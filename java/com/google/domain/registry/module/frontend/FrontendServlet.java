@@ -14,18 +14,13 @@
 
 package com.google.domain.registry.module.frontend;
 
-import static java.util.Arrays.asList;
-
-import com.google.common.base.Function;
-import com.google.common.collect.FluentIterable;
-import com.google.domain.registry.request.RequestHandler;
 import com.google.domain.registry.request.RequestModule;
-
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.security.Security;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -36,23 +31,17 @@ public final class FrontendServlet extends HttpServlet {
 
   private static final FrontendComponent component = DaggerFrontendComponent.create();
 
-  private static final RequestHandler<FrontendRequestComponent> requestHandler =
-      RequestHandler.create(FrontendRequestComponent.class, FluentIterable
-          .from(asList(FrontendRequestComponent.class.getMethods()))
-          .transform(new Function<Method, Method>() {
-            @Override
-            public Method apply(Method method) {
-              method.setAccessible(true);  // Make App Engine's security manager happy.
-              return method;
-            }}));
-
   @Override
   public void init() {
+    for (Method m : FrontendRequestComponent.class.getMethods()) {
+      m.setAccessible(true);
+    }
     Security.addProvider(new BouncyCastleProvider());
   }
 
   @Override
   public void service(HttpServletRequest req, HttpServletResponse rsp) throws IOException {
-    requestHandler.handleRequest(req, rsp, component.startRequest(new RequestModule(req, rsp)));
+    component.startRequest(new RequestModule(req, rsp))
+        .requestHandler().handleRequest();
   }
 }

@@ -14,7 +14,6 @@
 
 package com.google.domain.registry.request;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.domain.registry.security.XsrfTokenManager.X_CSRF_TOKEN;
@@ -36,6 +35,7 @@ import org.joda.time.Duration;
 import java.io.IOException;
 import java.lang.reflect.Method;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -61,6 +61,11 @@ import javax.servlet.http.HttpServletResponse;
  * <li>Methods whose raw return type does not have an {@code @Action} annotation are ignored
  * </ol>
  *
+ * <p><b>Warning:</b> When using the App Engine platform, you must call
+ * {@link Method#setAccessible(boolean) setAccessible(true)} on all your component {@link Method}
+ * instances, from within the same package as the component. This is due to cross-package
+ * reflection restrictions.
+ *
  * <h3>Security Features</h3>
  *
  * <p>XSRF protection is built into this class. It can be enabled or disabled on individual actions
@@ -70,7 +75,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @param <C> component type
  */
-public final class RequestHandler<C> {
+public final class RequestHandler<C extends RequestComponent<?>> {
 
   private static final FormattingLogger logger = FormattingLogger.getLoggerForCallerClass();
 
@@ -79,39 +84,24 @@ public final class RequestHandler<C> {
   @NonFinalForTesting
   private static UserService userService = UserServiceFactory.getUserService();
 
-  /**
-   * Creates a new request processor based off your component methods.
-   *
-   * <p><b>Warning:</b> When using the App Engine platform, you must call
-   * {@link Method#setAccessible(boolean) setAccessible(true)} on all your component {@link Method}
-   * instances, from within the same package as the component. This is due to cross-package
-   * reflection restrictions.
-   *
-   * @param methods is the result of calling {@link Class#getMethods()} on {@code component}, which
-   *     are filtered to only include those with no arguments returning a {@link Runnable} with an
-   *     {@link Action} annotation
-   */
-  public static <C> RequestHandler<C> create(Class<C> component, Iterable<Method> methods) {
-    return new RequestHandler<>(component, Router.create(methods));
-  }
+  private final C component;
+  private final HttpServletResponse rsp;
+  private final HttpServletRequest req;
+  private final Optional<Route> route;
 
-  private final Router router;
-
-  private RequestHandler(Class<C> component, Router router) {
-    checkNotNull(component);
-    this.router = router;
+  @Inject
+  public RequestHandler(
+      C component, HttpServletResponse rsp, HttpServletRequest req, Optional<Route> route) {
+    this.component = component;
+    this.rsp = rsp;
+    this.req = req;
+    this.route = route;
   }
 
   /**
    * Runs the appropriate action for a servlet request.
-   *
-   * @param component is an instance of the component type whose methods were passed to
-   *     {@link #create(Class, Iterable)}
    */
-  public void handleRequest(HttpServletRequest req, HttpServletResponse rsp, C component)
-      throws IOException {
-    checkNotNull(component);
-    checkNotNull(rsp);
+  public void handleRequest() throws IOException {
     Action.Method method;
     try {
       method = Action.Method.valueOf(req.getMethod());
@@ -121,7 +111,6 @@ public final class RequestHandler<C> {
       return;
     }
     String path = req.getRequestURI();
-    Optional<Route> route = router.route(path);
     if (!route.isPresent()) {
       logger.infofmt("No action found for: %s", path);
       rsp.sendError(SC_NOT_FOUND);

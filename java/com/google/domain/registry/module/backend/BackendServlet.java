@@ -14,11 +14,6 @@
 
 package com.google.domain.registry.module.backend;
 
-import static java.util.Arrays.asList;
-
-import com.google.common.base.Function;
-import com.google.common.collect.FluentIterable;
-import com.google.domain.registry.request.RequestHandler;
 import com.google.domain.registry.request.RequestModule;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -36,23 +31,17 @@ public final class BackendServlet extends HttpServlet {
 
   private static final BackendComponent component = DaggerBackendComponent.create();
 
-  private static final RequestHandler<BackendRequestComponent> requestHandler =
-      RequestHandler.create(BackendRequestComponent.class, FluentIterable
-          .from(asList(BackendRequestComponent.class.getMethods()))
-          .transform(new Function<Method, Method>() {
-            @Override
-            public Method apply(Method method) {
-              method.setAccessible(true);  // Make App Engine's security manager happy.
-              return method;
-            }}));
-
   @Override
   public void init() {
+    for (Method method : BackendRequestComponent.class.getMethods()) {
+      method.setAccessible(true);
+    }
     Security.addProvider(new BouncyCastleProvider());
   }
 
   @Override
   public void service(HttpServletRequest req, HttpServletResponse rsp) throws IOException {
-    requestHandler.handleRequest(req, rsp, component.startRequest(new RequestModule(req, rsp)));
+    component.startRequest(new RequestModule(req, rsp))
+        .requestHandler().handleRequest();
   }
 }

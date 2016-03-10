@@ -34,6 +34,7 @@ import javax.inject.Singleton;
         BraintreeModule.class,
         ConfigModule.class,
         ConsoleConfigModule.class,
+        FrontendModule.class,
         KeyModule.class,
         SystemClockModule.class,
         UserServiceModule.class,

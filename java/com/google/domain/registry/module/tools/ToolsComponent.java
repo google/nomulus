@@ -28,7 +28,9 @@ import com.google.domain.registry.request.Modules.GoogleCredentialModule;
 import com.google.domain.registry.request.Modules.Jackson2Module;
 import com.google.domain.registry.request.Modules.UrlFetchTransportModule;
 import com.google.domain.registry.request.Modules.UseAppIdentityCredentialForGoogleApisModule;
+import com.google.domain.registry.request.RequestHandler;
 import com.google.domain.registry.request.RequestModule;
+import com.google.domain.registry.request.Router;
 import com.google.domain.registry.util.SystemClock.SystemClockModule;
 import com.google.domain.registry.util.SystemSleeper.SystemSleeperModule;
 
@@ -55,6 +57,7 @@ import javax.inject.Singleton;
         UseAppIdentityCredentialForGoogleApisModule.class,
         SystemClockModule.class,
         SystemSleeperModule.class,
+        ToolsModule.class,
         VoidKeyringModule.class,
     })
 interface ToolsComponent {

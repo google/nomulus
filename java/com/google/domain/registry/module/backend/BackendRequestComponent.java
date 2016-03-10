@@ -45,6 +45,7 @@ import com.google.domain.registry.rde.RdeReportAction;
 import com.google.domain.registry.rde.RdeReporter;
 import com.google.domain.registry.rde.RdeStagingAction;
 import com.google.domain.registry.rde.RdeUploadAction;
+import com.google.domain.registry.request.RequestComponent;
 import com.google.domain.registry.request.RequestModule;
 import com.google.domain.registry.request.RequestScope;
 import com.google.domain.registry.tmch.NordnUploadAction;
@@ -72,7 +73,7 @@ import dagger.Subcomponent;
         SheetModule.class,
         TmchModule.class,
     })
-interface BackendRequestComponent {
+interface BackendRequestComponent extends RequestComponent<BackendRequestComponent> {
   BigqueryPollJobAction bigqueryPollJobAction();
   BrdaCopyAction brdaCopyAction();
   CommitLogCheckpointAction commitLogCheckpointAction();
