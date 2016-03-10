@@ -15,7 +15,7 @@
 package com.google.domain.registry.request;
 
 /** Common methods for dagger request components. */
-public interface RequestComponent<C extends RequestComponent<?>> {
+public interface RequestComponent<C extends RequestComponent<C>> {
   /**
    * Provides request handler instance injected by Dagger.
    */

@@ -75,7 +75,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @param <C> component type
  */
-public final class RequestHandler<C extends RequestComponent<?>> {
+public abstract class RequestHandler<C extends RequestComponent<C>> {
 
   private static final FormattingLogger logger = FormattingLogger.getLoggerForCallerClass();
 
@@ -89,7 +89,6 @@ public final class RequestHandler<C extends RequestComponent<?>> {
   private final HttpServletRequest req;
   private final Optional<Route> route;
 
-  @Inject
   public RequestHandler(
       C component, HttpServletResponse rsp, HttpServletRequest req, Optional<Route> route) {
     this.component = component;

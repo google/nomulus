@@ -74,6 +74,10 @@ import dagger.Subcomponent;
         TmchModule.class,
     })
 interface BackendRequestComponent extends RequestComponent<BackendRequestComponent> {
+
+  // XXX: Working around eclipse not handling generics properly. Need to submit bug.
+  BackendRequestHandler requestHandler();
+
   BigqueryPollJobAction bigqueryPollJobAction();
   BrdaCopyAction brdaCopyAction();
   CommitLogCheckpointAction commitLogCheckpointAction();

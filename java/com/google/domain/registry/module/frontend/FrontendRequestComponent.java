@@ -49,6 +49,10 @@ import dagger.Subcomponent;
     })
 interface FrontendRequestComponent extends RequestComponent<FrontendRequestComponent> {
   ConsoleUiAction consoleUiAction();
+
+  //XXX: Working around eclipse not handling generics properly. Need to submit bug.
+  FrontendRequestHandler requestHandler();
+
   RdapAutnumAction rdapAutnumAction();
   RegistrarPaymentAction registrarPaymentAction();
   RegistrarPaymentSetupAction registrarPaymentSetupAction();

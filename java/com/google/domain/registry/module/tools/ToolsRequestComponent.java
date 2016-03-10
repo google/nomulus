@@ -52,6 +52,10 @@ import dagger.Subcomponent;
         ToolsServerModule.class,
     })
 interface ToolsRequestComponent extends RequestComponent<ToolsRequestComponent> {
+  
+  //XXX: Working around eclipse not handling generics properly. Need to submit bug.
+  ToolsRequestHandler requestHandler();
+  
   CreateGroupsAction createGroupsAction();
   CreatePremiumListAction createPremiumListAction();
   DeleteEntityAction deleteEntityAction();

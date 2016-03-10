@@ -106,7 +106,14 @@ public final class RequestHandlerTest {
     }
   }
 
-  public class Component implements RequestComponent {
+  public class ComponentRequestHandler extends RequestHandler<Component> {
+    public ComponentRequestHandler(Component component, HttpServletResponse rsp,
+        HttpServletRequest req, Optional<Route> route) {
+      super(component, rsp, req, route);
+    }
+  }
+
+  public class Component implements RequestComponent<Component> {
     public BumblebeeTask bumblebeeTask() {
       return bumblebeeTask;
     }
@@ -172,7 +179,7 @@ public final class RequestHandlerTest {
     } catch (IllegalArgumentException ignored) {
       // request module returns Optional.absent() for invalid http methods.
     }
-    return new RequestHandler<Component>(component, rsp, req, route);
+    return new ComponentRequestHandler(component, rsp, req, route);
   }
   //C component, HttpServletResponse rsp, HttpServletRequest req, Optional<Route> route)
 
