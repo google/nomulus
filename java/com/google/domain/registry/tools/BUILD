@@ -11,6 +11,7 @@ package_group(
     packages = [
         "//java/com/google/domain/registry/testing",
         "//java/com/google/domain/registry/tools",
+        "//java/com/google/domain/registry/eclipse",
         "//javatests/com/google/domain/registry/tools",
     ],
 )
