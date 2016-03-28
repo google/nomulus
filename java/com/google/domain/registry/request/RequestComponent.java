@@ -14,17 +14,10 @@
 
 package com.google.domain.registry.request;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-import javax.inject.Scope;
-
-/** Dagger annotation for request-scoped components that depend on a global component. */
-@Scope
-@Documented
-@Target({ElementType.TYPE, ElementType.METHOD})
-@Retention(RetentionPolicy.RUNTIME)
-public @interface RequestScope {}
+/** Common methods for dagger request components. */
+public interface RequestComponent<C extends RequestComponent<C>> {
+  /**
+   * Provides request handler instance injected by Dagger.
+   */
+  RequestHandler<C> requestHandler();
+}

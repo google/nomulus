@@ -17,8 +17,10 @@ package com.google.domain.registry.module.backend;
 import static com.google.domain.registry.model.registry.Registries.assertTldExists;
 import static com.google.domain.registry.request.RequestParameters.extractRequiredParameter;
 
+import com.google.common.collect.ImmutableList;
 import com.google.domain.registry.request.Parameter;
 import com.google.domain.registry.request.RequestParameters;
+import com.google.domain.registry.request.Router;
 
 import dagger.Module;
 import dagger.Provides;
@@ -35,5 +37,10 @@ public class BackendModule {
   @Parameter(RequestParameters.PARAM_TLD)
   static String provideTld(HttpServletRequest req) {
     return assertTldExists(extractRequiredParameter(req, RequestParameters.PARAM_TLD));
+  }
+
+  @Provides
+  static Router provideRouter() {
+    return new Router(ImmutableList.copyOf(BackendRequestComponent.class.getMethods()));
   }
 }

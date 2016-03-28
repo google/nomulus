@@ -17,11 +17,13 @@ package com.google.domain.registry.request;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.base.Optional;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CharStreams;
 import com.google.common.net.MediaType;
+import com.google.domain.registry.request.Action.Method;
 import com.google.domain.registry.request.HttpException.BadRequestException;
 import com.google.domain.registry.request.HttpException.UnsupportedMediaTypeException;
 
@@ -33,6 +35,7 @@ import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.regex.Matcher;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -68,6 +71,25 @@ public final class RequestModule {
   @RequestPath
   static String provideRequestPath(HttpServletRequest req) {
     return req.getRequestURI();
+  }
+
+  @Provides
+  @RequestPath
+  static Matcher provideRequestPathMatcher(
+      Optional<Route> route, @RequestPath String path) {
+    return route.get().pattern().matcher(path);
+  }
+
+  @Provides
+  static Optional<Route> provideRoute(HttpServletRequest req, Router router) {
+    Method method;
+    try {
+      method = Method.valueOf(req.getMethod());
+    } catch (IllegalArgumentException e) {
+      // Ignore unrecognized method so RequestHandler can deal with it.
+      return Optional.absent();
+    }
+    return router.route(req.getRequestURI(), method);
   }
 
   @Provides

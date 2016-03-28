@@ -12,19 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.domain.registry.request;
+package com.google.domain.registry.module.frontend;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import com.google.common.collect.ImmutableList;
+import com.google.domain.registry.request.Router;
 
-import javax.inject.Scope;
+import dagger.Module;
+import dagger.Provides;
 
-/** Dagger annotation for request-scoped components that depend on a global component. */
-@Scope
-@Documented
-@Target({ElementType.TYPE, ElementType.METHOD})
-@Retention(RetentionPolicy.RUNTIME)
-public @interface RequestScope {}
+/** Dagger module for default GAE module. */
+@Module
+public class FrontendModule {
+
+  @Provides
+  static Router provideRouter() {
+    return new Router(ImmutableList.copyOf(FrontendRequestComponent.class.getMethods()));
+  }
+}

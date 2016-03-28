@@ -18,6 +18,8 @@ import com.google.domain.registry.export.PublishDetailReportAction;
 import com.google.domain.registry.loadtest.LoadTestAction;
 import com.google.domain.registry.loadtest.LoadTestModule;
 import com.google.domain.registry.mapreduce.MapreduceModule;
+import com.google.domain.registry.request.RequestComponent;
+import com.google.domain.registry.request.RequestHandler;
 import com.google.domain.registry.request.RequestModule;
 import com.google.domain.registry.request.RequestScope;
 import com.google.domain.registry.tools.mapreduce.DeleteProberDataAction;
@@ -49,7 +51,11 @@ import dagger.Subcomponent;
         RequestModule.class,
         ToolsServerModule.class,
     })
-interface ToolsRequestComponent {
+interface ToolsRequestComponent extends RequestComponent<ToolsRequestComponent> {
+  
+  //XXX: Working around eclipse not handling generics properly. Need to submit bug.
+  ToolsRequestHandler requestHandler();
+  
   CreateGroupsAction createGroupsAction();
   CreatePremiumListAction createPremiumListAction();
   DeleteEntityAction deleteEntityAction();

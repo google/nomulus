@@ -14,6 +14,8 @@
 
 package com.google.domain.registry.request;
 
+import java.util.regex.Pattern;
+
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Function;
 
@@ -23,14 +25,15 @@ import com.google.common.base.Function;
  * @see Router
  */
 @AutoValue
-abstract class Route {
+public abstract class Route {
 
   static Route create(Action action, Function<Object, Runnable> instantiator) {
-    return new AutoValue_Route(action, instantiator);
+    return new AutoValue_Route(action, instantiator, compileActionPath(action.path()));
   }
 
   abstract Action action();
   abstract Function<Object, Runnable> instantiator();
+  abstract Pattern pattern();
 
   boolean isMethodAllowed(Action.Method requestMethod) {
     for (Action.Method method : action().method()) {
@@ -43,5 +46,35 @@ abstract class Route {
 
   boolean shouldXsrfProtect(Action.Method requestMethod) {
     return action().xsrfProtection() && requestMethod != Action.Method.GET;
+  }
+
+  /**
+   * Key used for router prefix matching.
+   * 
+   * <p>Some routes are equipped with route parameters, which
+   * would not allow the router to match the entire path
+   * with the route. The routerKey() method will detect
+   * route parameters and only return the path up to the
+   * first parameter in the route. If there are no parameters,
+   * the entire path of the action is returned.</p>
+   *
+   * @return Key to be used in router prefix matching
+   */
+  String prefix() {
+    String key = action().path();
+    int i = key.indexOf("/:");
+    if (i != -1) {
+      key = key.substring(0, i + 1);
+    }
+    return key;
+  }
+
+  private static Pattern compileActionPath(String actionPath) {
+    return Pattern.compile(""
+        + "\\Q"
+        + Pattern.compile(":([^/]+)")
+            .matcher(actionPath)
+            .replaceAll("\\\\E(?<$1>[^/]+)\\\\Q")
+        + "\\E");
   }
 }
