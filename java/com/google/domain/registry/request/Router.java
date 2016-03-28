@@ -81,7 +81,7 @@ public class Router {
           if (matcher.matches()) {
             if (route.isMethodAllowed(method)) {
               return Optional.of(route);
-            } else if(firstPathMatch == null) {
+            } else if (firstPathMatch == null) {
               firstPathMatch = route;
             }
           }
@@ -116,7 +116,6 @@ public class Router {
    * the same path and overlap in allowed http methods.
    */
   private static void validateRoute(Route newRoute, Iterable<Route> existingRoutes) {
-    // cannot
     checkArgument(newRoute.action().path().indexOf("/:") != 0,
         "Route cannot begin with a route parameter");
     Set<RouteSignature> routeSignatures = new HashSet<>();
@@ -131,7 +130,7 @@ public class Router {
     for (Action.Method m : newRoute.action().method()) {
       RouteSignature signature = RouteSignature.create(newRoutePath, m);
       checkArgument(routeSignatures.add(signature),
-        "Two actions cannot have the same path and method");
+          "Two actions cannot have the same path and method");
     }
 
   }

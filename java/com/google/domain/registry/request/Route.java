@@ -50,12 +50,13 @@ public abstract class Route {
 
   /**
    * Key used for router prefix matching.
-   * Some routes are equipped with route parameters, which
+   * 
+   * <p>Some routes are equipped with route parameters, which
    * would not allow the router to match the entire path
    * with the route. The routerKey() method will detect
    * route parameters and only return the path up to the
    * first parameter in the route. If there are no parameters,
-   * the entire path of the action is returned.
+   * the entire path of the action is returned.</p>
    *
    * @return Key to be used in router prefix matching
    */
