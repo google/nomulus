@@ -491,9 +491,15 @@ def domain_registry_repositories():
   # XXX: new_http_archive() doesn't maintain the executable bit.
   #      https://github.com/bazelbuild/bazel/issues/984
   native.http_file(
-      name = "phantomjs",
+      name = "phantomjs_linux",
       sha256 = "86dd9a4bf4aee45f1a84c9f61cf1947c1d6dce9b9e8d2a907105da7852460d2f",
       url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2",
+  )
+
+  native.http_file(
+      name = "phantomjs_mac",
+      sha256 = "538cf488219ab27e309eafc629e2bcee9976990fe90b1ec334f541779150f8c1",
+      url = "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-macosx.zip",
   )
 
   native.maven_jar(
