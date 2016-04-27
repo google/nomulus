@@ -25,6 +25,6 @@ import javax.inject.Scope;
 /** Dagger annotation for request-scoped components that depend on a global component. */
 @Scope
 @Documented
-@Target({ElementType.TYPE})
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RequestScope {}
