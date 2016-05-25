@@ -151,7 +151,7 @@ public class VerifyEntityIntegrityActionTest
     persistResource(
         newDomainResource("long.march", contact)
             .asBuilder()
-            .setCreationTimeForTest(now.minusMonths(3))
+            .setCreationTime(now.minusMonths(3))
             .build());
     persistDeletedContact("ricketycricket", now.minusDays(3));
     persistDeletedContact("ricketycricket", now.minusDays(2));

@@ -211,9 +211,9 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable, 
       super(instance);
     }
 
-    /** Set the time this resource was created. Should only be used in tests. */
+    /** Set the time this resource was created. Should only be used in tests or RDE import. */
     @VisibleForTesting
-    public B setCreationTimeForTest(DateTime creationTime) {
+    public B setCreationTime(DateTime creationTime) {
       getInstance().creationTime = CreateAutoTimestamp.create(creationTime);
       return thisCastToDerived();
     }

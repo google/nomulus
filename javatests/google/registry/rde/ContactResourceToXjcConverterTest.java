@@ -306,7 +306,7 @@ public class ContactResourceToXjcConverterTest {
         .setCurrentSponsorClientId("TheRegistrar")
         .setLastEppUpdateClientId("TheRegistrar")
         .setAuthInfo(ContactAuthInfo.create(PasswordAuth.create("2fooBAR")))
-        .setCreationTimeForTest(DateTime.parse("1900-01-01TZ"))
+        .setCreationTime(DateTime.parse("1900-01-01TZ"))
         .setLastTransferTime(DateTime.parse("1925-04-20TZ"))
         .setLastEppUpdateTime(DateTime.parse("1930-04-20TZ"))
         .setEmailAddress("justine@crr.com")

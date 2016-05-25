@@ -114,7 +114,7 @@ public class DatastoreHelper {
     return new HostResource.Builder()
         .setFullyQualifiedHostName(hostName)
         .setCurrentSponsorClientId("TheRegistrar")
-        .setCreationTimeForTest(START_OF_TIME)
+        .setCreationTime(START_OF_TIME)
         .setRepoId(generateNewContactHostRoid())
         .build();
   }
@@ -137,7 +137,7 @@ public class DatastoreHelper {
         .setFullyQualifiedDomainName(domainName)
         .setCreationClientId("TheRegistrar")
         .setCurrentSponsorClientId("TheRegistrar")
-        .setCreationTimeForTest(START_OF_TIME)
+        .setCreationTime(START_OF_TIME)
         .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("2fooBAR")))
         .setRegistrant(contactRef)
         .setContacts(ImmutableSet.of(

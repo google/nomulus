@@ -281,7 +281,7 @@ public class DeleteContactResourceActionTest
   public void testFailure_contactAlreadyDeleted() throws Exception {
     ContactResource contactDeleted = persistResource(
         newContactResource("blah1236").asBuilder()
-            .setCreationTimeForTest(clock.nowUtc().minusDays(2))
+            .setCreationTime(clock.nowUtc().minusDays(2))
             .setDeletionTime(clock.nowUtc().minusDays(1))
             .build());
     thrown.expect(

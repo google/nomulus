@@ -214,7 +214,7 @@ public class DeleteHostResourceActionTest
   public void testFailure_hostAlreadyDeleted() throws Exception {
     HostResource hostDeleted = persistResource(
         newHostResource("ns3.example.tld").asBuilder()
-            .setCreationTimeForTest(clock.nowUtc().minusDays(2))
+            .setCreationTime(clock.nowUtc().minusDays(2))
             .setDeletionTime(clock.nowUtc().minusDays(1))
             .build());
     thrown.expect(

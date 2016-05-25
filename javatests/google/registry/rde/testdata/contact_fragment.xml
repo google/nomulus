@@ -1,0 +1,40 @@
+<rdeContact:contact
+        xmlns:rdeContact="urn:ietf:params:xml:ns:rdeContact-1.0"
+        xmlns:contact="urn:ietf:params:xml:ns:contact-1.0">
+    <rdeContact:id>love-id</rdeContact:id>
+    <rdeContact:roid>2-ROID</rdeContact:roid>
+    <rdeContact:status s="clientDeleteProhibited"/>
+    <rdeContact:status s="serverUpdateProhibited"/>
+    <rdeContact:postalInfo type="int">
+        <contact:name>Dipsy Doodle</contact:name>
+        <contact:org>Charleston Road Registry Incorporated</contact:org>
+        <contact:addr>
+            <contact:street>123 Charleston Road</contact:street>
+            <contact:street>Suite 123</contact:street>
+            <contact:city>Mountain View</contact:city>
+            <contact:sp>CA</contact:sp>
+            <contact:pc>31337</contact:pc>
+            <contact:cc>US</contact:cc>
+        </contact:addr>
+    </rdeContact:postalInfo>
+    <rdeContact:voice x="123">+1.2126660000</rdeContact:voice>
+    <rdeContact:fax>+1.2126660001</rdeContact:fax>
+    <rdeContact:email>justine@crr.com</rdeContact:email>
+    <rdeContact:clID>TheRegistrar</rdeContact:clID>
+    <rdeContact:crRr>NewRegistrar</rdeContact:crRr>
+    <rdeContact:crDate>1900-01-01T00:00:00Z</rdeContact:crDate>
+    <rdeContact:upRr>TheRegistrar</rdeContact:upRr>
+    <rdeContact:upDate>1930-04-20T00:00:00Z</rdeContact:upDate>
+    <rdeContact:trDate>1925-04-20T00:00:00Z</rdeContact:trDate>
+    <rdeContact:trnData>
+        <rdeContact:trStatus>serverApproved</rdeContact:trStatus>
+        <rdeContact:reRr>TheRegistrar</rdeContact:reRr>
+        <rdeContact:reDate>1925-04-19T00:00:00Z</rdeContact:reDate>
+        <rdeContact:acRr>NewRegistrar</rdeContact:acRr>
+        <rdeContact:acDate>1925-04-21T00:00:00Z</rdeContact:acDate>
+    </rdeContact:trnData>
+    <rdeContact:disclose flag="true">
+        <contact:name type="int"/>
+        <contact:addr type="int"/>
+    </rdeContact:disclose>
+</rdeContact:contact>

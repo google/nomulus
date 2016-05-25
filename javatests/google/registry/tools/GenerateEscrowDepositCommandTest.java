@@ -202,7 +202,7 @@ public class GenerateEscrowDepositCommandTest
     return new HostResource.Builder()
         .setRepoId(generateNewContactHostRoid())
         .setCreationClientId("LawyerCat")
-        .setCreationTimeForTest(clock.nowUtc())
+        .setCreationTime(clock.nowUtc())
         .setCurrentSponsorClientId("BusinessCat")
         .setFullyQualifiedHostName(Idn.toASCII(fqdn))
         .setInetAddresses(ImmutableSet.of(InetAddresses.forString(ip)))

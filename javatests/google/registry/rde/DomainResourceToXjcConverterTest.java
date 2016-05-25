@@ -270,7 +270,7 @@ public class DomainResourceToXjcConverterTest {
                 makeContactResource(clock, "11-Q9JYB4C", "5372808-TRL",
                     "bird or fiend!? i shrieked upstarting", "bog@cat.みんな")))))
         .setCreationClientId("LawyerCat")
-        .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
+        .setCreationTime(DateTime.parse("1900-01-01T00:00:00Z"))
         .setCurrentSponsorClientId("GetTheeBack")
         .setDsData(ImmutableSet.of(DelegationSignerData.create(
               123, 200, 230, base16().decode("1234567890"))))
@@ -374,7 +374,7 @@ public class DomainResourceToXjcConverterTest {
             .setEmailAddress(email)
             .setCurrentSponsorClientId("GetTheeBack")
             .setCreationClientId("GetTheeBack")
-            .setCreationTimeForTest(END_OF_TIME)
+            .setCreationTime(END_OF_TIME)
             .setInternationalizedPostalInfo(new PostalInfo.Builder()
                 .setType(PostalInfo.Type.INTERNATIONALIZED)
                 .setName(name)
@@ -405,7 +405,7 @@ public class DomainResourceToXjcConverterTest {
     return persistEppResource(
         new HostResource.Builder()
             .setCreationClientId("LawyerCat")
-            .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
+            .setCreationTime(DateTime.parse("1900-01-01T00:00:00Z"))
             .setCurrentSponsorClientId("BusinessCat")
             .setFullyQualifiedHostName(Idn.toASCII(fqhn))
             .setInetAddresses(ImmutableSet.of(InetAddresses.forString(ip)))

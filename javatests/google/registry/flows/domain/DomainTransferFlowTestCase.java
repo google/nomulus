@@ -120,7 +120,7 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         .setFullyQualifiedDomainName(label + "." + tld)
         .setCurrentSponsorClientId("TheRegistrar")
         .setCreationClientId("TheRegistrar")
-        .setCreationTimeForTest(DateTime.parse("1999-04-03T22:00:00.0Z"))
+        .setCreationTime(DateTime.parse("1999-04-03T22:00:00.0Z"))
         .setRegistrationExpirationTime(REGISTRATION_EXPIRATION_TIME)
         .setRegistrant(Ref.create(loadByUniqueId(ContactResource.class, "jd1234", clock.nowUtc())))
         .setContacts(ImmutableSet.of(
@@ -164,7 +164,7 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
             .setFullyQualifiedHostName("ns1." + label + "." + tld)
             .setCurrentSponsorClientId("TheRegistrar")
             .setCreationClientId("TheRegistrar")
-            .setCreationTimeForTest(DateTime.parse("1999-04-03T22:00:00.0Z"))
+            .setCreationTime(DateTime.parse("1999-04-03T22:00:00.0Z"))
             .setSuperordinateDomain(Ref.create(domain))
             .build());
     domain = persistResource(domain.asBuilder()

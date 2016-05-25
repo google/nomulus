@@ -218,7 +218,7 @@ public class DomainWhoisResponseTest {
         .setFullyQualifiedDomainName("EXAMPLE.tld")
         .setRepoId("3-TLD")
         .setLastEppUpdateTime(DateTime.parse("2009-05-29T20:13:00Z"))
-        .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))
+        .setCreationTime(DateTime.parse("2000-10-08T00:45:00Z"))
         .setRegistrationExpirationTime(DateTime.parse("2010-10-08T00:44:59Z"))
         .setCurrentSponsorClientId("NewRegistrar")
         .setStatusValues(ImmutableSet.of(

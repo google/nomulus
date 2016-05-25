@@ -66,7 +66,7 @@ public class HostResourceToXjcConverterTest {
     XjcRdeHost bean = HostResourceToXjcConverter.convertHost(
         new HostResource.Builder()
             .setCreationClientId("LawyerCat")
-            .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
+            .setCreationTime(DateTime.parse("1900-01-01T00:00:00Z"))
             .setCurrentSponsorClientId("BusinessCat")
             .setFullyQualifiedHostName("ns1.love.lol")
             .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
@@ -115,7 +115,7 @@ public class HostResourceToXjcConverterTest {
     XjcRdeHost bean = HostResourceToXjcConverter.convertHost(
         new HostResource.Builder()
             .setCreationClientId("LawyerCat")
-            .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
+            .setCreationTime(DateTime.parse("1900-01-01T00:00:00Z"))
             .setCurrentSponsorClientId("BusinessCat")
             .setFullyQualifiedHostName("ns1.love.lol")
             .setInetAddresses(ImmutableSet.of(InetAddresses.forString("cafe::abba")))
@@ -136,7 +136,7 @@ public class HostResourceToXjcConverterTest {
     HostResourceToXjcConverter.convertHost(
         new HostResource.Builder()
             .setCreationClientId("LawyerCat")
-            .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
+            .setCreationTime(DateTime.parse("1900-01-01T00:00:00Z"))
             .setCurrentSponsorClientId("BusinessCat")
             .setFullyQualifiedHostName("ns1.love.lol")
             .setInetAddresses(ImmutableSet.of(InetAddresses.forString("cafe::abba")))
@@ -154,7 +154,7 @@ public class HostResourceToXjcConverterTest {
     XjcRdeHostElement bean = HostResourceToXjcConverter.convert(
         new HostResource.Builder()
             .setCreationClientId("LawyerCat")
-            .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
+            .setCreationTime(DateTime.parse("1900-01-01T00:00:00Z"))
             .setCurrentSponsorClientId("BusinessCat")
             .setFullyQualifiedHostName("ns1.love.lol")
             .setInetAddresses(ImmutableSet.of(InetAddresses.forString("cafe::abba")))
