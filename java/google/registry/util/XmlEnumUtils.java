@@ -14,10 +14,6 @@
 
 package google.registry.util;
 
-import com.google.common.collect.ImmutableMap;
-
-import java.util.Arrays;
-
 import javax.xml.bind.annotation.XmlEnumValue;
 
 /** Utility methods related to xml enums. */
@@ -28,35 +24,6 @@ public class XmlEnumUtils {
       return input.getClass().getField(input.name()).getAnnotation(XmlEnumValue.class).value();
     } catch (NoSuchFieldException e) {
       throw new RuntimeException(e);
-    }
-  }
-
-  /** Efficient lookup from xml enums to java enums */
-  public final static class XmlToEnumMapper<T extends Enum<?>> {
-
-    private final ImmutableMap<String, T> map;
-
-    public XmlToEnumMapper(T[] enumValues) {
-      this(Arrays.asList(enumValues));
-    }
-
-    public XmlToEnumMapper(Iterable<T> enumValues) {
-      ImmutableMap.Builder<String, T> mapBuilder = new ImmutableMap.Builder<>();
-      for (T value : enumValues) {
-        try {
-          String xmlName =
-              value.getClass().getField(value.name()).getAnnotation(XmlEnumValue.class).value();
-          mapBuilder = mapBuilder.put(xmlName, value);
-        } catch (NoSuchFieldException e) {
-          throw new RuntimeException(e);
-        }
-      }
-      map = mapBuilder.build();
-    }
-
-    /** Look up {@link T} from the {@link XmlEnumValue} */
-    public T xmlToEnum(String value) {
-      return map.get(value);
     }
   }
 }

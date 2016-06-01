@@ -29,7 +29,7 @@ import google.registry.model.contact.PostalInfo;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.util.XmlEnumUtils.XmlToEnumMapper;
+import google.registry.util.XmlToEnumMapper;
 import google.registry.xjc.contact.XjcContactAddrType;
 import google.registry.xjc.contact.XjcContactDiscloseType;
 import google.registry.xjc.contact.XjcContactE164Type;
@@ -46,9 +46,9 @@ import javax.annotation.Nullable;
 final class XjcToContactResourceConverter {
 
   private static final XmlToEnumMapper<PostalInfo.Type> POSTAL_INFO_TYPE_MAPPER =
-      new XmlToEnumMapper<>(PostalInfo.Type.values());
+      XmlToEnumMapper.create(PostalInfo.Type.values());
   private static final XmlToEnumMapper<TransferStatus> TRANSFER_STATUS_MAPPER =
-      new XmlToEnumMapper<>(TransferStatus.values());
+      XmlToEnumMapper.create(TransferStatus.values());
 
   private static final Function<XjcContactIntLocType, PostalInfoChoice> choiceConverter =
       new Function<XjcContactIntLocType, PostalInfoChoice>() {
