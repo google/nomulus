@@ -30,12 +30,12 @@ public class XmlEnumUtils {
       throw new RuntimeException(e);
     }
   }
-  
+
   /** Efficient lookup from xml enums to java enums */
-  public static class XmlToEnumMapper<T extends Enum<?>> {
+  public final static class XmlToEnumMapper<T extends Enum<?>> {
 
     private final ImmutableMap<String, T> map;
-    
+
     public XmlToEnumMapper(T[] enumValues) {
       this(Arrays.asList(enumValues));
     }

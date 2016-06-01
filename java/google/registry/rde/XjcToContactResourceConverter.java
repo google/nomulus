@@ -40,18 +40,16 @@ import google.registry.xjc.contact.XjcContactStatusType;
 import google.registry.xjc.rdecontact.XjcRdeContact;
 import google.registry.xjc.rdecontact.XjcRdeContactTransferDataType;
 
-import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 
 /** Utility class that turns {@link XjcRdeContact} as {@link ContactResource}. */
 final class XjcToContactResourceConverter {
 
-  private static final XmlToEnumMapper<PostalInfo.Type> postalInfoTypeMapper =
+  private static final XmlToEnumMapper<PostalInfo.Type> POSTAL_INFO_TYPE_MAPPER =
       new XmlToEnumMapper<>(PostalInfo.Type.values());
-  private static final XmlToEnumMapper<TransferStatus> transferStatusMapper =
+  private static final XmlToEnumMapper<TransferStatus> TRANSFER_STATUS_MAPPER =
       new XmlToEnumMapper<>(TransferStatus.values());
 
-  //TODO: use lambda syntax when java 8 syntax is available
   private static final Function<XjcContactIntLocType, PostalInfoChoice> choiceConverter =
       new Function<XjcContactIntLocType, PostalInfoChoice>() {
         public PostalInfoChoice apply(XjcContactIntLocType choice) {
@@ -59,7 +57,7 @@ final class XjcToContactResourceConverter {
         }
       };
 
-  private static final Function<XjcContactStatusType, StatusValue> statusConverter =
+  private static final Function<XjcContactStatusType, StatusValue> STATUS_CONVERTER =
       new Function<XjcContactStatusType, StatusValue>() {
         public StatusValue apply(XjcContactStatusType status) {
           return convertStatusValue(status);
@@ -72,7 +70,7 @@ final class XjcToContactResourceConverter {
     return new ContactResource.Builder()
         .setRepoId(contact.getRoid())
         .setStatusValues(
-            ImmutableSet.copyOf(Iterables.transform(contact.getStatuses(), statusConverter)))
+            ImmutableSet.copyOf(Iterables.transform(contact.getStatuses(), STATUS_CONVERTER)))
         .setLocalizedPostalInfo(
             getPostalInfoOfType(contact.getPostalInfos(), XjcContactPostalInfoEnumType.LOC))
         .setInternationalizedPostalInfo(
@@ -107,13 +105,13 @@ final class XjcToContactResourceConverter {
   }
 
   /** Converts {@link XjcRdeContactTransferDataType} to {@link TransferData}. */
-  @CheckForNull
-  private static TransferData convertTransferData(XjcRdeContactTransferDataType transferData) {
+  private static TransferData convertTransferData(
+      @Nullable XjcRdeContactTransferDataType transferData) {
     if (transferData == null) {
       return TransferData.EMPTY;
     }
     return new TransferData.Builder()
-        .setTransferStatus(transferStatusMapper.xmlToEnum(transferData.getTrStatus().value()))
+        .setTransferStatus(TRANSFER_STATUS_MAPPER.xmlToEnum(transferData.getTrStatus().value()))
         .setGainingClientId(transferData.getReRr().getValue())
         .setLosingClientId(transferData.getAcRr().getValue())
         .setTransferRequestTime(transferData.getReDate())
@@ -134,8 +132,7 @@ final class XjcToContactResourceConverter {
 
   /** Converts {@link XjcContactDiscloseType} to {@link Disclose}. */
   @Nullable
-  @CheckForNull
-  private static Disclose convertDisclose(XjcContactDiscloseType disclose) {
+  private static Disclose convertDisclose(@Nullable XjcContactDiscloseType disclose) {
     if (disclose == null) {
       return null;
     }
@@ -149,7 +146,6 @@ final class XjcToContactResourceConverter {
 
   /** Converts {@link XjcContactE164Type} to {@link ContactPhoneNumber}. */
   @Nullable
-  @CheckForNull
   private static ContactPhoneNumber convertPhoneNumber(@Nullable XjcContactE164Type phoneNumber) {
     if (phoneNumber == null) {
       return null;
@@ -162,7 +158,7 @@ final class XjcToContactResourceConverter {
 
   /** Converts {@link PostalInfoChoice} to {@link XjcContactIntLocType}. */
   private static PostalInfoChoice convertPostalInfoChoice(XjcContactIntLocType choice) {
-    return PostalInfoChoice.create(postalInfoTypeMapper.xmlToEnum(choice.getType().value()));
+    return PostalInfoChoice.create(POSTAL_INFO_TYPE_MAPPER.xmlToEnum(choice.getType().value()));
   }
 
   /** Converts {@link XjcContactPostalInfoType} to {@link PostalInfo}. */
@@ -171,7 +167,7 @@ final class XjcToContactResourceConverter {
         .setName(postalInfo.getName())
         .setOrg(postalInfo.getOrg())
         .setAddress(convertAddress(postalInfo.getAddr()))
-        .setType(postalInfoTypeMapper.xmlToEnum(postalInfo.getType().value()))
+        .setType(POSTAL_INFO_TYPE_MAPPER.xmlToEnum(postalInfo.getType().value()))
         .build();
   }
 

@@ -14,6 +14,7 @@
 
 package google.registry.model;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.union;
 import static google.registry.util.CollectionUtils.difference;
@@ -212,8 +213,9 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable, 
     }
 
     /** Set the time this resource was created. Should only be used in tests or RDE import. */
-    @VisibleForTesting
     public B setCreationTime(DateTime creationTime) {
+      checkState(getInstance().creationTime == null,
+          "creationTime can only be set once for EppResource.");
       getInstance().creationTime = CreateAutoTimestamp.create(creationTime);
       return thisCastToDerived();
     }
