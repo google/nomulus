@@ -16,7 +16,6 @@ package google.registry.rde;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteSource;
 import google.registry.testing.ExceptionRule;
 import google.registry.xjc.rdecontact.XjcRdeContact;
@@ -33,11 +32,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+/** Unit tests for {@link RdeParser}. */
+@RunWith(JUnit4.class)
 public class RdeParserTest {
 
   private static final ByteSource DEPOSIT_XML = RdeTestData.get("deposit_full_parser.xml");
@@ -464,7 +467,7 @@ public class RdeParserTest {
     RdeParser parser = new RdeParser(xml);
     parser.nextEppParams();
     XjcRdeEppParams eppParams = parser.getEppParams();
-    assertThat(eppParams.getVersions()).isEqualTo(ImmutableList.of("1.0"));
+    assertThat(eppParams.getVersions()).containsExactly("1.0");
   }
 
   @Test

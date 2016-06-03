@@ -15,6 +15,7 @@
 package google.registry.rde;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
@@ -159,7 +160,7 @@ public class RdeParser {
     if (!nextElement(RDE_HEADER_URI, "header")) {
       throw new IllegalStateException("No RDE Header found");
     }
-    XjcRdeHeaderElement element = unmarshalElement(RDE_HEADER_URI, "header");
+    XjcRdeHeaderElement element = (XjcRdeHeaderElement) unmarshalElement(RDE_HEADER_URI, "header");
     return element.getValue();
   }
 
@@ -171,9 +172,9 @@ public class RdeParser {
    * @return Jaxb Element
    * @throws IllegalStateException if the parser is not at the specified element
    */
-  private <T> T unmarshalElement(String uri, String name) {
-    checkArgument(name != null, "name cannot be null");
-    checkArgument(uri != null, "uri cannot be null");
+  private Object unmarshalElement(String uri, String name) {
+    checkArgumentNotNull(name, "name cannot be null");
+    checkArgumentNotNull(uri, "uri cannot be null");
     try {
       if (isAtElement(uri, name)) {
         TransformerFactory tf = TransformerFactory.newInstance();
@@ -181,7 +182,7 @@ public class RdeParser {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         t.transform(new StAXSource(reader), new StreamResult(bout));
         ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
-        T element = XjcXmlTransformer.unmarshal(bin);
+        Object element = XjcXmlTransformer.unmarshal(bin);
         return element;
       } else {
         throw new IllegalStateException(String.format("Not at element %s:%s", uri, name));
@@ -251,8 +252,8 @@ public class RdeParser {
    * @return Number of elements that were skipped
    */
   private int skipElements(int numberOfElements, String uri, String name) {
-    checkArgument(numberOfElements >= 0,
-        "number of elements must be greater than or equal to zero");
+    checkArgument(
+        numberOfElements >= 0, "number of elements must be greater than or equal to zero");
     getHeader();
     // don't do any skipping if numberOfElements is 0
     if (numberOfElements == 0) {
@@ -274,7 +275,8 @@ public class RdeParser {
   /**
    * Advances parser to the next contact element.
    *
-   * <p>The parser may skip over other types of elements while advancing to the next contact element.
+   * <p>The parser may skip over other types of elements while advancing to the next contact
+   * element.
    *
    * @return true if the parser advanced to a contact element, false otherwise
    */
@@ -301,7 +303,6 @@ public class RdeParser {
    * <p>In the process of skipping over a contact element, other elements may be skipped as well.
    * Elements of types other than contact elements will not be counted.
    *
-   * @param numberOfElements Number of elements to skip
    * @return Number of contact elements that were skipped
    */
   public int skipContacts(int numberOfContacts) {
@@ -319,7 +320,8 @@ public class RdeParser {
    * @throws IllegalStateException if the parser is not at a contact element
    */
   public XjcRdeContact getContact() {
-    XjcRdeContactElement element = unmarshalElement(RDE_CONTACT_URI, "contact");
+    XjcRdeContactElement element =
+        (XjcRdeContactElement) unmarshalElement(RDE_CONTACT_URI, "contact");
     return element.getValue();
   }
 
@@ -347,13 +349,12 @@ public class RdeParser {
   /**
    * Attempts to skip over a number of domains.
    *
-   * <p>If the parser is not currently at a domain element, it will advance to the next instance before
-   * skipping any.
+   * <p>If the parser is not currently at a domain element, it will advance to the next instance
+   * before skipping any.
    *
    * <p>In the process of skipping over a domain element, other elements may be skipped as well.
    * Elements of types other than domain elements will not be counted.
    *
-   * @param numberOfElements Number of elements to skip
    * @return Number of domain elements that were skipped
    */
   public int skipDomains(int numberOfDomains) {
@@ -371,7 +372,7 @@ public class RdeParser {
    * @throws IllegalStateException if the parser is not at a domain element
    */
   public XjcRdeDomain getDomain() {
-    XjcRdeDomainElement element = unmarshalElement(RDE_DOMAIN_URI, "domain");
+    XjcRdeDomainElement element = (XjcRdeDomainElement) unmarshalElement(RDE_DOMAIN_URI, "domain");
     return element.getValue();
   }
 
@@ -399,13 +400,12 @@ public class RdeParser {
   /**
    * Attempts to skip over a number of hosts.
    *
-   * <p>If the parser is not currently at a host element, it will advance to the next instance before
-   * skipping any.
+   * <p>If the parser is not currently at a host element, it will advance to the next instance
+   * before skipping any.
    *
-   * <p>In the process of skipping over a host element, other elements may be skipped as well. Elements
-   * of types other than host elements will not be counted.
+   * <p>In the process of skipping over a host element, other elements may be skipped as well.
+   * Elements of types other than host elements will not be counted.
    *
-   * @param numberOfElements Number of elements to skip
    * @return Number of host elements that were skipped
    */
   public int skipHosts(int numberOfHosts) {
@@ -423,14 +423,15 @@ public class RdeParser {
    * @throws IllegalStateException if the parser is not at a host element
    */
   public XjcRdeHost getHost() {
-    XjcRdeHostElement element = unmarshalElement(RDE_HOST_URI, "host");
+    XjcRdeHostElement element = (XjcRdeHostElement) unmarshalElement(RDE_HOST_URI, "host");
     return element.getValue();
   }
 
   /**
    * Advances parser to the next registrar element.
    *
-   * <p>The parser may skip over other types of elements while advancing to the next registrar element.
+   * <p>The parser may skip over other types of elements while advancing to the next registrar
+   * element.
    *
    * @return true if the parser advanced to a registrar element, false otherwise
    */
@@ -459,7 +460,8 @@ public class RdeParser {
    * @throws IllegalStateException if the parser is not at a registrar element
    */
   public XjcRdeRegistrar getRegistrar() {
-    XjcRdeRegistrarElement element = unmarshalElement(RDE_REGISTRAR_URI, "registrar");
+    XjcRdeRegistrarElement element =
+        (XjcRdeRegistrarElement) unmarshalElement(RDE_REGISTRAR_URI, "registrar");
     return element.getValue();
   }
 
@@ -495,7 +497,7 @@ public class RdeParser {
    * @throws IllegalStateException if the parser is not at a IDN element
    */
   public XjcRdeIdn getIdn() {
-    XjcRdeIdnElement element = unmarshalElement(RDE_IDN_URI, "idnTableRef");
+    XjcRdeIdnElement element = (XjcRdeIdnElement) unmarshalElement(RDE_IDN_URI, "idnTableRef");
     return element.getValue();
   }
 
@@ -531,14 +533,15 @@ public class RdeParser {
    * @throws IllegalStateException if the parser is not at a NNDN element
    */
   public XjcRdeNndn getNndn() {
-    XjcRdeNndnElement element = unmarshalElement(RDE_NNDN_URI, "NNDN");
+    XjcRdeNndnElement element = (XjcRdeNndnElement) unmarshalElement(RDE_NNDN_URI, "NNDN");
     return element.getValue();
   }
 
   /**
    * Advances parser to the next eppParams element.
    *
-   * <p>The parser may skip over other types of elements while advancing to the next eppParams element.
+   * <p>The parser may skip over other types of elements while advancing to the next eppParams
+   * element.
    *
    * @return true if the parser advanced to a eppParams element, false otherwise
    */
@@ -567,7 +570,8 @@ public class RdeParser {
    * @throws IllegalStateException if the parser is not at a eppParams element
    */
   public XjcRdeEppParams getEppParams() {
-    XjcRdeEppParamsElement element = unmarshalElement(RDE_EPP_PARAMS_URI, "eppParams");
+    XjcRdeEppParamsElement element =
+        (XjcRdeEppParamsElement) unmarshalElement(RDE_EPP_PARAMS_URI, "eppParams");
     return element.getValue();
   }
 }
