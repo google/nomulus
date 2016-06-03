@@ -190,6 +190,9 @@ public class RdeParserTest {
     assertThat(parser.skipDomains(1)).isEqualTo(1);
     // there are two domains
     assertThat(parser.isAtDomain()).isTrue();
+    // prove that the parser advanced to the second domain
+    assertThat(parser.nextDomain()).isFalse();
+    assertThat(parser.isAtDomain()).isFalse();
   }
 
   @Test
@@ -207,6 +210,9 @@ public class RdeParserTest {
     assertThat(parser.skipDomains(1)).isEqualTo(1);
     // there are two domains
     assertThat(parser.isAtDomain()).isTrue();
+    // prove that the parser advanced to the second domain
+    assertThat(parser.nextDomain()).isFalse();
+    assertThat(parser.isAtDomain()).isFalse();
   }
 
   @Test
@@ -284,6 +290,9 @@ public class RdeParserTest {
     assertThat(parser.skipHosts(1)).isEqualTo(1);
     // there are two hosts
     assertThat(parser.isAtHost()).isTrue();
+    // prove that the parser advanced to the second host
+    assertThat(parser.nextHost()).isFalse();
+    assertThat(parser.isAtHost()).isFalse();
   }
 
   @Test
@@ -301,6 +310,9 @@ public class RdeParserTest {
     assertThat(parser.skipHosts(1)).isEqualTo(1);
     // there are two hosts
     assertThat(parser.isAtHost()).isTrue();
+    // prove that the parser advanced to the second host
+    assertThat(parser.nextHost()).isFalse();
+    assertThat(parser.isAtHost()).isFalse();
   }
 
   @Test
