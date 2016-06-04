@@ -455,3 +455,9 @@ def domain_registry_repositories():
       artifact = "com.google.truth:truth:0.28",
       sha1 = "0a388c7877c845ff4b8e19689dda5ac9d34622c4",
   )
+
+  native.maven_jar(
+      name = "stax2_api",
+      artifact = "org.codehaus.woodstox:stax2-api:3.1.4",
+      sha1 = "ac19014b1e6a7c08aad07fe114af792676b685b7",
+  )
