@@ -149,6 +149,7 @@ public class RdeParser {
   public RdeParser(InputStream xmlInput) throws XMLStreamException {
     XMLInputFactory factory = (XMLInputFactory) XMLInputFactory.newInstance();
     reader = (XMLStreamReader) factory.createXMLStreamReader(xmlInput);
+    header = new RdeHeader(readHeader());
   }
 
   /**
@@ -231,9 +232,6 @@ public class RdeParser {
   }
 
   public RdeHeader getHeader() {
-    if (header == null) {
-      header = new RdeHeader(readHeader());
-    }
     return header;
   }
 
@@ -254,7 +252,6 @@ public class RdeParser {
   private int skipElements(int numberOfElements, String uri, String name) {
     checkArgument(
         numberOfElements >= 0, "number of elements must be greater than or equal to zero");
-    getHeader();
     // don't do any skipping if numberOfElements is 0
     if (numberOfElements == 0) {
       return 0;
@@ -281,7 +278,6 @@ public class RdeParser {
    * @return true if the parser advanced to a contact element, false otherwise
    */
   public boolean nextContact() {
-    getHeader();
     return nextElement(RDE_CONTACT_URI, "contact");
   }
 
@@ -333,7 +329,6 @@ public class RdeParser {
    * @return true if the parser advanced to a domain element, false otherwise
    */
   public boolean nextDomain() {
-    getHeader();
     return nextElement(RDE_DOMAIN_URI, "domain");
   }
 
@@ -384,7 +379,6 @@ public class RdeParser {
    * @return true if the parser advanced to a host element, false otherwise
    */
   public boolean nextHost() {
-    getHeader();
     return nextElement(RDE_HOST_URI, "host");
   }
 
@@ -436,7 +430,6 @@ public class RdeParser {
    * @return true if the parser advanced to a registrar element, false otherwise
    */
   public boolean nextRegistrar() {
-    getHeader();
     return nextElement(RDE_REGISTRAR_URI, "registrar");
   }
 
@@ -473,7 +466,6 @@ public class RdeParser {
    * @return true if the parser advanced to a IDN element, false otherwise
    */
   public boolean nextIdn() {
-    getHeader();
     return nextElement(RDE_IDN_URI, "idnTableRef");
   }
 
@@ -509,7 +501,6 @@ public class RdeParser {
    * @return true if the parser advanced to a NNDN element, false otherwise
    */
   public boolean nextNndn() {
-    getHeader();
     return nextElement(RDE_NNDN_URI, "NNDN");
   }
 
@@ -546,7 +537,6 @@ public class RdeParser {
    * @return true if the parser advanced to a eppParams element, false otherwise
    */
   public boolean nextEppParams() {
-    getHeader();
     return nextElement(RDE_EPP_PARAMS_URI, "eppParams");
   }
 
