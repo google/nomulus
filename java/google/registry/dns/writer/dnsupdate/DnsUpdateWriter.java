@@ -16,7 +16,6 @@ package google.registry.dns.writer.dnsupdate;
 
 import static com.google.common.base.Verify.verify;
 import static google.registry.model.EppResourceUtils.loadByUniqueId;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 
 import com.google.common.net.InternetDomainName;
 
@@ -53,10 +52,9 @@ import javax.inject.Inject;
  * A DnsWriter that implements the DNS UPDATE protocol as specified in
  * <a href="https://tools.ietf.org/html/rfc2136">RFC 2136</a>. Publishes changes in the
  * domain-registry to a (capable) external DNS server, sometimes called a "hidden master". DNS
- * UPDATE messages are sent via a "resolver" class which implements the network transport. For each
- * publish call, a single UPDATE message is created containing the records required to "synchronize"
- * the DNS with the current (at the time of processing) state of the registry, for the supplied
- * domain/host.
+ * UPDATE messages are sent via a supplied "transport" class. For each publish call, a single
+ * UPDATE message is created containing the records required to "synchronize" the DNS with the
+ * current (at the time of processing) state of the registry, for the supplied domain/host.
  *
  * <p>The general strategy of the publish methods is to delete <em>all</em> resource records of any
  * <em>type</em> that match the exact domain/host name supplied. And then for create/update cases,
@@ -76,23 +74,23 @@ import javax.inject.Inject;
 public class DnsUpdateWriter implements DnsWriter {
 
   private final Duration dnsTimeToLive;
-  private final DnsMessageTransport resolver;
+  private final DnsMessageTransport transport;
   private final Clock clock;
 
   /**
    * Class constructor.
    *
    * @param dnsTimeToLive TTL used for any created resource records
-   * @param resolver a resolver used to send/receive the UPDATE messages
+   * @param transport the transport used to send/receive the UPDATE messages
    * @param clock a source of time
    */
   @Inject
   public DnsUpdateWriter(
       @Config("dnsUpdateTimeToLive") Duration dnsTimeToLive,
-      DnsMessageTransport resolver,
+      DnsMessageTransport transport,
       Clock clock) {
     this.dnsTimeToLive = dnsTimeToLive;
-    this.resolver = resolver;
+    this.transport = transport;
     this.clock = clock;
   }
 
@@ -103,12 +101,11 @@ public class DnsUpdateWriter implements DnsWriter {
       Update update = new Update(toAbsoluteName(findTldFromName(domainName)));
       update.delete(toAbsoluteName(domainName), Type.ANY);
       if (domain != null && domain.shouldPublishToDns()) {
-        update.add(makeNameServerSet(
-            domainName, ofy().load().refs(domain.getNameservers()).values()));
-        update.add(makeDelegationSignerSet(domainName, domain.getDsData()));
+        update.add(makeNameServerSet(domain));
+        update.add(makeDelegationSignerSet(domain));
       }
 
-      Message response = resolver.send(update);
+      Message response = transport.send(update);
       verify(
           response.getRcode() == Rcode.NOERROR,
           "DNS server failed domain update for '%s' rcode: %s",
@@ -126,11 +123,11 @@ public class DnsUpdateWriter implements DnsWriter {
       Update update = new Update(toAbsoluteName(findTldFromName(hostName)));
       update.delete(toAbsoluteName(hostName), Type.ANY);
       if (host != null) {
-        update.add(makeAddressSet(hostName, host.getInetAddresses()));
-        update.add(makeV6AddressSet(hostName, host.getInetAddresses()));
+        update.add(makeAddressSet(host));
+        update.add(makeV6AddressSet(host));
       }
 
-      Message response = resolver.send(update);
+      Message response = transport.send(update);
       verify(
           response.getRcode() == Rcode.NOERROR,
           "DNS server failed host update for '%s' rcode: %s",
@@ -147,13 +144,12 @@ public class DnsUpdateWriter implements DnsWriter {
   @Override
   public void close() {}
 
-  private RRset makeDelegationSignerSet(String domainName, Iterable<DelegationSignerData> dsData)
-      throws TextParseException {
+  private RRset makeDelegationSignerSet(DomainResource domain) throws TextParseException {
     RRset signerSet = new RRset();
-    for (DelegationSignerData signerData : dsData) {
+    for (DelegationSignerData signerData : domain.getDsData()) {
       DSRecord dsRecord =
           new DSRecord(
-              toAbsoluteName(domainName),
+              toAbsoluteName(domain.getFullyQualifiedDomainName()),
               DClass.IN,
               dnsTimeToLive.getStandardSeconds(),
               signerData.getKeyTag(),
@@ -165,43 +161,46 @@ public class DnsUpdateWriter implements DnsWriter {
     return signerSet;
   }
 
-  private RRset makeNameServerSet(String domainName, Iterable<HostResource> nameservers)
-      throws TextParseException {
+  private RRset makeNameServerSet(DomainResource domain) throws TextParseException {
     RRset nameServerSet = new RRset();
-    for (HostResource host : nameservers) {
+    for (String hostName : domain.loadNameserverFullyQualifiedHostNames()) {
       NSRecord record =
           new NSRecord(
-              toAbsoluteName(domainName),
+              toAbsoluteName(domain.getFullyQualifiedDomainName()),
               DClass.IN,
               dnsTimeToLive.getStandardSeconds(),
-              toAbsoluteName(host.getFullyQualifiedHostName()));
+              toAbsoluteName(hostName));
       nameServerSet.addRR(record);
     }
     return nameServerSet;
   }
 
-  private RRset makeAddressSet(String hostName, Iterable<InetAddress> addresses)
-      throws TextParseException {
+  private RRset makeAddressSet(HostResource host) throws TextParseException {
     RRset addressSet = new RRset();
-    for (InetAddress address : addresses) {
+    for (InetAddress address : host.getInetAddresses()) {
       if (address instanceof Inet4Address) {
         ARecord record =
             new ARecord(
-                toAbsoluteName(hostName), DClass.IN, dnsTimeToLive.getStandardSeconds(), address);
+                toAbsoluteName(host.getFullyQualifiedHostName()),
+                DClass.IN,
+                dnsTimeToLive.getStandardSeconds(),
+                address);
         addressSet.addRR(record);
       }
     }
     return addressSet;
   }
 
-  private RRset makeV6AddressSet(String hostName, Iterable<InetAddress> addresses)
-      throws TextParseException {
+  private RRset makeV6AddressSet(HostResource host) throws TextParseException {
     RRset addressSet = new RRset();
-    for (InetAddress address : addresses) {
+    for (InetAddress address : host.getInetAddresses()) {
       if (address instanceof Inet6Address) {
         AAAARecord record =
             new AAAARecord(
-                toAbsoluteName(hostName), DClass.IN, dnsTimeToLive.getStandardSeconds(), address);
+                toAbsoluteName(host.getFullyQualifiedHostName()),
+                DClass.IN,
+                dnsTimeToLive.getStandardSeconds(),
+                address);
         addressSet.addRR(record);
       }
     }
