@@ -68,11 +68,6 @@ public class TestRegistryConfig implements RegistryConfig {
   }
 
   @Override
-  public String getEscrowFileImportBucket() {
-    return getProjectId() + "-escrow-import";
-  }
-
-  @Override
   public boolean getTmchCaTestingMode() {
     return true;
   }
