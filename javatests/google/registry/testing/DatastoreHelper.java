@@ -573,6 +573,16 @@ public class DatastoreHelper {
         .build());
   }
 
+  /** Creates a stripped-down {@link Registrar} with the specified clientId and ianaIdentifier */
+  public static Registrar persistRegistrar(String clientId, long ianaIdentifier) {
+    return persistSimpleResource(
+        new Registrar.Builder()
+          .setClientIdentifier(clientId)
+          .setType(Registrar.Type.REAL)
+          .setIanaIdentifier(ianaIdentifier)
+          .build());
+  }
+
   private static Iterable<BillingEvent> getBillingEvents() {
     return Iterables.<BillingEvent>concat(
         ofy().load().type(BillingEvent.OneTime.class),
