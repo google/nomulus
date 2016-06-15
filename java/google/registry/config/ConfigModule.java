@@ -296,6 +296,15 @@ public final class ConfigModule {
   }
 
   /**
+   * Returns the Google Cloud Storage bucket for importing escrow files.
+   */
+  @Provides
+  @Config("rdeImportBucket")
+  public String provideRdeImportBucket(@Config("projectId") String projectId) {
+    return projectId + "-rde-import";
+  }
+
+  /**
    * Size of Ghostryde buffer in bytes for each layer in the pipeline.
    *
    * @see google.registry.rde.Ghostryde
