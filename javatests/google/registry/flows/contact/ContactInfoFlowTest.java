@@ -79,7 +79,7 @@ public class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, C
             .setCurrentSponsorClientId("TheRegistrar")
             .setCreationClientId("NewRegistrar")
             .setLastEppUpdateClientId("NewRegistrar")
-            .setCreationTimeForTest(DateTime.parse("1999-04-03T22:00:00.0Z"))
+            .setCreationTime(DateTime.parse("1999-04-03T22:00:00.0Z"))
             .setLastEppUpdateTime(DateTime.parse("1999-12-03T09:00:00.0Z"))
             .setLastTransferTime(DateTime.parse("2000-04-08T09:00:00.0Z"))
             .setAuthInfo(ContactAuthInfo.create(PasswordAuth.create("2fooBAR")))

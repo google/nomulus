@@ -86,7 +86,7 @@ public class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Dom
         .setCurrentSponsorClientId("NewRegistrar")
         .setCreationClientId("TheRegistrar")
         .setLastEppUpdateClientId("NewRegistrar")
-        .setCreationTimeForTest(DateTime.parse("1999-04-03T22:00:00.0Z"))
+        .setCreationTime(DateTime.parse("1999-04-03T22:00:00.0Z"))
         .setLastEppUpdateTime(DateTime.parse("1999-12-03T09:00:00.0Z"))
         .setLastTransferTime(DateTime.parse("2000-04-08T09:00:00.0Z"))
         .setRegistrationExpirationTime(DateTime.parse("2005-04-03T22:00:00.0Z"))
@@ -254,7 +254,7 @@ public class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Dom
         .addGracePeriod(
             GracePeriod.create(gracePeriodStatus, clock.nowUtc().plusDays(1), "foo", null))
         .setCreationClientId("NewRegistrar")
-        .setCreationTimeForTest(DateTime.parse("2003-11-26T22:00:00.0Z"))
+        .setCreationTime(DateTime.parse("2003-11-26T22:00:00.0Z"))
         .setRegistrationExpirationTime(DateTime.parse("2005-11-26T22:00:00.0Z"))
         .setLastTransferTime(null)
         .setLastEppUpdateTime(null)

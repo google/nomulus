@@ -177,7 +177,7 @@ public class EppResourceUtilsTest {
     // Don't save a commit log, we shouldn't need one.
     HostResource host = persistResource(
         newHostResource("ns1.cat.tld").asBuilder()
-            .setCreationTimeForTest(clock.nowUtc())
+            .setCreationTime(clock.nowUtc())
             .build());
     assertThat(loadAtPointInTime(host, clock.nowUtc().minus(1)).now()).isNull();
   }
@@ -188,7 +188,7 @@ public class EppResourceUtilsTest {
     // Don't save a commit log, we shouldn't need one.
     HostResource host = persistResource(
         newHostResource("ns1.cat.tld").asBuilder()
-            .setCreationTimeForTest(START_OF_TIME)
+            .setCreationTime(START_OF_TIME)
             .build());
     assertThat(loadAtPointInTime(host, clock.nowUtc()).now()).isEqualTo(host);
   }
@@ -200,7 +200,7 @@ public class EppResourceUtilsTest {
     // Save resource with a commit log that we can read in later as a revisions map value.
     HostResource oldHost = persistResourceWithCommitLog(
         newHostResource("ns1.cat.tld").asBuilder()
-            .setCreationTimeForTest(START_OF_TIME)
+            .setCreationTime(START_OF_TIME)
             .setCurrentSponsorClientId("OLD")
             .build());
     // Advance a day so that the next created revision entry doesn't overwrite the existing one.
@@ -221,7 +221,7 @@ public class EppResourceUtilsTest {
     // Don't save a commit log, we want to test the handling of a broken revisions reference.
     HostResource oldHost = persistResource(
         newHostResource("ns1.cat.tld").asBuilder()
-            .setCreationTimeForTest(START_OF_TIME)
+            .setCreationTime(START_OF_TIME)
             .setCurrentSponsorClientId("OLD")
             .build());
     // Advance a day so that the next created revision entry doesn't overwrite the existing one.
@@ -243,7 +243,7 @@ public class EppResourceUtilsTest {
     // Save a commit log that we can fall back to.
     HostResource oldHost = persistResourceWithCommitLog(
         newHostResource("ns1.cat.tld").asBuilder()
-            .setCreationTimeForTest(START_OF_TIME)
+            .setCreationTime(START_OF_TIME)
             .setCurrentSponsorClientId("OLD")
             .build());
     // Advance a day so that the next created revision entry doesn't overwrite the existing one.
@@ -266,7 +266,7 @@ public class EppResourceUtilsTest {
     // Don't save a commit log; we want to test that we load from the current resource.
     HostResource host = persistResource(
         newHostResource("ns1.cat.tld").asBuilder()
-            .setCreationTimeForTest(START_OF_TIME)
+            .setCreationTime(START_OF_TIME)
             .setCurrentSponsorClientId("OLD")
             .build());
     // Load at the point in time before the first save; there will be no floor entry for the

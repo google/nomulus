@@ -116,7 +116,7 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
     // Persist a linked contact.
     ContactResource contact = persistActiveContact("sh8013");
     domain = newDomainResource(getUniqueIdFromCommand()).asBuilder()
-        .setCreationTimeForTest(TIME_BEFORE_FLOW)
+        .setCreationTime(TIME_BEFORE_FLOW)
         .setRegistrant(Ref.create(contact))
         .setRegistrationExpirationTime(expirationTime)
         .build();

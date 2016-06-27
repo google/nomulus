@@ -74,7 +74,7 @@ public class AllocateDomainCommandTest extends CommandTestCase<AllocateDomainCom
         persistResource(newDomainApplication(name)
             .asBuilder()
             .setRepoId(repoId)
-            .setCreationTimeForTest(START_OF_TIME)
+            .setCreationTime(START_OF_TIME)
             .setRegistrant(Ref.create(persistActiveContact("registrant")))
             .setContacts(ImmutableSet.of(
                 DesignatedContact.create(

@@ -122,7 +122,7 @@ public final class FullFieldsTestEntityHelper {
     HostResource.Builder builder = new HostResource.Builder()
         .setRepoId(generateNewContactHostRoid())
         .setFullyQualifiedHostName(Idn.toASCII(fqhn))
-        .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"));
+        .setCreationTime(DateTime.parse("2000-10-08T00:45:00Z"));
     if ((ip1 != null) || (ip2 != null)) {
       ImmutableSet.Builder<InetAddress> ipBuilder = new ImmutableSet.Builder<>();
       if (ip1 != null) {
@@ -175,7 +175,7 @@ public final class FullFieldsTestEntityHelper {
     ContactResource.Builder builder = new ContactResource.Builder()
         .setContactId(id)
         .setRepoId(generateNewContactHostRoid())
-        .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))
+        .setCreationTime(DateTime.parse("2000-10-08T00:45:00Z"))
         .setInternationalizedPostalInfo(postalBuilder.build())
         .setVoiceNumber(
             new ContactPhoneNumber.Builder()
@@ -223,7 +223,7 @@ public final class FullFieldsTestEntityHelper {
         .setFullyQualifiedDomainName(Idn.toASCII(domain))
         .setRepoId(generateNewDomainRoid(getTldFromDomainName(Idn.toASCII(domain))))
         .setLastEppUpdateTime(DateTime.parse("2009-05-29T20:13:00Z"))
-        .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))
+        .setCreationTime(DateTime.parse("2000-10-08T00:45:00Z"))
         .setRegistrationExpirationTime(DateTime.parse("2110-10-08T00:44:59Z"))
         .setCurrentSponsorClientId(registrar.getClientIdentifier())
         .setStatusValues(ImmutableSet.of(
