@@ -263,6 +263,12 @@
     <servlet-name>backend-servlet</servlet-name>
     <url-pattern>/_dr/task/expandRecurringBillingEvents</url-pattern>
   </servlet-mapping>
+  
+  <!-- Mapreduce to import contacts from escrow file -->
+  <servlet-mapping>
+    <servlet-name>backend-servlet</servlet-name>
+    <url-pattern>/_dr/task/importRdeContacts</url-pattern>
+  </servlet-mapping>
 
   <!-- Security config -->
   <security-constraint>
