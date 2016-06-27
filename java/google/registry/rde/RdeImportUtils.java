@@ -39,8 +39,10 @@ import javax.inject.Inject;
 import javax.xml.stream.XMLStreamException;
 import org.joda.time.DateTime;
 
-/** Utility functions for escrow file import. */
-public final class RdeImportUtils {
+/**
+ * Utility functions for escrow file import.
+ */
+public class RdeImportUtils {
 
   private static final FormattingLogger logger = FormattingLogger.getLoggerForCallerClass();
 
@@ -147,7 +149,7 @@ public final class RdeImportUtils {
                 String.format("Registrar '%s' not found in the registry", registrar.getId()));
           }
         }
-      } catch (XMLStreamException e) {
+      } catch (Exception e) {
         throw new IllegalArgumentException(
             String.format("Invalid XML file: '%s'", escrowFilePath), e);
       }

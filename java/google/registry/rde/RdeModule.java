@@ -34,6 +34,7 @@ import org.joda.time.DateTime;
 public final class RdeModule {
 
   static final String PARAM_WATERMARK = "watermark";
+  static final String PATH = "path";
 
   @Provides
   @Parameter(PARAM_WATERMARK)
@@ -51,5 +52,11 @@ public final class RdeModule {
   @Named("rde-report")
   static Queue provideQueueRdeReport() {
     return getQueue("rde-report");
+  }
+
+  @Provides
+  @Parameter(PATH)
+  static String providePath(HttpServletRequest req) {
+    return RequestParameters.extractRequiredParameter(req, PATH);
   }
 }
