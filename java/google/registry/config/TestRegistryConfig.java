@@ -15,14 +15,17 @@
 package google.registry.config;
 
 import static google.registry.config.ConfigUtils.makeUrl;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.Duration.standardDays;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.Resources;
 import com.google.common.net.HostAndPort;
 
 import org.joda.time.Duration;
 
+import java.io.IOException;
 import java.net.URL;
 
 /**
@@ -172,6 +175,19 @@ public class TestRegistryConfig implements RegistryConfig {
   @Override
   public String getCheckApiServletRegistrarClientId() {
     return "TheRegistrar";
+  }
+
+  @Override
+  public String getWhoisRequestDisclaimer() {
+      String disclaimerFilePath = "google/registry/whois/disclaimer/disclaimer.txt";
+
+    URL resource = Resources.getResource(disclaimerFilePath);
+    try {
+      return Resources.toString(resource, UTF_8).replaceAll("\r?\n", "\r\n").trim();
+    } catch (IOException e) {
+        throw new RuntimeException("Failed to load disclaimer file", e);
+    }
+
   }
 
   @Override

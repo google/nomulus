@@ -218,6 +218,12 @@ public interface RegistryConfig {
    */
   public String getCheckApiServletRegistrarClientId();
 
+
+  /**
+   * Returns the text for the disclaimer to be appended to the WHOIS response.
+   */
+  public String getWhoisRequestDisclaimer();
+
   /**
    * Returns the delay before executing async delete flow mapreduces.
    *
