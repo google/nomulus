@@ -28,6 +28,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.google.common.io.Resources;
 
+import google.registry.config.RegistryEnvironment;
 import google.registry.model.eppcommon.Address;
 import google.registry.model.registrar.Registrar;
 import google.registry.util.Idn;
@@ -46,8 +47,10 @@ import javax.annotation.Nullable;
 /** Base class for responses to WHOIS queries. */
 abstract class WhoisResponseImpl implements WhoisResponse {
 
+  private static final RegistryEnvironment ENVIRONMENT = RegistryEnvironment.get();
+
   /** Legal disclaimer that is appended to all WHOIS responses. */
-  private static final String DISCLAIMER = load("disclaimer.txt");
+  private static final String DISCLAIMER = ENVIRONMENT.config().getWhoisRequestDisclaimer();
 
   /** Field name for ICANN problem reporting URL appended to all WHOIS responses. */
   private static final String ICANN_REPORTING_URL_FIELD =
@@ -202,16 +205,6 @@ abstract class WhoisResponseImpl implements WhoisResponse {
 
   /** An emitter that needs no special logic. */
   static class BasicEmitter extends Emitter<BasicEmitter> {}
-
-  /** Slurps UTF-8 file from jar, relative to this source file. */
-  private static String load(String relativeFilename) {
-    URL resource = Resources.getResource(WhoisResponseImpl.class, relativeFilename);
-    try {
-      return Resources.toString(resource, UTF_8).replaceAll("\r?\n", "\r\n").trim();
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to slurp: " + relativeFilename, e);
-    }
-  }
 
   /** Returns the registrar for this client id, or an empty registrar with null values. */
   static Registrar getRegistrar(@Nullable String clientId) {
