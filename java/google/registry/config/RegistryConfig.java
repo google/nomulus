@@ -90,11 +90,6 @@ public interface RegistryConfig {
   public String getZoneFilesBucket();
 
   /**
-   * Returns the Google Cloud Storage bucket for importing escrow files.
-   */
-  public String getEscrowFileImportBucket();
-
-  /**
    * Returns {@code true} if TMCH certificate authority should be in testing mode.
    *
    * @see google.registry.tmch.TmchCertificateAuthority

@@ -35,7 +35,7 @@ import javax.annotation.CheckReturnValue;
 import javax.inject.Inject;
 
 /** Utilities for working with Google Cloud Storage. */
-public final class GcsUtils {
+public class GcsUtils {
 
   private static final FormattingLogger logger = FormattingLogger.getLoggerForCallerClass();
 

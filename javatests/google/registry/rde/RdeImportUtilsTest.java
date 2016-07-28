@@ -30,36 +30,65 @@ package google.registry.rde;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatastoreHelper.persistRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.ByteSource;
+
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Work;
+import google.registry.gcs.GcsUtils;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.index.ForeignKeyIndex;
+import google.registry.model.registry.Registry.TldState;
 import google.registry.testing.AppEngineRule;
+import google.registry.testing.ExceptionRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.ShardableTestCase;
 import org.joda.time.DateTime;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 /** Unit tests for {@link RdeImportUtils} */
-@RunWith(JUnit4.class)
+@RunWith(MockitoJUnitRunner.class)
 public class RdeImportUtilsTest extends ShardableTestCase {
+  private static final ByteSource DEPOSIT_XML = RdeTestData.get("deposit_full.xml");
+  private static final ByteSource DEPOSIT_BADTLD_XML = RdeTestData.get("deposit_full_badtld.xml");
+  private static final ByteSource DEPOSIT_GETLD_XML = RdeTestData.get("deposit_full_getld.xml");
+  private static final ByteSource DEPOSIT_BADREGISTRAR_XML =
+      RdeTestData.get("deposit_full_badregistrar.xml");
+
+  private InputStream xmlInput;
 
   @Rule
   public final AppEngineRule appEngine = AppEngineRule.builder()
       .withDatastore()
       .build();
+
+  @Rule
+  public final ExceptionRule thrown = new ExceptionRule();
+
+  @Mock
+  private GcsUtils gcsUtils;
 
   private RdeImportUtils rdeImportUtils;
   private FakeClock clock;
@@ -68,7 +97,17 @@ public class RdeImportUtilsTest extends ShardableTestCase {
   public void before() {
     clock = new FakeClock();
     clock.setTo(DateTime.now());
-    rdeImportUtils = new RdeImportUtils(ofy(), clock);
+    rdeImportUtils = new RdeImportUtils(ofy(), clock, "import-bucket", gcsUtils);
+    createTld("test", TldState.PREDELEGATION);
+    createTld("getld", TldState.GENERAL_AVAILABILITY);
+    persistRegistrar("RegistrarX", 1L);
+  }
+
+  @After
+  public void after() throws IOException {
+    if (xmlInput != null) {
+      xmlInput.close();
+    }
   }
 
   /** Verifies import of a contact that has not been previously imported */
@@ -114,6 +153,45 @@ public class RdeImportUtilsTest extends ShardableTestCase {
         .build();
   }
 
+  /** Verifies that no errors are thrown when a valid escrow file is validated */
+  @Test
+  public void testValidateEscrowFile_valid() throws Exception {
+    xmlInput = DEPOSIT_XML.openBufferedStream();
+    when(gcsUtils.openInputStream(any(GcsFilename.class))).thenReturn(xmlInput);
+    rdeImportUtils.validateEscrowFileForImport("valid-deposit-file.xml");
+    verify(gcsUtils).openInputStream(new GcsFilename("import-bucket", "valid-deposit-file.xml"));
+  }
+
+  /** Verifies thrown error when tld in escrow file is not in the registry */
+  @Test
+  public void testValidateEscrowFile_tldNotFound() throws Exception {
+    thrown.expect(IllegalArgumentException.class, "Tld 'badtld' not found in the registry");
+    xmlInput = DEPOSIT_BADTLD_XML.openBufferedStream();
+    when(gcsUtils.openInputStream(any(GcsFilename.class))).thenReturn(xmlInput);
+    rdeImportUtils.validateEscrowFileForImport("invalid-deposit-badtld.xml");
+  }
+
+  /** Verifies thrown errer when tld in escrow file is not in PREDELEGATION state */
+  @Test
+  public void testValidateEscrowFile_tldWrongState() throws Exception {
+    thrown.expect(IllegalArgumentException.class,
+        "Tld 'getld' is in state GENERAL_AVAILABILITY and cannot be imported");
+    xmlInput = DEPOSIT_GETLD_XML.openBufferedStream();
+    when(gcsUtils.openInputStream(any(GcsFilename.class))).thenReturn(xmlInput);
+    rdeImportUtils.validateEscrowFileForImport("invalid-deposit-getld.xml");
+  }
+
+  /** Verifies thrown error when registrar in escrow file is not in the registry */
+  @Test
+  public void testValidateEscrowFile_badRegistrar() throws Exception {
+    thrown.expect(IllegalArgumentException.class,
+        "Registrar 'RegistrarY' not found in the registry");
+    xmlInput = DEPOSIT_BADREGISTRAR_XML.openBufferedStream();
+    when(gcsUtils.openInputStream(any(GcsFilename.class))).thenReturn(xmlInput);
+    rdeImportUtils.validateEscrowFileForImport("invalid-deposit-badregistrar.xml");
+  }
+
+  /** Gets the contact with the specified ROID */
   private static ContactResource getContact(String repoId) {
     final Key<ContactResource> key = Key.create(ContactResource.class, repoId);
     return ofy().transact(new Work<ContactResource>() {
