@@ -181,6 +181,7 @@ public class RdeUploadActionTest {
       action.ghostryde = new Ghostryde(BUFFER_SIZE);
       action.jsch =
           JSchModule.provideJSch(
+              "user@ignored",
               keyring.getRdeSshClientPrivateKey(), keyring.getRdeSshClientPublicKey());
       action.jschSshSessionFactory = new JSchSshSessionFactory(standardSeconds(3));
       action.response = response;
