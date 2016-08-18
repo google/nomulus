@@ -21,6 +21,7 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.config.ConfigModule.Config;
 import google.registry.keyring.api.KeyModule.Key;
 
 /** Dagger module for {@link JSch} which provides SSH/SFTP connectivity. */
@@ -29,13 +30,14 @@ public final class JSchModule {
 
   @Provides
   static JSch provideJSch(
+      @Config("rdeSshIdentity") String identity,
       @Key("rdeSshClientPrivateKey") String privateKey,
       @Key("rdeSshClientPublicKey") String publicKey) {
     applyAppEngineKludge();
     JSch jsch = new JSch();
     try {
       jsch.addIdentity(
-          "rde@charlestonroadregistry.com",
+          identity,
           privateKey.getBytes(UTF_8),
           publicKey.getBytes(UTF_8),
           null);
