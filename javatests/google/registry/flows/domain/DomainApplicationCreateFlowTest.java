@@ -39,10 +39,12 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.googlecode.objectify.Key;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.ResourceCreateFlow.ResourceAlreadyExistsException;
 import google.registry.flows.ResourceFlow.BadCommandForRegistryPhaseException;
 import google.registry.flows.ResourceFlowTestCase;
+import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.domain.BaseDomainCreateFlow.AcceptedTooLongAgoException;
 import google.registry.flows.domain.BaseDomainCreateFlow.ClaimsPeriodEndedException;
 import google.registry.flows.domain.BaseDomainCreateFlow.ExpiredClaimException;
@@ -100,6 +102,7 @@ import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.flows.domain.DomainFlowUtils.UnsupportedFeeAttributeException;
 import google.registry.model.domain.DomainApplication;
 import google.registry.model.domain.GracePeriod;
+import google.registry.model.domain.LrpToken;
 import google.registry.model.domain.launch.ApplicationStatus;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.launch.LaunchPhase;
@@ -865,6 +868,154 @@ public class DomainApplicationCreateFlowTest
     persistContactsAndHosts();
     clock.advanceOneMilli();
     doSuccessfulTest("domain_create_landrush_response.xml", false, 2);
+  }
+
+  @Test
+  public void testSuccess_landrushLrpApplication() throws Exception {
+    createTld("tld", TldState.LANDRUSH);
+    persistResource(Registry.get("tld").asBuilder()
+        .setLrpTldStates(ImmutableSet.of(TldState.LANDRUSH))
+        .build());
+    LrpToken token = persistResource(new LrpToken.Builder()
+        .setToken("lrptokentest")
+        .setAssignee("test-validate.tld")
+        .setValidTlds(ImmutableSet.of("tld"))
+        .build());
+    setEppInput("domain_create_landrush_lrp.xml");
+    persistContactsAndHosts();
+    clock.advanceOneMilli();
+    doSuccessfulTest("domain_create_landrush_response.xml", false);
+    assertThat(ofy().load().entity(token).now().getRedemptionHistoryEntry()).isNotNull();
+  }
+
+  @Test
+  public void testSuccess_landrush_duringLrpWithMissingToken() throws Exception {
+    createTld("tld", TldState.LANDRUSH);
+    persistResource(Registry.get("tld").asBuilder()
+        .setLrpTldStates(ImmutableSet.of(TldState.LANDRUSH))
+        .build());
+    setEppInput("domain_create_landrush.xml");
+    persistContactsAndHosts();
+    clock.advanceOneMilli();
+    doSuccessfulTest("domain_create_landrush_response.xml", false);
+  }
+
+  @Test
+  public void testSuccess_landrushLrpApplication_superuser() throws Exception {
+    // Using an LRP token as superuser should still mark the token as redeemed (i.e. same effect
+    // as non-superuser).
+    createTld("tld", TldState.LANDRUSH);
+    persistResource(Registry.get("tld").asBuilder()
+        .setLrpTldStates(ImmutableSet.of(TldState.LANDRUSH))
+        .build());
+    LrpToken token = persistResource(new LrpToken.Builder()
+        .setToken("lrptokentest")
+        .setAssignee("test-validate.tld")
+        .setValidTlds(ImmutableSet.of("tld"))
+        .build());
+    setEppInput("domain_create_landrush_lrp.xml");
+    persistContactsAndHosts();
+    clock.advanceOneMilli();
+    runSuperuserFlow("domain_create_landrush_response.xml");
+    assertThat(ofy().load().entity(token).now().getRedemptionHistoryEntry()).isNotNull();
+  }
+
+  @Test
+  public void testFailure_landrushLrpApplication_badToken() throws Exception {
+    createTld("tld", TldState.LANDRUSH);
+    persistResource(Registry.get("tld").asBuilder()
+        .setLrpTldStates(ImmutableSet.of(TldState.LANDRUSH))
+        .build());
+    persistResource(new LrpToken.Builder()
+        .setToken("lrptokentest2")
+        .setAssignee("test-validate.tld")
+        .setValidTlds(ImmutableSet.of("tld"))
+        .build());
+    setEppInput("domain_create_landrush_lrp.xml");
+    persistContactsAndHosts();
+    clock.advanceOneMilli();
+    thrown.expect(BadAuthInfoForResourceException.class);
+    runFlow();
+  }
+
+  @Test
+  public void testFailure_landrushLrpApplication_tokenForWrongTld() throws Exception {
+    createTld("tld", TldState.LANDRUSH);
+    persistResource(Registry.get("tld").asBuilder()
+        .setLrpTldStates(ImmutableSet.of(TldState.LANDRUSH))
+        .build());
+    persistResource(new LrpToken.Builder()
+        .setToken("lrptokentest")
+        // The below assignee doesn't really make sense here, but as of right now the validation
+        // in TldSpecificLogicProxy is just a match on the domain name, so this test ensures that
+        // the registration fails due to invalid TLDs even if everything else otherwise matches.
+        .setAssignee("test-validate.tld")
+        .setValidTlds(ImmutableSet.of("other"))
+        .build());
+    setEppInput("domain_create_landrush_lrp.xml");
+    persistContactsAndHosts();
+    clock.advanceOneMilli();
+    thrown.expect(BadAuthInfoForResourceException.class);
+    runFlow();
+  }
+
+  @Test
+  public void testFailure_landrushLrpApplication_usedToken() throws Exception {
+    thrown.expect(BadAuthInfoForResourceException.class);
+    createTld("tld", TldState.LANDRUSH);
+    persistResource(Registry.get("tld").asBuilder()
+        .setLrpTldStates(ImmutableSet.of(TldState.LANDRUSH))
+        .build());
+    persistResource(new LrpToken.Builder()
+        .setToken("lrptokentest")
+        .setAssignee("test-validate.tld")
+        .setValidTlds(ImmutableSet.of("tld"))
+        .setRedemptionHistoryEntry(Key.create(HistoryEntry.class, "1")) // as long as it's not null
+        .build());
+    setEppInput("domain_create_landrush_lrp.xml");
+    persistContactsAndHosts();
+    clock.advanceOneMilli();
+    runFlow();
+  }
+
+  @Test
+  public void testSuccess_landrushApplicationWithLrpToken_notInLrp() throws Exception {
+    createTld("tld", TldState.LANDRUSH);
+    LrpToken token = persistResource(new LrpToken.Builder()
+        .setToken("lrptokentest")
+        .setAssignee("test-validate.tld")
+        .setValidTlds(ImmutableSet.of("tld"))
+        .build());
+    setEppInput("domain_create_landrush_lrp.xml");
+    persistContactsAndHosts();
+    clock.advanceOneMilli();
+    // Application should continue as normal, since the LRP token will just be ignored
+    doSuccessfulTest("domain_create_landrush_response.xml", false);
+    // Token should not be marked as used, since this isn't an LRP state
+    assertThat(ofy().load().entity(token).now().getRedemptionHistoryEntry()).isNull();
+  }
+
+  @Test
+  public void testSuccess_landrushApplicationWithLrpToken_differentLrpState() throws Exception {
+    createTld("tld");
+    persistResource(Registry.get("tld").asBuilder()
+        .setLrpTldStates(ImmutableSet.of(TldState.SUNRISE))
+        .setTldStateTransitions(ImmutableSortedMap.of(
+            START_OF_TIME, TldState.SUNRISE,
+            clock.nowUtc(), TldState.LANDRUSH))
+        .build());
+    LrpToken token = persistResource(new LrpToken.Builder()
+        .setToken("lrptokentest")
+        .setAssignee("test-validate.tld")
+        .setValidTlds(ImmutableSet.of("tld"))
+        .build());
+    setEppInput("domain_create_landrush_lrp.xml");
+    persistContactsAndHosts();
+    clock.advanceOneMilli();
+    // Application should continue as normal, since the LRP token will just be ignored
+    doSuccessfulTest("domain_create_landrush_response.xml", false);
+    // Token should not be marked as used, since this isn't an LRP state
+    assertThat(ofy().load().entity(token).now().getRedemptionHistoryEntry()).isNull();
   }
 
   @Test

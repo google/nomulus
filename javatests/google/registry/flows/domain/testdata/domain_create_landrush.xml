@@ -13,7 +13,7 @@
         <domain:contact type="admin">sh8013</domain:contact>
         <domain:contact type="tech">sh8013</domain:contact>
         <domain:authInfo>
-          <domain:pw>2fooBAR</domain:pw>
+          <domain:pw></domain:pw>
         </domain:authInfo>
       </domain:create>
     </create>

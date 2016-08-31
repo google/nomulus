@@ -19,10 +19,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import org.joda.time.Instant;
+import org.joda.time.Interval;
 
 /**
- * Value type class to store a point-in-time snapshot of a {@link Metric} value for a given label
- * value tuple.
+ * Value type class to store a snapshot of a {@link Metric} value for a given label value tuple and
+ * time {@link Interval}.
  */
 @AutoValue
 public abstract class MetricPoint<V> {
@@ -34,21 +35,43 @@ public abstract class MetricPoint<V> {
   MetricPoint() {}
 
   /**
-   * Returns a new {@link MetricPoint}. Callers should insure that the count of {@code labelValues}
-   * matches the count of labels for the given metric.
+   * Returns a new {@link MetricPoint} representing a value at a specific {@link Instant}.
+   *
+   * <p>Callers should insure that the count of {@code labelValues} matches the count of labels for
+   * the given metric.
    */
   static <V> MetricPoint<V> create(
       Metric<V> metric, ImmutableList<String> labelValues, Instant timestamp, V value) {
     checkArgument(
         labelValues.size() == metric.getMetricSchema().labels().size(), LABEL_COUNT_ERROR);
-    return new AutoValue_MetricPoint<>(metric, labelValues, timestamp, value);
+    return new AutoValue_MetricPoint<>(
+        metric, labelValues, new Interval(timestamp, timestamp), value);
+  }
+
+  /**
+   * Returns a new {@link MetricPoint} representing a value over an {@link Interval} from {@code
+   * startTime} to {@code endTime}.
+   *
+   * <p>Callers should insure that the count of {@code labelValues} matches the count of labels for
+   * the given metric.
+   */
+  static <V> MetricPoint<V> create(
+      Metric<V> metric,
+      ImmutableList<String> labelValues,
+      Instant startTime,
+      Instant endTime,
+      V value) {
+    checkArgument(
+        labelValues.size() == metric.getMetricSchema().labels().size(), LABEL_COUNT_ERROR);
+    return new AutoValue_MetricPoint<>(
+        metric, labelValues, new Interval(startTime, endTime), value);
   }
 
   public abstract Metric<V> metric();
 
   public abstract ImmutableList<String> labelValues();
 
-  public abstract Instant timestamp();
+  public abstract Interval interval();
 
   public abstract V value();
 }

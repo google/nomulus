@@ -19,7 +19,6 @@ import static google.registry.testing.AppEngineRule.THE_REGISTRAR_GAE_USER_ID;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.appengine.api.users.User;
@@ -75,24 +74,6 @@ public class SessionUtilsTest {
   public void before() throws Exception {
     sessionUtils = new SessionUtils(userService);
     when(req.getSession()).thenReturn(session);
-  }
-
-  @Test
-  public void testRedirectIfNotLoggedIn_loggedIn_doesNothing() throws Exception {
-    when(userService.isUserLoggedIn()).thenReturn(true);
-    assertThat(sessionUtils.redirectIfNotLoggedIn(req, rsp)).isTrue();
-    verifyZeroInteractions(req, rsp);
-  }
-
-  @Test
-  public void testRedirectIfNotLoggedIn_notLoggedIn_sendsTemporaryRedirect() throws Exception {
-    when(userService.isUserLoggedIn()).thenReturn(false);
-    when(req.getRequestURI()).thenReturn("foo");
-    when(userService.createLoginURL(eq("foo"))).thenReturn("bar");
-    assertThat(sessionUtils.redirectIfNotLoggedIn(req, rsp)).isFalse();
-    verify(rsp).setStatus(eq(302));
-    verify(rsp).setHeader(eq("Location"), eq("bar"));
-    verifyNoMoreInteractions(rsp);
   }
 
   @Test

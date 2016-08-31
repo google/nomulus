@@ -16,7 +16,7 @@
   [
     {
       "type" : "IANA Registrar ID",
-      "identifier" : "1"
+      "identifier" : "%NAME%"
     }
   ],
   "events": [

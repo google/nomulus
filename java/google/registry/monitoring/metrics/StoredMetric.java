@@ -32,7 +32,11 @@ import org.joda.time.Instant;
  * <p>The values are stored and set over time. This metric is generally suitable for state
  * indicators, such as indicating that a server is in a RUNNING state or in a STOPPED state.
  *
- * <p>See {@link Counter} for a subclass which is suitable for incremental values.
+ * <p>See {@link Counter} for a subclass which is suitable for stateful incremental values.
+ *
+ * <p>The {@link MetricPoint#interval()} of values of instances of this metric will always have a
+ * start time equal to the end time, since the metric value represents a point-in-time snapshot with
+ * no relationship to prior values.
  */
 @ThreadSafe
 public class StoredMetric<V> extends AbstractMetric<V> implements SettableMetric<V> {
@@ -82,7 +86,8 @@ public class StoredMetric<V> extends AbstractMetric<V> implements SettableMetric
   final ImmutableList<MetricPoint<V>> getTimestampedValues(Instant timestamp) {
     ImmutableList.Builder<MetricPoint<V>> timestampedValues = new Builder<>();
     for (Entry<ImmutableList<String>, V> entry : values.entrySet()) {
-      timestampedValues.add(MetricPoint.create(this, entry.getKey(), timestamp, entry.getValue()));
+      timestampedValues.add(
+          MetricPoint.create(this, entry.getKey(), timestamp, timestamp, entry.getValue()));
     }
 
     return timestampedValues.build();

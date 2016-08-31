@@ -29,6 +29,10 @@ import org.joda.time.Instant;
  *
  * <p>This pattern works well for gauge-like metrics, such as CPU usage, memory usage, and file
  * descriptor counts.
+ *
+ * <p>The {@link MetricPoint#interval()} of values of instances of this metric will always have a
+ * start time equal to the end time, since the metric value represents a point-in-time snapshot with
+ * no relationship to prior values.
  */
 @ThreadSafe
 public final class VirtualMetric<V> extends AbstractMetric<V> {
@@ -77,7 +81,8 @@ public final class VirtualMetric<V> extends AbstractMetric<V> {
 
     ImmutableList.Builder<MetricPoint<V>> metricPoints = ImmutableList.builder();
     for (Entry<ImmutableList<String>, V> entry : values.entrySet()) {
-      metricPoints.add(MetricPoint.create(this, entry.getKey(), timestamp, entry.getValue()));
+      metricPoints.add(
+          MetricPoint.create(this, entry.getKey(), timestamp, timestamp, entry.getValue()));
     }
 
     cardinality = values.size();

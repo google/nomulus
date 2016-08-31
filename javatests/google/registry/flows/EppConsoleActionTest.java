@@ -43,7 +43,7 @@ public class EppConsoleActionTest extends ShardableTestCase {
       .build();
 
   @Test
-  public void doTest() {
+  public void testAction() {
     EppConsoleAction action = new EppConsoleAction();
     action.inputXmlBytes = INPUT_XML_BYTES;
     action.session = new FakeHttpSession();

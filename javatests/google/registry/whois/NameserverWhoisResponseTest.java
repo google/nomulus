@@ -78,7 +78,7 @@ public class NameserverWhoisResponseTest {
   }
 
   @Test
-  public void getTextOutputTest() {
+  public void testGetTextOutput() {
     NameserverWhoisResponse nameserverWhoisResponse =
         new NameserverWhoisResponse(hostResource1, clock.nowUtc());
     assertThat(nameserverWhoisResponse.getPlainTextOutput(false, "Doodle Disclaimer"))
@@ -86,7 +86,7 @@ public class NameserverWhoisResponseTest {
   }
 
   @Test
-  public void getMultipleNameserversResponse() {
+  public void testGetMultipleNameserversResponse() {
     NameserverWhoisResponse nameserverWhoisResponse =
         new NameserverWhoisResponse(ImmutableList.of(hostResource1, hostResource2), clock.nowUtc());
     assertThat(nameserverWhoisResponse.getPlainTextOutput(false, "Doodle Disclaimer"))

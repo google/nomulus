@@ -1,21 +1,21 @@
 {
   "objectClassName" : "entity",
-  "handle" : "unicoderegistrar",
+  "handle" : "1",
   "status" : ["active"],
   "roles" : ["registrar"],
   "links" :
   [
     {
-      "value" : "http://myserver.google.com/entity/unicoderegistrar",
+      "value" : "http://myserver.google.com/entity/1",
       "rel" : "self",
-      "href" : "http://myserver.google.com/entity/unicoderegistrar",
+      "href" : "http://myserver.google.com/entity/1",
       "type" : "application/rdap+json"
     }
   ],
   "events": [
     {
       "eventAction": "registration",
-      "eventActor": "unicoderegistrar",
+      "eventActor": "1",
       "eventDate": "1999-01-01T00:00:00.000Z"
     },
     {

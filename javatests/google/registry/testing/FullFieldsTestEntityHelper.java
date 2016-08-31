@@ -51,11 +51,16 @@ public final class FullFieldsTestEntityHelper {
 
   public static Registrar makeRegistrar(
       String clientId, String registrarName, Registrar.State state) {
+    return makeRegistrar(clientId, registrarName, state, 1L);
+  }
+
+  public static Registrar makeRegistrar(
+      String clientId, String registrarName, Registrar.State state, Long ianaIdentifier) {
     Registrar registrar = new Registrar.Builder()
       .setClientIdentifier(clientId)
       .setRegistrarName(registrarName)
       .setType(Registrar.Type.REAL)
-      .setIanaIdentifier(1L)
+      .setIanaIdentifier(ianaIdentifier)
       .setState(state)
       .setInternationalizedAddress(new RegistrarAddress.Builder()
           .setStreet(ImmutableList.of("123 Example Boulevard <script>"))

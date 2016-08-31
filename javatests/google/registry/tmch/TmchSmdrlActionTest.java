@@ -38,7 +38,7 @@ public class TmchSmdrlActionTest extends TmchActionTestCase {
   }
 
   @Test
-  public void successSmdrl() throws Exception {
+  public void testSuccess_smdrl() throws Exception {
     SignedMarkRevocationList smdrl = SignedMarkRevocationList.get();
     assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", now)).isFalse();
     assertThat(smdrl.isSmdRevoked("0000001681375789102250-65536", now)).isFalse();

@@ -28,7 +28,7 @@ import org.joda.time.Period;
 
 /** Base class for the fee and credit types. */
 @XmlTransient
-public class BaseFee extends ImmutableObject {
+public abstract class BaseFee extends ImmutableObject {
 
   /** Enum for when a fee is applied. */
   public enum AppliedType {
@@ -71,6 +71,13 @@ public class BaseFee extends ImmutableObject {
     return firstNonNull(refundable, true);
   }
 
+  /**
+   * According to the fee extension specification, a fee must always be non-negative, while a credit
+   * must always be negative. Essentially, they are the same thing, just with different sign.
+   * However, we need them to be separate classes for proper JAXB handling.
+   * 
+   * @see "https://tools.ietf.org/html/draft-brown-epp-fees-03#section-2.4"
+   */
   public BigDecimal getCost() {
     return cost;
   }

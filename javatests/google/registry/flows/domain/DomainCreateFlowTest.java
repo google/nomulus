@@ -17,6 +17,7 @@ package google.registry.flows.domain;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.fee.Fee.FEE_EXTENSION_URIS;
+import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.pricing.PricingEngineProxy.getPricesForDomainName;
 import static google.registry.testing.DatastoreHelper.assertBillingEvents;
 import static google.registry.testing.DatastoreHelper.createTld;
@@ -102,6 +103,7 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainResource;
 import google.registry.model.domain.GracePeriod;
+import google.registry.model.domain.LrpToken;
 import google.registry.model.domain.launch.ApplicationStatus;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -783,6 +785,34 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
     setEppInput("domain_create_anchor_wrong_authcode.xml");
     persistContactsAndHosts();
     runFlow();
+  }
+
+  @Test
+  public void testSuccess_anchorTenantViaAuthCode_matchingLrpToken() throws Exception {
+    // This is definitely a corner case, as (without superuser) anchor tenants may only register
+    // via auth code during GA, and LRP will almost never be a GA offering. We're running this
+    // as superuser to bypass the state checks, though anchor tenant code checks and LRP token
+    // redemption still happen regardless.
+    createTld("tld", TldState.LANDRUSH);
+    persistResource(Registry.get("tld").asBuilder()
+        .setReservedLists(persistReservedList(
+            "tld-reserved",
+            "anchor,RESERVED_FOR_ANCHOR_TENANT,2fooBAR"))
+        .build());
+    LrpToken token = persistResource(new LrpToken.Builder()
+        .setToken("2fooBAR")
+        .setAssignee("anchor.tld")
+        .build());
+    setEppInput("domain_create_anchor_authcode.xml");
+    persistContactsAndHosts();
+    runFlowAssertResponse(
+        CommitMode.LIVE,
+        UserPrivileges.SUPERUSER,
+        readFile("domain_create_anchor_response.xml"));
+    assertSuccessfulCreate("tld", true);
+    // Token should not be marked as used, since interpreting the authcode as anchor tenant should
+    // take precedence.
+    assertThat(ofy().load().entity(token).now().getRedemptionHistoryEntry()).isNull();
   }
 
   @Test

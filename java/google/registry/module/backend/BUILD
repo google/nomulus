@@ -36,6 +36,7 @@ java_library(
         "//java/google/registry/keyring/api",
         "//java/google/registry/mapreduce",
         "//java/google/registry/model",
+        "//java/google/registry/monitoring/metrics",
         "//java/google/registry/monitoring/whitebox",
         "//java/google/registry/rde",
         "//java/google/registry/request",

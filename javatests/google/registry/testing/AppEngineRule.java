@@ -269,10 +269,9 @@ public final class AppEngineRule extends ExternalResource {
     }
     if (withLocalModules) {
       configs.add(new LocalModulesServiceTestConfig()
-          .addDefaultModuleVersion()
-          .addAutomaticScalingModuleVersion("default", "v1")
-          .addAutomaticScalingModuleVersion("tools", "v1")
-          .addAutomaticScalingModuleVersion("backend", "v1"));
+          .addBasicScalingModuleVersion("default", "1", 1)
+          .addBasicScalingModuleVersion("tools", "1", 1)
+          .addBasicScalingModuleVersion("backend", "1", 1));
     }
     if (withTaskQueue) {
       File queueFile = temporaryFolder.newFile("queue.xml");
@@ -305,6 +304,10 @@ public final class AppEngineRule extends ExternalResource {
           return clock.nowUtc().getMillis();
         }
       });
+    }
+
+    if (withLocalModules) {
+      helper.setEnvInstance("0");
     }
 
     helper.setUp();

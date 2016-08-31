@@ -101,7 +101,6 @@ public class RegistrarServletTestCase {
     when(req.getHeader(eq("X-CSRF-Token"))).thenReturn(generateToken("console"));
     when(req.getReader()).thenReturn(createJsonPayload(ImmutableMap.of("op", "read")));
     when(sessionUtils.isLoggedIn()).thenReturn(true);
-    when(sessionUtils.redirectIfNotLoggedIn(req, rsp)).thenReturn(true);
     when(sessionUtils.checkRegistrarConsoleLogin(req)).thenReturn(true);
     when(sessionUtils.getRegistrarClientId(req)).thenReturn(CLIENT_ID);
     when(modulesService.getVersionHostname("backend", null)).thenReturn("backend.hostname");

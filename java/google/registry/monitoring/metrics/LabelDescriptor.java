@@ -41,11 +41,12 @@ public abstract class LabelDescriptor {
    *     blank
    */
   public static LabelDescriptor create(String name, String description) {
+    checkArgument(!name.isEmpty(), "Name must not be empty");
+    checkArgument(!description.isEmpty(), "Description must not be empty");
     checkArgument(
         ALLOWED_LABEL_PATTERN.matches(name),
-        "Label must match the regex %s",
+        "Label name must match the regex %s",
         ALLOWED_LABEL_PATTERN);
-    checkArgument(!description.isEmpty(), "Description must not be empty");
 
     return new AutoValue_LabelDescriptor(name, description);
   }

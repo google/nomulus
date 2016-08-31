@@ -1,0 +1,13 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <create>
+      <host:create xmlns:host="urn:ietf:params:xml:ns:host-1.0">
+        <host:name>example.tld</host:name>
+        <host:addr ip="v4">162.100.102.99</host:addr>
+        <host:addr ip="v4">4.5.6.7</host:addr>
+        <host:addr ip="v6">2001:0db8:85a3:0000:0000:8a2e:0370:7334</host:addr>
+      </host:create>
+    </create>
+    <clTRID>GTechTool</clTRID>
+  </command>
+</epp>

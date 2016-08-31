@@ -341,13 +341,14 @@ class CloudDnsWriter implements DnsWriter {
    * <p>This call should be used in conjunction with getResourceRecordsForDomain in a get-and-set
    * retry loop.
    *
+   * <p>See {@link "https://cloud.google.com/dns/troubleshooting"} for a list of errors produced by
+   * the Google Cloud DNS API.
+   *
    * @throws IOException if the operation could not be completed successfully due to an
    *     uncorrectable error.
    * @throws ZoneStateException if the operation could not be completely successfully because the
    *     records to delete do not exist, already exist or have been modified with different
    *     attributes since being queried.
-   * @see "https://cloud.google.com/dns/troubleshooting" for a list of errors produced by the Google
-   *     Cloud DNS API.
    */
   private void updateResourceRecords(
       ImmutableSet<ResourceRecordSet> additions, ImmutableSet<ResourceRecordSet> deletions)

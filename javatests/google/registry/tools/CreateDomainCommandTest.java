@@ -55,10 +55,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   @Test
   public void testFailure_missingClientId() throws Exception {
     thrown.expect(ParameterException.class);
-    runCommandForced(
-        "--domain=example.tld",
-        "--registrant=crr-admin");
-    runCommandForced();
+    runCommandForced("--domain=example.tld", "--registrant=crr-admin");
   }
 
   @Test
@@ -69,8 +66,6 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
         "--registrant=crr-admin",
         "--admin=crr-admin",
         "--tech=crr-tech");
-
-    runCommandForced();
   }
 
   @Test
@@ -81,8 +76,6 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
         "--domain=example.tld",
         "--admin=crr-admin",
         "--tech=crr-tech");
-
-    runCommandForced();
   }
 
   @Test

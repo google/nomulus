@@ -67,8 +67,18 @@ public class MapreduceRunner {
   private String jobName;
   private String moduleName;
 
-  // Defaults for number of mappers/reducers if not specified in HTTP params.
-  private int defaultMapShards = Integer.MAX_VALUE;
+  // Defaults for number of mappers/reducers if not specified in HTTP params.  The max allowable
+  // count for both (which is specified in the App Engine mapreduce framework) is 1000.  We use 100
+  // mapper shards because there's a bottleneck in the App Engine mapreduce framework caused by
+  // updating the mapreduce status on a single Datastore entity (which only supports so many writes
+  // per second).  The existing mapreduces don't actually do that much work for TLDs that aren't
+  // .com-sized, so the shards finish so quickly that contention becomes a problem.  This number can
+  // always be tuned up for large registry systems with on the order of hundreds of thousands of
+  // entities on up.
+  // The default reducer shard count is one because most mapreduces use it to collate and output
+  // results.  The ones that actually perform a substantial amount of work in a reduce step use a
+  // higher non-default number of reducer shards.
+  private int defaultMapShards = 100;
   private int defaultReduceShards = 1;
 
   /**

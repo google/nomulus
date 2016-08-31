@@ -26,6 +26,7 @@ import google.registry.groups.GroupsModule;
 import google.registry.groups.GroupssettingsModule;
 import google.registry.keyring.api.KeyModule;
 import google.registry.keyring.api.VoidKeyringModule;
+import google.registry.monitoring.metrics.MetricReporter;
 import google.registry.monitoring.whitebox.StackdriverModule;
 import google.registry.rde.JSchModule;
 import google.registry.request.Modules.AppIdentityCredentialModule;
@@ -46,6 +47,7 @@ import javax.inject.Singleton;
 @Component(
     modules = {
         AppIdentityCredentialModule.class,
+        BackendMetricsModule.class,
         BigqueryModule.class,
         ConfigModule.class,
         DatastoreServiceModule.class,
@@ -71,4 +73,5 @@ import javax.inject.Singleton;
     })
 interface BackendComponent {
   BackendRequestComponent startRequest(RequestModule requestModule);
+  MetricReporter metricReporter();
 }

@@ -41,6 +41,7 @@ import static google.registry.util.CollectionUtils.nullToEmpty;
 
 import com.google.common.base.Optional;
 import com.google.common.net.InternetDomainName;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Work;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.ParameterValuePolicyErrorException;
@@ -49,10 +50,12 @@ import google.registry.flows.EppException.ParameterValueSyntaxErrorException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
 import google.registry.flows.EppException.UnimplementedOptionException;
 import google.registry.flows.ResourceCreateFlow;
+import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainBase.Builder;
 import google.registry.model.domain.DomainCommand.Create;
 import google.registry.model.domain.DomainResource;
+import google.registry.model.domain.LrpToken;
 import google.registry.model.domain.fee.FeeTransformCommandExtension;
 import google.registry.model.domain.launch.LaunchCreateExtension;
 import google.registry.model.domain.launch.LaunchNotice;
@@ -90,6 +93,7 @@ public abstract class BaseDomainCreateFlow<R extends DomainBase, B extends Build
   protected SignedMark signedMark;
   protected boolean isAnchorTenantViaReservation;
   protected TldState tldState;
+  protected Optional<LrpToken> lrpToken;
 
   @Override
   public final void initResourceCreateOrMutateFlow() throws EppException {
@@ -183,6 +187,13 @@ public abstract class BaseDomainCreateFlow<R extends DomainBase, B extends Build
     // The TLD should always be the parent of the requested domain name.
     isAnchorTenantViaReservation = matchesAnchorTenantReservation(
         domainLabel, tld, command.getAuthInfo().getPw().getValue());
+    boolean isLrpApplication =
+        registry.getLrpTldStates().contains(tldState)
+            && !command.getAuthInfo().getPw().getValue().isEmpty()
+            && !isAnchorTenantViaReservation;
+    lrpToken = isLrpApplication
+        ? TldSpecificLogicProxy.getMatchingLrpToken(command, tld)
+        : Optional.<LrpToken>absent();
     // Superusers can create reserved domains, force creations on domains that require a claims
     // notice without specifying a claims key, and override blocks on registering premium domains.
     if (!isSuperuser) {
@@ -190,6 +201,9 @@ public abstract class BaseDomainCreateFlow<R extends DomainBase, B extends Build
           launchCreate != null && !launchCreate.getSignedMarks().isEmpty();
       if (!isAnchorTenantViaReservation) {
         verifyNotReserved(domainName, isSunriseApplication);
+      }
+      if (isLrpApplication && !lrpToken.isPresent()) {
+          throw new BadAuthInfoForResourceException();
       }
       boolean isClaimsPeriod = now.isBefore(registry.getClaimsPeriodEnd());
       boolean isClaimsCreate = launchCreate != null && launchCreate.getNotice() != null;
@@ -229,6 +243,15 @@ public abstract class BaseDomainCreateFlow<R extends DomainBase, B extends Build
     }
     validateSecDnsExtension();
     verifyDomainCreateIsAllowed();
+  }
+
+  @Override
+  protected void modifyCreateRelatedResources() {
+    if (lrpToken.isPresent()) {
+      ofy().save().entity(lrpToken.get().asBuilder()
+          .setRedemptionHistoryEntry(Key.create(historyEntry))
+          .build());
+    }
   }
 
   /** Validate the secDNS extension, if present. */

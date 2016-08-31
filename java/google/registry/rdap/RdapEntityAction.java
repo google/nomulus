@@ -20,6 +20,7 @@ import static google.registry.request.Action.Method.HEAD;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.re2j.Pattern;
 import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactResource;
@@ -34,7 +35,14 @@ import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**
- * RDAP (new WHOIS) action for entity (contact and registrar) requests.
+ * RDAP (new WHOIS) action for entity (contact and registrar) requests. the ICANN operational
+ * profile dictates that the "handle" for registrars is to be the IANA registrar ID:
+ *
+ * <p>2.8.3. Registries MUST support lookup for entities with the registrar role within other
+ * objects using the handle (as described in 3.1.5 of RFC7482). The handle of the entity with the
+ * registrar role MUST be equal to IANA Registrar ID. The entity with the registrar role in the RDAP
+ * response MUST contain a publicIDs member to identify the IANA Registrar ID from the IANA’s
+ * Registrar ID registry. The type value of the publicID object MUST be equal to IANA Registrar ID.
  */
 @Action(path = RdapEntityAction.PATH, method = {GET, HEAD}, isPrefix = true)
 public class RdapEntityAction extends RdapActionBase {
@@ -80,17 +88,23 @@ public class RdapEntityAction extends RdapActionBase {
             now);
       }
     }
-    String clientId = pathSearchString.trim();
-    if ((clientId.length() >= 3) && (clientId.length() <= 16)) {
+    try {
+      Long ianaIdentifier = Long.parseLong(pathSearchString);
       wasValidKey = true;
-      Registrar registrar = Registrar.loadByClientId(clientId);
+      Registrar registrar = Iterables.getOnlyElement(
+          Registrar.loadByIanaIdentifierRange(ianaIdentifier, ianaIdentifier + 1, 1), null);
       if ((registrar != null) && registrar.isActiveAndPubliclyVisible()) {
         return RdapJsonFormatter.makeRdapJsonForRegistrar(
             registrar, true, rdapLinkBase, rdapWhoisServer, now);
       }
+    } catch (NumberFormatException e) {
+      // Although the search string was not a valid IANA identifier, it might still have been a
+      // valid ROID.
     }
-    throw !wasValidKey
-        ? new BadRequestException(pathSearchString + " is not a valid entity handle")
-        : new NotFoundException(pathSearchString + " not found");
+    // At this point, we have failed to find either a contact or a registrar.
+    throw wasValidKey
+        ? new NotFoundException(pathSearchString + " not found")
+        : new BadRequestException(pathSearchString + " is not a valid entity handle");
   }
 }
+

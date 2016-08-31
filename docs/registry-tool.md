@@ -9,6 +9,15 @@ if the most recent export failed.  Its code lives inside the tools package
 (`java/google/registry/tools`), and is compiled by building the `registry_tool`
 target in the Bazel BUILD file in that package.
 
+To build the tool and display its command-line help, execute this command:
+
+    $ bazel run //java/google/registry/tool:registry_tool -- --help
+
+For future invocations you should alias the compiled binary in the
+`bazel-genfiles/java/google/registry` directory or add it to your path so that
+you can run it more easily.  The rest of this guide assumes that it has been
+aliased to `registry_tool`.
+
 The registry tool is always called with a specific environment to run in using
 the -e parameter.  This looks like:
 

@@ -30,7 +30,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
 import google.registry.model.common.EntityGroupRoot;
-import google.registry.model.registrar.Registrar.CertificateState;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.testing.ExceptionRule;
@@ -126,7 +125,7 @@ public class RegistrarTest extends EntityTestCase {
 
   @Test
   public void testIndexing() throws Exception {
-    verifyIndexing(registrar, "registrarName");
+    verifyIndexing(registrar, "registrarName", "ianaIdentifier");
   }
 
   @Test
@@ -215,20 +214,6 @@ public class RegistrarTest extends EntityTestCase {
     assertThat(registrar.getLastCertificateUpdateTime()).isEqualTo(clock.nowUtc());
     assertThat(registrar.getFailoverClientCertificate()).isNull();
     assertThat(registrar.getFailoverClientCertificateHash()).isNull();
-  }
-
-  @Test
-  public void testSuccess_certificateStates() throws Exception {
-    // Initialized registrar should have the full certificate.
-    assertThat(registrar.getCertificateState()).isEqualTo(CertificateState.CERTIFICATE);
-
-    // Setting a null certificate will also reset the hash.
-    registrar = registrar.asBuilder().setClientCertificate(null, clock.nowUtc()).build();
-    assertThat(registrar.getCertificateState()).isEqualTo(CertificateState.NONE);
-
-    // Set client certificate hash explicitly.
-    registrar = registrar.asBuilder().setClientCertificateHash(SAMPLE_CERT_HASH).build();
-    assertThat(registrar.getCertificateState()).isEqualTo(CertificateState.CERTIFICATE_HASH);
   }
 
   @Test

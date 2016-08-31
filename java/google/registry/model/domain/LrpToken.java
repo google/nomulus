@@ -40,8 +40,8 @@ public class LrpToken extends BackupGroupRoot implements Buildable {
   String token;
 
   /**
-   * The token's assignee (additional metadata for identifying the owner of the token, which may
-   * vary from TLD to TLD).
+   * The token's assignee (additional metadata for identifying the owner of the token, the details
+   * of which might differ from TLD to TLD).
    */
   @Index
   String assignee;

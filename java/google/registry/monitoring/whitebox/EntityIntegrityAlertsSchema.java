@@ -30,7 +30,7 @@ final class EntityIntegrityAlertsSchema {
   static final String FIELD_TARGET = "target";
   static final String FIELD_MESSAGE = "message";
 
-  static final ImmutableList<TableFieldSchema> ENTITY_INTEGRITY_ALERTS_SCHEMA_FIELDS =
+  static final ImmutableList<TableFieldSchema> SCHEMA_FIELDS =
       ImmutableList.of(
           new TableFieldSchema().setName(FIELD_SCANTIME).setType(TIMESTAMP.name()),
           new TableFieldSchema().setName(FIELD_SOURCE).setType(STRING.name()),

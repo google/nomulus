@@ -621,11 +621,11 @@ public class RdapJsonFormatter {
       DateTime now) {
     ImmutableMap.Builder<String, Object> builder = new ImmutableMap.Builder<>();
     builder.put("objectClassName", "entity");
-    builder.put("handle", registrar.getClientIdentifier());
+    builder.put("handle", registrar.getIanaIdentifier().toString());
     builder.put("status", STATUS_LIST_ACTIVE);
     builder.put("roles", ImmutableList.of(RdapEntityRole.REGISTRAR.rfc7483String));
     builder.put("links",
-        ImmutableList.of(makeLink("entity", registrar.getClientIdentifier(), linkBase)));
+        ImmutableList.of(makeLink("entity", registrar.getIanaIdentifier().toString(), linkBase)));
     builder.put("publicIds",
         ImmutableList.of(
             ImmutableMap.of(
@@ -805,7 +805,7 @@ public class RdapJsonFormatter {
     ImmutableList.Builder<Object> eventsBuilder = new ImmutableList.Builder<>();
     eventsBuilder.add(makeEvent(
         RdapEventAction.REGISTRATION,
-        registrar.getClientIdentifier(),
+        registrar.getIanaIdentifier().toString(),
         registrar.getCreationTime()));
     if ((registrar.getLastUpdateTime() != null)
         && registrar.getLastUpdateTime().isAfter(registrar.getCreationTime())) {

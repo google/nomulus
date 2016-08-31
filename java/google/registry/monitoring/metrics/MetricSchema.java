@@ -45,7 +45,8 @@ public abstract class MetricSchema {
     checkArgument(!name.isEmpty(), "Name must not be blank");
     checkArgument(!description.isEmpty(), "Description must not be blank");
     checkArgument(!valueDisplayName.isEmpty(), "Value Display Name must not be empty");
-    // TODO: strengthen metric name validation.
+    checkArgument(name.startsWith("/"), "Name must be URL-like and start with a '/'");
+    // TODO(b/30916431): strengthen metric name validation.
 
     return new AutoValue_MetricSchema(name, description, valueDisplayName, kind, labels);
   }

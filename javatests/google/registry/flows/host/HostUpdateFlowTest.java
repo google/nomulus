@@ -38,6 +38,7 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.net.InetAddresses;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Ref;
 import google.registry.flows.EppRequestSource;
@@ -62,7 +63,6 @@ import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
-import java.net.InetAddress;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -756,10 +756,12 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
         null,
         null);
     createTld("tld");
-    persistResource(newHostResource(oldHostName()).asBuilder()
-        .setSuperordinateDomain(Ref.create(persistActiveDomain("example.tld")))
-        .setInetAddresses(ImmutableSet.of(InetAddress.getLocalHost()))
-        .build());
+    persistResource(
+        newHostResource(oldHostName())
+            .asBuilder()
+            .setSuperordinateDomain(Ref.create(persistActiveDomain("example.tld")))
+            .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
+            .build());
     thrown.expect(RenameHostToExternalRemoveIpException.class);
     runFlow();
   }

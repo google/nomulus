@@ -101,7 +101,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void publishDomainCreatePublishesNameServers() throws Exception {
+  public void testPublishDomainCreate_publishesNameServers() throws Exception {
     HostResource host1 = persistActiveHost("ns1.example.tld");
     HostResource host2 = persistActiveHost("ns2.example.tld");
     DomainResource domain =
@@ -122,7 +122,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void publishDomainCreatePublishesDelegationSigner() throws Exception {
+  public void testPublishDomainCreate_publishesDelegationSigner() throws Exception {
     DomainResource domain =
         persistActiveDomain("example.tld")
             .asBuilder()
@@ -145,7 +145,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void publishDomainWhenNotActiveRemovesDnsRecords() throws Exception {
+  public void testPublishDomainWhenNotActive_removesDnsRecords() throws Exception {
     DomainResource domain =
         persistActiveDomain("example.tld")
             .asBuilder()
@@ -164,7 +164,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void publishDomainDeleteRemovesDnsRecords() throws Exception {
+  public void testPublishDomainDelete_removesDnsRecords() throws Exception {
     persistDeletedDomain("example.tld", clock.nowUtc());
 
     writer.publishDomain("example.tld");
@@ -177,7 +177,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void publishHostCreatePublishesAddressRecords() throws Exception {
+  public void testPublishHostCreate_publishesAddressRecords() throws Exception {
     HostResource host =
         persistResource(
             newHostResource("ns1.example.tld")
@@ -209,7 +209,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void publishHostDeleteRemovesDnsRecords() throws Exception {
+  public void testPublishHostDelete_removesDnsRecords() throws Exception {
     persistDeletedHost("ns1.example.tld", clock.nowUtc());
     persistActiveDomain("example.tld");
 
@@ -224,7 +224,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void publishHostDeleteRemovesGlueRecords() throws Exception {
+  public void testPublishHostDelete_removesGlueRecords() throws Exception {
     persistDeletedHost("ns1.example.tld", clock.nowUtc());
     persistResource(
         persistActiveDomain("example.tld")
@@ -244,7 +244,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void publishDomainExternalAndInBailiwickNameServer() throws Exception {
+  public void testPublishDomainExternalAndInBailiwickNameServer() throws Exception {
     HostResource externalNameserver = persistResource(newHostResource("ns1.example.com"));
     HostResource inBailiwickNameserver =
         persistResource(
@@ -279,7 +279,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void publishDomainDeleteOrphanGlues() throws Exception {
+  public void testPublishDomainDeleteOrphanGlues() throws Exception {
     HostResource inBailiwickNameserver =
         persistResource(
             newHostResource("ns1.example.tld")
@@ -314,7 +314,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void publishDomainFailsWhenDnsUpdateReturnsError() throws Exception {
+  public void testPublishDomainFails_whenDnsUpdateReturnsError() throws Exception {
     DomainResource domain =
         persistActiveDomain("example.tld")
             .asBuilder()
@@ -328,7 +328,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void publishHostFailsWhenDnsUpdateReturnsError() throws Exception {
+  public void testPublishHostFails_whenDnsUpdateReturnsError() throws Exception {
     HostResource host =
         persistActiveSubordinateHost("ns1.example.tld", persistActiveDomain("example.tld"))
             .asBuilder()

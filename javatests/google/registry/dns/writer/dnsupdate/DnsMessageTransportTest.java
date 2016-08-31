@@ -81,7 +81,7 @@ public class DnsMessageTransportTest {
   }
 
   @Test
-  public void sentMessageHasCorrectLengthAndContent() throws Exception {
+  public void testSentMessageHasCorrectLengthAndContent() throws Exception {
     ByteArrayInputStream inputStream =
         new ByteArrayInputStream(messageToBytesWithLength(expectedResponse));
     when(mockSocket.getInputStream()).thenReturn(inputStream);
@@ -99,7 +99,7 @@ public class DnsMessageTransportTest {
   }
 
   @Test
-  public void receivedMessageWithLengthHasCorrectContent() throws Exception {
+  public void testReceivedMessageWithLengthHasCorrectContent() throws Exception {
     ByteArrayInputStream inputStream =
         new ByteArrayInputStream(messageToBytesWithLength(expectedResponse));
     when(mockSocket.getInputStream()).thenReturn(inputStream);
@@ -112,7 +112,7 @@ public class DnsMessageTransportTest {
   }
 
   @Test
-  public void eofReceivingResponse() throws Exception {
+  public void testEofReceivingResponse() throws Exception {
     byte[] messageBytes = messageToBytesWithLength(expectedResponse);
     ByteArrayInputStream inputStream =
         new ByteArrayInputStream(Arrays.copyOf(messageBytes, messageBytes.length - 1));
@@ -125,7 +125,7 @@ public class DnsMessageTransportTest {
   }
 
   @Test
-  public void timeoutReceivingResponse() throws Exception {
+  public void testTimeoutReceivingResponse() throws Exception {
     InputStream mockInputStream = mock(InputStream.class);
     when(mockInputStream.read()).thenThrow(new SocketTimeoutException("testing"));
     when(mockSocket.getInputStream()).thenReturn(mockInputStream);
@@ -143,7 +143,7 @@ public class DnsMessageTransportTest {
   }
 
   @Test
-  public void sentMessageTooLongThrowsException() throws Exception {
+  public void testSentMessageTooLongThrowsException() throws Exception {
     Update oversize = new Update(Name.fromString("tld", Name.root));
     for (int i = 0; i < 2000; i++) {
       oversize.add(
@@ -160,7 +160,7 @@ public class DnsMessageTransportTest {
   }
 
   @Test
-  public void responseIdMismatchThrowsExeption() throws Exception {
+  public void testResponseIdMismatchThrowsExeption() throws Exception {
     expectedResponse.getHeader().setID(1 + simpleQuery.getHeader().getID());
     when(mockSocket.getInputStream())
         .thenReturn(new ByteArrayInputStream(messageToBytesWithLength(expectedResponse)));
@@ -176,7 +176,7 @@ public class DnsMessageTransportTest {
   }
 
   @Test
-  public void responseOpcodeMismatchThrowsException() throws Exception {
+  public void testResponseOpcodeMismatchThrowsException() throws Exception {
     simpleQuery.getHeader().setOpcode(Opcode.QUERY);
     expectedResponse.getHeader().setOpcode(Opcode.STATUS);
     when(mockSocket.getInputStream())

@@ -23,6 +23,7 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.HostResourceSubject.assertAboutHosts;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.net.InetAddresses;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Ref;
 import google.registry.model.EntityTestCase;
@@ -71,19 +72,20 @@ public class HostResourceTest extends EntityTestCase {
                 .setTransferRequestTrid(Trid.create("client trid"))
                 .build())
             .build());
-    hostResource = cloneAndSetAutoTimestamps(
-        new HostResource.Builder()
-            .setRepoId("DEADBEEF-COM")
-            .setFullyQualifiedHostName("ns1.example.com")
-            .setCreationClientId("a registrar")
-            .setLastEppUpdateTime(clock.nowUtc())
-            .setLastEppUpdateClientId("another registrar")
-            .setLastTransferTime(clock.nowUtc())
-            .setInetAddresses(ImmutableSet.of(InetAddress.getLocalHost()))
-            .setStatusValues(ImmutableSet.of(StatusValue.OK))
-            .setSuperordinateDomain(Ref.create(
-                loadByUniqueId(DomainResource.class, "example.com", clock.nowUtc())))
-            .build());
+    hostResource =
+        cloneAndSetAutoTimestamps(
+            new HostResource.Builder()
+                .setRepoId("DEADBEEF-COM")
+                .setFullyQualifiedHostName("ns1.example.com")
+                .setCreationClientId("a registrar")
+                .setLastEppUpdateTime(clock.nowUtc())
+                .setLastEppUpdateClientId("another registrar")
+                .setLastTransferTime(clock.nowUtc())
+                .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
+                .setStatusValues(ImmutableSet.of(StatusValue.OK))
+                .setSuperordinateDomain(
+                    Ref.create(loadByUniqueId(DomainResource.class, "example.com", clock.nowUtc())))
+                .build());
     persistResource(hostResource);
   }
 
@@ -139,9 +141,12 @@ public class HostResourceTest extends EntityTestCase {
     assertThat(new HostResource.Builder()
         .setInetAddresses(ImmutableSet.<InetAddress>of()).build().inetAddresses)
             .isNull();
-    assertThat(new HostResource.Builder()
-        .setInetAddresses(ImmutableSet.of(InetAddress.getLocalHost())).build().inetAddresses)
-            .isNotNull();
+    assertThat(
+            new HostResource.Builder()
+                .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
+                .build()
+                .inetAddresses)
+        .isNotNull();
   }
 
   @Test

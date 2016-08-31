@@ -59,39 +59,39 @@ public class ConsoleUiActionTest {
   }
 
   @Test
-  public void webPage_disallowsIframe() throws Exception {
+  public void testWebPage_disallowsIframe() throws Exception {
     action.run();
     assertThat(response.getHeaders()).containsEntry("X-Frame-Options", "SAMEORIGIN");
   }
 
   @Test
-  public void webPage_setsHtmlUtf8ContentType() throws Exception {
+  public void testWebPage_setsHtmlUtf8ContentType() throws Exception {
     action.run();
     assertThat(response.getContentType()).isEqualTo(MediaType.HTML_UTF_8);
   }
 
   @Test
-  public void webPage_containsUserNickname() throws Exception {
+  public void testWebPage_containsUserNickname() throws Exception {
     action.run();
     assertThat(response.getPayload()).contains("marla.singer");
   }
 
   @Test
-  public void userHasAccessAsTheRegistrar_showsRegistrarConsole() throws Exception {
+  public void testUserHasAccessAsTheRegistrar_showsRegistrarConsole() throws Exception {
     action.run();
     assertThat(response.getPayload()).contains("Registrar Console");
     assertThat(response.getPayload()).contains("reg-content-and-footer");
   }
 
   @Test
-  public void consoleDisabled_showsDisabledPage() throws Exception {
+  public void testConsoleDisabled_showsDisabledPage() throws Exception {
     action.enabled = false;
     action.run();
     assertThat(response.getPayload()).contains("<h1>Console is disabled</h1>");
   }
 
   @Test
-  public void userDoesntHaveAccessToAnyRegistrar_showsWhoAreYouPage() throws Exception {
+  public void testUserDoesntHaveAccessToAnyRegistrar_showsWhoAreYouPage() throws Exception {
     when(sessionUtils.checkRegistrarConsoleLogin(any(HttpServletRequest.class))).thenReturn(false);
     action.run();
     assertThat(response.getPayload()).contains("<h1>You need permission</h1>");

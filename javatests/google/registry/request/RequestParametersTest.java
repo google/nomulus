@@ -20,7 +20,6 @@ import static google.registry.request.RequestParameters.extractEnumParameter;
 import static google.registry.request.RequestParameters.extractOptionalDatetimeParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredDatetimeParameter;
-import static google.registry.request.RequestParameters.extractRequiredMaybeEmptyParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static org.mockito.Mockito.when;
 
@@ -62,26 +61,6 @@ public class RequestParametersTest {
     when(req.getParameter("spin")).thenReturn("");
     thrown.expect(BadRequestException.class, "spin");
     extractRequiredParameter(req, "spin");
-  }
-
-  @Test
-  public void testExtractRequiredMaybeEmptyParameter_valuePresent_returnsValue() throws Exception {
-    when(req.getParameter("spin")).thenReturn("bog");
-    assertThat(extractRequiredMaybeEmptyParameter(req, "spin")).isEqualTo("bog");
-  }
-
-  @Test
-  public void testExtractRequiredMaybeEmptyParameter_notPresent_throwsBadRequest()
-      throws Exception {
-    thrown.expect(BadRequestException.class, "spin");
-    extractRequiredMaybeEmptyParameter(req, "spin");
-  }
-
-  @Test
-  public void testExtractRequiredMaybeEmptyParameter_empty_returnsValue()
-      throws Exception {
-    when(req.getParameter("spin")).thenReturn("");
-    assertThat(extractRequiredMaybeEmptyParameter(req, "spin")).isEmpty();
   }
 
   @Test

@@ -58,19 +58,6 @@ public final class RequestParameters {
     return result;
   }
 
-  /**
-   * Returns first GET or POST parameter associated with {@code name}.
-   *
-   * @throws BadRequestException if request parameter is absent (but not if empty)
-   */
-  public static String extractRequiredMaybeEmptyParameter(HttpServletRequest req, String name) {
-    String result = req.getParameter(name);
-    if (result == null) {
-      throw new BadRequestException("Missing parameter: " + name);
-    }
-    return result;
-  }
-
   /** Returns the first GET or POST parameter associated with {@code name}. */
   public static Optional<String> extractOptionalParameter(HttpServletRequest req, String name) {
     return Optional.fromNullable(emptyToNull(req.getParameter(name)));

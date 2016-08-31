@@ -29,9 +29,9 @@ public class EppMetrics extends Metrics {
 
   private static final String REQUEST_LOG_ID = "com.google.appengine.runtime.request_log_id";
 
-  static final String EPPMETRICS_TABLE_ID = "eppMetrics";
+  static final String TABLE_ID = "eppMetrics";
 
-  static final ImmutableList<TableFieldSchema> EPPMETRICS_SCHEMA_FIELDS =
+  static final ImmutableList<TableFieldSchema> SCHEMA_FIELDS =
       ImmutableList.of(
           new TableFieldSchema().setName("requestId").setType(FieldType.STRING.name()),
           new TableFieldSchema().setName("startTime").setType(FieldType.TIMESTAMP.name()),
@@ -45,7 +45,7 @@ public class EppMetrics extends Metrics {
 
   @Inject
   public EppMetrics() {
-    setTableId(EPPMETRICS_TABLE_ID);
+    setTableId(TABLE_ID);
     fields.put("attempts", 0);
     fields.put("requestId", getCurrentEnvironment().getAttributes().get(REQUEST_LOG_ID).toString());
   }

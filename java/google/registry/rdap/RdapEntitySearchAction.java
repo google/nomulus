@@ -104,7 +104,7 @@ public class RdapEntitySearchAction extends RdapActionBase {
 
   /**
    * Searches for entities by name, returning a JSON array of entity info maps.
-   * 
+   *
    * <p>As per Gustavo Lozano of ICANN, registrar name search should be by registrar name only, not
    * by registrar contact name:
    *
@@ -112,7 +112,7 @@ public class RdapEntitySearchAction extends RdapActionBase {
    * in the Base Registry Agreement (see 1.6 of Section 4 of the Base Registry Agreement,
    * https://newgtlds.icann.org/sites/default/files/agreements/
    * agreement-approved-09jan14-en.htm).
-   * 
+   *
    * <p>According to RFC 7482 section 6.1, punycode is only used for domain name labels, so we can
    * assume that entity names are regular unicode.
    */
@@ -162,17 +162,18 @@ public class RdapEntitySearchAction extends RdapActionBase {
           .type(ContactResource.class)
           .id(partialStringQuery.getInitialString())
           .now();
-      Registrar registrar = Registrar.loadByClientId(partialStringQuery.getInitialString());
+      ImmutableList<Registrar> registrars = getMatchingRegistrars(partialStringQuery);
       return makeSearchResults(
           ((contactResource == null) || !contactResource.getDeletionTime().isEqual(END_OF_TIME))
               ? ImmutableList.<ContactResource>of() : ImmutableList.of(contactResource),
-          (registrar == null)
-              ? ImmutableList.<Registrar>of() : ImmutableList.of(registrar),
+          registrars,
           now);
     // Handle queries with a wildcard, but no suffix. For contact resources, the deletion time will
     // always be END_OF_TIME for non-deleted records; unlike domain resources, we don't need to
     // worry about deletion times in the future. That allows us to use an equality query for the
-    // deletion time.
+    // deletion time. Because the handle for registrars is the IANA identifier number, don't allow
+    // wildcard searches for registrars, by simply not searching for registrars if a wildcard is
+    // present.
     } else if (partialStringQuery.getSuffix() == null) {
       return makeSearchResults(
           ofy().load()
@@ -183,15 +184,25 @@ public class RdapEntitySearchAction extends RdapActionBase {
                   "<", Key.create(ContactResource.class, partialStringQuery.getNextInitialString()))
               .filter("deletionTime", END_OF_TIME)
               .limit(rdapResultSetMaxSize),
-          Registrar.loadByClientIdRange(
-              partialStringQuery.getInitialString(),
-              partialStringQuery.getNextInitialString(),
-              rdapResultSetMaxSize),
+          ImmutableList.<Registrar>of(),
           now);
     // Don't allow suffixes in entity handle search queries.
     } else {
       throw new UnprocessableEntityException("Suffixes not allowed in entity handle searches");
     }
+  }
+
+  /** Looks up registrars by handle (i.e. IANA identifier). */
+  private ImmutableList<Registrar>
+      getMatchingRegistrars(final RdapSearchPattern partialStringQuery) {
+    Long ianaIdentifier;
+    try {
+      ianaIdentifier = Long.parseLong(partialStringQuery.getInitialString());
+    } catch (NumberFormatException e) {
+      return ImmutableList.of();
+    }
+    return ImmutableList.copyOf(Registrar.loadByIanaIdentifierRange(
+        ianaIdentifier, ianaIdentifier + 1, rdapResultSetMaxSize));
   }
 
   /** Builds a JSON array of entity info maps based on the specified contacts and registrars. */

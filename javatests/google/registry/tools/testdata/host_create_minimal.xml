@@ -1,0 +1,10 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <create>
+      <host:create xmlns:host="urn:ietf:params:xml:ns:host-1.0">
+        <host:name>notours.external</host:name>
+      </host:create>
+    </create>
+    <clTRID>GTechTool</clTRID>
+  </command>
+</epp>

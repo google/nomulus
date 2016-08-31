@@ -14,6 +14,7 @@
 
 package google.registry.model.domain.fee;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.ImmutableList;
@@ -41,6 +42,7 @@ public class Fee extends BaseFee {
   public static Fee create(BigDecimal cost, String description) {
     Fee instance = new Fee();
     instance.cost = checkNotNull(cost);
+    checkArgument(instance.cost.signum() >= 0);
     instance.description = description;
     return instance;
   }

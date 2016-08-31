@@ -43,6 +43,7 @@ import google.registry.tools.server.UpdatePremiumListAction;
 import google.registry.tools.server.VerifyOteAction;
 import google.registry.tools.server.javascrap.BackfillAutorenewBillingFlagAction;
 import google.registry.tools.server.javascrap.CountRecurringBillingEventsAction;
+import google.registry.tools.server.javascrap.RefreshAllDomainsAction;
 
 /** Dagger component with per-request lifetime for "tools" App Engine module. */
 @RequestScope
@@ -74,6 +75,7 @@ interface ToolsRequestComponent {
   ListTldsAction listTldsAction();
   LoadTestAction loadTestAction();
   PublishDetailReportAction publishDetailReportAction();
+  RefreshAllDomainsAction refreshAllDomainsAction();
   ResaveAllEppResourcesAction resaveAllEppResourcesAction();
   UpdatePremiumListAction updatePremiumListAction();
   VerifyOteAction verifyOteAction();

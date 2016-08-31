@@ -18,8 +18,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import google.registry.testing.AppEngineRule;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -27,6 +29,10 @@ import org.junit.runners.JUnit4;
 /** Unit tests for {@link BackendServlet}. */
 @RunWith(JUnit4.class)
 public class BackendServletTest {
+
+  @Rule
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastore().withLocalModules().build();
 
   private final HttpServletRequest req = mock(HttpServletRequest.class);
   private final HttpServletResponse rsp = mock(HttpServletResponse.class);

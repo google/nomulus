@@ -52,9 +52,10 @@ import javax.inject.Inject;
  * An EPP flow that creates a new application for a domain resource.
  *
  * @error {@link google.registry.flows.EppException.UnimplementedExtensionException}
- * @error {@link google.registry.flows.ResourceFlow.BadCommandForRegistryPhaseException}
- * @error {@link google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException}
  * @error {@link google.registry.flows.ResourceCreateFlow.ResourceAlreadyExistsException}
+ * @error {@link google.registry.flows.ResourceFlow.BadCommandForRegistryPhaseException}
+ * @error {@link google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException}
+ * @error {@link google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException}
  * @error {@link BaseDomainCreateFlow.AcceptedTooLongAgoException}
  * @error {@link BaseDomainCreateFlow.ClaimsPeriodEndedException}
  * @error {@link BaseDomainCreateFlow.ExpiredClaimException}

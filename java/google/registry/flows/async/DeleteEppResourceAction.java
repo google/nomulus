@@ -104,16 +104,21 @@ public abstract class DeleteEppResourceAction<T extends EppResource> implements 
     mapper.setTargetResource(resourceKey);
     reducer.setClient(requestingClientId, isSuperuser);
     logger.infofmt("Executing Delete EPP resource mapreduce for %s", resourceKey);
-    response.sendJavaScriptRedirect(createJobPath(mrRunner
-        .setJobName("Check for EPP resource references and then delete")
-        .setModuleName("backend")
-        .runMapreduce(
-            mapper,
-            reducer,
-            ImmutableList.of(
-                // Add an extra shard that maps over a null domain. See the mapper code for why.
-                new NullInput<DomainBase>(),
-                EppResourceInputs.createEntityInput(DomainBase.class)))));
+    try {
+      response.sendJavaScriptRedirect(createJobPath(mrRunner
+          .setJobName("Check for EPP resource references and then delete")
+          .setModuleName("backend")
+          .runMapreduce(
+              mapper,
+              reducer,
+              ImmutableList.of(
+                  // Add an extra shard that maps over a null domain. See the mapper code for why.
+                  new NullInput<DomainBase>(),
+                  EppResourceInputs.createEntityInput(DomainBase.class)))));
+    } catch (Throwable t) {
+      logger.severefmt(
+          t, "Error while kicking off DeleteEppResource MR for %s", resource.getForeignKey());
+    }
   }
 
   /**

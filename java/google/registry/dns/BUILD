@@ -38,6 +38,7 @@ java_library(
         "//java/google/registry/config",
         "//java/google/registry/dns/writer",
         "//java/google/registry/model",
+        "//java/google/registry/monitoring/metrics",
         "//java/google/registry/request",
         "//java/google/registry/util",
     ],

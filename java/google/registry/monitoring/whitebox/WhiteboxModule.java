@@ -14,10 +14,6 @@
 
 package google.registry.monitoring.whitebox;
 
-import static google.registry.monitoring.whitebox.EntityIntegrityAlertsSchema.ENTITY_INTEGRITY_ALERTS_SCHEMA_FIELDS;
-import static google.registry.monitoring.whitebox.EntityIntegrityAlertsSchema.TABLE_ID;
-import static google.registry.monitoring.whitebox.EppMetrics.EPPMETRICS_SCHEMA_FIELDS;
-import static google.registry.monitoring.whitebox.EppMetrics.EPPMETRICS_TABLE_ID;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 
 import com.google.api.services.bigquery.model.TableFieldSchema;
@@ -37,16 +33,18 @@ import javax.servlet.http.HttpServletRequest;
 @Module
 public class WhiteboxModule {
 
-  @Provides @IntoMap
-  @StringKey(EPPMETRICS_TABLE_ID)
+  @Provides
+  @IntoMap
+  @StringKey(EppMetrics.TABLE_ID)
   static ImmutableList<TableFieldSchema> provideEppMetricsSchema() {
-    return EPPMETRICS_SCHEMA_FIELDS;
+    return EppMetrics.SCHEMA_FIELDS;
   }
 
-  @Provides @IntoMap
-  @StringKey(TABLE_ID)
+  @Provides
+  @IntoMap
+  @StringKey(EntityIntegrityAlertsSchema.TABLE_ID)
   static ImmutableList<TableFieldSchema> provideEntityIntegrityAlertsSchema() {
-    return ENTITY_INTEGRITY_ALERTS_SCHEMA_FIELDS;
+    return EntityIntegrityAlertsSchema.SCHEMA_FIELDS;
   }
 
   @Provides

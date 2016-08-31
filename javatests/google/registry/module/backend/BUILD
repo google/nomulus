@@ -20,6 +20,7 @@ java_library(
         "//third_party/java/servlet/servlet_api",
         "//third_party/java/truth",
         "//java/google/registry/module/backend",
+        "//javatests/google/registry/testing",
     ],
 )
 

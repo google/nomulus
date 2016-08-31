@@ -96,3 +96,13 @@ java_binary(
     ],
 )
 
+java_binary(
+    name = "gtech_tool",
+    create_executable = 1,
+    main_class = "google.registry.tools.GtechTool",
+    runtime_deps = [
+        ":tools",
+        "//third_party/java/appengine:appengine-api-link",
+        "//third_party/java/appengine:appengine-remote-api-link",
+    ],
+)

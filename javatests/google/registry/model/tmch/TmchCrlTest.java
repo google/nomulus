@@ -26,14 +26,11 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class TmchCrlTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
 
   @Test
   @SuppressWarnings("null")
-  public void success() throws Exception {
+  public void testSuccess() throws Exception {
     assertThat(TmchCrl.get()).isNull();
     TmchCrl.set("lolcat");
     assertThat(TmchCrl.get().getCrl()).isEqualTo("lolcat");

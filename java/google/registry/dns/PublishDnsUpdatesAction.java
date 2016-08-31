@@ -20,6 +20,7 @@ import static google.registry.util.CollectionUtils.nullToEmpty;
 
 import com.google.common.net.InternetDomainName;
 import google.registry.config.ConfigModule.Config;
+import google.registry.dns.DnsMetrics.Status;
 import google.registry.dns.writer.DnsWriter;
 import google.registry.request.Action;
 import google.registry.request.HttpException.ServiceUnavailableException;
@@ -44,6 +45,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
   @Inject DnsQueue dnsQueue;
   @Inject DnsWriterProxy dnsWriterProxy;
+  @Inject DnsMetrics dnsMetrics;
   @Inject @Config("dnsWriteLockTimeout") Duration timeout;
   @Inject @Parameter(RequestParameters.PARAM_TLD) String tld;
   @Inject @Parameter(DOMAINS_PARAM) Set<String> domains;
@@ -76,16 +78,20 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
       for (String domain : nullToEmpty(domains)) {
         if (!DomainNameUtils.isUnder(
             InternetDomainName.from(domain), InternetDomainName.from(tld))) {
+          dnsMetrics.incrementPublishDomainRequests(tld, Status.REJECTED);
           logger.severefmt("%s: skipping domain %s not under tld", tld, domain);
         } else {
+          dnsMetrics.incrementPublishDomainRequests(tld, Status.ACCEPTED);
           writer.publishDomain(domain);
         }
       }
       for (String host : nullToEmpty(hosts)) {
         if (!DomainNameUtils.isUnder(
             InternetDomainName.from(host), InternetDomainName.from(tld))) {
+          dnsMetrics.incrementPublishHostRequests(tld, Status.REJECTED);
           logger.severefmt("%s: skipping host %s not under tld", tld, host);
         } else {
+          dnsMetrics.incrementPublishHostRequests(tld, Status.ACCEPTED);
           writer.publishHost(host);
         }
       }

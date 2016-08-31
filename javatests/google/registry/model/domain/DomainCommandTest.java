@@ -16,39 +16,16 @@ package google.registry.model.domain;
 
 import static google.registry.testing.DatastoreHelper.persistActiveContact;
 import static google.registry.testing.DatastoreHelper.persistActiveHost;
-import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.model.ResourceCommandTestCase;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
 import google.registry.model.eppinput.ResourceCommand;
-import google.registry.model.ofy.Ofy;
-import google.registry.testing.AppEngineRule;
 import google.registry.testing.EppLoader;
-import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
-import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 
 /** Tests for DomainCommand. */
 public class DomainCommandTest extends ResourceCommandTestCase {
-
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
-
-  @Rule
-  public InjectRule inject = new InjectRule();
-
-  private FakeClock clock = new FakeClock(DateTime.now(UTC));
-
-  @Before
-  public void beforeDomainCommandTest() throws Exception {
-    inject.setStaticField(Ofy.class, "clock", clock);
-  }
 
   @Test
   public void testCreate() throws Exception {

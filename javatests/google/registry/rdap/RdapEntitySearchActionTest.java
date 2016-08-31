@@ -99,12 +99,12 @@ public class RdapEntitySearchActionTest {
 
     registrar =
         persistResource(
-            makeRegistrar("2-Registrar", "Yes Virginia <script>", Registrar.State.ACTIVE));
+            makeRegistrar("2-Registrar", "Yes Virginia <script>", Registrar.State.ACTIVE, 20L));
     persistSimpleResources(makeRegistrarContacts(registrar));
 
     // inactive
     registrarInactive =
-        persistResource(makeRegistrar("2-RegistrarInact", "No Way", Registrar.State.PENDING));
+        persistResource(makeRegistrar("2-RegistrarInact", "No Way", Registrar.State.PENDING, 21L));
     persistSimpleResources(makeRegistrarContacts(registrarInactive));
 
     // test
@@ -270,7 +270,7 @@ public class RdapEntitySearchActionTest {
     assertThat(generateActualJsonWithFullName("Yes Virginia <script>"))
         .isEqualTo(
             generateExpectedJsonForEntity(
-                "2-Registrar", "Yes Virginia <script>", null, null, "rdap_registrar.json"));
+                "20", "Yes Virginia <script>", null, null, "rdap_registrar.json"));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
@@ -288,11 +288,11 @@ public class RdapEntitySearchActionTest {
   }
 
   @Test
-  public void testHandleMatch_registrar_found() throws Exception {
-    assertThat(generateActualJsonWithHandle("2-Registrar"))
+  public void testHandleMatch_20_found() throws Exception {
+    assertThat(generateActualJsonWithHandle("20"))
         .isEqualTo(
             generateExpectedJsonForEntity(
-                "2-Registrar", "Yes Virginia <script>", null, null, "rdap_registrar.json"));
+                "20", "Yes Virginia <script>", null, null, "rdap_registrar.json"));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
@@ -312,13 +312,6 @@ public class RdapEntitySearchActionTest {
   public void testNameMatch_testAndInactiveRegistrars_notFound() throws Exception {
     generateActualJsonWithHandle("No Way");
     assertThat(response.getStatus()).isEqualTo(404);
-  }
-
-  @Test
-  public void testHandleMatch_2rstar_found() throws Exception {
-    assertThat(generateActualJsonWithHandle("2-R*"))
-        .isEqualTo(generateExpectedJson("rdap_multiple_contacts.json"));
-    assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @Test
@@ -349,12 +342,9 @@ public class RdapEntitySearchActionTest {
   }
 
   @Test
-  public void testHandleMatch_2registstar_found() throws Exception {
-    assertThat(generateActualJsonWithHandle("2-Regist*"))
-        .isEqualTo(
-            generateExpectedJsonForEntity(
-                "2-Registrar", "Yes Virginia <script>", null, null, "rdap_registrar.json"));
-    assertThat(response.getStatus()).isEqualTo(200);
+  public void testHandleMatch_20star_notFound() throws Exception {
+    generateActualJsonWithHandle("20*");
+    assertThat(response.getStatus()).isEqualTo(404);
   }
 
   @Test

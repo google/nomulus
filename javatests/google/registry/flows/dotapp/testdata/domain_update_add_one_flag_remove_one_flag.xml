@@ -1,0 +1,21 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <update>
+      <domain:update
+       xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>example.tld</domain:name>
+      </domain:update>
+    </update>
+    <extension>
+      <flags:update xmlns:flags="urn:google:params:xml:ns:flags-0.1">
+        <flags:add>
+          <flags:flag>%ADDFLAG%</flags:flag>
+        </flags:add>
+        <flags:rem>
+          <flags:flag>%REMOVEFLAG%</flags:flag>
+        </flags:rem>
+      </flags:update>
+      </extension>
+    <clTRID>ABC-12345</clTRID>
+  </command>
+</epp>

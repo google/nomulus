@@ -21,14 +21,16 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.template.soy.data.SoyMapData;
 import google.registry.tools.Command.GtechCommand;
-import google.registry.tools.soy.CreateDomainSoyInfo;
+import google.registry.tools.soy.DomainCreateSoyInfo;
 import java.util.List;
 import javax.inject.Inject;
 
 /** A command to create a new domain via EPP. */
 @Parameters(separators = " =", commandDescription = "Create a new domain via EPP.")
 final class CreateDomainCommand extends MutatingEppToolCommand implements GtechCommand {
-  @Parameter(names = {"-c", "--client"},
+
+  @Parameter(
+      names = {"-c", "--client"},
       description = "Client identifier of the registrar to execute the command as",
       required = true)
   String clientIdentifier;
@@ -52,7 +54,7 @@ final class CreateDomainCommand extends MutatingEppToolCommand implements GtechC
 
   @Parameter(
       names = {"-r", "--registrant"},
-      description = "Domain registrant.", 
+      description = "Domain registrant.",
       required = true)
   private String registrant;
 
@@ -83,10 +85,9 @@ final class CreateDomainCommand extends MutatingEppToolCommand implements GtechC
     if (isNullOrEmpty(password)) {
       password = passwordGenerator.createPassword(PASSWORD_LENGTH);
     }
-
     checkArgument(ns == null || ns.size() <= 13, "There can be at most 13 nameservers.");
 
-    setSoyTemplate(CreateDomainSoyInfo.getInstance(), CreateDomainSoyInfo.CREATEDOMAIN);
+    setSoyTemplate(DomainCreateSoyInfo.getInstance(), DomainCreateSoyInfo.DOMAINCREATE);
     addSoyRecord(clientIdentifier, new SoyMapData(
         "domain", domain,
         "period", period == null ? null : period.toString(),

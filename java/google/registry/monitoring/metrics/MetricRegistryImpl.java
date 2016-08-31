@@ -81,7 +81,6 @@ public final class MetricRegistryImpl implements MetricRegistry {
       String description,
       String valueDisplayName,
       ImmutableSet<LabelDescriptor> labels) {
-
     Counter metric = new Counter(name, description, valueDisplayName, labels);
     registerMetric(name, metric);
     logger.info("Registered new counter: " + name);

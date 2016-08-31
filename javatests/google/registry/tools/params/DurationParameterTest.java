@@ -50,13 +50,13 @@ public class DurationParameterTest {
   }
 
   @Test
-  public void demonstrateThat_isoMissingP_notAllowed() throws Exception {
+  public void testIsoMissingP_notAllowed() throws Exception {
     thrown.expect(IllegalArgumentException.class);
     Period.parse("T36H");
   }
 
   @Test
-  public void demonstrateThat_isoMissingPT_notAllowed() throws Exception {
+  public void testIsoMissingPT_notAllowed() throws Exception {
     thrown.expect(IllegalArgumentException.class);
     Period.parse("36H");
   }

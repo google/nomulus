@@ -24,8 +24,8 @@ import com.google.common.collect.ImmutableList;
 public interface Metric<V> {
 
   /**
-   * Returns the list of the latest {@link MetricPoint} instances for every label-value combination
-   * tracked for this metric.
+   * Returns the latest {@link MetricPoint} instances for every label-value combination tracked for
+   * this metric.
    */
   ImmutableList<MetricPoint<V>> getTimestampedValues();
 

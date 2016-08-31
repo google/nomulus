@@ -17,9 +17,7 @@ package google.registry.ui.server.registrar;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
-import static com.google.common.net.HttpHeaders.LOCATION;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
 
 import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
@@ -34,7 +32,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 /** HTTP session management helper class. */
@@ -53,22 +50,6 @@ public class SessionUtils {
   }
 
   /**
-   * Redirects client to login URL if they aren't authenticated with the App Engine user service.
-   *
-   * @return {@code false} if request should abort.
-   */
-  @CheckReturnValue
-  public boolean redirectIfNotLoggedIn(HttpServletRequest req, HttpServletResponse rsp) {
-    if (!isLoggedIn()) {
-      logger.info("User not logged in to App Engine UserService.");
-      rsp.setStatus(SC_MOVED_TEMPORARILY);
-      rsp.setHeader(LOCATION, userService.createLoginURL(req.getRequestURI()));
-      return false;
-    }
-    return true;
-  }
-
-  /**
    * Checks GAE user has access to Registrar Console.
    *
    * <p>This routine will first check the HTTP session (creating one if it doesn't exist) for the
@@ -82,7 +63,8 @@ public class SessionUtils {
    * wasn't revoked. This should only cost one memcache read.
    * </ul>
    *
-   * <p><b>Note:</b> You should call {@link #redirectIfNotLoggedIn} before calling this method.
+   * <p><b>Note:</b> You must ensure the user has logged in before calling this method, for example
+   * by setting {@code @Action(requireLogin = true)}.
    *
    * @return {@code false} if user does not have access, in which case the caller should write an
    *     error response and abort the request.
@@ -91,7 +73,7 @@ public class SessionUtils {
   public boolean checkRegistrarConsoleLogin(HttpServletRequest req) {
     HttpSession session = req.getSession();
     User user = userService.getCurrentUser();
-    checkState(user != null, "You forgot to call redirectIfNotLoggedIn()");
+    checkState(user != null, "No logged in user found");
     String clientId = (String) session.getAttribute(CLIENT_ID_ATTRIBUTE);
     if (clientId == null) {
       Optional<Registrar> registrar = guessRegistrar(user.getUserId());

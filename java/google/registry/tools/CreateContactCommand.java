@@ -22,13 +22,14 @@ import com.beust.jcommander.Parameters;
 import com.google.template.soy.data.SoyMapData;
 import google.registry.tools.Command.GtechCommand;
 import google.registry.tools.params.PhoneNumberParameter;
-import google.registry.tools.soy.CreateContactSoyInfo;
+import google.registry.tools.soy.ContactCreateSoyInfo;
 import java.util.List;
 import javax.inject.Inject;
 
 /** A command to create a new contact via EPP. */
 @Parameters(separators = " =", commandDescription = "Create a new contact via EPP.")
 final class CreateContactCommand extends MutatingEppToolCommand implements GtechCommand {
+
   // TODO(b/19016175): Expand to allow full suite of contact flows.
   @Parameter(
       names = {"-c", "--client"},
@@ -111,12 +112,10 @@ final class CreateContactCommand extends MutatingEppToolCommand implements Gtech
     if (isNullOrEmpty(password)) {
       password = passwordGenerator.createPassword(PASSWORD_LENGTH);
     }
-
     checkArgument(street == null || street.size() <= 3,
         "Addresses must contain at most 3 street lines.");
 
-    setSoyTemplate(CreateContactSoyInfo.getInstance(),
-        CreateContactSoyInfo.CREATECONTACT);
+    setSoyTemplate(ContactCreateSoyInfo.getInstance(), ContactCreateSoyInfo.CONTACTCREATE);
     addSoyRecord(clientIdentifier, new SoyMapData(
         "id", id,
         "name", name,

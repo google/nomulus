@@ -14,6 +14,7 @@
 
 package google.registry.model.domain.fee;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.math.BigDecimal;
@@ -23,6 +24,7 @@ public class Credit extends BaseFee {
   public static Credit create(BigDecimal cost, String description) {
     Credit instance = new Credit();
     instance.cost = checkNotNull(cost);
+    checkArgument(instance.cost.signum() < 0);
     instance.description = description;
     return instance;
   }
