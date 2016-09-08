@@ -35,7 +35,7 @@ public final class JSchModule {
     JSch jsch = new JSch();
     try {
       jsch.addIdentity(
-          "rde@charlestonroadregistry.com",
+          "mercury-donuts-test@example.test",
           privateKey.getBytes(UTF_8),
           publicKey.getBytes(UTF_8),
           null);

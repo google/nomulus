@@ -15,9 +15,11 @@
 package google.registry.module.backend;
 
 import dagger.Component;
+import domains.donuts.keyring.DonutsKeyringModule;
 import google.registry.bigquery.BigqueryModule;
 import google.registry.config.ConfigModule;
-import google.registry.dns.writer.VoidDnsWriterModule;
+import google.registry.dns.writer.dnsupdate.DnsUpdateConfigModule;
+import google.registry.dns.writer.dnsupdate.DnsUpdateWriterModule;
 import google.registry.export.DriveModule;
 import google.registry.export.sheet.SpreadsheetServiceModule;
 import google.registry.gcs.GcsServiceModule;
@@ -25,7 +27,6 @@ import google.registry.groups.DirectoryModule;
 import google.registry.groups.GroupsModule;
 import google.registry.groups.GroupssettingsModule;
 import google.registry.keyring.api.KeyModule;
-import google.registry.keyring.api.DummyKeyringModule;
 import google.registry.monitoring.metrics.MetricReporter;
 import google.registry.monitoring.whitebox.StackdriverModule;
 import google.registry.rde.JSchModule;
@@ -51,6 +52,9 @@ import javax.inject.Singleton;
         ConfigModule.class,
         DatastoreServiceModule.class,
         DirectoryModule.class,
+        DnsUpdateConfigModule.class,
+        DnsUpdateWriterModule.class,
+        DonutsKeyringModule.class,
         DriveModule.class,
         GcsServiceModule.class,
         GoogleCredentialModule.class,
@@ -67,8 +71,6 @@ import javax.inject.Singleton;
         URLFetchServiceModule.class,
         UrlFetchTransportModule.class,
         UseAppIdentityCredentialForGoogleApisModule.class,
-        VoidDnsWriterModule.class,
-        DummyKeyringModule.class,
     })
 interface BackendComponent {
   BackendRequestComponent startRequest(RequestModule requestModule);

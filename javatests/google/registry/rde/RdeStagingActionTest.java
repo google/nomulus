@@ -28,7 +28,7 @@ import static google.registry.testing.GcsTestingUtils.readGcsFile;
 import static google.registry.testing.TaskQueueHelper.assertAtLeastOneTaskIsEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
-import static google.registry.tldconfig.idn.IdnTableEnum.EXTENDED_LATIN;
+import static google.registry.tldconfig.idn.IdnTableEnum.DE;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
@@ -395,11 +395,11 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
     XjcRdeDomain domain = extractAndRemoveContentWithType(XjcRdeDomain.class, deposit);
     XjcRdeIdn firstIdn = extractAndRemoveContentWithType(XjcRdeIdn.class, deposit);
     XjcRdeHeader header = extractAndRemoveContentWithType(XjcRdeHeader.class, deposit);
-
-    assertThat(domain.getIdnTableId()).isEqualTo("extended_latin");
-    assertThat(firstIdn.getId()).isEqualTo("extended_latin");
-    assertThat(firstIdn.getUrl()).isEqualTo(EXTENDED_LATIN.getTable().getUrl().toString());
-    assertThat(firstIdn.getUrlPolicy()).isEqualTo(EXTENDED_LATIN.getTable().getPolicy().toString());
+    
+    assertThat(domain.getIdnTableId()).isEqualTo("de");
+    assertThat(firstIdn.getId()).isEqualTo("de");
+    assertThat(firstIdn.getUrl()).isEqualTo(DE.getTable().getUrl().toString());
+    assertThat(firstIdn.getUrlPolicy()).isEqualTo(DE.getTable().getPolicy().toString());
     assertThat(mapifyCounts(header))
         .containsEntry(RdeResourceType.IDN.getUri(), (long) IdnTableEnum.values().length);
   }

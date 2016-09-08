@@ -98,7 +98,7 @@ final class RdeFixtures {
         .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
         .setLastEppUpdateClientId("IntoTheTempest")
         .setLastEppUpdateTime(clock.nowUtc())
-        .setIdnTableName("extended_latin")
+        .setIdnTableName("de")
         .setNameservers(ImmutableSet.of(
             Key.create(
                 makeHostResource(clock, "bird.or.devil.みんな", "1.2.3.4")),

@@ -15,6 +15,7 @@
 package google.registry.module.tools;
 
 import dagger.Component;
+import domains.donuts.keyring.DonutsKeyringModule;
 import google.registry.config.ConfigModule;
 import google.registry.export.DriveModule;
 import google.registry.gcs.GcsServiceModule;
@@ -22,7 +23,6 @@ import google.registry.groups.DirectoryModule;
 import google.registry.groups.GroupsModule;
 import google.registry.groups.GroupssettingsModule;
 import google.registry.keyring.api.KeyModule;
-import google.registry.keyring.api.DummyKeyringModule;
 import google.registry.request.Modules.AppIdentityCredentialModule;
 import google.registry.request.Modules.DatastoreServiceModule;
 import google.registry.request.Modules.GoogleCredentialModule;
@@ -43,6 +43,7 @@ import javax.inject.Singleton;
         ConfigModule.class,
         DatastoreServiceModule.class,
         DirectoryModule.class,
+        DonutsKeyringModule.class,
         DriveModule.class,
         GcsServiceModule.class,
         GoogleCredentialModule.class,
@@ -55,7 +56,6 @@ import javax.inject.Singleton;
         UseAppIdentityCredentialForGoogleApisModule.class,
         SystemClockModule.class,
         SystemSleeperModule.class,
-        DummyKeyringModule.class,
     })
 interface ToolsComponent {
   ToolsRequestComponent startRequest(RequestModule requestModule);

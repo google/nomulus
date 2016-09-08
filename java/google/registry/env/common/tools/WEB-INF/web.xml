@@ -159,6 +159,17 @@
       <transport-guarantee>CONFIDENTIAL</transport-guarantee>
     </user-data-constraint>
   </security-constraint>
+  
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>External</web-resource-name>
+      <description>
+        MERC-365 Registry Tool Authentication: Relax Security on Server Side 
+        Commands for the Google Registry Tool
+      </description>
+      <url-pattern>/_dr/admin/*</url-pattern>
+    </web-resource-collection>
+  </security-constraint>
 
   <!-- Require TLS on all requests. -->
   <security-constraint>

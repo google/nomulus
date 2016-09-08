@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.testing.InjectRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
@@ -90,28 +91,13 @@ public class IdnLabelValidatorTest {
   }
 
   @Test
-  public void testMinna() {
-    doJapaneseLanguageTests("xn--q9jyb4c");
-  }
-
-  @Test
-  public void testFoo() {
-    doJapaneseLanguageTests("foo");
-  }
-
-  @Test
-  public void testSoy() {
-    doJapaneseLanguageTests("soy");
-  }
-
-  @Test
   public void testOverridenTables() {
-    // Set .tld to have only the extended latin table and not japanese.
+    // Set .tld to have only the German table and not French.
     inject.setStaticField(
         IdnLabelValidator.class,
         "idnTableListsPerTld",
-        ImmutableMap.of("tld", ImmutableList.of(IdnTableEnum.EXTENDED_LATIN)));
+        ImmutableMap.of("tld", ImmutableList.of(IdnTableEnum.DE)));
     assertThat(findValidIdnTableForTld("foo", "tld")).isPresent();
-    assertThat(findValidIdnTableForTld("みんな",  "tld")).isAbsent();
+    assertThat(findValidIdnTableForTld("ça",  "tld")).isAbsent();
   }
 }

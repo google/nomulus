@@ -40,7 +40,10 @@ import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogCheckpointRoot;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
+import google.registry.model.permission.PermissionGroup;
+import google.registry.model.permission.UserPermissionGroups;
 import google.registry.model.poll.PollMessage;
+import google.registry.model.pricing.PricingCategory;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
@@ -55,6 +58,7 @@ import google.registry.model.tmch.ClaimsListShard;
 import google.registry.model.tmch.ClaimsListShard.ClaimsListRevision;
 import google.registry.model.tmch.ClaimsListShard.ClaimsListSingleton;
 import google.registry.model.tmch.TmchCrl;
+import google.registry.model.user.User;
 
 /** Sets of classes of the Objectify-registered entities in use throughout the model. */
 public final class EntityClasses {
@@ -93,12 +97,14 @@ public final class EntityClasses {
           Lock.class,
           LogsExportCursor.class,
           LrpToken.class,
+          PermissionGroup.class,
           PollMessage.class,
           PollMessage.Autorenew.class,
           PollMessage.OneTime.class,
           PremiumList.class,
           PremiumList.PremiumListEntry.class,
           PremiumList.PremiumListRevision.class,
+          PricingCategory.class,
           RdeRevision.class,
           Registrar.class,
           RegistrarBillingEntry.class,
@@ -109,7 +115,9 @@ public final class EntityClasses {
           ReservedList.class,
           ServerSecret.class,
           SignedMarkRevocationList.class,
-          TmchCrl.class);
+          TmchCrl.class,
+          User.class,
+          UserPermissionGroups.class);
 
   /**
    * Function that converts an Objectify-registered class to its datastore kind name.

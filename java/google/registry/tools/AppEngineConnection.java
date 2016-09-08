@@ -100,7 +100,7 @@ class AppEngineConnection implements Connection {
       String endpoint, Map<String, ?> params, MediaType contentType, byte[] payload)
           throws IOException {
     HttpURLConnection connection = getHttpURLConnection(
-        new URL(String.format("http://%s%s?%s", getServer(), endpoint, encodeParams(params))));
+        new URL(String.format("%s://%s%s?%s", getScheme(), getServer(), endpoint, encodeParams(params))));
     connection.setRequestMethod("POST");
     connection.setUseCaches(false);
     connection.setRequestProperty(CONTENT_TYPE, contentType.toString());
@@ -124,6 +124,11 @@ class AppEngineConnection implements Connection {
     return CharStreams.toString(new InputStreamReader(connection.getInputStream(), UTF_8));
   }
 
+  /** Returns https assuming that 443 is for https in case the user passes --server option  */
+  private String getScheme() {
+    return (getServer().getPort() == 443 ? "https" : "http");
+  }
+  
   private String encodeParams(Map<String, ?> params) {
     return Joiner.on('&').join(Iterables.transform(
         params.entrySet(),
@@ -168,9 +173,19 @@ class AppEngineConnection implements Connection {
     return server.getHostText().equals("localhost");
   }
 
+  /* 
+   * MERC-365  Relaxing security on repository tool server side commands
+   * 
+   * No User is used to reconstruct the XSRF token while processing server 
+   * side command in GAE.
+   */
   private String getUserId() {
     return isLocalhost()
         ? UserIdProvider.getTestUserId()
-        : UserIdProvider.getProdUserId();
+        : getEmptyAsNoUser();
+  }
+  
+  private String getEmptyAsNoUser() {
+    return ""; 
   }
 }

@@ -547,6 +547,23 @@ class google.registry.model.ofy.CommitLogMutation {
   @Parent com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest> parent;
   byte[] entityProtoBytes;
 }
+enum google.registry.model.permission.Permission {
+  ASSIGN_PERMISSION_GROUPS;
+  NONE;
+  READ_PERMISSION_GROUPS;
+  READ_REGISTRAR_CONTACTS;
+  WRITE_PERMISSON_GROUPS;
+}
+class google.registry.model.permission.PermissionGroup {
+  @Id java.lang.String name;
+  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
+  java.util.Set<google.registry.model.permission.Permission> permissions;
+}
+class google.registry.model.permission.UserPermissionGroups {
+  @Id java.lang.String emailAddress;
+  @Parent com.googlecode.objectify.Key<google.registry.model.registrar.Registrar> parent;
+  java.util.Set<java.lang.String> permissionGroups;
+}
 class google.registry.model.poll.PendingActionNotificationResponse$ContactPendingActionNotificationResponse {
   google.registry.model.eppcommon.Trid trid;
   google.registry.model.poll.PendingActionNotificationResponse$NameOrId nameOrId;
@@ -588,6 +605,12 @@ class google.registry.model.poll.PollMessage$OneTime {
   java.util.List<google.registry.model.transfer.TransferResponse$ContactTransferResponse> contactTransferResponses;
   java.util.List<google.registry.model.transfer.TransferResponse$DomainTransferResponse> domainTransferResponses;
   org.joda.time.DateTime eventTime;
+}
+class google.registry.model.pricing.PricingCategory {
+  @Id java.lang.String name;
+  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
+  java.lang.String comment;
+  org.joda.money.Money price;
 }
 class google.registry.model.rde.RdeRevision {
   @Id java.lang.String id;
@@ -895,4 +918,20 @@ enum google.registry.model.transfer.TransferStatus {
   PENDING;
   SERVER_APPROVED;
   SERVER_CANCELLED;
+}
+class google.registry.model.user.User {
+  @Id long id;
+  @Parent com.googlecode.objectify.Key<google.registry.model.registrar.Registrar> parent;
+  google.registry.model.CreateAutoTimestamp creationTime;
+  google.registry.model.UpdateAutoTimestamp lastUpdateTime;
+  java.lang.Boolean active;
+  java.lang.String email;
+  java.lang.String faxNumber;
+  java.lang.String firstName;
+  java.lang.String gaeUserId;
+  java.lang.String lastName;
+  java.lang.String middleName;
+  java.lang.String phoneNumber;
+  java.lang.String role;
+  java.lang.String securityPhrase;
 }
