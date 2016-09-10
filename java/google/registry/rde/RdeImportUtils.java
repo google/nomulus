@@ -22,7 +22,9 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Work;
 import google.registry.config.ConfigModule.Config;
 import google.registry.gcs.GcsUtils;
+import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
+import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.ofy.Ofy;
@@ -61,6 +63,55 @@ public class RdeImportUtils {
     this.escrowBucketName = escrowBucketName;
   }
 
+  private boolean importEppResource(final EppResource resource, final String type) {
+    return ofy.transact(
+        new Work<Boolean>() {
+          @Override
+          public Boolean run() {
+            EppResource existing = ofy.load().key(Key.create(resource)).now();
+            if (existing == null) {
+              ForeignKeyIndex<ContactResource> existingForeignKeyIndex =
+                  ForeignKeyIndex.load(
+                      ContactResource.class, resource.getForeignKey(), clock.nowUtc());
+              // foreign key index should not exist, since existing contact was not found.
+              checkState(
+                  existingForeignKeyIndex == null,
+                  String.format(
+                      "New %s resource has existing foreign key index. "
+                          + "contactId=%s, repoId=%s",
+                      type, resource.getForeignKey(), resource.getRepoId()));
+              ofy.save().entity(resource);
+              ofy.save().entity(ForeignKeyIndex.create(resource, resource.getDeletionTime()));
+              ofy.save().entity(EppResourceIndex.create(Key.create(resource)));
+              logger.infofmt(
+                  "Imported %s resource - ROID=%s, id=%s",
+                  type, resource.getRepoId(), resource.getForeignKey());
+              return true;
+            } else if (!existing.getRepoId().equals(resource.getRepoId())) {
+              logger.warningfmt(
+                  "Existing %s with same id but different ROID. "
+                      + "id=%s, existing ROID=%s, new ROID=%s",
+                  type, resource.getForeignKey(), existing.getRepoId(), resource.getRepoId());
+            }
+            return false;
+          }
+        });
+  }
+
+  /**
+   * Imports a host from an escrow file.
+   *
+   * <p>The host will only be imported if it has not been previously imported.
+   *
+   * <p>If the host is imported, {@link ForeignKeyIndex} and {@link EppResourceIndex} are also
+   * created.
+   *
+   * @return true if the host was created or updated, false otherwise.
+   */
+  public boolean importHost(final HostResource resource) {
+    return importEppResource(resource, "host");
+  }
+
   /**
    * Imports a contact from an escrow file.
    *
@@ -72,38 +123,7 @@ public class RdeImportUtils {
    * @return true if the contact was created or updated, false otherwise.
    */
   public boolean importContact(final ContactResource resource) {
-    return ofy.transact(
-        new Work<Boolean>() {
-          @Override
-          public Boolean run() {
-            ContactResource existing = ofy.load().key(Key.create(resource)).now();
-            if (existing == null) {
-              ForeignKeyIndex<ContactResource> existingForeignKeyIndex =
-                  ForeignKeyIndex.load(
-                      ContactResource.class, resource.getContactId(), clock.nowUtc());
-              // foreign key index should not exist, since existing contact was not found.
-              checkState(
-                  existingForeignKeyIndex == null,
-                  String.format(
-                      "New contact resource has existing foreign key index. "
-                          + "contactId=%s, repoId=%s",
-                      resource.getContactId(), resource.getRepoId()));
-              ofy.save().entity(resource);
-              ofy.save().entity(ForeignKeyIndex.create(resource, resource.getDeletionTime()));
-              ofy.save().entity(EppResourceIndex.create(Key.create(resource)));
-              logger.infofmt(
-                  "Imported contact resource - ROID=%s, id=%s",
-                  resource.getRepoId(), resource.getContactId());
-              return true;
-            } else if (!existing.getRepoId().equals(resource.getRepoId())) {
-              logger.warningfmt(
-                  "Existing contact with same contact id but different ROID. "
-                      + "contactId=%s, existing ROID=%s, new ROID=%s",
-                  resource.getContactId(), existing.getRepoId(), resource.getRepoId());
-            }
-            return false;
-          }
-        });
+    return importEppResource(resource, "contact");
   }
 
   /**
