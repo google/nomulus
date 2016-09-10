@@ -36,6 +36,7 @@ import google.registry.xjc.rderegistrar.XjcRdeRegistrar;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.inject.Inject;
+import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
 import org.joda.time.DateTime;
 
@@ -149,7 +150,7 @@ public class RdeImportUtils {
                 String.format("Registrar '%s' not found in the registry", registrar.getId()));
           }
         }
-      } catch (Exception e) {
+      } catch (XMLStreamException | JAXBException e) {
         throw new IllegalArgumentException(
             String.format("Invalid XML file: '%s'", escrowFilePath), e);
       }
