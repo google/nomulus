@@ -50,6 +50,7 @@ import google.registry.monitoring.whitebox.MetricsExportAction;
 import google.registry.monitoring.whitebox.VerifyEntityIntegrityAction;
 import google.registry.monitoring.whitebox.WhiteboxModule;
 import google.registry.rde.BrdaCopyAction;
+import google.registry.rde.RdeContactImportAction;
 import google.registry.rde.RdeModule;
 import google.registry.rde.RdeReportAction;
 import google.registry.rde.RdeReporter;
@@ -105,6 +106,7 @@ interface BackendRequestComponent {
   NordnVerifyAction nordnVerifyAction();
   PublishDnsUpdatesAction publishDnsUpdatesAction();
   ReadDnsQueueAction readDnsQueueAction();
+  RdeContactImportAction rdeContactImportAction();
   RdeReportAction rdeReportAction();
   RdeStagingAction rdeStagingAction();
   RdeUploadAction rdeUploadAction();
