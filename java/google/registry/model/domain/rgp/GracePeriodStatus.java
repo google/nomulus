@@ -16,6 +16,7 @@ package google.registry.model.domain.rgp;
 
 import google.registry.model.translators.EnumToAttributeAdapter;
 import google.registry.model.translators.EnumToAttributeAdapter.EppEnum;
+import javax.annotation.Nullable;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
@@ -100,5 +101,20 @@ public enum GracePeriodStatus implements EppEnum {
   @Override
   public String getXmlName() {
     return xmlName;
+  }
+
+  /**
+   * Maps from xmlName to {@link GracePeriodStatus}.
+   *
+   * If no match is found for xmlName, null is returned.
+   */
+  @Nullable
+  public static GracePeriodStatus fromXmlName(String xmlName) {
+    for (GracePeriodStatus status : GracePeriodStatus.values()) {
+      if (status.xmlName.equals(xmlName)) {
+        return status;
+      }
+    }
+    return null;
   }
 }
