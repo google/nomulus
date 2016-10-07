@@ -2,7 +2,7 @@
 
 Nomulus includes a command-line registry administration tool that is invoked
 using the `nomulus` command. It has the ability to view and change a large
-number of things in a running domain registry environment, including creating
+number of things in a live domain registry environment, including creating
 registrars, updating premium and reserved lists, running an EPP command from a
 given XML file, and performing various backend tasks like re-running RDE if the
 most recent export failed. Its code lives inside the tools package
@@ -68,11 +68,11 @@ server-side command otherwise.
 ## Common tool patterns
 
 All tools ultimately implement the `Command` interface located in the `tools`
-package. If you use an IDE such as Eclipse to view the type hierarchy of that
-interface, you'll see all of the commands that exist, as well as how a lot of
-them are grouped using sub-interfaces or abstract classes that provide
-additional functionality. The most common patterns that are used by a large
-number of other tools are:
+package. If you use an integrated development environment (IDE) such as
+Eclipse to view the type hierarchy of that interface, you'll see all of the 
+commands that exist, as well as how a lot of them are grouped using 
+sub-interfaces or abstract classes that provide additional functionality. 
+The most common patterns that are used by a large number of other tools are:
 
 *   **`BigqueryCommand`** -- Provides a connection to BigQuery for tools that
     need it.
