@@ -71,9 +71,9 @@ for their protocol specification.
 
 Poll messages are stored by the system as entities in Datastore. All poll
 messages have an event time at which they become active; any poll request before
-that time will not return the poll message. For example, every domain when
-created speculatively enqueues a poll message for the automatic renewal of the
-domain a year later. This poll message won't be delivered until that year
+that time will not return the poll message. For example, every domain when created
+enqueues a speculative poll message for the automatic renewal of the domain a year
+later. This poll message won't be delivered until that year
 elapses, and if some change to the domain occurs prior to that point, such as it
 being deleted, then the speculative poll message will be deleted and thus never
 delivered. Other poll messages are effective immediately, e.g. the poll message
