@@ -279,6 +279,12 @@
     <url-pattern>/_dr/task/importRdeContacts</url-pattern>
   </servlet-mapping>
 
+  <!-- Mapreduce to import hosts from escrow file -->
+  <servlet-mapping>
+    <servlet-name>backend-servlet</servlet-name>
+    <url-pattern>/_dr/task/importRdeHosts</url-pattern>
+  </servlet-mapping>
+
   <!-- Security config -->
   <security-constraint>
     <web-resource-collection>

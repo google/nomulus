@@ -28,12 +28,14 @@ import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.ByteSource;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Work;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
+import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.index.ForeignKeyIndex;
@@ -44,6 +46,8 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.ShardableTestCase;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
@@ -130,12 +134,65 @@ public class RdeImportUtilsTest extends ShardableTestCase {
     assertThat(saved.getLastEppUpdateTime()).isEqualTo(newContact.getLastEppUpdateTime());
   }
 
+  /** Verifies import of a host that has not been previously imported */
+  @Test
+  public void testImportNewHost() throws UnknownHostException {
+    HostResource newHost = buildNewHost();
+    assertThat(rdeImportUtils.importHost(newHost)).isTrue();
+    assertEppResourceIndexEntityFor(newHost);
+    assertForeignKeyIndexFor(newHost);
+
+    // verify the new contact was saved
+    HostResource saved = getHost("FOO_ROID");
+    assertThat(saved).isNotNull();
+    assertThat(saved.getFullyQualifiedHostName()).isEqualTo(
+        newHost.getFullyQualifiedHostName());
+    assertThat(saved.getInetAddresses()).isEqualTo(
+        newHost.getInetAddresses());
+    assertThat(saved.getLastEppUpdateTime()).isEqualTo(newHost.getLastEppUpdateTime());
+  }
+
+  /** Verifies that a host will not be imported more than once */
+  @Test
+  public void testImportExistingHost() throws UnknownHostException {
+    HostResource newHost = buildNewHost();
+    persistResource(newHost);
+    HostResource updatedHost =
+        newHost
+          .asBuilder()
+          .setLastEppUpdateTime(newHost.getLastEppUpdateTime().plusSeconds(1))
+          .build();
+    assertThat(rdeImportUtils.importHost(updatedHost)).isFalse();
+
+    // verify the new contact was saved
+    HostResource saved = getHost("FOO_ROID");
+    assertThat(saved).isNotNull();
+    assertThat(saved.getFullyQualifiedHostName()).isEqualTo(
+        newHost.getFullyQualifiedHostName());
+    assertThat(saved.getInetAddresses()).isEqualTo(
+        newHost.getInetAddresses());
+    assertThat(saved.getLastEppUpdateTime()).isEqualTo(newHost.getLastEppUpdateTime());
+  }
+
   private static ContactResource buildNewContact() {
     return new ContactResource.Builder()
         .setContactId("sh8013")
         .setEmailAddress("jdoe@example.com")
         .setLastEppUpdateTime(DateTime.parse("2010-10-10T00:00:00.000Z"))
         .setRepoId("TEST-123")
+        .build();
+  }
+
+  private static HostResource buildNewHost() throws UnknownHostException {
+    return new HostResource.Builder()
+        .setFullyQualifiedHostName("foo.bar.example")
+        .setInetAddresses(ImmutableSet.of(
+            InetAddress.getByName("192.0.2.2"),
+            InetAddress.getByName("192.0.2.29"),
+            InetAddress.getByName("1080:0:0:0:8:800:200C:417A")
+        ))
+        .setLastEppUpdateTime(DateTime.parse("2010-10-10T00:00:00.000Z"))
+        .setRepoId("FOO_ROID")
         .build();
   }
 
@@ -187,6 +244,17 @@ public class RdeImportUtilsTest extends ShardableTestCase {
       public ContactResource run() {
         return ofy().load().key(key).now();
       }});
+  }
+
+  /** Gets the contact with the specified ROID */
+  private static HostResource getHost(String repoId) {
+    final Key<HostResource> key = Key.create(HostResource.class, repoId);
+    return ofy().transact(new Work<HostResource>() {
+      @Override
+      public HostResource run() {
+        return ofy().load().key(key).now();
+      }
+    });
   }
 
   /** Confirms that a ForeignKeyIndex exists in the datastore for a given resource. */
