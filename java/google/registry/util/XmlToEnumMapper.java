@@ -38,13 +38,16 @@ public final class XmlToEnumMapper<T extends Enum<?>> {
     ImmutableMap.Builder<String, T> mapBuilder = new ImmutableMap.Builder<>();
     for (T value : enumValues) {
       try {
-        String xmlName =
-            value
-                .getDeclaringClass()
-                .getField(value.name())
-                .getAnnotation(XmlEnumValue.class)
-                .value();
-        mapBuilder = mapBuilder.put(xmlName, value);
+        XmlEnumValue xmlAnnotation = value
+            .getDeclaringClass()
+            .getField(value.name())
+            .getAnnotation(XmlEnumValue.class);
+        if (xmlAnnotation == null) {
+            throw new IllegalArgumentException("Cannot map enum value to xml name: " + value);
+        } else {
+          String xmlName = xmlAnnotation.value();
+          mapBuilder = mapBuilder.put(xmlName, value);
+        }
       } catch (NoSuchFieldException e) {
         throw new RuntimeException(e);
       }

@@ -23,7 +23,6 @@ import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
 import com.google.appengine.tools.cloudstorage.RetryParams;
 import com.google.appengine.tools.mapreduce.Mapper;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import google.registry.config.ConfigModule;
@@ -80,21 +79,15 @@ public class RdeContactImportAction implements Runnable {
 
   /**
    * Creates a new {@link RdeContactInput}
-   *
-   * <p>Should be overridden in a subclass for the purposes of unit testing.
    */
-  @VisibleForTesting
-  RdeContactInput createInput() {
+  private RdeContactInput createInput() {
     return new RdeContactInput(mapShards, importBucketName, importFileName);
   }
 
   /**
    * Creates a new {@link RdeContactImportMapper}
-   *
-   * <p>Should be overridden in a subclass for the purposes of unit testing.
    */
-  @VisibleForTesting
-  RdeContactImportMapper createMapper() {
+  private RdeContactImportMapper createMapper() {
     return new RdeContactImportMapper(importBucketName);
   }
 
