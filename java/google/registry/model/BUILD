@@ -25,10 +25,13 @@ FIELD_EXPOSERS = [
     "eppoutput/FieldExposer.java",
     "export/FieldExposer.java",
     "host/FieldExposer.java",
+    "icann/FieldExposer.java",
     "index/FieldExposer.java",
     "mark/FieldExposer.java",
     "ofy/FieldExposer.java",
+    "permission/FieldExposer.java",
     "poll/FieldExposer.java",
+    "pricing/FieldExposer.java",
     "registrar/FieldExposer.java",
     "registry/FieldExposer.java",
     "registry/label/FieldExposer.java",
@@ -39,6 +42,7 @@ FIELD_EXPOSERS = [
     "tmch/FieldExposer.java",
     "transfer/FieldExposer.java",
     "translators/FieldExposer.java",
+    "user/FieldExposer.java",
 ]
 
 

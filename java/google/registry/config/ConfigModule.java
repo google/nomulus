@@ -14,20 +14,24 @@
 
 package google.registry.config;
 
-import static google.registry.config.ConfigUtils.makeUrl;
-
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
-import dagger.Module;
-import dagger.Provides;
-import java.lang.annotation.Documented;
-import java.net.URI;
-import java.net.URL;
-import javax.annotation.Nullable;
-import javax.inject.Qualifier;
+
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTimeConstants;
 import org.joda.time.Duration;
+
+import java.lang.annotation.Documented;
+import java.net.URI;
+import java.net.URL;
+
+import javax.annotation.Nullable;
+import javax.inject.Qualifier;
+
+import dagger.Module;
+import dagger.Provides;
+
+import static google.registry.config.ConfigUtils.makeUrl;
 
 /**
  * Configuration example for the Domain Registry codebase.
@@ -73,6 +77,17 @@ public final class ConfigModule {
   @Provides
   public static RegistryConfig provideConfig(RegistryEnvironment environment) {
     return environment.config();
+  }
+
+  /**
+   * Returns the DPML TLD name
+   *
+   * @return String name of the DPML TLD name
+   */
+  @Provides
+  @Config("dpmlTld")
+  public static String provideDpmlTld() {
+    return "dpml.zone";
   }
 
   @Provides
@@ -443,7 +458,7 @@ public final class ConfigModule {
   @Provides
   @Config("rdeSshIdentity")
   public static String provideSshIdentity() {
-    return "rde@charlestonroadregistry.com";
+    return "mercury-donuts-test@example.test";
   }
 
   /**
@@ -648,19 +663,21 @@ public final class ConfigModule {
   @Provides
   @Config("whoisDisclaimer")
   public static String provideWhoisDisclaimer() {
-    return "WHOIS information is provided by Charleston Road Registry Inc. (CRR) solely for\n"
-        + "query-based, informational purposes. By querying our WHOIS database, you are\n"
-        + "agreeing to comply with these terms\n"
-        + "(http://www.registry.google/about/whois-disclaimer.html) so please read them\n"
-        + "carefully.  Any information provided is \"as is\" without any guarantee of\n"
-        + "accuracy. You may not use such information to (a) allow, enable, or otherwise\n"
-        + "support the transmission of mass unsolicited, commercial advertising or\n"
-        + "solicitations; (b) enable high volume, automated, electronic processes that\n"
-        + "access the systems of CRR or any ICANN-Accredited Registrar, except as\n"
-        + "reasonably necessary to register domain names or modify existing registrations;\n"
-        + "or (c) engage in or support unlawful behavior. CRR reserves the right to\n"
-        + "restrict or deny your access to the Whois database, and may modify these terms\n"
-        + "at any time.\n";
+    return "Terms of Use: Users accessing the Donuts WHOIS service must agree to use the data "
+        + "only for lawful purposes, and under under no circumstances use the data to: Allow, "
+        + "enable, or otherwise support the transmission by e-mail, telephone, or facsimile "
+        + "of mass unsolicited, commercial advertising or solicitations to entities other "
+        + "than the registrar's own existing customers. Enable high volume, automated, "
+        + "electronic processes that send queries or data to the systems of Donuts or "
+        + "any ICANN-accredited registrar, except as reasonably necessary to register "
+        + "domain names or modify existing registrations. When using the Donuts Whois "
+        + "service, please consider the following: The Whois service is not a replacement "
+        + "for standard EPP commands to the SRS service. Whois is not considered authoritative "
+        + "for registered domain objects. The Whois service may be scheduled for downtime "
+        + "during production or OT&E maintenance periods. Queries to the Whois services are "
+        + "throttled. If too many queries are received from a single IP address within a "
+        + "specified time, the service will begin to reject further queries for a period of "
+        + "time to prevent disruption of Whois service access.";
   }
 
   /**

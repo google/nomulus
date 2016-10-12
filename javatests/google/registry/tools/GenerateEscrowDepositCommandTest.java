@@ -114,7 +114,7 @@ public class GenerateEscrowDepositCommandTest
 
   @Test
   public void testRun_oneHostNotDeletedOrFuture_producesValidDepositXml() throws Exception {
-    createTlds("lol", "ussr", "xn--q9jyb4c");
+    createTlds("lol", "ussr", "xn--unup4y");
     clock.setTo(DateTime.parse("1980-01-01TZ"));
     persistResourceWithCommitLog(
         newHostResource("communism.ussr", "dead:beef::cafe").asBuilder()
@@ -127,13 +127,13 @@ public class GenerateEscrowDepositCommandTest
     clock.setTo(DateTime.parse("2010-10-17TZ"));
     runCommand(
         "--outdir=" + tmpDir.getRoot(),
-        "--tld=xn--q9jyb4c",
+        "--tld=xn--unup4y",
         "--watermark=" + clock.nowUtc());
     XmlTestUtils.assertXmlEquals(
-        readResourceUtf8(getClass(), "testdata/xn--q9jyb4c_2010-10-17_full_S1_R0.xml"),
+        readResourceUtf8(getClass(), "testdata/xn--unup4y_2010-10-17_full_S1_R0.xml"),
         new String(
             Files.readAllBytes(
-                Paths.get(tmpDir.getRoot().toString(), "xn--q9jyb4c_2010-10-17_full_S1_R0.xml")),
+                Paths.get(tmpDir.getRoot().toString(), "xn--unup4y_2010-10-17_full_S1_R0.xml")),
             UTF_8),
         "deposit.contents.registrar.crDate",
         "deposit.contents.registrar.upDate");

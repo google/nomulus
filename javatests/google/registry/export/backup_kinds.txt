@@ -1,5 +1,6 @@
-
 Cancellation
+CategorizedListEntry
+CategorizedPremiumList
 ContactResource
 Cursor
 DomainApplicationIndex
@@ -11,13 +12,16 @@ ForeignKeyDomainIndex
 ForeignKeyHostIndex
 HistoryEntry
 HostResource
+IcannReportField
 LogsExportCursor
 LrpToken
 Modification
 OneTime
+PermissionGroup
 PollMessage
 PremiumList
 PremiumListEntry
+PricingCategory
 RdeRevision
 Recurring
 Registrar
@@ -27,3 +31,5 @@ RegistrarCredit
 RegistrarCreditBalance
 Registry
 ReservedList
+User
+UserPermissionGroups

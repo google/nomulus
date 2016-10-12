@@ -34,6 +34,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
+import google.registry.model.registry.label.BasePremiumList;
 import google.registry.model.registry.label.PremiumList;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -721,7 +722,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   @Test
   public void testSuccess_premiumListNotRemovedWhenNotSpecified() throws Exception {
     runCommandForced("--add_reserved_lists=xn--q9jyb4c_r1,xn--q9jyb4c_r2", "xn--q9jyb4c");
-    Key<PremiumList> premiumListKey = Registry.get("xn--q9jyb4c").getPremiumList();
+    Key<BasePremiumList> premiumListKey = Registry.get("xn--q9jyb4c").getPremiumList();
     assertThat(premiumListKey).isNotNull();
     assertThat(premiumListKey.getName()).isEqualTo("xn--q9jyb4c");
   }

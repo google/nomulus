@@ -211,11 +211,12 @@ zip_file(
 #
 # The crash environment is used for testing loads, backups, and restores.
 
+# TODO: determine if META-INF/appengine-application.xml is necessary.
 registry_ear_file(
     name = "registry_crash_ear",
     out = "registry_crash.ear",
     configs = {
-        "env/common/META-INF/appengine-application.xml": "META-INF/appengine-application.xml",
+        "env/crash/META-INF/appengine-application.xml": "META-INF/appengine-application.xml",
         "env/common/META-INF/application.xml": "META-INF/application.xml",
     },
     wars = {

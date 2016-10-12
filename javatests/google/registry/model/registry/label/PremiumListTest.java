@@ -28,7 +28,6 @@ import com.googlecode.objectify.Key;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
-import google.registry.model.registry.label.PremiumList.PremiumListRevision;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.ExceptionRule;
 import java.util.Map;
@@ -213,7 +212,7 @@ public class PremiumListTest {
   public void testDelete() throws Exception {
     persistPremiumList("gtld1", "trombone,USD 10");
     assertThat(PremiumList.get("gtld1")).isPresent();
-    Key<PremiumListRevision> parent = PremiumList.get("gtld1").get().getRevisionKey();
+    Key<BasePremiumList.PremiumListRevision> parent = PremiumList.get("gtld1").get().getRevisionKey();
     PremiumList.get("gtld1").get().delete();
     assertThat(PremiumList.get("gtld1")).isAbsent();
     assertThat(ofy().load().type(PremiumListEntry.class).ancestor(parent).list()).isEmpty();

@@ -35,6 +35,7 @@ import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.registry.Registry.RegistryNotFoundException;
 import google.registry.model.registry.Registry.TldState;
+import google.registry.model.registry.label.BasePremiumList;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.testing.ExceptionRule;
@@ -177,7 +178,7 @@ public class RegistryTest extends EntityTestCase {
   public void testSetPremiumList() {
     PremiumList pl2 = persistPremiumList("tld2", "lol,USD 50", "cat,USD 700");
     Registry registry = Registry.get("tld").asBuilder().setPremiumList(pl2).build();
-    Key<PremiumList> plKey = registry.getPremiumList();
+    Key<BasePremiumList> plKey = registry.getPremiumList();
     assertThat(plKey).isNotNull();
     PremiumList stored = PremiumList.get(plKey.getName()).get();
     assertThat(stored.getName()).isEqualTo("tld2");

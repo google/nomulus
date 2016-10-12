@@ -13,6 +13,7 @@ java_library(
         "//java/com/google/common/base",
         "//java/com/google/common/collect",
         "//java/com/google/common/net",
+        "//java/domains/donuts/keyring",
         "//third_party/java/bouncycastle",
         "//third_party/java/dagger",
         "//third_party/java/joda_time",
@@ -25,8 +26,6 @@ java_library(
         "//java/google/registry/config",
         "//java/google/registry/cron",
         "//java/google/registry/dns",
-        "//java/google/registry/dns/writer",
-        "//java/google/registry/dns/writer/clouddns",
         "//java/google/registry/dns/writer/dnsupdate",
         "//java/google/registry/export",
         "//java/google/registry/export/sheet",
@@ -55,6 +54,7 @@ java_binary(
     create_executable = 0,
     runtime_deps = [
         ":backend",
+        "//java/domains/donuts/config",  # DonutsRegistryConfig
         "//java/google/registry/monitoring/whitebox",  # MetricsTaskServlet
     ],
 )

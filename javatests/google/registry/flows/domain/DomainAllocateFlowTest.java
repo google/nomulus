@@ -304,7 +304,7 @@ public class DomainAllocateFlowTest
     clock.advanceOneMilli();
     runFlowAsSuperuser();
     assertThat(getOnlyGlobalResource(DomainResource.class)).isNotNull();
-    assertDnsTasksEnqueued("xn--abc-873b2e7eb1k8a4lpjvv.tld");
+    assertDnsTasksEnqueued("xn--15qt0w.tld");
   }
 
   private void doSuccessfulClaimsNoticeTest() throws Exception {

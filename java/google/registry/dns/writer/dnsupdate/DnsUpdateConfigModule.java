@@ -30,7 +30,7 @@ public class DnsUpdateConfigModule {
   @Provides
   @Config("dnsUpdateHost")
   public static String provideDnsUpdateHost() {
-    return "localhost";
+    return "ns-master.test.hg.team";
   }
 
   /**
@@ -48,6 +48,6 @@ public class DnsUpdateConfigModule {
   @Provides
   @Config("dnsUpdateTimeToLive")
   public static Duration provideDnsUpdateTimeToLive() {
-    return Duration.standardHours(2);
+    return Duration.standardHours(24);
   }
 }

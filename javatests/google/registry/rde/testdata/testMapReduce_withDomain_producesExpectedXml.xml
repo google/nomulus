@@ -131,7 +131,7 @@
     <rdeDomain:name>love.lol</rdeDomain:name>
     <rdeDomain:roid>2-LOL</rdeDomain:roid>
     <rdeDomain:uName>love.lol</rdeDomain:uName>
-    <rdeDomain:idnTableId>extended_latin</rdeDomain:idnTableId>
+    <rdeDomain:idnTableId>de</rdeDomain:idnTableId>
     <rdeDomain:status s="clientDeleteProhibited"/>
     <rdeDomain:status s="clientTransferProhibited"/>
     <rdeDomain:status s="clientRenewProhibited"/>
@@ -238,14 +238,24 @@
     <rdeContact:crDate>1999-12-31T00:00:00Z</rdeContact:crDate>
 </rdeContact:contact>
 
-<rdeIDN:idnTableRef id="extended_latin">
-    <rdeIDN:url>https://www.iana.org/domains/idn-tables/tables/google_latn_1.0.txt</rdeIDN:url>
-    <rdeIDN:urlPolicy>https://www.registry.google/about/policies/domainabuse/</rdeIDN:urlPolicy>
+<rdeIDN:idnTableRef id="de">
+    <rdeIDN:url>https://www.iana.org/domains/idn-tables/tables/actor_de_1.0.txt</rdeIDN:url>
+    <rdeIDN:urlPolicy>http://www.donuts.domains/policies/idn</rdeIDN:urlPolicy>
 </rdeIDN:idnTableRef>
 
-<rdeIDN:idnTableRef id="ja">
-    <rdeIDN:url>https://www.iana.org/domains/idn-tables/tables/google_ja_1.0.txt</rdeIDN:url>
-    <rdeIDN:urlPolicy>https://www.registry.google/about/policies/domainabuse/</rdeIDN:urlPolicy>
+<rdeIDN:idnTableRef id="es">
+    <rdeIDN:url>https://www.iana.org/domains/idn-tables/tables/agency_es_1.0.txt</rdeIDN:url>
+    <rdeIDN:urlPolicy>http://www.donuts.domains/policies/idn</rdeIDN:urlPolicy>
+</rdeIDN:idnTableRef>
+
+<rdeIDN:idnTableRef id="fr">
+    <rdeIDN:url>https://www.iana.org/domains/idn-tables/tables/agency_fr_1.0.txt</rdeIDN:url>
+    <rdeIDN:urlPolicy>http://www.donuts.domains/policies/idn</rdeIDN:urlPolicy>
+</rdeIDN:idnTableRef>
+
+<rdeIDN:idnTableRef id="zh">
+    <rdeIDN:url>https://www.iana.org/domains/idn-tables/tables/actor_zh_1.0.txt</rdeIDN:url>
+    <rdeIDN:urlPolicy>http://www.donuts.domains/policies/idn</rdeIDN:urlPolicy>
 </rdeIDN:idnTableRef>
 
 <rdeHeader:header>
@@ -254,7 +264,7 @@
     <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeDomain-1.0">1</rdeHeader:count>
     <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeHost-1.0">2</rdeHeader:count>
     <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeRegistrar-1.0">2</rdeHeader:count>
-    <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeIDN-1.0">2</rdeHeader:count>
+    <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeIDN-1.0">4</rdeHeader:count>
 </rdeHeader:header>
 
 </rde:contents>

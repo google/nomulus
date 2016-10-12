@@ -18,6 +18,7 @@ import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoMap;
 import dagger.multibindings.StringKey;
+import google.registry.model.pricing.CategorizedPremiumListPricingEngine;
 import google.registry.model.pricing.PremiumPricingEngine;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 
@@ -34,6 +35,14 @@ public class PricingModule {
   @Provides @IntoMap
   @StringKey(StaticPremiumListPricingEngine.NAME)
   static PremiumPricingEngine provideStaticPremiumList(StaticPremiumListPricingEngine engine) {
+    return engine;
+  }
+
+  @Provides
+  @IntoMap
+  @StringKey(CategorizedPremiumListPricingEngine.NAME)
+  static PremiumPricingEngine providesCategorizedPremiumList(
+      CategorizedPremiumListPricingEngine engine) {
     return engine;
   }
 }

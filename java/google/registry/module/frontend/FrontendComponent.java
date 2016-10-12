@@ -15,9 +15,9 @@
 package google.registry.module.frontend;
 
 import dagger.Component;
+import domains.donuts.keyring.DonutsKeyringModule;
 import google.registry.braintree.BraintreeModule;
 import google.registry.config.ConfigModule;
-import google.registry.keyring.api.DummyKeyringModule;
 import google.registry.keyring.api.KeyModule;
 import google.registry.monitoring.metrics.MetricReporter;
 import google.registry.monitoring.whitebox.StackdriverModule;
@@ -40,9 +40,9 @@ import javax.inject.Singleton;
         BraintreeModule.class,
         ConfigModule.class,
         ConsoleConfigModule.class,
-        DummyKeyringModule.class,
         FrontendMetricsModule.class,
         Jackson2Module.class,
+        DonutsKeyringModule.class,
         KeyModule.class,
         ModulesServiceModule.class,
         StackdriverModule.class,

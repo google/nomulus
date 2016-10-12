@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<rde:deposit xmlns:domain="urn:ietf:params:xml:ns:domain-1.0"
+             xmlns:contact="urn:ietf:params:xml:ns:contact-1.0"
+             xmlns:rdeContact="urn:ietf:params:xml:ns:rdeContact-1.0"
+             xmlns:rdeDomain="urn:ietf:params:xml:ns:rdeDomain-1.0"
+             xmlns:epp="urn:ietf:params:xml:ns:epp-1.0"
+             xmlns:rdeNNDN="urn:ietf:params:xml:ns:rdeNNDN-1.0"
+             xmlns:rdeRegistrar="urn:ietf:params:xml:ns:rdeRegistrar-1.0"
+             xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0"
+             xmlns:dsig="http://www.w3.org/2000/09/xmldsig#"
+             xmlns:launch="urn:ietf:params:xml:ns:launch-1.0"
+             xmlns:rde="urn:ietf:params:xml:ns:rde-1.0"
+             xmlns:rdeEppParams="urn:ietf:params:xml:ns:rdeEppParams-1.0"
+             xmlns:rdeNotification="urn:ietf:params:xml:ns:rdeNotification-1.0"
+             xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1"
+             xmlns:host="urn:ietf:params:xml:ns:host-1.0"
+             xmlns:mark="urn:ietf:params:xml:ns:mark-1.0"
+             xmlns:rdeIDN="urn:ietf:params:xml:ns:rdeIDN-1.0"
+             xmlns:rdePolicy="urn:ietf:params:xml:ns:rdePolicy-1.0"
+             xmlns:eppcom="urn:ietf:params:xml:ns:eppcom-1.0"
+             xmlns:smd="urn:ietf:params:xml:ns:signedMark-1.0"
+             xmlns:rdeHost="urn:ietf:params:xml:ns:rdeHost-1.0"
+             xmlns:rdeReport="urn:ietf:params:xml:ns:rdeReport-1.0"
+             xmlns:iirdea="urn:ietf:params:xml:ns:iirdea-1.0"
+             xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0"
+             type="FULL"
+             id="AAAACK5XPRKAA">
+    <rde:watermark>2010-10-17T00:00:00Z</rde:watermark>
+    <rde:rdeMenu>
+        <rde:version>1.0</rde:version>
+        <rde:objURI>urn:ietf:params:xml:ns:rdeContact-1.0</rde:objURI>
+        <rde:objURI>urn:ietf:params:xml:ns:rdeDomain-1.0</rde:objURI>
+        <rde:objURI>urn:ietf:params:xml:ns:rdeHost-1.0</rde:objURI>
+        <rde:objURI>urn:ietf:params:xml:ns:rdeRegistrar-1.0</rde:objURI>
+        <rde:objURI>urn:ietf:params:xml:ns:rdeHeader-1.0</rde:objURI>
+        <rde:objURI>urn:ietf:params:xml:ns:rdeIDN-1.0</rde:objURI>
+    </rde:rdeMenu>
+    <rde:contents>
+
+        <rdeHost:host>
+            <rdeHost:name>ns1.cat.lol</rdeHost:name>
+            <rdeHost:roid>5-ROID</rdeHost:roid>
+            <rdeHost:status s="pendingUpdate"/>
+            <rdeHost:addr ip="v6">feed::a:bee</rdeHost:addr>
+            <rdeHost:clID>BusinessCat</rdeHost:clID>
+            <rdeHost:crRr>LawyerCat</rdeHost:crRr>
+            <rdeHost:crDate>1999-12-31T00:00:00Z</rdeHost:crDate>
+            <rdeHost:upRr>CeilingCat</rdeHost:upRr>
+            <rdeHost:upDate>1999-12-31T00:00:00Z</rdeHost:upDate>
+            <rdeHost:trDate>1910-01-01T00:00:00Z</rdeHost:trDate>
+        </rdeHost:host>
+
+        <rdeRegistrar:registrar>
+            <rdeRegistrar:id>NewRegistrar</rdeRegistrar:id>
+            <rdeRegistrar:name>New Registrar</rdeRegistrar:name>
+            <rdeRegistrar:gurid>8</rdeRegistrar:gurid>
+            <rdeRegistrar:status>ok</rdeRegistrar:status>
+            <rdeRegistrar:postalInfo type="loc">
+                <rdeRegistrar:addr>
+                    <rdeRegistrar:street>123 Example Bőulevard</rdeRegistrar:street>
+                    <rdeRegistrar:city>Williamsburg</rdeRegistrar:city>
+                    <rdeRegistrar:sp>NY</rdeRegistrar:sp>
+                    <rdeRegistrar:pc>11211</rdeRegistrar:pc>
+                    <rdeRegistrar:cc>US</rdeRegistrar:cc>
+                </rdeRegistrar:addr>
+            </rdeRegistrar:postalInfo>
+            <rdeRegistrar:postalInfo type="int">
+                <rdeRegistrar:addr>
+                    <rdeRegistrar:street>123 Example Boulevard</rdeRegistrar:street>
+                    <rdeRegistrar:city>Williamsburg</rdeRegistrar:city>
+                    <rdeRegistrar:sp>NY</rdeRegistrar:sp>
+                    <rdeRegistrar:pc>11211</rdeRegistrar:pc>
+                    <rdeRegistrar:cc>US</rdeRegistrar:cc>
+                </rdeRegistrar:addr>
+            </rdeRegistrar:postalInfo>
+            <rdeRegistrar:voice>+1.3334445555</rdeRegistrar:voice>
+            <rdeRegistrar:email>new.registrar@example.com</rdeRegistrar:email>
+            <rdeRegistrar:whoisInfo>
+                <rdeRegistrar:name>whois.nic.fakewhois.example</rdeRegistrar:name>
+            </rdeRegistrar:whoisInfo>
+            <rdeRegistrar:crDate>2015-08-10T14:53:45Z</rdeRegistrar:crDate>
+            <rdeRegistrar:upDate>2015-08-10T14:53:45Z</rdeRegistrar:upDate>
+        </rdeRegistrar:registrar>
+
+        <rdeRegistrar:registrar>
+            <rdeRegistrar:id>TheRegistrar</rdeRegistrar:id>
+            <rdeRegistrar:name>The Registrar</rdeRegistrar:name>
+            <rdeRegistrar:gurid>1</rdeRegistrar:gurid>
+            <rdeRegistrar:status>ok</rdeRegistrar:status>
+            <rdeRegistrar:postalInfo type="loc">
+                <rdeRegistrar:addr>
+                    <rdeRegistrar:street>123 Example Bőulevard</rdeRegistrar:street>
+                    <rdeRegistrar:city>Williamsburg</rdeRegistrar:city>
+                    <rdeRegistrar:sp>NY</rdeRegistrar:sp>
+                    <rdeRegistrar:pc>11211</rdeRegistrar:pc>
+                    <rdeRegistrar:cc>US</rdeRegistrar:cc>
+                </rdeRegistrar:addr>
+            </rdeRegistrar:postalInfo>
+            <rdeRegistrar:postalInfo type="int">
+                <rdeRegistrar:addr>
+                    <rdeRegistrar:street>123 Example Boulevard</rdeRegistrar:street>
+                    <rdeRegistrar:city>Williamsburg</rdeRegistrar:city>
+                    <rdeRegistrar:sp>NY</rdeRegistrar:sp>
+                    <rdeRegistrar:pc>11211</rdeRegistrar:pc>
+                    <rdeRegistrar:cc>US</rdeRegistrar:cc>
+                </rdeRegistrar:addr>
+            </rdeRegistrar:postalInfo>
+            <rdeRegistrar:voice>+1.2223334444</rdeRegistrar:voice>
+            <rdeRegistrar:email>new.registrar@example.com</rdeRegistrar:email>
+            <rdeRegistrar:whoisInfo>
+                <rdeRegistrar:name>whois.nic.fakewhois.example</rdeRegistrar:name>
+            </rdeRegistrar:whoisInfo>
+            <rdeRegistrar:crDate>2015-08-10T14:53:45Z</rdeRegistrar:crDate>
+            <rdeRegistrar:upDate>2015-08-10T14:53:45Z</rdeRegistrar:upDate>
+        </rdeRegistrar:registrar>
+
+        <rdeIDN:idnTableRef id="de">
+            <rdeIDN:url>https://www.iana.org/domains/idn-tables/tables/actor_de_1.0.txt</rdeIDN:url>
+            <rdeIDN:urlPolicy>http://www.donuts.domains/policies/idn</rdeIDN:urlPolicy>
+        </rdeIDN:idnTableRef>
+
+        <rdeIDN:idnTableRef id="es">
+            <rdeIDN:url>https://www.iana.org/domains/idn-tables/tables/agency_es_1.0.txt</rdeIDN:url>
+            <rdeIDN:urlPolicy>http://www.donuts.domains/policies/idn</rdeIDN:urlPolicy>
+        </rdeIDN:idnTableRef>
+
+        <rdeIDN:idnTableRef id="fr">
+            <rdeIDN:url>https://www.iana.org/domains/idn-tables/tables/agency_fr_1.0.txt</rdeIDN:url>
+            <rdeIDN:urlPolicy>http://www.donuts.domains/policies/idn</rdeIDN:urlPolicy>
+        </rdeIDN:idnTableRef>
+
+        <rdeIDN:idnTableRef id="zh">
+            <rdeIDN:url>https://www.iana.org/domains/idn-tables/tables/actor_zh_1.0.txt</rdeIDN:url>
+            <rdeIDN:urlPolicy>http://www.donuts.domains/policies/idn</rdeIDN:urlPolicy>
+        </rdeIDN:idnTableRef>
+
+        <rdeHeader:header>
+            <rdeHeader:tld>xn--unup4y</rdeHeader:tld>
+            <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeDomain-1.0">0</rdeHeader:count>
+            <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeContact-1.0">0</rdeHeader:count>
+            <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeHost-1.0">1</rdeHeader:count>
+            <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeRegistrar-1.0">2</rdeHeader:count>
+            <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeIDN-1.0">4</rdeHeader:count>
+        </rdeHeader:header>
+
+    </rde:contents>
+</rde:deposit>

@@ -16,7 +16,9 @@ package google.registry.model;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
+
 import com.googlecode.objectify.Key;
+
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.RegistrarBillingEntry;
 import google.registry.model.billing.RegistrarCredit;
@@ -31,6 +33,7 @@ import google.registry.model.domain.DomainResource;
 import google.registry.model.domain.LrpToken;
 import google.registry.model.export.LogsExportCursor;
 import google.registry.model.host.HostResource;
+import google.registry.model.icann.IcannReportField;
 import google.registry.model.index.DomainApplicationIndex;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
@@ -40,11 +43,16 @@ import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogCheckpointRoot;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
+import google.registry.model.permission.PermissionGroup;
+import google.registry.model.permission.UserPermissionGroups;
 import google.registry.model.poll.PollMessage;
+import google.registry.model.pricing.PricingCategory;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.registry.Registry;
+import google.registry.model.registry.label.BasePremiumList;
+import google.registry.model.registry.label.CategorizedPremiumList;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.reporting.HistoryEntry;
@@ -55,18 +63,26 @@ import google.registry.model.tmch.ClaimsListShard;
 import google.registry.model.tmch.ClaimsListShard.ClaimsListRevision;
 import google.registry.model.tmch.ClaimsListShard.ClaimsListSingleton;
 import google.registry.model.tmch.TmchCrl;
+import google.registry.model.user.User;
 
-/** Sets of classes of the Objectify-registered entities in use throughout the model. */
+/**
+ * Sets of classes of the Objectify-registered entities in use throughout the model.
+ */
 public final class EntityClasses {
 
-  /** Set of entity classes. */
+  /**
+   * Set of entity classes.
+   */
   @SuppressWarnings("unchecked")  // varargs
   public static final ImmutableSet<Class<? extends ImmutableObject>> ALL_CLASSES =
       ImmutableSet.<Class<? extends ImmutableObject>>of(
+          BasePremiumList.PremiumListRevision.class,
           BillingEvent.Cancellation.class,
           BillingEvent.Modification.class,
           BillingEvent.OneTime.class,
           BillingEvent.Recurring.class,
+          CategorizedPremiumList.class,
+          CategorizedPremiumList.CategorizedListEntry.class,
           ClaimsListShard.class,
           ClaimsListRevision.class,
           ClaimsListSingleton.class,
@@ -90,15 +106,17 @@ public final class EntityClasses {
           GaeUserIdConverter.class,
           HistoryEntry.class,
           HostResource.class,
+          IcannReportField.class,
           Lock.class,
           LogsExportCursor.class,
           LrpToken.class,
+          PermissionGroup.class,
           PollMessage.class,
           PollMessage.Autorenew.class,
           PollMessage.OneTime.class,
           PremiumList.class,
           PremiumList.PremiumListEntry.class,
-          PremiumList.PremiumListRevision.class,
+          PricingCategory.class,
           RdeRevision.class,
           Registrar.class,
           RegistrarBillingEntry.class,
@@ -109,7 +127,9 @@ public final class EntityClasses {
           ReservedList.class,
           ServerSecret.class,
           SignedMarkRevocationList.class,
-          TmchCrl.class);
+          TmchCrl.class,
+          User.class,
+          UserPermissionGroups.class);
 
   /**
    * Function that converts an Objectify-registered class to its datastore kind name.
@@ -126,5 +146,6 @@ public final class EntityClasses {
         }
       };
 
-  private EntityClasses() {}
+  private EntityClasses() {
+  }
 }

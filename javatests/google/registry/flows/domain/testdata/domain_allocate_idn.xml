@@ -3,7 +3,7 @@
     <create>
       <domain:create
        xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
-        <domain:name>xn--abc-873b2e7eb1k8a4lpjvv.tld</domain:name>
+        <domain:name>xn--15qt0w.tld</domain:name>
         <domain:period unit="y">2</domain:period>
         <domain:ns>
           <domain:hostObj>ns1.example.net</domain:hostObj>
