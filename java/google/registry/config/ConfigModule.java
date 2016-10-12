@@ -14,12 +14,9 @@
 
 package google.registry.config;
 
-import static google.registry.config.ConfigUtils.makeUrl;
-
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
-import dagger.Module;
-import dagger.Provides;
+
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTimeConstants;
 import org.joda.time.Duration;
@@ -30,6 +27,11 @@ import java.net.URL;
 
 import javax.annotation.Nullable;
 import javax.inject.Qualifier;
+
+import dagger.Module;
+import dagger.Provides;
+
+import static google.registry.config.ConfigUtils.makeUrl;
 
 /**
  * Configuration example for the Domain Registry codebase.
@@ -75,6 +77,17 @@ public final class ConfigModule {
   @Provides
   public static RegistryConfig provideConfig(RegistryEnvironment environment) {
     return environment.config();
+  }
+
+  /**
+   * Returns the DPML TLD name
+   *
+   * @return String name of the DPML TLD name
+   */
+  @Provides
+  @Config("dpmlTld")
+  public static String provideDpmlTld() {
+    return "dpml.zone";
   }
 
   @Provides
