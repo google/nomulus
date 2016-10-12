@@ -101,10 +101,8 @@ public class RdeContactInput extends Input<ContactResource> {
 
   /**
    * Creates a new instance of {@link RdeContactReader}
-   *
-   * <p>This method can be overridden by a subclass for the purposes of unit testing.
    */
-  protected RdeContactReader newReader(int offset, int maxResults) {
+  private RdeContactReader newReader(int offset, int maxResults) {
     return new RdeContactReader(importBucketName, importFileName, offset, maxResults);
   }
 
