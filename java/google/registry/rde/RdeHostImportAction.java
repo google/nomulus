@@ -47,11 +47,11 @@ public class RdeHostImportAction implements Runnable {
   private static final GcsService GCS_SERVICE =
       GcsServiceFactory.createGcsService(RetryParams.getDefaultInstance());
 
-  protected final MapreduceRunner mrRunner;
-  protected final Response response;
-  protected final String importBucketName;
-  protected final String importFileName;
-  protected final Optional<Integer> mapShards;
+  private final MapreduceRunner mrRunner;
+  private final Response response;
+  private final String importBucketName;
+  private final String importFileName;
+  private final Optional<Integer> mapShards;
 
   @Inject
   public RdeHostImportAction(
