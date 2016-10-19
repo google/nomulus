@@ -17,6 +17,7 @@ package google.registry.module.tools;
 import dagger.Component;
 import google.registry.config.ConfigModule;
 import google.registry.export.DriveModule;
+import google.registry.flows.FlowInjectionModule;
 import google.registry.gcs.GcsServiceModule;
 import google.registry.groups.DirectoryModule;
 import google.registry.groups.GroupsModule;
@@ -56,6 +57,7 @@ import javax.inject.Singleton;
         UseAppIdentityCredentialForGoogleApisModule.class,
         SystemClockModule.class,
         SystemSleeperModule.class,
+        FlowInjectionModule.class,
     })
 interface ToolsComponent {
   ToolsRequestComponent startRequest(RequestModule requestModule);
