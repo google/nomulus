@@ -24,6 +24,7 @@ import google.registry.config.ConfigModule.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
+import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.ofy.Ofy;
@@ -99,6 +100,19 @@ public class RdeImportUtils {
   }
 
   /**
+   * Imports a host from an escrow file.
+   *
+   * <p>The host will only be imported if it has not been previously imported.
+   *
+   * <p>If the host is imported, {@link ForeignKeyIndex} and {@link EppResourceIndex} are also
+   * created.
+   *
+   * @return true if the host was created or updated, false otherwise.
+   */
+  public boolean importHost(final HostResource resource) {
+    return importEppResource(resource, "host");
+  }
+
   /**
    * Imports a contact from an escrow file.
    *
