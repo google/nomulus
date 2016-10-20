@@ -69,7 +69,9 @@ import google.registry.util.SystemSleeper.SystemSleeperModule;
     DnsModule.class,
     FlowModule.class,
     FlowComponent.FlowComponentModule.class,
-    SystemSleeperModule.class})
+    SystemSleeperModule.class,
+    FlowInjectionModule.class,
+})
 public interface FlowComponent {
 
   Trid trid();

@@ -119,8 +119,8 @@ public class DomainCheckFlowTest
   public void testSuccess_oneExtra() throws Exception {
     setEppInput("domain_check_one_tld_extra_validation.xml");
     doCheckTest(
-        create(false, "extra.tld", "Extra"),
-        create(true, "extra2.tld", null));
+        create(false, "disallowed.tld", "disallowed"),
+        create(true, "allowed.tld", null));
   }
 
   @Test

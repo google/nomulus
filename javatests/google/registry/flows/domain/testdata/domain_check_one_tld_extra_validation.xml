@@ -2,8 +2,8 @@
   <command>
     <check>
       <domain:check xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
-        <domain:name>extra.tld</domain:name>
-        <domain:name>extra2.tld</domain:name>
+        <domain:name>disallowed.tld</domain:name>
+        <domain:name>allowed.tld</domain:name>
       </domain:check>
     </check>
     <clTRID>ABC-12345</clTRID>

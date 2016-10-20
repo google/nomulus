@@ -20,7 +20,6 @@ import google.registry.config.ConfigModule;
 import google.registry.dns.writer.VoidDnsWriterModule;
 import google.registry.export.DriveModule;
 import google.registry.export.sheet.SpreadsheetServiceModule;
-import google.registry.flows.FlowInjectionModule;
 import google.registry.gcs.GcsServiceModule;
 import google.registry.groups.DirectoryModule;
 import google.registry.groups.GroupsModule;
@@ -70,7 +69,6 @@ import javax.inject.Singleton;
         UrlFetchTransportModule.class,
         UseAppIdentityCredentialForGoogleApisModule.class,
         VoidDnsWriterModule.class,
-        FlowInjectionModule.class,
     })
 interface BackendComponent {
   BackendRequestComponent startRequest(RequestModule requestModule);

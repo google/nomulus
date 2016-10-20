@@ -6,9 +6,7 @@ import google.registry.flows.EppException;
 import google.registry.model.domain.launch.LaunchCreateExtension;
 import google.registry.model.registry.label.ReservationType;
 
-/**
- * Provides an injection point for custom Domain name validation during flows
- */
+/** Provides an injection point for custom Domain name validation during flows */
 public interface ExtraDomainValidation {
 
   /**
@@ -20,10 +18,12 @@ public interface ExtraDomainValidation {
    * @param now the date time this flow was executed
    * @throws EppException if the custom validation fails
    */
-  void validateDomainCreate(final String label,
-                            final String tld,
-                            final LaunchCreateExtension launchCreate,
-                            final DateTime now) throws EppException;
+  void validateDomainCreate(
+      final String label,
+      final String tld,
+      final LaunchCreateExtension launchCreate,
+      final DateTime now)
+      throws EppException;
 
   /**
    * Checks if the provided label is blocked by any extra domain validation
@@ -34,8 +34,9 @@ public interface ExtraDomainValidation {
    * @param now the date time this flow was executed
    * @return the reason the domain is blocked or null if not blocked
    */
-  String getExtraValidationBlockMessage(final String label,
-                                        final String tld,
-                                        final ReservationType reservationType,
-                                        final DateTime now);
+  String getExtraValidationBlockMessage(
+      final String label,
+      final String tld,
+      final ReservationType reservationType,
+      final DateTime now);
 }
