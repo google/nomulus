@@ -116,6 +116,14 @@ public class DomainCheckFlowTest
   }
 
   @Test
+  public void testSuccess_oneExtra() throws Exception {
+    setEppInput("domain_check_one_tld_extra_validation.xml");
+    doCheckTest(
+        create(false, "extra.tld", "Extra"),
+        create(true, "extra2.tld", null));
+  }
+
+  @Test
   public void testSuccess_anchorTenantReserved() throws Exception {
     setEppInput("domain_check_anchor.xml");
     doCheckTest(create(false, "anchor.tld", "Reserved"));

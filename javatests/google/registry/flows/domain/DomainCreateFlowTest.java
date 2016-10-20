@@ -53,6 +53,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.flows.EppException.UnimplementedExtensionException;
+import google.registry.flows.EppFlowInjectionModule.ExtraDomainError;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.LoggedInFlow.UndeclaredServiceExtensionException;
 import google.registry.flows.ResourceFlowTestCase;
@@ -1191,6 +1192,15 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
     persistResource(Registrar.loadByClientId("TheRegistrar").asBuilder()
         .setBlockPremiumNames(true)
         .build());
+    runFlow();
+  }
+
+  @Test
+  public void testFailure_extraBlocked() throws Exception {
+    thrown.expect(ExtraDomainError.class);
+    createTld("tld");
+    setEppInput("domain_create_extra_validation.xml");
+    persistContactsAndHosts("net");
     runFlow();
   }
 
