@@ -35,7 +35,9 @@ import javax.inject.Singleton;
 @Component(
     modules = {
         ConfigModule.class,
-        EppTestComponent.FakesAndMocksModule.class
+        EppTestComponent.FakesAndMocksModule.class,
+        FlowInjectionModule.class,
+        EppTestFlowInjectionModule.class,
     })
 interface EppTestComponent {
 
@@ -93,4 +95,3 @@ interface EppTestComponent {
     FlowComponent.Builder flowComponentBuilder();
   }
 }
-

@@ -30,6 +30,7 @@ import static google.registry.model.registry.label.ReservationType.UNRESERVED;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
@@ -100,6 +101,7 @@ public final class DomainCheckFlow extends LoggedInFlow {
   @Inject ResourceCommand resourceCommand;
   @Inject @ClientId String clientId;
   @Inject @Config("maxChecks") int maxChecks;
+  @Inject Optional<ExtraDomainValidation> extraDomainValidation;
   @Inject DomainCheckFlow() {}
 
   @Override
@@ -164,6 +166,14 @@ public final class DomainCheckFlow extends LoggedInFlow {
             nullToEmpty(sessionMetadata.getServiceExtensionUris()),
             FEE_EXTENSION_URIS)) {
       return "Premium names require EPP ext.";
+    }
+    if (extraDomainValidation.isPresent()) {
+      String extraBlockValidationMessage = extraDomainValidation.get()
+          .getExtraValidationBlockMessage(
+              domainName.parts().get(0), domainName.parent().toString(), reservationType, now);
+      if (extraBlockValidationMessage != null) {
+        return extraBlockValidationMessage;
+      }
     }
     return reservationType.getMessageForCheck();
   }

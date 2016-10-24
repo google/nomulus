@@ -156,6 +156,7 @@ public class DomainCreateFlow extends LoggedInFlow implements TransactionalFlow 
   @Inject @ClientId String clientId;
   @Inject @TargetId String targetId;
   @Inject HistoryEntry.Builder historyBuilder;
+  @Inject Optional<ExtraDomainValidation> extraDomainValidation;
   @Inject DomainCreateFlow() {}
 
   @Override
@@ -219,6 +220,10 @@ public class DomainCreateFlow extends LoggedInFlow implements TransactionalFlow 
       verifyPremiumNameIsNotBlocked(targetId, now, clientId);
       verifyNoOpenApplications();
       verifyIsGaOrIsSpecialCase(tldState, isAnchorTenant);
+      if (extraDomainValidation.isPresent()) {
+        extraDomainValidation.get().validateDomainCreate(
+            domainLabel, registry.getTldStr(), launchCreate, now);
+      }
     }
     SecDnsCreateExtension secDnsCreate =
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));
