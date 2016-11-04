@@ -17,9 +17,11 @@ package google.registry.rde.imports;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatastoreHelper.persistActiveContact;
 import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static org.joda.time.DateTimeZone.UTC;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,10 +33,15 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.ByteSource;
 import com.googlecode.objectify.Key;
+import com.googlecode.objectify.VoidWork;
 import com.googlecode.objectify.Work;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.DesignatedContact;
+import google.registry.model.domain.DesignatedContact.Type;
+import google.registry.model.domain.DomainResource;
+import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
@@ -103,8 +110,12 @@ public class RdeImportUtilsTest extends ShardableTestCase {
   /** Verifies import of a contact that has not been previously imported */
   @Test
   public void testImportNewContact() {
-    ContactResource newContact = buildNewContact();
-    assertThat(rdeImportUtils.importContact(newContact)).isTrue();
+    final ContactResource newContact = buildNewContact();
+    ofy().transact(new VoidWork() {
+      public void vrun() {
+        rdeImportUtils.importContact(newContact);
+      }
+    });
     assertEppResourceIndexEntityFor(newContact);
     assertForeignKeyIndexFor(newContact);
 
@@ -121,14 +132,20 @@ public class RdeImportUtilsTest extends ShardableTestCase {
   public void testImportExistingContact() {
     ContactResource newContact = buildNewContact();
     persistResource(newContact);
-    ContactResource updatedContact =
+    final ContactResource updatedContact =
         newContact
             .asBuilder()
             .setLastEppUpdateTime(newContact.getLastEppUpdateTime().plusSeconds(1))
             .build();
-    assertThat(rdeImportUtils.importContact(updatedContact)).isFalse();
-
-    // verify the updated contact was saved
+    try {
+      ofy().transact(new VoidWork() {
+        public void vrun() {
+          rdeImportUtils.importContact(updatedContact);
+        }
+      });
+      fail("Expected ResourceExistsException");
+    } catch (ResourceExistsException expected) {}
+    // verify the updated contact was not saved
     ContactResource saved = getContact("TEST-123");
     assertThat(saved).isNotNull();
     assertThat(saved.getContactId()).isEqualTo(newContact.getContactId());
@@ -139,8 +156,15 @@ public class RdeImportUtilsTest extends ShardableTestCase {
   /** Verifies import of a host that has not been previously imported */
   @Test
   public void testImportNewHost() throws UnknownHostException {
-    HostResource newHost = buildNewHost();
-    assertThat(rdeImportUtils.importHost(newHost)).isTrue();
+    final HostResource newHost = buildNewHost();
+    ofy().transact(new VoidWork() {
+
+      @Override
+      public void vrun() {
+        rdeImportUtils.importHost(newHost);
+      }
+    });
+
     assertEppResourceIndexEntityFor(newHost);
     assertForeignKeyIndexFor(newHost);
 
@@ -159,14 +183,21 @@ public class RdeImportUtilsTest extends ShardableTestCase {
   public void testImportExistingHost() throws UnknownHostException {
     HostResource newHost = buildNewHost();
     persistResource(newHost);
-    HostResource updatedHost =
+    final HostResource updatedHost =
         newHost
           .asBuilder()
           .setLastEppUpdateTime(newHost.getLastEppUpdateTime().plusSeconds(1))
           .build();
-    assertThat(rdeImportUtils.importHost(updatedHost)).isFalse();
+    try {
+      ofy().transact(new VoidWork() {
+        public void vrun() {
+          rdeImportUtils.importHost(updatedHost);
+        }
+      });
+      fail("Expected ResourceExistsException");
+    } catch (ResourceExistsException expected) {}
 
-    // verify the new contact was saved
+    // verify the contact was not updated
     HostResource saved = getHost("FOO_ROID");
     assertThat(saved).isNotNull();
     assertThat(saved.getFullyQualifiedHostName()).isEqualTo(
@@ -174,6 +205,58 @@ public class RdeImportUtilsTest extends ShardableTestCase {
     assertThat(saved.getInetAddresses()).isEqualTo(
         newHost.getInetAddresses());
     assertThat(saved.getLastEppUpdateTime()).isEqualTo(newHost.getLastEppUpdateTime());
+  }
+
+  @Test
+  public void testImportNewDomain() throws Exception {
+    final DomainResource newDomain = buildNewDomain();
+    ofy().transact(new VoidWork() {
+
+      @Override
+      public void vrun() {
+        rdeImportUtils.importDomain(newDomain);
+      }
+    });
+
+    DomainResource saved = getDomain("Dexample1-TEST");
+    assertThat(saved.getFullyQualifiedDomainName()).isEqualTo(
+        newDomain.getFullyQualifiedDomainName());
+    assertThat(saved.getStatusValues()).isEqualTo(newDomain.getStatusValues());
+    assertThat(saved.getRegistrant()).isEqualTo(newDomain.getRegistrant());
+    assertThat(saved.getContacts()).isEqualTo(newDomain.getContacts());
+    assertThat(saved.getCurrentSponsorClientId()).isEqualTo(newDomain.getCurrentSponsorClientId());
+    assertThat(saved.getCreationClientId()).isEqualTo(newDomain.getCreationClientId());
+    assertThat(saved.getCreationTime()).isEqualTo(newDomain.getCreationTime());
+    assertThat(saved.getRegistrationExpirationTime()).isEqualTo(
+        newDomain.getRegistrationExpirationTime());
+  }
+
+  @Test
+  public void testImportExistingDomain() throws Exception {
+    DomainResource newDomain = buildNewDomain();
+    persistResource(newDomain);
+    final DomainResource updatedDomain = newDomain.asBuilder()
+        .setFullyQualifiedDomainName("1" + newDomain.getFullyQualifiedDomainName())
+        .build();
+    try {
+      ofy().transact(new VoidWork() {
+        public void vrun() {
+          rdeImportUtils.importDomain(updatedDomain);
+        }
+      });
+      fail("Expected ResourceExistsException");
+    } catch (ResourceExistsException expected) { }
+    DomainResource saved = getDomain("Dexample1-TEST");
+    assertThat(saved.getFullyQualifiedDomainName()).isEqualTo(
+        newDomain.getFullyQualifiedDomainName());
+    assertThat(saved.getStatusValues()).isEqualTo(newDomain.getStatusValues());
+    assertThat(saved.getRegistrant()).isEqualTo(newDomain.getRegistrant());
+    assertThat(saved.getContacts()).isEqualTo(newDomain.getContacts());
+    assertThat(saved.getCurrentSponsorClientId()).isEqualTo(newDomain.getCurrentSponsorClientId());
+    assertThat(saved.getCreationClientId()).isEqualTo(newDomain.getCreationClientId());
+    assertThat(saved.getCreationTime()).isEqualTo(newDomain.getCreationTime());
+    assertThat(saved.getRegistrationExpirationTime()).isEqualTo(
+        newDomain.getRegistrationExpirationTime());
   }
 
   private static ContactResource buildNewContact() {
@@ -195,6 +278,24 @@ public class RdeImportUtilsTest extends ShardableTestCase {
         ))
         .setLastEppUpdateTime(DateTime.parse("2010-10-10T00:00:00.000Z"))
         .setRepoId("FOO_ROID")
+        .build();
+  }
+
+  private DomainResource buildNewDomain() {
+    ContactResource registrant = persistActiveContact("jd1234");
+    ContactResource admin = persistActiveContact("sh8013");
+    return new DomainResource.Builder()
+        .setFullyQualifiedDomainName("example1.example")
+        .setRepoId("Dexample1-TEST")
+        .setStatusValues(ImmutableSet.of(StatusValue.OK))
+        .setRegistrant(Key.create(registrant))
+        .setContacts(ImmutableSet.of(
+            DesignatedContact.create(Type.ADMIN, Key.create(admin)),
+            DesignatedContact.create(Type.TECH, Key.create(admin))))
+        .setCurrentSponsorClientId("RegistrarX")
+        .setCreationClientId("RegistrarX")
+        .setCreationTime(DateTime.parse("1999-04-03T22:00:00.0Z"))
+        .setRegistrationExpirationTime(DateTime.parse("2015-04-03T22:00:00.0Z"))
         .build();
   }
 
@@ -248,12 +349,23 @@ public class RdeImportUtilsTest extends ShardableTestCase {
       }});
   }
 
-  /** Gets the contact with the specified ROID */
+  /** Gets the host with the specified ROID */
   private static HostResource getHost(String repoId) {
     final Key<HostResource> key = Key.create(HostResource.class, repoId);
     return ofy().transact(new Work<HostResource>() {
       @Override
       public HostResource run() {
+        return ofy().load().key(key).now();
+      }
+    });
+  }
+
+  /** Gets the domain with the specified ROID */
+  private static DomainResource getDomain(String repoId) {
+    final Key<DomainResource> key = Key.create(DomainResource.class, repoId);
+    return ofy().transact(new Work<DomainResource>() {
+      @Override
+      public DomainResource run() {
         return ofy().load().key(key).now();
       }
     });

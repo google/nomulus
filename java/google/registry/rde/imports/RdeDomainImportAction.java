@@ -16,6 +16,7 @@ package google.registry.rde.imports;
 
 import static google.registry.mapreduce.MapreduceRunner.PARAM_MAP_SHARDS;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.rde.imports.RdeImportsModule.PATH;
 import static google.registry.util.PipelineUtils.createJobPath;
 
 import com.google.appengine.tools.cloudstorage.GcsService;
@@ -30,25 +31,25 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.gcs.GcsUtils;
 import google.registry.mapreduce.MapreduceRunner;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.DomainResource;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.util.FormattingLogger;
 import google.registry.util.SystemClock;
 import google.registry.xjc.JaxbFragment;
-import google.registry.xjc.rdecontact.XjcRdeContact;
-import google.registry.xjc.rdecontact.XjcRdeContactElement;
+import google.registry.xjc.rdedomain.XjcRdeDomain;
+import google.registry.xjc.rdedomain.XjcRdeDomainElement;
 
 import javax.inject.Inject;
 
 /**
- * A mapreduce that imports contacts from an escrow file.
+ * A mapreduce that imports domains from an escrow file.
  *
  * <p>Specify the escrow file to import with the "path" parameter.
  */
-@Action(path = "/_dr/task/importRdeContacts")
-public class RdeContactImportAction implements Runnable {
+@Action(path = "/_dr/task/importRdeDomains")
+public class RdeDomainImportAction implements Runnable {
 
   private static final FormattingLogger logger = FormattingLogger.getLoggerForCallerClass();
   private static final GcsService GCS_SERVICE =
@@ -61,11 +62,11 @@ public class RdeContactImportAction implements Runnable {
   protected final Optional<Integer> mapShards;
 
   @Inject
-  public RdeContactImportAction(
+  public RdeDomainImportAction(
       MapreduceRunner mrRunner,
       Response response,
       @Config("rdeImportBucket") String importBucketName,
-      @Parameter("path") String importFileName,
+      @Parameter(PATH) String importFileName,
       @Parameter(PARAM_MAP_SHARDS) Optional<Integer> mapShards) {
     this.mrRunner = mrRunner;
     this.response = response;
@@ -76,8 +77,12 @@ public class RdeContactImportAction implements Runnable {
 
   @Override
   public void run() {
+    logger.infofmt(
+        "Launching domains import mapreduce: bucket=%s, filename=%s",
+        this.importBucketName,
+        this.importFileName);
     response.sendJavaScriptRedirect(createJobPath(mrRunner
-        .setJobName("Import contacts from escrow file")
+        .setJobName("Import domains from escrow file")
         .setModuleName("backend")
         .runMapOnly(
             createMapper(),
@@ -85,28 +90,29 @@ public class RdeContactImportAction implements Runnable {
   }
 
   /**
-   * Creates a new {@link RdeContactInput}
+   * Creates a new {@link RdeDomainInput}
    */
-  private RdeContactInput createInput() {
-    return new RdeContactInput(mapShards, importBucketName, importFileName);
+  private RdeDomainInput createInput() {
+    return new RdeDomainInput(mapShards, importBucketName, importFileName);
   }
 
   /**
-   * Creates a new {@link RdeContactImportMapper}
+   * Creates a new {@link RdeDomainImportMapper}
    */
-  private RdeContactImportMapper createMapper() {
-    return new RdeContactImportMapper(importBucketName);
+  private RdeDomainImportMapper createMapper() {
+    return new RdeDomainImportMapper(importBucketName);
   }
 
-  /** Mapper to import contacts from an escrow file. */
-  public static class RdeContactImportMapper extends Mapper<JaxbFragment<XjcRdeContactElement>, Void, Void> {
+  /** Mapper to import domains from an escrow file. */
+  public static class RdeDomainImportMapper
+      extends Mapper<JaxbFragment<XjcRdeDomainElement>, Void, Void> {
 
     private static final long serialVersionUID = -7645091075256589374L;
 
     private final String importBucketName;
     private transient RdeImportUtils importUtils;
 
-    public RdeContactImportMapper(String importBucketName) {
+    public RdeDomainImportMapper(String importBucketName) {
       this.importBucketName = importBucketName;
     }
 
@@ -129,39 +135,38 @@ public class RdeContactImportAction implements Runnable {
     }
 
     @Override
-    public void map(JaxbFragment<XjcRdeContactElement> fragment) {
-      final XjcRdeContact xjcContact = fragment.getInstance().getValue();
+    public void map(JaxbFragment<XjcRdeDomainElement> fragment) {
+      final XjcRdeDomain xjcDomain = fragment.getInstance().getValue();
       try {
-        logger.infofmt("Converting xml for contact %s", xjcContact.getId());
+        logger.infofmt("Converting xml for domain %s", xjcDomain.getName());
         // Record number of attempted map operations
-        getContext().incrementCounter("contact imports attempted");
-        logger.infofmt("Saving contact %s", xjcContact.getId());
+        getContext().incrementCounter("domain imports attempted");
+        logger.infofmt("Saving domain %s", xjcDomain.getName());
         ofy().transact(new VoidWork() {
           @Override
           public void vrun() {
-            ContactResource contact =
-                XjcToContactResourceConverter.convertContact(xjcContact);
-            getImportUtils().importContact(contact);
+            DomainResource domain =
+                XjcToDomainResourceConverter.convertDomain(xjcDomain);
+            getImportUtils().importDomain(domain);
           }
         });
-        // Record number of contacts imported
-        getContext().incrementCounter("contacts saved");
-        logger.infofmt("Contact %s was imported successfully", xjcContact.getId());
+        // Record the number of domains imported
+        getContext().incrementCounter("domains saved");
+        logger.infofmt("Domain %s was imported successfully", xjcDomain.getName());
       } catch (ResourceExistsException e) {
-        // Record the number of contacts already in the registry
-        getContext().incrementCounter("contacts skipped");
-        logger.infofmt("Contact %s already exists", xjcContact.getId());
+        // Record the number of domains already in the registry
+        getContext().incrementCounter("domains skipped");
+        logger.infofmt("Domain %s already exists", xjcDomain.getName());
       } catch (Exception e) {
-        // Record the number of contacts with unexpected errors
-        getContext().incrementCounter("contact import errors");
-        throw new ContactImportException(xjcContact.getId(), xjcContact.toString(), e);
+        getContext().incrementCounter("domain import errors");
+        throw new DomainImportException(xjcDomain.getName(), xjcDomain.toString(), e);
       }
     }
   }
 
-  private static class ContactImportException extends RuntimeException {
-    ContactImportException(String contactId, String xml, Throwable cause) {
-      super(String.format("Error importing contact %s; xml=%s", contactId, xml), cause);
+  private static class DomainImportException extends RuntimeException {
+    DomainImportException(String domainName, String xml, Throwable cause) {
+      super(String.format("Error processing domain %s; xml=%s", domainName, xml), cause);
     }
   }
 }

@@ -27,6 +27,11 @@ import google.registry.gcs.GcsUtils;
 import google.registry.model.host.HostResource;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.ExceptionRule;
+import google.registry.xjc.JaxbFragment;
+import google.registry.xjc.rdecontact.XjcRdeContact;
+import google.registry.xjc.rdecontact.XjcRdeContactElement;
+import google.registry.xjc.rdehost.XjcRdeHost;
+import google.registry.xjc.rdehost.XjcRdeHostElement;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -67,8 +72,7 @@ public class RdeHostReaderTest {
   public void testZeroOffsetOneResult_readsOne() throws Exception {
     pushToGcs(DEPOSIT_1_HOST);
     RdeHostReader reader = getReader(0, 1);
-    HostResource host1 = reader.next();
-    checkHost(host1, "ns1.example1.test", "Hns1_example1_test-TEST");
+    checkHost(reader.next(), "ns1.example1.test", "Hns1_example1_test-TEST");
   }
 
   /** Reads at most one at 0 offset 1 maxResults */
@@ -198,11 +202,20 @@ public class RdeHostReaderTest {
   }
 
   /** Verifies that domain name and ROID match expected values */
-  private void checkHost(HostResource host, String domainName, String repoId) {
-    assertThat(host).isNotNull();
-    assertThat(host.getFullyQualifiedHostName()).isEqualTo(domainName);
-    assertThat(host.getRepoId()).isEqualTo(repoId);
+  private void checkHost(JaxbFragment<XjcRdeHostElement> fragment, String domainName, String repoId) {
+    assertThat(fragment).isNotNull();
+    XjcRdeHost host = fragment.getInstance().getValue();
+    assertThat(host.getName()).isEqualTo(domainName);
+    assertThat(host.getRoid()).isEqualTo(repoId);
   }
+
+//  /** Verifies that contact id and ROID match expected values */
+//  private void checkContact(JaxbFragment<XjcRdeContactElement> fragment, String contactId, String repoId) throws Exception {
+//    assertThat(fragment).isNotNull();
+//    XjcRdeContact contact = fragment.getInstance().getValue();
+//    assertThat(contact.getId()).isEqualTo(contactId);
+//    assertThat(contact.getRoid()).isEqualTo(repoId);
+//  }
 
   /** Gets a new {@link RdeHostReader} with specified offset and maxResults */
   private RdeHostReader getReader(int offset, int maxResults) throws Exception {

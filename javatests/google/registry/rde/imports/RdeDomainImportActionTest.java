@@ -16,9 +16,10 @@ package google.registry.rde.imports;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.getHistoryEntries;
-import static google.registry.testing.DatastoreHelper.newContactResource;
-import static google.registry.testing.DatastoreHelper.newHostResource;
+import static google.registry.testing.DatastoreHelper.newDomainResource;
+import static google.registry.testing.DatastoreHelper.persistActiveContact;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.DatastoreHelper.persistSimpleResource;
 
@@ -29,11 +30,11 @@ import com.google.appengine.tools.cloudstorage.RetryParams;
 import com.google.common.base.Optional;
 import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
-import google.registry.config.RegistryConfig.ConfigModule;
 import com.googlecode.objectify.Key;
+import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.gcs.GcsUtils;
 import google.registry.mapreduce.MapreduceRunner;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.DomainResource;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
@@ -50,12 +51,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
-/** Unit tests for {@link RdeContactImportAction}. */
+/** Unit tests for {@link RdeDomainImportAction}. */
 @RunWith(MockitoJUnitRunner.class)
-public class RdeContactImportActionTest extends MapreduceTestCase<RdeContactImportAction> {
+public class RdeDomainImportActionTest extends MapreduceTestCase<RdeDomainImportAction> {
 
-  private static final ByteSource DEPOSIT_1_CONTACT =
-      RdeImportsTestData.get("deposit_1_contact.xml");
+  private static final ByteSource DEPOSIT_1_DOMAIN = RdeImportsTestData.get("deposit_1_domain.xml");
   private static final String IMPORT_BUCKET_NAME = "import-bucket";
   private static final String IMPORT_FILE_NAME = "escrow-file.xml";
 
@@ -68,9 +68,12 @@ public class RdeContactImportActionTest extends MapreduceTestCase<RdeContactImpo
 
   @Before
   public void before() throws Exception {
+    createTld("test");
+    persistActiveContact("jd1234");
+    persistActiveContact("sh8013");
     response = new FakeResponse();
     mrRunner = makeDefaultRunner();
-    action = new RdeContactImportAction(
+    action = new RdeDomainImportAction(
         mrRunner,
         response,
         IMPORT_BUCKET_NAME,
@@ -79,68 +82,53 @@ public class RdeContactImportActionTest extends MapreduceTestCase<RdeContactImpo
   }
 
   @Test
-  public void test_mapreduceSuccessfullyImportsContact() throws Exception {
-    pushToGcs(DEPOSIT_1_CONTACT);
+  public void test_mapreduceSuccessfullyImportsDomain() throws Exception {
+    pushToGcs(DEPOSIT_1_DOMAIN);
     runMapreduce();
-    List<ContactResource> contacts = ofy().load().type(ContactResource.class).list();
-    assertThat(contacts).hasSize(1);
-    checkContact(contacts.get(0));
+    List<DomainResource> domains = ofy().load().type(DomainResource.class).list();
+    assertThat(domains).hasSize(1);
+    checkDomain(domains.get(0));
   }
 
   @Test
   public void test_mapreduceSuccessfullyCreatesHistoryEntry() throws Exception {
-    pushToGcs(DEPOSIT_1_CONTACT);
+    pushToGcs(DEPOSIT_1_DOMAIN);
     runMapreduce();
-    List<ContactResource> contacts = ofy().load().type(ContactResource.class).list();
-    ContactResource contact = contacts.get(0);
+    List<DomainResource> domains = ofy().load().type(DomainResource.class).list();
+    DomainResource domain = domains.get(0);
     // verify history entry
-    List<HistoryEntry> historyEntries = getHistoryEntries(contact);
+    List<HistoryEntry> historyEntries = getHistoryEntries(domain);
     assertThat(historyEntries).hasSize(1);
-    checkHistoryEntry(historyEntries.get(0), contact);
+    checkHistoryEntry(historyEntries.get(0), domain);
   }
 
-  /** Ensures that a second pass on a contact does not import a new contact. */
+  /** Ensures that a second pass on a domain does not import a new domain. */
   @Test
   public void test_mapreduceTwiceDoesNotDuplicateResources() throws Exception {
-    pushToGcs(DEPOSIT_1_CONTACT);
-    // Create contact and history entry first
-    ContactResource existingContact = persistResource(
-        newContactResource("contact1")
-        .asBuilder()
-        .setRepoId("contact1-TEST")
-        .build());
+    pushToGcs(DEPOSIT_1_DOMAIN);
+    // Create domain and history entry first
+    DomainResource existingDomain =
+        persistResource(
+            newDomainResource("example1.test").asBuilder().setRepoId("Dexample1-TEST").build());
     persistSimpleResource(createHistoryEntry(
-        existingContact.getRepoId(),
-        existingContact.getCurrentSponsorClientId(),
-        loadContactXml(DEPOSIT_1_CONTACT)));
+        existingDomain.getRepoId(),
+        existingDomain.getCurrentSponsorClientId(),
+        loadDomainXml(DEPOSIT_1_DOMAIN)));
     // Simulate running a second import and verify that the resources
-    // aren't imported twice (only one host, and one history entry)
+    // aren't imported twice (only one domain, and one history entry)
+    pushToGcs(DEPOSIT_1_DOMAIN);
     runMapreduce();
-    List<ContactResource> contacts = ofy().load().type(ContactResource.class).list();
-    assertThat(contacts).hasSize(1);
-    ContactResource contact = contacts.get(0);
+    List<DomainResource> domains = ofy().load().type(DomainResource.class).list();
+    assertThat(domains.size()).isEqualTo(1);
+    DomainResource domain = domains.get(0);
     // verify history entry
-    List<HistoryEntry> historyEntries = getHistoryEntries(contact);
+    List<HistoryEntry> historyEntries = getHistoryEntries(domain);
     assertThat(historyEntries).hasSize(1);
-    checkHistoryEntry(historyEntries.get(0), contact);
-  }
-
-  private static HistoryEntry createHistoryEntry(String roid, String clid, byte[] objectXml) {
-      return new HistoryEntry.Builder()
-          .setType(HistoryEntry.Type.RDE_IMPORT)
-          .setClientId(clid)
-          .setTrid(Trid.create(null))
-          .setModificationTime(DateTime.now())
-          .setXmlBytes(objectXml)
-          .setBySuperuser(true)
-          .setReason("RDE Import")
-          .setRequestedByRegistrar(false)
-          .setParent(Key.create(null, ContactResource.class, roid))
-          .build();
+    checkHistoryEntry(historyEntries.get(0), domain);
   }
 
   /** Verify history entry fields are correct */
-  private void checkHistoryEntry(HistoryEntry entry, ContactResource parent) {
+  private void checkHistoryEntry(HistoryEntry entry, DomainResource parent) {
     assertThat(entry.getType()).isEqualTo(HistoryEntry.Type.RDE_IMPORT);
     assertThat(entry.getClientId()).isEqualTo(parent.getCurrentSponsorClientId());
     assertThat(entry.getXmlBytes().length).isGreaterThan(0);
@@ -150,10 +138,10 @@ public class RdeContactImportActionTest extends MapreduceTestCase<RdeContactImpo
     assertThat(entry.getParent()).isEqualTo(Key.create(parent));
   }
 
-  /** Verifies that contact id and ROID match expected values */
-  private void checkContact(ContactResource contact) {
-    assertThat(contact.getContactId()).isEqualTo("contact1");
-    assertThat(contact.getRepoId()).isEqualTo("contact1-TEST");
+  /** Verifies that domain id and ROID match expected values */
+  private void checkDomain(DomainResource domain) {
+    assertThat(domain.getFullyQualifiedDomainName()).isEqualTo("example1.test");
+    assertThat(domain.getRepoId()).isEqualTo("Dexample1-TEST");
   }
 
   private void runMapreduce() throws Exception {
@@ -170,11 +158,25 @@ public class RdeContactImportActionTest extends MapreduceTestCase<RdeContactImpo
     }
   }
 
-  private static byte[] loadContactXml(ByteSource source) throws IOException {
+  private static byte[] loadDomainXml(ByteSource source) throws IOException {
     byte[] result = new byte[(int)source.size()];
     try (InputStream inStream = source.openStream()) {
       ByteStreams.readFully(inStream, result);
     }
     return result;
+  }
+
+  private static HistoryEntry createHistoryEntry(String roid, String clid, byte[] objectXml) {
+    return new HistoryEntry.Builder()
+        .setType(HistoryEntry.Type.RDE_IMPORT)
+        .setClientId(clid)
+        .setTrid(Trid.create(null))
+        .setModificationTime(DateTime.now())
+        .setXmlBytes(objectXml)
+        .setBySuperuser(true)
+        .setReason("RDE Import")
+        .setRequestedByRegistrar(false)
+        .setParent(Key.create(null, DomainResource.class, roid))
+        .build();
   }
 }
