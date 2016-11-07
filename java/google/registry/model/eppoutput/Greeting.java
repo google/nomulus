@@ -14,7 +14,6 @@
 
 package google.registry.model.eppoutput;
 
-import google.registry.config.ConfigModule;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppcommon.PresenceMarker;
 import google.registry.model.eppcommon.ProtocolDefinition;
@@ -44,9 +43,9 @@ public class Greeting extends ImmutableObject implements ResponseOrGreeting {
   @XmlElement
   static Dcp dcp = new Dcp();
 
-  public static Greeting create(DateTime svDate) {
+  public static Greeting create(DateTime svDate, String svID) {
     Greeting instance = new Greeting();
-    instance.svID = ConfigModule.provideSvID();
+    instance.svID = svID;
     instance.svDate = svDate;
     return instance;
   }
