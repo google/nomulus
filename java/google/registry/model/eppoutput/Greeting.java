@@ -14,11 +14,13 @@
 
 package google.registry.model.eppoutput;
 
+import google.registry.config.ConfigModule;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppcommon.PresenceMarker;
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppoutput.EppOutput.ResponseOrGreeting;
 import java.util.Set;
+
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import org.joda.time.DateTime;
@@ -31,7 +33,7 @@ import org.joda.time.DateTime;
  */
 public class Greeting extends ImmutableObject implements ResponseOrGreeting {
 
-  String svID = "Charleston Road Registry";
+  String svID;
   DateTime svDate;
 
   /** This is never changed, so it might as well be static for efficiency. */
@@ -44,6 +46,7 @@ public class Greeting extends ImmutableObject implements ResponseOrGreeting {
 
   public static Greeting create(DateTime svDate) {
     Greeting instance = new Greeting();
+    instance.svID = ConfigModule.provideSvID();
     instance.svDate = svDate;
     return instance;
   }

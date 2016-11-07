@@ -784,4 +784,14 @@ public final class ConfigModule {
   public static Duration getAsyncDeleteFlowMapreduceDelay() {
     return Duration.standardSeconds(90);
   }
+
+  /**
+   * Per RFC {@link: https://tools.ietf.org/html/rfc5730} 'svID' is the element that
+   * contains the name of the server
+   */
+  @Provides
+  @Config("svID")
+  public static String provideSvID() {
+    return "Charleston Road Registry";
+  }
 }
