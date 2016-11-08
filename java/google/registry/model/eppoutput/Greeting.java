@@ -14,6 +14,7 @@
 
 package google.registry.model.eppoutput;
 
+import google.registry.config.ConfigModule;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppcommon.PresenceMarker;
 import google.registry.model.eppcommon.ProtocolDefinition;
@@ -24,6 +25,8 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import org.joda.time.DateTime;
 
+import static google.registry.config.ConfigModule.*;
+
 /**
  * A greeting, defined in {@link "http://tools.ietf.org/html/rfc5730"}.
  *
@@ -32,6 +35,7 @@ import org.joda.time.DateTime;
  */
 public class Greeting extends ImmutableObject implements ResponseOrGreeting {
 
+  // 'svID' maps to the constructor argument 'greetingServerName'
   String svID;
   DateTime svDate;
 
@@ -43,7 +47,7 @@ public class Greeting extends ImmutableObject implements ResponseOrGreeting {
   @XmlElement
   static Dcp dcp = new Dcp();
 
-  public static Greeting create(DateTime svDate, String svID) {
+  public static Greeting create(DateTime svDate, @Config("greetingServerName") String svID) {
     Greeting instance = new Greeting();
     instance.svID = svID;
     instance.svDate = svDate;

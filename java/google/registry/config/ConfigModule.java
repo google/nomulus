@@ -786,12 +786,9 @@ public final class ConfigModule {
   }
 
   /**
-   * Returns the name of the server.  An EPP server responds to a successful connection and
-   * a &lt;hello&gt; element by returning a &lt;greeting&gt; element to the client.
+   * The server ID used in the 'svID' element of an EPP 'greeting'.
    *
    * @see <a href=https://tools.ietf.org/html/rfc5730>RFC 7530</a>
-   *
-   * @return A string value representing the server name
    */
   @Provides
   @Config("greetingServerName")

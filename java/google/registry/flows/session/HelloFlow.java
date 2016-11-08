@@ -27,12 +27,12 @@ public class HelloFlow implements Flow {
 
   @Inject ExtensionManager extensionManager;
   @Inject Clock clock;
-  @Inject @Config("svID") String svID;
+  @Inject @Config("greetingServerName") String greetingServerName;
   @Inject HelloFlow() {}
 
   @Override
   public Greeting run() throws EppException {
     extensionManager.validate();  // There are no legal extensions for this flow.
-    return Greeting.create(clock.nowUtc(), svID);
+    return Greeting.create(clock.nowUtc(), greetingServerName);
   }
 }
