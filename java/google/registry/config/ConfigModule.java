@@ -791,8 +791,8 @@ public final class ConfigModule {
    * @see <a href=https://tools.ietf.org/html/rfc5730>RFC 7530</a>
    */
   @Provides
-  @Config("greetingServerName")
-  public static String provideGreetingServerName() {
+  @Config("greetingServerId")
+  public static String provideGreetingServerId() {
     return "Charleston Road Registry";
   }
 }
