@@ -14,6 +14,7 @@
 
 package google.registry.flows.session;
 
+import google.registry.config.ConfigModule.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
@@ -26,11 +27,12 @@ public class HelloFlow implements Flow {
 
   @Inject ExtensionManager extensionManager;
   @Inject Clock clock;
+  @Inject @Config("greetingServerId") String greetingServerId;
   @Inject HelloFlow() {}
 
   @Override
   public Greeting run() throws EppException {
     extensionManager.validate();  // There are no legal extensions for this flow.
-    return Greeting.create(clock.nowUtc());
+    return Greeting.create(clock.nowUtc(), greetingServerId);
   }
 }

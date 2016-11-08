@@ -19,9 +19,12 @@ import google.registry.model.eppcommon.PresenceMarker;
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppoutput.EppOutput.ResponseOrGreeting;
 import java.util.Set;
+
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import org.joda.time.DateTime;
+
+import static google.registry.config.ConfigModule.Config;
 
 /**
  * A greeting, defined in {@link "http://tools.ietf.org/html/rfc5730"}.
@@ -31,7 +34,7 @@ import org.joda.time.DateTime;
  */
 public class Greeting extends ImmutableObject implements ResponseOrGreeting {
 
-  String svID = "Charleston Road Registry";
+  String svID;
   DateTime svDate;
 
   /** This is never changed, so it might as well be static for efficiency. */
@@ -42,8 +45,9 @@ public class Greeting extends ImmutableObject implements ResponseOrGreeting {
   @XmlElement
   static Dcp dcp = new Dcp();
 
-  public static Greeting create(DateTime svDate) {
+  public static Greeting create(DateTime svDate, @Config("greetingServerId") String svID) {
     Greeting instance = new Greeting();
+    instance.svID = svID;
     instance.svDate = svDate;
     return instance;
   }
