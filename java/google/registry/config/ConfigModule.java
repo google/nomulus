@@ -786,12 +786,16 @@ public final class ConfigModule {
   }
 
   /**
-   * Per RFC {@link: https://tools.ietf.org/html/rfc5730} 'svID' is the element that
-   * contains the name of the server
+   * Returns the name of the server.  An EPP server responds to a successful connection and
+   * a &lt;hello&gt; element by returning a &lt;greeting&gt; element to the client.
+   *
+   * @see <a href=https://tools.ietf.org/html/rfc5730>RFC 7530</a>
+   *
+   * @return A string value representing the server name
    */
   @Provides
-  @Config("svID")
-  public static String provideSvID() {
+  @Config("greetingServerName")
+  public static String provideGreetingServerName() {
     return "Charleston Road Registry";
   }
 }
