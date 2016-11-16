@@ -93,6 +93,14 @@ public class HostResource extends EppResource implements ForeignKeyedEppResource
   Key<DomainResource> superordinateDomain;
 
   /**
+   * The time that this resource was last transferred.
+   *
+   * <p>Can be null if the resource has never been transferred.
+   */
+  @XmlElement(name = "trDate")
+  DateTime lastTransferTime;
+
+  /**
    * The most recent time that the superordinate domain was changed, or null if this host is
    * external.
    */
@@ -111,6 +119,10 @@ public class HostResource extends EppResource implements ForeignKeyedEppResource
   @XmlElement(name = "addr")
   public ImmutableSet<InetAddress> getInetAddresses() {
     return nullToEmptyImmutableCopy(inetAddresses);
+  }
+
+  public DateTime getLastTransferTime() {
+    return lastTransferTime;
   }
 
   public DateTime getLastSuperordinateChange() {
@@ -195,6 +207,11 @@ public class HostResource extends EppResource implements ForeignKeyedEppResource
 
     public Builder setSuperordinateDomain(Key<DomainResource> superordinateDomain) {
       getInstance().superordinateDomain = superordinateDomain;
+      return this;
+    }
+
+    public Builder setLastTransferTime(DateTime lastTransferTime) {
+      getInstance().lastTransferTime = lastTransferTime;
       return this;
     }
 

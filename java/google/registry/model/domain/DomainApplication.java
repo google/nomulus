@@ -185,13 +185,6 @@ public class DomainApplication extends DomainBase {
     return auctionPrice;
   }
 
-  /** Domain applications don't expose transfer time, so override this and mark it xml transient. */
-  @XmlTransient
-  @Override
-  public final DateTime getLastTransferTime() {
-    return super.getLastTransferTime();
-  }
-
   /**
    * The application id is the repoId.
    */

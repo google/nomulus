@@ -72,7 +72,6 @@ public class DomainApplicationTest extends EntityTestCase {
             .setCreationClientId("a registrar")
             .setLastEppUpdateTime(clock.nowUtc())
             .setLastEppUpdateClientId("another registrar")
-            .setLastTransferTime(clock.nowUtc())
             .setStatusValues(ImmutableSet.of(
                 StatusValue.CLIENT_DELETE_PROHIBITED,
                 StatusValue.SERVER_DELETE_PROHIBITED,

@@ -20,6 +20,8 @@ import static com.google.common.truth.Truth.assertAbout;
 import com.google.common.truth.AbstractVerb.DelegatedVerb;
 import com.google.common.truth.FailureStrategy;
 import google.registry.model.host.HostResource;
+import google.registry.testing.TruthChainer.And;
+import org.joda.time.DateTime;
 
 /** Truth subject for asserting things about {@link HostResource} instances. */
 public final class HostResourceSubject
@@ -35,5 +37,19 @@ public final class HostResourceSubject
 
   public static DelegatedVerb<HostResourceSubject, HostResource> assertAboutHosts() {
     return assertAbout(new SubjectFactory());
+  }
+
+  public And<HostResourceSubject> hasLastTransferTime(DateTime lastTransferTime) {
+    return hasValue(
+        lastTransferTime,
+        actual().getLastTransferTime(),
+        "has lastTransferTime");
+  }
+
+  public And<HostResourceSubject> hasLastTransferTimeNotEqualTo(DateTime lastTransferTime) {
+    return doesNotHaveValue(
+        lastTransferTime,
+        actual().getLastTransferTime(),
+        "lastTransferTime");
   }
 }

@@ -18,15 +18,16 @@ import com.google.auto.value.AutoValue;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
 import google.registry.flows.SessionMetadata;
+import google.registry.flows.domain.DomainCreateFlow;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainResource;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.reporting.HistoryEntry;
 
 /**
- * A no-op base class for domain create flow custom logic.
+ * A no-op base class for {@link DomainCreateFlow} custom logic.
  *
- * <p>Extend this class and override the hooks to perform custom logic.
+ * <p>Extend this class and override the hook(s) to perform custom logic.
  */
 public class DomainCreateFlowCustomLogic extends BaseFlowCustomLogic {
 
@@ -41,17 +42,16 @@ public class DomainCreateFlowCustomLogic extends BaseFlowCustomLogic {
   }
 
   /**
-   * A hook that runs before new entities are persisted.
+   * A hook that runs before new entities are persisted, allowing them to be changed.
    *
-   * <p>This takes the new entities as input and returns the actual entities to save. It is
-   * important to be careful when changing the flow behavior for existing entities, because the core
-   * logic across many different flows expects the existence of these entities and many of the
-   * fields on them.
+   * <p>It returns the actual entity changes that should be persisted to Datastore. It is important
+   * to be careful when changing the flow behavior for existing entities, because the core logic
+   * across many different flows expects the existence of these entities and many of the fields on
+   * them.
    */
   @SuppressWarnings("unused")
-  public EntityChanges beforeSave(BeforeSaveParameters parameters, EntityChanges entityChanges)
-      throws EppException {
-    return entityChanges;
+  public EntityChanges beforeSave(BeforeSaveParameters parameters) throws EppException {
+    return parameters.entityChanges();
   }
 
   /** A class to encapsulate parameters for a call to {@link #afterValidation}. */
@@ -59,6 +59,7 @@ public class DomainCreateFlowCustomLogic extends BaseFlowCustomLogic {
   public abstract static class AfterValidationParameters extends ImmutableObject {
 
     public abstract InternetDomainName domainName();
+
     public abstract int years();
 
     public static Builder newBuilder() {
@@ -68,8 +69,11 @@ public class DomainCreateFlowCustomLogic extends BaseFlowCustomLogic {
     /** Builder for {@link AfterValidationParameters}. */
     @AutoValue.Builder
     public abstract static class Builder {
+
       public abstract Builder setDomainName(InternetDomainName domainName);
+
       public abstract Builder setYears(int years);
+
       public abstract AfterValidationParameters build();
     }
   }
@@ -79,7 +83,11 @@ public class DomainCreateFlowCustomLogic extends BaseFlowCustomLogic {
   public abstract static class BeforeSaveParameters extends ImmutableObject {
 
     public abstract DomainResource newDomain();
+
     public abstract HistoryEntry historyEntry();
+
+    public abstract EntityChanges entityChanges();
+
     public abstract int years();
 
     public static Builder newBuilder() {
@@ -89,9 +97,15 @@ public class DomainCreateFlowCustomLogic extends BaseFlowCustomLogic {
     /** Builder for {@link BeforeSaveParameters}. */
     @AutoValue.Builder
     public abstract static class Builder {
+
       public abstract Builder setNewDomain(DomainResource newDomain);
+
       public abstract Builder setHistoryEntry(HistoryEntry historyEntry);
+
+      public abstract Builder setEntityChanges(EntityChanges entityChanges);
+
       public abstract Builder setYears(int years);
+
       public abstract BeforeSaveParameters build();
     }
   }

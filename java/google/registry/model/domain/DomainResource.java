@@ -162,6 +162,14 @@ public class DomainResource extends DomainBase
   @XmlTransient
   TransferData transferData;
 
+  /**
+   * The time that this resource was last transferred.
+   *
+   * <p>Can be null if the resource has never been transferred.
+   */
+  @XmlElement(name = "trDate")
+  DateTime lastTransferTime;
+
   public ImmutableSet<String> getSubordinateHosts() {
     return nullToEmptyImmutableCopy(subordinateHosts);
   }
@@ -201,6 +209,11 @@ public class DomainResource extends DomainBase
   @Override
   public final TransferData getTransferData() {
     return Optional.fromNullable(transferData).or(TransferData.EMPTY);
+  }
+
+  @Override
+  public DateTime getLastTransferTime() {
+    return lastTransferTime;
   }
 
   @Override
@@ -462,5 +475,12 @@ public class DomainResource extends DomainBase
       getInstance().transferData = transferData;
       return thisCastToDerived();
     }
+
+    @Override
+    public Builder setLastTransferTime(DateTime lastTransferTime) {
+      getInstance().lastTransferTime = lastTransferTime;
+      return thisCastToDerived();
+    }
   }
 }
+

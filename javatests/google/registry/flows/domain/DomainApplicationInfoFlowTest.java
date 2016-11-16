@@ -90,7 +90,6 @@ public class DomainApplicationInfoFlowTest
         .setLastEppUpdateClientId("NewRegistrar")
         .setCreationTimeForTest(DateTime.parse("1999-04-03T22:00:00.0Z"))
         .setLastEppUpdateTime(DateTime.parse("1999-12-03T09:00:00.0Z"))
-        .setLastTransferTime(DateTime.parse("2000-04-08T09:00:00.0Z"))
         .setRegistrant(Key.create(registrant))
         .setContacts(ImmutableSet.of(
             DesignatedContact.create(Type.ADMIN, Key.create(contact)),
@@ -125,7 +124,6 @@ public class DomainApplicationInfoFlowTest
         .setLastEppUpdateClientId("NewRegistrar")
         .setCreationTimeForTest(DateTime.parse("1999-04-03T22:00:00.0Z"))
         .setLastEppUpdateTime(DateTime.parse("1999-12-03T09:00:00.0Z"))
-        .setLastTransferTime(DateTime.parse("2000-04-08T09:00:00.0Z"))
         .setRegistrant(Key.create(registrant))
         .setContacts(ImmutableSet.of(
             DesignatedContact.create(Type.ADMIN, Key.create(contact)),
@@ -350,7 +348,7 @@ public class DomainApplicationInfoFlowTest
     thrown.expect(ApplicationLaunchPhaseMismatchException.class);
     runFlow();
   }
-  
+
 
   /** Test registry extra logic manager with no flags. */
   @Test

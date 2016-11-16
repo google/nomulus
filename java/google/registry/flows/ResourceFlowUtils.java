@@ -14,6 +14,7 @@
 
 package google.registry.flows;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.tryFind;
 import static com.google.common.collect.Sets.intersection;
@@ -67,7 +68,6 @@ import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import java.util.List;
 import java.util.Set;
-import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
 /** Static utility functions for resource flows. */
@@ -221,7 +221,7 @@ public final class ResourceFlowUtils {
         .setServerApproveAutorenewEvent(null)
         .setServerApproveAutorenewPollMessage(null)
         .setTransferStatus(transferStatus)
-        .setPendingTransferExpirationTime(now)
+        .setPendingTransferExpirationTime(checkNotNull(now))
         .build();
   }
 
@@ -232,15 +232,12 @@ public final class ResourceFlowUtils {
    * {@link TransferStatus}, clears all the server-approve fields on the {@link TransferData}
    * including the extended registration years field, and sets the expiration time of the last
    * pending transfer to now.
-   *
-   * @param now the time that the transfer was resolved, or null if the transfer was never actually
-   *     resolved but the resource was deleted while it was still pending.
    */
   @SuppressWarnings("unchecked")
   public static <
       R extends EppResource & ResourceWithTransferData,
       B extends EppResource.Builder<R, B> & BuilderWithTransferData<B>> B resolvePendingTransfer(
-          R resource, TransferStatus transferStatus, @Nullable DateTime now) {
+          R resource, TransferStatus transferStatus, DateTime now) {
     return ((B) resource.asBuilder())
         .removeStatusValue(StatusValue.PENDING_TRANSFER)
         .setTransferData(
@@ -255,13 +252,15 @@ public final class ResourceFlowUtils {
    * including the extended registration years field, and sets the expiration time of the last
    * pending transfer to now.
    */
-  public static <R extends EppResource & ResourceWithTransferData> R approvePendingTransfer(
-      R resource, TransferStatus transferStatus, DateTime now) {
-    Builder<R, ?> builder = resolvePendingTransfer(resource, transferStatus, now);
-    builder
+  public static <
+        R extends EppResource & ResourceWithTransferData,
+        B extends Builder<R, B> & BuilderWithTransferData<B>>
+            R approvePendingTransfer(R resource, TransferStatus transferStatus, DateTime now) {
+    B builder = resolvePendingTransfer(resource, transferStatus, now);
+    return builder
         .setLastTransferTime(now)
-        .setCurrentSponsorClientId(resource.getTransferData().getGainingClientId());
-    return builder.build();
+        .setCurrentSponsorClientId(resource.getTransferData().getGainingClientId())
+        .build();
   }
 
   /**

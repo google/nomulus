@@ -18,7 +18,6 @@ import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.poll.PollFlowUtils.getPollMessagesQuery;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACK_MESSAGE;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_NO_MESSAGES;
-import static google.registry.util.CollectionUtils.forceEmptyToNull;
 
 import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
@@ -76,8 +75,8 @@ public class PollRequestFlow implements Flow {
             .setQueueLength(getPollMessagesQuery(clientId, now).count())
             .setMessageId(PollMessage.EXTERNAL_KEY_CONVERTER.convert(Key.create(pollMessage)))
             .build())
-        .setMultipleResData(forceEmptyToNull(pollMessage.getResponseData()))
-        .setExtensions(forceEmptyToNull(pollMessage.getResponseExtensions()))
+        .setMultipleResData(pollMessage.getResponseData())
+        .setExtensions(pollMessage.getResponseExtensions())
         .build();
   }
 

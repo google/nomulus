@@ -210,9 +210,13 @@ public class DeleteContactsAndHostsActionTest
     // Check that the contact is deleted as of now.
     assertThat(loadByForeignKey(ContactResource.class, "sh8013", clock.nowUtc())).isNull();
     // Check that it's still there (it wasn't deleted yesterday) and that it has history.
+    ContactResource softDeletedContact =
+        loadByForeignKey(ContactResource.class, "sh8013", clock.nowUtc().minusDays(1));
     assertAboutContacts()
-        .that(loadByForeignKey(ContactResource.class, "sh8013", clock.nowUtc().minusDays(1)))
+        .that(softDeletedContact)
         .hasOneHistoryEntryEachOfTypes(CONTACT_TRANSFER_REQUEST, CONTACT_DELETE);
+    assertThat(softDeletedContact.getTransferData().getPendingTransferExpirationTime())
+        .isEqualTo(softDeletedContact.getDeletionTime());
     assertNoBillingEvents();
     PollMessage deletePollMessage =
         Iterables.getOnlyElement(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1)));

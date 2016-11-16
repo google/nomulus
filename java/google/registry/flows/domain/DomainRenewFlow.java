@@ -216,11 +216,12 @@ public final class DomainRenewFlow implements TransactionalFlow {
 
   private ImmutableList<FeeTransformResponseExtension> createResponseExtensions(
       Money renewCost, FeeRenewCommandExtension feeRenew) {
-    return (feeRenew == null) ? null : ImmutableList.of(feeRenew
-        .createResponseBuilder()
-        .setCurrency(renewCost.getCurrencyUnit())
-        .setFees(ImmutableList.of(Fee.create(renewCost.getAmount(), FeeType.RENEW)))
-        .build());
+    return (feeRenew == null)
+        ? ImmutableList.<FeeTransformResponseExtension>of()
+        : ImmutableList.of(feeRenew.createResponseBuilder()
+            .setCurrency(renewCost.getCurrencyUnit())
+            .setFees(ImmutableList.of(Fee.create(renewCost.getAmount(), FeeType.RENEW)))
+            .build());
   }
 
   /** The domain has a pending transfer on it and so can't be explicitly renewed. */

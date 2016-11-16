@@ -19,7 +19,6 @@ import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.domain.DomainFlowUtils.addSecDnsExtensionIfPresent;
 import static google.registry.flows.domain.DomainFlowUtils.handleFeeRequest;
-import static google.registry.util.CollectionUtils.forceEmptyToNull;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -149,6 +148,6 @@ public final class DomainInfoFlow implements Flow {
         extensions.add(FlagsInfoResponseExtension.create(ImmutableList.copyOf(flags)));
       }
     }
-    return forceEmptyToNull(extensions.build());
+    return extensions.build();
   }
 }

@@ -27,6 +27,7 @@ import org.joda.time.DateTime;
  * Interface for classes which provide extra registry logic for things like TLD-specific rules and
  * discounts.
  */
+@Deprecated
 public interface RegistryExtraFlowLogic {
 
   /** Gets the flags to be returned for application info commands. */
