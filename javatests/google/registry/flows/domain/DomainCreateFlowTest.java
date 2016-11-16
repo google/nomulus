@@ -1215,7 +1215,7 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
   }
 
   @Test
-  public void testFailure_signedMark() throws Exception {
+  public void testFailure_signedMarkWithoutAnchorTenant() throws Exception {
     createTld("tld", TldState.SUNRISE);
     setEppInput("domain_create_signed_mark.xml");
     persistContactsAndHosts();
@@ -1573,7 +1573,7 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
   }
 
   @Test
-  public void testSuccess_qlpLandrushRegistrationWithEncodedSignedMark() throws Exception {
+  public void testSuccess_qlpLandrushRegistrationIgnoresEncodedSignedMark() throws Exception {
     createTld("tld", TldState.LANDRUSH);
     clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
     setEppInput("domain_create_registration_qlp_landrush_encoded_signed_mark.xml");
