@@ -199,9 +199,8 @@ public class DomainCreateFlow implements TransactionalFlow {
       verifyNoCodeMarks(launchCreate);
       validateLaunchCreateNotice(launchCreate.getNotice(), domainLabel, isSuperuser, now);
     }
-    if (hasSignedMarks) {
-      verifySignedMarksAllowed(tldState, isAnchorTenant);
-    }
+    boolean isInSunrise = hasSignedMarks && QLP_SMD_ALLOWED_STATES.contains(tldState);
+    verifySignedMarksAllowed(isInSunrise, isAnchorTenant);
     customLogic.afterValidation(
         DomainCreateFlowCustomLogic.AfterValidationParameters.newBuilder()
             .setDomainName(domainName)
@@ -290,7 +289,7 @@ public class DomainCreateFlow implements TransactionalFlow {
       entitiesToSave.add(
           prepareMarkedLrpTokenEntity(authInfo.getPw().getValue(), domainName, historyEntry));
     }
-    enqueueTasks(hasSignedMarks, hasClaimsNotice, newDomain);
+    enqueueTasks(isInSunrise, hasClaimsNotice, newDomain);
 
     // TODO: Remove this section and only use the customLogic.
     Optional<RegistryExtraFlowLogic> extraFlowLogic =
@@ -327,9 +326,9 @@ public class DomainCreateFlow implements TransactionalFlow {
   }
 
   /** Only QLP domains can have a signed mark on a domain create, and only in sunrise or sunrush. */
-  private void verifySignedMarksAllowed(TldState tldState, boolean isAnchorTenant)
+  private void verifySignedMarksAllowed(boolean isInSunrise, boolean isAnchorTenant)
       throws SignedMarksNotAcceptedInCurrentPhaseException {
-    if (!isAnchorTenant || !QLP_SMD_ALLOWED_STATES.contains(tldState)) {
+    if (isInSunrise && !isAnchorTenant) {
       throw new SignedMarksNotAcceptedInCurrentPhaseException();
     }
   }
@@ -427,11 +426,11 @@ public class DomainCreateFlow implements TransactionalFlow {
   }
 
   private void enqueueTasks(
-      boolean hasSignedMarks, boolean hasClaimsNotice, DomainResource newDomain) {
+      boolean isInSunrise, boolean hasClaimsNotice, DomainResource newDomain) {
     if (newDomain.shouldPublishToDns()) {
       DnsQueue.create().addDomainRefreshTask(newDomain.getFullyQualifiedDomainName());
     }
-    if (hasClaimsNotice || hasSignedMarks) {
+    if (hasClaimsNotice || isInSunrise) {
       LordnTask.enqueueDomainResourceTask(newDomain);
     }
   }

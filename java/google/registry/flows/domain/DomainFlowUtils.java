@@ -367,17 +367,17 @@ public class DomainFlowUtils {
   }
 
   static void verifyNotReserved(
-      InternetDomainName domainName, boolean isSunriseApplication) throws EppException {
-    if (isReserved(domainName, isSunriseApplication)) {
+      InternetDomainName domainName, boolean hasSignedMarks) throws EppException {
+    if (isReserved(domainName, hasSignedMarks)) {
       throw new DomainReservedException(domainName.toString());
     }
   }
 
-  private static boolean isReserved(InternetDomainName domainName, boolean inSunrise) {
+  private static boolean isReserved(InternetDomainName domainName, boolean hasSignedMarks) {
     ReservationType type = getReservationType(domainName);
     return type == ReservationType.FULLY_BLOCKED
         || type == ReservationType.RESERVED_FOR_ANCHOR_TENANT
-        || (TYPES_ALLOWED_FOR_CREATE_ONLY_IN_SUNRISE.contains(type) && !inSunrise);
+        || (TYPES_ALLOWED_FOR_CREATE_ONLY_IN_SUNRISE.contains(type) && !hasSignedMarks);
   }
 
   /** Returns an enum that encodes how and when this name is reserved in the current tld. */
