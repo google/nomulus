@@ -131,6 +131,8 @@ import org.joda.time.Interval;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.annotation.Nullable;
+
 /** Unit tests for {@link DomainCreateFlow}. */
 public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, DomainResource> {
 
@@ -256,7 +258,8 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
     assertNoLordn(null, null);
   }
 
-  private void assertNoLordn(String smdId, LaunchNotice launchNotice) throws Exception {
+  private void assertNoLordn(
+      @Nullable String smdId, @Nullable LaunchNotice launchNotice) throws Exception {
     assertAboutDomains().that(reloadResourceByForeignKey())
         .hasSmdId(smdId).and()
         .hasLaunchNotice(launchNotice);
@@ -414,6 +417,18 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
         .build());
     persistContactsAndHosts();
     doSuccessfulTest();
+  }
+
+  @Test
+  public void testSuccess_GeneralAvailabilityIgnoresEncodedSignedMark() throws Exception {
+    createTld("tld", TldState.GENERAL_AVAILABILITY);
+    clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
+    setEppInput("domain_create_registration_encoded_signed_mark.xml");
+    eppRequestSource = EppRequestSource.TOOL;  // Only tools can pass in metadata.
+    persistContactsAndHosts();
+    runFlow();
+    assertSuccessfulCreate("tld", true);
+    assertNoLordn("0000001761376042759136-65535", null);
   }
 
   @Test
