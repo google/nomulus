@@ -319,7 +319,7 @@ public class DeleteContactsAndHostsAction implements Runnable {
           ContactResource contact = (ContactResource) resource;
           resourceToSaveBuilder = contact.asBuilder()
               .setTransferData(createResolvedTransferData(
-                  contact.getTransferData(), TransferStatus.SERVER_CANCELLED, null))
+                  contact.getTransferData(), TransferStatus.SERVER_CANCELLED, now))
               .wipeOut();
         } else {
           resourceToSaveBuilder = resource.asBuilder();

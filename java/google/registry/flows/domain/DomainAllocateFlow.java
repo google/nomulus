@@ -394,7 +394,7 @@ public class DomainAllocateFlow implements TransactionalFlow {
     FeeCreateCommandExtension feeCreate =
         eppInput.getSingleExtension(FeeCreateCommandExtension.class);
     return (feeCreate == null)
-        ? null
+        ? ImmutableList.<FeeTransformResponseExtension>of()
         : ImmutableList.of(createFeeCreateResponse(feeCreate, commandOperations));
   }
 

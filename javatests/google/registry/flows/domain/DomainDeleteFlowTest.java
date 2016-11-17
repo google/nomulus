@@ -537,6 +537,8 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
     assertThat(domain.getTransferData().getServerApproveBillingEvent()).isNull();
     assertThat(domain.getTransferData().getServerApproveAutorenewEvent()).isNull();
     assertThat(domain.getTransferData().getServerApproveAutorenewPollMessage()).isNull();
+    assertThat(domain.getTransferData().getPendingTransferExpirationTime())
+        .isEqualTo(clock.nowUtc());
     assertThat(ofy().load().key(oldTransferData.getServerApproveBillingEvent()).now()).isNull();
     assertThat(ofy().load().key(oldTransferData.getServerApproveAutorenewEvent()).now()).isNull();
     assertThat(ofy().load().key(oldTransferData.getServerApproveAutorenewPollMessage()).now())

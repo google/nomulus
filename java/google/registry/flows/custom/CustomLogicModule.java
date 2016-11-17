@@ -28,4 +28,10 @@ public class CustomLogicModule {
       CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata) {
     return factory.forDomainCreateFlow(eppInput, sessionMetadata);
   }
+
+  @Provides
+  static DomainCheckFlowCustomLogic provideDomainCheckFlowCustomLogic(
+      CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata) {
+    return factory.forDomainCheckFlow(eppInput, sessionMetadata);
+  }
 }

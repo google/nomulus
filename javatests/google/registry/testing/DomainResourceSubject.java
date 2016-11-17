@@ -79,6 +79,20 @@ public final class DomainResourceSubject
     return andChainer();
   }
 
+  public And<DomainResourceSubject> hasLastTransferTime(DateTime lastTransferTime) {
+    return hasValue(
+        lastTransferTime,
+        actual().getLastTransferTime(),
+        "has lastTransferTime");
+  }
+
+  public And<DomainResourceSubject> hasLastTransferTimeNotEqualTo(DateTime lastTransferTime) {
+    return doesNotHaveValue(
+        lastTransferTime,
+        actual().getLastTransferTime(),
+        "lastTransferTime");
+  }
+
   public And<DomainResourceSubject> hasDeletePollMessage() {
     if (actual().getDeletePollMessage() == null) {
       fail("has a delete poll message");

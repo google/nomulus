@@ -132,7 +132,7 @@ public class DomainTransferRequestFlowTest
 
   private void assertTransferApproved(HostResource host) {
     DateTime afterAutoAck = clock.nowUtc().plus(Registry.get("tld").getAutomaticTransferLength());
-    assertAboutEppResources().that(host)
+    assertAboutHosts().that(host)
         .hasCurrentSponsorClientId("NewRegistrar").and()
         .hasLastTransferTime(afterAutoAck).and()
         .doesNotHaveStatusValue(StatusValue.PENDING_TRANSFER);

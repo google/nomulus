@@ -26,7 +26,7 @@ import static google.registry.testing.DatastoreHelper.getOnlyPollMessage;
 import static google.registry.testing.DatastoreHelper.getPollMessages;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.DomainResourceSubject.assertAboutDomains;
-import static google.registry.testing.GenericEppResourceSubject.assertAboutEppResources;
+import static google.registry.testing.HostResourceSubject.assertAboutHosts;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.util.Arrays.asList;
 import static org.joda.money.CurrencyUnit.USD;
@@ -111,7 +111,7 @@ public class DomainTransferApproveFlowTest
   }
 
   private void assertTransferApproved(HostResource host) {
-    assertAboutEppResources().that(host)
+    assertAboutHosts().that(host)
         .hasCurrentSponsorClientId("NewRegistrar").and()
         .hasLastTransferTime(clock.nowUtc()).and()
         .doesNotHaveStatusValue(StatusValue.PENDING_TRANSFER);

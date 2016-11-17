@@ -105,15 +105,6 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable, 
   @XmlElement(name = "upDate")
   DateTime lastEppUpdateTime;
 
-  /**
-   * The time that this resource was last transferred.
-   *
-   * <p>Can be null if the resource has never been transferred.
-   */
-  // Map the method to XML, not the field, so subclasses can override it.
-  @XmlTransient
-  DateTime lastTransferTime;
-
   /** Status values associated with this resource. */
   Set<StatusValue> status;
 
@@ -157,11 +148,6 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable, 
     return nullToEmptyImmutableCopy(status);
   }
 
-  @XmlElement(name = "trDate")
-  public DateTime getLastTransferTime() {
-    return lastTransferTime;
-  }
-
   public final DateTime getDeletionTime() {
     return deletionTime;
   }
@@ -186,11 +172,21 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable, 
   /** An interface for resources that have transfer data. */
   public interface ResourceWithTransferData {
     public TransferData getTransferData();
+
+    /**
+     * The time that this resource was last transferred.
+     *
+     * <p>Can be null if the resource has never been transferred.
+     */
+    public DateTime getLastTransferTime();
   }
 
   /** An interface for builders of resources that have transfer data. */
   public interface BuilderWithTransferData<B extends BuilderWithTransferData<B>> {
     public B setTransferData(TransferData transferData);
+
+    /** Set the time when this resource was transferred. */
+    public B setLastTransferTime(DateTime lastTransferTime);
   }
 
   /** Abstract builder for {@link EppResource} types. */
@@ -252,12 +248,6 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable, 
     /** Set the registrar who last performed a {@literal <update>} on this resource. */
     public B setLastEppUpdateClientId(String lastEppUpdateClientId) {
       getInstance().lastEppUpdateClientId = lastEppUpdateClientId;
-      return thisCastToDerived();
-    }
-
-    /** Set the time when this resource was transferred. */
-    public B setLastTransferTime(DateTime lastTransferTime) {
-      getInstance().lastTransferTime = lastTransferTime;
       return thisCastToDerived();
     }
 

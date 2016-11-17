@@ -47,11 +47,11 @@ public class HostFlowUtils {
     if (!name.equals(hostNameLowerCase)) {
       throw new HostNameNotLowerCaseException(hostNameLowerCase);
     }
-    String hostNamePunyCoded = Idn.toASCII(name);
-    if (!name.equals(hostNamePunyCoded)) {
-      throw new HostNameNotPunyCodedException(hostNamePunyCoded);
-    }
     try {
+      String hostNamePunyCoded = Idn.toASCII(name);
+      if (!name.equals(hostNamePunyCoded)) {
+        throw new HostNameNotPunyCodedException(hostNamePunyCoded);
+      }
       InternetDomainName hostName = InternetDomainName.from(name);
       if (!name.equals(hostName.toString())) {
         throw new HostNameNotNormalizedException(hostName.toString());

@@ -150,20 +150,6 @@ abstract class AbstractEppResourceSubject
         "has deletionTime");
   }
 
-  public And<S> hasLastTransferTime(DateTime lastTransferTime) {
-    return hasValue(
-        lastTransferTime,
-        actual().getLastTransferTime(),
-        "has lastTransferTime");
-  }
-
-  public And<S> hasLastTransferTimeNotEqualTo(DateTime lastTransferTime) {
-    return doesNotHaveValue(
-        lastTransferTime,
-        actual().getLastTransferTime(),
-        "lastTransferTime");
-  }
-
   public And<S> hasLastEppUpdateTime(DateTime lastUpdateTime) {
     return hasValue(
         lastUpdateTime,

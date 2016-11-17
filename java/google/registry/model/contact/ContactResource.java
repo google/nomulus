@@ -125,6 +125,14 @@ public class ContactResource extends EppResource
   @XmlTransient
   TransferData transferData;
 
+  /**
+   * The time that this resource was last transferred.
+   *
+   * <p>Can be null if the resource has never been transferred.
+   */
+  @XmlElement(name = "trDate")
+  DateTime lastTransferTime;
+
   // If any new fields are added which contain personal information, make sure they are cleared by
   // the wipeOut() function, so that data is not kept around for deleted contacts.
 
@@ -168,6 +176,11 @@ public class ContactResource extends EppResource
   @Override
   public final TransferData getTransferData() {
     return Optional.fromNullable(transferData).or(TransferData.EMPTY);
+  }
+
+  @Override
+  public DateTime getLastTransferTime() {
+    return lastTransferTime;
   }
 
   @Override
@@ -273,6 +286,12 @@ public class ContactResource extends EppResource
     public Builder setTransferData(TransferData transferData) {
       getInstance().transferData = transferData;
       return this;
+    }
+
+    @Override
+    public Builder setLastTransferTime(DateTime lastTransferTime) {
+      getInstance().lastTransferTime = lastTransferTime;
+      return thisCastToDerived();
     }
 
     /**

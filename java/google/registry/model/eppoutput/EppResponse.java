@@ -14,6 +14,9 @@
 
 package google.registry.model.eppoutput;
 
+import static google.registry.util.CollectionUtils.forceEmptyToNull;
+import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
+
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.Buildable;
@@ -150,11 +153,11 @@ public class EppResponse extends ImmutableObject implements ResponseOrGreeting {
   ImmutableList<? extends ResponseExtension> extensions;
 
   public ImmutableList<? extends ResponseData> getResponseData() {
-    return resData;
+    return nullToEmptyImmutableCopy(resData);
   }
 
   public ImmutableList<? extends ResponseExtension> getExtensions() {
-    return extensions;
+    return nullToEmptyImmutableCopy(extensions);
   }
 
   @Nullable
@@ -216,8 +219,8 @@ public class EppResponse extends ImmutableObject implements ResponseOrGreeting {
       return setMultipleResData(ImmutableList.of(onlyResData));
     }
 
-    public Builder setMultipleResData(@Nullable ImmutableList<? extends ResponseData> resData) {
-      getInstance().resData = resData;
+    public Builder setMultipleResData(ImmutableList<? extends ResponseData> resData) {
+      getInstance().resData = forceEmptyToNull(resData);
       return this;
     }
 
@@ -225,8 +228,8 @@ public class EppResponse extends ImmutableObject implements ResponseOrGreeting {
       return setExtensions(ImmutableList.of(onlyExtension));
     }
 
-    public Builder setExtensions(@Nullable ImmutableList<? extends ResponseExtension> extensions) {
-      getInstance().extensions = extensions;
+    public Builder setExtensions(ImmutableList<? extends ResponseExtension> extensions) {
+      getInstance().extensions = forceEmptyToNull(extensions);
       return this;
     }
   }

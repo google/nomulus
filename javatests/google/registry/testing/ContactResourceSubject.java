@@ -162,6 +162,19 @@ public final class ContactResourceSubject
         "has transfer losingClientId");
   }
 
+  public And<ContactResourceSubject> hasLastTransferTime(DateTime lastTransferTime) {
+    return hasValue(
+        lastTransferTime,
+        actual().getLastTransferTime(),
+        "has lastTransferTime");
+  }
+
+  public And<ContactResourceSubject> hasLastTransferTimeNotEqualTo(DateTime lastTransferTime) {
+    return doesNotHaveValue(
+        lastTransferTime,
+        actual().getLastTransferTime(),
+        "lastTransferTime");
+  }
   public static DelegatedVerb<ContactResourceSubject, ContactResource> assertAboutContacts() {
     return assertAbout(new SubjectFactory());
   }
