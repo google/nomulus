@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
+
+  <application>domain-registry</application>
+  <version>1</version>
+  <module>default</module>
+  <threadsafe>true</threadsafe>
+  <sessions-enabled>true</sessions-enabled>
+  <instance-class>B4_1G</instance-class>
+  <basic-scaling>
+    <max-instances>10</max-instances>
+    <idle-timeout>10m</idle-timeout>
+  </basic-scaling>
+
+
+  <system-properties>
+    <property name="java.util.logging.config.file"
+              value="WEB-INF/logging.properties"/>
+    <property name="google.registry.environment"
+              value="local"/>
+    <property name="appengine.generated.dir"
+              value="/tmp/domain-registry-appengine-generated/local/"/>
+  </system-properties>
+
+  <static-files>
+    <include path="/*.html">
+      <http-header name="Cache-Control" value="max-age=0,must-revalidate" />
+    </include>
+    <include path="/assets/js/**">
+      <http-header name="Cache-Control" value="max-age=0,must-revalidate" />
+    </include>
+    <include path="/assets/css/**">
+      <http-header name="Cache-Control" value="max-age=0,must-revalidate" />
+    </include>
+    <include path="/assets/images/**">
+      <http-header name="Cache-Control" value="max-age=0,must-revalidate" />
+    </include>
+    <include path="/assets/sources/**">
+      <http-header name="Cache-Control" value="max-age=0,must-revalidate" />
+    </include>
+  </static-files>
+</appengine-web-app>

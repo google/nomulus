@@ -646,12 +646,12 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
 
   @Test
   public void testSuccess_idn() throws Exception {
-    createTld("xn--q9jyb4c");
-    setEppInput("domain_create_idn_minna.xml");
+    createTld("xn--unup4y");
+    setEppInput("domain_create_idn_zh.xml");
     persistContactsAndHosts("net");
-    runFlowAssertResponse(readFile("domain_create_response_idn_minna.xml"));
-    assertSuccessfulCreate("xn--q9jyb4c", false);
-    assertDnsTasksEnqueued("xn--abc-873b2e7eb1k8a4lpjvv.xn--q9jyb4c");
+    runFlowAssertResponse(readFile("domain_create_response_idn_zh.xml"));
+    assertSuccessfulCreate("xn--unup4y", false);
+    assertDnsTasksEnqueued("xn--15qt0w.xn--unup4y");
   }
 
   @Test

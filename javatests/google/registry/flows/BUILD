@@ -31,6 +31,7 @@ java_library(
         "//java/com/google/common/io",
         "//java/com/google/common/net",
         "//java/com/google/common/testing",
+        "//java/domains/donuts",
         "//third_party/java/appengine:appengine-api-testonly",
         "//third_party/java/appengine:appengine-testing",
         "//third_party/java/dagger",

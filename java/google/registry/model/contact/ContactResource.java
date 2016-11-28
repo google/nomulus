@@ -77,6 +77,7 @@ public class ContactResource extends EppResource
    * from (creationTime, deletionTime) there can only be one contact in the datastore with this id.
    * However, there can be many contacts with the same id and non-overlapping lifetimes.
    */
+  @Index
   @XmlTransient
   String contactId;
 

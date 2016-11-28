@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blacklistentries>
+
+  <!-- Example IPv4 CIDR Subnet
+  <blacklist>
+    <subnet>1.2.3.4/24</subnet>
+    <description>An IPv4 subnet</description>
+  </blacklist> -->
+
+  <!-- Example IPv6 CIDR Subnet
+  <blacklist>
+    <subnet>abcd::123:4567/48</subnet>
+    <description>An IPv6 subnet</description>
+  </blacklist> -->
+
+</blacklistentries>

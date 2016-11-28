@@ -14,8 +14,10 @@
 
 package google.registry.tldconfig.idn;
 
-import static google.registry.tldconfig.idn.IdnTableEnum.EXTENDED_LATIN;
-import static google.registry.tldconfig.idn.IdnTableEnum.JA;
+import static google.registry.tldconfig.idn.IdnTableEnum.ES;
+import static google.registry.tldconfig.idn.IdnTableEnum.FR;
+import static google.registry.tldconfig.idn.IdnTableEnum.DE;
+import static google.registry.tldconfig.idn.IdnTableEnum.ZH;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -28,12 +30,12 @@ public final class IdnLabelValidator {
 
   /** Most TLDs will use this generic list of IDN tables. */
   private static final ImmutableList<IdnTableEnum> DEFAULT_IDN_TABLES =
-      ImmutableList.of(EXTENDED_LATIN, JA);
+      ImmutableList.of(ES, FR, DE, ZH);
 
   /** Some TLDs have their own IDN tables, configured here. */
   @NonFinalForTesting
   private static ImmutableMap<String, ImmutableList<IdnTableEnum>> idnTableListsPerTld =
-      ImmutableMap.of("xn--q9jyb4c", ImmutableList.of(EXTENDED_LATIN, JA));
+      ImmutableMap.of();
 
   /**
    * Returns name of first matching {@link IdnTable} if domain label is valid for the given TLD.

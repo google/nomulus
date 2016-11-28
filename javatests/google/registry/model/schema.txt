@@ -394,6 +394,39 @@ class google.registry.model.host.HostResource {
   org.joda.time.DateTime lastSuperordinateChange;
   org.joda.time.DateTime lastTransferTime;
 }
+class google.registry.model.icann.IcannDnsReportingFields {
+  @Id java.lang.String tld;
+  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
+  int dnsTcpQueriesReceivedCount;
+  int dnsTcpQueriesRespondedCount;
+  int dnsUdpQueriesReceivedCount;
+  int dnsUdpQueriesRespondedCount;
+  java.lang.String dnsTcpQueriesReceived;
+  java.lang.String dnsTcpQueriesResponded;
+  java.lang.String dnsUdpQueriesReceived;
+  java.lang.String dnsUdpQueriesResponded;
+  org.joda.time.YearMonth yearMonth;
+}
+class google.registry.model.icann.IcannRegistrarReportingFields {
+  @Id java.lang.String clientId;
+  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
+  int preRampUpRegistrarsCount;
+  int rampUpRegistrarsCount;
+  int zfaPasswordsCount;
+  java.lang.String tld;
+  org.joda.time.YearMonth yearMonth;
+}
+class google.registry.model.icann.IcannTldReportingFields {
+  @Id java.lang.String tld;
+  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
+  int agpExemptedDomainsCount;
+  int agpExemptionRequestsCount;
+  int agpExemptionsGrantedCount;
+  int transferDisputedLostCount;
+  int transferDisputedNondecisionCount;
+  int transferDisputedWonCount;
+  org.joda.time.YearMonth yearMonth;
+}
 class google.registry.model.index.DomainApplicationIndex {
   @Id java.lang.String fullyQualifiedDomainName;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
@@ -540,6 +573,23 @@ class google.registry.model.ofy.CommitLogMutation {
   @Parent com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest> parent;
   byte[] entityProtoBytes;
 }
+enum google.registry.model.permission.Permission {
+  ASSIGN_PERMISSION_GROUPS;
+  NONE;
+  READ_PERMISSION_GROUPS;
+  READ_REGISTRAR_CONTACTS;
+  WRITE_PERMISSON_GROUPS;
+}
+class google.registry.model.permission.PermissionGroup {
+  @Id java.lang.String name;
+  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
+  java.util.Set<google.registry.model.permission.Permission> permissions;
+}
+class google.registry.model.permission.UserPermissionGroups {
+  @Id java.lang.String emailAddress;
+  @Parent com.googlecode.objectify.Key<google.registry.model.registrar.Registrar> parent;
+  java.util.Set<java.lang.String> permissionGroups;
+}
 class google.registry.model.poll.PendingActionNotificationResponse$ContactPendingActionNotificationResponse {
   google.registry.model.eppcommon.Trid trid;
   google.registry.model.poll.PendingActionNotificationResponse$NameOrId nameOrId;
@@ -581,6 +631,13 @@ class google.registry.model.poll.PollMessage$OneTime {
   java.util.List<google.registry.model.transfer.TransferResponse$ContactTransferResponse> contactTransferResponses;
   java.util.List<google.registry.model.transfer.TransferResponse$DomainTransferResponse> domainTransferResponses;
   org.joda.time.DateTime eventTime;
+}
+class google.registry.model.pricing.PricingCategory {
+  @Id java.lang.String name;
+  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
+  java.lang.String comment;
+  org.joda.money.Money price;
+  org.joda.time.DateTime activationDate;
 }
 class google.registry.model.rde.RdeRevision {
   @Id java.lang.String id;
@@ -671,7 +728,7 @@ class google.registry.model.registry.Registry {
   boolean dnsPaused;
   boolean escrowEnabled;
   boolean premiumPriceAckRequired;
-  com.googlecode.objectify.Key<google.registry.model.registry.label.PremiumList> premiumList;
+  com.googlecode.objectify.Key<google.registry.model.registry.label.BasePremiumList> premiumList;
   google.registry.model.CreateAutoTimestamp creationTime;
   google.registry.model.common.TimedTransitionProperty<google.registry.model.registry.Registry$TldState, google.registry.model.registry.Registry$TldStateTransition> tldStateTransitions;
   google.registry.model.common.TimedTransitionProperty<org.joda.money.Money, google.registry.model.registry.Registry$BillingCostTransition> eapFeeSchedule;
@@ -725,23 +782,49 @@ enum google.registry.model.registry.Registry$TldType {
   REAL;
   TEST;
 }
+class google.registry.model.registry.label.BasePremiumList {
+  @Id java.lang.String name;
+  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
+  com.googlecode.objectify.Key<google.registry.model.registry.label.BasePremiumList$PremiumListRevision> revisionKey;
+  java.lang.String description;
+  org.joda.time.DateTime creationTime;
+  org.joda.time.DateTime lastUpdateTime;
+}
+class google.registry.model.registry.label.BasePremiumList$PremiumListRevision {
+  @Id long revisionId;
+  @Parent com.googlecode.objectify.Key<google.registry.model.registry.label.BasePremiumList> parent;
+}
+class google.registry.model.registry.label.CategorizedPremiumList {
+  @Id java.lang.String name;
+  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
+  com.googlecode.objectify.Key<google.registry.model.registry.label.BasePremiumList$PremiumListRevision> revisionKey;
+  java.lang.String description;
+  org.joda.time.DateTime creationTime;
+  org.joda.time.DateTime lastUpdateTime;
+}
+class google.registry.model.registry.label.CategorizedPremiumList$CategorizedListEntry {
+  @Id java.lang.String label;
+  @Parent com.googlecode.objectify.Key<google.registry.model.registry.label.BasePremiumList$PremiumListRevision> parent;
+  google.registry.model.common.TimedTransitionProperty<java.lang.String, google.registry.model.registry.label.CategorizedPremiumList$CategorizedListEntry$PricingCategoryTransition> categoryTransitions;
+  java.lang.String comment;
+}
+class google.registry.model.registry.label.CategorizedPremiumList$CategorizedListEntry$PricingCategoryTransition {
+  java.lang.String pricingCategory;
+  org.joda.time.DateTime transitionTime;
+}
 class google.registry.model.registry.label.PremiumList {
   @Id java.lang.String name;
   @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  com.googlecode.objectify.Key<google.registry.model.registry.label.PremiumList$PremiumListRevision> revisionKey;
+  com.googlecode.objectify.Key<google.registry.model.registry.label.BasePremiumList$PremiumListRevision> revisionKey;
   java.lang.String description;
   org.joda.time.DateTime creationTime;
   org.joda.time.DateTime lastUpdateTime;
 }
 class google.registry.model.registry.label.PremiumList$PremiumListEntry {
   @Id java.lang.String label;
-  @Parent com.googlecode.objectify.Key<google.registry.model.registry.label.PremiumList$PremiumListRevision> parent;
+  @Parent com.googlecode.objectify.Key<google.registry.model.registry.label.BasePremiumList$PremiumListRevision> parent;
   java.lang.String comment;
   org.joda.money.Money price;
-}
-class google.registry.model.registry.label.PremiumList$PremiumListRevision {
-  @Id long revisionId;
-  @Parent com.googlecode.objectify.Key<google.registry.model.registry.label.PremiumList> parent;
 }
 enum google.registry.model.registry.label.ReservationType {
   ALLOWED_IN_SUNRISE;
@@ -889,4 +972,20 @@ enum google.registry.model.transfer.TransferStatus {
   PENDING;
   SERVER_APPROVED;
   SERVER_CANCELLED;
+}
+class google.registry.model.user.User {
+  @Id long id;
+  @Parent com.googlecode.objectify.Key<google.registry.model.registrar.Registrar> parent;
+  google.registry.model.CreateAutoTimestamp creationTime;
+  google.registry.model.UpdateAutoTimestamp lastUpdateTime;
+  java.lang.Boolean active;
+  java.lang.String email;
+  java.lang.String faxNumber;
+  java.lang.String firstName;
+  java.lang.String gaeUserId;
+  java.lang.String lastName;
+  java.lang.String middleName;
+  java.lang.String phoneNumber;
+  java.lang.String role;
+  java.lang.String securityPhrase;
 }

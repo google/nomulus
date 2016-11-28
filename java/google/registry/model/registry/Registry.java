@@ -58,7 +58,7 @@ import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
-import google.registry.model.registry.label.PremiumList;
+import google.registry.model.registry.label.BasePremiumList;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.util.Idn;
 import java.util.Set;
@@ -237,6 +237,23 @@ public class Registry extends ImmutableObject implements Buildable {
     return registry;
   }
 
+  /** Returns a version of the registry that has not been locally cached. */
+  public static Optional<Registry> getUncached(final String tld) {
+    return Optional.fromNullable(ofy().doTransactionless(new Work<Registry>() {
+      @Override
+      public Registry run() {
+        return ofy()
+                   .load()
+                   .key(Key.create(getCrossTldKey(), Registry.class, tld))
+                   .now();
+      }}));
+  }
+
+  /** Returns true if the given TLD exists */
+  public static boolean exists(String tld) {
+    return CACHE.getUnchecked(tld).orNull() != null;
+  }
+
   /** Whenever a registry is saved, invalidate the cache entry. */
   @OnSave
   void updateCache() {
@@ -299,8 +316,8 @@ public class Registry extends ImmutableObject implements Buildable {
     return nullToEmptyImmutableCopy(reservedLists);
   }
 
-  /** The static {@link PremiumList} for this TLD, if there is one. */
-  Key<PremiumList> premiumList;
+  /** The static {@link BasePremiumList} for this TLD, if there is one. */
+  Key<BasePremiumList> premiumList;
 
   /** Should RDE upload a nightly escrow deposit for this TLD? */
   boolean escrowEnabled = DEFAULT_ESCROW_ENABLED;
@@ -483,7 +500,7 @@ public class Registry extends ImmutableObject implements Buildable {
     return anchorTenantAddGracePeriodLength;
   }
 
-  public Key<PremiumList> getPremiumList() {
+  public Key<BasePremiumList> getPremiumList() {
     return premiumList;
   }
 
@@ -749,7 +766,7 @@ public class Registry extends ImmutableObject implements Buildable {
       return this;
     }
 
-    public Builder setPremiumList(PremiumList premiumList) {
+    public Builder setPremiumList(BasePremiumList premiumList) {
       getInstance().premiumList = (premiumList == null) ? null : Key.create(premiumList);
       return this;
     }

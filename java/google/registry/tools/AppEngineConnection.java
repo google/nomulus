@@ -166,9 +166,19 @@ class AppEngineConnection implements Connection {
     return server.getHostText().equals("localhost");
   }
 
+  /* 
+   * MERC-365  Relaxing security on repository tool server side commands
+   * 
+   * No User is used to reconstruct the XSRF token while processing server 
+   * side command in GAE.
+   */
   private String getUserId() {
     return isLocalhost()
         ? UserIdProvider.getTestUserId()
-        : UserIdProvider.getProdUserId();
+        : getEmptyAsNoUser();
+  }
+  
+  private String getEmptyAsNoUser() {
+    return ""; 
   }
 }

@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<queue-entries>
+
+  <queue>
+    <name>dns-pull</name>
+    <mode>pull</mode>
+  </queue>
+
+  <queue>
+    <name>dns-publish</name>
+    <rate>100/s</rate>
+    <bucket-size>100</bucket-size>
+  </queue>
+
+  <queue>
+    <name>async-delete-pull</name>
+    <mode>pull</mode>
+  </queue>
+
+  <queue>
+    <name>async-host-rename-pull</name>
+    <mode>pull</mode>
+  </queue>
+
+  <queue>
+    <name>delete-commits</name>
+    <rate>10/s</rate>
+    <bucket-size>100</bucket-size>
+    <retry-parameters>
+      <task-retry-limit>1</task-retry-limit>
+    </retry-parameters>
+  </queue>
+
+  <queue>
+    <name>export-commits</name>
+    <rate>10/s</rate>
+    <bucket-size>100</bucket-size>
+    <retry-parameters>
+      <!-- Retry aggressively since a single delayed export increases our time window of
+           unrecoverable data loss in the event of a datastore failure. -->
+      <min-backoff-seconds>1</min-backoff-seconds>
+      <max-backoff-seconds>60</max-backoff-seconds>
+      <!-- No age limit; a failed export should be retried as long as possible to avoid
+           having data missing from our exported commit log record. -->
+    </retry-parameters>
+  </queue>
+
+  <!-- Queue for polling export BigQuery jobs for completion. -->
+  <queue>
+    <name>export-bigquery-poll</name>
+    <!-- Limit queue to 5 concurrent tasks and 5 per second to avoid hitting BigQuery quotas. -->
+    <rate>5/s</rate>
+    <bucket-size>5</bucket-size>
+    <max-concurrent-requests>5</max-concurrent-requests>
+    <!-- Check every 20s and increase interval to every 5 minutes. -->
+    <retry-parameters>
+      <min-backoff-seconds>20</min-backoff-seconds>
+      <max-backoff-seconds>300</max-backoff-seconds>
+      <max-doublings>2</max-doublings>
+    </retry-parameters>
+  </queue>
+
+  <!-- Queue for launching new snapshots and for triggering the initial BigQuery load jobs. -->
+  <queue>
+    <name>export-snapshot</name>
+    <rate>5/m</rate>
+    <retry-parameters>
+      <!-- Should be less than the exportSnapshot cron interval; see cron.xml. -->
+      <task-age-limit>22h</task-age-limit>
+      <!-- Retry starting at a 5m interval and increasing up to a 30m interval. -->
+      <min-backoff-seconds>300</min-backoff-seconds>
+      <max-backoff-seconds>1800</max-backoff-seconds>
+      <task-retry-limit>10</task-retry-limit>
+    </retry-parameters>
+  </queue>
+
+  <!-- Queue for polling managed backup snapshots for completion. -->
+  <queue>
+    <name>export-snapshot-poll</name>
+    <rate>5/m</rate>
+    <retry-parameters>
+      <!-- Should be less than the exportSnapshot cron interval; see cron.xml. -->
+      <task-age-limit>22h</task-age-limit>
+      <!-- Retry starting at a 1m interval and increasing up to a 5m interval. -->
+      <min-backoff-seconds>60</min-backoff-seconds>
+      <max-backoff-seconds>300</max-backoff-seconds>
+    </retry-parameters>
+  </queue>
+
+  <!-- Queue for updating BigQuery views after a snapshot kind's load job completes. -->
+  <queue>
+    <name>export-snapshot-update-view</name>
+    <rate>1/s</rate>
+    <retry-parameters>
+      <!-- Should be less than the exportSnapshot cron interval; see cron.xml. -->
+      <task-age-limit>22h</task-age-limit>
+      <!-- Retry starting at a 10s interval and increasing up to a 1m interval. -->
+      <min-backoff-seconds>10</min-backoff-seconds>
+      <max-backoff-seconds>60</max-backoff-seconds>
+      <task-retry-limit>10</task-retry-limit>
+    </retry-parameters>
+  </queue>
+
+  <queue>
+    <name>rde-upload</name>
+    <rate>1/m</rate>
+    <max-concurrent-requests>1</max-concurrent-requests>
+    <retry-parameters>
+      <task-age-limit>4h</task-age-limit>
+    </retry-parameters>
+  </queue>
+
+  <queue>
+    <name>rde-report</name>
+    <rate>1/s</rate>
+    <max-concurrent-requests>1</max-concurrent-requests>
+    <retry-parameters>
+      <task-age-limit>4h</task-age-limit>
+    </retry-parameters>
+  </queue>
+
+  <queue>
+    <name>brda</name>
+    <rate>1/m</rate>
+    <max-concurrent-requests>10</max-concurrent-requests>
+    <retry-parameters>
+      <task-age-limit>23h</task-age-limit>
+    </retry-parameters>
+  </queue>
+
+  <!-- Queue for tasks that communicate with TMCH MarksDB webserver. -->
+  <!-- TODO(b/17623181): Delete this once the queue implementation is live and working. -->
+  <queue>
+    <name>marksdb</name>
+    <rate>1/m</rate>
+    <max-concurrent-requests>1</max-concurrent-requests>
+    <retry-parameters>
+      <task-age-limit>11h</task-age-limit>  <!-- cron interval minus hour -->
+    </retry-parameters>
+  </queue>
+
+  <!-- Queue for tasks to produce LORDN CSV reports, either by by the query or queue method. -->
+  <queue>
+    <name>nordn</name>
+    <rate>1/s</rate>
+    <max-concurrent-requests>10</max-concurrent-requests>
+    <retry-parameters>
+      <task-age-limit>11h</task-age-limit>  <!-- cron interval minus hour -->
+    </retry-parameters>
+  </queue>
+
+  <!-- Queue for LORDN Claims CSV rows to be periodically queried and then uploaded in batches. -->
+  <queue>
+    <name>lordn-claims</name>
+    <mode>pull</mode>
+  </queue>
+
+  <!-- Queue for LORDN Sunrise CSV rows to be periodically queried and then uploaded in batches. -->
+  <queue>
+    <name>lordn-sunrise</name>
+    <mode>pull</mode>
+  </queue>
+
+  <!-- Queue used by the MapReduce library for running tasks.
+
+       Do not re-use this queue for tasks that our code creates (e.g. tasks to launch MapReduces
+       that aren't themselves part of a running MapReduce).-->
+  <queue>
+    <name>mapreduce</name>
+    <!-- Warning: DO NOT SET A <target> parameter for this queue.  See b/24782801 for why. -->
+    <rate>500/s</rate>
+    <bucket-size>100</bucket-size>
+  </queue>
+
+  <!-- Queue for tasks that sync data to Google Spreadsheets. -->
+  <queue>
+    <name>sheet</name>
+    <rate>1/s</rate>
+    <!-- max-concurrent-requests is intentionally omitted. -->
+    <retry-parameters>
+      <task-age-limit>1h</task-age-limit>
+    </retry-parameters>
+  </queue>
+
+  <!-- queue for whitebox metrics -->
+  <queue>
+    <name>bigquery-streaming-metrics</name>
+    <rate>500/s</rate>
+    <bucket-size>500</bucket-size>
+    <retry-parameters>
+      <task-retry-limit>1</task-retry-limit>
+      <task-age-limit>1m</task-age-limit>
+    </retry-parameters>
+  </queue>
+
+  <!-- Queue for infrequent cron tasks (i.e. hourly or less often) that should retry three times on failure. -->
+  <queue>
+    <name>retryable-cron-tasks</name>
+    <rate>1/s</rate>
+    <retry-parameters>
+      <task-retry-limit>3</task-retry-limit>
+    </retry-parameters>
+  </queue>
+
+  <!-- The load[0-9] queues are used for load-testing, and can be safely deleted
+       in any environment that doesn't require load-testing. -->
+  <queue>
+    <name>load0</name>
+    <rate>500/s</rate>
+    <bucket-size>500</bucket-size>
+  </queue>
+
+  <queue>
+    <name>load1</name>
+    <rate>500/s</rate>
+    <bucket-size>500</bucket-size>
+  </queue>
+
+  <queue>
+    <name>load2</name>
+    <rate>500/s</rate>
+    <bucket-size>500</bucket-size>
+  </queue>
+
+  <queue>
+    <name>load3</name>
+    <rate>500/s</rate>
+    <bucket-size>500</bucket-size>
+  </queue>
+
+  <queue>
+    <name>load4</name>
+    <rate>500/s</rate>
+    <bucket-size>500</bucket-size>
+  </queue>
+
+  <queue>
+    <name>load5</name>
+    <rate>500/s</rate>
+    <bucket-size>500</bucket-size>
+  </queue>
+
+  <queue>
+    <name>load6</name>
+    <rate>500/s</rate>
+    <bucket-size>500</bucket-size>
+  </queue>
+
+  <queue>
+    <name>load7</name>
+    <rate>500/s</rate>
+    <bucket-size>500</bucket-size>
+  </queue>
+
+  <queue>
+    <name>load8</name>
+    <rate>500/s</rate>
+    <bucket-size>500</bucket-size>
+  </queue>
+
+  <queue>
+    <name>load9</name>
+    <rate>500/s</rate>
+    <bucket-size>500</bucket-size>
+  </queue>
+</queue-entries>

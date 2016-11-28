@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://java.sun.com/xml/ns/javaee" version="2.5"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+                             http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+  <!-- Servlets -->
+
+  <!-- Servlet for injected tools actions -->
+  <servlet>
+    <display-name>ToolsServlet</display-name>
+    <servlet-name>tools-servlet</servlet-name>
+    <servlet-class>google.registry.module.tools.ToolsServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>tools-servlet</servlet-name>
+    <url-pattern>/_dr/admin/verifyOte</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>tools-servlet</servlet-name>
+    <url-pattern>/_dr/admin/createGroups</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>tools-servlet</servlet-name>
+    <url-pattern>/_dr/admin/createPremiumList</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>tools-servlet</servlet-name>
+    <url-pattern>/_dr/admin/list/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>tools-servlet</servlet-name>
+    <url-pattern>/_dr/admin/deleteEntity</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>tools-servlet</servlet-name>
+    <url-pattern>/_dr/admin/updatePremiumList</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>tools-servlet</servlet-name>
+    <url-pattern>/_dr/loadtest</url-pattern>
+  </servlet-mapping>
+
+  <!-- Command line tool uses this endpoint to modify the datastore. -->
+  <servlet>
+    <display-name>Remote API Servlet</display-name>
+    <servlet-name>RemoteApiServlet</servlet-name>
+    <servlet-class>com.google.apphosting.utils.remoteapi.RemoteApiServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>RemoteApiServlet</servlet-name>
+    <url-pattern>/remote_api</url-pattern>
+  </servlet-mapping>
+
+  <!--  ExecuteEppCommand uses this to execute remotely. -->
+  <servlet-mapping>
+    <servlet-name>tools-servlet</servlet-name>
+    <url-pattern>/_dr/epptool</url-pattern>
+  </servlet-mapping>
+
+  <!--  Mapreduce to re-save all EppResources. -->
+  <servlet-mapping>
+    <servlet-name>tools-servlet</servlet-name>
+    <url-pattern>/_dr/task/resaveAllEppResources</url-pattern>
+  </servlet-mapping>
+
+
+  <!-- Mapreduce to delete EppResources, children, and indices. -->
+  <servlet-mapping>
+    <servlet-name>tools-servlet</servlet-name>
+    <url-pattern>/_dr/task/killAllEppResources</url-pattern>
+  </servlet-mapping>
+
+  <!-- Mapreduce to delete all commit logs. -->
+  <servlet-mapping>
+    <servlet-name>tools-servlet</servlet-name>
+    <url-pattern>/_dr/task/killAllCommitLogs</url-pattern>
+  </servlet-mapping>
+
+  <!-- This path serves up the App Engine results page for mapreduce runs. -->
+  <servlet>
+    <servlet-name>mapreduce</servlet-name>
+    <servlet-class>com.google.appengine.tools.mapreduce.MapReduceServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>mapreduce</servlet-name>
+    <url-pattern>/_dr/mapreduce/*</url-pattern>
+  </servlet-mapping>
+
+  <!-- Pipeline GUI servlets. -->
+  <servlet>
+    <servlet-name>pipeline</servlet-name>
+    <servlet-class>com.google.appengine.tools.pipeline.impl.servlets.PipelineServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>pipeline</servlet-name>
+    <url-pattern>/_ah/pipeline/*</url-pattern>
+  </servlet-mapping>
+
+  <!-- Refreshes all active domains in DNS -->
+  <servlet-mapping>
+    <servlet-name>tools-servlet</servlet-name>
+    <url-pattern>/_dr/task/refreshAllDomains</url-pattern>
+  </servlet-mapping>
+
+  <!-- Registrar detail report publishing action. -->
+  <servlet-mapping>
+    <servlet-name>tools-servlet</servlet-name>
+    <url-pattern>/_dr/publishDetailReport</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>tools-servlet</servlet-name>
+    <url-pattern>/_dr/task/generateZoneFiles</url-pattern>
+  </servlet-mapping>
+
+
+  <!-- Security config -->
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>Internal</web-resource-name>
+      <description>
+        Admin-only internal section.  Requests for paths covered by the URL patterns below will be
+        checked for a logged-in user account that's allowed to access the AppEngine admin console
+        (NOTE: this includes Editor/Viewer permissions in addition to Owner and the new IAM
+        App Engine Admin role.  See https://cloud.google.com/appengine/docs/java/access-control
+        specifically the "Access handlers that have a login:admin restriction" line.)
+
+        TODO(b/28219927): lift some of these restrictions so that we can allow OAuth authentication
+        for endpoints that need to be accessed by open-source automated processes.
+     </description>
+
+      <!-- Internal AppEngine endpoints.  The '_ah' is short for app hosting.  -->
+      <url-pattern>/_ah/*</url-pattern>
+
+      <!-- Internal registry endpoints.  The '_dr' is short for domain registry. -->
+      <url-pattern>/_dr/*</url-pattern>
+
+      <!-- Registrar console (should not be available on non-default module). -->
+      <url-pattern>/registrar*</url-pattern>
+
+      <!-- Verbatim JavaScript sources (only visible to admins for debugging). -->
+      <url-pattern>/assets/sources/*</url-pattern>
+
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>admin</role-name>
+    </auth-constraint>
+
+    <!-- Repeated here since catch-all rule below is not inherited. -->
+    <user-data-constraint>
+      <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+    </user-data-constraint>
+  </security-constraint>
+  
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>External</web-resource-name>
+      <description>
+        MERC-365 Registry Tool Authentication: Relax Security on Server Side 
+        Commands for the Google Registry Tool
+      </description>
+      <url-pattern>/_dr/admin/*</url-pattern>
+    </web-resource-collection>
+  </security-constraint>
+
+  <!-- Require TLS on all requests. -->
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>Secure</web-resource-name>
+      <description>
+        Require encryption for all paths. http URLs will be redirected to https.
+      </description>
+      <url-pattern>/*</url-pattern>
+    </web-resource-collection>
+    <user-data-constraint>
+      <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+    </user-data-constraint>
+  </security-constraint>
+
+  <!-- See: https://code.google.com/p/objectify-appengine/wiki/Setup -->
+  <filter>
+    <filter-name>ObjectifyFilter</filter-name>
+    <filter-class>com.googlecode.objectify.ObjectifyFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>ObjectifyFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <!-- Register types with Objectify. -->
+  <filter>
+    <filter-name>OfyFilter</filter-name>
+    <filter-class>google.registry.model.ofy.OfyFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>OfyFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+</web-app>

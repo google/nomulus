@@ -43,6 +43,8 @@ import google.registry.model.translators.DurationTranslatorFactory;
 import google.registry.model.translators.InetAddressTranslatorFactory;
 import google.registry.model.translators.ReadableInstantUtcTranslatorFactory;
 import google.registry.model.translators.UpdateAutoTimestampTranslatorFactory;
+import google.registry.model.translators.YearMonthTranslatorFactory;
+
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -129,7 +131,8 @@ public class ObjectifyService {
         new InetAddressTranslatorFactory(),
         new MoneyStringTranslatorFactory(),
         new ReadableInstantUtcTranslatorFactory(),
-        new UpdateAutoTimestampTranslatorFactory())) {
+        new UpdateAutoTimestampTranslatorFactory(),
+        new YearMonthTranslatorFactory())) {
       factory().getTranslators().add(translatorFactory);
     }
   }

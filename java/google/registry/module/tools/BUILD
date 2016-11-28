@@ -17,6 +17,7 @@ java_library(
         "//third_party/java/jsr305_annotations",
         "//third_party/java/jsr330_inject",
         "//third_party/java/servlet/servlet_api",
+        "//java/domains/donuts",
         "//java/google/registry/config",
         "//java/google/registry/dns",
         "//java/google/registry/export",
@@ -44,5 +45,6 @@ java_binary(
     create_executable = 0,
     runtime_deps = [
         ":tools",
+        "//java/domains/donuts",  # DonutsRegistryConfig
     ],
 )

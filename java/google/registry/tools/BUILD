@@ -43,6 +43,7 @@ java_library(
         "//java/com/google/common/io",
         "//java/com/google/common/net",
         "//java/com/google/common/util/concurrent",
+        "//java/domains/donuts",
         "//java/google/registry/bigquery",
         "//java/google/registry/config",
         "//java/google/registry/dns/writer",

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
+
+  <application>domain-registry</application>
+  <version>1</version>
+  <module>default</module>
+  <threadsafe>true</threadsafe>
+  <sessions-enabled>true</sessions-enabled>
+  <instance-class>B4_1G</instance-class>
+  <basic-scaling>
+    <max-instances>20</max-instances>
+    <idle-timeout>10m</idle-timeout>
+  </basic-scaling>
+
+  <system-properties>
+    <property name="java.util.logging.config.file"
+              value="WEB-INF/logging.properties"/>
+    <property name="google.registry.environment"
+              value="sandbox"/>
+  </system-properties>
+
+  <static-files>
+    <include path="/*.html" expiration="1d"/>
+    <include path="/assets/js/**" expiration="1d"/>
+    <include path="/assets/css/**" expiration="1d"/>
+    <include path="/assets/images/**" expiration="1d"/>
+    <include path="/assets/sources/**" expiration="1d"/>
+  </static-files>
+
+  <!-- Prevent uncaught servlet errors from leaking a stack trace. -->
+  <static-error-handlers>
+    <handler file="error.html"/>
+  </static-error-handlers>
+</appengine-web-app>

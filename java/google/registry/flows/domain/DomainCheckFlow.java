@@ -27,6 +27,7 @@ import static google.registry.model.index.DomainApplicationIndex.loadActiveAppli
 import static google.registry.model.registry.label.ReservationType.UNRESERVED;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;

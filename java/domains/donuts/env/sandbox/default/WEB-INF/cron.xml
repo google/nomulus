@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cronentries>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=marksdb&endpoint=/_dr/task/tmchDnl&runInEmpty]]></url>
+    <description>
+      This job downloads the latest DNL from MarksDB and inserts it into the database.
+      (See: TmchDnlServlet, ClaimsList)
+    </description>
+    <schedule>every 12 hours synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=marksdb&endpoint=/_dr/task/tmchSmdrl&runInEmpty]]></url>
+    <description>
+      This job downloads the latest SMDRL from MarksDB and inserts it into the database.
+      (See: TmchSmdrlServlet, SignedMarkRevocationList)
+    </description>
+    <schedule>every 12 hours synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=marksdb&endpoint=/_dr/task/tmchCrl&runInEmpty]]></url>
+    <description>
+      This job downloads the latest CRL from MarksDB and inserts it into the database.
+      (See: TmchCrlServlet)
+    </description>
+    <schedule>every 12 hours synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/syncGroupMembers&runInEmpty]]></url>
+    <description>
+      Syncs RegistrarContact changes in the past hour to Google Groups.
+    </description>
+    <schedule>every 1 hours synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/task/deleteContactsAndHosts]]></url>
+    <description>
+      This job runs a mapreduce that processes batch asynchronous deletions of
+      contact and host resources by mapping over all EppResources and checking
+      for any references to the contacts/hosts in pending deletion.
+    </description>
+    <schedule>every 5 minutes synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/task/refreshDnsOnHostRename]]></url>
+    <description>
+      This job runs a mapreduce that asynchronously handles DNS refreshes for
+      host renames by mapping over all domains and creating DNS refresh tasks
+      for any domains that reference a renamed host.
+    </description>
+    <schedule>every 5 minutes synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=export-snapshot&endpoint=/_dr/task/exportSnapshot&runInEmpty]]></url>
+    <description>
+      This job fires off a datastore backup-as-a-service job that generates snapshot files in GCS.
+      It also enqueues a new task to wait on the completion of that job and then load the resulting
+      snapshot into bigquery.
+    </description>
+    <!-- Keep the task-age-limit for this job's task queue less than this cron interval. -->
+    <schedule>every day 06:00</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/exportReservedTerms&forEachRealTld]]></url>
+    <description>
+      Reserved terms export to Google Drive job for creating once-daily exports.
+    </description>
+    <schedule>every day 05:30</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/exportDomainLists&runInEmpty]]></url>
+    <description>
+      This job exports lists of all active domain names to Google Cloud Storage.
+    </description>
+    <schedule>every 12 hours synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/readDnsQueue?jitterSeconds=45]]></url>
+    <description>
+      Lease all tasks from the dns-pull queue, group by TLD, and invoke PublishDnsUpdates for each
+      group.
+    </description>
+    <schedule>every 1 minutes synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/deleteProberData&runInEmpty]]></url>
+    <description>
+      This job clears out data from probers and runs once a week.
+    </description>
+    <schedule>every monday 14:00</schedule>
+    <timezone>UTC</timezone>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/verifyEntityIntegrity&runInEmpty]]></url>
+    <description>
+      This job verifies entity integrity and runs once daily.
+    </description>
+    <schedule>every day 06:30</schedule>
+    <timezone>UTC</timezone>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=sheet&endpoint=/_dr/task/syncRegistrarsSheet&runInEmpty]]></url>
+    <description>
+      Synchronize Registrar entities to Google Spreadsheets.
+    </description>
+    <schedule>every 1 hours synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <!-- TODO(b/23319222): Re-enable when fixed.
+  <cron>
+    <url><![CDATA[/_dr/cron/commitLogFanout?queue=delete-commits&endpoint=/_dr/task/deleteOldCommitLogs&jitterSeconds=600]]></url>
+    <description>
+      This job deletes commit logs from datastore that are old, e.g. thirty days.
+    </description>
+    <schedule>every 20 minutes synchronized</schedule>
+    <target>backend</target>
+  </cron>
+  -->
+
+  <cron>
+    <url><![CDATA[/_ah/sessioncleanup?clear]]></url>
+    <description>
+      Delete up to 100 expired _ah_SESSION entities from Datastore.
+    </description>
+    <schedule>every 15 minutes</schedule>
+    <target>backend</target>
+  </cron>
+
+
+</cronentries>

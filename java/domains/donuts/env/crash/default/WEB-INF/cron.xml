@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cronentries>
+
+  <cron>
+    <url>/_dr/task/rdeStaging</url>
+    <description>
+      This job generates a full RDE escrow deposit as a single gigantic XML document
+      and streams it to cloud storage. When this job has finished successfully, it'll
+      launch a separate task that uploads the deposit file to Iron Mountain via SFTP.
+    </description>
+    <!--
+      This only needs to run once per day, but we launch additional jobs in case the
+      cursor is lagging behind, so it'll catch up to the current date as quickly as
+      possible. The only job that'll run under normal circumstances is the one that's
+      close to midnight, since if the cursor is up-to-date, the task is a no-op.
+
+      We want it to be close to midnight because that reduces the chance that the
+      point-in-time code won't have to go to the extra trouble of fetching old
+      versions of objects from the datastore. However, we don't want it to run too
+      close to midnight, because there's always a chance that a change which was
+      timestamped before midnight hasn't fully been committed to the datastore. So
+      we add a 4+ minute grace period to ensure the transactions cool down, since
+      our queries are not transactional.
+    -->
+    <schedule>every 4 hours from 00:07 to 20:00</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=rde-upload&endpoint=/_dr/task/rdeUpload&forEachRealTld]]></url>
+    <description>
+      This job is a no-op unless RdeUploadCursor falls behind for some reason.
+    </description>
+    <schedule>every 4 hours synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=rde-report&endpoint=/_dr/task/rdeReport&forEachRealTld]]></url>
+    <description>
+      This job is a no-op unless RdeReportCursor falls behind for some reason.
+    </description>
+    <schedule>every 4 hours synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=marksdb&endpoint=/_dr/task/tmchDnl&runInEmpty]]></url>
+    <description>
+      This job downloads the latest DNL from MarksDB and inserts it into the database.
+      (See: TmchDnlServlet, ClaimsList)
+    </description>
+    <schedule>every 12 hours synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=marksdb&endpoint=/_dr/task/tmchSmdrl&runInEmpty]]></url>
+    <description>
+      This job downloads the latest SMDRL from MarksDB and inserts it into the database.
+      (See: TmchSmdrlServlet, SignedMarkRevocationList)
+    </description>
+    <schedule>every 12 hours synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=marksdb&endpoint=/_dr/task/tmchCrl&runInEmpty]]></url>
+    <description>
+      This job downloads the latest CRL from MarksDB and inserts it into the database.
+      (See: TmchCrlServlet)
+    </description>
+    <schedule>every 12 hours synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=sheet&endpoint=/_dr/task/syncRegistrarsSheet&runInEmpty]]></url>
+    <description>
+      Synchronize Registrar entities to Google Spreadsheets.
+    </description>
+    <schedule>every 1 hours synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <!-- TODO: Add borgmon job to check that these files are created and updated successfully. -->
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/exportReservedTerms&forEachRealTld]]></url>
+    <description>
+      Reserved terms export to Google Drive job for creating once-daily exports.
+    </description>
+    <schedule>every day 05:30</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/syncGroupMembers&runInEmpty]]></url>
+    <description>
+      Syncs RegistrarContact changes in the past hour to Google Groups.
+    </description>
+    <schedule>every 1 hours synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/task/deleteContactsAndHosts]]></url>
+    <description>
+      This job runs a mapreduce that processes batch asynchronous deletions of
+      contact and host resources by mapping over all EppResources and checking
+      for any references to the contacts/hosts in pending deletion.
+    </description>
+    <schedule>every 5 minutes synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/task/refreshDnsOnHostRename]]></url>
+    <description>
+      This job runs a mapreduce that asynchronously handles DNS refreshes for
+      host renames by mapping over all domains and creating DNS refresh tasks
+      for any domains that reference a renamed host.
+    </description>
+    <schedule>every 5 minutes synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=export-snapshot&endpoint=/_dr/task/exportSnapshot&runInEmpty]]></url>
+    <description>
+      This job fires off a datastore backup-as-a-service job that generates snapshot files in GCS.
+      It also enqueues a new task to wait on the completion of that job and then load the resulting
+      snapshot into bigquery.
+    </description>
+    <!-- Keep the task-age-limit for this job's task queue less than this cron interval. -->
+    <schedule>every day 06:00</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/readDnsQueue?jitterSeconds=45]]></url>
+    <description>
+      Lease all tasks from the dns-pull queue, group by TLD, and invoke PublishDnsUpdates for each
+      group.
+    </description>
+    <schedule>every 1 minutes synchronized</schedule>
+    <target>backend</target>
+  </cron>
+
+
+</cronentries>

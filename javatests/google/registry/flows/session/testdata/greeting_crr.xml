@@ -1,6 +1,6 @@
 <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
   <greeting>
-    <svID>Charleston Road Registry</svID>
+    <svID>Donuts, Inc</svID>
     <svDate>%DATE%</svDate>
     <svcMenu>
       <version>1.0</version>

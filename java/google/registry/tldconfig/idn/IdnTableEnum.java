@@ -24,8 +24,7 @@ import java.net.URL;
 
 /** Wrapper enum that loads all {@link IdnTable} resources into memory. */
 public enum IdnTableEnum {
-  EXTENDED_LATIN,
-  JA;
+  DE, ES, FR, ZH;
 
   private final IdnTable table;
 

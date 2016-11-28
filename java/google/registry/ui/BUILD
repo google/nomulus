@@ -1,4 +1,4 @@
-package(default_visibility = ["//java/google/registry:registry_project"])
+package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # Apache 2.0
 
@@ -44,10 +44,10 @@ zip_file(
     srcs = [":runfiles"],
     out = "ui.war",
     mappings = {
-        "java/google/registry/ui/assets": "assets",
-        "java/google/registry/ui/css": "assets/css",
-        "java/google/registry/ui/html": "",
-        "java/google/registry/ui": "assets/js",
+        "domain_registry/java/google/registry/ui/assets": "assets",
+        "domain_registry/java/google/registry/ui/css": "assets/css",
+        "domain_registry/java/google/registry/ui/html": "",
+        "domain_registry/java/google/registry/ui": "assets/js",
     },
 )
 
@@ -56,11 +56,11 @@ zip_file(
     srcs = [":runfiles_debug"],
     out = "ui_debug.war",
     mappings = {
-        "java/google/registry/ui/deps.js": "assets/sources/deps.js",
-        "java/google/registry/ui/brain_bin.js.map": "assets/js/brain_bin.js.map",
-        "java/google/registry/ui/registrar_bin.js.map": "assets/js/registrar_bin.js.map",
-        "java/google/registry/ui/registrar_dbg.js": "assets/js/registrar_dbg.js",
-        "java/google/registry/ui/css/registrar_dbg.css": "assets/css/registrar_dbg.css",
+        "domain_registry/java/google/registry/ui/deps.js": "assets/sources/deps.js",
+        "domain_registry/java/google/registry/ui/brain_bin.js.map": "assets/js/brain_bin.js.map",
+        "domain_registry/java/google/registry/ui/registrar_bin.js.map": "assets/js/registrar_bin.js.map",
+        "domain_registry/java/google/registry/ui/registrar_dbg.js": "assets/js/registrar_dbg.js",
+        "domain_registry/java/google/registry/ui/css/registrar_dbg.css": "assets/css/registrar_dbg.css",
         "": "assets/sources",
     },
     deps = [":war"],

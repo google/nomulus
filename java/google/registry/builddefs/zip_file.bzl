@@ -1,17 +1,3 @@
-# Copyright 2016 The Nomulus Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 """Zip file creator that allows arbitrary path renaming.
 
 This rule takes two main inputs: a bunch of filesets and a dictionary of
@@ -39,10 +25,9 @@ Prefixes are matched with component granularity, not characters. Mappings with
 more components take precedence. Mappings with equal components are sorted
 asciibetically.
 
-Mappings apply to the "short path" of a file, which is relative to the root of
-the repository, not the current directory. Short paths do not take into
-consideration bazel-foo/ output directories. Furthermore, if a file is located
-in an external repository, then its short path will begin with external/foo/.
+Mappings apply to the "long path" of a file, i.e. relative to TEST_SRCDIR,
+e.g. workspace_name/pkg/file. Long paths do not take into consideration
+bazel-foo/ output directories.
 
 The deps attribute allows zip_file() rules to depend on other zip_file() rules.
 In such cases, the contents of directly dependent zip files are unzipped and
@@ -110,15 +95,22 @@ A zip file can be assembled across many rules. For example:
 
 """
 
-load('//java/google/registry/builddefs:defs.bzl', 'ZIPPER', 'runpath')
+load('//java/google/registry/builddefs:defs.bzl',
+     'ZIPPER',
+     'collect_data_runfiles',
+     'long_path')
 
-def _impl(ctx):
+def _zip_file(ctx):
   """Implementation of zip_file() rule."""
   for s, d in ctx.attr.mappings.items():
     if (s.startswith('/') or s.endswith('/') or
         d.startswith('/') or d.endswith('/')):
       fail('mappings should not begin or end with slash')
-  mapped = _map_sources(ctx.files.srcs, ctx.attr.mappings)
+  srcs = set()
+  srcs += ctx.files.srcs
+  srcs += ctx.files.data
+  srcs += collect_data_runfiles(ctx.attr.data)
+  mapped = _map_sources(ctx, srcs, ctx.attr.mappings)
   cmd = [
       '#!/bin/sh',
       'set -e',
@@ -146,7 +138,7 @@ def _impl(ctx):
   ctx.file_action(output=script, content='\n'.join(cmd), executable=True)
   inputs = [ctx.file._zipper]
   inputs += [dep.zip_file for dep in ctx.attr.deps]
-  inputs += ctx.files.srcs
+  inputs += list(srcs)
   ctx.action(
       inputs=inputs,
       outputs=[ctx.outputs.out],
@@ -154,10 +146,9 @@ def _impl(ctx):
       mnemonic='zip',
       progress_message='Creating zip with %d inputs %s' % (
           len(inputs), ctx.label))
-  return struct(files=set([ctx.outputs.out]),
-                zip_file=ctx.outputs.out)
+  return struct(files=set([ctx.outputs.out]), zip_file=ctx.outputs.out)
 
-def _map_sources(srcs, mappings):
+def _map_sources(ctx, srcs, mappings):
   """Calculates paths in zip file for srcs."""
   # order mappings with more path components first
   mappings = sorted([(-len(source.split('/')), source, dest)
@@ -168,32 +159,32 @@ def _map_sources(srcs, mappings):
   used = {i: False for i in mappings_indexes}
   mapped = []
   for file_ in srcs:
-    short_path = runpath(file_)
+    run_path = long_path(ctx, file_)
     zip_path = None
     for i in mappings_indexes:
       source = mappings[i][0]
       dest = mappings[i][1]
       if not source:
         if dest:
-          zip_path = dest + '/' + short_path
+          zip_path = dest + '/' + run_path
         else:
-          zip_path = short_path
-      elif source == short_path:
+          zip_path = run_path
+      elif source == run_path:
         if dest:
           zip_path = dest
         else:
-          zip_path = short_path
-      elif short_path.startswith(source + '/'):
+          zip_path = run_path
+      elif run_path.startswith(source + '/'):
         if dest:
-          zip_path = dest + short_path[len(source):]
+          zip_path = dest + run_path[len(source):]
         else:
-          zip_path = short_path[len(source) + 1:]
+          zip_path = run_path[len(source) + 1:]
       else:
         continue
       used[i] = True
       break
     if not zip_path:
-      fail('no mapping matched: ' + short_path)
+      fail("no mapping matched: source '%s', run_path '%s'" % (source, run_path))
     mapped += [(file_.path, zip_path)]
   for i in mappings_indexes:
     if not used[i]:
@@ -201,11 +192,12 @@ def _map_sources(srcs, mappings):
   return mapped
 
 zip_file = rule(
-    implementation=_impl,
+    implementation=_zip_file,
     output_to_genfiles = True,
     attrs={
         'out': attr.output(mandatory=True),
         'srcs': attr.label_list(allow_files=True),
+        'data': attr.label_list(cfg='data', allow_files=True),
         'deps': attr.label_list(providers=['zip_file']),
         'mappings': attr.string_dict(),
         '_zipper': attr.label(default=Label(ZIPPER), single_file=True),

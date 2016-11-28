@@ -61,7 +61,7 @@ public class TestRegistryConfig implements RegistryConfig {
 
   @Override
   public HostAndPort getServer() {
-    throw new UnsupportedOperationException();
+    return null;
   }
 
   @Override

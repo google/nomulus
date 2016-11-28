@@ -130,7 +130,8 @@ public class ContactResourceTest extends EntityTestCase {
         contactResource,
         "deletionTime",
         "currentSponsorClientId",
-        "searchName");
+        "searchName",
+        "contactId");
   }
 
   @Test

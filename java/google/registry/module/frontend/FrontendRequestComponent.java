@@ -16,6 +16,7 @@ package google.registry.module.frontend;
 
 import dagger.Module;
 import dagger.Subcomponent;
+import domains.donuts.config.DonutsTlsCredentialsModule;
 import google.registry.dns.DnsModule;
 import google.registry.flows.CheckApiAction;
 import google.registry.flows.CheckApiAction.CheckApiModule;
@@ -52,7 +53,7 @@ import google.registry.whois.WhoisServer;
     modules = {
         CheckApiModule.class,
         DnsModule.class,
-        EppTlsModule.class,
+        DonutsTlsCredentialsModule.class,
         RdapModule.class,
         RegistrarUserModule.class,
         RequestModule.class,

@@ -15,11 +15,11 @@
 package google.registry.tools;
 
 import dagger.Component;
+import domains.donuts.keyring.DonutsKeyringModule;
 import google.registry.config.ConfigModule;
 import google.registry.dns.writer.VoidDnsWriterModule;
 import google.registry.dns.writer.clouddns.CloudDnsWriterModule;
 import google.registry.dns.writer.dnsupdate.DnsUpdateWriterModule;
-import google.registry.keyring.api.DummyKeyringModule;
 import google.registry.keyring.api.KeyModule;
 import google.registry.request.Modules.DatastoreServiceModule;
 import google.registry.request.Modules.Jackson2Module;
@@ -39,7 +39,7 @@ import google.registry.util.SystemSleeper.SystemSleeperModule;
     DatastoreServiceModule.class,
     CloudDnsWriterModule.class,
     DnsUpdateWriterModule.class,
-    DummyKeyringModule.class,
+    DonutsKeyringModule.class,
     Jackson2Module.class,
     KeyModule.class,
     RegistryToolModule.class,
