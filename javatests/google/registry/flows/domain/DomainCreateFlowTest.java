@@ -131,6 +131,8 @@ import org.joda.time.Interval;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.annotation.Nullable;
+
 /** Unit tests for {@link DomainCreateFlow}. */
 public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, DomainResource> {
 
@@ -253,9 +255,14 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
   }
 
   private void assertNoLordn() throws Exception {
+    assertNoLordn(null, null);
+  }
+
+  private void assertNoLordn(
+      @Nullable String smdId, @Nullable LaunchNotice launchNotice) throws Exception {
     assertAboutDomains().that(reloadResourceByForeignKey())
-        .hasSmdId(null).and()
-        .hasLaunchNotice(null);
+        .hasSmdId(smdId).and()
+        .hasLaunchNotice(launchNotice);
     assertNoTasksEnqueued(QUEUE_CLAIMS, QUEUE_SUNRISE);
   }
 
@@ -410,6 +417,18 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
         .build());
     persistContactsAndHosts();
     doSuccessfulTest();
+  }
+
+  @Test
+  public void testSuccess_GeneralAvailabilityIgnoresEncodedSignedMark() throws Exception {
+    createTld("tld", TldState.GENERAL_AVAILABILITY);
+    clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
+    setEppInput("domain_create_registration_encoded_signed_mark.xml");
+    eppRequestSource = EppRequestSource.TOOL;  // Only tools can pass in metadata.
+    persistContactsAndHosts();
+    runFlow();
+    assertSuccessfulCreate("tld", true);
+    assertNoLordn("0000001761376042759136-65535", null);
   }
 
   @Test
@@ -1211,7 +1230,8 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
   }
 
   @Test
-  public void testFailure_signedMark() throws Exception {
+  public void testFailure_signedMarkWithoutAnchorTenant() throws Exception {
+    createTld("tld", TldState.SUNRISE);
     setEppInput("domain_create_signed_mark.xml");
     persistContactsAndHosts();
     thrown.expect(SignedMarksNotAcceptedInCurrentPhaseException.class);
@@ -1568,14 +1588,15 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
   }
 
   @Test
-  public void testFailure_qlpLandrushRegistrationWithEncodedSignedMark() throws Exception {
+  public void testSuccess_qlpLandrushRegistrationIgnoresEncodedSignedMark() throws Exception {
     createTld("tld", TldState.LANDRUSH);
     clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
     setEppInput("domain_create_registration_qlp_landrush_encoded_signed_mark.xml");
     eppRequestSource = EppRequestSource.TOOL;  // Only tools can pass in metadata.
     persistContactsAndHosts();
-    thrown.expect(SignedMarksNotAcceptedInCurrentPhaseException.class);
     runFlow();
+    assertSuccessfulCreate("tld", true);
+    assertNoLordn("0000001761376042759136-65535", null);
   }
 
   @Test
