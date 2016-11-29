@@ -4,7 +4,6 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
-
 java_library(
     name = "clouddns",
     srcs = glob(["*.java"]),
@@ -18,11 +17,11 @@ java_library(
         "//java/com/google/common/collect",
         "//java/com/google/common/net",
         "//java/com/google/common/util/concurrent",
-        "//third_party/java/dagger",
-        "//third_party/java/joda_time",
         "//java/google/registry/config",
         "//java/google/registry/dns/writer",
         "//java/google/registry/model",
         "//java/google/registry/util",
+        "//third_party/java/dagger",
+        "//third_party/java/joda_time",
     ],
 )

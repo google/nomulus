@@ -7,7 +7,6 @@ licenses(["notice"])  # Apache 2.0
 
 load("//java/com/google/testing/builddefs:GenTestRules.bzl", "GenTestRules")
 
-
 java_library(
     name = "model",
     # There be circular dependencies down thar, so just have this
@@ -27,6 +26,13 @@ java_library(
         "//java/com/google/common/net",
         "//java/com/google/common/testing",
         "//java/com/google/common/util/concurrent",
+        "//java/google/registry/config",
+        "//java/google/registry/flows",
+        "//java/google/registry/model",
+        "//java/google/registry/util",
+        "//java/google/registry/xml",
+        "//javatests/google/registry/testing",
+        "//javatests/google/registry/xml",
         "//third_party/java/appengine:appengine-api-testonly",
         "//third_party/java/appengine:appengine-testing",
         "//third_party/java/joda_money",
@@ -35,13 +41,6 @@ java_library(
         "//third_party/java/junit",
         "//third_party/java/objectify:objectify-v4_1",
         "//third_party/java/truth",
-        "//java/google/registry/config",
-        "//java/google/registry/flows",
-        "//java/google/registry/model",
-        "//java/google/registry/util",
-        "//java/google/registry/xml",
-        "//javatests/google/registry/testing",
-        "//javatests/google/registry/xml",
     ],
 )
 

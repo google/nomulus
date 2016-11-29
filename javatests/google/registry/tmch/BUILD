@@ -7,7 +7,6 @@ licenses(["notice"])  # Apache 2.0
 
 load("//java/com/google/testing/builddefs:GenTestRules.bzl", "GenTestRules")
 
-
 java_library(
     name = "tmch",
     srcs = glob(["*.java"]),
@@ -22,6 +21,11 @@ java_library(
         "//java/com/google/common/collect",
         "//java/com/google/common/io",
         "//java/com/google/common/net",
+        "//java/google/registry/model",
+        "//java/google/registry/request",
+        "//java/google/registry/tmch",
+        "//java/google/registry/util",
+        "//javatests/google/registry/testing",
         "//third_party/java/appengine:appengine-api-testonly",
         "//third_party/java/bouncycastle",
         "//third_party/java/bouncycastle_bcpg",
@@ -32,11 +36,6 @@ java_library(
         "//third_party/java/objectify:objectify-v4_1",
         "//third_party/java/servlet/servlet_api",
         "//third_party/java/truth",
-        "//java/google/registry/model",
-        "//java/google/registry/request",
-        "//java/google/registry/tmch",
-        "//java/google/registry/util",
-        "//javatests/google/registry/testing",
     ],
 )
 

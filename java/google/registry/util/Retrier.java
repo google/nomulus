@@ -93,8 +93,8 @@ public class Retrier implements Serializable {
   @SafeVarargs
   public final <V> V callWithRetry(
       Callable<V> callable,
-      Class<? extends RuntimeException> retryableError,
-      Class<? extends RuntimeException>... moreRetryableErrors) {
+      Class<? extends Throwable> retryableError,
+      Class<? extends Throwable>... moreRetryableErrors) {
     final Set<Class<?>> retryables =
         new ImmutableSet.Builder<Class<?>>().add(retryableError).add(moreRetryableErrors).build();
     return callWithRetry(callable, new Predicate<Throwable>() {

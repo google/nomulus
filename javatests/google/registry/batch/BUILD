@@ -7,7 +7,6 @@ licenses(["notice"])  # Apache 2.0
 
 load("//java/com/google/testing/builddefs:GenTestRules.bzl", "GenTestRules")
 
-
 java_library(
     name = "batch",
     srcs = glob(["*.java"]),
@@ -17,6 +16,11 @@ java_library(
         "//java/com/google/common/collect",
         "//java/com/google/common/io",
         "//java/com/google/common/net",
+        "//java/google/registry/batch",
+        "//java/google/registry/model",
+        "//java/google/registry/util",
+        "//javatests/google/registry/testing",
+        "//javatests/google/registry/testing/mapreduce",
         "//third_party/java/appengine:appengine-api-testonly",
         "//third_party/java/appengine:appengine-stubs",
         "//third_party/java/appengine_gcs_client",
@@ -30,18 +34,13 @@ java_library(
         "//third_party/java/re2j",
         "//third_party/java/servlet/servlet_api",
         "//third_party/java/truth",
-        "//java/google/registry/batch",
-        "//java/google/registry/model",
-        "//java/google/registry/util",
-        "//javatests/google/registry/testing",
-        "//javatests/google/registry/testing/mapreduce",
     ],
 )
 
 GenTestRules(
     name = "GeneratedTestRules",
-    default_test_size = "medium",
-    shard_count = 3,
+    default_test_size = "large",
+    shard_count = 4,
     test_files = glob(["*Test.java"]),
     deps = [":batch"],
 )

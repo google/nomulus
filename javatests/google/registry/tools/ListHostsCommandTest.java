@@ -27,9 +27,4 @@ public class ListHostsCommandTest extends ListObjectsCommandTestCase<ListHostsCo
   final String getTaskPath() {
     return ListHostsAction.PATH;
   }
-
-  @Override
-  final String getTld() {
-    return null;
-  }
 }

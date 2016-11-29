@@ -7,7 +7,6 @@ licenses(["notice"])  # Apache 2.0
 
 load("//java/com/google/testing/builddefs:GenTestRules.bzl", "GenTestRules")
 
-
 java_library(
     name = "security",
     srcs = glob(
@@ -18,6 +17,9 @@ java_library(
         "//java/com/google/common/base",
         "//java/com/google/common/collect",
         "//java/com/google/common/net",
+        "//java/google/registry/security",
+        "//java/google/registry/util",
+        "//javatests/google/registry/testing",
         "//third_party/java/appengine:appengine-api-testonly",
         "//third_party/java/appengine:appengine-testing",
         "//third_party/java/joda_time",
@@ -26,9 +28,6 @@ java_library(
         "//third_party/java/mockito",
         "//third_party/java/servlet/servlet_api",
         "//third_party/java/truth",
-        "//java/google/registry/security",
-        "//java/google/registry/util",
-        "//javatests/google/registry/testing",
     ],
 )
 

@@ -28,9 +28,4 @@ public class ListPremiumListsCommandTest
   final String getTaskPath() {
     return ListPremiumListsAction.PATH;
   }
-
-  @Override
-  final String getTld() {
-    return null;
-  }
 }

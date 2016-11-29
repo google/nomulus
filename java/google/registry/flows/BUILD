@@ -6,7 +6,6 @@ licenses(["notice"])  # Apache 2.0
 
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_java_template_library")
 
-
 filegroup(
     name = "flows_files",
     srcs = glob([
@@ -30,17 +29,6 @@ java_library(
         "//java/com/google/common/io",
         "//java/com/google/common/math",
         "//java/com/google/common/net",
-        "//third_party/java/appengine:appengine-api",
-        "//third_party/java/appengine_mapreduce2:appengine_mapreduce",
-        "//third_party/java/auto:auto_value",
-        "//third_party/java/dagger",
-        "//third_party/java/joda_money",
-        "//third_party/java/joda_time",
-        "//third_party/java/json_simple",
-        "//third_party/java/jsr305_annotations",
-        "//third_party/java/jsr330_inject",
-        "//third_party/java/objectify:objectify-v4_1",
-        "//third_party/java/servlet/servlet_api",
         "//java/google/registry/config",
         "//java/google/registry/dns",
         "//java/google/registry/mapreduce",
@@ -54,7 +42,17 @@ java_library(
         "//java/google/registry/tmch",
         "//java/google/registry/util",
         "//java/google/registry/xml",
-
+        "//third_party/java/appengine:appengine-api",
+        "//third_party/java/appengine_mapreduce2:appengine_mapreduce",
+        "//third_party/java/auto:auto_value",
+        "//third_party/java/dagger",
+        "//third_party/java/joda_money",
+        "//third_party/java/joda_time",
+        "//third_party/java/json_simple",
+        "//third_party/java/jsr305_annotations",
+        "//third_party/java/jsr330_inject",
+        "//third_party/java/objectify:objectify-v4_1",
+        "//third_party/java/servlet/servlet_api",
         "@io_bazel_rules_closure//closure/templates",
     ],
 )

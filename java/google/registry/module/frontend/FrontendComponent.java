@@ -31,6 +31,7 @@ import google.registry.request.Modules.UseAppIdentityCredentialForGoogleApisModu
 import google.registry.request.Modules.UserServiceModule;
 import google.registry.ui.ConsoleConfigModule;
 import google.registry.util.SystemClock.SystemClockModule;
+import google.registry.util.SystemSleeper.SystemSleeperModule;
 import javax.inject.Singleton;
 
 /** Dagger component with instance lifetime for "default" App Engine module. */
@@ -50,6 +51,7 @@ import javax.inject.Singleton;
         ModulesServiceModule.class,
         StackdriverModule.class,
         SystemClockModule.class,
+        SystemSleeperModule.class,
         UrlFetchTransportModule.class,
         UseAppIdentityCredentialForGoogleApisModule.class,
         UserServiceModule.class,

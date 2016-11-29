@@ -14,20 +14,24 @@
 
 package google.registry.tools;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import google.registry.tools.server.ListDomainsAction;
+import java.util.List;
 
-/** Command to list all second-level domains associated with a TLD. */
-@Parameters(separators = " =", commandDescription = "List domains associated with a TLD.")
+/** Command to list all second-level domains on specified TLD(s). */
+@Parameters(separators = " =", commandDescription = "List domains on TLD(s).")
 final class ListDomainsCommand extends ListObjectsCommand {
 
   @Parameter(
-      names = {"-t", "--tld"},
-      description = "Top level domain whose second-level domains shall be listed.",
+      names = {"-t", "--tld", "--tlds"},
+      description = "Comma-delimited list of top-level domain(s) to list second-level domains of.",
       required = true)
-  private String tld;
+  private List<String> tlds;
 
   @Override
   String getCommandPath() {
@@ -38,6 +42,8 @@ final class ListDomainsCommand extends ListObjectsCommand {
    * (in addition to the usual ones). */
   @Override
   ImmutableMap<String, Object> getParameterMap() {
-    return ImmutableMap.<String, Object>of("tld", tld);
+    String tldsParam = Joiner.on(',').join(tlds);
+    checkArgument(tldsParam.length() < 1024, "Total length of TLDs is too long for URL parameter");
+    return ImmutableMap.<String, Object>of("tlds", tldsParam);
   }
 }

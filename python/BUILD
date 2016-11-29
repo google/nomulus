@@ -10,7 +10,6 @@ package(default_visibility = ["//java/google/registry:registry_project"])
 
 licenses(["notice"])  # Apache 2.0
 
-
 # NOTE: All py_library() rules under this directory should depend on this rule.
 #
 # This rule serves to add this directory (/python) to the PYTHONPATH of any

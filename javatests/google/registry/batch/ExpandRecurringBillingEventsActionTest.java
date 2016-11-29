@@ -17,6 +17,7 @@ package google.registry.batch;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.testing.DatastoreHelper.assertBillingEvents;
 import static google.registry.testing.DatastoreHelper.assertBillingEventsForResource;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
@@ -52,6 +53,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
 
 /** Unit tests for {@link ExpandRecurringBillingEventsAction}. */
 @RunWith(JUnit4.class)
@@ -259,7 +261,6 @@ public class ExpandRecurringBillingEventsActionTest
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
     assertBillingEventsForResource(domain, recurring);
-    assertCursorAt(clock.nowUtc());
   }
 
   @Test
@@ -663,5 +664,15 @@ public class ExpandRecurringBillingEventsActionTest
     thrown.expect(
         IllegalArgumentException.class, "Cursor time must be earlier than execution time.");
     runMapreduce();
+  }
+
+  @Test
+  public void testFailure_mapperException_doesNotMoveCursor() throws Exception {
+    saveCursor(START_OF_TIME); // Need a saved cursor to verify that it didn't move.
+    // Set target to a TLD that doesn't exist.
+    recurring = persistResource(recurring.asBuilder().setTargetId("domain.junk").build());
+    runMapreduce();
+    assertBillingEvents(recurring); // only the bogus one in datastore
+    assertCursorAt(START_OF_TIME); // Cursor doesn't move on a failure.
   }
 }

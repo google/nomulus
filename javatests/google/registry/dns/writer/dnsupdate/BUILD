@@ -7,7 +7,6 @@ licenses(["notice"])  # Apache 2.0
 
 load("//java/com/google/testing/builddefs:GenTestRules.bzl", "GenTestRules")
 
-
 java_library(
     name = "dnsupdate",
     srcs = glob(["*.java"]),
@@ -16,6 +15,9 @@ java_library(
         "//java/com/google/common/collect",
         "//java/com/google/common/io",
         "//java/com/google/common/net",
+        "//java/google/registry/dns/writer/dnsupdate",
+        "//java/google/registry/model",
+        "//javatests/google/registry/testing",
         "//third_party/java/dagger",
         "//third_party/java/dnsjava",
         "//third_party/java/joda_time",
@@ -26,9 +28,6 @@ java_library(
         "//third_party/java/re2j",
         "//third_party/java/servlet/servlet_api",
         "//third_party/java/truth",
-        "//java/google/registry/dns/writer/dnsupdate",
-        "//java/google/registry/model",
-        "//javatests/google/registry/testing",
     ],
 )
 

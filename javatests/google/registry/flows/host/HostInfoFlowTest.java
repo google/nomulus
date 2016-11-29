@@ -14,8 +14,6 @@
 
 package google.registry.flows.host;
 
-import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.EppResourceUtils.isDeleted;
 import static google.registry.testing.DatastoreHelper.assertNoBillingEvents;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.newDomainResource;
@@ -50,12 +48,11 @@ public class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostRes
     createTld("foobar");
   }
 
-  private HostResource persistHostResource(boolean active) throws Exception {
-    HostResource host = persistResource(
+  private HostResource persistHostResource() throws Exception {
+    return persistResource(
         new HostResource.Builder()
             .setFullyQualifiedHostName(getUniqueIdFromCommand())
             .setRepoId("1FF-FOOBAR")
-            .setDeletionTime(active ? null : clock.nowUtc().minusDays(1))
             .setCurrentSponsorClientId("my sponsor")
             .setStatusValues(
                 ImmutableSet.of(StatusValue.CLIENT_UPDATE_PROHIBITED))
@@ -70,13 +67,11 @@ public class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostRes
             .setLastEppUpdateTime(DateTime.parse("1999-12-03T09:00:00.0Z"))
             .setLastTransferTime(DateTime.parse("2000-04-08T09:00:00.0Z"))
             .build());
-    assertThat(isDeleted(host, clock.nowUtc())).isNotEqualTo(active);
-    return host;
   }
 
   @Test
   public void testSuccess() throws Exception {
-    persistHostResource(true);
+    persistHostResource();
     assertTransactionalFlow(false);
     // Check that the persisted host info was returned.
     runFlowAssertResponse(
@@ -89,10 +84,10 @@ public class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostRes
 
   @Test
   public void testSuccess_linked() throws Exception {
-    persistHostResource(true);
+    persistHostResource();
     persistResource(
         newDomainResource("example.foobar").asBuilder()
-          .addNameservers(ImmutableSet.of(Key.create(persistHostResource(true))))
+          .addNameservers(ImmutableSet.of(Key.create(persistHostResource())))
           .build());
     assertTransactionalFlow(false);
     // Check that the persisted host info was returned.
@@ -113,7 +108,7 @@ public class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostRes
             .setCurrentSponsorClientId("superclientid")
             .build());
     persistResource(
-        persistHostResource(true).asBuilder()
+        persistHostResource().asBuilder()
             .setRepoId("CEEF-FOOBAR")
             .setSuperordinateDomain(Key.create(domain))
             .setLastSuperordinateChange(lastSuperordinateChange)
@@ -156,7 +151,8 @@ public class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostRes
 
   @Test
   public void testFailure_existedButWasDeleted() throws Exception {
-    persistHostResource(false);
+    persistResource(
+      persistHostResource().asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     thrown.expect(
         ResourceDoesNotExistException.class,
         String.format("(%s)", getUniqueIdFromCommand()));

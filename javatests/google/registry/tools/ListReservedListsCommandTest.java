@@ -28,9 +28,4 @@ public class ListReservedListsCommandTest
   final String getTaskPath() {
     return ListReservedListsAction.PATH;
   }
-
-  @Override
-  final String getTld() {
-    return null;
-  }
 }

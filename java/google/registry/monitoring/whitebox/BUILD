@@ -4,7 +4,6 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
-
 java_library(
     name = "whitebox",
     srcs = glob(["*.java"]),
@@ -19,6 +18,15 @@ java_library(
         "//java/com/google/common/cache",
         "//java/com/google/common/collect",
         "//java/com/google/common/net",
+        "//java/google/registry/bigquery",
+        "//java/google/registry/config",
+        "//java/google/registry/mapreduce",
+        "//java/google/registry/mapreduce/inputs",
+        "//java/google/registry/model",
+        "//java/google/registry/monitoring/metrics",
+        "//java/google/registry/request",
+        "//java/google/registry/request:modules",
+        "//java/google/registry/util",
         "//third_party/java/appengine:appengine-api",
         "//third_party/java/appengine_mapreduce2:appengine_mapreduce",
         "//third_party/java/auto:auto_factory",
@@ -29,14 +37,5 @@ java_library(
         "//third_party/java/jsr330_inject",
         "//third_party/java/objectify:objectify-v4_1",
         "//third_party/java/servlet/servlet_api",
-        "//java/google/registry/bigquery",
-        "//java/google/registry/config",
-        "//java/google/registry/mapreduce",
-        "//java/google/registry/mapreduce/inputs",
-        "//java/google/registry/model",
-        "//java/google/registry/monitoring/metrics",
-        "//java/google/registry/request",
-        "//java/google/registry/request:modules",
-        "//java/google/registry/util",
     ],
 )

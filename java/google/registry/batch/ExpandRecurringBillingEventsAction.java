@@ -138,6 +138,11 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
         return;
       }
       getContext().incrementCounter("Recurring billing events encountered");
+      // Ignore any recurring billing events that have yet to apply.
+      if (recurring.getEventTime().isAfter(executeTime)) {
+        getContext().incrementCounter("Recurring billing events ignored");
+        return;
+      }
       int billingEventsSaved = 0;
       try {
         billingEventsSaved = ofy().transactNew(new Work<Integer>() {
@@ -199,6 +204,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
             t, "Error while expanding Recurring billing events for %s", recurring.getId());
         getContext().incrementCounter("error: " + t.getClass().getSimpleName());
         getContext().incrementCounter(ERROR_COUNTER);
+        throw t;
       }
       if (!isDryRun) {
         getContext().incrementCounter("Saved OneTime billing events", billingEventsSaved);

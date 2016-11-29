@@ -133,7 +133,7 @@ public class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, C
   }
 
   @Test
-  public void testSuccess_otherRegistrarWithoutAuthInfio_doesNotSeeAuthInfo() throws Exception {
+  public void testSuccess_otherRegistrarWithoutAuthInfo_doesNotSeeAuthInfo() throws Exception {
     setClientIdForFlow("NewRegistrar");
     setEppInput("contact_info_no_authinfo.xml");
     persistContactResource(true);

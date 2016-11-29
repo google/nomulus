@@ -15,23 +15,22 @@
 package google.registry.flows.custom;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
 import google.registry.flows.SessionMetadata;
-import google.registry.flows.domain.DomainCreateFlow;
+import google.registry.flows.domain.DomainUpdateFlow;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainResource;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.reporting.HistoryEntry;
 
 /**
- * A no-op base class for {@link DomainCreateFlow} custom logic.
+ * A no-op base class for {@link DomainUpdateFlow} custom logic.
  *
  * <p>Extend this class and override the hook(s) to perform custom logic.
  */
-public class DomainCreateFlowCustomLogic extends BaseFlowCustomLogic {
+public class DomainUpdateFlowCustomLogic extends BaseFlowCustomLogic {
 
-  protected DomainCreateFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata) {
+  protected DomainUpdateFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata) {
     super(eppInput, sessionMetadata);
   }
 
@@ -64,81 +63,56 @@ public class DomainCreateFlowCustomLogic extends BaseFlowCustomLogic {
   @AutoValue
   public abstract static class AfterValidationParameters extends ImmutableObject {
 
-    /** The parsed domain name of the domain that is requested to be created. */
-    public abstract InternetDomainName domainName();
-
-    /**
-     * The number of years that the domain name will be registered for.
-     *
-     * <p>On standard TLDs, this is usually 1.
-     */
-    public abstract int years();
+    public abstract DomainResource existingDomain();
 
     public static Builder newBuilder() {
-      return new AutoValue_DomainCreateFlowCustomLogic_AfterValidationParameters.Builder();
+      return new AutoValue_DomainUpdateFlowCustomLogic_AfterValidationParameters.Builder();
     }
 
     /** Builder for {@link AfterValidationParameters}. */
     @AutoValue.Builder
     public abstract static class Builder {
 
-      public abstract Builder setDomainName(InternetDomainName domainName);
-
-      public abstract Builder setYears(int years);
+      public abstract Builder setExistingDomain(DomainResource existingDomain);
 
       public abstract AfterValidationParameters build();
     }
   }
 
-  /** A class to encapsulate parameters for a call to {@link #beforeSave}. */
+  /**
+   * A class to encapsulate parameters for a call to {@link #beforeSave}.
+   *
+   * <p>Note that both newDomain and historyEntry are included in entityChanges. They are also
+   * passed separately for convenience, but they are the same instance, and changes to them will
+   * also affect what is persisted from entityChanges.
+   */
   @AutoValue
   public abstract static class BeforeSaveParameters extends ImmutableObject {
 
-    /**
-     * The new {@link DomainResource} entity that is going to be persisted at the end of the
-     * transaction.
-     */
+    public abstract DomainResource existingDomain();
+
     public abstract DomainResource newDomain();
 
-    /**
-     * The new {@link HistoryEntry} entity for the domain's creation that is going to be persisted
-     * at the end of the transaction.
-     */
     public abstract HistoryEntry historyEntry();
 
-    /**
-     * The collection of {@link EntityChanges} (including new entities and those to delete) that
-     * will be persisted at the end of the transaction.
-     *
-     * <p>Note that the new domain and history entry are also included as saves in this collection,
-     * and are separated out above solely for convenience, as they are most likely to need to be
-     * changed. Removing them from the collection will cause them not to be saved, which is most
-     * likely not what you intended.
-     */
+
     public abstract EntityChanges entityChanges();
 
-    /**
-     * The number of years that the domain name will be registered for.
-     *
-     * <p>On standard TLDs, this is usually 1.
-     */
-    public abstract int years();
-
     public static Builder newBuilder() {
-      return new AutoValue_DomainCreateFlowCustomLogic_BeforeSaveParameters.Builder();
+      return new AutoValue_DomainUpdateFlowCustomLogic_BeforeSaveParameters.Builder();
     }
 
     /** Builder for {@link BeforeSaveParameters}. */
     @AutoValue.Builder
     public abstract static class Builder {
 
+      public abstract Builder setExistingDomain(DomainResource existingDomain);
+
       public abstract Builder setNewDomain(DomainResource newDomain);
 
       public abstract Builder setHistoryEntry(HistoryEntry historyEntry);
 
       public abstract Builder setEntityChanges(EntityChanges entityChanges);
-
-      public abstract Builder setYears(int years);
 
       public abstract BeforeSaveParameters build();
     }

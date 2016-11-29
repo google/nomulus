@@ -4,7 +4,6 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
-
 java_library(
     name = "tmch",
     srcs = glob(["*.java"]),
@@ -20,6 +19,12 @@ java_library(
         "//java/com/google/common/io",
         "//java/com/google/common/net",
         "//java/com/google/common/util/concurrent",
+        "//java/google/registry/config",
+        "//java/google/registry/keyring/api",
+        "//java/google/registry/model",
+        "//java/google/registry/request",
+        "//java/google/registry/util",
+        "//java/google/registry/xml",
         "//third_party/java/appengine:appengine-api",
         "//third_party/java/bouncycastle",
         "//third_party/java/bouncycastle_bcpg",
@@ -30,11 +35,5 @@ java_library(
         "//third_party/java/objectify:objectify-v4_1",
         "//third_party/java/re2j",
         "//third_party/java/servlet/servlet_api",
-        "//java/google/registry/config",
-        "//java/google/registry/keyring/api",
-        "//java/google/registry/model",
-        "//java/google/registry/request",
-        "//java/google/registry/util",
-        "//java/google/registry/xml",
     ],
 )

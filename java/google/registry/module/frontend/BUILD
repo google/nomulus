@@ -4,19 +4,12 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
-
 java_library(
     name = "frontend",
     srcs = glob(["*.java"]),
     deps = [
         "//java/com/google/common/base",
         "//java/com/google/common/collect",
-        "//third_party/java/appengine:appengine-api",
-        "//third_party/java/bouncycastle",
-        "//third_party/java/dagger",
-        "//third_party/java/jsr305_annotations",
-        "//third_party/java/jsr330_inject",
-        "//third_party/java/servlet/servlet_api",
         "//java/google/registry/braintree",
         "//java/google/registry/config",
         "//java/google/registry/dns",
@@ -31,6 +24,12 @@ java_library(
         "//java/google/registry/ui/server/registrar",
         "//java/google/registry/util",
         "//java/google/registry/whois",
+        "//third_party/java/appengine:appengine-api",
+        "//third_party/java/bouncycastle",
+        "//third_party/java/dagger",
+        "//third_party/java/jsr305_annotations",
+        "//third_party/java/jsr330_inject",
+        "//third_party/java/servlet/servlet_api",
     ],
 )
 

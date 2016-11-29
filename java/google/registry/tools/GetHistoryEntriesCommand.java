@@ -14,14 +14,19 @@
 
 package google.registry.tools;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.googlecode.objectify.Key;
+import google.registry.model.EppResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.tools.Command.RemoteApiCommand;
+import google.registry.tools.CommandUtilities.ResourceType;
 import google.registry.xml.XmlTransformer;
 import org.joda.time.DateTime;
 
@@ -40,9 +45,29 @@ final class GetHistoryEntriesCommand implements RemoteApiCommand {
       description = "Only show history entries that occurred at or before this time")
   private DateTime before = END_OF_TIME;
 
+  @Parameter(
+    names = "--type",
+    description = "Resource type.")
+  private ResourceType type;
+
+  @Parameter(
+    names = "--id",
+    description = "Foreign key of the resource, or application ID of the domain application.")
+  private String uniqueId;
+
   @Override
   public void run() {
-    for (HistoryEntry entry : ofy().load().type(HistoryEntry.class)
+    Key<? extends EppResource> parentKey = null;
+    if (type != null || uniqueId != null) {
+      checkArgument(
+          type != null && uniqueId != null,
+          "If either of 'type' or 'id' are set then both must be");
+      parentKey = type.getKey(uniqueId, DateTime.now(UTC));
+    }
+    for (HistoryEntry entry :
+            (parentKey == null
+                ? ofy().load().type(HistoryEntry.class)
+                : ofy().load().type(HistoryEntry.class).ancestor(parentKey))
         .order("modificationTime")
         .filter("modificationTime >=", after)
         .filter("modificationTime <=", before)) {

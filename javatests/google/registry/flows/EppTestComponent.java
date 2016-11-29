@@ -28,7 +28,9 @@ import google.registry.monitoring.whitebox.BigQueryMetricsEnqueuer;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.request.RequestScope;
 import google.registry.testing.FakeClock;
+import google.registry.testing.FakeSleeper;
 import google.registry.util.Clock;
+import google.registry.util.Sleeper;
 import javax.inject.Singleton;
 
 /** Dagger component for running EPP tests. */
@@ -48,6 +50,7 @@ interface EppTestComponent {
   static class FakesAndMocksModule {
 
     final FakeClock clock;
+    final Sleeper sleeper;
     final DnsQueue dnsQueue;
     final BigQueryMetricsEnqueuer metricsEnqueuer;
     final EppMetric.Builder metricBuilder;
@@ -55,6 +58,7 @@ interface EppTestComponent {
 
     FakesAndMocksModule(FakeClock clock) {
       this.clock = clock;
+      this.sleeper = new FakeSleeper(clock);
       this.dnsQueue = DnsQueue.create();
       this.metricBuilder = EppMetric.builderForRequest("request-id-1", clock);
       this.modulesService = mock(ModulesService.class);
@@ -64,6 +68,11 @@ interface EppTestComponent {
     @Provides
     Clock provideClock() {
       return clock;
+    }
+
+    @Provides
+    Sleeper provideSleeper() {
+      return sleeper;
     }
 
     @Provides

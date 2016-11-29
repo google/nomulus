@@ -4,7 +4,6 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
-
 java_library(
     name = "util",
     srcs = glob(["*.java"]),
@@ -20,6 +19,7 @@ java_library(
         "//java/com/google/common/primitives",
         "//java/com/google/common/reflect",
         "//java/com/google/common/util/concurrent",
+        "//java/google/registry/config",
         "//third_party/java/appengine:appengine-api",
         "//third_party/java/dagger",
         "//third_party/java/icu4j",
@@ -29,6 +29,5 @@ java_library(
         "//third_party/java/objectify:objectify-v4_1",
         "//third_party/java/re2j",
         "//third_party/java/servlet/servlet_api",
-        "//java/google/registry/config",
     ],
 )

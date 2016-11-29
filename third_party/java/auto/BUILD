@@ -30,10 +30,10 @@ java_plugin(
     processor_class = "com.google.auto.factory.processor.AutoFactoryProcessor",
     visibility = ["//visibility:private"],
     deps = [
+        ":auto_common",
         "@auto_factory//jar",
         "@guava//jar",
         "@javawriter//jar",
-        ":auto_common",
     ],
 )
 
@@ -42,9 +42,9 @@ java_plugin(
     processor_class = "com.google.auto.service.processor.AutoServiceProcessor",
     visibility = ["//visibility:private"],
     deps = [
+        ":auto_common",
         "@auto_service//jar",
         "@guava//jar",
-        ":auto_common",
     ],
 )
 
@@ -53,9 +53,9 @@ java_plugin(
     processor_class = "com.google.auto.value.processor.AutoValueProcessor",
     visibility = ["//visibility:private"],
     deps = [
-        "@auto_value//jar",
-        "@guava//jar",
         ":auto_common",
         "//third_party/java/jsr305_annotations",
+        "@auto_value//jar",
+        "@guava//jar",
     ],
 )

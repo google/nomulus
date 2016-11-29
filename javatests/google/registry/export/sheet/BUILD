@@ -5,7 +5,6 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
-
 java_library(
     name = "sheet",
     srcs = glob(["*.java"]),
@@ -14,6 +13,11 @@ java_library(
         "//java/com/google/common/collect",
         "//java/com/google/common/net",
         "//java/com/google/gdata:spreadsheet",
+        "//java/google/registry/config",
+        "//java/google/registry/export/sheet",
+        "//java/google/registry/model",
+        "//java/google/registry/util",
+        "//javatests/google/registry/testing",
         "//third_party/java/joda_time",
         "//third_party/java/jsr305_annotations",
         "//third_party/java/junit",
@@ -21,11 +25,6 @@ java_library(
         "//third_party/java/objectify:objectify-v4_1",
         "//third_party/java/servlet/servlet_api",
         "//third_party/java/truth",
-        "//java/google/registry/config",
-        "//java/google/registry/export/sheet",
-        "//java/google/registry/model",
-        "//java/google/registry/util",
-        "//javatests/google/registry/testing",
     ],
 )
 

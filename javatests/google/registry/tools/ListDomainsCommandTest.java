@@ -14,7 +14,11 @@
 
 package google.registry.tools;
 
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import google.registry.tools.server.ListDomainsAction;
+import java.util.List;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -32,7 +36,15 @@ public class ListDomainsCommandTest extends ListObjectsCommandTestCase<ListDomai
   }
 
   @Override
-  final String getTld() {
-    return "foo";
+  protected List<String> getTlds() {
+    return ImmutableList.of("foo");
+  }
+
+  @Test
+  public void test_tldsParamTooLong() throws Exception {
+    String tldsParam = "--tld=foo,bar" + Strings.repeat(",baz", 300);
+    thrown.expect(
+        IllegalArgumentException.class, "Total length of TLDs is too long for URL parameter");
+    runCommand(tldsParam);
   }
 }

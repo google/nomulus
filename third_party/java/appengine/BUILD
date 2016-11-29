@@ -63,10 +63,10 @@ java_library(
     name = "appengine-testing",
     testonly = 1,
     exports = [
-        "@appengine_testing//jar",
         ":appengine-api-labs-testonly",
         ":appengine-api-testonly",
         ":appengine-stubs",
+        "@appengine_testing//jar",
     ],
 )
 

@@ -40,4 +40,19 @@ public class CustomLogicFactory {
       EppInput eppInput, SessionMetadata sessionMetadata) {
     return new DomainCheckFlowCustomLogic(eppInput, sessionMetadata);
   }
+
+  public DomainInfoFlowCustomLogic forDomainInfoFlow(
+      EppInput eppInput, SessionMetadata sessionMetadata) {
+    return new DomainInfoFlowCustomLogic(eppInput, sessionMetadata);
+  }
+
+  public DomainUpdateFlowCustomLogic forDomainUpdateFlow(
+      EppInput eppInput, SessionMetadata sessionMetadata) {
+    return new DomainUpdateFlowCustomLogic(eppInput, sessionMetadata);
+  }
+
+  public DomainRenewFlowCustomLogic forDomainRenewFlow(
+      EppInput eppInput, SessionMetadata sessionMetadata) {
+    return new DomainRenewFlowCustomLogic(eppInput, sessionMetadata);
+  }
 }

@@ -141,6 +141,7 @@ public final class DomainCheckFlow implements Flow {
     customLogic.afterValidation(
         DomainCheckFlowCustomLogic.AfterValidationParameters.newBuilder()
             .setDomainNames(domainNames)
+            // TODO: Use as of date from fee extension v0.12 instead of now, if specificed.
             .setAsOfDate(now)
             .build());
     Set<String> existingIds = checkResourcesExist(DomainResource.class, targetIds, now);

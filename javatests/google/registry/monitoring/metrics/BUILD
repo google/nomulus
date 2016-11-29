@@ -7,7 +7,6 @@ licenses(["notice"])  # Apache 2.0
 
 load("//java/com/google/testing/builddefs:GenTestRules.bzl", "GenTestRules")
 
-
 java_library(
     name = "metrics",
     srcs = glob(["*.java"]),
@@ -19,11 +18,11 @@ java_library(
         "//java/com/google/common/base",
         "//java/com/google/common/collect",
         "//java/com/google/common/util/concurrent",
+        "//java/google/registry/monitoring/metrics",
         "//third_party/java/joda_time",
         "//third_party/java/junit",
         "//third_party/java/mockito",
         "//third_party/java/truth",
-        "//java/google/registry/monitoring/metrics",
     ],
 )
 

@@ -8,7 +8,6 @@ licenses(["notice"])  # Apache 2.0
 load("//java/google/registry/builddefs:zip_file.bzl", "zip_file")
 load("//javatests/google/registry/builddefs:zip_contents_test.bzl", "zip_contents_test")
 
-
 genrule(
     name = "generated",
     outs = ["generated.txt"],

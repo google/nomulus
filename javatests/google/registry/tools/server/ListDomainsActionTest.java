@@ -19,6 +19,7 @@ import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableSet;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -42,19 +43,19 @@ public class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_invalidRequest_missingTld() throws Exception {
-    action.tld = null;
+  public void testRun_invalidRequest_missingTlds() throws Exception {
+    action.tlds = ImmutableSet.of();
     testRunError(
         action,
         null,
         null,
         null,
-        "^Null or empty TLD specified$");
+        "^Must specify TLDs to query$");
   }
 
   @Test
   public void testRun_invalidRequest_invalidTld() throws Exception {
-    action.tld = "%%%badtld%%%";
+    action.tlds = ImmutableSet.of("%%%badtld%%%");
     testRunError(
         action,
         null,
@@ -65,7 +66,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
 
   @Test
   public void testRun_noParameters() throws Exception {
-    action.tld = "foo";
+    action.tlds = ImmutableSet.of("foo");
     testRunSuccess(
         action,
         null,
@@ -75,7 +76,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
 
   @Test
   public void testRun_twoLinesWithIdOnly() throws Exception {
-    action.tld = "foo";
+    action.tlds = ImmutableSet.of("foo");
     createTlds("bar", "sim");
     persistActiveDomain("dontlist.bar");
     persistActiveDomain("example1.foo");
@@ -92,8 +93,27 @@ public class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
+  public void testRun_multipleTlds() throws Exception {
+    action.tlds = ImmutableSet.of("bar", "foo");
+    createTlds("bar", "sim");
+    persistActiveDomain("dolist.bar");
+    persistActiveDomain("example1.foo");
+    persistActiveDomain("example2.foo");
+    persistActiveDomain("notlistedaswell.sim");
+    testRunSuccess(
+        action,
+        null,
+        null,
+        null,
+        "^dolist.bar",
+        "^example1.foo$",
+        "^example2.foo$");
+  }
+
+
+  @Test
   public void testRun_twoLinesWithIdOnlyNoHeader() throws Exception {
-    action.tld = "foo";
+    action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo");
     persistActiveDomain("example2.foo");
     testRunSuccess(
@@ -107,7 +127,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
 
   @Test
   public void testRun_twoLinesWithIdOnlyExplicitHeader() throws Exception {
-    action.tld = "foo";
+    action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo");
     persistActiveDomain("example2.foo");
     testRunSuccess(
@@ -123,7 +143,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
 
   @Test
   public void testRun_twoLinesWithRepoId() throws Exception {
-    action.tld = "foo";
+    action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo");
     persistActiveDomain("example3.foo");
     testRunSuccess(
@@ -139,7 +159,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
 
   @Test
   public void testRun_twoLinesWithRepoIdNoHeader() throws Exception {
-    action.tld = "foo";
+    action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo");
     persistActiveDomain("example3.foo");
     testRunSuccess(
@@ -153,7 +173,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
 
   @Test
   public void testRun_twoLinesWithRepoIdExplicitHeader() throws Exception {
-    action.tld = "foo";
+    action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo");
     persistActiveDomain("example3.foo");
     testRunSuccess(
@@ -169,7 +189,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
 
   @Test
   public void testRun_twoLinesWithWildcard() throws Exception {
-    action.tld = "foo";
+    action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo");
     persistActiveDomain("example3.foo");
     testRunSuccess(
@@ -185,7 +205,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
 
   @Test
   public void testRun_twoLinesWithWildcardAndAnotherField() throws Exception {
-    action.tld = "foo";
+    action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo");
     persistActiveDomain("example3.foo");
     testRunSuccess(
@@ -201,7 +221,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
 
   @Test
   public void testRun_withBadField_returnsError() throws Exception {
-    action.tld = "foo";
+    action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example2.foo");
     persistActiveDomain("example1.foo");
     testRunError(

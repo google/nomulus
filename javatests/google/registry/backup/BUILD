@@ -7,7 +7,6 @@ licenses(["notice"])  # Apache 2.0
 
 load("//java/com/google/testing/builddefs:GenTestRules.bzl", "GenTestRules")
 
-
 java_library(
     name = "backup",
     srcs = glob(["*.java"]),
@@ -18,6 +17,11 @@ java_library(
         "//java/com/google/common/net",
         "//java/com/google/common/primitives",
         "//java/com/google/common/util/concurrent",
+        "//java/google/registry/backup",
+        "//java/google/registry/config",
+        "//java/google/registry/model",
+        "//java/google/registry/util",
+        "//javatests/google/registry/testing",
         "//third_party/java/appengine:appengine-api-testonly",
         "//third_party/java/appengine_gcs_client",
         "//third_party/java/joda_time",
@@ -27,11 +31,6 @@ java_library(
         "//third_party/java/objectify:objectify-v4_1",
         "//third_party/java/servlet/servlet_api",
         "//third_party/java/truth",
-        "//java/google/registry/backup",
-        "//java/google/registry/config",
-        "//java/google/registry/model",
-        "//java/google/registry/util",
-        "//javatests/google/registry/testing",
     ],
 )
 

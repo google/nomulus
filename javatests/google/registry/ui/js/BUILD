@@ -7,7 +7,6 @@ licenses(["notice"])  # Apache 2.0
 
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_js_library", "closure_js_test")
 
-
 closure_js_library(
     name = "testing",
     srcs = ["testing.js"],
@@ -25,8 +24,8 @@ closure_js_test(
     compilation_level = "WHITESPACE_ONLY",
     deps = [
         ":testing",
-        "//javascript/closure",
         "//java/google/registry/ui/js",
+        "//javascript/closure",
         "//javascript/closure:testing",
     ],
 )

@@ -15,7 +15,6 @@
 package google.registry.tools;
 
 import static google.registry.request.JsonResponse.JSON_SAFETY_PREFIX;
-import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.tools.server.ListObjectsAction.FIELDS_PARAM;
 import static google.registry.tools.server.ListObjectsAction.FULL_FIELD_NAMES_PARAM;
 import static google.registry.tools.server.ListObjectsAction.PRINT_HEADER_ROW_PARAM;
@@ -25,10 +24,14 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
 import google.registry.tools.ServerSideCommand.Connection;
+import java.util.List;
+import javax.annotation.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -46,24 +49,20 @@ public abstract class ListObjectsCommandTestCase<C extends ListObjectsCommand>
   abstract String getTaskPath();
 
   /**
-   * The TLD to be used (for those subclasses that use TLDs; may be null).
+   * The TLD to be used (for those subclasses that use TLDs; defaults to empty).
    */
-  abstract String getTld();
+  protected List<String> getTlds() {
+    return ImmutableList.<String>of();
+  }
 
   /**
-   * The TLD argument to be passed on the command line; null if not needed.
+   * The TLDs argument to be passed on the command line; null if not needed.
    */
-  String tldArgumentString;
+  @Nullable String tldsParameter;
 
   @Before
   public void init() throws Exception {
-    String tld = getTld();
-    if (tld == null) {
-      tldArgumentString = null;
-    } else {
-      createTld(tld);
-      tldArgumentString = "--tld=" + tld;
-    }
+    tldsParameter = getTlds().isEmpty() ? null : ("--tld=" + Joiner.on(',').join(getTlds()));
     command.setConnection(connection);
     when(
         connection.send(
@@ -89,9 +88,8 @@ public abstract class ListObjectsCommandTestCase<C extends ListObjectsCommand>
     if (fullFieldNames.isPresent()) {
       params.put(FULL_FIELD_NAMES_PARAM, fullFieldNames.get());
     }
-    String tld = getTld();
-    if (tld != null) {
-      params.put("tld", tld);
+    if (!getTlds().isEmpty()) {
+      params.put("tlds", Joiner.on(',').join(getTlds()));
     }
     verify(connection).send(
         eq(getTaskPath()),
@@ -102,74 +100,74 @@ public abstract class ListObjectsCommandTestCase<C extends ListObjectsCommand>
 
   @Test
   public void testRun_noFields() throws Exception {
-    if (tldArgumentString == null) {
+    if (tldsParameter == null) {
       runCommand();
     } else {
-      runCommand(tldArgumentString);
+      runCommand(tldsParameter);
     }
     verifySent(null, Optional.<Boolean>absent(), Optional.<Boolean>absent());
   }
 
   @Test
   public void testRun_oneField() throws Exception {
-    if (tldArgumentString == null) {
+    if (tldsParameter == null) {
       runCommand("--fields=fieldName");
     } else {
-      runCommand("--fields=fieldName", tldArgumentString);
+      runCommand("--fields=fieldName", tldsParameter);
     }
     verifySent("fieldName", Optional.<Boolean>absent(), Optional.<Boolean>absent());
   }
 
   @Test
   public void testRun_wildcardField() throws Exception {
-    if (tldArgumentString == null) {
+    if (tldsParameter == null) {
       runCommand("--fields=*");
     } else {
-      runCommand("--fields=*", tldArgumentString);
+      runCommand("--fields=*", tldsParameter);
     }
     verifySent("*", Optional.<Boolean>absent(), Optional.<Boolean>absent());
   }
 
   @Test
   public void testRun_header() throws Exception {
-    if (tldArgumentString == null) {
+    if (tldsParameter == null) {
       runCommand("--fields=fieldName", "--header=true");
     } else {
-      runCommand("--fields=fieldName", "--header=true", tldArgumentString);
+      runCommand("--fields=fieldName", "--header=true", tldsParameter);
     }
     verifySent("fieldName", Optional.of(Boolean.TRUE), Optional.<Boolean>absent());
   }
 
   @Test
   public void testRun_noHeader() throws Exception {
-    if (tldArgumentString == null) {
+    if (tldsParameter == null) {
       runCommand("--fields=fieldName", "--header=false");
     } else {
-      runCommand("--fields=fieldName", "--header=false", tldArgumentString);
+      runCommand("--fields=fieldName", "--header=false", tldsParameter);
     }
     verifySent("fieldName", Optional.of(Boolean.FALSE), Optional.<Boolean>absent());
   }
 
   @Test
   public void testRun_fullFieldNames() throws Exception {
-    if (tldArgumentString == null) {
+    if (tldsParameter == null) {
       runCommand("--fields=fieldName", "--full_field_names");
     } else {
-      runCommand("--fields=fieldName", "--full_field_names", tldArgumentString);
+      runCommand("--fields=fieldName", "--full_field_names", tldsParameter);
     }
     verifySent("fieldName", Optional.<Boolean>absent(), Optional.of(Boolean.TRUE));
   }
 
   @Test
   public void testRun_allParameters() throws Exception {
-    if (tldArgumentString == null) {
+    if (tldsParameter == null) {
       runCommand("--fields=fieldName,otherFieldName,*", "--header=true", "--full_field_names");
     } else {
       runCommand(
           "--fields=fieldName,otherFieldName,*",
           "--header=true",
           "--full_field_names",
-          tldArgumentString);
+          tldsParameter);
     }
     verifySent(
         "fieldName,otherFieldName,*", Optional.of(Boolean.TRUE), Optional.of(Boolean.TRUE));

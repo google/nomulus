@@ -21,16 +21,10 @@ import google.registry.tools.server.ListTldsAction;
  *
  * @see ListObjectsCommandTestCase
  */
-public class ListTldsCommandTest
-    extends ListObjectsCommandTestCase<ListTldsCommand> {
+public class ListTldsCommandTest extends ListObjectsCommandTestCase<ListTldsCommand> {
 
   @Override
   final String getTaskPath() {
     return ListTldsAction.PATH;
-  }
-
-  @Override
-  final String getTld() {
-    return null;
   }
 }

@@ -8,11 +8,11 @@ java_binary(
     name = "annotation_processors_ide",
     create_executable = False,
     runtime_deps = [
+        "//third_party/java/dagger:dagger-compiler",
         "@auto_factory//jar",
         "@auto_service//jar",
         "@auto_value//jar",
         "@javawriter//jar",
-        "//third_party/java/dagger:dagger-compiler",
     ],
 )
 

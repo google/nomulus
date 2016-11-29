@@ -20,6 +20,8 @@ import static google.registry.request.RequestParameters.extractOptionalParameter
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.request.Parameter;
@@ -79,6 +81,13 @@ public class ToolsServerModule {
   @Parameter("tld")
   static String provideTld(HttpServletRequest req) {
     return extractRequiredParameter(req, "tld");
+  }
+
+  @Provides
+  @Parameter("tlds")
+  static ImmutableSet<String> provideTlds(HttpServletRequest req) {
+    String tldsString = extractRequiredParameter(req, "tlds");
+    return ImmutableSet.copyOf(Splitter.on(',').split(tldsString));
   }
 
   @Provides

@@ -4,7 +4,6 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
-
 java_library(
     name = "server",
     srcs = glob(["*.java"]),
@@ -28,7 +27,6 @@ java_library(
         "//third_party/java/jsr305_annotations",
         "//third_party/java/re2j",
         "//third_party/java/servlet/servlet_api",
-
         "@io_bazel_rules_closure//closure/templates",
     ],
 )

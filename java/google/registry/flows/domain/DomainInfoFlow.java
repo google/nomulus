@@ -29,6 +29,10 @@ import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.ClientId;
 import google.registry.flows.FlowModule.TargetId;
+import google.registry.flows.custom.DomainInfoFlowCustomLogic;
+import google.registry.flows.custom.DomainInfoFlowCustomLogic.AfterValidationParameters;
+import google.registry.flows.custom.DomainInfoFlowCustomLogic.BeforeResponseParameters;
+import google.registry.flows.custom.DomainInfoFlowCustomLogic.BeforeResponseReturnData;
 import google.registry.model.domain.DomainCommand.Info;
 import google.registry.model.domain.DomainCommand.Info.HostsRequest;
 import google.registry.model.domain.DomainResource;
@@ -72,19 +76,31 @@ public final class DomainInfoFlow implements Flow {
   @Inject @TargetId String targetId;
   @Inject Clock clock;
   @Inject EppResponse.Builder responseBuilder;
-  @Inject DomainInfoFlow() {}
+  @Inject DomainInfoFlowCustomLogic customLogic;
+
+  @Inject
+  DomainInfoFlow() {}
 
   @Override
   public final EppResponse run() throws EppException {
     extensionManager.register(FeeInfoCommandExtensionV06.class);
+    customLogic.beforeValidation();
     extensionManager.validate();
     validateClientIsLoggedIn(clientId);
     DateTime now = clock.nowUtc();
     DomainResource domain = loadAndVerifyExistence(DomainResource.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, domain);
+    customLogic.afterValidation(AfterValidationParameters.newBuilder().setDomain(domain).build());
+    BeforeResponseReturnData responseData =
+        customLogic.beforeResponse(
+            BeforeResponseParameters.newBuilder()
+                .setDomain(domain)
+                .setResData(getResourceInfo(domain))
+                .setResponseExtensions(getDomainResponseExtensions(domain, now))
+                .build());
     return responseBuilder
-        .setResData(getResourceInfo(domain))
-        .setExtensions(getDomainResponseExtensions(domain, now))
+        .setResData(responseData.resData())
+        .setExtensions(responseData.responseExtensions())
         .build();
   }
 
@@ -126,24 +142,21 @@ public final class DomainInfoFlow implements Flow {
     }
     FeeInfoCommandExtensionV06 feeInfo =
         eppInput.getSingleExtension(FeeInfoCommandExtensionV06.class);
-    if (feeInfo != null) {  // Fee check was requested.
+    if (feeInfo != null) { // Fee check was requested.
       FeeInfoResponseExtensionV06.Builder builder = new FeeInfoResponseExtensionV06.Builder();
       handleFeeRequest(
-          feeInfo,
-          builder,
-          InternetDomainName.from(targetId),
-          clientId,
-          null,
-          now,
-          eppInput);
+          feeInfo, builder, InternetDomainName.from(targetId), clientId, null, now, eppInput);
       extensions.add(builder.build());
     }
     // If the TLD uses the flags extension, add it to the info response.
     Optional<RegistryExtraFlowLogic> extraLogicManager =
         RegistryExtraFlowLogicProxy.newInstanceForDomain(domain);
     if (extraLogicManager.isPresent()) {
-      Set<String> flags = extraLogicManager.get().getExtensionFlags(
-          domain, clientId, now); // As-of date is always now for info commands.
+      Set<String> flags =
+          extraLogicManager
+              .get()
+              .getExtensionFlags(
+                  domain, clientId, now); // As-of date is always now for info commands.
       if (!flags.isEmpty()) {
         extensions.add(FlagsInfoResponseExtension.create(ImmutableList.copyOf(flags)));
       }

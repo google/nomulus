@@ -7,7 +7,6 @@ load("//java/google/registry/builddefs:zip_file.bzl", "zip_file")
 
 exports_files(["globals.txt"])
 
-
 filegroup(
     name = "runfiles",
     srcs = glob(["assets/**"]) + [
@@ -23,19 +22,19 @@ filegroup(
 filegroup(
     name = "runfiles_debug",
     srcs = [
-        "@closure_library//:js_files",
         "brain_bin.js.map",
         "deps.js",
         "registrar_bin.js.map",
         "registrar_dbg.js",
-        "//javascript/closure:js_files_recursive",
-        "//javascript/template/soy:soy_usegoog_js_files",
         "//java/google/registry/ui/css:css_files",
         "//java/google/registry/ui/css:registrar_dbg.css",
         "//java/google/registry/ui/js:js_files",
         "//java/google/registry/ui/js/registrar:js_files",
         "//java/google/registry/ui/soy:js_files",
         "//java/google/registry/ui/soy/registrar:js_files",
+        "//javascript/closure:js_files_recursive",
+        "//javascript/template/soy:soy_usegoog_js_files",
+        "@closure_library//:js_files",
     ],
 )
 
@@ -72,13 +71,12 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//java/com/google/common/base",
+        "//java/google/registry/config",
         "//third_party/java/appengine:appengine-api",
         "//third_party/java/dagger",
         "//third_party/java/jsr305_annotations",
-        "//java/google/registry/config",
     ],
 )
-
 
 closure_js_deps(
     name = "deps",

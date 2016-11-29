@@ -18,16 +18,14 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.net.InetAddresses;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.xjc.host.XjcHostAddrType;
 import google.registry.xjc.host.XjcHostStatusType;
-import google.registry.xjc.rdecontact.XjcRdeContact;
 import google.registry.xjc.rdehost.XjcRdeHost;
 import java.net.InetAddress;
 
-/** Utility class that converts an {@link XjcRdeContact} into a {@link ContactResource}. */
+/** Utility class that converts an {@link XjcRdeHost} into a {@link HostResource}. */
 public class XjcToHostResourceConverter {
 
   private static final Function<XjcHostStatusType, StatusValue> STATUS_VALUE_CONVERTER =

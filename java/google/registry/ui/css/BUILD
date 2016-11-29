@@ -6,7 +6,6 @@ licenses(["notice"])  # Apache 2.0
 
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_css_library", "closure_css_binary")
 
-
 filegroup(
     name = "css_files",
     srcs = glob(["*.css"]),
@@ -16,7 +15,6 @@ closure_css_library(
     name = "kd_components_lib",
     srcs = ["kd_components.css"],
 )
-
 
 closure_css_library(
     name = "registry_lib",

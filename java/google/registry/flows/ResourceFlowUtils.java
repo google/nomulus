@@ -256,7 +256,7 @@ public final class ResourceFlowUtils {
         R extends EppResource & ResourceWithTransferData,
         B extends Builder<R, B> & BuilderWithTransferData<B>>
             R approvePendingTransfer(R resource, TransferStatus transferStatus, DateTime now) {
-    B builder = resolvePendingTransfer(resource, transferStatus, now);
+    B builder = ResourceFlowUtils.<R, B>resolvePendingTransfer(resource, transferStatus, now);
     return builder
         .setLastTransferTime(now)
         .setCurrentSponsorClientId(resource.getTransferData().getGainingClientId())

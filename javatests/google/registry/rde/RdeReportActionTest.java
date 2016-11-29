@@ -52,11 +52,15 @@ import google.registry.request.HttpException.InternalServerErrorException;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.BouncyCastleProviderRule;
 import google.registry.testing.ExceptionRule;
+import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
+import google.registry.testing.FakeSleeper;
+import google.registry.util.Retrier;
 import google.registry.xjc.XjcXmlTransformer;
 import google.registry.xjc.rdereport.XjcRdeReportReport;
 import google.registry.xml.XmlException;
 import java.io.ByteArrayInputStream;
+import java.net.SocketTimeoutException;
 import java.util.Map;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
@@ -103,6 +107,7 @@ public class RdeReportActionTest {
     reporter.reportUrlPrefix = "https://rde-report.example";
     reporter.urlFetchService = urlFetchService;
     reporter.password = "foo";
+    reporter.retrier = new Retrier(new FakeSleeper(new FakeClock()), 3);
     RdeReportAction action = new RdeReportAction();
     action.gcsUtils = new GcsUtils(gcsService, 1024);
     action.ghostryde = new Ghostryde(1024);
@@ -183,6 +188,19 @@ public class RdeReportActionTest {
     when(urlFetchService.fetch(any(HTTPRequest.class))).thenThrow(new ExpectedException());
     thrown.expect(ExpectedException.class);
     createAction().runWithLock(loadRdeReportCursor());
+  }
+
+  @Test
+  public void testRunWithLock_socketTimeout_doesRetry() throws Exception {
+    when(httpResponse.getResponseCode()).thenReturn(SC_OK);
+    when(httpResponse.getContent()).thenReturn(IIRDEA_GOOD_XML.read());
+    when(urlFetchService.fetch(request.capture()))
+        .thenThrow(new SocketTimeoutException())
+        .thenReturn(httpResponse);
+    createAction().runWithLock(loadRdeReportCursor());
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
+    assertThat(response.getPayload()).isEqualTo("OK test 2006-06-06T00:00:00.000Z\n");
   }
 
   private DateTime loadRdeReportCursor() {

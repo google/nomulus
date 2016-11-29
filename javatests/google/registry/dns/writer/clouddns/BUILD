@@ -7,7 +7,6 @@ licenses(["notice"])  # Apache 2.0
 
 load("//java/com/google/testing/builddefs:GenTestRules.bzl", "GenTestRules")
 
-
 java_library(
     name = "clouddns",
     srcs = glob(["*Test.java"]),
@@ -18,6 +17,10 @@ java_library(
         "//java/com/google/common/io",
         "//java/com/google/common/net",
         "//java/com/google/common/util/concurrent",
+        "//java/google/registry/dns/writer/clouddns",
+        "//java/google/registry/model",
+        "//java/google/registry/util",
+        "//javatests/google/registry/testing",
         "//third_party/java/joda_time",
         "//third_party/java/jsr305_annotations",
         "//third_party/java/jsr330_inject",
@@ -26,10 +29,6 @@ java_library(
         "//third_party/java/objectify:objectify-v4_1",
         "//third_party/java/servlet/servlet_api",
         "//third_party/java/truth",
-        "//java/google/registry/dns/writer/clouddns",
-        "//java/google/registry/model",
-        "//java/google/registry/util",
-        "//javatests/google/registry/testing",
     ],
 )
 

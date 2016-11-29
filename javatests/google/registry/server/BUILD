@@ -5,7 +5,6 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
-
 java_library(
     name = "TestServer",
     srcs = [
@@ -23,11 +22,11 @@ java_library(
         "//java/com/google/common/net",
         "//java/com/google/common/primitives",
         "//java/com/google/common/util/concurrent",
+        "//java/google/registry/util",
         "//third_party/java/auto:auto_value",
         "//third_party/java/jetty/v6_1_22",
         "//third_party/java/jsr305_annotations",
         "//third_party/java/servlet/servlet_api",
-        "//java/google/registry/util",
     ],
 )
 
@@ -36,11 +35,11 @@ java_library(
     srcs = ["Fixture.java"],
     deps = [
         "//java/com/google/common/collect",
+        "//java/google/registry/model",
+        "//javatests/google/registry/testing",
         "//third_party/java/appengine:appengine-api",
         "//third_party/java/joda_time",
         "//third_party/java/objectify:objectify-v4_1",
-        "//java/google/registry/model",
-        "//javatests/google/registry/testing",
     ],
 )
 
@@ -55,11 +54,11 @@ java_library(
         ":TestServer",
         "//java/com/google/common/collect",
         "//java/com/google/common/net",
-        "//third_party/java/jsr305_annotations",
-        "//third_party/java/servlet/servlet_api",
         "//java/google/registry/module/backend",
         "//java/google/registry/module/frontend",
         "//java/google/registry/ui/server/registrar",
+        "//third_party/java/jsr305_annotations",
+        "//third_party/java/servlet/servlet_api",
     ],
 )
 
@@ -72,10 +71,10 @@ java_binary(
         ":RegistryTestServer",
         "//java/com/google/common/collect",
         "//java/com/google/common/net",
-        "//third_party/java/jcommander",
-        "//third_party/java/junit",
         "//java/google/registry/tools/params",
         "//java/google/registry/ui",
         "//javatests/google/registry/testing",
+        "//third_party/java/jcommander",
+        "//third_party/java/junit",
     ],
 )

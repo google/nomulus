@@ -28,9 +28,4 @@ public class ListRegistrarsCommandTest
   final String getTaskPath() {
     return ListRegistrarsAction.PATH;
   }
-
-  @Override
-  final String getTld() {
-    return null;
-  }
 }

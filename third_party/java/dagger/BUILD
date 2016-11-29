@@ -10,17 +10,17 @@ java_library(
 java_library(
     name = "dagger-runtime",
     exports = [
-        "@dagger//jar",
         "//third_party/java/jsr330_inject",
+        "@dagger//jar",
     ],
 )
 
 java_library(
     name = "dagger-producers",
     exports = [
+        "//third_party/java/jsr330_inject",
         "@dagger_producers//jar",
         "@guava//jar",
-        "//third_party/java/jsr330_inject",
     ],
 )
 
@@ -29,8 +29,6 @@ java_library(
     visibility = ["//visibility:public"],
     exports = ["@dagger_compiler//jar"],
     runtime_deps = [
-        "@gson//jar",
-        "@guava//jar",
         ":dagger-producers",
         ":dagger-runtime",
         "//third_party/java/auto:auto_common",
@@ -39,6 +37,8 @@ java_library(
         "//third_party/java/javapoet",
         "//third_party/java/jsr305_annotations",
         "//third_party/java/jsr330_inject",
+        "@gson//jar",
+        "@guava//jar",
     ],
 )
 

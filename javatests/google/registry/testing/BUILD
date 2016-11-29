@@ -5,7 +5,6 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
-
 java_library(
     name = "testing",
     srcs = glob(
@@ -29,6 +28,16 @@ java_library(
         "//java/com/google/common/net",
         "//java/com/google/common/testing",
         "//java/com/google/common/util/concurrent",
+        "//java/google/registry/config",
+        "//java/google/registry/dns:constants",
+        "//java/google/registry/dns/writer",
+        "//java/google/registry/flows",
+        "//java/google/registry/model",
+        "//java/google/registry/pricing",
+        "//java/google/registry/request",
+        "//java/google/registry/tmch",
+        "//java/google/registry/util",
+        "//java/google/registry/xml",
         "//third_party/java/appengine:appengine-api-testonly",
         "//third_party/java/appengine:appengine-integration-testing",
         "//third_party/java/appengine:appengine-stubs",
@@ -48,16 +57,5 @@ java_library(
         "//third_party/java/objectify:objectify-v4_1",
         "//third_party/java/servlet/servlet_api",
         "//third_party/java/truth",
-        "//java/google/registry/config",
-        "//java/google/registry/dns:constants",
-        "//java/google/registry/dns/writer",
-        "//java/google/registry/flows",
-        "//java/google/registry/model",
-        "//java/google/registry/pricing",
-        "//java/google/registry/request",
-        "//java/google/registry/tmch",
-        "//java/google/registry/util",
-        "//java/google/registry/xml",
     ],
 )
-

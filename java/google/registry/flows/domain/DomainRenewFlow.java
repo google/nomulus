@@ -14,6 +14,7 @@
 
 package google.registry.flows.domain;
 
+import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses;
@@ -42,7 +43,14 @@ import google.registry.flows.FlowModule.ClientId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
+import google.registry.flows.custom.DomainRenewFlowCustomLogic;
+import google.registry.flows.custom.DomainRenewFlowCustomLogic.AfterValidationParameters;
+import google.registry.flows.custom.DomainRenewFlowCustomLogic.BeforeResponseParameters;
+import google.registry.flows.custom.DomainRenewFlowCustomLogic.BeforeResponseReturnData;
+import google.registry.flows.custom.DomainRenewFlowCustomLogic.BeforeSaveParameters;
+import google.registry.flows.custom.EntityChanges;
 import google.registry.flows.domain.TldSpecificLogicProxy.EppCommandOperations;
+import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -112,11 +120,13 @@ public final class DomainRenewFlow implements TransactionalFlow {
   @Inject @Superuser boolean isSuperuser;
   @Inject HistoryEntry.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
+  @Inject DomainRenewFlowCustomLogic customLogic;
   @Inject DomainRenewFlow() {}
 
   @Override
   public final EppResponse run() throws EppException {
     extensionManager.register(FeeRenewCommandExtension.class, MetadataExtension.class);
+    customLogic.beforeValidation();
     extensionManager.validate();
     validateClientIsLoggedIn(clientId);
     DateTime now = ofy().getTransactionTime();
@@ -131,6 +141,12 @@ public final class DomainRenewFlow implements TransactionalFlow {
         Registry.get(existingDomain.getTld()), targetId, clientId, now, years, eppInput);
     validateFeeChallenge(
         targetId, existingDomain.getTld(), now, feeRenew, commandOperations.getTotalCost());
+    customLogic.afterValidation(
+        AfterValidationParameters.newBuilder()
+            .setExistingDomain(existingDomain)
+            .setNow(now)
+            .setYears(years)
+            .build());
     HistoryEntry historyEntry = historyBuilder
         .setType(HistoryEntry.Type.DOMAIN_RENEW)
         .setPeriod(command.getPeriod())
@@ -170,11 +186,37 @@ public final class DomainRenewFlow implements TransactionalFlow {
         .setAutorenewPollMessage(Key.create(newAutorenewPollMessage))
         .addGracePeriod(GracePeriod.forBillingEvent(GracePeriodStatus.RENEW, explicitRenewEvent))
         .build();
-    ofy().save().<Object>entities(
-        newDomain, historyEntry, explicitRenewEvent, newAutorenewEvent, newAutorenewPollMessage);
+    EntityChanges entityChanges =
+        customLogic.beforeSave(
+            BeforeSaveParameters.newBuilder()
+                .setExistingDomain(existingDomain)
+                .setNewDomain(newDomain)
+                .setNow(now)
+                .setYears(years)
+                .setHistoryEntry(historyEntry)
+                .setEntityChanges(
+                    EntityChanges.newBuilder()
+                        .setSaves(
+                            ImmutableSet.<ImmutableObject>of(
+                                newDomain,
+                                historyEntry,
+                                explicitRenewEvent,
+                                newAutorenewEvent,
+                                newAutorenewPollMessage))
+                        .build())
+                .build());
+    persistEntityChanges(entityChanges);
+    BeforeResponseReturnData responseData =
+        customLogic.beforeResponse(
+            BeforeResponseParameters.newBuilder()
+                .setDomain(newDomain)
+                .setResData(DomainRenewData.create(targetId, newExpirationTime))
+                .setResponseExtensions(
+                    createResponseExtensions(commandOperations.getTotalCost(), feeRenew))
+                .build());
     return responseBuilder
-        .setResData(DomainRenewData.create(targetId, newExpirationTime))
-        .setExtensions(createResponseExtensions(commandOperations.getTotalCost(), feeRenew))
+        .setResData(responseData.resData())
+        .setExtensions(responseData.responseExtensions())
         .build();
   }
 

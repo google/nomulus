@@ -2,7 +2,6 @@ package(default_visibility = ["//java/google/registry:registry_project"])
 
 licenses(["notice"])  # Apache 2.0
 
-
 py_library(
     name = "icann_report_query_builder",
     srcs = ["icann_report_query_builder.py"],

@@ -4,7 +4,6 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
-
 filegroup(
     name = "xml_schema_files",
     srcs = glob(["xsd/*.xsd"]),

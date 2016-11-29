@@ -6,7 +6,6 @@ licenses(["notice"])  # Apache 2.0
 
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_js_library")
 
-
 filegroup(
     name = "js_files",
     srcs = glob(["*.js"]),
@@ -16,7 +15,6 @@ closure_js_library(
     name = "registrar",
     srcs = [":js_files"],
     deps = [
-        "//javascript/closure",
         "//java/google/registry/ui/js",
         "//java/google/registry/ui/soy:Forms",
         "//java/google/registry/ui/soy/registrar:Console",
@@ -31,5 +29,6 @@ closure_js_library(
         "//java/google/registry/ui/soy/registrar:Payment",
         "//java/google/registry/ui/soy/registrar:SecuritySettings",
         "//java/google/registry/ui/soy/registrar:WhoisSettings",
+        "//javascript/closure",
     ],
 )

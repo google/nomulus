@@ -6,7 +6,6 @@ licenses(["notice"])  # Apache 2.0
 
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_java_template_library", "closure_js_template_library")
 
-
 filegroup(
     name = "js_files",
     srcs = [

@@ -17,6 +17,7 @@ package google.registry.flows.domain;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.collect.Sets.symmetricDifference;
 import static com.google.common.collect.Sets.union;
+import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.checkSameValuesNotAddedAndRemoved;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
@@ -41,7 +42,6 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.util.DateTimeUtils.earliestOf;
 
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.dns.DnsQueue;
@@ -51,6 +51,10 @@ import google.registry.flows.FlowModule.ClientId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
+import google.registry.flows.custom.DomainUpdateFlowCustomLogic;
+import google.registry.flows.custom.DomainUpdateFlowCustomLogic.AfterValidationParameters;
+import google.registry.flows.custom.DomainUpdateFlowCustomLogic.BeforeSaveParameters;
+import google.registry.flows.custom.EntityChanges;
 import google.registry.flows.domain.DomainFlowUtils.FeesRequiredForNonFreeUpdateException;
 import google.registry.flows.domain.TldSpecificLogicProxy.EppCommandOperations;
 import google.registry.model.ImmutableObject;
@@ -128,9 +132,8 @@ public final class DomainUpdateFlow implements TransactionalFlow {
    * requires special checking, since you must be able to clear the status off the object with an
    * update.
    */
-  private static final ImmutableSet<StatusValue> UPDATE_DISALLOWED_STATUSES = ImmutableSet.of(
-      StatusValue.PENDING_DELETE,
-      StatusValue.SERVER_UPDATE_PROHIBITED);
+  private static final ImmutableSet<StatusValue> UPDATE_DISALLOWED_STATUSES =
+      ImmutableSet.of(StatusValue.PENDING_DELETE, StatusValue.SERVER_UPDATE_PROHIBITED);
 
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;
@@ -142,6 +145,8 @@ public final class DomainUpdateFlow implements TransactionalFlow {
   @Inject HistoryEntry.Builder historyBuilder;
   @Inject DnsQueue dnsQueue;
   @Inject EppResponse.Builder responseBuilder;
+  @Inject DomainUpdateFlowCustomLogic customLogic;
+
   @Inject DomainUpdateFlow() {}
 
   @Override
@@ -151,12 +156,15 @@ public final class DomainUpdateFlow implements TransactionalFlow {
         FlagsUpdateCommandExtension.class,
         MetadataExtension.class,
         SecDnsUpdateExtension.class);
+    customLogic.beforeValidation();
     extensionManager.validate();
     validateClientIsLoggedIn(clientId);
     DateTime now = ofy().getTransactionTime();
     Update command = cloneAndLinkReferences((Update) resourceCommand, now);
     DomainResource existingDomain = loadAndVerifyExistence(DomainResource.class, targetId, now);
     verifyUpdateAllowed(command, existingDomain, now);
+    customLogic.afterValidation(
+        AfterValidationParameters.newBuilder().setExistingDomain(existingDomain).build());
     HistoryEntry historyEntry = buildHistoryEntry(existingDomain, now);
     DomainResource newDomain = performUpdate(command, existingDomain, now);
     // If the new domain is in the sunrush add grace period and is now publishable to DNS because we
@@ -165,21 +173,30 @@ public final class DomainUpdateFlow implements TransactionalFlow {
       for (GracePeriod gracePeriod : newDomain.getGracePeriods()) {
         if (gracePeriod.isSunrushAddGracePeriod()) {
           newDomain = convertSunrushAddToAdd(newDomain, gracePeriod, historyEntry, now);
-          break;  // There can only be one sunrush add grace period.
+          break; // There can only be one sunrush add grace period.
         }
       }
     }
     validateNewState(newDomain);
     dnsQueue.addDomainRefreshTask(targetId);
     handleExtraFlowLogic(existingDomain, historyEntry, now);
-    ImmutableList.Builder<ImmutableObject> entitiesToSave = new ImmutableList.Builder<>();
+    ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
     entitiesToSave.add(newDomain, historyEntry);
     Optional<BillingEvent.OneTime> statusUpdateBillingEvent =
         createBillingEventForStatusUpdates(existingDomain, newDomain, historyEntry, now);
     if (statusUpdateBillingEvent.isPresent()) {
       entitiesToSave.add(statusUpdateBillingEvent.get());
     }
-    ofy().save().entities(entitiesToSave.build());
+    EntityChanges entityChanges =
+        customLogic.beforeSave(
+            BeforeSaveParameters.newBuilder()
+                .setHistoryEntry(historyEntry)
+                .setNewDomain(newDomain)
+                .setExistingDomain(existingDomain)
+                .setEntityChanges(
+                    EntityChanges.newBuilder().setSaves(entitiesToSave.build()).build())
+                .build());
+    persistEntityChanges(entityChanges);
     return responseBuilder.build();
   }
 

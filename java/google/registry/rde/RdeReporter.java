@@ -33,6 +33,7 @@ import google.registry.config.RegistryConfig;
 import google.registry.keyring.api.KeyModule.Key;
 import google.registry.request.HttpException.InternalServerErrorException;
 import google.registry.util.FormattingLogger;
+import google.registry.util.Retrier;
 import google.registry.util.UrlFetchException;
 import google.registry.xjc.XjcXmlTransformer;
 import google.registry.xjc.iirdea.XjcIirdeaResponseElement;
@@ -43,7 +44,9 @@ import google.registry.xml.XmlException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.util.concurrent.Callable;
 import javax.inject.Inject;
 
 /**
@@ -60,6 +63,7 @@ public class RdeReporter {
   private static final String REPORT_MIME = "text/xml";
 
   @Inject RegistryConfig config;
+  @Inject Retrier retrier;
   @Inject URLFetchService urlFetchService;
   @Inject @Config("rdeReportUrlPrefix") String reportUrlPrefix;
   @Inject @Key("icannReportingPassword") String password;
@@ -75,19 +79,26 @@ public class RdeReporter {
     URL url = makeReportUrl(header.getTld(), report.getId());
     String username = header.getTld() + "_ry";
     String token = base64().encode(String.format("%s:%s", username, password).getBytes(UTF_8));
-    HTTPRequest req = new HTTPRequest(url, PUT, validateCertificate().setDeadline(60d));
+    final HTTPRequest req = new HTTPRequest(url, PUT, validateCertificate().setDeadline(60d));
     req.addHeader(new HTTPHeader(CONTENT_TYPE, REPORT_MIME));
     req.addHeader(new HTTPHeader(AUTHORIZATION, "Basic " + token));
     req.setPayload(reportBytes);
     logger.infofmt("Sending report:\n%s", new String(reportBytes, UTF_8));
-    HTTPResponse rsp = urlFetchService.fetch(req);
-    switch (rsp.getResponseCode()) {
-      case SC_OK:
-      case SC_BAD_REQUEST:
-        break;
-      default:
-        throw new UrlFetchException("PUT failed", req, rsp);
-    }
+    HTTPResponse rsp = retrier.callWithRetry(
+        new Callable<HTTPResponse>() {
+          @Override
+          public HTTPResponse call() throws Exception {
+            HTTPResponse rsp = urlFetchService.fetch(req);
+            switch (rsp.getResponseCode()) {
+              case SC_OK:
+              case SC_BAD_REQUEST:
+                break;
+              default:
+                throw new UrlFetchException("PUT failed", req, rsp);
+            }
+            return rsp;
+          }
+        }, SocketTimeoutException.class);
 
     // Ensure the XML response is valid.
     XjcIirdeaResult result = parseResult(rsp);

@@ -4,14 +4,13 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
-
 java_library(
     name = "metrics",
     srcs = glob(["*.java"]),
     deps = [
         "//google/monitoring:monitoring_java_lib",
-        "//java/com/google/api/client/http",
         "//java/com/google/api/client/googleapis/json",
+        "//java/com/google/api/client/http",
         "//java/com/google/api/client/json",
         "//java/com/google/common/annotations",
         "//java/com/google/common/base",
