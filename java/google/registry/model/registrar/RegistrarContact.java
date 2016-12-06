@@ -39,6 +39,7 @@ import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
+import google.registry.model.annotations.ReportedOn;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
@@ -52,6 +53,7 @@ import java.util.Set;
  * set to true.
  */
 @Cache(expirationSeconds = RECOMMENDED_MEMCACHE_EXPIRATION)
+@ReportedOn
 @Entity
 public class RegistrarContact extends ImmutableObject implements Jsonifiable {
 

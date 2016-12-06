@@ -42,6 +42,7 @@ import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.EppResource;
+import google.registry.model.annotations.ReportedOn;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.launch.LaunchNotice;
@@ -54,6 +55,7 @@ import javax.xml.bind.annotation.XmlTransient;
 
 /** Shared base class for {@link DomainResource} and {@link DomainApplication}. */
 @XmlTransient
+@ReportedOn
 @Entity
 public abstract class DomainBase extends EppResource {
 

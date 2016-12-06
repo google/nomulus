@@ -32,6 +32,7 @@ import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.ReportedOn;
 import java.util.HashMap;
 import java.util.Map;
 import org.joda.money.CurrencyUnit;
@@ -49,6 +50,7 @@ import org.joda.time.DateTime;
  * taking the balance object with the latest effective time that is before (before or at) T, and
  * breaking any ties by choosing the mostly recently written among those balances.
  */
+@ReportedOn
 @Entity
 public final class RegistrarCreditBalance extends ImmutableObject implements Buildable {
 

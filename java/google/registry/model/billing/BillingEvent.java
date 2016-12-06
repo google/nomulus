@@ -37,6 +37,7 @@ import com.googlecode.objectify.annotation.Parent;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.TimeOfYear;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -198,6 +199,7 @@ public abstract class BillingEvent extends ImmutableObject
   }
 
   /** A one-time billable event. */
+  @ReportedOn
   @Entity
   public static class OneTime extends BillingEvent {
 
@@ -328,6 +330,7 @@ public abstract class BillingEvent extends ImmutableObject
    * recurring event might change and each time we bill for it we need to bill at the current cost,
    * not the value that was in use at the time the recurrence was created.
    */
+  @ReportedOn
   @Entity
   public static class Recurring extends BillingEvent {
 
@@ -400,6 +403,7 @@ public abstract class BillingEvent extends ImmutableObject
    * <p>This is implemented as a separate event rather than a bit on BillingEvent in order to
    * preserve the immutability of billing events.
    */
+  @ReportedOn
   @Entity
   public static class Cancellation extends BillingEvent {
 
@@ -510,6 +514,7 @@ public abstract class BillingEvent extends ImmutableObject
   /**
    * An event representing a modification of an existing one-time billing event.
    */
+  @ReportedOn
   @Entity
   public static class Modification extends BillingEvent {
 

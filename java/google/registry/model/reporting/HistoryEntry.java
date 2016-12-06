@@ -24,11 +24,13 @@ import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.ReportedOn;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import org.joda.time.DateTime;
 
 /** A record of an EPP command that mutated a resource. */
+@ReportedOn
 @Entity
 public class HistoryEntry extends ImmutableObject implements Buildable {
 
