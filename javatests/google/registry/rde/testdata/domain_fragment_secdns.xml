@@ -1,0 +1,23 @@
+<rdeDom:domain
+    xmlns:domain="urn:ietf:params:xml:ns:domain-1.0"
+    xmlns:rdeDom="urn:ietf:params:xml:ns:rdeDomain-1.0"
+    xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1">
+  <rdeDom:name>example1.example</rdeDom:name>
+  <rdeDom:roid>Dexample1-TEST</rdeDom:roid>
+  <rdeDom:status s="ok"/>
+  <rdeDom:registrant>jd1234</rdeDom:registrant>
+  <rdeDom:contact type="admin">sh8013</rdeDom:contact>
+  <rdeDom:contact type="tech">sh8013</rdeDom:contact>
+  <rdeDom:clID>RegistrarX</rdeDom:clID>
+  <rdeDom:crRr client="jdoe">RegistrarX</rdeDom:crRr>
+  <rdeDom:crDate>1999-04-03T22:00:00.0Z</rdeDom:crDate>
+  <rdeDom:exDate>2015-04-03T22:00:00.0Z</rdeDom:exDate>
+  <rdeDom:secDNS>
+    <secDNS:dsData>
+      <secDNS:keyTag>4609</secDNS:keyTag>
+      <secDNS:alg>8</secDNS:alg>
+      <secDNS:digestType>2</secDNS:digestType>
+      <secDNS:digest>5FA1FA1C2F70AA483FE178B765D82B272072B4E4167902C5B7F97D46C8899F44</secDNS:digest>
+   </secDNS:dsData>
+  </rdeDom:secDNS>
+</rdeDom:domain>

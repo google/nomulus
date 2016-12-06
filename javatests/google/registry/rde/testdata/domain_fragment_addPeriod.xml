@@ -1,0 +1,15 @@
+<rdeDom:domain
+    xmlns:domain="urn:ietf:params:xml:ns:domain-1.0"
+    xmlns:rdeDom="urn:ietf:params:xml:ns:rdeDomain-1.0">
+  <rdeDom:name>example1.example</rdeDom:name>
+  <rdeDom:roid>Dexample1-TEST</rdeDom:roid>
+  <rdeDom:status s="ok"/>
+  <rdeDom:rgpStatus s="addPeriod"/>
+  <rdeDom:registrant>jd1234</rdeDom:registrant>
+  <rdeDom:contact type="admin">sh8013</rdeDom:contact>
+  <rdeDom:contact type="tech">sh8013</rdeDom:contact>
+  <rdeDom:clID>RegistrarX</rdeDom:clID>
+  <rdeDom:crRr client="jdoe">RegistrarX</rdeDom:crRr>
+  <rdeDom:crDate>1999-04-03T22:00:00.0Z</rdeDom:crDate>
+  <rdeDom:exDate>2015-04-03T22:00:00.0Z</rdeDom:exDate>
+</rdeDom:domain>

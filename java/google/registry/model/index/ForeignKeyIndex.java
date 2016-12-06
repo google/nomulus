@@ -122,7 +122,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
   /**
    * Loads a {@link Key} to an {@link EppResource} from the datastore by foreign key.
    *
-   * <p>Returns absent if no foreign key index with this foreign key was ever created, or if the
+   * <p>Returns null if no foreign key index with this foreign key was ever created, or if the
    * most recently created foreign key index was deleted before time "now". This method does not
    * actually check that the referenced resource actually exists. However, for normal epp resources,
    * it is safe to assume that the referenced resource exists if the foreign key index does.

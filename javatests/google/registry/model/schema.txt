@@ -808,6 +808,7 @@ enum google.registry.model.reporting.HistoryEntry$Type {
   HOST_DELETE_FAILURE;
   HOST_PENDING_DELETE;
   HOST_UPDATE;
+  RDE_IMPORT;
   SYNTHETIC;
 }
 class google.registry.model.server.Lock {
