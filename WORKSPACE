@@ -6,9 +6,9 @@ domain_registry_repositories()
 
 http_archive(
     name = "io_bazel_rules_closure",
-    sha256 = "1e2e6f73c4bb219a37a667ecb637539d7d7839f99b4f97496e5ea5e16cc87431",
-    strip_prefix = "rules_closure-b2ff976c8585e2051153bd62fbef6ef176b41b42",
-    url = "http://bazel-mirror.storage.googleapis.com/github.com/bazelbuild/rules_closure/archive/b2ff976c8585e2051153bd62fbef6ef176b41b42.tar.gz",  # 2016-11-29
+    sha256 = "c26721a7d47c90cb7d28b704718b27f7dff6ee654f795c5224d3c4e412a4c631",
+    strip_prefix = "rules_closure-a0ec40ee36d824da50d39ff5bd054d395e814649",
+    url = "http://bazel-mirror.storage.googleapis.com/github.com/bazelbuild/rules_closure/archive/a0ec40ee36d824da50d39ff5bd054d395e814649.tar.gz",  # 2016-12-06
 )
 
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_repositories")
