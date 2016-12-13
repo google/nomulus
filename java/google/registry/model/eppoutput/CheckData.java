@@ -88,6 +88,10 @@ public abstract class CheckData extends ImmutableObject implements ResponseData 
       return avail;
     }
 
+    public String getValue() {
+      return value;
+    }
+
     protected static <T extends CheckNameOrID> T init(T instance, boolean avail, String value) {
       instance.avail = avail;
       instance.value = value;
