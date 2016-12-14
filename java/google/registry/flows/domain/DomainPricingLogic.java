@@ -14,7 +14,6 @@
 
 package google.registry.flows.domain;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.pricing.PricingEngineProxy.getDomainCreateCost;
@@ -62,31 +61,17 @@ public final class DomainPricingLogic {
   DomainPricingLogic() {}
 
   /** A collection of fees and credits for a specific EPP transform. */
-  public static final class EppCommandOperations extends ImmutableObject {
+  public static final class FeesAndCredits extends ImmutableObject {
     private final CurrencyUnit currency;
     private final ImmutableList<Fee> fees;
     private final ImmutableList<Credit> credits;
 
-    /** Constructs an EppCommandOperations object using separate lists of fees and credits. */
-    EppCommandOperations(
-        CurrencyUnit currency, ImmutableList<Fee> fees, ImmutableList<Credit> credits) {
-      this.currency =
-          checkArgumentNotNull(currency, "Currency may not be null in EppCommandOperations.");
-      checkArgument(!fees.isEmpty(), "You must specify one or more fees.");
-      this.fees = checkArgumentNotNull(fees, "Fees may not be null in EppCommandOperations.");
-      this.credits =
-          checkArgumentNotNull(credits, "Credits may not be null in EppCommandOperations.");
-    }
-
-    /**
-     * Constructs an EppCommandOperations object. The arguments are sorted into fees and credits.
-     */
-    EppCommandOperations(CurrencyUnit currency, BaseFee... feesAndCredits) {
-      this.currency =
-          checkArgumentNotNull(currency, "Currency may not be null in EppCommandOperations.");
+    /** Constructs an FeesAndCredits object. The arguments are sorted into fees and credits. */
+    public FeesAndCredits(CurrencyUnit currency, BaseFee... baseFees) {
+      this.currency = checkArgumentNotNull(currency, "Currency may not be null in FeesAndCredits.");
       ImmutableList.Builder<Fee> feeBuilder = new ImmutableList.Builder<>();
       ImmutableList.Builder<Credit> creditBuilder = new ImmutableList.Builder<>();
-      for (BaseFee feeOrCredit : feesAndCredits) {
+      for (BaseFee feeOrCredit : baseFees) {
         if (feeOrCredit instanceof Credit) {
           creditBuilder.add((Credit) feeOrCredit);
         } else {
@@ -147,7 +132,7 @@ public final class DomainPricingLogic {
   }
 
   /** Returns a new create price for the Pricer. */
-  public EppCommandOperations getCreatePrice(
+  public FeesAndCredits getCreatePrice(
       Registry registry, String domainName, DateTime date, int years) throws EppException {
     CurrencyUnit currency = registry.getCurrency();
 
@@ -155,24 +140,26 @@ public final class DomainPricingLogic {
     BaseFee createFeeOrCredit =
         Fee.create(getDomainCreateCost(domainName, date, years).getAmount(), FeeType.CREATE);
 
-    // Apply custom logic to the create fee, if any.
-    createFeeOrCredit =
-        customLogic.customizeCreatePrice(
-            CreatePriceParameters.newBuilder()
-                .setCreateFee(createFeeOrCredit)
-                .setRegistry(registry)
-                .setDomainName(InternetDomainName.from(domainName))
-                .setAsOfDate(date)
-                .setYears(years)
-                .build());
+    FeesAndCredits feesAndCredits;
 
     // Create fees for the cost and the EAP fee, if any.
     Fee eapFee = registry.getEapFeeFor(date);
     if (!eapFee.hasZeroCost()) {
-      return new EppCommandOperations(currency, createFeeOrCredit, eapFee);
+      feesAndCredits = new FeesAndCredits(currency, createFeeOrCredit, eapFee);
     } else {
-      return new EppCommandOperations(currency, createFeeOrCredit);
+      feesAndCredits = new FeesAndCredits(currency, createFeeOrCredit);
     }
+
+    // Apply custom logic to the create fee, if any.
+    return customLogic.customizeCreatePrice(
+        CreatePriceParameters.newBuilder()
+            .setFeesAndCredits(feesAndCredits)
+            .setRegistry(registry)
+            .setDomainName(InternetDomainName.from(domainName))
+            .setAsOfDate(date)
+            .setYears(years)
+            .build());
+
   }
 
   // TODO: (b/33000134) clean up the rest of the pricing calls.
@@ -204,7 +191,7 @@ public final class DomainPricingLogic {
   }
 
   /** Returns a new renew price for the pricer. */
-  public static EppCommandOperations getRenewPrice(
+  public static FeesAndCredits getRenewPrice(
       Registry registry,
       String domainName,
       String clientId,
@@ -212,23 +199,23 @@ public final class DomainPricingLogic {
       int years,
       EppInput eppInput)
       throws EppException {
-    return new EppCommandOperations(
+    return new FeesAndCredits(
         registry.getCurrency(),
         getRenewFeeOrCredit(registry, domainName, clientId, date, years, eppInput));
   }
 
   /** Returns a new restore price for the pricer. */
-  public static EppCommandOperations getRestorePrice(
+  public static FeesAndCredits getRestorePrice(
       Registry registry, String domainName, String clientId, DateTime date, EppInput eppInput)
       throws EppException {
-    return new EppCommandOperations(
+    return new FeesAndCredits(
         registry.getCurrency(),
         getRenewFeeOrCredit(registry, domainName, clientId, date, 1, eppInput),
         Fee.create(registry.getStandardRestoreCost().getAmount(), FeeType.RESTORE));
   }
 
   /** Returns a new transfer price for the pricer. */
-  public static EppCommandOperations getTransferPrice(
+  public static FeesAndCredits getTransferPrice(
       Registry registry,
       String domainName,
       String clientId,
@@ -241,7 +228,7 @@ public final class DomainPricingLogic {
   }
 
   /** Returns a new update price for the pricer. */
-  public static EppCommandOperations getUpdatePrice(
+  public static FeesAndCredits getUpdatePrice(
       Registry registry, String domainName, String clientId, DateTime date, EppInput eppInput)
       throws EppException {
     CurrencyUnit currency = registry.getCurrency();
@@ -261,11 +248,11 @@ public final class DomainPricingLogic {
       feeOrCredit = Fee.create(Money.zero(registry.getCurrency()).getAmount(), FeeType.UPDATE);
     }
 
-    return new EppCommandOperations(currency, feeOrCredit);
+    return new FeesAndCredits(currency, feeOrCredit);
   }
 
   /** Returns a new domain application update price for the pricer. */
-  public static EppCommandOperations getApplicationUpdatePrice(
+  public static FeesAndCredits getApplicationUpdatePrice(
       Registry registry,
       DomainApplication application,
       String clientId,
@@ -287,7 +274,7 @@ public final class DomainPricingLogic {
       feeOrCredit = Fee.create(Money.zero(registry.getCurrency()).getAmount(), FeeType.UPDATE);
     }
 
-    return new EppCommandOperations(currency, feeOrCredit);
+    return new FeesAndCredits(currency, feeOrCredit);
   }
 
   /** Returns the fee class for a given domain and date. */

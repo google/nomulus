@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.rde;
+package google.registry.rde.imports;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.io.ByteSource;
-import google.registry.rde.RdeParser.RdeHeader;
+import google.registry.rde.imports.RdeParser.RdeHeader;
 import google.registry.testing.ExceptionRule;
 import google.registry.xjc.rdecontact.XjcRdeContact;
 import google.registry.xjc.rdedomain.XjcRdeDomain;
@@ -40,7 +40,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class RdeParserTest {
 
-  private static final ByteSource DEPOSIT_XML = RdeTestData.get("deposit_full_parser.xml");
+  private static final ByteSource DEPOSIT_XML = RdeImportsTestData.get("deposit_full_parser.xml");
 
   private InputStream xml;
 

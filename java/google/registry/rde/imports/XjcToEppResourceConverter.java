@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.rde;
+package google.registry.rde.imports;
 
 import com.google.common.base.Joiner;
 import google.registry.model.EppResource;

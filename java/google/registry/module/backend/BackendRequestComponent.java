@@ -50,13 +50,14 @@ import google.registry.monitoring.whitebox.MetricsExportAction;
 import google.registry.monitoring.whitebox.VerifyEntityIntegrityAction;
 import google.registry.monitoring.whitebox.WhiteboxModule;
 import google.registry.rde.BrdaCopyAction;
-import google.registry.rde.RdeContactImportAction;
-import google.registry.rde.RdeHostImportAction;
 import google.registry.rde.RdeModule;
 import google.registry.rde.RdeReportAction;
 import google.registry.rde.RdeReporter;
 import google.registry.rde.RdeStagingAction;
 import google.registry.rde.RdeUploadAction;
+import google.registry.rde.imports.RdeContactImportAction;
+import google.registry.rde.imports.RdeHostImportAction;
+import google.registry.rde.imports.RdeImportsModule;
 import google.registry.request.RequestComponentBuilder;
 import google.registry.request.RequestModule;
 import google.registry.request.RequestScope;
@@ -82,6 +83,7 @@ import google.registry.tmch.TmchSmdrlAction;
         ExportRequestModule.class,
         MapreduceModule.class,
         RdeModule.class,
+        RdeImportsModule.class,
         RequestModule.class,
         SheetModule.class,
         TmchModule.class,

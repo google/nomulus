@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.rde;
+package google.registry.rde.imports;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
@@ -44,7 +44,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class RdeContactImportActionTest extends MapreduceTestCase<RdeContactImportAction> {
 
-  private static final ByteSource DEPOSIT_1_CONTACT = RdeTestData.get("deposit_1_contact.xml");
+  private static final ByteSource DEPOSIT_1_CONTACT =
+      RdeImportsTestData.get("deposit_1_contact.xml");
   private static final String IMPORT_BUCKET_NAME = "import-bucket";
   private static final String IMPORT_FILE_NAME = "escrow-file.xml";
 

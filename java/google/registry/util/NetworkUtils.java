@@ -46,9 +46,9 @@ public final class NetworkUtils {
   /**
    * Returns random unused local port that can be used for TCP listening server.
    *
-   * @throws IOException if failed to find free port after {@value #PICK_ATTEMPTS} attempts
+   * @throws RuntimeException if failed to find free port after {@value #PICK_ATTEMPTS} attempts
    */
-  public static int pickUnusedPort() throws IOException {
+  public static int pickUnusedPort() {
     // In an ideal world, we would just listen on port 0 and use whatever random port the kernel
     // assigns us. But our CI testing system reports there are rare circumstances in which this
     // doesn't work.
@@ -58,7 +58,7 @@ public final class NetworkUtils {
         return serverSocket.getLocalPort();
       } catch (IOException e) {
         if (!ports.hasNext()) {
-          throw new IOException("Failed to acquire random port", e);
+          throw new RuntimeException("Failed to acquire random port", e);
         }
       }
     }

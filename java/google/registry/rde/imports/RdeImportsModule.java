@@ -12,45 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.rde;
+package google.registry.rde.imports;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
-
-import com.google.appengine.api.taskqueue.Queue;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
-import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
-import org.joda.time.DateTime;
 
 /**
- * Dagger module for RDE package.
+ * Dagger module for RDE imports package.
  *
  * @see "google.registry.module.backend.BackendRequestComponent"
  */
 @Module
-public final class RdeModule {
-
-  static final String PARAM_WATERMARK = "watermark";
-  static final String PATH = "path";
+public final class RdeImportsModule {
 
   @Provides
-  @Parameter(PARAM_WATERMARK)
-  static DateTime provideWatermark(HttpServletRequest req) {
-    return DateTime.parse(RequestParameters.extractRequiredParameter(req, PARAM_WATERMARK));
-  }
-
-  @Provides
-  @Named("brda")
-  static Queue provideQueueBrda() {
-    return getQueue("brda");
-  }
-
-  @Provides
-  @Named("rde-report")
-  static Queue provideQueueRdeReport() {
-    return getQueue("rde-report");
+  @Parameter("path")
+  static String providePath(HttpServletRequest req) {
+    return RequestParameters.extractRequiredParameter(req, "path");
   }
 }

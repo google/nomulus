@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.rde;
+package google.registry.rde.imports;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -40,14 +40,17 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class RdeHostInputTest {
 
-  private static final ByteSource DEPOSIT_0_HOST = RdeTestData.get("deposit_0_host_header.xml");
-  private static final ByteSource DEPOSIT_1_HOST = RdeTestData.get("deposit_1_host.xml");
-  private static final ByteSource DEPOSIT_199_HOST = RdeTestData.get("deposit_199_host_header.xml");
-  private static final ByteSource DEPOSIT_200_HOST = RdeTestData.get("deposit_200_host_header.xml");
+  private static final ByteSource DEPOSIT_0_HOST =
+      RdeImportsTestData.get("deposit_0_host_header.xml");
+  private static final ByteSource DEPOSIT_1_HOST = RdeImportsTestData.get("deposit_1_host.xml");
+  private static final ByteSource DEPOSIT_199_HOST =
+      RdeImportsTestData.get("deposit_199_host_header.xml");
+  private static final ByteSource DEPOSIT_200_HOST =
+      RdeImportsTestData.get("deposit_200_host_header.xml");
   private static final ByteSource DEPOSIT_1000_HOST =
-      RdeTestData.get("deposit_1000_host_header.xml");
+      RdeImportsTestData.get("deposit_1000_host_header.xml");
   private static final ByteSource DEPOSIT_10000_HOST =
-      RdeTestData.get("deposit_10000_host_header.xml");
+      RdeImportsTestData.get("deposit_10000_host_header.xml");
   private static final String IMPORT_BUCKET_NAME = "import-bucket";
   private static final String IMPORT_FILE_NAME = "escrow-file.xml";
 

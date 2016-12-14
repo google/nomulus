@@ -54,10 +54,11 @@ java_library(
         ":TestServer",
         "//java/com/google/common/collect",
         "//java/com/google/common/net",
+        "//java/google/registry/model",
         "//java/google/registry/module/backend",
         "//java/google/registry/module/frontend",
-        "//java/google/registry/ui/server/registrar",
         "//third_party/java/jsr305_annotations",
+        "//third_party/java/objectify:objectify-v4_1",
         "//third_party/java/servlet/servlet_api",
     ],
 )

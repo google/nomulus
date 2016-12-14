@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.rde;
+package google.registry.rde.imports;
 
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
@@ -364,7 +364,7 @@ public class XjcToDomainResourceConverterTest {
 
   private XjcRdeDomain loadDomainFromRdeXml(String filename) {
     try {
-      ByteSource source = RdeTestData.get(filename);
+      ByteSource source = RdeImportsTestData.get(filename);
       try (InputStream ins = source.openStream()) {
         return ((XjcRdeDomainElement) unmarshaller.unmarshal(ins)).getValue();
       }

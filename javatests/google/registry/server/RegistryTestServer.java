@@ -19,9 +19,12 @@ import static google.registry.server.Route.route;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
+import com.googlecode.objectify.ObjectifyFilter;
+import google.registry.model.ofy.OfyFilter;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import javax.servlet.Filter;
 
 /** Lightweight HTTP server for testing the Nomulus Admin and Registrar consoles. */
 public final class RegistryTestServer {
@@ -90,11 +93,15 @@ public final class RegistryTestServer {
       route("/registrar-payment-setup",
           google.registry.module.frontend.FrontendServlet.class));
 
+  private static final ImmutableList<Class<? extends Filter>> FILTERS = ImmutableList.of(
+      ObjectifyFilter.class,
+      OfyFilter.class);
+
   private final TestServer server;
 
-  /** @see TestServer#TestServer(HostAndPort, java.util.Map, Iterable) */
+  /** @see TestServer#TestServer(HostAndPort, java.util.Map, Iterable, Iterable) */
   public RegistryTestServer(HostAndPort address) {
-    server = new TestServer(address, RUNFILES, ROUTES);
+    server = new TestServer(address, RUNFILES, ROUTES, FILTERS);
   }
 
   /** @see TestServer#start() */

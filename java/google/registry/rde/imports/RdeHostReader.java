@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.rde;
+package google.registry.rde.imports;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.appengine.tools.cloudstorage.GcsService;
@@ -21,7 +21,7 @@ import com.google.appengine.tools.cloudstorage.RetryParams;
 import com.google.appengine.tools.mapreduce.InputReader;
 import google.registry.config.ConfigModule;
 import google.registry.gcs.GcsUtils;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.host.HostResource;
 import google.registry.util.FormattingLogger;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,11 +29,11 @@ import java.io.Serializable;
 import java.util.NoSuchElementException;
 import javax.annotation.concurrent.NotThreadSafe;
 
-/** Mapreduce {@link InputReader} for reading contacts from escrow files */
+/** Mapreduce {@link InputReader} for reading hosts from escrow files */
 @NotThreadSafe
-public class RdeContactReader extends InputReader<ContactResource> implements Serializable {
+public class RdeHostReader extends InputReader<HostResource> implements Serializable {
 
-  private static final long serialVersionUID = -3688793834175577691L;
+  private static final long serialVersionUID = 3037264959150412846L;
 
   private static final FormattingLogger logger = FormattingLogger.getLoggerForCallerClass();
   private static final GcsService GCS_SERVICE =
@@ -60,7 +60,7 @@ public class RdeContactReader extends InputReader<ContactResource> implements Se
       // skip the file offset and count
       // if count is greater than 0, the reader has been rehydrated after doing some work.
       // skip any already processed records.
-      parser.skipContacts(offset + count);
+      parser.skipHosts(offset + count);
       return parser;
     } catch (Exception e) {
       logger.severefmt(e, "Error opening rde file %s/%s", importBucketName, importFileName);
@@ -68,7 +68,7 @@ public class RdeContactReader extends InputReader<ContactResource> implements Se
     }
   }
 
-  public RdeContactReader(
+  public RdeHostReader(
       String importBucketName,
       String importFileName,
       int offset,
@@ -80,18 +80,18 @@ public class RdeContactReader extends InputReader<ContactResource> implements Se
   }
 
   @Override
-  public ContactResource next() throws IOException {
+  public HostResource next() throws IOException {
     if (count < maxResults) {
       if (parser == null) {
         parser = newParser();
-        if (parser.isAtContact()) {
+        if (parser.isAtHost()) {
           count++;
-          return XjcToContactResourceConverter.convertContact(parser.getContact());
+          return XjcToHostResourceConverter.convert(parser.getHost());
         }
       }
-      if (parser.nextContact()) {
+      if (parser.nextHost()) {
         count++;
-        return XjcToContactResourceConverter.convertContact(parser.getContact());
+        return XjcToHostResourceConverter.convert(parser.getHost());
       }
     }
     throw new NoSuchElementException();

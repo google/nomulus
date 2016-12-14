@@ -468,8 +468,8 @@ public final class ConfigModule {
   /**
    * Returns the Google Cloud Storage bucket for importing escrow files.
    *
-   * @see google.registry.rde.RdeContactImportAction
-   * @see google.registry.rde.RdeHostImportAction
+   * @see google.registry.rde.imports.RdeContactImportAction
+   * @see google.registry.rde.imports.RdeHostImportAction
    */
   @Provides
   @Config("rdeImportBucket")

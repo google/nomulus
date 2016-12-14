@@ -52,7 +52,7 @@ import google.registry.flows.FlowModule.ClientId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
-import google.registry.flows.domain.DomainPricingLogic.EppCommandOperations;
+import google.registry.flows.domain.DomainPricingLogic.FeesAndCredits;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
@@ -390,13 +390,12 @@ public class DomainAllocateFlow implements TransactionalFlow {
 
   private ImmutableList<FeeTransformResponseExtension> createResponseExtensions(
       DateTime now, Registry registry, int years) throws EppException {
-    EppCommandOperations commandOperations =
-        pricingLogic.getCreatePrice(registry, targetId, now, years);
+    FeesAndCredits feesAndCredits = pricingLogic.getCreatePrice(registry, targetId, now, years);
     FeeCreateCommandExtension feeCreate =
         eppInput.getSingleExtension(FeeCreateCommandExtension.class);
     return (feeCreate == null)
         ? ImmutableList.<FeeTransformResponseExtension>of()
-        : ImmutableList.of(createFeeCreateResponse(feeCreate, commandOperations));
+        : ImmutableList.of(createFeeCreateResponse(feeCreate, feesAndCredits));
   }
 
   /** Domain application with specific ROID does not exist. */

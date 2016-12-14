@@ -140,7 +140,7 @@ public final class SyncGroupMembersAction implements Runnable {
             syncRegistrarContacts(registrar);
             return null;
           }}, RuntimeException.class);
-        resultsBuilder.put(registrar, Optional.absent());
+        resultsBuilder.put(registrar, Optional.<Throwable>absent());
       } catch (Throwable e) {
         logger.severe(e, e.getMessage());
         resultsBuilder.put(registrar, Optional.of(e));

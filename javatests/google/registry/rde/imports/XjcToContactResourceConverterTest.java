@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.rde;
+package google.registry.rde.imports;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatastoreHelper.createTld;
@@ -46,7 +46,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class XjcToContactResourceConverterTest {
 
-  private static final ByteSource CONTACT_XML = RdeTestData.get("contact_fragment.xml");
+  private static final ByteSource CONTACT_XML = RdeImportsTestData.get("contact_fragment.xml");
 
   @Rule
   public final AppEngineRule appEngine = AppEngineRule.builder()

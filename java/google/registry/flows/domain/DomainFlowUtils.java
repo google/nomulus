@@ -56,7 +56,7 @@ import google.registry.flows.EppException.ParameterValueSyntaxErrorException;
 import google.registry.flows.EppException.RequiredParameterMissingException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
 import google.registry.flows.EppException.UnimplementedOptionException;
-import google.registry.flows.domain.DomainPricingLogic.EppCommandOperations;
+import google.registry.flows.domain.DomainPricingLogic.FeesAndCredits;
 import google.registry.flows.exceptions.ResourceAlreadyExistsException;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.model.EppResource;
@@ -994,12 +994,12 @@ public class DomainFlowUtils {
 
   /** Create a response extension listign the fees on a domain or application create. */
   static FeeTransformResponseExtension createFeeCreateResponse(
-      FeeTransformCommandExtension feeCreate,
-      EppCommandOperations commandOperations) {
-    return feeCreate.createResponseBuilder()
-        .setCurrency(commandOperations.getCurrency())
-        .setFees(commandOperations.getFees())
-        .setCredits(commandOperations.getCredits())
+      FeeTransformCommandExtension feeCreate, FeesAndCredits feesAndCredits) {
+    return feeCreate
+        .createResponseBuilder()
+        .setCurrency(feesAndCredits.getCurrency())
+        .setFees(feesAndCredits.getFees())
+        .setCredits(feesAndCredits.getCredits())
         .build();
   }
 

@@ -32,6 +32,7 @@ java_library(
         "//java/google/registry/monitoring/metrics",
         "//java/google/registry/monitoring/whitebox",
         "//java/google/registry/rde",
+        "//java/google/registry/rde/imports",
         "//java/google/registry/request",
         "//java/google/registry/request:modules",
         "//java/google/registry/tmch",

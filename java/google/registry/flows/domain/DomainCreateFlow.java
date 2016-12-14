@@ -61,7 +61,7 @@ import google.registry.flows.custom.DomainCreateFlowCustomLogic;
 import google.registry.flows.custom.DomainCreateFlowCustomLogic.BeforeResponseParameters;
 import google.registry.flows.custom.DomainCreateFlowCustomLogic.BeforeResponseReturnData;
 import google.registry.flows.custom.EntityChanges;
-import google.registry.flows.domain.DomainPricingLogic.EppCommandOperations;
+import google.registry.flows.domain.DomainPricingLogic.FeesAndCredits;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
@@ -211,10 +211,9 @@ public class DomainCreateFlow implements TransactionalFlow {
 
     FeeCreateCommandExtension feeCreate =
         eppInput.getSingleExtension(FeeCreateCommandExtension.class);
-    EppCommandOperations commandOperations =
-        pricingLogic.getCreatePrice(registry, targetId, now, years);
+    FeesAndCredits feesAndCredits = pricingLogic.getCreatePrice(registry, targetId, now, years);
     validateFeeChallenge(
-        targetId, registry.getTldStr(), now, feeCreate, commandOperations.getTotalCost());
+        targetId, registry.getTldStr(), now, feeCreate, feesAndCredits.getTotalCost());
     // Superusers can create reserved domains, force creations on domains that require a claims
     // notice without specifying a claims key, ignore the registry phase, and override blocks on
     // registering premium domains.
@@ -242,8 +241,9 @@ public class DomainCreateFlow implements TransactionalFlow {
     DateTime registrationExpirationTime = leapSafeAddYears(now, years);
     HistoryEntry historyEntry = buildHistory(repoId, period, now);
     // Bill for the create.
-    BillingEvent.OneTime createBillingEvent = createOneTimeBillingEvent(
-        registry, isAnchorTenant, years, commandOperations, historyEntry, now);
+    BillingEvent.OneTime createBillingEvent =
+        createOneTimeBillingEvent(
+            registry, isAnchorTenant, years, feesAndCredits, historyEntry, now);
     // Create a new autorenew billing event and poll message starting at the expiration time.
     BillingEvent.Recurring autorenewBillingEvent =
         createAutorenewBillingEvent(historyEntry, registrationExpirationTime);
@@ -256,8 +256,8 @@ public class DomainCreateFlow implements TransactionalFlow {
         autorenewBillingEvent,
         autorenewPollMessage);
     // Bill for EAP cost, if any.
-    if (!commandOperations.getEapCost().isZero()) {
-      entitiesToSave.add(createEapBillingEvent(commandOperations, createBillingEvent));
+    if (!feesAndCredits.getEapCost().isZero()) {
+      entitiesToSave.add(createEapBillingEvent(feesAndCredits, createBillingEvent));
     }
     DomainResource newDomain = new DomainResource.Builder()
         .setCreationClientId(clientId)
@@ -308,7 +308,7 @@ public class DomainCreateFlow implements TransactionalFlow {
         customLogic.beforeResponse(
             BeforeResponseParameters.newBuilder()
                 .setResData(DomainCreateData.create(targetId, now, registrationExpirationTime))
-                .setResponseExtensions(createResponseExtensions(feeCreate, commandOperations))
+                .setResponseExtensions(createResponseExtensions(feeCreate, feesAndCredits))
                 .build());
     return responseBuilder
         .setResData(responseData.resData())
@@ -352,7 +352,7 @@ public class DomainCreateFlow implements TransactionalFlow {
       Registry registry,
       boolean isAnchorTenant,
       int years,
-      EppCommandOperations commandOperations,
+      FeesAndCredits feesAndCredits,
       HistoryEntry historyEntry,
       DateTime now) {
     return new BillingEvent.OneTime.Builder()
@@ -360,14 +360,17 @@ public class DomainCreateFlow implements TransactionalFlow {
         .setTargetId(targetId)
         .setClientId(clientId)
         .setPeriodYears(years)
-        .setCost(commandOperations.getCreateCost())
+        .setCost(feesAndCredits.getCreateCost())
         .setEventTime(now)
-        .setBillingTime(now.plus(isAnchorTenant
-            ? registry.getAnchorTenantAddGracePeriodLength()
-            : registry.getAddGracePeriodLength()))
-        .setFlags(isAnchorTenant
-            ? ImmutableSet.of(BillingEvent.Flag.ANCHOR_TENANT)
-            : ImmutableSet.<BillingEvent.Flag>of())
+        .setBillingTime(
+            now.plus(
+                isAnchorTenant
+                    ? registry.getAnchorTenantAddGracePeriodLength()
+                    : registry.getAddGracePeriodLength()))
+        .setFlags(
+            isAnchorTenant
+                ? ImmutableSet.of(BillingEvent.Flag.ANCHOR_TENANT)
+                : ImmutableSet.<BillingEvent.Flag>of())
         .setParent(historyEntry)
         .build();
   }
@@ -396,13 +399,13 @@ public class DomainCreateFlow implements TransactionalFlow {
         .build();
   }
 
-  private OneTime createEapBillingEvent(EppCommandOperations commandOperations,
-      BillingEvent.OneTime createBillingEvent) {
+  private static OneTime createEapBillingEvent(
+      FeesAndCredits feesAndCredits, BillingEvent.OneTime createBillingEvent) {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.FEE_EARLY_ACCESS)
         .setTargetId(createBillingEvent.getTargetId())
         .setClientId(createBillingEvent.getClientId())
-        .setCost(commandOperations.getEapCost())
+        .setCost(feesAndCredits.getEapCost())
         .setEventTime(createBillingEvent.getEventTime())
         .setBillingTime(createBillingEvent.getBillingTime())
         .setFlags(createBillingEvent.getFlags())
@@ -424,11 +427,11 @@ public class DomainCreateFlow implements TransactionalFlow {
     }
   }
 
-  private ImmutableList<FeeTransformResponseExtension> createResponseExtensions(
-      FeeCreateCommandExtension feeCreate, EppCommandOperations commandOperations) {
+  private static ImmutableList<FeeTransformResponseExtension> createResponseExtensions(
+      FeeCreateCommandExtension feeCreate, FeesAndCredits feesAndCredits) {
     return (feeCreate == null)
         ? ImmutableList.<FeeTransformResponseExtension>of()
-        : ImmutableList.of(createFeeCreateResponse(feeCreate, commandOperations));
+        : ImmutableList.of(createFeeCreateResponse(feeCreate, feesAndCredits));
   }
 
   /** There is an open application for this domain. */

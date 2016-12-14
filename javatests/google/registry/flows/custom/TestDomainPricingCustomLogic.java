@@ -18,11 +18,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainPricingLogic;
+import google.registry.flows.domain.DomainPricingLogic.FeesAndCredits;
 import google.registry.model.domain.fee.BaseFee;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Credit;
@@ -61,13 +63,21 @@ public class TestDomainPricingCustomLogic extends DomainPricingCustomLogic {
 
   /** A hook that customizes create price. */
   @Override
-  public BaseFee customizeCreatePrice(CreatePriceParameters createPriceParameters)
+  public FeesAndCredits customizeCreatePrice(CreatePriceParameters createPriceParameters)
       throws EppException {
     InternetDomainName domainName = createPriceParameters.domainName();
     if (domainName.parent().toString().equals("flags")) {
-      return domainNameToFeeOrCredit(domainName);
+      FeesAndCredits feesAndCredits = createPriceParameters.feesAndCredits();
+      ImmutableList.Builder<BaseFee> baseFeeBuilder = new ImmutableList.Builder<>();
+      baseFeeBuilder.addAll(feesAndCredits.getCredits());
+      for (BaseFee fee : feesAndCredits.getFees()) {
+        baseFeeBuilder.add(
+            fee.getType() == FeeType.CREATE ? domainNameToFeeOrCredit(domainName) : fee);
+      }
+      return new FeesAndCredits(
+          feesAndCredits.getCurrency(), Iterables.toArray(baseFeeBuilder.build(), BaseFee.class));
     } else {
-      return createPriceParameters.createFee();
+      return createPriceParameters.feesAndCredits();
     }
   }
 }

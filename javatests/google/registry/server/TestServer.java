@@ -31,8 +31,10 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
+import javax.servlet.Filter;
 import javax.servlet.http.HttpServlet;
 import org.mortbay.jetty.Connector;
+import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.bio.SocketConnector;
 import org.mortbay.jetty.servlet.Context;
@@ -80,10 +82,14 @@ public final class TestServer {
    * @param runfiles map of server paths to local directories or files, to be served statically
    * @param routes list of servlet endpoints
    */
-  public TestServer(HostAndPort address, Map<String, Path> runfiles, Iterable<Route> routes) {
+  public TestServer(
+      HostAndPort address,
+      Map<String, Path> runfiles,
+      Iterable<Route> routes,
+      Iterable<Class<? extends Filter>> filters) {
     urlAddress = createUrlAddress(address);
     server.addConnector(createConnector(address));
-    server.addHandler(createHandler(runfiles, routes));
+    server.addHandler(createHandler(runfiles, routes, filters));
   }
 
   /** Starts the HTTP server in a new thread and returns once it's online. */
@@ -143,7 +149,10 @@ public final class TestServer {
     }
   }
 
-  private Context createHandler(Map<String, Path> runfiles, Iterable<Route> routes) {
+  private Context createHandler(
+      Map<String, Path> runfiles,
+      Iterable<Route> routes,
+      Iterable<Class<? extends Filter>> filters) {
     Context context = new Context(server, CONTEXT_PATH, Context.SESSIONS);
     context.addServlet(new ServletHolder(HealthzServlet.class), "/healthz");
     for (Map.Entry<String, Path> runfile : runfiles.entrySet()) {
@@ -153,6 +162,9 @@ public final class TestServer {
     }
     for (Route route : routes) {
       context.addServlet(new ServletHolder(wrapServlet(route.servletClass())), route.path());
+    }
+    for (Class<? extends Filter> filter : filters) {
+      context.addFilter(filter, "/*", Handler.REQUEST);
     }
     ServletHolder holder = new ServletHolder(DefaultServlet.class);
     holder.setInitParameter("aliases", "1");

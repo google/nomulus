@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.rde;
+package google.registry.rde.imports;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatastoreHelper.createTld;
@@ -43,7 +43,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class XjcToHostResourceConverterTest {
 
-  private static final ByteSource HOST_XML = RdeTestData.get("host_fragment.xml");
+  private static final ByteSource HOST_XML = RdeImportsTestData.get("host_fragment.xml");
 
   //List of packages to initialize JAXBContext
   private static final String JAXB_CONTEXT_PACKAGES = Joiner.on(":")

@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.rde;
+package google.registry.rde.imports;
 
 import static google.registry.mapreduce.MapreduceRunner.PARAM_MAP_SHARDS;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.rde.RdeModule.PATH;
 import static google.registry.util.PipelineUtils.createJobPath;
 
 import com.google.appengine.tools.cloudstorage.GcsService;
@@ -29,7 +28,7 @@ import google.registry.config.ConfigModule;
 import google.registry.config.ConfigModule.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.mapreduce.MapreduceRunner;
-import google.registry.model.host.HostResource;
+import google.registry.model.contact.ContactResource;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
@@ -37,28 +36,28 @@ import google.registry.util.SystemClock;
 import javax.inject.Inject;
 
 /**
- * A mapreduce that imports hosts from an escrow file.
+ * A mapreduce that imports contacts from an escrow file.
  *
  * <p>Specify the escrow file to import with the "path" parameter.
  */
-@Action(path = "/_dr/task/importRdeHosts")
-public class RdeHostImportAction implements Runnable {
+@Action(path = "/_dr/task/importRdeContacts")
+public class RdeContactImportAction implements Runnable {
 
   private static final GcsService GCS_SERVICE =
       GcsServiceFactory.createGcsService(RetryParams.getDefaultInstance());
 
-  private final MapreduceRunner mrRunner;
-  private final Response response;
-  private final String importBucketName;
-  private final String importFileName;
-  private final Optional<Integer> mapShards;
+  protected final MapreduceRunner mrRunner;
+  protected final Response response;
+  protected final String importBucketName;
+  protected final String importFileName;
+  protected final Optional<Integer> mapShards;
 
   @Inject
-  public RdeHostImportAction(
+  public RdeContactImportAction(
       MapreduceRunner mrRunner,
       Response response,
       @Config("rdeImportBucket") String importBucketName,
-      @Parameter(PATH) String importFileName,
+      @Parameter("path") String importFileName,
       @Parameter(PARAM_MAP_SHARDS) Optional<Integer> mapShards) {
     this.mrRunner = mrRunner;
     this.response = response;
@@ -70,21 +69,35 @@ public class RdeHostImportAction implements Runnable {
   @Override
   public void run() {
     response.sendJavaScriptRedirect(createJobPath(mrRunner
-        .setJobName("Import hosts from escrow file")
+        .setJobName("Import contacts from escrow file")
         .setModuleName("backend")
         .runMapOnly(
-            new RdeHostImportMapper(importBucketName),
-            ImmutableList.of(new RdeHostInput(mapShards, importBucketName, importFileName)))));
+            createMapper(),
+            ImmutableList.of(createInput()))));
   }
 
-  /** Mapper to import hosts from an escrow file. */
-  public static class RdeHostImportMapper extends Mapper<HostResource, Void, Void> {
+  /**
+   * Creates a new {@link RdeContactInput}
+   */
+  private RdeContactInput createInput() {
+    return new RdeContactInput(mapShards, importBucketName, importFileName);
+  }
 
-    private static final long serialVersionUID = -2898753709127134419L;
+  /**
+   * Creates a new {@link RdeContactImportMapper}
+   */
+  private RdeContactImportMapper createMapper() {
+    return new RdeContactImportMapper(importBucketName);
+  }
+
+  /** Mapper to import contacts from an escrow file. */
+  public static class RdeContactImportMapper extends Mapper<ContactResource, Void, Void> {
+
+    private static final long serialVersionUID = -7645091075256589374L;
     private final String importBucketName;
     private transient RdeImportUtils importUtils;
 
-    public RdeHostImportMapper(String importBucketName) {
+    public RdeContactImportMapper(String importBucketName) {
       this.importBucketName = importBucketName;
     }
 
@@ -107,8 +120,8 @@ public class RdeHostImportAction implements Runnable {
     }
 
     @Override
-    public void map(HostResource host) {
-      getImportUtils().importHost(host);
+    public void map(ContactResource contact) {
+      getImportUtils().importContact(contact);
     }
   }
 }

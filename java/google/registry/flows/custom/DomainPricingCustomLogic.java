@@ -19,8 +19,8 @@ import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainPricingLogic;
+import google.registry.flows.domain.DomainPricingLogic.FeesAndCredits;
 import google.registry.model.ImmutableObject;
-import google.registry.model.domain.fee.BaseFee;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.registry.Registry;
 import org.joda.time.DateTime;
@@ -38,16 +38,16 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
   /** A hook that customizes create price. */
   @SuppressWarnings("unused")
-  public BaseFee customizeCreatePrice(CreatePriceParameters createPriceParameters)
+  public FeesAndCredits customizeCreatePrice(CreatePriceParameters createPriceParameters)
       throws EppException {
-    return createPriceParameters.createFee();
+    return createPriceParameters.feesAndCredits();
   }
 
   /** A class to encapsulate parameters for a call to {@link #customizeCreatePrice} . */
   @AutoValue
   public abstract static class CreatePriceParameters extends ImmutableObject {
 
-    public abstract BaseFee createFee();
+    public abstract FeesAndCredits feesAndCredits();
 
     public abstract Registry registry();
 
@@ -65,7 +65,7 @@ public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
     @AutoValue.Builder
     public abstract static class Builder {
 
-      public abstract Builder setCreateFee(BaseFee createFee);
+      public abstract Builder setFeesAndCredits(FeesAndCredits feesAndCredits);
 
       public abstract Builder setRegistry(Registry registry);
 

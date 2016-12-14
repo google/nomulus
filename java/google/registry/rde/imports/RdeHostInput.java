@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.rde;
+package google.registry.rde.imports;
 
-import static com.google.common.math.IntMath.divide;
-import static java.math.RoundingMode.CEILING;
-import static java.math.RoundingMode.FLOOR;
+import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.appengine.tools.cloudstorage.GcsService;
@@ -28,22 +26,23 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import google.registry.config.ConfigModule;
 import google.registry.gcs.GcsUtils;
-import google.registry.model.contact.ContactResource;
-import google.registry.rde.RdeParser.RdeHeader;
+import google.registry.model.host.HostResource;
+import google.registry.rde.imports.RdeParser.RdeHeader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
 /**
- * A MapReduce {@link Input} that imports {@link ContactResource} objects from an escrow file.
+ * A MapReduce {@link Input} that imports {@link HostResource} objects from an escrow file.
  *
  * <p>If a mapShards parameter has been specified, up to that many readers will be created
  * so that each map shard has one reader. If a mapShards parameter has not been specified, a
  * default number of readers will be created.
  */
-public class RdeContactInput extends Input<ContactResource> {
+public class RdeHostInput extends Input<HostResource> {
 
-  private static final long serialVersionUID = -366966393494008712L;
+  private static final long serialVersionUID = 9218225041307602452L;
+
   private static final GcsService GCS_SERVICE =
       GcsServiceFactory.createGcsService(RetryParams.getDefaultInstance());
 
@@ -65,54 +64,56 @@ public class RdeContactInput extends Input<ContactResource> {
   private final String importFileName;
 
   /**
-   * Creates a new {@link RdeContactInput}
+   * Creates a new {@link RdeHostInput}
    *
    * @param mapShards Number of readers that should be created
    * @param importBucketName Name of GCS bucket for escrow file imports
    * @param importFileName Name of escrow file in GCS
    */
-  public RdeContactInput(Optional<Integer> mapShards, String importBucketName,
+  public RdeHostInput(Optional<Integer> mapShards, String importBucketName,
       String importFileName) {
     this.numReaders = mapShards.or(DEFAULT_READERS);
+    checkArgument(numReaders > 0, "Number of shards must be greater than zero");
     this.importBucketName = importBucketName;
     this.importFileName = importFileName;
   }
 
   @Override
-  public List<? extends InputReader<ContactResource>> createReaders() throws IOException {
+  public List<? extends InputReader<HostResource>> createReaders() throws IOException {
     int numReaders = this.numReaders;
-    RdeHeader header = newParser().getHeader();
-    int numberOfContacts = header.getContactCount().intValue();
-    if (numberOfContacts / numReaders < MINIMUM_RECORDS_PER_READER) {
-      numReaders = divide(numberOfContacts, MINIMUM_RECORDS_PER_READER, FLOOR);
+    RdeHeader header = createParser().getHeader();
+    int numberOfHosts = header.getHostCount().intValue();
+    if (numberOfHosts / numReaders < MINIMUM_RECORDS_PER_READER) {
+      numReaders = numberOfHosts / MINIMUM_RECORDS_PER_READER;
       // use at least one reader
       numReaders = Math.max(numReaders, 1);
     }
-    ImmutableList.Builder<RdeContactReader> builder = new ImmutableList.Builder<>();
-    int contactsPerReader =
-        Math.max(MINIMUM_RECORDS_PER_READER, divide(numberOfContacts, numReaders, CEILING));
+    ImmutableList.Builder<RdeHostReader> builder = new ImmutableList.Builder<>();
+    int hostsPerReader =
+        Math.max(MINIMUM_RECORDS_PER_READER, (int) Math.ceil((double) numberOfHosts / numReaders));
     int offset = 0;
     for (int i = 0; i < numReaders; i++) {
-      builder = builder.add(newReader(offset, contactsPerReader));
-      offset += contactsPerReader;
+      builder = builder.add(createReader(offset, hostsPerReader));
+      offset += hostsPerReader;
     }
     return builder.build();
   }
 
   /**
-   * Creates a new instance of {@link RdeContactReader}
+   * Creates a new instance of {@link RdeHostReader}
    */
-  private RdeContactReader newReader(int offset, int maxResults) {
-    return new RdeContactReader(importBucketName, importFileName, offset, maxResults);
+  private RdeHostReader createReader(int offset, int maxResults) {
+    return new RdeHostReader(importBucketName, importFileName, offset, maxResults);
   }
 
   /**
    * Creates a new instance of {@link RdeParser}
    */
-  private RdeParser newParser() {
+  private RdeParser createParser() {
     GcsUtils utils = new GcsUtils(GCS_SERVICE, ConfigModule.provideGcsBufferSize());
     GcsFilename filename = new GcsFilename(importBucketName, importFileName);
-    try (InputStream xmlInput = utils.openInputStream(filename)) {
+    InputStream xmlInput = utils.openInputStream(filename);
+    try {
       return new RdeParser(xmlInput);
     } catch (Exception e) {
       throw new InitializationException(
@@ -124,7 +125,6 @@ public class RdeContactInput extends Input<ContactResource> {
    * Thrown when the input cannot initialize properly.
    */
   private static class InitializationException extends RuntimeException {
-
     public InitializationException(String message, Throwable cause) {
       super(message, cause);
     }

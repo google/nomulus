@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.rde;
+package google.registry.rde.imports;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
@@ -61,11 +61,13 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class RdeImportUtilsTest extends ShardableTestCase {
 
-  private static final ByteSource DEPOSIT_XML = RdeTestData.get("deposit_full.xml");
-  private static final ByteSource DEPOSIT_BADTLD_XML = RdeTestData.get("deposit_full_badtld.xml");
-  private static final ByteSource DEPOSIT_GETLD_XML = RdeTestData.get("deposit_full_getld.xml");
+  private static final ByteSource DEPOSIT_XML = RdeImportsTestData.get("deposit_full.xml");
+  private static final ByteSource DEPOSIT_BADTLD_XML =
+      RdeImportsTestData.get("deposit_full_badtld.xml");
+  private static final ByteSource DEPOSIT_GETLD_XML =
+      RdeImportsTestData.get("deposit_full_getld.xml");
   private static final ByteSource DEPOSIT_BADREGISTRAR_XML =
-      RdeTestData.get("deposit_full_badregistrar.xml");
+      RdeImportsTestData.get("deposit_full_badregistrar.xml");
 
   private InputStream xmlInput;
 
