@@ -27,6 +27,7 @@ import com.googlecode.objectify.annotation.Cache;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.BackupGroupRoot;
+import google.registry.model.annotations.ReportedOn;
 import google.registry.model.domain.DomainApplication;
 import google.registry.util.CollectionUtils;
 import java.util.Set;
@@ -38,6 +39,7 @@ import org.joda.time.DateTime;
  * resource is always kept up to date as additional domain applications are created, it is never
  * necessary to query them explicitly from Datastore.
  */
+@ReportedOn
 @Entity
 @Cache(expirationSeconds = RECOMMENDED_MEMCACHE_EXPIRATION)
 public class DomainApplicationIndex extends BackupGroupRoot {

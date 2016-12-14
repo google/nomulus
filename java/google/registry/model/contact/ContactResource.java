@@ -31,6 +31,7 @@ import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.annotations.ExternalMessagingName;
+import google.registry.model.annotations.ReportedOn;
 import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.transfer.TransferData;
 import java.util.List;
@@ -65,6 +66,7 @@ import org.joda.time.DateTime;
     "authInfo",
     "disclose" })
 @Cache(expirationSeconds = RECOMMENDED_MEMCACHE_EXPIRATION)
+@ReportedOn
 @Entity
 @ExternalMessagingName("contact")
 public class ContactResource extends EppResource

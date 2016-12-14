@@ -42,7 +42,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Sets;
-import com.google.re2j.Pattern;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Work;
 import com.googlecode.objectify.annotation.Cache;
@@ -59,6 +58,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.UpdateAutoTimestamp;
+import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.NonFinalForTesting;
@@ -72,10 +72,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import javax.annotation.Nullable;
+import com.google.re2j.Pattern;
 import org.joda.time.DateTime;
 
 /** Information about a registrar. */
 @Cache(expirationSeconds = RECOMMENDED_MEMCACHE_EXPIRATION)
+@ReportedOn
 @Entity
 public class Registrar extends ImmutableObject implements Buildable, Jsonifiable {
 

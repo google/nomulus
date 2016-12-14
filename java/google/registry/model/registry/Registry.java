@@ -53,6 +53,7 @@ import google.registry.config.RegistryEnvironment;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
@@ -71,6 +72,7 @@ import org.joda.time.Interval;
 
 /** Persisted per-TLD configuration data. */
 @Cache(expirationSeconds = RECOMMENDED_MEMCACHE_EXPIRATION)
+@ReportedOn
 @Entity
 public class Registry extends ImmutableObject implements Buildable {
 

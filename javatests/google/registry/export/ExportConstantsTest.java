@@ -17,20 +17,18 @@ package google.registry.export;
 import static com.google.common.io.Resources.getResource;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static google.registry.util.ResourceUtils.readResourceUtf8;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.io.Resources;
-import com.google.re2j.Pattern;
-import com.googlecode.objectify.annotation.Entity;
-import google.registry.model.ImmutableObject;
 import java.net.URL;
 import java.util.List;
 import javax.annotation.Nullable;
+import com.google.re2j.Pattern;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -41,10 +39,12 @@ public class ExportConstantsTest {
 
   private static final String GOLDEN_BACKUP_KINDS_FILENAME = "backup_kinds.txt";
 
+  private static final String GOLDEN_REPORTING_KINDS_FILENAME = "reporting_kinds.txt";
+
   private static final String UPDATE_INSTRUCTIONS_TEMPLATE = Joiner.on('\n').join(
       "",
       "---------------------------------------------------------------------------------",
-      "Your changes affect the list of backed-up kinds in the golden file:",
+      "Your changes affect the list of %s kinds in the golden file:",
       "  %s",
       "If these changes are desired, update the golden file with the following contents:",
       "=================================================================================",
@@ -56,24 +56,27 @@ public class ExportConstantsTest {
   public void testBackupKinds_matchGoldenBackupKindsFile() throws Exception {
     URL goldenBackupKindsResource =
         getResource(ExportConstantsTest.class, GOLDEN_BACKUP_KINDS_FILENAME);
-    final Pattern stripComments = Pattern.compile("\\s*#.*$");
-    List<String> goldenKinds = FluentIterable
-        .from(Splitter.on('\n').split(
-            Resources.toString(goldenBackupKindsResource, UTF_8).trim()))
-        .transform(
-            new Function<String, String>() {
-              @Override @Nullable public String apply(@Nullable String line) {
-                return stripComments.matcher(line).replaceFirst("");
-              }})
-        .toList();
+    List<String> goldenKinds = extractListFromFile(GOLDEN_BACKUP_KINDS_FILENAME);
     ImmutableSet<String> actualKinds = ExportConstants.getBackupKinds();
-    String updateInstructions = String.format(
-        UPDATE_INSTRUCTIONS_TEMPLATE,
-        goldenBackupKindsResource.toString(),
-        Joiner.on('\n').join(actualKinds));
+    String updateInstructions =
+        getUpdateInstructions("backed-up", goldenBackupKindsResource.toString(), actualKinds);
     assertWithMessage(updateInstructions)
         .that(actualKinds)
         .containsExactlyElementsIn(goldenKinds)
+        .inOrder();
+  }
+
+  @Test
+  public void testReportingKinds_matchGoldenReportingKindsFile() throws Exception {
+    URL goldenReportingKindsResource =
+        getResource(ExportConstantsTest.class, GOLDEN_REPORTING_KINDS_FILENAME);
+    List<String> goldenReportingKinds = extractListFromFile(GOLDEN_REPORTING_KINDS_FILENAME);
+    ImmutableSet<String> actualKinds = ExportConstants.getReportingKinds();
+    String updateInstructions =
+        getUpdateInstructions("reporting", goldenReportingKindsResource.toString(), actualKinds);
+    assertWithMessage(updateInstructions)
+        .that(actualKinds)
+        .containsExactlyElementsIn(goldenReportingKinds)
         .inOrder();
   }
 
@@ -82,12 +85,38 @@ public class ExportConstantsTest {
     assertThat(ExportConstants.getBackupKinds()).containsAllIn(ExportConstants.getReportingKinds());
   }
 
-  @Test
-  public void testReportingEntityClasses_areAllBaseEntityClasses() throws Exception {
-    for (Class<? extends ImmutableObject> clazz : ExportConstants.REPORTING_ENTITY_CLASSES) {
-      assertThat(clazz.isAnnotationPresent(Entity.class))
-          .named(String.format("class %s is an @Entity", clazz.getSimpleName()))
-          .isTrue();
-    }
+  /**
+   * Helper method to get update instructions
+   *
+   * @param name - type of entity
+   * @param resource - Resource file contents
+   * @param actualKinds - data from ExportConstants
+   * @return String of update instructions
+   */
+  private String getUpdateInstructions(
+      String name, String resource, ImmutableSet<String> actualKinds) {
+    return String.format(
+        UPDATE_INSTRUCTIONS_TEMPLATE, name, resource, Joiner.on('\n').join(actualKinds));
+  }
+
+  /**
+   * Helper method to extract list from file
+   *
+   * @param filename
+   * @return ImmutableList<String>
+   */
+  private static ImmutableList<String> extractListFromFile(String filename) {
+    String fileContents = readResourceUtf8(ExportConstantsTest.class, filename);
+    final Pattern stripComments = Pattern.compile("\\s*#.*$");
+    return FluentIterable.from(Splitter.on('\n').split(fileContents.trim()))
+        .transform(
+            new Function<String, String>() {
+              @Override
+              @Nullable
+              public String apply(@Nullable String line) {
+                return stripComments.matcher(line).replaceFirst("");
+              }
+            })
+        .toList();
   }
 }

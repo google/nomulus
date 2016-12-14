@@ -12,6 +12,7 @@ java_library(
     srcs = glob(["*.java"]),
     resources = glob([
         "backup_kinds.txt",
+        "reporting_kinds.txt",
     ]),
     deps = [
         "//apiserving/discoverydata/bigquery:bigqueryv2",

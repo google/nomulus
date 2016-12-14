@@ -32,6 +32,7 @@ import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
+import google.registry.model.annotations.ReportedOn;
 import google.registry.model.domain.DomainResource;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.transfer.TransferData;
@@ -65,6 +66,7 @@ import org.joda.time.DateTime;
     "lastEppUpdateTime",
     "lastTransferTime" })
 @Cache(expirationSeconds = RECOMMENDED_MEMCACHE_EXPIRATION)
+@ReportedOn
 @Entity
 @ExternalMessagingName("host")
 public class HostResource extends EppResource implements ForeignKeyedEppResource {
