@@ -53,7 +53,7 @@ java_library(
 
 GenTestRules(
     name = "GeneratedTestRules",
-    default_test_size = "medium",
+    default_test_size = "large",
     test_files = glob(["*Test.java"]),
     deps = [":rde"],
 )
