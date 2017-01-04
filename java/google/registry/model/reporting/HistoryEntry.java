@@ -103,6 +103,13 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
   @Index
   String clientId;
 
+  /**
+   * The id of the registrar that is being acted upon in a domain transfer type. Every transfer is
+   * triggered by the registrar making the EPP transfer command; the other registrar involved is
+   * stored here in the otherClientId.
+   */
+  String otherClientId;
+
   /** Transaction id that made this change. */
   Trid trid;
 
@@ -137,6 +144,10 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
 
   public String getClientId() {
     return clientId;
+  }
+
+  public String getOtherClientId() {
+    return otherClientId;
   }
 
   public Trid getTrid() {
@@ -200,6 +211,11 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
 
     public Builder setClientId(String clientId) {
       getInstance().clientId = clientId;
+      return this;
+    }
+
+    public Builder setOtherClientId(String otherClientId) {
+      getInstance().otherClientId = otherClientId;
       return this;
     }
 

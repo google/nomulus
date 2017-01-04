@@ -190,7 +190,11 @@ public class DomainTransferRequestFlowTest
         .hasOneHistoryEntryEachOfTypes(
             HistoryEntry.Type.DOMAIN_CREATE,
             HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST);
-    assertAboutHistoryEntries().that(historyEntryTransferRequest).hasPeriodYears(registrationYears);
+    assertAboutHistoryEntries()
+        .that(historyEntryTransferRequest)
+        .hasPeriodYears(registrationYears)
+        .and()
+        .hasOtherClientId("TheRegistrar");
     assertAboutHosts().that(subordinateHost).hasNoHistoryEntries();
     assertThat(getPollMessages("TheRegistrar", clock.nowUtc())).hasSize(1);
 

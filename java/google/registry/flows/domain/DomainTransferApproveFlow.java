@@ -102,13 +102,14 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     verifyResourceOwnership(clientId, existingDomain);
     String tld = existingDomain.getTld();
     checkAllowedAccessToTld(clientId, tld);
+    TransferData transferData = existingDomain.getTransferData();
+    String gainingClientId = transferData.getGainingClientId();
     HistoryEntry historyEntry = historyBuilder
         .setType(HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE)
         .setModificationTime(now)
+        .setOtherClientId(gainingClientId)
         .setParent(Key.create(existingDomain))
         .build();
-    TransferData transferData = existingDomain.getTransferData();
-    String gainingClientId = transferData.getGainingClientId();
     int extraYears = transferData.getExtendedRegistrationYears();
     // Bill for the transfer.
     BillingEvent.OneTime billingEvent = new BillingEvent.OneTime.Builder()

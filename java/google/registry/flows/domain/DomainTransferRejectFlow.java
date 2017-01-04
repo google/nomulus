@@ -82,6 +82,7 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
     HistoryEntry historyEntry = historyBuilder
         .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REJECT)
         .setModificationTime(now)
+        .setOtherClientId(existingDomain.getTransferData().getGainingClientId())
         .setParent(Key.create(existingDomain))
         .build();
     verifyOptionalAuthInfo(authInfo, existingDomain);

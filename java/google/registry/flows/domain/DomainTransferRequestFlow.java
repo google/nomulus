@@ -213,6 +213,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
   private HistoryEntry buildHistory(Period period, DomainResource existingResource, DateTime now) {
     return historyBuilder
         .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
+        .setOtherClientId(existingResource.getCurrentSponsorClientId())
         .setPeriod(period)
         .setModificationTime(now)
         .setParent(Key.create(existingResource))

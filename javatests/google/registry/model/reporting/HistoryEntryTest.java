@@ -43,6 +43,7 @@ public class HistoryEntryTest extends EntityTestCase {
       .setXmlBytes("<xml></xml>".getBytes(UTF_8))
       .setModificationTime(clock.nowUtc())
       .setClientId("foo")
+      .setOtherClientId("otherClient")
       .setTrid(Trid.create("ABC-123"))
       .setBySuperuser(false)
       .setReason("reason")

@@ -776,6 +776,7 @@ class google.registry.model.reporting.HistoryEntry {
   google.registry.model.reporting.HistoryEntry$Type type;
   java.lang.Boolean requestedByRegistrar;
   java.lang.String clientId;
+  java.lang.String otherClientId;
   java.lang.String reason;
   org.joda.time.DateTime modificationTime;
 }

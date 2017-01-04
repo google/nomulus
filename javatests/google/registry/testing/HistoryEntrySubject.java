@@ -56,6 +56,10 @@ public class HistoryEntrySubject extends Subject<HistoryEntrySubject, HistoryEnt
     return hasValue(clientId, actual().getClientId(), "has client ID");
   }
 
+  public And<HistoryEntrySubject> hasOtherClientId(String otherClientId) {
+    return hasValue(otherClientId, actual().getOtherClientId(), "has other client ID");
+  }
+
   public And<HistoryEntrySubject> hasPeriod() {
     if (actual().getPeriod() == null) {
       fail("has a period");
