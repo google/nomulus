@@ -103,6 +103,9 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
   @Index
   String clientId;
 
+  /** The id of the registrar that is being acted upon. */
+  String otherClientId;
+
   /** Transaction id that made this change. */
   Trid trid;
 
@@ -137,6 +140,10 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
 
   public String getClientId() {
     return clientId;
+  }
+
+  public String getOtherClientId() {
+    return otherClientId;
   }
 
   public Trid getTrid() {
@@ -200,6 +207,11 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
 
     public Builder setClientId(String clientId) {
       getInstance().clientId = clientId;
+      return this;
+    }
+
+    public Builder setOtherClientId(String otherClientId) {
+      getInstance().otherClientId = otherClientId;
       return this;
     }
 

@@ -17,10 +17,12 @@ package google.registry.flows.domain;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatastoreHelper.assertBillingEvents;
 import static google.registry.testing.DatastoreHelper.deleteResource;
+import static google.registry.testing.DatastoreHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatastoreHelper.getOnlyPollMessage;
 import static google.registry.testing.DatastoreHelper.getPollMessages;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.DomainResourceSubject.assertAboutDomains;
+import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.collect.FluentIterable;
@@ -90,6 +92,11 @@ public class DomainTransferRejectFlowTest
             HistoryEntry.Type.DOMAIN_CREATE,
             HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST,
             HistoryEntry.Type.DOMAIN_TRANSFER_REJECT);
+    final HistoryEntry historyEntryTransferRejected =
+        getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_TRANSFER_REJECT);
+    assertAboutHistoryEntries()
+        .that(historyEntryTransferRejected)
+        .hasOtherClientId("NewRegistrar");
     // The only billing event left should be the original autorenew event, now reopened.
     assertBillingEvents(
         getLosingClientAutorenewEvent().asBuilder().setRecurrenceEndTime(END_OF_TIME).build());

@@ -26,6 +26,7 @@ import static google.registry.testing.DatastoreHelper.getOnlyPollMessage;
 import static google.registry.testing.DatastoreHelper.getPollMessages;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.DomainResourceSubject.assertAboutDomains;
+import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.testing.HostResourceSubject.assertAboutHosts;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.util.Arrays.asList;
@@ -155,6 +156,8 @@ public class DomainTransferApproveFlowTest
         HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE);
     final HistoryEntry historyEntryTransferApproved =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE);
+    assertAboutHistoryEntries().that(historyEntryTransferApproved)
+        .hasOtherClientId("NewRegistrar");
     assertTransferApproved(domain);
     assertAboutDomains().that(domain).hasRegistrationExpirationTime(expectedExpirationTime);
     assertThat(ofy().load().key(domain.getAutorenewBillingEvent()).now().getEventTime())
