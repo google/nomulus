@@ -103,7 +103,11 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
   @Index
   String clientId;
 
-  /** The id of the registrar that is being acted upon. */
+  /**
+   * The id of the registrar that is being acted upon in a domain transfer type. Every transfer is
+   * triggered by the registrar making the EPP transfer command; the other registrar involved is
+   * stored here in the otherClientId.
+   */
   String otherClientId;
 
   /** Transaction id that made this change. */
