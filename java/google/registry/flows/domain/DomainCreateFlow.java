@@ -202,16 +202,6 @@ public class DomainCreateFlow implements TransactionalFlow {
       validateLaunchCreateNotice(launchCreate.getNotice(), domainLabel, isSuperuser, now);
     }
     boolean isSunriseCreate = hasSignedMarks && SUNRISE_STATES.contains(tldState);
-    customLogic.afterValidation(
-        DomainCreateFlowCustomLogic.AfterValidationParameters.newBuilder()
-            .setDomainName(domainName)
-            .setYears(years)
-            .build());
-
-    FeeCreateCommandExtension feeCreate =
-        eppInput.getSingleExtension(FeeCreateCommandExtension.class);
-    FeesAndCredits feesAndCredits = pricingLogic.getCreatePrice(registry, targetId, now, years);
-    validateFeeChallenge(targetId, registry.getTldStr(), now, feeCreate, feesAndCredits);
     // Superusers can create reserved domains, force creations on domains that require a claims
     // notice without specifying a claims key, ignore the registry phase, and override blocks on
     // registering premium domains.
@@ -233,6 +223,20 @@ public class DomainCreateFlow implements TransactionalFlow {
       verifyNoOpenApplications(now);
       verifyIsGaOrIsSpecialCase(tldState, isAnchorTenant);
     }
+    String signedMarkId = hasSignedMarks
+        // If a signed mark was provided, then it must match the desired domain label.
+        ? verifySignedMarks(launchCreate.getSignedMarks(), domainLabel, now).getId()
+        : null;
+    customLogic.afterValidation(
+        DomainCreateFlowCustomLogic.AfterValidationParameters.newBuilder()
+            .setDomainName(domainName)
+            .setSignedMarkId(signedMarkId)
+            .setYears(years)
+            .build());
+    FeeCreateCommandExtension feeCreate =
+        eppInput.getSingleExtension(FeeCreateCommandExtension.class);
+    FeesAndCredits feesAndCredits = pricingLogic.getCreatePrice(registry, targetId, now, years);
+    validateFeeChallenge(targetId, registry.getTldStr(), now, feeCreate, feesAndCredits);
     SecDnsCreateExtension secDnsCreate =
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));
     String repoId = createDomainRoid(ObjectifyService.allocateId(), registry.getTldStr());
@@ -266,10 +270,7 @@ public class DomainCreateFlow implements TransactionalFlow {
         .setAutorenewBillingEvent(Key.create(autorenewBillingEvent))
         .setAutorenewPollMessage(Key.create(autorenewPollMessage))
         .setLaunchNotice(hasClaimsNotice ? launchCreate.getNotice() : null)
-        .setSmdId(hasSignedMarks
-            // If a signed mark was provided, then it must match the desired domain label.
-            ? verifySignedMarks(launchCreate.getSignedMarks(), domainLabel, now).getId()
-            : null)
+        .setSmdId(signedMarkId)
         .setDsData(secDnsCreate == null ? null : secDnsCreate.getDsData())
         .setRegistrant(command.getRegistrant())
         .setAuthInfo(command.getAuthInfo())

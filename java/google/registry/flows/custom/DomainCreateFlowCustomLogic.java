@@ -26,6 +26,9 @@ import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
 import google.registry.model.reporting.HistoryEntry;
+import org.joda.time.DateTime;
+
+import javax.annotation.Nullable;
 
 /**
  * A no-op base class for {@link DomainCreateFlow} custom logic.
@@ -92,6 +95,14 @@ public class DomainCreateFlowCustomLogic extends BaseFlowCustomLogic {
      */
     public abstract int years();
 
+    /**
+     * The ID of the validated signed mark.
+     *
+     * <p>If a signed mark was not supplied this value will be null</p>
+     */
+    @Nullable
+    public abstract String signedMarkId();
+
     public static Builder newBuilder() {
       return new AutoValue_DomainCreateFlowCustomLogic_AfterValidationParameters.Builder();
     }
@@ -103,6 +114,8 @@ public class DomainCreateFlowCustomLogic extends BaseFlowCustomLogic {
       public abstract Builder setDomainName(InternetDomainName domainName);
 
       public abstract Builder setYears(int years);
+
+      public abstract Builder setSignedMarkId(String signedMarkId);
 
       public abstract AfterValidationParameters build();
     }
