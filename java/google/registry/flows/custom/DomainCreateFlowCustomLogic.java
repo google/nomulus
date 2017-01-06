@@ -103,9 +103,6 @@ public class DomainCreateFlowCustomLogic extends BaseFlowCustomLogic {
     @Nullable
     public abstract String signedMarkId();
 
-    /** The time at which this flow was executed */
-    public abstract DateTime transactionTime();
-
     public static Builder newBuilder() {
       return new AutoValue_DomainCreateFlowCustomLogic_AfterValidationParameters.Builder();
     }
@@ -119,8 +116,6 @@ public class DomainCreateFlowCustomLogic extends BaseFlowCustomLogic {
       public abstract Builder setYears(int years);
 
       public abstract Builder setSignedMarkId(String signedMarkId);
-
-      public abstract Builder setTransactionTime(DateTime transactionTime);
 
       public abstract AfterValidationParameters build();
     }
