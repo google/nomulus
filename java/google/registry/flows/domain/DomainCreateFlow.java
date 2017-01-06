@@ -230,6 +230,8 @@ public class DomainCreateFlow implements TransactionalFlow {
     customLogic.afterValidation(
         DomainCreateFlowCustomLogic.AfterValidationParameters.newBuilder()
             .setDomainName(domainName)
+            .setSignedMarkId(signedMarkId)
+            .setTransactionTime(now)
             .setYears(years)
             .build());
     FeeCreateCommandExtension feeCreate =
