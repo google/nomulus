@@ -11,8 +11,6 @@ java_library(
         exclude = ["Modules.java"],
     ),
     deps = [
-        "//java/google/registry/security",
-        "//java/google/registry/util",
         "@com_google_appengine_api_1_0_sdk",
         "@com_google_auto_value",
         "@com_google_code_findbugs_jsr305",
@@ -21,6 +19,8 @@ java_library(
         "@com_googlecode_json_simple",
         "@javax_servlet_api",
         "@joda_time",
+        "//java/google/registry/security",
+        "//java/google/registry/util",
     ],
 )
 
@@ -28,8 +28,6 @@ java_library(
     name = "modules",
     srcs = ["Modules.java"],
     deps = [
-        "//java/google/registry/config",
-        "//java/google/registry/keyring/api",
         "@com_google_api_client",
         "@com_google_api_client_appengine",
         "@com_google_appengine_api_1_0_sdk",
@@ -38,5 +36,8 @@ java_library(
         "@com_google_http_client",
         "@com_google_http_client_appengine",
         "@com_google_http_client_jackson2",
+        "//java/google/registry/config",
+        "//java/google/registry/keyring/api",
+        "//java/google/registry/monitoring/whitebox",
     ],
 )

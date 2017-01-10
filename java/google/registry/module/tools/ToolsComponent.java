@@ -26,6 +26,7 @@ import google.registry.keyring.api.DummyKeyringModule;
 import google.registry.keyring.api.KeyModule;
 import google.registry.module.tools.ToolsRequestComponent.ToolsRequestComponentModule;
 import google.registry.request.Modules.AppIdentityCredentialModule;
+import google.registry.request.Modules.BigQueryStreamingMetricsModule;
 import google.registry.request.Modules.DatastoreServiceModule;
 import google.registry.request.Modules.GoogleCredentialModule;
 import google.registry.request.Modules.Jackson2Module;
@@ -42,6 +43,7 @@ import javax.inject.Singleton;
 @Component(
     modules = {
         AppIdentityCredentialModule.class,
+        BigQueryStreamingMetricsModule.class,
         ConfigModule.class,
         CustomLogicFactoryModule.class,
         DatastoreServiceModule.class,

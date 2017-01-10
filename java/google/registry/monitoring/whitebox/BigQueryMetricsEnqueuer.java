@@ -14,10 +14,10 @@
 
 package google.registry.monitoring.whitebox;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withUrl;
 
 import com.google.appengine.api.modules.ModulesService;
+import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.appengine.api.taskqueue.TransientFailureException;
 import com.google.common.base.Supplier;
@@ -39,6 +39,7 @@ public class BigQueryMetricsEnqueuer {
   public static final String QUEUE = "bigquery-streaming-metrics";
 
   @Inject ModulesService modulesService;
+  @Inject @Named(QUEUE) Queue bigQueryStreamingMetricsQueue;
   @Inject @Named("insertIdGenerator") Supplier<String> idGenerator;
 
   @Inject BigQueryMetricsEnqueuer() {}
@@ -54,7 +55,7 @@ public class BigQueryMetricsEnqueuer {
         opts.param(entry.getKey(), entry.getValue());
       }
       opts.param("tableId", metric.getTableId());
-      getQueue(QUEUE).add(opts);
+      bigQueryStreamingMetricsQueue.add(opts);
     } catch (TransientFailureException e) {
       // Log and swallow. We may drop some metrics here but this should be rare.
       logger.info(e, e.getMessage());

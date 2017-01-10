@@ -15,6 +15,7 @@
 package google.registry.request;
 
 import static com.google.appengine.api.datastore.DatastoreServiceFactory.getDatastoreService;
+import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.api.client.extensions.appengine.http.UrlFetchTransport;
@@ -27,6 +28,7 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.modules.ModulesService;
 import com.google.appengine.api.modules.ModulesServiceFactory;
+import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 import com.google.appengine.api.users.UserService;
@@ -38,12 +40,14 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.KeyModule.Key;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.Set;
+import google.registry.monitoring.whitebox.BigQueryMetricsEnqueuer;
+
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.Set;
 
 /** Dagger modules for App Engine services and other vendor classes. */
 public final class Modules {
@@ -67,6 +71,16 @@ public final class Modules {
     @Provides
     static ModulesService provideModulesService() {
       return modulesService;
+    }
+  }
+
+  /** Dagger module for {@link BigQueryMetricsEnqueuer} queue */
+  @Module
+  public static final class BigQueryStreamingMetricsModule {
+    @Provides
+    @Named(BigQueryMetricsEnqueuer.QUEUE)
+    static Queue provideBigQueryStreamingMetricsQueue() {
+      return getQueue(BigQueryMetricsEnqueuer.QUEUE);
     }
   }
 
