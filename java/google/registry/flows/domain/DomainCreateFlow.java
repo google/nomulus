@@ -48,6 +48,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.net.InternetDomainName;
 import com.googlecode.objectify.Key;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
@@ -167,6 +168,7 @@ public class DomainCreateFlow implements TransactionalFlow {
   @Inject DomainFlowTmchUtils tmchUtils;
   @Inject DomainPricingLogic pricingLogic;
   @Inject DnsQueue dnsQueue;
+  @Inject @Config("requireUniqueRoidSuffix") boolean requireUniqueRoidSuffix;
   @Inject DomainCreateFlow() {}
 
   @Override
@@ -239,7 +241,9 @@ public class DomainCreateFlow implements TransactionalFlow {
     validateFeeChallenge(targetId, registry.getTldStr(), now, feeCreate, feesAndCredits);
     SecDnsCreateExtension secDnsCreate =
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));
-    String repoId = createDomainRepoId(ObjectifyService.allocateId(), registry.getTldStr());
+    String repoId =
+        createDomainRepoId(
+            ObjectifyService.allocateId(), registry.getTldStr(), requireUniqueRoidSuffix);
     DateTime registrationExpirationTime = leapSafeAddYears(now, years);
     HistoryEntry historyEntry = buildHistory(repoId, period, now);
     // Bill for the create.

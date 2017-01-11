@@ -48,6 +48,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
 import com.googlecode.objectify.Key;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.EppException.ObjectAlreadyExistsException;
@@ -172,6 +173,7 @@ public final class DomainApplicationCreateFlow implements TransactionalFlow {
   @Inject DomainApplicationCreateFlowCustomLogic customLogic;
   @Inject DomainFlowTmchUtils tmchUtils;
   @Inject DomainPricingLogic pricingLogic;
+  @Inject @Config("requireUniqueRoidSuffix") boolean requireUniqueRoidSuffix;
   @Inject DomainApplicationCreateFlow() {}
 
   @Override
@@ -232,7 +234,7 @@ public final class DomainApplicationCreateFlow implements TransactionalFlow {
         .setCreationTrid(trid)
         .setCreationClientId(clientId)
         .setCurrentSponsorClientId(clientId)
-        .setRepoId(createDomainRepoId(ObjectifyService.allocateId(), tld))
+        .setRepoId(createDomainRepoId(ObjectifyService.allocateId(), tld, requireUniqueRoidSuffix))
         .setLaunchNotice(launchCreate == null ? null : launchCreate.getNotice())
         .setIdnTableName(idnTableName)
         .setPhase(launchCreate.getPhase())

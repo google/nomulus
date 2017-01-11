@@ -16,6 +16,7 @@ package google.registry.flows.domain;
 
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.getOnlyElement;
+import static google.registry.config.RegistryConfig.Config;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceDoesNotExist;
 import static google.registry.flows.domain.DomainFlowUtils.cloneAndLinkReferences;
@@ -111,6 +112,7 @@ public class DomainAllocateFlow implements TransactionalFlow {
   @Inject EppInput eppInput;
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainPricingLogic pricingLogic;
+  @Inject @Config("requireUniqueRoidSuffix") boolean requireUniqueRoidSuffix;
   @Inject DomainAllocateFlow() {}
 
   @Override
@@ -140,7 +142,9 @@ public class DomainAllocateFlow implements TransactionalFlow {
         eppInput.getSingleExtension(AllocateCreateExtension.class);
     DomainApplication application =
         loadAndValidateApplication(allocateCreate.getApplicationRoid(), now);
-    String repoId = createDomainRepoId(ObjectifyService.allocateId(), registry.getTldStr());
+    String repoId =
+        createDomainRepoId(
+            ObjectifyService.allocateId(), registry.getTldStr(), requireUniqueRoidSuffix);
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
     HistoryEntry historyEntry = buildHistory(repoId, period, now);
     entitiesToSave.add(historyEntry);
