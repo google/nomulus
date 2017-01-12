@@ -739,7 +739,7 @@ public class DatastoreHelper {
 
   /** Returns a newly allocated, globally unique domain repoId of the format HEX-TLD. */
   public static String generateNewDomainRoid(String tld) {
-    return createDomainRepoId(ObjectifyService.allocateId(), tld);
+    return createDomainRepoId(ObjectifyService.allocateId(), tld, true);
   }
 
   /**

@@ -1084,6 +1084,15 @@ public final class RegistryConfig {
               .build())
           .build();
     }
+
+    /**
+     * Returns {@code true} if the roid suffix of each tld is required to be unique.
+     */
+    @Provides
+    @Config("requireUniqueRoidSuffix")
+    public static boolean provideRequireUniqueRoidSuffix() {
+      return true;
+    }
   }
 
   /**

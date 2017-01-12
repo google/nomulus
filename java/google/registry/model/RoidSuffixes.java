@@ -51,8 +51,13 @@ public final class RoidSuffixes {
    * @throws IllegalStateException if there is no such tld, or the tld does not have a roid suffix
    * configured on it
    */
-  public static String getRoidSuffixForTld(String tld) {
-    String roidSuffix = roidSuffixMapCache.get().get(tld);
+  public static String getRoidSuffixForTld(String tld, boolean requireUniqueRoidSuffix) {
+    String roidSuffix;
+    if (requireUniqueRoidSuffix) {
+      roidSuffix = roidSuffixMapCache.get().get(tld);
+    } else {
+      roidSuffix = Registry.get(tld).getRoidSuffix();
+    }
     checkState(roidSuffix != null, "Could not find ROID suffix for TLD %s", tld);
     return roidSuffix;
   }

@@ -37,6 +37,24 @@ public class RoidSuffixesTest {
   @Test
   public void test_newlyCreatedRegistry_isAddedToRoidSuffixesList() {
     persistResource(newRegistry("tld", "MEOW"));
-    assertThat(getRoidSuffixForTld("tld")).isEqualTo("MEOW");
+    assertThat(getRoidSuffixForTld("tld", true)).isEqualTo("MEOW");
+  }
+
+  @Test
+  public void test_shouldAllowTldsWithSameRoidSuffix_whenNotRequiredUnique() {
+    persistResource(newRegistry("wtf", "donuts"));
+    persistResource(newRegistry("ltd", "donuts"));
+
+    assertThat(getRoidSuffixForTld("wtf", false)).isEqualTo("donuts");
+    assertThat(getRoidSuffixForTld("ltd", false)).isEqualTo("donuts");
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void test_shouldNotAllowTldsWithSameRoidSuffix_whenRequiredUnique() {
+    persistResource(newRegistry("wtf", "donuts"));
+    persistResource(newRegistry("ltd", "donuts"));
+
+    assertThat(getRoidSuffixForTld("wtf", true)).isEqualTo("donuts");
+    assertThat(getRoidSuffixForTld("ltd", true)).isEqualTo("donuts");
   }
 }

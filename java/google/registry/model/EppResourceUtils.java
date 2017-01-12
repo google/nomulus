@@ -55,8 +55,8 @@ public final class EppResourceUtils {
   private static final FormattingLogger logger = FormattingLogger.getLoggerForCallerClass();
 
   /** Returns the full domain repoId in the format HEX-TLD for the specified long id and tld. */
-  public static String createDomainRepoId(long repoId, String tld) {
-    return createRepoId(repoId, getRoidSuffixForTld(tld));
+  public static String createDomainRepoId(long repoId, String tld, boolean requireUniqueRoidSuffix) {
+    return createRepoId(repoId, getRoidSuffixForTld(tld, requireUniqueRoidSuffix));
   }
 
   /** Returns the full repoId in the format HEX-TLD for the specified long id and ROID suffix. */
