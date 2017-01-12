@@ -24,6 +24,7 @@ import google.registry.module.frontend.FrontendRequestComponent.FrontendRequestC
 import google.registry.monitoring.metrics.MetricReporter;
 import google.registry.monitoring.whitebox.StackdriverModule;
 import google.registry.request.Modules.AppIdentityCredentialModule;
+import google.registry.request.Modules.BigQueryStreamingMetricsModule;
 import google.registry.request.Modules.Jackson2Module;
 import google.registry.request.Modules.ModulesServiceModule;
 import google.registry.request.Modules.UrlFetchTransportModule;
@@ -39,6 +40,7 @@ import javax.inject.Singleton;
 @Component(
     modules = {
         AppIdentityCredentialModule.class,
+        BigQueryStreamingMetricsModule.class,
         BraintreeModule.class,
         ConfigModule.class,
         ConsoleConfigModule.class,

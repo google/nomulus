@@ -31,6 +31,7 @@ import google.registry.monitoring.metrics.MetricReporter;
 import google.registry.monitoring.whitebox.StackdriverModule;
 import google.registry.rde.JSchModule;
 import google.registry.request.Modules.AppIdentityCredentialModule;
+import google.registry.request.Modules.BigQueryStreamingMetricsModule;
 import google.registry.request.Modules.DatastoreServiceModule;
 import google.registry.request.Modules.GoogleCredentialModule;
 import google.registry.request.Modules.Jackson2Module;
@@ -49,6 +50,7 @@ import javax.inject.Singleton;
     modules = {
         AppIdentityCredentialModule.class,
         BackendRequestComponentModule.class,
+        BigQueryStreamingMetricsModule.class,
         BigqueryModule.class,
         ConfigModule.class,
         DatastoreServiceModule.class,
