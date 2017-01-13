@@ -17,7 +17,7 @@ package google.registry.whois;
 import org.joda.time.DateTime;
 
 /** Represents a WHOIS command request from a client. */
-interface WhoisCommand {
+public interface WhoisCommand {
 
   /**
    * Executes a WHOIS query and returns the resultant data.

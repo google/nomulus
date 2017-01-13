@@ -66,6 +66,7 @@ public class WhoisServerTest {
     result.input = new StringReader(input);
     result.response = response;
     result.disclaimer = "Doodle Disclaimer";
+    result.commandFactory = new WhoisCommandFactory();
     return result;
   }
 

@@ -15,7 +15,6 @@
 package google.registry.whois;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.registry.Registries.findTldForName;
 import static google.registry.model.registry.Registries.getTlds;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
@@ -23,13 +22,11 @@ import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.net.InternetDomainName;
-import google.registry.model.EppResource;
-import google.registry.util.TypeUtils.TypeInstantiator;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
 /** Represents a WHOIS lookup on a domain name (i.e. SLD) or a nameserver. */
-abstract class DomainOrHostLookupCommand<T extends EppResource> implements WhoisCommand {
+public abstract class DomainOrHostLookupCommand implements WhoisCommand {
 
   @VisibleForTesting
   final InternetDomainName domainOrHostName;
@@ -52,17 +49,14 @@ abstract class DomainOrHostLookupCommand<T extends EppResource> implements Whois
     }
     // Google Policy: Do not return records under TLDs for which we're not authoritative.
     if (tld.isPresent() && getTlds().contains(tld.get().toString())) {
-      T domainOrHost = loadByForeignKey(
-          new TypeInstantiator<T>(getClass()){}.getExactType(),
-          domainOrHostName.toString(),
-          now);
-      if (domainOrHost != null) {
-        return getSuccessResponse(domainOrHost, now);
+      final Optional<WhoisResponse> response = getResponse(domainOrHostName, now);
+      if (response.isPresent()) {
+        return response.get();
       }
     }
     throw new WhoisException(now, SC_NOT_FOUND, errorPrefix + " not found.");
   }
 
   /** Renders a response record, provided its successfully retrieved datastore entity. */
-  abstract WhoisResponse getSuccessResponse(T domainOrHost, DateTime now);
+  protected abstract Optional<WhoisResponse> getResponse(InternetDomainName domainName, DateTime now);
 }

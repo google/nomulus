@@ -132,6 +132,7 @@ public final class WhoisHttpServer implements Runnable {
   @Inject Response response;
   @Inject @Config("whoisDisclaimer") String disclaimer;
   @Inject @Config("whoisHttpExpires") Duration expires;
+  @Inject @Config("whoisCommandFactory") WhoisCommandFactory commandFactory;
   @Inject @RequestPath String requestPath;
   @Inject WhoisHttpServer() {}
 
@@ -144,7 +145,7 @@ public final class WhoisHttpServer implements Runnable {
       String command = decode(JOINER.join(SLASHER.split(path.substring(PATH.length())))) + "\r\n";
       Reader reader = new StringReader(command);
       DateTime now = clock.nowUtc();
-      sendResponse(SC_OK, new WhoisReader(reader, now).readCommand().executeQuery(now));
+      sendResponse(SC_OK, new WhoisReader(reader, commandFactory, now).readCommand().executeQuery(now));
     } catch (WhoisException e) {
       sendResponse(e.getStatus(), e);
     } catch (IOException e) {

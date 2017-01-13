@@ -58,9 +58,8 @@ public class WhoisServer implements Runnable {
   @Inject Clock clock;
   @Inject Reader input;
   @Inject Response response;
-  @Inject
-  @Config("whoisDisclaimer")
-  String disclaimer;
+  @Inject @Config("whoisCommandFactory") WhoisCommandFactory commandFactory;
+  @Inject @Config("whoisDisclaimer") String disclaimer;
   @Inject WhoisServer() {}
 
   @Override
@@ -69,7 +68,7 @@ public class WhoisServer implements Runnable {
     DateTime now = clock.nowUtc();
     try {
       responseText =
-          new WhoisReader(input, now)
+          new WhoisReader(input, commandFactory, now)
               .readCommand()
               .executeQuery(now)
               .getPlainTextOutput(PREFER_UNICODE, disclaimer);
