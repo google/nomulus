@@ -34,8 +34,8 @@ import org.joda.time.DateTime;
  */
 public class DomainRenewFlowCustomLogic extends BaseFlowCustomLogic {
 
-  protected DomainRenewFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata) {
-    super(eppInput, sessionMetadata);
+  protected DomainRenewFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    super(eppInput, sessionMetadata, isSuperuser);
   }
 
   /** A hook that runs before any validation. This is useful to e.g. add allowable extensions. */

@@ -32,42 +32,42 @@ import google.registry.model.eppinput.EppInput;
 public class CustomLogicFactory {
 
   public DomainApplicationCreateFlowCustomLogic forDomainApplicationCreateFlow(
-      EppInput eppInput, SessionMetadata sessionMetadata) {
-    return new DomainApplicationCreateFlowCustomLogic(eppInput, sessionMetadata);
+      EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    return new DomainApplicationCreateFlowCustomLogic(eppInput, sessionMetadata, isSuperuser);
   }
 
   public DomainCreateFlowCustomLogic forDomainCreateFlow(
-      EppInput eppInput, SessionMetadata sessionMetadata) {
-    return new DomainCreateFlowCustomLogic(eppInput, sessionMetadata);
+      EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    return new DomainCreateFlowCustomLogic(eppInput, sessionMetadata, isSuperuser);
   }
 
   public DomainCheckFlowCustomLogic forDomainCheckFlow(
-      EppInput eppInput, SessionMetadata sessionMetadata) {
-    return new DomainCheckFlowCustomLogic(eppInput, sessionMetadata);
+      EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    return new DomainCheckFlowCustomLogic(eppInput, sessionMetadata, isSuperuser);
   }
 
   public DomainInfoFlowCustomLogic forDomainInfoFlow(
-      EppInput eppInput, SessionMetadata sessionMetadata) {
-    return new DomainInfoFlowCustomLogic(eppInput, sessionMetadata);
+      EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    return new DomainInfoFlowCustomLogic(eppInput, sessionMetadata, isSuperuser);
   }
 
   public DomainUpdateFlowCustomLogic forDomainUpdateFlow(
-      EppInput eppInput, SessionMetadata sessionMetadata) {
-    return new DomainUpdateFlowCustomLogic(eppInput, sessionMetadata);
+      EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    return new DomainUpdateFlowCustomLogic(eppInput, sessionMetadata, isSuperuser);
   }
 
   public DomainRenewFlowCustomLogic forDomainRenewFlow(
-      EppInput eppInput, SessionMetadata sessionMetadata) {
-    return new DomainRenewFlowCustomLogic(eppInput, sessionMetadata);
+      EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    return new DomainRenewFlowCustomLogic(eppInput, sessionMetadata, isSuperuser);
   }
 
   public DomainDeleteFlowCustomLogic forDomainDeleteFlow(
-      EppInput eppInput, SessionMetadata sessionMetadata) {
-    return new DomainDeleteFlowCustomLogic(eppInput, sessionMetadata);
+      EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    return new DomainDeleteFlowCustomLogic(eppInput, sessionMetadata, isSuperuser);
   }
 
   public DomainPricingCustomLogic forDomainPricing(
-      EppInput eppInput, SessionMetadata sessionMetadata) {
-    return new DomainPricingCustomLogic(eppInput, sessionMetadata);
+      EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    return new DomainPricingCustomLogic(eppInput, sessionMetadata, isSuperuser);
   }
 }

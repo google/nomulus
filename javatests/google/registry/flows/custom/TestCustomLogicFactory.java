@@ -22,13 +22,13 @@ public class TestCustomLogicFactory extends CustomLogicFactory {
 
   @Override
   public DomainCreateFlowCustomLogic forDomainCreateFlow(
-      EppInput eppInput, SessionMetadata sessionMetadata) {
-    return new TestDomainCreateFlowCustomLogic(eppInput, sessionMetadata);
+      EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    return new TestDomainCreateFlowCustomLogic(eppInput, sessionMetadata, isSuperuser);
   }
 
   @Override
   public DomainPricingCustomLogic forDomainPricing(
-      EppInput eppInput, SessionMetadata sessionMetadata) {
-    return new TestDomainPricingCustomLogic(eppInput, sessionMetadata);
+      EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    return new TestDomainPricingCustomLogic(eppInput, sessionMetadata, isSuperuser);
   }
 }

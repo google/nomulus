@@ -25,10 +25,12 @@ public abstract class BaseFlowCustomLogic {
 
   private final EppInput eppInput;
   private final SessionMetadata sessionMetadata;
+  private final boolean isSuperuser;
 
-  protected BaseFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata) {
+  protected BaseFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
     this.eppInput = eppInput;
     this.sessionMetadata = sessionMetadata;
+    this.isSuperuser = isSuperuser;
   }
 
   protected EppInput getEppInput() {
@@ -37,5 +39,9 @@ public abstract class BaseFlowCustomLogic {
 
   protected SessionMetadata getSessionMetadata() {
     return sessionMetadata;
+  }
+
+  protected boolean isSuperuser() {
+    return isSuperuser;
   }
 }

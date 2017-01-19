@@ -31,8 +31,8 @@ import google.registry.model.eppoutput.EppResponse.ResponseExtension;
  */
 public class DomainInfoFlowCustomLogic extends BaseFlowCustomLogic {
 
-  protected DomainInfoFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata) {
-    super(eppInput, sessionMetadata);
+  protected DomainInfoFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    super(eppInput, sessionMetadata, isSuperuser);
   }
 
   /** A hook that runs before any validation. This is useful to e.g. add allowable extensions. */

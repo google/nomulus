@@ -32,8 +32,8 @@ public class TestDomainPricingCustomLogic extends DomainPricingCustomLogic {
 
   private static final BigDecimal ONE_HUNDRED_BUCKS = Money.of(CurrencyUnit.USD, 100).getAmount();
 
-  protected TestDomainPricingCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata) {
-    super(eppInput, sessionMetadata);
+  protected TestDomainPricingCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    super(eppInput, sessionMetadata, isSuperuser);
   }
 
   @Override

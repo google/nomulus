@@ -308,6 +308,11 @@ public abstract class FlowTestCase<F extends Flow> extends ShardableTestCase {
     return runFlow(CommitMode.LIVE, UserPrivileges.NORMAL);
   }
 
+  /** Shortcut to call {@link #runFlow(CommitMode, UserPrivileges)} as super user and live run. */
+  public EppOutput runFlowSuperuser() throws Exception {
+    return runFlow(CommitMode.LIVE, UserPrivileges.SUPERUSER);
+  }
+
   /** Run a flow, marshal the result to EPP, and assert that the output is as expected. */
   public EppOutput runFlowAssertResponse(
       CommitMode commitMode, UserPrivileges userPrivileges, String xml, String... ignoredPaths)

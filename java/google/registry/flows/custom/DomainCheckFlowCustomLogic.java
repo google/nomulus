@@ -34,8 +34,8 @@ import org.joda.time.DateTime;
  */
 public class DomainCheckFlowCustomLogic extends BaseFlowCustomLogic {
 
-  protected DomainCheckFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata) {
-    super(eppInput, sessionMetadata);
+  protected DomainCheckFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    super(eppInput, sessionMetadata, isSuperuser);
   }
 
   /**

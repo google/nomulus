@@ -201,6 +201,7 @@ public class DomainCreateFlow implements TransactionalFlow {
       validateLaunchCreateNotice(launchCreate.getNotice(), domainLabel, isSuperuser, now);
     }
     boolean isSunriseCreate = hasSignedMarks && SUNRISE_STATES.contains(tldState);
+    String signedMarkId = null;
     // Superusers can create reserved domains, force creations on domains that require a claims
     // notice without specifying a claims key, ignore the registry phase, and override blocks on
     // registering premium domains.
@@ -221,12 +222,12 @@ public class DomainCreateFlow implements TransactionalFlow {
       verifyPremiumNameIsNotBlocked(targetId, now, clientId);
       verifyNoOpenApplications(now);
       verifyIsGaOrIsSpecialCase(tldState, isAnchorTenant);
-    }
-    String signedMarkId = hasSignedMarks
+      signedMarkId = hasSignedMarks
         // If a signed mark was provided, then it must match the desired domain label. Get the mark
         // at this point so that we can verify it before the "after validation" extension point.
         ? tmchUtils.verifySignedMarks(launchCreate.getSignedMarks(), domainLabel, now).getId()
         : null;
+    }
     customLogic.afterValidation(
         DomainCreateFlowCustomLogic.AfterValidationParameters.newBuilder()
             .setDomainName(domainName)

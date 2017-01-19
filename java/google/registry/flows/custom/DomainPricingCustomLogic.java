@@ -33,8 +33,8 @@ import org.joda.time.DateTime;
  */
 public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
-  protected DomainPricingCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata) {
-    super(eppInput, sessionMetadata);
+  protected DomainPricingCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    super(eppInput, sessionMetadata, isSuperuser);
   }
 
   /** A hook that customizes the application update price. */

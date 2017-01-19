@@ -24,8 +24,8 @@ import google.registry.model.poll.PollMessage;
 /** A class to customize {@link DomainCreateFlowCustomLogic} for testing. */
 public class TestDomainCreateFlowCustomLogic extends DomainCreateFlowCustomLogic {
 
-  protected TestDomainCreateFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata) {
-    super(eppInput, sessionMetadata);
+  protected TestDomainCreateFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    super(eppInput, sessionMetadata, isSuperuser);
   }
 
   @Override

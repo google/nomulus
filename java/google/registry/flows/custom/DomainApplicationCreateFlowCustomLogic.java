@@ -35,8 +35,8 @@ import google.registry.model.reporting.HistoryEntry;
 public class DomainApplicationCreateFlowCustomLogic extends BaseFlowCustomLogic {
 
   protected DomainApplicationCreateFlowCustomLogic(
-      EppInput eppInput, SessionMetadata sessionMetadata) {
-    super(eppInput, sessionMetadata);
+      EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
+    super(eppInput, sessionMetadata, isSuperuser);
   }
 
   /** A hook that runs before any validation. This is useful to e.g. add allowable extensions. */
