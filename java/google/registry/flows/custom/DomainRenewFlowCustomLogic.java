@@ -17,6 +17,7 @@ package google.registry.flows.custom;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import google.registry.flows.EppException;
+import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainRenewFlow;
 import google.registry.model.ImmutableObject;
@@ -34,8 +35,8 @@ import org.joda.time.DateTime;
  */
 public class DomainRenewFlowCustomLogic extends BaseFlowCustomLogic {
 
-  protected DomainRenewFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
-    super(eppInput, sessionMetadata, isSuperuser);
+  protected DomainRenewFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    super(eppInput, sessionMetadata, flowMetadata);
   }
 
   /** A hook that runs before any validation. This is useful to e.g. add allowable extensions. */

@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
+import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainCheckFlow;
 import google.registry.model.ImmutableObject;
@@ -34,8 +35,8 @@ import org.joda.time.DateTime;
  */
 public class DomainCheckFlowCustomLogic extends BaseFlowCustomLogic {
 
-  protected DomainCheckFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
-    super(eppInput, sessionMetadata, isSuperuser);
+  protected DomainCheckFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    super(eppInput, sessionMetadata, flowMetadata);
   }
 
   /**

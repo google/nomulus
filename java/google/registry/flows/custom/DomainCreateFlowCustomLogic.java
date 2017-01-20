@@ -19,6 +19,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
+import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainCreateFlow;
 import google.registry.model.ImmutableObject;
@@ -35,8 +36,8 @@ import google.registry.model.reporting.HistoryEntry;
  */
 public class DomainCreateFlowCustomLogic extends BaseFlowCustomLogic {
 
-  protected DomainCreateFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
-    super(eppInput, sessionMetadata, isSuperuser);
+  protected DomainCreateFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    super(eppInput, sessionMetadata, flowMetadata);
   }
 
   /** A hook that runs before any validation. This is useful to e.g. add allowable extensions. */

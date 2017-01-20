@@ -17,6 +17,7 @@ package google.registry.flows.custom;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 
 import google.registry.flows.EppException;
+import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.poll.PollMessage;
@@ -24,8 +25,9 @@ import google.registry.model.poll.PollMessage;
 /** A class to customize {@link DomainCreateFlowCustomLogic} for testing. */
 public class TestDomainCreateFlowCustomLogic extends DomainCreateFlowCustomLogic {
 
-  protected TestDomainCreateFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
-    super(eppInput, sessionMetadata, isSuperuser);
+  protected TestDomainCreateFlowCustomLogic(
+    EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    super(eppInput, sessionMetadata, flowMetadata);
   }
 
   @Override

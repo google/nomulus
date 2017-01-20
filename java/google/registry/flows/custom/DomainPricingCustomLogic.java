@@ -17,6 +17,7 @@ package google.registry.flows.custom;
 import com.google.auto.value.AutoValue;
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
+import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainPricingLogic;
 import google.registry.flows.domain.FeesAndCredits;
@@ -33,8 +34,8 @@ import org.joda.time.DateTime;
  */
 public class DomainPricingCustomLogic extends BaseFlowCustomLogic {
 
-  protected DomainPricingCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
-    super(eppInput, sessionMetadata, isSuperuser);
+  protected DomainPricingCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    super(eppInput, sessionMetadata, flowMetadata);
   }
 
   /** A hook that customizes the application update price. */

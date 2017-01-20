@@ -259,6 +259,13 @@ public class FlowModule {
         .setResultFromCode(Result.Code.SUCCESS);  // Default to success.
   }
 
+  @Provides
+  static FlowMetadata provideFlowMetadata(@Superuser boolean isSuperuser) {
+    return FlowMetadata.newBuilder()
+      .setSuperuser(isSuperuser)
+      .build();
+  }
+
   /** Wrapper class to carry an {@link EppException} to the calling code. */
   static class EppExceptionInProviderException extends RuntimeException {
     EppExceptionInProviderException(EppException exception) {

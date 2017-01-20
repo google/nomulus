@@ -16,6 +16,7 @@ package google.registry.flows.custom;
 
 import dagger.Module;
 import dagger.Provides;
+import google.registry.flows.FlowMetadata;
 import google.registry.flows.FlowModule;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.SessionMetadata;
@@ -27,49 +28,49 @@ public class CustomLogicModule {
 
   @Provides
   static DomainApplicationCreateFlowCustomLogic provideDomainApplicationCreateFlowCustomLogic(
-      CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata, @Superuser boolean isSuperuser) {
-    return factory.forDomainApplicationCreateFlow(eppInput, sessionMetadata, isSuperuser);
+    CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    return factory.forDomainApplicationCreateFlow(eppInput, sessionMetadata, flowMetadata);
   }
 
   @Provides
   static DomainCreateFlowCustomLogic provideDomainCreateFlowCustomLogic(
-      CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata, @Superuser boolean isSuperuser) {
-    return factory.forDomainCreateFlow(eppInput, sessionMetadata, isSuperuser);
+      CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    return factory.forDomainCreateFlow(eppInput, sessionMetadata, flowMetadata);
   }
 
   @Provides
   static DomainCheckFlowCustomLogic provideDomainCheckFlowCustomLogic(
-      CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata, @Superuser boolean isSuperuser) {
-    return factory.forDomainCheckFlow(eppInput, sessionMetadata, isSuperuser);
+      CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    return factory.forDomainCheckFlow(eppInput, sessionMetadata, flowMetadata);
   }
 
   @Provides
   static DomainInfoFlowCustomLogic provideDomainInfoFlowCustomLogic(
-      CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata, @Superuser boolean isSuperuser) {
-    return factory.forDomainInfoFlow(eppInput, sessionMetadata, isSuperuser);
+      CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    return factory.forDomainInfoFlow(eppInput, sessionMetadata, flowMetadata);
   }
 
   @Provides
   static DomainUpdateFlowCustomLogic provideDomainUpdateFlowCustomLogic(
-      CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata, @Superuser boolean isSuperuser) {
-    return factory.forDomainUpdateFlow(eppInput, sessionMetadata, isSuperuser);
+      CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    return factory.forDomainUpdateFlow(eppInput, sessionMetadata, flowMetadata);
   }
 
   @Provides
   static DomainRenewFlowCustomLogic provideDomainRenewFlowCustomLogic(
-      CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata, @Superuser boolean isSuperuser) {
-    return factory.forDomainRenewFlow(eppInput, sessionMetadata, isSuperuser);
+      CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    return factory.forDomainRenewFlow(eppInput, sessionMetadata, flowMetadata);
   }
 
   @Provides
   static DomainDeleteFlowCustomLogic provideDomainDeleteFlowCustomLogic(
-      CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata, @Superuser boolean isSuperuser) {
-    return factory.forDomainDeleteFlow(eppInput, sessionMetadata, isSuperuser);
+      CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    return factory.forDomainDeleteFlow(eppInput, sessionMetadata, flowMetadata);
   }
 
   @Provides
   static DomainPricingCustomLogic provideDomainPricingCustomLogic(
-      CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata, @Superuser boolean isSuperuser) {
-    return factory.forDomainPricing(eppInput, sessionMetadata, isSuperuser);
+      CustomLogicFactory factory, EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    return factory.forDomainPricing(eppInput, sessionMetadata, flowMetadata);
   }
 }

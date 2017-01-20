@@ -17,6 +17,7 @@ package google.registry.flows.custom;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import google.registry.flows.EppException;
+import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainDeleteFlow;
 import google.registry.model.ImmutableObject;
@@ -33,8 +34,8 @@ import google.registry.model.reporting.HistoryEntry;
  */
 public class DomainDeleteFlowCustomLogic extends BaseFlowCustomLogic {
 
-  protected DomainDeleteFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, boolean isSuperuser) {
-    super(eppInput, sessionMetadata, isSuperuser);
+  protected DomainDeleteFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    super(eppInput, sessionMetadata, flowMetadata);
   }
 
   /** A hook that runs before any validation. This is useful to e.g. add allowable extensions. */
