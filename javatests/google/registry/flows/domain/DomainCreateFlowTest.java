@@ -425,7 +425,7 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
   }
 
   @Test
-  public void testSuccess_generalAvailability_ignoresEncodedSignedMarkMismatch() throws Exception {
+  public void testSuccess_generalAvailability_ignoresEncodedSignedMark() throws Exception {
     createTld("tld", TldState.GENERAL_AVAILABILITY);
     clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
     setEppInput("domain_create_registration_encoded_signed_mark.xml");
@@ -437,7 +437,7 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
   }
 
   @Test
-  public void testSuccess_superuser_ignoresEncodedSignedMark() throws Exception {
+  public void testSuccess_superuser_ignoresEncodedSignedMarkMismatch() throws Exception {
     createTld("tld", TldState.GENERAL_AVAILABILITY);
     clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
     setEppInput("domain_create_registration_encoded_signed_mark_mismatched_label.xml");
