@@ -3,11 +3,12 @@ package google.registry.flows;
 import com.google.auto.value.AutoValue;
 import google.registry.model.ImmutableObject;
 
-/** Object to allow setting and retrieving metadata information in flows. */
+/** Object to hold metadata information specific to a particular execution of a flow. */
 @AutoValue
 public abstract class FlowMetadata extends ImmutableObject {
 
-  public abstract boolean superuser();
+  /** True if this flow is being run with superuser privileges */
+  public abstract boolean isSuperuser();
 
   public static Builder newBuilder() {
     return new AutoValue_FlowMetadata.Builder();
@@ -17,7 +18,7 @@ public abstract class FlowMetadata extends ImmutableObject {
   @AutoValue.Builder
   public abstract static class Builder {
 
-    public abstract Builder setSuperuser(boolean superuser);
+    public abstract Builder setSuperuser(boolean isSuperuser);
 
     public abstract FlowMetadata build();
   }
