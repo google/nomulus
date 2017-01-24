@@ -14,6 +14,7 @@
 
 package google.registry.flows.custom;
 
+import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.model.eppinput.EppInput;
 
@@ -22,13 +23,13 @@ public class TestCustomLogicFactory extends CustomLogicFactory {
 
   @Override
   public DomainCreateFlowCustomLogic forDomainCreateFlow(
-      EppInput eppInput, SessionMetadata sessionMetadata) {
-    return new TestDomainCreateFlowCustomLogic(eppInput, sessionMetadata);
+    EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    return new TestDomainCreateFlowCustomLogic(eppInput, sessionMetadata, flowMetadata);
   }
 
   @Override
   public DomainPricingCustomLogic forDomainPricing(
-      EppInput eppInput, SessionMetadata sessionMetadata) {
-    return new TestDomainPricingCustomLogic(eppInput, sessionMetadata);
+      EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    return new TestDomainPricingCustomLogic(eppInput, sessionMetadata, flowMetadata);
   }
 }

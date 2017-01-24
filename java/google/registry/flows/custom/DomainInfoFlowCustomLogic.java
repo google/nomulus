@@ -17,6 +17,7 @@ package google.registry.flows.custom;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import google.registry.flows.EppException;
+import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainInfoFlow;
 import google.registry.model.ImmutableObject;
@@ -31,8 +32,8 @@ import google.registry.model.eppoutput.EppResponse.ResponseExtension;
  */
 public class DomainInfoFlowCustomLogic extends BaseFlowCustomLogic {
 
-  protected DomainInfoFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata) {
-    super(eppInput, sessionMetadata);
+  protected DomainInfoFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    super(eppInput, sessionMetadata, flowMetadata);
   }
 
   /** A hook that runs before any validation. This is useful to e.g. add allowable extensions. */

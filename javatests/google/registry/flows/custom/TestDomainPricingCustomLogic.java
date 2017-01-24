@@ -16,6 +16,7 @@ package google.registry.flows.custom;
 
 
 import google.registry.flows.EppException;
+import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.domain.DomainPricingLogic;
 import google.registry.flows.domain.FeesAndCredits;
@@ -32,8 +33,9 @@ public class TestDomainPricingCustomLogic extends DomainPricingCustomLogic {
 
   private static final BigDecimal ONE_HUNDRED_BUCKS = Money.of(CurrencyUnit.USD, 100).getAmount();
 
-  protected TestDomainPricingCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata) {
-    super(eppInput, sessionMetadata);
+  protected TestDomainPricingCustomLogic(
+    EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
+    super(eppInput, sessionMetadata, flowMetadata);
   }
 
   @Override

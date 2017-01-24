@@ -14,6 +14,7 @@
 
 package google.registry.flows.custom;
 
+import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
 import google.registry.model.eppinput.EppInput;
 
@@ -25,10 +26,12 @@ public abstract class BaseFlowCustomLogic {
 
   private final EppInput eppInput;
   private final SessionMetadata sessionMetadata;
+  private final FlowMetadata flowMetadata;
 
-  protected BaseFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata) {
+  protected BaseFlowCustomLogic(EppInput eppInput, SessionMetadata sessionMetadata, FlowMetadata flowMetadata) {
     this.eppInput = eppInput;
     this.sessionMetadata = sessionMetadata;
+    this.flowMetadata = flowMetadata;
   }
 
   protected EppInput getEppInput() {
@@ -37,5 +40,9 @@ public abstract class BaseFlowCustomLogic {
 
   protected SessionMetadata getSessionMetadata() {
     return sessionMetadata;
+  }
+
+  protected FlowMetadata getFlowMetadata() {
+    return flowMetadata;
   }
 }
