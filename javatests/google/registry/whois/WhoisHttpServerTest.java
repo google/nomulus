@@ -71,6 +71,7 @@ public class WhoisHttpServerTest {
     result.requestPath = WhoisHttpServer.PATH + pathInfo;
     result.response = response;
     result.disclaimer = "Doodle Disclaimer";
+    result.commandFactory = new WhoisCommandFactory();
     return result;
   }
 

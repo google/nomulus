@@ -988,6 +988,13 @@ public final class RegistryConfig {
       return "google.registry.flows.custom.CustomLogicFactory";
     }
 
+    @Provides
+    @Config("whoisCommandFactoryClass")
+    public static String provideWhoisCommandFactoryClass() {
+      // TODO(b/32875427): This will be converted to YAML configuration in a future refactor.
+      return "google.registry.whois.WhoisCommandFactory";
+    }
+
     private static final String RESERVED_TERMS_EXPORT_DISCLAIMER = ""
         + "# This list contains reserve terms for the TLD. Other terms may be reserved\n"
         + "# but not included in this list, including terms EXAMPLE REGISTRY chooses not\n"

@@ -26,6 +26,8 @@ import google.registry.request.Modules.Jackson2Module;
 import google.registry.request.Modules.URLFetchServiceModule;
 import google.registry.util.SystemClock.SystemClockModule;
 import google.registry.util.SystemSleeper.SystemSleeperModule;
+import google.registry.whois.WhoisModule;
+
 import javax.inject.Singleton;
 
 /**
@@ -50,6 +52,7 @@ import javax.inject.Singleton;
     SystemSleeperModule.class,
     URLFetchServiceModule.class,
     VoidDnsWriterModule.class,
+    WhoisModule.class,
   },
   dependencies = {
     HttpRequestFactoryComponent.class,
