@@ -22,8 +22,9 @@ import java.net.InetAddress;
 
 /**
  * A class used to configure whois commands.
- * <p>To add custom commands, extend this class, then configure it in
- * {@link ConfigModule#provideWhoisCommandFactoryClass()}.
+ *
+ * <p>To add custom commands, extend this class, then configure it in {@link
+ * ConfigModule#provideWhoisCommandFactoryClass()}.
  */
 public class WhoisCommandFactory {
 
@@ -31,7 +32,8 @@ public class WhoisCommandFactory {
     return domainLookup(domainName, null);
   }
 
-  public WhoisCommand domainLookup(InternetDomainName domainName, @Nullable InternetDomainName tld) {
+  public WhoisCommand domainLookup(
+      InternetDomainName domainName, @Nullable InternetDomainName tld) {
     return new DomainLookupCommand(domainName, tld);
   }
 
@@ -43,7 +45,8 @@ public class WhoisCommandFactory {
     return nameserverLookupByHost(hostName, null);
   }
 
-  public WhoisCommand nameserverLookupByHost(InternetDomainName hostName, @Nullable InternetDomainName tld) {
+  public WhoisCommand nameserverLookupByHost(
+      InternetDomainName hostName, @Nullable InternetDomainName tld) {
     return new NameserverLookupByHostCommand(hostName, tld);
   }
 

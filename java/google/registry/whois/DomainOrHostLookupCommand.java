@@ -22,14 +22,14 @@ import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.net.InternetDomainName;
-import javax.annotation.Nullable;
 import org.joda.time.DateTime;
+
+import javax.annotation.Nullable;
 
 /** Represents a WHOIS lookup on a domain name (i.e. SLD) or a nameserver. */
 public abstract class DomainOrHostLookupCommand implements WhoisCommand {
 
-  @VisibleForTesting
-  final InternetDomainName domainOrHostName;
+  @VisibleForTesting final InternetDomainName domainOrHostName;
 
   private final String errorPrefix;
 
@@ -58,5 +58,6 @@ public abstract class DomainOrHostLookupCommand implements WhoisCommand {
   }
 
   /** Renders a response record, provided its successfully retrieved datastore entity. */
-  protected abstract Optional<WhoisResponse> getResponse(InternetDomainName domainName, DateTime now);
+  protected abstract Optional<WhoisResponse> getResponse(
+      InternetDomainName domainName, DateTime now);
 }

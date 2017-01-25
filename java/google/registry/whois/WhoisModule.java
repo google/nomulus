@@ -21,9 +21,9 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Reader;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Dagger module for the whois package.
@@ -51,7 +51,7 @@ public final class WhoisModule {
   @Provides
   @Config("whoisCommandFactory")
   static WhoisCommandFactory provideWhoisCommandFactory(
-    @Config("whoisCommandFactoryClass") String factoryClass) {
+      @Config("whoisCommandFactoryClass") String factoryClass) {
     return instantiate(getClassFromString(factoryClass, WhoisCommandFactory.class));
   }
 }

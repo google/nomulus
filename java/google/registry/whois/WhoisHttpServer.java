@@ -104,15 +104,15 @@ public final class WhoisHttpServer implements Runnable {
    * Cross-origin resource sharing (CORS) allowed origins policy.
    *
    * <p>This field specifies the value of the {@code Access-Control-Allow-Origin} response header.
-   * Without this header, other domains such as charlestonroadregistry.com would not be able to
-   * send requests to our WHOIS interface.
+   * Without this header, other domains such as charlestonroadregistry.com would not be able to send
+   * requests to our WHOIS interface.
    *
-   * <p>Our policy shall be to allow requests from pretty much anywhere using a wildcard policy.
-   * The reason this is safe is because our WHOIS interface doesn't allow clients to modify data,
-   * nor does it allow them to fetch user data. Only publicly available information is returned.
+   * <p>Our policy shall be to allow requests from pretty much anywhere using a wildcard policy. The
+   * reason this is safe is because our WHOIS interface doesn't allow clients to modify data, nor
+   * does it allow them to fetch user data. Only publicly available information is returned.
    *
-   * @see <a href="http://www.w3.org/TR/cors/#access-control-allow-origin-response-header">
-   *        W3C CORS § 5.1 Access-Control-Allow-Origin Response Header</a>
+   * @see <a href="http://www.w3.org/TR/cors/#access-control-allow-origin-response-header">W3C CORS
+   *     § 5.1 Access-Control-Allow-Origin Response Header</a>
    */
   private static final String CORS_ALLOW_ORIGIN = "*";
 

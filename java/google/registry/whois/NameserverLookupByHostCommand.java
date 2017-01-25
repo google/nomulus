@@ -19,8 +19,9 @@ import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import com.google.common.base.Optional;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.host.HostResource;
-import javax.annotation.Nullable;
 import org.joda.time.DateTime;
+
+import javax.annotation.Nullable;
 
 /** Represents a WHOIS lookup on a nameserver based on its hostname. */
 public class NameserverLookupByHostCommand extends DomainOrHostLookupCommand {
@@ -35,7 +36,9 @@ public class NameserverLookupByHostCommand extends DomainOrHostLookupCommand {
 
   @Override
   protected Optional<WhoisResponse> getResponse(InternetDomainName hostName, DateTime now) {
-    final HostResource hostResource = loadByForeignKey(HostResource.class, hostName.toString(), now);
-    return Optional.fromNullable(hostResource == null ? null : new NameserverWhoisResponse(hostResource, now));
+    final HostResource hostResource =
+        loadByForeignKey(HostResource.class, hostName.toString(), now);
+    return Optional.fromNullable(
+        hostResource == null ? null : new NameserverWhoisResponse(hostResource, now));
   }
 }
