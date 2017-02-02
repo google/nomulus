@@ -24,6 +24,8 @@ import com.google.appengine.tools.cloudstorage.RetryParams;
 import com.google.appengine.tools.mapreduce.Mapper;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+
+import com.googlecode.objectify.VoidWork;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.gcs.GcsUtils;
@@ -32,7 +34,12 @@ import google.registry.model.host.HostResource;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
+import google.registry.util.FormattingLogger;
 import google.registry.util.SystemClock;
+import google.registry.xjc.JaxbFragment;
+import google.registry.xjc.rdehost.XjcRdeHost;
+import google.registry.xjc.rdehost.XjcRdeHostElement;
+
 import javax.inject.Inject;
 
 /**
@@ -43,6 +50,7 @@ import javax.inject.Inject;
 @Action(path = "/_dr/task/importRdeHosts")
 public class RdeHostImportAction implements Runnable {
 
+  private static final FormattingLogger logger = FormattingLogger.getLoggerForCallerClass();
   private static final GcsService GCS_SERVICE =
       GcsServiceFactory.createGcsService(RetryParams.getDefaultInstance());
 
@@ -77,9 +85,10 @@ public class RdeHostImportAction implements Runnable {
   }
 
   /** Mapper to import hosts from an escrow file. */
-  public static class RdeHostImportMapper extends Mapper<HostResource, Void, Void> {
+  public static class RdeHostImportMapper extends Mapper<JaxbFragment<XjcRdeHostElement>, Void, Void> {
 
     private static final long serialVersionUID = -2898753709127134419L;
+
     private final String importBucketName;
     private transient RdeImportUtils importUtils;
 
@@ -106,8 +115,39 @@ public class RdeHostImportAction implements Runnable {
     }
 
     @Override
-    public void map(HostResource host) {
-      getImportUtils().importHost(host);
+    public void map(JaxbFragment<XjcRdeHostElement> fragment) {
+      final XjcRdeHost xjcHost = fragment.getInstance().getValue();
+      try {
+        logger.infofmt("Converting xml for host %s", xjcHost.getName());
+        // Record number of attempted map operations
+        getContext().incrementCounter("host imports attempted");
+        logger.infofmt("Saving host %s", xjcHost.getName());
+        ofy().transact(new VoidWork() {
+
+          @Override
+          public void vrun() {
+            HostResource host = XjcToHostResourceConverter.convert(xjcHost);
+            getImportUtils().importHost(host);
+          }
+        });
+        // Record number of hosts imported
+        getContext().incrementCounter("hosts saved");
+        logger.infofmt("Host %s was imported successfully", xjcHost.getName());
+      } catch (ResourceExistsException e) {
+        // Record the number of hosts already in the registry
+        getContext().incrementCounter("hosts skipped");
+        logger.infofmt("Host %s already exists", xjcHost.getName());
+      } catch (Exception e) {
+        // Record the number of hosts with unexpected errors
+        getContext().incrementCounter("host import errors");
+        throw new HostImportException(xjcHost.getName(), xjcHost.toString(), e);
+      }
+    }
+  }
+
+  private static class HostImportException extends RuntimeException {
+    HostImportException(String hostName, String xml, Throwable cause) {
+      super(String.format("Error processing host %s; xml=%s", hostName, xml), cause);
     }
   }
 }

@@ -14,24 +14,10 @@
 
 package google.registry.rde.imports;
 
-import com.google.common.base.Charsets;
-import google.registry.model.EppResource;
-import google.registry.xjc.XjcXmlTransformer;
-import google.registry.xml.XmlException;
-import java.io.ByteArrayOutputStream;
-
 /**
- * Base class for Jaxb object to {@link EppResource} converters
+ * Indicates that a resource already exists and was not imported.
  */
-public abstract class XjcToEppResourceConverter {
+public class ResourceExistsException extends RuntimeException {
 
-  protected static byte[] getObjectXml(Object jaxbElement) {
-    try {
-      ByteArrayOutputStream bout = new ByteArrayOutputStream();
-      XjcXmlTransformer.marshalLenient(jaxbElement, bout, Charsets.UTF_8);
-      return bout.toByteArray();
-    } catch (XmlException e) {
-      throw new RuntimeException(e);
-    }
-  }
+  private static final long serialVersionUID = -9180381693364904061L;
 }

@@ -15,19 +15,26 @@
 package google.registry.rde.imports;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.rde.imports.RdeImportTestUtils.checkTrid;
 import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatastoreHelper.getHistoryEntries;
 
 import com.google.appengine.repackaged.com.google.common.net.InetAddresses;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteSource;
+import com.googlecode.objectify.Work;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.ShardableTestCase;
 import google.registry.xjc.rdehost.XjcRdeHost;
 import google.registry.xjc.rdehost.XjcRdeHostElement;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.List;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import org.joda.time.DateTime;
@@ -45,7 +52,7 @@ public class XjcToHostResourceConverterTest extends ShardableTestCase {
 
   private static final ByteSource HOST_XML = RdeImportsTestData.get("host_fragment.xml");
 
-  //List of packages to initialize JAXBContext
+  // List of packages to initialize JAXBContext
   private static final String JAXB_CONTEXT_PACKAGES = Joiner.on(":")
       .join(ImmutableList.of(
           "google.registry.xjc.contact",
@@ -78,8 +85,8 @@ public class XjcToHostResourceConverterTest extends ShardableTestCase {
 
   @Test
   public void testConvertHostResource() throws Exception {
-    XjcRdeHost xjcHost = getHost();
-    HostResource host = XjcToHostResourceConverter.convert(xjcHost);
+    XjcRdeHost xjcHost = loadHostFromRdeXml();
+    HostResource host = convertHostInTransaction(xjcHost);
     assertThat(host.getFullyQualifiedHostName()).isEqualTo("ns1.example1.test");
     assertThat(host.getRepoId()).isEqualTo("Hns1_example1_test-TEST");
     // The imported XML also had LINKED status, but that should have been dropped on import.
@@ -96,7 +103,37 @@ public class XjcToHostResourceConverterTest extends ShardableTestCase {
     assertThat(host.getLastTransferTime()).isEqualTo(DateTime.parse("2008-10-03T09:34:00.0Z"));
   }
 
-  private XjcRdeHost getHost() throws Exception {
+  @Test
+  public void testConvertHostResourceHistoryEntry() throws Exception {
+    XjcRdeHost xjcHost = loadHostFromRdeXml();
+    HostResource host = convertHostInTransaction(xjcHost);
+    List<HistoryEntry> historyEntries = getHistoryEntries(host);
+    assertThat(historyEntries).hasSize(1);
+    HistoryEntry entry = historyEntries.get(0);
+    assertThat(entry.getType()).isEqualTo(HistoryEntry.Type.RDE_IMPORT);
+    assertThat(entry.getClientId()).isEqualTo("RegistrarX");
+    assertThat(entry.getBySuperuser()).isTrue();
+    assertThat(entry.getReason()).isEqualTo("RDE Import");
+    assertThat(entry.getRequestedByRegistrar()).isFalse();
+    checkTrid(entry.getTrid());
+    // check xml against original domain xml
+    try (InputStream ins = new ByteArrayInputStream(entry.getXmlBytes())) {
+      XjcRdeHost unmarshalledXml = ((XjcRdeHostElement) unmarshaller.unmarshal(ins)).getValue();
+      assertThat(unmarshalledXml.getName()).isEqualTo(xjcHost.getName());
+      assertThat(unmarshalledXml.getRoid()).isEqualTo(xjcHost.getRoid());
+    }
+  }
+
+  private static HostResource convertHostInTransaction(final XjcRdeHost xjcHost) {
+    return ofy().transact(new Work<HostResource>() {
+      @Override
+      public HostResource run() {
+        return XjcToHostResourceConverter.convert(xjcHost);
+      }
+    });
+  }
+
+  private XjcRdeHost loadHostFromRdeXml() throws Exception {
     try (InputStream ins = HOST_XML.openStream()) {
       return ((XjcRdeHostElement) unmarshaller.unmarshal(ins)).getValue();
     }

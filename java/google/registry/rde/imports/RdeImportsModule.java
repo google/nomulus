@@ -28,9 +28,11 @@ import javax.servlet.http.HttpServletRequest;
 @Module
 public final class RdeImportsModule {
 
+  static final String PATH = "path";
+
   @Provides
-  @Parameter("path")
+  @Parameter(PATH)
   static String providePath(HttpServletRequest req) {
-    return RequestParameters.extractRequiredParameter(req, "path");
+    return RequestParameters.extractRequiredParameter(req, PATH);
   }
 }

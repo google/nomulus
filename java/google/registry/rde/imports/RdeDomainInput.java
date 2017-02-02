@@ -28,22 +28,22 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.gcs.GcsUtils;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.DomainResource;
 import google.registry.rde.imports.RdeParser.RdeHeader;
 import google.registry.xjc.JaxbFragment;
-import google.registry.xjc.rdecontact.XjcRdeContactElement;
+import google.registry.xjc.rdedomain.XjcRdeDomainElement;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
 /**
- * A MapReduce {@link Input} that imports {@link ContactResource} objects from an escrow file.
+ * A MapReduce {@link Input} that imports {@link DomainResource} objects from an escrow file.
  *
  * <p>If a mapShards parameter has been specified, up to that many readers will be created
  * so that each map shard has one reader. If a mapShards parameter has not been specified, a
  * default number of readers will be created.
  */
-public class RdeContactInput extends Input<JaxbFragment<XjcRdeContactElement>> {
+public class RdeDomainInput extends Input<JaxbFragment<XjcRdeDomainElement>> {
 
   private static final long serialVersionUID = -366966393494008712L;
   private static final GcsService GCS_SERVICE =
@@ -66,7 +66,7 @@ public class RdeContactInput extends Input<JaxbFragment<XjcRdeContactElement>> {
   private final String importBucketName;
   private final String importFileName;
 
-  public RdeContactInput(Optional<Integer> mapShards, String importBucketName,
+  public RdeDomainInput(Optional<Integer> mapShards, String importBucketName,
       String importFileName) {
     this.numReaders = mapShards.or(DEFAULT_READERS);
     this.importBucketName = importBucketName;
@@ -74,28 +74,28 @@ public class RdeContactInput extends Input<JaxbFragment<XjcRdeContactElement>> {
   }
 
   @Override
-  public List<? extends InputReader<JaxbFragment<XjcRdeContactElement>>> createReaders() throws IOException {
+  public List<? extends InputReader<JaxbFragment<XjcRdeDomainElement>>> createReaders() throws IOException {
     int numReaders = this.numReaders;
     RdeHeader header = newParser().getHeader();
-    int numberOfContacts = header.getContactCount().intValue();
-    if (numberOfContacts / numReaders < MINIMUM_RECORDS_PER_READER) {
-      numReaders = divide(numberOfContacts, MINIMUM_RECORDS_PER_READER, FLOOR);
+    int numberOfDomains = header.getDomainCount().intValue();
+    if (numberOfDomains / numReaders < MINIMUM_RECORDS_PER_READER) {
+      numReaders = divide(numberOfDomains, MINIMUM_RECORDS_PER_READER, FLOOR);
       // use at least one reader
       numReaders = Math.max(numReaders, 1);
     }
-    ImmutableList.Builder<RdeContactReader> builder = new ImmutableList.Builder<>();
-    int contactsPerReader =
-        Math.max(MINIMUM_RECORDS_PER_READER, divide(numberOfContacts, numReaders, CEILING));
+    ImmutableList.Builder<RdeDomainReader> builder = new ImmutableList.Builder<>();
+    int domainsPerReader =
+        Math.max(MINIMUM_RECORDS_PER_READER, divide(numberOfDomains, numReaders, CEILING));
     int offset = 0;
     for (int i = 0; i < numReaders; i++) {
-      builder = builder.add(newReader(offset, contactsPerReader));
-      offset += contactsPerReader;
+      builder = builder.add(newReader(offset, domainsPerReader));
+      offset += domainsPerReader;
     }
     return builder.build();
   }
 
-  private RdeContactReader newReader(int offset, int maxResults) {
-    return new RdeContactReader(importBucketName, importFileName, offset, maxResults);
+  private RdeDomainReader newReader(int offset, int maxResults) {
+    return new RdeDomainReader(importBucketName, importFileName, offset, maxResults);
   }
 
   private RdeParser newParser() {

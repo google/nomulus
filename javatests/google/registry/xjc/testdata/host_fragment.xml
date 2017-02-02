@@ -1,0 +1,15 @@
+<rdeHost:host xmlns:rdeHost="urn:ietf:params:xml:ns:rdeHost-1.0">
+  <rdeHost:name>ns1.example1.test</rdeHost:name>
+  <rdeHost:roid>Hns1_example1_test-TEST</rdeHost:roid>
+  <rdeHost:status s="ok"/>
+  <rdeHost:status s="linked"/>
+  <rdeHost:addr ip="v4">192.0.2.2</rdeHost:addr>
+  <rdeHost:addr ip="v4">192.0.2.29</rdeHost:addr>
+  <rdeHost:addr ip="v6">1080:0:0:0:8:800:200C:417A</rdeHost:addr>
+  <rdeHost:clID>RegistrarX</rdeHost:clID>
+  <rdeHost:crRr>RegistrarX</rdeHost:crRr>
+  <rdeHost:crDate>1999-05-08T12:10:00.0Z</rdeHost:crDate>
+  <rdeHost:upRr>RegistrarX</rdeHost:upRr>
+  <rdeHost:upDate>2009-10-03T09:34:00.0Z</rdeHost:upDate>
+  <rdeHost:trDate>2008-10-03T09:34:00.0Z</rdeHost:trDate>
+</rdeHost:host>

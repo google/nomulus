@@ -24,9 +24,11 @@ import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.gcs.GcsUtils;
-import google.registry.model.contact.ContactResource;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.ExceptionRule;
+import google.registry.xjc.JaxbFragment;
+import google.registry.xjc.rdecontact.XjcRdeContact;
+import google.registry.xjc.rdecontact.XjcRdeContactElement;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -71,8 +73,7 @@ public class RdeContactReaderTest {
   public void testZeroOffsetOneResult_readsOne() throws Exception {
     pushToGcs(DEPOSIT_1_CONTACT);
     RdeContactReader reader = getReader(0, 1);
-    ContactResource contact1 = reader.next();
-    checkContact(contact1, "contact1", "contact1-TEST");
+    checkContact(reader.next(), "contact1", "contact1-TEST");
   }
 
   /** Reads at most one at 0 offset 1 maxResults */
@@ -202,10 +203,11 @@ public class RdeContactReaderTest {
   }
 
   /** Verifies that contact id and ROID match expected values */
-  private void checkContact(ContactResource contact, String contactId, String repoId) {
-    assertThat(contact).isNotNull();
-    assertThat(contact.getContactId()).isEqualTo(contactId);
-    assertThat(contact.getRepoId()).isEqualTo(repoId);
+  private void checkContact(JaxbFragment<XjcRdeContactElement> fragment, String contactId, String repoId) throws Exception {
+    assertThat(fragment).isNotNull();
+    XjcRdeContact contact = fragment.getInstance().getValue();
+    assertThat(contact.getId()).isEqualTo(contactId);
+    assertThat(contact.getRoid()).isEqualTo(repoId);
   }
 
   /** Gets a new {@link RdeContactReader} with specified offset and maxResults */

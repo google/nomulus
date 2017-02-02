@@ -19,19 +19,24 @@ import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
 import com.google.appengine.tools.cloudstorage.RetryParams;
 import com.google.appengine.tools.mapreduce.InputReader;
+
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.gcs.GcsUtils;
-import google.registry.model.contact.ContactResource;
 import google.registry.util.FormattingLogger;
+import google.registry.xjc.JaxbFragment;
+import google.registry.xjc.rdecontact.XjcRdeContactElement;
+import google.registry.xml.XmlException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.util.NoSuchElementException;
+
 import javax.annotation.concurrent.NotThreadSafe;
 
 /** Mapreduce {@link InputReader} for reading contacts from escrow files */
 @NotThreadSafe
-public class RdeContactReader extends InputReader<ContactResource> implements Serializable {
+public class RdeContactReader extends InputReader<JaxbFragment<XjcRdeContactElement>> implements Serializable {
 
   private static final long serialVersionUID = -3688793834175577691L;
 
@@ -80,21 +85,24 @@ public class RdeContactReader extends InputReader<ContactResource> implements Se
   }
 
   @Override
-  public ContactResource next() throws IOException {
+  public JaxbFragment<XjcRdeContactElement> next() throws IOException {
     if (count < maxResults) {
       if (parser == null) {
         parser = newParser();
         if (parser.isAtContact()) {
-          count++;
-          return XjcToContactResourceConverter.convertContact(parser.getContact());
+          return readContact();
         }
       }
       if (parser.nextContact()) {
-        count++;
-        return XjcToContactResourceConverter.convertContact(parser.getContact());
+        return readContact();
       }
     }
     throw new NoSuchElementException();
+  }
+
+  private JaxbFragment<XjcRdeContactElement> readContact() {
+    count++;
+    return JaxbFragment.create(new XjcRdeContactElement(parser.getContact()));
   }
 
   @Override

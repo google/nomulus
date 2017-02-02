@@ -173,4 +173,15 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
             return now.isBefore(fki.deletionTime);
           }});
   }
+
+  /** Loads a {@link ForeignKeyIndex} for a specific foreign key, if one exists */
+  @Nullable
+  @SuppressWarnings("unchecked")
+  public static <E extends EppResource> ForeignKeyIndex<E> find(
+      Class<E> clazz, String foreignKey) {
+    return (ForeignKeyIndex<E>) ofy()
+        .load()
+        .type(RESOURCE_CLASS_TO_FKI_CLASS.get(clazz))
+        .id(foreignKey).now();
+  }
 }

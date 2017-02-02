@@ -17,6 +17,7 @@ package google.registry.rde.imports;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.rde.imports.RdeImportTestUtils.checkTrid;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.getHistoryEntries;
 import static google.registry.testing.DatastoreHelper.persistActiveContact;
@@ -117,6 +118,8 @@ public class XjcToDomainResourceConverterTest {
     assertThat(domain.getGracePeriods()).isEmpty();
     assertThat(domain.getLastEppUpdateClientId()).isNull();
     assertThat(domain.getLastEppUpdateTime()).isNull();
+    assertThat(domain.getAutorenewBillingEvent()).isNotNull();
+    assertThat(domain.getAutorenewPollMessage()).isNotNull();
   }
 
   @Test
@@ -128,7 +131,7 @@ public class XjcToDomainResourceConverterTest {
     assertThat(domain.getGracePeriods()).hasSize(1);
     GracePeriod gracePeriod = domain.getGracePeriods().asList().get(0);
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.ADD);
-    assertThat(gracePeriod.getClientId()).isEqualTo(xjcDomain.getCrRr().getClient());
+    assertThat(gracePeriod.getClientId()).isEqualTo("RegistrarX");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(xjcDomain.getCrDate().plusDays(5));
   }
 
@@ -141,7 +144,7 @@ public class XjcToDomainResourceConverterTest {
     assertThat(domain.getGracePeriods()).hasSize(1);
     GracePeriod gracePeriod = domain.getGracePeriods().asList().get(0);
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.AUTO_RENEW);
-    assertThat(gracePeriod.getClientId()).isEqualTo(xjcDomain.getClID());
+    assertThat(gracePeriod.getClientId()).isEqualTo("RegistrarX");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(xjcDomain.getUpDate().plusDays(45));
   }
 
@@ -154,7 +157,7 @@ public class XjcToDomainResourceConverterTest {
     assertThat(domain.getGracePeriods()).hasSize(1);
     GracePeriod gracePeriod = domain.getGracePeriods().asList().get(0);
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.REDEMPTION);
-    assertThat(gracePeriod.getClientId()).isEqualTo(xjcDomain.getClID());
+    assertThat(gracePeriod.getClientId()).isEqualTo("RegistrarX");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(xjcDomain.getUpDate().plusDays(30));
   }
 
@@ -167,7 +170,7 @@ public class XjcToDomainResourceConverterTest {
     assertThat(domain.getGracePeriods()).hasSize(1);
     GracePeriod gracePeriod = domain.getGracePeriods().asList().get(0);
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.RENEW);
-    assertThat(gracePeriod.getClientId()).isEqualTo(xjcDomain.getClID());
+    assertThat(gracePeriod.getClientId()).isEqualTo("RegistrarX");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(xjcDomain.getUpDate().plusDays(5));
   }
 
@@ -180,7 +183,7 @@ public class XjcToDomainResourceConverterTest {
     assertThat(domain.getGracePeriods()).hasSize(1);
     GracePeriod gracePeriod = domain.getGracePeriods().asList().get(0);
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.PENDING_DELETE);
-    assertThat(gracePeriod.getClientId()).isEqualTo(xjcDomain.getClID());
+    assertThat(gracePeriod.getClientId()).isEqualTo("RegistrarX");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(xjcDomain.getUpDate().plusDays(5));
   }
 
@@ -203,7 +206,7 @@ public class XjcToDomainResourceConverterTest {
     assertThat(domain.getGracePeriods()).hasSize(1);
     GracePeriod gracePeriod = domain.getGracePeriods().asList().get(0);
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.TRANSFER);
-    assertThat(gracePeriod.getClientId()).isEqualTo(xjcDomain.getClID());
+    assertThat(gracePeriod.getClientId()).isEqualTo("RegistrarX");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(xjcDomain.getUpDate().plusDays(5));
   }
 
@@ -298,10 +301,11 @@ public class XjcToDomainResourceConverterTest {
     assertThat(historyEntries).hasSize(1);
     HistoryEntry entry = historyEntries.get(0);
     assertThat(entry.getType()).isEqualTo(HistoryEntry.Type.RDE_IMPORT);
-    assertThat(entry.getClientId()).isEqualTo(xjcDomain.getClID());
+    assertThat(entry.getClientId()).isEqualTo("RegistrarX");
     assertThat(entry.getBySuperuser()).isTrue();
     assertThat(entry.getReason()).isEqualTo("RDE Import");
     assertThat(entry.getRequestedByRegistrar()).isFalse();
+    checkTrid(entry.getTrid());
     // check xml against original domain xml
     try (InputStream ins = new ByteArrayInputStream(entry.getXmlBytes())) {
       XjcRdeDomain unmarshalledXml = ((XjcRdeDomainElement) unmarshaller.unmarshal(ins)).getValue();
@@ -318,17 +322,12 @@ public class XjcToDomainResourceConverterTest {
     // First import in a transaction, then verify in another transaction.
     // Ancestor queries don't work within the same transaction.
     DomainResource domain = persistResource(convertDomainInTransaction(xjcDomain));
-    List<HistoryEntry> historyEntries = getHistoryEntries(domain);
-    assertThat(historyEntries).hasSize(1);
-    HistoryEntry entry = historyEntries.get(0);
-    List<BillingEvent.Recurring> billingEvents =
-        ofy().load().type(BillingEvent.Recurring.class).ancestor(entry).list();
-    assertThat(billingEvents).hasSize(1);
-    BillingEvent.Recurring autoRenewEvent = billingEvents.get(0);
+    BillingEvent.Recurring autoRenewEvent =
+        ofy().load().key(domain.getAutorenewBillingEvent()).now();
     assertThat(autoRenewEvent.getReason()).isEqualTo(Reason.RENEW);
     assertThat(autoRenewEvent.getFlags()).isEqualTo(ImmutableSet.of(Flag.AUTO_RENEW));
     assertThat(autoRenewEvent.getTargetId()).isEqualTo(xjcDomain.getRoid());
-    assertThat(autoRenewEvent.getClientId()).isEqualTo(xjcDomain.getClID());
+    assertThat(autoRenewEvent.getClientId()).isEqualTo("RegistrarX");
     assertThat(autoRenewEvent.getEventTime()).isEqualTo(xjcDomain.getExDate());
     assertThat(autoRenewEvent.getRecurrenceEndTime()).isEqualTo(END_OF_TIME);
   }
@@ -341,15 +340,10 @@ public class XjcToDomainResourceConverterTest {
     // First import in a transaction, then verify in another transaction.
     // Ancestor queries don't work within the same transaction.
     DomainResource domain = persistResource(convertDomainInTransaction(xjcDomain));
-    List<HistoryEntry> historyEntries = getHistoryEntries(domain);
-    assertThat(historyEntries).hasSize(1);
-    HistoryEntry entry = historyEntries.get(0);
-    List<PollMessage> pollMessages = ofy().load().type(PollMessage.class).ancestor(entry).list();
-    assertThat(pollMessages).hasSize(1);
-    PollMessage pollMessage = pollMessages.get(0);
+    PollMessage pollMessage = ofy().load().key(domain.getAutorenewPollMessage()).now();
     assertThat(pollMessage).isInstanceOf(PollMessage.Autorenew.class);
     assertThat(((PollMessage.Autorenew) pollMessage).getTargetId()).isEqualTo(xjcDomain.getRoid());
-    assertThat(pollMessage.getClientId()).isEqualTo(xjcDomain.getClID());
+    assertThat(pollMessage.getClientId()).isEqualTo("RegistrarX");
     assertThat(pollMessage.getEventTime()).isEqualTo(xjcDomain.getExDate());
     assertThat(pollMessage.getMsg()).isEqualTo("Domain was auto-renewed.");
   }

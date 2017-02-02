@@ -274,6 +274,12 @@
     <servlet-name>backend-servlet</servlet-name>
     <url-pattern>/_dr/task/importRdeHosts</url-pattern>
   </servlet-mapping>
+  
+  <!-- Mapreduce to import domains from escrow file -->
+  <servlet-mapping>
+    <servlet-name>backend-servlet</servlet-name>
+    <url-pattern>/_dr/task/importRdeDomains</url-pattern>
+  </servlet-mapping>
 
   <!-- Security config -->
   <security-constraint>

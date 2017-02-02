@@ -24,7 +24,7 @@ import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.gcs.GcsUtils;
 import google.registry.util.FormattingLogger;
 import google.registry.xjc.JaxbFragment;
-import google.registry.xjc.rdehost.XjcRdeHostElement;
+import google.registry.xjc.rdedomain.XjcRdeDomainElement;
 import google.registry.xml.XmlException;
 
 import java.io.IOException;
@@ -32,14 +32,10 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.util.NoSuchElementException;
 
-import javax.annotation.concurrent.NotThreadSafe;
+/** Mapreduce {@link InputReader} for reading domains from escrow files */
+public class RdeDomainReader extends InputReader<JaxbFragment<XjcRdeDomainElement>> implements Serializable {
 
-/** Mapreduce {@link InputReader} for reading hosts from escrow files */
-@NotThreadSafe
-public class RdeHostReader extends InputReader<JaxbFragment<XjcRdeHostElement>> implements Serializable {
-
-  private static final long serialVersionUID = 3037264959150412846L;
-
+  private static final long serialVersionUID = -2175777052970160122L;
   private static final FormattingLogger logger = FormattingLogger.getLoggerForCallerClass();
   private static final GcsService GCS_SERVICE =
       GcsServiceFactory.createGcsService(RetryParams.getDefaultInstance());
@@ -65,7 +61,7 @@ public class RdeHostReader extends InputReader<JaxbFragment<XjcRdeHostElement>> 
       // skip the file offset and count
       // if count is greater than 0, the reader has been rehydrated after doing some work.
       // skip any already processed records.
-      parser.skipHosts(offset + count);
+      parser.skipDomains(offset + count);
       return parser;
     } catch (Exception e) {
       logger.severefmt(e, "Error opening rde file %s/%s", importBucketName, importFileName);
@@ -73,7 +69,7 @@ public class RdeHostReader extends InputReader<JaxbFragment<XjcRdeHostElement>> 
     }
   }
 
-  public RdeHostReader(
+  public RdeDomainReader(
       String importBucketName,
       String importFileName,
       int offset,
@@ -85,24 +81,24 @@ public class RdeHostReader extends InputReader<JaxbFragment<XjcRdeHostElement>> 
   }
 
   @Override
-  public JaxbFragment<XjcRdeHostElement> next() throws IOException {
+  public JaxbFragment<XjcRdeDomainElement> next() throws IOException {
     if (count < maxResults) {
       if (parser == null) {
         parser = newParser();
-        if (parser.isAtHost()) {
-          return readHost();
+        if (parser.isAtDomain()) {
+          return readDomain();
         }
       }
-      if (parser.nextHost()) {
-        return readHost();
+      if (parser.nextDomain()) {
+        return readDomain();
       }
     }
     throw new NoSuchElementException();
   }
 
-  private JaxbFragment<XjcRdeHostElement> readHost() {
+  private JaxbFragment<XjcRdeDomainElement> readDomain() {
     count++;
-    return JaxbFragment.create(new XjcRdeHostElement(parser.getHost()));
+    return JaxbFragment.create(new XjcRdeDomainElement(parser.getDomain()));
   }
 
   @Override

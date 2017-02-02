@@ -28,6 +28,8 @@ import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.host.HostResource;
 import google.registry.rde.imports.RdeParser.RdeHeader;
+import google.registry.xjc.JaxbFragment;
+import google.registry.xjc.rdehost.XjcRdeHostElement;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -39,7 +41,7 @@ import java.util.List;
  * so that each map shard has one reader. If a mapShards parameter has not been specified, a
  * default number of readers will be created.
  */
-public class RdeHostInput extends Input<HostResource> {
+public class RdeHostInput extends Input<JaxbFragment<XjcRdeHostElement>> {
 
   private static final long serialVersionUID = 9218225041307602452L;
 
@@ -63,13 +65,6 @@ public class RdeHostInput extends Input<HostResource> {
   private final String importBucketName;
   private final String importFileName;
 
-  /**
-   * Creates a new {@link RdeHostInput}
-   *
-   * @param mapShards Number of readers that should be created
-   * @param importBucketName Name of GCS bucket for escrow file imports
-   * @param importFileName Name of escrow file in GCS
-   */
   public RdeHostInput(Optional<Integer> mapShards, String importBucketName,
       String importFileName) {
     this.numReaders = mapShards.or(DEFAULT_READERS);
@@ -79,7 +74,7 @@ public class RdeHostInput extends Input<HostResource> {
   }
 
   @Override
-  public List<? extends InputReader<HostResource>> createReaders() throws IOException {
+  public List<? extends InputReader<JaxbFragment<XjcRdeHostElement>>> createReaders() throws IOException {
     int numReaders = this.numReaders;
     RdeHeader header = createParser().getHeader();
     int numberOfHosts = header.getHostCount().intValue();
@@ -99,16 +94,10 @@ public class RdeHostInput extends Input<HostResource> {
     return builder.build();
   }
 
-  /**
-   * Creates a new instance of {@link RdeHostReader}
-   */
   private RdeHostReader createReader(int offset, int maxResults) {
     return new RdeHostReader(importBucketName, importFileName, offset, maxResults);
   }
 
-  /**
-   * Creates a new instance of {@link RdeParser}
-   */
   private RdeParser createParser() {
     GcsUtils utils = new GcsUtils(GCS_SERVICE, ConfigModule.provideGcsBufferSize());
     GcsFilename filename = new GcsFilename(importBucketName, importFileName);

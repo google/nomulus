@@ -16,21 +16,29 @@ package google.registry.rde.imports;
 
 import static com.google.common.base.Predicates.equalTo;
 import static com.google.common.base.Predicates.not;
+import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.rde.imports.RdeImportUtils.generateTridForImport;
 
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.net.InetAddresses;
+
+import com.googlecode.objectify.Key;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.xjc.host.XjcHostAddrType;
 import google.registry.xjc.host.XjcHostStatusType;
 import google.registry.xjc.rdehost.XjcRdeHost;
+import google.registry.xjc.rdehost.XjcRdeHostElement;
+import org.joda.time.DateTime;
+
 import java.net.InetAddress;
 
 /** Utility class that converts an {@link XjcRdeHost} into a {@link HostResource}. */
-public class XjcToHostResourceConverter {
+public class XjcToHostResourceConverter extends XjcToEppResourceConverter {
 
   private static final Function<XjcHostStatusType, StatusValue> STATUS_VALUE_CONVERTER =
       new Function<XjcHostStatusType, StatusValue>() {
@@ -49,6 +57,19 @@ public class XjcToHostResourceConverter {
       };
 
   static HostResource convert(XjcRdeHost host) {
+    // First create and save history entry
+    ofy().save().entity(
+        new HistoryEntry.Builder()
+            .setType(HistoryEntry.Type.RDE_IMPORT)
+            .setClientId(host.getClID())
+            .setTrid(generateTridForImport())
+            .setModificationTime(DateTime.now())
+            .setXmlBytes(getObjectXml(new XjcRdeHostElement(host)))
+            .setBySuperuser(true)
+            .setReason("RDE Import")
+            .setRequestedByRegistrar(false)
+            .setParent(Key.create(null, HostResource.class, host.getRoid()))
+            .build());
     return new HostResource.Builder()
         .setFullyQualifiedHostName(host.getName())
         .setRepoId(host.getRoid())

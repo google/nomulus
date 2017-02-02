@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.transform;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.rde.imports.RdeImportUtils.generateTridForImport;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -26,6 +27,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.net.InternetDomainName;
+
 import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
@@ -38,7 +40,6 @@ import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.poll.PollMessage;
@@ -120,14 +121,12 @@ final class XjcToDomainResourceConverter extends XjcToEppResourceConverter {
 
     @Override
     public GracePeriod apply(XjcRgpStatusType gracePeriodStatus) {
-      // TODO: (wolfgang) address these items in code review:
-      // verify that this logic is correct
       switch (gracePeriodStatus.getS()) {
         case ADD_PERIOD:
           return GracePeriod.createWithoutBillingEvent(
               GracePeriodStatus.ADD,
               domain.getCrDate().plus(this.tld.getAddGracePeriodLength()),
-              domain.getCrRr().getClient());
+              domain.getCrRr().getValue());
         case AUTO_RENEW_PERIOD:
           return GracePeriod.createForRecurring(
               GracePeriodStatus.AUTO_RENEW,
@@ -180,6 +179,8 @@ final class XjcToDomainResourceConverter extends XjcToEppResourceConverter {
             .setCurrentSponsorClientId(domain.getClID())
             .setCreationClientId(domain.getCrRr().getValue())
             .setCreationTime(domain.getCrDate())
+            .setAutorenewPollMessage(Key.create(pollMessage))
+            .setAutorenewBillingEvent(Key.create(autoRenewBillingEvent))
             .setRegistrationExpirationTime(domain.getExDate())
             .setLastEppUpdateTime(domain.getUpDate())
             .setLastEppUpdateClientId(domain.getUpRr() == null ? null : domain.getUpRr().getValue())
@@ -235,7 +236,7 @@ final class XjcToDomainResourceConverter extends XjcToEppResourceConverter {
         new HistoryEntry.Builder()
             .setType(HistoryEntry.Type.RDE_IMPORT)
             .setClientId(domain.getClID())
-            .setTrid(Trid.create(null))
+            .setTrid(generateTridForImport())
             .setModificationTime(DateTime.now())
             .setXmlBytes(getObjectXml(element))
             .setBySuperuser(true)

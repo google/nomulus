@@ -16,11 +16,15 @@ package google.registry.rde.imports;
 
 import static com.google.common.base.Predicates.equalTo;
 import static com.google.common.base.Predicates.not;
+import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.rde.imports.RdeImportUtils.generateTridForImport;
 
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+
+import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactPhoneNumber;
 import google.registry.model.contact.ContactResource;
@@ -28,6 +32,7 @@ import google.registry.model.contact.Disclose;
 import google.registry.model.contact.Disclose.PostalInfoChoice;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.util.XmlToEnumMapper;
@@ -39,11 +44,13 @@ import google.registry.xjc.contact.XjcContactPostalInfoEnumType;
 import google.registry.xjc.contact.XjcContactPostalInfoType;
 import google.registry.xjc.contact.XjcContactStatusType;
 import google.registry.xjc.rdecontact.XjcRdeContact;
+import google.registry.xjc.rdecontact.XjcRdeContactElement;
 import google.registry.xjc.rdecontact.XjcRdeContactTransferDataType;
+
 import javax.annotation.Nullable;
 
 /** Utility class that converts an {@link XjcRdeContact} into a {@link ContactResource}. */
-final class XjcToContactResourceConverter {
+final class XjcToContactResourceConverter extends XjcToEppResourceConverter {
 
   private static final XmlToEnumMapper<PostalInfo.Type> POSTAL_INFO_TYPE_MAPPER =
       XmlToEnumMapper.create(PostalInfo.Type.values());
@@ -68,6 +75,18 @@ final class XjcToContactResourceConverter {
 
   /** Converts {@link XjcRdeContact} to {@link ContactResource}. */
   static ContactResource convertContact(XjcRdeContact contact) {
+    ofy().save().entity(
+        new HistoryEntry.Builder()
+            .setType(HistoryEntry.Type.RDE_IMPORT)
+            .setClientId(contact.getClID())
+            .setTrid(generateTridForImport())
+            .setModificationTime(ofy().getTransactionTime())
+            .setXmlBytes(getObjectXml(new XjcRdeContactElement(contact)))
+            .setBySuperuser(true)
+            .setReason("RDE Import")
+            .setRequestedByRegistrar(false)
+            .setParent(Key.create(null, ContactResource.class, contact.getRoid()))
+            .build());
     return new ContactResource.Builder()
         .setRepoId(contact.getRoid())
         .setStatusValues(
