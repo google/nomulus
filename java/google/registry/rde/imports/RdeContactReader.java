@@ -101,13 +101,8 @@ public class RdeContactReader extends InputReader<JaxbFragment<XjcRdeContactElem
   }
 
   private JaxbFragment<XjcRdeContactElement> readContact() {
-    try {
-      count++;
-      return JaxbFragment.create(new XjcRdeContactElement(parser.getContact()));
-    } catch(XmlException e) {
-      // Fail fast on any error parsing the xml
-      throw new RuntimeException(e);
-    }
+    count++;
+    return JaxbFragment.create(new XjcRdeContactElement(parser.getContact()));
   }
 
   @Override

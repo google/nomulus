@@ -101,13 +101,8 @@ public class RdeHostReader extends InputReader<JaxbFragment<XjcRdeHostElement>> 
   }
 
   private JaxbFragment<XjcRdeHostElement> readHost() {
-    try {
-      count++;
-      return JaxbFragment.create(new XjcRdeHostElement(parser.getHost()));
-    } catch (XmlException e) {
-      // Fail fast on any error parsing the xml
-      throw new RuntimeException(e);
-    }
+    count++;
+    return JaxbFragment.create(new XjcRdeHostElement(parser.getHost()));
   }
 
   @Override

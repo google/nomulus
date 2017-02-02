@@ -41,7 +41,7 @@ public class JaxbFragment<T> implements Serializable {
   /**
    * Stores a JAXB element in a {@link JaxbFragment}
    */
-  public static <T> JaxbFragment<T> create(T object) throws XmlException {
+  public static <T> JaxbFragment<T> create(T object) {
     JaxbFragment<T> fragment = new JaxbFragment<>();
     fragment.instance = object;
     return fragment;

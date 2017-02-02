@@ -209,14 +209,6 @@ public class RdeHostReaderTest {
     assertThat(host.getRoid()).isEqualTo(repoId);
   }
 
-//  /** Verifies that contact id and ROID match expected values */
-//  private void checkContact(JaxbFragment<XjcRdeContactElement> fragment, String contactId, String repoId) throws Exception {
-//    assertThat(fragment).isNotNull();
-//    XjcRdeContact contact = fragment.getInstance().getValue();
-//    assertThat(contact.getId()).isEqualTo(contactId);
-//    assertThat(contact.getRoid()).isEqualTo(repoId);
-//  }
-
   /** Gets a new {@link RdeHostReader} with specified offset and maxResults */
   private RdeHostReader getReader(int offset, int maxResults) throws Exception {
     RdeHostReader reader =

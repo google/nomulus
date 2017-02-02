@@ -97,13 +97,8 @@ public class RdeDomainReader extends InputReader<JaxbFragment<XjcRdeDomainElemen
   }
 
   private JaxbFragment<XjcRdeDomainElement> readDomain() {
-    try {
-      count++;
-      return JaxbFragment.create(new XjcRdeDomainElement(parser.getDomain()));
-    } catch (XmlException e) {
-      // This won't ever happen
-      throw new RuntimeException(e);
-    }
+    count++;
+    return JaxbFragment.create(new XjcRdeDomainElement(parser.getDomain()));
   }
 
   @Override
