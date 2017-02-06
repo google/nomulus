@@ -15,7 +15,10 @@
 package google.registry.rde.imports;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.dns.DnsConstants.DNS_TARGET_NAME_PARAM;
+import static google.registry.dns.DnsConstants.DNS_TARGET_TYPE_PARAM;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.request.RequestParameters.PARAM_TLD;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.getHistoryEntries;
 import static google.registry.testing.DatastoreHelper.newDomainResource;
@@ -23,20 +26,26 @@ import static google.registry.testing.DatastoreHelper.persistActiveContact;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.DatastoreHelper.persistSimpleResource;
 
+import com.google.appengine.api.taskqueue.TaskHandle;
+import com.google.appengine.api.taskqueue.TaskOptions.Method;
 import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
 import com.google.appengine.tools.cloudstorage.RetryParams;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.ConfigModule;
+import google.registry.dns.DnsConstants;
+import google.registry.dns.DnsQueue;
 import google.registry.gcs.GcsUtils;
 import google.registry.mapreduce.MapreduceRunner;
 import google.registry.model.domain.DomainResource;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.mapreduce.MapreduceTestCase;
@@ -44,7 +53,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.Map;
+
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
+import org.joda.time.Seconds;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -124,6 +137,28 @@ public class RdeDomainImportActionTest extends MapreduceTestCase<RdeDomainImport
     List<HistoryEntry> historyEntries = getHistoryEntries(domain);
     assertThat(historyEntries).hasSize(1);
     checkHistoryEntry(historyEntries.get(0), domain);
+  }
+
+  /** Ensures that dns publishing is kicked off on domain import */
+  @Test
+  public void test_mapreducePublishesToDns() throws Exception {
+    pushToGcs(DEPOSIT_1_DOMAIN);
+    runMapreduce();
+    DnsQueue dnsQueue = DnsQueue.create();
+    List<TaskHandle> tasks = dnsQueue.leaseTasks(Duration.standardSeconds(1));
+    assertThat(tasks.size()).isEqualTo(1);
+    TaskHandle dnsTask = tasks.get(0);
+    Map<String, String> params = ImmutableMap.copyOf(dnsTask.extractParams());
+    assertThat(params.get(RequestParameters.PARAM_TLD)).isEqualTo("test");
+    assertThat(params.get(DnsConstants.DNS_TARGET_TYPE_PARAM)).isEqualTo("DOMAIN");
+    assertThat(params.get(DnsConstants.DNS_TARGET_NAME_PARAM)).isEqualTo("example1.test");
+
+    /*
+             .method(Method.PULL)
+        .param(DNS_TARGET_TYPE_PARAM, targetType.toString())
+        .param(DNS_TARGET_NAME_PARAM, targetName)
+        .param(PARAM_TLD, tld));
+     */
   }
 
   /** Verify history entry fields are correct */
