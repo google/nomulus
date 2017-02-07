@@ -63,6 +63,7 @@ import google.registry.xjc.secdns.XjcSecdnsDsDataType;
 import org.joda.time.DateTime;
 
 import java.security.NoSuchAlgorithmException;
+import java.security.ProviderException;
 import java.security.SecureRandom;
 import java.util.Random;
 
@@ -76,8 +77,7 @@ final class XjcToDomainResourceConverter extends XjcToEppResourceConverter {
     try {
       return SecureRandom.getInstance("NativePRNG");
     } catch (NoSuchAlgorithmException e) {
-      // In the case that secure random isn't available, use insecure random instead.
-      return new Random();
+      throw new ProviderException(e);
     }
   }
 
