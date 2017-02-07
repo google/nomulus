@@ -152,13 +152,6 @@ public class RdeDomainImportActionTest extends MapreduceTestCase<RdeDomainImport
     assertThat(params.get(RequestParameters.PARAM_TLD)).isEqualTo("test");
     assertThat(params.get(DnsConstants.DNS_TARGET_TYPE_PARAM)).isEqualTo("DOMAIN");
     assertThat(params.get(DnsConstants.DNS_TARGET_NAME_PARAM)).isEqualTo("example1.test");
-
-    /*
-             .method(Method.PULL)
-        .param(DNS_TARGET_TYPE_PARAM, targetType.toString())
-        .param(DNS_TARGET_NAME_PARAM, targetName)
-        .param(PARAM_TLD, tld));
-     */
   }
 
   /** Verify history entry fields are correct */
