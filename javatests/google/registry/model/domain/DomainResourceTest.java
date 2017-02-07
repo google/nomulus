@@ -422,4 +422,18 @@ public class DomainResourceTest extends EntityTestCase {
   public void testToHydratedString_notCircular() {
     domain.toHydratedString();  // If there are circular references, this will overflow the stack.
   }
+
+  @Test
+  public void testFailure_uppercaseDomainName() {
+    thrown.expect(
+        IllegalArgumentException.class, "Domain name must be in puny-coded, lower-case form");
+    domain.asBuilder().setFullyQualifiedDomainName("AAA.BBB");
+  }
+
+  @Test
+  public void testFailure_utf8DomainName() {
+    thrown.expect(
+        IllegalArgumentException.class, "Domain name must be in puny-coded, lower-case form");
+    domain.asBuilder().setFullyQualifiedDomainName("みんな.みんな");
+  }
 }

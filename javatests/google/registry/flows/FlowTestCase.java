@@ -24,7 +24,6 @@ import static google.registry.testing.DatastoreHelper.getPollMessages;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static google.registry.xml.XmlTestUtils.assertXmlEquals;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Arrays.asList;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.base.Function;
@@ -33,6 +32,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.common.collect.ObjectArrays;
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
 import google.registry.flows.EppTestComponent.FakesAndMocksModule;
 import google.registry.flows.picker.FlowPicker;
@@ -268,7 +268,7 @@ public abstract class FlowTestCase<F extends Flow> extends ShardableTestCase {
           }};
     // Ordering is irrelevant but duplicates should be considered independently.
     assertThat(FluentIterable.from(pollMessages).transform(idStripper))
-        .containsExactlyElementsIn(FluentIterable.from(asList(expected)).transform(idStripper));
+        .containsExactlyElementsIn(FluentIterable.from(expected).transform(idStripper));
   }
 
   private EppOutput runFlowInternal(CommitMode commitMode, UserPrivileges userPrivileges)
@@ -318,10 +318,7 @@ public abstract class FlowTestCase<F extends Flow> extends ShardableTestCase {
       CommitMode commitMode, UserPrivileges userPrivileges, String xml, String... ignoredPaths)
       throws Exception {
     // Always ignore the server trid, since it's generated and meaningless to flow correctness.
-    // TODO(user): Remove asList()
-    String[] ignoredPathsPlusTrid = FluentIterable.from(asList(ignoredPaths))
-        .append("epp.response.trID.svTRID")
-        .toArray(String.class);
+    String[] ignoredPathsPlusTrid = ObjectArrays.concat(ignoredPaths, "epp.response.trID.svTRID");
     EppOutput output = runFlowInternal(commitMode, userPrivileges);
     if (output.isResponse()) {
       assertThat(output.isSuccess()).isTrue();

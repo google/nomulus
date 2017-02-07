@@ -59,7 +59,7 @@ public class NameserverWhoisResponseTest {
     createTld("tld");
 
     hostResource1 = new HostResource.Builder()
-        .setFullyQualifiedHostName("NS1.EXAMPLE.tld")
+        .setFullyQualifiedHostName("ns1.example.tld")
         .setCurrentSponsorClientId("example")
         .setInetAddresses(ImmutableSet.of(
             InetAddresses.forString("192.0.2.123"),
@@ -68,7 +68,7 @@ public class NameserverWhoisResponseTest {
         .build();
 
     hostResource2 = new HostResource.Builder()
-        .setFullyQualifiedHostName("NS2.EXAMPLE.tld")
+        .setFullyQualifiedHostName("ns2.example.tld")
         .setCurrentSponsorClientId("example")
         .setInetAddresses(ImmutableSet.of(
             InetAddresses.forString("192.0.2.123"),

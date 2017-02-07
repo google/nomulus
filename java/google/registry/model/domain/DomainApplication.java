@@ -169,6 +169,8 @@ public class DomainApplication extends DomainBase {
     return getRepoId();
   }
 
+  /** This is a no-op and should never be called on an application explicitly. */
+  @Deprecated
   @Override
   public DomainApplication cloneProjectedAtTime(DateTime now) {
     // Applications have no grace periods and can't be transferred, so there is nothing to project.

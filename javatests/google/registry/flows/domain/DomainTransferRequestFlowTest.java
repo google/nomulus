@@ -28,7 +28,6 @@ import static google.registry.testing.GenericEppResourceSubject.assertAboutEppRe
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.testing.HostResourceSubject.assertAboutHosts;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static java.util.Arrays.asList;
 import static org.joda.money.CurrencyUnit.EUR;
 import static org.joda.money.CurrencyUnit.USD;
 
@@ -212,7 +211,7 @@ public class DomainTransferRequestFlowTest
         .setPeriodYears(registrationYears)
         .setParent(historyEntryTransferRequest)
         .build();
-    assertBillingEvents(FluentIterable.from(asList(extraExpectedBillingEvents))
+    assertBillingEvents(FluentIterable.from(extraExpectedBillingEvents)
         .transform(new Function<BillingEvent.Cancellation.Builder, BillingEvent>() {
           @Override
           public BillingEvent apply(Builder builder) {

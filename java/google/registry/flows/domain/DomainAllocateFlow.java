@@ -41,6 +41,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
 import com.googlecode.objectify.Key;
+import dagger.Lazy;
 import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.AuthorizationErrorException;
@@ -109,6 +110,7 @@ public class DomainAllocateFlow implements TransactionalFlow {
   @Inject @Superuser boolean isSuperuser;
   @Inject HistoryEntry.Builder historyBuilder;
   @Inject EppInput eppInput;
+  @Inject Lazy<DnsQueue> dnsQueue;
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainPricingLogic pricingLogic;
   @Inject DomainAllocateFlow() {}
@@ -360,7 +362,7 @@ public class DomainAllocateFlow implements TransactionalFlow {
 
   private void enqueueTasks(AllocateCreateExtension allocateCreate, DomainResource newDomain) {
     if (newDomain.shouldPublishToDns()) {
-      DnsQueue.create().addDomainRefreshTask(newDomain.getFullyQualifiedDomainName());
+      dnsQueue.get().addDomainRefreshTask(newDomain.getFullyQualifiedDomainName());
     }
     if (allocateCreate.getSmdId() != null || allocateCreate.getNotice() != null) {
       LordnTask.enqueueDomainResourceTask(newDomain);

@@ -14,6 +14,7 @@
 
 package google.registry.tools;
 
+import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -21,7 +22,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.beust.jcommander.JCommander;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ObjectArrays;
 import com.google.common.io.Files;
 import com.google.common.reflect.TypeToken;
@@ -114,7 +114,7 @@ public abstract class CommandTestCase<C extends Command> {
 
   /** Writes the data to a temporary file and then returns a path to the file. */
   String writeToNamedTmpFile(String filename, Iterable<String> data) throws IOException {
-    return writeToNamedTmpFile(filename, FluentIterable.from(data).toArray(String.class));
+    return writeToNamedTmpFile(filename, toArray(data, String.class));
   }
 
   /** Writes the data to a temporary file and then returns a path to the file. */
@@ -129,7 +129,7 @@ public abstract class CommandTestCase<C extends Command> {
 
   /** Writes the data to a temporary file and then returns a path to the file. */
   String writeToTmpFile(Iterable<String> data) throws IOException {
-    return writeToNamedTmpFile("tmp_file", FluentIterable.from(data).toArray(String.class));
+    return writeToNamedTmpFile("tmp_file", toArray(data, String.class));
   }
 
   /** Returns a path to a known good certificate file. */

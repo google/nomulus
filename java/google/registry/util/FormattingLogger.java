@@ -14,8 +14,6 @@
 
 package google.registry.util;
 
-import static java.util.Arrays.asList;
-
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import java.util.logging.Handler;
@@ -38,7 +36,7 @@ public class FormattingLogger {
 
   private void log(Level level, Throwable cause, String msg) {
     StackTraceElement callerFrame = FluentIterable
-        .from(asList(new Exception().getStackTrace()))
+        .from(new Exception().getStackTrace())
         .firstMatch(new Predicate<StackTraceElement>() {
             @Override
             public boolean apply(StackTraceElement frame) {

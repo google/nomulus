@@ -264,4 +264,18 @@ public class HostResourceTest extends EntityTestCase {
     // If there are circular references, this will overflow the stack.
     hostResource.toHydratedString();
   }
+
+  @Test
+  public void testFailure_uppercaseHostName() {
+    thrown.expect(
+        IllegalArgumentException.class, "Host name must be in puny-coded, lower-case form");
+    hostResource.asBuilder().setFullyQualifiedHostName("AAA.BBB.CCC");
+  }
+
+  @Test
+  public void testFailure_utf8HostName() {
+    thrown.expect(
+        IllegalArgumentException.class, "Host name must be in puny-coded, lower-case form");
+    hostResource.asBuilder().setFullyQualifiedHostName("みんな.みんな.みんな");
+  }
 }

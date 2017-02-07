@@ -29,7 +29,6 @@ import static google.registry.testing.DomainResourceSubject.assertAboutDomains;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.testing.HostResourceSubject.assertAboutHosts;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static java.util.Arrays.asList;
 import static org.joda.money.CurrencyUnit.USD;
 
 import com.google.common.base.Function;
@@ -177,7 +176,7 @@ public class DomainTransferApproveFlowTest
         .build();
     assertBillingEventsForResource(
         domain,
-        FluentIterable.from(asList(expectedCancellationBillingEvents))
+        FluentIterable.from(expectedCancellationBillingEvents)
             .transform(new Function<BillingEvent.Cancellation.Builder, BillingEvent>() {
               @Override
               public Cancellation apply(Builder builder) {

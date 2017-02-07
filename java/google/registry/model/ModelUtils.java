@@ -21,7 +21,6 @@ import static com.google.common.collect.Iterables.all;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Maps.transformValues;
 import static com.google.common.collect.Sets.newLinkedHashSet;
-import static java.util.Arrays.asList;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
@@ -93,7 +92,7 @@ public class ModelUtils {
     Iterable<?> body;
     if (clazz.isEnum()) {
       stringBuilder.append("enum ");
-      body = FluentIterable.from(asList(clazz.getEnumConstants()));
+      body = FluentIterable.from(clazz.getEnumConstants());
     } else {
       stringBuilder.append("class ");
       body = FluentIterable.from(getAllFields(clazz).values())

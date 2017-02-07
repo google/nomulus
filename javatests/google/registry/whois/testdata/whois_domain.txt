@@ -1,4 +1,4 @@
-Domain Name: EXAMPLE.tld
+Domain Name: example.tld
 Domain ID: 3-TLD
 WHOIS Server: whois.nic.fakewhois.example
 Referral URL: http://www.referral.example/path
@@ -52,8 +52,8 @@ Tech Phone Ext: 1234
 Tech Fax: +1.5555551213
 Tech Fax Ext: 93
 Tech Email: EMAIL@EXAMPLE.tld
-Name Server: NS01.EXAMPLEREGISTRAR.tld
-Name Server: NS02.EXAMPLEREGISTRAR.tld
+Name Server: ns01.exampleregistrar.tld
+Name Server: ns02.exampleregistrar.tld
 DNSSEC: signedDelegation
 >>> Last update of WHOIS database: 2009-05-29T20:15:00Z <<<
 

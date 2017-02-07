@@ -71,12 +71,12 @@ public class DomainWhoisResponseTest {
     createTld("tld");
 
     hostResource1 = persistResource(new HostResource.Builder()
-        .setFullyQualifiedHostName("NS01.EXAMPLEREGISTRAR.tld")
+        .setFullyQualifiedHostName("ns01.exampleregistrar.tld")
         .setRepoId("1-TLD")
         .build());
 
     hostResource2 = persistResource(new HostResource.Builder()
-        .setFullyQualifiedHostName("NS02.EXAMPLEREGISTRAR.tld")
+        .setFullyQualifiedHostName("ns02.exampleregistrar.tld")
         .setRepoId("2-TLD")
         .build());
 
@@ -212,7 +212,7 @@ public class DomainWhoisResponseTest {
     Key<ContactResource> techResourceKey = Key.create(techContact);
 
     domainResource = persistResource(new DomainResource.Builder()
-        .setFullyQualifiedDomainName("EXAMPLE.tld")
+        .setFullyQualifiedDomainName("example.tld")
         .setRepoId("3-TLD")
         .setLastEppUpdateTime(DateTime.parse("2009-05-29T20:13:00Z"))
         .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))

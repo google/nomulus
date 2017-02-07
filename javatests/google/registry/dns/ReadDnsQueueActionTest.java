@@ -86,8 +86,7 @@ public class ReadDnsQueueActionTest {
     clock.setTo(DateTime.now(DateTimeZone.UTC));
     createTlds("com", "net", "example");
     persistResource(Registry.get("example").asBuilder().setTldType(TldType.TEST).build());
-    dnsQueue = new DnsQueue();
-    dnsQueue.queue = getQueue(DNS_PULL_QUEUE_NAME);
+    dnsQueue = DnsQueue.create();
   }
 
   private void run(boolean keepTasks) throws Exception {
@@ -132,7 +131,7 @@ public class ReadDnsQueueActionTest {
     dnsQueue.addDomainRefreshTask("domain.net");
     dnsQueue.addDomainRefreshTask("domain.example");
     run(false);
-    assertNoTasksEnqueued(DnsConstants.DNS_PULL_QUEUE_NAME);
+    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
     assertTasksEnqueued(
         DNS_PUBLISH_PUSH_QUEUE_NAME,
         new TaskMatcher().method("POST"),
@@ -146,7 +145,7 @@ public class ReadDnsQueueActionTest {
     dnsQueue.addDomainRefreshTask("domain.net");
     dnsQueue.addDomainRefreshTask("domain.example");
     run(false);
-    assertNoTasksEnqueued(DnsConstants.DNS_PULL_QUEUE_NAME);
+    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
     assertTldsEnqueuedInPushQueue("com", "net", "example");
   }
 
@@ -157,7 +156,7 @@ public class ReadDnsQueueActionTest {
     dnsQueue.addDomainRefreshTask("domain.example");
     run(true);
     assertTasksEnqueued(
-        DnsConstants.DNS_PULL_QUEUE_NAME,
+        DNS_PULL_QUEUE_NAME,
         new TaskMatcher().payload("Target-Type=DOMAIN&Target-Name=domain.com&tld=com"),
         new TaskMatcher().payload("Target-Type=DOMAIN&Target-Name=domain.net&tld=net"),
         new TaskMatcher().payload("Target-Type=DOMAIN&Target-Name=domain.example&tld=example"));
@@ -171,7 +170,7 @@ public class ReadDnsQueueActionTest {
     dnsQueue.addDomainRefreshTask("domain.net");
     dnsQueue.addDomainRefreshTask("domain.example");
     run(false);
-    assertTasksEnqueued(DnsConstants.DNS_PULL_QUEUE_NAME, new TaskMatcher());
+    assertTasksEnqueued(DNS_PULL_QUEUE_NAME, new TaskMatcher());
     assertTldsEnqueuedInPushQueue("com", "example");
   }
 
@@ -181,7 +180,7 @@ public class ReadDnsQueueActionTest {
     dnsQueue.addDomainRefreshTask("domain.net");
     dnsQueue.addZoneRefreshTask("example");
     run(false);
-    assertNoTasksEnqueued(DnsConstants.DNS_PULL_QUEUE_NAME);
+    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
     assertTasksEnqueued(DNS_PUBLISH_PUSH_QUEUE_NAME,
         new TaskMatcher()
             .url(PublishDnsUpdatesAction.PATH)
@@ -213,11 +212,13 @@ public class ReadDnsQueueActionTest {
               task.param("domains", domainName);
               break;
             case 1:
-              dnsQueue.queue.add(createRefreshTask("ns1." + domainName, TargetType.HOST));
+              getQueue(DNS_PULL_QUEUE_NAME)
+                  .add(createRefreshTask("ns1." + domainName, TargetType.HOST));
               task.param("hosts", "ns1." + domainName);
               break;
             case 2:
-              dnsQueue.queue.add(createRefreshTask("ns2." + domainName, TargetType.HOST));
+              getQueue(DNS_PULL_QUEUE_NAME)
+                  .add(createRefreshTask("ns2." + domainName, TargetType.HOST));
               task.param("hosts", "ns2." + domainName);
               break;
           }
@@ -231,7 +232,7 @@ public class ReadDnsQueueActionTest {
       }
     }
     run(false);
-    assertNoTasksEnqueued(DnsConstants.DNS_PULL_QUEUE_NAME);
+    assertNoTasksEnqueued(DNS_PULL_QUEUE_NAME);
     assertTasksEnqueued(DNS_PUBLISH_PUSH_QUEUE_NAME, expectedTasks);
   }
 }

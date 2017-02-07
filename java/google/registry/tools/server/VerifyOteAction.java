@@ -21,7 +21,6 @@ import static google.registry.flows.picker.FlowPicker.getFlowClass;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.DomainNameUtils.ACE_PREFIX;
-import static java.util.Arrays.asList;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Function;
@@ -229,7 +228,7 @@ public class VerifyOteAction implements Runnable, JsonAction {
     UNCLASSIFIED_FLOWS(0, Predicates.<EppInput>alwaysFalse());
 
     /** The number of StatTypes with a non-zero requirement. */
-    private static final int NUM_REQUIREMENTS = FluentIterable.from(asList(values()))
+    private static final int NUM_REQUIREMENTS = FluentIterable.from(values())
           .filter(new Predicate<StatType>() {
               @Override
               public boolean apply(@Nonnull StatType statType) {

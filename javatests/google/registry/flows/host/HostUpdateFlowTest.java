@@ -361,19 +361,6 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_superuserCanSpecifyInvalidExistingHostName() throws Exception {
-    persistActiveHost("NS1.çiça199.tld.");
-    clock.advanceOneMilli();
-    setEppHostUpdateInput("NS1.çiça199.tld.", "ns1.xn--ia199-xrab.tld", null, null);
-    runFlowAssertResponse(
-        CommitMode.LIVE, UserPrivileges.SUPERUSER, readFile("host_update_response.xml"));
-    clock.advanceOneMilli();
-    assertThat(loadByForeignKey(HostResource.class, "NS1.çiça199.tld.", clock.nowUtc())).isNull();
-    assertThat(loadByForeignKey(HostResource.class, "ns1.xn--ia199-xrab.tld", clock.nowUtc()))
-        .isNotNull();
-  }
-
-  @Test
   public void testSuccess_subordToSubord_lastTransferTimeFromPreviousSuperordinateWinsOut()
       throws Exception {
     setEppHostUpdateInput(
@@ -720,7 +707,6 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
 
   @Test
   public void testFailure_referToNonLowerCaseHostname() throws Exception {
-    persistActiveHost("ns1.EXAMPLE.tld");
     setEppHostUpdateInput("ns1.EXAMPLE.tld", "ns2.example.tld", null, null);
     thrown.expect(HostNameNotLowerCaseException.class);
     runFlow();
@@ -736,7 +722,6 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
 
   @Test
   public void testFailure_referToNonPunyCodedHostname() throws Exception {
-    persistActiveHost("ns1.çauçalito.tld");
     setEppHostUpdateInput("ns1.çauçalito.tld", "ns1.sausalito.tld", null, null);
     thrown.expect(HostNameNotPunyCodedException.class, "expected ns1.xn--aualito-txac.tld");
     runFlow();

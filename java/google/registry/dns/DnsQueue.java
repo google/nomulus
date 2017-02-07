@@ -14,6 +14,7 @@
 
 package google.registry.dns;
 
+import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.dns.DnsConstants.DNS_PULL_QUEUE_NAME;
 import static google.registry.dns.DnsConstants.DNS_TARGET_NAME_PARAM;
@@ -25,7 +26,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueConstants;
-import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.api.taskqueue.TaskHandle;
 import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.appengine.api.taskqueue.TaskOptions.Method;
@@ -48,8 +48,23 @@ public class DnsQueue {
 
   private static final FormattingLogger logger = FormattingLogger.getLoggerForCallerClass();
 
-  @Inject @Named(DNS_PULL_QUEUE_NAME) Queue queue;
-  @Inject DnsQueue() {}
+  private final Queue queue;
+
+  @Inject
+  public DnsQueue(@Named(DNS_PULL_QUEUE_NAME) Queue queue) {
+    this.queue = queue;
+  }
+
+  /**
+   * Constructs a new instance.
+   *
+   * <p><b>Note:</b> Prefer <code>@Inject</code>ing DnsQueue instances instead. You should only use
+   * this helper method in situations for which injection does not work, e.g. inside mapper or
+   * reducer classes in mapreduces that need to be Serializable.
+   */
+  public static DnsQueue create() {
+    return new DnsQueue(getQueue(DNS_PULL_QUEUE_NAME));
+  }
 
   long writeBatchSize = QueueConstants.maxLeaseCount();
 
@@ -126,18 +141,5 @@ public class DnsQueue {
     } catch (TransientFailureException | DeadlineExceededException e) {
       logger.severe(e, "Failed deleting tasks too fast");
     }
-  }
-
-  /**
-   * Creates a new instance.
-   *
-   * <p><b>Note:</b> Prefer <code>@Inject</code>ing DnsQueue instances instead. You should only use
-   * this helper method in situations for which injection does not work, e.g. inside mapper or
-   * reducer classes in mapreduces that need to be Serializable.
-   */
-  public static DnsQueue create() {
-    DnsQueue result = new DnsQueue();
-    result.queue = QueueFactory.getQueue(DNS_PULL_QUEUE_NAME);
-    return result;
   }
 }

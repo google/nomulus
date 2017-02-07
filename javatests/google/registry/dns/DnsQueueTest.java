@@ -14,7 +14,6 @@
 
 package google.registry.dns;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
@@ -45,8 +44,7 @@ public class DnsQueueTest {
 
   @Before
   public void init() {
-    dnsQueue = new DnsQueue();
-    dnsQueue.queue = getQueue("dns-pull");
+    dnsQueue = DnsQueue.create();
     dnsQueue.writeBatchSize = 10;
   }
 

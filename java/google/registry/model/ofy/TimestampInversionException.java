@@ -14,8 +14,6 @@
 
 package google.registry.model.ofy;
 
-import static java.util.Arrays.asList;
-
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
@@ -50,7 +48,7 @@ class TimestampInversionException extends RuntimeException {
             "Timestamp inversion between transaction time (%s) and %s",
             transactionTime,
             problem),
-        getFileAndLine(FluentIterable.from(asList(new Exception().getStackTrace()))
+        getFileAndLine(FluentIterable.from(new Exception().getStackTrace())
           .firstMatch(new Predicate<StackTraceElement>() {
             @Override
             public boolean apply(StackTraceElement element) {

@@ -19,7 +19,6 @@ import static com.google.common.base.CaseFormat.UPPER_UNDERSCORE;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.model.registry.Registries.assertTldExists;
-import static java.util.Arrays.asList;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
@@ -108,7 +107,7 @@ final class CreateAuctionCreditsCommand extends MutatingCommand {
     CURRENCY_CODE;
 
     public static List<String> getHeaders() {
-      return FluentIterable.from(asList(values()))
+      return FluentIterable.from(values())
           .transform(new Function<CsvHeader, String>() {
               @Override
               public String apply(CsvHeader header) {

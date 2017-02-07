@@ -15,6 +15,7 @@
 package google.registry.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Throwables.throwIfUnchecked;
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.math.IntMath.pow;
 import static google.registry.util.PredicateUtils.supertypeOf;
@@ -102,15 +103,5 @@ public class Retrier implements Serializable {
       public boolean apply(Throwable e) {
         return any(retryables, supertypeOf(e.getClass()));
       }});
-  }
-
-  // TODO(user): Replace with Throwables.throwIfUnchecked
-  private static void throwIfUnchecked(Throwable throwable) {
-    if (throwable instanceof RuntimeException) {
-      throw (RuntimeException) throwable;
-    }
-    if (throwable instanceof Error) {
-      throw (Error) throwable;
-    }
   }
 }

@@ -14,12 +14,14 @@
 
 package google.registry.model.host;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.union;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.ofy.Ofy.RECOMMENDED_MEMCACHE_EXPIRATION;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
@@ -164,6 +166,9 @@ public class HostResource extends EppResource implements ForeignKeyedEppResource
     }
 
     public Builder setFullyQualifiedHostName(String fullyQualifiedHostName) {
+      checkArgument(
+          fullyQualifiedHostName.equals(canonicalizeDomainName(fullyQualifiedHostName)),
+          "Host name must be in puny-coded, lower-case form");
       getInstance().fullyQualifiedHostName = fullyQualifiedHostName;
       return this;
     }

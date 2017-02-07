@@ -19,7 +19,6 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.ofy.Ofy.RECOMMENDED_MEMCACHE_EXPIRATION;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
-import static google.registry.util.DateTimeUtils.latestOf;
 
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
@@ -95,9 +94,8 @@ public class DomainApplicationIndex extends BackupGroupRoot {
     }
     ImmutableSet.Builder<DomainApplication> apps = new ImmutableSet.Builder<>();
     for (DomainApplication app : ofy().load().keys(index.getKeys()).values()) {
-      DateTime forwardedNow = latestOf(now, app.getUpdateAutoTimestamp().getTimestamp());
-      if (app.getDeletionTime().isAfter(forwardedNow)) {
-        apps.add(app.cloneProjectedAtTime(forwardedNow));
+      if (app.getDeletionTime().isAfter(now)) {
+        apps.add(app);
       }
     }
     return apps.build();

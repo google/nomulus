@@ -16,7 +16,6 @@ package google.registry.model.ofy;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 import static google.registry.util.ObjectifyUtils.OBJECTS_TO_KEYS;
-import static java.util.Arrays.asList;
 
 import com.google.common.base.Functions;
 import com.google.common.collect.FluentIterable;
@@ -45,7 +44,7 @@ abstract class AugmentedDeleter implements Deleter {
 
   @Override
   public Result<Void> entities(Object... entities) {
-    handleDeletion(FluentIterable.from(asList(entities)).transform(OBJECTS_TO_KEYS));
+    handleDeletion(FluentIterable.from(entities).transform(OBJECTS_TO_KEYS));
     return delegate.entities(entities);
   }
 

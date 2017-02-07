@@ -26,6 +26,7 @@ import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
 import static google.registry.util.CollectionUtils.union;
+import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -209,6 +210,9 @@ public abstract class DomainBase extends EppResource {
     }
 
     public B setFullyQualifiedDomainName(String fullyQualifiedDomainName) {
+      checkArgument(
+          fullyQualifiedDomainName.equals(canonicalizeDomainName(fullyQualifiedDomainName)),
+          "Domain name must be in puny-coded, lower-case form");
       getInstance().fullyQualifiedDomainName = fullyQualifiedDomainName;
       return thisCastToDerived();
     }

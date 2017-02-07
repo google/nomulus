@@ -1,11 +1,11 @@
-Server Name: NS1.EXAMPLE.tld
+Server Name: ns1.example.tld
 IP Address: 192.0.2.123
 IP Address: 2001:db8::1
 Registrar: Example Registrar, Inc.
 WHOIS Server: whois.nic.fakewhois.example
 Referral URL: http://www.referral.example/path
 
-Server Name: NS2.EXAMPLE.tld
+Server Name: ns2.example.tld
 IP Address: 192.0.2.123
 IP Address: 2001:db8::1
 Registrar: Example Registrar, Inc.

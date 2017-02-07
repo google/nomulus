@@ -35,7 +35,6 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DomainNameUtils.ACE_PREFIX_REGEX;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
-import static java.util.Arrays.asList;
 import static org.joda.money.CurrencyUnit.USD;
 
 import com.google.common.base.Ascii;
@@ -626,7 +625,7 @@ public class DatastoreHelper {
   public static void assertBillingEvents(BillingEvent... expected) throws Exception {
     assertThat(FluentIterable.from(getBillingEvents()).transform(BILLING_EVENT_ID_STRIPPER))
         .containsExactlyElementsIn(
-            FluentIterable.from(asList(expected)).transform(BILLING_EVENT_ID_STRIPPER));
+            FluentIterable.from(expected).transform(BILLING_EVENT_ID_STRIPPER));
   }
 
   /** Assert that the expected billing events set is exactly the one found in the fake datastore. */
@@ -643,7 +642,7 @@ public class DatastoreHelper {
       EppResource resource, BillingEvent... expected) throws Exception {
     assertThat(FluentIterable.from(getBillingEvents(resource)).transform(BILLING_EVENT_ID_STRIPPER))
         .containsExactlyElementsIn(
-            FluentIterable.from(asList(expected)).transform(BILLING_EVENT_ID_STRIPPER));
+            FluentIterable.from(expected).transform(BILLING_EVENT_ID_STRIPPER));
   }
 
   /** Assert that there are no billing events. */
@@ -664,7 +663,7 @@ public class DatastoreHelper {
       throws Exception {
     assertThat(FluentIterable.from(getPollMessages(resource)).transform(POLL_MESSAGE_ID_STRIPPER))
         .containsExactlyElementsIn(
-            FluentIterable.from(asList(expected)).transform(POLL_MESSAGE_ID_STRIPPER));
+            FluentIterable.from(expected).transform(POLL_MESSAGE_ID_STRIPPER));
   }
 
   /** Helper to effectively erase the poll message ID to facilitate comparison. */
