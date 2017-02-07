@@ -9,6 +9,7 @@ java_library(
     srcs = glob(["*.java"]),
     deps = [
         "//java/google/registry/config",
+        "//java/google/registry/dns",
         "//java/google/registry/gcs",
         "//java/google/registry/mapreduce",
         "//java/google/registry/model",

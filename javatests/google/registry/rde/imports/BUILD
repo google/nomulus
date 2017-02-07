@@ -13,6 +13,8 @@ java_library(
     resources = glob(["testdata/*"]),
     deps = [
         "//java/google/registry/config",
+        "//java/google/registry/dns",
+        "//java/google/registry/dns:constants",
         "//java/google/registry/gcs",
         "//java/google/registry/mapreduce",
         "//java/google/registry/model",
