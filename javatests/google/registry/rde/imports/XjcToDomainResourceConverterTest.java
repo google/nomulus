@@ -120,6 +120,8 @@ public class XjcToDomainResourceConverterTest {
     assertThat(domain.getLastEppUpdateTime()).isNull();
     assertThat(domain.getAutorenewBillingEvent()).isNotNull();
     assertThat(domain.getAutorenewPollMessage()).isNotNull();
+    assertThat(domain.getAuthInfo()).isNotNull();
+    assertThat(domain.getAuthInfo().getPw().getValue()).hasLength(16);
   }
 
   @Test

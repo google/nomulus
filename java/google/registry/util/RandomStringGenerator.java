@@ -26,7 +26,7 @@ public class RandomStringGenerator extends StringGenerator {
   private final Random random;
 
   @Inject
-  RandomStringGenerator(@Named("alphabet") String alphabet, Random random) {
+  public RandomStringGenerator(@Named("alphabet") String alphabet, Random random) {
     super(alphabet);
     this.random = random;
   }

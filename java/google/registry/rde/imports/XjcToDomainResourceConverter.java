@@ -34,10 +34,12 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
+import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainResource;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex;
@@ -47,6 +49,8 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.util.RandomStringGenerator;
+import google.registry.util.StringGenerator;
 import google.registry.util.XmlToEnumMapper;
 import google.registry.xjc.domain.XjcDomainContactType;
 import google.registry.xjc.domain.XjcDomainNsType;
@@ -58,8 +62,24 @@ import google.registry.xjc.rgp.XjcRgpStatusType;
 import google.registry.xjc.secdns.XjcSecdnsDsDataType;
 import org.joda.time.DateTime;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Random;
+
 /** Utility class that converts an {@link XjcRdeDomainElement} into a {@link DomainResource}. */
 final class XjcToDomainResourceConverter extends XjcToEppResourceConverter {
+
+  private static final RandomStringGenerator stringGenerator = new RandomStringGenerator(
+      StringGenerator.Alphabets.BASE_64, getRandom());
+
+  private static Random getRandom() {
+    try {
+      return SecureRandom.getInstance("NativePRNG");
+    } catch (NoSuchAlgorithmException e) {
+      // In the case that secure random isn't available, use insecure random instead.
+      return new Random();
+    }
+  }
 
   private static final XmlToEnumMapper<TransferStatus> TRANSFER_STATUS_MAPPER =
       XmlToEnumMapper.create(TransferStatus.values());
@@ -194,7 +214,11 @@ final class XjcToDomainResourceConverter extends XjcToEppResourceConverter {
                     ? ImmutableSet.<DelegationSignerData>of()
                     : ImmutableSet.copyOf(
                         transform(domain.getSecDNS().getDsDatas(), SECDNS_CONVERTER)))
-            .setTransferData(convertDomainTransferData(domain.getTrnData()));
+            .setTransferData(convertDomainTransferData(domain.getTrnData()))
+            // authInfo pw must be a token between 6 and 16 characters in length
+            // generate a token of 16 characters as the default authInfo pw
+            .setAuthInfo(DomainAuthInfo
+                .create(PasswordAuth.create(stringGenerator.createString(16), domain.getRoid())));
     checkArgumentNotNull(
         domain.getRegistrant(), "Registrant is missing for domain '%s'", domain.getName());
     builder = builder.setRegistrant(convertRegistrant(domain.getRegistrant()));
