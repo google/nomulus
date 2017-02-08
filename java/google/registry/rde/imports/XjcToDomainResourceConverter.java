@@ -49,6 +49,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.util.NonFinalForTesting;
 import google.registry.util.RandomStringGenerator;
 import google.registry.util.StringGenerator;
 import google.registry.util.XmlToEnumMapper;
@@ -70,10 +71,11 @@ import java.util.Random;
 /** Utility class that converts an {@link XjcRdeDomainElement} into a {@link DomainResource}. */
 final class XjcToDomainResourceConverter extends XjcToEppResourceConverter {
 
-  private static final RandomStringGenerator stringGenerator = new RandomStringGenerator(
+  @NonFinalForTesting
+  static StringGenerator stringGenerator = new RandomStringGenerator(
       StringGenerator.Alphabets.BASE_64, getRandom());
 
-  private static Random getRandom() {
+  static Random getRandom() {
     try {
       return SecureRandom.getInstance("NativePRNG");
     } catch (NoSuchAlgorithmException e) {
