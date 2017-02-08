@@ -20,9 +20,9 @@ import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyHasPendingTransfer;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
-import static google.registry.flows.domain.DomainFlowUtils.createLosingTransferPollMessage;
-import static google.registry.flows.domain.DomainFlowUtils.createTransferResponse;
 import static google.registry.flows.domain.DomainFlowUtils.updateAutorenewRecurrenceEndTime;
+import static google.registry.flows.domain.DomainTransferUtils.createLosingTransferPollMessage;
+import static google.registry.flows.domain.DomainTransferUtils.createTransferResponse;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 

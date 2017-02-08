@@ -17,7 +17,7 @@ package google.registry.flows.domain;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
-import static google.registry.flows.domain.DomainFlowUtils.createTransferResponse;
+import static google.registry.flows.domain.DomainTransferUtils.createTransferResponse;
 import static google.registry.model.domain.DomainResource.extendRegistrationWithCap;
 
 import com.google.common.base.Optional;
