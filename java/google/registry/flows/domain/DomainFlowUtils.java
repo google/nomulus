@@ -94,7 +94,6 @@ import google.registry.model.domain.secdns.SecDnsUpdateExtension.Remove;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
 import google.registry.model.host.HostResource;
-import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registry.Registry;
@@ -102,8 +101,6 @@ import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.label.ReservationType;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tmch.ClaimsListShard;
-import google.registry.model.transfer.TransferData;
-import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.util.Idn;
 import java.math.BigDecimal;
 import java.util.HashSet;
@@ -622,59 +619,6 @@ public class DomainFlowUtils {
     if (!feeTotal.equals(feesAndCredits.getTotalCost())) {
       throw new FeesMismatchException(feesAndCredits.getTotalCost());
     }
-  }
-
-  /** Create a poll message for the gaining client in a transfer. */
-  static PollMessage createGainingTransferPollMessage(
-      String targetId,
-      TransferData transferData,
-      @Nullable DateTime extendedRegistrationExpirationTime,
-      HistoryEntry historyEntry) {
-    return new PollMessage.OneTime.Builder()
-        .setClientId(transferData.getGainingClientId())
-        .setEventTime(transferData.getPendingTransferExpirationTime())
-        .setMsg(transferData.getTransferStatus().getMessage())
-        .setResponseData(ImmutableList.of(
-            createTransferResponse(targetId, transferData, extendedRegistrationExpirationTime),
-            DomainPendingActionNotificationResponse.create(
-                  targetId,
-                  transferData.getTransferStatus().isApproved(),
-                  transferData.getTransferRequestTrid(),
-                  historyEntry.getModificationTime())))
-        .setParent(historyEntry)
-        .build();
-  }
-
-  /** Create a poll message for the losing client in a transfer. */
-  static PollMessage createLosingTransferPollMessage(
-      String targetId,
-      TransferData transferData,
-      @Nullable DateTime extendedRegistrationExpirationTime,
-      HistoryEntry historyEntry) {
-    return new PollMessage.OneTime.Builder()
-        .setClientId(transferData.getLosingClientId())
-        .setEventTime(transferData.getPendingTransferExpirationTime())
-        .setMsg(transferData.getTransferStatus().getMessage())
-        .setResponseData(ImmutableList.of(
-            createTransferResponse(targetId, transferData, extendedRegistrationExpirationTime)))
-        .setParent(historyEntry)
-        .build();
-  }
-
-  /** Create a {@link DomainTransferResponse} off of the info in a {@link TransferData}. */
-  static DomainTransferResponse createTransferResponse(
-      String targetId,
-      TransferData transferData,
-      @Nullable DateTime extendedRegistrationExpirationTime) {
-    return new DomainTransferResponse.Builder()
-        .setFullyQualifiedDomainNameName(targetId)
-        .setGainingClientId(transferData.getGainingClientId())
-        .setLosingClientId(transferData.getLosingClientId())
-        .setPendingTransferExpirationTime(transferData.getPendingTransferExpirationTime())
-        .setTransferRequestTime(transferData.getTransferRequestTime())
-        .setTransferStatus(transferData.getTransferStatus())
-        .setExtendedRegistrationExpirationTime(extendedRegistrationExpirationTime)
-        .build();
   }
 
   /**
