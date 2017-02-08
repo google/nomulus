@@ -88,7 +88,6 @@ public class DomainTransferUtils {
       DateTime serverApproveNewExpirationTime,
       HistoryEntry historyEntry,
       DomainResource existingDomain,
-      String targetId,
       Trid trid,
       String gainingClientId,
       Money transferCost,
@@ -104,22 +103,29 @@ public class DomainTransferUtils {
         .add(createTransferBillingEvent(
             automaticTransferTime,
             historyEntry,
-            targetId,
+            existingDomain.getRepoId(),
             gainingClientId,
             registry,
             transferCost,
             years))
-        .addAll(createOptionalAutorenewCancellation(
-            automaticTransferTime, historyEntry, targetId, existingDomain)
-                .asSet())
-        .add(createGainingClientAutorenewEvent(
-            serverApproveNewExpirationTime, historyEntry, targetId, gainingClientId))
-        .add(createGainingClientAutorenewPollMessage(
-            serverApproveNewExpirationTime, historyEntry, targetId, gainingClientId))
-        .add(createGainingTransferPollMessage(
-            targetId, serverApproveTransferData, serverApproveNewExpirationTime, historyEntry))
-        .add(createLosingTransferPollMessage(
-            targetId, serverApproveTransferData, serverApproveNewExpirationTime, historyEntry))
+        .addAll(createOptionalAutorenewCancellation(automaticTransferTime,
+            historyEntry,
+            existingDomain.getRepoId(),
+            existingDomain).asSet())
+        .add(createGainingClientAutorenewEvent(serverApproveNewExpirationTime,
+            historyEntry,
+            existingDomain.getRepoId(),
+            gainingClientId))
+        .add(createGainingClientAutorenewPollMessage(serverApproveNewExpirationTime, historyEntry,
+            existingDomain.getRepoId(), gainingClientId))
+        .add(createGainingTransferPollMessage(existingDomain.getRepoId(),
+            serverApproveTransferData,
+            serverApproveNewExpirationTime,
+            historyEntry))
+        .add(createLosingTransferPollMessage(existingDomain.getRepoId(),
+            serverApproveTransferData,
+            serverApproveNewExpirationTime,
+            historyEntry))
         .build();
   }
 

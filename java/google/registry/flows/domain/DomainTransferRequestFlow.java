@@ -148,7 +148,6 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
             serverApproveNewExpirationTime,
             historyEntry,
             existingDomain,
-            targetId,
             trid,
             gainingClientId,
             feesAndCredits.getTotalCost(),
