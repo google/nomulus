@@ -51,6 +51,8 @@ import org.junit.runners.JUnit4;
 public class XjcToHostResourceConverterTest extends ShardableTestCase {
 
   private static final ByteSource HOST_XML = RdeImportsTestData.get("host_fragment.xml");
+  private static final ByteSource HOST_XML_UCASE =
+      RdeImportsTestData.get("host_fragment_ucase.xml");
 
   // List of packages to initialize JAXBContext
   private static final String JAXB_CONTEXT_PACKAGES = Joiner.on(":")
@@ -103,6 +105,14 @@ public class XjcToHostResourceConverterTest extends ShardableTestCase {
     assertThat(host.getLastTransferTime()).isEqualTo(DateTime.parse("2008-10-03T09:34:00.0Z"));
   }
 
+  /** Verifies that uppercase host names are converted to lowercase */
+  @Test
+  public void testConvertHostResourceUpperCase() throws Exception {
+    XjcRdeHost xjcHost = loadHostFromRdeXml(HOST_XML_UCASE);
+    HostResource host = convertHostInTransaction(xjcHost);
+    assertThat(host.getFullyQualifiedHostName()).isEqualTo("ns1.example1.test");
+  }
+
   @Test
   public void testConvertHostResourceHistoryEntry() throws Exception {
     XjcRdeHost xjcHost = loadHostFromRdeXml();
@@ -134,7 +144,11 @@ public class XjcToHostResourceConverterTest extends ShardableTestCase {
   }
 
   private XjcRdeHost loadHostFromRdeXml() throws Exception {
-    try (InputStream ins = HOST_XML.openStream()) {
+    return loadHostFromRdeXml(HOST_XML);
+  }
+
+  private XjcRdeHost loadHostFromRdeXml(ByteSource source) throws Exception {
+    try (InputStream ins = source.openStream()) {
       return ((XjcRdeHostElement) unmarshaller.unmarshal(ins)).getValue();
     }
   }

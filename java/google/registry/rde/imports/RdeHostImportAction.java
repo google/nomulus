@@ -117,7 +117,6 @@ public class RdeHostImportAction implements Runnable {
     public void map(JaxbFragment<XjcRdeHostElement> fragment) {
       final XjcRdeHost xjcHost = fragment.getInstance().getValue();
       try {
-        logger.infofmt("Converting xml for host %s", xjcHost.getName());
         // Record number of attempted map operations
         getContext().incrementCounter("host imports attempted");
         logger.infofmt("Saving host %s", xjcHost.getName());
@@ -134,19 +133,13 @@ public class RdeHostImportAction implements Runnable {
         logger.infofmt("Host %s was imported successfully", xjcHost.getName());
       } catch (ResourceExistsException e) {
         // Record the number of hosts already in the registry
-        getContext().incrementCounter("hosts skipped");
+        getContext().incrementCounter("existing hosts skipped");
         logger.infofmt("Host %s already exists", xjcHost.getName());
       } catch (Exception e) {
         // Record the number of hosts with unexpected errors
         getContext().incrementCounter("host import errors");
-        throw new HostImportException(xjcHost.getName(), xjcHost.toString(), e);
+        logger.severefmt(e, "Error processing host %s; xml=%s", xjcHost.getName(), xjcHost);
       }
-    }
-  }
-
-  private static class HostImportException extends RuntimeException {
-    HostImportException(String hostName, String xml, Throwable cause) {
-      super(String.format("Error processing host %s; xml=%s", hostName, xml), cause);
     }
   }
 }

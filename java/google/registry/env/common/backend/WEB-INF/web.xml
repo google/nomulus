@@ -281,6 +281,12 @@
     <url-pattern>/_dr/task/importRdeDomains</url-pattern>
   </servlet-mapping>
 
+  <!-- Mapreduce to link hosts from escrow file to superordinate domains -->
+  <servlet-mapping>
+    <servlet-name>backend-servlet</servlet-name>
+    <url-pattern>/_dr/task/linkRdeHosts</url-pattern>
+  </servlet-mapping>
+
   <!-- Security config -->
   <security-constraint>
     <web-resource-collection>

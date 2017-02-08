@@ -132,6 +132,16 @@ public class XjcToDomainResourceConverterTest {
     assertThat(domain.getAuthInfo().getPw().getValue()).isEqualTo("0123456789abcdef");
   }
 
+  /** Verifies that uppercase domain names are converted to lowercase */
+  @Test
+  public void testConvertDomainResourceUpperCase() throws Exception {
+    persistActiveContact("jd1234");
+    persistActiveContact("sh8013");
+    final XjcRdeDomain xjcDomain = loadDomainFromRdeXml("domain_fragment_ucase.xml");
+    DomainResource domain = convertDomainInTransaction(xjcDomain);
+    assertThat(domain.getFullyQualifiedDomainName()).isEqualTo("example1.example");
+  }
+
   @Test
   public void testConvertDomainResourceAddPeriod() throws Exception {
     persistActiveContact("jd1234");

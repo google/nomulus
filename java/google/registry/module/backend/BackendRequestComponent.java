@@ -61,6 +61,7 @@ import google.registry.rde.RdeUploadAction;
 import google.registry.rde.imports.RdeContactImportAction;
 import google.registry.rde.imports.RdeDomainImportAction;
 import google.registry.rde.imports.RdeHostImportAction;
+import google.registry.rde.imports.RdeHostLinkAction;
 import google.registry.rde.imports.RdeImportsModule;
 import google.registry.request.RequestComponentBuilder;
 import google.registry.request.RequestModule;
@@ -117,6 +118,7 @@ interface BackendRequestComponent {
   RdeContactImportAction rdeContactImportAction();
   RdeDomainImportAction rdeDomainImportAction();
   RdeHostImportAction rdeHostImportAction();
+  RdeHostLinkAction rdeHostLinkAction();
   RdeReportAction rdeReportAction();
   RdeStagingAction rdeStagingAction();
   RdeUploadAction rdeUploadAction();

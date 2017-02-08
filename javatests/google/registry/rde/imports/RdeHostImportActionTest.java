@@ -16,6 +16,7 @@ package google.registry.rde.imports;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.getHistoryEntries;
 import static google.registry.testing.DatastoreHelper.newHostResource;
 import static google.registry.testing.DatastoreHelper.persistResource;
@@ -66,6 +67,7 @@ public class RdeHostImportActionTest extends MapreduceTestCase<RdeHostImportActi
 
   @Before
   public void before() throws Exception {
+    createTld("test");
     response = new FakeResponse();
     mrRunner = new MapreduceRunner(Optional.<Integer>absent(), Optional.<Integer>absent());
     action = new RdeHostImportAction(

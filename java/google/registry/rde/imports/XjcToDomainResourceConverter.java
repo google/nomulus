@@ -20,6 +20,7 @@ import static com.google.common.collect.Iterables.transform;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.rde.imports.RdeImportUtils.generateTridForImport;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.base.Ascii;
@@ -27,6 +28,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.net.InternetDomainName;
+
 import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
@@ -97,6 +99,8 @@ final class XjcToDomainResourceConverter extends XjcToEppResourceConverter {
       new Function<String, Key<HostResource>>() {
         @Override
         public Key<HostResource> apply(String fullyQualifiedHostName) {
+          // host names are always lower case
+          fullyQualifiedHostName = canonicalizeDomainName(fullyQualifiedHostName);
           Key<HostResource> key =
               ForeignKeyIndex.loadAndGetKey(
                   HostResource.class, fullyQualifiedHostName, DateTime.now());
@@ -193,7 +197,7 @@ final class XjcToDomainResourceConverter extends XjcToEppResourceConverter {
         new GracePeriodConverter(domain, Key.create(autoRenewBillingEvent));
     DomainResource.Builder builder =
         new DomainResource.Builder()
-            .setFullyQualifiedDomainName(domain.getName())
+            .setFullyQualifiedDomainName(canonicalizeDomainName(domain.getName()))
             .setRepoId(domain.getRoid())
             .setIdnTableName(domain.getIdnTableId())
             .setCurrentSponsorClientId(domain.getClID())

@@ -163,18 +163,12 @@ public class RdeDomainImportAction implements Runnable {
         logger.infofmt("Domain %s was imported successfully", xjcDomain.getName());
       } catch (ResourceExistsException e) {
         // Record the number of domains already in the registry
-        getContext().incrementCounter("domains skipped");
+        getContext().incrementCounter("existing domains skipped");
         logger.infofmt("Domain %s already exists", xjcDomain.getName());
       } catch (Exception e) {
         getContext().incrementCounter("domain import errors");
-        throw new DomainImportException(xjcDomain.getName(), xjcDomain.toString(), e);
+        logger.severefmt(e, "Error processing domain %s; xml=%s", xjcDomain.getName(), xjcDomain);
       }
-    }
-  }
-
-  private static class DomainImportException extends RuntimeException {
-    DomainImportException(String domainName, String xml, Throwable cause) {
-      super(String.format("Error processing domain %s; xml=%s", domainName, xml), cause);
     }
   }
 }
