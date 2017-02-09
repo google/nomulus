@@ -14,10 +14,18 @@
 
 package google.registry.rde.imports;
 
+import static google.registry.flows.domain.DomainTransferUtils.createLosingTransferPollMessage;
+import static google.registry.flows.domain.DomainTransferUtils.createPendingTransferData;
+import static google.registry.flows.domain.DomainTransferUtils.createTransferServerApproveEntities;
 import static google.registry.mapreduce.MapreduceRunner.PARAM_MAP_SHARDS;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
+import static google.registry.rde.imports.RdeImportUtils.createAutoRenewBillingEventForDomainImport;
+import static google.registry.rde.imports.RdeImportUtils.createAutoRenewPollMessageForDomainImport;
+import static google.registry.rde.imports.RdeImportUtils.createHistoryEntryForDomainImport;
 import static google.registry.rde.imports.RdeImportsModule.PATH;
 import static google.registry.util.PipelineUtils.createJobPath;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
@@ -25,13 +33,20 @@ import com.google.appengine.tools.cloudstorage.RetryParams;
 import com.google.appengine.tools.mapreduce.Mapper;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.VoidWork;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.dns.DnsQueue;
 import google.registry.gcs.GcsUtils;
 import google.registry.mapreduce.MapreduceRunner;
+import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.DomainResource;
+import google.registry.model.poll.PollMessage;
+import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
+import google.registry.model.transfer.TransferStatus;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
@@ -40,6 +55,7 @@ import google.registry.util.SystemClock;
 import google.registry.xjc.JaxbFragment;
 import google.registry.xjc.rdedomain.XjcRdeDomain;
 import google.registry.xjc.rdedomain.XjcRdeDomainElement;
+import org.joda.money.Money;
 import javax.inject.Inject;
 
 /**
@@ -145,17 +161,70 @@ public class RdeDomainImportAction implements Runnable {
     public void map(JaxbFragment<XjcRdeDomainElement> fragment) {
       final XjcRdeDomain xjcDomain = fragment.getInstance().getValue();
       try {
-        logger.infofmt("Converting xml for domain %s", xjcDomain.getName());
         // Record number of attempted map operations
         getContext().incrementCounter("domain imports attempted");
+
         logger.infofmt("Saving domain %s", xjcDomain.getName());
         ofy().transact(new VoidWork() {
           @Override
           public void vrun() {
-            DomainResource domain =
-                XjcToDomainResourceConverter.convertDomain(xjcDomain);
-            getImportUtils().importDomain(domain);
+            HistoryEntry historyEntry = createHistoryEntryForDomainImport(xjcDomain);
+            BillingEvent.Recurring autorenewBillingEvent =
+                createAutoRenewBillingEventForDomainImport(xjcDomain, historyEntry);
+            PollMessage.Autorenew autorenewPollMessage =
+                createAutoRenewPollMessageForDomainImport(xjcDomain, historyEntry);
+            DomainResource domain = XjcToDomainResourceConverter.convertDomain(
+                xjcDomain, autorenewBillingEvent, autorenewPollMessage);
             getDnsQueue().addDomainRefreshTask(domain.getFullyQualifiedDomainName());
+            // Keep a list of "extra objects" that need to be saved along with the domain
+            // and add to it if necessary.
+            ImmutableSet<Object> extraEntitiesToSave =
+                getImportUtils().getIndexesForEppResource(domain, "domain");
+            // Create speculative server approval entities for pending transfers
+            if (domain.getTransferData().getTransferStatus() == TransferStatus.PENDING) {
+              TransferData transferData = domain.getTransferData();
+              checkArgumentNotNull(transferData,
+                  "Domain %s is in pending transfer but has no transfer data",
+                  domain.getFullyQualifiedDomainName());
+              Money transferCost = getDomainRenewCost(
+                  domain.getFullyQualifiedDomainName(),
+                  transferData.getPendingTransferExpirationTime(),
+                  transferData.getExtendedRegistrationYears());
+              // Create speculative entities in anticipation of an automatic server approval.
+              ImmutableSet<TransferServerApproveEntity> serverApproveEntities =
+                  createTransferServerApproveEntities(
+                      transferData.getPendingTransferExpirationTime(),
+                      domain.getRegistrationExpirationTime()
+                          .plusYears(transferData.getExtendedRegistrationYears()),
+                      historyEntry,
+                      domain,
+                      historyEntry.getTrid(),
+                      transferData.getGainingClientId(),
+                      transferCost,
+                      transferData.getExtendedRegistrationYears(),
+                      transferData.getTransferRequestTime());
+              transferData =
+                  createPendingTransferData(transferData.asBuilder(), serverApproveEntities);
+              // Create a poll message to notify the losing registrar that a transfer was requested.
+              PollMessage requestPollMessage = createLosingTransferPollMessage(domain.getRepoId(),
+                  transferData, transferData.getPendingTransferExpirationTime(), historyEntry)
+                      .asBuilder().setEventTime(transferData.getTransferRequestTime()).build();
+              domain = domain.asBuilder().setTransferData(transferData).build();
+              autorenewBillingEvent = autorenewBillingEvent.asBuilder()
+                  .setRecurrenceEndTime(transferData.getPendingTransferExpirationTime()).build();
+              autorenewPollMessage = autorenewPollMessage.asBuilder()
+                  .setAutorenewEndTime(transferData.getPendingTransferExpirationTime()).build();
+              extraEntitiesToSave = new ImmutableSet.Builder<>()
+                  .add(requestPollMessage)
+                  .addAll(extraEntitiesToSave)
+                  .addAll(serverApproveEntities).build();
+            } // End pending transfer check
+            ofy().save()
+              .entities(new ImmutableSet.Builder<>()
+                .add(domain, historyEntry, autorenewBillingEvent, autorenewPollMessage)
+                .addAll(extraEntitiesToSave)
+                .build())
+            .now();
           }
         });
         // Record the number of domains imported
@@ -169,6 +238,13 @@ public class RdeDomainImportAction implements Runnable {
         getContext().incrementCounter("domain import errors");
         throw new DomainImportException(xjcDomain.getName(), xjcDomain.toString(), e);
       }
+    }
+
+    private void setupPendingTransfer(final HistoryEntry historyEntry,
+        DomainResource domain,
+        BillingEvent.Recurring autorenewBillingEvent,
+        PollMessage.Autorenew autorenewPollMessage) {
+
     }
   }
 

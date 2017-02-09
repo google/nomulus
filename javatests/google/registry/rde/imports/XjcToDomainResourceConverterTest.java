@@ -18,6 +18,9 @@ import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.rde.imports.RdeImportTestUtils.checkTrid;
+import static google.registry.rde.imports.RdeImportUtils.createAutoRenewBillingEventForDomainImport;
+import static google.registry.rde.imports.RdeImportUtils.createAutoRenewPollMessageForDomainImport;
+import static google.registry.rde.imports.RdeImportUtils.createHistoryEntryForDomainImport;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.getHistoryEntries;
 import static google.registry.testing.DatastoreHelper.persistActiveContact;
@@ -44,6 +47,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.ExceptionRule;
@@ -358,11 +362,62 @@ public class XjcToDomainResourceConverterTest {
     assertThat(pollMessage.getMsg()).isEqualTo("Domain was auto-renewed.");
   }
 
+  @Test
+  public void testConvertDomainResourcePendingTransfer() throws Exception {
+    persistActiveContact("jd1234");
+    persistActiveContact("sh8013");
+    final XjcRdeDomain xjcDomain = loadDomainFromRdeXml("domain_fragment_pending_transfer.xml");
+    DomainResource domain = persistResource(convertDomainInTransaction(xjcDomain));
+    assertThat(domain.getTransferData()).isNotNull();
+    assertThat(domain.getTransferData().getTransferStatus()).isEqualTo(TransferStatus.PENDING);
+    assertThat(domain.getTransferData().getGainingClientId()).isEqualTo("RegistrarY");
+    assertThat(domain.getTransferData().getTransferRequestTime())
+        .isEqualTo(DateTime.parse("2015-01-03T22:00:00.0Z"));
+    assertThat(domain.getTransferData().getLosingClientId()).isEqualTo("RegistrarX");
+    assertThat(domain.getTransferData().getPendingTransferExpirationTime())
+        .isEqualTo(DateTime.parse("2015-01-08T22:00:00.0Z"));
+  }
+
+  @Test
+  public void testConvertDomainResourcePendingTransferDefaultExtendedYears() throws Exception {
+    persistActiveContact("jd1234");
+    persistActiveContact("sh8013");
+    final XjcRdeDomain xjcDomain = loadDomainFromRdeXml("domain_fragment_pending_transfer.xml");
+    DomainResource domain = persistResource(convertDomainInTransaction(xjcDomain));
+    assertThat(domain.getTransferData()).isNotNull();
+    assertThat(domain.getTransferData().getExtendedRegistrationYears()).isEqualTo(1);
+  }
+
+  @Test
+  public void testConvertDomainResourcePendingTransferExtendOneYear() throws Exception {
+    persistActiveContact("jd1234");
+    persistActiveContact("sh8013");
+    final XjcRdeDomain xjcDomain = loadDomainFromRdeXml("domain_fragment_pending_transfer_1yr.xml");
+    DomainResource domain = persistResource(convertDomainInTransaction(xjcDomain));
+    assertThat(domain.getTransferData()).isNotNull();
+    assertThat(domain.getTransferData().getExtendedRegistrationYears()).isEqualTo(1);
+  }
+
+  @Test
+  public void testConvertDomainResourcePendingTransferExtendTwoYears() throws Exception {
+    persistActiveContact("jd1234");
+    persistActiveContact("sh8013");
+    final XjcRdeDomain xjcDomain = loadDomainFromRdeXml("domain_fragment_pending_transfer_2yr.xml");
+    DomainResource domain = persistResource(convertDomainInTransaction(xjcDomain));
+    assertThat(domain.getTransferData()).isNotNull();
+    assertThat(domain.getTransferData().getExtendedRegistrationYears()).isEqualTo(2);
+  }
+
   private static DomainResource convertDomainInTransaction(final XjcRdeDomain xjcDomain) {
+    final HistoryEntry historyEntry = createHistoryEntryForDomainImport(xjcDomain);
+    final BillingEvent.Recurring autorenewBillingEvent = createAutoRenewBillingEventForDomainImport(xjcDomain, historyEntry);
+    final PollMessage.Autorenew autorenewPollMessage = createAutoRenewPollMessageForDomainImport(xjcDomain, historyEntry);
     return ofy().transact(new Work<DomainResource>() {
+      @SuppressWarnings("unchecked")
       @Override
       public DomainResource run() {
-        return XjcToDomainResourceConverter.convertDomain(xjcDomain);
+        ofy().save().entities(historyEntry, autorenewBillingEvent, autorenewPollMessage);
+        return XjcToDomainResourceConverter.convertDomain(xjcDomain, autorenewBillingEvent, autorenewPollMessage);
       }});
   }
 

@@ -17,13 +17,21 @@ package google.registry.rde.imports;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.rde.imports.RdeImportUtils.generateTridForImport;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
+import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.BaseEncoding;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.EppResource;
+import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingEvent.Flag;
+import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainResource;
 import google.registry.model.eppcommon.Trid;
@@ -31,13 +39,22 @@ import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.ofy.Ofy;
+import google.registry.model.poll.PollMessage;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.RegistryNotFoundException;
 import google.registry.model.registry.Registry.TldState;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.util.Clock;
 import google.registry.util.FormattingLogger;
+import google.registry.xjc.XjcXmlTransformer;
+import google.registry.xjc.rdedomain.XjcRdeDomain;
+import google.registry.xjc.rdedomain.XjcRdeDomainElement;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrar;
+import google.registry.xml.XmlException;
+import org.joda.time.DateTime;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
@@ -66,10 +83,11 @@ public class RdeImportUtils {
     this.escrowBucketName = escrowBucketName;
   }
 
-  private <T extends EppResource> void importEppResource(final T resource, final String type) {
+  public <T extends EppResource> ImmutableSet<Object> getIndexesForEppResource(T resource,
+      String type) {
     @SuppressWarnings("unchecked")
     Class<T> resourceClass = (Class<T>) resource.getClass();
-    EppResource existing = ofy.load().key(Key.create(resource)).now();
+    Object existing = ofy.load().key(Key.create(resource)).now();
     if (existing != null) {
       // This will roll back the transaction and prevent duplicate history entries from being saved.
       throw new ResourceExistsException();
@@ -83,9 +101,15 @@ public class RdeImportUtils {
         type,
         resource.getForeignKey(),
         resource.getRepoId());
-    ofy.save().entity(resource);
-    ofy.save().entity(ForeignKeyIndex.create(resource, resource.getDeletionTime()));
-    ofy.save().entity(EppResourceIndex.create(Key.create(resource)));
+    return ImmutableSet.<Object>of(ForeignKeyIndex.create(resource, resource.getDeletionTime()),
+        EppResourceIndex.create(Key.create(resource)));
+  }
+
+  private <T extends EppResource> void importEppResource(final T resource, final String type) {
+    ofy.save().entities(new ImmutableSet.Builder<>()
+        .add(resource)
+        .addAll(getIndexesForEppResource(resource, type))
+        .build());
     logger.infofmt(
         "Imported %s resource - ROID=%s, id=%s",
         type, resource.getRepoId(), resource.getForeignKey());
@@ -183,5 +207,60 @@ public class RdeImportUtils {
     // Base64 encoded UUID string meets this requirement
     return Trid.create(
         "Import_" + BaseEncoding.base64().encode(UUID.randomUUID().toString().getBytes()));
+  }
+
+  public static BillingEvent.Recurring createAutoRenewBillingEventForDomainImport(
+      XjcRdeDomain domain, HistoryEntry historyEntry) {
+    final BillingEvent.Recurring billingEvent =
+        new BillingEvent.Recurring.Builder()
+            .setReason(Reason.RENEW)
+            .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+            .setTargetId(domain.getRoid())
+            .setClientId(domain.getClID())
+            .setEventTime(domain.getExDate())
+            .setRecurrenceEndTime(END_OF_TIME)
+            .setParent(historyEntry)
+            .build();
+    return billingEvent;
+  }
+
+  public static PollMessage.Autorenew createAutoRenewPollMessageForDomainImport(
+      XjcRdeDomain domain, HistoryEntry historyEntry) {
+    final PollMessage.Autorenew pollMessage =
+        new PollMessage.Autorenew.Builder()
+            .setTargetId(domain.getRoid())
+            .setClientId(domain.getClID())
+            .setEventTime(domain.getExDate())
+            .setMsg("Domain was auto-renewed.")
+            .setParent(historyEntry)
+            .build();
+    return pollMessage;
+  }
+
+  public static HistoryEntry createHistoryEntryForDomainImport(XjcRdeDomain domain) {
+    XjcRdeDomainElement element = new XjcRdeDomainElement(domain);
+    final HistoryEntry historyEntry =
+        new HistoryEntry.Builder()
+            .setType(HistoryEntry.Type.RDE_IMPORT)
+            .setClientId(domain.getClID())
+            .setTrid(generateTridForImport())
+            .setModificationTime(DateTime.now())
+            .setXmlBytes(getObjectXml(element))
+            .setBySuperuser(true)
+            .setReason("RDE Import")
+            .setRequestedByRegistrar(false)
+            .setParent(Key.create(null, DomainResource.class, domain.getRoid()))
+            .build();
+    return historyEntry;
+  }
+
+  public static byte[] getObjectXml(Object jaxbElement) {
+    try {
+      ByteArrayOutputStream bout = new ByteArrayOutputStream();
+      XjcXmlTransformer.marshalLenient(jaxbElement, bout, Charsets.UTF_8);
+      return bout.toByteArray();
+    } catch (XmlException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
