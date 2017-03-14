@@ -47,6 +47,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.DeterministicStringGenerator;
@@ -232,6 +233,16 @@ public class XjcToDomainResourceConverterTest {
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.TRANSFER);
     assertThat(gracePeriod.getClientId()).isEqualTo("RegistrarX");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(xjcDomain.getUpDate().plusDays(5));
+    TransferData transferData = domain.getTransferData();
+    assertThat(transferData).isNotEqualTo(TransferData.EMPTY);
+    assertThat(transferData.getTransferStatus()).isEqualTo(TransferStatus.CLIENT_APPROVED);
+    assertThat(transferData.getLosingClientId()).isEqualTo("RegistrarY");
+    assertThat(transferData.getTransferRequestTime())
+        .isEqualTo(DateTime.parse("2014-10-08T16:23:21.897803Z"));
+    assertThat(transferData.getGainingClientId()).isEqualTo("RegistrarX");
+    assertThat(transferData.getPendingTransferExpirationTime())
+        .isEqualTo(DateTime.parse("2014-10-09T08:25:43.305554Z"));
+    assertThat(transferData.getExtendedRegistrationYears()).isEqualTo(1);
   }
 
   @Test
@@ -418,8 +429,27 @@ public class XjcToDomainResourceConverterTest {
     assertThat(domain.getTransferData().getExtendedRegistrationYears()).isEqualTo(2);
   }
 
+  @Test
+  public void testConvertDomainResourcePendingTransferRegistrationCap() throws Exception {
+    persistActiveContact("jd1234");
+    persistActiveContact("sh8013");
+    final XjcRdeDomain xjcDomain =
+        loadDomainFromRdeXml("domain_fragment_pending_transfer_registration_cap.xml");
+    DomainResource domain = persistResource(convertDomainInTransaction(xjcDomain));
+    assertThat(domain.getTransferData()).isNotNull();
+    // exDate is equal to domain expiration, but extended registration years is always
+    // at least 1 year
+    assertThat(domain.getTransferData().getExtendedRegistrationYears()).isEqualTo(1);
+  }
+
   private static DomainResource convertDomainInTransaction(final XjcRdeDomain xjcDomain) {
-    final HistoryEntry historyEntry = createHistoryEntryForDomainImport(xjcDomain);
+    // HistoryEntry modification times should always match the transaction time of the save
+    final HistoryEntry historyEntry = ofy().transact(new Work<HistoryEntry>() {
+      @Override
+      public HistoryEntry run() {
+        return createHistoryEntryForDomainImport(xjcDomain);
+      }
+    });
     final BillingEvent.Recurring autorenewBillingEvent =
         createAutoRenewBillingEventForDomainImport(xjcDomain, historyEntry);
     final PollMessage.Autorenew autorenewPollMessage =

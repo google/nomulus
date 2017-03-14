@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.transform;
 import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
+import static google.registry.model.domain.DomainResource.extendRegistrationWithCap;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Function;
@@ -254,10 +255,14 @@ final class XjcToDomainResourceConverter extends XjcToEppResourceConverter {
     if (transferStatus == TransferStatus.PENDING) {
       // Default to domain expiration time plus one year if no expiration is specified
       if (data.getExDate() == null) {
-        newExpirationTime = newExpirationTime.plusYears(1);
+        newExpirationTime = extendRegistrationWithCap(data.getAcDate(), domainExpiration, 1);
       } else {
         newExpirationTime = data.getExDate();
       }
+    }
+    Years extendedRegistrationYears = Years.yearsBetween(domainExpiration, newExpirationTime);
+    if (extendedRegistrationYears.getYears() < 1) {
+      extendedRegistrationYears = Years.ONE;
     }
     return new TransferData.Builder()
         .setTransferStatus(transferStatus)
@@ -267,8 +272,7 @@ final class XjcToDomainResourceConverter extends XjcToEppResourceConverter {
         .setPendingTransferExpirationTime(data.getAcDate())
         // This will be wrong for domains that are not in pending transfer,
         // but there isn't a reliable way to calculate it.
-        .setExtendedRegistrationYears(
-            Years.yearsBetween(domainExpiration, newExpirationTime).getYears())
+        .setExtendedRegistrationYears(extendedRegistrationYears.getYears())
         .build();
   }
 

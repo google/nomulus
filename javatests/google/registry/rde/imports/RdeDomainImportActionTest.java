@@ -45,6 +45,7 @@ import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.request.Response;
 import google.registry.testing.FakeResponse;
@@ -69,6 +70,8 @@ public class RdeDomainImportActionTest extends MapreduceTestCase<RdeDomainImport
   private static final ByteSource DEPOSIT_1_DOMAIN = RdeImportsTestData.get("deposit_1_domain.xml");
   private static final ByteSource DEPOSIT_1_DOMAIN_PENDING_TRANSFER =
       RdeImportsTestData.get("deposit_1_domain_pending_transfer.xml");
+  private static final ByteSource DEPOSIT_1_DOMAIN_PENDING_TRANSFER_REG_CAP =
+      RdeImportsTestData.get("deposit_1_domain_pending_transfer_registration_cap.xml");
   private static final String IMPORT_BUCKET_NAME = "import-bucket";
   private static final String IMPORT_FILE_NAME = "escrow-file.xml";
 
@@ -190,7 +193,7 @@ public class RdeDomainImportActionTest extends MapreduceTestCase<RdeDomainImport
 
     // Domain should be assigned to RegistrarY after server approval
     DomainResource afterApproval =
-        domains.get(0).cloneProjectedAtTime(serverApprovalTime.plus(Seconds.ONE));
+        domains.get(0).cloneProjectedAtTime(serverApprovalTime);
     assertThat(afterApproval.getCurrentSponsorClientId()).isEqualTo("RegistrarY");
     assertThat(loadAutorenewBillingEventForDomain(afterApproval).getClientId())
         .isEqualTo("RegistrarY");
@@ -213,6 +216,46 @@ public class RdeDomainImportActionTest extends MapreduceTestCase<RdeDomainImport
   }
 
   @Test
+  public void testMapreducePendingTransferRegistrationCap() throws Exception {
+    // implicit server approval happens at 2015-01-08T22:00:00.0Z
+    DateTime serverApprovalTime = DateTime.parse("2015-04-03T22:00:00.0Z");
+    pushToGcs(DEPOSIT_1_DOMAIN_PENDING_TRANSFER_REG_CAP);
+    runMapreduce();
+    List<DomainResource> domains = ofy().load().type(DomainResource.class).list();
+    assertThat(domains).hasSize(1);
+    checkDomain(domains.get(0));
+
+    // Domain should be assigned to RegistrarX before server approval
+    DomainResource beforeApproval =
+        domains.get(0).cloneProjectedAtTime(serverApprovalTime.minus(Seconds.ONE));
+    assertThat(beforeApproval.getCurrentSponsorClientId()).isEqualTo("RegistrarX");
+    assertThat(loadAutorenewBillingEventForDomain(beforeApproval).getClientId())
+        .isEqualTo("RegistrarX");
+    assertThat(loadAutorenewPollMessageForDomain(beforeApproval).getClientId())
+        .isEqualTo("RegistrarX");
+    // Current expiration is 2025-04-03T22:00:00.0Z
+    assertThat(beforeApproval.getRegistrationExpirationTime())
+        .isEqualTo(DateTime.parse("2025-04-03T22:00:00.0Z"));
+
+    // Domain should be assigned to RegistrarY after server approval
+    DomainResource afterApproval =
+        domains.get(0).cloneProjectedAtTime(serverApprovalTime);
+    assertThat(afterApproval.getCurrentSponsorClientId()).isEqualTo("RegistrarY");
+    assertThat(loadAutorenewBillingEventForDomain(afterApproval).getClientId())
+        .isEqualTo("RegistrarY");
+    assertThat(loadAutorenewPollMessageForDomain(afterApproval).getClientId())
+        .isEqualTo("RegistrarY");
+    // New expiration should be capped at 10 years
+    assertThat(afterApproval.getRegistrationExpirationTime())
+        .isEqualTo(DateTime.parse("2025-04-03T22:00:00.0Z"));
+
+    // Capped expiration time should be in responseData for transfer request
+    checkTransferRequestPollMessage(domains.get(0), "RegistrarX",
+        DateTime.parse("2015-03-29T22:00:00.0Z"),
+        DateTime.parse("2025-04-03T22:00:00.0Z"));
+  }
+
+  @Test
   public void testMapreducePendingTransferEvents() throws Exception {
     pushToGcs(DEPOSIT_1_DOMAIN_PENDING_TRANSFER);
     runMapreduce();
@@ -220,7 +263,8 @@ public class RdeDomainImportActionTest extends MapreduceTestCase<RdeDomainImport
     assertThat(domains).hasSize(1);
     checkDomain(domains.get(0));
     checkTransferRequestPollMessage(domains.get(0), "RegistrarX",
-        DateTime.parse("2015-01-03T22:00:00.0Z"));
+        DateTime.parse("2015-01-03T22:00:00.0Z"),
+        DateTime.parse("2016-04-03T22:00:00.0Z"));
     checkTransferServerApprovalPollMessage(domains.get(0), "RegistrarX",
         DateTime.parse("2015-01-08T22:00:00.0Z"));
     checkTransferServerApprovalPollMessage(domains.get(0), "RegistrarY",
@@ -243,11 +287,17 @@ public class RdeDomainImportActionTest extends MapreduceTestCase<RdeDomainImport
 
   /** Verifies the existence of a transfer request poll message */
   private static void checkTransferRequestPollMessage(
-      DomainResource domain, String clientId, DateTime expectedAt) {
+      DomainResource domain, String clientId, DateTime expectedAt, DateTime expectedExpiration) {
     for (PollMessage message : getPollMessages(domain)) {
       if (TransferStatus.PENDING.getMessage().equals(message.getMsg())
           && clientId.equals(message.getClientId())
           && expectedAt.equals(message.getEventTime())) {
+        assertThat(message.getResponseData()).hasSize(1);
+        DomainTransferResponse responseData =
+            (DomainTransferResponse) message.getResponseData().get(0);
+        // make sure expiration is set correctly
+        assertThat(responseData.getExtendedRegistrationExpirationTime())
+            .isEqualTo(expectedExpiration);
         return;
       }
     }

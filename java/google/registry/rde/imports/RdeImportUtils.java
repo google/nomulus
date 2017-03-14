@@ -16,6 +16,7 @@ package google.registry.rde.imports;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -56,7 +57,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
-import org.joda.time.DateTime;
 
 /**
  * Utility functions for escrow file import.
@@ -82,14 +82,8 @@ public class RdeImportUtils {
   public <T extends EppResource & ForeignKeyedEppResource> ImmutableSet<Object>
       createIndexesForEppResource(T resource) {
     @SuppressWarnings("unchecked")
-    Class<T> resourceClass = (Class<T>) resource.getClass();
-    Object existing = ofy.load().key(Key.create(resource)).now();
-    if (existing != null) {
-      // This will roll back the transaction and prevent duplicate history entries from being saved.
-      throw new ResourceExistsException();
-    }
     ForeignKeyIndex<T> existingForeignKeyIndex =
-        ForeignKeyIndex.load(resourceClass, resource.getForeignKey(), START_OF_TIME);
+        ForeignKeyIndex.load((Class<T>)resource.getClass(), resource.getForeignKey(), START_OF_TIME);
     // ForeignKeyIndex should never have existed, since existing resource was not found.
     checkState(
         existingForeignKeyIndex == null,
@@ -104,13 +98,18 @@ public class RdeImportUtils {
   /**
    * Imports a resource from an escrow file.
    *
-   * <p>The host will only be imported if it has not been previously imported.
+   * <p>The resource will only be imported if it has not been previously imported.
    *
-   * <p>If the host is imported, {@link ForeignKeyIndex} and {@link EppResourceIndex} are also
+   * <p>If the resource is imported, {@link ForeignKeyIndex} and {@link EppResourceIndex} are also
    * created.
    */
   public <T extends EppResource & ForeignKeyedEppResource> void
       importEppResource(final T resource) {
+    Object existing = ofy.load().key(Key.create(resource)).now();
+    if (existing != null) {
+      // This will roll back the transaction and prevent duplicate history entries from being saved.
+      throw new ResourceExistsException();
+    }
     ofy.save().entities(new ImmutableSet.Builder<>()
         .add(resource)
         .addAll(createIndexesForEppResource(resource))
@@ -213,7 +212,7 @@ public class RdeImportUtils {
             .setType(HistoryEntry.Type.RDE_IMPORT)
             .setClientId(domain.getClID())
             .setTrid(generateTridForImport())
-            .setModificationTime(DateTime.now())
+            .setModificationTime(ofy().getTransactionTime())
             .setXmlBytes(getObjectXml(element))
             .setBySuperuser(true)
             .setReason("RDE Import")

@@ -26,6 +26,7 @@ import static google.registry.rde.imports.RdeImportUtils.createHistoryEntryForDo
 import static google.registry.rde.imports.RdeImportsModule.PATH;
 import static google.registry.util.PipelineUtils.createJobPath;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
+import static google.registry.model.domain.DomainResource.extendRegistrationWithCap;
 
 import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
@@ -57,6 +58,7 @@ import google.registry.xjc.rdedomain.XjcRdeDomain;
 import google.registry.xjc.rdedomain.XjcRdeDomainElement;
 import javax.inject.Inject;
 import org.joda.money.Money;
+import org.joda.time.DateTime;
 
 /**
  * A mapreduce that imports domains from an escrow file.
@@ -191,6 +193,10 @@ public class RdeDomainImportAction implements Runnable {
                   transferData.getPendingTransferExpirationTime(),
                   transferData.getExtendedRegistrationYears());
               // Create speculative entities in anticipation of an automatic server approval.
+              DateTime newExpirationTime = extendRegistrationWithCap(
+                  transferData.getPendingTransferExpirationTime(),
+                  domain.getRegistrationExpirationTime(),
+                  transferData.getExtendedRegistrationYears());
               ImmutableSet<TransferServerApproveEntity> serverApproveEntities =
                   createTransferServerApproveEntities(
                       transferData.getPendingTransferExpirationTime(),
@@ -207,7 +213,7 @@ public class RdeDomainImportAction implements Runnable {
                   createPendingTransferData(transferData.asBuilder(), serverApproveEntities);
               // Create a poll message to notify the losing registrar that a transfer was requested.
               PollMessage requestPollMessage = createLosingTransferPollMessage(domain.getRepoId(),
-                  transferData, transferData.getPendingTransferExpirationTime(), historyEntry)
+                  transferData, newExpirationTime, historyEntry)
                       .asBuilder().setEventTime(transferData.getTransferRequestTime()).build();
               domain = domain.asBuilder().setTransferData(transferData).build();
               autorenewBillingEvent = autorenewBillingEvent.asBuilder()
