@@ -36,14 +36,19 @@ import google.registry.mapreduce.MapreduceRunner;
 import google.registry.model.domain.DomainResource;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
+import google.registry.model.ofy.Ofy;
 import google.registry.request.Response;
+import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
+import google.registry.testing.InjectRule;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
+import org.joda.time.DateTime;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -59,14 +64,21 @@ public class RdeHostLinkActionTest extends MapreduceTestCase<RdeHostLinkAction> 
   private static final GcsService GCS_SERVICE =
       GcsServiceFactory.createGcsService(RetryParams.getDefaultInstance());
 
+  @Rule
+  public final InjectRule inject = new InjectRule();
+
   private MapreduceRunner mrRunner;
 
   private Response response;
 
   private final Optional<Integer> mapShards = Optional.absent();
 
+  private FakeClock clock = new FakeClock();
+
   @Before
   public void before() throws Exception {
+    clock.setTo(DateTime.now());
+    inject.setStaticField(Ofy.class, "clock", clock);
     createTld("test");
     response = new FakeResponse();
     mrRunner = new MapreduceRunner(Optional.<Integer>absent(), Optional.<Integer>absent());
@@ -86,10 +98,41 @@ public class RdeHostLinkActionTest extends MapreduceTestCase<RdeHostLinkAction> 
     ForeignKeyDomainIndex.create(superordinateDomain, END_OF_TIME);
     Key<DomainResource> superOrdinateDomainKey = Key.create(superordinateDomain);
     pushToGcs(DEPOSIT_1_HOST);
+    // set transaction time to slightly after resource save
+    clock.advanceOneMilli();
     runMapreduce();
+    // verify that host is linked to domain
     List<HostResource> hosts = ofy().load().type(HostResource.class).list();
     assertThat(hosts).hasSize(1);
     assertThat(hosts.get(0).getSuperordinateDomain()).isEqualTo(superOrdinateDomainKey);
+    assertThat(hosts.get(0).getLastSuperordinateChange())
+        .isEqualTo(clock.nowUtc());
+    // verify that domain is linked to host
+    List<DomainResource> domains = ofy().load().type(DomainResource.class).list();
+    assertThat(domains).hasSize(1);
+    assertThat(domains.get(0).getSubordinateHosts()).containsExactly("ns1.example1.test");
+  }
+
+  @Test
+  public void test_mapreduceIgnoresHostWithWrongRepoid() throws Exception {
+    // in-zone host with different repoid is ignored, since it would already be linked
+    // from a separate epp create or import.
+    // Create host and domain first
+    HostResource newHost = persistResource(
+        newHostResource("ns1.example1.test")
+            .asBuilder()
+            .setRepoId("wrong-repoid")
+            .build());
+    DomainResource superordinateDomain = persistActiveDomain("example1.test");
+    ForeignKeyDomainIndex.create(superordinateDomain, END_OF_TIME);
+    pushToGcs(DEPOSIT_1_HOST);
+    // set transaction time to slightly after resource save
+    clock.advanceOneMilli();
+    runMapreduce();
+    // verify that host has not been updated
+    List<HostResource> hosts = ofy().load().type(HostResource.class).list();
+    assertThat(hosts).hasSize(1);
+    assertThat(hosts.get(0).getUpdateAutoTimestamp()).isEqualTo(newHost.getUpdateAutoTimestamp());
   }
 
   private void runMapreduce() throws Exception {

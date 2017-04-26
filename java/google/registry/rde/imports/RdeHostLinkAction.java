@@ -24,9 +24,10 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InternetDomainName;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.VoidWork;
+import com.googlecode.objectify.Work;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.mapreduce.MapreduceRunner;
+import google.registry.model.EppResource;
 import google.registry.model.domain.DomainResource;
 import google.registry.model.host.HostResource;
 import google.registry.request.Action;
@@ -98,39 +99,69 @@ public class RdeHostLinkAction implements Runnable {
       final XjcRdeHost xjcHost = fragment.getInstance().getValue();
       logger.infofmt("Attempting to link superordinate domain for host %s", xjcHost.getName());
       try {
-        InternetDomainName hostName = InternetDomainName.from(xjcHost.getName());
-        Optional<DomainResource> superordinateDomain =
-            lookupSuperordinateDomain(hostName, DateTime.now());
-        // if suporordinateDomain is null, this is an out of zone host and can't be linked
-        if (!superordinateDomain.isPresent()) {
-          getContext().incrementCounter("post-import hosts out of zone");
-          logger.infofmt("Host %s is out of zone", xjcHost.getName());
-          return;
-        }
-        // at this point, the host is definitely in zone and should be linked
-        getContext().incrementCounter("post-import hosts in zone");
-        final Key<DomainResource> superordinateDomainKey = Key.create(superordinateDomain.get());
-        ofy().transact(new VoidWork() {
+        final InternetDomainName hostName = InternetDomainName.from(xjcHost.getName());
+
+        HostLinkResult hostLinkResult = ofy().transact(new Work<HostLinkResult>() {
           @Override
-          public void vrun() {
+          public HostLinkResult run() {
+            Optional<DomainResource> superordinateDomain =
+                lookupSuperordinateDomain(hostName, ofy().getTransactionTime());
+            // if suporordinateDomain is absent, this is an out of zone host and can't be linked.
+            // absent is only returned for out of zone hosts, and an exception is thrown for in
+            // zone hosts with no superordinate domain.
+            if (!superordinateDomain.isPresent()) {
+              return HostLinkResult.HOST_OUT_OF_ZONE;
+            }
+            Key<DomainResource> superordinateDomainKey = Key.create(superordinateDomain.get());
+            // link host to superordinate domain and set time of last superordinate change to
+            // the time of the import
             HostResource host =
                 ofy().load().now(Key.create(HostResource.class, xjcHost.getRoid()));
-            ofy().save()
-                .entity(host.asBuilder().setSuperordinateDomain(superordinateDomainKey).build());
+            if (host == null) {
+              return HostLinkResult.HOST_NOT_FOUND;
+            }
+            // link domain to subordinate host
+            ofy().save().<EppResource>entities(
+                host.asBuilder().setSuperordinateDomain(superordinateDomainKey)
+                    .setLastSuperordinateChange(ofy().getTransactionTime())
+                    .build(),
+                superordinateDomain.get().asBuilder()
+                    .addSubordinateHost(host.getFullyQualifiedHostName()).build());
+            return HostLinkResult.HOST_LINKED;
           }
         });
-        logger.infofmt(
-            "Successfully linked host %s to superordinate domain %s",
-            xjcHost.getName(),
-            superordinateDomain.get().getFullyQualifiedDomainName());
-        // Record number of hosts successfully linked
-        getContext().incrementCounter("post-import hosts linked");
-      } catch (Exception e) {
+        // increment counter and log appropriately based on result of transaction
+        switch (hostLinkResult) {
+          case HOST_LINKED:
+            logger.infofmt(
+                "Successfully linked host %s to superordinate domain", xjcHost.getName());
+            // Record number of hosts successfully linked
+            getContext().incrementCounter("post-import hosts linked");
+            break;
+          case HOST_NOT_FOUND:
+            getContext().incrementCounter("hosts not found");
+            logger.severefmt(
+                "Host with name %s and repoid %s not found",
+                xjcHost.getName(),
+                xjcHost.getRoid());
+            break;
+          case HOST_OUT_OF_ZONE:
+            getContext().incrementCounter("post-import hosts out of zone");
+            logger.infofmt("Host %s is out of zone", xjcHost.getName());
+            break;
+        }
+      } catch (RuntimeException e) {
         // Record the number of hosts with unexpected errors
         getContext().incrementCounter("post-import host errors");
-        throw new HostLinkException(xjcHost.getName(), xjcHost.toString(), e);
+        logger.severefmt(e, "Error linking host %s; xml=%s", xjcHost.getName(), xjcHost);
       }
     }
+  }
+
+  private static enum HostLinkResult {
+    HOST_NOT_FOUND,
+    HOST_OUT_OF_ZONE,
+    HOST_LINKED;
   }
 
   private static class HostLinkException extends RuntimeException {
