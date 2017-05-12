@@ -131,6 +131,7 @@ additional components that are not provided out of the box.
     *   [EPP RTK Project](http://epp-rtk.sourceforge.net/)
     *   [CentralNic](https://www.centralnic.com/registry/labs)
     *   [ari-toolkit](https://github.com/AusRegistry/ari-toolkit)
+    *   [Net::DRI](https://metacpan.org/pod/Net::DRI)
 *   Some Open Source DNS Projects that may be useful, but which we have not
     tested:
     *   [AtomiaDNS](http://atomiadns.com/)
