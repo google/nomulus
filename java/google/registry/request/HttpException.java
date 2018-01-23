@@ -84,7 +84,7 @@ public abstract class HttpException extends RuntimeException {
     }
 
     public NotModifiedException(String message) {
-      super(HttpServletResponse.SC_NOT_FOUND, message, null);
+      super(HttpServletResponse.SC_NOT_MODIFIED, message, null);
     }
 
     @Override
