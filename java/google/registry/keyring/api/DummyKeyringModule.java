@@ -42,6 +42,28 @@ import org.bouncycastle.openpgp.bc.BcPGPSecretKeyRingCollection;
  * with all attempted outgoing connections failing because the supplied dummy credentials aren't
  * valid. For a real system that needs to connect with external services, you should replace this
  * module with one that loads real credentials from secure sources.
+ * 
+ * <p>The dummy PGP keyrings are created using gnupg1/pgp1 roughly like the following (using
+ * gnupg2/pgp2 is an exercise left for the developer):
+ * <pre>{@code
+ * # mkdir gpg
+ * # chmod 700 gpg
+ * # gpg1 --homedir gpg --gen-key <<<EOF
+ * 1
+ * 1024
+ * 0
+ * Y
+ * Test Registry
+ * test-registry@example.com
+ * 
+ * O
+ * EOF
+ * [press enter twice at keyring password prompts]
+ * # gpg1 --homedir gpg -a -o pgp-public-keyring.asc --export test-registry@example.com
+ * # gpg1 --homedir gpg -a -o pgp-private-keyring.asc --export-secret-keys test-registry@example.com
+ * # mv pgp*keyring.asc java/google/registry/keyring/api
+ * # rm -rf gpg
+ * }</pre>
  */
 @Module
 @Immutable
@@ -56,7 +78,7 @@ public final class DummyKeyringModule {
       Resources.asByteSource(getResource(InMemoryKeyring.class, "pgp-private-keyring.asc"));
 
   /** The email address of the aforementioned PGP key. */
-  private static final String EMAIL_ADDRESS = "domain-registry-users@googlegroups.com";
+  private static final String EMAIL_ADDRESS = "test-registry@example.com";
 
   /** Always returns a {@link InMemoryKeyring} instance. */
   @Provides
