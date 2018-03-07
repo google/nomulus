@@ -117,7 +117,8 @@ public final class PgpHelper {
           new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider())
               .build(new char[0]));
     } catch (PGPException e) {
-      throw new VerifyException(e.getMessage());
+      throw new VerifyException(String.format(
+          "Could not load PGP private key for: %s", query), e);
     }
     return new PGPKeyPair(publicKey, privateKey);
   }
