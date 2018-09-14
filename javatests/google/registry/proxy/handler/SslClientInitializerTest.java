@@ -37,6 +37,7 @@ import io.netty.handler.ssl.SslProvider;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import java.security.KeyPair;
 import java.security.PrivateKey;
+import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLException;
@@ -46,7 +47,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
-import sun.security.provider.certpath.SunCertPathBuilderException;
 
 /**
  * Unit tests for {@link SslClientInitializer}.
@@ -142,7 +142,7 @@ public class SslClientInitializerTest {
     nettyRule.setUpClient(localAddress, PROTOCOL, sslClientInitializer);
     // The connection is now terminated, both the client side and the server side should get
     // exceptions.
-    nettyRule.assertThatClientRootCause().isInstanceOf(SunCertPathBuilderException.class);
+    nettyRule.assertThatClientRootCause().isInstanceOf(CertPathBuilderException.class);
     nettyRule.assertThatServerRootCause().isInstanceOf(SSLException.class);
     assertThat(nettyRule.getChannel().isActive()).isFalse();
   }
