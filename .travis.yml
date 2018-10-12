@@ -1,0 +1,14 @@
+sudo: required
+dist: trusty
+addons:
+  apt:
+    packages:
+      - wget
+
+before_install:
+  - wget https://github.com/bazelbuild/bazel/releases/download/0.17.1/bazel-0.17.1-installer-linux-x86_64.sh
+  - chmod 755 bazel-0.17.1-installer-linux-x86_64.sh
+  - sudo ./bazel-0.17.1-installer-linux-x86_64.sh
+
+script:
+  - bazel test --test_output=errors ... |& cat
