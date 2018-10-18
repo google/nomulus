@@ -186,6 +186,7 @@ public class ShellCommand implements Command {
       }
       Exception lastError = null;
       try {
+        System.out.println("Snuff!!!");
         runner.run(lineArgs);
       } catch (Exception e) {
         lastError = e;
