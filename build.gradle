@@ -29,6 +29,7 @@ plugins {
   id "com.moowork.node" version "1.2.0"
 
   id 'idea'
+  id 'com.diffplug.gradle.spotless' version '3.18.0'
 }
 
 apply plugin: google.registry.gradle.plugin.ReportUploaderPlugin

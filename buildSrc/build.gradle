@@ -8,14 +8,13 @@ buildscript {
 }
 
 plugins {
-// Java static analysis plugins. Keep versions consistent with ../build.gradle
+  // Java static analysis plugins. Keep versions consistent with ../build.gradle
   id 'nebula.lint' version '10.4.2'
   // Config helper for annotation processors such as AutoValue and Dagger.
   // Ensures that source code is generated at an appropriate location.
   id 'net.ltgt.apt' version '0.19' apply false
   id 'net.ltgt.errorprone' version '0.6.1'
   id 'checkstyle'
-
   id 'com.diffplug.gradle.spotless' version '3.18.0'
 }
 
@@ -51,26 +50,6 @@ sourceSets {
 
 checkstyle {
   configDir file('../config/checkstyle')
-}
-
-// To check or fix file formats, run the following commands from this directory:
-// - Check: ../gradlew spotlessCheck
-// - Format in place: ../gradlew spotlessApply
-spotless {
-  java {
-    target project.fileTree("${project.rootDir}/") {
-      include "src/main/java/**/*.java"
-      include "src/test/java/**/*.java"
-    }
-    googleJavaFormat('1.7')
-  }
-  format 'misc', {
-    target '**/*.gradle'
-
-    trimTrailingWhitespace()
-    indentWithSpaces(2)
-    endWithNewline()
-  }
 }
 
 dependencies {
