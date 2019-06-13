@@ -34,7 +34,11 @@ FROM ( (
       -- Registrations that are active (not deleted) will have null deletionTime
       -- because END_OF_TIME is an invalid timestamp in standardSQL
       (SAFE_CAST(deletionTime AS STRING) IS NULL
-        OR deletionTime > CURRENT_TIMESTAMP)) AS domain
+        OR deletionTime > CURRENT_TIMESTAMP)
+    AND NOT EXISTS(SELECT 1 FROM
+     UNNEST(status) domainStatus WHERE domainStatus IN
+     UNNEST(['CLIENT_HOLD', 'INACTIVE', 'PENDING_DELETE', 'SERVER_HOLD']))
+    ) AS domain
   JOIN (
     SELECT
       __key__.name AS clientId,
