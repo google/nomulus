@@ -31,29 +31,25 @@ if [ "${environment}" == tool ]
 then
   mkdir -p "${dest}"
 
-  cd gradle
   ./gradlew clean :core:nomulus \
     -PmavenUrl=https://"${gcs_prefix}"/maven \
     -PpluginsUrl=https://"${gcs_prefix}"/plugins
-  cd -
 
-  mv gradle/core/build/libs/nomulus.jar "${dest}"
+  mv core/build/libs/nomulus.jar "${dest}"
 else
   dest="${dest}/$1"
   mkdir -p "${dest}"
 
-  cd gradle
   ./gradlew clean stage -Penvironment="${environment}" \
     -PmavenUrl=https://"${gcs_prefix}"/maven \
     -PpluginsUrl=https://"${gcs_prefix}"/plugins
-  cd -
 
   for service in default pubapi backend tools
   do
-    mv gradle/services/"${service}"/build/staged-app "${dest}/${service}"
+    mv services/"${service}"/build/staged-app "${dest}/${service}"
   done
 
-  mv gradle/core/build/resources/main/google/registry/env/common/META-INF \
+  mv core/build/resources/main/google/registry/env/common/META-INF \
     "${dest}/META-INF"
 
   cd "${dest}"

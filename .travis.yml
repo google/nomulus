@@ -55,4 +55,4 @@ env:
 # output, instead of the default 10.
 # See notes on the CREDZ and REPORT_GCS_BUCKET environment variable in the
 # comments at the top of the file.
-script: cd gradle && echo "$CREDZ" >credz.json && chmod 755 ./gradlew && travis_wait 45 ./gradlew build --continue -P uploaderDestination="$REPORT_GCS_DESTINATION" -P uploaderCredentialsFile=credz.json -P uploaderMultithreadedUpload=yes -P mavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven -P pluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins
+script: echo "$CREDZ" >credz.json && chmod 755 ./gradlew && travis_wait 45 ./gradlew build --continue -P uploaderDestination="$REPORT_GCS_DESTINATION" -P uploaderCredentialsFile=credz.json -P uploaderMultithreadedUpload=yes -P mavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven -P pluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins

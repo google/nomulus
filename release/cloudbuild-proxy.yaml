@@ -26,11 +26,10 @@ steps:
   - ':proxy:deployJar'
   - '-PmavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven'
   - '-PpluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins'
-  dir: 'gradle'
 # Build the docker image.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args: ['docker', 'build', '--tag', 'gcr.io/${PROJECT_ID}/proxy:${TAG_NAME}', '.']
-  dir: 'gradle/proxy'
+  dir: 'proxy'
 # Push the image. We can't let Cloud Build's default processing do that for us
 # because we need to push the image before we can sign it in the following
 # step.

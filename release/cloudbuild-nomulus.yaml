@@ -27,7 +27,6 @@ steps:
 # Run tests
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args: ['./gradlew', 'test', '-PskipDockerIncompatibleTests=true']
-  dir: 'gradle'
 # Build the tool binary.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args: ['release/build_nomulus_for_env.sh', 'tool', 'output']

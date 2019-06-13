@@ -1,0 +1,98 @@
+buildscript {
+  if (rootProject.disableDependencyLocking.toBoolean() == false) {
+    // Lock buildscript dependencies.
+    configurations.classpath {
+      resolutionStrategy.activateDependencyLocking()
+    }
+  }
+}
+
+plugins {
+// Java static analysis plugins. Keep versions consistent with ../build.gradle
+  id 'nebula.lint' version '10.4.2'
+  // Config helper for annotation processors such as AutoValue and Dagger.
+  // Ensures that source code is generated at an appropriate location.
+  id 'net.ltgt.apt' version '0.19' apply false
+  id 'net.ltgt.errorprone' version '0.6.1'
+  id 'checkstyle'
+
+  id 'com.diffplug.gradle.spotless' version '3.18.0'
+}
+
+if (rootProject.disableDependencyLocking.toBoolean() == false) {
+  // Lock application dependencies.
+  dependencyLocking {
+    lockAllConfigurations()
+  }
+}
+
+repositories {
+  if (project.ext.properties.mavenUrl == null) {
+    println "Plugin dependencies: Using Maven central..."
+    mavenCentral()
+  } else {
+    maven {
+      println "Plugin dependencies: Using repo ${mavenUrl}..."
+      url mavenUrl
+    }
+  }
+}
+
+apply from: '../dependencies.gradle'
+apply from: '../java_common.gradle'
+
+sourceSets {
+  main {
+    java {
+      srcDirs += "${project.buildDir}/generated/source/apt/main"
+    }
+  }
+}
+
+checkstyle {
+  configDir file('../config/checkstyle')
+}
+
+// To check or fix file formats, run the following commands from this directory:
+// - Check: ../gradlew spotlessCheck
+// - Format in place: ../gradlew spotlessApply
+spotless {
+  java {
+    target project.fileTree("${project.rootDir}/") {
+      include "src/main/java/**/*.java"
+      include "src/test/java/**/*.java"
+    }
+    googleJavaFormat('1.7')
+  }
+  format 'misc', {
+    target '**/*.gradle'
+
+    trimTrailingWhitespace()
+    indentWithSpaces(2)
+    endWithNewline()
+  }
+}
+
+dependencies {
+  def deps = dependencyMap
+  compile deps['com.google.auth:google-auth-library-credentials']
+  compile deps['com.google.auth:google-auth-library-oauth2-http']
+  compile deps['com.google.cloud:google-cloud-core']
+  compile deps['com.google.guava:guava']
+  compile deps['com.google.auto.value:auto-value-annotations']
+  compile deps['com.google.cloud:google-cloud-storage']
+  compile deps['org.apache.commons:commons-text']
+  compile deps['com.google.auth:google-auth-library-credentials']
+  compile deps['com.google.template:soy']
+  annotationProcessor deps['com.google.auto.value:auto-value']
+  testCompile deps['com.google.truth:truth']
+  testCompile deps['com.google.truth.extensions:truth-java8-extension']
+  testCompile deps['junit:junit']
+  testCompile deps['org.mockito:mockito-core']
+}
+
+gradle.projectsEvaluated {
+  tasks.withType(JavaCompile) {
+    options.compilerArgs << "-Xlint:unchecked"
+  }
+}

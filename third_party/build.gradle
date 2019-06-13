@@ -1,0 +1,14 @@
+plugins {
+  id 'java-library'
+}
+
+sourceSets {
+  main {
+    java {
+      srcDirs = [
+          "${rootDir}/third_party/junit/"
+      ]
+      include '**/*.java'
+    }
+  }
+}
