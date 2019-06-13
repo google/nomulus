@@ -3,7 +3,7 @@
 # This file is expected to be part of source control.
 com.beust:jcommander:1.48
 com.fasterxml.jackson.core:jackson-core:2.9.6
-com.google.api-client:google-api-client:1.28.0
+com.google.api-client:google-api-client:1.29.2
 com.google.apis:google-api-services-cloudkms:v1-rev12-1.22.0
 com.google.apis:google-api-services-monitoring:v3-rev426-1.23.0
 com.google.apis:google-api-services-storage:v1-rev150-1.22.0
@@ -19,18 +19,17 @@ com.google.flogger:flogger:0.1
 com.google.guava:failureaccess:1.0.1
 com.google.guava:guava:27.1-jre
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava
-com.google.http-client:google-http-client-apache:2.0.0
-com.google.http-client:google-http-client-jackson2:1.28.0
-com.google.http-client:google-http-client:1.28.0
+com.google.http-client:google-http-client-jackson2:1.29.2
+com.google.http-client:google-http-client:1.29.2
 com.google.j2objc:j2objc-annotations:1.1
 com.google.monitoring-client:metrics:1.0.4
 com.google.monitoring-client:stackdriver:1.0.4
-com.google.oauth-client:google-oauth-client:1.28.0
+com.google.oauth-client:google-oauth-client:1.29.2
 com.google.re2j:re2j:1.1
 com.ibm.icu:icu4j:57.1
 commons-codec:commons-codec:1.10
 commons-logging:commons-logging:1.2
-io.grpc:grpc-context:1.14.0
+io.grpc:grpc-context:1.18.0
 io.netty:netty-buffer:4.1.31.Final
 io.netty:netty-codec-http:4.1.31.Final
 io.netty:netty-codec:4.1.31.Final
@@ -38,8 +37,8 @@ io.netty:netty-common:4.1.31.Final
 io.netty:netty-handler:4.1.31.Final
 io.netty:netty-resolver:4.1.31.Final
 io.netty:netty-transport:4.1.31.Final
-io.opencensus:opencensus-api:0.18.0
-io.opencensus:opencensus-contrib-http-util:0.18.0
+io.opencensus:opencensus-api:0.19.2
+io.opencensus:opencensus-contrib-http-util:0.19.2
 javax.activation:activation:1.1
 javax.inject:javax.inject:1
 javax.mail:mail:1.4

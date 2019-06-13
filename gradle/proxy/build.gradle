@@ -7,24 +7,7 @@ sourceSets {
   }
 }
 
-task deployJar(type: Jar) {
-  manifest {
-    attributes 'Main-Class': 'google.registry.proxy.ProxyServer'
-  }
-  baseName = 'proxy_server'
-  version = null
-  from {
-    configurations.runtimeClasspath.collect {
-      it.isDirectory() ? it : zipTree(it)
-    }
-  }
-  // Excludes signature files that accompany some dependency jars, like
-  // bonuncycastle. It they are present, only classes from those signed jars are
-  // made available to the class loader.
-  // see https://discuss.gradle.org/t/signing-a-custom-gradle-plugin-thats-downloaded-by-the-build-system-from-github/1365
-  exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
-  with jar
-}
+createUberJar('deployJar', 'proxy_server', 'google.registry.proxy.ProxyServer')
 
 dependencies {
   def deps = rootProject.dependencyMap
@@ -74,3 +57,4 @@ dependencies {
   annotationProcessor deps['com.google.dagger:dagger-compiler']
   testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
 }
+

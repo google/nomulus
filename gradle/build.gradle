@@ -23,6 +23,7 @@ plugins {
   id 'net.ltgt.apt' version '0.19' apply false
   id 'net.ltgt.errorprone' version '0.6.1'
   id 'checkstyle'
+  id 'com.github.johnrengelman.shadow' version '5.0.0'
 
   // NodeJs plugin
   id "com.moowork.node" version "1.2.0"
@@ -100,6 +101,26 @@ subprojects {
   // Skip no-op project
   if (project.name == 'services') return
 
+  ext.createUberJar = { taskName, binaryName, mainClass ->
+    project.tasks.create(
+      taskName, com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+      mergeServiceFiles()
+      baseName = binaryName
+      manifest {
+        attributes 'Main-Class': mainClass
+      }
+      zip64 = true
+      classifier = null
+      version = null
+      configurations = [project.configurations.runtimeClasspath]
+      from project.sourceSets.main.output
+      // Excludes signature files that accompany some dependency jars, like
+      // bonuncycastle. If they are present, only classes from those signed jars are
+      // made available to the class loader.
+      // see https://discuss.gradle.org/t/signing-a-custom-gradle-plugin-thats-downloaded-by-the-build-system-from-github/1365
+      exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
+    }
+  }
 
   if (rootProject.disableDependencyLocking.toBoolean() == false) {
     buildscript {
@@ -196,3 +217,4 @@ subprojects {
     }
   }
 }
+

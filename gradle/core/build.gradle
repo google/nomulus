@@ -666,23 +666,9 @@ test {
   }
 }.dependsOn(fragileTest, outcastTest)
 
-task nomulus(type: Jar) {
-  manifest {
-    attributes 'Main-Class': 'google.registry.tools.RegistryTool'
-  }
-  zip64 = true
-  baseName = 'nomulus'
-  version = null
-  from {
-    configurations.runtimeClasspath.collect {
-      it.isDirectory() ? it : zipTree(it)
-    }
-  }
-  // Excludes signature files that accompany some dependency jars, like
-  // bonuncycastle. It they are present, only classes from those signed jars are
-  // made available to the class loader.
-  // see https://discuss.gradle.org/t/signing-a-custom-gradle-plugin-thats-downloaded-by-the-build-system-from-github/1365
-  exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
-  with jar
-  dependsOn project(':third_party').jar
-}
+createUberJar('nomulus', 'nomulus', 'google.registry.tools.RegistryTool')
+createUberJar('gtechTool', 'gtech_tool', 'google.registry.tools.GtechTool')
+project.nomulus.dependsOn project(':third_party').jar
+project.gtechTool.dependsOn project(':third_party').jar
+
+
