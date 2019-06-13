@@ -59,4 +59,3 @@ dependencies {
   annotationProcessor deps['com.google.dagger:dagger-compiler']
   testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
 }
-
