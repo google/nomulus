@@ -16,11 +16,6 @@
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
 steps:
-# Set permissions correctly. Not sure why it is necessary, but it is.
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  args: ['chown', '-R', 'root:root', '.']
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  args: ['chmod', '-R', '777', '.']
 # Create a directory to store the artifacts
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args: ['mkdir', 'nomulus']

@@ -67,7 +67,7 @@ steps:
     sed -i s%distroless/java%${PROJECT_ID}/base@$base_digest% proxy/Dockerfile
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-proxy.yaml
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-nomulus.yaml
-    sed -i s/GCP_PROJECT/${PROJECT_ID}/ java/google/registry/proxy/kubernetes/proxy-*.yaml
+    sed -i s/GCP_PROJECT/${PROJECT_ID}/ proxy/src/main/java/google/registry/proxy/kubernetes/proxy-*.yaml
     sed -i s/'$${TAG_NAME}'/${TAG_NAME}/g release/cloudbuild-sync.yaml
 # Upload the gradle binary to GCS if it does not exist and point URL in gradle wrapper to it.
 - name: 'gcr.io/cloud-builders/gsutil'
