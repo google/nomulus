@@ -8,7 +8,7 @@ def projects = ['production': 'domain-registry',
 
 def environment = rootProject.findProperty("environment")
 if (environment == null) {
-    environment = 'alpha'
+    environment = 'production'
 }
 def gcpProject = projects[environment]
 if (gcpProject == null) {
