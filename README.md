@@ -2,7 +2,7 @@
 
 | Internal | Open Source |
 |-------|--------|
-|![Build Status for Google Registry internal build](https://storage.googleapis.com/domain-registry-kokoro/build.svg)|[![Build Status for the open source build](https://travis-ci.org/google/nomulus.svg?branch=master)](https://travis-ci.org/google/nomulus)|
+|[![Build Status for Google Registry internal build](https://storage.googleapis.com/domain-registry-kokoro/build.svg)](https://storage.googleapis.com/domain-registry-kokoro/index.html)|[![Build Status for the open source build](https://travis-ci.org/google/nomulus.svg?branch=master)](https://travis-ci.org/google/nomulus)|
 
 ![Nomulus logo](./nomulus-logo.png)
 
