@@ -39,6 +39,7 @@ cache:
   directories:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
+    - $HOME/google-cloud-sdk
 
 # WebDriver tests need Chrome and ChromeDriver provisioned by the docker image
 services:
@@ -48,6 +49,20 @@ env:
   # Disable fancy status information (looks bad on travis and exceeds logfile
   # quota)
   TERM=dumb
+
+before_install:
+- if [ ! -d $HOME/google-cloud-sdk/bin ]; then
+    # The install script errors if this directory already exists,
+    # but Travis already creates it when we mark it as cached.
+    rm -rf $HOME/google-cloud-sdk;
+    # The install script is overly verbose, which sometimes causes
+    # problems on Travis, so ignore stdout.
+    curl https://sdk.cloud.google.com | bash > /dev/null;
+  fi
+# This line is critical. We setup the SDK to take precedence in our
+# environment over the old SDK that is already on the machine.
+- source $HOME/google-cloud-sdk/path.bash.inc
+- gcloud version
 
 # Specialize gradle build to use an up-to-date gradle and the /gradle
 # directory.

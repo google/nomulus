@@ -11,6 +11,8 @@ sourceSets {
 
 createUberJar('deployJar', 'proxy_server', 'google.registry.proxy.ProxyServer')
 
+project.build.dependsOn deployJar
+
 dependencies {
   def deps = rootProject.dependencyMap
 
