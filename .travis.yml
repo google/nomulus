@@ -51,6 +51,7 @@ env:
     - TERM=dumb
     # Do not prompt for user input when using any SDK methods.
     - CLOUDSDK_CORE_DISABLE_PROMPTS=1
+
 install:
   - |
     if [ ! -d $HOME/google-cloud-sdk/bin ]
