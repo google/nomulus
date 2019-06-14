@@ -25,7 +25,6 @@
 # usage (usually just wrapping it in single quotes should suffice).
 
 language: java
-install: true
 jdk:
   # Our builds fail against Oracle Java for reasons yet unknown.
   - openjdk8
@@ -39,15 +38,35 @@ cache:
   directories:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
+    - $HOME/google-cloud-sdk/
 
 # WebDriver tests need Chrome and ChromeDriver provisioned by the docker image
 services:
   - docker
 
 env:
-  # Disable fancy status information (looks bad on travis and exceeds logfile
-  # quota)
-  TERM=dumb
+  global:
+    # Disable fancy status information (looks bad on travis and exceeds logfile
+    # quota)
+    - TERM=dumb
+    # Do not prompt for user input when using any SDK methods.
+    - CLOUDSDK_CORE_DISABLE_PROMPTS=1
+install:
+  - |
+    if [ ! -d $HOME/google-cloud-sdk/bin ]
+    then
+      # The install script errors if this directory already exists,
+      # but Travis already creates it when we mark it as cached.
+      rm -rf $HOME/google-cloud-sdk
+      # The install script is overly verbose, which sometimes causes
+      # problems on Travis, so ignore stdout.
+      curl https://sdk.cloud.google.com | bash
+    fi
+  # This line is critical. We setup the SDK to take precedence in our
+  # environment over the old SDK that is already on the machine.
+  - source $HOME/google-cloud-sdk/path.bash.inc
+  - gcloud components install app-engine-java
+  - gcloud version
 
 # Specialize gradle build to use an up-to-date gradle and the /gradle
 # directory.
