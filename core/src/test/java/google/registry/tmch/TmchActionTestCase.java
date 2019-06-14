@@ -36,7 +36,7 @@ import org.mockito.junit.MockitoRule;
 
 /** Common code for unit tests of classes that extend {@link Marksdb}. */
 @RunWith(JUnit4.class)
-public class TmchActionTestCase {
+public abstract class TmchActionTestCase {
 
   static final String MARKSDB_LOGIN_AND_PASSWORD = "lolcat:attack";
   static final String MARKSDB_URL = "http://127.0.0.1/love";

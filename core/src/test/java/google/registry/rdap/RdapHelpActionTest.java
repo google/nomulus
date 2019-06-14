@@ -24,8 +24,11 @@ import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 /** Unit tests for {@link RdapHelpAction}. */
+@RunWith(JUnit4.class)
 public class RdapHelpActionTest extends RdapActionBaseTestCase<RdapHelpAction> {
 
   public RdapHelpActionTest() {

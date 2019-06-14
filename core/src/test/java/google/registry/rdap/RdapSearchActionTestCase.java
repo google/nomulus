@@ -27,7 +27,7 @@ import java.util.Optional;
 import org.junit.Before;
 
 /** Common unit test code for actions inheriting {@link RdapSearchActionBase}. */
-public class RdapSearchActionTestCase<A extends RdapSearchActionBase>
+public abstract class RdapSearchActionTestCase<A extends RdapSearchActionBase>
     extends RdapActionBaseTestCase<A> {
 
   protected RdapSearchActionTestCase(Class<A> rdapActionClass) {

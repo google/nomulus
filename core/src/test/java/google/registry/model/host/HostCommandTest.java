@@ -19,6 +19,7 @@ import org.junit.Test;
 
 /** Test xml roundtripping of commands. */
 public class HostCommandTest extends ResourceCommandTestCase {
+
   @Test
   public void testCreate() throws Exception {
     doXmlRoundtripTest("host_create.xml");
