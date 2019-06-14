@@ -74,6 +74,9 @@ ext.projectRootDir = "${rootDir}"
 task deploy {
   group = 'deployment'
   description = 'Deploys all services to App Engine.'
+  if (rootProject.findProperty("environment") != 'alpha') {
+    throw new GradleException("Can only deploy to alpha.");
+  }
 }
 
 task stage {
