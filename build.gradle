@@ -97,6 +97,11 @@ allprojects {
   }
 }
 
+task licenseCheck(type: Exec) {
+  executable '/usr/bin/python'
+  args('config/check_license.py')
+}
+
 subprojects {
   // Skip no-op project
   if (project.name == 'services') return
@@ -152,6 +157,8 @@ subprojects {
   apply from: "${rootDir.path}/java_common.gradle"
 
   if (project.name == 'third_party') return
+
+  project.tasks.test.dependsOn licenseCheck
 
 // Path to code generated with annotation processors. Note that this path is
 // chosen by the 'net.ltgt.apt' plugin, and may change if IDE-specific plugins
