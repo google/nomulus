@@ -367,4 +367,26 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
         "--mode=CREATE", "--name=Jim Doe", "--email=jim.doe@example.com", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getContactsRequireSyncing()).isTrue();
   }
+
+  @Test
+  public void testCreate_failure_badEmail() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--mode=CREATE", "--name=Jim Doe", "--email=lolcat", "NewRegistrar"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Provided email lolcat is not a valid email address");
+  }
+
+  @Test
+  public void testCreate_failure_nullEmail() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> runCommandForced("--mode=CREATE", "--name=Jim Doe", "NewRegistrar"));
+    assertThat(thrown).hasMessageThat().isEqualTo("--email is required when --mode=CREATE");
+  }
 }

@@ -1,7 +1,7 @@
 # Webdriver Tests
 
 This is the home of the Nomulus webdriver tests. These tests run our user-facing
-HTML/JavaScript code in the context of a set of common browsers. See the[Webdriver documentation](https://www.seleniumhq.org/docs/03_webdriver.jsp)
+HTML/JavaScript code in the context of a set of common browsers. See the [Webdriver documentation](https://www.seleniumhq.org/docs/03_webdriver.jsp)
 for more information on using webdriver.
 
 ## My Screenshot Tests are Failing!
@@ -12,7 +12,7 @@ for more information on using webdriver.
 2. Missing golden images
   * If you added a new test using screenshot comparison, you have to generate
     the golden image for that test in advance and copy it to
-    [goldens/](https://github.com/google/nomulus/tree/master/javatests/google/registry/webdriver/goldens)
+    [goldens/](https://github.com/google/nomulus/tree/master/core/src/test/java/google/registry/webdriver/goldens)
     folder. There
     is an auxiliary Gradle build task to help with this, and here are some examples:
     ```shell
@@ -23,7 +23,7 @@ for more information on using webdriver.
     # Generate the golden image for a certain test
     $ ./gradlew :core:generateGoldenImages \
       --tests "google.registry.webdriver.OteSetupConsoleScreenshotTest.get_owner_fails"
-    ```-webkit-transition
+    ```
 3. Screenshot differs by X pixels
   * If you made any change to the existing test and expected to affect the web page,
     the screenshot should be different from the previously generated golden image.

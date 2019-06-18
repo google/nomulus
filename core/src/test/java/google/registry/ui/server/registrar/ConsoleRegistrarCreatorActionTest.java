@@ -413,6 +413,27 @@ public final class ConsoleRegistrarCreatorActionTest {
   }
 
   @Test
+  public void testPost_badEmailFails() {
+    action.clientId = Optional.of("myclientid");
+    action.name = Optional.of("registrar name");
+    action.billingAccount = Optional.of("USD=billing-account");
+    action.ianaId = Optional.of(12321);
+    action.referralEmail = Optional.of("lolcat");
+    action.driveId = Optional.of("drive-id");
+    action.consoleUserEmail = Optional.of("myclientid@registry.example");
+
+    action.street1 = Optional.of("my street");
+    action.city = Optional.of("my city");
+    action.countryCode = Optional.of("CC");
+
+    action.method = Method.POST;
+    action.run();
+
+    assertThat(response.getPayload())
+        .contains("Failed: Provided email lolcat is not a valid email address");
+  }
+
+  @Test
   public void testPost_unauthorized() {
     action.registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(ImmutableSetMultimap.of());

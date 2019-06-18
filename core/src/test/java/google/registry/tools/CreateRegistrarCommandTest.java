@@ -1771,4 +1771,28 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
                 "--cc US",
                 "clientz"));
   }
+
+  @Test
+  public void testFailure_badEmail() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--name=blobio",
+                    "--password=some_password",
+                    "--registrar_type=REAL",
+                    "--iana_id=8",
+                    "--passcode=01234",
+                    "--icann_referral_email=lolcat",
+                    "--street=\"123 Fake St\"",
+                    "--city Fakington",
+                    "--state MA",
+                    "--zip 00351",
+                    "--cc US",
+                    "clientz"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Provided email lolcat is not a valid email address");
+  }
 }

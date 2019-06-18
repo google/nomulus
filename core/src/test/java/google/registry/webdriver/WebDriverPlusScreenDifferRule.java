@@ -58,7 +58,7 @@ public final class WebDriverPlusScreenDifferRule extends ExternalResource
   // the sum of the absolute difference between the values of the RGB channels. So a 120,30,200
   // reference pixel and a 122,31,193 result pixel have a difference of 10, and would be considered
   // identical if MAX_COLOR_DIFF=10
-  private static final int MAX_COLOR_DIFF = 10;
+  private static final int MAX_COLOR_DIFF = 20;
 
   // Percent of pixels that are allowed to be different (more than the MAX_COLOR_DIFF) between the
   // images while still considering the test to have passed. Useful if there are a very small

@@ -134,9 +134,7 @@ dependencies {
   compile deps['com.google.apis:google-api-services-monitoring']
   compile deps['com.google.apis:google-api-services-sheets']
   maybeRuntime deps['com.google.apis:google-api-services-storage']
-  // TODO(b/71631624): change appengine:appengine-api-1.0-sdk to
-  // testCompileOnly after BillingEmailUtilsTest.java is fixed.
-  compile deps['com.google.appengine:appengine-api-1.0-sdk']
+  testCompileOnly deps['com.google.appengine:appengine-api-1.0-sdk']
   maybeRuntime deps['com.google.appengine:appengine-api-labs']
   maybeRuntime deps['com.google.appengine:appengine-api-stubs']
   testCompile deps['com.google.appengine:appengine-api-stubs']
@@ -559,6 +557,15 @@ compileProdJS.dependsOn processResources
 compileProdJS.dependsOn processTestResources
 compileProdJS.dependsOn soyToJS
 assemble.dependsOn compileProdJS
+
+task karmaTest(type: Exec) {
+  dependsOn ':npmInstall'
+  workingDir rootProject.projectDir
+  executable 'node_modules/karma/bin/karma'
+  args('start')
+}
+
+test.dependsOn karmaTest
 
 // Make testing artifacts available to be depended up on by other projects.
 // TODO: factor out google.registry.testing to be a separate project.

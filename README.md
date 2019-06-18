@@ -31,7 +31,7 @@ running system:
 *   [Install
     guide](https://github.com/google/nomulus/blob/master/docs/install.md)
 *   View the source code in
-    [java/google/registry/](https://github.com/google/nomulus/tree/master/java/google/registry)
+    [java/google/registry/](https://github.com/google/nomulus/tree/master/core/src/main/java/google/registry)
 *   [Other docs](https://github.com/google/nomulus/tree/master/docs)
 *   [Javadoc](https://nomulus.foo/javadoc/latest/)
 *   [Nomulus discussion

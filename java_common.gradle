@@ -15,12 +15,23 @@ dependencies {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    options.compilerArgs << "-Werror"
+    // The -Werror flag causes Intellij to fail on deprecated api use.
+    // Allow IDE user to turn off this flag by specifying a Gradle VM
+    // option from inside the IDE.
+    if (System.getProperty('no_werror') != 'true') {
+        options.compilerArgs << "-Werror"
+    }
     options.errorprone.disableWarningsInGeneratedCode = true
     options.errorprone.errorproneArgumentProviders.add([
             asArguments: {
                 return ['-XepExcludedPaths:.*/build/generated/.*']
             }] as CommandLineArgumentProvider)
+    // Disable features currently incompatible with Java 12
+    if ((JavaVersion.current().majorVersion as Integer) > 11) {
+      // This check is broken in Java 12.
+      // See https://github.com/google/error-prone/issues/1257
+      options.errorprone.errorproneArgs=['-Xep:Finally:OFF']
+    }
 }
 
 version = '1.0'

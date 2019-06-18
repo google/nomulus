@@ -815,6 +815,17 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
     assertThat(loadRegistrar("NewRegistrar").getPoNumber()).isEmpty();
   }
 
+  @Test
+  public void testFailure_badEmail() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> runCommand("--email=lolcat", "--force", "NewRegistrar"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Provided email lolcat is not a valid email address");
+  }
+
   private void persistWhoisAbuseContact() {
     persistResource(
         AppEngineRule.makeRegistrarContact1()

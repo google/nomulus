@@ -16,6 +16,7 @@ package google.registry.model.registrar;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
@@ -84,6 +85,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 
@@ -836,7 +839,7 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
     }
 
     public Builder setEmailAddress(String emailAddress) {
-      getInstance().emailAddress = emailAddress;
+      getInstance().emailAddress = checkValidEmail(emailAddress);
       return this;
     }
 
@@ -861,7 +864,7 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
     }
 
     public Builder setIcannReferralEmail(String icannReferralEmail) {
-      getInstance().icannReferralEmail = icannReferralEmail;
+      getInstance().icannReferralEmail = checkValidEmail(icannReferralEmail);
       return this;
     }
 
@@ -902,6 +905,19 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
             getInstance().type, getInstance().ianaIdentifier));
       return cloneEmptyToNull(super.build());
     }
+  }
+
+  /** Verifies that the email address in question is not null and has a valid format. */
+  static String checkValidEmail(String email) {
+    checkNotNull(email, "Provided email was null");
+    try {
+      InternetAddress internetAddress = new InternetAddress(email, true);
+      internetAddress.validate();
+    } catch (AddressException e) {
+      throw new IllegalArgumentException(
+          String.format("Provided email %s is not a valid email address", email));
+    }
+    return email;
   }
 
   /** Loads all registrar entities directly from Datastore. */

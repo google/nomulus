@@ -152,24 +152,6 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_emptyJsonObject_emailFieldNotRequiredWhenEmpty() {
-    persistResource(loadRegistrar(CLIENT_ID).asBuilder().setEmailAddress(null).build());
-    Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
-    args.remove("emailAddress");
-
-    Map<String, Object> response = action.handleJsonRequest(ImmutableMap.of(
-        "op", "update",
-        "id", CLIENT_ID,
-        "args", args));
-
-    assertThat(response).containsExactly(
-        "status", "SUCCESS",
-        "message", "Saved TheRegistrar",
-        "results", ImmutableList.of(loadRegistrar(CLIENT_ID).toJsonMap()));
-    assertMetric(CLIENT_ID, "update", "[OWNER]", "SUCCESS");
-  }
-
-  @Test
   public void testFailure_updateRegistrarInfo_notAuthorized() {
     setUserWithoutAccess();
 

@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.registrar.Registrar.checkValidEmail;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
 import static java.util.stream.Collectors.joining;
 
@@ -296,7 +297,7 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
     @Override
     public RegistrarContact build() {
       checkNotNull(getInstance().parent, "Registrar parent cannot be null");
-      checkNotNull(getInstance().emailAddress, "Email address cannot be null");
+      checkValidEmail(getInstance().emailAddress);
       return cloneEmptyToNull(super.build());
     }
 

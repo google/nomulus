@@ -19,112 +19,102 @@ goog.require('goog.dom.classlist');
 goog.require('goog.json');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
-goog.require('goog.testing.asserts');
-goog.require('goog.testing.jsunit');
 goog.require('goog.testing.net.XhrIo');
 goog.require('registry.registrar.ConsoleTestUtil');
 goog.require('registry.testing');
 goog.require('registry.util');
 
+describe("console test", function() {
+  const $ = goog.dom.getRequiredElement;
+  const stubs = new goog.testing.PropertyReplacer();
 
-const $ = goog.dom.getRequiredElement;
-const stubs = new goog.testing.PropertyReplacer();
+  const test = {
+    testXsrfToken: 'testToken',
+    testClientId: 'daddy',
+    mockControl: new goog.testing.MockControl()
+  };
 
-const test = {
-  testXsrfToken: 'testToken',
-  testClientId: 'daddy',
-  mockControl: new goog.testing.MockControl()
-};
-
-
-function setUp() {
-  registry.testing.addToDocument('<div id="test"/>');
-  registry.testing.addToDocument('<div class="kd-butterbar"/>');
-  stubs.setPath('goog.net.XhrIo', goog.testing.net.XhrIo);
-  registry.registrar.ConsoleTestUtil.renderConsoleMain($('test'), {
-    xsrfToken: test.testXsrfToken,
-    clientId: test.testClientId,
+  beforeEach(function() {
+    registry.testing.addToDocument('<div id="test"/>');
+    registry.testing.addToDocument('<div class="kd-butterbar"/>');
+    stubs.setPath('goog.net.XhrIo', goog.testing.net.XhrIo);
+    registry.registrar.ConsoleTestUtil.renderConsoleMain($('test'), {
+      xsrfToken: test.testXsrfToken,
+      clientId: test.testClientId,
+    });
+    registry.registrar.ConsoleTestUtil.setup(test);
+    const regNavlist = $('reg-navlist');
+    const active = regNavlist.querySelector('a[href="#contact-us"]');
+    expect(active).not.toBeNull();
   });
-  registry.registrar.ConsoleTestUtil.setup(test);
-  const regNavlist = $('reg-navlist');
-  const active = regNavlist.querySelector('a[href="#contact-us"]');
-  assertTrue(active != null);
-}
 
-
-function tearDown() {
-  goog.testing.net.XhrIo.cleanup();
-  stubs.reset();
-  test.mockControl.$tearDown();
-}
-
-
-function testButter() {
-  registry.registrar.ConsoleTestUtil.visit(test, {
-    productName: 'Foo Registry'
+  afterEach(function() {
+    goog.testing.net.XhrIo.cleanup();
+    stubs.reset();
+    test.mockControl.$tearDown();
   });
-  registry.util.butter('butter msg');
-  const butter = goog.dom.getElementByClass(goog.getCssName('kd-butterbar'));
-  assertNotNull(butter.innerHTML.match(/.*butter msg.*/));
-  assertTrue(goog.dom.classlist.contains(butter, goog.getCssName('shown')));
-}
 
-
-/** Authed user with no path op specified should nav to welcome page. */
-function testShowLoginOrDash() {
-  registry.registrar.ConsoleTestUtil.visit(test, {
-    productName: 'Foo Registry'
+  it("testButter", function() {
+    registry.registrar.ConsoleTestUtil.visit(test, {
+      productName: 'Foo Registry'
+    });
+    registry.util.butter('butter msg');
+    const butter = goog.dom.getElementByClass(goog.getCssName('kd-butterbar'));
+    expect(butter.innerHTML.match(/.*butter msg.*/)).not.toBeNull();
+    expect(goog.dom.classlist.contains(butter, goog.getCssName('shown'))).toBe(true);
   });
-  assertNotNull(goog.dom.getElement('domain-registrar-dashboard'));
-}
 
-
-function testNavToResources() {
-  registry.registrar.ConsoleTestUtil.visit(test, {
-    path: 'resources',
-    xsrfToken: test.testXsrfToken,
-    technicalDocsUrl: 'http://example.com/techdocs',
-    readonly: true,
+  /** Authed user with no path op specified should nav to welcome page. */
+  it("testShowLoginOrDash", function() {
+    registry.registrar.ConsoleTestUtil.visit(test, {
+      productName: 'Foo Registry'
+    });
+    expect(goog.dom.getElement('domain-registrar-dashboard')).not.toBeNull();
   });
-  const xhr = goog.testing.net.XhrIo.getSendInstances().pop();
-  assertTrue(xhr.isActive());
-  assertEquals('/registrar-settings', xhr.getLastUri());
-  assertEquals(test.testXsrfToken,
-               xhr.getLastRequestHeaders()['X-CSRF-Token']);
-  xhr.simulateResponse(200, goog.json.serialize({
-    status: 'SUCCESS',
-    message: 'OK',
-    results: [{
-      driveFolderId: 'blahblah'
-    }]
-  }));
-  assertContains('blahblah', $('reg-resources-driveLink').getAttribute('href'));
-}
 
-
-function testNavToContactUs() {
-  registry.registrar.ConsoleTestUtil.visit(test, {
-    path: 'contact-us',
-    xsrfToken: test.testXsrfToken,
-    productName: 'Domain Registry',
-    integrationEmail: 'integration@example.com',
-    supportEmail: 'support@example.com',
-    announcementsEmail: 'announcement@example.com',
-    supportPhoneNumber: '+1 (888) 555 0123'
+  it("testNavToResources", function() {
+    registry.registrar.ConsoleTestUtil.visit(test, {
+      path: 'resources',
+      xsrfToken: test.testXsrfToken,
+      technicalDocsUrl: 'http://example.com/techdocs',
+      readonly: true,
+    });
+    const xhr = goog.testing.net.XhrIo.getSendInstances().pop();
+    expect(xhr.isActive()).toBe(true);
+    expect(xhr.getLastUri()).toEqual('/registrar-settings');
+    expect(xhr.getLastRequestHeaders()['X-CSRF-Token']).toEqual(test.testXsrfToken);
+    xhr.simulateResponse(200, goog.json.serialize({
+      status: 'SUCCESS',
+      message: 'OK',
+      results: [{
+        driveFolderId: 'blahblah'
+      }]
+    }));
+    expect($('reg-resources-driveLink').getAttribute('href')).toContain('blahblah');
   });
-  const xhr = goog.testing.net.XhrIo.getSendInstances().pop();
-  assertTrue(xhr.isActive());
-  assertEquals('/registrar-settings', xhr.getLastUri());
-  assertEquals(test.testXsrfToken,
-               xhr.getLastRequestHeaders()['X-CSRF-Token']);
-  const passcode = '5-5-5-5-5';
-  xhr.simulateResponse(200, goog.json.serialize({
-    status: 'SUCCESS',
-    message: 'OK',
-    results: [{
-      phonePasscode: passcode
-    }]
-  }));
-  assertEquals(passcode,
-               goog.dom.getTextContent($('domain-registrar-phone-passcode')));
-}
+
+  it("testNavToContactUs", function() {
+    registry.registrar.ConsoleTestUtil.visit(test, {
+      path: 'contact-us',
+      xsrfToken: test.testXsrfToken,
+      productName: 'Domain Registry',
+      integrationEmail: 'integration@example.com',
+      supportEmail: 'support@example.com',
+      announcementsEmail: 'announcement@example.com',
+      supportPhoneNumber: '+1 (888) 555 0123'
+    });
+    const xhr = goog.testing.net.XhrIo.getSendInstances().pop();
+    expect(xhr.isActive()).toBe(true);
+    expect(xhr.getLastUri()).toEqual('/registrar-settings');
+    expect(xhr.getLastRequestHeaders()['X-CSRF-Token']).toEqual(test.testXsrfToken);
+    const passcode = '5-5-5-5-5';
+    xhr.simulateResponse(200, goog.json.serialize({
+      status: 'SUCCESS',
+      message: 'OK',
+      results: [{
+        phonePasscode: passcode
+      }]
+    }));
+    expect(goog.dom.getTextContent($('domain-registrar-phone-passcode'))).toEqual(passcode);
+  });
+});

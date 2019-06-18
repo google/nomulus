@@ -16,28 +16,25 @@ goog.setTestOnly();
 
 goog.require('goog.dispose');
 goog.require('goog.testing.MockControl');
-goog.require('goog.testing.jsunit');
 goog.require('registry.Component');
 goog.require('registry.Console');
 
+describe("component test", function() {
+  let mocks;
 
-var mocks = new goog.testing.MockControl();
+  beforeEach(function() {
+    mocks = new goog.testing.MockControl();
+  });
 
+  afterEach(function() {
+    mocks.$tearDown();
+  });
 
-function setUp() {
-  mocks = new goog.testing.MockControl();
-}
-
-
-function tearDown() {
-  mocks.$tearDown();
-}
-
-
-function testCreationAndDisposal_dontTouchConsoleObject() {
-  var console = mocks.createStrictMock(registry.Console);
-  mocks.$replayAll();
-  var component = new registry.Component(console);
-  goog.dispose(component);
-  mocks.$verifyAll();
-}
+  it("testCreationAndDisposal_dontTouchConsoleObject", function() {
+    var console = mocks.createStrictMock(registry.Console);
+    mocks.$replayAll();
+    var component = new registry.Component(console);
+    goog.dispose(component);
+    mocks.$verifyAll();
+  });
+});

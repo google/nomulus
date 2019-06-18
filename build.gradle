@@ -27,6 +27,8 @@ plugins {
 
   // NodeJs plugin
   id "com.moowork.node" version "1.2.0"
+
+  id 'idea'
 }
 
 apply plugin: google.registry.gradle.plugin.ReportUploaderPlugin
