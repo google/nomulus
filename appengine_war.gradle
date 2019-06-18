@@ -71,3 +71,4 @@ dependencies {
 
 rootProject.deploy.dependsOn appengineDeploy
 rootProject.stage.dependsOn appengineStage
+appengineDeploy.dependsOn rootProject.verifyDeployment
