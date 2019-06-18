@@ -163,6 +163,7 @@ subprojects {
 
   project.ext.javaDir = "${project.projectDir}/src/main/java"
   project.ext.javaTestDir = "${project.projectDir}/src/test/java"
+  project.ext.resourcesSourceDir = "${project.projectDir}/src/main/resources"
 
   sourceSets {
     main {
@@ -170,9 +171,7 @@ subprojects {
         srcDirs += aptGeneratedDir
       }
       resources {
-        srcDirs = [
-            project.ext.javaDir
-        ]
+        srcDirs += project.ext.javaDir
         exclude commonlyExcludedResources
       }
     }
@@ -181,9 +180,7 @@ subprojects {
         srcDirs += aptGeneratedTestDir
       }
       resources {
-        srcDirs = [
-            project.ext.javaTestDir
-        ]
+        srcDirs += project.ext.javaTestDir
         exclude commonlyExcludedResources
       }
     }

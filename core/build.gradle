@@ -372,7 +372,7 @@ task soyToJava {
           spec11SoyDir, toolsSoyDir, uiSoyDir, registrarSoyDir,
   ]
   soyRelativeDirs.each {
-    inputs.dir "${javaDir}/${it}"
+    inputs.dir "${resourcesSourceDir}/${it}"
     outputs.dir "${generatedDir}/${it}"
   }
 
@@ -392,19 +392,19 @@ task soyToJava {
     soyToJava('google.registry.tools.soy',
             "${generatedDir}/${toolsSoyDir}",
             fileTree(
-                    dir: "${javaDir}/${toolsSoyDir}",
+                    dir: "${resourcesSourceDir}/${toolsSoyDir}",
                     include: ['**/*.soy']))
 
     soyToJava('google.registry.ui.soy.registrar',
             "${generatedDir}/${registrarSoyDir}",
             fileTree(
-                    dir: "${javaDir}/${registrarSoyDir}",
+                    dir: "${resourcesSourceDir}/${registrarSoyDir}",
                     include: ['**/*.soy']))
 
     soyToJava('google.registry.ui.soy',
             "${generatedDir}/${uiSoyDir}",
             files {
-              file("${javaDir}/${uiSoyDir}").listFiles()
+              file("${resourcesSourceDir}/${uiSoyDir}").listFiles()
             }.filter {
               it.name.endsWith(".soy")
             })
@@ -412,13 +412,13 @@ task soyToJava {
     soyToJava('google.registry.reporting.spec11.soy',
             "${generatedDir}/${spec11SoyDir}",
             fileTree(
-                    dir: "${javaDir}/${spec11SoyDir}",
+                    dir: "${resourcesSourceDir}/${spec11SoyDir}",
                     include: ['**/*.soy']))
   }
 }
 
 task soyToJS {
-  def rootSoyDirectory = "${javaDir}/google/registry/ui/soy"
+  def rootSoyDirectory = "${resourcesSourceDir}/google/registry/ui/soy"
   def outputSoyDirectory = "${generatedDir}/google/registry/ui/soy"
   inputs.dir rootSoyDirectory
   outputs.dir outputSoyDirectory
@@ -432,7 +432,7 @@ task soyToJS {
           "--allowExternalCalls", "false",
           "--srcs", "${soyFiles.join(',')}",
           "--shouldProvideRequireSoyNamespaces", "true",
-          "--compileTimeGlobalsFile", "${javaDir}/google/registry/ui/globals.txt",
+          "--compileTimeGlobalsFile", "${resourcesSourceDir}/google/registry/ui/globals.txt",
           "--deps", "${deps.join(',')}"
     }
   }
