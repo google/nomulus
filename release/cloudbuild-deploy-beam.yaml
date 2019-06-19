@@ -3,7 +3,7 @@
 # cloud-build-local --config=cloudbuild-deploy-beam.yaml --dryrun=false \
 # --substitutions=TAG_NAME=[TAG],_CREDENTIAL_JSON=[CREDENTIAL_JSON],\
 # _CREDENTIAL_KEYRING=[CREDENTIAL_KEYRING],_CREDENTIAL_KEY=[CREDENTIAL_KEY],\
-# _ENV=[ENV] .
+# _ENV=[ENV] ..
 #
 # This will deploy Beam pipelines to GCS for the PROJECT_ID defined in gcloud
 # tool.
@@ -11,7 +11,7 @@
 # To manually trigger a build on GCB, run:
 # gcloud builds submit --config=cloudbuild-deploy-beam.yaml --substitutions=TAG_NAME=[TAG],\
 # _CREDENTIAL_JSON=[CREDENTIAL_JSON],_CREDENTIAL_KEYRING=[CREDENTIAL_KEYRING],\
-# _CREDENTIAL_KEY=[CREDENTIAL_KEY],_ENV=[ENV] .
+# _CREDENTIAL_KEY=[CREDENTIAL_KEY],_ENV=[ENV] ..
 #
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds

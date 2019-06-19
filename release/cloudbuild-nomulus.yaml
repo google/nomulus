@@ -4,14 +4,14 @@
 # credential helper.
 # Then, in the root of a nomulus source tree, run:
 # cloud-build-local --config=cloudbuild-nomulus.yaml --dryrun=false \
-#   --substitutions TAG_NAME=[TAG] .
+#   --substitutions TAG_NAME=[TAG] ..
 # This will build the contents of the current directory and generate the
 # nomulus war-files locally.
 # The PROJECT_ID is the current project name that gcloud uses.
 # You can add "--push true" to have the image pushed to GCR.
 #
 # To manually trigger a build on GCB, run:
-# gcloud builds submit --config cloudbuild-nomulus.yaml --substitutions TAG_NAME=[TAG] .
+# gcloud builds submit --config cloudbuild-nomulus.yaml --substitutions TAG_NAME=[TAG] ..
 #
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds

@@ -3,12 +3,12 @@
 # credential helper.
 # See: https://cloud.google.com/cloud-build/docs/build-debug-locally
 # Then run:
-# cloud-build-local --config=cloudbuild-proxy.yaml --dryrun=false --substitutions TAG_NAME=[TAG] .
+# cloud-build-local --config=cloudbuild-proxy.yaml --dryrun=false --substitutions TAG_NAME=[TAG] ..
 # This will create a docker image named gcr.io/[PROJECT_ID]/proxy:[TAG] locally.
 # The PROJECT_ID is the current project name that gcloud uses.
 #
 # To manually trigger a build on GCB, run:
-# gcloud builds submit --config cloudbuild-proxy.yaml --substitutions TAG_NAME=[TAG] .
+# gcloud builds submit --config cloudbuild-proxy.yaml --substitutions TAG_NAME=[TAG] ..
 #
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds

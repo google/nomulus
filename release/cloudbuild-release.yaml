@@ -4,10 +4,11 @@
 # See: https://cloud.google.com/cloud-build/docs/build-debug-locally
 # Then run:
 # cloud-build-local --config=cloudbuild-release.yaml --dryrun=false \
-#   --substitutions TAG_NAME=[TAG] .
+#   --substitutions TAG_NAME=[TAG],_INTERNAL_REPO_URL=[URL] ..
 #
 # To manually trigger a build on GCB, run:
-# gcloud builds submit --config cloudbuild-proxy.yaml --substitutions TAG_NAME=[TAG] .
+# gcloud builds submit --config cloudbuild-release.yaml --substitutions \
+#   TAG_NAME=[TAG],_INTERNAL_REPO_URL=[URL] ..
 #
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
@@ -25,7 +26,7 @@ steps:
   - |
     git clone https://gerrit.googlesource.com/gcompute-tools
     ./gcompute-tools/git-cookie-authdaemon
-    git clone ${_INTERNAL_REPO_URL}
+    git clone ${_INTERNAL_REPO_URL} nomulus-internal
 # Tag and push the internal repo.
 - name: 'gcr.io/cloud-builders/git'
   entrypoint: /bin/bash

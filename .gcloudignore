@@ -1,7 +1,6 @@
-python/**
-bazel-*/**
-gradle/**/build/**
-gradle/**/WEB-INF/**
-gradle/.*/**
+python/
+**/build/
+**/out/
+.*/
 repos/**
-**/.idea/**
+**/.idea/
