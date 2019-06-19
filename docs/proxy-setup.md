@@ -103,7 +103,7 @@ $ gcloud auth application-default login
 Login with the account that has "Project Owner" role of all three projects
 mentioned above.
 
-Navigate to `java/google/registry/proxy/terraform`, create a folder called
+Navigate to `proxy/terraform`, create a folder called
 `envs`, and inside it, create a folder for the environment that proxy is
 deployed to ("alpha" for example). Copy `example_config.tf` to the environment
 folder.
@@ -232,11 +232,11 @@ $ gcloud container clusters get-credentials --project <proxy-project> \
 
 # Deploys environment specific kubernetes objects.
 $ kubectl create -f \
-java/google/registry/proxy/kubernetes/proxy-deployment-<env>.yaml
+proxy/kubernetes/proxy-deployment-<env>.yaml
 
 # Deploys shared kubernetes objects.
 $ kubectl create -f \
-java/google/registry/proxy/kubernetes/proxy-service.yaml
+proxy/kubernetes/proxy-service.yaml
 ```
 
 Repeat this for all three clusters.

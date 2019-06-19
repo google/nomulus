@@ -55,7 +55,7 @@ artifacts:
     location: 'gs://${PROJECT_ID}-deploy/${TAG_NAME}'
     # This cannot be regexs because of how Spinnaker constructs artifact paths.
     paths:
-    - 'proxy/src/main/java/google/registry/proxy/kubernetes/proxy-*.yaml'
+    - 'proxy/kubernetes/proxy-*.yaml'
     - 'release/cloudbuild-tag.yaml'
 timeout: 3600s
 options:
