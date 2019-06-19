@@ -53,8 +53,8 @@ gradleLint.rules = [
 ]
 
 // To check or fix file formats, run the following commands from this directory:
-// - Check: ../gradlew spotlessCheck
-// - Format in place: ../gradlew spotlessApply
+// - Check: ./gradlew spotlessCheck
+// - Format in place: ./gradlew spotlessApply
 spotless {
   java {
     clearSteps()
