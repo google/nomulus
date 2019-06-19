@@ -1,14 +1,5 @@
 apply plugin: 'java'
 
-sourceSets {
-  main {
-    resources {
-      exclude "${javaDir}/terraform/"
-      exclude "${javaDir}/kubernetes/"
-    }
-  }
-}
-
 createUberJar('deployJar', 'proxy_server', 'google.registry.proxy.ProxyServer')
 
 project.build.dependsOn deployJar
