@@ -1,8 +1,8 @@
 # Nomulus
 
-| Internal | Open Source |
-|-------|--------|
-|[![Build Status for Google Registry internal build](https://storage.googleapis.com/domain-registry-kokoro/build.svg)](https://storage.googleapis.com/domain-registry-kokoro/index.html)|[![Build Status for the open source build](https://travis-ci.org/google/nomulus.svg?branch=master)](https://travis-ci.org/google/nomulus)|
+| Internal Build | FOSS Build | License | Code Search |
+|----------------|------------|---------|-------------|
+|[![Build Status for Google Registry internal build](https://storage.googleapis.com/domain-registry-kokoro/build.svg)](https://storage.googleapis.com/domain-registry-kokoro/index.html)|[![Build Status for the open source build](https://travis-ci.org/google/nomulus.svg?branch=master)](https://travis-ci.org/google/nomulus)|[![License for this repo](https://img.shields.io/github/license/google/nomulus.svg)](https://github.com/jianglai/nomulus/blob/master/LICENSE)|[![Link to Source Graph](https://github.com/sourcegraph/sourcegraph/blob/master/ui/assets/img/sourcegraph-logo.svg)](https://sourcegraph.com/github.com/google/nomulus)|
 
 ![Nomulus logo](./nomulus-logo.png)
 
@@ -30,8 +30,8 @@ running system:
 
 *   [Install
     guide](https://github.com/google/nomulus/blob/master/docs/install.md)
-*   View the source code in
-    [java/google/registry/](https://github.com/google/nomulus/tree/master/core/src/main/java/google/registry)
+*   View the source code for the [GAE app](https://github.com/google/nomulus/tree/master/core/src/main/java/google/registry)
+    and for the [GKE proxy](https://github.com/google/nomulus/tree/master/proxy/src/main/java/google/registry)
 *   [Other docs](https://github.com/google/nomulus/tree/master/docs)
 *   [Javadoc](https://nomulus.foo/javadoc/latest/)
 *   [Nomulus discussion
