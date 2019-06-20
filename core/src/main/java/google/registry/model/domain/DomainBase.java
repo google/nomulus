@@ -104,7 +104,7 @@ public class DomainBase extends EppResource
    * from (creationTime, deletionTime) there can only be one domain in Datastore with this name.
    * However, there can be many domains with the same name and non-overlapping lifetimes.
    *
-   * @invariant fullyQualifiedDomainName == fullyQualifiedDomainName.toLowerCase()
+   * @invariant fullyQualifiedDomainName == fullyQualifiedDomainName.toLowerCase(Locale.ENGLISH)
    */
   @Index
   String fullyQualifiedDomainName;
