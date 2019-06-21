@@ -29,6 +29,7 @@ plugins {
   id "com.moowork.node" version "1.2.0"
 
   id 'idea'
+  id 'com.diffplug.gradle.spotless' version '3.18.0'
 }
 
 apply plugin: google.registry.gradle.plugin.ReportUploaderPlugin
@@ -73,6 +74,16 @@ ext.projectRootDir = "${rootDir}"
 task deploy {
   group = 'deployment'
   description = 'Deploys all services to App Engine.'
+}
+
+task verifyDeployment {
+  group = 'deployment'
+  description = 'Ensure that one can only deploy to alpha.'
+  doFirst {
+    if (rootProject.findProperty("environment") != 'alpha') {
+      throw new GradleException("Can only deploy to alpha.");
+    }
+  }
 }
 
 task stage {
@@ -170,6 +181,7 @@ subprojects {
 
   project.ext.javaDir = "${project.projectDir}/src/main/java"
   project.ext.javaTestDir = "${project.projectDir}/src/test/java"
+  project.ext.resourcesSourceDir = "${project.projectDir}/src/main/resources"
 
   sourceSets {
     main {
@@ -177,9 +189,7 @@ subprojects {
         srcDirs += aptGeneratedDir
       }
       resources {
-        srcDirs = [
-            project.ext.javaDir
-        ]
+        srcDirs += project.ext.javaDir
         exclude commonlyExcludedResources
       }
     }
@@ -188,9 +198,7 @@ subprojects {
         srcDirs += aptGeneratedTestDir
       }
       resources {
-        srcDirs = [
-            project.ext.javaTestDir
-        ]
+        srcDirs += project.ext.javaTestDir
         exclude commonlyExcludedResources
       }
     }
@@ -215,4 +223,3 @@ subprojects {
     }
   }
 }
-

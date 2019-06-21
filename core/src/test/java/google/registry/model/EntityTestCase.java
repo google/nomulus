@@ -48,7 +48,7 @@ import org.junit.runners.JUnit4;
 
 /** Base class of all unit tests for entities which are persisted to Datastore via Objectify. */
 @RunWith(JUnit4.class)
-public class EntityTestCase {
+public abstract class EntityTestCase {
 
   @Rule
   public final AppEngineRule appEngine = AppEngineRule.builder()

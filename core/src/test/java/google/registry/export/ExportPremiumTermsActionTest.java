@@ -48,7 +48,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 
 @RunWith(JUnit4.class)
 public class ExportPremiumTermsActionTest {
@@ -188,7 +188,8 @@ public class ExportPremiumTermsActionTest {
             EXPECTED_FILE_CONTENT.getBytes(UTF_8));
     verifyNoMoreInteractions(driveConnection);
     verify(response).setStatus(SC_INTERNAL_SERVER_ERROR);
-    verify(response).setPayload(Matchers.contains("Error exporting premium terms file to Drive."));
+    verify(response).setPayload(
+        ArgumentMatchers.contains("Error exporting premium terms file to Drive."));
     verify(response).setContentType(PLAIN_TEXT_UTF_8);
     verifyNoMoreInteractions(response);
   }

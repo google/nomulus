@@ -31,12 +31,12 @@ import java.util.Date;
 import javax.net.ssl.SSLSession;
 import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 /**
  * Utility class that provides methods used by {@link SslClientInitializerTest} and {@link
  * SslServerInitializerTest}.
  */
+@SuppressWarnings("deprecation")
 public class SslInitializerTestUtils {
 
   static {
@@ -56,7 +56,8 @@ public class SslInitializerTestUtils {
    */
   public static X509Certificate signKeyPair(
       SelfSignedCertificate ssc, KeyPair keyPair, String hostname) throws Exception {
-    X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
+    org.bouncycastle.x509.X509V3CertificateGenerator certGen =
+        new org.bouncycastle.x509.X509V3CertificateGenerator();
     X500Principal dnName = new X500Principal("CN=" + hostname);
     certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
     certGen.setSubjectDN(dnName);

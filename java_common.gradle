@@ -41,7 +41,6 @@ targetCompatibility = '1.8'
 compileJava { options.encoding = "UTF-8" }
 compileTestJava { options.encoding = "UTF-8" }
 
-
 gradleLint.rules = [
         // Checks if Gradle wrapper is up-to-date
         'archaic-wrapper',
@@ -51,3 +50,26 @@ gradleLint.rules = [
         'unused-dependency'
         // TODO(weiminyu): enable more dependency checks
 ]
+
+// To check or fix file formats, run the following commands from this directory:
+// - Check: ./gradlew spotlessCheck
+// - Format in place: ./gradlew spotlessApply
+spotless {
+  java {
+    clearSteps()
+    target project.fileTree("${project.rootDir}/") {
+      include "src/main/java/**/*.java"
+      include "src/test/java/**/*.java"
+      // there are some files that have degenerate interactions with the GJF formatter
+      exclude "**/flows/FlowComponent.java"
+    }
+    googleJavaFormat('1.7')
+  }
+  format 'misc', {
+    clearSteps()
+    target '**/*.gradle'
+    trimTrailingWhitespace()
+    indentWithSpaces(2)
+    endWithNewline()
+  }
+}

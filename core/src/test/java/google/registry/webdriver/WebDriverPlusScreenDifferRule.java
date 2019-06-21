@@ -39,17 +39,19 @@ import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.HasInputDevices;
-import org.openqa.selenium.interactions.Keyboard;
-import org.openqa.selenium.interactions.Mouse;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 /**
  * WebDriver delegate JUnit Rule that exposes most {@link WebDriver} API plus {@link ScreenDiffer}
  * API.
  */
+@SuppressWarnings("deprecation")
 public final class WebDriverPlusScreenDifferRule extends ExternalResource
-    implements WebDriver, HasInputDevices, TakesScreenshot, JavascriptExecutor, HasCapabilities {
+    implements WebDriver,
+        org.openqa.selenium.interactions.HasInputDevices,
+        TakesScreenshot,
+        JavascriptExecutor,
+        HasCapabilities {
 
   private static final int WAIT_FOR_ELEMENTS_POLLING_INTERVAL_MS = 10;
   private static final int WAIT_FOR_ELEMENTS_BONUS_DELAY_MS = 150;
@@ -274,13 +276,13 @@ public final class WebDriverPlusScreenDifferRule extends ExternalResource
   }
 
   @Override
-  public Keyboard getKeyboard() {
-    return ((HasInputDevices) driver).getKeyboard();
+  public org.openqa.selenium.interactions.Keyboard getKeyboard() {
+    return ((org.openqa.selenium.interactions.HasInputDevices) driver).getKeyboard();
   }
 
   @Override
-  public Mouse getMouse() {
-    return ((HasInputDevices) driver).getMouse();
+  public org.openqa.selenium.interactions.Mouse getMouse() {
+    return ((org.openqa.selenium.interactions.HasInputDevices) driver).getMouse();
   }
 
   @Override

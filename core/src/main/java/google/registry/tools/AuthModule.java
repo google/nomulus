@@ -17,8 +17,6 @@ package google.registry.tools;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets.Details;
@@ -27,6 +25,7 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.util.store.AbstractDataStoreFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -43,6 +42,7 @@ import google.registry.config.RegistryConfig.Config;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -102,6 +102,23 @@ public class AuthModule {
   }
 
   @Provides
+  @LocalOAuth2Credentials
+  public static GoogleCredentials provideLocalOAuth2Credentials(
+      @LocalCredentialJson String credentialJson,
+      @Config("localCredentialOauthScopes") ImmutableList<String> scopes) {
+    try {
+      GoogleCredentials credentials =
+          GoogleCredentials.fromStream(new ByteArrayInputStream(credentialJson.getBytes(UTF_8)));
+      if (credentials.createScopedRequired()) {
+        credentials = credentials.createScoped(scopes);
+      }
+      return credentials;
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  @Provides
   public static GoogleAuthorizationCodeFlow provideAuthorizationCodeFlow(
       JsonFactory jsonFactory,
       GoogleClientSecrets clientSecrets,
@@ -115,12 +132,6 @@ public class AuthModule {
     } catch (IOException ex) {
       throw new RuntimeException(ex);
     }
-  }
-
-  @Provides
-  public static AuthorizationCodeInstalledApp provideAuthorizationCodeInstalledApp(
-      GoogleAuthorizationCodeFlow flow) {
-    return new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver());
   }
 
   @Provides
@@ -215,4 +226,10 @@ public class AuthModule {
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
   @interface OAuthClientId {}
+
+  /** Dagger qualifier for the local OAuth2 Credentials. */
+  @Qualifier
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface LocalOAuth2Credentials {}
 }
