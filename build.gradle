@@ -108,9 +108,9 @@ allprojects {
   }
 }
 
-task licenseCheck(type: Exec) {
+task runPresubmits(type: Exec) {
   executable '/usr/bin/python'
-  args('config/check_license.py')
+  args('config/presubmits.py')
 }
 
 subprojects {
@@ -169,7 +169,7 @@ subprojects {
 
   if (project.name == 'third_party') return
 
-  project.tasks.test.dependsOn licenseCheck
+  project.tasks.test.dependsOn runPresubmits
 
 // Path to code generated with annotation processors. Note that this path is
 // chosen by the 'net.ltgt.apt' plugin, and may change if IDE-specific plugins
