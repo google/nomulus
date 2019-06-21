@@ -1,17 +1,14 @@
 # To run the build locally, install cloud-build-local first.
 # Then run:
 # cloud-build-local --config=cloudbuild-deploy-beam.yaml --dryrun=false \
-# --substitutions=TAG_NAME=[TAG],_CREDENTIAL_JSON=[CREDENTIAL_JSON],\
-# _CREDENTIAL_KEYRING=[CREDENTIAL_KEYRING],_CREDENTIAL_KEY=[CREDENTIAL_KEY],\
-# _ENV=[ENV] ..
+# --substitutions=TAG_NAME=[TAG],_ENV=[ENV] ..
 #
 # This will deploy Beam pipelines to GCS for the PROJECT_ID defined in gcloud
 # tool.
 #
 # To manually trigger a build on GCB, run:
-# gcloud builds submit --config=cloudbuild-deploy-beam.yaml --substitutions=TAG_NAME=[TAG],\
-# _CREDENTIAL_JSON=[CREDENTIAL_JSON],_CREDENTIAL_KEYRING=[CREDENTIAL_KEYRING],\
-# _CREDENTIAL_KEY=[CREDENTIAL_KEY],_ENV=[ENV] ..
+# gcloud builds submit --config=cloudbuild-deploy-beam.yaml \
+# --substitutions=TAG_NAME=[TAG],_ENV=[ENV] ..
 #
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
@@ -28,27 +25,26 @@ steps:
   args:
   - gsutil
   - cp
-  - gs://${PROJECT_ID}-deploy/nomulus-credential/${_CREDENTIAL_JSON}
+  - gs://${PROJECT_ID}-deploy/secrets/tool-credential.json.enc
   - .
 # Decrypt the credential
-- name: 'gcr.io/cloud-builders/gcloud'
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  entrypoint: /bin/bash
   args:
-  - kms
-  - decrypt
-  - --ciphertext-file=${_CREDENTIAL_JSON}
-  - --plaintext-file=nomulus-credential.json
-  - --location=global
-  - --keyring=${_CREDENTIAL_KEYRING}
-  - --key=${_CREDENTIAL_KEY}
+  - -c
+  - |
+    cat tool-credential.json.enc | base64 -d | gcloud kms decrypt \
+      --ciphertext-file=- --plaintext-file=tool-credential.json \
+      --location=global --keyring=nomulus-tool-keyring --key=nomulus-tool-key
 # Deploy spec11 and invoicing pipeline to GCS
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
   args:
   - -c
   - |
-    java -jar nomulus.jar -e ${_ENV} --credential nomulus-credential.json \
+    java -jar nomulus.jar -e ${_ENV} --credential tool-credential.json \
     deploy_spec11_pipeline
-    java -jar nomulus.jar -e ${_ENV} --credential nomulus-credential.json \
+    java -jar nomulus.jar -e ${_ENV} --credential tool-credential.json \
     deploy_invoicing_pipeline
 timeout: 3600s
 options:
