@@ -20,32 +20,49 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import java.util.function.Function;
+import javax.inject.Inject;
 
-public class ActionHandler<O, I> extends SimpleChannelInboundHandler<I>
-    implements Function<O, ChannelFuture> {
+public class ActionHandler extends SimpleChannelInboundHandler<Object>
+    implements Function<Object, ChannelFuture> {
 
   private ChannelPromise finished;
   private Channel channel;
 
+  @Inject
+  public ActionHandler() {}
+
   @Override
-  public ChannelFuture apply(O outboundMessage) {
-    // Send the request to server.
+  public ChannelFuture apply(Object outboundMessage) {
+    // Sends request along Outbound Handlers on the Pipeline
+
     channel.writeAndFlush(outboundMessage);
     return finished;
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) {
+    //Once handler is added to channel pipeline, initialize channel and future for this handler
     channel = ctx.channel();
     finished = ctx.newPromise();
   }
 
   @Override
-  protected void channelRead0(ChannelHandlerContext ctx, I InboundMessage) {
-    // Response received, validate it, register metrics, etc.
-    // Once everything is done, mark the promise as success;
+  protected void channelRead0(ChannelHandlerContext ctx, Object InboundMessage) {
+    //Only purpose of Handler is to mark future as a success
 
     finished.setSuccess();
+  }
+
+  /**
+   *Both methods are only used for testing
+   */
+
+  public Channel getChannel() {
+    return channel;
+  }
+
+  public ChannelPromise getFinished() {
+    return finished;
   }
 
 }
