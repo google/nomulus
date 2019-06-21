@@ -21,3 +21,5 @@ include 'services:default'
 include 'services:backend'
 include 'services:tools'
 include 'services:pubapi'
+include 'prober'
+
