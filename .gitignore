@@ -79,6 +79,9 @@ nomulus.iml
 nomulus.ipr
 nomulus.iws
 
+# VScode
+.vscode
+
 # Javascript output
 **/out/*
 
