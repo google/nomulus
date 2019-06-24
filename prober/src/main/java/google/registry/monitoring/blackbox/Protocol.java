@@ -22,26 +22,40 @@ import javax.inject.Provider;
 
 @AutoValue
 public abstract class Protocol {
-  final static AttributeKey<Protocol> PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL_KEY");
 
-  /** Protocol name. */
+  /**
+   * Default names associated with each protocol
+   */
+  final static String EPP_PROTOCOL_NAME = "EPP";
+  final static String DNS_PROTOCOL_NAME = "DNS";
+  final static String WHOIS_PROTOCOL_NAME =  "WHOIS";
+  final static String RDAP_PROTOCOL_NAME = "RDAP";
+
+  final static AttributeKey<Protocol> PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL_KEY");
+  public boolean PERSISTENT_CONNECTION = name() == EPP_PROTOCOL_NAME;
+  /**
+   *  @return name of Protocol.
+   */
   abstract String name();
 
-  /** Port to bind to at remote host*/
+  /**
+   * @return Port to bind to at remote host
+   */
   abstract int port();
 
+  /**
+   * @return hostname to connect to
+   */
   abstract String host();
 
   /** The {@link ChannelHandler} providers to use for the protocol, in order. */
   abstract ImmutableList<Provider<? extends ChannelHandler>> handlerProviders();
 
+  /** Builds new Protocol from @AutoValue Builder implementation*/
   static Protocol.Builder builder() {
     return new AutoValue_Protocol.Builder();
   }
 
-  public static Protocol defaultImplementation(){
-    return Protocol.builder().name("Default").port(8080).host("127.0.0.1").handlerProviders(ImmutableList.of()).build();
-  }
 
   @AutoValue.Builder
   public static abstract class Builder {
