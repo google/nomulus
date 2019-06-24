@@ -11,122 +11,170 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Google-style presubmits for the Nomulus project.
+
+These aren't built in to the static code analysis tools we use (e.g. Checkstyle,
+Error Prone) so we must write them manually.
+"""
 
 import os
 import sys
 import re
 
+# We should never analyze any generated files
 UNIVERSALLY_SKIPPED_PATTERNS = {"/build/", "/out/"}
 # We can't rely on CI to have the Enum package installed so we do this instead.
-__FORBIDDEN__ = 1
-__REQUIRED__ = 2
+FORBIDDEN = 1
+REQUIRED = 2
+
 
 class PresubmitCheck:
-    def __init__(self, regex, included_extensions, skipped_patterns, regex_type = __FORBIDDEN__):
-        self.regex = regex
-        self.included_extensions = included_extensions
-        self.skipped_patterns = skipped_patterns
-        self.regex_type = regex_type
 
-    def get_failed_files(self, files):
-        return [file for file in files if self._fails(file)]
+  def __init__(self,
+               regex,
+               included_extensions,
+               skipped_patterns,
+               regex_type=FORBIDDEN):
+    """Define a presubmit check for a particular set of files,
 
-    def _fails(self, file):
-        if not file.endswith(self.included_extensions): return False
-        for pattern in UNIVERSALLY_SKIPPED_PATTERNS:
-            if pattern in file: return False
-        for pattern in self.skipped_patterns:
-            if pattern in file: return False
-        with open(file, 'r') as f:
-            file_content = f.read()
-            matches = re.match(self.regex, file_content, re.DOTALL)
-            if self.regex_type == __FORBIDDEN__: return matches
-            return not matches
+        The provided prefix should always or never be included in the files.
+
+        Args:
+            regex: the regular expression to forbid or require
+            included_extensions: a tuple of extensions that define which files
+              we run over
+            skipped_patterns: a set of patterns that will cause any files that
+              include them to be skipped
+            regex_type: either FORBIDDEN or REQUIRED--whether or not the regex
+              must be present or cannot be present.
+    """
+    self.regex = regex
+    self.included_extensions = included_extensions
+    self.skipped_patterns = UNIVERSALLY_SKIPPED_PATTERNS.union(skipped_patterns)
+    self.regex_type = regex_type
+
+  def fails(self, file):
+    """ Determine whether or not this file fails the regex check.
+
+    Args:
+        file: the full path of the file to check
+    """
+    if not file.endswith(self.included_extensions):
+      return False
+    for pattern in self.skipped_patterns:
+      if pattern in file:
+        return False
+    with open(file, "r") as f:
+      file_content = f.read()
+      matches = re.match(self.regex, file_content, re.DOTALL)
+      if self.regex_type == FORBIDDEN:
+        return matches
+      return not matches
+
 
 PRESUBMITS = {
     # License check
     PresubmitCheck(
         r".*Copyright 20\d{2} The Nomulus Authors\. All Rights Reserved\.",
-        ("java", "js", "soy", "sql", "py", "sh"),
-        {".git", "/build/", "/generated/", "node_modules/", "JUnitBackports.java"},
-        __REQUIRED__
-    ): "The following files did not match the license header",
+        ("java", "js", "soy", "sql", "py", "sh"), {
+            ".git", "/build/", "/generated/", "node_modules/",
+            "JUnitBackports.java"
+        }, REQUIRED):
+        "File did not include the license header.",
 
     # System.(out|err).println should only appear in tools/
     PresubmitCheck(
-        r".*\bSystem\.(out|err)\.print",
-        "java",
-        {"StackdriverDashboardBuilder.java", "/tools/", "/example/", "RegistryTestServerMain.java", "TestServerRule.java", "FlowDocumentationTool.java"}
-    ): "System.(out|err).println is only allowed in tools/ packages. Please use a logger instead.",
+        r".*\bSystem\.(out|err)\.print", "java", {
+            "StackdriverDashboardBuilder.java", "/tools/", "/example/",
+            "RegistryTestServerMain.java", "TestServerRule.java",
+            "FlowDocumentationTool.java"
+        }):
+        "System.(out|err).println is only allowed in tools/ packages. Please "
+        "use a logger instead.",
 
     # Various Soy linting checks
     PresubmitCheck(
-        ".* *(/\*)?\* {?@param ",
+        r".* *(/\*)?\* {?@param ",
         "soy",
         {},
-    ): "In SOY please use the ({@param name: string} /** User name. */) style parameter passing instead of the ( * @param name User name.) style parameter pasing.",
+    ):
+        "In SOY please use the ({@param name: string} /** User name. */) style"
+        " parameter passing instead of the ( * @param name User name.) style "
+        "parameter pasing.",
     PresubmitCheck(
-        '.*[{][^}]+\w+:\s+"',
+        r'.*\{[^}]+\w+:\s+"',
         "soy",
         {},
-    ): "Please don't use double-quoted string literals in Soy parameters",
+    ):
+        "Please don't use double-quoted string literals in Soy parameters",
     PresubmitCheck(
-        '.*autoescape\s*=\s*"[^s]',
+        r'.*autoescape\s*=\s*"[^s]',
         "soy",
         {},
-    ): "All soy templates must use strict autoescaping",
+    ):
+        "All soy templates must use strict autoescaping",
     PresubmitCheck(
-        ".*noAutoescape",
+        r".*noAutoescape",
         "soy",
         {},
-    ): "All soy templates must use strict autoescaping",
+    ):
+        "All soy templates must use strict autoescaping",
 
     # various JS linting checks
     PresubmitCheck(
-        ".*goog\.base\(",
+        r".*goog\.base\(",
         "js",
         {"/node_modules/"},
-    ): "Use of goog.base is not allowed.",
+    ):
+        "Use of goog.base is not allowed.",
     PresubmitCheck(
-        ".*goog\.dom\.classes",
+        r".*goog\.dom\.classes",
         "js",
         {"/node_modules/"},
-    ): "Instead of goog.dom.classes, use goog.dom.classlist which is smaller and faster.",
+    ):
+        "Instead of goog.dom.classes, use goog.dom.classlist which is smaller "
+        "and faster.",
     PresubmitCheck(
-        ".*goog\.getMsg",
+        r".*goog\.getMsg",
         "js",
         {"/node_modules/"},
-    ): "Put messages in Soy, instead of using goog.getMsg().",
+    ):
+        "Put messages in Soy, instead of using goog.getMsg().",
     PresubmitCheck(
-        ".*(innerHTML|outerHTML)\s*(=|[+]=)([^=]|$)",
+        r".*(innerHTML|outerHTML)\s*(=|[+]=)([^=]|$)",
         "js",
         {"/node_modules/"},
-    ): "Do not assign directly to the dom. Use goog.dom.setTextContent to set to plain text, goog.dom.removeChildren to clear, or soy.renderElement to render anything else",
+    ):
+        "Do not assign directly to the dom. Use goog.dom.setTextContent to set"
+        " to plain text, goog.dom.removeChildren to clear, or "
+        "soy.renderElement to render anything else",
     PresubmitCheck(
-        ".*console\.(log|info|warn|error)",
+        r".*console\.(log|info|warn|error)",
         "js",
         {"/node_modules/", "google/registry/ui/js/util.js"},
-    ): "JavaScript files should not include console logging."
+    ):
+        "JavaScript files should not include console logging."
 }
 
+
 def get_files():
-    result = []
-    for root, dirnames, filenames in os.walk("."):
-        paths = [os.path.join(root, filename) for filename in filenames]
-        result.extend(paths)
-    return result
+  result = []
+  for root, dirnames, filenames in os.walk("."):
+    for filename in filenames:
+      yield os.path.join(root, filename)
+
 
 if __name__ == "__main__":
-    all_files = get_files()
-    failed = False
+  failed = False
+  for file in get_files():
+    error_messages = []
     for presubmit, error_message in PRESUBMITS.items():
-        failed_files = presubmit.get_failed_files(all_files)
-        if failed_files:
-            failed = True
-            print(error_message)
-            print(failed_files)
+      if presubmit.fails(file):
+        error_messages.append(error_message)
 
-    if failed:
-        sys.exit(1)
+    if error_messages:
+      failed = True
+      print("%s had errors: \n%s" % (file, "\n".join(error_messages)))
 
-
+  if failed:
+    sys.exit(1)
