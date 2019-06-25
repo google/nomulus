@@ -94,7 +94,7 @@ PRESUBMITS = {
 
     # Various Soy linting checks
     PresubmitCheck(
-        r".* *(/\*)?\* {?@param ",
+        r".* (/\*)?\* {?@param ",
         "soy",
         {},
     ):
@@ -174,7 +174,7 @@ if __name__ == "__main__":
 
     if error_messages:
       failed = True
-      print("%s had errors: \n%s" % (file, "\n".join(error_messages)))
+      print("%s had errors: \n  %s" % (file, "\n  ".join(error_messages)))
 
   if failed:
     sys.exit(1)
