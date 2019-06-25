@@ -25,8 +25,6 @@ by Joshua Bloch in his book Effective Java -->
     <property name="message" value='TODO is preferred to FIXME.  e.g. "TODO(johndoe): Refactor when v2 is released."' />
   </module>
 
-  <!-- Presubmit checks that previously existed in the Google codebase. -->
-
   <!-- Checks that String.toUpper/LowerCase() is never used without locale. -->
   <module name="RegexpSingleline">
     <property name="format" value="\.to(Upper|Lower)Case\(\)"/>
