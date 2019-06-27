@@ -14,7 +14,6 @@
 
 package google.registry.rdap;
 
-import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -34,8 +33,9 @@ import com.google.gson.JsonObject;
 import com.googlecode.objectify.Key;
 import google.registry.keyring.api.KeyModule;
 import google.registry.model.registrar.Registrar;
+import google.registry.model.registry.Registries;
+import google.registry.model.registry.Registry.TldType;
 import google.registry.request.Action;
-import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,8 +55,6 @@ import javax.inject.Inject;
  *
  * <p>It is a "login/query/logout" system where you login using the ICANN Reporting credentials, get
  * a cookie you then send to get the list and finally logout.
- *
- * <p>The username is [TLD]_ry. It could be any "real" TLD.
  */
 @Action(
     service = Action.Service.BACKEND,
@@ -75,45 +73,49 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
   @Inject HttpTransport httpTransport;
   @Inject @KeyModule.Key("icannReportingPassword") String password;
 
-  /**
-   * The TLD for which we make the request.
-   *
-   * <p>The actual value doesn't matter, as long as it's a TLD that has access to the ICANN
-   * Reporter. It's just used to login.
-   */
-  @Inject @Parameter("tld") String tld;
-
   @Inject
   UpdateRegistrarRdapBaseUrlsAction() {}
 
-  private String loginAndGetId(HttpRequestFactory requestFactory) {
-    try {
-      logger.atInfo().log("Logging in to MoSAPI");
-      HttpRequest request =
-          requestFactory.buildGetRequest(new GenericUrl(String.format(LOGIN_URL, tld)));
-      request.getHeaders().setBasicAuthentication(String.format("%s_ry", tld), password);
-      HttpResponse response = request.execute();
+  private MosApiCredential login(HttpRequestFactory requestFactory) {
+    logger.atInfo().log("Logging in to MoSAPI");
+    // All TLDs have the same password, so just keep trying until one works
+    // '(the expectation is that all / any should work)
+    ImmutableSet<String> allTlds = Registries.getTldsOfType(TldType.REAL);
+    for (String tld : allTlds) {
+      try {
+        HttpRequest request =
+            requestFactory.buildGetRequest(new GenericUrl(String.format(LOGIN_URL, tld)));
+        request.getHeaders().setBasicAuthentication(String.format("%s_ry", tld), password);
+        HttpResponse response = request.execute();
 
-      Optional<HttpCookie> idCookie =
-          HttpCookie.parse(response.getHeaders().getFirstHeaderStringValue("Set-Cookie")).stream()
-              .filter(cookie -> cookie.getName().equals(COOKIE_ID))
-              .findAny();
-      checkState(
-          idCookie.isPresent(),
-          "Didn't get the ID cookie from the login response. Code: %s, headers: %s",
-          response.getStatusCode(),
-          response.getHeaders());
-      return idCookie.get().getValue();
-    } catch (IOException e) {
-      throw new UncheckedIOException("Error logging in to MoSAPI server: " + e.getMessage(), e);
+        Optional<HttpCookie> idCookie =
+            HttpCookie.parse(response.getHeaders().getFirstHeaderStringValue("Set-Cookie")).stream()
+                .filter(cookie -> cookie.getName().equals(COOKIE_ID))
+                .findAny();
+        if (idCookie.isPresent()) {
+          return MosApiCredential.create(tld, idCookie.get().getValue());
+        } else {
+          logger.atInfo()
+              .log(String
+                  .format("Didn't get the ID cookie from the login response. Code: %d, headers: %s",
+                      response.getStatusCode(), response.getHeaders()));
+        }
+      } catch (IOException e) {
+        // This shouldn't happen, but continue anyway
+        logger.atInfo()
+            .log(String.format("Error logging in to MoSAPI server: %s", e.getMessage()), e);
+      }
     }
+    throw new IllegalStateException(
+        String.format("Error logging in to MosAPI server. Tried TLDs %s", allTlds));
   }
 
-  private void logout(HttpRequestFactory requestFactory, String id) {
+  private void logout(HttpRequestFactory requestFactory, MosApiCredential credential) {
     try {
       HttpRequest request =
-          requestFactory.buildGetRequest(new GenericUrl(String.format(LOGOUT_URL, tld)));
-      request.getHeaders().setCookie(String.format("%s=%s", COOKIE_ID, id));
+          requestFactory
+              .buildGetRequest(new GenericUrl(String.format(LOGOUT_URL, credential.tld())));
+      request.getHeaders().setCookie(String.format("%s=%s", COOKIE_ID, credential.cookieId()));
       request.execute();
     } catch (IOException e) {
       logger.atWarning().withCause(e).log("Failed to log out of MoSAPI server. Continuing.");
@@ -124,12 +126,12 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
 
   private ImmutableSetMultimap<String, String> getRdapBaseUrlsPerIanaId() {
     HttpRequestFactory requestFactory = httpTransport.createRequestFactory();
-    String id = loginAndGetId(requestFactory);
+    MosApiCredential credential = login(requestFactory);
     String content;
     try {
       HttpRequest request =
-          requestFactory.buildGetRequest(new GenericUrl(String.format(LIST_URL, tld)));
-      request.getHeaders().setCookie(String.format("%s=%s", COOKIE_ID, id));
+          requestFactory.buildGetRequest(new GenericUrl(String.format(LIST_URL, credential.tld())));
+      request.getHeaders().setCookie(String.format("%s=%s", COOKIE_ID, credential.cookieId()));
       HttpResponse response = request.execute();
 
       try (InputStream input = response.getContent()) {
@@ -139,7 +141,7 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
       throw new UncheckedIOException(
           "Error reading RDAP list from MoSAPI server: " + e.getMessage(), e);
     } finally {
-      logout(requestFactory, id);
+      logout(requestFactory, credential);
     }
 
     logger.atInfo().log("list reply: '%s'", content);
