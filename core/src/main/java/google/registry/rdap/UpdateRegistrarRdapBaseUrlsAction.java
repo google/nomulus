@@ -14,6 +14,7 @@
 
 package google.registry.rdap;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -152,19 +153,22 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
   }
 
   private ImmutableSetMultimap<String, String> getRdapBaseUrlsPerIanaId() {
-    // All TLDs have the same password, so just keep trying until one works
+    // All TLDs have the same data, so just keep trying until one works
     // (the expectation is that all / any should work)
     ImmutableSet<String> tlds = Registries.getTldsOfType(TldType.REAL);
+    checkArgument(!tlds.isEmpty(), "There must exist at least on REAL TLD");
+    Throwable finalThrowable = null;
     for (String tld : tlds) {
       try {
         return getRdapBaseUrlsPerIanaIdWithTld(tld);
       } catch (Throwable throwable) {
-        logger.atInfo().log(String
+        logger.atWarning().log(String
             .format("Error retrieving RDAP urls with TLD %s: %s", tld, throwable.getMessage()));
+        finalThrowable = throwable;
       }
     }
-    throw new IllegalStateException(
-        String.format("Error contacting MosAPI server. Tried TLDs %s", tlds));
+    throw new RuntimeException(
+        String.format("Error contacting MosAPI server. Tried TLDs %s", tlds), finalThrowable);
   }
 
   @Override
