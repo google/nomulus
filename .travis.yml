@@ -68,6 +68,8 @@ install:
   - source $HOME/google-cloud-sdk/path.bash.inc
   - gcloud components install app-engine-java
   - gcloud version
+  # Allow docker to authenticate against Google's container registry.
+  - gcloud auth configure-docker
 
 # Specialize gradle build to use an up-to-date gradle and the /gradle
 # directory.
