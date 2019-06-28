@@ -207,4 +207,13 @@
     <schedule>every 15 minutes</schedule>
     <target>backend</target>
   </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/task/updateRegistrarRdapBaseUrls]]></url>
+    <description>
+      This job reloads all registrar RDAP base URLs from ICANN.
+    </description>
+    <schedule>every day 02:34</schedule>
+    <target>backend</target>
+  </cron>
 </cronentries>

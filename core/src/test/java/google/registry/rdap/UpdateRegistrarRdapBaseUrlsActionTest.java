@@ -231,14 +231,14 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest extends ShardableTestCa
   public void testNoTlds() {
     deleteTld("tld");
     assertThat(assertThrows(IllegalStateException.class, action::run)).hasMessageThat()
-        .isEqualTo("Error logging in to MosAPI server. Tried TLDs []");
+        .isEqualTo("Error contacting MosAPI server. Tried TLDs []");
   }
 
   @Test
   public void testOnlyTestTlds() {
     persistResource(Registry.get("tld").asBuilder().setTldType(TldType.TEST).build());
     assertThat(assertThrows(IllegalStateException.class, action::run)).hasMessageThat()
-        .isEqualTo("Error logging in to MosAPI server. Tried TLDs []");
+        .isEqualTo("Error contacting MosAPI server. Tried TLDs []");
   }
 
   @Test

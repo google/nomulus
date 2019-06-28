@@ -14,6 +14,7 @@
 
 package google.registry.rdap;
 
+import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -76,46 +77,34 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
   @Inject
   UpdateRegistrarRdapBaseUrlsAction() {}
 
-  private MosApiCredential login(HttpRequestFactory requestFactory) {
-    logger.atInfo().log("Logging in to MoSAPI");
-    // All TLDs have the same password, so just keep trying until one works
-    // '(the expectation is that all / any should work)
-    ImmutableSet<String> allTlds = Registries.getTldsOfType(TldType.REAL);
-    for (String tld : allTlds) {
-      try {
-        HttpRequest request =
-            requestFactory.buildGetRequest(new GenericUrl(String.format(LOGIN_URL, tld)));
-        request.getHeaders().setBasicAuthentication(String.format("%s_ry", tld), password);
-        HttpResponse response = request.execute();
+  private String loginAndGetId(HttpRequestFactory requestFactory, String tld) {
+    try {
+      logger.atInfo().log("Logging in to MoSAPI");
+      HttpRequest request =
+          requestFactory.buildGetRequest(new GenericUrl(String.format(LOGIN_URL, tld)));
+      request.getHeaders().setBasicAuthentication(String.format("%s_ry", tld), password);
+      HttpResponse response = request.execute();
 
-        Optional<HttpCookie> idCookie =
-            HttpCookie.parse(response.getHeaders().getFirstHeaderStringValue("Set-Cookie")).stream()
-                .filter(cookie -> cookie.getName().equals(COOKIE_ID))
-                .findAny();
-        if (idCookie.isPresent()) {
-          return MosApiCredential.create(tld, idCookie.get().getValue());
-        } else {
-          logger.atInfo()
-              .log(String
-                  .format("Didn't get the ID cookie from the login response. Code: %d, headers: %s",
-                      response.getStatusCode(), response.getHeaders()));
-        }
-      } catch (IOException e) {
-        // This shouldn't happen, but continue anyway
-        logger.atInfo()
-            .log(String.format("Error logging in to MoSAPI server: %s", e.getMessage()), e);
-      }
+      Optional<HttpCookie> idCookie =
+          HttpCookie.parse(response.getHeaders().getFirstHeaderStringValue("Set-Cookie")).stream()
+              .filter(cookie -> cookie.getName().equals(COOKIE_ID))
+              .findAny();
+      checkState(
+          idCookie.isPresent(),
+          "Didn't get the ID cookie from the login response. Code: %s, headers: %s",
+          response.getStatusCode(),
+          response.getHeaders());
+      return idCookie.get().getValue();
+    } catch (IOException e) {
+      throw new UncheckedIOException("Error logging in to MoSAPI server: " + e.getMessage(), e);
     }
-    throw new IllegalStateException(
-        String.format("Error logging in to MosAPI server. Tried TLDs %s", allTlds));
   }
 
-  private void logout(HttpRequestFactory requestFactory, MosApiCredential credential) {
+  private void logout(HttpRequestFactory requestFactory, String id, String tld) {
     try {
       HttpRequest request =
-          requestFactory
-              .buildGetRequest(new GenericUrl(String.format(LOGOUT_URL, credential.tld())));
-      request.getHeaders().setCookie(String.format("%s=%s", COOKIE_ID, credential.cookieId()));
+          requestFactory.buildGetRequest(new GenericUrl(String.format(LOGOUT_URL, tld)));
+      request.getHeaders().setCookie(String.format("%s=%s", COOKIE_ID, id));
       request.execute();
     } catch (IOException e) {
       logger.atWarning().withCause(e).log("Failed to log out of MoSAPI server. Continuing.");
@@ -124,14 +113,14 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
     }
   }
 
-  private ImmutableSetMultimap<String, String> getRdapBaseUrlsPerIanaId() {
+  private ImmutableSetMultimap<String, String> getRdapBaseUrlsPerIanaIdWithTld(String tld) {
     HttpRequestFactory requestFactory = httpTransport.createRequestFactory();
-    MosApiCredential credential = login(requestFactory);
+    String id = loginAndGetId(requestFactory, tld);
     String content;
     try {
       HttpRequest request =
-          requestFactory.buildGetRequest(new GenericUrl(String.format(LIST_URL, credential.tld())));
-      request.getHeaders().setCookie(String.format("%s=%s", COOKIE_ID, credential.cookieId()));
+          requestFactory.buildGetRequest(new GenericUrl(String.format(LIST_URL, tld)));
+      request.getHeaders().setCookie(String.format("%s=%s", COOKIE_ID, id));
       HttpResponse response = request.execute();
 
       try (InputStream input = response.getContent()) {
@@ -141,7 +130,7 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
       throw new UncheckedIOException(
           "Error reading RDAP list from MoSAPI server: " + e.getMessage(), e);
     } finally {
-      logout(requestFactory, credential);
+      logout(requestFactory, id, tld);
     }
 
     logger.atInfo().log("list reply: '%s'", content);
@@ -160,6 +149,22 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
     }
 
     return builder.build();
+  }
+
+  private ImmutableSetMultimap<String, String> getRdapBaseUrlsPerIanaId() {
+    // All TLDs have the same password, so just keep trying until one works
+    // (the expectation is that all / any should work)
+    ImmutableSet<String> tlds = Registries.getTldsOfType(TldType.REAL);
+    for (String tld : tlds) {
+      try {
+        return getRdapBaseUrlsPerIanaIdWithTld(tld);
+      } catch (Throwable throwable) {
+        logger.atInfo().log(String
+            .format("Error retrieving RDAP urls with TLD %s: %s", tld, throwable.getMessage()));
+      }
+    }
+    throw new IllegalStateException(
+        String.format("Error contacting MosAPI server. Tried TLDs %s", tlds));
   }
 
   @Override
