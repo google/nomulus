@@ -11,6 +11,7 @@ buildscript {
     classpath "net.ltgt.gradle:gradle-errorprone-plugin:0.6.1"
     classpath 'org.sonatype.aether:aether-api:1.13.1'
     classpath 'org.sonatype.aether:aether-impl:1.13.1'
+    classpath 'com.bmuschko:gradle-docker-plugin:4.10.0'
   }
 }
 
@@ -33,6 +34,7 @@ plugins {
 }
 
 apply plugin: google.registry.gradle.plugin.ReportUploaderPlugin
+apply plugin: 'com.bmuschko.docker-remote-api'
 
 reportUploader {
   // Set the location where we want to upload the build results.
