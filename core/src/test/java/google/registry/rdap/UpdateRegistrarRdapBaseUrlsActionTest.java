@@ -230,15 +230,15 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest extends ShardableTestCa
   @Test
   public void testNoTlds() {
     deleteTld("tld");
-    assertThat(assertThrows(IllegalStateException.class, action::run)).hasMessageThat()
-        .isEqualTo("Error contacting MosAPI server. Tried TLDs []");
+    assertThat(assertThrows(IllegalArgumentException.class, action::run)).hasMessageThat()
+        .isEqualTo("There must exist at least one REAL TLD.");
   }
 
   @Test
   public void testOnlyTestTlds() {
     persistResource(Registry.get("tld").asBuilder().setTldType(TldType.TEST).build());
-    assertThat(assertThrows(IllegalStateException.class, action::run)).hasMessageThat()
-        .isEqualTo("Error contacting MosAPI server. Tried TLDs []");
+    assertThat(assertThrows(IllegalArgumentException.class, action::run)).hasMessageThat()
+        .isEqualTo("There must exist at least one REAL TLD.");
   }
 
   @Test
@@ -256,6 +256,24 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest extends ShardableTestCa
     addValidResponses(httpTransport);
 
     action.run();
+  }
+
+  @Test
+  public void testBothFail() {
+    createTld("secondtld");
+    httpTransport = new TestHttpTransport();
+    action.httpTransport = httpTransport;
+
+    MockLowLevelHttpResponse badLoginResponse = new MockLowLevelHttpResponse();
+    badLoginResponse.addHeader("Set-Cookie",
+        "Expires=Thu, 01-Jan-1970 00:00:10 GMT; Path=/mosapi/v1/app; Secure; HttpOnly");
+
+    // it should fail for both TLDs
+    httpTransport.addNextResponse(badLoginResponse);
+    httpTransport.addNextResponse(badLoginResponse);
+
+    assertThat(assertThrows(RuntimeException.class, action::run)).hasMessageThat()
+        .isEqualTo("Error contacting MosAPI server. Tried TLDs [secondtld, tld]");
   }
 
   private static void addValidResponses(TestHttpTransport httpTransport) {

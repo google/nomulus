@@ -24,6 +24,7 @@ import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.flogger.FluentLogger;
@@ -155,8 +156,8 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
   private ImmutableSetMultimap<String, String> getRdapBaseUrlsPerIanaId() {
     // All TLDs have the same data, so just keep trying until one works
     // (the expectation is that all / any should work)
-    ImmutableSet<String> tlds = Registries.getTldsOfType(TldType.REAL);
-    checkArgument(!tlds.isEmpty(), "There must exist at least on REAL TLD");
+    ImmutableList<String> tlds = ImmutableList.sortedCopyOf(Registries.getTldsOfType(TldType.REAL));
+    checkArgument(!tlds.isEmpty(), "There must exist at least one REAL TLD.");
     Throwable finalThrowable = null;
     for (String tld : tlds) {
       try {
