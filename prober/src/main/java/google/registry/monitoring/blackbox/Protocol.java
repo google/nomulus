@@ -20,6 +20,11 @@ import io.netty.util.AttributeKey;
 import io.netty.channel.ChannelHandler;
 import javax.inject.Provider;
 
+/**
+ * Protocol Class packages all static variables necessary for a certain type of connection
+ * Both the host and the path can be changed for the same protocol
+ * Mainly packages the handlers necessary for the requisite channel pipeline
+ */
 @AutoValue
 public abstract class Protocol {
 
@@ -31,28 +36,49 @@ public abstract class Protocol {
   final static String WHOIS_PROTOCOL_NAME =  "WHOIS";
   final static String RDAP_PROTOCOL_NAME = "RDAP";
 
-  final static AttributeKey<Protocol> PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL_KEY");
-  public boolean PERSISTENT_CONNECTION = name() == EPP_PROTOCOL_NAME;
-  /**
-   *  @return name of Protocol.
-   */
-  abstract String name();
+  private String host;
+  private String path = "";
 
-  /**
-   * @return Port to bind to at remote host
-   */
-  abstract int port();
+  /** Setter method for Protocol's host*/
+  public Protocol host(String host) {
+    this.host = host;
+    return this;
+  }
 
-  /**
-   * @return hostname to connect to
-   */
-  abstract String host();
+  /** Getter method for Protocol's host*/
+  public String host() {
+    return host;
+  }
+
+  /** Setter method for Protocol's path*/
+  public Protocol path(String path) {
+    this.path = path;
+    return this;
+  }
+
+  /** Getter method for Protocol's path*/
+  public String path() {
+    return path;
+  }
+
+  /** If connection associated with Protocol is persistent, which is only EPP */
+  public boolean persistentConnection() {
+    return name() == EPP_PROTOCOL_NAME;
+  }
+
+  /** Protocol Name */
+  public abstract String name();
+
+  /** Port to bind to at remote host */
+  public abstract int port();
 
   /** The {@link ChannelHandler} providers to use for the protocol, in order. */
-  abstract ImmutableList<Provider<? extends ChannelHandler>> handlerProviders();
+  public abstract ImmutableList<Provider<? extends ChannelHandler>> handlerProviders();
 
-  /** Builds new Protocol from @AutoValue Builder implementation*/
-  static Protocol.Builder builder() {
+
+  public abstract Builder toBuilder();
+
+  public static Protocol.Builder builder() {
     return new AutoValue_Protocol.Builder();
   }
 
@@ -60,16 +86,15 @@ public abstract class Protocol {
   @AutoValue.Builder
   public static abstract class Builder {
 
-    abstract Builder name(String value);
+    public abstract Builder name(String value);
 
-    abstract Builder host(String value);
+    public abstract Builder port(int num);
 
-    abstract Builder port(int num);
+    public abstract Builder handlerProviders(ImmutableList<Provider<? extends ChannelHandler>> providers);
 
-    abstract Builder handlerProviders(ImmutableList<Provider<? extends ChannelHandler>> providers);
-
-    abstract Protocol build();
+    public abstract Protocol build();
   }
+
 
 
 }
