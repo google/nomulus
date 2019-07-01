@@ -868,7 +868,9 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
       return this;
     }
 
-    public Builder setDriveFolderId(String driveFolderId) {
+    public Builder setDriveFolderId(@Nullable String driveFolderId) {
+      checkArgument(driveFolderId == null || !driveFolderId.contains("/"),
+          "Drive folder ID must not be a full URL");
       getInstance().driveFolderId = driveFolderId;
       return this;
     }
