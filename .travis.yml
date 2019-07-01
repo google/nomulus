@@ -52,6 +52,9 @@ env:
     # Do not prompt for user input when using any SDK methods.
     - CLOUDSDK_CORE_DISABLE_PROMPTS=1
 
+before_install:
+  - sudo apt-get install -y gpg
+
 install:
   - |
     if [ ! -d $HOME/google-cloud-sdk/bin ]
@@ -71,6 +74,8 @@ install:
   # Write credentials file for uploading reports to GCS and for pulling from
   # docker.
   - echo "$CREDZ" >credz.json
+  - gpg --recv-keys 9F3F5BDEFAE32F56
+  - gpg --trust-model=always -ear 9F3F5BDEFAE32F56 <credz.json
   - gcloud auth activate-service-account --key-file=credz.json
   - gcloud auth configure-docker
 
