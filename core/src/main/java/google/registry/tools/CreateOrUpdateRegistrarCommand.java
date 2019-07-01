@@ -237,7 +237,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
   @Nullable
   @Parameter(
       names = "--drive_folder_id",
-      description = "Id of this registrar's folder in Drive",
+      description = "Id (not full URL) of this registrar's folder in Drive",
       converter = OptionalStringParameter.class,
       validateWith = OptionalStringParameter.class)
   Optional<String> driveFolderId;
