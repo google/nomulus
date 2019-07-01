@@ -85,6 +85,9 @@ nomulus.iws
 # Javascript output
 **/out/*
 
+# AutoValue generated code
+AutoValue_.*.java
+
 ######################################################################
 # Python Ignores
 
