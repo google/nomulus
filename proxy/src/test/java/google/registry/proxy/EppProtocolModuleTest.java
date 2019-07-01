@@ -139,7 +139,7 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
     // First inbound message is hello.
     assertThat((FullHttpRequest) channel.readInbound()).isEqualTo(makeEppHttpRequest(HELLO_BYTES));
 
-    byte[] inputBytes = readResourceBytes(getClass(), "testdata/login.xml").read();
+    byte[] inputBytes = readResourceBytes(getClass(), "login.xml").read();
 
     // Verify inbound message is as expected.
     assertThat(channel.writeInbound(getByteBufFromContent(inputBytes))).isTrue();
@@ -155,8 +155,8 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
     // First inbound message is hello.
     channel.readInbound();
 
-    byte[] inputBytes1 = readResourceBytes(getClass(), "testdata/login.xml").read();
-    byte[] inputBytes2 = readResourceBytes(getClass(), "testdata/logout.xml").read();
+    byte[] inputBytes1 = readResourceBytes(getClass(), "login.xml").read();
+    byte[] inputBytes2 = readResourceBytes(getClass(), "logout.xml").read();
 
     // Verify inbound messages are as expected.
     assertThat(
@@ -177,8 +177,8 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
     // First inbound message is hello.
     channel.readInbound();
 
-    byte[] inputBytes1 = readResourceBytes(getClass(), "testdata/login.xml").read();
-    byte[] inputBytes2 = readResourceBytes(getClass(), "testdata/logout.xml").read();
+    byte[] inputBytes1 = readResourceBytes(getClass(), "login.xml").read();
+    byte[] inputBytes2 = readResourceBytes(getClass(), "logout.xml").read();
     ByteBuf inputBuffer =
         Unpooled.wrappedBuffer(
             getByteBufFromContent(inputBytes1), getByteBufFromContent(inputBytes2));
@@ -205,7 +205,7 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
     // First inbound message is hello.
     channel.readInbound();
 
-    byte[] outputBytes = readResourceBytes(getClass(), "testdata/login_response.xml").read();
+    byte[] outputBytes = readResourceBytes(getClass(), "login_response.xml").read();
 
     // Verify outbound message is as expected.
     assertThat(channel.writeOutbound(makeEppHttpResponse(outputBytes))).isTrue();
@@ -221,7 +221,7 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
     // First inbound message is hello.
     channel.readInbound();
 
-    byte[] outputBytes = readResourceBytes(getClass(), "testdata/login_response.xml").read();
+    byte[] outputBytes = readResourceBytes(getClass(), "login_response.xml").read();
 
     // Verify outbound message is not written to the peer as the response is not OK.
     EncoderException thrown =
@@ -243,7 +243,7 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
     // First inbound message is hello.
     channel.readInbound();
 
-    byte[] outputBytes1 = readResourceBytes(getClass(), "testdata/login_response.xml").read();
+    byte[] outputBytes1 = readResourceBytes(getClass(), "login_response.xml").read();
     Cookie cookie1 = new DefaultCookie("name1", "value1");
     Cookie cookie2 = new DefaultCookie("name2", "value2");
 
@@ -252,13 +252,13 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
     assertBufferRepresentsContent(getAllOutboundFrames(channel), outputBytes1);
 
     // Verify inbound message contains cookies.
-    byte[] inputBytes1 = readResourceBytes(getClass(), "testdata/logout.xml").read();
+    byte[] inputBytes1 = readResourceBytes(getClass(), "logout.xml").read();
     assertThat(channel.writeInbound(getByteBufFromContent(inputBytes1))).isTrue();
     assertThat((FullHttpRequest) channel.readInbound())
         .isEqualTo(makeEppHttpRequest(inputBytes1, cookie1, cookie2));
 
     // Second outbound message change cookies.
-    byte[] outputBytes2 = readResourceBytes(getClass(), "testdata/logout_response.xml").read();
+    byte[] outputBytes2 = readResourceBytes(getClass(), "logout_response.xml").read();
     Cookie cookie3 = new DefaultCookie("name3", "value3");
     cookie2 = new DefaultCookie("name2", "newValue2");
 
@@ -267,7 +267,7 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
     assertBufferRepresentsContent(getAllOutboundFrames(channel), outputBytes2);
 
     // Verify inbound message contains updated cookies.
-    byte[] inputBytes2 = readResourceBytes(getClass(), "testdata/login.xml").read();
+    byte[] inputBytes2 = readResourceBytes(getClass(), "login.xml").read();
     assertThat(channel.writeInbound(getByteBufFromContent(inputBytes2))).isTrue();
     assertThat((FullHttpRequest) channel.readInbound())
         .isEqualTo(makeEppHttpRequest(inputBytes2, cookie1, cookie2, cookie3));

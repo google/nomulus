@@ -79,7 +79,7 @@ public final class TestDataHelper {
   public static String loadFile(Class<?> context, String filename) {
     return fileCache.computeIfAbsent(
         FileKey.create(context, filename),
-        k -> readResourceUtf8(context, "testdata/" + filename));
+        k -> readResourceUtf8(context, filename));
   }
 
   /**
@@ -102,7 +102,7 @@ public final class TestDataHelper {
   public static ByteSource loadBytes(Class<?> context, String filename) {
     return byteCache.computeIfAbsent(
         FileKey.create(context, filename),
-        k -> readResourceBytes(context, "testdata/" + filename));
+        k -> readResourceBytes(context, filename));
   }
 
   /**
@@ -110,7 +110,7 @@ public final class TestDataHelper {
    */
   public static String filePath(Class<?> context, String filename) {
     String packagePath = context.getPackage().getName().replace('.', '/');
-    return String.format("javatests/%s/testdata/%s", packagePath, filename);
+    return String.format("src/test/resources/%s/%s", packagePath, filename);
   }
 
   /** Returns a recursive iterable of all files in the given directory. */
