@@ -74,6 +74,7 @@ install:
   # Write credentials file for uploading reports to GCS and for pulling from
   # docker.
   - echo "$CREDZ" >credz.json
+  - ls -l credz.json
   - gpg --recv-keys 9F3F5BDEFAE32F56
   - gpg --trust-model=always -ear 9F3F5BDEFAE32F56 <credz.json
   - gcloud auth activate-service-account --key-file=credz.json
