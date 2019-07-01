@@ -1,4 +1,4 @@
-// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+// Copyright 2017 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package google.registry.monitoring.blackbox.handlers;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.monitoring.blackbox.ProbingAction.REMOTE_ADDRESS_KEY;
 import static google.registry.monitoring.blackbox.Protocol.PROTOCOL_KEY;
 import static google.registry.monitoring.blackbox.handlers.SslInitializerTestUtils.getKeyPair;
 import static google.registry.monitoring.blackbox.handlers.SslInitializerTestUtils.setUpSslChannel;
@@ -62,14 +61,10 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class SslClientInitializerTest {
 
-  /**
-   * Fake host to test if the SSL engine gets the correct peer host.
-   */
+  /** Fake host to test if the SSL engine gets the correct peer host. */
   private static final String SSL_HOST = "www.example.tld";
 
-  /**
-   * Fake port to test if the SSL engine gets the correct peer port.
-   */
+  /** Fake port to test if the SSL engine gets the correct peer port. */
   private static final int SSL_PORT = 12345;
 
   @Rule
@@ -82,24 +77,21 @@ public class SslClientInitializerTest {
   @Parameters(name = "{0}")
   public static SslProvider[] data() {
     return OpenSsl.isAvailable()
-        ? new SslProvider[]{SslProvider.JDK, SslProvider.OPENSSL}
-        : new SslProvider[]{SslProvider.JDK};
+        ? new SslProvider[] {SslProvider.JDK, SslProvider.OPENSSL}
+        : new SslProvider[] {SslProvider.JDK};
   }
 
-  /**
-   * Saves the SNI hostname received by the server, if sent by the client.
-   */
+  /** Saves the SNI hostname received by the server, if sent by the client. */
   private String sniHostReceived;
 
-  /**
-   * Fake protocol saved in channel attribute.
-   */
-  private static final Protocol PROTOCOL = Protocol.builder()
-      .setName("ssl")
-      .setPort(SSL_PORT)
-      .setHandlerProviders(ImmutableList.of())
-      .setPersistentConnection(false)
-      .build();
+  /** Fake protocol saved in channel attribute. */
+  private static final Protocol PROTOCOL =
+      Protocol.builder()
+          .name("ssl")
+          .port(SSL_PORT)
+          .handlerProviders(ImmutableList.of())
+          .build()
+          .host(SSL_HOST);
 
   private ChannelHandler getServerHandler(PrivateKey privateKey, X509Certificate certificate)
       throws Exception {
@@ -117,7 +109,6 @@ public class SslClientInitializerTest {
         new SslClientInitializer<>(sslProvider);
     EmbeddedChannel channel = new EmbeddedChannel();
     channel.attr(PROTOCOL_KEY).set(PROTOCOL);
-    channel.attr(REMOTE_ADDRESS_KEY).set(SSL_HOST);
     ChannelPipeline pipeline = channel.pipeline();
     pipeline.addLast(sslClientInitializer);
     ChannelHandler firstHandler = pipeline.first();
@@ -147,8 +138,7 @@ public class SslClientInitializerTest {
     nettyRule.setUpServer(localAddress, getServerHandler(ssc.key(), ssc.cert()));
     SslClientInitializer<LocalChannel> sslClientInitializer =
         new SslClientInitializer<>(sslProvider);
-
-    nettyRule.setUpClient(localAddress, PROTOCOL, SSL_HOST, sslClientInitializer);
+    nettyRule.setUpClient(localAddress, PROTOCOL, sslClientInitializer);
     // The connection is now terminated, both the client side and the server side should get
     // exceptions.
     nettyRule.assertThatClientRootCause().isInstanceOf(CertPathBuilderException.class);
@@ -174,9 +164,8 @@ public class SslClientInitializerTest {
 
     // Set up the client to trust the self signed cert used to sign the cert that server provides.
     SslClientInitializer<LocalChannel> sslClientInitializer =
-        new SslClientInitializer<>(sslProvider, new X509Certificate[]{ssc.cert()});
-
-    nettyRule.setUpClient(localAddress, PROTOCOL, SSL_HOST, sslClientInitializer);
+        new SslClientInitializer<>(sslProvider, new X509Certificate[] {ssc.cert()});
+    nettyRule.setUpClient(localAddress, PROTOCOL, sslClientInitializer);
 
     setUpSslChannel(nettyRule.getChannel(), cert);
     nettyRule.assertThatMessagesWork();
@@ -203,9 +192,8 @@ public class SslClientInitializerTest {
 
     // Set up the client to trust the self signed cert used to sign the cert that server provides.
     SslClientInitializer<LocalChannel> sslClientInitializer =
-        new SslClientInitializer<>(sslProvider, new X509Certificate[]{ssc.cert()});
-
-    nettyRule.setUpClient(localAddress, PROTOCOL, SSL_HOST, sslClientInitializer);
+        new SslClientInitializer<>(sslProvider, new X509Certificate[] {ssc.cert()});
+    nettyRule.setUpClient(localAddress, PROTOCOL, sslClientInitializer);
 
     // When the client rejects the server cert due to wrong hostname, both the client and server
     // should throw exceptions.
@@ -215,4 +203,3 @@ public class SslClientInitializerTest {
     assertThat(nettyRule.getChannel().isActive()).isFalse();
   }
 }
-
