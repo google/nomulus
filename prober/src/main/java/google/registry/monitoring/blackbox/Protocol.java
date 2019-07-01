@@ -28,6 +28,8 @@ import javax.inject.Provider;
 @AutoValue
 public abstract class Protocol {
 
+  public final static AttributeKey<Protocol> PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL_KEY");
+
   /**
    * Default names associated with each protocol
    */
@@ -38,6 +40,7 @@ public abstract class Protocol {
 
   private String host;
   private String path = "";
+  private ProbingAction probingAction;
 
   /** Setter method for Protocol's host*/
   public Protocol host(String host) {
@@ -61,6 +64,17 @@ public abstract class Protocol {
     return path;
   }
 
+  /** Setter method for Protocol's ProbingAction parent*/
+  public <O> Protocol probingAction(ProbingAction<O> probingAction) {
+    this.probingAction = probingAction;
+    return this;
+  }
+
+  /** Getter method for Protocol's path*/
+  public <O> ProbingAction<O> probingAction() {
+    return probingAction;
+  }
+
   /** If connection associated with Protocol is persistent, which is only EPP */
   public boolean persistentConnection() {
     return name() == EPP_PROTOCOL_NAME;
@@ -78,7 +92,7 @@ public abstract class Protocol {
 
   public abstract Builder toBuilder();
 
-  public static Protocol.Builder builder() {
+  public static Builder builder() {
     return new AutoValue_Protocol.Builder();
   }
 
