@@ -76,7 +76,7 @@ PRESUBMITS = {
     # License check
     PresubmitCheck(
         r".*Copyright 20\d{2} The Nomulus Authors\. All Rights Reserved\.",
-        ("java", "js", "soy", "sql", "py", "sh"), {
+        ("java", "js", "soy", "sql", "py", "sh", "gradle"), {
             ".git", "/build/", "/generated/", "node_modules/",
             "JUnitBackports.java"
         }, REQUIRED):
