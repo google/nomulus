@@ -31,7 +31,7 @@ if [ "${environment}" == tool ]
 then
   mkdir -p "${dest}"
 
-  ./gradlew clean :core:nomulus \
+  ./gradlew clean :core:nomulus :core:release \
     -PmavenUrl=https://"${gcs_prefix}"/maven \
     -PpluginsUrl=https://"${gcs_prefix}"/plugins
 

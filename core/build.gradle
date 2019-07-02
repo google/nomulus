@@ -663,6 +663,7 @@ task flowDocsTool(type: JavaExec) {
 test {
   // Common exclude pattern. See README in parent directory for explanation.
   exclude "**/*TestCase.*", "**/*TestSuite.*"
+  exclude "**/webdriver/*"
   exclude fragileTestPatterns
   exclude outcastTestPatterns
 
