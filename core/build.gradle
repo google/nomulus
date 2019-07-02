@@ -700,6 +700,7 @@ import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 apply plugin: 'com.bmuschko.docker-remote-api'
 
 task syncDependencies(type: Sync) {
+  dependsOn nomulus
   from 'build/libs/nomulus.jar'
   into "${project.rootDir}/core/tool_docker"
   preserve {
@@ -713,4 +714,6 @@ task buildToolImage(type: DockerBuildImage) {
   tags = ["google/nomulus"]
 }
 
-project.build.dependsOn buildToolImage
+tasks.register("release") {
+  dependsOn buildToolImage
+}

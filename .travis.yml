@@ -52,9 +52,6 @@ env:
     # Do not prompt for user input when using any SDK methods.
     - CLOUDSDK_CORE_DISABLE_PROMPTS=1
 
-before_install:
-  - sudo apt-get install -y gnupg
-
 install:
   - |
     if [ ! -d $HOME/google-cloud-sdk/bin ]
@@ -71,14 +68,6 @@ install:
   - source $HOME/google-cloud-sdk/path.bash.inc
   - gcloud components install app-engine-java
   - gcloud version
-  # Write credentials file for uploading reports to GCS and for pulling from
-  # docker.
-  - echo "$CREDZ" >credz.json
-  - ls -l credz.json
-  - gpg --recv-keys 9F3F5BDEFAE32F56
-  - gpg --trust-model=always -ear 9F3F5BDEFAE32F56 <credz.json
-  - gcloud auth activate-service-account --key-file=credz.json
-  - gcloud auth configure-docker
 
 # Specialize gradle build to use an up-to-date gradle and the /gradle
 # directory.
@@ -86,4 +75,4 @@ install:
 # output, instead of the default 10.
 # See notes on the CREDZ and REPORT_GCS_BUCKET environment variable in the
 # comments at the top of the file.
-script: travis_wait 45 ./gradlew build --continue -P uploaderDestination="$REPORT_GCS_DESTINATION" -P uploaderCredentialsFile=credz.json -P uploaderMultithreadedUpload=yes -P mavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven -P pluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins
+script: echo "$CREDZ" >credz.json && chmod 755 ./gradlew && travis_wait 45 ./gradlew build --continue -P uploaderDestination="$REPORT_GCS_DESTINATION" -P uploaderCredentialsFile=credz.json -P uploaderMultithreadedUpload=yes -P mavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven -P pluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins
