@@ -25,6 +25,53 @@ by Joshua Bloch in his book Effective Java -->
     <property name="message" value='TODO is preferred to FIXME.  e.g. "TODO(johndoe): Refactor when v2 is released."' />
   </module>
 
+  <!-- Checks that String.toUpper/LowerCase() is never used without locale. -->
+  <module name="RegexpSingleline">
+    <property name="format" value="\.to(Upper|Lower)Case\(\)"/>
+    <property name="message" value="String.toUpper/LowerCase() can have unexpected results depending on locale. Either set the locale explicitly - e.g., toUpperCase(Locale.ENGLISH) - or use Ascii.toUpper/LowerCase(...) instead." />
+  </module>
+
+  <!-- Checks that DateTime.now(...) is always passed a DateTimeZone parameter. -->
+  <module name="RegexpSingleline">
+    <property name="format" value="DateTime\.now\(\)"/>
+    <property name="message" value="DateTime.now() must be called with a DateTimeZone parameter, e.g. DateTime.now(UTC)" />
+  </module>
+
+  <!-- Checks that Javadoc does not include a malformed @see tag. -->
+  <module name="RegexpSingleline">
+    <property name="format" value='@see\s\"http(|s)://'/>
+    <property name="message" value='Your Javadocs appear to use invalid &lt;a&gt; tag syntax in @see tags. Please use the correct syntax: @see &lt;a href="http(s)://your_url"&gt;url_description&lt;/a&gt;'/>
+  </module>
+
+  <!-- Checks that our Ofy wrapper is used instead of the "real" ofy(). -->
+  <module name="RegexpSingleline">
+    <property name="format" value="com\.googlecode\.objectify\.ObjectifyService\.ofy"/>
+    <property name="message" value="Use google.registry.model.ofy.ObjectifyService.ofy(). Do not use com.googlecode.objectify.v4.ObjectifyService.ofy()."/>
+  </module>
+
+  <!-- Checks that java.util.Optional is used instead of Guava's Optional. -->
+  <module name="RegexpSingleline">
+    <property name="format" value="com\.google\.common\.base\.Optional"/>
+    <property name="message" value="Use java.util.Optional instead of Guava's Optional."/>
+  </module>
+
+  <!-- Checks that our backport JUnit exception assertion methods are used instead of the ones slated for release in JUnit 4.13. -->
+  <module name="RegexpSingleline">
+    <property name="format" value="org\.junit\.Assert\.(assert|expect)Throws"/>
+    <property name="message" value="Use the exception assertion methods in google.registry.testing.JUnitBackports instead of those in JUnit."/>
+  </module>
+
+  <!-- Checks that the deprecated ExpectedException is not used. -->
+  <module name="RegexpSingleline">
+    <property name="format" value="org\.junit\.rules\.ExpectedException"/>
+    <property name="message" value="Use assertThrows and expectThrows from JUnitBackports instead of the deprecated methods on ExpectedException."/>
+  </module>
+
+  <!-- Checks that the deprecated MockitoJUnitRunner is not used. -->
+  <module name="RegexpSingleline">
+    <property name="format" value="MockitoJUnitRunner"/>
+    <property name="message" value="MockitoJUnitRunner is deprecated. Use @RunWith(JUnit4.class) and MockitoRule instead."/>
+  </module>
 
   <!-- All Java AST specific tests live under TreeWalker module. -->
   <module name="TreeWalker">
