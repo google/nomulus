@@ -35,10 +35,10 @@ import org.junit.runners.JUnit4;
  * condition.  For example, there should always be a matching pair of lines such as the following:
  *
  * <pre>
- *   java/.../flows/session/LoginFlow.java:
+ *   src/main/java/.../flows/session/LoginFlow.java:
  *     @error {&#64;link AlreadyLoggedInException}
  *
- *   javatests/.../flows/session/LoginFlowTest.java:
+ *   src/test/java/.../flows/session/LoginFlowTest.java:
  *     import .....flows.session.LoginFlow.AlreadyLoggedInException;
  * </pre>
  *
