@@ -15,86 +15,69 @@
 package google.registry.monitoring.blackbox.handlers;
 
 import com.google.common.flogger.FluentLogger;
-import google.registry.monitoring.blackbox.ProbingAction;
-import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
-import google.registry.monitoring.blackbox.exceptions.FailureException;
-import google.registry.monitoring.blackbox.messages.InboundMessageType;
+import com.google.common.flogger.StackSize;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.http.HttpResponse;
+import java.util.function.Function;
+import javax.inject.Inject;
 
 /**
- *Superclass of all {@link io.netty.channel.ChannelHandler}s placed at end of channel pipeline
  *
- * <p> {@link ActionHandler} inherits from {@link SimpleChannelInboundHandler< InboundMessageType >}, as it should only be passed in
- * messages that implement the {@link InboundMessageType} interface.</p>
- *
- * <p> The {@link ActionHandler} skeleton exists for a few main purposes. First, it returns a {@link ChannelPromise},
- * which informs the {@link ProbingAction} in charge that a response has been read.
- * Second, with any exception thrown, the connection is closed, and the ProbingAction governing this channel is informed
- * of the error, lastly, given the type of error, the status of the {@link ResponseType} is marked as a {@code FAILURE}
- * or {@code ERROR}. If no exception is thrown and the message reached {@code channelRead0}, then it is marked as {@code SUCCESS}.</p>
- *
- * <p>Subclasses specify further work to be done for specific kinds of channel pipelines. </p>
+ * @param <I> Generic Type of Inbound Message
+ * @param <O> Generic Type of Outbound Message
+ * Abstract class that tells sends message down pipeline and
+ * and tells listeners to move on when the message is received.
  */
-public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundMessageType> {
+public abstract class ActionHandler<I, O> extends SimpleChannelInboundHandler<I>
+    implements Function<O, ChannelFuture> {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  /** {@link ChannelPromise} that informs {@link ProbingAction} if response has been received. */
-  private ChannelPromise finished;
+  protected ChannelPromise finished;
+  private Channel channel;
 
-  /** Returns initialized {@link ChannelPromise} to {@link ProbingAction}.*/
-  public ChannelFuture getFinishedFuture() {
+
+  /** returns ChannelPromise for when inbound message is recieved
+   * a
+   * @param outboundMessage
+   * @return
+   */
+  @Override
+  public ChannelFuture apply(O outboundMessage) {
+    // Sends request along Outbound Handlers on the Pipeline
+
+    channel.writeAndFlush(outboundMessage);
     return finished;
+
   }
 
-  /** Initializes {@link ChannelPromise}*/
+  public void resetFuture() {
+    finished = channel.newPromise();
+  }
+
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) {
-    // Once handler is added to channel pipeline, initialize channel and future for this handler
+    //Once handler is added to channel pipeline, initialize channel and future for this handler
+
+    channel = ctx.channel();
     finished = ctx.newPromise();
   }
 
-  /** Marks {@link ResponseType} and {@link ChannelPromise} as success */
   @Override
-  public void channelRead0(ChannelHandlerContext ctx, InboundMessageType inboundMessage)
-      throws FailureException, UndeterminedStateException {
+  public void channelRead0(ChannelHandlerContext ctx, I inboundMessage) throws Exception{
+    //Only purpose of Handler is to mark future as a success
 
     finished.setSuccess();
   }
 
-  /**
-   * Logs the channel and pipeline that caused error, closes channel, then informs
-   * {@link ProbingAction} listeners of error.
-   */
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-    logger.atWarning().withCause(cause).log(String.format(
-        "Attempted Action was unsuccessful with channel: %s, having pipeline: %s",
-        ctx.channel().toString(),
-        ctx.channel().pipeline().toString()));
-
-    if (cause instanceof FailureException) {
-      //On FailureException, we know the response is a failure.
-
-      //Since it wasn't a success, we still want to log to see what caused the FAILURE
-      logger.atInfo().log(cause.getMessage());
-
-      //As always, inform the ProbingStep that we successfully completed this action
-      finished.setFailure(cause);
-
-    } else {
-      //On UndeterminedStateException, we know the response type is an error.
-
-      //Since it wasn't a success, we still log what caused the ERROR
-      logger.atWarning().log(cause.getMessage());
-      finished.setFailure(cause);
-
-      //As this was an ERROR in performing the action, we must close the channel
-      ChannelFuture closedFuture = ctx.channel().close();
-      closedFuture.addListener(f -> logger.atInfo().log("Unsuccessful channel connection closed"));
-    }
+    logger.atSevere().withCause(cause).withStackTrace(StackSize.FULL).log("Exception Caught");
   }
 }
+
