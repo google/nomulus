@@ -16,30 +16,35 @@ apply plugin: 'java'
 
 createUberJar('deployJar', 'prober', 'google.registry.monitoring.blackbox.Prober')
 
+
 dependencies {
   def deps = rootProject.dependencyMap
 
-    compile deps['com.google.auto.value:auto-value-annotations']
-    compile deps['com.google.dagger:dagger']
-    compile deps['com.google.flogger:flogger']
-    compile deps['com.google.guava:guava']
-    compile deps['io.netty:netty-buffer']
-    compile deps['io.netty:netty-codec-http']
-    compile deps['io.netty:netty-codec']
-    compile deps['io.netty:netty-common']
-    compile deps['io.netty:netty-handler']
-    compile deps['io.netty:netty-transport']
-    compile deps['javax.inject:javax.inject']
-    compile deps['joda-time:joda-time']
+  compile deps['com.google.auto.value:auto-value-annotations']
+  compile deps['com.google.code.findbugs:jsr305']
+  compile deps['com.google.code.gson:gson']
+  compile deps['com.google.dagger:dagger']
+  compile deps['com.google.flogger:flogger']
+  compile deps['com.google.guava:guava']
+  compile deps['io.netty:netty-buffer']
+  compile deps['io.netty:netty-codec-http']
+  compile deps['io.netty:netty-codec']
+  compile deps['io.netty:netty-common']
+  compile deps['io.netty:netty-handler']
+  compile deps['io.netty:netty-transport']
+  compile deps['javax.inject:javax.inject']
+  compile deps['joda-time:joda-time']
+  compile deps['org.bouncycastle:bcpkix-jdk15on']
+  compile deps['org.bouncycastle:bcprov-jdk15on']
 
   runtime deps['com.google.flogger:flogger-system-backend']
   runtime deps['com.google.auto.value:auto-value']
   runtime deps['io.netty:netty-tcnative-boringssl-static']
 
-    testCompile deps['com.google.truth:truth']
-    testCompile deps['junit:junit']
-    testCompile deps['org.mockito:mockito-core']
-    testCompile project(':third_party')
+  testCompile deps['com.google.truth:truth']
+  testCompile deps['junit:junit']
+  testCompile deps['org.mockito:mockito-core']
+  testCompile project(':third_party')
 
   // Include auto-value in compile until nebula-lint understands
   // annotationProcessor
