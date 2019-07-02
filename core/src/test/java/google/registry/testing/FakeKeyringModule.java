@@ -38,7 +38,7 @@ import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.bc.BcPGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.bc.BcPGPSecretKeyRingCollection;
 
-/** Keyring factory that loads keys from {@code javatests/.../testing/testdata} */
+/** Keyring factory that loads keys from {@code src/test/java/.../testing} */
 @Module
 @Immutable
 public final class FakeKeyringModule {

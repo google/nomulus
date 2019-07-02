@@ -106,7 +106,8 @@ public final class TestDataHelper {
   }
 
   /**
-   * Returns the "real" location of the file loaded by the other commands, starting from javatests/.
+   * Returns the "real" location of the file loaded by the other commands, starting from
+   * src/test/resources/.
    */
   public static String filePath(Class<?> context, String filename) {
     String packagePath = context.getPackage().getName().replace('.', '/');
