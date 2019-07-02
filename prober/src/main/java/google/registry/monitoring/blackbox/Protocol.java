@@ -16,28 +16,81 @@ package google.registry.monitoring.blackbox;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
-import io.netty.channel.ChannelHandler;
 import io.netty.util.AttributeKey;
+import io.netty.channel.ChannelHandler;
 import javax.inject.Provider;
 
 /**
- * {@link AutoValue} class that stores all unchanged variables necessary for type of connection.
+ * Protocol Class packages all static variables necessary for a certain type of connection
+ * Both the host and the path can be changed for the same protocol
+ * Mainly packages the handlers necessary for the requisite channel pipeline
  */
 @AutoValue
 public abstract class Protocol {
 
-  /** {@link AttributeKey} that lets channel reference {@link Protocol} that created it. */
-  public static final AttributeKey<Protocol> PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL_KEY");
+  public final static AttributeKey<Protocol> PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL_KEY");
 
+  /**
+   * Default names associated with each protocol
+   */
+  final static String EPP_PROTOCOL_NAME = "EPP";
+  final static String DNS_PROTOCOL_NAME = "DNS";
+  final static String WHOIS_PROTOCOL_NAME =  "WHOIS";
+  final static String RDAP_PROTOCOL_NAME = "RDAP";
+
+  private String host;
+  private String path = "";
+  private ProbingAction probingAction;
+
+  /** Setter method for Protocol's host*/
+  public Protocol host(String host) {
+    this.host = host;
+    return this;
+  }
+
+  /** Getter method for Protocol's host*/
+  public String host() {
+    return host;
+  }
+
+  /** Setter method for Protocol's path*/
+  public Protocol path(String path) {
+    this.path = path;
+    return this;
+  }
+
+  /** Getter method for Protocol's path*/
+  public String path() {
+    return path;
+  }
+
+  /** Setter method for Protocol's ProbingAction parent*/
+  public <O> Protocol probingAction(ProbingAction<O> probingAction) {
+    this.probingAction = probingAction;
+    return this;
+  }
+
+  /** Getter method for Protocol's path*/
+  public <O> ProbingAction<O> probingAction() {
+    return probingAction;
+  }
+
+  /** If connection associated with Protocol is persistent, which is only EPP */
+  public boolean persistentConnection() {
+    return name() == EPP_PROTOCOL_NAME;
+  }
+
+  /** Protocol Name */
   public abstract String name();
 
+  /** Port to bind to at remote host */
   public abstract int port();
 
   /** The {@link ChannelHandler} providers to use for the protocol, in order. */
-  abstract ImmutableList<Provider<? extends ChannelHandler>> handlerProviders();
+  public abstract ImmutableList<Provider<? extends ChannelHandler>> handlerProviders();
 
-  /** Boolean that notes if connection associated with Protocol is persistent.*/
-  abstract boolean persistentConnection();
+
+  public abstract Builder toBuilder();
 
   public static Builder builder() {
     return new AutoValue_Protocol.Builder();
@@ -47,25 +100,13 @@ public abstract class Protocol {
   @AutoValue.Builder
   public abstract static class Builder {
 
-    public abstract Builder setName(String value);
+    public abstract Builder name(String value);
 
-    public abstract Builder setPort(int num);
+    public abstract Builder port(int num);
 
-    public abstract Builder setHandlerProviders(ImmutableList<Provider<? extends ChannelHandler>> providers);
-
-    public abstract Builder setPersistentConnection(boolean value);
+    public abstract Builder handlerProviders(ImmutableList<Provider<? extends ChannelHandler>> providers);
 
     public abstract Protocol build();
   }
-
-  @Override
-  public String toString() {
-    return String.format(
-        "Protocol with name: %s, port: %d, providers: %s, and persistent connection: %s",
-        name(),
-        port(),
-        handlerProviders(),
-        persistentConnection()
-    );
-  }
 }
+
