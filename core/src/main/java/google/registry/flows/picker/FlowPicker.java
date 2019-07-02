@@ -82,6 +82,9 @@ public class FlowPicker {
   /** Marker class for unimplemented flows. */
   private abstract static class UnimplementedFlow implements Flow {}
 
+  /** Marker class for unimplemented restore flows. */
+  private abstract static class UnimplementedRestoreFlow implements Flow {}
+
   /** A function type that takes an {@link EppInput} and returns a {@link Flow} class. */
   private abstract static class FlowProvider {
     /** Get the flow associated with this {@link EppInput} or return null to signal no match. */
@@ -160,7 +163,7 @@ public class FlowPicker {
       // Restore command with an op of "report" is not currently supported.
       return (rgpUpdateExtension.get().getRestoreCommand().getRestoreOp() == RestoreOp.REQUEST)
           ? DomainRestoreRequestFlow.class
-          : UnimplementedFlow.class;
+          : UnimplementedRestoreFlow.class;
     }};
 
   /**
@@ -265,8 +268,11 @@ public class FlowPicker {
       Class<? extends Flow> flowClass = flowProvider.get(eppInput);
       if (flowClass == UnimplementedFlow.class) {
         break;  // We found it, but it's marked as not implemented.
-      }
-      if (flowClass != null) {
+      } else if (flowClass == UnimplementedRestoreFlow.class) {
+        throw new UnimplementedCommandException(
+            "Domain restores are approved and enacted instantly, "
+                + "therefore domain restore reports are not supported");
+      } else if (flowClass != null) {
         return flowClass;  // We found it!
       }
     }
