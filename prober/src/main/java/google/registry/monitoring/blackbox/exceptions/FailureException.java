@@ -12,18 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.monitoring.blackbox.exceptions;
+package google.registry.monitoring.blackbox;
 
-/**
- * Base exception class for all instances when the status of the action performed is FAILURE.
- */
-public class FailureException extends Exception {
-
-  public FailureException(String msg) {
-    super(msg);
-  }
-
-  public FailureException(Throwable e) {
-    super(e);
-  }
-}
