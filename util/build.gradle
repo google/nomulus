@@ -2,8 +2,11 @@ apply plugin: 'java'
 
 dependencies {
   def deps = rootProject.dependencyMap
+  compile deps['com.google.api-client:google-api-client']
   compile deps['com.google.appengine:appengine-api-1.0-sdk']
   compile deps['com.google.appengine:appengine-testing']
+  compile deps['com.google.auth:google-auth-library-credentials']
+  compile deps['com.google.auth:google-auth-library-oauth2-http']
   compile deps['com.google.auto.value:auto-value-annotations']
   compile deps['com.google.code.findbugs:jsr305']
   compile deps['com.google.dagger:dagger']

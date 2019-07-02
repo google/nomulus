@@ -12,6 +12,8 @@ dependencies {
   compile deps['com.google.apis:google-api-services-cloudkms']
   compile deps['com.google.apis:google-api-services-monitoring']
   compile deps['com.google.apis:google-api-services-storage']
+  compile deps['com.google.auth:google-auth-library-credentials']
+  compile deps['com.google.auth:google-auth-library-oauth2-http']
   compile deps['com.google.auto.value:auto-value-annotations']
   compile deps['com.google.code.findbugs:jsr305']
   compile deps['com.google.code.gson:gson']

@@ -17,17 +17,17 @@ package google.registry.export.datastore;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpRequest;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.collect.ImmutableList;
 import google.registry.testing.TestDataHelper;
+import google.registry.util.GoogleCredentialsBundle;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Rule;
@@ -48,27 +48,44 @@ public class DatastoreAdminTest {
 
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 
-  private HttpTransport httpTransport;
-  private GoogleCredential googleCredential;
   private DatastoreAdmin datastoreAdmin;
+
+  private static HttpRequest simulateSendRequest(HttpRequest httpRequest) {
+    try {
+      httpRequest.setUrl(new GenericUrl("https://localhost:65537")).execute();
+    } catch (Exception expected) {
+    }
+    return httpRequest;
+  }
+
+  private static Optional<String> getAccessToken(HttpRequest httpRequest) {
+    return httpRequest.getHeaders().getAuthorizationAsList().stream()
+        .filter(header -> header.startsWith(AUTH_HEADER_PREFIX))
+        .map(header -> header.substring(AUTH_HEADER_PREFIX.length()))
+        .findAny();
+  }
+
+  private static Optional<String> getRequestContent(HttpRequest httpRequest) throws IOException {
+    if (httpRequest.getContent() == null) {
+      return Optional.empty();
+    }
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    httpRequest.getContent().writeTo(outputStream);
+    outputStream.close();
+    return Optional.of(outputStream.toString(StandardCharsets.UTF_8.name()));
+  }
 
   @Before
   public void setup() {
-    httpTransport = new NetHttpTransport();
-    googleCredential =
-        new GoogleCredential.Builder()
-            .setTransport(httpTransport)
-            .setJsonFactory(JacksonFactory.getDefaultInstance())
-            .setClock(() -> 0)
-            .build();
-    googleCredential.setAccessToken(ACCESS_TOKEN);
-    googleCredential.setExpiresInSeconds(1_000L);
-
+    Date oneHourLater = new Date(System.currentTimeMillis() + 3_600_000);
+    GoogleCredentials googleCredentials = GoogleCredentials
+        .create(new AccessToken(ACCESS_TOKEN, oneHourLater));
+    GoogleCredentialsBundle credentialsBundle = GoogleCredentialsBundle.create(googleCredentials);
     datastoreAdmin =
         new DatastoreAdmin.Builder(
-                googleCredential.getTransport(),
-                googleCredential.getJsonFactory(),
-                googleCredential)
+                credentialsBundle.getHttpTransport(),
+                credentialsBundle.getJsonFactory(),
+                credentialsBundle.getHttpRequestInitializer())
             .setApplicationName("MyApplication")
             .setProjectId("MyCloudProject")
             .build();
@@ -150,30 +167,5 @@ public class DatastoreAdminTest {
 
     simulateSendRequest(httpRequest);
     assertThat(getAccessToken(httpRequest)).hasValue(ACCESS_TOKEN);
-  }
-
-  private static HttpRequest simulateSendRequest(HttpRequest httpRequest) {
-    try {
-      httpRequest.setUrl(new GenericUrl("https://localhost:65537")).execute();
-    } catch (Exception expected) {
-    }
-    return httpRequest;
-  }
-
-  private static Optional<String> getAccessToken(HttpRequest httpRequest) {
-    return httpRequest.getHeaders().getAuthorizationAsList().stream()
-        .filter(header -> header.startsWith(AUTH_HEADER_PREFIX))
-        .map(header -> header.substring(AUTH_HEADER_PREFIX.length()))
-        .findAny();
-  }
-
-  private static Optional<String> getRequestContent(HttpRequest httpRequest) throws IOException {
-    if (httpRequest.getContent() == null) {
-      return Optional.empty();
-    }
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    httpRequest.getContent().writeTo(outputStream);
-    outputStream.close();
-    return Optional.of(outputStream.toString(StandardCharsets.UTF_8.name()));
   }
 }
