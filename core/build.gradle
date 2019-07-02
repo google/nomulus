@@ -25,6 +25,7 @@ def screenshotsForGoldensDir = "${project.buildDir}/screenshots_for_goldens"
 def newGoldensDir = "${project.buildDir}/new_golden_images"
 def goldensDir =
   "${javaTestDir}/google/registry/webdriver/goldens/chrome-linux"
+def jsDir = "${project.projectDir}/src/main/javascript"
 
 // Tests that conflict with (mostly unidentified) members of the main test
 // suite. It is unclear if they are offenders (i.e., those that pollute global
@@ -480,7 +481,7 @@ task soyToJS {
 }
 
 task stylesheetsToJavascript {
-  def cssSourceDir = "${javaDir}/google/registry/ui/css"
+  def cssSourceDir = "${jsDir}/google/registry/ui/css"
   def outputDir = "${resourcesDir}/google/registry/ui/css"
   inputs.dir cssSourceDir
   outputs.dir outputDir
@@ -533,8 +534,8 @@ task compileProdJS(type: JavaExec) {
   def outputDir = "${resourcesDir}/google/registry/ui"
   def nodeModulesDir = "${rootDir}/node_modules"
   def cssSourceDir = "${resourcesDir}/google/registry/ui/css"
-  def jsSourceDir = "${javaDir}/google/registry/ui/js"
-  def externsDir = "${javaDir}/google/registry/ui/externs"
+  def jsSourceDir = "${jsDir}/google/registry/ui/js"
+  def externsDir = "${jsDir}/google/registry/ui/externs"
   def soySourceDir = "${generatedDir}/google/registry/ui/soy"
 
   [nodeModulesDir, cssSourceDir, jsSourceDir, externsDir, soySourceDir].each {
