@@ -46,6 +46,8 @@ artifacts:
     - 'output/nomulus.jar'
     - 'release/cloudbuild-sync.yaml'
     - 'release/cloudbuild-beam.yaml'
+# Docker images to push.
+images: ['gcr.io/domain-registry/nomulus-tool']
 timeout: 3600s
 options:
   machineType: 'N1_HIGHCPU_8'
