@@ -14,7 +14,6 @@
 
 package google.registry.monitoring.blackbox.handlers;
 
-import static google.registry.monitoring.blackbox.ProbingAction.PROBING_ACTION_KEY;
 import static google.registry.monitoring.blackbox.Protocol.PROTOCOL_KEY;
 
 import com.google.common.flogger.FluentLogger;
@@ -22,6 +21,8 @@ import google.registry.monitoring.blackbox.NewChannelAction;
 import google.registry.monitoring.blackbox.ProbingAction;
 import google.registry.monitoring.blackbox.Prober;
 import google.registry.monitoring.blackbox.Protocol;
+import io.netty.channel.AbstractChannel;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -32,6 +33,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import java.net.URL;
 import javax.inject.Inject;
+import org.joda.time.Duration;
 
 public class WebWhoisActionHandler extends ActionHandler<HttpResponse, HttpRequest> {
 
@@ -39,6 +41,12 @@ public class WebWhoisActionHandler extends ActionHandler<HttpResponse, HttpReque
 
   @Inject
   public WebWhoisActionHandler() {}
+
+  /** Method needed for workaround in order to create ProbingAction builder with Channel type specified by the current channel type */
+  private <C extends AbstractChannel> NewChannelAction.Builder<HttpRequest, C> createBuilder(
+      Class<? extends Channel> className, ProbingAction<HttpRequest> currentAction) {
+    return ((NewChannelAction<HttpRequest, C>) currentAction).toBuilder();
+  }
 
   @Override
   public void channelRead0(ChannelHandlerContext ctx, HttpResponse response) throws Exception{
@@ -59,11 +67,10 @@ public class WebWhoisActionHandler extends ActionHandler<HttpResponse, HttpReque
 
       logger.atInfo().log(String.format("Redirected to %s with host: %s, port: %d, and path: %s", url, newHost, newPort, newPath));
 
-
       Protocol oldProtocol = ctx.channel().attr(PROTOCOL_KEY).get();
 
       //Build new Protocol from new attributes
-      ProbingAction<HttpRequest> currentAction = oldProtocol.probingAction();
+      ProbingAction<HttpRequest> currentAction = (ProbingAction<HttpRequest>) oldProtocol.probingAction();
 
       //Construct new Protocol to reflect redirected host, path, and port
       Protocol newProtocol = Prober.portToProtocolMap.get(newPort).toBuilder().build()
@@ -74,11 +81,11 @@ public class WebWhoisActionHandler extends ActionHandler<HttpResponse, HttpReque
       FullHttpRequest httpRequest = ((DefaultFullHttpRequest) currentAction.outboundMessage()).setUri(newPath);
       httpRequest.headers().set(HttpHeaderNames.HOST, newHost);
 
-
       //Create new probingAction that takes in the new Protocol and HttpRequest message
-      ProbingAction<HttpRequest> redirectedAction = currentAction.<HttpRequest, NewChannelAction.Builder<HttpRequest>, NewChannelAction<HttpRequest>>toBuilder()
+      ProbingAction<HttpRequest> redirectedAction = createBuilder(ctx.channel().getClass(), currentAction)
           .protocol(newProtocol)
           .outboundMessage(httpRequest)
+          .delay(Duration.ZERO)
           .build();
 
       oldProtocol.probingAction(redirectedAction);

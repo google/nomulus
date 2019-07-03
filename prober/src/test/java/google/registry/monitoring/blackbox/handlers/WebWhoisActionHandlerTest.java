@@ -26,8 +26,8 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.channel.local.LocalChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
@@ -80,7 +80,7 @@ public class WebWhoisActionHandlerTest {
 
   /**Sets up probingAction for when testing redirection */
   private void setupProbingAction(Protocol protocol, HttpRequest outboundMessage, Bootstrap bootstrap) {
-    NewChannelAction.<HttpRequest>builder()
+    NewChannelAction.<HttpRequest, LocalChannel>builder()
         .protocol(protocol)
         .outboundMessage(outboundMessage)
         .delay(DEFAULT_DURATION)
@@ -95,7 +95,7 @@ public class WebWhoisActionHandlerTest {
         outboundMessage,
         new Bootstrap()
             .group(new NioEventLoopGroup())
-            .channel(NioSocketChannel.class));
+            .channel(LocalChannel.class));
     setupChannel(protocol);
   }
 

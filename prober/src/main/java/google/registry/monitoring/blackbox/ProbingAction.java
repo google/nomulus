@@ -15,7 +15,6 @@
 package google.registry.monitoring.blackbox;
 
 import static com.google.common.flogger.StackSize.SMALL;
-import static google.registry.monitoring.blackbox.Protocol.PROTOCOL_KEY;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
@@ -48,13 +47,13 @@ public abstract class ProbingAction<O> implements Callable<ChannelFuture> {
 
 
   /** {@link ActionHandler} Associated with this {@link ProbingAction}*/
-  private ActionHandler actionHandler;
+  private ActionHandler<?, O> actionHandler;
 
 
   /**
    * The requisite instance of {@link ActionHandler}, which is always the last {@link ChannelHandler} in the pipeline
    */
-  public ActionHandler actionHandler() {
+  private ActionHandler<?, O> actionHandler() {
     return actionHandler;
   }
 
@@ -97,27 +96,34 @@ public abstract class ProbingAction<O> implements Callable<ChannelFuture> {
     //Sets Action Handler to appropriately the last channel in the pipeline
     //Logs severe if the last channel in the pipeline is not
     try {
-      this.actionHandler = (ActionHandler) this.channel().pipeline().last();
+      this.actionHandler = (ActionHandler<?, O>) this.channel().pipeline().last();
     } catch (ClassCastException exception) {
       logger.atSevere().withStackTrace(SMALL).log("Last Handler in the ChannelPipeline is not an ActionHandler");
     }
 
 
-
-
     ChannelPromise finished = channel().newPromise();
 
     //Every specified time frame by delay(), we perform the next action in our sequence
-    timer.newTimeout(timeout -> {
-          // Write appropriate message to pipeline
-          ChannelFuture channelFuture = actionHandler().apply(outboundMessage());
+    if (!delay().equals(Duration.ZERO)) {
+      timer.newTimeout(timeout -> {
+            // Write appropriate message to pipeline
+            ChannelFuture channelFuture = actionHandler().apply(outboundMessage());
 
-          channelFuture.addListeners(
-              future -> actionHandler().resetFuture(),
-              future -> finished.setSuccess());
-        },
-        delay().getStandardSeconds(),
-        TimeUnit.SECONDS);
+            channelFuture.addListeners(
+                future -> actionHandler().resetFuture(),
+                future -> finished.setSuccess());
+          },
+          delay().getStandardSeconds(),
+          TimeUnit.SECONDS);
+    } else {
+
+      ChannelFuture channelFuture = actionHandler().apply(outboundMessage());
+      channelFuture.addListeners(
+          future -> actionHandler().resetFuture(),
+          future -> finished.setSuccess()
+      );
+    }
 
     return finished;
   }

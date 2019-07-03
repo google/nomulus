@@ -49,14 +49,20 @@ import org.junit.rules.ExternalResource;
 /**
  * Helper for setting up and testing client / server connection with netty.
  *
- * <p>Used in {@link SslClientInitializerTest}
+ * <p>Used in {@link SslClientInitializerTest} and {@link google.registry.monitoring.blackbox.ProbingActionTest}
  */
-final class NettyRule extends ExternalResource {
+public final class NettyRule extends ExternalResource {
 
   // All I/O operations are done inside the single thread within this event loop group, which is
   // different from the main test thread. Therefore synchronizations are required to make sure that
   // certain I/O activities are finished when assertions are performed.
-  private final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
+  public NettyRule() {
+    eventLoopGroup = new NioEventLoopGroup(1);
+  }
+  public NettyRule(EventLoopGroup e) {
+    eventLoopGroup = e;
+  }
+  private final EventLoopGroup eventLoopGroup;
 
   // Handler attached to server's channel to record the request received.
   private EchoHandler echoHandler;
@@ -67,7 +73,7 @@ final class NettyRule extends ExternalResource {
   private Channel channel;
 
   /** Sets up a server channel bound to the given local address. */
-  void setUpServer(LocalAddress localAddress, ChannelHandler handler) {
+  public void setUpServer(LocalAddress localAddress, ChannelHandler handler) {
     checkState(echoHandler == null, "Can't call setUpServer twice");
     echoHandler = new EchoHandler();
     ChannelInitializer<LocalChannel> serverInitializer =
@@ -115,8 +121,14 @@ final class NettyRule extends ExternalResource {
     channel = b.connect(localAddress).syncUninterruptibly().channel();
   }
 
-  void checkReady() {
+  private void checkReady() {
     checkState(channel != null, "Must call setUpClient to finish NettyRule setup");
+  }
+
+  /** Test that custom setup to send message to current server sends right message */
+  public void assertThatCustomWorks(String message) throws Exception {
+    assertThat(echoHandler.getRequestFuture().get()).isEqualTo(message);
+
   }
 
   /**
@@ -169,6 +181,7 @@ final class NettyRule extends ExternalResource {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
       // In the test we only send messages of type ByteBuf.
+
       assertThat(msg).isInstanceOf(ByteBuf.class);
       String request = ((ByteBuf) msg).toString(UTF_8);
       // After the message is written back to the client, fulfill the promise.

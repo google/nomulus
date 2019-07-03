@@ -16,15 +16,12 @@ package google.registry.monitoring.blackbox.handlers;
 
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.StackSize;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import io.netty.handler.codec.http.HttpResponse;
 import java.util.function.Function;
-import javax.inject.Inject;
 
 /**
  *
@@ -42,15 +39,10 @@ public abstract class ActionHandler<I, O> extends SimpleChannelInboundHandler<I>
   private Channel channel;
 
 
-  /** returns ChannelPromise for when inbound message is recieved
-   * a
-   * @param outboundMessage
-   * @return
-   */
+  /** Writes and flushes specified outboundMessage to channel pipeline and returns future
+   * that is marked as success when ActionHandler next reads from the channel */
   @Override
   public ChannelFuture apply(O outboundMessage) {
-    // Sends request along Outbound Handlers on the Pipeline
-
     channel.writeAndFlush(outboundMessage);
     return finished;
 
@@ -63,15 +55,13 @@ public abstract class ActionHandler<I, O> extends SimpleChannelInboundHandler<I>
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) {
     //Once handler is added to channel pipeline, initialize channel and future for this handler
-
     channel = ctx.channel();
     finished = ctx.newPromise();
   }
 
   @Override
   public void channelRead0(ChannelHandlerContext ctx, I inboundMessage) throws Exception{
-    //Only purpose of Handler is to mark future as a success
-
+    //simply marks finished as success
     finished.setSuccess();
   }
 
