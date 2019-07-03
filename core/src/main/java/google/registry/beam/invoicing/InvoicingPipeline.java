@@ -16,11 +16,9 @@ package google.registry.beam.invoicing;
 
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey;
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey.InvoiceGroupingKeyCoder;
-import google.registry.config.CredentialModule.LocalCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.reporting.billing.BillingModule;
 import google.registry.reporting.billing.GenerateInvoicesAction;
-import google.registry.util.GoogleCredentialsBundle;
 import java.io.Serializable;
 import javax.inject.Inject;
 import org.apache.beam.runners.dataflow.DataflowRunner;
@@ -81,9 +79,6 @@ public class InvoicingPipeline implements Serializable {
   @Config("invoiceFilePrefix")
   String invoiceFilePrefix;
 
-  @Inject @LocalCredential
-  GoogleCredentialsBundle credentialsBundle;
-
   @Inject
   InvoicingPipeline() {}
 
@@ -105,7 +100,6 @@ public class InvoicingPipeline implements Serializable {
   public void deploy() {
     // We can't store options as a member variable due to serialization concerns.
     InvoicingPipelineOptions options = PipelineOptionsFactory.as(InvoicingPipelineOptions.class);
-    options.setGcpCredential(credentialsBundle.getGoogleCredentials());
     options.setProject(projectId);
     options.setRunner(DataflowRunner.class);
     // This causes p.run() to stage the pipeline as a template on GCS, as opposed to running it.
