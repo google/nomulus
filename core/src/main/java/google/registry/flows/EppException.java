@@ -209,6 +209,7 @@ public abstract class EppException extends Exception {
   /** Specified command is not implemented. */
   @EppResultCode(Code.UNIMPLEMENTED_COMMAND)
   public static class UnimplementedCommandException extends EppException {
+
     public UnimplementedCommandException(InnerCommand command) {
       super(String.format(
           "No flow found for %s with extension %s",
@@ -216,6 +217,10 @@ public abstract class EppException extends Exception {
           command instanceof ResourceCommandWrapper
               ? ((ResourceCommandWrapper) command).getResourceCommand().getClass().getSimpleName()
               : null));
+    }
+
+    public UnimplementedCommandException(String message) {
+      super(message);
     }
   }
 

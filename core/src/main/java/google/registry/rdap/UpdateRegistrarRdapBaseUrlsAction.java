@@ -58,6 +58,19 @@ import javax.inject.Inject;
  *
  * <p>It is a "login/query/logout" system where you login using the ICANN Reporting credentials, get
  * a cookie you then send to get the list and finally logout.
+ *
+ * <p>For clarity, this is how one would contact this endpoint "manually", from a whitelisted IP
+ * server:
+ *
+ * <p>$ curl [base]/login -I --user [tld]_ry:[password]
+ *
+ * <p>get the id=xxx value from the reply
+ *
+ * <p>$ curl [base]/registrarRdapBaseUrl/list -b 'id=xxx'
+ *
+ * <p>$ curl [base]/logout -b 'id=xxx'
+ *
+ * <p>where [base] is https://mosapi.icann.org/mosapi/v1/[tld]
  */
 @Action(
     service = Action.Service.BACKEND,

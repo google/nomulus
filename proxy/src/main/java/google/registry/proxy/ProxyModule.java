@@ -20,11 +20,11 @@ import static google.registry.proxy.ProxyConfig.getProxyConfig;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.client.googleapis.util.Utils;
 import com.google.api.services.cloudkms.v1.CloudKMS;
 import com.google.api.services.cloudkms.v1.model.DecryptRequest;
 import com.google.api.services.storage.Storage;
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.flogger.LoggerConfig;
@@ -41,6 +41,7 @@ import google.registry.proxy.WebWhoisProtocolsModule.HttpsWhoisProtocol;
 import google.registry.proxy.WhoisProtocolModule.WhoisProtocol;
 import google.registry.proxy.handler.ProxyProtocolHandler;
 import google.registry.util.Clock;
+import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.SystemClock;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
@@ -50,6 +51,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -209,13 +211,13 @@ public class ProxyModule {
 
   @Singleton
   @Provides
-  static GoogleCredential provideCredential(ProxyConfig config) {
+  static GoogleCredentialsBundle provideCredential(ProxyConfig config) {
     try {
-      GoogleCredential credential = GoogleCredential.getApplicationDefault();
-      if (credential.createScopedRequired()) {
-        credential = credential.createScoped(config.gcpScopes);
+      GoogleCredentials credentials = GoogleCredentials.getApplicationDefault();
+      if (credentials.createScopedRequired()) {
+        credentials = credentials.createScoped(config.gcpScopes);
       }
-      return credential;
+      return GoogleCredentialsBundle.create(credentials);
     } catch (IOException e) {
       throw new RuntimeException("Unable to obtain OAuth2 credential.", e);
     }
@@ -226,36 +228,45 @@ public class ProxyModule {
   @Provides
   @Named("accessToken")
   static Supplier<String> provideAccessTokenSupplier(
-      GoogleCredential credential, ProxyConfig config) {
+      GoogleCredentialsBundle credentialsBundle, ProxyConfig config) {
     return () -> {
+      GoogleCredentials credentials = credentialsBundle.getGoogleCredentials();
+      AccessToken accessToken = credentials.getAccessToken();
+      Date nextExpirationTime =
+          new Date(
+              System.currentTimeMillis() + config.accessTokenRefreshBeforeExpirationSeconds * 1000);
       // If we never obtained an access token, the expiration time is null.
-      if (credential.getExpiresInSeconds() == null
+      if (accessToken == null
           // If we have an access token, make sure to refresh it ahead of time.
-          || credential.getExpiresInSeconds() < config.accessTokenRefreshBeforeExpirationSeconds) {
+          || accessToken.getExpirationTime().before(nextExpirationTime)) {
         try {
-          credential.refreshToken();
+          credentials.refresh();
         } catch (IOException e) {
           throw new RuntimeException("Cannot refresh access token.", e);
         }
       }
-      return credential.getAccessToken();
+      return credentials.getAccessToken().getTokenValue();
     };
   }
 
   @Singleton
   @Provides
-  static CloudKMS provideCloudKms(GoogleCredential credential, ProxyConfig config) {
+  static CloudKMS provideCloudKms(GoogleCredentialsBundle credentialsBundle, ProxyConfig config) {
     return new CloudKMS.Builder(
-            Utils.getDefaultTransport(), Utils.getDefaultJsonFactory(), credential)
+            credentialsBundle.getHttpTransport(),
+            credentialsBundle.getJsonFactory(),
+            credentialsBundle.getHttpRequestInitializer())
         .setApplicationName(config.projectId)
         .build();
   }
 
   @Singleton
   @Provides
-  static Storage provideStorage(GoogleCredential credential, ProxyConfig config) {
+  static Storage provideStorage(GoogleCredentialsBundle credentialsBundle, ProxyConfig config) {
     return new Storage.Builder(
-            Utils.getDefaultTransport(), Utils.getDefaultJsonFactory(), credential)
+            credentialsBundle.getHttpTransport(),
+            credentialsBundle.getJsonFactory(),
+            credentialsBundle.getHttpRequestInitializer())
         .setApplicationName(config.projectId)
         .build();
   }
@@ -337,14 +348,14 @@ public class ProxyModule {
   @Singleton
   @Component(
       modules = {
-        ProxyModule.class,
-        CertificateModule.class,
-        HttpsRelayProtocolModule.class,
-        WhoisProtocolModule.class,
-        WebWhoisProtocolsModule.class,
-        EppProtocolModule.class,
-        HealthCheckProtocolModule.class,
-        MetricsModule.class
+          ProxyModule.class,
+          CertificateModule.class,
+          HttpsRelayProtocolModule.class,
+          WhoisProtocolModule.class,
+          WebWhoisProtocolsModule.class,
+          EppProtocolModule.class,
+          HealthCheckProtocolModule.class,
+          MetricsModule.class
       })
   interface ProxyComponent {
 

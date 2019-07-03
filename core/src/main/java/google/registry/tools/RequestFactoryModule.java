@@ -14,13 +14,13 @@
 
 package google.registry.tools;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.CredentialModule.DefaultCredential;
 import google.registry.config.RegistryConfig;
+import google.registry.util.GoogleCredentialsBundle;
 
 /**
  * Module for providing the HttpRequestFactory.
@@ -30,12 +30,12 @@ import google.registry.config.RegistryConfig;
  */
 @Module
 class RequestFactoryModule {
-  
+
   static final int REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 
   @Provides
   static HttpRequestFactory provideHttpRequestFactory(
-      @DefaultCredential GoogleCredential credential) {
+      @DefaultCredential GoogleCredentialsBundle credentialsBundle) {
     if (RegistryConfig.areServersLocal()) {
       return new NetHttpTransport()
           .createRequestFactory(
@@ -47,11 +47,12 @@ class RequestFactoryModule {
       return new NetHttpTransport()
           .createRequestFactory(
               request -> {
-                credential.initialize(request);
+                credentialsBundle.getHttpRequestInitializer().initialize(request);
                 // GAE request times out after 10 min, so here we set the timeout to 10 min. This is
                 // needed to support some nomulus commands like updating premium lists that take
                 // a lot of time to complete.
-                // See https://developers.google.com/api-client-library/java/google-api-java-client/errors
+                // See
+                // https://developers.google.com/api-client-library/java/google-api-java-client/errors
                 request.setConnectTimeout(REQUEST_TIMEOUT_MS);
                 request.setReadTimeout(REQUEST_TIMEOUT_MS);
               });
