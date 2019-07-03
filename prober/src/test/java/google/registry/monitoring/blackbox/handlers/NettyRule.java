@@ -235,3 +235,4 @@ public final class NettyRule extends ExternalResource {
         channel.writeAndFlush(Unpooled.wrappedBuffer(data.getBytes(US_ASCII)));
   }
 }
+

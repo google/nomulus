@@ -16,6 +16,7 @@ package google.registry.monitoring.blackbox;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
+import io.netty.channel.local.LocalAddress;
 import io.netty.util.AttributeKey;
 import io.netty.channel.ChannelHandler;
 import javax.inject.Provider;
@@ -39,8 +40,9 @@ public abstract class Protocol {
   final static String RDAP_PROTOCOL_NAME = "RDAP";
 
   private String host;
+  private LocalAddress address;
   private String path = "";
-  private ProbingAction probingAction;
+  private ProbingAction<?> probingAction;
 
   /** Setter method for Protocol's host*/
   public Protocol host(String host) {
@@ -65,29 +67,40 @@ public abstract class Protocol {
   }
 
   /** Setter method for Protocol's ProbingAction parent*/
-  public <O> Protocol probingAction(ProbingAction<O> probingAction) {
+  public Protocol probingAction(ProbingAction<?> probingAction) {
     this.probingAction = probingAction;
     return this;
   }
 
+  /** Getter method for Protocol's path. ONLY FOR TESTING*/
+  public LocalAddress address() {
+    return address;
+  }
+
+  /** Setter method for Protocol's ProbingAction parent. ONLY FOR TESTING*/
+  public Protocol address(LocalAddress address) {
+    this.address = address;
+    return this;
+  }
+
   /** Getter method for Protocol's path*/
-  public <O> ProbingAction<O> probingAction() {
+  public ProbingAction<?> probingAction() {
     return probingAction;
   }
 
   /** If connection associated with Protocol is persistent, which is only EPP */
-  public boolean persistentConnection() {
-    return name() == EPP_PROTOCOL_NAME;
+  boolean persistentConnection() {
+    return name().equals(EPP_PROTOCOL_NAME);
   }
 
   /** Protocol Name */
-  public abstract String name();
+  abstract String name();
 
   /** Port to bind to at remote host */
   public abstract int port();
 
   /** The {@link ChannelHandler} providers to use for the protocol, in order. */
-  public abstract ImmutableList<Provider<? extends ChannelHandler>> handlerProviders();
+  abstract ImmutableList<Provider<? extends ChannelHandler>> handlerProviders();
 
 
   public abstract Builder toBuilder();
@@ -95,7 +108,6 @@ public abstract class Protocol {
   public static Builder builder() {
     return new AutoValue_Protocol.Builder();
   }
-
 
   @AutoValue.Builder
   public static abstract class Builder {

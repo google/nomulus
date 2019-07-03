@@ -144,6 +144,7 @@ public abstract class ProbingAction<O> implements Callable<ChannelFuture> {
       return probingAction;
     }
   }
+
   /**
    * @param channelPipeline is pipeline associated with channel that we want to add handlers to
    * @param handlerProviders are a list of provider objects that give us the requisite handlers Adds
@@ -156,7 +157,5 @@ public abstract class ProbingAction<O> implements Callable<ChannelFuture> {
       channelPipeline.addLast(handlerProvider.get());
     }
   }
-
 }
-
 

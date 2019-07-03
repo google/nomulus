@@ -44,3 +44,4 @@ public abstract class ExistingChannelAction<O> extends ProbingAction<O> {
     public abstract Builder<O> channel(Channel channel);
   }
 }
+

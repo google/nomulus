@@ -203,3 +203,4 @@ public class SslClientInitializerTest {
     assertThat(nettyRule.getChannel().isActive()).isFalse();
   }
 }
+

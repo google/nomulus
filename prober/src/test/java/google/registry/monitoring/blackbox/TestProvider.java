@@ -29,5 +29,5 @@ public class TestProvider<E> implements Provider<E> {
   public E get() {
     return obj;
   }
-
 }
+
