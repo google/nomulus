@@ -453,6 +453,14 @@ public class RegistrarTest extends EntityTestCase {
   }
 
   @Test
+  public void testFailure_driveFolderId_asFullUrl() {
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> registrar.asBuilder().setDriveFolderId(
+            "https://drive.google.com/drive/folders/1j3v7RZkU25DjbTx2-Q93H04zKOBau89M"));
+    assertThat(thrown).hasMessageThat().isEqualTo("Drive folder ID must not be a full URL");
+  }
+
+  @Test
   public void testFailure_nullEmail() {
     NullPointerException thrown =
         assertThrows(NullPointerException.class, () -> registrar.asBuilder().setEmailAddress(null));
