@@ -14,6 +14,7 @@
 
 package google.registry.rdap;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -23,6 +24,7 @@ import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.flogger.FluentLogger;
@@ -34,8 +36,9 @@ import com.google.gson.JsonObject;
 import com.googlecode.objectify.Key;
 import google.registry.keyring.api.KeyModule;
 import google.registry.model.registrar.Registrar;
+import google.registry.model.registry.Registries;
+import google.registry.model.registry.Registry.TldType;
 import google.registry.request.Action;
-import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,8 +58,6 @@ import javax.inject.Inject;
  *
  * <p>It is a "login/query/logout" system where you login using the ICANN Reporting credentials, get
  * a cookie you then send to get the list and finally logout.
- *
- * <p>The username is [TLD]_ry. It could be any "real" TLD.
  *
  * <p>For clarity, this is how one would contact this endpoint "manually", from a whitelisted IP
  * server:
@@ -88,18 +89,10 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
   @Inject HttpTransport httpTransport;
   @Inject @KeyModule.Key("icannReportingPassword") String password;
 
-  /**
-   * The TLD for which we make the request.
-   *
-   * <p>The actual value doesn't matter, as long as it's a TLD that has access to the ICANN
-   * Reporter. It's just used to login.
-   */
-  @Inject @Parameter("tld") String tld;
-
   @Inject
   UpdateRegistrarRdapBaseUrlsAction() {}
 
-  private String loginAndGetId(HttpRequestFactory requestFactory) {
+  private String loginAndGetId(HttpRequestFactory requestFactory, String tld) {
     try {
       logger.atInfo().log("Logging in to MoSAPI");
       HttpRequest request =
@@ -122,7 +115,7 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
     }
   }
 
-  private void logout(HttpRequestFactory requestFactory, String id) {
+  private void logout(HttpRequestFactory requestFactory, String id, String tld) {
     try {
       HttpRequest request =
           requestFactory.buildGetRequest(new GenericUrl(String.format(LOGOUT_URL, tld)));
@@ -135,9 +128,9 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
     }
   }
 
-  private ImmutableSetMultimap<String, String> getRdapBaseUrlsPerIanaId() {
+  private ImmutableSetMultimap<String, String> getRdapBaseUrlsPerIanaIdWithTld(String tld) {
     HttpRequestFactory requestFactory = httpTransport.createRequestFactory();
-    String id = loginAndGetId(requestFactory);
+    String id = loginAndGetId(requestFactory, tld);
     String content;
     try {
       HttpRequest request =
@@ -152,7 +145,7 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
       throw new UncheckedIOException(
           "Error reading RDAP list from MoSAPI server: " + e.getMessage(), e);
     } finally {
-      logout(requestFactory, id);
+      logout(requestFactory, id, tld);
     }
 
     logger.atInfo().log("list reply: '%s'", content);
@@ -171,6 +164,25 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
     }
 
     return builder.build();
+  }
+
+  private ImmutableSetMultimap<String, String> getRdapBaseUrlsPerIanaId() {
+    // All TLDs have the same data, so just keep trying until one works
+    // (the expectation is that all / any should work)
+    ImmutableList<String> tlds = ImmutableList.sortedCopyOf(Registries.getTldsOfType(TldType.REAL));
+    checkArgument(!tlds.isEmpty(), "There must exist at least one REAL TLD.");
+    Throwable finalThrowable = null;
+    for (String tld : tlds) {
+      try {
+        return getRdapBaseUrlsPerIanaIdWithTld(tld);
+      } catch (Throwable throwable) {
+        logger.atWarning().log(String
+            .format("Error retrieving RDAP urls with TLD %s: %s", tld, throwable.getMessage()));
+        finalThrowable = throwable;
+      }
+    }
+    throw new RuntimeException(
+        String.format("Error contacting MosAPI server. Tried TLDs %s", tlds), finalThrowable);
   }
 
   @Override
