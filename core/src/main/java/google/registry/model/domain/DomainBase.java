@@ -379,7 +379,7 @@ public class DomainBase extends EppResource
     // There is no transfer. Do any necessary autorenews.
 
     Builder builder = asBuilder();
-    if (isBeforeOrAt(registrationExpirationTime, now)) {
+    if (!isBeforeOrAt(getDeletionTime(), now) && isBeforeOrAt(registrationExpirationTime, now)) {
       // Autorenew by the number of years between the old expiration time and now.
       DateTime lastAutorenewTime = leapSafeAddYears(
           registrationExpirationTime,

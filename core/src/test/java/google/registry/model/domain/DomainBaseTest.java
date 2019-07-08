@@ -28,6 +28,7 @@ import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -556,5 +557,16 @@ public class DomainBaseTest extends EntityTestCase {
     assertThat(thrown)
         .hasMessageThat()
         .contains("Domain name must be in puny-coded, lower-case form");
+  }
+
+  @Test
+  public void testClone_doNotExtendExpirationOnDeletedDomain() {
+    DateTime now = DateTime.now(UTC);
+    domain = persistResource(domain.asBuilder().setRegistrationExpirationTime(now.minusDays(1))
+        .setDeletionTime(now.minusDays(1))
+        .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE, StatusValue.INACTIVE))
+        .build());
+    assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationTime())
+        .isEqualTo(now.minusDays(1));
   }
 }
