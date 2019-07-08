@@ -376,10 +376,10 @@ public class DomainBase extends EppResource
 
     Optional<DateTime> newLastEppUpdateTime = Optional.empty();
 
-    // There is no transfer. Do any necessary autorenews.
+    // There is no transfer. Do any necessary autorenews for active domains
 
     Builder builder = asBuilder();
-    if (!isBeforeOrAt(getDeletionTime(), now) && isBeforeOrAt(registrationExpirationTime, now)) {
+    if (isBeforeOrAt(registrationExpirationTime, now) && !isBeforeOrAt(getDeletionTime(), now)) {
       // Autorenew by the number of years between the old expiration time and now.
       DateTime lastAutorenewTime = leapSafeAddYears(
           registrationExpirationTime,
