@@ -39,6 +39,11 @@ public class EppMetrics {
           LabelDescriptor.create("tld", "The TLD acted on by the command (if applicable)."),
           LabelDescriptor.create("status", "The return status of the command."));
 
+  private static final ImmutableSet<LabelDescriptor> LABEL_DESCRIPTORS =
+      ImmutableSet.of(
+          LabelDescriptor.create("command", "The name of the command."),
+          LabelDescriptor.create("status", "The return status of the command."));
+
   private static final IncrementableMetric eppRequestsByRegistrar =
       MetricRegistryImpl.getDefault()
           .newIncrementableMetric(
@@ -71,6 +76,15 @@ public class EppMetrics {
               "EPP Processing Time By TLD",
               "milliseconds",
               LABEL_DESCRIPTORS_BY_TLD,
+              DEFAULT_FITTER);
+
+  private static final EventMetric eppProcessingTime =
+      MetricRegistryImpl.getDefault()
+          .newEventMetric(
+              "/epp/total_processing_time",
+              "EPP Processing Time",
+              "milliseconds",
+              LABEL_DESCRIPTORS,
               DEFAULT_FITTER);
 
   @Inject
@@ -107,5 +121,6 @@ public class EppMetrics {
         metric.getCommandName().orElse(""),
         metric.getTld().orElse(""),
         eppStatusCode);
+    eppProcessingTime.record(processingTime, metric.getCommandName().orElse(""), eppStatusCode);
   }
 }
