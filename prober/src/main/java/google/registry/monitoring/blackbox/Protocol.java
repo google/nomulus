@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2019 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package google.registry.monitoring.blackbox;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
+import io.netty.channel.local.LocalAddress;
 import io.netty.util.AttributeKey;
 import io.netty.channel.ChannelHandler;
 import javax.inject.Provider;
@@ -29,7 +30,7 @@ import javax.inject.Provider;
 public abstract class Protocol {
 
   public final static AttributeKey<Protocol> PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL_KEY");
-
+  private final static LocalAddress DEFAULT_ADDRESS = new LocalAddress("TEST_ADDRESS");
   /**
    * Default names associated with each protocol
    */
@@ -38,67 +39,31 @@ public abstract class Protocol {
   final static String WHOIS_PROTOCOL_NAME =  "WHOIS";
   final static String RDAP_PROTOCOL_NAME = "RDAP";
 
-  private String host;
-  private String path = "";
-  private ProbingAction probingAction;
-
-  /** Setter method for Protocol's host*/
-  public Protocol host(String host) {
-    this.host = host;
-    return this;
-  }
-
-  /** Getter method for Protocol's host*/
-  public String host() {
-    return host;
-  }
-
-  /** Setter method for Protocol's path*/
-  public Protocol path(String path) {
-    this.path = path;
-    return this;
-  }
-
-  /** Getter method for Protocol's path*/
-  public String path() {
-    return path;
-  }
-
-  /** Setter method for Protocol's ProbingAction parent*/
-  public <O> Protocol probingAction(ProbingAction<O> probingAction) {
-    this.probingAction = probingAction;
-    return this;
-  }
-
-  /** Getter method for Protocol's path*/
-  public <O> ProbingAction<O> probingAction() {
-    return probingAction;
-  }
-
-  /** If connection associated with Protocol is persistent, which is only EPP */
-  public boolean persistentConnection() {
-    return name() == EPP_PROTOCOL_NAME;
-  }
+  /** Local Address of Protocol. ONLY FOR TESTING*/
+  public abstract LocalAddress address();
 
   /** Protocol Name */
-  public abstract String name();
+  abstract String name();
 
   /** Port to bind to at remote host */
   public abstract int port();
 
   /** The {@link ChannelHandler} providers to use for the protocol, in order. */
-  public abstract ImmutableList<Provider<? extends ChannelHandler>> handlerProviders();
+  abstract ImmutableList<Provider<? extends ChannelHandler>> handlerProviders();
 
+  /** If connection associated with Protocol is persistent, which is only EPP */
+  abstract boolean persistentConnection();
 
   public abstract Builder toBuilder();
 
   public static Builder builder() {
-    return new AutoValue_Protocol.Builder();
+    return new AutoValue_Protocol.Builder().address(DEFAULT_ADDRESS);
   }
-
 
   @AutoValue.Builder
   public static abstract class Builder {
+
+    public abstract Builder address(LocalAddress value);
 
     public abstract Builder name(String value);
 
@@ -106,9 +71,9 @@ public abstract class Protocol {
 
     public abstract Builder handlerProviders(ImmutableList<Provider<? extends ChannelHandler>> providers);
 
+    public abstract Builder persistentConnection(boolean value);
+
     public abstract Protocol build();
   }
-
-
-
 }
+
