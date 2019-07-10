@@ -78,11 +78,11 @@ public class EppMetrics {
               LABEL_DESCRIPTORS_BY_TLD,
               DEFAULT_FITTER);
 
-  private static final EventMetric eppProcessingTime =
+  private static final EventMetric requestTime =
       MetricRegistryImpl.getDefault()
           .newEventMetric(
-              "/epp/total_processing_time",
-              "EPP Processing Time",
+              "/epp/request_time",
+              "EPP Request Time",
               "milliseconds",
               LABEL_DESCRIPTORS,
               DEFAULT_FITTER);
@@ -121,6 +121,6 @@ public class EppMetrics {
         metric.getCommandName().orElse(""),
         metric.getTld().orElse(""),
         eppStatusCode);
-    eppProcessingTime.record(processingTime, metric.getCommandName().orElse(""), eppStatusCode);
+    requestTime.record(processingTime, metric.getCommandName().orElse(""), eppStatusCode);
   }
 }
