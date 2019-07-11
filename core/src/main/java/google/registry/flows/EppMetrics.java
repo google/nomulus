@@ -43,7 +43,7 @@ public class EppMetrics {
       ImmutableSet.of(
           LabelDescriptor.create("command", "The name of the command."),
           LabelDescriptor.create("traffic_type",
-              "The traffic type of the command, either CANARY, PROBER, or REAL."),
+              "The traffic type of the command, one of CANARY, PROBER, or REAL."),
           LabelDescriptor.create("status", "The return status of the command."));
 
   private static final IncrementableMetric eppRequestsByRegistrar =
@@ -84,7 +84,7 @@ public class EppMetrics {
       MetricRegistryImpl.getDefault()
           .newEventMetric(
               "/epp/processing_time_by_traffic_type",
-              "EPP Request Time",
+              "EPP Request Time By Traffic Type",
               "milliseconds",
               LABEL_DESCRIPTORS_BY_TRAFFIC_TYPE,
               DEFAULT_FITTER);
