@@ -23,10 +23,16 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 
 /**
+ *Superclass of all Handlers placed at end of channel pipeline
  *
+ * <p> {@code ActionHandler} inherits from {@link SimpleChannelInboundHandler<InboundMarker>}, as it should only be passed in
+ * messages that implement the {@link InboundMarker} interface. </p>
  *
- * Abstract class that tells sends message down pipeline and
- * and tells listeners to move on when the message is received.
+ * <p> The {@code ActionHandler} skeleton exists for a few main purposes. First, it returns a {@link ChannelPromise},
+ * which informs the {@link ProbingAction} in charge that a response has been read. Second, it stores the {@link OutboundMarker}
+ * passed down the pipeline, so that subclasses can use that information for their own processes. Lastly, with any exception
+ * thrown, the connection is closed, and the ProbingAction governing this channel is informed of the error. Subclasses
+ * specify further work to be done for specific kinds of channel pipelines. </p>
  */
 public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundMarker> {
 
@@ -35,16 +41,16 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
   protected ChannelPromise finished;
   protected OutboundMarker outboundMessage;
 
-  /** Writes and flushes specified outboundMessage to channel pipeline and returns future
-   * that is marked as success when ActionHandler next reads from the channel */
+  /** Takes in {@link OutboundMarker} type and saves for subclasses. Then returns initialized {@link ChannelPromise}*/
   public ChannelFuture getFuture(OutboundMarker outboundMessage) {
+
     //Action Handlers subclasses require the outboundMessage for additional logic
     this.outboundMessage = outboundMessage;
 
-    //returns the ChannelPromise initialized
     return finished;
   }
 
+  /** Initializes new {@link ChannelPromise} */
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) {
     //Once handler is added to channel pipeline, initialize channel and future for this handler
@@ -57,6 +63,7 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
     finished.setSuccess();
   }
 
+  /** Logs the channel and pipeline that caused error, closes channel, then informs {@link ProbingAction} listeners of error */
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     logger.atSevere().withCause(cause).log(String.format(
@@ -69,4 +76,3 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
     closedFuture.addListener(f -> logger.atInfo().log("Unsuccessful channel connection closed"));
   }
 }
-
