@@ -17,41 +17,29 @@ package google.registry.monitoring.blackbox;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import io.netty.channel.local.LocalAddress;
-import io.netty.util.AttributeKey;
 import io.netty.channel.ChannelHandler;
 import javax.inject.Provider;
 
 /**
- * Protocol Class packages all static variables necessary for a certain type of connection
- * Both the host and the path can be changed for the same protocol
- * Mainly packages the handlers necessary for the requisite channel pipeline
+ * {@link AutoValue} class that stores all unchanged variables necessary for type of connection
  */
 @AutoValue
 public abstract class Protocol {
 
-  public final static AttributeKey<Protocol> PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL_KEY");
+  /** Default {@link LocalAddress} when not initialized in {@code Builder} */
   private final static LocalAddress DEFAULT_ADDRESS = new LocalAddress("TEST_ADDRESS");
-  /**
-   * Default names associated with each protocol
-   */
-  final static String EPP_PROTOCOL_NAME = "EPP";
-  final static String DNS_PROTOCOL_NAME = "DNS";
-  final static String WHOIS_PROTOCOL_NAME =  "WHOIS";
-  final static String RDAP_PROTOCOL_NAME = "RDAP";
 
   /** Local Address of Protocol. ONLY FOR TESTING*/
   public abstract LocalAddress address();
 
-  /** Protocol Name */
   abstract String name();
 
-  /** Port to bind to at remote host */
   public abstract int port();
 
   /** The {@link ChannelHandler} providers to use for the protocol, in order. */
   abstract ImmutableList<Provider<? extends ChannelHandler>> handlerProviders();
 
-  /** If connection associated with Protocol is persistent, which is only EPP */
+  /** Boolean that notes if connection associated with Protocol is persistent.*/
   abstract boolean persistentConnection();
 
   public abstract Builder toBuilder();
@@ -76,4 +64,3 @@ public abstract class Protocol {
     public abstract Protocol build();
   }
 }
-
