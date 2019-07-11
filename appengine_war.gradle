@@ -15,18 +15,18 @@
 def environments = ['production', 'sandbox', 'alpha', 'crash']
 
 def projects = ['production': 'domain-registry',
-                'sandbox'   : 'domain-registry-sandbox',
-                'alpha'     : 'domain-registry-alpha',
-                'crash'     : 'domain-registry-crash']
+  'sandbox'   : 'domain-registry-sandbox',
+  'alpha'     : 'domain-registry-alpha',
+  'crash'     : 'domain-registry-crash']
 
 
 def environment = rootProject.findProperty("environment")
 if (environment == null) {
-    environment = 'production'
+  environment = 'production'
 }
 def gcpProject = projects[environment]
 if (gcpProject == null) {
-    throw new GradleException("-Penvironment must be one of ${environments}.")
+  throw new GradleException("-Penvironment must be one of ${environments}.")
 }
 
 apply plugin: 'war'
@@ -35,54 +35,69 @@ apply plugin: 'war'
 // plugin will recognize this as an app-engine standard app (and also
 // obtains the appengine-web.xml from the correct location)
 project.convention.plugins['war'].webAppDirName =
-        "../../core/src/main/java/google/registry/env/${environment}/${project.name}"
+  "../../core/src/main/java/google/registry/env/${environment}/${project.name}"
 
 apply plugin: 'com.google.cloud.tools.appengine'
 
 // Get the web.xml file for the service.
 war {
-    webInf {
-        from "../../core/src/main/java/google/registry/env/common/${project.name}/WEB-INF"
-    }
+  webInf {
+    from "../../core/src/main/java/google/registry/env/common/${project.name}/WEB-INF"
+  }
 }
 
 def coreResourcesDir = "${rootDir}/core/build/resources/main"
 war {
-    from("${coreResourcesDir}/google/registry/ui/html") {
-        include "*.html"
-    }
+  from("${coreResourcesDir}/google/registry/ui/html") {
+    include "*.html"
+  }
 }
 
 if (project.path == ":services:default") {
-    war {
-        from("${coreResourcesDir}/google/registry/ui") {
-            include "registrar_bin.js"
-            if (environment != "production") {
-                include "registrar_bin.js.map"
-            }
-            into("assets/js")
-        }
-        from("${coreResourcesDir}/google/registry/ui/css") {
-            include "registrar*"
-            into("assets/css")
-        }
-        from("${coreResourcesDir}/google/registry/ui/assets/images") {
-            include "**/*"
-            into("assets/images")
-        }
+  war {
+    from("${coreResourcesDir}/google/registry/ui") {
+      include "registrar_bin.js"
+      if (environment != "production") {
+        include "registrar_bin.js.map"
+      }
+      into("assets/js")
     }
+    from("${coreResourcesDir}/google/registry/ui/css") {
+      include "registrar*"
+      into("assets/css")
+    }
+    from("${coreResourcesDir}/google/registry/ui/assets/images") {
+      include "**/*"
+      into("assets/images")
+    }
+  }
+}
+
+// AppEngine deploy doesn't automatically update the cron jobs, so do it manually.
+// https://github.com/spinnaker/spinnaker/issues/4611 is a similar issue when deploying to prod
+task uploadCron(type: Exec) {
+  dependsOn ':services:default:appengineStage'
+  workingDir rootProject.projectDir
+  executable 'gcloud'
+  args([
+    "-q",
+    "--project",
+    "$gcpProject",
+    "app",
+    "deploy",
+    "services/default/build/staged-app/WEB-INF/appengine-generated/cron.yaml"])
 }
 
 appengine {
-    deploy {
-        project = gcpProject
-    }
+  deploy {
+    project = gcpProject
+  }
 }
 
 dependencies {
-    compile project(':core')
+  compile project(':core')
 }
 
-rootProject.deploy.dependsOn appengineDeploy
+rootProject.deploy.dependsOn appengineDeploy, uploadCron
 rootProject.stage.dependsOn appengineStage
 appengineDeploy.dependsOn rootProject.verifyDeployment
