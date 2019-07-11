@@ -28,6 +28,7 @@ import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.CollectionUtils.union;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.earliestOf;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.leapSafeAddYears;
@@ -379,7 +380,7 @@ public class DomainBase extends EppResource
     // There is no transfer. Do any necessary autorenews for active domains.
 
     Builder builder = asBuilder();
-    if (isBeforeOrAt(registrationExpirationTime, now) && !isBeforeOrAt(getDeletionTime(), now)) {
+    if (isBeforeOrAt(registrationExpirationTime, now) && END_OF_TIME.equals(getDeletionTime())) {
       // Autorenew by the number of years between the old expiration time and now.
       DateTime lastAutorenewTime = leapSafeAddYears(
           registrationExpirationTime,
