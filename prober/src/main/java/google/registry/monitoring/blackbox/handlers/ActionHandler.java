@@ -76,3 +76,4 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
     closedFuture.addListener(f -> logger.atInfo().log("Unsuccessful channel connection closed"));
   }
 }
+
