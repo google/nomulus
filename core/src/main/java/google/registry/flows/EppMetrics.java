@@ -43,7 +43,7 @@ public class EppMetrics {
       ImmutableSet.of(
           LabelDescriptor.create("command", "The name of the command."),
           LabelDescriptor.create("traffic_type",
-              "The traffic type of the command, one of CANARY, PROBER, or REAL."),
+              "The traffic type of the command; one of CANARY, PROBER, or REAL."),
           LabelDescriptor.create("status", "The return status of the command."));
 
   private static final IncrementableMetric eppRequestsByRegistrar =
