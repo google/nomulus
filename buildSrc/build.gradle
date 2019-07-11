@@ -15,9 +15,7 @@
 buildscript {
   if (rootProject.disableDependencyLocking.toBoolean() == false) {
     // Lock buildscript dependencies.
-    configurations.classpath {
-      resolutionStrategy.activateDependencyLocking()
-    }
+    configurations.classpath { resolutionStrategy.activateDependencyLocking() }
   }
 }
 
@@ -34,9 +32,7 @@ plugins {
 
 if (rootProject.disableDependencyLocking.toBoolean() == false) {
   // Lock application dependencies.
-  dependencyLocking {
-    lockAllConfigurations()
-  }
+  dependencyLocking { lockAllConfigurations() }
 }
 
 repositories {
@@ -57,15 +53,11 @@ apply from: '../java_common.gradle'
 
 sourceSets {
   main {
-    java {
-      srcDirs += "${project.buildDir}/generated/source/apt/main"
-    }
+    java { srcDirs += "${project.buildDir}/generated/source/apt/main" }
   }
 }
 
-checkstyle {
-  configDir file('../config/checkstyle')
-}
+checkstyle { configDir file('../config/checkstyle') }
 
 dependencies {
   def deps = dependencyMap
@@ -85,7 +77,17 @@ dependencies {
 }
 
 gradle.projectsEvaluated {
-  tasks.withType(JavaCompile) {
-    options.compilerArgs << "-Xlint:unchecked"
+  tasks.withType(JavaCompile) { options.compilerArgs << "-Xlint:unchecked" }
+}
+
+// Duplicated from ../build.gradle. Not creating shared script since
+// buildSrc directory is expected to go away.
+// Run ../gradlew spotlessApply to fix format issues.
+spotless {
+  groovyGradle {
+    clearSteps()
+    target '**/*.gradle'
+    paddedCell()
+    greclipse().configFile('../greclipse.properties')
   }
 }

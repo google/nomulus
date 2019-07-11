@@ -15,9 +15,7 @@
 buildscript {
   if (project.disableDependencyLocking.toBoolean() == false) {
     // Lock buildscript dependencies.
-    configurations.classpath {
-      resolutionStrategy.activateDependencyLocking()
-    }
+    configurations.classpath { resolutionStrategy.activateDependencyLocking() }
   }
 
   dependencies {
@@ -108,7 +106,7 @@ task verifyDeployment {
   description = 'Ensure that one can only deploy to alpha.'
   doFirst {
     if (rootProject.findProperty("environment") != 'alpha') {
-      throw new GradleException("Can only deploy to alpha.");
+      throw new GradleException("Can only deploy to alpha.")
     }
   }
 }
@@ -122,17 +120,17 @@ allprojects {
   // Skip no-op project
   if (project.name == 'services') return
 
-  repositories {
-    if (rootProject.mavenUrl) {
-      maven {
-        println "Java dependencies: Using repo $pluginsUrl..."
-        url rootProject.mavenUrl
+    repositories {
+      if (rootProject.mavenUrl) {
+        maven {
+          println "Java dependencies: Using repo $pluginsUrl..."
+          url rootProject.mavenUrl
+        }
+      } else {
+        println "Java dependencies: Using Maven Central..."
+        mavenCentral()
       }
-    } else {
-      println "Java dependencies: Using Maven Central..."
-      mavenCentral()
     }
-  }
 }
 
 task runPresubmits(type: Exec) {
@@ -144,33 +142,31 @@ subprojects {
   // Skip no-op project
   if (project.name == 'services') return
 
-  ext.createUberJar = { taskName, binaryName, mainClass ->
-    project.tasks.create(
-      taskName, com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
-      mergeServiceFiles()
-      baseName = binaryName
-      manifest {
-        attributes 'Main-Class': mainClass
-      }
-      zip64 = true
-      classifier = null
-      version = null
-      configurations = [project.configurations.runtimeClasspath]
-      from project.sourceSets.main.output
-      // Excludes signature files that accompany some dependency jars, like
-      // bonuncycastle. If they are present, only classes from those signed jars are
-      // made available to the class loader.
-      // see https://discuss.gradle.org/t/signing-a-custom-gradle-plugin-thats-downloaded-by-the-build-system-from-github/1365
-      exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
+    ext.createUberJar = { taskName, binaryName, mainClass ->
+      project.tasks.create(
+              taskName, com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+                mergeServiceFiles()
+                baseName = binaryName
+                manifest { attributes 'Main-Class': mainClass }
+                zip64 = true
+                classifier = null
+                version = null
+                configurations = [
+                  project.configurations.runtimeClasspath
+                ]
+                from project.sourceSets.main.output
+                // Excludes signature files that accompany some dependency jars, like
+                // bonuncycastle. If they are present, only classes from those signed jars are
+                // made available to the class loader.
+                // see https://discuss.gradle.org/t/signing-a-custom-gradle-plugin-thats-downloaded-by-the-build-system-from-github/1365
+                exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
+              }
     }
-  }
 
   if (rootProject.disableDependencyLocking.toBoolean() == false) {
     buildscript {
       // Lock buildscript dependencies.
-      configurations.classpath {
-        resolutionStrategy.activateDependencyLocking()
-      }
+      configurations.classpath { resolutionStrategy.activateDependencyLocking() }
     }
     // Lock application dependencies except for the gradle-license-report
     // plugin. See dependency_license.gradle for more information.
@@ -179,10 +175,12 @@ subprojects {
     }
   }
 
-  def services = [':services:default',
-                  ':services:backend',
-                  ':services:tools',
-                  ':services:pubapi']
+  def services = [
+    ':services:default',
+    ':services:backend',
+    ':services:tools',
+    ':services:pubapi'
+  ]
 
   // Set up all of the deployment projects.
   if (services.contains(project.path)) {
@@ -197,15 +195,18 @@ subprojects {
 
   if (project.name == 'third_party') return
 
-  project.tasks.test.dependsOn runPresubmits
+    project.tasks.test.dependsOn runPresubmits
 
-// Path to code generated with annotation processors. Note that this path is
-// chosen by the 'net.ltgt.apt' plugin, and may change if IDE-specific plugins
-// are applied, e.g., 'idea' or 'eclipse'
+  // Path to code generated with annotation processors. Note that this path is
+  // chosen by the 'net.ltgt.apt' plugin, and may change if IDE-specific plugins
+  // are applied, e.g., 'idea' or 'eclipse'
   def aptGeneratedDir = "${project.buildDir}/generated/source/apt/main"
   def aptGeneratedTestDir = "${project.buildDir}/generated/source/apt/test"
 
-  def commonlyExcludedResources = ['**/*.java', '**/BUILD']
+  def commonlyExcludedResources = [
+    '**/*.java',
+    '**/BUILD'
+  ]
 
   project.ext.javaDir = "${project.projectDir}/src/main/java"
   project.ext.javaTestDir = "${project.projectDir}/src/test/java"
@@ -213,18 +214,14 @@ subprojects {
 
   sourceSets {
     main {
-      java {
-        srcDirs += aptGeneratedDir
-      }
+      java { srcDirs += aptGeneratedDir }
       resources {
         srcDirs += project.ext.javaDir
         exclude commonlyExcludedResources
       }
     }
     test {
-      java {
-        srcDirs += aptGeneratedTestDir
-      }
+      java { srcDirs += aptGeneratedTestDir }
       resources {
         srcDirs += project.ext.javaTestDir
         exclude commonlyExcludedResources
@@ -233,21 +230,40 @@ subprojects {
   }
 
   if (project.name == 'util') return
-  if (project.name == 'proxy') return
-  if (project.name == 'core') return
+    if (project.name == 'proxy') return
+    if (project.name == 'core') return
 
-  test {
-    testLogging.showStandardStreams = Boolean.parseBoolean(showAllOutput)
-  }
+    test {
+      testLogging.showStandardStreams = Boolean.parseBoolean(showAllOutput)
+    }
 
   ext.relativePath = "google/registry/${project.name}"
 
   sourceSets.each {
-    it.java {
-      include "${project.relativePath}/"
-    }
-    it.resources {
-      include "${project.relativePath}/"
-    }
+    it.java { include "${project.relativePath}/" }
+    it.resources { include "${project.relativePath}/" }
+  }
+}
+
+
+
+// Formatter configuration for non-Java files. Java format is configured in
+// java_common.gradle. The spotlesscheck and spotlessApply tasks covers all
+// file types.
+spotless {
+  groovyGradle {
+    clearSteps()
+    target '**/*.gradle'
+    paddedCell()
+    greclipse().configFile('greclipse.properties')
+  }
+
+  format 'misc', {
+    clearSteps()
+    target '**/*.json', '**/*.properties'
+    targetExclude 'services/**', 'node_modules/**', '**/test/resources/**'
+    trimTrailingWhitespace()
+    indentWithSpaces(2)  // Indent config not working on .json
+    endWithNewline()
   }
 }
