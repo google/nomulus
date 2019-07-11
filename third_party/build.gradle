@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-plugins {
-  id 'java-library'
-}
+plugins { id 'java-library' }
 
 sourceSets {
   main {
     java {
       srcDirs = [
-          "${rootDir}/third_party/junit/"
+        "${rootDir}/third_party/junit/"
       ]
       include '**/*.java'
     }

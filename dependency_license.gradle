@@ -17,14 +17,8 @@
 // Note that the 'apply plugin' line does not use string literal. It references directly the
 // main class of the plugin.
 buildscript {
-  repositories {
-    maven {
-      url 'https://plugins.gradle.org/m2/'
-    }
-  }
-  dependencies {
-    classpath 'com.github.jk1:gradle-license-report:1.8'
-  }
+  repositories { maven { url 'https://plugins.gradle.org/m2/' } }
+  dependencies { classpath 'com.github.jk1:gradle-license-report:1.8' }
 }
 apply plugin: com.github.jk1.license.LicenseReportPlugin
 
@@ -69,19 +63,19 @@ licenseReport {
   allowedLicensesFile = file(toFullFilePath("${configFolder}/allowed_licenses.json"))
 
   filters = new com.github.jk1.license.filter.LicenseBundleNormalizer(
-      bundlePath: toFullFilePath("${configFolder}/license_normalizer_bundle.json"),
-      createDefaultTransformationRules: false)
+          bundlePath: toFullFilePath("${configFolder}/license_normalizer_bundle.json"),
+          createDefaultTransformationRules: false)
 
   // The following dependency jars do not contain license info.
   // Investigation results are documented inline.
   excludes = [
-      // BSD: https://github.com/javacc/javacc/blob/master/LICENSE
-      'javacc:javacc',
-      // CDDL+GPL2.0 according to Maven Central:
-      // https://mvnrepository.com/artifact/javax.servlet/servlet-api/2.5
-      'javax.servlet:servlet-api',
-      // Presumed free since this is from Apache:
-      // http://www.apache.org/licenses/
-      'xerces:xmlParserAPIs'
+    // BSD: https://github.com/javacc/javacc/blob/master/LICENSE
+    'javacc:javacc',
+    // CDDL+GPL2.0 according to Maven Central:
+    // https://mvnrepository.com/artifact/javax.servlet/servlet-api/2.5
+    'javax.servlet:servlet-api',
+    // Presumed free since this is from Apache:
+    // http://www.apache.org/licenses/
+    'xerces:xmlParserAPIs'
   ]
 }

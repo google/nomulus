@@ -23,29 +23,30 @@ tasks.test.dependsOn tasks.checkstyleMain
 tasks.test.dependsOn tasks.checkstyleTest
 
 dependencies {
-    // compatibility with Java 8
-    errorproneJavac("com.google.errorprone:javac:9+181-r4173-1")
-    errorprone("com.google.errorprone:error_prone_core:2.3.3")
+  // compatibility with Java 8
+  errorproneJavac("com.google.errorprone:javac:9+181-r4173-1")
+  errorprone("com.google.errorprone:error_prone_core:2.3.3")
 }
 
 tasks.withType(JavaCompile).configureEach {
-    // The -Werror flag causes Intellij to fail on deprecated api use.
-    // Allow IDE user to turn off this flag by specifying a Gradle VM
-    // option from inside the IDE.
-    if (System.getProperty('no_werror') != 'true') {
-        options.compilerArgs << "-Werror"
-    }
-    options.errorprone.disableWarningsInGeneratedCode = true
-    options.errorprone.errorproneArgumentProviders.add([
-            asArguments: {
-                return ['-XepExcludedPaths:.*/build/generated/.*']
-            }] as CommandLineArgumentProvider)
-    // Disable features currently incompatible with Java 12
-    if ((JavaVersion.current().majorVersion as Integer) > 11) {
-      // This check is broken in Java 12.
-      // See https://github.com/google/error-prone/issues/1257
-      options.errorprone.errorproneArgs=['-Xep:Finally:OFF']
-    }
+  // The -Werror flag causes Intellij to fail on deprecated api use.
+  // Allow IDE user to turn off this flag by specifying a Gradle VM
+  // option from inside the IDE.
+  if (System.getProperty('no_werror') != 'true') {
+    options.compilerArgs << "-Werror"
+  }
+  options.errorprone.disableWarningsInGeneratedCode = true
+  options.errorprone.errorproneArgumentProviders.add([
+    asArguments: { return [ '-XepExcludedPaths:.*/build/generated/.*' ]
+    }] as CommandLineArgumentProvider)
+  // Disable features currently incompatible with Java 12
+  if ((JavaVersion.current().majorVersion as Integer) > 11) {
+    // This check is broken in Java 12.
+    // See https://github.com/google/error-prone/issues/1257
+    options.errorprone.errorproneArgs=[
+      '-Xep:Finally:OFF'
+    ]
+  }
 }
 
 version = '1.0'
@@ -56,13 +57,13 @@ compileJava { options.encoding = "UTF-8" }
 compileTestJava { options.encoding = "UTF-8" }
 
 gradleLint.rules = [
-        // Checks if Gradle wrapper is up-to-date
-        'archaic-wrapper',
-        // Checks for indirect dependencies with dynamic version spec. Best
-        // practice calls for declaring them with specific versions.
-        'undeclared-dependency',
-        'unused-dependency'
-        // TODO(weiminyu): enable more dependency checks
+  // Checks if Gradle wrapper is up-to-date
+  'archaic-wrapper',
+  // Checks for indirect dependencies with dynamic version spec. Best
+  // practice calls for declaring them with specific versions.
+  'undeclared-dependency',
+  'unused-dependency'
+  // TODO(weiminyu): enable more dependency checks
 ]
 
 // To check or fix file formats, run the following commands from this directory:
@@ -78,12 +79,5 @@ spotless {
       exclude "**/flows/FlowComponent.java"
     }
     googleJavaFormat('1.7')
-  }
-  format 'misc', {
-    clearSteps()
-    target '**/*.gradle'
-    trimTrailingWhitespace()
-    indentWithSpaces(2)
-    endWithNewline()
   }
 }

@@ -15,11 +15,7 @@
 if (pluginsUrl) {
   println "Plugins: Using repo $pluginsUrl..."
   pluginManagement {
-    repositories {
-      maven {
-        url pluginsUrl
-      }
-    }
+    repositories { maven { url pluginsUrl } }
   }
 } else {
   println "Plugins: Using default repo..."
