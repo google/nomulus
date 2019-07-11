@@ -75,7 +75,7 @@ if (project.path == ":services:default") {
 
 appengine {
     deploy {
-        project = gcpProject
+        projectId = gcpProject
     }
 }
 
