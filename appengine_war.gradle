@@ -12,21 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-def environments = ['production', 'sandbox', 'alpha', 'crash']
+def environments = [
+  'production',
+  'sandbox',
+  'alpha',
+  'crash'
+]
 
 def projects = ['production': 'domain-registry',
-                'sandbox'   : 'domain-registry-sandbox',
-                'alpha'     : 'domain-registry-alpha',
-                'crash'     : 'domain-registry-crash']
+  'sandbox'   : 'domain-registry-sandbox',
+  'alpha'     : 'domain-registry-alpha',
+  'crash'     : 'domain-registry-crash']
 
 
 def environment = rootProject.findProperty("environment")
 if (environment == null) {
-    environment = 'production'
+  environment = 'production'
 }
 def gcpProject = projects[environment]
 if (gcpProject == null) {
-    throw new GradleException("-Penvironment must be one of ${environments}.")
+  throw new GradleException("-Penvironment must be one of ${environments}.")
 }
 
 apply plugin: 'war'
@@ -40,48 +45,36 @@ project.convention.plugins['war'].webAppDirName =
 apply plugin: 'com.google.cloud.tools.appengine'
 
 // Get the web.xml file for the service.
-war {
-    webInf {
-        from "../../core/src/main/java/google/registry/env/common/${project.name}/WEB-INF"
-    }
-}
+war { webInf { from "../../core/src/main/java/google/registry/env/common/${project.name}/WEB-INF" } }
 
 def coreResourcesDir = "${rootDir}/core/build/resources/main"
 war {
-    from("${coreResourcesDir}/google/registry/ui/html") {
-        include "*.html"
-    }
+  from("${coreResourcesDir}/google/registry/ui/html") { include "*.html" }
 }
 
 if (project.path == ":services:default") {
-    war {
-        from("${coreResourcesDir}/google/registry/ui") {
-            include "registrar_bin.js"
-            if (environment != "production") {
-                include "registrar_bin.js.map"
-            }
-            into("assets/js")
-        }
-        from("${coreResourcesDir}/google/registry/ui/css") {
-            include "registrar*"
-            into("assets/css")
-        }
-        from("${coreResourcesDir}/google/registry/ui/assets/images") {
-            include "**/*"
-            into("assets/images")
-        }
+  war {
+    from("${coreResourcesDir}/google/registry/ui") {
+      include "registrar_bin.js"
+      if (environment != "production") {
+        include "registrar_bin.js.map"
+      }
+      into("assets/js")
     }
+    from("${coreResourcesDir}/google/registry/ui/css") {
+      include "registrar*"
+      into("assets/css")
+    }
+    from("${coreResourcesDir}/google/registry/ui/assets/images") {
+      include "**/*"
+      into("assets/images")
+    }
+  }
 }
 
-appengine {
-    deploy {
-        project = gcpProject
-    }
-}
+appengine { deploy { project = gcpProject } }
 
-dependencies {
-    compile project(':core')
-}
+dependencies { compile project(':core') }
 
 rootProject.deploy.dependsOn appengineDeploy
 rootProject.stage.dependsOn appengineStage
