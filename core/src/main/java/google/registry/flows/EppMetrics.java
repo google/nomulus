@@ -39,7 +39,7 @@ public class EppMetrics {
           LabelDescriptor.create("tld", "The TLD acted on by the command (if applicable)."),
           LabelDescriptor.create("status", "The return status of the command."));
 
-  private static final ImmutableSet<LabelDescriptor> LABEL_DESCRIPTORS_BY_TRAFFIC_TYPE =
+  private static final ImmutableSet<LabelDescriptor> LABEL_DESCRIPTORS =
       ImmutableSet.of(
           LabelDescriptor.create("command", "The name of the command."),
           LabelDescriptor.create("traffic_type",
@@ -80,13 +80,13 @@ public class EppMetrics {
               LABEL_DESCRIPTORS_BY_TLD,
               DEFAULT_FITTER);
 
-  private static final EventMetric processingTimeByTrafficType =
+  private static final EventMetric requestTime =
       MetricRegistryImpl.getDefault()
           .newEventMetric(
-              "/epp/processing_time_by_traffic_type",
-              "EPP Request Time By Traffic Type",
+              "/epp/request_time",
+              "EPP Request Time",
               "milliseconds",
-              LABEL_DESCRIPTORS_BY_TRAFFIC_TYPE,
+              LABEL_DESCRIPTORS,
               DEFAULT_FITTER);
 
   private enum TrafficType {
@@ -122,8 +122,7 @@ public class EppMetrics {
         .record(processingTime, commandName, metric.getClientId().orElse(""), eppStatusCode);
     String tld = metric.getTld().orElse("");
     processingTimeByTld.record(processingTime, commandName, tld, eppStatusCode);
-    processingTimeByTrafficType
-        .record(processingTime, commandName, getTrafficType(tld).toString(), eppStatusCode);
+    requestTime.record(processingTime, commandName, getTrafficType(tld).toString(), eppStatusCode);
   }
 
   private static TrafficType getTrafficType(String tld) {
