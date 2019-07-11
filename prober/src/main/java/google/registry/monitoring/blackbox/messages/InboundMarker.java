@@ -15,8 +15,7 @@
 package google.registry.monitoring.blackbox.messages;
 
 /**
- * Simple Interface that is implemented by all classes that serve
- * as inboundMessages in the channel pipelines
+ * Simple Interface that is implemented by all classes that serve as {@code inboundMessages} in channel pipeline
  */
 public interface InboundMarker {}
 
