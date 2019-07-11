@@ -71,6 +71,19 @@ reportUploader {
 
 apply from: 'dependencies.gradle'
 
+apply from: 'dependency_license.gradle'
+
+// Custom task to run checkLicense in buildSrc, which is not triggered
+// by root project tasks. A shell task is used because buildSrc tasks
+// cannot be referenced in the same way as tasks from a regular included
+// build.
+task checkBuildSrcLicense(type:Exec) {
+  workingDir "${rootDir}/buildSrc"
+  commandLine '../gradlew', 'checkLicense'
+}
+tasks.checkLicense.dependsOn(tasks.checkBuildSrcLicense)
+tasks.build.dependsOn(tasks.checkLicense)
+
 // Provide defaults for all of the project properties.
 
 // showAllOutput: boolean.  If true, dump all test output during the build.
@@ -159,9 +172,10 @@ subprojects {
         resolutionStrategy.activateDependencyLocking()
       }
     }
-    // Lock application dependencies.
-    dependencyLocking {
-      lockAllConfigurations()
+    // Lock application dependencies except for the gradle-license-report
+    // plugin. See dependency_license.gradle for more information.
+    configurations.findAll { it.name != 'dependencyLicenseReport' }.each {
+      it.resolutionStrategy.activateDependencyLocking()
     }
   }
 
