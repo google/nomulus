@@ -13,7 +13,8 @@
 // limitations under the License.
 
 ext {
-    // Dependencies explicitly declared in a configuration
+    // Direct dependencies and compile-time transitive dependencies (i.e.,
+    // those flagged as undeclared-dependency by Nebula-lint).
     dependencyList = [
       'args4j:args4j:2.0.26',
       'com.beust:jcommander:1.60',

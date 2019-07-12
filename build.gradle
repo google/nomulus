@@ -277,14 +277,21 @@ task checkDependenciesDotGradle {
     if (unusedDeps.isEmpty()) {
       return
     }
-    logger.error("The following are not direct dependencies:\n${unusedDeps.toListString()}")
-    throw new IllegalStateException("The dependencies.gradle file should only contain direct dependencies.")
+    logger.error(
+        "The following are not direct dependencies:\n${unusedDeps.toListString()}")
+    throw new IllegalStateException(
+        "The dependencies.gradle file should only contain direct dependencies.")
   }
 }
+tasks.build.dependsOn(tasks.checkDependenciesDotGradle)
 
 def createGetBuildSrcDirectDepsTask(outputFileName) {
-  return tasks.create("getBuildSrcDeps_${new Random().nextInt()}", Exec) {
+  return tasks
+      .create(
+          "getBuildSrcDeps_${java.util.UUID.randomUUID()}".toString(),
+          Exec) {
     workingDir "${rootDir}/buildSrc"
-    commandLine '../gradlew', 'exportDenpendencies', "-PdependencyExportFile=${outputFileName}"
+    commandLine '../gradlew', 'exportDenpendencies',
+                "-PdependencyExportFile=${outputFileName}"
   }
 }
