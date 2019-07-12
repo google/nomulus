@@ -93,7 +93,8 @@ gradle.projectsEvaluated {
 task exportDenpendencies {
   def outputFileProperty = 'dependencyExportFile'
   def output = project.hasProperty(outputFileProperty)
-      ? new PrintStream(new File(project.getProperty(outputFileProperty)))
+      ? new PrintStream(
+          new File(project.getProperty(outputFileProperty)))
       : System.out
 
   doLast {
@@ -101,7 +102,7 @@ task exportDenpendencies {
       it.dependencies.findAll {
         it.group != null
       }.each {
-          output.println("${it.group}:${it.name}")
+        output.println("${it.group}:${it.name}")
       }
     }
   }
