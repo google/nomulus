@@ -14,8 +14,6 @@
 
 package google.registry.proxy;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.client.googleapis.util.Utils;
 import com.google.api.services.monitoring.v3.Monitoring;
 import com.google.api.services.monitoring.v3.model.MonitoredResource;
 import com.google.common.collect.ImmutableMap;
@@ -29,6 +27,7 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.proxy.ProxyConfig.Environment;
 import google.registry.proxy.metric.MetricParameters;
+import google.registry.util.GoogleCredentialsBundle;
 import javax.inject.Singleton;
 
 /** Module that provides necessary bindings to instantiate a {@link MetricReporter} */
@@ -39,9 +38,12 @@ public class MetricsModule {
 
   @Singleton
   @Provides
-  static Monitoring provideMonitoring(GoogleCredential credential, ProxyConfig config) {
+  static Monitoring provideMonitoring(GoogleCredentialsBundle credentialsBundle,
+      ProxyConfig config) {
     return new Monitoring.Builder(
-            Utils.getDefaultTransport(), Utils.getDefaultJsonFactory(), credential)
+            credentialsBundle.getHttpTransport(),
+            credentialsBundle.getJsonFactory(),
+            credentialsBundle.getHttpRequestInitializer())
         .setApplicationName(config.projectId)
         .build();
   }

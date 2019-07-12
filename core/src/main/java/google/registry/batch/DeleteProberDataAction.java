@@ -17,6 +17,7 @@ package google.registry.batch;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.config.RegistryEnvironment.PRODUCTION;
 import static google.registry.mapreduce.MapreduceRunner.PARAM_DRY_RUN;
 import static google.registry.model.ResourceTransferUtils.updateForeignKeyIndexDeletionTime;
 import static google.registry.model.ofy.ObjectifyService.ofy;
@@ -77,7 +78,6 @@ public class DeleteProberDataAction implements Runnable {
   @Inject @Config("registryAdminClientId") String registryAdminClientId;
   @Inject MapreduceRunner mrRunner;
   @Inject Response response;
-  @Inject RegistryEnvironment registryEnvironment;
   @Inject DeleteProberDataAction() {}
 
   @Override
@@ -96,7 +96,7 @@ public class DeleteProberDataAction implements Runnable {
 
   private ImmutableSet<String> getProberRoidSuffixes() {
     checkArgument(
-        !RegistryEnvironment.PRODUCTION.equals(registryEnvironment)
+        !PRODUCTION.equals(RegistryEnvironment.get())
             || tlds.stream().allMatch(tld -> tld.endsWith(".test")),
         "On production, can only work on TLDs that end with .test");
     ImmutableSet<String> deletableTlds =

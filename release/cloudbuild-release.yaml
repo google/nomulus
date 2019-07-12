@@ -4,10 +4,11 @@
 # See: https://cloud.google.com/cloud-build/docs/build-debug-locally
 # Then run:
 # cloud-build-local --config=cloudbuild-release.yaml --dryrun=false \
-#   --substitutions TAG_NAME=[TAG] .
+#   --substitutions TAG_NAME=[TAG],_INTERNAL_REPO_URL=[URL] ..
 #
 # To manually trigger a build on GCB, run:
-# gcloud builds submit --config cloudbuild-proxy.yaml --substitutions TAG_NAME=[TAG] .
+# gcloud builds submit --config cloudbuild-release.yaml --substitutions \
+#   TAG_NAME=[TAG],_INTERNAL_REPO_URL=[URL] ..
 #
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
@@ -18,15 +19,22 @@
 # repo. Actual release artifacts are built from the release repo, ensuring reproducibility.
 steps:
 # Check the out internal repo.
-- name: 'gcr.io/cloud-builders/gcloud'
-  args: ['source', 'repos', 'clone', 'nomulus-internal']
+- name: 'gcr.io/cloud-builders/git'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    git clone https://gerrit.googlesource.com/gcompute-tools
+    ./gcompute-tools/git-cookie-authdaemon
+    git clone ${_INTERNAL_REPO_URL} nomulus-internal
 # Tag and push the internal repo.
 - name: 'gcr.io/cloud-builders/git'
   entrypoint: /bin/bash
   args:
   - -c
   - |
-    git tag ${TAG_NAME} && git push origin ${TAG_NAME}
+    git tag ${TAG_NAME}
+    git push origin ${TAG_NAME}
   dir: 'nomulus-internal'
 # Merge the repos.
 - name: 'gcr.io/cloud-builders/git'
@@ -67,8 +75,11 @@ steps:
     sed -i s%distroless/java%${PROJECT_ID}/base@$base_digest% proxy/Dockerfile
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-proxy.yaml
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-nomulus.yaml
-    sed -i s/GCP_PROJECT/${PROJECT_ID}/ proxy/src/main/java/google/registry/proxy/kubernetes/proxy-*.yaml
+    sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-beam.yaml
+    sed -i s/GCP_PROJECT/${PROJECT_ID}/ proxy/kubernetes/proxy-*.yaml
     sed -i s/'$${TAG_NAME}'/${TAG_NAME}/g release/cloudbuild-sync.yaml
+    sed -i s/'$${TAG_NAME}'/${TAG_NAME}/g release/cloudbuild-beam.yaml
+    sed -i s/'$${_ENV}'/${_ENV}/g release/cloudbuild-beam.yaml
 # Upload the gradle binary to GCS if it does not exist and point URL in gradle wrapper to it.
 - name: 'gcr.io/cloud-builders/gsutil'
   entrypoint: /bin/bash

@@ -1,4 +1,4 @@
- // Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2017 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import org.joda.money.CurrencyUnit;
 import org.junit.Before;
 import org.junit.Test;
 
-/** Unit tests for {@link Registrar}. */
+ /** Unit tests for {@link Registrar}. */
 public class RegistrarTest extends EntityTestCase {
   private Registrar registrar;
   private RegistrarContact abuseAdminContact;
@@ -450,6 +450,14 @@ public class RegistrarTest extends EntityTestCase {
     assertThrows(
         IllegalArgumentException.class,
         () -> registrar.asBuilder().setAllowedTldsUncached(ImmutableSet.of("bad")));
+  }
+
+  @Test
+  public void testFailure_driveFolderId_asFullUrl() {
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> registrar.asBuilder().setDriveFolderId(
+            "https://drive.google.com/drive/folders/1j3v7RZkU25DjbTx2-Q93H04zKOBau89M"));
+    assertThat(thrown).hasMessageThat().isEqualTo("Drive folder ID must not be a full URL");
   }
 
   @Test

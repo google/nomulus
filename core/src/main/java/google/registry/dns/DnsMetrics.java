@@ -14,6 +14,8 @@
 
 package google.registry.dns;
 
+import static google.registry.config.RegistryEnvironment.PRODUCTION;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.monitoring.metrics.DistributionFitter;
 import com.google.monitoring.metrics.EventMetric;
@@ -180,8 +182,6 @@ public class DnsMetrics {
               LABEL_DESCRIPTORS_FOR_LATENCY,
               EXPONENTIAL_FITTER);
 
-  @Inject RegistryEnvironment registryEnvironment;
-
   @Inject
   DnsMetrics() {}
 
@@ -225,7 +225,7 @@ public class DnsMetrics {
     hostsCommittedCount.incrementBy(numberOfHosts, tld, status.name(), dnsWriter);
 
     // We don't want to record the following metrics in production, as they are quite expensive
-    if (registryEnvironment == RegistryEnvironment.PRODUCTION) {
+    if (RegistryEnvironment.get().equals(PRODUCTION)) {
       return;
     }
 

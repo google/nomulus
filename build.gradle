@@ -1,3 +1,17 @@
+// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 buildscript {
   if (project.disableDependencyLocking.toBoolean() == false) {
     // Lock buildscript dependencies.
@@ -27,6 +41,9 @@ plugins {
 
   // NodeJs plugin
   id "com.moowork.node" version "1.2.0"
+
+  id 'idea'
+  id 'com.diffplug.gradle.spotless' version '3.18.0'
 }
 
 apply plugin: google.registry.gradle.plugin.ReportUploaderPlugin
@@ -54,6 +71,19 @@ reportUploader {
 
 apply from: 'dependencies.gradle'
 
+apply from: 'dependency_license.gradle'
+
+// Custom task to run checkLicense in buildSrc, which is not triggered
+// by root project tasks. A shell task is used because buildSrc tasks
+// cannot be referenced in the same way as tasks from a regular included
+// build.
+task checkBuildSrcLicense(type:Exec) {
+  workingDir "${rootDir}/buildSrc"
+  commandLine '../gradlew', 'checkLicense'
+}
+tasks.checkLicense.dependsOn(tasks.checkBuildSrcLicense)
+tasks.build.dependsOn(tasks.checkLicense)
+
 // Provide defaults for all of the project properties.
 
 // showAllOutput: boolean.  If true, dump all test output during the build.
@@ -71,6 +101,16 @@ ext.projectRootDir = "${rootDir}"
 task deploy {
   group = 'deployment'
   description = 'Deploys all services to App Engine.'
+}
+
+task verifyDeployment {
+  group = 'deployment'
+  description = 'Ensure that one can only deploy to alpha.'
+  doFirst {
+    if (rootProject.findProperty("environment") != 'alpha') {
+      throw new GradleException("Can only deploy to alpha.");
+    }
+  }
 }
 
 task stage {
@@ -93,6 +133,11 @@ allprojects {
       mavenCentral()
     }
   }
+}
+
+task runPresubmits(type: Exec) {
+  executable '/usr/bin/python'
+  args('config/presubmits.py')
 }
 
 subprojects {
@@ -127,9 +172,10 @@ subprojects {
         resolutionStrategy.activateDependencyLocking()
       }
     }
-    // Lock application dependencies.
-    dependencyLocking {
-      lockAllConfigurations()
+    // Lock application dependencies except for the gradle-license-report
+    // plugin. See dependency_license.gradle for more information.
+    configurations.findAll { it.name != 'dependencyLicenseReport' }.each {
+      it.resolutionStrategy.activateDependencyLocking()
     }
   }
 
@@ -151,6 +197,8 @@ subprojects {
 
   if (project.name == 'third_party') return
 
+  project.tasks.test.dependsOn runPresubmits
+
 // Path to code generated with annotation processors. Note that this path is
 // chosen by the 'net.ltgt.apt' plugin, and may change if IDE-specific plugins
 // are applied, e.g., 'idea' or 'eclipse'
@@ -161,6 +209,7 @@ subprojects {
 
   project.ext.javaDir = "${project.projectDir}/src/main/java"
   project.ext.javaTestDir = "${project.projectDir}/src/test/java"
+  project.ext.resourcesSourceDir = "${project.projectDir}/src/main/resources"
 
   sourceSets {
     main {
@@ -168,9 +217,7 @@ subprojects {
         srcDirs += aptGeneratedDir
       }
       resources {
-        srcDirs = [
-            project.ext.javaDir
-        ]
+        srcDirs += project.ext.javaDir
         exclude commonlyExcludedResources
       }
     }
@@ -179,9 +226,7 @@ subprojects {
         srcDirs += aptGeneratedTestDir
       }
       resources {
-        srcDirs = [
-            project.ext.javaTestDir
-        ]
+        srcDirs += project.ext.javaTestDir
         exclude commonlyExcludedResources
       }
     }
@@ -206,4 +251,3 @@ subprojects {
     }
   }
 }
-

@@ -17,6 +17,7 @@ package google.registry.ui.server.registrar;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.net.HttpHeaders.X_FRAME_OPTIONS;
+import static google.registry.config.RegistryEnvironment.PRODUCTION;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
 
@@ -70,25 +71,20 @@ import javax.servlet.http.HttpServletRequest;
     auth = Auth.AUTH_PUBLIC)
 public final class ConsoleOteSetupAction implements Runnable {
 
-  private static final int PASSWORD_LENGTH = 16;
-
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
   public static final String PATH = "/registrar-ote-setup";
-
+  @VisibleForTesting // webdriver and screenshot tests need this
+  public static final Supplier<SoyCssRenamingMap> CSS_RENAMING_MAP_SUPPLIER =
+      SoyTemplateUtils.createCssRenamingMapSupplier(
+          Resources.getResource("google/registry/ui/css/registrar_bin.css.js"),
+          Resources.getResource("google/registry/ui/css/registrar_dbg.css.js"));
+  private static final int PASSWORD_LENGTH = 16;
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Supplier<SoyTofu> TOFU_SUPPLIER =
       SoyTemplateUtils.createTofuSupplier(
           google.registry.ui.soy.ConsoleSoyInfo.getInstance(),
           google.registry.ui.soy.FormsSoyInfo.getInstance(),
           google.registry.ui.soy.AnalyticsSoyInfo.getInstance(),
           google.registry.ui.soy.registrar.OteSetupConsoleSoyInfo.getInstance());
-
-  @VisibleForTesting  // webdriver and screenshot tests need this
-  public static final Supplier<SoyCssRenamingMap> CSS_RENAMING_MAP_SUPPLIER =
-      SoyTemplateUtils.createCssRenamingMapSupplier(
-          Resources.getResource("google/registry/ui/css/registrar_bin.css.js"),
-          Resources.getResource("google/registry/ui/css/registrar_dbg.css.js"));
-
   @Inject HttpServletRequest req;
   @Inject @RequestMethod Method method;
   @Inject Response response;
@@ -96,27 +92,49 @@ public final class ConsoleOteSetupAction implements Runnable {
   @Inject UserService userService;
   @Inject XsrfTokenManager xsrfTokenManager;
   @Inject AuthResult authResult;
-  @Inject RegistryEnvironment registryEnvironment;
   @Inject SendEmailUtils sendEmailUtils;
-  @Inject @Config("logoFilename") String logoFilename;
-  @Inject @Config("productName") String productName;
-  @Inject @Config("analyticsConfig") Map<String, Object> analyticsConfig;
-  @Inject @Named("base58StringGenerator") StringGenerator passwordGenerator;
-  @Inject @Parameter("clientId") Optional<String> clientId;
-  @Inject @Parameter("email") Optional<String> email;
-  @Inject @Parameter("password") Optional<String> optionalPassword;
 
-  @Inject ConsoleOteSetupAction() {}
+  @Inject
+  @Config("logoFilename")
+  String logoFilename;
+
+  @Inject
+  @Config("productName")
+  String productName;
+
+  @Inject
+  @Config("analyticsConfig")
+  Map<String, Object> analyticsConfig;
+
+  @Inject
+  @Named("base58StringGenerator")
+  StringGenerator passwordGenerator;
+
+  @Inject
+  @Parameter("clientId")
+  Optional<String> clientId;
+
+  @Inject
+  @Parameter("email")
+  Optional<String> email;
+
+  @Inject
+  @Parameter("password")
+  Optional<String> optionalPassword;
+
+  @Inject
+  ConsoleOteSetupAction() {}
 
   @Override
   public void run() {
-    response.setHeader(X_FRAME_OPTIONS, "SAMEORIGIN");  // Disallow iframing.
-    response.setHeader("X-Ui-Compatible", "IE=edge");  // Ask IE not to be silly.
+    response.setHeader(X_FRAME_OPTIONS, "SAMEORIGIN"); // Disallow iframing.
+    response.setHeader("X-Ui-Compatible", "IE=edge"); // Ask IE not to be silly.
 
     logger.atInfo().log(
         "User %s is accessing the OT&E setup page. Method= %s",
         registrarAccessor.userIdForLogging(), method);
-    checkState(registryEnvironment != RegistryEnvironment.PRODUCTION, "Can't create OT&E in prod");
+    checkState(
+        !RegistryEnvironment.get().equals(PRODUCTION), "Can't create OT&E in prod");
     if (!authResult.userAuthInfo().isPresent()) {
       response.setStatus(SC_MOVED_TEMPORARILY);
       String location;
@@ -201,11 +219,11 @@ public final class ConsoleOteSetupAction implements Runnable {
       data.put("errorMessage", e.getMessage());
       response.setPayload(
           TOFU_SUPPLIER
-          .get()
-          .newRenderer(OteSetupConsoleSoyInfo.FORM_PAGE)
-          .setCssRenamingMap(CSS_RENAMING_MAP_SUPPLIER.get())
-          .setData(data)
-          .render());
+              .get()
+              .newRenderer(OteSetupConsoleSoyInfo.FORM_PAGE)
+              .setCssRenamingMap(CSS_RENAMING_MAP_SUPPLIER.get())
+              .setData(data)
+              .render());
     }
   }
 
@@ -223,12 +241,11 @@ public final class ConsoleOteSetupAction implements Runnable {
             .render());
   }
 
-
   private void sendExternalUpdates(ImmutableMap<String, String> clientIdToTld) {
     if (!sendEmailUtils.hasRecipients()) {
       return;
     }
-    String environment = Ascii.toLowerCase(String.valueOf(registryEnvironment));
+    String environment = Ascii.toLowerCase(String.valueOf(RegistryEnvironment.get()));
     StringBuilder builder = new StringBuilder();
     builder.append(
         String.format(
@@ -240,10 +257,7 @@ public final class ConsoleOteSetupAction implements Runnable {
                 String.format("   Registrar %s with access to TLD %s\n", clientId, tld)));
     builder.append(String.format("Gave user %s web access to these Registrars\n", email.get()));
     sendEmailUtils.sendEmail(
-        String.format(
-            "OT&E for registrar %s created in %s",
-            clientId.get(),
-            environment),
+        String.format("OT&E for registrar %s created in %s", clientId.get(), environment),
         builder.toString());
   }
 }

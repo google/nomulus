@@ -17,16 +17,14 @@ package google.registry.tools;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets.Details;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.util.store.AbstractDataStoreFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -40,6 +38,7 @@ import google.registry.config.CredentialModule.DefaultCredential;
 import google.registry.config.CredentialModule.LocalCredential;
 import google.registry.config.CredentialModule.LocalCredentialJson;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.util.GoogleCredentialsBundle;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -60,14 +59,6 @@ public class AuthModule {
   private static final File DATA_STORE_DIR =
       new File(System.getProperty("user.home"), ".config/nomulus/credentials");
 
-  @Module
-  abstract static class LocalCredentialModule {
-    @Binds
-    @DefaultCredential
-    abstract GoogleCredential provideLocalCredentialAsDefaultCredential(
-        @LocalCredential GoogleCredential credential);
-  }
-
   @Provides
   @StoredCredential
   static Credential provideCredential(
@@ -86,16 +77,16 @@ public class AuthModule {
 
   @Provides
   @LocalCredential
-  public static GoogleCredential provideLocalCredential(
+  public static GoogleCredentialsBundle provideLocalCredential(
       @LocalCredentialJson String credentialJson,
       @Config("localCredentialOauthScopes") ImmutableList<String> scopes) {
     try {
-      GoogleCredential credential =
-          GoogleCredential.fromStream(new ByteArrayInputStream(credentialJson.getBytes(UTF_8)));
+      GoogleCredentials credential =
+          GoogleCredentials.fromStream(new ByteArrayInputStream(credentialJson.getBytes(UTF_8)));
       if (credential.createScopedRequired()) {
         credential = credential.createScoped(scopes);
       }
-      return credential;
+      return GoogleCredentialsBundle.create(credential);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -115,12 +106,6 @@ public class AuthModule {
     } catch (IOException ex) {
       throw new RuntimeException(ex);
     }
-  }
-
-  @Provides
-  public static AuthorizationCodeInstalledApp provideAuthorizationCodeInstalledApp(
-      GoogleAuthorizationCodeFlow flow) {
-    return new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver());
   }
 
   @Provides
@@ -187,16 +172,11 @@ public class AuthModule {
     }
   }
 
-  /** Raised when we need a user login. */
-  static class LoginRequiredException extends RuntimeException {
-    LoginRequiredException() {}
-  }
-
   /**
    * Dagger qualifier for the {@link Credential} constructed from the data stored on disk.
    *
    * <p>This {@link Credential} should not be used in another module, hence the private qualifier.
-   * It's only use is to build a {@link GoogleCredential}, which is used in injection sites
+   * It's only use is to build a {@link GoogleCredentials}, which is used in injection sites
    * elsewhere.
    */
   @Qualifier
@@ -215,4 +195,17 @@ public class AuthModule {
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
   @interface OAuthClientId {}
+
+  @Module
+  abstract static class LocalCredentialModule {
+    @Binds
+    @DefaultCredential
+    abstract GoogleCredentialsBundle provideLocalCredentialAsDefaultCredential(
+        @LocalCredential GoogleCredentialsBundle credential);
+  }
+
+  /** Raised when we need a user login. */
+  static class LoginRequiredException extends RuntimeException {
+    LoginRequiredException() {}
+  }
 }

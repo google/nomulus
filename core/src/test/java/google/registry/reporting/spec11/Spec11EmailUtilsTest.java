@@ -15,9 +15,15 @@
 package google.registry.reporting.spec11;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.eppcommon.StatusValue.CLIENT_HOLD;
+import static google.registry.model.eppcommon.StatusValue.SERVER_HOLD;
+import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParserTest.getMatchA;
 import static google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParserTest.getMatchB;
 import static google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParserTest.sampleThreatMatches;
+import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatastoreHelper.newDomainBase;
+import static google.registry.testing.DatastoreHelper.persistActiveHost;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static org.mockito.Mockito.doThrow;
@@ -29,6 +35,9 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
+import com.googlecode.objectify.Key;
+import google.registry.model.domain.DomainBase;
+import google.registry.model.host.HostResource;
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
 import google.registry.testing.AppEngineRule;
 import google.registry.util.EmailMessage;
@@ -118,6 +127,9 @@ public class Spec11EmailUtilsTest {
   private ArgumentCaptor<EmailMessage> contentCaptor;
   private final LocalDate date = new LocalDate(2018, 7, 15);
 
+  private DomainBase aDomain;
+  private DomainBase bDomain;
+
   @Before
   public void setUp() throws Exception {
     emailService = mock(SendEmailService.class);
@@ -132,6 +144,12 @@ public class Spec11EmailUtilsTest {
             new InternetAddress("my-reply-to@test.com"),
             FAKE_RESOURCES,
             "Super Cool Registry");
+
+    createTld("com");
+    HostResource host = persistActiveHost("ns1.example.com");
+    aDomain = persistDomainWithHost("a.com", host);
+    bDomain = persistDomainWithHost("b.com", host);
+    persistDomainWithHost("c.com", host);
   }
 
   @Test
@@ -211,6 +229,41 @@ public class Spec11EmailUtilsTest {
   }
 
   @Test
+  public void testSuccess_skipsInactiveDomain() throws Exception {
+    // CLIENT_HOLD and SERVER_HOLD mean no DNS so we don't need to email it out
+    persistResource(
+        ofy().load().entity(aDomain).now().asBuilder().addStatusValue(SERVER_HOLD)
+            .build());
+    persistResource(
+        ofy().load().entity(bDomain).now().asBuilder().addStatusValue(CLIENT_HOLD)
+            .build());
+    emailUtils.emailSpec11Reports(
+        date,
+        Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL,
+        "Super Cool Registry Monthly Threat Detector [2018-07-15]",
+        sampleThreatMatches());
+    // We inspect individual parameters because Message doesn't implement equals().
+    verify(emailService, times(2)).sendEmail(contentCaptor.capture());
+    List<EmailMessage> capturedContents = contentCaptor.getAllValues();
+    validateMessage(
+        capturedContents.get(0),
+        "my-sender@test.com",
+        "new.registrar@example.com",
+        Optional.of("my-reply-to@test.com"),
+        "Super Cool Registry Monthly Threat Detector [2018-07-15]",
+        String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>c.com</td><td>MALWARE</td></tr>"),
+        Optional.of(MediaType.HTML_UTF_8));
+    validateMessage(
+        capturedContents.get(1),
+        "my-sender@test.com",
+        "my-receiver@test.com",
+        Optional.empty(),
+        "Spec11 Pipeline Success 2018-07-15",
+        "Spec11 reporting completed successfully.",
+        Optional.empty());
+  }
+
+  @Test
   public void testOneFailure_sendsAlert() throws Exception {
     // If there is one failure, we should still send the other message and then an alert email
     LinkedHashSet<RegistrarThreatMatches> matches = new LinkedHashSet<>();
@@ -229,7 +282,7 @@ public class Spec11EmailUtilsTest {
                     date,
                     Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL,
                     "Super Cool Registry Monthly Threat Detector [2018-07-15]",
-                    matches));
+                    ImmutableSet.copyOf(matches)));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Emailing Spec11 reports failed, first exception:");
@@ -339,5 +392,11 @@ public class Spec11EmailUtilsTest {
     }
     contentType.ifPresent(expectedContentBuilder::setContentType);
     assertThat(message).isEqualTo(expectedContentBuilder.build());
+  }
+
+  private static DomainBase persistDomainWithHost(String domainName, HostResource host) {
+    return persistResource(
+        newDomainBase(domainName).asBuilder().setNameservers(ImmutableSet.of(Key.create(host)))
+            .build());
   }
 }

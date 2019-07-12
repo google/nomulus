@@ -36,6 +36,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.testing.CertificateSamples;
+import google.registry.testing.SystemPropertyRule;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.EmailMessage;
@@ -44,6 +45,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -52,6 +54,9 @@ import org.mockito.ArgumentCaptor;
 /** Tests for {@link RegistrarSettingsAction}. */
 @RunWith(JUnit4.class)
 public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
+
+  @Rule
+  public final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
 
   @Test
   public void testSuccess_updateRegistrarInfo_andSendsNotificationEmail() throws Exception {
@@ -393,7 +398,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   @Test
   public void testUpdate_allowedTlds_failedWhenNoWhoisAbuseContactExists() {
     setUserAdmin();
-    action.registryEnvironment = RegistryEnvironment.PRODUCTION;
+    RegistryEnvironment.PRODUCTION.setup(systemPropertyRule);
     Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
     args.put("allowedTlds", ImmutableList.of("newtld", "currenttld"));
 

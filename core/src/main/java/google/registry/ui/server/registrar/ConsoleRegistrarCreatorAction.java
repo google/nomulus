@@ -107,7 +107,6 @@ public final class ConsoleRegistrarCreatorAction implements Runnable {
   @Inject UserService userService;
   @Inject XsrfTokenManager xsrfTokenManager;
   @Inject AuthResult authResult;
-  @Inject RegistryEnvironment registryEnvironment;
   @Inject SendEmailUtils sendEmailUtils;
   @Inject @Config("logoFilename") String logoFilename;
   @Inject @Config("productName") String productName;
@@ -354,7 +353,7 @@ public final class ConsoleRegistrarCreatorAction implements Runnable {
     if (!sendEmailUtils.hasRecipients()) {
       return;
     }
-    String environment = Ascii.toLowerCase(String.valueOf(registryEnvironment));
+    String environment = Ascii.toLowerCase(String.valueOf(RegistryEnvironment.get()));
     String body =
         String.format(
                 "The following registrar was created in %s by %s:\n",

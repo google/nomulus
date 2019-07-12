@@ -22,7 +22,6 @@ import java.util.Map;
 import javax.annotation.Nullable;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpSessionContext;
 
 /** A fake {@link HttpSession} that only provides support for getting/setting attributes. */
 @SuppressWarnings("deprecation")
@@ -63,7 +62,7 @@ public class FakeHttpSession implements HttpSession {
   }
 
   @Override
-  public HttpSessionContext getSessionContext() {
+  public javax.servlet.http.HttpSessionContext getSessionContext() {
     throw new UnsupportedOperationException();
   }
 

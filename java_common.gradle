@@ -1,3 +1,17 @@
+// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 apply plugin: 'java'
 apply plugin: 'nebula.lint'
 apply plugin: 'net.ltgt.apt'
@@ -15,7 +29,12 @@ dependencies {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    options.compilerArgs << "-Werror"
+    // The -Werror flag causes Intellij to fail on deprecated api use.
+    // Allow IDE user to turn off this flag by specifying a Gradle VM
+    // option from inside the IDE.
+    if (System.getProperty('no_werror') != 'true') {
+        options.compilerArgs << "-Werror"
+    }
     options.errorprone.disableWarningsInGeneratedCode = true
     options.errorprone.errorproneArgumentProviders.add([
             asArguments: {
@@ -36,7 +55,6 @@ targetCompatibility = '1.8'
 compileJava { options.encoding = "UTF-8" }
 compileTestJava { options.encoding = "UTF-8" }
 
-
 gradleLint.rules = [
         // Checks if Gradle wrapper is up-to-date
         'archaic-wrapper',
@@ -46,3 +64,26 @@ gradleLint.rules = [
         'unused-dependency'
         // TODO(weiminyu): enable more dependency checks
 ]
+
+// To check or fix file formats, run the following commands from this directory:
+// - Check: ./gradlew spotlessCheck
+// - Format in place: ./gradlew spotlessApply
+spotless {
+  java {
+    clearSteps()
+    target project.fileTree("${project.rootDir}/") {
+      include "src/main/java/**/*.java"
+      include "src/test/java/**/*.java"
+      // there are some files that have degenerate interactions with the GJF formatter
+      exclude "**/flows/FlowComponent.java"
+    }
+    googleJavaFormat('1.7')
+  }
+  format 'misc', {
+    clearSteps()
+    target '**/*.gradle'
+    trimTrailingWhitespace()
+    indentWithSpaces(2)
+    endWithNewline()
+  }
+}

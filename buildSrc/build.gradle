@@ -1,3 +1,17 @@
+// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 buildscript {
   if (rootProject.disableDependencyLocking.toBoolean() == false) {
     // Lock buildscript dependencies.
@@ -8,14 +22,13 @@ buildscript {
 }
 
 plugins {
-// Java static analysis plugins. Keep versions consistent with ../build.gradle
+  // Java static analysis plugins. Keep versions consistent with ../build.gradle
   id 'nebula.lint' version '10.4.2'
   // Config helper for annotation processors such as AutoValue and Dagger.
   // Ensures that source code is generated at an appropriate location.
   id 'net.ltgt.apt' version '0.19' apply false
   id 'net.ltgt.errorprone' version '0.6.1'
   id 'checkstyle'
-
   id 'com.diffplug.gradle.spotless' version '3.18.0'
 }
 
@@ -39,6 +52,7 @@ repositories {
 }
 
 apply from: '../dependencies.gradle'
+apply from: '../dependency_license.gradle'
 apply from: '../java_common.gradle'
 
 sourceSets {
@@ -53,26 +67,6 @@ checkstyle {
   configDir file('../config/checkstyle')
 }
 
-// To check or fix file formats, run the following commands from this directory:
-// - Check: ../gradlew spotlessCheck
-// - Format in place: ../gradlew spotlessApply
-spotless {
-  java {
-    target project.fileTree("${project.rootDir}/") {
-      include "src/main/java/**/*.java"
-      include "src/test/java/**/*.java"
-    }
-    googleJavaFormat('1.7')
-  }
-  format 'misc', {
-    target '**/*.gradle'
-
-    trimTrailingWhitespace()
-    indentWithSpaces(2)
-    endWithNewline()
-  }
-}
-
 dependencies {
   def deps = dependencyMap
   compile deps['com.google.auth:google-auth-library-credentials']
@@ -82,7 +76,6 @@ dependencies {
   compile deps['com.google.auto.value:auto-value-annotations']
   compile deps['com.google.cloud:google-cloud-storage']
   compile deps['org.apache.commons:commons-text']
-  compile deps['com.google.auth:google-auth-library-credentials']
   compile deps['com.google.template:soy']
   annotationProcessor deps['com.google.auto.value:auto-value']
   testCompile deps['com.google.truth:truth']

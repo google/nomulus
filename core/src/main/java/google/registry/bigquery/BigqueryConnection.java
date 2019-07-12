@@ -727,7 +727,7 @@ public class BigqueryConnection implements AutoCloseable {
               .setProjectId(getProjectId())
               .setDatasetId(datasetName)))
           .execute();
-      System.err.printf("Created dataset: %s:%s\n", getProjectId(), datasetName);
+      logger.atInfo().log("Created dataset: %s:%s\n", getProjectId(), datasetName);
       return true;
     }
     return false;

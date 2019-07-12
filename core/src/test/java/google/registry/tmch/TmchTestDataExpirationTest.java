@@ -47,7 +47,7 @@ public class TmchTestDataExpirationTest {
             new TmchXmlSignature(
                 new TmchCertificateAuthority(TmchCaMode.PILOT, new SystemClock())));
 
-    for (Path path : listFiles(TmchTestDataExpirationTest.class, "testdata/active/")) {
+    for (Path path : listFiles(TmchTestDataExpirationTest.class, "active/")) {
       if (path.toString().endsWith(".smd")) {
         logger.atInfo().log("Verifying: %s", path);
         String tmchData = ResourceUtils.readResourceUtf8(path.toUri().toURL());

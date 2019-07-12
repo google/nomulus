@@ -39,6 +39,13 @@ public class EppMetrics {
           LabelDescriptor.create("tld", "The TLD acted on by the command (if applicable)."),
           LabelDescriptor.create("status", "The return status of the command."));
 
+  private static final ImmutableSet<LabelDescriptor> LABEL_DESCRIPTORS =
+      ImmutableSet.of(
+          LabelDescriptor.create("command", "The name of the command."),
+          LabelDescriptor.create("traffic_type",
+              "The traffic type of the command; one of CANARY, PROBER, or REAL."),
+          LabelDescriptor.create("status", "The return status of the command."));
+
   private static final IncrementableMetric eppRequestsByRegistrar =
       MetricRegistryImpl.getDefault()
           .newIncrementableMetric(
@@ -73,6 +80,19 @@ public class EppMetrics {
               LABEL_DESCRIPTORS_BY_TLD,
               DEFAULT_FITTER);
 
+  private static final EventMetric requestTime =
+      MetricRegistryImpl.getDefault()
+          .newEventMetric(
+              "/epp/request_time",
+              "EPP Request Time",
+              "milliseconds",
+              LABEL_DESCRIPTORS,
+              DEFAULT_FITTER);
+
+  private enum TrafficType {
+    CANARY, PROBER, REAL
+  }
+
   @Inject
   public EppMetrics() {}
 
@@ -97,15 +117,21 @@ public class EppMetrics {
         metric.getStatus().isPresent() ? String.valueOf(metric.getStatus().get().code) : "";
     long processingTime =
         metric.getEndTimestamp().getMillis() - metric.getStartTimestamp().getMillis();
-    processingTimeByRegistrar.record(
-        processingTime,
-        metric.getCommandName().orElse(""),
-        metric.getClientId().orElse(""),
-        eppStatusCode);
-    processingTimeByTld.record(
-        processingTime,
-        metric.getCommandName().orElse(""),
-        metric.getTld().orElse(""),
-        eppStatusCode);
+    String commandName = metric.getCommandName().orElse("");
+    processingTimeByRegistrar
+        .record(processingTime, commandName, metric.getClientId().orElse(""), eppStatusCode);
+    String tld = metric.getTld().orElse("");
+    processingTimeByTld.record(processingTime, commandName, tld, eppStatusCode);
+    requestTime.record(processingTime, commandName, getTrafficType(tld).toString(), eppStatusCode);
+  }
+
+  private static TrafficType getTrafficType(String tld) {
+    if (tld.endsWith("canary.test")) {
+      return TrafficType.CANARY;
+    } else if (tld.endsWith(".test")) {
+      return TrafficType.PROBER;
+    } else {
+      return TrafficType.REAL;
+    }
   }
 }

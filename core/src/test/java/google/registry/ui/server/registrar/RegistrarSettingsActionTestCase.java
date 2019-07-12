@@ -33,7 +33,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.truth.Truth;
-import google.registry.config.RegistryEnvironment;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.request.JsonActionRunner;
@@ -59,16 +58,13 @@ import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 /** Base class for tests using {@link RegistrarSettingsAction}. */
-@RunWith(JUnit4.class)
-public class RegistrarSettingsActionTestCase {
+public abstract class RegistrarSettingsActionTestCase {
 
   static final String CLIENT_ID = "TheRegistrar";
 
@@ -119,7 +115,6 @@ public class RegistrarSettingsActionTestCase {
             getGSuiteOutgoingEmailDisplayName(),
             ImmutableList.of("notification@test.example", "notification2@test.example"),
             emailService);
-    action.registryEnvironment = RegistryEnvironment.get();
     action.registrarConsoleMetrics = new RegistrarConsoleMetrics();
     action.authResult =
         AuthResult.create(

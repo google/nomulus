@@ -94,13 +94,6 @@ public final class RegistryConfig {
   @Module
   public static final class ConfigModule {
 
-    private static final RegistryEnvironment REGISTRY_ENVIRONMENT = RegistryEnvironment.get();
-
-    @Provides
-    public static RegistryEnvironment provideRegistryEnvironment() {
-      return REGISTRY_ENVIRONMENT;
-    }
-
     @Provides
     @Config("projectId")
     public static String provideProjectId(RegistryConfigSettings config) {

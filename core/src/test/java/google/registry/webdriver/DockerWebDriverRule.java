@@ -26,6 +26,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.testcontainers.containers.BindMode;
+import org.testcontainers.containers.BrowserWebDriverContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 
@@ -39,8 +40,11 @@ class DockerWebDriverRule extends ExternalResource {
   private WebDriver webDriver;
 
   private static URL getWebDriverUrl() {
+
+    // BrowserWebDriverContainer will try and match the version of the Dockerized
+    // browser to whichever version of Selenium is found on the classpath
     GenericContainer container =
-        new GenericContainer("selenium/standalone-chrome:3.141.59-mercury")
+        new BrowserWebDriverContainer()
             .withFileSystemBind("/dev/shm", "/dev/shm", BindMode.READ_WRITE)
             .withExposedPorts(CHROME_DRIVER_SERVICE_PORT)
             .waitingFor(Wait.forHttp("/").withStartupTimeout(Duration.of(20, ChronoUnit.SECONDS)));

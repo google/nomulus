@@ -29,6 +29,7 @@ import google.registry.model.registrar.RegistrarContact;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.server.RegistryTestServer;
 import google.registry.testing.AppEngineRule;
+import java.util.concurrent.TimeUnit;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.Timeout;
@@ -60,7 +61,7 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
 
 
 
-  @Rule public final Timeout deathClock = new Timeout(60000);
+  @Rule public final Timeout deathClock = new Timeout(60000, TimeUnit.MILLISECONDS);
 
   /** Checks the identified element has the given text content. */
   void assertEltText(String eltId, String eltValue) {

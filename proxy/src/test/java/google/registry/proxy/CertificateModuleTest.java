@@ -33,7 +33,7 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import javax.inject.Named;
 import javax.inject.Singleton;
-import org.bouncycastle.openssl.PEMWriter;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,8 +50,8 @@ public class CertificateModuleTest {
 
   private static byte[] getPemBytes(Object... objects) throws Exception {
     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-    try (PEMWriter pemWriter =
-        new PEMWriter(new OutputStreamWriter(byteArrayOutputStream, UTF_8))) {
+    try (JcaPEMWriter pemWriter =
+        new JcaPEMWriter(new OutputStreamWriter(byteArrayOutputStream, UTF_8))) {
       for (Object object : objects) {
         pemWriter.writeObject(object);
       }

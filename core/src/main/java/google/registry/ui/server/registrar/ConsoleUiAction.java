@@ -66,7 +66,7 @@ public final class ConsoleUiAction implements Runnable {
           google.registry.ui.soy.registrar.ConsoleSoyInfo.getInstance(),
           google.registry.ui.soy.AnalyticsSoyInfo.getInstance());
 
-  @VisibleForTesting  // webdriver and screenshot tests need this
+  @VisibleForTesting // webdriver and screenshot tests need this
   public static final Supplier<SoyCssRenamingMap> CSS_RENAMING_MAP_SUPPLIER =
       SoyTemplateUtils.createCssRenamingMapSupplier(
           Resources.getResource("google/registry/ui/css/registrar_bin.css.js"),
@@ -79,18 +79,49 @@ public final class ConsoleUiAction implements Runnable {
   @Inject UserService userService;
   @Inject XsrfTokenManager xsrfTokenManager;
   @Inject AuthResult authResult;
-  @Inject RegistryEnvironment environment;
-  @Inject @Config("logoFilename") String logoFilename;
-  @Inject @Config("productName") String productName;
-  @Inject @Config("integrationEmail") String integrationEmail;
-  @Inject @Config("supportEmail") String supportEmail;
-  @Inject @Config("announcementsEmail") String announcementsEmail;
-  @Inject @Config("supportPhoneNumber") String supportPhoneNumber;
-  @Inject @Config("technicalDocsUrl") String technicalDocsUrl;
-  @Inject @Config("registrarConsoleEnabled") boolean enabled;
-  @Inject @Config("analyticsConfig") Map<String, Object> analyticsConfig;
-  @Inject @Parameter(PARAM_CLIENT_ID) Optional<String> paramClientId;
-  @Inject ConsoleUiAction() {}
+
+  @Inject
+  @Config("logoFilename")
+  String logoFilename;
+
+  @Inject
+  @Config("productName")
+  String productName;
+
+  @Inject
+  @Config("integrationEmail")
+  String integrationEmail;
+
+  @Inject
+  @Config("supportEmail")
+  String supportEmail;
+
+  @Inject
+  @Config("announcementsEmail")
+  String announcementsEmail;
+
+  @Inject
+  @Config("supportPhoneNumber")
+  String supportPhoneNumber;
+
+  @Inject
+  @Config("technicalDocsUrl")
+  String technicalDocsUrl;
+
+  @Inject
+  @Config("registrarConsoleEnabled")
+  boolean enabled;
+
+  @Inject
+  @Config("analyticsConfig")
+  Map<String, Object> analyticsConfig;
+
+  @Inject
+  @Parameter(PARAM_CLIENT_ID)
+  Optional<String> paramClientId;
+
+  @Inject
+  ConsoleUiAction() {}
 
   @Override
   public void run() {
@@ -113,8 +144,8 @@ public final class ConsoleUiAction implements Runnable {
     }
     User user = authResult.userAuthInfo().get().user();
     response.setContentType(MediaType.HTML_UTF_8);
-    response.setHeader(X_FRAME_OPTIONS, "SAMEORIGIN");  // Disallow iframing.
-    response.setHeader("X-Ui-Compatible", "IE=edge");  // Ask IE not to be silly.
+    response.setHeader(X_FRAME_OPTIONS, "SAMEORIGIN"); // Disallow iframing.
+    response.setHeader("X-Ui-Compatible", "IE=edge"); // Ask IE not to be silly.
     SoyMapData data = new SoyMapData();
     data.put("logoFilename", logoFilename);
     data.put("productName", productName);
@@ -127,7 +158,8 @@ public final class ConsoleUiAction implements Runnable {
     if (!enabled) {
       response.setStatus(SC_SERVICE_UNAVAILABLE);
       response.setPayload(
-          TOFU_SUPPLIER.get()
+          TOFU_SUPPLIER
+              .get()
               .newRenderer(ConsoleSoyInfo.DISABLED)
               .setCssRenamingMap(CSS_RENAMING_MAP_SUPPLIER.get())
               .setData(data)
@@ -139,7 +171,7 @@ public final class ConsoleUiAction implements Runnable {
     data.put("xsrfToken", xsrfTokenManager.generateToken(user.getEmail()));
     ImmutableSetMultimap<String, Role> roleMap = registrarAccessor.getAllClientIdWithRoles();
     data.put("allClientIds", roleMap.keySet());
-    data.put("environment", environment.toString());
+    data.put("environment", RegistryEnvironment.get().toString());
     // We set the initial value to the value that will show if guessClientId throws.
     String clientId = "<null>";
     try {
@@ -161,7 +193,8 @@ public final class ConsoleUiAction implements Runnable {
           "User %s doesn't have access to registrar console.", authResult.userIdForLogging());
       response.setStatus(SC_FORBIDDEN);
       response.setPayload(
-          TOFU_SUPPLIER.get()
+          TOFU_SUPPLIER
+              .get()
               .newRenderer(ConsoleSoyInfo.WHOAREYOU)
               .setCssRenamingMap(CSS_RENAMING_MAP_SUPPLIER.get())
               .setData(data)
@@ -175,7 +208,9 @@ public final class ConsoleUiAction implements Runnable {
       throw e;
     }
 
-    String payload = TOFU_SUPPLIER.get()
+    String payload =
+        TOFU_SUPPLIER
+            .get()
             .newRenderer(ConsoleSoyInfo.MAIN)
             .setCssRenamingMap(CSS_RENAMING_MAP_SUPPLIER.get())
             .setData(data)

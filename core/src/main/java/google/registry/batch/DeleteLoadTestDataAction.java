@@ -73,7 +73,6 @@ public class DeleteLoadTestDataAction implements Runnable {
 
   @Inject MapreduceRunner mrRunner;
   @Inject Response response;
-  @Inject RegistryEnvironment registryEnvironment;
 
   @Inject
   DeleteLoadTestDataAction() {}
@@ -84,7 +83,8 @@ public class DeleteLoadTestDataAction implements Runnable {
     // run on production. On other environments, data is fully wiped out occasionally anyway, so
     // having some broken data that isn't referred to isn't the end of the world.
     checkState(
-        registryEnvironment != PRODUCTION, "This mapreduce is not safe to run on PRODUCTION.");
+        !RegistryEnvironment.get().equals(PRODUCTION),
+        "This mapreduce is not safe to run on PRODUCTION.");
 
     mrRunner
         .setJobName("Delete load test data")

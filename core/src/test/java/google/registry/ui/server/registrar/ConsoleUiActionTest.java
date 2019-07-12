@@ -28,7 +28,6 @@ import com.google.appengine.api.users.UserServiceFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.net.MediaType;
-import google.registry.config.RegistryEnvironment;
 import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
@@ -52,10 +51,11 @@ import org.junit.runners.JUnit4;
 public class ConsoleUiActionTest {
 
   @Rule
-  public final AppEngineRule appEngineRule = AppEngineRule.builder()
-      .withDatastore()
-      .withUserService(UserInfo.create("marla.singer@example.com", "12345"))
-      .build();
+  public final AppEngineRule appEngineRule =
+      AppEngineRule.builder()
+          .withDatastore()
+          .withUserService(UserInfo.create("marla.singer@example.com", "12345"))
+          .build();
 
   private final HttpServletRequest request = mock(HttpServletRequest.class);
   private final FakeResponse response = new FakeResponse();
@@ -79,7 +79,6 @@ public class ConsoleUiActionTest {
     action.xsrfTokenManager = new XsrfTokenManager(new FakeClock(), action.userService);
     action.paramClientId = Optional.empty();
     action.authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
-    action.environment = RegistryEnvironment.UNITTEST;
     action.analyticsConfig = ImmutableMap.of("googleAnalyticsId", "sampleId");
 
     action.registrarAccessor =

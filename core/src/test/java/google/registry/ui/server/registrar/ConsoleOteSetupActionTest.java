@@ -41,6 +41,7 @@ import google.registry.testing.AppEngineRule;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
+import google.registry.testing.SystemPropertyRule;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
@@ -67,6 +68,9 @@ public final class ConsoleOteSetupActionTest {
 
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 
+  @Rule
+  public final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
+
   private final FakeResponse response = new FakeResponse();
   private final ConsoleOteSetupAction action = new ConsoleOteSetupAction();
   private final User user = new User("marla.singer@example.com", "gmail.com", "12345");
@@ -87,7 +91,6 @@ public final class ConsoleOteSetupActionTest {
     action.userService = UserServiceFactory.getUserService();
     action.xsrfTokenManager = new XsrfTokenManager(new FakeClock(), action.userService);
     action.authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
-    action.registryEnvironment = RegistryEnvironment.UNITTEST;
     action.sendEmailUtils =
         new SendEmailUtils(
             new InternetAddress("outgoing@registry.example"),
@@ -122,7 +125,7 @@ public final class ConsoleOteSetupActionTest {
 
   @Test
   public void testGet_authorized_onProduction() {
-    action.registryEnvironment = RegistryEnvironment.PRODUCTION;
+    RegistryEnvironment.PRODUCTION.setup(systemPropertyRule);
     assertThrows(IllegalStateException.class, action::run);
   }
 

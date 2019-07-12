@@ -96,7 +96,7 @@ public class FlowContext {
   }
 
   /**
-   * Helper to locate test files for this flow by looking in javatests/ for all files with the
+   * Helper to locate test files for this flow by looking in src/test/java/ for all files with the
    * exact same relative filename as the flow file, but with a "*Test{,Case}.java" suffix.
    */
   private static Set<String> getTestFilenames(String flowName) throws IOException {

@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
+import static google.registry.config.RegistryEnvironment.PRODUCTION;
 import static google.registry.export.sheet.SyncRegistrarsSheetAction.enqueueRegistrarSheetSync;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.security.JsonResponseHelper.Status.ERROR;
@@ -92,7 +93,6 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   @Inject SendEmailUtils sendEmailUtils;
   @Inject AuthenticatedRegistrarAccessor registrarAccessor;
   @Inject AuthResult authResult;
-  @Inject RegistryEnvironment registryEnvironment;
 
   @Inject RegistrarSettingsAction() {}
 
@@ -334,7 +334,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       // If a REAL registrar isn't in compliance with regards to having an abuse contact set,
       // prevent addition of allowed TLDs until that's fixed.
       if (Registrar.Type.REAL.equals(initialRegistrar.getType())
-          && RegistryEnvironment.PRODUCTION.equals(registryEnvironment)) {
+          && PRODUCTION.equals(RegistryEnvironment.get())) {
         checkArgumentPresent(
             initialRegistrar.getWhoisAbuseContact(),
             "Cannot add allowed TLDs if there is no WHOIS abuse contact set.");
@@ -496,7 +496,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       return;
     }
     enqueueRegistrarSheetSync(appEngineServiceUtils.getCurrentVersionHostname("backend"));
-    String environment = Ascii.toLowerCase(String.valueOf(registryEnvironment));
+    String environment = Ascii.toLowerCase(String.valueOf(RegistryEnvironment.get()));
     sendEmailUtils.sendEmail(
         String.format(
             "Registrar %s (%s) updated in registry %s environment",

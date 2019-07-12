@@ -17,16 +17,20 @@ package google.registry.reporting.spec11;
 import static com.google.common.base.Throwables.getRootCause;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.Resources.getResource;
+import static google.registry.model.ofy.ObjectifyService.ofy;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import com.google.template.soy.SoyFileSet;
 import com.google.template.soy.parseinfo.SoyTemplateInfo;
 import com.google.template.soy.tofu.SoyTofu;
 import com.google.template.soy.tofu.SoyTofu.Renderer;
+import google.registry.beam.spec11.ThreatMatch;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
@@ -34,7 +38,6 @@ import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
@@ -84,16 +87,19 @@ public class Spec11EmailUtils {
       LocalDate date,
       SoyTemplateInfo soyTemplateInfo,
       String subject,
-      Set<RegistrarThreatMatches> registrarThreatMatchesSet) {
+      ImmutableSet<RegistrarThreatMatches> registrarThreatMatchesSet) {
     ImmutableMap.Builder<RegistrarThreatMatches, Throwable> failedMatchesBuilder =
         ImmutableMap.builder();
     for (RegistrarThreatMatches registrarThreatMatches : registrarThreatMatchesSet) {
-      try {
-        // Handle exceptions individually per registrar so that one failed email doesn't prevent the
-        // rest from being sent.
-        emailRegistrar(date, soyTemplateInfo, subject, registrarThreatMatches);
-      } catch (Throwable e) {
-        failedMatchesBuilder.put(registrarThreatMatches, getRootCause(e));
+      RegistrarThreatMatches filteredMatches = filterOutNonPublishedMatches(registrarThreatMatches);
+      if (!filteredMatches.threatMatches().isEmpty()) {
+        try {
+          // Handle exceptions individually per registrar so that one failed email doesn't prevent
+          // the rest from being sent.
+          emailRegistrar(date, soyTemplateInfo, subject, filteredMatches);
+        } catch (Throwable e) {
+          failedMatchesBuilder.put(registrarThreatMatches, getRootCause(e));
+        }
       }
     }
     ImmutableMap<RegistrarThreatMatches, Throwable> failedMatches = failedMatchesBuilder.build();
@@ -118,6 +124,16 @@ public class Spec11EmailUtils {
     sendAlertEmail(
         String.format("Spec11 Pipeline Success %s", date),
         "Spec11 reporting completed successfully.");
+  }
+
+  private RegistrarThreatMatches filterOutNonPublishedMatches(
+      RegistrarThreatMatches registrarThreatMatches) {
+    ImmutableList<ThreatMatch> filteredMatches = registrarThreatMatches.threatMatches().stream()
+        .filter(threatMatch ->
+            ofy().load().type(DomainBase.class).filter("fullyQualifiedDomainName",
+                threatMatch.fullyQualifiedDomainName()).first().now().shouldPublishToDns()
+        ).collect(toImmutableList());
+    return RegistrarThreatMatches.create(registrarThreatMatches.clientId(), filteredMatches);
   }
 
   private void emailRegistrar(

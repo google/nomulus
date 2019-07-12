@@ -42,6 +42,7 @@ import google.registry.testing.AppEngineRule;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
+import google.registry.testing.SystemPropertyRule;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
@@ -69,6 +70,9 @@ public final class ConsoleRegistrarCreatorActionTest {
 
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 
+  @Rule
+  public final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
+
   private final FakeResponse response = new FakeResponse();
   private final ConsoleRegistrarCreatorAction action = new ConsoleRegistrarCreatorAction();
   private final User user = new User("marla.singer@example.com", "gmail.com", "12345");
@@ -89,7 +93,6 @@ public final class ConsoleRegistrarCreatorActionTest {
     action.userService = UserServiceFactory.getUserService();
     action.xsrfTokenManager = new XsrfTokenManager(new FakeClock(), action.userService);
     action.authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
-    action.registryEnvironment = RegistryEnvironment.UNITTEST;
     action.sendEmailUtils =
         new SendEmailUtils(
             new InternetAddress("outgoing@registry.example"),
@@ -142,7 +145,7 @@ public final class ConsoleRegistrarCreatorActionTest {
 
   @Test
   public void testGet_authorized_onProduction() {
-    action.registryEnvironment = RegistryEnvironment.PRODUCTION;
+    RegistryEnvironment.PRODUCTION.setup(systemPropertyRule);
     action.run();
     assertThat(response.getPayload()).contains("<h1>Create Registrar</h1>");
     assertThat(response.getPayload()).contains("gtag('config', 'sampleId')");
