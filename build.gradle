@@ -251,3 +251,40 @@ subprojects {
     }
   }
 }
+
+task checkDependenciesDotGradle {
+  def buildSrcDepsFile = File.createTempFile('buildSrc', 'deps')
+  buildSrcDepsFile.deleteOnExit()
+  dependsOn createGetBuildSrcDirectDepsTask(buildSrcDepsFile)
+
+  doLast {
+    Set<String> depsInUse = []
+    allprojects {
+      configurations.all {
+        it.dependencies.findAll { it.group != null }.each {
+          depsInUse.add("${it.group}:${it.name}".toString())
+        }
+      }
+    }
+    if (buildSrcDepsFile.exists()) {
+      depsInUse.addAll(buildSrcDepsFile.readLines())
+    }
+    def unusedDeps =
+        rootProject.dependencyMap.keySet()
+            .findAll { !depsInUse.contains(it) }
+            .toSorted()
+
+    if (unusedDeps.isEmpty()) {
+      return
+    }
+    logger.error("The following are not direct dependencies:\n${unusedDeps.toListString()}")
+    throw new IllegalStateException("The dependencies.gradle file should only contain direct dependencies.")
+  }
+}
+
+def createGetBuildSrcDirectDepsTask(outputFileName) {
+  return tasks.create("getBuildSrcDeps_${new Random().nextInt()}", Exec) {
+    workingDir "${rootDir}/buildSrc"
+    commandLine '../gradlew', 'exportDenpendencies', "-PdependencyExportFile=${outputFileName}"
+  }
+}
