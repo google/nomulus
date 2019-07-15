@@ -83,6 +83,6 @@ dependencies {
     compile project(':core')
 }
 
-rootProject.deploy.dependsOn appengineDeploy
+rootProject.deploy.dependsOn appengineDeployAll
 rootProject.stage.dependsOn appengineStage
 appengineDeploy.dependsOn rootProject.verifyDeployment
