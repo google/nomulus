@@ -671,9 +671,5 @@ task syncDependencies(type: Sync) {
 task buildToolImage(type: DockerBuildImage) {
   dependsOn syncDependencies
   inputDir = file("${project.rootDir}/core/tool_docker")
-  tags = ["gcr.io/domain-registry/nomulus-tool"]
-}
-
-tasks.register("release") {
-  dependsOn buildToolImage
+  tags = ["nomulus-tool"]
 }
