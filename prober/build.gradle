@@ -18,7 +18,7 @@ createUberJar('deployJar', 'prober', 'google.registry.monitoring.blackbox.Prober
 
 dependencies {
     def deps = rootProject.dependencyMap
-    
+
     compile deps['com.google.auto.value:auto-value-annotations']
     compile deps['com.google.dagger:dagger']
     compile deps['com.google.flogger:flogger']
@@ -34,7 +34,7 @@ dependencies {
     runtime deps['com.google.flogger:flogger-system-backend']
     runtime deps['com.google.auto.value:auto-value']
     runtime deps['io.netty:netty-tcnative-boringssl-static']
-    
+
     testCompile deps['com.google.truth:truth']
     testCompile deps['junit:junit']
     testCompile deps['org.mockito:mockito-core']
@@ -47,4 +47,3 @@ dependencies {
     annotationProcessor deps['com.google.dagger:dagger-compiler']
     testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
 }
-
