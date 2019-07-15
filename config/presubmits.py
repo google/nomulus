@@ -76,11 +76,16 @@ PRESUBMITS = {
     # License check
     PresubmitCheck(
         r".*Copyright 20\d{2} The Nomulus Authors\. All Rights Reserved\.",
-        ("java", "js", "soy", "sql", "py", "sh"), {
+        ("java", "js", "soy", "sql", "py", "sh", "gradle"), {
             ".git", "/build/", "/generated/", "node_modules/",
             "JUnitBackports.java"
         }, REQUIRED):
         "File did not include the license header.",
+
+    # Files must end in a newline
+    PresubmitCheck(r".*\n$", ("java", "js", "soy", "sql", "py", "sh", "gradle"),
+                   {"node_modules/"}, REQUIRED):
+        "Source files must end in a newline.",
 
     # System.(out|err).println should only appear in tools/
     PresubmitCheck(

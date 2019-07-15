@@ -16,8 +16,12 @@ package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatastoreHelper.deleteTld;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
+import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.DatastoreHelper.persistSimpleResource;
+import static google.registry.testing.JUnitBackports.assertThrows;
 
 import com.google.api.client.http.LowLevelHttpRequest;
 import com.google.api.client.testing.http.MockHttpTransport;
@@ -27,6 +31,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
+import google.registry.model.registry.Registry;
+import google.registry.model.registry.Registry.TldType;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.ShardableTestCase;
 import java.util.ArrayList;
@@ -95,8 +101,8 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest extends ShardableTestCa
     }
   }
 
-  TestHttpTransport httpTransport;
-  UpdateRegistrarRdapBaseUrlsAction action;
+  private TestHttpTransport httpTransport;
+  private UpdateRegistrarRdapBaseUrlsAction action;
 
   @Before
   public void setUp() {
@@ -104,27 +110,10 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest extends ShardableTestCa
     action = new UpdateRegistrarRdapBaseUrlsAction();
 
     action.password = "myPassword";
-    action.tld = "tld";
     action.httpTransport = httpTransport;
+    addValidResponses(httpTransport);
 
-    MockLowLevelHttpResponse loginResponse = new MockLowLevelHttpResponse();
-    loginResponse.addHeader(
-        "Set-Cookie",
-        "id=myAuthenticationId; "
-            + "Expires=Tue, 11-Jun-2019 16:34:21 GMT; Path=/mosapi/v1/app; Secure; HttpOnly");
-
-    MockLowLevelHttpResponse listResponse = new MockLowLevelHttpResponse();
-    listResponse.setContent(JSON_LIST_REPLY);
-
-    MockLowLevelHttpResponse logoutResponse = new MockLowLevelHttpResponse();
-    loginResponse.addHeader(
-        "Set-Cookie",
-        "id=id; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Path=/mosapi/v1/app; Secure; HttpOnly");
-
-    httpTransport.addNextResponse(loginResponse);
-    httpTransport.addNextResponse(listResponse);
-    httpTransport.addNextResponse(logoutResponse);
-
+    createTld("tld");
   }
 
   private void assertCorrectRequestsSent() {
@@ -236,5 +225,73 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest extends ShardableTestCa
             "https://rdap.example.com", "https://rdap.example.net", "https://rdap.example.org");
     assertThat(loadRegistrar("registrar4001").getRdapBaseUrls())
         .containsExactly("https://rdap.example.com");
+  }
+
+  @Test
+  public void testNoTlds() {
+    deleteTld("tld");
+    assertThat(assertThrows(IllegalArgumentException.class, action::run)).hasMessageThat()
+        .isEqualTo("There must exist at least one REAL TLD.");
+  }
+
+  @Test
+  public void testOnlyTestTlds() {
+    persistResource(Registry.get("tld").asBuilder().setTldType(TldType.TEST).build());
+    assertThat(assertThrows(IllegalArgumentException.class, action::run)).hasMessageThat()
+        .isEqualTo("There must exist at least one REAL TLD.");
+  }
+
+  @Test
+  public void testSecondTldSucceeds() {
+    createTld("secondtld");
+    httpTransport = new TestHttpTransport();
+    action.httpTransport = httpTransport;
+
+    // the first TLD request will return a bad cookie but the second will succeed
+    MockLowLevelHttpResponse badLoginResponse = new MockLowLevelHttpResponse();
+    badLoginResponse.addHeader("Set-Cookie",
+        "Expires=Thu, 01-Jan-1970 00:00:10 GMT; Path=/mosapi/v1/app; Secure; HttpOnly");
+
+    httpTransport.addNextResponse(badLoginResponse);
+    addValidResponses(httpTransport);
+
+    action.run();
+  }
+
+  @Test
+  public void testBothFail() {
+    createTld("secondtld");
+    httpTransport = new TestHttpTransport();
+    action.httpTransport = httpTransport;
+
+    MockLowLevelHttpResponse badLoginResponse = new MockLowLevelHttpResponse();
+    badLoginResponse.addHeader("Set-Cookie",
+        "Expires=Thu, 01-Jan-1970 00:00:10 GMT; Path=/mosapi/v1/app; Secure; HttpOnly");
+
+    // it should fail for both TLDs
+    httpTransport.addNextResponse(badLoginResponse);
+    httpTransport.addNextResponse(badLoginResponse);
+
+    assertThat(assertThrows(RuntimeException.class, action::run)).hasMessageThat()
+        .isEqualTo("Error contacting MosAPI server. Tried TLDs [secondtld, tld]");
+  }
+
+  private static void addValidResponses(TestHttpTransport httpTransport) {
+    MockLowLevelHttpResponse loginResponse = new MockLowLevelHttpResponse();
+    loginResponse.addHeader(
+        "Set-Cookie",
+        "id=myAuthenticationId; "
+            + "Expires=Tue, 11-Jun-2019 16:34:21 GMT; Path=/mosapi/v1/app; Secure; HttpOnly");
+
+    MockLowLevelHttpResponse listResponse = new MockLowLevelHttpResponse();
+    listResponse.setContent(JSON_LIST_REPLY);
+
+    MockLowLevelHttpResponse logoutResponse = new MockLowLevelHttpResponse();
+    logoutResponse.addHeader(
+        "Set-Cookie",
+        "id=id; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Path=/mosapi/v1/app; Secure; HttpOnly");
+    httpTransport.addNextResponse(loginResponse);
+    httpTransport.addNextResponse(listResponse);
+    httpTransport.addNextResponse(logoutResponse);
   }
 }

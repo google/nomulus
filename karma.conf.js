@@ -28,13 +28,13 @@ module.exports = function(config) {
     autoWatch: false,
     files: [
       'node_modules/google-closure-library/closure/goog/base.js',
-      'core/build/resources/test/**/*_test.js',
+      'core/src/test/javascript/**/*_test.js',
       {
-        pattern: 'core/build/resources/test/**/!(*_test).js',
+        pattern: 'core/src/test/javascript/**/!(*_test).js',
         included: false
       },
       {
-        pattern: 'core/build/resources/main/**/*.js',
+        pattern: 'core/src/main/javascript/**/*.js',
         included: false
       },
       {
@@ -63,9 +63,7 @@ module.exports = function(config) {
       'node_modules/google-closure-library/closure/goog/deps.js': ['closure', 'closure-deps'],
       'node_modules/google-closure-library/closure/goog/base.js': ['closure'],
       'node_modules/google-closure-library/closure/**/*.js': ['closure'],
-      'core/build/resources/test/**/*_test.js': ['closure'],
-      'core/build/resources/test/**/!(*_test).js': ['closure'],
-      'core/build/resources/main/**/*.js': ['closure'],
+      'core/src/*/javascript/**/*.js': ['closure'],
       'core/build/generated/source/custom/main/**/*.soy.js': ['closure'],
       'node_modules/soyutils_usegoog.js': ['closure']
     },

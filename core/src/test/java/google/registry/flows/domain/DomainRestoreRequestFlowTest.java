@@ -632,4 +632,16 @@ public class DomainRestoreRequestFlowTest
                 TransactionReportField.RESTORED_DOMAINS,
                 1));
   }
+
+  @Test
+  public void testFailure_restoreReportsAreNotSupported() {
+    setEppInput("domain_update_restore_report.xml");
+    // This exception is referred to by its fully qualified path (rather than being imported) so
+    // that it is not included in the list of exceptions thrown by DomainRestoreRequestFlow, as this
+    // test EPP won't trigger the request flow at all.
+    EppException thrown = assertThrows(
+        google.registry.flows.EppException.UnimplementedCommandException.class, this::runFlow);
+    assertThat(thrown).hasMessageThat().contains("domain restore reports are not supported");
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
 }

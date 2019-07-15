@@ -14,7 +14,6 @@
 
 package google.registry.keyring.kms;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.cloudkms.v1.CloudKMS;
 import dagger.Binds;
 import dagger.Module;
@@ -24,6 +23,7 @@ import dagger.multibindings.StringKey;
 import google.registry.config.CredentialModule.DefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.Keyring;
+import google.registry.util.GoogleCredentialsBundle;
 
 /** Dagger module for Cloud KMS. */
 @Module
@@ -31,19 +31,22 @@ public abstract class KmsModule {
 
   public static final String NAME = "KMS";
 
+  @Provides
+  static CloudKMS provideKms(
+      @DefaultCredential GoogleCredentialsBundle credentialsBundle,
+      @Config("cloudKmsProjectId") String projectId) {
+    return new CloudKMS.Builder(
+            credentialsBundle.getHttpTransport(),
+            credentialsBundle.getJsonFactory(),
+            credentialsBundle.getHttpRequestInitializer())
+        .setApplicationName(projectId)
+        .build();
+  }
+
   @Binds
   @IntoMap
   @StringKey(NAME)
   abstract Keyring provideKeyring(KmsKeyring keyring);
-
-  @Provides
-  static CloudKMS provideKms(
-      @DefaultCredential GoogleCredential credential,
-      @Config("cloudKmsProjectId") String projectId) {
-    return new CloudKMS.Builder(credential.getTransport(), credential.getJsonFactory(), credential)
-        .setApplicationName(projectId)
-        .build();
-  }
 
   @Binds
   abstract KmsConnection provideKmsConnection(KmsConnectionImpl kmsConnectionImpl);

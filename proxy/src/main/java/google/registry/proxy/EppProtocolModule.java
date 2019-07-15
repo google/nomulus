@@ -134,7 +134,7 @@ public class EppProtocolModule {
   @Named("hello")
   static byte[] provideHelloBytes() {
     try {
-      return readResourceBytes(EppProtocolModule.class, "resources/hello.xml").read();
+      return readResourceBytes(EppProtocolModule.class, "hello.xml").read();
     } catch (IOException e) {
       throw new RuntimeException("Cannot read EPP <hello> message file.", e);
     }

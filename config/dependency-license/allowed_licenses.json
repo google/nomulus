@@ -1,0 +1,172 @@
+{
+  "allowedLicenses": [
+    {
+      "moduleLicense": "Apache Software License, Version 1.1"
+    },
+    {
+      "moduleLicense": "Apache 2"
+    },
+    {
+      "moduleLicense": "Apache 2.0"
+    },
+    {
+      "moduleLicense": "Apache-2.0"
+    },
+    {
+      "moduleLicense": "Apache License 2.0"
+    },
+    {
+      "moduleLicense": "Apache License v2.0"
+    },
+    {
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleLicense": "Apache Software License - Version 2.0"
+    },
+    {
+      "moduleLicense": "The Apache License, Version 2.0"
+    },
+    {
+      "moduleLicense": "The Apache Software License, Version 2.0"
+    },
+    {
+      "moduleLicense": "The Apache Software License, version 2.0"
+    },
+    {
+      "moduleLicense": "Bouncy Castle Licence"
+    },
+    {
+      "moduleLicense": "BSD"
+    },
+    {
+      "moduleLicense": "BSD 2-Clause License"
+    },
+    {
+      "moduleLicense": "BSD 2-Clause license"
+    },
+    {
+      "moduleLicense": "BSD 3-clause"
+    },
+    {
+      "moduleLicense": "BSD 3-Clause"
+    },
+    {
+      "moduleLicense": "BSD 3-Clause License"
+    },
+    {
+      "moduleLicense": "The 3-Clause BSD License"
+    },
+    {
+      "moduleLicense": "BSD License"
+    },
+    {
+      "moduleLicense": "BSD New License"
+    },
+    {
+      "moduleLicense": "BSD New license"
+    },
+    {
+      "moduleLicense": "BSD style"
+    },
+    {
+      "moduleLicense": "New BSD License"
+    },
+    {
+      "moduleLicense": "Revised BSD"
+    },
+    {
+      "moduleLicense": "The BSD License"
+    },
+    {
+      "moduleLicense": "CC0 1.0 Universal License"
+    },
+    {
+      "moduleLicense": "CDDL 1.1"
+    },
+    {
+      "moduleLicense": "CDDL + GPLv2 with classpath exception"
+    },
+    {
+      "moduleLicense": "COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0"
+    },
+    {
+      "moduleLicense": "https://glassfish.java.net/public/CDDL+GPL_1_1.html, https://glassfish.java.net/public/CDDL+GPL_1_1.html"
+    },
+    {
+      "moduleLicense": "CDDL+GPL License"
+    },
+    {
+      "moduleLicense": "\\n                Dual license consisting of the CDDL v1.1 and GPL v2\\n            "
+    },
+    {
+      "moduleLicense": "Eclipse Public License - Version 1.0"
+    },
+    {
+      "moduleLicense": "Eclipse Public License - v 1.0"
+    },
+    {
+      "moduleLicense": "Eclipse Public License 1.0"
+    },
+    {
+      "moduleLicense": "Google App Engine Terms of Service"
+    },
+    {
+      "moduleLicense": "GNU General Public License, version 2, with the Classpath Exception"
+    },
+    {
+      "moduleLicense": "GNU GENERAL PUBLIC LICENSE, Version 2 + Classpath Exception"
+    },
+    {
+      "moduleLicense": "GPL2 w/ CPE"
+    },
+    {
+      "moduleLicense": "GNU Lesser Public License"
+    },
+    {
+      "moduleLicense": "The Go license"
+    },
+    {
+      "moduleLicense": "GWT Terms"
+    },
+    {
+      "moduleLicense": "ICU License"
+    },
+    {
+      "moduleLicense": "The JSON License"
+    },
+    {
+      "moduleLicense": "LGPL-2.1+"
+    },
+    {
+      "moduleLicense": "LGPL, version 2.1"
+    },
+    {
+      "moduleLicense": "MIT"
+    },
+    {
+      "moduleLicense": "MIT License"
+    },
+    {
+      "moduleLicense": "MIT license"
+    },
+    {
+      "moduleLicense": "The MIT License"
+    },
+    {
+      "moduleLicense": "The MIT license"
+    },
+    {
+      "moduleLicense": "Mozilla Public License Version 2.0"
+    },
+    {
+      "moduleLicense": "Public Domain"
+    },
+    {
+      "moduleLicense": "PUBLIC DOMAIN"
+    },
+    {
+      "moduleLicense": "The W3C Software License"
+    }
+  ]
+}

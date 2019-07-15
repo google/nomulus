@@ -17,6 +17,7 @@ package google.registry.webdriver;
 import google.registry.webdriver.RepeatableRunner.AttemptNumber;
 import org.junit.ClassRule;
 import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 /** Base class for tests that needs a {@link WebDriverPlusScreenDifferRule}. */
 public class WebDriverTestCase {
@@ -27,4 +28,7 @@ public class WebDriverTestCase {
   @Rule
   public final WebDriverPlusScreenDifferRule driver =
       new WebDriverPlusScreenDifferRule(webDriverProvider::getWebDriver, attemptNumber);
+
+  @Rule
+  public final Timeout timeout = Timeout.seconds(30);
 }

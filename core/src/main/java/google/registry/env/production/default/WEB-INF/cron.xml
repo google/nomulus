@@ -112,8 +112,6 @@
     <target>backend</target>
   </cron>
 
-  <!--
-    TODO(b/134576418) enable this cron job once we're sure the Action works
   <cron>
     <url><![CDATA[/_dr/task/updateRegistrarRdapBaseUrls]]></url>
     <description>
@@ -122,7 +120,6 @@
     <schedule>every day 02:34</schedule>
     <target>backend</target>
   </cron>
-  -->
 
   <cron>
     <url><![CDATA[/_dr/task/deleteOldCommitLogs]]></url>
