@@ -16,7 +16,6 @@ package google.registry.monitoring.blackbox;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
-import io.netty.channel.local.LocalAddress;
 import io.netty.channel.ChannelHandler;
 import javax.inject.Provider;
 
@@ -25,12 +24,6 @@ import javax.inject.Provider;
  */
 @AutoValue
 public abstract class Protocol {
-
-  /** Default {@link LocalAddress} when not initialized in {@code Builder} */
-  private final static LocalAddress DEFAULT_ADDRESS = new LocalAddress("TEST_ADDRESS");
-
-  /** Local Address of Protocol. ONLY FOR TESTING*/
-  public abstract LocalAddress address();
 
   abstract String name();
 
@@ -45,13 +38,11 @@ public abstract class Protocol {
   public abstract Builder toBuilder();
 
   public static Builder builder() {
-    return new AutoValue_Protocol.Builder().address(DEFAULT_ADDRESS);
+    return new AutoValue_Protocol.Builder();
   }
 
   @AutoValue.Builder
   public static abstract class Builder {
-
-    public abstract Builder address(LocalAddress value);
 
     public abstract Builder name(String value);
 
