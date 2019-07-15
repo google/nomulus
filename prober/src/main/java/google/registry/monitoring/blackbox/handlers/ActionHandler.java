@@ -23,7 +23,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 
 /**
- *Superclass of all Handlers placed at end of channel pipeline
+ *Superclass of all {@link ChannelHandler}s placed at end of channel pipeline
  *
  * <p> {@code ActionHandler} inherits from {@link SimpleChannelInboundHandler<InboundMarker>}, as it should only be passed in
  * messages that implement the {@link InboundMarker} interface. </p>
@@ -39,14 +39,9 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   protected ChannelPromise finished;
-  protected OutboundMarker outboundMessage;
 
   /** Takes in {@link OutboundMarker} type and saves for subclasses. Then returns initialized {@link ChannelPromise}*/
-  public ChannelFuture getFuture(OutboundMarker outboundMessage) {
-
-    //Action Handlers subclasses require the outboundMessage for additional logic
-    this.outboundMessage = outboundMessage;
-
+  public ChannelFuture getFuture() {
     return finished;
   }
 
