@@ -263,7 +263,7 @@ task checkDependenciesDotGradle {
       configurations.all {
         it.dependencies.findAll { it.group != null }.each {
           // Note: .toString() is required since GString should
-          // not be map keys.
+          // not be mixed with Java Strings.
           depsInUse.add("${it.group}:${it.name}".toString())
         }
       }
