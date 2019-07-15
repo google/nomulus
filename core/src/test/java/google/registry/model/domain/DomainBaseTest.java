@@ -42,6 +42,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact.Type;
+import google.registry.model.domain.Period.Unit;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
@@ -568,5 +569,83 @@ public class DomainBaseTest extends EntityTestCase {
         .build());
     assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationTime())
         .isEqualTo(now.minusDays(1));
+  }
+
+  @Test
+  public void testClone_doNotExtendExpirationOnFutureDeletedDomain() {
+    // if a domain is in pending deletion (REDEMPTION period, for instance), don't extend expiration
+    DateTime now = DateTime.now(UTC);
+    domain = persistResource(domain.asBuilder().setRegistrationExpirationTime(now.plusDays(1))
+        .setDeletionTime(now.plusDays(20))
+        .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE, StatusValue.INACTIVE))
+        .build());
+    assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationTime())
+        .isEqualTo(now.plusDays(1));
+  }
+
+  @Test
+  public void testClone_extendsExpirationForExpiredTransferredDomain() {
+    // If the transfer implicitly succeeded, the expiration time should be extended
+    DateTime now = DateTime.now(UTC);
+    DateTime transferExpirationTime = now.minusDays(1);
+    DateTime previousExpiration = now.minusDays(2);
+
+    TransferData transferData = new TransferData.Builder()
+        .setPendingTransferExpirationTime(transferExpirationTime)
+        .setTransferStatus(TransferStatus.PENDING)
+        .setGainingClientId("TheRegistrar")
+        .build();
+    Period extensionPeriod = transferData.getTransferPeriod();
+    DateTime newExpiration = extensionPeriod.getUnit().equals(Unit.YEARS)
+        ? previousExpiration.plusYears(extensionPeriod.getValue())
+        : previousExpiration.plusMonths(extensionPeriod.getValue());
+    domain = persistResource(domain.asBuilder().setRegistrationExpirationTime(previousExpiration)
+        .setTransferData(transferData).build());
+
+    assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationTime())
+        .isEqualTo(newExpiration);
+  }
+
+  @Test
+  public void testClone_extendsExpirationForNonExpiredTransferredDomain() {
+    // If the transfer implicitly succeeded, the expiration time should be extended even if it
+    // hadn't already expired
+    DateTime now = DateTime.now(UTC);
+    DateTime transferExpirationTime = now.minusDays(1);
+    DateTime previousExpiration = now.plusWeeks(2);
+
+    TransferData transferData = new TransferData.Builder()
+        .setPendingTransferExpirationTime(transferExpirationTime)
+        .setTransferStatus(TransferStatus.PENDING)
+        .setGainingClientId("TheRegistrar")
+        .build();
+    Period extensionPeriod = transferData.getTransferPeriod();
+    DateTime newExpiration = extensionPeriod.getUnit().equals(Unit.YEARS)
+        ? previousExpiration.plusYears(extensionPeriod.getValue())
+        : previousExpiration.plusMonths(extensionPeriod.getValue());
+    domain = persistResource(domain.asBuilder().setRegistrationExpirationTime(previousExpiration)
+        .setTransferData(transferData).build());
+
+    assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationTime())
+        .isEqualTo(newExpiration);
+  }
+
+  @Test
+  public void testClone_doesNotExtendExpirationForPendingTransfer() {
+    // Pending transfers shouldn't affect the expiration time
+    DateTime now = DateTime.now(UTC);
+    DateTime transferExpirationTime = now.plusDays(1);
+    DateTime previousExpiration = now.plusWeeks(2);
+
+    TransferData transferData = new TransferData.Builder()
+        .setPendingTransferExpirationTime(transferExpirationTime)
+        .setTransferStatus(TransferStatus.PENDING)
+        .setGainingClientId("TheRegistrar")
+        .build();
+    domain = persistResource(domain.asBuilder().setRegistrationExpirationTime(previousExpiration)
+        .setTransferData(transferData).build());
+    
+    assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationTime())
+        .isEqualTo(previousExpiration);
   }
 }
