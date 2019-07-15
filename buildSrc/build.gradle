@@ -89,3 +89,4 @@ gradle.projectsEvaluated {
     options.compilerArgs << "-Xlint:unchecked"
   }
 }
+checkstyleMain.dependsOn(javaFormatGithubDiff)
