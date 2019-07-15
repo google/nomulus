@@ -1,0 +1,34 @@
+# To run the build locally, install cloud-build-local first.
+# See: https://cloud.google.com/cloud-build/docs/build-debug-locally
+# You will need access to a private registry, so be sure to install the docker
+# credential helper.
+# Then, in the root of a nomulus source tree, run:
+# cloud-build-local --config=cloudbuild-nomulus.yaml --dryrun=false \
+#   --substitutions TAG_NAME=[TAG] ..
+# This will build the contents of the current directory and generate the
+# nomulus war-files locally.
+# The PROJECT_ID is the current project name that gcloud uses.
+# You can add "--push true" to have the image pushed to GCR.
+#
+# To manually trigger a build on GCB, run:
+# gcloud builds submit --config cloudbuild-nomulus.yaml --substitutions TAG_NAME=[TAG] ..
+#
+# To trigger a build automatically, follow the instructions below and add a trigger:
+# https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
+steps:
+# Download and unzip the tarball that contains the relevant config files
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  args: ['gsutil', 'cp', 'gs://${PROJECT_ID}-deploy/${TAG_NAME}/${_ENVIRONMENT}.tar', '${_ENVIRONMENT}.tar']
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  args: ['tar', '-xvf', '${_ENVIRONMENT}.tar']
+# Deploy the various config files
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  args: ['gcloud', '-q', '--project', '${PROJECT_ID}', 'app', 'deploy', 'default/WEB-INF/appengine-generated/cron.yaml']
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  args: ['gcloud', '-q', '--project', '${PROJECT_ID}', 'app', 'deploy', 'default/WEB-INF/appengine-generated/dispatch.yaml']
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  args: ['gcloud', '-q', '--project', '${PROJECT_ID}', 'app', 'deploy', 'default/WEB-INF/appengine-generated/dos.yaml']
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  args: ['gcloud', '-q', '--project', '${PROJECT_ID}', 'app', 'deploy', 'default/WEB-INF/appengine-generated/index.yaml']
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  args: ['gcloud', '-q', '--project', '${PROJECT_ID}', 'app', 'deploy', 'default/WEB-INF/appengine-generated/queue.yaml']
