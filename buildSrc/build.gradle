@@ -52,6 +52,7 @@ repositories {
 }
 
 apply from: '../dependencies.gradle'
+apply from: '../dependency_license.gradle'
 apply from: '../java_common.gradle'
 
 sourceSets {
@@ -86,5 +87,23 @@ dependencies {
 gradle.projectsEvaluated {
   tasks.withType(JavaCompile) {
     options.compilerArgs << "-Xlint:unchecked"
+  }
+}
+
+task exportDenpendencies {
+  def outputFileProperty = 'dependencyExportFile'
+  def output = project.hasProperty(outputFileProperty)
+      ? new PrintStream(
+          new File(project.getProperty(outputFileProperty)))
+      : System.out
+
+  doLast {
+    project.configurations.all {
+      it.dependencies.findAll {
+        it.group != null
+      }.each {
+        output.println("${it.group}:${it.name}")
+      }
+    }
   }
 }

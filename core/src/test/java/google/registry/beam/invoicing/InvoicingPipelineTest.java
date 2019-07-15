@@ -16,8 +16,10 @@ package google.registry.beam.invoicing;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.ResourceUtils;
 import java.io.File;
 import java.io.IOException;
@@ -58,15 +60,17 @@ public class InvoicingPipelineTest {
 
   @Before
   public void initializePipeline() throws IOException {
-    invoicingPipeline = new InvoicingPipeline();
-    invoicingPipeline.projectId = "test-project";
     File beamTempFolder = tempFolder.newFolder();
-    invoicingPipeline.beamBucketUrl = beamTempFolder.getAbsolutePath();
-    invoicingPipeline.invoiceFilePrefix = "REG-INV";
-    invoicingPipeline.beamStagingUrl = beamTempFolder.getAbsolutePath() + "/staging";
-    invoicingPipeline.invoiceTemplateUrl =
-        beamTempFolder.getAbsolutePath() + "/templates/invoicing";
-    invoicingPipeline.billingBucketUrl = tempFolder.getRoot().getAbsolutePath();
+    String beamTempFolderPath = beamTempFolder.getAbsolutePath();
+    invoicingPipeline = new InvoicingPipeline(
+        "test-project",
+        beamTempFolderPath,
+        beamTempFolderPath + "/templates/invoicing",
+        beamTempFolderPath + "/staging",
+        tempFolder.getRoot().getAbsolutePath(),
+        "REG-INV",
+        GoogleCredentialsBundle.create(GoogleCredentials.create(null))
+    );
   }
 
   private ImmutableList<BillingEvent> getInputEvents() {

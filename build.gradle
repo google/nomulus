@@ -21,7 +21,7 @@ buildscript {
   }
 
   dependencies {
-    classpath 'com.google.cloud.tools:appengine-gradle-plugin:1.3.3'
+    classpath 'com.google.cloud.tools:appengine-gradle-plugin:2.0.1'
     classpath "net.ltgt.gradle:gradle-errorprone-plugin:0.6.1"
     classpath 'org.sonatype.aether:aether-api:1.13.1'
     classpath 'org.sonatype.aether:aether-impl:1.13.1'
@@ -70,6 +70,19 @@ reportUploader {
 }
 
 apply from: 'dependencies.gradle'
+
+apply from: 'dependency_license.gradle'
+
+// Custom task to run checkLicense in buildSrc, which is not triggered
+// by root project tasks. A shell task is used because buildSrc tasks
+// cannot be referenced in the same way as tasks from a regular included
+// build.
+task checkBuildSrcLicense(type:Exec) {
+  workingDir "${rootDir}/buildSrc"
+  commandLine '../gradlew', 'checkLicense'
+}
+tasks.checkLicense.dependsOn(tasks.checkBuildSrcLicense)
+tasks.build.dependsOn(tasks.checkLicense)
 
 // Provide defaults for all of the project properties.
 
@@ -159,9 +172,10 @@ subprojects {
         resolutionStrategy.activateDependencyLocking()
       }
     }
-    // Lock application dependencies.
-    dependencyLocking {
-      lockAllConfigurations()
+    // Lock application dependencies except for the gradle-license-report
+    // plugin. See dependency_license.gradle for more information.
+    configurations.findAll { it.name != 'dependencyLicenseReport' }.each {
+      it.resolutionStrategy.activateDependencyLocking()
     }
   }
 
@@ -235,5 +249,51 @@ subprojects {
     it.resources {
       include "${project.relativePath}/"
     }
+  }
+}
+
+task checkDependenciesDotGradle {
+  def buildSrcDepsFile = File.createTempFile('buildSrc', 'deps')
+  buildSrcDepsFile.deleteOnExit()
+  dependsOn createGetBuildSrcDirectDepsTask(buildSrcDepsFile)
+
+  doLast {
+    Set<String> depsInUse = []
+    allprojects {
+      configurations.all {
+        it.dependencies.findAll { it.group != null }.each {
+          // Note: .toString() is required since GString should
+          // not be mixed with Java Strings.
+          depsInUse.add("${it.group}:${it.name}".toString())
+        }
+      }
+    }
+    if (buildSrcDepsFile.exists()) {
+      depsInUse.addAll(buildSrcDepsFile.readLines())
+    }
+    def unusedDeps =
+        rootProject.dependencyMap.keySet()
+            .findAll { !depsInUse.contains(it) }
+            .toSorted()
+
+    if (unusedDeps.isEmpty()) {
+      return
+    }
+    logger.error(
+        "Unused dependencies in dependencies.gradle:\n${unusedDeps.toListString()}")
+    throw new IllegalStateException(
+        "The dependencies.gradle file should only contain direct dependencies.")
+  }
+}
+tasks.build.dependsOn(tasks.checkDependenciesDotGradle)
+
+def createGetBuildSrcDirectDepsTask(outputFileName) {
+  return tasks
+      .create(
+          "getBuildSrcDeps_${java.util.UUID.randomUUID()}".toString(),
+          Exec) {
+    workingDir "${rootDir}/buildSrc"
+    commandLine '../gradlew', 'exportDenpendencies',
+                "-PdependencyExportFile=${outputFileName}"
   }
 }

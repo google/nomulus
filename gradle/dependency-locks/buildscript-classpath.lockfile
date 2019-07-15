@@ -11,10 +11,15 @@ com.diffplug.spotless:spotless-lib:1.18.0
 com.diffplug.spotless:spotless-plugin-gradle:3.18.0
 com.github.jengelman.gradle.plugins:shadow:5.0.0
 com.github.johnrengelman.shadow:com.github.johnrengelman.shadow.gradle.plugin:5.0.0
-com.google.cloud.tools:appengine-gradle-plugin:1.3.3
-com.google.cloud.tools:appengine-plugins-core:0.3.2
-com.google.code.gson:gson:2.7
-com.google.guava:guava:20.0
+com.google.cloud.tools:appengine-gradle-plugin:2.0.1
+com.google.cloud.tools:appengine-plugins-core:0.7.5
+com.google.code.findbugs:jsr305:3.0.2
+com.google.code.gson:gson:2.8.5
+com.google.errorprone:error_prone_annotations:2.2.0
+com.google.guava:failureaccess:1.0
+com.google.guava:guava:27.0-jre
+com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava
+com.google.j2objc:j2objc-annotations:1.1
 com.googlecode.concurrent-trees:concurrent-trees:2.6.1
 com.googlecode.javaewah:JavaEWAH:1.1.6
 com.jcraft:jsch:0.1.54
@@ -39,6 +44,7 @@ org.apache.ant:ant-antlr:1.8.4
 org.apache.ant:ant-junit:1.8.4
 org.apache.ant:ant-launcher:1.9.7
 org.apache.ant:ant:1.9.7
+org.apache.commons:commons-compress:1.18
 org.apache.commons:commons-lang3:3.8.1
 org.apache.httpcomponents:httpclient:4.5.2
 org.apache.httpcomponents:httpcore:4.4.4
@@ -48,6 +54,7 @@ org.apache.maven:maven-artifact:3.6.1
 org.apache.maven:maven-builder-support:3.6.1
 org.apache.maven:maven-model-builder:3.6.1
 org.apache.maven:maven-model:3.6.1
+org.checkerframework:checker-qual:2.5.2
 org.codehaus.gpars:gpars:1.2.1
 org.codehaus.groovy:groovy-all:2.4.9
 org.codehaus.groovy:groovy-ant:2.1.8
@@ -56,12 +63,14 @@ org.codehaus.groovy:groovy-templates:2.1.8
 org.codehaus.groovy:groovy-xml:2.4.7
 org.codehaus.groovy:groovy:2.4.7
 org.codehaus.jsr166-mirror:jsr166y:1.7.0
+org.codehaus.mojo:animal-sniffer-annotations:1.17
 org.codehaus.plexus:plexus-component-annotations:1.7.1
 org.codehaus.plexus:plexus-interpolation:1.25
 org.codehaus.plexus:plexus-utils:3.2.0
 org.codenarc:CodeNarc:0.25.2
 org.eclipse.jdt:core:3.1.1
 org.eclipse.jgit:org.eclipse.jgit:5.0.1.201806211838-r
+org.glassfish:javax.json:1.0.4
 org.gmetrics:GMetrics:0.7
 org.hamcrest:hamcrest-core:1.3
 org.jdom:jdom2:2.0.6
@@ -82,4 +91,4 @@ org.sonatype.aether:aether-spi:1.13.1
 org.sonatype.aether:aether-util:1.13.1
 org.spockframework:spock-core:1.1-groovy-2.4-rc-4
 org.vafer:jdependency:2.1.1
-org.yaml:snakeyaml:1.17
+org.yaml:snakeyaml:1.21

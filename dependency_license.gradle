@@ -1,0 +1,87 @@
+// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Legacy-style declaration of the gradle-license-report plugin, which is necessary
+// in shared scripts.
+// Note that the 'apply plugin' line does not use string literal. It references directly the
+// main class of the plugin.
+buildscript {
+  repositories {
+    maven {
+      url 'https://plugins.gradle.org/m2/'
+    }
+  }
+  dependencies {
+    classpath 'com.github.jk1:gradle-license-report:1.8'
+  }
+}
+apply plugin: com.github.jk1.license.LicenseReportPlugin
+
+// Configures the checkLicense task.
+//
+// This task discovers license information for each dependency including a
+// name phrase and possibly additional details, such as an http link or relative
+// path of a file in the jar. This information is saved in json format under
+// build/reports/dependency-license. It is not used right now, but may be useful
+// if we want to check the content of the licenses.
+//
+// The required 'allowedLicensesFile' contains the acceptable license name phrases.
+// If a phrase not in this file is found, the checkLicense task will fail. Exact
+// string match is used, so they are case-sensitive and preceding/trailing whitespaces are important.
+//
+// This plugin also generates an html report under build/reports/dependency-license.
+// The optional 'filters' parameter accepts custom name-normalization rules. This
+// report is not currently in use.
+//
+// Note that this task needs to be explicitly invoked on buildSrc.
+//
+// Also note that dependencies of buildscript classpath and 'official' Gradle plugins are
+// not checked.
+//
+// Due to a bug/feature of this plugin, the Nomulus project can not lock all dependencies.
+// The 'dependencyLicenseReport' configuration must be excluded from locking.
+// TODO(weiminyu): add github issue number after reporting to author.
+licenseReport {
+  ext.toFullFilePath = { relativePath ->
+    if (rootDir.path.endsWith('buildSrc')) {
+      return "${rootDir.path}/../${relativePath}"
+    }
+    return "${rootDir.path}/${relativePath}"
+  }
+
+  // Check licenses dependencies in all configurations. This does not include
+  // buildscript-classpath.
+  configurations = ALL
+
+  def configFolder = 'config/dependency-license'
+
+  allowedLicensesFile = file(toFullFilePath("${configFolder}/allowed_licenses.json"))
+
+  filters = new com.github.jk1.license.filter.LicenseBundleNormalizer(
+      bundlePath: toFullFilePath("${configFolder}/license_normalizer_bundle.json"),
+      createDefaultTransformationRules: false)
+
+  // The following dependency jars do not contain license info.
+  // Investigation results are documented inline.
+  excludes = [
+      // BSD: https://github.com/javacc/javacc/blob/master/LICENSE
+      'javacc:javacc',
+      // CDDL+GPL2.0 according to Maven Central:
+      // https://mvnrepository.com/artifact/javax.servlet/servlet-api/2.5
+      'javax.servlet:servlet-api',
+      // Presumed free since this is from Apache:
+      // http://www.apache.org/licenses/
+      'xerces:xmlParserAPIs'
+  ]
+}

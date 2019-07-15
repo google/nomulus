@@ -100,7 +100,7 @@ public class AuthModule {
       AbstractDataStoreFactory dataStoreFactory) {
     try {
       return new GoogleAuthorizationCodeFlow.Builder(
-              new NetHttpTransport(), jsonFactory, clientSecrets, requiredOauthScopes)
+          new NetHttpTransport(), jsonFactory, clientSecrets, requiredOauthScopes)
           .setDataStoreFactory(dataStoreFactory)
           .build();
     } catch (IOException ex) {

@@ -141,7 +141,15 @@ public class RepeatableRunner extends BlockJUnit4ClassRunner {
       int numSuccess = 0, numFailure = 0;
       Throwable lastException = null;
       for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-        attemptNumber.set(attempt);
+        // attemptNumber would be null if any exception happens during the
+        // instantiation of test class object(including test rules). However,
+        // those exceptions would not be actually thrown until statement.evaluate()
+        // is invoked. So, we should just skip the setter and let the statement
+        // be evaluated. Then we should be able to find the stack trace of
+        // root cause in the test reports.
+        if (attemptNumber != null) {
+          attemptNumber.set(attempt);
+        }
         try {
           statement.evaluate();
           numSuccess++;

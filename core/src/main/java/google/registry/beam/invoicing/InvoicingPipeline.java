@@ -14,11 +14,14 @@
 
 package google.registry.beam.invoicing;
 
+import com.google.auth.oauth2.GoogleCredentials;
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey;
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey.InvoiceGroupingKeyCoder;
+import google.registry.config.CredentialModule.LocalCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.reporting.billing.BillingModule;
 import google.registry.reporting.billing.GenerateInvoicesAction;
+import google.registry.util.GoogleCredentialsBundle;
 import java.io.Serializable;
 import javax.inject.Inject;
 import org.apache.beam.runners.dataflow.DataflowRunner;
@@ -55,32 +58,31 @@ import org.apache.beam.sdk.values.TypeDescriptors;
  */
 public class InvoicingPipeline implements Serializable {
 
-  @Inject
-  @Config("projectId")
-  String projectId;
+  private final String projectId;
+  private final String beamBucketUrl;
+  private final String invoiceTemplateUrl;
+  private final String beamStagingUrl;
+  private final String billingBucketUrl;
+  private final String invoiceFilePrefix;
+  private final GoogleCredentials googleCredentials;
 
   @Inject
-  @Config("apacheBeamBucketUrl")
-  String beamBucketUrl;
-
-  @Inject
-  @Config("invoiceTemplateUrl")
-  String invoiceTemplateUrl;
-
-  @Inject
-  @Config("beamStagingUrl")
-  String beamStagingUrl;
-
-  @Inject
-  @Config("billingBucketUrl")
-  String billingBucketUrl;
-
-  @Inject
-  @Config("invoiceFilePrefix")
-  String invoiceFilePrefix;
-
-  @Inject
-  InvoicingPipeline() {}
+  public InvoicingPipeline(
+      @Config("projectId") String projectId,
+      @Config("apacheBeamBucketUrl") String beamBucketUrl,
+      @Config("invoiceTemplateUrl") String invoiceTemplateUrl,
+      @Config("beamStagingUrl") String beamStagingUrl,
+      @Config("billingBucketUrl") String billingBucketUrl,
+      @Config("invoiceFilePrefix") String invoiceFilePrefix,
+      @LocalCredential GoogleCredentialsBundle googleCredentialsBundle) {
+    this.projectId = projectId;
+    this.beamBucketUrl = beamBucketUrl;
+    this.invoiceTemplateUrl = invoiceTemplateUrl;
+    this.beamStagingUrl = beamStagingUrl;
+    this.billingBucketUrl = billingBucketUrl;
+    this.invoiceFilePrefix = invoiceFilePrefix;
+    this.googleCredentials = googleCredentialsBundle.getGoogleCredentials();
+  }
 
   /** Custom options for running the invoicing pipeline. */
   interface InvoicingPipelineOptions extends DataflowPipelineOptions {
@@ -105,6 +107,10 @@ public class InvoicingPipeline implements Serializable {
     // This causes p.run() to stage the pipeline as a template on GCS, as opposed to running it.
     options.setTemplateLocation(invoiceTemplateUrl);
     options.setStagingLocation(beamStagingUrl);
+    // This credential is used when Dataflow deploys the template to GCS in target GCP project.
+    // So, make sure the credential has write permission to GCS in that project.
+    options.setGcpCredential(googleCredentials);
+
     Pipeline p = Pipeline.create(options);
 
     PCollection<BillingEvent> billingEvents =

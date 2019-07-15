@@ -1,0 +1,32 @@
+{
+  "bundles" : [
+    {
+      "bundleName" : "Apache 2.0",
+      "licenseName" : "Apache 2.0",
+      "licenseUrl" : "http://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "bundleName" : "MIT License",
+      "licenseName" : "MIT License",
+      "licenseUrl" : "http://www.opensource.org/licenses/mit-license.php"
+    }
+  ],
+  "transformationRules" : [
+    {
+      "bundleName" : "Apache 2.0",
+      "licenseUrlPattern" : "http://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "bundleName" : "Apache 2.0",
+      "licenseUrlPattern" : "http://www.apache.org/licenses/LICENSE-2.0.txt"
+    },
+    {
+      "bundleName" : "MIT License",
+      "licenseUrlPattern" : "http://www.opensource.org/licenses/mit-license.php"
+    },
+    {
+      "bundleName" : "MIT License",
+      "licenseUrlPattern" : "http://www.opensource.org/licenses/MIT"
+    }
+  ]
+}
