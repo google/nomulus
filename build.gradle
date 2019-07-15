@@ -251,3 +251,49 @@ subprojects {
     }
   }
 }
+
+task checkDependenciesDotGradle {
+  def buildSrcDepsFile = File.createTempFile('buildSrc', 'deps')
+  buildSrcDepsFile.deleteOnExit()
+  dependsOn createGetBuildSrcDirectDepsTask(buildSrcDepsFile)
+
+  doLast {
+    Set<String> depsInUse = []
+    allprojects {
+      configurations.all {
+        it.dependencies.findAll { it.group != null }.each {
+          // Note: .toString() is required since GString should
+          // not be mixed with Java Strings.
+          depsInUse.add("${it.group}:${it.name}".toString())
+        }
+      }
+    }
+    if (buildSrcDepsFile.exists()) {
+      depsInUse.addAll(buildSrcDepsFile.readLines())
+    }
+    def unusedDeps =
+        rootProject.dependencyMap.keySet()
+            .findAll { !depsInUse.contains(it) }
+            .toSorted()
+
+    if (unusedDeps.isEmpty()) {
+      return
+    }
+    logger.error(
+        "Unused dependencies in dependencies.gradle:\n${unusedDeps.toListString()}")
+    throw new IllegalStateException(
+        "The dependencies.gradle file should only contain direct dependencies.")
+  }
+}
+tasks.build.dependsOn(tasks.checkDependenciesDotGradle)
+
+def createGetBuildSrcDirectDepsTask(outputFileName) {
+  return tasks
+      .create(
+          "getBuildSrcDeps_${java.util.UUID.randomUUID()}".toString(),
+          Exec) {
+    workingDir "${rootDir}/buildSrc"
+    commandLine '../gradlew', 'exportDenpendencies',
+                "-PdependencyExportFile=${outputFileName}"
+  }
+}
