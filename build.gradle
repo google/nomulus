@@ -206,6 +206,7 @@ subprojects {
 
   if (project.name == 'third_party') return
 
+  // checkstyleMain.dependsOn(tasks.javaFormatGithubDiff)
   project.tasks.test.dependsOn runPresubmits
 
 // Path to code generated with annotation processors. Note that this path is

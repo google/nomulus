@@ -78,7 +78,8 @@ PRESUBMITS = {
         r".*Copyright 20\d{2} The Nomulus Authors\. All Rights Reserved\.",
         ("java", "js", "soy", "sql", "py", "sh", "gradle"), {
             ".git", "/build/", "/generated/", "node_modules/",
-            "JUnitBackports.java", "registrar_bin.", "registrar_dbg."
+            "JUnitBackports.java", "registrar_bin.", "registrar_dbg.",
+            "google-java-format-diff.py"
         }, REQUIRED):
         "File did not include the license header.",
 
