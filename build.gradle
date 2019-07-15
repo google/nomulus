@@ -262,6 +262,8 @@ task checkDependenciesDotGradle {
     allprojects {
       configurations.all {
         it.dependencies.findAll { it.group != null }.each {
+          // Note: .toString() is required since GString should
+          // not be map keys.
           depsInUse.add("${it.group}:${it.name}".toString())
         }
       }
@@ -278,7 +280,7 @@ task checkDependenciesDotGradle {
       return
     }
     logger.error(
-        "The following are not direct dependencies:\n${unusedDeps.toListString()}")
+        "Unused dependencies in dependencies.gradle:\n${unusedDeps.toListString()}")
     throw new IllegalStateException(
         "The dependencies.gradle file should only contain direct dependencies.")
   }
