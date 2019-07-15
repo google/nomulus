@@ -144,4 +144,3 @@ task javaFormatGithubDiff(type: Exec) {
   commandLine 'bash', '-c',
       "git diff -U0 ${baseCommit} ${projectDir} | ${formtDiffScript} -p1 -i ${googleJavaFormatJarArg}"
 }
-
