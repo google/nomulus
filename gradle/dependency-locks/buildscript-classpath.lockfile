@@ -2,7 +2,6 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 cglib:cglib-nodep:3.2.2
-com.bmuschko:gradle-docker-plugin:4.10.0
 com.diffplug.durian:durian-collect:1.2.0
 com.diffplug.durian:durian-core:1.2.0
 com.diffplug.durian:durian-io:1.2.0

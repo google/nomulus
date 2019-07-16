@@ -25,14 +25,23 @@ steps:
 # Build the tool binary and image.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args: ['release/build_nomulus_for_env.sh', 'tool', 'output']
-# Tag the tool image with the relavent tags.
+# Tag the tool image and push it to the registry.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
   args:
     - -c
     - |
-      docker tag nomulus-tool gcr.io/{PROJECT_ID}/nomulus-tool:latest
-      docker tag nomulus-tool gcr.io/{PROJECT_ID}/nomulus-tool:{TAG_NAME}
+      docker tag nomulus-tool gcr.io/${PROJECT_ID}/nomulus-tool:${TAG_NAME}
+      docker push gcr.io/${PROJECT_ID}/nomulus-tool:${TAG_NAME}
+# Get the tool image digest and substitute in the digest in the tagging yaml file.
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - >
+    digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/nomulus-tool \
+      --format="get(digest)" --filter="tags = ${TAG_NAME}") && \
+    sed -i s/'$${_IMAGE}:$${TAG_NAME}'/nomulus-tool@$digest/g release/cloudbuild-tag.yaml
 # Build and package the deployment files for alpha.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args: ['release/build_nomulus_for_env.sh', 'alpha', 'output']
@@ -52,10 +61,9 @@ artifacts:
     paths:
     - 'output/*.tar'
     - 'output/nomulus.jar'
+    - 'release/cloudbuild-tag.yaml'
     - 'release/cloudbuild-sync.yaml'
     - 'release/cloudbuild-beam.yaml'
-# Docker images to push.
-images: ['gcr.io/domain-registry/nomulus-tool']
 timeout: 3600s
 options:
   machineType: 'N1_HIGHCPU_8'
