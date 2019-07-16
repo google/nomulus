@@ -15,11 +15,12 @@
 package google.registry.monitoring.blackbox.handlers;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.monitoring.blackbox.ProbingAction.REMOTE_ADDRESS_KEY;
-import static google.registry.monitoring.blackbox.Protocol.PROTOCOL_KEY;
+import static google.registry.monitoring.blackbox.ProbingAction.PROBING_ACTION_KEY;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.flogger.FluentLogger;
+
+import google.registry.monitoring.blackbox.ProbingAction;
 import google.registry.monitoring.blackbox.Protocol;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -63,8 +64,7 @@ public class SslClientInitializer<C extends Channel> extends ChannelInitializer<
     this(sslProvider, null, null, null);
   }
 
-  public SslClientInitializer(SslProvider sslProvider, Supplier<PrivateKey> privateKeySupplier,
-      Supplier<X509Certificate[]> certificateSupplier) {
+  public SslClientInitializer(SslProvider sslProvider, Supplier<PrivateKey> privateKeySupplier, Supplier<X509Certificate[]> certificateSupplier) {
     //We use the default trust store here as well, setting trustCertificates to null
     this(sslProvider, null, privateKeySupplier, certificateSupplier);
   }
@@ -89,8 +89,8 @@ public class SslClientInitializer<C extends Channel> extends ChannelInitializer<
 
   @Override
   protected void initChannel(C channel) throws Exception {
-    Protocol protocol = channel.attr(PROTOCOL_KEY).get();
-    String host = channel.attr(REMOTE_ADDRESS_KEY).get();
+    ProbingAction action = channel.attr(PROBING_ACTION_KEY).get();
+    Protocol protocol = action.protocol();
 
     //Builds SslHandler from Protocol, and based on if we require a privateKey and certificate
     checkNotNull(protocol, "Protocol is not set for channel: %s", channel);
@@ -98,14 +98,12 @@ public class SslClientInitializer<C extends Channel> extends ChannelInitializer<
         SslContextBuilder.forClient()
             .sslProvider(sslProvider)
             .trustManager(trustedCertificates);
-    if (privateKeySupplier != null && certificateSupplier != null) {
-      sslContextBuilder = sslContextBuilder
-          .keyManager(privateKeySupplier.get(), certificateSupplier.get());
-    }
+    if (privateKeySupplier != null && certificateSupplier != null)
+      sslContextBuilder = sslContextBuilder.keyManager(privateKeySupplier.get(), certificateSupplier.get());
 
     SslHandler sslHandler = sslContextBuilder
         .build()
-        .newHandler(channel.alloc(), host, protocol.port());
+        .newHandler(channel.alloc(), action.host(), protocol.port());
 
     // Enable hostname verification.
     SSLEngine sslEngine = sslHandler.engine();
