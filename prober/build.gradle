@@ -1,25 +1,26 @@
-apply plugin: 'java'
+// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-createUberJar('deployJar', 'prober', 'google.registry.monitoring.blackbox.Main')
-
+createUberJar('deployJar', 'prober', 'google.registry.monitoring.blackbox.Prober')
 
 dependencies {
-    def deps = rootProject.dependencyMap
+  def deps = rootProject.dependencyMap
 
-    compile deps['com.beust:jcommander']
-    compile deps['com.google.api-client:google-api-client']
-    compile deps['com.google.apis:google-api-services-cloudkms']
-    compile deps['com.google.apis:google-api-services-monitoring']
-    compile deps['com.google.apis:google-api-services-storage']
     compile deps['com.google.auto.value:auto-value-annotations']
-    compile deps['com.google.code.findbugs:jsr305']
-    compile deps['com.google.code.gson:gson']
     compile deps['com.google.dagger:dagger']
     compile deps['com.google.flogger:flogger']
     compile deps['com.google.guava:guava']
-    compile deps['com.google.http-client:google-http-client']
-    compile deps['com.google.monitoring-client:metrics']
-    compile deps['com.google.monitoring-client:stackdriver']
     compile deps['io.netty:netty-buffer']
     compile deps['io.netty:netty-codec-http']
     compile deps['io.netty:netty-codec']
@@ -28,26 +29,20 @@ dependencies {
     compile deps['io.netty:netty-transport']
     compile deps['javax.inject:javax.inject']
     compile deps['joda-time:joda-time']
-    compile deps['org.bouncycastle:bcpkix-jdk15on']
-    compile deps['org.bouncycastle:bcprov-jdk15on']
-    compile project(':util')
 
-    runtime deps['com.google.flogger:flogger-system-backend']
-    runtime deps['com.google.auto.value:auto-value']
-    runtime deps['io.netty:netty-tcnative-boringssl-static']
+  runtime deps['com.google.flogger:flogger-system-backend']
+  runtime deps['com.google.auto.value:auto-value']
+  runtime deps['io.netty:netty-tcnative-boringssl-static']
 
-    testCompile deps['com.google.monitoring-client:contrib']
-    testCompile deps['com.google.truth:truth']
-    testCompile deps['org.yaml:snakeyaml']
-    testCompile deps['junit:junit']
-    testCompile deps['org.mockito:mockito-core']
-    testCompile project(':third_party')
-    testCompile project(path: ':core', configuration: 'testRuntime')
+  testCompile deps['com.google.truth:truth']
+  testCompile deps['junit:junit']
+  testCompile deps['org.mockito:mockito-core']
+  testCompile project(':third_party')
 
-    // Include auto-value in compile until nebula-lint understands
-    // annotationProcessor
-    annotationProcessor deps['com.google.auto.value:auto-value']
-    testAnnotationProcessor deps['com.google.auto.value:auto-value']
-    annotationProcessor deps['com.google.dagger:dagger-compiler']
-    testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
+  // Include auto-value in compile until nebula-lint understands
+  // annotationProcessor
+  annotationProcessor deps['com.google.auto.value:auto-value']
+  testAnnotationProcessor deps['com.google.auto.value:auto-value']
+  annotationProcessor deps['com.google.dagger:dagger-compiler']
+  testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
 }
