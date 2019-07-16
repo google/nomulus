@@ -14,26 +14,17 @@
 
 package google.registry.monitoring.blackbox;
 
-import com.google.common.collect.ImmutableSet;
-import google.registry.monitoring.blackbox.ProberModule.ProberComponent;
+import com.google.common.collect.ImmutableMap;
 
 /**
- * Main class of the Prober, which obtains and starts the {@link ProbingSequence}s provided by Dagger.
+ * Main class of the Prober, which constructs the ProbingSequences then runs them
  */
 public class Prober {
 
-  /** Main Dagger Component */
-  private static ProberComponent proberComponent = DaggerProberModule_ProberComponent.builder().build();
+  //TODO: Create ImmutableMap between port numbers and protocols with Dagger
+  public static final ImmutableMap<Integer, Protocol> portToProtocolMap = ImmutableMap.of();
 
-
+  //TODO: Create and run probing sequences
   public static void main(String[] args) {
-
-    //Obtains WebWhois Sequence provided by proberComponent
-    ImmutableSet<ProbingSequence> sequences = ImmutableSet.copyOf(proberComponent.sequences());
-
-    //Tells Sequences to start running
-    for (ProbingSequence sequence : sequences) {
-      sequence.start();
-    }
   }
 }
