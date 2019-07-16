@@ -15,8 +15,7 @@
 package google.registry.monitoring.blackbox.handlers;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.monitoring.blackbox.ProbingAction.REMOTE_ADDRESS_KEY;
-import static google.registry.monitoring.blackbox.Protocol.PROTOCOL_KEY;
+import static google.registry.monitoring.blackbox.ProbingAction.PROBING_ACTION_KEY;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.flogger.FluentLogger;
@@ -89,8 +88,8 @@ public class SslClientInitializer<C extends Channel> extends ChannelInitializer<
 
   @Override
   protected void initChannel(C channel) throws Exception {
-    Protocol protocol = channel.attr(PROTOCOL_KEY).get();
-    String host = channel.attr(REMOTE_ADDRESS_KEY).get();
+    ProbingAction action = channel.attr(PROBING_ACTION_KEY).get();
+    Protocol protocol = action.protocol();
 
     //Builds SslHandler from Protocol, and based on if we require a privateKey and certificate
     checkNotNull(protocol, "Protocol is not set for channel: %s", channel);
@@ -105,7 +104,7 @@ public class SslClientInitializer<C extends Channel> extends ChannelInitializer<
 
     SslHandler sslHandler = sslContextBuilder
         .build()
-        .newHandler(channel.alloc(), host, protocol.port());
+        .newHandler(channel.alloc(), action.host(), protocol.port());
 
     // Enable hostname verification.
     SSLEngine sslEngine = sslHandler.engine();
