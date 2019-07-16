@@ -646,7 +646,6 @@ test {
 
 createUberJar('nomulus', 'nomulus', 'google.registry.tools.RegistryTool')
 project.nomulus.dependsOn project(':third_party').jar
-project.gtechTool.dependsOn project(':third_party').jar
 
 task buildToolImage(dependsOn: nomulus, type: Exec) {
   commandLine 'docker', 'build', '-t', 'nomulus-tool', '.'
