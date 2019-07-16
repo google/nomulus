@@ -42,7 +42,6 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact.Type;
-import google.registry.model.domain.Period.Unit;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
@@ -63,7 +62,9 @@ import org.junit.Test;
 /** Unit tests for {@link DomainBase}. */
 public class DomainBaseTest extends EntityTestCase {
 
-  DomainBase domain;
+  private DomainBase domain;
+  private Key<BillingEvent.OneTime> oneTimeBillKey;
+  private Key<BillingEvent.Recurring> recurringBillKey;
 
   @Before
   public void setUp() {
@@ -87,10 +88,8 @@ public class DomainBaseTest extends EntityTestCase {
             .build()));
     Key<HistoryEntry> historyEntryKey =
         Key.create(persistResource(new HistoryEntry.Builder().setParent(domainKey).build()));
-    Key<BillingEvent.OneTime> oneTimeBillKey =
-        Key.create(historyEntryKey, BillingEvent.OneTime.class, 1);
-    Key<BillingEvent.Recurring> recurringBillKey =
-        Key.create(historyEntryKey, BillingEvent.Recurring.class, 2);
+    oneTimeBillKey = Key.create(historyEntryKey, BillingEvent.OneTime.class, 1);
+    recurringBillKey = Key.create(historyEntryKey, BillingEvent.Recurring.class, 2);
     Key<PollMessage.Autorenew> autorenewPollKey =
         Key.create(historyEntryKey, PollMessage.Autorenew.class, 3);
     Key<PollMessage.OneTime> onetimePollKey =
@@ -596,9 +595,7 @@ public class DomainBaseTest extends EntityTestCase {
         .setGainingClientId("TheRegistrar")
         .build();
     Period extensionPeriod = transferData.getTransferPeriod();
-    DateTime newExpiration = extensionPeriod.getUnit().equals(Unit.YEARS)
-        ? previousExpiration.plusYears(extensionPeriod.getValue())
-        : previousExpiration.plusMonths(extensionPeriod.getValue());
+    DateTime newExpiration = previousExpiration.plusYears(extensionPeriod.getValue());
     domain = persistResource(domain.asBuilder().setRegistrationExpirationTime(previousExpiration)
         .setTransferData(transferData).build());
 
@@ -620,9 +617,7 @@ public class DomainBaseTest extends EntityTestCase {
         .setGainingClientId("TheRegistrar")
         .build();
     Period extensionPeriod = transferData.getTransferPeriod();
-    DateTime newExpiration = extensionPeriod.getUnit().equals(Unit.YEARS)
-        ? previousExpiration.plusYears(extensionPeriod.getValue())
-        : previousExpiration.plusMonths(extensionPeriod.getValue());
+    DateTime newExpiration = previousExpiration.plusYears(extensionPeriod.getValue());
     domain = persistResource(domain.asBuilder().setRegistrationExpirationTime(previousExpiration)
         .setTransferData(transferData).build());
 
@@ -644,8 +639,39 @@ public class DomainBaseTest extends EntityTestCase {
         .build();
     domain = persistResource(domain.asBuilder().setRegistrationExpirationTime(previousExpiration)
         .setTransferData(transferData).build());
-    
+
     assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationTime())
         .isEqualTo(previousExpiration);
+  }
+
+  @Test
+  public void testClone_transferDuringAutorenew() {
+    // When the domain is an an autorenew grace period, we should not extend the registration
+    // expiration by a further year--it should just be whatever the autorenew was
+    DateTime now = DateTime.now(UTC);
+    DateTime transferExpirationTime = now.minusDays(1);
+    DateTime previousExpiration = now.minusDays(2);
+
+    TransferData transferData = new TransferData.Builder()
+        .setPendingTransferExpirationTime(transferExpirationTime)
+        .setTransferStatus(TransferStatus.PENDING)
+        .setGainingClientId("TheRegistrar")
+        .setServerApproveAutorenewEvent(recurringBillKey)
+        .setServerApproveBillingEvent(oneTimeBillKey)
+        .build();
+    domain = persistResource(domain.asBuilder()
+        .setRegistrationExpirationTime(previousExpiration)
+        .setGracePeriods(ImmutableSet.of(GracePeriod
+            .createForRecurring(GracePeriodStatus.AUTO_RENEW, now.plusDays(1), "NewRegistrar",
+                recurringBillKey)))
+        .setTransferData(transferData)
+        .setAutorenewBillingEvent(recurringBillKey)
+        .build());
+    DomainBase clone = domain.cloneProjectedAtTime(now);
+    assertThat(clone.getRegistrationExpirationTime())
+        .isEqualTo(domain.getRegistrationExpirationTime().plusYears(1));
+    // Transferring removes the AUTORENEW grace period and adds a TRANSFER grace period
+    assertThat(getOnlyElement(clone.getGracePeriods()).getType())
+        .isEqualTo(GracePeriodStatus.TRANSFER);
   }
 }
