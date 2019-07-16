@@ -89,3 +89,21 @@ gradle.projectsEvaluated {
     options.compilerArgs << "-Xlint:unchecked"
   }
 }
+
+task exportDenpendencies {
+  def outputFileProperty = 'dependencyExportFile'
+  def output = project.hasProperty(outputFileProperty)
+      ? new PrintStream(
+          new File(project.getProperty(outputFileProperty)))
+      : System.out
+
+  doLast {
+    project.configurations.all {
+      it.dependencies.findAll {
+        it.group != null
+      }.each {
+        output.println("${it.group}:${it.name}")
+      }
+    }
+  }
+}

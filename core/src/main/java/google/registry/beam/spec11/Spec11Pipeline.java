@@ -17,9 +17,12 @@ package google.registry.beam.spec11;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.beam.BeamUtils.getQueryFromFile;
 
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auto.value.AutoValue;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
+import google.registry.config.CredentialModule.LocalCredential;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.Retrier;
 import google.registry.util.SqlTemplate;
 import java.io.Serializable;
@@ -77,26 +80,29 @@ public class Spec11Pipeline implements Serializable {
   /** The JSON object field we put the threat match array for Spec11 reports. */
   public static final String THREAT_MATCHES_FIELD = "threatMatches";
 
-  @Inject
-  @Config("projectId")
-  String projectId;
+  private final String projectId;
+  private final String beamStagingUrl;
+  private final String spec11TemplateUrl;
+  private final String reportingBucketUrl;
+  private final GoogleCredentials googleCredentials;
+  private final Retrier retrier;
 
   @Inject
-  @Config("beamStagingUrl")
-  String beamStagingUrl;
-
-  @Inject
-  @Config("spec11TemplateUrl")
-  String spec11TemplateUrl;
-
-  @Inject
-  @Config("reportingBucketUrl")
-  String reportingBucketUrl;
-
-  @Inject Retrier retrier;
-
-  @Inject
-  Spec11Pipeline() {}
+  public Spec11Pipeline(
+      @Config("projectId") String projectId,
+      @Config("beamStagingUrl") String beamStagingUrl,
+      @Config("spec11TemplateUrl") String spec11TemplateUrl,
+      @Config("reportingBucketUrl") String reportingBucketUrl,
+      @LocalCredential GoogleCredentialsBundle googleCredentialsBundle,
+      Retrier retrier
+  ) {
+    this.projectId = projectId;
+    this.beamStagingUrl = beamStagingUrl;
+    this.spec11TemplateUrl = spec11TemplateUrl;
+    this.reportingBucketUrl = reportingBucketUrl;
+    this.googleCredentials = googleCredentialsBundle.getGoogleCredentials();
+    this.retrier = retrier;
+  }
 
   /** Custom options for running the spec11 pipeline. */
   interface Spec11PipelineOptions extends DataflowPipelineOptions {
@@ -134,6 +140,9 @@ public class Spec11Pipeline implements Serializable {
     // This causes p.run() to stage the pipeline as a template on GCS, as opposed to running it.
     options.setTemplateLocation(spec11TemplateUrl);
     options.setStagingLocation(beamStagingUrl);
+    // This credential is used when Dataflow deploys the template to GCS in target GCP project.
+    // So, make sure the credential has write permission to GCS in that project.
+    options.setGcpCredential(googleCredentials);
 
     Pipeline p = Pipeline.create(options);
     PCollection<Subdomain> domains =
