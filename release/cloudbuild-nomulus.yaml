@@ -38,9 +38,9 @@ steps:
   entrypoint: /bin/bash
   args:
   - -c
-  - >
+  - |
     digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/nomulus-tool \
-      --format="get(digest)" --filter="tags = ${TAG_NAME}") && \
+      --format="get(digest)" --filter="tags = ${TAG_NAME}")
     sed -i s/'$${_IMAGE}'/nomulus-tool/g release/cloudbuild-tag.yaml
     sed -i s/':$${TAG_NAME}'/@$digest/g release/cloudbuild-tag.yaml
 # Build and package the deployment files for alpha.

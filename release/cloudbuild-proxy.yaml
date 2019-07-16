@@ -36,9 +36,9 @@ steps:
   entrypoint: /bin/bash
   args:
   - -c
-  - >
+  - |
     digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/proxy \
-      --format="get(digest)" --filter="tags = ${TAG_NAME}") && \
+      --format="get(digest)" --filter="tags = ${TAG_NAME}")
     gcloud --project=${PROJECT_ID} alpha container binauthz attestations \
       sign-and-create --artifact-url=gcr.io/${PROJECT_ID}/proxy@$digest \
       --attestor=build-attestor --attestor-project=${PROJECT_ID} \
