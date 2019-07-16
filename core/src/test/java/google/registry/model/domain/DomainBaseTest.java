@@ -563,7 +563,7 @@ public class DomainBaseTest extends EntityTestCase {
   public void testClone_doNotExtendExpirationOnDeletedDomain() {
     DateTime now = DateTime.now(UTC);
     domain = persistResource(domain.asBuilder().setRegistrationExpirationTime(now.minusDays(1))
-        .setDeletionTime(now.minusDays(1))
+        .setDeletionTime(now.minusDays(10))
         .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE, StatusValue.INACTIVE))
         .build());
     assertThat(domain.cloneProjectedAtTime(now).getRegistrationExpirationTime())
@@ -572,7 +572,7 @@ public class DomainBaseTest extends EntityTestCase {
 
   @Test
   public void testClone_doNotExtendExpirationOnFutureDeletedDomain() {
-    // if a domain is in pending deletion (REDEMPTION period, for instance), don't extend expiration
+    // if a domain is in pending deletion (StatusValue.PENDING_DELETE), don't extend expiration
     DateTime now = DateTime.now(UTC);
     domain = persistResource(domain.asBuilder().setRegistrationExpirationTime(now.plusDays(1))
         .setDeletionTime(now.plusDays(20))
