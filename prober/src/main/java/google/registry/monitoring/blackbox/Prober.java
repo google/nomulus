@@ -12,6 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-@javax.annotation.ParametersAreNonnullByDefault
-package google.registry.xjc;
+package google.registry.monitoring.blackbox;
 
+import com.google.common.collect.ImmutableMap;
+
+/**
+ * Main class of the Prober, which constructs the ProbingSequences then runs them
+ */
+public class Prober {
+
+  //TODO: Create ImmutableMap between port numbers and protocols with Dagger
+  public static final ImmutableMap<Integer, Protocol> portToProtocolMap = ImmutableMap.of();
+
+  //TODO: Create and run probing sequences
+  public static void main(String[] args) {
+  }
+}
