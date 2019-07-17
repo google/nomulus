@@ -1,11 +1,13 @@
 # To run the build locally, install cloud-build-local first.
 # Then run:
-# cloud-build-local --config=cloudbuild-tag.yaml --dryrun=false --substitutions TAG_NAME=[TAG] ..
-# This will add a "live" tag to the proxy image in gcr.io/[PROJECT_ID]/proxy:[TAG].
+# cloud-build-local --config=cloudbuild-tag.yaml --dryrun=false --substitutions \
+#   TAG_NAME=[TAG],_IMAGE=[IMAGE] ..
+# This will add a "live" tag to the image in gcr.io/[PROJECT_ID]/[IMAGE]:[TAG].
 # The PROJECT_ID is the current project name that gcloud uses.
 #
 # To manually trigger a build on GCB, run:
-# gcloud builds submit --config cloudbuild-tag.yaml --substitutions TAG_NAME=[TAG] ..
+# gcloud builds submit --config cloudbuild-tag.yaml --substitutions \
+#   TAG_NAME=[TAG],_IMAGE=[IMAGE] ..
 #
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
@@ -16,8 +18,8 @@ steps:
   - container
   - images
   - add-tag
-  - gcr.io/${PROJECT_ID}/proxy:${TAG_NAME}
-  - gcr.io/${PROJECT_ID}/proxy:live
+  - gcr.io/${PROJECT_ID}/${_IMAGE}:${TAG_NAME}
+  - gcr.io/${PROJECT_ID}/${_IMAGE}:live
 timeout: 3600s
 options:
   machineType: 'N1_HIGHCPU_8'

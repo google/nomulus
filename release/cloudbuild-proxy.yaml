@@ -36,16 +36,17 @@ steps:
   entrypoint: /bin/bash
   args:
   - -c
-  - >
+  - |
     digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/proxy \
-      --format="get(digest)" --filter="tags = ${TAG_NAME}") && \
+      --format="get(digest)" --filter="tags = ${TAG_NAME}")
     gcloud --project=${PROJECT_ID} alpha container binauthz attestations \
       sign-and-create --artifact-url=gcr.io/${PROJECT_ID}/proxy@$digest \
       --attestor=build-attestor --attestor-project=${PROJECT_ID} \
       --keyversion-project=${PROJECT_ID} --keyversion-location=global \
       --keyversion-keyring=attestor-keys --keyversion-key=signing \
       --keyversion=1
-    sed -i s/proxy:'$${TAG_NAME}'/proxy@$digest/g release/cloudbuild-tag.yaml
+    sed -i s/'$${_IMAGE}'/proxy/g release/cloudbuild-tag.yaml
+    sed -i s/':$${TAG_NAME}'/@$digest/g release/cloudbuild-tag.yaml
 # Images to upload to GCR. Even though the image has already been uploaded, we still include it
 # here so that the GCB pubsub message contains it (for Spinnaker to consume).
 images: ['gcr.io/${PROJECT_ID}/proxy:${TAG_NAME}']

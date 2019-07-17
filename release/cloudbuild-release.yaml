@@ -57,10 +57,15 @@ steps:
     docker pull gcr.io/distroless/java
     docker tag gcr.io/distroless/java gcr.io/${PROJECT_ID}/base:${TAG_NAME}
     docker tag gcr.io/distroless/java gcr.io/${PROJECT_ID}/base:latest
-    docker push gcr.io/${PROJECT_ID}/base:latest
-    docker push gcr.io/${PROJECT_ID}/base:${TAG_NAME}
+    docker pull gcr.io/distroless/java:debug
+    docker tag gcr.io/distroless/java:debug gcr.io/${PROJECT_ID}/base-debug:${TAG_NAME}
+    docker tag gcr.io/distroless/java:debug gcr.io/${PROJECT_ID}/base-debug:latest
     docker push gcr.io/${PROJECT_ID}/builder:latest
     docker push gcr.io/${PROJECT_ID}/builder:${TAG_NAME}
+    docker push gcr.io/${PROJECT_ID}/base:latest
+    docker push gcr.io/${PROJECT_ID}/base:${TAG_NAME}
+    docker push gcr.io/${PROJECT_ID}/base-debug:latest
+    docker push gcr.io/${PROJECT_ID}/base-debug:${TAG_NAME}
   dir: 'release/builder/'
 # Do text replacement in the merged repo, hardcoding image digests.
 - name: 'gcr.io/cloud-builders/gcloud'
@@ -72,10 +77,15 @@ steps:
       --format='get(digest)' --filter='tags = ${TAG_NAME}')
     base_digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/base \
       --format='get(digest)' --filter='tags = ${TAG_NAME}')
+    debug_digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/base-debug \
+      --format='get(digest)' --filter='tags = ${TAG_NAME}')
     sed -i s%distroless/java%${PROJECT_ID}/base@$base_digest% proxy/Dockerfile
+    sed -i s%distroless/java:debug%${PROJECT_ID}/base-debug@$debug_digest% core/Dockerfile
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-proxy.yaml
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-nomulus.yaml
     sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-beam.yaml
+    sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-sync.yaml
+    sed -i s/builder:latest/builder@$builder_digest/g release/cloudbuild-tag.yaml
     sed -i s/GCP_PROJECT/${PROJECT_ID}/ proxy/kubernetes/proxy-*.yaml
     sed -i s/'$${TAG_NAME}'/${TAG_NAME}/g release/cloudbuild-sync.yaml
     sed -i s/'$${TAG_NAME}'/${TAG_NAME}/g release/cloudbuild-beam.yaml

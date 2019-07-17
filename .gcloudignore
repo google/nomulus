@@ -4,3 +4,6 @@ python/
 .*/
 repos/**
 **/.idea/
+*.jar
+!third_party/**/*.jar
+!/gradle/wrapper/**/*.jar
