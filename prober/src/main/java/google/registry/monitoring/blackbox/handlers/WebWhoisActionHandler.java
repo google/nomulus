@@ -181,7 +181,5 @@ public class WebWhoisActionHandler extends ActionHandler {
 
     }
   }
-
-
 }
 
