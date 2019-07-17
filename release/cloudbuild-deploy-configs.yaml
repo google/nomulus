@@ -19,17 +19,4 @@
 steps:
 # Download and unzip the tarball that contains the relevant config files
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  args: ['gsutil', 'cp', 'gs://${PROJECT_ID}-deploy/${TAG_NAME}/${_ENV}.tar', '.']
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  args: ['tar', '-xvf', '${_ENV}.tar']
-# Deploy the various config files
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  args: ['gcloud', '-q', '--project', '${PROJECT_ID}', 'app', 'deploy', 'default/WEB-INF/appengine-generated/cron.yaml']
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  args: ['gcloud', '-q', '--project', '${PROJECT_ID}', 'app', 'deploy', 'default/WEB-INF/appengine-generated/dispatch.yaml']
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  args: ['gcloud', '-q', '--project', '${PROJECT_ID}', 'app', 'deploy', 'default/WEB-INF/appengine-generated/dos.yaml']
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  args: ['gcloud', '-q', '--project', '${PROJECT_ID}', 'app', 'deploy', 'default/WEB-INF/appengine-generated/index.yaml']
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  args: ['gcloud', '-q', '--project', '${PROJECT_ID}', 'app', 'deploy', 'default/WEB-INF/appengine-generated/queue.yaml']
+  args: ['release/deploy_configs_to_env.sh', '${_ENV}', '${TAG_NAME}']
