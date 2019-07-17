@@ -14,7 +14,6 @@
 
 package google.registry.monitoring.blackbox;
 
-
 import com.google.auto.value.AutoValue;
 import com.google.common.flogger.FluentLogger;
 import io.netty.bootstrap.Bootstrap;
@@ -28,8 +27,7 @@ import io.netty.channel.local.LocalAddress;
 /**
  *Subclass of {@link ProbingAction} that creates a new {@link Channel} based on its parameters
  *
- * @param <C> For testing Purposes to use different kinds of channels (other than NioSocketChannel)
- * Subclass of ProbingAction where each instance creates a new channel
+ * @param <C> For testing Purposes to use different kinds of channels (other than {@link NioSocketChannel})
  */
 @AutoValue
 public abstract class NewChannelAction<C extends AbstractChannel> extends ProbingAction {
