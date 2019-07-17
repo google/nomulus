@@ -46,6 +46,10 @@ plugins {
   id 'com.diffplug.gradle.spotless' version '3.18.0'
 }
 
+wrapper {
+  distributionType = Wrapper.DistributionType.ALL
+}
+
 apply plugin: google.registry.gradle.plugin.ReportUploaderPlugin
 
 reportUploader {
