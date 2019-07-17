@@ -80,4 +80,3 @@ public abstract class ActionHandler<I, O> extends SimpleChannelInboundHandler<I>
     logger.atSevere().withCause(cause).withStackTrace(StackSize.FULL).log("Exception Caught");
   }
 }
-
