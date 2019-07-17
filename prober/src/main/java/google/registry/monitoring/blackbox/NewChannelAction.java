@@ -52,7 +52,6 @@ public abstract class NewChannelAction<C extends AbstractChannel> extends Probin
     return this.channel;
   }
 
-
   @Override
   public abstract Builder<C> toBuilder();
 
@@ -120,7 +119,6 @@ public abstract class NewChannelAction<C extends AbstractChannel> extends Probin
     return new AutoValue_NewChannelAction.Builder<C>().path("").address(DEFAULT_ADDRESS);
   }
 
-
   @AutoValue.Builder
   public static abstract class Builder<C extends AbstractChannel> extends ProbingAction.Builder<Builder<C>, NewChannelAction<C>> {
     //specifies bootstrap in this builder
@@ -129,6 +127,4 @@ public abstract class NewChannelAction<C extends AbstractChannel> extends Probin
     public abstract NewChannelAction.Builder<C> address(LocalAddress value);
 
   }
-
 }
-
