@@ -16,7 +16,11 @@ apply plugin: 'java'
 
 createUberJar('deployJar', 'proxy_server', 'google.registry.proxy.ProxyServer')
 
-project.build.dependsOn deployJar
+task buildProxyImage(dependsOn: deployJar, type: Exec) {
+  commandLine 'docker', 'build', '-t', 'proxy', '.'
+}
+
+project.build.dependsOn buildProxyImage
 
 dependencies {
   def deps = rootProject.dependencyMap
