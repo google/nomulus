@@ -15,14 +15,18 @@
 package google.registry.monitoring.blackbox.handlers;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.monitoring.blackbox.ProbingAction.REMOTE_ADDRESS_KEY;
-import static google.registry.monitoring.blackbox.Protocol.PROTOCOL_KEY;
+import static google.registry.monitoring.blackbox.ProbingAction.PROBING_ACTION_KEY;
 import static google.registry.monitoring.blackbox.handlers.SslInitializerTestUtils.getKeyPair;
 import static google.registry.monitoring.blackbox.handlers.SslInitializerTestUtils.setUpSslChannel;
 import static google.registry.monitoring.blackbox.handlers.SslInitializerTestUtils.signKeyPair;
 
 import com.google.common.collect.ImmutableList;
+import google.registry.monitoring.blackbox.ExistingChannelAction;
+import google.registry.monitoring.blackbox.ProbingAction;
 import google.registry.monitoring.blackbox.Protocol;
+import google.registry.monitoring.blackbox.TestUtils.DuplexMessageTest;
+import google.registry.monitoring.blackbox.messages.OutboundMessageType;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -41,6 +45,7 @@ import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLException;
+import org.joda.time.Duration;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -61,6 +66,8 @@ import org.junit.runners.Parameterized.Parameters;
  */
 @RunWith(Parameterized.class)
 public class SslClientInitializerTest {
+
+  private static final OutboundMessageType DEFAULT_MESSAGE = new DuplexMessageTest("TEST_MESSAGE");
 
   /** Fake host to test if the SSL engine gets the correct peer host. */
   private static final String SSL_HOST = "www.example.tld";
@@ -86,12 +93,15 @@ public class SslClientInitializerTest {
   private String sniHostReceived;
 
   /** Fake protocol saved in channel attribute. */
-  private final static Protocol PROTOCOL = Protocol.builder()
-        .setName("ssl")
-        .setPort(SSL_PORT)
-        .setHandlerProviders(ImmutableList.of())
-        .setPersistentConnection(false)
-        .build();
+  private static final Protocol PROTOCOL =
+      Protocol.builder()
+          .name("ssl")
+          .port(SSL_PORT)
+          .handlerProviders(ImmutableList.of())
+          .persistentConnection(false)
+          .build();
+
+  private ProbingAction probingAction;
 
   private ChannelHandler getServerHandler(PrivateKey privateKey, X509Certificate certificate)
       throws Exception {
@@ -103,13 +113,23 @@ public class SslClientInitializerTest {
         });
   }
 
+  private void setupProbingAction(Channel channel) {
+    probingAction = ExistingChannelAction.builder()
+        .delay(Duration.ZERO)
+        .host(SSL_HOST)
+        .channel(channel)
+        .outboundMessage(DEFAULT_MESSAGE)
+        .protocol(PROTOCOL)
+        .build();
+  }
+
   @Test
   public void testSuccess_swappedInitializerWithSslHandler() throws Exception {
     SslClientInitializer<EmbeddedChannel> sslClientInitializer =
         new SslClientInitializer<>(sslProvider);
     EmbeddedChannel channel = new EmbeddedChannel();
-    channel.attr(PROTOCOL_KEY).set(PROTOCOL);
-    channel.attr(REMOTE_ADDRESS_KEY).set(SSL_HOST);
+    setupProbingAction(channel);
+    channel.attr(PROBING_ACTION_KEY).set(probingAction);
     ChannelPipeline pipeline = channel.pipeline();
     pipeline.addLast(sslClientInitializer);
     ChannelHandler firstHandler = pipeline.first();
@@ -140,7 +160,8 @@ public class SslClientInitializerTest {
     SslClientInitializer<LocalChannel> sslClientInitializer =
         new SslClientInitializer<>(sslProvider);
 
-    nettyRule.setUpClient(localAddress, PROTOCOL, SSL_HOST, sslClientInitializer);
+    setupProbingAction(new EmbeddedChannel());
+    nettyRule.setUpClient(localAddress, probingAction, sslClientInitializer);
     // The connection is now terminated, both the client side and the server side should get
     // exceptions.
     nettyRule.assertThatClientRootCause().isInstanceOf(CertPathBuilderException.class);
@@ -168,7 +189,8 @@ public class SslClientInitializerTest {
     SslClientInitializer<LocalChannel> sslClientInitializer =
         new SslClientInitializer<>(sslProvider, new X509Certificate[] {ssc.cert()});
 
-    nettyRule.setUpClient(localAddress, PROTOCOL, SSL_HOST, sslClientInitializer);
+    setupProbingAction(new EmbeddedChannel());
+    nettyRule.setUpClient(localAddress, probingAction, sslClientInitializer);
 
     setUpSslChannel(nettyRule.getChannel(), cert);
     nettyRule.assertThatMessagesWork();
@@ -197,7 +219,8 @@ public class SslClientInitializerTest {
     SslClientInitializer<LocalChannel> sslClientInitializer =
         new SslClientInitializer<>(sslProvider, new X509Certificate[] {ssc.cert()});
 
-    nettyRule.setUpClient(localAddress, PROTOCOL, SSL_HOST, sslClientInitializer);
+    setupProbingAction(new EmbeddedChannel());
+    nettyRule.setUpClient(localAddress, probingAction, sslClientInitializer);
 
     // When the client rejects the server cert due to wrong hostname, both the client and server
     // should throw exceptions.
