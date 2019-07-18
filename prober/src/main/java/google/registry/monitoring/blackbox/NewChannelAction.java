@@ -15,6 +15,8 @@
 package google.registry.monitoring.blackbox;
 
 
+import static google.registry.monitoring.blackbox.ProbingStep.DEFAULT_ADDRESS;
+
 import com.google.auto.value.AutoValue;
 import com.google.common.flogger.FluentLogger;
 import io.netty.bootstrap.Bootstrap;
@@ -35,9 +37,6 @@ import io.netty.channel.local.LocalAddress;
 public abstract class NewChannelAction<C extends AbstractChannel> extends ProbingAction {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
-  /** Default {@link LocalAddress} when not initialized in {@code Builder} */
-  private final static LocalAddress DEFAULT_ADDRESS = new LocalAddress("TEST_ADDRESS");
 
   /** {@link LocalAddress} for connection. ONLY FOR TESTING*/
   public abstract LocalAddress address();
@@ -86,7 +85,7 @@ public abstract class NewChannelAction<C extends AbstractChannel> extends Probin
 
     ChannelFuture connectionFuture;
 
-    if (!host().equals("")) {
+    if (address() == DEFAULT_ADDRESS) {
       connectionFuture = bootstrap.connect(host(), protocol().port());
     } else {
       connectionFuture = bootstrap.connect(address());
@@ -119,7 +118,7 @@ public abstract class NewChannelAction<C extends AbstractChannel> extends Probin
   }
 
   public static <C extends AbstractChannel> NewChannelAction.Builder<C> builder() {
-    return new AutoValue_NewChannelAction.Builder<C>().path("").address(DEFAULT_ADDRESS);
+    return new AutoValue_NewChannelAction.Builder<C>().path("");
   }
 
 
