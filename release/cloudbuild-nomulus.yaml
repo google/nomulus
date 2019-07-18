@@ -64,7 +64,9 @@ artifacts:
     - 'output/nomulus.jar'
     - 'release/cloudbuild-tag.yaml'
     - 'release/cloudbuild-sync.yaml'
-    - 'release/cloudbuild-beam.yaml'
+    - 'release/cloudbuild-beam-*.yaml'
+    - 'release/cloudbuild-deploy-configs-*.yaml'
+
 timeout: 3600s
 options:
   machineType: 'N1_HIGHCPU_8'
