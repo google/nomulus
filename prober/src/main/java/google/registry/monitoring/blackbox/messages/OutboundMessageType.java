@@ -18,4 +18,3 @@ package google.registry.monitoring.blackbox.messages;
  * Marker Interface that is implemented by all classes that serve as {@code outboundMessages} in channel pipeline
  */
 public interface OutboundMessageType {}
-
