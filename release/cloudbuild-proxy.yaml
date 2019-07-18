@@ -13,39 +13,40 @@
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
 steps:
-# Set permissions correctly. Not sure why it is necessary, but it is.
-# Build the deploy jar.
+# Build the proxy docker image.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args:
   - './gradlew'
   - ':proxy:test'
-  - ':proxy:deployJar'
+  - ':proxy:buildProxyImage'
   - '-PmavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven'
   - '-PpluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins'
-# Build the docker image.
+# Tag and push the image. We can't let Cloud Build's default processing do that for us
+# because we need to push the image before we can sign it in the following step.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  args: ['docker', 'build', '--tag', 'gcr.io/${PROJECT_ID}/proxy:${TAG_NAME}', '.']
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    docker tag proxy gcr.io/${PROJECT_ID}/proxy:${TAG_NAME}
+    docker push gcr.io/${PROJECT_ID}/proxy:${TAG_NAME}
   dir: 'proxy'
-# Push the image. We can't let Cloud Build's default processing do that for us
-# because we need to push the image before we can sign it in the following
-# step.
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  args: ['docker', 'push', 'gcr.io/${PROJECT_ID}/proxy:${TAG_NAME}']
 # Get the image digest, sign it and substitute in the digest in the tagging yaml file.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
   args:
   - -c
-  - >
+  - |
     digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/proxy \
-      --format="get(digest)" --filter="tags = ${TAG_NAME}") && \
+      --format="get(digest)" --filter="tags = ${TAG_NAME}")
     gcloud --project=${PROJECT_ID} alpha container binauthz attestations \
       sign-and-create --artifact-url=gcr.io/${PROJECT_ID}/proxy@$digest \
       --attestor=build-attestor --attestor-project=${PROJECT_ID} \
       --keyversion-project=${PROJECT_ID} --keyversion-location=global \
       --keyversion-keyring=attestor-keys --keyversion-key=signing \
       --keyversion=1
-    sed -i s/proxy:'$${TAG_NAME}'/proxy@$digest/g release/cloudbuild-tag.yaml
+    sed -i s/'$${_IMAGE}'/proxy/g release/cloudbuild-tag.yaml
+    sed -i s/':$${TAG_NAME}'/@$digest/g release/cloudbuild-tag.yaml
 # Images to upload to GCR. Even though the image has already been uploaded, we still include it
 # here so that the GCB pubsub message contains it (for Spinnaker to consume).
 images: ['gcr.io/${PROJECT_ID}/proxy:${TAG_NAME}']

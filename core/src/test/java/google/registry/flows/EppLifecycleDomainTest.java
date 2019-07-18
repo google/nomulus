@@ -33,6 +33,7 @@ import static org.joda.money.CurrencyUnit.USD;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
+import com.google.common.truth.Truth;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
 import google.registry.model.billing.BillingEvent;
@@ -197,6 +198,11 @@ public class EppLifecycleDomainTest extends EppTestCase {
         makeRecurringCreateBillingEvent(domain, createTime.plusYears(2), deleteTime));
 
     assertThatLogoutSucceeds();
+
+    // Make sure that in the future, the domain expiration is unchanged after deletion
+    DomainBase clonedDomain = domain.cloneProjectedAtTime(deleteTime.plusYears(5));
+    Truth.assertThat(clonedDomain.getRegistrationExpirationTime())
+        .isEqualTo(createTime.plusYears(2));
   }
 
   @Test

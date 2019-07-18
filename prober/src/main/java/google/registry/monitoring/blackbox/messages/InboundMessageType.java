@@ -12,27 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-if (pluginsUrl) {
-  println "Plugins: Using repo $pluginsUrl..."
-  pluginManagement {
-    repositories {
-      maven {
-        url pluginsUrl
-      }
-    }
-  }
-} else {
-  println "Plugins: Using default repo..."
-}
+package google.registry.monitoring.blackbox.messages;
 
-rootProject.name = 'nomulus'
+/**
+ * Marker Interface that is implemented by all classes that serve as {@code inboundMessages} in channel pipeline
+ */
+public interface InboundMessageType {}
 
-include 'core'
-include 'prober'
-include 'proxy'
-include 'third_party'
-include 'util'
-include 'services:default'
-include 'services:backend'
-include 'services:tools'
-include 'services:pubapi'
