@@ -87,4 +87,3 @@ public abstract class Protocol {
     );
   }
 }
-
