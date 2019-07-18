@@ -17,9 +17,10 @@ apply plugin: 'java'
 createUberJar('deployJar', 'prober', 'google.registry.monitoring.blackbox.Prober')
 
 
+
 dependencies {
     def deps = rootProject.dependencyMap
-    
+
     compile deps['com.google.auto.value:auto-value-annotations']
     compile deps['com.google.code.findbugs:jsr305']
     compile deps['com.google.code.gson:gson']
@@ -40,11 +41,12 @@ dependencies {
     runtime deps['com.google.flogger:flogger-system-backend']
     runtime deps['com.google.auto.value:auto-value']
     runtime deps['io.netty:netty-tcnative-boringssl-static']
-    
+
     testCompile deps['com.google.truth:truth']
     testCompile deps['junit:junit']
     testCompile deps['org.mockito:mockito-core']
     testCompile project(':third_party')
+    //testCompile project(path: ':core', configuration: 'testRuntime')
 
     // Include auto-value in compile until nebula-lint understands
     // annotationProcessor
@@ -54,3 +56,7 @@ dependencies {
     testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
 }
 
+task(runMain, dependsOn: 'classes', type: JavaExec) {
+    main = 'google.registry.monitoring.blackbox.Prober'
+    classpath = sourceSets.main.runtimeClasspath
+}
