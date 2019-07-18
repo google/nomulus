@@ -182,4 +182,3 @@ public class ProbingSequence extends AbstractCircularLinkedListIterator<ProbingS
     }
   }
 }
-
