@@ -12,11 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.monitoring.blackbox.messages;
+package google.registry.monitoring.blackbox;
 
-/**
- * Marker Interface that is implemented by all classes that serve as {@code outboundMessages} in
- * channel pipeline
- */
-public interface OutboundMessageType {}
+import dagger.Module;
+import dagger.Provides;
+import google.registry.monitoring.blackbox.Tokens.Token;
+import google.registry.monitoring.blackbox.Tokens.WebWhoisToken;
+import google.registry.monitoring.blackbox.WebWhoisModule.WebWhoisProtocol;
+import javax.inject.Qualifier;
 
+@Module
+public class TokenModule {
+
+  @Qualifier
+  public @interface WebWhoIs {}
+
+  @Provides
+  @WebWhoisProtocol
+  static Token provideToken(@WebWhoisProtocol String domainName) {
+    return new WebWhoisToken(domainName);
+  }
+
+
+}
