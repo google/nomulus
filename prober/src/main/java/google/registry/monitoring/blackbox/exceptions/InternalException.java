@@ -12,11 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.monitoring.blackbox.messages;
+package google.registry.monitoring.blackbox.exceptions;
 
 /**
- * Marker Interface that is implemented by all classes that serve as {@code outboundMessages} in
- * channel pipeline
+ * Base exception class for all instances when the Status of the task performed is ERROR
  */
-public interface OutboundMessageType {}
+public class InternalException extends Exception {
 
+  public InternalException(String msg) {
+    super(msg);
+  }
+
+  public InternalException(Throwable e) {
+    super(e);
+  }
+}
