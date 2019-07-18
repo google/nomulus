@@ -1,17 +1,3 @@
-// Copyright 2019 The Nomulus Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package google.registry.monitoring.blackbox.TestServers;
 
 import static google.registry.monitoring.blackbox.TestUtils.makeHttpResponse;
@@ -19,13 +5,11 @@ import static google.registry.monitoring.blackbox.TestUtils.makeRedirectResponse
 
 import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.messages.HttpResponseMessage;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.local.LocalAddress;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequest;
@@ -36,10 +20,10 @@ import io.netty.handler.codec.http.HttpServerCodec;
 /**
  * {@link TestServer} subtype that performs WebWhois Services Expected
  *
- * <p>It will either redirect the client to the correct location if given the
+ * It will either redirect the client to the correct location if given the
  * requisite redirect input, give the client a successful response if they give
  * the expected final destination, or give the client an error message if given
- * an unexpected host location</p>
+ * an unexpected host location
  */
 public class WebWhoisServer extends TestServer {
 
@@ -75,14 +59,14 @@ public class WebWhoisServer extends TestServer {
    * Handler that will wither redirect client, give successful response, or give error messge
    */
   @Sharable
-  static class RedirectHandler extends SimpleChannelInboundHandler<HttpRequest> {
+  static class RedirectHandler extends ChannelDuplexHandler {
     private String redirectInput;
     private String destinationInput;
 
     /**
      *
      * @param redirectInput - Server will send back redirect to {@code destinationInput} when receiving a request with this host location
-     * @param destinationInput - Server will send back an {@link HttpResponseStatus} OK response when receiving a request with this host location
+     * @param destinationInput - Server will send back an {@link HttpResponseStatus.OK} response when receiving a request with this host location
      */
     public RedirectHandler(String redirectInput, String destinationInput) {
       this.redirectInput = redirectInput;
@@ -91,14 +75,15 @@ public class WebWhoisServer extends TestServer {
 
     /** Reads input {@link HttpRequest}, and creates appropriate {@link HttpResponseMessage} based on what header location is */
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, HttpRequest request) {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
+      HttpRequest request = (HttpRequest) msg;
       HttpResponse response;
       if (request.headers().get("host").equals(redirectInput)) {
-        response = new HttpResponseMessage(makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, destinationInput, true, false));
+        response = HttpResponseMessage.fromResponse(makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, destinationInput, true, false));
       } else if (request.headers().get("host").equals(destinationInput)) {
-        response = new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.OK));
+        response = HttpResponseMessage.fromResponse(makeHttpResponse(HttpResponseStatus.OK));
       } else {
-        response = new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.BAD_REQUEST));
+        response = HttpResponseMessage.fromResponse(makeHttpResponse(HttpResponseStatus.BAD_REQUEST));
       }
       ctx.channel().writeAndFlush(response);
 
