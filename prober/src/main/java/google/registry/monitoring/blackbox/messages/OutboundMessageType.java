@@ -19,4 +19,3 @@ package google.registry.monitoring.blackbox.messages;
  * channel pipeline
  */
 public interface OutboundMessageType {}
-
