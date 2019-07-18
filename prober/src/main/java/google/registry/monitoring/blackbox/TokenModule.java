@@ -12,18 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.monitoring.blackbox.exceptions;
+package google.registry.monitoring.blackbox;
 
-/**
- * Base exception class for all instances when the Status of the task performed is ERROR
- */
-public class ResponseException extends Exception {
+import dagger.Module;
+import dagger.Provides;
+import google.registry.monitoring.blackbox.Tokens.Token;
+import google.registry.monitoring.blackbox.Tokens.WebWhoisToken;
+import google.registry.monitoring.blackbox.WebWhoisModule.WebWhoisProtocol;
+import javax.inject.Qualifier;
 
-  public ResponseException(String msg) {
-    super(msg);
+@Module
+public class TokenModule {
+
+  @Qualifier
+  public @interface WebWhoIs {}
+
+  @Provides
+  @WebWhoisProtocol
+  static Token provideToken(@WebWhoisProtocol String domainName) {
+    return new WebWhoisToken(domainName);
   }
 
-  public ResponseException(Throwable e) {
-    super(e);
-  }
+
 }
