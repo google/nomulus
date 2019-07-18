@@ -77,4 +77,16 @@ public abstract class Protocol {
 
     public abstract Protocol build();
   }
+
+  @Override
+  public String toString() {
+    return String.format(
+        "Protocol with name: %s, port: %d, providers: %s, and persistent connection: %s",
+        name(),
+        port(),
+        handlerProviders(),
+        persistentConnection()
+    );
+  }
 }
+
