@@ -38,16 +38,24 @@ public abstract class NewChannelAction<C extends AbstractChannel> extends Probin
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  /** {@link LocalAddress} for connection. ONLY FOR TESTING*/
+  /**
+   * {@link LocalAddress} for connection. ONLY FOR TESTING
+   */
   public abstract LocalAddress address();
 
-  /** {@link Channel} created from bootstrap connection to protocol's specified host and port*/
+  /**
+   * {@link Channel} created from bootstrap connection to protocol's specified host and port
+   */
   private Channel channel;
 
-  /** {@link Bootstrap} object associated with this {@link ProbingAction} */
+  /**
+   * {@link Bootstrap} object associated with this {@link ProbingAction}
+   */
   abstract Bootstrap bootstrap();
 
-  /** {@link Channel} object instantiated in {@code call()} */
+  /**
+   * {@link Channel} object instantiated in {@code call()}
+   */
   @Override
   public Channel channel() {
     return this.channel;
@@ -60,8 +68,8 @@ public abstract class NewChannelAction<C extends AbstractChannel> extends Probin
   /**
    * Creates channel from {@link Bootstrap} and {@link Bootstrap} given to instance
    *
-   * @return ChannelFuture instance that is set to success when previous action has
-   * finished and requisite time as passed
+   * @return ChannelFuture instance that is set to success when previous action has finished and
+   * requisite time as passed
    */
   @Override
   public ChannelFuture call() {
@@ -78,7 +86,6 @@ public abstract class NewChannelAction<C extends AbstractChannel> extends Probin
           }
         })
         .attr(PROBING_ACTION_KEY, this);
-
 
     logger.atInfo().log("Initialized bootstrap with channel Handlers");
     //ChannelFuture that performs action when connection is established
@@ -101,7 +108,9 @@ public abstract class NewChannelAction<C extends AbstractChannel> extends Probin
     connectionFuture.addListener(
         (ChannelFuture channelFuture) -> {
           if (channelFuture.isSuccess()) {
-            logger.atInfo().log(String.format("Successful connection to remote host: %s at port: %d", host(), protocol().port()));
+            logger.atInfo().log(String
+                .format("Successful connection to remote host: %s at port: %d", host(),
+                    protocol().port()));
             ChannelFuture future = super.call();
             future.addListener(f -> finished.setSuccess());
 
@@ -123,13 +132,13 @@ public abstract class NewChannelAction<C extends AbstractChannel> extends Probin
 
 
   @AutoValue.Builder
-  public static abstract class Builder<C extends AbstractChannel> extends ProbingAction.Builder<Builder<C>, NewChannelAction<C>> {
+  public static abstract class Builder<C extends AbstractChannel> extends
+      ProbingAction.Builder<Builder<C>, NewChannelAction<C>> {
+
     //specifies bootstrap in this builder
     public abstract NewChannelAction.Builder<C> bootstrap(Bootstrap value);
 
     public abstract NewChannelAction.Builder<C> address(LocalAddress value);
 
   }
-
 }
-
