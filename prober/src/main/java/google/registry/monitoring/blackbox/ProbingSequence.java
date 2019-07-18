@@ -14,86 +14,109 @@
 
 package google.registry.monitoring.blackbox;
 
-import google.registry.monitoring.blackbox.tokens.Token;
+import google.registry.monitoring.blackbox.Tokens.Token;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.AbstractChannel;
 import io.netty.channel.EventLoopGroup;
 
 /**
- * Represents Sequence of {@link ProbingStep}s that the Prober performs in order.
+ * Represents Sequence of {@link ProbingSteps} that the Prober performs in order
  *
+ * @param <C> Primarily for testing purposes to specify channel type. Usually is {@link NioSocketChannel}
+ * but for tests is {@link LocalChannel}
  *
  * <p>Created with {@link Builder} where we specify {@link EventLoopGroup}, {@link AbstractChannel} class type,
- * then sequentially add in the {@link ProbingStep.Builder}s in order and mark which one is the first repeated step.</p>
+ * then sequentially add in the {@link ProbingStep}s in order and mark which one is the first repeated step.</p>
  *
  * <p>{@link ProbingSequence} implicitly points each {@link ProbingStep} to the next one, so once the first one
- * is activated with the requisite {@link Token}, the {@link ProbingStep}s do the rest of the work.</p>
+ * is activated with the requisite {@link Token}, the {@link ProbingStep}s do the rest of the work</p>
  */
-public class ProbingSequence {
-  private ProbingStep firstStep;
+public class ProbingSequence<C extends AbstractChannel> {
+  private ProbingStep<C> firstStep;
 
-  /**Each {@link ProbingSequence} requires a start token to begin running. */
-  private Token startToken;
+  /** A given {@link Prober} will run each of its {@link ProbingSequence}s with the same given {@link EventLoopGroup} */
+  private EventLoopGroup eventGroup;
 
-  public void start() {
-    // calls the first step with startToken;
-    firstStep.accept(startToken);
+  /** Each {@link ProbingSequence} houses its own {@link Bootstrap} instance */
+  private Bootstrap bootstrap;
+
+  public Bootstrap getBootstrap() {
+    return bootstrap;
+  }
+
+  public void start(Token token) {
+    // calls the first step with input token;
+    firstStep.accept(token);
   }
 
   /**
-   * Turns {@link ProbingStep.Builder}s into fully self-dependent sequence with
-   * supplied {@link Bootstrap}.
+   * {@link Builder} which takes in {@link ProbingStep}s
+   *
+   * @param <C> Same specified {@code C} for overall {@link ProbingSequence}
    */
-  public static class Builder {
+  public static class Builder<C extends AbstractChannel> {
+    private ProbingStep<C> currentStep;
+    private ProbingStep<C> firstStep;
+    private ProbingStep<C> firstSequenceStep;
+    private EventLoopGroup eventLoopGroup;
+    private Class<C> classType;
 
-    private ProbingStep currentStep;
-    private ProbingStep firstStep;
-    private ProbingStep firstRepeatedStep;
-
-    private Token startToken;
-
-    public Builder(Token startToken) {
-      this.startToken = startToken;
+    Builder<C> eventLoopGroup(EventLoopGroup eventLoopGroup) {
+      this.eventLoopGroup = eventLoopGroup;
+      return this;
     }
 
-    /**
-     * Adds {@link ProbingStep}, which is supplied with {@link Bootstrap},
-     * built, and pointed to by the previous {@link ProbingStep} added.
-     */
-    public Builder addStep(ProbingStep step) {
-
-      if (currentStep == null)
+    Builder<C> addStep(ProbingStep<C> step) {
+      if (currentStep == null) {
         firstStep = step;
-      else
+      } else {
         currentStep.nextStep(step);
-
+      }
       currentStep = step;
       return this;
     }
 
-    /** We take special note of the first repeated step. */
-    public Builder markFirstRepeated() {
-      firstRepeatedStep = currentStep;
+    /** We take special note of the first repeated step and set pointers in {@link ProbingStep}s appropriately */
+    Builder<C> makeFirstRepeated() {
+      firstSequenceStep = currentStep;
+      return this;
+    }
+    /** Set the class to be the same as {@code C} */
+    public Builder<C> setClass(Class<C> classType) {
+      this.classType = classType;
       return this;
     }
 
-    /**
-     * Points last {@link ProbingStep} to the {@code firstRepeatedStep} and
-     * calls private constructor to create {@link ProbingSequence}.
-     */
-    public ProbingSequence build() {
-      if (firstRepeatedStep == null)
-        firstRepeatedStep = firstStep;
-
-      currentStep.nextStep(firstRepeatedStep);
+    public ProbingSequence<C> build() {
+      currentStep.nextStep(firstSequenceStep);
       currentStep.lastStep();
-      return new ProbingSequence(this.firstStep, this.startToken);
+      return new ProbingSequence<>(this.firstStep, this.eventLoopGroup, this.classType);
     }
+
   }
 
-  private ProbingSequence(ProbingStep firstStep, Token startToken) {
+  /** We point each {@link ProbingStep} to the parent {@link ProbingSequence} so it can access its {@link Bootstrap} */
+  private void setParents() {
+    ProbingStep<C> currentStep = firstStep.parent(this).nextStep();
+
+    while (currentStep != firstStep) {
+      currentStep = currentStep.parent(this).nextStep();
+    }
+  }
+  private ProbingSequence(ProbingStep<C> firstStep, EventLoopGroup eventLoopGroup,
+      Class<C> classType) {
     this.firstStep = firstStep;
-    this.startToken = startToken;
+    this.eventGroup = eventLoopGroup;
+    this.bootstrap = new Bootstrap()
+        .group(eventGroup)
+        .channel(classType);
+    setParents();
+  }
+
+  @Override
+  public String toString() {
+    return String.format("ProbingSequence with EventLoopGroup: %s and Bootstrap %s", eventGroup, bootstrap);
+
   }
 }
 
