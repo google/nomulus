@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# This script builds the GAE artifacts for a given environment, moves the
-# artifacts for all services to a designated location, and then creates a
-# tarball from there.
+# This script downloads the tagged tarball from GCS and uploads the AppEngine config files therein
+# to the provided environment. The standard AppEngine deployment process doesn't automatically
+# update these configs, so we must do it manually.
 
 set -e
 
@@ -40,8 +40,6 @@ fi
 
 gsutil cp gs://domain-registry-dev-deploy/${tag_name}/${environment}.tar .
 tar -xvf ${environment}.tar
-gcloud -q --project ${project_id} app deploy default/WEB-INF/appengine-generated/cron.yaml
-gcloud -q --project ${project_id} app deploy default/WEB-INF/appengine-generated/dispatch.yaml
-gcloud -q --project ${project_id} app deploy default/WEB-INF/appengine-generated/dos.yaml
-gcloud -q --project ${project_id} app deploy default/WEB-INF/appengine-generated/index.yaml
-gcloud -q --project ${project_id} app deploy default/WEB-INF/appengine-generated/queue.yaml
+for filename in cron dispatch dos index queue; do
+  gcloud -q --project ${project_id} app deploy default/WEB-INF/appengine-generated/${filename}.yaml
+done
