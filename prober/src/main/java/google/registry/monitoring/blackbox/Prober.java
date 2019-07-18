@@ -15,16 +15,31 @@
 package google.registry.monitoring.blackbox;
 
 import com.google.common.collect.ImmutableMap;
+import google.registry.monitoring.blackbox.ProberModule.ProberComponent;
+import google.registry.monitoring.blackbox.Tokens.Token;
+import io.netty.channel.socket.nio.NioSocketChannel;
 
 /**
- * Main class of the Prober, which constructs the ProbingSequences then runs them
+ * Main class of the Prober, which obtains the {@link ProbingSequences}s provided by {@link Dagger} and runs them
  */
 public class Prober {
 
-  //TODO: Create ImmutableMap between port numbers and protocols with Dagger
-  public static final ImmutableMap<Integer, Protocol> portToProtocolMap = ImmutableMap.of();
+  /** Main {@link Dagger} Component */
+  private static ProberComponent proberComponent = DaggerProberModule_ProberComponent.builder().build();
 
-  //TODO: Create and run probing sequences
+  /** {@link ImmutableMap} of {@code port}s to {@link Protocol}s for WebWhois Redirects */
+  public static final ImmutableMap<Integer, Protocol> portToProtocolMap = proberComponent.providePortToProtocolMap();
+
+
   public static void main(String[] args) {
+
+    ProbingSequence<NioSocketChannel> httpsSequence = proberComponent.provideHttpsWhoisSequence();
+    Token httpsToken = proberComponent.provideWebWhoisToken();
+
+    ProbingSequence<NioSocketChannel> httpSequence = proberComponent.provideHttpWhoisSequence();
+    Token httpToken = proberComponent.provideWebWhoisToken();
+    httpsSequence.start(httpsToken);
+    httpSequence.start(httpToken);
   }
 }
+
