@@ -45,4 +45,3 @@ public abstract class ExistingChannelAction extends ProbingAction {
     public abstract Builder channel(Channel channel);
   }
 }
-

@@ -42,4 +42,3 @@ public class Prober {
     httpSequence.start(httpToken);
   }
 }
-
