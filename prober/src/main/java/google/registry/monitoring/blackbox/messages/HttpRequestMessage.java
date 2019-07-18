@@ -28,13 +28,14 @@ public class HttpRequestMessage extends DefaultFullHttpRequest implements Outbou
 
   public static HttpRequestMessage fromRequest(FullHttpRequest request) {
     ByteBuf buf = request.content();
-
+    HttpRequestMessage output;
     if (buf == null) {
-      return new HttpRequestMessage(HttpVersion.HTTP_1_1, request.method(), request.uri());
+      output = new HttpRequestMessage(HttpVersion.HTTP_1_1, request.method(), request.uri());
     } else {
-     return new HttpRequestMessage(HttpVersion.HTTP_1_1, request.method(), request.uri(), buf);
+      output = new HttpRequestMessage(HttpVersion.HTTP_1_1, request.method(), request.uri(), buf);
     }
-
+    request.headers().forEach((entry) -> output.headers().set(entry.getKey(), entry.getValue()));
+    return output;
   }
 
 }

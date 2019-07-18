@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2019 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,60 +16,56 @@ package google.registry.monitoring.blackbox;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
-import io.netty.util.AttributeKey;
 import io.netty.channel.ChannelHandler;
 import javax.inject.Provider;
 
+/**
+ * {@link AutoValue} class that stores all unchanged variables necessary for type of connection
+ */
 @AutoValue
 public abstract class Protocol {
 
-  /**
-   * Default names associated with each protocol
-   */
-  final static String EPP_PROTOCOL_NAME = "EPP";
-  final static String DNS_PROTOCOL_NAME = "DNS";
-  final static String WHOIS_PROTOCOL_NAME =  "WHOIS";
-  final static String RDAP_PROTOCOL_NAME = "RDAP";
-
-  final static AttributeKey<Protocol> PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL_KEY");
-  public boolean PERSISTENT_CONNECTION = name() == EPP_PROTOCOL_NAME;
-  /**
-   *  @return name of Protocol.
-   */
   abstract String name();
 
-  /**
-   * @return Port to bind to at remote host
-   */
-  abstract int port();
-
-  /**
-   * @return hostname to connect to
-   */
-  abstract String host();
+  public abstract int port();
 
   /** The {@link ChannelHandler} providers to use for the protocol, in order. */
   abstract ImmutableList<Provider<? extends ChannelHandler>> handlerProviders();
 
-  /** Builds new Protocol from @AutoValue Builder implementation*/
-  static Protocol.Builder builder() {
+  /** Boolean that notes if connection associated with Protocol is persistent.*/
+  abstract boolean persistentConnection();
+
+  public abstract Builder toBuilder();
+
+  public static Builder builder() {
     return new AutoValue_Protocol.Builder();
   }
 
-
+  /** Builder for {@link Protocol}. */
   @AutoValue.Builder
-  public static abstract class Builder {
+  public abstract static class Builder {
 
-    abstract Builder name(String value);
+    public abstract Builder name(String value);
 
-    abstract Builder host(String value);
+    public abstract Builder port(int num);
 
-    abstract Builder port(int num);
+    public abstract Builder handlerProviders(
+        ImmutableList<Provider<? extends ChannelHandler>> providers);
 
-    abstract Builder handlerProviders(ImmutableList<Provider<? extends ChannelHandler>> providers);
+    public abstract Builder persistentConnection(boolean value);
 
-    abstract Protocol build();
+    public abstract Protocol build();
   }
 
-
+  @Override
+  public String toString() {
+    return String.format(
+        "Protocol with name: %s, port: %d, providers: %s, and persistent connection: %s",
+        name(),
+        port(),
+        handlerProviders(),
+        persistentConnection()
+    );
+  }
 }
+
