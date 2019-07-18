@@ -51,7 +51,4 @@ public class WebWhoisToken extends Token {
   public String getHost() {
     return host;
   }
-
-
 }
-
