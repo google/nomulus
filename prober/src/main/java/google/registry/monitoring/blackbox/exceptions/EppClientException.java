@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.monitoring.blackbox.handlers;
+package google.registry.monitoring.blackbox.exceptions;
 
 /**
  * Base exception class for all instances when the Status of the task performed is ERROR
  */
-public class ServerSideException extends Exception {
+public class EppClientException extends InternalException {
 
-  public ServerSideException(String msg) {
+  public EppClientException(String msg) {
     super(msg);
   }
 
-  public ServerSideException(Throwable e) {
+  public EppClientException(Throwable e) {
     super(e);
   }
 }

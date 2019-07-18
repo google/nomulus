@@ -17,20 +17,16 @@ package google.registry.monitoring.blackbox.handlers;
 import static google.registry.monitoring.blackbox.ProbingAction.PROBING_ACTION_KEY;
 
 import com.google.common.flogger.FluentLogger;
-import google.registry.monitoring.blackbox.NewChannelAction;
 import google.registry.monitoring.blackbox.ProbingAction;
 import google.registry.monitoring.blackbox.Prober;
 import google.registry.monitoring.blackbox.Protocol;
+import google.registry.monitoring.blackbox.exceptions.ResponseException;
+import google.registry.monitoring.blackbox.exceptions.ServerSideException;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.messages.HttpResponseMessage;
 import google.registry.monitoring.blackbox.messages.InboundMessageType;
-import google.registry.monitoring.blackbox.messages.OutboundMessageType;
-import io.netty.channel.AbstractChannel;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import java.net.MalformedURLException;
@@ -59,7 +55,7 @@ public class WebWhoisActionHandler extends ActionHandler {
    */
   @Override
   public void channelRead0(ChannelHandlerContext ctx, InboundMessageType msg)
-      throws ServerSideException {
+      throws ResponseException {
 
     HttpResponseMessage response = (HttpResponseMessage) msg;
 
@@ -67,9 +63,8 @@ public class WebWhoisActionHandler extends ActionHandler {
     if (response.status() == HttpResponseStatus.OK) {
       logger.atInfo().log("Received Successful HttpResponseStatus");
 
-      finished.setSuccess();
-
       logger.atInfo().log("Response Received: " + response);
+      super.channelRead0(ctx, msg);
 
     } else if (response.status() == HttpResponseStatus.FOUND || response.status() == HttpResponseStatus.MOVED_PERMANENTLY) {
 
@@ -79,7 +74,7 @@ public class WebWhoisActionHandler extends ActionHandler {
         url = new URL(response.headers().get("Location"));
       } catch (MalformedURLException e) {
         //in case of error, log it, and let ActionHandler's exceptionThrown method deal with it
-        throw new ServerSideException("Redirected Location was invalid. Given Location was: " + response.headers().get("Location"));
+        throw new ResponseException("Redirected Location was invalid. Given Location was: " + response.headers().get("Location"));
       }
       //From url, extract new host, port, and path
       String newHost = url.getHost();
@@ -126,10 +121,12 @@ public class WebWhoisActionHandler extends ActionHandler {
       );
     } else {
       //Add in metrics Handling that informs MetricsCollector the response was a FAILURE
-      finished.setSuccess();
       logger.atWarning().log(String.format("Received unexpected response: %s", response.status()));
+      throw new ResponseException("Response received from remote site was: " + response.status());
 
     }
   }
+
+
 }
 
