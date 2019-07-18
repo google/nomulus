@@ -5,7 +5,6 @@ import static google.registry.monitoring.blackbox.TestUtils.makeRedirectResponse
 
 import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.messages.HttpResponseMessage;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -67,7 +66,7 @@ public class WebWhoisServer extends TestServer {
     /**
      *
      * @param redirectInput - Server will send back redirect to {@code destinationInput} when receiving a request with this host location
-     * @param destinationInput - Server will send back an {@link HttpResponseStatus} OK response when receiving a request with this host location
+     * @param destinationInput - Server will send back an {@link HttpResponseStatus.OK} response when receiving a request with this host location
      */
     public RedirectHandler(String redirectInput, String destinationInput) {
       this.redirectInput = redirectInput;
