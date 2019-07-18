@@ -18,10 +18,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.GcsTestingUtils.writeGcsFile;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -68,6 +68,7 @@ public class CopyDetailReportsActionTest {
   @Before
   public void setUp() {
     persistResource(loadRegistrar("TheRegistrar").asBuilder().setDriveFolderId("0B-12345").build());
+    persistResource(loadRegistrar("NewRegistrar").asBuilder().setDriveFolderId("0B-54321").build());
     response = new FakeResponse();
     driveConnection = mock(DriveConnection.class);
     emailUtils = mock(BillingEmailUtils.class);
@@ -96,21 +97,21 @@ public class CopyDetailReportsActionTest {
 
     action.run();
     verify(driveConnection)
-        .createFile(
+        .createOrUpdateFile(
             "invoice_details_2017-10_TheRegistrar_test.csv",
             MediaType.CSV_UTF_8,
             "0B-12345",
             "hello,world\n1,2".getBytes(UTF_8));
 
     verify(driveConnection)
-        .createFile(
+        .createOrUpdateFile(
             "invoice_details_2017-10_TheRegistrar_hello.csv",
             MediaType.CSV_UTF_8,
             "0B-12345",
             "hola,mundo\n3,4".getBytes(UTF_8));
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
-    assertThat(response.getPayload()).isEqualTo("Copied detail reports.");
+    assertThat(response.getPayload()).isEqualTo("Copied detail reports.\n");
   }
 
   @Test
@@ -126,7 +127,7 @@ public class CopyDetailReportsActionTest {
         "hello,world\n1,2".getBytes(UTF_8));
     action.run();
     verify(driveConnection)
-        .createFile(
+        .createOrUpdateFile(
             "invoice_details_2017-10_TheRegistrar_hello.csv",
             MediaType.CSV_UTF_8,
             "0B-12345",
@@ -135,7 +136,7 @@ public class CopyDetailReportsActionTest {
     verifyNoMoreInteractions(driveConnection);
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
-    assertThat(response.getPayload()).isEqualTo("Copied detail reports.");
+    assertThat(response.getPayload()).isEqualTo("Copied detail reports.\n");
   }
 
   @Test
@@ -144,41 +145,63 @@ public class CopyDetailReportsActionTest {
         gcsService,
         new GcsFilename("test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
         "hola,mundo\n3,4".getBytes(UTF_8));
-    when(driveConnection.createFile(any(), any(), any(), any()))
+    when(driveConnection.createOrUpdateFile(any(), any(), any(), any()))
         .thenThrow(new IOException("expected"))
         .thenReturn("success");
 
     action.run();
     verify(driveConnection, times(2))
-        .createFile(
+        .createOrUpdateFile(
             "invoice_details_2017-10_TheRegistrar_hello.csv",
             MediaType.CSV_UTF_8,
             "0B-12345",
             "hola,mundo\n3,4".getBytes(UTF_8));
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
-    assertThat(response.getPayload()).isEqualTo("Copied detail reports.");
+    assertThat(response.getPayload()).isEqualTo("Copied detail reports.\n");
   }
 
   @Test
-  public void testFail_tooManyFailures_sendsAlertEmail() throws IOException {
+  public void testFail_tooManyFailures_sendsAlertEmail_continues() throws IOException {
     writeGcsFile(
         gcsService,
         new GcsFilename("test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
         "hola,mundo\n3,4".getBytes(UTF_8));
-    when(driveConnection.createFile(any(), any(), any(), any()))
+    writeGcsFile(
+        gcsService,
+        new GcsFilename("test-bucket", "results/invoice_details_2017-10_NewRegistrar_test.csv"),
+        "hello,world\n1,2".getBytes(UTF_8));
+    when(driveConnection.createOrUpdateFile(
+            eq("invoice_details_2017-10_TheRegistrar_hello.csv"), any(), any(), any()))
         .thenThrow(new IOException("expected"));
 
-    RuntimeException thrown = assertThrows(RuntimeException.class, action::run);
-    assertThat(thrown).hasMessageThat().isEqualTo("java.io.IOException: expected");
+    action.run();
     verify(driveConnection, times(3))
-        .createFile(
+        .createOrUpdateFile(
             "invoice_details_2017-10_TheRegistrar_hello.csv",
             MediaType.CSV_UTF_8,
             "0B-12345",
             "hola,mundo\n3,4".getBytes(UTF_8));
-    verify(emailUtils).sendAlertEmail("Warning: CopyDetailReportsAction failed.\nEncountered: "
-        + "expected on file: invoice_details_2017-10_TheRegistrar_hello.csv");
+    verify(driveConnection)
+        .createOrUpdateFile(
+            "invoice_details_2017-10_NewRegistrar_test.csv",
+            MediaType.CSV_UTF_8,
+            "0B-54321",
+            "hello,world\n1,2".getBytes(UTF_8));
+    verify(emailUtils)
+        .sendAlertEmail(
+            "Copied detail reports.\n"
+                + "The following errors were encountered:\n"
+                + "Registrar: TheRegistrar\n"
+                + "Error: java.io.IOException: expected\n");
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
+    assertThat(response.getPayload())
+        .isEqualTo(
+            "Copied detail reports.\n"
+                + "The following errors were encountered:\n"
+                + "Registrar: TheRegistrar\n"
+                + "Error: java.io.IOException: expected\n");
   }
 
   @Test

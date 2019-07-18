@@ -54,6 +54,10 @@ public class DriveConnection {
   /**
    * Creates a file with the given parent.
    *
+   * <p>If a file with the same path already exists, a duplicate is created. If overwriting the
+   * existing file is the desired behavior, use {@link #createOrUpdateFile(String, MediaType,
+   * String, byte[])} instead.
+   *
    * @returns the file id.
    */
   public String createFile(String title, MediaType mimeType, String parentFolderId, byte[] bytes)

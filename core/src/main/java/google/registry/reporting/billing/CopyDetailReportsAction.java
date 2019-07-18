@@ -22,6 +22,7 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
@@ -38,6 +39,7 @@ import google.registry.util.Retrier;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 /** Copy all registrar detail reports in a given bucket's subdirectory from GCS to Drive. */
@@ -95,6 +97,8 @@ public final class CopyDetailReportsAction implements Runnable {
       response.setPayload(String.format("Failure, encountered %s", e.getMessage()));
       return;
     }
+    ImmutableMap.Builder<String, Throwable> copyErrorsBuilder =
+        new ImmutableMap.Builder<String, Throwable>();
     for (String detailReportName : detailReportObjectNames) {
       // The standard report format is "invoice_details_yyyy-MM_registrarId_tld.csv
       // TODO(larryruili): Determine a safer way of enforcing this.
@@ -117,7 +121,7 @@ public final class CopyDetailReportsAction implements Runnable {
               try (InputStream input =
                   gcsUtils.openInputStream(
                       new GcsFilename(billingBucket, invoiceDirectoryPrefix + detailReportName))) {
-                driveConnection.createFile(
+                driveConnection.createOrUpdateFile(
                     detailReportName,
                     MediaType.CSV_UTF_8,
                     driveFolderId,
@@ -129,15 +133,31 @@ public final class CopyDetailReportsAction implements Runnable {
             },
             IOException.class);
       } catch (Throwable e) {
-        emailUtils.sendAlertEmail(
+        String alertMessage =
             String.format(
-                "Warning: CopyDetailReportsAction failed.\nEncountered: %s on file: %s",
-                getRootCause(e).getMessage(), detailReportName));
-        throw e;
+                "Warning: CopyDetailReportsAction failed for registrar %s.\n"
+                    + "Encountered: %s on file: %s",
+                registrarId, getRootCause(e).getMessage(), detailReportName);
+        copyErrorsBuilder.put(registrarId, e);
+        logger.atSevere().withCause(e).log(alertMessage);
       }
     }
     response.setStatus(SC_OK);
     response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
-    response.setPayload("Copied detail reports.");
+    StringBuilder payload = new StringBuilder().append("Copied detail reports.\n");
+    ImmutableMap<String, Throwable> copyErrors = copyErrorsBuilder.build();
+    if (!copyErrors.isEmpty()) {
+      payload.append("The following errors were encountered:\n");
+      payload.append(
+          copyErrors.entrySet().stream()
+              .map(
+                  entrySet ->
+                      String.format(
+                          "Registrar: %s\nError: %s\n",
+                          entrySet.getKey(), entrySet.getValue().getMessage()))
+              .collect(Collectors.joining()));
+    }
+    response.setPayload(payload.toString());
+    emailUtils.sendAlertEmail(payload.toString());
   }
 }
