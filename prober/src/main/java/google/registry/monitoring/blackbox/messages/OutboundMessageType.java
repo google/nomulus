@@ -14,17 +14,8 @@
 
 package google.registry.monitoring.blackbox.messages;
 
-import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
-
 /**
  * Marker Interface that is implemented by all classes that serve as {@code outboundMessages} in channel pipeline
  */
-public interface OutboundMessageType {
+public interface OutboundMessageType {}
 
-  /** All {@link OutboundMessageType} implementing classes should be able to be modified by token with String arguments */
-  OutboundMessageType modifyMessage(String... args) throws UndeterminedStateException;
-
-  /** Necessary to inform metrics collector what kind of message is sent down {@link io.netty.channel.ChannelPipeline} */
-  @Override
-  String toString();
-}
