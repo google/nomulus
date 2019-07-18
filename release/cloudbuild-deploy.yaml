@@ -1,0 +1,75 @@
+# To run the build locally, install cloud-build-local first.
+# Then run:
+# cloud-build-local --config=cloudbuild-deploy-beam.yaml --dryrun=false \
+# --substitutions=TAG_NAME=[TAG],_ENV=[ENV] ..
+#
+# This will deploy Beam pipelines to GCS for the PROJECT_ID defined in gcloud
+# tool.
+#
+# To manually trigger a build on GCB, run:
+# gcloud builds submit --config=cloudbuild-deploy-beam.yaml \
+# --substitutions=TAG_NAME=[TAG],_ENV=[ENV] ..
+#
+# To trigger a build automatically, follow the instructions below and add a trigger:
+# https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
+steps:
+# Pull the credential for nomulus tool.
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  args:
+  - gsutil
+  - cp
+  - gs://${PROJECT_ID}-deploy/secrets/tool-credential.json.enc
+  - .
+# Decrypt the credential.
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    cat tool-credential.json.enc | base64 -d | gcloud kms decrypt \
+      --ciphertext-file=- --plaintext-file=tool-credential.json \
+      --location=global --keyring=nomulus-tool-keyring --key=nomulus-tool-key
+# Deploy the Spec11 pipeline to GCS.
+- name: 'gcr.io/${PROJECT_ID}/nomulus-tool:latest'
+  args:
+  - -e
+  - ${_ENV}
+  - --credential
+  - tool-credential.json
+  - deploy_spec11_pipeline
+# Deploy the invoicing pipeline to GCS.
+- name: 'gcr.io/${PROJECT_ID}/nomulus-tool:latest'
+  args:
+  - -e
+  - ${_ENV}
+  - --credential
+  - tool-credential.json
+  - deploy_invoicing_pipeline
+# Deploy the GAE config files.
+# First authorize the gcloud tool to use the credential json file, then
+# download and unzip the tarball that contains the relevant config files
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    gcloud auth activate-service-account --key-file=tool-credential.json
+    if [ ${_ENV} == production ]; then
+      project_id="domain-registry"
+    else
+      project_id="domain-registry-${_ENV}"
+    fi
+    gsutil cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/${_ENV}.tar .
+    tar -xvf ${_ENV}.tar
+    # Note that this currently does not work for google.com projects that
+    # we use due to b/137891685. External projects are likely to work.
+    for filename in cron dispatch dos index queue; do
+      gcloud -q --project ${project_id} app deploy \
+        default/WEB-INF/appengine-generated/${filename}.yaml
+    done
+
+timeout: 3600s
+options:
+  machineType: 'N1_HIGHCPU_8'

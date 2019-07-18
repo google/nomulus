@@ -29,20 +29,25 @@ steps:
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
   args:
-    - -c
-    - |
-      docker tag nomulus-tool gcr.io/${PROJECT_ID}/nomulus-tool:${TAG_NAME}
-      docker push gcr.io/${PROJECT_ID}/nomulus-tool:${TAG_NAME}
-# Get the tool image digest and substitute in the digest in the tagging yaml file.
+  - -c
+  - |
+    set -e
+    docker tag nomulus-tool gcr.io/${PROJECT_ID}/nomulus-tool:${TAG_NAME}
+    docker tag nomulus-tool gcr.io/${PROJECT_ID}/nomulus-tool:latest
+    docker push gcr.io/${PROJECT_ID}/nomulus-tool:${TAG_NAME}
+    docker push gcr.io/${PROJECT_ID}/nomulus-tool:latest
+# Get the tool image digest and substitute in the digest in other GCB files.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
   args:
   - -c
   - |
+    set -e
     digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/nomulus-tool \
       --format="get(digest)" --filter="tags = ${TAG_NAME}")
     sed -i s/'$${_IMAGE}'/nomulus-tool/g release/cloudbuild-tag.yaml
     sed -i s/':$${TAG_NAME}'/@$digest/g release/cloudbuild-tag.yaml
+    sed -i s/'nomulus-tool:latest'/nomulus-tool@$digest/g release/cloudbuild-deploy-*.yaml
 # Build and package the deployment files for alpha.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args: ['release/build_nomulus_for_env.sh', 'alpha', 'output']
@@ -64,8 +69,7 @@ artifacts:
     - 'output/nomulus.jar'
     - 'release/cloudbuild-tag.yaml'
     - 'release/cloudbuild-sync.yaml'
-    - 'release/cloudbuild-beam-*.yaml'
-    - 'release/cloudbuild-deploy-configs-*.yaml'
+    - 'release/cloudbuild-deploy-*.yaml'
 
 timeout: 3600s
 options:

@@ -16,11 +16,11 @@ steps:
 # Build the proxy docker image.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args:
-  - './gradlew'
-  - ':proxy:test'
-  - ':proxy:buildProxyImage'
-  - '-PmavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven'
-  - '-PpluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins'
+  - ./gradlew
+  - :proxy:test
+  - :proxy:buildProxyImage
+  - -PmavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven
+  - -PpluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins
 # Tag and push the image. We can't let Cloud Build's default processing do that for us
 # because we need to push the image before we can sign it in the following step.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
@@ -28,8 +28,11 @@ steps:
   args:
   - -c
   - |
+    set -e
     docker tag proxy gcr.io/${PROJECT_ID}/proxy:${TAG_NAME}
+    docker tag proxy gcr.io/${PROJECT_ID}/proxy:latest
     docker push gcr.io/${PROJECT_ID}/proxy:${TAG_NAME}
+    docker push gcr.io/${PROJECT_ID}/proxy:latest
   dir: 'proxy'
 # Get the image digest, sign it and substitute in the digest in the tagging yaml file.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
@@ -37,6 +40,7 @@ steps:
   args:
   - -c
   - |
+    set -e
     digest=$(gcloud container images list-tags gcr.io/${PROJECT_ID}/proxy \
       --format="get(digest)" --filter="tags = ${TAG_NAME}")
     gcloud --project=${PROJECT_ID} alpha container binauthz attestations \

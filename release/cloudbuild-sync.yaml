@@ -13,12 +13,12 @@ steps:
 # Rsync the folder.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args:
-  - 'gsutil'
-  - '-m'
-  - 'rsync'
-  - '-d'
-  - 'gs://${PROJECT_ID}-deploy/${TAG_NAME}'
-  - 'gs://${PROJECT_ID}-deploy/live'
+  - gsutil
+  - -m
+  - rsync
+  - -d
+  - gs://${PROJECT_ID}-deploy/${TAG_NAME}
+  - gs://${PROJECT_ID}-deploy/live
 timeout: 3600s
 options:
   machineType: 'N1_HIGHCPU_8'
