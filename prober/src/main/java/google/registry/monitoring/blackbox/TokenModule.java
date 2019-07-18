@@ -32,6 +32,4 @@ public class TokenModule {
   static Token provideToken(@WebWhoisProtocol String domainName) {
     return new WebWhoisToken(domainName);
   }
-
-
 }
