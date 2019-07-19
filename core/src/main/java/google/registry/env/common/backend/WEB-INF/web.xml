@@ -13,11 +13,6 @@
     <load-on-startup>1</load-on-startup>
   </servlet>
 
-  <servlet-mapping>
-    <servlet-name>backend-servlet</servlet-name>
-    <url-pattern>/_dr/task/metrics</url-pattern>
-  </servlet-mapping>
-
   <!-- RDE -->
 
   <!--
