@@ -163,7 +163,6 @@ PRESUBMITS = {
 
 
 def get_files():
-  result = []
   for root, dirnames, filenames in os.walk("."):
     for filename in filenames:
       yield os.path.join(root, filename)
