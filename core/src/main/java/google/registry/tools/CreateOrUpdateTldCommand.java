@@ -19,7 +19,6 @@ import static google.registry.util.CollectionUtils.findDuplicates;
 import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 
 import com.beust.jcommander.Parameter;
-import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -255,7 +254,7 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
           tld,
           canonicalizeDomainName(tld));
       checkArgument(
-          !CharMatcher.javaDigit().matches(tld.charAt(0)),
+          !Character.isDigit(tld.charAt(0)),
           "TLDs cannot begin with a number");
       Registry oldRegistry = getOldRegistry(tld);
       // TODO(b/26901539): Add a flag to set the pricing engine once we have more than one option.

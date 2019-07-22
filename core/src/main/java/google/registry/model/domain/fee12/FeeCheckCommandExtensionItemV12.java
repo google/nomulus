@@ -15,9 +15,9 @@
 package google.registry.model.domain.fee12;
 
 import com.google.common.base.Ascii;
-import com.google.common.base.CharMatcher;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeCheckCommandExtensionItem;
+import java.util.Locale;
 import java.util.Optional;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
@@ -83,7 +83,7 @@ public class FeeCheckCommandExtensionItemV12 extends FeeCheckCommandExtensionIte
   @Override
   public CommandName getCommandName() {
     // Require the xml string to be lowercase.
-    if (commandName != null && CharMatcher.javaLowerCase().matchesAllOf(commandName)) {
+    if (commandName != null && commandName.toLowerCase(Locale.ENGLISH).equals(commandName)) {
       try {
         return CommandName.valueOf(Ascii.toUpperCase(commandName));
       } catch (IllegalArgumentException e) {

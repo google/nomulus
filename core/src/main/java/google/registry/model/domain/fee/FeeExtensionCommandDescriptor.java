@@ -15,9 +15,9 @@
 package google.registry.model.domain.fee;
 
 import com.google.common.base.Ascii;
-import com.google.common.base.CharMatcher;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.fee.FeeQueryCommandExtensionItem.CommandName;
+import java.util.Locale;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlValue;
 
@@ -47,7 +47,7 @@ public class FeeExtensionCommandDescriptor extends ImmutableObject {
 
   public CommandName getCommand() {
     // Require the xml string to be lowercase.
-    if (command != null && CharMatcher.javaLowerCase().matchesAllOf(command)) {
+    if (command != null && command.toLowerCase(Locale.ENGLISH).equals(command)) {
       try {
         return CommandName.valueOf(Ascii.toUpperCase(command));
       } catch (IllegalArgumentException e) {
