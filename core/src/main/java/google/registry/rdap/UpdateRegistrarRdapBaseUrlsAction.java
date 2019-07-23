@@ -92,27 +92,23 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
   @Inject
   UpdateRegistrarRdapBaseUrlsAction() {}
 
-  private String loginAndGetId(HttpRequestFactory requestFactory, String tld) {
-    try {
-      logger.atInfo().log("Logging in to MoSAPI");
-      HttpRequest request =
-          requestFactory.buildGetRequest(new GenericUrl(String.format(LOGIN_URL, tld)));
-      request.getHeaders().setBasicAuthentication(String.format("%s_ry", tld), password);
-      HttpResponse response = request.execute();
+  private String loginAndGetId(HttpRequestFactory requestFactory, String tld) throws IOException {
+    logger.atInfo().log("Logging in to MoSAPI");
+    HttpRequest request =
+        requestFactory.buildGetRequest(new GenericUrl(String.format(LOGIN_URL, tld)));
+    request.getHeaders().setBasicAuthentication(String.format("%s_ry", tld), password);
+    HttpResponse response = request.execute();
 
-      Optional<HttpCookie> idCookie =
-          HttpCookie.parse(response.getHeaders().getFirstHeaderStringValue("Set-Cookie")).stream()
-              .filter(cookie -> cookie.getName().equals(COOKIE_ID))
-              .findAny();
-      checkState(
-          idCookie.isPresent(),
-          "Didn't get the ID cookie from the login response. Code: %s, headers: %s",
-          response.getStatusCode(),
-          response.getHeaders());
-      return idCookie.get().getValue();
-    } catch (IOException e) {
-      throw new UncheckedIOException("Error logging in to MoSAPI server: " + e.getMessage(), e);
-    }
+    Optional<HttpCookie> idCookie =
+        HttpCookie.parse(response.getHeaders().getFirstHeaderStringValue("Set-Cookie")).stream()
+            .filter(cookie -> cookie.getName().equals(COOKIE_ID))
+            .findAny();
+    checkState(
+        idCookie.isPresent(),
+        "Didn't get the ID cookie from the login response. Code: %s, headers: %s",
+        response.getStatusCode(),
+        response.getHeaders());
+    return idCookie.get().getValue();
   }
 
   private void logout(HttpRequestFactory requestFactory, String id, String tld) {
@@ -128,9 +124,8 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
     }
   }
 
-  private ImmutableSetMultimap<String, String> getRdapBaseUrlsPerIanaIdWithTld(String tld) {
-    HttpRequestFactory requestFactory = httpTransport.createRequestFactory();
-    String id = loginAndGetId(requestFactory, tld);
+  private ImmutableSetMultimap<String, String> getRdapBaseUrlsPerIanaIdWithTld(
+      String tld, String id, HttpRequestFactory requestFactory) {
     String content;
     try {
       HttpRequest request =
@@ -173,11 +168,22 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
     checkArgument(!tlds.isEmpty(), "There must exist at least one REAL TLD.");
     Throwable finalThrowable = null;
     for (String tld : tlds) {
+      HttpRequestFactory requestFactory = httpTransport.createRequestFactory();
+      String id;
       try {
-        return getRdapBaseUrlsPerIanaIdWithTld(tld);
+        id = loginAndGetId(requestFactory, tld);
+      } catch (Throwable e) {
+        // Login failures are bad but not unexpected for certain TLDs. We shouldn't store those
+        // but rather should only store useful Throwables.
+        logger.atWarning().log("Error logging in to MoSAPI server: " + e.getMessage(), e);
+        continue;
+      }
+      try {
+        return getRdapBaseUrlsPerIanaIdWithTld(tld, id, requestFactory);
       } catch (Throwable throwable) {
-        logger.atWarning().log(String
-            .format("Error retrieving RDAP urls with TLD %s: %s", tld, throwable.getMessage()));
+        logger.atWarning().log(
+            String.format(
+                "Error retrieving RDAP urls with TLD %s: %s", tld, throwable.getMessage()));
         finalThrowable = throwable;
       }
     }

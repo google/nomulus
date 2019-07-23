@@ -29,6 +29,7 @@ import com.google.api.client.testing.http.MockLowLevelHttpRequest;
 import com.google.api.client.testing.http.MockLowLevelHttpResponse;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.gson.JsonSyntaxException;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registry.Registry;
@@ -274,6 +275,44 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest extends ShardableTestCa
 
     assertThat(assertThrows(RuntimeException.class, action::run)).hasMessageThat()
         .isEqualTo("Error contacting MosAPI server. Tried TLDs [secondtld, tld]");
+  }
+
+  @Test
+  public void testFailureCause_ignoresLoginFailure() {
+    // Login failures aren't particularly interesting so we should log them, but the final
+    // throwable should be some other failure if one existed
+    createTld("secondtld");
+    httpTransport = new TestHttpTransport();
+    action.httpTransport = httpTransport;
+
+    MockLowLevelHttpResponse loginResponse = new MockLowLevelHttpResponse();
+    loginResponse.addHeader(
+        "Set-Cookie",
+        "id=myAuthenticationId; "
+            + "Expires=Tue, 11-Jun-2019 16:34:21 GMT; Path=/mosapi/v1/app; Secure; HttpOnly");
+
+    MockLowLevelHttpResponse badListResponse = new MockLowLevelHttpResponse();
+    String badListReply = JSON_LIST_REPLY.substring(50);
+    badListResponse.setContent(badListReply);
+
+    MockLowLevelHttpResponse logoutResponse = new MockLowLevelHttpResponse();
+    logoutResponse.addHeader(
+        "Set-Cookie",
+        "id=id; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Path=/mosapi/v1/app; Secure; HttpOnly");
+
+    MockLowLevelHttpResponse badLoginResponse = new MockLowLevelHttpResponse();
+    badLoginResponse.addHeader(
+        "Set-Cookie",
+        "Expires=Thu, 01-Jan-1970 00:00:10 GMT; Path=/mosapi/v1/app; Secure; HttpOnly");
+
+    httpTransport.addNextResponse(loginResponse);
+    httpTransport.addNextResponse(badListResponse);
+    httpTransport.addNextResponse(logoutResponse);
+    httpTransport.addNextResponse(badLoginResponse);
+
+    assertThat(assertThrows(RuntimeException.class, action::run))
+        .hasCauseThat()
+        .isInstanceOf(JsonSyntaxException.class);
   }
 
   private static void addValidResponses(TestHttpTransport httpTransport) {
