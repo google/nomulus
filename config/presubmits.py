@@ -78,7 +78,7 @@ PRESUBMITS = {
         r".*Copyright 20\d{2} The Nomulus Authors\. All Rights Reserved\.",
         ("java", "js", "soy", "sql", "py", "sh", "gradle"), {
             ".git", "/build/", "/generated/", "node_modules/",
-            "JUnitBackports.java"
+            "JUnitBackports.java", "registrar_bin.", "registrar_dbg."
         }, REQUIRED):
         "File did not include the license header.",
 
@@ -148,7 +148,7 @@ PRESUBMITS = {
     PresubmitCheck(
         r".*(innerHTML|outerHTML)\s*(=|[+]=)([^=]|$)",
         "js",
-        {"/node_modules/"},
+        {"/node_modules/", "registrar_bin."},
     ):
         "Do not assign directly to the dom. Use goog.dom.setTextContent to set"
         " to plain text, goog.dom.removeChildren to clear, or "
@@ -156,7 +156,7 @@ PRESUBMITS = {
     PresubmitCheck(
         r".*console\.(log|info|warn|error)",
         "js",
-        {"/node_modules/", "google/registry/ui/js/util.js"},
+        {"/node_modules/", "google/registry/ui/js/util.js", "registrar_bin."},
     ):
         "JavaScript files should not include console logging."
 }

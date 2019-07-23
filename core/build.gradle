@@ -651,5 +651,19 @@ task buildToolImage(dependsOn: nomulus, type: Exec) {
   commandLine 'docker', 'build', '-t', 'nomulus-tool', '.'
 }
 
+task copyJsFilesForTestServer(dependsOn: build, type: Copy) {
+  // Unfortunately the test server relies on having some compiled JS/CSS
+  // in place, so copy it over here
+  from "${resourcesDir}/google/registry/ui/"
+  include '**/*.js'
+  include '**/*.css'
+  into "${project.projectDir}/src/main/resources/google/registry/ui/"
+}
+
+task runTestServer(dependsOn: copyJsFilesForTestServer, type: JavaExec) {
+  main = 'google.registry.server.RegistryTestServerMain'
+  classpath = sourceSets.test.runtimeClasspath
+}
+
 project.build.dependsOn buildToolImage
 project.build.dependsOn ':stage'

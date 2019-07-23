@@ -41,7 +41,7 @@ public final class RegistryTestServerMain {
   @Parameter(
       names = "--mode",
       description = "UI console debug mode. RAW allows live editing; DEBUG allows rename testing.")
-  private ConsoleDebug mode = ConsoleDebug.RAW;
+  private ConsoleDebug mode = ConsoleDebug.PRODUCTION;
 
   @Parameter(
       names = "--address",
