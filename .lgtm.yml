@@ -1,0 +1,4 @@
+extraction:
+  java:
+    prepare:
+      packages: "npm"
