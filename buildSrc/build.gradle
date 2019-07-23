@@ -13,7 +13,7 @@
 // limitations under the License.
 
 buildscript {
-  if (rootProject.disableDependencyLocking.toBoolean() == false) {
+  if (project.enableDependencyLocking.toBoolean()) {
     // Lock buildscript dependencies.
     configurations.classpath {
       resolutionStrategy.activateDependencyLocking()
@@ -32,7 +32,7 @@ plugins {
   id 'com.diffplug.gradle.spotless' version '3.18.0'
 }
 
-if (rootProject.disableDependencyLocking.toBoolean() == false) {
+if (rootProject.enableDependencyLocking.toBoolean()) {
   // Lock application dependencies.
   dependencyLocking {
     lockAllConfigurations()
