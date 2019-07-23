@@ -1,8 +1,8 @@
 # Nomulus
 
-| Internal Build | FOSS Build | License | Code Search |
-|----------------|------------|---------|-------------|
-|[![Build Status for Google Registry internal build](https://storage.googleapis.com/domain-registry-kokoro/build.svg)](https://storage.googleapis.com/domain-registry-kokoro/index.html)|[![Build Status for the open source build](https://travis-ci.org/google/nomulus.svg?branch=master)](https://travis-ci.org/google/nomulus)|[![License for this repo](https://img.shields.io/github/license/google/nomulus.svg)](https://github.com/google/nomulus/blob/master/LICENSE)|[![Link to Source Graph](https://github.com/sourcegraph/sourcegraph/blob/master/ui/assets/img/sourcegraph-logo.svg)](https://sourcegraph.com/github.com/google/nomulus)|
+| Internal Build | FOSS Build | LGTM | License | Code Search |
+|----------------|------------|------|---------|-------------|
+|[![Build Status for Google Registry internal build](https://storage.googleapis.com/domain-registry-kokoro/build.svg)](https://storage.googleapis.com/domain-registry-kokoro/index.html)|[![Build Status for the open source build](https://travis-ci.org/google/nomulus.svg?branch=master)](https://travis-ci.org/google/nomulus)|[![Total alerts](https://img.shields.io/lgtm/alerts/g/google/nomulus.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/google/nomulus/alerts/)|[![License for this repo](https://img.shields.io/github/license/google/nomulus.svg)](https://github.com/google/nomulus/blob/master/LICENSE)|[![Link to Source Graph](https://github.com/sourcegraph/sourcegraph/blob/master/ui/assets/img/sourcegraph-logo.svg)](https://sourcegraph.com/github.com/google/nomulus)|
 
 ![Nomulus logo](./nomulus-logo.png)
 
