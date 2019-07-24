@@ -75,6 +75,12 @@ if (project.path == ":services:default") {
 
 appengine {
     deploy {
+        // appengineDeployAll task requires the version to be set. So,
+        // this config lets gcloud select a version name when deploying
+        // to alpha from our workstation.
+        if (environment != 'production' && environment != 'sandbox') {
+            version = 'GCLOUD_CONFIG'
+        }
         projectId = gcpProject
     }
 }
