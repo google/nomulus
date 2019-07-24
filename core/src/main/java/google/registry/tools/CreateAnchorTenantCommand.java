@@ -52,7 +52,7 @@ final class CreateAnchorTenantCommand extends MutatingEppToolCommand {
 
   @Parameter(
       names = {"--contact"},
-      description = "Contact ID for the request. This will be used for registrant, admin contact,"
+      description = "Contact ID for the request. This will be used for registrant, admin contact, "
           + "and tech contact.",
       required = true)
   private String contact;
