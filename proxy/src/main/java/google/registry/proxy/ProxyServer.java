@@ -20,7 +20,7 @@ import static google.registry.proxy.handler.RelayHandler.RELAY_CHANNEL_KEY;
 import static google.registry.proxy.handler.RelayHandler.writeToRelayChannel;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.monitoring.metrics.MetricReporter;
 import google.registry.proxy.Protocol.BackendProtocol;
@@ -51,28 +51,27 @@ import java.util.concurrent.TimeoutException;
 import javax.inject.Provider;
 
 /**
- * A multi-protocol proxy server that listens on port(s) specified in {@link
- * ProxyModule.ProxyComponent#portToProtocolMap()} }.
+ * A multi-protocol proxy server that listens for protocols in {@link
+ * ProxyModule.ProxyComponent#protocols()} }.
  */
 public class ProxyServer implements Runnable {
-
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /** Maximum length of the queue of incoming connections. */
   private static final int MAX_SOCKET_BACKLOG = 128;
 
-  private final ImmutableMap<Integer, FrontendProtocol> portToProtocolMap;
+  private final ImmutableSet<FrontendProtocol> protocols;
   private final HashMap<Integer, Channel> portToChannelMap = new HashMap<>();
   private final EventLoopGroup eventGroup = new NioEventLoopGroup();
 
   ProxyServer(ProxyComponent proxyComponent) {
-    this.portToProtocolMap = proxyComponent.portToProtocolMap();
+    this.protocols = ImmutableSet.copyOf(proxyComponent.protocols());
   }
 
   /**
    * A {@link ChannelInitializer} for connections from a client of a certain protocol.
    *
-   * <p>The {@link #initChannel} method does the following:
+   * <p>The {@link #initChannel(NioSocketChannel)} method does the following:
    *
    * <ol>
    *   <li>Determine the {@link FrontendProtocol} of the inbound {@link Channel} from its parent
@@ -263,8 +262,9 @@ public class ProxyServer implements Runnable {
               .childOption(ChannelOption.AUTO_READ, false);
 
       // Bind to each port specified in portToHandlersMap.
-      portToProtocolMap.forEach(
-          (port, protocol) -> {
+      protocols.forEach(
+          protocol -> {
+            int port = protocol.port();
             try {
               // Wait for binding to be established for each listening port.
               ChannelFuture serverChannelFuture = serverBootstrap.bind(port).sync();

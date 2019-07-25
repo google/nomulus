@@ -25,8 +25,6 @@ import com.google.api.services.cloudkms.v1.model.DecryptRequest;
 import com.google.api.services.storage.Storage;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import com.google.common.flogger.LoggerConfig;
 import com.google.monitoring.metrics.MetricReporter;
 import dagger.Component;
@@ -183,12 +181,6 @@ public class ProxyModule {
   @HttpsWhoisProtocol
   int provideHttpsWhoisProtocol(ProxyConfig config) {
     return Optional.ofNullable(httpsWhoisPort).orElse(config.webWhois.httpsPort);
-  }
-
-  @Provides
-  ImmutableMap<Integer, FrontendProtocol> providePortToProtocolMap(
-      Set<FrontendProtocol> protocolSet) {
-    return Maps.uniqueIndex(protocolSet, Protocol::port);
   }
 
   @Provides
@@ -359,7 +351,7 @@ public class ProxyModule {
       })
   interface ProxyComponent {
 
-    ImmutableMap<Integer, FrontendProtocol> portToProtocolMap();
+    Set<FrontendProtocol> protocols();
 
     MetricReporter metricReporter();
   }
