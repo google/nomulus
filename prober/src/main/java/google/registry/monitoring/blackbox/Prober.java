@@ -14,31 +14,23 @@
 
 package google.registry.monitoring.blackbox;
 
-import com.google.common.collect.ImmutableMap;
 import google.registry.monitoring.blackbox.ProberModule.ProberComponent;
-import google.registry.monitoring.blackbox.Tokens.Token;
-import io.netty.channel.socket.nio.NioSocketChannel;
 
 /**
- * Main class of the Prober, which obtains the {@link ProbingSequences}s provided by {@link Dagger} and runs them
+ * Main class of the Prober, which obtains and starts the {@link ProbingSequence}s provided by Dagger.
  */
 public class Prober {
 
-  /** Main {@link Dagger} Component */
+  /** Main Dagger Component */
   private static ProberComponent proberComponent = DaggerProberModule_ProberComponent.builder().build();
-
-  /** {@link ImmutableMap} of {@code port}s to {@link Protocol}s for WebWhois Redirects */
-  public static final ImmutableMap<Integer, Protocol> portToProtocolMap = proberComponent.providePortToProtocolMap();
 
 
   public static void main(String[] args) {
 
-    ProbingSequence<NioSocketChannel> httpsSequence = proberComponent.provideHttpsWhoisSequence();
-    Token httpsToken = proberComponent.provideWebWhoisToken();
+    //Obtains WebWhois Sequence provided by proberComponent
+    ProbingSequence webWhoisSequence = proberComponent.provideWebWhoisSequence();
 
-    ProbingSequence<NioSocketChannel> httpSequence = proberComponent.provideHttpWhoisSequence();
-    Token httpToken = proberComponent.provideWebWhoisToken();
-    httpsSequence.start(httpsToken);
-    httpSequence.start(httpToken);
+    //Tells Sequence to start running
+    webWhoisSequence.start();
   }
 }
