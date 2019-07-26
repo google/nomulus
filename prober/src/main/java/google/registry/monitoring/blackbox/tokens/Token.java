@@ -14,18 +14,16 @@
 
 package google.registry.monitoring.blackbox.tokens;
 
-import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
+import google.registry.monitoring.blackbox.exceptions.InternalException;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
-import google.registry.monitoring.blackbox.ProbingSequence;
-import google.registry.monitoring.blackbox.ProbingStep;
 import io.netty.channel.Channel;
 
 /**
- * Superclass that represents information passed to each {@link ProbingStep}
- * in a single loop of a {@link ProbingSequence}.
+ * Superclass that represents information passed to each {@link google.registry.monitoring.blackbox.ProbingStep}
+ * in a single loop of a {@link google.registry.monitoring.blackbox.ProbingSequence}.
  *
  * <p>Modifies the message passed in to reflect information relevant to a single loop
- * in a {@link ProbingSequence}. Additionally, passes
+ * in a {@link google.registry.monitoring.blackbox.ProbingSequence}. Additionally, passes
  * on channel that remains unchanged within a loop of the sequence.</p>
  *
  * <p>Also obtains the next {@link Token} corresponding to the next iteration of a loop
@@ -33,21 +31,17 @@ import io.netty.channel.Channel;
  */
 public abstract class Token {
 
-  /**
-   * {@link Channel} that always starts out as null. Once a persistent connection
-   * is made (such as EPP), that channel is stored in the token and passed on to
-   * later steps in the sequence until a new loop begins.
-   */
+  /** {@link Channel} that always starts out as null. */
   protected Channel channel;
 
   /** Obtains next {@link Token} for next loop in sequence. */
   public abstract Token next();
 
   /** String corresponding to host that is relevant for loop in sequence. */
-  public abstract String host();
+  public abstract String getHost();
 
   /** Modifies the {@link OutboundMessageType} in the manner necessary for each loop */
-  public abstract OutboundMessageType modifyMessage(OutboundMessageType messageType) throws UndeterminedStateException;
+  public abstract OutboundMessageType modifyMessage(OutboundMessageType messageType) throws InternalException;
 
   /** Set method for {@code channel} */
   public void setChannel(Channel channel) {
