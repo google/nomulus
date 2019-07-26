@@ -87,7 +87,7 @@ public class Spec11EmailUtilsTest {
           + "update your abuse contact using your registrar portal account.</p>"
           + ""
           + "<p>If you have any questions regarding this notice, please contact "
-          + "my-reply-to@test.com.</p>";
+          + "abuse@test.com.</p>";
   private static final String MONTHLY_EMAIL_FORMAT =
       "Dear registrar partner,"
           + ""
@@ -117,7 +117,7 @@ public class Spec11EmailUtilsTest {
           + "our monthly reporting.</p>"
           + ""
           + "<p>If you have any questions regarding this notice, please contact "
-          + "my-reply-to@test.com.</p>";
+          + "abuse@test.com.</p>";
 
   @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
 
@@ -139,9 +139,8 @@ public class Spec11EmailUtilsTest {
     emailUtils =
         new Spec11EmailUtils(
             emailService,
-            new InternetAddress("my-sender@test.com"),
             new InternetAddress("my-receiver@test.com"),
-            new InternetAddress("my-reply-to@test.com"),
+            new InternetAddress("abuse@test.com"),
             FAKE_RESOURCES,
             "Super Cool Registry");
 
@@ -164,17 +163,17 @@ public class Spec11EmailUtilsTest {
     List<EmailMessage> capturedContents = contentCaptor.getAllValues();
     validateMessage(
         capturedContents.get(0),
-        "my-sender@test.com",
+        "abuse@test.com",
         "the.registrar@example.com",
-        Optional.of("my-reply-to@test.com"),
+        Optional.of("abuse@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>a.com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(1),
-        "my-sender@test.com",
+        "abuse@test.com",
         "new.registrar@example.com",
-        Optional.of("my-reply-to@test.com"),
+        Optional.of("abuse@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         String.format(
             MONTHLY_EMAIL_FORMAT,
@@ -182,7 +181,7 @@ public class Spec11EmailUtilsTest {
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(2),
-        "my-sender@test.com",
+        "abuse@test.com",
         "my-receiver@test.com",
         Optional.empty(),
         "Spec11 Pipeline Success 2018-07-15",
@@ -202,17 +201,17 @@ public class Spec11EmailUtilsTest {
     List<EmailMessage> capturedMessages = contentCaptor.getAllValues();
     validateMessage(
         capturedMessages.get(0),
-        "my-sender@test.com",
+        "abuse@test.com",
         "the.registrar@example.com",
-        Optional.of("my-reply-to@test.com"),
+        Optional.of("abuse@test.com"),
         "Super Cool Registry Daily Threat Detector [2018-07-15]",
         String.format(DAILY_EMAIL_FORMAT, "<tr><td>a.com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedMessages.get(1),
-        "my-sender@test.com",
+        "abuse@test.com",
         "new.registrar@example.com",
-        Optional.of("my-reply-to@test.com"),
+        Optional.of("abuse@test.com"),
         "Super Cool Registry Daily Threat Detector [2018-07-15]",
         String.format(
             DAILY_EMAIL_FORMAT,
@@ -220,7 +219,7 @@ public class Spec11EmailUtilsTest {
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedMessages.get(2),
-        "my-sender@test.com",
+        "abuse@test.com",
         "my-receiver@test.com",
         Optional.empty(),
         "Spec11 Pipeline Success 2018-07-15",
@@ -247,15 +246,15 @@ public class Spec11EmailUtilsTest {
     List<EmailMessage> capturedContents = contentCaptor.getAllValues();
     validateMessage(
         capturedContents.get(0),
-        "my-sender@test.com",
+        "abuse@test.com",
         "new.registrar@example.com",
-        Optional.of("my-reply-to@test.com"),
+        Optional.of("abuse@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>c.com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedContents.get(1),
-        "my-sender@test.com",
+        "abuse@test.com",
         "my-receiver@test.com",
         Optional.empty(),
         "Spec11 Pipeline Success 2018-07-15",
@@ -292,17 +291,17 @@ public class Spec11EmailUtilsTest {
     List<EmailMessage> capturedMessages = contentCaptor.getAllValues();
     validateMessage(
         capturedMessages.get(0),
-        "my-sender@test.com",
+        "abuse@test.com",
         "the.registrar@example.com",
-        Optional.of("my-reply-to@test.com"),
+        Optional.of("abuse@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>a.com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedMessages.get(1),
-        "my-sender@test.com",
+        "abuse@test.com",
         "new.registrar@example.com",
-        Optional.of("my-reply-to@test.com"),
+        Optional.of("abuse@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         String.format(
             MONTHLY_EMAIL_FORMAT,
@@ -310,7 +309,7 @@ public class Spec11EmailUtilsTest {
         Optional.of(MediaType.HTML_UTF_8));
     validateMessage(
         capturedMessages.get(2),
-        "my-sender@test.com",
+        "abuse@test.com",
         "my-receiver@test.com",
         Optional.empty(),
         "Spec11 Emailing Failure 2018-07-15",
@@ -324,7 +323,7 @@ public class Spec11EmailUtilsTest {
     verify(emailService).sendEmail(contentCaptor.capture());
     validateMessage(
         contentCaptor.getValue(),
-        "my-sender@test.com",
+        "abuse@test.com",
         "my-receiver@test.com",
         Optional.empty(),
         "Spec11 Pipeline Alert: 2018-07",

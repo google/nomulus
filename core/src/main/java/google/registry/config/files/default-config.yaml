@@ -357,9 +357,9 @@ misc:
   # Address we send alert summary emails to.
   alertRecipientEmailAddress: email@example.com
 
-  # Address to which the Spec 11 emails to registrars should be replied. This needs
-  # to be a deliverable email address in case the registrars want to contact us.
-  spec11ReplyToEmailAddress: reply-to@example.com
+  # Address from which Spec 11 emails to registrars are sent. This needs
+  # to be a deliverable email address to handle replies from registrars as well.
+  spec11OutgoingEmailAddress: abuse@example.com
 
   # How long to delay processing of asynchronous deletions. This should always
   # be longer than eppResourceCachingSeconds, to prevent deleted contacts or

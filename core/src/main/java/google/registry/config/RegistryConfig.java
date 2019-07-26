@@ -894,9 +894,9 @@ public final class RegistryConfig {
      * @see google.registry.reporting.spec11.Spec11EmailUtils
      */
     @Provides
-    @Config("spec11ReplyToEmailAddress")
-    public static InternetAddress provideSpec11ReplyToEmailAddress(RegistryConfigSettings config) {
-      return parseEmailAddress(config.misc.spec11ReplyToEmailAddress);
+    @Config("spec11OutgoingEmailAddress")
+    public static InternetAddress provideSpec11OutgoingEmailAddress(RegistryConfigSettings config) {
+      return parseEmailAddress(config.misc.spec11OutgoingEmailAddress);
     }
 
     /**

@@ -59,22 +59,19 @@ public class Spec11EmailUtils {
   private final SendEmailService emailService;
   private final InternetAddress outgoingEmailAddress;
   private final InternetAddress alertRecipientAddress;
-  private final InternetAddress spec11ReplyToAddress;
   private final ImmutableList<String> spec11WebResources;
   private final String registryName;
 
   @Inject
   Spec11EmailUtils(
       SendEmailService emailService,
-      @Config("gSuiteOutgoingEmailAddress") InternetAddress outgoingEmailAddress,
       @Config("alertRecipientEmailAddress") InternetAddress alertRecipientAddress,
-      @Config("spec11ReplyToEmailAddress") InternetAddress spec11ReplyToAddress,
+      @Config("spec11OutgoingEmailAddress") InternetAddress spec11OutgoingEmailAddress,
       @Config("spec11WebResources") ImmutableList<String> spec11WebResources,
       @Config("registryName") String registryName) {
     this.emailService = emailService;
-    this.outgoingEmailAddress = outgoingEmailAddress;
+    this.outgoingEmailAddress = spec11OutgoingEmailAddress;
     this.alertRecipientAddress = alertRecipientAddress;
-    this.spec11ReplyToAddress = spec11ReplyToAddress;
     this.spec11WebResources = spec11WebResources;
     this.registryName = registryName;
   }
@@ -149,7 +146,7 @@ public class Spec11EmailUtils {
             .setContentType(MediaType.HTML_UTF_8)
             .setFrom(outgoingEmailAddress)
             .addRecipient(getEmailAddressForRegistrar(registrarThreatMatches.clientId()))
-            .setBcc(spec11ReplyToAddress)
+            .setBcc(outgoingEmailAddress)
             .build());
   }
 
@@ -172,7 +169,7 @@ public class Spec11EmailUtils {
         ImmutableMap.of(
             "date", date.toString(),
             "registry", registryName,
-            "replyToEmail", spec11ReplyToAddress.getAddress(),
+            "replyToEmail", outgoingEmailAddress.getAddress(),
             "threats", threatMatchMap,
             "resources", spec11WebResources);
     renderer.setData(data);

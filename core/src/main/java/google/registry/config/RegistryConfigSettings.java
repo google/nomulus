@@ -173,7 +173,7 @@ public class RegistryConfigSettings {
   public static class Misc {
     public String sheetExportId;
     public String alertRecipientEmailAddress;
-    public String spec11ReplyToEmailAddress;
+    public String spec11OutgoingEmailAddress;
     public int asyncDeleteDelaySeconds;
     public int transientFailureRetries;
   }
