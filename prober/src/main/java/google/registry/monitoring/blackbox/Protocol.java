@@ -29,7 +29,7 @@ public abstract class Protocol {
   /** {@link AttributeKey} that lets channel reference {@link Protocol} that created it. */
   public static final AttributeKey<Protocol> PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL_KEY");
 
-  public abstract String name();
+  abstract String name();
 
   public abstract int port();
 
@@ -43,7 +43,6 @@ public abstract class Protocol {
     return new AutoValue_Protocol.Builder();
   }
 
-  /** Builder for {@link Protocol}. */
   @AutoValue.Builder
   public abstract static class Builder {
 

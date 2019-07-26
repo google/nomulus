@@ -16,10 +16,10 @@ package google.registry.monitoring.blackbox.tokens;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.WebWhoisModule.WebWhoisProtocol;
-import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
+import google.registry.monitoring.blackbox.exceptions.InternalException;
+import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -33,38 +33,42 @@ import javax.inject.Named;
 public class WebWhoisToken extends Token {
 
   /** For each top level domain (tld), we probe "prefix.tld". */
-  private final static String PREFIX = "whois.nic.";
+  private final String prefix;
 
   /** {@link ImmutableList} of all top level domains to be probed. */
-  private final Iterator<String> topLevelDomainsIterator;
+  private final ImmutableList<String> topLevelDomains;
 
   /** Current index of {@code topLevelDomains} that represents tld we are probing. */
-  private String currentDomain;
+  private int domainsIndex;
 
   @Inject
-  public WebWhoisToken(@WebWhoisProtocol ImmutableList<String> topLevelDomains) {
+  public WebWhoisToken(
+      @Named("Web-WHOIS-Prefix") String prefix,
+      @WebWhoisProtocol ImmutableList<String> topLevelDomains) {
 
-    topLevelDomainsIterator = topLevelDomains.iterator();
-    currentDomain = topLevelDomainsIterator.next();
+    domainsIndex = 0;
+    this.prefix = prefix;
+    this.topLevelDomains = topLevelDomains;
   }
 
   /** Increments {@code domainsIndex} or resets it to reflect move to next top level domain. */
   @Override
   public WebWhoisToken next() {
-    currentDomain = topLevelDomainsIterator.next();
+    domainsIndex += 1;
+    domainsIndex %= topLevelDomains.size();
     return this;
   }
 
   /** Modifies message to reflect the new host coming from the new top level domain. */
   @Override
-  public OutboundMessageType modifyMessage(OutboundMessageType original) throws UndeterminedStateException {
-    return original.modifyMessage(host());
+  public OutboundMessageType modifyMessage(OutboundMessageType original) throws InternalException {
+    return original.modifyMessage(getHost());
   }
 
   /** Returns host as the concatenation of fixed {@code prefix} and current value of {@code topLevelDomains}. */
   @Override
-  public String host() {
-    return PREFIX + currentDomain;
+  public String getHost() {
+    return prefix + topLevelDomains.get(domainsIndex);
   }
 }
 
