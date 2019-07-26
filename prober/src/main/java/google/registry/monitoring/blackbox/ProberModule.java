@@ -14,99 +14,59 @@
 
 package google.registry.monitoring.blackbox;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.monitoring.blackbox.Tokens.Token;
-import google.registry.monitoring.blackbox.WebWhoisModule.HttpWhoisProtocol;
-import google.registry.monitoring.blackbox.WebWhoisModule.HttpsWhoisProtocol;
 import google.registry.monitoring.blackbox.WebWhoisModule.WebWhoisProtocol;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
-import java.util.Set;
+import io.netty.handler.ssl.OpenSsl;
+import io.netty.handler.ssl.SslProvider;
 import javax.inject.Singleton;
+import org.joda.time.Duration;
 
 /**
- * {@link Dagger} main module, which Provides {@link ProbingSequences} and houses {@link ProberComponent}
- *
- * <p>Provides</p>
+ * Dagger main module, which {@link Provides} all objects that are shared between sequences and stores
+ * {@link ProberComponent}, which allows main {@link Prober} class to obtain each {@link ProbingSequence}.
  */
 @Module
 public class ProberModule {
-  private final int httpWhoIsPort = 80;
-  private final int httpsWhoIsPort = 443;
 
+  /** Default {@link Duration} chosen to be time between each {@link ProbingAction} call. */
+  private static final Duration DEFAULT_DURATION = new Duration(4000L);
+
+  /** {@link Provides} one global {@link EventLoopGroup} shared by each {@link ProbingSequence}. */
   @Provides
   @Singleton
   EventLoopGroup provideEventLoopGroup() {
     return new NioEventLoopGroup();
   }
 
+  /** {@link Provides} above {@code DEFAULT_DURATION} for all provided {@link ProbingStep}s to use. */
   @Provides
-  @HttpWhoisProtocol
-  ProbingSequence<NioSocketChannel> provideHttpWhoisSequence(
-      @HttpWhoisProtocol ProbingStep<NioSocketChannel> probingStep,
-      EventLoopGroup eventLoopGroup) {
-    return new ProbingSequence.Builder<NioSocketChannel>()
-        .setClass(NioSocketChannel.class)
-        .addStep(probingStep)
-        .makeFirstRepeated()
-        .eventLoopGroup(eventLoopGroup)
-        .build();
+  @Singleton
+  Duration provideDuration() {
+    return DEFAULT_DURATION;
   }
 
+  /** {@link Provides} the {@link SslProvider} used by instances of {@link google.registry.monitoring.blackbox.handlers.SslClientInitializer} */
   @Provides
-  @HttpsWhoisProtocol
-  ProbingSequence<NioSocketChannel> provideHttpsWhoisSequence(
-      @HttpsWhoisProtocol ProbingStep<NioSocketChannel> probingStep,
-      EventLoopGroup eventLoopGroup) {
-    return new ProbingSequence.Builder<NioSocketChannel>()
-        .setClass(NioSocketChannel.class)
-        .addStep(probingStep)
-        .makeFirstRepeated()
-        .eventLoopGroup(eventLoopGroup)
-        .build();
+  static SslProvider provideSslProvider() {
+    // Prefer OpenSSL.
+    return OpenSsl.isAvailable() ? SslProvider.OPENSSL : SslProvider.JDK;
   }
 
-  @Provides
-  @HttpWhoisProtocol
-  int provideHttpWhoisPort() {
-    return httpWhoIsPort;
-  }
-
-  @Provides
-  @HttpsWhoisProtocol
-  int provideHttpsWhoisPort() {
-    return httpsWhoIsPort;
-  }
-
-  @Provides
-  ImmutableMap<Integer, Protocol> providePortToProtocolMap(
-      Set<Protocol> protocolSet) {
-    return Maps.uniqueIndex(protocolSet, Protocol::port);
-  }
-
-
-
+  /** Root level {@link Component} that provides each {@link ProbingSequence}. */
   @Singleton
   @Component(
       modules = {
           ProberModule.class,
           WebWhoisModule.class,
-          TokenModule.class
       })
   public interface ProberComponent {
 
-    @HttpWhoisProtocol ProbingSequence<NioSocketChannel> provideHttpWhoisSequence();
-
-    @HttpsWhoisProtocol ProbingSequence<NioSocketChannel> provideHttpsWhoisSequence();
-
-    ImmutableMap<Integer, Protocol> providePortToProtocolMap();
-
-    @WebWhoisProtocol Token provideWebWhoisToken();
+    //Standard WebWhois sequence
+    @WebWhoisProtocol ProbingSequence provideWebWhoisSequence();
 
   }
 }
