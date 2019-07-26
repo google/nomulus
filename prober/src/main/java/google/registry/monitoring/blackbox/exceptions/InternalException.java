@@ -15,7 +15,8 @@
 package google.registry.monitoring.blackbox.exceptions;
 
 /**
- * Base exception class for all instances when the Status of the task performed is ERROR
+ * Base exception class for all instances when the action performed fails
+ * due to the fault of the Prober.
  */
 public class InternalException extends Exception {
 
