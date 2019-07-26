@@ -12,13 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.monitoring.blackbox.handlers;
-
-import io.netty.channel.ChannelDuplexHandler;
+package google.registry.monitoring.blackbox.exceptions;
 
 /**
- * Abstract class whose subclasses handle the {@link InboundMessageType} and
- * {@link OutboundMessageType} being passed to and from the {@link ActionHandler}
- *
+ * Base exception class for all instances when the status of the action performed is ERROR.
  */
-public abstract class MessageHandler extends ChannelDuplexHandler {}
+public class ConnectionException extends Exception {
+
+  public ConnectionException(String msg) {
+    super(msg);
+  }
+
+  public ConnectionException(Throwable e) {
+    super(e);
+  }
+}
