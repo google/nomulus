@@ -17,62 +17,86 @@ package google.registry.monitoring.blackbox;
 import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
-import dagger.multibindings.IntoSet;
 
-import google.registry.monitoring.blackbox.handlers.MessageHandler;
+import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
+import google.registry.monitoring.blackbox.messages.OutboundMessageType;
+import google.registry.monitoring.blackbox.tokens.Token;
 import google.registry.monitoring.blackbox.handlers.WebWhoisMessageHandler;
 import google.registry.monitoring.blackbox.handlers.SslClientInitializer;
 import google.registry.monitoring.blackbox.handlers.WebWhoisActionHandler;
+import google.registry.monitoring.blackbox.tokens.WebWhoisToken;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslProvider;
+import java.util.List;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
+import org.joda.time.Duration;
 
 /** A module that provides the {@link Protocol}s to send HTTP(S) web WHOIS requests. */
 @Module
 public class WebWhoisModule {
 
-  final static String DOMAIN_SUFFIX = "whois.nic.";
+  private final int httpWhoIsPort = 80;
+  private final int httpsWhoIsPort = 443;
+  private static final String HTTP_PROTOCOL_NAME = "whois_http";
+  private static final String HTTPS_PROTOCOL_NAME = "whois_https";
+  private static final String DOMAIN_PREFIX = "whois.nic.";
+
+  /** Standard length of messages used by Proxy. Equates to 0.5 MB. */
+  private static final int maximumMessageLengthBytes = 512 * 1024;
 
 
   /** Dagger qualifier to provide HTTP whois protocol related handlers and other bindings. */
   @Qualifier
-  @interface HttpWhoisProtocol {}
+  public @interface HttpWhoisProtocol {}
 
   /** Dagger qualifier to provide HTTPS whois protocol related handlers and other bindings. */
   @Qualifier
-  @interface HttpsWhoisProtocol {}
+  public @interface HttpsWhoisProtocol {}
 
   /** Dagger qualifier to provide any WebWhois related bindings. */
   @Qualifier
   public @interface WebWhoisProtocol {}
 
-
-
-  private static final String HTTP_PROTOCOL_NAME = "whois_http";
-  private static final String HTTPS_PROTOCOL_NAME = "whois_https";
-
-
+  /** {@link Provides} standard WebWhois sequence. */
   @Provides
-  @HttpWhoisProtocol
-  static ProbingStep<NioSocketChannel> provideHttpWhoisProbingSequence(
-      @HttpWhoisProtocol Protocol httpWhoisProtocol) {
-    return new ProbingStepWeb<>(httpWhoisProtocol);
-  }
+  @WebWhoisProtocol
+  ProbingSequence provideWebWhoisSequence(
+      @WebWhoisProtocol ProbingStep.Builder probingStepBuilder,
+      WebWhoisToken webWhoisToken,
+      @WebWhoisProtocol Bootstrap bootstrap) {
 
-  @Provides
-  @HttpsWhoisProtocol
-  static ProbingStep<NioSocketChannel> provideHttpsWhoisProbingStep(
-      @HttpsWhoisProtocol Protocol httpsWhoisProtocol) {
-    return new ProbingStepWeb<>(httpsWhoisProtocol);
+    return new ProbingSequence.Builder()
+        .addToken(webWhoisToken)
+        .setBootstrap(bootstrap)
+        .addStep(probingStepBuilder)
+        .build();
   }
 
 
+  /** {@link Provides} only step used in WebWhois sequence. */
+  @Provides
+  @WebWhoisProtocol
+  static ProbingStep.Builder provideWebWhoisStepBuilder(
+      @HttpWhoisProtocol Protocol httpWhoisProtocol,
+      HttpRequestMessage messageTemplate,
+      Duration duration) {
+
+    return ProbingStep.builder()
+        .setProtocol(httpWhoisProtocol)
+        .setMessageTemplate(messageTemplate)
+        .setDuration(duration);
+  }
+
+  /** {@link Provides} the {@link Protocol} that corresponds to http connection. */
   @Singleton
   @Provides
   @HttpWhoisProtocol
@@ -80,28 +104,14 @@ public class WebWhoisModule {
       @HttpWhoisProtocol int httpWhoisPort,
       @HttpWhoisProtocol ImmutableList<Provider<? extends ChannelHandler>> handlerProviders) {
     return Protocol.builder()
-        .name(HTTP_PROTOCOL_NAME)
-        .port(httpWhoisPort)
-        .handlerProviders(handlerProviders)
-        .persistentConnection(false)
+        .setName(HTTP_PROTOCOL_NAME)
+        .setPort(httpWhoisPort)
+        .setHandlerProviders(handlerProviders)
+        .setPersistentConnection(false)
         .build();
   }
 
-  @Singleton
-  @Provides
-  @IntoSet
-  static Protocol provideHttpProtocolForSet(
-      @HttpWhoisProtocol int httpWhoisPort,
-      @HttpWhoisProtocol ImmutableList<Provider<? extends ChannelHandler>> handlerProviders) {
-    return Protocol.builder()
-        .name(HTTP_PROTOCOL_NAME)
-        .port(httpWhoisPort)
-        .handlerProviders(handlerProviders)
-        .persistentConnection(false)
-        .build();
-  }
-
-
+  /** {@link Provides} the {@link Protocol} that corresponds to https connection. */
   @Singleton
   @Provides
   @HttpsWhoisProtocol
@@ -109,40 +119,28 @@ public class WebWhoisModule {
       @HttpsWhoisProtocol int httpsWhoisPort,
       @HttpsWhoisProtocol ImmutableList<Provider<? extends ChannelHandler>> handlerProviders) {
     return Protocol.builder()
-        .name(HTTPS_PROTOCOL_NAME)
-        .port(httpsWhoisPort)
-        .handlerProviders(handlerProviders)
-        .persistentConnection(false)
+        .setName(HTTPS_PROTOCOL_NAME)
+        .setPort(httpsWhoisPort)
+        .setHandlerProviders(handlerProviders)
+        .setPersistentConnection(false)
         .build();
   }
 
-  @Singleton
+  /** {@link Provides} the prefix where we probe: "prefix.tld". */
   @Provides
-  @IntoSet
-  static Protocol provideHttpsProtocolForSet(
-      @HttpsWhoisProtocol int httpsWhoisPort,
-      @HttpsWhoisProtocol ImmutableList<Provider<? extends ChannelHandler>> handlerProviders) {
-    return Protocol.builder()
-        .name(HTTPS_PROTOCOL_NAME)
-        .port(httpsWhoisPort)
-        .handlerProviders(handlerProviders)
-        .persistentConnection(false)
-        .build();
-  }
-
-  @Provides
-  @WebWhoisProtocol
-  String provideHttpWhoisHost() {
-    return "app";
+  @Named("Web-WHOIS-Prefix")
+  String provideWhoisPrefix() {
+    return DOMAIN_PREFIX;
   }
 
 
+  /** {@link Provides} the list of providers of {@link ChannelHandler}s that are used for http protocol. */
   @Provides
   @HttpWhoisProtocol
   static ImmutableList<Provider<? extends ChannelHandler>> providerHttpWhoisHandlerProviders(
       Provider<HttpClientCodec> httpClientCodecProvider,
       Provider<HttpObjectAggregator> httpObjectAggregatorProvider,
-      @WebWhoisProtocol Provider<MessageHandler> messageHandlerProvider,
+      Provider<WebWhoisMessageHandler> messageHandlerProvider,
       Provider<WebWhoisActionHandler> webWhoisActionHandlerProvider) {
     return ImmutableList.of(
         httpClientCodecProvider,
@@ -151,13 +149,14 @@ public class WebWhoisModule {
         webWhoisActionHandlerProvider);
   }
 
+  /** {@link Provides} the list of providers of {@link ChannelHandler}s that are used for https protocol. */
   @Provides
   @HttpsWhoisProtocol
   static ImmutableList<Provider<? extends ChannelHandler>> providerHttpsWhoisHandlerProviders(
       @HttpsWhoisProtocol Provider<SslClientInitializer<NioSocketChannel>> sslClientInitializerProvider,
       Provider<HttpClientCodec> httpClientCodecProvider,
       Provider<HttpObjectAggregator> httpObjectAggregatorProvider,
-      @WebWhoisProtocol Provider<MessageHandler> messageHandlerProvider,
+      Provider<WebWhoisMessageHandler> messageHandlerProvider,
       Provider<WebWhoisActionHandler> webWhoisActionHandlerProvider) {
     return ImmutableList.of(
         sslClientInitializerProvider,
@@ -167,33 +166,57 @@ public class WebWhoisModule {
         webWhoisActionHandlerProvider);
   }
 
-
-  @Provides
-  @WebWhoisProtocol
-  static MessageHandler provideMessageHandler() {
-    return new WebWhoisMessageHandler();
-  }
-
   @Provides
   static HttpClientCodec provideHttpClientCodec() {
     return new HttpClientCodec();
   }
 
   @Provides
-  static HttpObjectAggregator provideHttpObjectAggregator() {
-    return new HttpObjectAggregator(1048576);
+  static HttpObjectAggregator provideHttpObjectAggregator(@WebWhoisProtocol int maxContentLength) {
+    return new HttpObjectAggregator(maxContentLength);
   }
 
-  @Provides
-  static SslProvider provideSslProvider() {
-    // Prefer OpenSSL.
-    return OpenSsl.isAvailable() ? SslProvider.OPENSSL : SslProvider.JDK;
-  }
-
+  /** {@link Provides} the {@link SslClientInitializer} used for the {@link HttpsWhoisProtocol}. */
   @Provides
   @HttpsWhoisProtocol
   static SslClientInitializer<NioSocketChannel> provideSslClientInitializer(SslProvider sslProvider) {
     return new SslClientInitializer<>(sslProvider);
+  }
+
+  /** {@link Provides} the {@link Bootstrap} used by the WebWhois sequence. */
+  @Singleton
+  @Provides
+  @WebWhoisProtocol
+  static Bootstrap provideBootstrap(EventLoopGroup eventLoopGroup) {
+    return new Bootstrap()
+        .group(eventLoopGroup)
+        .channel(NioSocketChannel.class);
+  }
+
+  @Provides
+  @WebWhoisProtocol
+  int provideMaximumMessageLengthBytes() {
+    return maximumMessageLengthBytes;
+  }
+
+  /** {@link Provides} the list of top level domains to be probed */
+  @Singleton
+  @Provides
+  @WebWhoisProtocol
+  ImmutableList<String> provideTopLevelDomains() {
+    return ImmutableList.of("how", "soy" , "xn--q9jyb4c");
+  }
+
+  @Provides
+  @HttpWhoisProtocol
+  int provideHttpWhoisPort() {
+    return httpWhoIsPort;
+  }
+
+  @Provides
+  @HttpsWhoisProtocol
+  int provideHttpsWhoisPort() {
+    return httpsWhoIsPort;
   }
 
 

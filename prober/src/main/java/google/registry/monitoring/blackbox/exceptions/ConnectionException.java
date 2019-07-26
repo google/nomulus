@@ -15,10 +15,9 @@
 package google.registry.monitoring.blackbox.exceptions;
 
 /**
- * Subclass of {@link UndeterminedStateException} that represents all instances when
- * the action performed failed due to an issue in the connection with the server.
+ * Base exception class for all instances when the status of the action performed is ERROR.
  */
-public class ConnectionException extends UndeterminedStateException {
+public class ConnectionException extends Exception {
 
   public ConnectionException(String msg) {
     super(msg);
