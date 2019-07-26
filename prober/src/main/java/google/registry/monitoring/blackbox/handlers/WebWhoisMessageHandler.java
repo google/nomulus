@@ -17,37 +17,36 @@ package google.registry.monitoring.blackbox.handlers;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.messages.HttpResponseMessage;
 import google.registry.monitoring.blackbox.messages.InboundMessageType;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.FullHttpResponse;
 import javax.inject.Inject;
 
 /**
- * Subclass of {@link MessageHandler} that converts inbound {@link FullHttpResponse}
+ * {@link io.netty.channel.ChannelHandler} that converts inbound {@link FullHttpResponse}
  * to custom type {@link HttpResponseMessage} and retains {@link HttpRequestMessage}
- * in case of reuse for redirection
+ * in case of reuse for redirection.
  */
-public class WebWhoisMessageHandler extends MessageHandler {
-
-  private HttpRequestMessage request;
+public class WebWhoisMessageHandler extends ChannelDuplexHandler {
 
   @Inject
   public WebWhoisMessageHandler() {}
 
-  /** Retains {@link HttpRequestMessage} and calls super write method*/
+  /** Retains {@link HttpRequestMessage} and calls super write method. */
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-    request = (HttpRequestMessage) msg;
+    HttpRequestMessage request = (HttpRequestMessage) msg;
     request.retain();
     super.write(ctx, request, promise);
   }
 
 
-  /** Converts {@link FullHttpResponse} to {@link HttpResponseMessage}, so it is an {@link InboundMessageType} instance */
+  /** Converts {@link FullHttpResponse} to {@link HttpResponseMessage}, so it is an {@link InboundMessageType} instance. */
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     FullHttpResponse originalResponse = (FullHttpResponse) msg;
-    InboundMessageType response = HttpResponseMessage.fromResponse(originalResponse);
+    HttpResponseMessage response = new HttpResponseMessage(originalResponse);
     super.channelRead(ctx, response);
   }
 }
