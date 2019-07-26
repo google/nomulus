@@ -23,6 +23,7 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.request.Parameter;
 import java.util.Optional;
+import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 
 /** Dagger module for the Registrar Console parameters. */
@@ -143,5 +144,11 @@ public final class RegistrarConsoleModule {
   @Parameter("passcode")
   static Optional<String> provideOptionalPasscode(HttpServletRequest req) {
     return extractOptionalParameter(req, "passcode");
+  }
+
+  @Provides
+  @Parameter("lockId")
+  static UUID provideLockId(HttpServletRequest req) {
+    return UUID.fromString(extractRequiredParameter(req, "lockId"));
   }
 }

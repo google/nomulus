@@ -257,8 +257,11 @@
     {/call}
   {/if}
   {if isNonnull($item['allowedToSetRegistryLockPassword'])}
-    <input type="hidden" name="allowedToSetRegistryLockPassword"
-           value="{$item['allowedToSetRegistryLockPassword']}">
+    <input type="checkbox"
+           style="visibility:none"
+           name="{$namePrefix}allowedToSetRegistryLockPassword"
+           id="{$namePrefix}allowedToSetRegistryLockPassword"
+        {if $item['allowedToSetRegistryLockPassword']}checked{/if}>
   {/if}
   <tr>
     <td colspan="2">
