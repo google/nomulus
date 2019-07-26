@@ -34,17 +34,9 @@ public class HttpResponseMessage extends DefaultFullHttpResponse implements Inbo
   }
 
   /** Used for pipeline conversion from {@link FullHttpResponse} to {@link HttpResponseMessage} */
-  public static HttpResponseMessage fromResponse(FullHttpResponse response) {
-    HttpResponseMessage finalResponse;
-    ByteBuf buf = response.content();
+  public HttpResponseMessage (FullHttpResponse response) {
+    this(response.protocolVersion(), response.status(), response.content());
 
-    if (buf == null)
-      finalResponse = new HttpResponseMessage(HttpVersion.HTTP_1_1, response.status());
-    else
-      finalResponse = new HttpResponseMessage(HttpVersion.HTTP_1_1, response.status(), buf);
-
-    response.headers().forEach((entry) -> finalResponse.headers().set(entry.getKey(), entry.getValue()));
-
-    return finalResponse;
+    response.headers().forEach((entry) -> headers().set(entry.getKey(), entry.getValue()));
   }
 }
