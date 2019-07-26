@@ -15,7 +15,7 @@
 package google.registry.monitoring.blackbox.exceptions;
 
 /**
- * Base exception class for all instances when the Status of the task performed is ERROR
+ * Base exception class for all instances when the status of the action performed is FAILURE.
  */
 public class ResponseException extends Exception {
 
