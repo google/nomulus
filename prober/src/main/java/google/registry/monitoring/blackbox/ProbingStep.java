@@ -14,152 +14,145 @@
 
 package google.registry.monitoring.blackbox;
 
+import com.google.auto.value.AutoValue;
 import com.google.common.flogger.FluentLogger;
-import google.registry.monitoring.blackbox.Tokens.Token;
+import google.registry.monitoring.blackbox.tokens.Token;
 import google.registry.monitoring.blackbox.exceptions.InternalException;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
-import io.netty.channel.AbstractChannel;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.local.LocalAddress;
-
 import java.util.function.Consumer;
 import org.joda.time.Duration;
 
 /**
- * Represents generator of actions performed at each step in {@link ProbingSequence}
- *
- * @param <C> See {@code C} in {@link ProbingSequence}
+ * {@link AutoValue} class that represents generator of actions performed at each step
+ * in {@link ProbingSequence}.
  *
  * <p>Holds the unchanged components in a given step of the {@link ProbingSequence}, which are
- * the {@link OutboundMessageType} and {@link Protocol} instances. It then modifies
- * these components on each loop iteration with the consumed {@link Token} and from that,
- * generates new {@link ProbingAction} to perform<./p>
+ * the {@link OutboundMessageType}, {@link Protocol}, {@link Duration}, and {@link Bootstrap} instances.
+ * It then modifies these components on each loop iteration with the consumed {@link Token} and from that,
+ * generates a new {@link ProbingAction} to call.</p>
  *
- * <p>Subclasses specify {@link Protocol} and {@link OutboundMessageType} of the {@link ProbingStep}</p>
  */
-public abstract class ProbingStep<C extends AbstractChannel> implements Consumer<Token> {
+@AutoValue
+public abstract class ProbingStep implements Consumer<Token> {
 
-  public static final LocalAddress DEFAULT_ADDRESS = new LocalAddress("DEFAULT_ADDRESS_CHECKER");
-  protected static final Duration DEFAULT_DURATION = new Duration(2000L);
+
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
-  /** Default {@link LocalAddress} when not initialized in {@code Builder} */
-  protected LocalAddress address = DEFAULT_ADDRESS;
 
   /** Necessary boolean to inform when to obtain next {@link Token}*/
   private boolean isLastStep = false;
-  private ProbingStep<C> nextStep;
-  private ProbingSequence<C> parent;
+  private ProbingStep nextStep;
 
-  protected Duration duration;
+  abstract Duration duration();
+  abstract Protocol protocol();
+  abstract OutboundMessageType messageTemplate();
+  abstract Bootstrap bootstrap();
 
-  protected final Protocol protocol;
-  protected final OutboundMessageType message;
 
-  protected ProbingStep(Protocol protocol, OutboundMessageType message) {
-    this.protocol = protocol;
-    this.message = message;
+  @AutoValue.Builder
+  public static abstract class Builder {
+    public abstract Builder setDuration(Duration value);
+
+    public abstract Builder setProtocol(Protocol value);
+
+    public abstract Builder setMessageTemplate(OutboundMessageType value);
+
+    public abstract Builder setBootstrap(Bootstrap value);
+
+    public abstract ProbingStep build();
   }
 
-  private OutboundMessageType message() {
-    return message;
+  public static Builder builder() {
+    return new AutoValue_ProbingStep.Builder();
   }
-
-  Protocol protocol() {
-    return protocol;
-  }
-
 
   void lastStep() {
     isLastStep = true;
   }
 
-  void nextStep(ProbingStep<C> step) {
+  void nextStep(ProbingStep step) {
     this.nextStep = step;
   }
 
-  ProbingStep<C> nextStep() {
+  ProbingStep nextStep() {
     return this.nextStep;
   }
 
-  ProbingStep<C> parent(ProbingSequence<C> parent) {
-    this.parent = parent;
-    return this;
-  }
-
-  /** Generates a new {@link ProbingAction} from token modified message and {@link Protocol} */
+  /** Generates a new {@link ProbingAction} from {@code token} modified {@link OutboundMessageType} */
   private ProbingAction generateAction(Token token) throws InternalException {
-    ProbingAction generatedAction;
+    OutboundMessageType message = token.modifyMessage(messageTemplate());
+    ProbingAction.Builder probingActionBuilder = ProbingAction.builder()
+        .setDelay(duration())
+        .setProtocol(protocol())
+        .setOutboundMessage(message)
+        .setHost(token.getHost())
+        .setBootstrap(bootstrap());
 
-    OutboundMessageType message = token.modifyMessage(message());
+    if (token.channel() != null)
+      probingActionBuilder.setChannel(token.channel());
 
-    //Depending on whether token passes a channel, we make a NewChannelAction or ExistingChannelAction
-    if (protocol().persistentConnection() && token.channel() != null) {
-      generatedAction = ExistingChannelAction.builder()
-          .delay(duration)
-          .protocol(protocol())
-          .outboundMessage(message)
-          .host(token.getHost())
-          .channel(token.channel())
-          .build();
-    } else {
-      generatedAction = NewChannelAction.<C>builder()
-          .delay(duration)
-          .protocol(protocol())
-          .outboundMessage(message)
-          .host(token.getHost())
-          .bootstrap(parent.getBootstrap())
-          .address(address)
-          .build();
-
-    }
-    return generatedAction;
+    return probingActionBuilder.build();
   }
 
 
-  /** On the last step, get the next {@link Token}. Otherwise, use the same one. */
+  /** On the last step, gets the next {@link Token}. Otherwise, uses the same one. */
   private Token generateNextToken(Token token) {
     return (isLastStep) ? token.next() : token;
   }
 
   @Override
   public void accept(Token token) {
-    ProbingAction nextAction;
+    ProbingAction currentAction;
     //attempt to generate new action. On error, move on to next step
     try {
-      nextAction = generateAction(token);
+      currentAction = generateAction(token);
     } catch(InternalException e) {
       logger.atWarning().withCause(e).log("Error in Action Generation");
       nextStep.accept(generateNextToken(token));
       return;
     }
 
-    //If the next step maintains the connection, pass on the channel from this
-    if (protocol().persistentConnection()) {
-      token.channel(nextAction.channel());
-    }
+
 
     //call the created action
-    ChannelFuture future = nextAction.call();
+    ChannelFuture future;
+
+    try {
+      future = currentAction.call();
+
+    } catch(InternalException e) {
+      logger.atWarning().withCause(e).log("Error in Action Performed");
+      nextStep.accept(generateNextToken(token));
+      return;
+    }
+
 
     //On result, either log success and move on, or
     future.addListener(f -> {
       if (f.isSuccess()) {
         logger.atInfo().log(String.format("Successfully completed Probing Step: %s", this));
-        nextStep.accept(generateNextToken(token));
+        //If the next step maintains the connection, pass on the channel from this
       } else {
         logger.atSevere().withCause(f.cause()).log("Did not result in future success");
       }
+      if (protocol().persistentConnection())
+        token.setChannel(currentAction.channel());
+
+      nextStep.accept(generateNextToken(token));
+
+
     });
   }
 
   @Override
   public String toString() {
     return String.format("ProbingStep with Protocol: %s\n" +
-        "OutboundMessage: %s\n" +
-        "and parent sequence: %s",
+        "OutboundMessage: %s\n",
         protocol(),
-        message(),
-        parent);
+        messageTemplate().getClass().getName());
   }
+
 }
+
+
