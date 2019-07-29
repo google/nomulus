@@ -15,14 +15,14 @@
 package google.registry.monitoring.blackbox.handlers;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.monitoring.blackbox.ProbingAction.REMOTE_ADDRESS_KEY;
-import static google.registry.monitoring.blackbox.Protocol.PROTOCOL_KEY;
+import static google.registry.monitoring.blackbox.connection.ProbingAction.REMOTE_ADDRESS_KEY;
+import static google.registry.monitoring.blackbox.connection.Protocol.PROTOCOL_KEY;
 import static google.registry.monitoring.blackbox.handlers.SslInitializerTestUtils.getKeyPair;
 import static google.registry.monitoring.blackbox.handlers.SslInitializerTestUtils.setUpSslChannel;
 import static google.registry.monitoring.blackbox.handlers.SslInitializerTestUtils.signKeyPair;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.Protocol;
+import google.registry.monitoring.blackbox.connection.Protocol;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.embedded.EmbeddedChannel;
