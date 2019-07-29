@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import org.joda.time.Duration;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -89,10 +90,46 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
   public abstract String host();
 
   /** The {@link SocketAddress} instance that specifies remote address of connection */
+  @Nullable
   public abstract SocketAddress address();
 
   /** The {@link Optional<Bootstrap>} that is only used in the {@link Builder} to create a connection. */
   public abstract Optional<Bootstrap> bootstrap();
+
+
+  public void informListeners(ChannelPromise finished, ActionHandler actionHandler) {
+    // Write appropriate outboundMessage to pipeline
+    ChannelFuture channelFuture = actionHandler.getFuture();
+    channel().writeAndFlush(outboundMessage());
+    channelFuture.addListeners(
+        //reset the future associated with our ActionHandler in case channel is reused
+        future -> actionHandler.resetFuture(),
+
+        //inform ProbingStep of the status of our action
+        future -> {
+          if (future.isSuccess())
+            finished.setSuccess();
+          else
+            finished.setFailure(future.cause());
+        },
+        //If we don't have a persistent connection, close the connection to this channel
+        future -> {
+          if (!protocol().persistentConnection()) {
+
+            ChannelFuture closedFuture = channel().close();
+            closedFuture.addListener(
+                f -> {
+                  if (f.isSuccess())
+                    logger.atInfo().log("Closed stale channel. Moving on to next ProbingStep");
+                  else
+                    logger.atWarning()
+                        .log("Could not close channel. Stale connection still exists.");
+                }
+            );
+          }
+        }
+    );
+  }
 
   /**
    * The method that performs the work of the actual action.
@@ -130,41 +167,13 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
     ActionHandler finalActionHandler = actionHandler;
 
     //Every specified time frame by delay(), we perform the next action in our sequence and inform ProbingStep when finished
-    timer.newTimeout(timeout -> {
-          // Write appropriate outboundMessage to pipeline
-          ChannelFuture channelFuture = finalActionHandler.getFuture();
-          channel().writeAndFlush(outboundMessage());
-          channelFuture.addListeners(
-              //reset the future associated with our ActionHandler in case channel is reused
-              future -> finalActionHandler.resetFuture(),
+    if (delay() == Duration.ZERO)
+      informListeners(finished, finalActionHandler);
+    else
+      timer.newTimeout(timeout -> informListeners(finished, finalActionHandler),
+          delay().getStandardSeconds(),
+          TimeUnit.SECONDS);
 
-              //inform ProbingStep of the status of our action
-              future -> {
-                if (future.isSuccess())
-                  finished.setSuccess();
-                else
-                  finished.setFailure(future.cause());
-              },
-              //If we don't have a persistent connection, close the connection to this channel
-              future -> {
-                if (!protocol().persistentConnection()) {
-
-                  ChannelFuture closedFuture = channel().close();
-                  closedFuture.addListener(
-                      f -> {
-                        if (f.isSuccess())
-                          logger.atInfo().log("Closed stale channel. Moving on to next ProbingStep");
-                        else
-                          logger.atWarning()
-                              .log("Could not close channel. Stale connection still exists.");
-                      }
-                  );
-                }
-              }
-          );
-        },
-        delay().getStandardSeconds(),
-        TimeUnit.SECONDS);
 
     return finished;
   }
@@ -224,7 +233,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
 
     abstract Channel channel();
 
-    abstract Optional<SocketAddress> address();
+    abstract SocketAddress address();
 
     abstract Optional<Bootstrap> bootstrap();
 
@@ -233,7 +242,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
     abstract ProbingAction autoBuild();
 
     public ProbingAction build() {
-      if (!address().isPresent())
+      if (address() == null)
         //If no address has been supplied, we set it based on the host and port
         setAddress(new InetSocketAddress(host(), protocol().port()));
 
@@ -259,7 +268,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
 
         logger.atInfo().log("Initialized bootstrap with channel Handlers");
         //ChannelFuture that performs action when connection is established
-        ChannelFuture connectionFuture = bootstrap().get().connect(address().get());
+        ChannelFuture connectionFuture = bootstrap().get().connect(address());
 
         setChannel(connectionFuture.channel());
         setConnectionFuture(connectionFuture);
