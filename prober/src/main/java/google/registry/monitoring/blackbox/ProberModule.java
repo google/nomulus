@@ -19,6 +19,7 @@ import dagger.Module;
 import dagger.Provides;
 import io.netty.channel.Channel;
 import google.registry.monitoring.blackbox.connection.ProbingAction;
+import google.registry.monitoring.blackbox.modules.CertificateModule;
 import google.registry.monitoring.blackbox.modules.EppModule;
 import google.registry.monitoring.blackbox.modules.WebWhoisModule;
 import io.netty.bootstrap.Bootstrap;
@@ -97,7 +98,8 @@ public class ProberModule {
       modules = {
           ProberModule.class,
           WebWhoisModule.class,
-          EppModule.class
+          EppModule.class,
+          CertificateModule.class
       })
   public interface ProberComponent {
 

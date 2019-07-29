@@ -42,7 +42,7 @@ public abstract class Protocol {
   /**
    * The {@link ChannelHandler} providers to use for the protocol, in order.
    */
-  abstract ImmutableList<Provider<? extends ChannelHandler>> handlerProviders();
+  public abstract ImmutableList<Provider<? extends ChannelHandler>> handlerProviders();
 
   /**
    * Boolean that notes if connection associated with Protocol is persistent.
