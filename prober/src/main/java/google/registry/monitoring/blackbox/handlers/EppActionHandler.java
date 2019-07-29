@@ -38,7 +38,8 @@ public class EppActionHandler extends ActionHandler {
    * @throws FailureException if we receive a failed response from the server
    */
   @Override
-  public void channelRead0(ChannelHandlerContext ctx, InboundMessageType msg) throws FailureException, UndeterminedStateException {
+  public void channelRead0(ChannelHandlerContext ctx, InboundMessageType msg)
+      throws FailureException, UndeterminedStateException {
     EppResponseMessage response = (EppResponseMessage) msg;
 
     //Based on the expected response type, will throw ResponseFailure if we don't receive a successful EPP response

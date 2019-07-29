@@ -63,10 +63,6 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
   /** Corresponding {@link EppResponseMessage} that we expect to receive on a successful request. */
   private EppResponseMessage expectedResponse;
 
-  private EppRequestMessage(String template) {
-    this.template = template;
-  }
-
   /**
    * From the input {@code clTRID} and {@code domainName}, modifies the template EPP XML document
    * to reflect new parameters.
