@@ -79,11 +79,11 @@ public class WebWhoisServer extends TestServer {
       HttpRequest request = (HttpRequest) msg;
       HttpResponse response;
       if (request.headers().get("host").equals(redirectInput)) {
-        response = HttpResponseMessage.fromResponse(makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, destinationInput, true, false));
+        response = new HttpResponseMessage(makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, destinationInput, true, false));
       } else if (request.headers().get("host").equals(destinationInput)) {
-        response = HttpResponseMessage.fromResponse(makeHttpResponse(HttpResponseStatus.OK));
+        response = new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.OK));
       } else {
-        response = HttpResponseMessage.fromResponse(makeHttpResponse(HttpResponseStatus.BAD_REQUEST));
+        response = new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.BAD_REQUEST));
       }
       ctx.channel().writeAndFlush(response);
 

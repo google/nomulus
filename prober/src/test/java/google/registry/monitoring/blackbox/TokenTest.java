@@ -16,10 +16,11 @@ package google.registry.monitoring.blackbox;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import google.registry.monitoring.blackbox.Tokens.Token;
-import google.registry.monitoring.blackbox.Tokens.WebWhoisToken;
+import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.exceptions.InternalException;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
+import google.registry.monitoring.blackbox.tokens.Token;
+import google.registry.monitoring.blackbox.tokens.WebWhoisToken;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
 import org.junit.Test;
@@ -34,20 +35,20 @@ public class TokenTest {
 
   private static String PREFIX = "whois.nic.";
   private static String TEST_STARTER = "starter";
-  private static String TEST_DOMAIN = "test";
+  private static ImmutableList<String> TEST_DOMAINS = ImmutableList.of("test");
 
-  public Token webToken = new WebWhoisToken(TEST_DOMAIN);
+  public Token webToken = new WebWhoisToken(PREFIX, TEST_DOMAINS);
 
   @Test
   public void testWebToken_MessageModificationSuccess() {
     //creates Request message with header
-    HttpRequestMessage message = new HttpRequestMessage(HttpVersion.HTTP_1_1, HttpMethod.GET, "");
+    HttpRequestMessage message = new HttpRequestMessage();
     message.headers().set("host", TEST_STARTER);
 
     //attempts to use Token's method for modifying the method based on its stored host
     try {
       HttpRequestMessage secondMessage = (HttpRequestMessage) webToken.modifyMessage(message);
-      assertThat(secondMessage.headers().get("host")).isEqualTo(PREFIX+TEST_DOMAIN);
+      assertThat(secondMessage.headers().get("host")).isEqualTo(PREFIX+TEST_DOMAINS.get(0));
     } catch(InternalException e) {
       throw new RuntimeException(e);
     }
