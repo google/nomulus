@@ -21,7 +21,6 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.flogger.FluentLogger;
 import google.registry.monitoring.blackbox.TestUtils.DummyStep;
 import google.registry.monitoring.blackbox.TestUtils.ExistingChannelToken;
 import google.registry.monitoring.blackbox.TestUtils.NewChannelToken;
@@ -47,7 +46,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 /** Unit Tests for {@link ProbingSequence}s and {@link ProbingStep}s and their specific implementations*/
-public class ProbingSequenceStepTest {
+public class ProbingStepTest {
 
   /** Basic Constants necessary for tests */
   private final String ADDRESS_NAME = "TEST_ADDRESS";
