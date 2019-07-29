@@ -15,16 +15,11 @@
 package google.registry.monitoring.blackbox.modules;
 
 import com.google.common.collect.ImmutableList;
-<<<<<<< HEAD
-=======
-import com.google.common.flogger.FluentLogger;
->>>>>>> Added Basic EPP structure
 import dagger.Module;
 import dagger.Provides;
 
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 
-<<<<<<< HEAD
 import dagger.multibindings.IntoSet;
 import google.registry.monitoring.blackbox.ProbingSequence;
 import google.registry.monitoring.blackbox.ProbingStep;
@@ -33,13 +28,10 @@ import google.registry.monitoring.blackbox.handlers.EppActionHandler;
 import google.registry.monitoring.blackbox.handlers.EppMessageHandler;
 import google.registry.monitoring.blackbox.handlers.SslClientInitializer;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
-import google.registry.monitoring.blackbox.messages.EppRequestMessage.Check;
 import google.registry.monitoring.blackbox.messages.EppResponseMessage;
 import google.registry.monitoring.blackbox.tokens.EppToken;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelHandler;
-import google.registry.monitoring.blackbox.modules.WebWhoisModule.WebWhoisProtocol;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslProvider;
 import java.security.PrivateKey;
@@ -203,6 +195,7 @@ public class EppModule {
 
   /** {@link Provides} {@link ProbingStep} that checks a domain doesn't exist on EPP server. */
   @Provides
+<<<<<<< HEAD
   @Named("checkNotExists")
     static ProbingStep provideEppCheckNotExistsStep(
         @EppProtocol Protocol eppProtocol,
