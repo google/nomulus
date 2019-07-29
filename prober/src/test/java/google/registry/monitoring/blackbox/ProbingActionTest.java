@@ -19,6 +19,12 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
+<<<<<<< HEAD
+=======
+import google.registry.monitoring.blackbox.TestServers.EchoServer;
+import google.registry.monitoring.blackbox.TestUtils.DuplexMessageTest;
+import google.registry.monitoring.blackbox.TestUtils.TestProvider;
+>>>>>>> Added Modified test server infrastructure.
 import google.registry.monitoring.blackbox.connection.ProbingAction;
 import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.handlers.ActionHandler;
@@ -159,12 +165,12 @@ public class ProbingActionTest {
     //setup
     setupNewChannelProtocol();
 
-    nettyRule.setUpServer(address, new ChannelInboundHandlerAdapter());
+    echoServer.setUpServer(address, new ChannelInboundHandlerAdapter());
     setupNewChannelAction();
     ChannelFuture future = newChannelAction.call();
 
     //Tests to see if message is properly sent to remote server
-    nettyRule.assertThatCustomWorks(TEST_MESSAGE);
+    echoServer.assertThatCustomWorks(TEST_MESSAGE);
 
     future.sync();
     //Tests to see that, since server responds, we have set future to true
