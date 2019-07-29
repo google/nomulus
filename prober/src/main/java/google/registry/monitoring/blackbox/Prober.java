@@ -28,7 +28,7 @@ public class Prober {
 
   public static void main(String[] args) {
 
-    //Obtains WebWhois Sequence provided by proberComponent
+    //Obtains all Sequences provided by proberComponent
     Set<ProbingSequence> sequences = proberComponent.provideAllSequences();
 
     //Tells Sequences to start running

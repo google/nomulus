@@ -230,6 +230,10 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
 
     abstract Optional<Channel> channel();
 
+    abstract SocketAddress address();
+
+    abstract Optional<Bootstrap> bootstrap();
+
     abstract String host();
 
     abstract ProbingAction autoBuild();

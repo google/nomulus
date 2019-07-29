@@ -17,9 +17,7 @@ package google.registry.monitoring.blackbox.messages;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static google.registry.util.ResourceUtils.readResourceStream;
-
-
+import static google.registry.util.ResourceUtils.readResourceBytes;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.flogger.FluentLogger;
@@ -150,7 +148,7 @@ public class EppMessage {
 
   private static InputStream readResource(String filename)
       throws IOException {
-    return readResourceStream(EppMessage.class, filename);
+    return readResourceBytes(EppMessage.class, filename).openStream();
   }
 
 
@@ -253,10 +251,8 @@ public class EppMessage {
         throw new ResponseException(e);
       }
     }
-    System.out.println(getElementValue(xml, EppRequestMessage.CLIENT_TRID_KEY));
     try {
       for (String exp : expressions) {
-        System.out.println(exp);
         NodeList nodes = (NodeList) xpath.evaluate(exp, xml, XPathConstants.NODESET);
         if (nodes.getLength() == 0) {
           throw new ResponseException("invalid EPP response. failed expression " + exp);
