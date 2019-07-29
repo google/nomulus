@@ -62,6 +62,7 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
   public void channelRead0(ChannelHandlerContext ctx, InboundMessageType inboundMessage)
       throws FailureException, UndeterminedStateException {
 
+
     finished.setSuccess();
   }
 
