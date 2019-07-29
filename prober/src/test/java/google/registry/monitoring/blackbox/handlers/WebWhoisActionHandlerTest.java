@@ -15,16 +15,16 @@
 package google.registry.monitoring.blackbox.handlers;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.monitoring.blackbox.ProbingAction.CONNECTION_FUTURE_KEY;
-import static google.registry.monitoring.blackbox.Protocol.PROTOCOL_KEY;
+import static google.registry.monitoring.blackbox.connection.ProbingAction.CONNECTION_FUTURE_KEY;
+import static google.registry.monitoring.blackbox.connection.Protocol.PROTOCOL_KEY;
 import static google.registry.monitoring.blackbox.TestUtils.makeHttpResponse;
 import static google.registry.monitoring.blackbox.TestUtils.makeHttpGetRequest;
 import static google.registry.monitoring.blackbox.TestUtils.makeRedirectResponse;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.ProbingAction;
-import google.registry.monitoring.blackbox.Protocol;
+import google.registry.monitoring.blackbox.connection.ProbingAction;
+import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.TestServers.WebWhoisServer;
 import google.registry.monitoring.blackbox.TestUtils.TestProvider;
 import google.registry.monitoring.blackbox.exceptions.FailureException;

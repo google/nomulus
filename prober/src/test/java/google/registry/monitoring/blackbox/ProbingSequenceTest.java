@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import google.registry.monitoring.blackbox.TestUtils.ProbingSequenceTestToken;
+import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import google.registry.monitoring.blackbox.tokens.Token;
 import io.netty.bootstrap.Bootstrap;

@@ -17,7 +17,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.monitoring.blackbox.ProbingAction.CONNECTION_FUTURE_KEY;
 import static google.registry.monitoring.blackbox.TestUtils.dummyStep;
 import static google.registry.monitoring.blackbox.TestUtils.testStep;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -26,6 +25,7 @@ import google.registry.monitoring.blackbox.TestUtils.DummyStep;
 import google.registry.monitoring.blackbox.TestUtils.ExistingChannelToken;
 import google.registry.monitoring.blackbox.TestUtils.NewChannelToken;
 import google.registry.monitoring.blackbox.TestUtils.TestProvider;
+import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.handlers.ActionHandler;
 import google.registry.monitoring.blackbox.handlers.ConversionHandler;
 import google.registry.monitoring.blackbox.handlers.NettyRule;
