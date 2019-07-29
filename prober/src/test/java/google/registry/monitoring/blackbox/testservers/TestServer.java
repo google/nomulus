@@ -14,39 +14,44 @@
 
 package google.registry.monitoring.blackbox.testservers;
 
-import static google.registry.monitoring.blackbox.TestUtils.makeHttpResponse;
-import static google.registry.monitoring.blackbox.TestUtils.makeRedirectResponse;
+import static com.google.common.base.Preconditions.checkState;
+import static google.registry.monitoring.blackbox.connection.ProbingAction.REMOTE_ADDRESS_KEY;
+import static google.registry.monitoring.blackbox.connection.Protocol.PROTOCOL_KEY;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.messages.HttpResponseMessage;
+import google.registry.monitoring.blackbox.connection.Protocol;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandler.Sharable;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.local.LocalServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import org.junit.rules.ExternalResource;
 
 /**
  * Mock Server Superclass whose subclasses implement specific behaviors we expect blackbox server to
  * perform
  */
-public class TestServer {
+public abstract class TestServer extends ExternalResource {
 
-  public TestServer(LocalAddress localAddress, ImmutableList<? extends ChannelHandler> handlers) {
-    this(new NioEventLoopGroup(1), localAddress, handlers);
+  protected final EventLoopGroup eventLoopGroup;
+  protected Channel channel;
+
+  protected TestServer() {
+    eventLoopGroup = new NioEventLoopGroup(1);
   }
 
-  public TestServer(EventLoopGroup eventLoopGroup, LocalAddress localAddress,
-      ImmutableList<? extends ChannelHandler> handlers) {
+  protected TestServer(EventLoopGroup eventLoopGroup) {
+    this.eventLoopGroup = eventLoopGroup;
+  }
+
+  protected void setupServer(LocalAddress address, ImmutableList<? extends ChannelHandler> handlers) {
+
     //Creates ChannelInitializer with handlers specified
     ChannelInitializer<LocalChannel> serverInitializer = new ChannelInitializer<LocalChannel>() {
       @Override
@@ -64,60 +69,47 @@ public class TestServer {
             .channel(LocalServerChannel.class)
             .childHandler(serverInitializer);
 
-    ChannelFuture unusedFuture = serverBootstrap.bind(localAddress).syncUninterruptibly();
+    try {
+      ChannelFuture future = serverBootstrap.bind(address).sync();
 
-  }
-
-  public static TestServer webWhoisServer(EventLoopGroup eventLoopGroup,
-      LocalAddress localAddress, String redirectInput, String destinationInput,
-      String destinationPath) {
-    return new TestServer(
-        eventLoopGroup,
-        localAddress,
-        ImmutableList.of(new RedirectHandler(redirectInput, destinationInput, destinationPath))
-    );
-  }
-
-  /**
-   * Handler that will wither redirect client, give successful response, or give error messge
-   */
-  @Sharable
-  static class RedirectHandler extends SimpleChannelInboundHandler<HttpRequest> {
-
-    private String redirectInput;
-    private String destinationInput;
-    private String destinationPath;
-
-    /**
-     * @param redirectInput - Server will send back redirect to {@code destinationInput} when
-     * receiving a request with this host location
-     * @param destinationInput - Server will send back an {@link HttpResponseStatus} OK response
-     * when receiving a request with this host location
-     */
-    public RedirectHandler(String redirectInput, String destinationInput, String destinationPath) {
-      this.redirectInput = redirectInput;
-      this.destinationInput = destinationInput;
-      this.destinationPath = destinationPath;
-    }
-
-    /**
-     * Reads input {@link HttpRequest}, and creates appropriate {@link HttpResponseMessage} based on
-     * what header location is
-     */
-    @Override
-    public void channelRead0(ChannelHandlerContext ctx, HttpRequest request) {
-      HttpResponse response;
-      if (request.headers().get("host").equals(redirectInput)) {
-        response = new HttpResponseMessage(
-            makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, destinationInput, true));
-      } else if (request.headers().get("host").equals(destinationInput)
-          && request.uri().equals(destinationPath)) {
-        response = new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.OK));
-      } else {
-        response = new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.BAD_REQUEST));
-      }
-      ChannelFuture unusedFuture = ctx.channel().writeAndFlush(response);
+    } catch (InterruptedException e) {
+      throw new ExceptionInInitializerError(e);
 
     }
+  }
+
+  /** Sets up a client channel connecting to the give local address. */
+  void setUpClient(
+      LocalAddress localAddress,
+      Protocol protocol,
+      String host,
+      ImmutableList<ChannelHandler> handlers) {
+    ChannelInitializer<LocalChannel> clientInitializer =
+        new ChannelInitializer<LocalChannel>() {
+          @Override
+          protected void initChannel(LocalChannel ch) throws Exception {
+            // Add the given handler
+            for (ChannelHandler handler: handlers)
+              ch.pipeline().addLast(handler);
+          }
+        };
+    Bootstrap b =
+        new Bootstrap()
+            .group(eventLoopGroup)
+            .channel(LocalChannel.class)
+            .handler(clientInitializer)
+            .attr(PROTOCOL_KEY, protocol)
+            .attr(REMOTE_ADDRESS_KEY, host);
+
+    channel = b.connect(localAddress).syncUninterruptibly().channel();
+  }
+
+  public Channel getChannel() {
+    checkReady();
+    return channel;
+  }
+
+  protected void checkReady() {
+    checkState(channel != null, "Must call setUpClient to finish TestServer setup");
   }
 }

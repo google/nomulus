@@ -22,7 +22,7 @@ import static google.registry.util.ResourceUtils.readResourceBytes;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.flogger.FluentLogger;
 import google.registry.monitoring.blackbox.exceptions.EppClientException;
-import google.registry.monitoring.blackbox.exceptions.ResponseException;
+import google.registry.monitoring.blackbox.exceptions.FailureException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -243,23 +243,23 @@ public class EppMessage {
    *     matching data specified in expressions
    */
   protected static void verifyEppResponse(Document xml, List<String> expressions, boolean validate)
-      throws ResponseException {
+      throws FailureException {
     if (validate) {
       try {
         eppValidate(xml);
       } catch (SAXException | IOException e) {
-        throw new ResponseException(e);
+        throw new FailureException(e);
       }
     }
     try {
       for (String exp : expressions) {
         NodeList nodes = (NodeList) xpath.evaluate(exp, xml, XPathConstants.NODESET);
         if (nodes.getLength() == 0) {
-          throw new ResponseException("invalid EPP response. failed expression " + exp);
+          throw new FailureException("invalid EPP response. failed expression " + exp);
         }
       }
     } catch (XPathExpressionException e) {
-      throw new ResponseException(e);
+      throw new FailureException(e);
     }
   }
 
@@ -352,14 +352,14 @@ public class EppMessage {
    * @throws EppClientException if the transform fails
    */
   public static Document byteArrayToXmlDoc(byte[] responseBuffer)
-      throws ResponseException {
+      throws FailureException {
     Document xml;
     try {
       DocumentBuilder builder = docBuilderFactory.newDocumentBuilder();
       ByteArrayInputStream byteStream = new ByteArrayInputStream(responseBuffer);
       xml = builder.parse(byteStream);
     } catch (ParserConfigurationException | SAXException | IOException e) {
-      throw new ResponseException(e);
+      throw new FailureException(e);
     }
     return xml;
 
