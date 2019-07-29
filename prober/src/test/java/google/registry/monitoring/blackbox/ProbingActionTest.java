@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.TestUtils.DuplexMessageTest;
 import google.registry.monitoring.blackbox.TestUtils.TestProvider;
+import google.registry.monitoring.blackbox.exceptions.InternalException;
 import google.registry.monitoring.blackbox.handlers.ActionHandler;
 import google.registry.monitoring.blackbox.handlers.ConversionHandler;
 import google.registry.monitoring.blackbox.handlers.NettyRule;
@@ -83,31 +84,31 @@ public class ProbingActionTest {
   /** Sets up a {@link Protocol} corresponding to when a new connection is created */
   private void setupNewChannelProtocol() {
     protocol = Protocol.builder()
-        .handlerProviders(ImmutableList.of(conversionHandlerProvider, testHandlerProvider))
-        .name(PROTOCOL_NAME)
-        .port(TEST_PORT)
-        .persistentConnection(false)
+        .setHandlerProviders(ImmutableList.of(conversionHandlerProvider, testHandlerProvider))
+        .setName(PROTOCOL_NAME)
+        .setPort(TEST_PORT)
+        .setPersistentConnection(false)
         .build();
   }
   /** Sets up a {@link Protocol} corresponding to when a new connection exists */
   private void setupExistingChannelProtocol() {
     protocol = Protocol.builder()
-        .handlerProviders(ImmutableList.of(conversionHandlerProvider, testHandlerProvider))
-        .name(PROTOCOL_NAME)
-        .port(TEST_PORT)
-        .persistentConnection(true)
+        .setHandlerProviders(ImmutableList.of(conversionHandlerProvider, testHandlerProvider))
+        .setName(PROTOCOL_NAME)
+        .setPort(TEST_PORT)
+        .setPersistentConnection(true)
         .build();
   }
 
-  /** Sets up a {@link NewChannelAction} with test specified attributes */
+  /** Sets up a {@link ProbingAction} that creates a channel using test specified attributes. */
   private void setupNewChannelAction() {
-    newChannelAction = NewChannelAction.<LocalChannel>builder()
-        .bootstrap(bootstrap)
-        .protocol(protocol)
-        .delay(Duration.ZERO)
-        .outboundMessage(new DuplexMessageTest(TEST_MESSAGE))
-        .host("")
-        .address(address)
+    newChannelAction = ProbingAction.builder()
+        .setBootstrap(bootstrap)
+        .setProtocol(protocol)
+        .setDelay(Duration.ZERO)
+        .setOutboundMessage(new DuplexMessageTest(TEST_MESSAGE))
+        .setHost("")
+        .setAddress(address)
         .build();
   }
 
@@ -115,25 +116,25 @@ public class ProbingActionTest {
     channel = new EmbeddedChannel();
   }
 
-  /** Sets up a {@link ExistingChannelAction} with test specified attributes */
+  /** Sets up a {@link ProbingAction} with existing channel using test specified attributes. */
   private void setupExistingChannelAction(Channel channel) {
-    existingChannelAction = ExistingChannelAction.builder()
-        .channel(channel)
-        .protocol(protocol)
-        .delay(Duration.ZERO)
-        .outboundMessage(new DuplexMessageTest(TEST_MESSAGE))
-        .host("")
+    existingChannelAction = ProbingAction.builder()
+        .setChannel(channel)
+        .setProtocol(protocol)
+        .setDelay(Duration.ZERO)
+        .setOutboundMessage(new DuplexMessageTest(TEST_MESSAGE))
+        .setHost("")
         .build();
   }
 
   @Test
-  public void testBehavior_existingChannel() {
+  public void testBehavior_existingChannel() throws InternalException {
     //setup
     setupChannel();
     setupExistingChannelProtocol();
-    setupExistingChannelAction(channel);
     channel.pipeline().addLast(conversionHandler);
     channel.pipeline().addLast(testHandler);
+    setupExistingChannelAction(channel);
 
 
     ChannelFuture future = existingChannelAction.call();
@@ -147,6 +148,7 @@ public class ProbingActionTest {
 
     //after writing inbound, we should have a success
     channel.writeInbound(Unpooled.wrappedBuffer(SECONDARY_TEST_MESSAGE.getBytes(US_ASCII)));
+    future.syncUninterruptibly();
     assertThat(future.isSuccess()).isTrue();
 
     assertThat(testHandler.toString()).isEqualTo(SECONDARY_TEST_MESSAGE);
@@ -156,9 +158,9 @@ public class ProbingActionTest {
   public void testSuccess_newChannel() throws Exception {
     //setup
     setupNewChannelProtocol();
-    setupNewChannelAction();
-    nettyRule.setUpServer(address, new ChannelInboundHandlerAdapter());
 
+    nettyRule.setUpServer(address, new ChannelInboundHandlerAdapter());
+    setupNewChannelAction();
     ChannelFuture future = newChannelAction.call();
 
     //Tests to see if message is properly sent to remote server
