@@ -17,7 +17,6 @@ package google.registry.monitoring.blackbox.handlers;
 import com.google.common.flogger.FluentLogger;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
-import google.registry.monitoring.blackbox.messages.EppRequestMessage.Hello;
 import google.registry.monitoring.blackbox.messages.EppResponseMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
@@ -49,7 +48,7 @@ public class EppMessageHandler extends ChannelDuplexHandler {
       throws Exception {
 
     //If the message is Hello, don't actually pass it on, just wait for server greeting.
-    if (!(msg instanceof Hello)) {
+    if (!(msg instanceof EppRequestMessage.Hello)) {
       //otherwise, we store what we expect a successful response to be
       EppRequestMessage request = (EppRequestMessage) msg;
       response = request.getExpectedResponse();
@@ -69,6 +68,7 @@ public class EppMessageHandler extends ChannelDuplexHandler {
       response.getDocument(buf);
       logger.atInfo().log(response.toString());
     } catch(FailureException e) {
+
       //otherwise we log that it was unsuccessful and throw the requisite error
       logger.atInfo().withCause(e);
       throw e;
