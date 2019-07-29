@@ -21,7 +21,9 @@ import google.registry.monitoring.blackbox.exceptions.InternalException;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
+import java.net.SocketAddress;
 import java.util.function.Consumer;
+import javax.annotation.Nullable;
 import org.joda.time.Duration;
 
 /**
@@ -48,6 +50,7 @@ public abstract class ProbingStep implements Consumer<Token> {
   abstract Protocol protocol();
   abstract OutboundMessageType messageTemplate();
   abstract Bootstrap bootstrap();
+  @Nullable abstract SocketAddress address();
 
 
   @AutoValue.Builder
@@ -59,6 +62,8 @@ public abstract class ProbingStep implements Consumer<Token> {
     public abstract Builder setMessageTemplate(OutboundMessageType value);
 
     public abstract Builder setBootstrap(Bootstrap value);
+
+    public abstract Builder setAddress(SocketAddress address);
 
     public abstract ProbingStep build();
   }
@@ -87,7 +92,8 @@ public abstract class ProbingStep implements Consumer<Token> {
         .setProtocol(protocol())
         .setOutboundMessage(message)
         .setHost(token.getHost())
-        .setBootstrap(bootstrap());
+        .setBootstrap(bootstrap())
+        .setAddress(address());
 
     if (token.channel() != null)
       probingActionBuilder.setChannel(token.channel());
