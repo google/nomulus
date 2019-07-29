@@ -17,9 +17,11 @@ package google.registry.monitoring.blackbox;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-import google.registry.monitoring.blackbox.Tokens.Token;
+import google.registry.monitoring.blackbox.exceptions.InternalException;
 import google.registry.monitoring.blackbox.messages.InboundMessageType;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
+import google.registry.monitoring.blackbox.tokens.Token;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -37,6 +39,9 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.concurrent.DefaultPromise;
+import java.net.Socket;
+import java.net.SocketAddress;
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 import org.joda.time.Duration;
 
@@ -141,26 +146,67 @@ public class TestUtils {
     public String toString() {
       return message;
     }
-  }
 
-  /** {@link ProbingStep} subclass that performs probing Steps functions, without time delay */
-  public static class TestStep extends ProbingStep<LocalChannel> {
+    @Override
+    public OutboundMessageType modifyMessage(String... args) throws InternalException {
+      message = args[0];
+      return this;
+    }
 
-    public TestStep(Protocol protocol, String testMessage, LocalAddress address) {
-      super(protocol, new DuplexMessageTest(testMessage));
-      this.address = address;
-      this.duration = Duration.ZERO;
+    @Override
+    public String name() {
+      return "Test Message of: " + this.toString();
     }
   }
 
+  /** {@link ProbingStep} subclass that performs probing Steps functions, without time delay */
+  public static ProbingStep testStep(Protocol protocol, String testMessage, Bootstrap bootstrap, SocketAddress address) {
+    return ProbingStep.builder()
+        .setProtocol(protocol)
+        .setDuration(Duration.ZERO)
+        .setMessageTemplate(new DuplexMessageTest(testMessage))
+        .setBootstrap(bootstrap)
+        .setAddress(address)
+        .build();
+
+  }
+  public static ProbingStep dummyStep(EventLoopGroup eventLoopGroup) {
+    return new DummyStep(eventLoopGroup);
+  }
+
   /** {@link ProbingStep} subclass that is solely used to note when the previous {@link ProbingStep} has completed its action */
-  public static class DummyStep extends ProbingStep<LocalChannel> {
+  public static class DummyStep extends ProbingStep {
     private DefaultPromise<Token> future;
 
-    public DummyStep(Protocol protocol, EventLoopGroup eventLoopGroup) {
-      super(protocol, new DuplexMessageTest());
-      future = new DefaultPromise<Token>(eventLoopGroup.next()) {};
-      duration = Duration.ZERO;
+    public DummyStep(EventLoopGroup eventLoopGroup) {
+      future = new DefaultPromise<Token>(eventLoopGroup.next()) {
+      };
+    }
+
+    @Override
+    Duration duration() {
+      return null;
+    }
+
+    @Override
+    Protocol protocol() {
+      return null;
+    }
+
+    @Override
+    OutboundMessageType messageTemplate() {
+      return null;
+    }
+
+    @Override
+    Bootstrap bootstrap() {
+      return null;
+    }
+
+    @Nullable
+    @Override
+    SocketAddress address() {
+      return null;
     }
 
     @Override
@@ -170,11 +216,16 @@ public class TestUtils {
     public DefaultPromise<Token> getFuture() {
       return future;
     }
+
+    @Override
+    public String toString() {
+      return "Dummy Step";
+    }
   }
 
   /** Basic outline for {@link Token} instances to be used in tests */
   private static abstract class TestToken extends Token {
-    private String host;
+    protected String host;
 
     protected TestToken(String host) {
       this.host = host;
@@ -219,6 +270,22 @@ public class TestUtils {
     public Channel channel() {
       return channel;
     }
+  }
+
+  /** {@link TestToken} instance that creates new channel */
+  public static class ProbingSequenceTestToken extends TestToken {
+    public ProbingSequenceTestToken() {
+      super("");
+    }
+    @Override
+    public Channel channel() {
+      return null;
+    }
+
+    public void addToHost(String suffix) {
+      host += suffix;
+    }
+
   }
 
   /**
