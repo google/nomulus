@@ -17,7 +17,7 @@ package google.registry.monitoring.blackbox.messages;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.monitoring.blackbox.exceptions.EppClientException;
-import google.registry.monitoring.blackbox.exceptions.InternalException;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.tokens.Token;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -57,12 +57,12 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
    *
    * @return the current {@link EppRequestMessage} instance
    *
-   * @throws InternalException - On the occasion that the prober can't appropriately
+   * @throws UndeterminedStateException - On the occasion that the prober can't appropriately
    * modify the EPP XML document, the blame falls on the prober, not the server, so it
-   * throws an {@link InternalException}
+   * throws an {@link UndeterminedStateException}
    */
   @Override
-  public EppRequestMessage modifyMessage(String... args) throws InternalException {
+  public EppRequestMessage modifyMessage(String... args) throws UndeterminedStateException {
     this.clTRID = args[0];
     String domain = args[1];
     Map<String, String> nextArguments = ImmutableMap.<String, String>builder()
@@ -74,7 +74,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
       message = getEppDocFromTemplate(template, nextArguments);
 
     } catch (IOException | EppClientException e) {
-      throw new InternalException(e);
+      throw new UndeterminedStateException(e);
     }
     return this;
   }
@@ -133,7 +133,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
     }
 
     @Override
-    public EppRequestMessage modifyMessage(String... args) throws InternalException {
+    public EppRequestMessage modifyMessage(String... args) throws UndeterminedStateException {
       this.clTRID = args[0];
       Map<String, String> nextArguments = ImmutableMap.<String, String>builder()
           .putAll(replacements)
@@ -142,7 +142,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
       try {
         message = getEppDocFromTemplate(template, nextArguments);
       } catch (IOException | EppClientException e) {
-        throw new InternalException(e);
+        throw new UndeterminedStateException(e);
       }
       return this;
     }
@@ -230,12 +230,12 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
     }
 
     @Override
-    public EppRequestMessage modifyMessage(String... args) throws InternalException {
+    public EppRequestMessage modifyMessage(String... args) throws UndeterminedStateException {
       this.clTRID = args[0];
       try {
         message = getEppDocFromTemplate(template, ImmutableMap.of(CLIENT_TRID_KEY, clTRID));
       } catch (IOException | EppClientException e) {
-        throw new InternalException(e);
+        throw new UndeterminedStateException(e);
       }
       return this;
     }

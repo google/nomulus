@@ -17,7 +17,7 @@ package google.registry.monitoring.blackbox.messages;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.exceptions.EppClientException;
-import google.registry.monitoring.blackbox.exceptions.ResponseException;
+import google.registry.monitoring.blackbox.exceptions.FailureException;
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,9 +27,9 @@ import org.w3c.dom.Document;
 public abstract class EppResponseMessage extends EppMessage implements InboundMessageType{
   protected String clTRID;
 
-  public abstract void getDocument(String clTRID, ByteBuf buf) throws ResponseException;
+  public abstract void getDocument(String clTRID, ByteBuf buf) throws FailureException;
 
-  protected void getDocument(ByteBuf buf) throws ResponseException {
+  protected void getDocument(ByteBuf buf) throws FailureException {
 
     int capacity = buf.readInt() - 4;
     byte[] response = new byte[capacity];
@@ -38,20 +38,20 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
     message = byteArrayToXmlDoc(response);
   }
 
-  public abstract void decode() throws ResponseException;
+  public abstract void decode() throws FailureException;
 
   public static class Success extends EppResponseMessage {
     @Inject
     public Success() {}
 
     @Override
-    public void getDocument(String clTRID, ByteBuf buf) throws ResponseException {
+    public void getDocument(String clTRID, ByteBuf buf) throws FailureException {
       this.clTRID = clTRID;
       super.getDocument(buf);
     }
 
     @Override
-    public void decode() throws ResponseException{
+    public void decode() throws FailureException{
       verifyEppResponse(
           message,
           ImmutableList.of(
@@ -66,13 +66,13 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
     @Inject
     public Failure() {}
 
-    public void getDocument(String clTRID, ByteBuf buf) throws ResponseException {
+    public void getDocument(String clTRID, ByteBuf buf) throws FailureException {
       this.clTRID = clTRID;
       super.getDocument(buf);
     }
 
     @Override
-    public void decode() throws ResponseException {
+    public void decode() throws FailureException {
       verifyEppResponse(
           message,
           ImmutableList.of(
@@ -86,12 +86,12 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
     public Greeting() {}
 
     @Override
-    public void getDocument(String clTRID, ByteBuf buf) throws ResponseException {
+    public void getDocument(String clTRID, ByteBuf buf) throws FailureException {
       super.getDocument(buf);
     }
 
     @Override
-    public void decode() throws ResponseException {
+    public void decode() throws FailureException {
       verifyEppResponse(
           message,
           ImmutableList.of(),

@@ -15,7 +15,7 @@
 package google.registry.monitoring.blackbox.handlers;
 
 import com.google.common.flogger.FluentLogger;
-import google.registry.monitoring.blackbox.exceptions.ResponseException;
+import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
 import google.registry.monitoring.blackbox.messages.EppResponseMessage;
 import io.netty.buffer.ByteBuf;
@@ -67,13 +67,13 @@ public class EppMessageHandler extends ChannelDuplexHandler {
   /** Performs conversion from {@link ByteBuf} */
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg)
-      throws ResponseException {
+      throws FailureException {
     try {
       //attempt to get response document from ByteBuf
       ByteBuf buf = (ByteBuf) msg;
       response.getDocument(clTRID, buf);
       logger.atInfo().log(response.toString());
-    } catch(ResponseException e) {
+    } catch(FailureException e) {
 
       //otherwise we log that it was unsuccessful and throw the requisite error
       logger.atInfo().withCause(e);

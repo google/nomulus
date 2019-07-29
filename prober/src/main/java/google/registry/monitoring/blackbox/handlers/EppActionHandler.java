@@ -14,8 +14,8 @@
 
 package google.registry.monitoring.blackbox.handlers;
 
-import google.registry.monitoring.blackbox.exceptions.InternalException;
-import google.registry.monitoring.blackbox.exceptions.ResponseException;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
+import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.messages.EppResponseMessage;
 import google.registry.monitoring.blackbox.messages.InboundMessageType;
 import io.netty.channel.ChannelHandlerContext;
@@ -35,10 +35,10 @@ public class EppActionHandler extends ActionHandler {
   /**
    * Decodes the received response to ensure that it is what we expect
    *
-   * @throws ResponseException if we receive a failed response from the server
+   * @throws FailureException if we receive a failed response from the server
    */
   @Override
-  public void channelRead0(ChannelHandlerContext ctx, InboundMessageType msg) throws ResponseException, InternalException {
+  public void channelRead0(ChannelHandlerContext ctx, InboundMessageType msg) throws FailureException, UndeterminedStateException {
     EppResponseMessage response = (EppResponseMessage) msg;
 
     //Based on the expected response type, will throw ResponseFailure if we don't receive a successful EPP response
