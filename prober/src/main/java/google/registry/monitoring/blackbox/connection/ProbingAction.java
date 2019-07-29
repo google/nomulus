@@ -188,6 +188,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
                   ChannelFuture unusedFutureWriteAndFlush =
                       channel().writeAndFlush(outboundMessage());
                   channelFuture.addListeners(
+                      future -> actionHandler.resetFuture(),
                       future -> {
                         if (future.isSuccess()) {
                           ChannelFuture unusedFuture = finished.setSuccess();

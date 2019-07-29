@@ -172,6 +172,5 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
               XFAIL_EXPRESSION),
           true);
     }
-
   }
 }

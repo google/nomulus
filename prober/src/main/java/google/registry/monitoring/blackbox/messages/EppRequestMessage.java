@@ -219,7 +219,6 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
     }
   }
 
-
   /**
    * {@link EppRequestMessage} subclass that represents message sent
    * to check that a given domain exists on the server's EPP records.
@@ -333,6 +332,4 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
       return "Logout Action";
     }
   }
-
-
 }

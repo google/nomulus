@@ -16,11 +16,10 @@ package google.registry.monitoring.blackbox.handlers;
 
 import com.google.common.flogger.FluentLogger;
 
+import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.connection.ProbingAction;
-import google.registry.monitoring.blackbox.connection.Protocol;
-import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.modules.WebWhoisModule.HttpWhoisProtocol;
 import google.registry.monitoring.blackbox.modules.WebWhoisModule.HttpsWhoisProtocol;
 import google.registry.monitoring.blackbox.modules.WebWhoisModule.WebWhoisProtocol;
