@@ -22,9 +22,11 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import google.registry.monitoring.blackbox.connection.ProbingAction;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.exceptions.UnrecoverableStateException;
+import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.tokens.Token;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
