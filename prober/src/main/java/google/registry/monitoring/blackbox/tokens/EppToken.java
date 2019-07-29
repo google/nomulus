@@ -19,6 +19,8 @@ import google.registry.monitoring.blackbox.exceptions.InternalException;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import io.netty.channel.Channel;
+import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  * {@link Token} subtype that deals performs specified actions for the EPP sequence
@@ -49,7 +51,7 @@ public abstract class EppToken extends Token {
   /** Constructor used when passing on same {@link Channel} to next {@link Token}. */
   protected EppToken(String tld, String host, Channel channel) {
     this(tld, host);
-    channel(channel);
+    setChannel(channel);
   }
 
   /** Modifies the message to reflect the new domain name and TRID */
@@ -103,7 +105,8 @@ public abstract class EppToken extends Token {
    * meaning the connection is remade on each new iteration of the {@link ProbingSequence}
    */
   public static class Transient extends EppToken {
-    public Transient(String tld, String host) {
+    @Inject
+    public Transient(@Named("eppTld") String tld, @Named("eppHost") String host) {
       super(tld, host);
     }
 
@@ -118,7 +121,8 @@ public abstract class EppToken extends Token {
    * meaning the connection is maintained on each new iteration of the {@link ProbingSequence}
    */
   public static class Persistent extends EppToken {
-    public Persistent(String tld, String host) {
+    @Inject
+    public Persistent(@Named("eppTld") String tld, @Named("eppHost") String host) {
       super(tld, host);
     }
 

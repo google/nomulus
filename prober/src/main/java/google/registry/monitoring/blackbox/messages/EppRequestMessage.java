@@ -122,7 +122,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
     private static final String template = "login.xml";
 
     @Inject
-    public LOGIN(@Named("epp_user_id") String eppClientId, @Named("epp_password") String eppClientPassword) {
+    public LOGIN(@Named("eppUserId") String eppClientId, @Named("eppPassword") String eppClientPassword) {
       super(
           template,
           ImmutableMap.of(

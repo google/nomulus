@@ -14,6 +14,7 @@
 
 package google.registry.monitoring.blackbox.handlers;
 
+import google.registry.monitoring.blackbox.exceptions.InternalException;
 import google.registry.monitoring.blackbox.exceptions.ResponseException;
 import google.registry.monitoring.blackbox.messages.EppResponseMessage;
 import google.registry.monitoring.blackbox.messages.InboundMessageType;
@@ -37,7 +38,7 @@ public class EppActionHandler extends ActionHandler {
    * @throws ResponseException if we receive a failed response from the server
    */
   @Override
-  public void channelRead0(ChannelHandlerContext ctx, InboundMessageType msg) throws ResponseException {
+  public void channelRead0(ChannelHandlerContext ctx, InboundMessageType msg) throws ResponseException, InternalException {
     EppResponseMessage response = (EppResponseMessage) msg;
 
     //Based on the expected response type, will throw ResponseFailure if we don't receive a successful EPP response
