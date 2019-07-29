@@ -18,7 +18,6 @@ package google.registry.monitoring.blackbox.messages;
 import com.google.common.collect.ImmutableMap;
 import google.registry.monitoring.blackbox.exceptions.EppClientException;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
-import google.registry.monitoring.blackbox.tokens.Token;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.IOException;
@@ -27,12 +26,12 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 /**
- * {@link EppMessage} subclass that implements {@link OutboundMessageType}, which represents
- * an outbound Epp message.
+ * {@link EppMessage} subclass that implements {@link OutboundMessageType}, which represents an
+ * outbound Epp message.
  *
  * <p>There are 7 specific types of this {@link EppRequestMessage}, which represent the 7
- * basic commands of EPP that we are probing, or are necessary to perform. They are:
- * HELLO, LOGIN, CREATE, CHECK, CLAIMSCHECK, DELETE, and LOGOUT</p>
+ * basic commands of EPP that we are probing, or are necessary to perform. They are: HELLO, LOGIN,
+ * CREATE, CHECK, CLAIMSCHECK, DELETE, and LOGOUT</p>
  *
  * <p>Stores a clTRID which is modified each time the token calls {@code modifyMessage}</p>
  */
@@ -48,18 +47,21 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
   private String template;
 
 
+  private EppRequestMessage(String template, ImmutableMap<String, String> replacements) {
+    this.template = template;
+    this.replacements = replacements;
+  }
+
   /**
-   * From the input clTRID and domainName, modifies the template EPP XML document
-   * to reflect new parameters.
+   * From the input clTRID and domainName, modifies the template EPP XML document to reflect new
+   * parameters.
    *
-   * @param args - should always be two Strings: First one is {@code clTRID},
-   * Second one is {@code domainName}
-   *
+   * @param args - should always be two Strings: First one is {@code clTRID}, Second one is {@code
+   * domainName}
    * @return the current {@link EppRequestMessage} instance
-   *
-   * @throws UndeterminedStateException - On the occasion that the prober can't appropriately
-   * modify the EPP XML document, the blame falls on the prober, not the server, so it
-   * throws an {@link UndeterminedStateException}
+   * @throws UndeterminedStateException - On the occasion that the prober can't appropriately modify
+   * the EPP XML document, the blame falls on the prober, not the server, so it throws an {@link
+   * UndeterminedStateException}
    */
   @Override
   public EppRequestMessage modifyMessage(String... args) throws UndeterminedStateException {
@@ -83,12 +85,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
     return clTRID;
   }
 
-  private EppRequestMessage(String template, ImmutableMap<String, String> replacements) {
-    this.template = template;
-    this.replacements = replacements;
-  }
-
-  public ByteBuf bytes() throws EppClientException{
+  public ByteBuf bytes() throws EppClientException {
     byte[] bytestream = xmlDocToByteArray(message);
     int capacity = HEADER_LENGTH + bytestream.length;
 
@@ -108,7 +105,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
     }
 
     @Override
-    public EppRequestMessage modifyMessage(String... args){
+    public EppRequestMessage modifyMessage(String... args) {
       return this;
     }
 
@@ -119,10 +116,12 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
   }
 
   public static class LOGIN extends EppRequestMessage {
+
     private static final String template = "login.xml";
 
     @Inject
-    public LOGIN(@Named("eppUserId") String eppClientId, @Named("eppPassword") String eppClientPassword) {
+    public LOGIN(@Named("eppUserId") String eppClientId,
+        @Named("eppPassword") String eppClientPassword) {
       super(
           template,
           ImmutableMap.of(
@@ -146,6 +145,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
       }
       return this;
     }
+
     @Override
     public String name() {
       return "Login Action";
@@ -153,6 +153,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
   }
 
   public static class CHECK extends EppRequestMessage {
+
     private static final String template = "check.xml";
 
     @Inject
@@ -170,6 +171,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
   }
 
   public static class CLAIMSCHECK extends EppRequestMessage {
+
     private static final String template = "claimscheck.xml";
 
     @Inject
@@ -187,6 +189,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
   }
 
   public static class CREATE extends EppRequestMessage {
+
     private static final String template = "create.xml";
 
     @Inject
@@ -196,6 +199,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
           ImmutableMap.of()
       );
     }
+
     @Override
     public String name() {
       return "Create Action";
@@ -203,6 +207,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
   }
 
   public static class DELETE extends EppRequestMessage {
+
     private static final String template = "delete.xml";
 
     @Inject
@@ -212,6 +217,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
           ImmutableMap.of()
       );
     }
+
     @Override
     public String name() {
       return "Delete Action";
@@ -219,6 +225,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
   }
 
   public static class LOGOUT extends EppRequestMessage {
+
     private static final String template = "logout.xml";
 
     @Inject
@@ -245,7 +252,6 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
       return "Logout Action";
     }
   }
-
 
 
 }
