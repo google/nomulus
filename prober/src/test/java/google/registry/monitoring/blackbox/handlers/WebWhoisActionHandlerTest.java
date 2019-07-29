@@ -23,9 +23,9 @@ import static google.registry.monitoring.blackbox.TestUtils.makeRedirectResponse
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import com.google.common.collect.ImmutableList;
+import google.registry.monitoring.blackbox.TestServers.WebWhoisServer;
 import google.registry.monitoring.blackbox.connection.ProbingAction;
 import google.registry.monitoring.blackbox.connection.Protocol;
-import google.registry.monitoring.blackbox.TestServers.WebWhoisServer;
 import google.registry.monitoring.blackbox.TestUtils.TestProvider;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
@@ -41,10 +41,10 @@ import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import javax.inject.Provider;
 import org.joda.time.Duration;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -73,6 +73,9 @@ public class WebWhoisActionHandlerTest {
       .setPort(HTTPS_PORT)
       .build();
 
+
+  @Rule
+  public WebWhoisServer webWhoisServer = new WebWhoisServer(new NioEventLoopGroup(1));
 
   private LocalAddress address;
   private EmbeddedChannel channel;
@@ -141,8 +144,8 @@ public class WebWhoisActionHandlerTest {
         .build();
   }
 
-  private void setupLocalServer(String redirectInput, String destinationInput, EventLoopGroup group) {
-    WebWhoisServer.strippedServer(group, address, redirectInput, destinationInput);
+  private void setupLocalServer(String redirectInput, String destinationInput) {
+    webWhoisServer.setupStrippedServer(address, redirectInput, destinationInput);
   }
 
   @Test
@@ -279,7 +282,7 @@ public class WebWhoisActionHandlerTest {
     HttpRequestMessage msg = new HttpRequestMessage(makeHttpGetRequest(host, ""));
     setupActionHandler(null, msg);
     Protocol initialProtocol = createProtocol("responseOk", 0, false);
-    setupLocalServer("", host, group);
+    setupLocalServer("", host);
     setupProbingActionWithoutChannel(initialProtocol, msg, makeBootstrap(group), host);
 
     //stores future
@@ -297,7 +300,8 @@ public class WebWhoisActionHandlerTest {
     HttpRequestMessage msg = new HttpRequestMessage(makeHttpGetRequest(DUMMY_URL, ""));
     setupActionHandler(null, msg);
     Protocol initialProtocol = createProtocol("responseOk", 0, false);
-    setupLocalServer("", host, group);
+
+    setupLocalServer("", TARGET_HOST);
     setupProbingActionWithoutChannel(initialProtocol, msg, makeBootstrap(group), host);
 
     //stores future

@@ -14,12 +14,19 @@
 
 package google.registry.monitoring.blackbox.TestServers;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.monitoring.blackbox.connection.ProbingAction.REMOTE_ADDRESS_KEY;
+import static google.registry.monitoring.blackbox.connection.Protocol.PROTOCOL_KEY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
+import google.registry.monitoring.blackbox.connection.ProbingAction;
+import google.registry.monitoring.blackbox.connection.Protocol;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -30,21 +37,30 @@ import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.local.LocalServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import org.junit.rules.ExternalResource;
 
 /**
  * Mock Server Superclass whose subclasses implement specific behaviors we expect blackbox server to perform
  */
-public abstract class TestServer {
-  private LocalAddress localAddress;
+public abstract class TestServer extends ExternalResource {
 
-  TestServer(LocalAddress localAddress, ImmutableList<? extends ChannelHandler> handlers) {
-    this(new NioEventLoopGroup(1), localAddress, handlers);
+  protected EventLoopGroup eventLoopGroup;
+  protected Channel channel;
+
+  protected TestServer() {
+    eventLoopGroup = new NioEventLoopGroup(1);
   }
 
-  TestServer(EventLoopGroup eventLoopGroup, LocalAddress localAddress, ImmutableList<? extends ChannelHandler> handlers) {
-    this.localAddress = localAddress;
+  protected TestServer(EventLoopGroup eventLoopGroup) {
+    this.eventLoopGroup = eventLoopGroup;
+  }
+
+  protected void setupServer(LocalAddress address, ImmutableList<? extends ChannelHandler> handlers) {
 
     //Creates ChannelInitializer with handlers specified
     ChannelInitializer<LocalChannel> serverInitializer = new ChannelInitializer<LocalChannel>() {
@@ -58,42 +74,60 @@ public abstract class TestServer {
     //Sets up serverBootstrap with specified initializer, eventLoopGroup, and using LocalServerChannel class
     ServerBootstrap serverBootstrap =
         new ServerBootstrap()
-        .group(eventLoopGroup)
-        .channel(LocalServerChannel.class)
-        .childHandler(serverInitializer);
+            .group(eventLoopGroup)
+            .channel(LocalServerChannel.class)
+            .childHandler(serverInitializer);
 
-    ChannelFuture unusedFuture = serverBootstrap.bind(localAddress).syncUninterruptibly();
+    try {
 
-  }
-  /**
-   * A handler that echoes back its inbound message. The message is also saved in a promise for
-   * inspection later.
-   */
-  public static class EchoHandler extends ChannelInboundHandlerAdapter {
+      ChannelFuture future = serverBootstrap.bind(address).sync();
 
-    private final CompletableFuture<String> requestFuture = new CompletableFuture<>();
+    } catch (InterruptedException e) {
+      throw new ExceptionInInitializerError(e);
 
-    public Future<String> getRequestFuture() {
-      return requestFuture;
-    }
-
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-      // In the test we only send messages of type ByteBuf.
-
-      assertThat(msg).isInstanceOf(ByteBuf.class);
-      String request = ((ByteBuf) msg).toString(UTF_8);
-      // After the message is written back to the client, fulfill the promise.
-      ChannelFuture unusedFuture =
-          ctx.writeAndFlush(msg).addListener(f -> requestFuture.complete(request));
-    }
-
-    /** Saves any inbound error as the cause of the promise failure. */
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-      ChannelFuture unusedFuture =
-          ctx.channel().closeFuture().addListener(f -> requestFuture.completeExceptionally(cause));
     }
   }
+
+  /** Sets up a client channel connecting to the give local address. */
+  void setUpClient(
+      LocalAddress localAddress,
+      Protocol protocol,
+      String host,
+      ImmutableList<ChannelHandler> handlers) {
+    ChannelInitializer<LocalChannel> clientInitializer =
+        new ChannelInitializer<LocalChannel>() {
+          @Override
+          protected void initChannel(LocalChannel ch) throws Exception {
+            // Add the given handler
+            for (ChannelHandler handler: handlers)
+              ch.pipeline().addLast(handler);
+          }
+        };
+    Bootstrap b =
+        new Bootstrap()
+            .group(eventLoopGroup)
+            .channel(LocalChannel.class)
+            .handler(clientInitializer)
+            .attr(PROTOCOL_KEY, protocol)
+            .attr(REMOTE_ADDRESS_KEY, host);
+
+    channel = b.connect(localAddress).syncUninterruptibly().channel();
+  }
+
+  public Channel getChannel() {
+    checkReady();
+    return channel;
+  }
+
+  protected void checkReady() {
+    checkState(channel != null, "Must call setUpClient to finish TestServer setup");
+  }
+
+
+
+
+
+
+
 
 }

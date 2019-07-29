@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
+import google.registry.monitoring.blackbox.TestServers.EchoServer;
 import google.registry.monitoring.blackbox.TestUtils.DuplexMessageTest;
 import google.registry.monitoring.blackbox.TestUtils.TestProvider;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
@@ -27,7 +28,6 @@ import google.registry.monitoring.blackbox.connection.ProbingAction;
 import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.handlers.ActionHandler;
 import google.registry.monitoring.blackbox.handlers.ConversionHandler;
-import google.registry.monitoring.blackbox.handlers.NettyRule;
 import google.registry.monitoring.blackbox.handlers.TestActionHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -82,7 +82,7 @@ public class ProbingActionTest {
 
   /** Used for testing how well probing step can create connection to blackbox server */
   @Rule
-  public NettyRule nettyRule = new NettyRule(eventLoopGroup);
+  public EchoServer echoServer = new EchoServer(eventLoopGroup);
 
   /** Sets up a {@link Protocol} corresponding to when a new connection is created */
   private void setupNewChannelProtocol() {
@@ -162,12 +162,12 @@ public class ProbingActionTest {
     //setup
     setupNewChannelProtocol();
 
-    nettyRule.setUpServer(address, new ChannelInboundHandlerAdapter());
+    echoServer.setUpServer(address, new ChannelInboundHandlerAdapter());
     setupNewChannelAction();
     ChannelFuture future = newChannelAction.call();
 
     //Tests to see if message is properly sent to remote server
-    nettyRule.assertThatCustomWorks(TEST_MESSAGE);
+    echoServer.assertThatCustomWorks(TEST_MESSAGE);
 
     future.sync();
     //Tests to see that, since server responds, we have set future to true

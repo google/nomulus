@@ -35,42 +35,37 @@ import io.netty.handler.codec.http.HttpServerCodec;
  * {@link TestServer} subtype that performs WebWhois Services Expected
  *
  * <p>It will either redirect the client to the correct location if given the
- * requisite redirect input, give the client a successful response if they give
+ * requisite redirect input, give the client a successful success if they give
  * the expected final destination, or give the client an error message if given
  * an unexpected host location</p>
  */
 public class WebWhoisServer extends TestServer {
 
-  public WebWhoisServer(LocalAddress localAddress, ImmutableList<? extends ChannelHandler> handlers) {
-    super(localAddress, handlers);
+  public WebWhoisServer() {
+    super();
   }
-
-  public WebWhoisServer(EventLoopGroup eventLoopGroup, LocalAddress localAddress, ImmutableList<? extends ChannelHandler> handlers) {
-    super(eventLoopGroup, localAddress, handlers);
+  public WebWhoisServer(EventLoopGroup eventLoopGroup) {
+    super(eventLoopGroup);
   }
 
   /** Creates server that doesn't deal with {@link ByteBuf} conversion and just sends the HttpRequestMessage object through pipeline */
-  public static WebWhoisServer strippedServer(EventLoopGroup eventLoopGroup, LocalAddress localAddress, String redirectInput, String destinationInput) {
-    return new WebWhoisServer(
-        eventLoopGroup,
-        localAddress,
-        ImmutableList.of(new RedirectHandler(redirectInput, destinationInput))
-    );
+  public void setupStrippedServer(LocalAddress address, String redirectInput, String destinationInput) {
+    setupServer(address, ImmutableList.of(new RedirectHandler(redirectInput, destinationInput)));
   }
-  /** Creates server that sends exactly what we expect a remote server to send as a response, by sending the {@link ByteBuf} of the response through pipeline */
-  public static WebWhoisServer fullServer(EventLoopGroup eventLoopGroup, LocalAddress localAddress, String redirectInput, String destinationInput) {
-    return new WebWhoisServer(
-        eventLoopGroup,
-        localAddress,
+  /** Creates server that sends exactly what we expect a remote server to send as a success, by sending the {@link ByteBuf} of the success through pipeline */
+  public void setupFullServer(LocalAddress address, String redirectInput, String destinationInput) {
+   setupServer(
+        address,
         ImmutableList.of(
             new HttpServerCodec(),
             new HttpObjectAggregator(1048576),
-            new RedirectHandler(redirectInput, destinationInput))
+            new RedirectHandler(redirectInput, destinationInput)
+        )
     );
   }
 
   /**
-   * Handler that will wither redirect client, give successful response, or give error messge
+   * Handler that will wither redirect client, give successful success, or give error messge
    */
   @Sharable
   static class RedirectHandler extends ChannelDuplexHandler {
@@ -80,7 +75,7 @@ public class WebWhoisServer extends TestServer {
     /**
      *
      * @param redirectInput - Server will send back redirect to {@code destinationInput} when receiving a request with this host location
-     * @param destinationInput - Server will send back an {@link HttpResponseStatus.OK} response when receiving a request with this host location
+     * @param destinationInput - Server will send back an {@link HttpResponseStatus} OK when receiving a request with this host location
      */
     public RedirectHandler(String redirectInput, String destinationInput) {
       this.redirectInput = redirectInput;

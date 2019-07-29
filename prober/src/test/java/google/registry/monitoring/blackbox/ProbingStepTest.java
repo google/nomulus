@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
+import google.registry.monitoring.blackbox.TestServers.EchoServer;
 import google.registry.monitoring.blackbox.TestUtils.DummyStep;
 import google.registry.monitoring.blackbox.TestUtils.ExistingChannelToken;
 import google.registry.monitoring.blackbox.TestUtils.NewChannelToken;
@@ -28,7 +29,6 @@ import google.registry.monitoring.blackbox.TestUtils.TestProvider;
 import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.handlers.ActionHandler;
 import google.registry.monitoring.blackbox.handlers.ConversionHandler;
-import google.registry.monitoring.blackbox.handlers.NettyRule;
 import google.registry.monitoring.blackbox.handlers.TestActionHandler;
 import google.registry.monitoring.blackbox.tokens.Token;
 import io.netty.bootstrap.Bootstrap;
@@ -65,10 +65,10 @@ public class ProbingStepTest {
 
   /** Used for testing how well probing step can create connection to blackbox server */
   @Rule
-  public NettyRule nettyRule = new NettyRule(eventLoopGroup);
+  public EchoServer echoServer = new EchoServer(eventLoopGroup);
 
 
-  /** The two main handlers we need in any test pipeline used that connects to {@link NettyRule's server}**/
+  /** The two main handlers we need in any test pipeline used that connects to {@link EchoServer's server}**/
   private ActionHandler testHandler = new TestActionHandler();
   private ChannelHandler conversionHandler = new ConversionHandler();
 
@@ -155,7 +155,7 @@ public class ProbingStepTest {
     setupNewChannelToken();
 
     //Set up blackbox server that recieves our messages then echoes them back to us
-    nettyRule.setUpServer(address, new ChannelInboundHandlerAdapter());
+    echoServer.setUpServer(address, new ChannelInboundHandlerAdapter());
 
     //checks that the ProbingSteps are appropriately pointing to each other
     assertThat(firstStep.nextStep()).isEqualTo(dummyStep);
@@ -170,7 +170,7 @@ public class ProbingStepTest {
     DefaultPromise<Token> future = ((DummyStep)dummyStep).getFuture();
 
     //checks that we have appropriately sent the write message to server
-    nettyRule.assertThatCustomWorks(TEST_MESSAGE);
+    echoServer.assertThatCustomWorks(TEST_MESSAGE);
 
     //checks that when the future is successful, we pass down the requisite token
     assertThat(future.get()).isEqualTo(testToken);

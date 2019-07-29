@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.monitoring.blackbox;
+package google.registry.monitoring.blackbox.tokens;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
-import google.registry.monitoring.blackbox.tokens.Token;
-import google.registry.monitoring.blackbox.tokens.WebWhoisToken;
+import google.registry.monitoring.blackbox.messages.EppRequestMessage;
+import java.io.IOException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -34,8 +34,10 @@ public class TokenTest {
   private static String PREFIX = "whois.nic.";
   private static String TEST_STARTER = "starter";
   private static ImmutableList<String> TEST_DOMAINS = ImmutableList.of("test");
+  private static String TEST_HOST = "host";
 
   public Token webToken = new WebWhoisToken(TEST_DOMAINS);
+  private Token eppToken = new EppToken.Persistent(TEST_DOMAINS.get(0), TEST_HOST);
 
   @Test
   public void testWebToken_MessageModificationSuccess() {
@@ -50,9 +52,19 @@ public class TokenTest {
     } catch(UndeterminedStateException e) {
       throw new RuntimeException(e);
     }
+  }
 
+  @Test
+  public void testEppToken_MessageModificationSuccess()
+      throws UndeterminedStateException {
+    EppRequestMessage originalMessage = new EppRequestMessage.CREATE();
+    String domainName = ((EppToken)eppToken).getCurrentDomainName();
+    String clTRID = domainName.substring(0, domainName.indexOf('.'));
 
+    EppRequestMessage modifiedMessage = (EppRequestMessage) eppToken.modifyMessage(originalMessage);
 
+    assertThat(modifiedMessage.getElementValue("//domainns:name")).isEqualTo(domainName);
+    assertThat(modifiedMessage.getClTRID()).isNotEqualTo(clTRID);
 
   }
 
