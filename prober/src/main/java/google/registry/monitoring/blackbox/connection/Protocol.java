@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.monitoring.blackbox;
+package google.registry.monitoring.blackbox.connection;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
@@ -37,7 +37,7 @@ public abstract class Protocol {
   abstract ImmutableList<Provider<? extends ChannelHandler>> handlerProviders();
 
   /** Boolean that notes if connection associated with Protocol is persistent.*/
-  abstract boolean persistentConnection();
+  public abstract boolean persistentConnection();
 
   public static Builder builder() {
     return new AutoValue_Protocol.Builder();

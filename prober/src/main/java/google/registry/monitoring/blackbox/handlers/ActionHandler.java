@@ -15,9 +15,9 @@
 package google.registry.monitoring.blackbox.handlers;
 
 import com.google.common.flogger.FluentLogger;
-import google.registry.monitoring.blackbox.ProbingAction;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
+import google.registry.monitoring.blackbox.connection.ProbingAction;
 import google.registry.monitoring.blackbox.messages.InboundMessageType;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.ChannelFuture;
@@ -33,8 +33,8 @@ import io.netty.channel.ChannelPromise;
  * <p> The {@link ActionHandler} skeleton exists for a few main purposes. First, it returns a {@link ChannelPromise},
  * which informs the {@link ProbingAction} in charge that a response has been read.
  * Second, with any exception thrown, the connection is closed, and the ProbingAction governing this channel is informed
- * of the error, lastly, given the type of error, the status of the {@link ResponseType} is marked as a {@code FAILURE}
- * or {@code ERROR}. If no exception is thrown and the message reached {@code channelRead0}, then it is marked as {@code SUCCESS}.</p>
+ * of the error, lastly, given the type of error, the future returned will be marked as a failure with the cause being
+ * the aforementioned error. If no exception is thrown and the message reached {@code channelRead0}, then the future is marked as a success.</p>
  *
  * <p>Subclasses specify further work to be done for specific kinds of channel pipelines. </p>
  */
@@ -43,7 +43,7 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /** {@link ChannelPromise} that informs {@link ProbingAction} if response has been received. */
-  private ChannelPromise finished;
+  protected ChannelPromise finished;
 
   /** Returns initialized {@link ChannelPromise} to {@link ProbingAction}.*/
   public ChannelFuture getFuture() {
@@ -57,7 +57,7 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
     finished = ctx.newPromise();
   }
 
-  /** Marks {@link ResponseType} and {@link ChannelPromise} as success */
+  /** Marks {@link ChannelPromise} as success */
   @Override
   public void channelRead0(ChannelHandlerContext ctx, InboundMessageType inboundMessage)
       throws FailureException, UndeterminedStateException {

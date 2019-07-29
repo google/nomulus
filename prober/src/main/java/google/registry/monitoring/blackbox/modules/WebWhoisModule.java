@@ -12,16 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.monitoring.blackbox;
+package google.registry.monitoring.blackbox.modules;
 
 import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
 
 import dagger.multibindings.IntoSet;
+
+import google.registry.monitoring.blackbox.ProbingSequence;
+import google.registry.monitoring.blackbox.ProbingStep;
+import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
-import google.registry.monitoring.blackbox.messages.OutboundMessageType;
-import google.registry.monitoring.blackbox.tokens.Token;
 import google.registry.monitoring.blackbox.handlers.WebWhoisMessageHandler;
 import google.registry.monitoring.blackbox.handlers.SslClientInitializer;
 import google.registry.monitoring.blackbox.handlers.WebWhoisActionHandler;
@@ -33,10 +35,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslProvider;
-import java.util.List;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
