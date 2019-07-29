@@ -69,7 +69,7 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
   }
 
   /**
-   * Marks {@link ChannelPromise} as success
+   * Resets {@link ChannelPromise} when reusing the same {@link ActionHandler} for a new action.
    */
   public void resetFuture() {
     finished = finished.channel().newPromise();
