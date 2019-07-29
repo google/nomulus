@@ -14,6 +14,8 @@
 package google.registry.monitoring.blackbox;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.monitoring.blackbox.TestUtils.dummyStep;
+import static google.registry.monitoring.blackbox.TestUtils.testStep;
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -24,12 +26,12 @@ import google.registry.monitoring.blackbox.TestUtils.DummyStep;
 import google.registry.monitoring.blackbox.TestUtils.ExistingChannelToken;
 import google.registry.monitoring.blackbox.TestUtils.NewChannelToken;
 import google.registry.monitoring.blackbox.TestUtils.TestProvider;
-import google.registry.monitoring.blackbox.TestUtils.TestStep;
-import google.registry.monitoring.blackbox.Tokens.Token;
 import google.registry.monitoring.blackbox.handlers.ActionHandler;
 import google.registry.monitoring.blackbox.handlers.ConversionHandler;
 import google.registry.monitoring.blackbox.handlers.NettyRule;
 import google.registry.monitoring.blackbox.handlers.TestActionHandler;
+import google.registry.monitoring.blackbox.tokens.Token;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
@@ -55,6 +57,10 @@ public class ProbingSequenceStepTest {
   private final String SECONDARY_TEST_MESSAGE = "SECONDARY_TEST_MESSAGE";
 
   private final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
+  private final Bootstrap bootstrap = new Bootstrap()
+      .group(eventLoopGroup)
+      .channel(LocalChannel.class);
+
   private final LocalAddress address = new LocalAddress(ADDRESS_NAME);
 
   /** Used for testing how well probing step can create connection to blackbox server */
@@ -77,11 +83,8 @@ public class ProbingSequenceStepTest {
 
 
   /** Fields that correspond to instances of each of the above {@link ProbingStep} classes in the same order */
-  private ProbingStep<LocalChannel> firstStep;
-  private ProbingStep<LocalChannel> dummyStep;
-
-  /** Never explicitly used, but our ProbingStep depends on the ProbingSequence to function, so we create a declare a throwaway ProbingSequence */
-  private ProbingSequence<LocalChannel> testSequence;
+  private ProbingStep firstStep;
+  private ProbingStep dummyStep;
 
   /** We declare the token we feed into our probing step, but will specify what kind it is, depending on if we are creating a new channel or reusing one */
   private Token testToken;
@@ -103,41 +106,32 @@ public class ProbingSequenceStepTest {
 
   /** Sets up our main step (firstStep) and throwaway step (dummyStep) */
   private void setupSteps() {
-    firstStep = new TestStep(testProtocol, TEST_MESSAGE, address);
-    dummyStep = new DummyStep(testProtocol, eventLoopGroup);
+    firstStep = testStep(testProtocol, TEST_MESSAGE, bootstrap, address);
+    dummyStep = dummyStep(eventLoopGroup);
+
+    firstStep.nextStep(dummyStep);
+    dummyStep.nextStep(firstStep);
   }
 
   /** Sets up testProtocol for when we create a new channel */
   private void setupNewProtocol() {
     testProtocol = Protocol.builder()
-        .handlerProviders(ImmutableList.of(conversionHandlerProvider, testHandlerProvider))
-        .name(PROTOCOL_NAME)
-        .port(PROTOCOL_PORT)
-        .persistentConnection(false)
+        .setHandlerProviders(ImmutableList.of(conversionHandlerProvider, testHandlerProvider))
+        .setName(PROTOCOL_NAME)
+        .setPort(PROTOCOL_PORT)
+        .setPersistentConnection(false)
         .build();
   }
 
   /** Sets up testProtocol for when a channel already exists */
   private void setupExistingProtocol() {
     testProtocol = Protocol.builder()
-        .handlerProviders(ImmutableList.of(conversionHandlerProvider, testHandlerProvider))
-        .name(PROTOCOL_NAME)
-        .port(PROTOCOL_PORT)
-        .persistentConnection(true)
+        .setHandlerProviders(ImmutableList.of(conversionHandlerProvider, testHandlerProvider))
+        .setName(PROTOCOL_NAME)
+        .setPort(PROTOCOL_PORT)
+        .setPersistentConnection(true)
         .build();
   }
-
-  /** Builds a sequence with our probing steps and the EventLoopGroup we initialized */
-  private void setupSequence() {
-    testSequence = new ProbingSequence.Builder<LocalChannel>()
-        .eventLoopGroup(eventLoopGroup)
-        .setClass(LocalChannel.class)
-        .addStep(firstStep)
-        .makeFirstRepeated()
-        .addStep(dummyStep)
-        .build();
-  }
-
 
   @Test
   public void testGeneralBehavior() {
@@ -147,27 +141,25 @@ public class ProbingSequenceStepTest {
     setupNewChannelToken();
 
     //there should be no next step
-    assertThat(firstStep.nextStep()).isNull();
+    assertThat(firstStep.bootstrap()).isEqualTo(bootstrap);
 
-    //we expect that this exception be thrown
-    assertThrows(NullPointerException.class, () -> firstStep.accept(testToken));
 
   }
 
   @Test
-  public void testWithSequence_NewChannel() throws Exception {
+  public void testNewChannel() throws Exception {
     //setup
     setupNewProtocol();
     setupSteps();
-    setupSequence();
     setupNewChannelToken();
+
+    //Set up blackbox server that recieves our messages then echoes them back to us
+    nettyRule.setUpServer(address, new ChannelInboundHandlerAdapter());
 
     //checks that the ProbingSteps are appropriately pointing to each other
     assertThat(firstStep.nextStep()).isEqualTo(dummyStep);
     assertThat(dummyStep.nextStep()).isEqualTo(firstStep);
 
-    //Set up blackbox server that recieves our messages then echoes them back to us
-    nettyRule.setUpServer(address, new ChannelInboundHandlerAdapter());
 
     //Call accept on the first step, which should send our message to the server, which will then be
     //echoed back to us, causing us to move to the next step
@@ -189,7 +181,6 @@ public class ProbingSequenceStepTest {
     //setup
     setupExistingProtocol();
     setupSteps();
-    setupSequence();
     setupChannel();
     setupExistingChannelToken();
 
