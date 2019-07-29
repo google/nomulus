@@ -100,3 +100,9 @@ nomulus.iws
 node_modules/**
 !node_modules/soyutils_usegoog.js
 /repos/
+
+# Compiled JS/CSS code
+core/**/registrar_bin*.js
+core/**/registrar_dbg*.js
+core/**/registrar_bin*.css
+core/**/registrar_dbg*.css
