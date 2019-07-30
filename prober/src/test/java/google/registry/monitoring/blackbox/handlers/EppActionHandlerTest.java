@@ -5,6 +5,8 @@ import static com.google.common.truth.Truth.assertThat;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.testservers.EppServer;
+import google.registry.monitoring.blackbox.messages.EppRequestMessage.Login;
+import google.registry.monitoring.blackbox.messages.EppResponseMessage;
 import google.registry.monitoring.blackbox.messages.EppMessage;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
 import io.netty.buffer.ByteBuf;
@@ -12,7 +14,6 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.io.IOException;
-import javax.xml.parsers.ParserConfigurationException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,25 +45,20 @@ public class EppActionHandlerTest {
   @Parameter(0)
   public EppRequestMessage messageType;
 
-  // We do our best effort to test all available SSL providers.
+  // We test all relevant EPP actions
   @Parameters(name = "{0}")
   public static EppRequestMessage[] data() {
     return new EppRequestMessage[] {
-        new EppRequestMessage.CHECK(),
-        new EppRequestMessage.CLAIMSCHECK(),
-        new EppRequestMessage.CREATE(),
-        new EppRequestMessage.DELETE(),
-        new EppRequestMessage.LOGOUT()
+        new EppRequestMessage.Create(new EppResponseMessage.SimpleSuccess()),
+        new EppRequestMessage.Delete(new EppResponseMessage.SimpleSuccess()),
+        new EppRequestMessage.Logout(new EppResponseMessage.SimpleSuccess()),
+        new EppRequestMessage.CheckExists(new EppResponseMessage.DomainExists()),
+        new EppRequestMessage.CheckNotExists(new EppResponseMessage.DomainNotExists())
     };
   }
 
   @Before
-  public void setup() throws ParserConfigurationException {
-    setupHandlers();
-  }
-
-
-  private void setupHandlers() {
+  public void setup() {
     statusHandler = new StatusHandler();
     actionHandler = new EppActionHandler();
     messageHandler = new EppMessageHandler();
@@ -72,19 +68,18 @@ public class EppActionHandlerTest {
     channel = new EmbeddedChannel(handlers);
   }
 
-
   @Test
   public void testBasicLogin_Success()
       throws IOException, SAXException, UndeterminedStateException, FailureException {
     setupEmbeddedChannel(messageHandler, actionHandler, statusHandler);
 
-    ChannelFuture future = actionHandler.getFuture();
+    ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeInbound(EppServer.stringToByteBuf(EppServer.getDefaultGreeting()));
 
     future.syncUninterruptibly();
     assertThat(statusHandler.getResponse()).isEqualTo(ResponseType.SUCCESS);
 
-    EppRequestMessage login = new EppRequestMessage.LOGIN(USER_ID, USER_PASSWORD);
+    EppRequestMessage login = new Login(new EppResponseMessage.SimpleSuccess(), USER_ID, USER_PASSWORD);
     login.modifyMessage(USER_CLIENT_TRID, DOMAIN_NAME);
 
     channel.writeOutbound(login);
@@ -98,13 +93,9 @@ public class EppActionHandlerTest {
         .isEqualTo(EppMessage.xmlDocToString(EppMessage.byteArrayToXmlDoc(bytestream)));
 
     actionHandler.resetFuture();
-    future = actionHandler.getFuture();
+    future = actionHandler.getFinishedFuture();
 
-    System.out.println(EppServer.getBasicResponse(
-        SUCCESS_RESULT_CODE,
-        SUCCESS_MSG,
-        USER_CLIENT_TRID,
-        SERVER_ID));
+
     channel.writeInbound(EppServer.stringToByteBuf(EppServer.getBasicResponse(
         SUCCESS_RESULT_CODE,
         SUCCESS_MSG,
@@ -120,7 +111,7 @@ public class EppActionHandlerTest {
       throws IOException, SAXException, UndeterminedStateException {
     setupEmbeddedChannel(messageHandler, actionHandler, statusHandler);
 
-    ChannelFuture future = actionHandler.getFuture();
+    ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeInbound(EppServer.stringToByteBuf(EppServer.getBasicResponse(
         FAILURE_RESULT_CODE,
         FAILURE_MSG,
@@ -136,13 +127,13 @@ public class EppActionHandlerTest {
       throws IOException, SAXException, UndeterminedStateException, FailureException {
     setupEmbeddedChannel(messageHandler, actionHandler, statusHandler);
 
-    ChannelFuture future = actionHandler.getFuture();
+    ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeInbound(EppServer.stringToByteBuf(EppServer.getDefaultGreeting()));
 
     future.syncUninterruptibly();
     assertThat(statusHandler.getResponse()).isEqualTo(ResponseType.SUCCESS);
 
-    EppRequestMessage login = new EppRequestMessage.LOGIN(USER_ID, USER_PASSWORD);
+    EppRequestMessage login = new Login(new EppResponseMessage.SimpleSuccess(), USER_ID, USER_PASSWORD);
     login.modifyMessage(USER_CLIENT_TRID, DOMAIN_NAME);
 
     channel.writeOutbound(login);
@@ -156,7 +147,7 @@ public class EppActionHandlerTest {
         .isEqualTo(EppMessage.xmlDocToString(EppMessage.byteArrayToXmlDoc(bytestream)));
 
     actionHandler.resetFuture();
-    future = actionHandler.getFuture();
+    future = actionHandler.getFinishedFuture();
 
     channel.writeInbound(EppServer.stringToByteBuf(EppServer.getBasicResponse(
         FAILURE_RESULT_CODE,
@@ -174,7 +165,7 @@ public class EppActionHandlerTest {
       throws IOException, SAXException, UndeterminedStateException, FailureException {
     setupEmbeddedChannel(messageHandler, actionHandler, statusHandler);
 
-    ChannelFuture future = actionHandler.getFuture();
+    ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeInbound(EppServer.stringToByteBuf(EppServer.getDefaultGreeting()));
 
     future.syncUninterruptibly();
@@ -193,13 +184,30 @@ public class EppActionHandlerTest {
         .isEqualTo(EppMessage.xmlDocToString(EppMessage.byteArrayToXmlDoc(bytestream)));
 
     actionHandler.resetFuture();
-    future = actionHandler.getFuture();
+    future = actionHandler.getFinishedFuture();
 
-    channel.writeInbound(EppServer.stringToByteBuf(EppServer.getBasicResponse(
-        SUCCESS_RESULT_CODE,
-        SUCCESS_MSG,
-        USER_CLIENT_TRID,
-        SERVER_ID)));
+    String response;
+
+    if (messageType instanceof EppRequestMessage.CheckExists)
+      response = EppServer.getCheckDomainResponse(
+          false,
+          DOMAIN_NAME,
+          USER_CLIENT_TRID,
+          SERVER_ID);
+    else if (messageType instanceof EppRequestMessage.CheckNotExists)
+      response = EppServer.getCheckDomainResponse(
+          true,
+          DOMAIN_NAME,
+          USER_CLIENT_TRID,
+          SERVER_ID);
+    else
+      response = EppServer.getBasicResponse(
+          SUCCESS_RESULT_CODE,
+          SUCCESS_MSG,
+          USER_CLIENT_TRID,
+          SERVER_ID);
+
+    channel.writeInbound(EppServer.stringToByteBuf(response));
 
     future.syncUninterruptibly();
     assertThat(statusHandler.getResponse()).isEqualTo(ResponseType.SUCCESS);
@@ -211,7 +219,7 @@ public class EppActionHandlerTest {
       throws IOException, SAXException, UndeterminedStateException, FailureException {
     setupEmbeddedChannel(messageHandler, actionHandler, statusHandler);
 
-    ChannelFuture future = actionHandler.getFuture();
+    ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeInbound(EppServer.stringToByteBuf(EppServer.getDefaultGreeting()));
 
     future.syncUninterruptibly();
@@ -230,13 +238,30 @@ public class EppActionHandlerTest {
         .isEqualTo(EppMessage.xmlDocToString(EppMessage.byteArrayToXmlDoc(bytestream)));
 
     actionHandler.resetFuture();
-    future = actionHandler.getFuture();
+    future = actionHandler.getFinishedFuture();
 
-    channel.writeInbound(EppServer.stringToByteBuf(EppServer.getBasicResponse(
-        FAILURE_RESULT_CODE,
-        FAILURE_MSG,
-        USER_CLIENT_TRID,
-        SERVER_ID)));
+    String response;
+
+    if (messageType instanceof EppRequestMessage.CheckExists)
+      response = EppServer.getCheckDomainResponse(
+          true,
+          DOMAIN_NAME,
+          USER_CLIENT_TRID,
+          SERVER_ID);
+    else if (messageType instanceof EppRequestMessage.CheckNotExists)
+      response = EppServer.getCheckDomainResponse(
+          false,
+          DOMAIN_NAME,
+          USER_CLIENT_TRID,
+          SERVER_ID);
+    else
+      response = EppServer.getBasicResponse(
+          FAILURE_RESULT_CODE,
+          FAILURE_MSG,
+          USER_CLIENT_TRID,
+          SERVER_ID);
+
+    channel.writeInbound(EppServer.stringToByteBuf(response));
 
     future.syncUninterruptibly();
     assertThat(statusHandler.getResponse()).isEqualTo(ResponseType.FAILURE);
@@ -248,13 +273,13 @@ public class EppActionHandlerTest {
       throws IOException, SAXException, UndeterminedStateException, FailureException {
     setupEmbeddedChannel(messageHandler, actionHandler, statusHandler);
 
-    ChannelFuture future = actionHandler.getFuture();
+    ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeInbound(EppServer.stringToByteBuf(EppServer.getDefaultGreeting()));
 
     future.syncUninterruptibly();
     assertThat(statusHandler.getResponse()).isEqualTo(ResponseType.SUCCESS);
 
-    EppRequestMessage login = new EppRequestMessage.LOGIN(USER_ID, USER_PASSWORD);
+    EppRequestMessage login = new Login(new EppResponseMessage.SimpleSuccess(), USER_ID, USER_PASSWORD);
     login.modifyMessage(USER_CLIENT_TRID, DOMAIN_NAME);
 
     channel.writeOutbound(login);
@@ -268,7 +293,7 @@ public class EppActionHandlerTest {
         .isEqualTo(EppMessage.xmlDocToString(EppMessage.byteArrayToXmlDoc(bytestream)));
 
     actionHandler.resetFuture();
-    future = actionHandler.getFuture();
+    future = actionHandler.getFinishedFuture();
 
     channel.writeInbound(EppServer.stringToByteBuf(EppServer.getBasicResponse(
         SUCCESS_RESULT_CODE,

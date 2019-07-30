@@ -19,7 +19,6 @@ import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage.Hello;
 import google.registry.monitoring.blackbox.messages.EppResponseMessage;
-import google.registry.monitoring.blackbox.messages.EppResponseMessage.SimpleSuccess;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -27,45 +26,37 @@ import io.netty.channel.ChannelPromise;
 import javax.inject.Inject;
 
 /**
- * Subclass of {@link MessageHandler} that converts inbound {@link ByteBuf}
+ * {@link io.netty.channel.ChannelHandler} that converts inbound {@link ByteBuf}
  * to custom type {@link EppResponseMessage} and similarly converts the outbound
- * {@link EppRequestMessage} to a {@link ByteBuf}
+ * {@link EppRequestMessage} to a {@link ByteBuf}. Always comes right before
+ * {@link EppActionHandler} in channel pipeline.
  */
 public class EppMessageHandler extends ChannelDuplexHandler {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private String clTRID;
-  private String domainName;
+  /** Corresponding {@link EppResponseMessage} that we expect to receive back from server. */
   private EppResponseMessage response;
-  private EppResponseMessage greeting;
-  private EppResponseMessage success;
 
+  /** Always sets response to be {@link EppResponseMessage.Greeting} as that will be first server response. */
   @Inject
   public EppMessageHandler() {
-    greeting = new EppResponseMessage.Greeting();
-    success = new SimpleSuccess();
-    response = greeting;
+    response = new EppResponseMessage.Greeting();
   }
 
-  /** Performs conversion to {@link ByteBuf} */
+  /** Performs conversion to {@link ByteBuf}. */
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
       throws Exception {
-    if (msg instanceof Hello) {
-      //if this is our first communication with the server, response should be expected to be a greeting
-      response = greeting;
-      return;
-    } else {
-      //otherwise we expect a success
-      response = success;
-    }
-    //convert the outbound message to bytes and store the expectedClTRID
-    EppRequestMessage request = (EppRequestMessage) msg;
-    clTRID = request.getClTRID();
-    domainName = request.getClTRID();
 
-    //write bytes to channel
-    ctx.write(request.bytes(), promise);
+    //If the message is Hello, don't actually pass it on, just wait for server greeting.
+    if (!(msg instanceof Hello)) {
+      //otherwise, we store what we expect a successful response to be
+      EppRequestMessage request = (EppRequestMessage) msg;
+      response = request.getExpectedResponse();
+
+      //then we write the ByteBuf representation of the EPP message to the server
+      ctx.write(request.bytes(), promise);
+    }
   }
 
   /** Performs conversion from {@link ByteBuf} */
@@ -75,10 +66,9 @@ public class EppMessageHandler extends ChannelDuplexHandler {
     try {
       //attempt to get response document from ByteBuf
       ByteBuf buf = (ByteBuf) msg;
-      response.getDocument(clTRID, buf);
+      response.getDocument(buf);
       logger.atInfo().log(response.toString());
     } catch(FailureException e) {
-
       //otherwise we log that it was unsuccessful and throw the requisite error
       logger.atInfo().withCause(e);
       throw e;

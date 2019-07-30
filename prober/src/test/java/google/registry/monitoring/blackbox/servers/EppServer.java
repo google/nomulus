@@ -129,55 +129,26 @@ public class EppServer extends TestServer {
   public static String getCheckDomainResponse(
       boolean availCode, String domain, String clTRID, String svTRID) {
     String response =
-        "<?xml version='1.0' encoding='UTF-8' ?>"
-            + "<epp xmlns='urn:ietf:params:xml:ns:epp-1.0'><success>"
-            + "<result code='1000'><msg lang='en'>command completed successfully</msg></result>"
-            + "<resData>"
-            + "<domain:chkData xmlns:domain='urn:ietf:params:xml:ns:domain-1.0'>"
-            + "<domain:cd><domain:name avail='%s'>%s</domain:name></domain:cd>"
-            + "</domain:chkData>"
-            + "</resData>"
-            + "<trID><clTRID>%s</clTRID><svTRID>%s</svTRID></trID>"
-            + "</success></epp>";
-    return String.format(response, availCode, domain, clTRID, svTRID);
-  }
+        "<?xml version='1.0' encoding='UTF-8'?><epp xmlns='urn:ietf:params:xml:ns:epp-1.0'>\n"
+            + "\t<response>\n"
+            + "\t\t<result code='1000'>\n"
+            + "\t\t\t<msg>Generic Message</msg>\n"
+            + "\t\t</result>\n"
+            + "\t\t<resData>\n"
+            + "\t\t\t<domain:chkData xmlns:domain='urn:ietf:params:xml:ns:domain-1.0'>\n"
+            + "\t\t\t\t<domain:cd>\n"
+            + "\t\t\t\t\t<domain:name avail='%s'>%s</domain:name>\n"
+            + "\t\t\t\t</domain:cd>\n"
+            + "\t\t\t</domain:chkData>\n"
+            + "\t\t</resData>\n"
+            + "\t\t<trID>\n"
+            + "\t\t\t<clTRID>%s</clTRID>\n"
+            + "\t\t\t<svTRID>%s</svTRID>\n"
+            + "\t\t</trID>\n"
+            + "\t</response>\n"
+            + "</epp>";
 
-  /**
-   * Return a domain ClaimsCheck success as a string. These always have a result
-   * code of 1000 unless something unusual occurred. The success or failure is evaulated against
-   * expectation of availability rather than result code in this case.
-   *
-   * @param availCode the availability code to use
-   * @param domain the domain the check success is for
-   * @param clTRID the client transaction ID
-   * @param svTRID the server transaction ID
-   * @param claimKey the claim key to include
-   * @return the EPP success message as a string
-   * @throws IllegalArgumentException if availability code is anything other than 0 or 1
-   */
-  public static String getClaimsCheckResponse(
-      boolean availCode, String domain, String clTRID, String svTRID, String claimKey) {
-    String claimKeyElement;
-    if (claimKey != null) {
-      claimKeyElement = String.format("<launch:claimKey>%s</launch:claimKey>", claimKey);
-    } else {
-      claimKeyElement = "";
-    }
-    String response =
-        "<?xml version='1.0' encoding='UTF-8' ?>"
-            + "<epp xmlns='urn:ietf:params:xml:ns:epp-1.0'><success>"
-            + "<result code='1000'><msg lang='en'>command completed successfully</msg></result>"
-            + "<extension>"
-            + "<launch:chkData xmlns:launch='urn:ietf:params:xml:ns:launch-1.0'>"
-            + "<launch:phase>claims</launch:phase>"
-            + "<launch:cd>"
-            + "<launch:name exists='%s'>%s</launch:name>"
-            + claimKeyElement
-            + "</launch:cd>"
-            + "</launch:chkData>"
-            + "</extension>"
-            + "<trID><clTRID>%s</clTRID><svTRID>%s</svTRID></trID>"
-            + "</success></epp>";
+  
     return String.format(response, availCode, domain, clTRID, svTRID);
   }
 

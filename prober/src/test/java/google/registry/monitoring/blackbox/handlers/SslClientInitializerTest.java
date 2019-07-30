@@ -23,6 +23,7 @@ import static google.registry.monitoring.blackbox.handlers.SslInitializerTestUti
 
 import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.testservers.EchoServer;
+>>>>>>> Updated EppServer to properly send successful Check responses.
 import google.registry.monitoring.blackbox.connection.Protocol;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;

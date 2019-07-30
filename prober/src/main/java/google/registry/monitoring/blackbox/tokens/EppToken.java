@@ -23,14 +23,14 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 /**
- * {@link Token} subtype that deals performs specified actions for the EPP sequence
+ * {@link Token} subtype that deals performs specified actions for the EPP sequence.
  */
 public abstract class EppToken extends Token {
 
-  /** Describes the maximum possible length of generated domain name */
+  /** Describes the maximum possible length of generated domain name. */
   private static final int MAX_DOMAIN_PART_LENGTH = 50;
 
-  /** On every new TRID generated, we increment this static counter to help for added differentiation */
+  /** On every new TRID generated, we increment this static counter to help for added differentiation. */
   private static int clientIdSuffix = 0;
 
   protected final String tld;
@@ -39,7 +39,7 @@ public abstract class EppToken extends Token {
 
   /**
    * Always the constructor used to provide any {@link EppToken}, with {@code tld}
-   * and {@code host} specified by {@link Dagger}
+   * and {@code host} specified by Dagger.
    */
   protected EppToken(String tld, String host) {
     this.tld = tld;
@@ -84,9 +84,7 @@ public abstract class EppToken extends Token {
         clientIdSuffix++);
   }
 
-  /**
-   * Return a fully qualified domain label to use, derived from the client transaction ID.
-   */
+  /** Return a fully qualified domain label to use, derived from the client transaction ID. */
   private String newDomainName(String clTRID) {
     String sld;
     // not sure if the local hostname will stick to RFC validity rules
@@ -102,7 +100,8 @@ public abstract class EppToken extends Token {
 
   /**
    * {@link EppToken} Subclass that represents a token used in a transient sequence,
-   * meaning the connection is remade on each new iteration of the {@link ProbingSequence}
+   * meaning the connection is remade on each new iteration of the
+   * {@link google.registry.monitoring.blackbox.ProbingSequence}.
    */
   public static class Transient extends EppToken {
     @Inject
@@ -118,7 +117,8 @@ public abstract class EppToken extends Token {
 
   /**
    * {@link EppToken} Subclass that represents a token used in a persistent sequence,
-   * meaning the connection is maintained on each new iteration of the {@link ProbingSequence}
+   * meaning the connection is maintained on each new iteration of the
+   * {@link google.registry.monitoring.blackbox.ProbingSequence}.
    */
   public static class Persistent extends EppToken {
     @Inject
@@ -126,6 +126,7 @@ public abstract class EppToken extends Token {
       super(tld, host);
     }
 
+    /** Constructor used on call to {@code next} to preserve channel. */
     private Persistent (String tld, String host, Channel channel) {
       super(tld, host, channel);
     }

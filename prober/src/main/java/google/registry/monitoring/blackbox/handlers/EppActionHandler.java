@@ -42,7 +42,7 @@ public class EppActionHandler extends ActionHandler {
     EppResponseMessage response = (EppResponseMessage) msg;
 
     //Based on the expected response type, will throw ResponseFailure if we don't receive a successful EPP response
-    response.decode();
+    response.verify();
     super.channelRead0(ctx, msg);
   }
 
