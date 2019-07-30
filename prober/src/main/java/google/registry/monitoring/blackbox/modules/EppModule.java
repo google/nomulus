@@ -55,6 +55,7 @@ public class EppModule {
   @Qualifier
   public @interface EppProtocol {}
 
+  /** Dagger provided {@link ProbingSequence} that probes EPP login and logout actions. */
   @Provides
   @Singleton
   @EppProtocol
@@ -122,18 +123,19 @@ public class EppModule {
         .build();
   }
 
+  /** Dagger provided {@link ProbingSequence} that probes EPP login, create, check, delete, and logout actions. */
   @Provides
   @Named("eppLoginCreateCheckDeleteCheckLogout")
   static ProbingSequence provideEppLoginCreateCheckDeleteCheckLogoutProbingSequence(
       EppToken.Transient token,
       Provider<Bootstrap> bootstrapProvider,
-      @Named("Hello") ProbingStep.Builder helloStepBuilder,
-      @Named("Login") ProbingStep.Builder loginStepBuilder,
-      @Named("Create") ProbingStep.Builder createStepBuilder,
-      @Named("Check") ProbingStep.Builder checkStepFirstBuilder,
-      @Named("Delete") ProbingStep.Builder deleteStepBuilder,
-      @Named("Check") ProbingStep.Builder checkStepSecondBuilder,
-      @Named("Logout") ProbingStep.Builder logoutStepBuilder) {
+      @Named("hello") ProbingStep.Builder helloStepBuilder,
+      @Named("login") ProbingStep.Builder loginStepBuilder,
+      @Named("create") ProbingStep.Builder createStepBuilder,
+      @Named("checkExists") ProbingStep.Builder checkStepFirstBuilder,
+      @Named("delete") ProbingStep.Builder deleteStepBuilder,
+      @Named("checkNotExists") ProbingStep.Builder checkStepSecondBuilder,
+      @Named("logout") ProbingStep.Builder logoutStepBuilder) {
     return new ProbingSequence.Builder()
         .setBootstrap(bootstrapProvider.get())
         .addToken(token)
