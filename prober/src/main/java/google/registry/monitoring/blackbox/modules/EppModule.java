@@ -15,7 +15,6 @@
 package google.registry.monitoring.blackbox.modules;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.flogger.FluentLogger;
 import dagger.Module;
 import dagger.Provides;
 
@@ -29,11 +28,9 @@ import google.registry.monitoring.blackbox.handlers.EppActionHandler;
 import google.registry.monitoring.blackbox.handlers.EppMessageHandler;
 import google.registry.monitoring.blackbox.handlers.SslClientInitializer;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
-import google.registry.monitoring.blackbox.modules.WebWhoisModule.WebWhoisProtocol;
 import google.registry.monitoring.blackbox.tokens.EppToken;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelHandler;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslProvider;
 import java.security.PrivateKey;
@@ -93,13 +90,39 @@ public class EppModule {
         .build();
   }
 
+  @Provides
+  @Singleton
+  @IntoSet
+  static ProbingSequence provideEppLoginCreateCheckDeleteCheckLogoutProbingSequence(
+      EppToken.Transient token,
+      Provider<Bootstrap> bootstrapProvider,
+      @Named("Hello") ProbingStep.Builder helloStepBuilder,
+      @Named("Login") ProbingStep.Builder loginStepBuilder,
+      @Named("Create") ProbingStep.Builder createStepBuilder,
+      @Named("Check") ProbingStep.Builder checkStepFirstBuilder,
+      @Named("Delete") ProbingStep.Builder deleteStepBuilder,
+      @Named("Check") ProbingStep.Builder checkStepSecondBuilder,
+      @Named("Logout") ProbingStep.Builder logoutStepBuilder) {
+    return new ProbingSequence.Builder()
+        .setBootstrap(bootstrapProvider.get())
+        .addToken(token)
+        .addStep(helloStepBuilder)
+        .addStep(loginStepBuilder)
+        .addStep(createStepBuilder)
+        .addStep(checkStepFirstBuilder)
+        .addStep(deleteStepBuilder)
+        .addStep(checkStepSecondBuilder)
+        .addStep(logoutStepBuilder)
+        .build();
+  }
+
 
   @Provides
   @Named("Hello")
   static ProbingStep provideEppHelloStep(
       @EppProtocol Protocol eppProtocol,
       Duration duration,
-      EppRequestMessage.HELLO helloRequest,
+      EppRequestMessage.Hello helloRequest,
       @EppProtocol Bootstrap bootstrap) {
     return ProbingStep.builder()
         .setProtocol(eppProtocol)
@@ -114,7 +137,7 @@ public class EppModule {
   static ProbingStep provideEppLoginStep(
       @EppProtocol Protocol eppProtocol,
       Duration duration,
-      EppRequestMessage.LOGIN loginRequest,
+      EppRequestMessage.Login loginRequest,
       @EppProtocol Bootstrap bootstrap) {
     return ProbingStep.builder()
         .setProtocol(eppProtocol)
@@ -129,7 +152,7 @@ public class EppModule {
   static ProbingStep provideEppCreateStep(
       @EppProtocol Protocol eppProtocol,
       Duration duration,
-      EppRequestMessage.CREATE createRequest,
+      EppRequestMessage.Create createRequest,
       @EppProtocol Bootstrap bootstrap) {
     return ProbingStep.builder()
         .setProtocol(eppProtocol)
@@ -139,12 +162,24 @@ public class EppModule {
         .build();
   }
 
+    @Provides
+    @Named("Check")
+    static ProbingStep.Builder provideEppCheckStepBuilder(
+        @EppProtocol Protocol eppProtocol,
+        Duration duration,
+        EppRequestMessage.CheckExists checkRequest) {
+      return ProbingStep.builder()
+          .setProtocol(eppProtocol)
+          .setDuration(duration)
+          .setMessageTemplate(checkRequest);
+  }
+
   @Provides
   @Named("Delete")
   static ProbingStep provideEppDeleteStep(
       @EppProtocol Protocol eppProtocol,
       Duration duration,
-      EppRequestMessage.DELETE deleteRequest,
+      EppRequestMessage.Delete deleteRequest,
       @EppProtocol Bootstrap bootstrap) {
     return ProbingStep.builder()
         .setProtocol(eppProtocol)
@@ -159,7 +194,7 @@ public class EppModule {
   static ProbingStep provideEppLogoutStep(
       @EppProtocol Protocol eppProtocol,
       Duration duration,
-      EppRequestMessage.LOGOUT logoutRequest,
+      EppRequestMessage.Logout logoutRequest,
       @EppProtocol Bootstrap bootstrap) {
     return ProbingStep.builder()
         .setProtocol(eppProtocol)

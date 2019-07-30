@@ -371,7 +371,7 @@ public class EppMessage {
    * node value of the first child, returning the transformed XML as a
    * Document.
    *
-   * <p>E.g. to replace the value "@@CLTRID@@" in the {@code <clTRID>}
+   * <p>E.g. to replace the value "@@CLTRID@@" in the {@code <expectedClTRID>}
    * node with a client transaction ID, use the mapping
    * {@code <"//domainns:clTRID", "AAA-123-BBBB">} (or whatever the ID is).
    *
