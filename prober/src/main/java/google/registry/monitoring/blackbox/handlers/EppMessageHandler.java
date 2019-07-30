@@ -17,7 +17,9 @@ package google.registry.monitoring.blackbox.handlers;
 import com.google.common.flogger.FluentLogger;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
+import google.registry.monitoring.blackbox.messages.EppRequestMessage.Hello;
 import google.registry.monitoring.blackbox.messages.EppResponseMessage;
+import google.registry.monitoring.blackbox.messages.EppResponseMessage.SimpleSuccess;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -33,6 +35,7 @@ public class EppMessageHandler extends ChannelDuplexHandler {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private String clTRID;
+  private String domainName;
   private EppResponseMessage response;
   private EppResponseMessage greeting;
   private EppResponseMessage success;
@@ -40,7 +43,7 @@ public class EppMessageHandler extends ChannelDuplexHandler {
   @Inject
   public EppMessageHandler() {
     greeting = new EppResponseMessage.Greeting();
-    success = new EppResponseMessage.Success();
+    success = new SimpleSuccess();
     response = greeting;
   }
 
@@ -48,7 +51,7 @@ public class EppMessageHandler extends ChannelDuplexHandler {
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
       throws Exception {
-    if (EppRequestMessage.HELLO.class.isInstance(msg)) {
+    if (msg instanceof Hello) {
       //if this is our first communication with the server, response should be expected to be a greeting
       response = greeting;
       return;
@@ -56,9 +59,10 @@ public class EppMessageHandler extends ChannelDuplexHandler {
       //otherwise we expect a success
       response = success;
     }
-    //convert the outbound message to bytes and store the clTRID
+    //convert the outbound message to bytes and store the expectedClTRID
     EppRequestMessage request = (EppRequestMessage) msg;
     clTRID = request.getClTRID();
+    domainName = request.getClTRID();
 
     //write bytes to channel
     ctx.write(request.bytes(), promise);

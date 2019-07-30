@@ -16,16 +16,13 @@
 package google.registry.monitoring.blackbox.messages;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.exceptions.EppClientException;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import io.netty.buffer.ByteBuf;
-import java.util.ArrayList;
-import java.util.List;
 import javax.inject.Inject;
-import org.w3c.dom.Document;
 
 public abstract class EppResponseMessage extends EppMessage implements InboundMessageType{
-  protected String clTRID;
+  protected String expectedClTRID;
+  protected String expectedDomainName;
 
   public abstract void getDocument(String clTRID, ByteBuf buf) throws FailureException;
 
@@ -40,13 +37,20 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
 
   public abstract void decode() throws FailureException;
 
-  public static class Success extends EppResponseMessage {
+  public void updateInformation(String expectedClTRID, String expectedDomainName) {
+    this.expectedClTRID = expectedClTRID;
+    this.expectedDomainName = expectedDomainName;
+  }
+
+
+
+  public static class SimpleSuccess extends EppResponseMessage {
     @Inject
-    public Success() {}
+    public SimpleSuccess() {}
 
     @Override
     public void getDocument(String clTRID, ByteBuf buf) throws FailureException {
-      this.clTRID = clTRID;
+      this.expectedClTRID = clTRID;
       super.getDocument(buf);
     }
 
@@ -55,19 +59,19 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
       verifyEppResponse(
           message,
           ImmutableList.of(
-              String.format("//eppns:clTRID[.='%s']", clTRID),
+              String.format("//eppns:clTRID[.='%s']", expectedClTRID),
             XPASS_EXPRESSION),
           true);
     }
-
   }
+  public static class DomainExists extends EppResponseMessage {
 
-  public static class Failure extends EppResponseMessage {
     @Inject
-    public Failure() {}
+    public DomainExists() {}
 
+    @Override
     public void getDocument(String clTRID, ByteBuf buf) throws FailureException {
-      this.clTRID = clTRID;
+      this.expectedClTRID = clTRID;
       super.getDocument(buf);
     }
 
@@ -76,7 +80,50 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
       verifyEppResponse(
           message,
           ImmutableList.of(
-              String.format("//eppns:clTRID[.='%s']", clTRID),
+              String.format("//eppns:clTRID[.='%s']", expectedClTRID),
+              String.format("//domainns:name[@avail='false'][.='%s']", expectedDomainName),
+              XPASS_EXPRESSION),
+          true);
+    }
+  }
+  public static class DomainNotExists extends EppResponseMessage {
+
+    @Inject
+    public DomainNotExists() {}
+
+    @Override
+    public void getDocument(String clTRID, ByteBuf buf) throws FailureException {
+      this.expectedClTRID = clTRID;
+      super.getDocument(buf);
+    }
+
+    @Override
+    public void decode() throws FailureException {
+      verifyEppResponse(
+          message,
+          ImmutableList.of(
+              String.format("//eppns:clTRID[.='%s']", expectedClTRID),
+              String.format("//domainns:name[@avail='true'][.='%s']", expectedDomainName),
+              XPASS_EXPRESSION),
+          true);
+    }
+  }
+
+  public static class Failure extends EppResponseMessage {
+    @Inject
+    public Failure() {}
+
+    public void getDocument(String clTRID, ByteBuf buf) throws FailureException {
+      this.expectedClTRID = clTRID;
+      super.getDocument(buf);
+    }
+
+    @Override
+    public void decode() throws FailureException {
+      verifyEppResponse(
+          message,
+          ImmutableList.of(
+              String.format("//eppns:clTRID[.='%s']", expectedClTRID),
               XFAIL_EXPRESSION),
           true);
     }
@@ -94,7 +141,7 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
     public void decode() throws FailureException {
       verifyEppResponse(
           message,
-          ImmutableList.of(),
+          ImmutableList.of("//eppns:greeting"),
           true);
     }
 
