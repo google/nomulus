@@ -30,10 +30,23 @@ import javax.inject.Inject;
  * facets of the 5 basic EPP commands we are attempting to probe. The original 5 are:
  * LOGIN, CREATE, CHECK, DELETE, LOGOUT.</p>
  *
+<<<<<<< HEAD
  * <p>In turn, there are 6 similar types: Hello, Login, Create, Check, Delete, and Logout.
  * The only difference is that we added a hello command that simply waits for the server
  * to send a greeting, then moves on to the Login action.</p>
  *
+=======
+ * <p>There are 8 specific types of this {@link EppRequestMessage}, which represent the
+ * facets of the 5 basic EPP commands we are attempting to probe. The original 6 are:
+ * LOGIN, CREATE, CHECK, CLAIMSCHECK, DELETE, LOGOUT.</p>
+ *
+ * <p>In turn, there are 8 similar types: Hello, Login, Create, CheckExists, CheckNotExists,
+ * ClaimsCheck, Delete, and Logout. The only difference is that we create two different
+ * types of Check, for when we expect the domain to exist and when we expect it not to.
+ * We also added a hello command that simply waits for the server to send a greeting, then
+ * moves on to the Login action.</p>
+ *
+>>>>>>> Javadoc on EppRequestMessage added
  * <p>Stores a clTRID and domainName which is modified each time the token calls
  * {@code modifyMessage}. These will also modify the EPP request sent to the server.</p>
  */

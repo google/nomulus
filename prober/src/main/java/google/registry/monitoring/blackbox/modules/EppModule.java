@@ -122,6 +122,31 @@ public class EppModule {
         .build();
   }
 
+  @Provides
+  @Named("eppLoginCreateCheckDeleteCheckLogout")
+  static ProbingSequence provideEppLoginCreateCheckDeleteCheckLogoutProbingSequence(
+      EppToken.Transient token,
+      Provider<Bootstrap> bootstrapProvider,
+      @Named("Hello") ProbingStep.Builder helloStepBuilder,
+      @Named("Login") ProbingStep.Builder loginStepBuilder,
+      @Named("Create") ProbingStep.Builder createStepBuilder,
+      @Named("Check") ProbingStep.Builder checkStepFirstBuilder,
+      @Named("Delete") ProbingStep.Builder deleteStepBuilder,
+      @Named("Check") ProbingStep.Builder checkStepSecondBuilder,
+      @Named("Logout") ProbingStep.Builder logoutStepBuilder) {
+    return new ProbingSequence.Builder()
+        .setBootstrap(bootstrapProvider.get())
+        .addToken(token)
+        .addStep(helloStepBuilder)
+        .addStep(loginStepBuilder)
+        .addStep(createStepBuilder)
+        .addStep(checkStepFirstBuilder)
+        .addStep(deleteStepBuilder)
+        .addStep(checkStepSecondBuilder)
+        .addStep(logoutStepBuilder)
+        .build();
+  }
+
 
   /**
    * Provides {@link ProbingStep} that establishes initial connection
@@ -195,7 +220,6 @@ public class EppModule {
 
   /** {@link Provides} {@link ProbingStep} that checks a domain doesn't exist on EPP server. */
   @Provides
-<<<<<<< HEAD
   @Named("checkNotExists")
     static ProbingStep provideEppCheckNotExistsStep(
         @EppProtocol Protocol eppProtocol,
