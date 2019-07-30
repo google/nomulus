@@ -19,12 +19,6 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
-<<<<<<< HEAD
-=======
-import google.registry.monitoring.blackbox.TestServers.EchoServer;
-import google.registry.monitoring.blackbox.TestUtils.DuplexMessageTest;
-import google.registry.monitoring.blackbox.TestUtils.TestProvider;
->>>>>>> Added Modified test server infrastructure.
 import google.registry.monitoring.blackbox.connection.ProbingAction;
 import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.handlers.ActionHandler;

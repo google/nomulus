@@ -14,7 +14,6 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.io.IOException;
-import javax.xml.parsers.ParserConfigurationException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -126,7 +125,7 @@ public class EppActionHandlerTest {
     setupEmbeddedChannel(actionHandler, statusHandler);
 
     ChannelFuture future = actionHandler.getFuture();
-    
+
     EppResponseMessage response = messageType.getExpectedResponse();
 
     response.getDocument(EppServer.stringToByteBuf(getResponseString(messageType.getExpectedResponse(), false, USER_CLIENT_TRID)));
