@@ -40,7 +40,7 @@ public class ConversionHandler extends ChannelDuplexHandler {
    * Handles inbound conversion
    */
   @Override
-  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+  public void channelRead(ChannelHandlerContext ctx, Object msg) {
     ByteBuf buf = (ByteBuf) msg;
     ctx.fireChannelRead(new TestMessage(buf.toString(UTF_8)));
     buf.release();

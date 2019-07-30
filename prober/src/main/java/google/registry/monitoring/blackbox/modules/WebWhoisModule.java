@@ -42,7 +42,8 @@ import javax.inject.Singleton;
 import org.joda.time.Duration;
 
 /**
- * A module that provides the {@link Protocol}s to send HTTP(S) web WHOIS requests.
+ * A module that provides the components necessary for and the overall
+ * {@link ProbingSequence} to probe WebWHOIS.
  */
 @Module
 public class WebWhoisModule {
