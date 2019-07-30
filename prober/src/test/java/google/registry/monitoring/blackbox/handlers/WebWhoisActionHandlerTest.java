@@ -23,7 +23,7 @@ import static google.registry.monitoring.blackbox.TestUtils.makeRedirectResponse
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.TestServers.WebWhoisServer;
+import google.registry.monitoring.blackbox.servers.WebWhoisServer;
 import google.registry.monitoring.blackbox.connection.ProbingAction;
 import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.TestUtils.TestProvider;

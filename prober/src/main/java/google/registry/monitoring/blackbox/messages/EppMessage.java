@@ -60,24 +60,38 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+/**
+ * Superclass of {@link EppRequestMessage} and {@link EppResponseMessage} that represents
+ * skeleton of any kind of EPP message, whether inbound or outbound.
+ *
+ * <p>Houses number of static methods for use of conversion between String and bytes to
+ * {@link Document} type, which represents an XML Document, the type of which is used for
+ * EPP messages.</p>
+ */
 public class EppMessage {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  /** Standard EPP header number of bytes (size of int). */
   protected static int HEADER_LENGTH = 4;
-  private final static DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
 
+  /**
+   * Static variables necessary for static methods that serve as tools for {@link Document}
+   * creation, conversion, and verification.
+   */
+  private final static DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
   private static final XPath xpath;
   private static final Schema eppSchema;
 
+  /** {@link Document} that represents the actual XML document sent inbound or outbound through channel pipeline. */
   protected Document message;
 
 
-  // These are the xpath expressions for EPP success status codes and failure status codes.
-  // commands can send one or the other to implement XPASS or XFAIL testing.
+  /** Expression that expresses a result code in the {@link EppResponseMessage} that means success. */
   @VisibleForTesting
   static final String XPASS_EXPRESSION =
       String.format("//eppns:result[@code>='%s'][@code<'%s']", 1000, 2000);
 
+  /** Expression that expresses a result code in the {@link EppResponseMessage} that means failure. */
   @VisibleForTesting
   static final String XFAIL_EXPRESSION =
       String.format("//eppns:result[@code>='%s'][@code<'%s']", 2000, 3000);
@@ -103,8 +117,6 @@ public class EppMessage {
   private static final String VALID_TLD_PART_REGEX;
   static final String VALID_SLD_LABEL_REGEX;
   static {
-
-
     // tld label part may contain a dot and end with a dot, and must
     // start and end with 0-9 or a-zA-Z but may contain any number of
     // dashes (minus signs "-") in between (even consecutive)
@@ -146,6 +158,7 @@ public class EppMessage {
     }
   }
 
+  /** Helper method that reads resource existing in same package as {@link EppMessage} class. */
   private static InputStream readResource(String filename)
       throws IOException {
     return readResourceBytes(EppMessage.class, filename).openStream();

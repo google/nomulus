@@ -47,11 +47,11 @@ public class WebWhoisServer extends TestServer {
     super(eventLoopGroup);
   }
 
-  /** Creates server that doesn't deal with {@link ByteBuf} conversion and just sends the HttpRequestMessage object through pipeline */
+  /** Creates server that doesn't deal with {@link io.netty.buffer.ByteBuf} conversion and just sends the HttpRequestMessage object through pipeline */
   public void setupStrippedServer(LocalAddress address, String redirectInput, String destinationInput) {
     setupServer(address, ImmutableList.of(new RedirectHandler(redirectInput, destinationInput)));
   }
-  /** Creates server that sends exactly what we expect a remote server to send as a success, by sending the {@link ByteBuf} of the success through pipeline */
+  /** Creates server that sends exactly what we expect a remote server to send as a success, by sending the {@link io.netty.buffer.ByteBuf} of the success through pipeline */
   public void setupFullServer(LocalAddress address, String redirectInput, String destinationInput) {
    setupServer(
         address,
@@ -64,7 +64,7 @@ public class WebWhoisServer extends TestServer {
   }
 
   /**
-   * Handler that will wither redirect client, give successful success, or give error messge
+   * Handler that will wither redirect client, give successful status, or give error message
    */
   @Sharable
   static class RedirectHandler extends ChannelDuplexHandler {

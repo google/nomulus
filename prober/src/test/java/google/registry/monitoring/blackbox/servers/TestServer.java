@@ -35,7 +35,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import org.junit.rules.ExternalResource;
 
 /**
- * Mock Server Superclass whose subclasses implement specific behaviors we expect blackbox server to perform
+ * Mock Server Superclass whose subclasses implement specific behaviors we expect blackbox server to perform.
  */
 public abstract class TestServer extends ExternalResource {
 

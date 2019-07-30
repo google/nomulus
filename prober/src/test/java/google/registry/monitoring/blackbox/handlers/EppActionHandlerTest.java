@@ -2,7 +2,12 @@ package google.registry.monitoring.blackbox.handlers;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import google.registry.monitoring.blackbox.TestServers.EppServer;
+import google.registry.monitoring.blackbox.messages.EppRequestMessage.Create;
+import google.registry.monitoring.blackbox.messages.EppRequestMessage.Delete;
+import google.registry.monitoring.blackbox.messages.EppRequestMessage.Login;
+import google.registry.monitoring.blackbox.messages.EppRequestMessage.Logout;
+import google.registry.monitoring.blackbox.messages.EppResponseMessage;
+import google.registry.monitoring.blackbox.servers.EppServer;
 import google.registry.monitoring.blackbox.exceptions.InternalException;
 import google.registry.monitoring.blackbox.exceptions.ResponseException;
 import google.registry.monitoring.blackbox.handlers.ActionHandler.ResponseType;
@@ -45,25 +50,20 @@ public class EppActionHandlerTest {
   @Parameter(0)
   public EppRequestMessage messageType;
 
-  // We do our best effort to test all available SSL providers.
+  // We test all relevant EPP actions
   @Parameters(name = "{0}")
   public static EppRequestMessage[] data() {
     return new EppRequestMessage[] {
-        new EppRequestMessage.CHECK(),
-        new EppRequestMessage.CLAIMSCHECK(),
-        new EppRequestMessage.CREATE(),
-        new EppRequestMessage.DELETE(),
-        new EppRequestMessage.LOGOUT()
+        new EppRequestMessage.Create(new EppResponseMessage.SimpleSuccess()),
+        new EppRequestMessage.Delete(new EppResponseMessage.SimpleSuccess()),
+        new EppRequestMessage.Logout(new EppResponseMessage.SimpleSuccess()),
+        new EppRequestMessage.CheckExists(new EppResponseMessage.DomainExists()),
+        new EppRequestMessage.CheckNotExists(new EppResponseMessage.DomainNotExists())
     };
   }
 
   @Before
-  public void setup() throws ParserConfigurationException {
-    setupHandlers();
-  }
-
-
-  private void setupHandlers() {
+  public void setup() {
     statusHandler = new StatusHandler();
     actionHandler = new EppActionHandler();
     messageHandler = new EppMessageHandler();
@@ -72,7 +72,6 @@ public class EppActionHandlerTest {
   private void setupEmbeddedChannel(ChannelHandler... handlers) {
     channel = new EmbeddedChannel(handlers);
   }
-
 
   @Test
   public void testBasicLogin_Success()
@@ -85,7 +84,7 @@ public class EppActionHandlerTest {
     future.syncUninterruptibly();
     assertThat(statusHandler.getResponse()).isEqualTo(ResponseType.SUCCESS);
 
-    EppRequestMessage login = new EppRequestMessage.LOGIN(USER_ID, USER_PASSWORD);
+    EppRequestMessage login = new Login(new EppResponseMessage.SimpleSuccess(), USER_ID, USER_PASSWORD);
     login.modifyMessage(USER_CLIENT_TRID, DOMAIN_NAME);
 
     channel.writeOutbound(login);
@@ -101,11 +100,7 @@ public class EppActionHandlerTest {
     actionHandler.resetFuture();
     future = actionHandler.getFuture();
 
-    System.out.println(EppServer.getBasicResponse(
-        SUCCESS_RESULT_CODE,
-        SUCCESS_MSG,
-        USER_CLIENT_TRID,
-        SERVER_ID));
+
     channel.writeInbound(EppServer.stringToByteBuf(EppServer.getBasicResponse(
         SUCCESS_RESULT_CODE,
         SUCCESS_MSG,
@@ -143,7 +138,7 @@ public class EppActionHandlerTest {
     future.syncUninterruptibly();
     assertThat(statusHandler.getResponse()).isEqualTo(ResponseType.SUCCESS);
 
-    EppRequestMessage login = new EppRequestMessage.LOGIN(USER_ID, USER_PASSWORD);
+    EppRequestMessage login = new Login(new EppResponseMessage.SimpleSuccess(), USER_ID, USER_PASSWORD);
     login.modifyMessage(USER_CLIENT_TRID, DOMAIN_NAME);
 
     channel.writeOutbound(login);
@@ -196,11 +191,28 @@ public class EppActionHandlerTest {
     actionHandler.resetFuture();
     future = actionHandler.getFuture();
 
-    channel.writeInbound(EppServer.stringToByteBuf(EppServer.getBasicResponse(
-        SUCCESS_RESULT_CODE,
-        SUCCESS_MSG,
-        USER_CLIENT_TRID,
-        SERVER_ID)));
+    String response;
+
+    if (messageType instanceof EppRequestMessage.CheckExists)
+      response = EppServer.getCheckDomainResponse(
+          false,
+          DOMAIN_NAME,
+          USER_CLIENT_TRID,
+          SERVER_ID);
+    else if (messageType instanceof EppRequestMessage.CheckNotExists)
+      response = EppServer.getCheckDomainResponse(
+          true,
+          DOMAIN_NAME,
+          USER_CLIENT_TRID,
+          SERVER_ID);
+    else
+      response = EppServer.getBasicResponse(
+          SUCCESS_RESULT_CODE,
+          SUCCESS_MSG,
+          USER_CLIENT_TRID,
+          SERVER_ID);
+
+    channel.writeInbound(EppServer.stringToByteBuf(response));
 
     future.syncUninterruptibly();
     assertThat(statusHandler.getResponse()).isEqualTo(ResponseType.SUCCESS);
@@ -233,11 +245,28 @@ public class EppActionHandlerTest {
     actionHandler.resetFuture();
     future = actionHandler.getFuture();
 
-    channel.writeInbound(EppServer.stringToByteBuf(EppServer.getBasicResponse(
-        FAILURE_RESULT_CODE,
-        FAILURE_MSG,
-        USER_CLIENT_TRID,
-        SERVER_ID)));
+    String response;
+
+    if (messageType instanceof EppRequestMessage.CheckExists)
+      response = EppServer.getCheckDomainResponse(
+          true,
+          DOMAIN_NAME,
+          USER_CLIENT_TRID,
+          SERVER_ID);
+    else if (messageType instanceof EppRequestMessage.CheckNotExists)
+      response = EppServer.getCheckDomainResponse(
+          false,
+          DOMAIN_NAME,
+          USER_CLIENT_TRID,
+          SERVER_ID);
+    else
+      response = EppServer.getBasicResponse(
+          FAILURE_RESULT_CODE,
+          FAILURE_MSG,
+          USER_CLIENT_TRID,
+          SERVER_ID);
+
+    channel.writeInbound(EppServer.stringToByteBuf(response));
 
     future.syncUninterruptibly();
     assertThat(statusHandler.getResponse()).isEqualTo(ResponseType.FAILURE);
@@ -255,7 +284,7 @@ public class EppActionHandlerTest {
     future.syncUninterruptibly();
     assertThat(statusHandler.getResponse()).isEqualTo(ResponseType.SUCCESS);
 
-    EppRequestMessage login = new EppRequestMessage.LOGIN(USER_ID, USER_PASSWORD);
+    EppRequestMessage login = new Login(new EppResponseMessage.SimpleSuccess(), USER_ID, USER_PASSWORD);
     login.modifyMessage(USER_CLIENT_TRID, DOMAIN_NAME);
 
     channel.writeOutbound(login);

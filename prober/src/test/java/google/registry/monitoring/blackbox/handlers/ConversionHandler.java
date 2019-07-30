@@ -25,17 +25,15 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 
 /**
- *  {@link ChannelHandler} used in tests to convert {@link OutboundMessageType} to
- *  to {@link ByteBuf}s and convert {@link ByteBuf}s to {@link InboundMessageType}
+ *  {@link io.netty.channel.ChannelHandler} used in tests to convert between
+ *  {@link DuplexMessageTest} and {@link ByteBuf}s.
  *
- *  <p>Specific type of {@link OutboundMessage Type} and {@link InboundMessageType}
- *  used for conversion is the {@link DuplexMessageTest} type.</p>
  */
 public class ConversionHandler extends ChannelDuplexHandler {
 
   /** Handles inbound conversion */
   @Override
-  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+  public void channelRead(ChannelHandlerContext ctx, Object msg) {
     ByteBuf buf = (ByteBuf) msg;
     ctx.fireChannelRead(new DuplexMessageTest(buf.toString(UTF_8)));
     buf.release();

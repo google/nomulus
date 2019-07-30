@@ -17,12 +17,9 @@ package google.registry.monitoring.blackbox.messages;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.monitoring.blackbox.exceptions.EppClientException;
-import google.registry.monitoring.blackbox.exceptions.InternalException;
-import google.registry.monitoring.blackbox.tokens.Token;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.IOException;
-import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -98,10 +95,6 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
       throw new EppClientException(e);
     }
     return this;
-  }
-
-  public String getClTRID() {
-    return clTRID;
   }
 
   /** Private constructor for {@link EppRequestMessage} that its subclasses use for instantiation. */
@@ -188,6 +181,8 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
    */
   public static class Login extends EppRequestMessage {
     private static final String template = "login.xml";
+
+    /** We store the clientId and password, which are necessary for the login EPP message. */
     private String eppClientId;
     private String eppClientPassword;
 
@@ -217,7 +212,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
       return this;
     }
     @Override
-    public String name() {
+    public String toString() {
       return "Login Action";
     }
   }
@@ -243,7 +238,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
     }
 
     @Override
-    public String name() {
+    public String toString() {
       return "Check Exists Action";
     }
   }
@@ -268,33 +263,8 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
     }
 
     @Override
-    public String name() {
+    public String toString() {
       return "Check Not Exists Action";
-    }
-  }
-
-  /**
-   * {@link EppRequestMessage} subclass that represents message sent
-   * to check that a given domain doesn't exist on the server's EPP records.
-   *
-   * <p>Expects back a {@link EppResponseMessage.DomainNotExists} from server.</p>
-   *
-   * <p>Constructor takes in only Dagger provided
-   * {@link EppResponseMessage.DomainNotExists}.</p>
-   *
-   * <p>Message is modified using parent {@code modifyMessage}.</p>
-   */
-  public static class ClaimsCheck extends EppRequestMessage {
-    private static final String template = "claimscheck.xml";
-
-    @Inject
-    public ClaimsCheck(EppResponseMessage.DomainClaimsCheck domainClaimsCheckResponse) {
-      super(domainClaimsCheckResponse, template);
-    }
-
-    @Override
-    public String name() {
-      return "Claimscheck Action";
     }
   }
 
@@ -317,7 +287,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
       super(simpleSuccessResponse, template);
     }
     @Override
-    public String name() {
+    public String toString() {
       return "Create Action";
     }
   }
@@ -342,7 +312,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
     }
 
     @Override
-    public String name() {
+    public String toString() {
       return "Delete Action";
     }
   }
@@ -380,7 +350,7 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
     }
 
     @Override
-    public String name() {
+    public String toString() {
       return "Logout Action";
     }
   }
