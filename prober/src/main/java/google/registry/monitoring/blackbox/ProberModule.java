@@ -92,6 +92,5 @@ public class ProberModule {
 
     //Standard WebWhois sequence
     Set<ProbingSequence> provideAllSequences();
-
   }
 }

@@ -16,18 +16,16 @@
 package google.registry.monitoring.blackbox.messages;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.exceptions.EppClientException;
 import google.registry.monitoring.blackbox.exceptions.ResponseException;
 import io.netty.buffer.ByteBuf;
-import java.util.ArrayList;
-import java.util.List;
 import javax.inject.Inject;
-import org.w3c.dom.Document;
 
 public abstract class EppResponseMessage extends EppMessage implements InboundMessageType{
-  protected String clTRID;
+  protected String expectedClTRID;
+  protected String expectedDomainName;
 
   public abstract void getDocument(String clTRID, ByteBuf buf) throws ResponseException;
+  public abstract void decode() throws ResponseException;
 
   protected void getDocument(ByteBuf buf) throws ResponseException {
 
@@ -38,15 +36,20 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
     message = byteArrayToXmlDoc(response);
   }
 
-  public abstract void decode() throws ResponseException;
+  public void updateInformation(String expectedClTRID, String expectedDomainName) {
+    this.expectedClTRID = expectedClTRID;
+    this.expectedDomainName = expectedDomainName;
+  }
 
-  public static class Success extends EppResponseMessage {
+
+
+  public static class SimpleSuccess extends EppResponseMessage {
     @Inject
-    public Success() {}
+    public SimpleSuccess() {}
 
     @Override
     public void getDocument(String clTRID, ByteBuf buf) throws ResponseException {
-      this.clTRID = clTRID;
+      this.expectedClTRID = clTRID;
       super.getDocument(buf);
     }
 
@@ -55,11 +58,54 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
       verifyEppResponse(
           message,
           ImmutableList.of(
-              String.format("//eppns:clTRID[.='%s']", clTRID),
+              String.format("//eppns:clTRID[.='%s']", expectedClTRID),
             XPASS_EXPRESSION),
           true);
     }
+  }
+  public static class DomainExists extends EppResponseMessage {
 
+    @Inject
+    public DomainExists() {}
+
+    @Override
+    public void getDocument(String clTRID, ByteBuf buf) throws ResponseException {
+      this.expectedClTRID = clTRID;
+      super.getDocument(buf);
+    }
+
+    @Override
+    public void decode() throws ResponseException{
+      verifyEppResponse(
+          message,
+          ImmutableList.of(
+              String.format("//eppns:clTRID[.='%s']", expectedClTRID),
+              String.format("//domainns:name[@avail='false'][.='%s']", expectedDomainName),
+              XPASS_EXPRESSION),
+          true);
+    }
+  }
+  public static class DomainNotExists extends EppResponseMessage {
+
+    @Inject
+    public DomainNotExists() {}
+
+    @Override
+    public void getDocument(String clTRID, ByteBuf buf) throws ResponseException {
+      this.expectedClTRID = clTRID;
+      super.getDocument(buf);
+    }
+
+    @Override
+    public void decode() throws ResponseException{
+      verifyEppResponse(
+          message,
+          ImmutableList.of(
+              String.format("//eppns:clTRID[.='%s']", expectedClTRID),
+              String.format("//domainns:name[@avail='true'][.='%s']", expectedDomainName),
+              XPASS_EXPRESSION),
+          true);
+    }
   }
 
   public static class Failure extends EppResponseMessage {
@@ -67,7 +113,7 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
     public Failure() {}
 
     public void getDocument(String clTRID, ByteBuf buf) throws ResponseException {
-      this.clTRID = clTRID;
+      this.expectedClTRID = clTRID;
       super.getDocument(buf);
     }
 
@@ -76,7 +122,7 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
       verifyEppResponse(
           message,
           ImmutableList.of(
-              String.format("//eppns:clTRID[.='%s']", clTRID),
+              String.format("//eppns:clTRID[.='%s']", expectedClTRID),
               XFAIL_EXPRESSION),
           true);
     }
@@ -94,7 +140,7 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
     public void decode() throws ResponseException {
       verifyEppResponse(
           message,
-          ImmutableList.of(),
+          ImmutableList.of("//eppns:greeting"),
           true);
     }
 
