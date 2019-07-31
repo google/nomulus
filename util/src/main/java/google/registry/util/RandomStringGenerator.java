@@ -14,8 +14,6 @@
 
 package google.registry.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.security.SecureRandom;
 
 /** Random string generator. */
@@ -31,7 +29,6 @@ public class RandomStringGenerator extends StringGenerator {
   /** Generates a random string of a specified length. */
   @Override
   public String createString(int length) {
-    checkArgument(length > 0);
     char[] password = new char[length];
     for (int i = 0; i < length; ++i) {
       password[i] = alphabet.charAt(random.nextInt(alphabet.length()));

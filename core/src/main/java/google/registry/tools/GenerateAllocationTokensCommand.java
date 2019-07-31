@@ -209,9 +209,6 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
    * may return an empty set.
    */
   private ImmutableSet<String> generateTokens(int count) {
-    if (tokenLength == 0) {
-      return ImmutableSet.of(prefix);
-    }
     ImmutableSet<String> candidates =
         stringGenerator.createStrings(tokenLength, count).stream()
             .map(s -> prefix + s)
