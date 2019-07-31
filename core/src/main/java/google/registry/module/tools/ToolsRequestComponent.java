@@ -25,6 +25,7 @@ import google.registry.flows.FlowComponent;
 import google.registry.loadtest.LoadTestAction;
 import google.registry.loadtest.LoadTestModule;
 import google.registry.mapreduce.MapreduceModule;
+import google.registry.model.transaction.TransactionModule;
 import google.registry.monitoring.whitebox.WhiteboxModule;
 import google.registry.request.RequestComponentBuilder;
 import google.registry.request.RequestModule;
@@ -58,6 +59,7 @@ import google.registry.tools.server.VerifyOteAction;
         MapreduceModule.class,
         RequestModule.class,
         ToolsServerModule.class,
+        TransactionModule.class,
         WhiteboxModule.class,
     })
 interface ToolsRequestComponent {

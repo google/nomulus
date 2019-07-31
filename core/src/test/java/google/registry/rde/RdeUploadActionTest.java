@@ -60,6 +60,7 @@ import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.registry.Registry;
+import google.registry.model.transaction.TransactionManager;
 import google.registry.rde.JSchSshSession.JSchSshSessionFactory;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.RequestParameters;
@@ -194,11 +195,14 @@ public class RdeUploadActionTest {
     writeGcsFile(gcsService, LENGTH_R1_FILE, Long.toString(DEPOSIT_XML.size()).getBytes(UTF_8));
     writeGcsFile(gcsService, REPORT_FILE, Ghostryde.encode(REPORT_XML.read(), encryptKey));
     writeGcsFile(gcsService, REPORT_R1_FILE, Ghostryde.encode(REPORT_XML.read(), encryptKey));
+    TransactionManager transactionManager = appEngine.getTransactionManager();
     ofy()
         .transact(
             () -> {
-              RdeRevision.saveRevision("lol", DateTime.parse("2010-10-17TZ"), FULL, 0);
-              RdeRevision.saveRevision("tld", DateTime.parse("2010-10-17TZ"), FULL, 0);
+              RdeRevision.saveRevision(
+                  transactionManager, "lol", DateTime.parse("2010-10-17TZ"), FULL, 0);
+              RdeRevision.saveRevision(
+                  transactionManager, "tld", DateTime.parse("2010-10-17TZ"), FULL, 0);
             });
   }
 
@@ -282,7 +286,8 @@ public class RdeUploadActionTest {
 
   @Test
   public void testRunWithLock_resend() throws Exception {
-    ofy().transact(() -> RdeRevision.saveRevision("tld", DateTime.parse("2010-10-17TZ"), FULL, 1));
+    ofy().transact(() -> RdeRevision.saveRevision(
+        appEngine.getTransactionManager(), "tld", DateTime.parse("2010-10-17TZ"), FULL, 1));
     int port = sftpd.serve("user", "password", folder.getRoot());
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");

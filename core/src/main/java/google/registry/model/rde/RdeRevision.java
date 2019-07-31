@@ -24,6 +24,7 @@ import com.google.common.base.VerifyException;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
+import google.registry.model.transaction.TransactionManager;
 import org.joda.time.DateTime;
 
 /**
@@ -67,10 +68,11 @@ public final class RdeRevision extends ImmutableObject {
    * @throws IllegalStateException if not in a transaction
    * @throws VerifyException if Datastore state doesn't meet the above criteria
    */
-  public static void saveRevision(String tld, DateTime date, RdeMode mode, int revision) {
+  public static void saveRevision(TransactionManager transactionManager,
+      String tld, DateTime date, RdeMode mode, int revision) {
     checkArgument(revision >= 0, "Negative revision: %s", revision);
     String triplet = makePartialName(tld, date, mode);
-    ofy().assertInTransaction();
+    transactionManager.assertInTransaction();
     RdeRevision object = ofy().load().type(RdeRevision.class).id(triplet).now();
     if (revision == 0) {
       verify(object == null, "RdeRevision object already created: %s", object);

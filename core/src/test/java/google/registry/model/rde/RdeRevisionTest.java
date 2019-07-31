@@ -22,8 +22,10 @@ import static google.registry.model.rde.RdeRevision.saveRevision;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import com.google.common.base.VerifyException;
+import google.registry.model.transaction.TransactionManager;
 import google.registry.testing.AppEngineRule;
 import org.joda.time.DateTime;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,24 +35,40 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class RdeRevisionTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  public TransactionManager transactionManager;
+
+  public static void save(String tld, DateTime date, RdeMode mode, int revision) {
+    String triplet = RdeNamingUtils.makePartialName(tld, date, mode);
+    RdeRevision object = new RdeRevision();
+    object.id = triplet;
+    object.revision = revision;
+    ofy().saveWithoutBackup().entity(object).now();
+  }
+
+  @Before
+  public void init() {
+    transactionManager = appEngine.getTransactionManager();
+  }
+
   @Test
   public void testGetNextRevision_objectDoesntExist_returnsZero() {
-    assertThat(getNextRevision("torment", DateTime.parse("1984-12-18TZ"), FULL))
-        .isEqualTo(0);
+    assertThat(getNextRevision("torment", DateTime.parse("1984-12-18TZ"), FULL)).isEqualTo(0);
   }
 
   @Test
   public void testGetNextRevision_objectExistsAtZero_returnsOne() {
     save("sorrow", DateTime.parse("1984-12-18TZ"), FULL, 0);
-    assertThat(getNextRevision("sorrow", DateTime.parse("1984-12-18TZ"), FULL))
-        .isEqualTo(1);
+    assertThat(getNextRevision("sorrow", DateTime.parse("1984-12-18TZ"), FULL)).isEqualTo(1);
   }
 
   @Test
   public void testSaveRevision_objectDoesntExist_newRevisionIsZero_nextRevIsOne() {
-    ofy().transact(() -> saveRevision("despondency", DateTime.parse("1984-12-18TZ"), FULL, 0));
+    ofy()
+        .transact(
+            () ->
+                saveRevision(
+                    transactionManager, "despondency", DateTime.parse("1984-12-18TZ"), FULL, 0));
     ofy()
         .transact(
             () ->
@@ -67,7 +85,12 @@ public class RdeRevisionTest {
                 ofy()
                     .transact(
                         () ->
-                            saveRevision("despondency", DateTime.parse("1984-12-18TZ"), FULL, 1)));
+                            saveRevision(
+                                transactionManager,
+                                "despondency",
+                                DateTime.parse("1984-12-18TZ"),
+                                FULL,
+                                1)));
     assertThat(thrown).hasMessageThat().contains("object missing");
   }
 
@@ -80,14 +103,24 @@ public class RdeRevisionTest {
             () ->
                 ofy()
                     .transact(
-                        () -> saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 0)));
+                        () ->
+                            saveRevision(
+                                transactionManager,
+                                "melancholy",
+                                DateTime.parse("1984-12-18TZ"),
+                                FULL,
+                                0)));
     assertThat(thrown).hasMessageThat().contains("object already created");
   }
 
   @Test
   public void testSaveRevision_objectExistsAtZero_newRevisionIsOne_nextRevIsTwo() {
     save("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 0);
-    ofy().transact(() -> saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 1));
+    ofy()
+        .transact(
+            () ->
+                saveRevision(
+                    transactionManager, "melancholy", DateTime.parse("1984-12-18TZ"), FULL, 1));
     ofy()
         .transact(
             () ->
@@ -104,7 +137,13 @@ public class RdeRevisionTest {
             () ->
                 ofy()
                     .transact(
-                        () -> saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 2)));
+                        () ->
+                            saveRevision(
+                                transactionManager,
+                                "melancholy",
+                                DateTime.parse("1984-12-18TZ"),
+                                FULL,
+                                2)));
     assertThat(thrown).hasMessageThat().contains("should be at 1 ");
   }
 
@@ -117,7 +156,12 @@ public class RdeRevisionTest {
                 ofy()
                     .transact(
                         () ->
-                            saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, -1)));
+                            saveRevision(
+                                transactionManager,
+                                "melancholy",
+                                DateTime.parse("1984-12-18TZ"),
+                                FULL,
+                                -1)));
     assertThat(thrown).hasMessageThat().contains("Negative revision");
   }
 
@@ -126,15 +170,9 @@ public class RdeRevisionTest {
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
-            () -> saveRevision("frenzy", DateTime.parse("1984-12-18TZ"), FULL, 1));
+            () ->
+                saveRevision(
+                    transactionManager, "frenzy", DateTime.parse("1984-12-18TZ"), FULL, 1));
     assertThat(thrown).hasMessageThat().contains("transaction");
-  }
-
-  public static void save(String tld, DateTime date, RdeMode mode, int revision) {
-    String triplet = RdeNamingUtils.makePartialName(tld, date, mode);
-    RdeRevision object = new RdeRevision();
-    object.id = triplet;
-    object.revision = revision;
-    ofy().saveWithoutBackup().entity(object).now();
   }
 }

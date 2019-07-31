@@ -14,6 +14,7 @@
 
 package google.registry.testing;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.truth.Truth.assert_;
 import static google.registry.testing.DatastoreHelper.persistSimpleResources;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
@@ -39,6 +40,8 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.transaction.DatastoreTransactionManager;
+import google.registry.model.transaction.TransactionManager;
 import google.registry.util.Clock;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -102,6 +105,7 @@ public final class AppEngineRule extends ExternalResource {
 
   private String taskQueueXml;
   private UserInfo userInfo;
+  private TransactionManager transactionManager;
 
   /** Builder for {@link AppEngineRule}. */
   public static class Builder {
@@ -315,6 +319,7 @@ public final class AppEngineRule extends ExternalResource {
       // Reset id allocation in ObjectifyService so that ids are deterministic in tests.
       ObjectifyService.resetNextTestId();
       loadInitialData();
+      transactionManager = new DatastoreTransactionManager();
     }
   }
 
@@ -343,6 +348,10 @@ public final class AppEngineRule extends ExternalResource {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public TransactionManager getTransactionManager() {
+    return checkNotNull(transactionManager);
   }
 
   /** Install {@code testing/logging.properties} so logging is less noisy. */

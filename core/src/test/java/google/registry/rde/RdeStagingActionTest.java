@@ -150,6 +150,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
     action.tlds = ImmutableSet.of();
     action.watermarks = ImmutableSet.of();
     action.revision = Optional.empty();
+    action.transactionManager = appEngine.getTransactionManager();
   }
 
   @Test

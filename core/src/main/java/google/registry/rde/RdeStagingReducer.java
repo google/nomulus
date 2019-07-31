@@ -37,6 +37,7 @@ import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeNamingUtils;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.registry.Registry;
+import google.registry.model.transaction.TransactionManager;
 import google.registry.request.RequestParameters;
 import google.registry.request.lock.LockHandler;
 import google.registry.tldconfig.idn.IdnTableEnum;
@@ -73,6 +74,7 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
   private final Duration lockTimeout;
   private final byte[] stagingKeyBytes;
   private final RdeMarshaller marshaller;
+  private final TransactionManager transactionManager;
 
   private RdeStagingReducer(
       TaskQueueUtils taskQueueUtils,
@@ -81,7 +83,8 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
       String bucket,
       Duration lockTimeout,
       byte[] stagingKeyBytes,
-      ValidationMode validationMode) {
+      ValidationMode validationMode,
+      TransactionManager transactionManager) {
     this.taskQueueUtils = taskQueueUtils;
     this.lockHandler = lockHandler;
     this.gcsBufferSize = gcsBufferSize;
@@ -89,6 +92,7 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
     this.lockTimeout = lockTimeout;
     this.stagingKeyBytes = stagingKeyBytes;
     this.marshaller = new RdeMarshaller(validationMode);
+    this.transactionManager = transactionManager;
   }
 
   @Override
@@ -223,7 +227,7 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
               ofy().save().entity(Cursor.create(key.cursor(), newPosition, registry)).now();
               logger.atInfo().log(
                   "Rolled forward %s on %s cursor to %s", key.cursor(), tld, newPosition);
-              RdeRevision.saveRevision(tld, watermark, mode, revision);
+              RdeRevision.saveRevision(transactionManager, tld, watermark, mode, revision);
               if (mode == RdeMode.FULL) {
                 taskQueueUtils.enqueue(
                     getQueue("rde-upload"),
@@ -249,7 +253,8 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
 
     @Inject Factory() {}
 
-    RdeStagingReducer create(ValidationMode validationMode) {
+    RdeStagingReducer create(
+        ValidationMode validationMode, TransactionManager transactionManager) {
       return new RdeStagingReducer(
           taskQueueUtils,
           lockHandler,
@@ -257,7 +262,8 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
           bucket,
           lockTimeout,
           stagingKeyBytes,
-          validationMode);
+          validationMode,
+          transactionManager);
     }
   }
 }

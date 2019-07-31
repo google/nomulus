@@ -33,6 +33,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
+import google.registry.model.transaction.TransactionManager;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
@@ -73,6 +74,7 @@ public class DeleteLoadTestDataAction implements Runnable {
 
   @Inject MapreduceRunner mrRunner;
   @Inject Response response;
+  @Inject TransactionManager transactionManager;
 
   @Inject
   DeleteLoadTestDataAction() {}
@@ -90,7 +92,7 @@ public class DeleteLoadTestDataAction implements Runnable {
         .setJobName("Delete load test data")
         .setModuleName("backend")
         .runMapOnly(
-            new DeleteLoadTestDataMapper(isDryRun),
+            new DeleteLoadTestDataMapper(isDryRun, transactionManager),
             ImmutableList.of(
                 createEntityInput(ContactResource.class), createEntityInput(HostResource.class)))
         .sendLinkToMapreduceConsole(response);
@@ -102,9 +104,11 @@ public class DeleteLoadTestDataAction implements Runnable {
     private static final long serialVersionUID = -3817710674062432694L;
 
     private final boolean isDryRun;
+    private final TransactionManager transactionManager;
 
-    public DeleteLoadTestDataMapper(boolean isDryRun) {
+    public DeleteLoadTestDataMapper(boolean isDryRun, TransactionManager transactionManager) {
       this.isDryRun = isDryRun;
+      this.transactionManager = transactionManager;
     }
 
     @Override
@@ -124,7 +128,7 @@ public class DeleteLoadTestDataAction implements Runnable {
           Key.create(EppResourceIndex.create(Key.create(resource)));
       final Key<? extends ForeignKeyIndex<?>> fki = ForeignKeyIndex.createKey(resource);
       int numEntitiesDeleted =
-          ofy()
+          transactionManager
               .transact(
                   () -> {
                     // This ancestor query selects all descendant entities.

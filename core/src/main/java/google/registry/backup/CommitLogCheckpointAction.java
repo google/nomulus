@@ -24,6 +24,7 @@ import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogCheckpointRoot;
+import google.registry.model.transaction.TransactionManager;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
@@ -57,13 +58,14 @@ public final class CommitLogCheckpointAction implements Runnable {
   @Inject CommitLogCheckpointStrategy strategy;
   @Inject TaskQueueUtils taskQueueUtils;
   @Inject CommitLogCheckpointAction() {}
+  @Inject TransactionManager transactionManager;
 
   @Override
   public void run() {
     final CommitLogCheckpoint checkpoint = strategy.computeCheckpoint();
     logger.atInfo().log(
         "Generated candidate checkpoint for time: %s", checkpoint.getCheckpointTime());
-    ofy()
+    transactionManager
         .transact(
             () -> {
               DateTime lastWrittenTime = CommitLogCheckpointRoot.loadRoot().getLastWrittenTime();

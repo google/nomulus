@@ -20,6 +20,7 @@ import google.registry.dns.DnsModule;
 import google.registry.flows.CheckApiAction;
 import google.registry.flows.CheckApiAction.CheckApiModule;
 import google.registry.flows.TlsCredentials.EppTlsModule;
+import google.registry.model.transaction.TransactionModule;
 import google.registry.monitoring.whitebox.WhiteboxModule;
 import google.registry.rdap.RdapAutnumAction;
 import google.registry.rdap.RdapDomainAction;
@@ -47,6 +48,7 @@ import google.registry.whois.WhoisModule;
       EppTlsModule.class,
       RdapModule.class,
       RequestModule.class,
+      TransactionModule.class,
       WhiteboxModule.class,
       WhoisModule.class,
     })

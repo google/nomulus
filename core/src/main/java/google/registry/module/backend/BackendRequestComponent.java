@@ -52,6 +52,7 @@ import google.registry.export.UploadDatastoreBackupAction;
 import google.registry.export.sheet.SheetModule;
 import google.registry.export.sheet.SyncRegistrarsSheetAction;
 import google.registry.mapreduce.MapreduceModule;
+import google.registry.model.transaction.TransactionModule;
 import google.registry.monitoring.whitebox.WhiteboxModule;
 import google.registry.rdap.UpdateRegistrarRdapBaseUrlsAction;
 import google.registry.rde.BrdaCopyAction;
@@ -104,6 +105,7 @@ import google.registry.tmch.TmchSmdrlAction;
         RequestModule.class,
         SheetModule.class,
         Spec11Module.class,
+        TransactionModule.class,
         TmchModule.class,
         VoidDnsWriterModule.class,
         WhiteboxModule.class,

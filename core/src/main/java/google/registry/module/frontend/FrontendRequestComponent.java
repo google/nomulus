@@ -20,6 +20,7 @@ import google.registry.dns.DnsModule;
 import google.registry.flows.EppTlsAction;
 import google.registry.flows.FlowComponent;
 import google.registry.flows.TlsCredentials.EppTlsModule;
+import google.registry.model.transaction.TransactionModule;
 import google.registry.monitoring.whitebox.WhiteboxModule;
 import google.registry.request.RequestComponentBuilder;
 import google.registry.request.RequestModule;
@@ -39,6 +40,7 @@ import google.registry.ui.server.registrar.RegistrarSettingsAction;
       EppTlsModule.class,
       RegistrarConsoleModule.class,
       RequestModule.class,
+      TransactionModule.class,
       WhiteboxModule.class,
     })
 interface FrontendRequestComponent {

@@ -38,6 +38,7 @@ import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.registrar.Registrar;
+import google.registry.model.transaction.TransactionManager;
 import google.registry.request.Action;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
@@ -207,6 +208,7 @@ public final class RdeStagingAction implements Runnable {
   @Inject RdeStagingReducer.Factory reducerFactory;
   @Inject Response response;
   @Inject MapreduceRunner mrRunner;
+  @Inject TransactionManager transactionManager;
   @Inject @Config("transactionCooldown") Duration transactionCooldown;
   @Inject @Parameter(RdeModule.PARAM_MANUAL) boolean manual;
   @Inject @Parameter(RdeModule.PARAM_DIRECTORY) Optional<String> directory;
@@ -234,7 +236,7 @@ public final class RdeStagingAction implements Runnable {
     }
     ValidationMode validationMode = lenient ? LENIENT : STRICT;
     RdeStagingMapper mapper = new RdeStagingMapper(validationMode, pendings);
-    RdeStagingReducer reducer = reducerFactory.create(validationMode);
+    RdeStagingReducer reducer = reducerFactory.create(validationMode, transactionManager);
 
     mrRunner
         .setJobName("Stage escrow deposits for all TLDs")

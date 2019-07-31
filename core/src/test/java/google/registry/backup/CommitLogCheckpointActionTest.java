@@ -61,6 +61,7 @@ public class CommitLogCheckpointActionTest {
     task.clock = new FakeClock(now);
     task.strategy = strategy;
     task.taskQueueUtils = new TaskQueueUtils(new Retrier(null, 1));
+    task.transactionManager = appEngine.getTransactionManager();
     when(strategy.computeCheckpoint())
         .thenReturn(
             CommitLogCheckpoint.create(

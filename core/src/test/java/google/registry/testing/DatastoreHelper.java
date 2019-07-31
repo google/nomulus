@@ -90,6 +90,8 @@ import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.model.registry.label.PremiumList.PremiumListRevision;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.transaction.DatastoreTransactionManager;
+import google.registry.model.transaction.TransactionManager;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.tmch.LordnTaskUtils;
@@ -103,6 +105,8 @@ import org.joda.time.DateTime;
 
 /** Static utils for setting up test resources. */
 public class DatastoreHelper {
+
+  private static final TransactionManager TRANSACTION_MANAGER = new DatastoreTransactionManager();
 
   private static final Supplier<String[]> DEFAULT_PREMIUM_LIST_CONTENTS =
       memoize(
@@ -921,7 +925,7 @@ public class DatastoreHelper {
    * @see #persistResource(Object)
    */
   public static <R extends EppResource> R persistEppResource(final R resource) {
-    checkState(!ofy().inTransaction());
+    checkState(!TRANSACTION_MANAGER.inTransaction());
     ofy()
         .transact(
             () -> {

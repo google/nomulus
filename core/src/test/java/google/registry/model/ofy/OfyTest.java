@@ -35,8 +35,6 @@ import com.google.appengine.api.datastore.DatastoreTimeoutException;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.taskqueue.TransientFailureException;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.VoidWork;
-import com.googlecode.objectify.Work;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.OnSave;
@@ -46,6 +44,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.transaction.TransactionManager.Work;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
@@ -221,12 +220,12 @@ public class OfyTest {
   /** Avoid regressions of b/21309102 where transaction time did not change on each retry. */
   @Test
   public void testTransact_getsNewTimestampOnEachTry() {
-    ofy().transact(new VoidWork() {
+    ofy().transact(new Runnable() {
 
       DateTime firstAttemptTime;
 
       @Override
-      public void vrun() {
+      public void run() {
         if (firstAttemptTime == null) {
           // Sleep a bit to ensure that the next attempt is at a new millisecond.
           firstAttemptTime = ofy().getTransactionTime();
@@ -292,17 +291,18 @@ public class OfyTest {
   @Test
   public void testTransact_datastoreTimeoutException_manifestWrittenToDatastore_returnsSuccess() {
     // A work unit that throws if it is ever retried.
-    VoidWork work = new VoidWork() {
+    Work work = new Work<Void>() {
       boolean firstCallToVrun = true;
 
       @Override
-      public void vrun() {
+      public Void run() {
         if (firstCallToVrun) {
           firstCallToVrun = false;
           ofy().save().entity(someObject);
-          return;
+          return null;
         }
         fail("Shouldn't have retried.");
+        return null;
       }};
     // A commit logged work that throws on the first attempt to get its result.
     CommitLoggedWork<Void> commitLoggedWork = new CommitLoggedWork<Void>(work, new SystemClock()) {
