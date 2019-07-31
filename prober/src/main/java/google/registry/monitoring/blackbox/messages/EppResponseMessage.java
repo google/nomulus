@@ -15,7 +15,8 @@
 package google.registry.monitoring.blackbox.messages;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.exceptions.ResponseException;
+import google.registry.monitoring.blackbox.exceptions.FailureException;
+import google.registry.monitoring.blackbox.messages.EppRequestMessage.Check;
 import io.netty.buffer.ByteBuf;
 import javax.inject.Inject;
 
@@ -39,10 +40,10 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
   protected String expectedDomainName;
 
   /** Verifies that the response recorded is what we expect from the request sent. */
-  public abstract void verify() throws ResponseException;
+  public abstract void verify() throws FailureException;
 
   /** Extracts {@link org.w3c.dom.Document} from the {@link ByteBuf} input. */
-  public void getDocument(ByteBuf buf) throws ResponseException {
+  public void getDocument(ByteBuf buf) throws FailureException {
     int capacity = buf.readInt() - 4;
     byte[] response = new byte[capacity];
 
@@ -60,8 +61,9 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
    * response containing only the {@code clTRID}.
    *
    * <p>Is the expected response for {@link EppRequestMessage.Login},
-   * {@link EppRequestMessage.Create}, {@link EppRequestMessage.Delete},
-   * and {@link EppRequestMessage.Logout}.</p>
+   * {@link EppRequestMessage.Create}, and {@link EppRequestMessage.Delete}
+   * when we expect successes and is always the expected response for
+   * {@link EppRequestMessage.Logout}.</p>
    */
   public static class SimpleSuccess extends EppResponseMessage {
     @Inject
@@ -69,7 +71,7 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
 
     /** Verifies document structure, successful result code, and accurate clTRID. */
     @Override
-    public void verify() throws ResponseException{
+    public void verify() throws FailureException {
       verifyEppResponse(
           message,
           ImmutableList.of(
@@ -83,7 +85,8 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
    * {@link EppResponseMessage} subclass that represents reponse
    * containing both the {@code clTRID} and {@code domainName}.
    *
-   * <p>Is the expected response for {@link EppRequestMessage.CheckExists}.</p>
+   * <p>Is the expected response for {@link EppRequestMessage.Check}
+   * when we expect the domain to exist on the server.</p>
    */
   public static class DomainExists extends EppResponseMessage {
 
@@ -92,7 +95,7 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
 
     /** Verifies document structure, result code, clTRID, and that the domainName exists. */
     @Override
-    public void verify() throws ResponseException{
+    public void verify() throws FailureException {
       verifyEppResponse(
           message,
           ImmutableList.of(
@@ -107,7 +110,8 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
    * {@link EppResponseMessage} subclass that represents reponse
    * containing both the {@code clTRID} and {@code domainName}.
    *
-   * <p>Is the expected response for {@link EppRequestMessage.CheckNotExists}.</p>
+   * <p>Is the expected response for {@link EppRequestMessage.Check}
+   * when we expect the domain to not exist on the server.</p>
    */
   public static class DomainNotExists extends EppResponseMessage {
 
@@ -116,7 +120,7 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
 
     /** Verifies document structure, result code, clTRID, and that the domainName doesn't exist. */
     @Override
-    public void verify() throws ResponseException{
+    public void verify() throws FailureException {
       verifyEppResponse(
           message,
           ImmutableList.of(
@@ -131,7 +135,7 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
    * {@link EppResponseMessage} subclass that represents the greeting
    * sent by the server to prober after initial connection established.
    *
-   * <p>Is the expected response for {@link EppRequestMessage.Hello}.</p>
+   * <p>Is the expected response for a successful {@link EppRequestMessage.Hello}.</p>
    */
   public static class Greeting extends EppResponseMessage {
     @Inject
@@ -139,10 +143,34 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
 
     /** Verifies document structure and that the type is a greeting. */
     @Override
-    public void verify() throws ResponseException {
+    public void verify() throws FailureException {
       verifyEppResponse(
           message,
           ImmutableList.of("//eppns:greeting"),
+          true);
+    }
+
+  }
+  /**
+   * {@link EppResponseMessage} subclass that represents a failure
+   * in the server completing a command.
+   *
+   * <p>Is the expected response for {@link EppRequestMessage.Login},
+   * {@link EppRequestMessage.Create}, and {@link EppRequestMessage.Delete}
+   * when we expect failures.
+   */
+  public static class Failure extends EppResponseMessage {
+    @Inject
+    public Failure() {}
+
+    /** Verifies document structure and that the type is a greeting. */
+    @Override
+    public void verify() throws FailureException {
+      verifyEppResponse(
+          message,
+          ImmutableList.of(
+              String.format("//eppns:clTRID[.='%s']", expectedClTRID),
+              XFAIL_EXPRESSION),
           true);
     }
 

@@ -17,8 +17,8 @@ package google.registry.monitoring.blackbox.tokens;
 import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
-import java.util.Iterator;
 import google.registry.monitoring.blackbox.modules.WebWhoisModule.WebWhoisProtocol;
+import java.util.Iterator;
 import javax.inject.Inject;
 
 /**

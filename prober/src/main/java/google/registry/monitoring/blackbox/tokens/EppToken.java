@@ -15,7 +15,7 @@
 package google.registry.monitoring.blackbox.tokens;
 
 import com.google.common.annotations.VisibleForTesting;
-import google.registry.monitoring.blackbox.exceptions.InternalException;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import io.netty.channel.Channel;
@@ -56,7 +56,7 @@ public abstract class EppToken extends Token {
 
   /** Modifies the message to reflect the new domain name and TRID */
   @Override
-  public OutboundMessageType modifyMessage(OutboundMessageType originalMessage) throws InternalException {
+  public OutboundMessageType modifyMessage(OutboundMessageType originalMessage) throws UndeterminedStateException {
     return ((EppRequestMessage) originalMessage).modifyMessage(getNewTRID(), currentDomainName);
   }
 

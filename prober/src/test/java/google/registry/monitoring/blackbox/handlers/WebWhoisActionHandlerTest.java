@@ -23,12 +23,12 @@ import static google.registry.monitoring.blackbox.TestUtils.makeRedirectResponse
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import com.google.common.collect.ImmutableList;
+import google.registry.monitoring.blackbox.exceptions.FailureException;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.servers.WebWhoisServer;
 import google.registry.monitoring.blackbox.connection.ProbingAction;
 import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.TestUtils.TestProvider;
-import google.registry.monitoring.blackbox.exceptions.FailureException;
-import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.messages.HttpResponseMessage;
 import io.netty.bootstrap.Bootstrap;
@@ -41,6 +41,7 @@ import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import javax.inject.Provider;
 import org.joda.time.Duration;
@@ -298,8 +299,9 @@ public class WebWhoisActionHandlerTest {
     EventLoopGroup group = new NioEventLoopGroup(1);
     String host = generateLocalAddress(TARGET_HOST);
     HttpRequestMessage msg = new HttpRequestMessage(makeHttpGetRequest(DUMMY_URL, ""));
+
     setupActionHandler(null, msg);
-    Protocol initialProtocol = createProtocol("responseOk", 0, false);
+    Protocol initialProtocol = createProtocol("responseFalse", 0, false);
 
     setupLocalServer("", TARGET_HOST);
     setupProbingActionWithoutChannel(initialProtocol, msg, makeBootstrap(group), host);
