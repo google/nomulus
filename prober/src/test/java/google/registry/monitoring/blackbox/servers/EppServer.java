@@ -4,7 +4,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.exceptions.EppClientException;
-import google.registry.monitoring.blackbox.exceptions.ResponseException;
+import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.messages.EppMessage;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
 import io.netty.buffer.ByteBuf;
@@ -190,7 +190,7 @@ public class EppServer extends TestServer {
       try {
         doc = EppMessage.byteArrayToXmlDoc(messageBytes);
         future.setSuccess();
-      } catch(ResponseException e) {
+      } catch(FailureException e) {
         future.setFailure(e);
       }
     }
