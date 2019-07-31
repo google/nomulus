@@ -4,9 +4,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.servers.EppServer;
 import google.registry.monitoring.blackbox.exceptions.EppClientException;
-import google.registry.monitoring.blackbox.exceptions.ResponseException;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -144,7 +144,7 @@ public class EppMessageTest {
     list.add("epp");
     list.add("//textAndAttr[child::text()='text2']");
 
-    assertThrows(ResponseException.class, () -> EppMessage.verifyEppResponse(xmlDoc, list, false));
+    assertThrows(FailureException.class, () -> EppMessage.verifyEppResponse(xmlDoc, list, false));
   }
 
   @Test
@@ -153,7 +153,7 @@ public class EppMessageTest {
     list.add("epp");
     list.add("//textAndAttr/@myAttr2");
 
-    assertThrows(ResponseException.class, () -> EppMessage.verifyEppResponse(xmlDoc, list, false));
+    assertThrows(FailureException.class, () -> EppMessage.verifyEppResponse(xmlDoc, list, false));
   }
 
   @Test
@@ -162,7 +162,7 @@ public class EppMessageTest {
     list.add("epp");
     list.add("//textAndAttrSplitRepeated[@myAttr3='3'][child::text()='text3']");
 
-    assertThrows(ResponseException.class, () -> EppMessage.verifyEppResponse(xmlDoc, list, false));
+    assertThrows(FailureException.class, () -> EppMessage.verifyEppResponse(xmlDoc, list, false));
   }
 
   @Test

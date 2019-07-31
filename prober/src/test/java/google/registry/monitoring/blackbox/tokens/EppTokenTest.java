@@ -40,6 +40,7 @@ public class EppTokenTest {
   @Test
   public void testMessageModificationSuccess()
       throws UndeterminedStateException {
+
     EppRequestMessage originalMessage = new EppRequestMessage.Create(new EppResponseMessage.SimpleSuccess());
     String domainName = ((EppToken)eppToken).getCurrentDomainName();
     String clTRID = domainName.substring(0, domainName.indexOf('.'));

@@ -45,6 +45,4 @@ public class EppActionHandler extends ActionHandler {
     response.verify();
     super.channelRead0(ctx, msg);
   }
-
-
 }
