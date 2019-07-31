@@ -162,6 +162,10 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
       numTokens = domainNames.size();
     }
 
+    checkArgument(
+        tokenLength > 0 || numTokens == 1,
+        "When specifying a token length of 0, one can only generate one token");
+
     int tokensSaved = 0;
     do {
       ImmutableSet<AllocationToken> tokens =
@@ -205,6 +209,9 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
    * may return an empty set.
    */
   private ImmutableSet<String> generateTokens(int count) {
+    if (tokenLength == 0) {
+      return ImmutableSet.of(prefix);
+    }
     ImmutableSet<String> candidates =
         stringGenerator.createStrings(tokenLength, count).stream()
             .map(s -> prefix + s)

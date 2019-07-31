@@ -173,6 +173,13 @@ public class GenerateAllocationTokensCommandTest
   }
 
   @Test
+  public void testSuccess_oneTokenWithOnlyPrefix() throws Exception {
+    runCommand("--prefix", "foobar", "--number", "1", "--length", "0");
+    assertAllocationTokens(createToken("foobar", null, null));
+    assertInStdout("foobar");
+  }
+
+  @Test
   public void testFailure_mustSpecifyNumberOfTokensOrDomainsFile() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommand("--prefix", "FEET"));
@@ -220,6 +227,17 @@ public class GenerateAllocationTokensCommandTest
                             "--token_status_transitions=\"%s=INVALID_STATUS\"", START_OF_TIME))))
         .hasCauseThat()
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void testFailure_multipleTokensNoLength() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> runCommand("--prefix", "somePrefix", "--number", "2", "--length", "0"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("When specifying a token length of 0, one can only generate one token");
   }
 
   @Test
