@@ -27,10 +27,18 @@ public interface TransactionManager {
     R run();
   }
 
-  /** Returns {@code true} if the caller is in a transaction. */
+  /** Returns {@code true} if the caller is in a transaction.
+   *
+   *  <p>Note that this function is kept for backward compatibility. We will review the use case
+   *  later when adding the cloud sql implementation.
+   */
   boolean inTransaction();
 
-  /** Throws {@link IllegalStateException} if the caller is not in a transaction. */
+  /** Throws {@link IllegalStateException} if the caller is not in a transaction.
+   *
+   *  <p>Note that this function is kept for backward compatibility. We will review the use case
+   *  later when adding the cloud sql implementation.
+   */
   void assertInTransaction();
 
   /** Executes the work in a transaction and returns the result. */
@@ -41,16 +49,31 @@ public interface TransactionManager {
 
   /** Pauses the current transaction (if any), executes the work in a new transaction
    *  and returns the result.
+   *
+   *  <p>Note that this function is kept for backward compatibility. We will review the use case
+   *  later when adding the cloud sql implementation.
    */
   <T> T transactNew(Work<T> work);
 
-  /** Pauses the current transaction (if any) and executes the work in a new transaction. */
+  /** Pauses the current transaction (if any) and executes the work in a new transaction.
+   *
+   *  <p>Note that this function is kept for backward compatibility. We will review the use case
+   *  later when adding the cloud sql implementation.
+   */
   void transactNew(Runnable work);
 
-  /** Executes the work in a read-only transaction and returns the result. */
+  /** Executes the work in a read-only transaction and returns the result.
+   *
+   *  <p>Note that this function is kept for backward compatibility. We will review the use case
+   *  later when adding the cloud sql implementation.
+   */
   <R> R transactNewReadOnly(Work<R> work);
 
-  /** Executes the work in a read-only transaction.*/
+  /** Executes the work in a read-only transaction.
+   *
+   *  <p>Note that this function is kept for backward compatibility. We will review the use case
+   *  later when adding the cloud sql implementation.
+   */
   void transactNewReadOnly(Runnable work);
 
   /** Executes the work in a transactionless context. */

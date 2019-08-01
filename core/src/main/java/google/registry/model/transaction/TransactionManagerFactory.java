@@ -14,6 +14,8 @@
 
 package google.registry.model.transaction;
 
+import google.registry.model.ofy.DatastoreTransactionManager;
+
 /** Factory class to create {@link TransactionManager} instance. */
 public class TransactionManagerFactory {
 
@@ -24,7 +26,7 @@ public class TransactionManagerFactory {
   private static TransactionManager createTransactionManager() {
     // TODO: Conditionally returns the corresponding implementation once we have
     //  CloudSqlTransactionManager
-    return new DatastoreTransactionManager();
+    return new DatastoreTransactionManager(null);
   }
 
   /** Returns {@link TransactionManager} instance. */
