@@ -21,6 +21,7 @@ import static com.google.common.collect.Sets.difference;
 import static google.registry.config.RegistryEnvironment.PRODUCTION;
 import static google.registry.export.sheet.SyncRegistrarsSheetAction.enqueueRegistrarSheetSync;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.security.JsonResponseHelper.Status.ERROR;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
@@ -174,7 +175,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   }
 
   private RegistrarResult update(final Map<String, ?> args, String clientId) {
-    return ofy()
+    return tm()
         .transact(
             () -> {
               // We load the registrar here rather than outside of the transaction - to make
@@ -302,12 +303,12 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     RegistrarFormFields.CLIENT_CERTIFICATE_FIELD
         .extractUntyped(args)
         .ifPresent(
-            certificate -> builder.setClientCertificate(certificate, ofy().getTransactionTime()));
+            certificate -> builder.setClientCertificate(certificate, tm().getTransactionTime()));
     RegistrarFormFields.FAILOVER_CLIENT_CERTIFICATE_FIELD
         .extractUntyped(args)
         .ifPresent(
             certificate ->
-                builder.setFailoverClientCertificate(certificate, ofy().getTransactionTime()));
+                builder.setFailoverClientCertificate(certificate, tm().getTransactionTime()));
 
     return checkNotChangedUnlessAllowed(builder, initialRegistrar, Role.OWNER);
   }

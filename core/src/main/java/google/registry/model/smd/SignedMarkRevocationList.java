@@ -22,6 +22,7 @@ import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.allocateId;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
@@ -92,7 +93,7 @@ public class SignedMarkRevocationList extends ImmutableObject {
   private static final Supplier<SignedMarkRevocationList> CACHE =
       memoizeWithShortExpiration(
           () ->
-              ofy()
+              tm()
                   .transactNewReadOnly(
                       () -> {
                         Iterable<SignedMarkRevocationList> shards =
@@ -150,7 +151,7 @@ public class SignedMarkRevocationList extends ImmutableObject {
 
   /** Save this list to Datastore in sharded form. Returns {@code this}. */
   public SignedMarkRevocationList save() {
-    ofy()
+    tm()
         .transact(
             () -> {
               ofy()

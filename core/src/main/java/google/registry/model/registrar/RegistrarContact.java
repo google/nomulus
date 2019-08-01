@@ -19,6 +19,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registrar.Registrar.checkValidEmail;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
 import static java.util.stream.Collectors.joining;
 
@@ -154,7 +155,7 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
    */
   public static void updateContacts(
       final Registrar registrar, final Set<RegistrarContact> contacts) {
-    ofy()
+    tm()
         .transact(
             () -> {
               ofy()

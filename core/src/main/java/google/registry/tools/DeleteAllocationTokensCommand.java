@@ -19,6 +19,7 @@ import static com.google.common.collect.Iterables.partition;
 import static com.google.common.collect.Streams.stream;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -64,7 +65,7 @@ final class DeleteAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   protected String execute() {
     long numDeleted =
         stream(partition(tokensToDelete, BATCH_SIZE))
-            .mapToLong(batch -> ofy().transact(() -> deleteBatch(batch)))
+            .mapToLong(batch -> tm().transact(() -> deleteBatch(batch)))
             .sum();
     return String.format("Deleted %d tokens in total.", numDeleted);
   }

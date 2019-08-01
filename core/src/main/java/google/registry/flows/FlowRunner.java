@@ -14,7 +14,7 @@
 
 package google.registry.flows;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.xml.XmlTransformer.prettyPrint;
 
 import com.google.common.base.Strings;
@@ -80,7 +80,7 @@ public class FlowRunner {
       return eppOutput;
     }
     try {
-      return ofy()
+      return tm()
           .transact(
               () -> {
                 try {

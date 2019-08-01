@@ -19,6 +19,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.flows.poll.PollFlowUtils.getPollMessagesQuery;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.makePollMessageExternalId;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -85,7 +86,7 @@ final class AckPollMessagesCommand implements CommandWithRemoteApi {
   public void run() {
     QueryKeys<PollMessage> query = getPollMessagesQuery(clientId, clock.nowUtc()).keys();
     for (List<Key<PollMessage>> keys : Iterables.partition(query, BATCH_SIZE)) {
-      ofy()
+      tm()
           .transact(
               () -> {
                 // Load poll messages and filter to just those of interest.

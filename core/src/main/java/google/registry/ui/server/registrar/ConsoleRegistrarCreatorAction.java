@@ -22,6 +22,7 @@ import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.net.HttpHeaders.X_FRAME_OPTIONS;
 import static google.registry.model.common.GaeUserIdConverter.convertEmailAddressToGaeUserId;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
 
@@ -294,7 +295,7 @@ public final class ConsoleRegistrarCreatorAction implements Runnable {
               .setEmailAddress(consoleUserEmail.get())
               .setGaeUserId(gaeUserId)
               .build();
-      ofy()
+      tm()
           .transact(
               () -> {
                 checkState(

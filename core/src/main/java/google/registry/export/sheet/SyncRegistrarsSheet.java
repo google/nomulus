@@ -25,6 +25,7 @@ import static google.registry.model.registrar.RegistrarContact.Type.LEGAL;
 import static google.registry.model.registrar.RegistrarContact.Type.MARKETING;
 import static google.registry.model.registrar.RegistrarContact.Type.TECH;
 import static google.registry.model.registrar.RegistrarContact.Type.WHOIS;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.base.Joiner;
@@ -152,7 +153,7 @@ class SyncRegistrarsSheet {
                   return builder.build();
                 })
             .collect(toImmutableList()));
-    ofy()
+    tm()
         .transact(
             () -> ofy().save().entity(Cursor.createGlobal(SYNC_REGISTRAR_SHEET, executionTime)));
   }

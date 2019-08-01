@@ -33,6 +33,7 @@ import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.RDE_SSH_CLIE
 import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.RDE_SSH_CLIENT_PUBLIC_STRING;
 import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.SAFE_BROWSING_API_KEY;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableMap;
@@ -182,7 +183,7 @@ public final class KmsUpdater {
    */
   private static void persistEncryptedValues(
       final ImmutableMap<String, EncryptResponse> encryptedValues) {
-    ofy()
+    tm()
         .transact(
             () -> {
               for (Map.Entry<String, EncryptResponse> entry : encryptedValues.entrySet()) {

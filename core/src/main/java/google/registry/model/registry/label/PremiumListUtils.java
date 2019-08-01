@@ -27,6 +27,7 @@ import static google.registry.model.registry.label.DomainLabelMetrics.PremiumLis
 import static google.registry.model.registry.label.PremiumList.cachePremiumListEntries;
 import static google.registry.model.registry.label.PremiumList.cachePremiumListRevisions;
 import static google.registry.model.registry.label.PremiumList.cachePremiumLists;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.auto.value.AutoValue;
@@ -151,12 +152,12 @@ public final class PremiumListUtils {
 
     // Save the new child entities in a series of transactions.
     for (final List<PremiumListEntry> batch : partition(parentedEntries, TRANSACTION_BATCH_SIZE)) {
-      ofy().transactNew(() -> ofy().save().entities(batch));
+      tm().transactNew(() -> ofy().save().entities(batch));
     }
 
     // Save the new PremiumList and revision itself.
-    PremiumList updated = ofy().transactNew(() -> {
-      DateTime now = ofy().getTransactionTime();
+    PremiumList updated = tm().transactNew(() -> {
+      DateTime now = tm().getTransactionTime();
       // Assert that the premium list hasn't been changed since we started this process.
       PremiumList existing = ofy().load()
           .type(PremiumList.class)
@@ -201,7 +202,7 @@ public final class PremiumListUtils {
 
   /** Deletes the PremiumList and all of its child entities. */
   public static void deletePremiumList(final PremiumList premiumList) {
-    ofy().transactNew(() -> ofy().delete().entity(premiumList));
+    tm().transactNew(() -> ofy().delete().entity(premiumList));
     deleteRevisionAndEntriesOfPremiumList(premiumList);
     cachePremiumLists.invalidate(premiumList.getName());
   }
@@ -214,9 +215,9 @@ public final class PremiumListUtils {
         partition(
             ofy().load().type(PremiumListEntry.class).ancestor(premiumList.revisionKey).keys(),
             TRANSACTION_BATCH_SIZE)) {
-      ofy().transactNew(() -> ofy().delete().keys(batch));
+      tm().transactNew(() -> ofy().delete().keys(batch));
     }
-    ofy().transactNew(() -> ofy().delete().key(premiumList.getRevisionKey()));
+    tm().transactNew(() -> ofy().delete().key(premiumList.getRevisionKey()));
   }
 
   /**

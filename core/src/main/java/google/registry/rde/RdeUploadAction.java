@@ -22,6 +22,7 @@ import static google.registry.model.common.Cursor.CursorType.RDE_UPLOAD_SFTP;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.rde.RdeMode.FULL;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static java.util.Arrays.asList;
@@ -169,11 +170,11 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
         () -> upload(xmlFilename, xmlLength, watermark, name), JSchException.class);
     logger.atInfo().log(
         "Updating RDE cursor '%s' for TLD '%s' following successful upload.", RDE_UPLOAD_SFTP, tld);
-    ofy()
+    tm()
         .transact(
             () -> {
               Cursor updatedSftpCursor =
-                  Cursor.create(RDE_UPLOAD_SFTP, ofy().getTransactionTime(), Registry.get(tld));
+                  Cursor.create(RDE_UPLOAD_SFTP, tm().getTransactionTime(), Registry.get(tld));
               ofy().save().entity(updatedSftpCursor);
             });
     response.setContentType(PLAIN_TEXT_UTF_8);

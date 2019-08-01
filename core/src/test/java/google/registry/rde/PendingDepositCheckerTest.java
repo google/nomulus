@@ -20,6 +20,7 @@ import static google.registry.model.common.Cursor.CursorType.RDE_STAGING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.model.rde.RdeMode.THIN;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static org.joda.time.DateTimeConstants.TUESDAY;
@@ -163,7 +164,7 @@ public class PendingDepositCheckerTest {
 
   private static void setCursor(
       final Registry registry, final CursorType cursorType, final DateTime value) {
-    ofy().transact(() -> ofy().save().entity(Cursor.create(cursorType, value, registry)));
+    tm().transact(() -> ofy().save().entity(Cursor.create(cursorType, value, registry)));
   }
 
   private static void createTldWithEscrowEnabled(final String tld) {

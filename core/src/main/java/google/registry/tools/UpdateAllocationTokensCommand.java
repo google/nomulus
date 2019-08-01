@@ -19,6 +19,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.partition;
 import static com.google.common.collect.Streams.stream;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -109,7 +110,7 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   protected String execute() {
     long numUpdated =
         stream(partition(tokensToSave, BATCH_SIZE))
-            .mapToLong(batch -> ofy().transact(() -> saveBatch(batch)))
+            .mapToLong(batch -> tm().transact(() -> saveBatch(batch)))
             .sum();
     return String.format("Updated %d tokens in total.", numUpdated);
   }

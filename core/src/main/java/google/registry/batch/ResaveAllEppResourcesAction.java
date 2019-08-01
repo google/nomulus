@@ -15,6 +15,7 @@
 package google.registry.batch;
 
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.google.appengine.tools.mapreduce.Mapper;
 import com.google.common.collect.ImmutableList;
@@ -69,7 +70,7 @@ public class ResaveAllEppResourcesAction implements Runnable {
 
     @Override
     public final void map(final Key<EppResource> resourceKey) {
-      ofy()
+      tm()
           .transact(
               () -> {
                 EppResource projectedResource =
@@ -77,7 +78,7 @@ public class ResaveAllEppResourcesAction implements Runnable {
                         .load()
                         .key(resourceKey)
                         .now()
-                        .cloneProjectedAtTime(ofy().getTransactionTime());
+                        .cloneProjectedAtTime(tm().getTransactionTime());
                 ofy().save().entity(projectedResource).now();
               });
       getContext().incrementCounter(String.format("%s entities re-saved", resourceKey.getKind()));

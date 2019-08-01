@@ -18,6 +18,7 @@ import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESAVE_TIMES;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
@@ -73,11 +74,11 @@ public class ResaveEntityAction implements Runnable {
   public void run() {
     logger.atInfo().log(
         "Re-saving entity %s which was enqueued at %s.", resourceKey, requestedTime);
-    ofy().transact(() -> {
+    tm().transact(() -> {
       ImmutableObject entity = ofy().load().key(resourceKey).now();
       ofy().save().entity(
           (entity instanceof EppResource)
-              ? ((EppResource) entity).cloneProjectedAtTime(ofy().getTransactionTime()) : entity
+              ? ((EppResource) entity).cloneProjectedAtTime(tm().getTransactionTime()) : entity
       );
       if (!resaveTimes.isEmpty()) {
         asyncTaskEnqueuer.enqueueAsyncResave(entity, requestedTime, resaveTimes);

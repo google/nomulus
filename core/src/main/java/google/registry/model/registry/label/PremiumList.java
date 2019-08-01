@@ -22,6 +22,7 @@ import static google.registry.config.RegistryConfig.getStaticPremiumListMaxCache
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.allocateId;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -150,7 +151,7 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
             new CacheLoader<String, PremiumList>() {
               @Override
               public PremiumList load(final String name) {
-                return ofy().doTransactionless(() -> loadPremiumList(name));
+                return tm().doTransactionless(() -> loadPremiumList(name));
               }
             });
   }
@@ -174,7 +175,7 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
                   new CacheLoader<Key<PremiumListRevision>, PremiumListRevision>() {
                     @Override
                     public PremiumListRevision load(final Key<PremiumListRevision> revisionKey) {
-                      return ofy().doTransactionless(() -> ofy().load().key(revisionKey).now());
+                      return tm().doTransactionless(() -> ofy().load().key(revisionKey).now());
                     }
                   });
 
@@ -214,7 +215,7 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
             new CacheLoader<Key<PremiumListEntry>, Optional<PremiumListEntry>>() {
               @Override
               public Optional<PremiumListEntry> load(final Key<PremiumListEntry> entryKey) {
-                return ofy()
+                return tm()
                     .doTransactionless(() -> Optional.ofNullable(ofy().load().key(entryKey).now()));
               }
             });

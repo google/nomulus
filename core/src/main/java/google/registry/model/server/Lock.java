@@ -16,6 +16,7 @@ package google.registry.model.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 
 import com.google.auto.value.AutoValue;
@@ -176,10 +177,10 @@ public class Lock extends ImmutableObject implements Serializable {
     // access to resources like GCS that can't be transactionally rolled back. Therefore, the lock
     // must be definitively acquired before it is used, even when called inside another transaction.
     AcquireResult acquireResult =
-        ofy()
+        tm()
             .transactNew(
                 () -> {
-                  DateTime now = ofy().getTransactionTime();
+                  DateTime now = tm().getTransactionTime();
 
                   // Checking if an unexpired lock still exists - if so, the lock can't be acquired.
                   Lock lock = ofy().load().type(Lock.class).id(lockId).now();
@@ -217,7 +218,7 @@ public class Lock extends ImmutableObject implements Serializable {
   /** Release the lock. */
   public void release() {
     // Just use the default clock because we aren't actually doing anything that will use the clock.
-    ofy()
+    tm()
         .transact(
             () -> {
               // To release a lock, check that no one else has already obtained it and if not
@@ -231,7 +232,7 @@ public class Lock extends ImmutableObject implements Serializable {
                 logger.atInfo().log("Deleting lock: %s", lockId);
                 ofy().deleteWithoutBackup().entity(Lock.this);
                 lockMetrics.recordRelease(
-                    resourceName, tld, new Duration(acquiredTime, ofy().getTransactionTime()));
+                    resourceName, tld, new Duration(acquiredTime, tm().getTransactionTime()));
               } else {
                 logger.atSevere().log(
                     "The lock we acquired was transferred to someone else before we"

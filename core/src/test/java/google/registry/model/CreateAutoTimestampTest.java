@@ -16,6 +16,7 @@ package google.registry.model;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.googlecode.objectify.ObjectifyService;
@@ -56,13 +57,13 @@ public class CreateAutoTimestampTest {
   @Test
   public void testSaveSetsTime() {
     DateTime transactionTime =
-        ofy()
+        tm()
             .transact(
                 () -> {
                   TestObject object = new TestObject();
                   assertThat(object.createTime.getTimestamp()).isNull();
                   ofy().save().entity(object);
-                  return ofy().getTransactionTime();
+                  return tm().getTransactionTime();
                 });
     ofy().clearSessionCache();
     assertThat(reload().createTime.timestamp).isEqualTo(transactionTime);
@@ -71,7 +72,7 @@ public class CreateAutoTimestampTest {
   @Test
   public void testResavingRespectsOriginalTime() {
     final DateTime oldCreateTime = DateTime.now(UTC).minusDays(1);
-    ofy()
+    tm()
         .transact(
             () -> {
               TestObject object = new TestObject();

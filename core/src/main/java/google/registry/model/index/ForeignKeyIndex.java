@@ -19,6 +19,7 @@ import static com.google.common.collect.Maps.filterValues;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.TypeUtils.instantiate;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -188,7 +189,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
 
         @Override
         public Optional<ForeignKeyIndex<?>> load(Key<ForeignKeyIndex<?>> key) {
-          return Optional.ofNullable(ofy().doTransactionless(() -> ofy().load().key(key).now()));
+          return Optional.ofNullable(tm().doTransactionless(() -> ofy().load().key(key).now()));
         }
 
         @Override
@@ -196,7 +197,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
             Iterable<? extends Key<ForeignKeyIndex<?>>> keys) {
           ImmutableSet<Key<ForeignKeyIndex<?>>> typedKeys = ImmutableSet.copyOf(keys);
           Map<Key<ForeignKeyIndex<?>>, ForeignKeyIndex<?>> existingFkis =
-              ofy().doTransactionless(() -> ofy().load().keys(typedKeys));
+              tm().doTransactionless(() -> ofy().load().keys(typedKeys));
           // ofy() omits keys that don't have values in Datastore, so re-add them in
           // here with Optional.empty() values.
           return Maps.asMap(
@@ -250,7 +251,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
   public static <E extends EppResource> Map<String, ForeignKeyIndex<E>> loadCached(
       Class<E> clazz, Iterable<String> foreignKeys, final DateTime now) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
-      return ofy().doTransactionless(() -> load(clazz, foreignKeys, now));
+      return tm().doTransactionless(() -> load(clazz, foreignKeys, now));
     }
     ImmutableList<Key<ForeignKeyIndex<?>>> fkiKeys =
         Streams.stream(foreignKeys)

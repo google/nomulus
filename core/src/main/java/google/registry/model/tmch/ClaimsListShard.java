@@ -21,6 +21,7 @@ import static com.google.common.base.Verify.verify;
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
 import static google.registry.model.ofy.ObjectifyService.allocateId;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -111,7 +112,7 @@ public class ClaimsListShard extends ImmutableObject {
                 Concurrent.transform(
                     shardKeys,
                     key ->
-                        ofy()
+                        tm()
                             .transactNewReadOnly(
                                 () -> {
                                   ClaimsListShard claimsListShard = ofy().load().key(key).now();
@@ -188,7 +189,7 @@ public class ClaimsListShard extends ImmutableObject {
     Concurrent.transform(
         CollectionUtils.partitionMap(labelsToKeys, shardSize),
         (final ImmutableMap<String, String> labelsToKeysShard) ->
-            ofy()
+            tm()
                 .transactNew(
                     () -> {
                       ClaimsListShard shard = create(creationTime, labelsToKeysShard);
@@ -199,7 +200,7 @@ public class ClaimsListShard extends ImmutableObject {
                     }));
 
     // Persist the new revision, thus causing the newly created shards to go live.
-    ofy()
+    tm()
         .transactNew(
             () -> {
               verify(

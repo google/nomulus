@@ -30,6 +30,7 @@ import static google.registry.model.ResourceTransferUtils.createTransferResponse
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.registry.label.PremiumListUtils.parentPremiumListEntriesOnRevision;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.difference;
 import static google.registry.util.CollectionUtils.union;
@@ -288,7 +289,7 @@ public class DatastoreHelper {
     // Calls {@link LordnTaskUtils#enqueueDomainBaseTask} wrapped in an ofy transaction so that
     // the
     // transaction time is set correctly.
-    ofy().transactNew(() -> LordnTaskUtils.enqueueDomainBaseTask(persistedDomain));
+    tm().transactNew(() -> LordnTaskUtils.enqueueDomainBaseTask(persistedDomain));
     return persistedDomain;
   }
 
@@ -864,7 +865,7 @@ public class DatastoreHelper {
     assertWithMessage("Attempting to persist a Builder is almost certainly an error in test code")
         .that(resource)
         .isNotInstanceOf(Buildable.Builder.class);
-    ofy().transact(() -> saveResource(resource, wantBackup));
+    tm().transact(() -> saveResource(resource, wantBackup));
     // Force the session cache to be cleared so that when we read the resource back, we read from
     // Datastore and not from the session cache. This is needed to trigger Objectify's load process
     // (unmarshalling entity protos to POJOs, nulling out empty collections, calling @OnLoad
@@ -877,7 +878,7 @@ public class DatastoreHelper {
   public static <R extends EppResource> R persistEppResourceInFirstBucket(final R resource) {
     final EppResourceIndex eppResourceIndex =
         EppResourceIndex.create(Key.create(EppResourceIndexBucket.class, 1), Key.create(resource));
-    ofy()
+    tm()
         .transact(
             () -> {
               Saver saver = ofy().save();
@@ -900,7 +901,7 @@ public class DatastoreHelper {
     }
     // Persist domains ten at a time, to avoid exceeding the entity group limit.
     for (final List<R> chunk : Iterables.partition(resources, 10)) {
-      ofy().transact(() -> chunk.forEach(resource -> saveResource(resource, wantBackup)));
+      tm().transact(() -> chunk.forEach(resource -> saveResource(resource, wantBackup)));
     }
     // Force the session to be cleared so that when we read it back, we read from Datastore
     // and not from the transaction's session cache.
@@ -921,8 +922,8 @@ public class DatastoreHelper {
    * @see #persistResource(Object)
    */
   public static <R extends EppResource> R persistEppResource(final R resource) {
-    checkState(!ofy().inTransaction());
-    ofy()
+    checkState(!tm().inTransaction());
+    tm()
         .transact(
             () -> {
               ofy()
@@ -932,7 +933,7 @@ public class DatastoreHelper {
                       new HistoryEntry.Builder()
                           .setParent(resource)
                           .setType(getHistoryEntryType(resource))
-                          .setModificationTime(ofy().getTransactionTime())
+                          .setModificationTime(tm().getTransactionTime())
                           .build());
               ofy().save().entity(ForeignKeyIndex.create(resource, resource.getDeletionTime()));
             });
@@ -1008,7 +1009,7 @@ public class DatastoreHelper {
    * ForeignKeyedEppResources.
    */
   public static <R> ImmutableList<R> persistSimpleResources(final Iterable<R> resources) {
-    ofy().transact(() -> ofy().saveWithoutBackup().entities(resources));
+    tm().transact(() -> ofy().saveWithoutBackup().entities(resources));
     // Force the session to be cleared so that when we read it back, we read from Datastore
     // and not from the transaction's session cache.
     ofy().clearSessionCache();
@@ -1024,7 +1025,7 @@ public class DatastoreHelper {
 
   /** Force the create and update timestamps to get written into the resource. **/
   public static <R> R cloneAndSetAutoTimestamps(final R resource) {
-    return ofy().transact(() -> ofy().load().fromEntity(ofy().save().toEntity(resource)));
+    return tm().transact(() -> ofy().load().fromEntity(ofy().save().toEntity(resource)));
   }
 
   /** Returns the entire map of {@link PremiumListEntry}s for the given {@link PremiumList}. */

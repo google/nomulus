@@ -32,6 +32,7 @@ import static google.registry.flows.domain.DomainTransferUtils.createTransferSer
 import static google.registry.model.domain.DomainBase.extendRegistrationWithCap;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -143,7 +144,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     extensionManager.validate();
     validateClientIsLoggedIn(gainingClientId);
     verifyRegistrarIsActive(gainingClientId);
-    DateTime now = ofy().getTransactionTime();
+    DateTime now = tm().getTransactionTime();
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
     Optional<DomainTransferRequestSuperuserExtension> superuserExtension =
         eppInput.getSingleExtension(DomainTransferRequestSuperuserExtension.class);

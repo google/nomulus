@@ -19,6 +19,7 @@ import static com.google.common.base.Verify.verify;
 import static com.google.common.base.Verify.verifyNotNull;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.rde.RdeNamingUtils.makePartialName;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.base.VerifyException;
 import com.googlecode.objectify.annotation.Entity;
@@ -70,7 +71,7 @@ public final class RdeRevision extends ImmutableObject {
   public static void saveRevision(String tld, DateTime date, RdeMode mode, int revision) {
     checkArgument(revision >= 0, "Negative revision: %s", revision);
     String triplet = makePartialName(tld, date, mode);
-    ofy().assertInTransaction();
+    tm().assertInTransaction();
     RdeRevision object = ofy().load().type(RdeRevision.class).id(triplet).now();
     if (revision == 0) {
       verify(object == null, "RdeRevision object already created: %s", object);

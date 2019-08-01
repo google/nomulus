@@ -39,6 +39,7 @@ import static google.registry.model.reporting.HistoryEntry.Type.CONTACT_DELETE;
 import static google.registry.model.reporting.HistoryEntry.Type.CONTACT_DELETE_FAILURE;
 import static google.registry.model.reporting.HistoryEntry.Type.HOST_DELETE;
 import static google.registry.model.reporting.HistoryEntry.Type.HOST_DELETE_FAILURE;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.model.transfer.TransferStatus.SERVER_CANCELLED;
 import static java.math.RoundingMode.CEILING;
 import static java.util.concurrent.TimeUnit.DAYS;
@@ -308,7 +309,7 @@ public class DeleteContactsAndHostsAction implements Runnable {
       final boolean hasNoActiveReferences = !Iterators.contains(values, true);
       logger.atInfo().log("Processing async deletion request for %s", deletionRequest.key());
       DeletionResult result =
-          ofy()
+          tm()
               .transactNew(
                   () -> {
                     DeletionResult deletionResult =
@@ -329,7 +330,7 @@ public class DeleteContactsAndHostsAction implements Runnable {
 
     private DeletionResult attemptToDeleteResource(
         DeletionRequest deletionRequest, boolean hasNoActiveReferences) {
-      DateTime now = ofy().getTransactionTime();
+      DateTime now = tm().getTransactionTime();
       EppResource resource =
           ofy().load().key(deletionRequest.key()).now().cloneProjectedAtTime(now);
       // Double-check transactionally that the resource is still active and in PENDING_DELETE.

@@ -14,7 +14,7 @@
 
 package google.registry.model.translators;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.model.UpdateAutoTimestamp;
@@ -46,7 +46,7 @@ public class UpdateAutoTimestampTranslatorFactory
       /** Save a timestamp, setting it to the current time. */
       @Override
       public Date saveValue(UpdateAutoTimestamp pojoValue) {
-        return ofy().getTransactionTime().toDate();
+        return tm().getTransactionTime().toDate();
       }};
   }
 }

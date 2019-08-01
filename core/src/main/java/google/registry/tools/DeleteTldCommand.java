@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -76,7 +77,7 @@ final class DeleteTldCommand extends ConfirmingCommand implements CommandWithRem
 
   @Override
   protected String execute() {
-    ofy().transactNew(() -> ofy().delete().entity(registry).now());
+    tm().transactNew(() -> ofy().delete().entity(registry).now());
     registry.invalidateInCache();
     return String.format("Deleted TLD '%s'.\n", tld);
   }

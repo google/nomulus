@@ -15,6 +15,7 @@
 package google.registry.model.server;
 
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
@@ -54,7 +55,7 @@ public class ServerSecret extends CrossTldSingleton {
                 return secret;
               }
               // Slow path - transactionally create a new ServerSecret (once per app setup).
-              return ofy().transact(() -> {
+              return tm().transact(() -> {
                 // Check again for an existing secret within the transaction to avoid races.
                 ServerSecret secret1 = ofy().load().entity(new ServerSecret()).now();
                 if (secret1 == null) {

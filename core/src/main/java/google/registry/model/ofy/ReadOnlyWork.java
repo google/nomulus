@@ -14,7 +14,7 @@
 
 package google.registry.model.ofy;
 
-import com.googlecode.objectify.Work;
+import google.registry.model.transaction.TransactionManager.Work;
 import google.registry.util.Clock;
 
 /** Wrapper for {@link Work} that disallows mutations and fails the transaction at the end. */
@@ -30,8 +30,8 @@ class ReadOnlyWork<R> extends CommitLoggedWork<R> {
   }
 
   @Override
-  public void vrun() {
-    super.vrun();
+  public void run() {
+    super.run();
     throw new KillTransactionException();
   }
 

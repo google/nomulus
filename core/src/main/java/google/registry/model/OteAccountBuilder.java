@@ -21,6 +21,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableList;
@@ -236,7 +237,7 @@ public final class OteAccountBuilder {
    */
   public ImmutableMap<String, String> buildAndPersist() {
     // save all the entitiesl in a single transaction
-    ofy().transact(this::saveAllEntities);
+    tm().transact(this::saveAllEntities);
     return clientIdToTld;
   }
 
@@ -249,7 +250,7 @@ public final class OteAccountBuilder {
 
   /** Saves all the OT&amp;E entities we created. */
   private void saveAllEntities() {
-    ofy().assertInTransaction();
+    tm().assertInTransaction();
 
     ImmutableList<Registry> registries = ImmutableList.of(sunriseTld, gaTld, eapTld);
     ImmutableList<RegistrarContact> contacts = contactsBuilder.build();

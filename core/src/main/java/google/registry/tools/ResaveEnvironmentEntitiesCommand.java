@@ -17,6 +17,7 @@ package google.registry.tools;
 import static com.google.common.collect.Lists.partition;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameters;
 import com.googlecode.objectify.Key;
@@ -46,7 +47,7 @@ final class ResaveEnvironmentEntitiesCommand implements CommandWithRemoteApi {
     System.out.printf("Re-saving %s entities.\n", clazz.getSimpleName());
     for (final Iterable<Key<T>> batch :
         partition(ofy().load().type(clazz).ancestor(getCrossTldKey()).keys().list(), BATCH_SIZE)) {
-      ofy().transact(() -> ofy().save().entities(ofy().load().keys(batch).values()));
+      tm().transact(() -> ofy().save().entities(ofy().load().keys(batch).values()));
       System.out.printf("Re-saved entities batch: %s.\n", batch);
     }
   }

@@ -32,13 +32,13 @@ import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Objectify;
 import com.googlecode.objectify.ObjectifyFactory;
-import com.googlecode.objectify.Work;
 import com.googlecode.objectify.cmd.Deleter;
 import com.googlecode.objectify.cmd.Loader;
 import com.googlecode.objectify.cmd.Saver;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.VirtualEntity;
 import google.registry.model.ofy.ReadOnlyWork.KillTransactionException;
+import google.registry.model.transaction.TransactionManager.Work;
 import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
 import google.registry.util.Sleeper;
@@ -246,7 +246,10 @@ public class Ofy {
         true;
         attempt++, sleepMillis *= 2) {
       try {
-        ofy().transactNew(work);
+        ofy().transactNew(() -> {
+          work.run();
+          return null;
+        });
         return work.getResult();
       } catch (TransientFailureException
           | TimestampInversionException
@@ -298,7 +301,10 @@ public class Ofy {
   public <R> R transactNewReadOnly(Work<R> work) {
     ReadOnlyWork<R> readOnlyWork = new ReadOnlyWork<>(work, getClock());
     try {
-      ofy().transactNew(readOnlyWork);
+      ofy().transactNew(() -> {
+        readOnlyWork.run();
+        return null;
+      });
     } catch (TransientFailureException | DatastoreTimeoutException | DatastoreFailureException e) {
       // These are always retryable for a read-only operation.
       return transactNewReadOnly(work);

@@ -22,6 +22,7 @@ import static com.google.common.collect.Sets.union;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -325,13 +326,13 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
 
         @Override
         public EppResource load(Key<? extends EppResource> key) {
-          return ofy().doTransactionless(() -> ofy().load().key(key).now());
+          return tm().doTransactionless(() -> ofy().load().key(key).now());
         }
 
         @Override
         public Map<Key<? extends EppResource>, EppResource> loadAll(
             Iterable<? extends Key<? extends EppResource>> keys) {
-          return ofy().doTransactionless(() -> loadMultiple(keys));
+          return tm().doTransactionless(() -> loadMultiple(keys));
         }
       };
 

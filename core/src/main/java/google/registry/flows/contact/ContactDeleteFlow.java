@@ -22,6 +22,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
@@ -84,7 +85,7 @@ public final class ContactDeleteFlow implements TransactionalFlow {
     extensionManager.register(MetadataExtension.class);
     extensionManager.validate();
     validateClientIsLoggedIn(clientId);
-    DateTime now = ofy().getTransactionTime();
+    DateTime now = tm().getTransactionTime();
     failfastForAsyncDelete(targetId, now, ContactResource.class, DomainBase::getReferencedContacts);
     ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
     verifyNoDisallowedStatuses(existingContact, DISALLOWED_STATUSES);
@@ -93,7 +94,7 @@ public final class ContactDeleteFlow implements TransactionalFlow {
       verifyResourceOwnership(clientId, existingContact);
     }
     asyncTaskEnqueuer.enqueueAsyncDelete(
-        existingContact, ofy().getTransactionTime(), clientId, trid, isSuperuser);
+        existingContact, tm().getTransactionTime(), clientId, trid, isSuperuser);
     ContactResource newContact =
         existingContact.asBuilder().addStatusValue(StatusValue.PENDING_DELETE).build();
     historyBuilder

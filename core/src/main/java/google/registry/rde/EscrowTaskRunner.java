@@ -15,6 +15,7 @@
 package google.registry.rde;
 
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.Cursor;
@@ -98,7 +99,7 @@ class EscrowTaskRunner {
           task.runWithLock(nextRequiredRun);
           DateTime nextRun = nextRequiredRun.plus(interval);
           logger.atInfo().log("Rolling cursor forward to %s.", nextRun);
-          ofy().transact(() -> ofy().save().entity(Cursor.create(cursorType, nextRun, registry)));
+          tm().transact(() -> ofy().save().entity(Cursor.create(cursorType, nextRun, registry)));
           return null;
         };
     String lockName = String.format("EscrowTaskRunner %s", task.getClass().getSimpleName());

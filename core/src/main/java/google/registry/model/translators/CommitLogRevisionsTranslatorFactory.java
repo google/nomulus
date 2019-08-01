@@ -17,6 +17,7 @@ package google.registry.model.translators;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static google.registry.config.RegistryConfig.getCommitLogDatastoreRetention;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableSortedMap;
@@ -62,7 +63,7 @@ public final class CommitLogRevisionsTranslatorFactory
   @Override
   ImmutableSortedMap<DateTime, Key<CommitLogManifest>> transformBeforeSave(
       ImmutableSortedMap<DateTime, Key<CommitLogManifest>> revisions) {
-    DateTime now = ofy().getTransactionTime();
+    DateTime now = tm().getTransactionTime();
     DateTime threshold = now.minus(getCommitLogDatastoreRetention());
     DateTime preThresholdTime = firstNonNull(revisions.floorKey(threshold), START_OF_TIME);
     return new ImmutableSortedMap.Builder<DateTime, Key<CommitLogManifest>>(Ordering.natural())

@@ -22,6 +22,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
@@ -85,7 +86,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
     extensionManager.register(MetadataExtension.class);
     extensionManager.validate();
     validateClientIsLoggedIn(clientId);
-    DateTime now = ofy().getTransactionTime();
+    DateTime now = tm().getTransactionTime();
     validateHostName(targetId);
     failfastForAsyncDelete(targetId, now, HostResource.class, DomainBase::getNameservers);
     HostResource existingHost = loadAndVerifyExistence(HostResource.class, targetId, now);
@@ -101,7 +102,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
       verifyResourceOwnership(clientId, owningResource);
     }
     asyncTaskEnqueuer.enqueueAsyncDelete(
-        existingHost, ofy().getTransactionTime(), clientId, trid, isSuperuser);
+        existingHost, tm().getTransactionTime(), clientId, trid, isSuperuser);
     HostResource newHost =
         existingHost.asBuilder().addStatusValue(StatusValue.PENDING_DELETE).build();
     historyBuilder
