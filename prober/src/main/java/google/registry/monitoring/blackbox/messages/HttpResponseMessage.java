@@ -25,11 +25,7 @@ import io.netty.handler.codec.http.HttpVersion;
  */
 public class HttpResponseMessage extends DefaultFullHttpResponse implements InboundMessageType {
 
-  public HttpResponseMessage(HttpVersion version, HttpResponseStatus status) {
-    super(version, status);
-  }
-
-  public HttpResponseMessage(HttpVersion version, HttpResponseStatus status, ByteBuf content) {
+  private HttpResponseMessage(HttpVersion version, HttpResponseStatus status, ByteBuf content) {
     super(version, status, content);
   }
 

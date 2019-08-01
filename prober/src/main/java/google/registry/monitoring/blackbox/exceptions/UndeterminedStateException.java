@@ -15,8 +15,9 @@
 package google.registry.monitoring.blackbox.exceptions;
 
 /**
- * Base exception class for all instances when the action performed fails before we can determine
- * the state of the result, meaning the status is recorded as ERROR.
+ * Base exception class for all instances when the action performed fails
+ * before we can determine the state of the result, meaning the status
+ * is recorded as ERROR.
  */
 public class UndeterminedStateException extends Exception {
 
