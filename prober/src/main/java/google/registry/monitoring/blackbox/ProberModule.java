@@ -14,14 +14,18 @@
 
 package google.registry.monitoring.blackbox;
 
+import com.google.common.collect.ImmutableList;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.monitoring.blackbox.WebWhoisModule.WebWhoisProtocol;
+import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslProvider;
+import java.util.Set;
 import javax.inject.Singleton;
 import org.joda.time.Duration;
 
@@ -33,7 +37,7 @@ import org.joda.time.Duration;
 public class ProberModule {
 
   /** Default {@link Duration} chosen to be time between each {@link ProbingAction} call. */
-  private static final Duration DEFAULT_DURATION = new Duration(4000L);
+  private static final Duration DEFAULT_DURATION = Duration.standardSeconds(4);
 
   /** {@link Provides} one global {@link EventLoopGroup} shared by each {@link ProbingSequence}. */
   @Provides
@@ -42,6 +46,12 @@ public class ProberModule {
     return new NioEventLoopGroup();
   }
 
+  /** {@link Provides} one global {@link Channel} class that is used to construct a {@link io.netty.bootstrap.Bootstrap}. */
+  @Provides
+  @Singleton
+  Class<? extends Channel> provideChannelClass() {
+    return NioSocketChannel.class;
+  }
   /** {@link Provides} above {@code DEFAULT_DURATION} for all provided {@link ProbingStep}s to use. */
   @Provides
   @Singleton
@@ -51,6 +61,7 @@ public class ProberModule {
 
   /** {@link Provides} the {@link SslProvider} used by instances of {@link google.registry.monitoring.blackbox.handlers.SslClientInitializer} */
   @Provides
+  @Singleton
   static SslProvider provideSslProvider() {
     // Prefer OpenSSL.
     return OpenSsl.isAvailable() ? SslProvider.OPENSSL : SslProvider.JDK;
@@ -66,7 +77,7 @@ public class ProberModule {
   public interface ProberComponent {
 
     //Standard WebWhois sequence
-    @WebWhoisProtocol ProbingSequence provideWebWhoisSequence();
+    Set<ProbingSequence> provideAllSequences();
 
   }
 }
