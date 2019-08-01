@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="urn:ietf:params:xml:ns:secDNS-1.1"
+  xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <annotation>
+    <documentation>
+      Extensible Provisioning Protocol v1.0
+      domain name extension schema for provisioning
+      DNS security (DNSSEC) extensions.
+    </documentation>
+  </annotation>
+
+  <!-- Child elements found in EPP commands. -->
+  <element name="create" type="secDNS:dsOrKeyType"/>
+  <element name="update" type="secDNS:updateType"/>
+
+  <!-- Child elements supporting either the dsData or the keyData interface. -->
+  <complexType name="dsOrKeyType">
+    <sequence>
+      <element name="maxSigLife" type="secDNS:maxSigLifeType" minOccurs="0"/>
+      <choice>
+        <element name="dsData" type="secDNS:dsDataType" maxOccurs="unbounded"/>
+        <element name="keyData" type="secDNS:keyDataType" maxOccurs="unbounded"/>
+      </choice>
+    </sequence>
+  </complexType>
+
+  <!-- Definition for the maximum signature life (maxSigLife) -->
+  <simpleType name="maxSigLifeType">
+    <restriction base="int">
+      <minInclusive value="1"/>
+    </restriction>
+  </simpleType>
+
+  <!-- Child elements of dsData used for dsData interface -->
+  <complexType name="dsDataType">
+    <sequence>
+      <element name="keyTag" type="unsignedShort"/>
+      <element name="alg" type="unsignedByte"/>
+      <element name="digestType" type="unsignedByte"/>
+      <element name="digest" type="hexBinary"/>
+      <element name="keyData" type="secDNS:keyDataType" minOccurs="0"/>
+    </sequence>
+  </complexType>
+
+  <!-- Child elements of keyData used for keyData interface and optionally with dsData
+    interface -->
+  <complexType name="keyDataType">
+    <sequence>
+      <element name="flags" type="unsignedShort"/>
+      <element name="protocol" type="unsignedByte"/>
+      <element name="alg" type="unsignedByte"/>
+      <element name="pubKey" type="secDNS:keyType"/>
+    </sequence>
+  </complexType>
+
+  <!-- Definition for the public key -->
+  <simpleType name="keyType">
+    <restriction base="base64Binary">
+      <minLength value="1"/>
+    </restriction>
+  </simpleType>
+
+  <!-- Child elements of the <update> element. -->
+  <complexType name="updateType">
+    <sequence>
+      <element name="rem" type="secDNS:remType" minOccurs="0"/>
+      <element name="add" type="secDNS:dsOrKeyType" minOccurs="0"/>
+      <element name="chg" type="secDNS:chgType" minOccurs="0"/>
+    </sequence>
+    <attribute name="urgent" type="boolean" default="false"/>
+  </complexType>
+
+
+  <!-- Child elements of the <rem> command. -->
+  <complexType name="remType">
+    <choice>
+      <element name="all" type="boolean"/>
+      <element name="dsData" type="secDNS:dsDataType" maxOccurs="unbounded"/>
+      <element name="keyData" type="secDNS:keyDataType" maxOccurs="unbounded"/>
+    </choice>
+  </complexType>
+
+  <!-- Child elements supporting the <chg> element. -->
+  <complexType name="chgType">
+    <sequence>
+      <element name="maxSigLife" type="secDNS:maxSigLifeType" minOccurs="0"/>
+    </sequence>
+  </complexType>
+
+  <!-- Child response elements. -->
+  <element name="infData" type="secDNS:dsOrKeyType"/>
+</schema>

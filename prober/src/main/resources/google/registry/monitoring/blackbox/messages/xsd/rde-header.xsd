@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="urn:ietf:params:xml:ns:rdeHeader-1.0"
+  xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0"
+  xmlns:rde="urn:ietf:params:xml:ns:rde-1.0"
+  xmlns:eppcom="urn:ietf:params:xml:ns:eppcom-1.0"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <import namespace="urn:ietf:params:xml:ns:eppcom-1.0"
+    schemaLocation="eppcom.xsd"/>
+  <import namespace="urn:ietf:params:xml:ns:rde-1.0"
+    schemaLocation="rde.xsd"/>
+
+  <annotation>
+    <documentation>
+      Registry Data Escrow Header schema
+    </documentation>
+  </annotation>
+
+  <!-- Root Element -->
+  <element name="header" type="rdeHeader:contentType"
+    substitutionGroup="rde:content"/>
+
+  <!-- Content Type -->
+  <complexType name="contentType">
+    <complexContent>
+      <extension base="rde:contentType">
+        <sequence>
+          <element name="tld" type="eppcom:labelType"/>
+          <element name="count" type="rdeHeader:countType"
+            maxOccurs="unbounded"/>
+        </sequence>
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <complexType name="countType">
+    <simpleContent>
+      <extension base="long">
+        <attribute name="uri" type="anyURI"/>
+      </extension>
+    </simpleContent>
+  </complexType>
+</schema>

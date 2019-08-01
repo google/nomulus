@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <login>
+      <clID>@@CLID@@</clID>
+      <pw>@@PWD@@</pw>
+      <options>
+        <version>1.0</version>
+        <lang>en</lang>
+      </options>
+      <svcs>
+        <objURI>urn:ietf:params:xml:ns:domain-1.0</objURI>
+        <objURI>urn:ietf:params:xml:ns:contact-1.0</objURI>
+        <objURI>urn:ietf:params:xml:ns:host-1.0</objURI>
+        <svcExtension>
+          <extURI>urn:ietf:params:xml:ns:launch-1.0</extURI>
+        </svcExtension>
+      </svcs>
+    </login>
+    <clTRID>@@CLTRID@@</clTRID>
+  </command>
+</epp>

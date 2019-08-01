@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="urn:ietf:params:xml:ns:rdeNotification-1.0"
+  xmlns:rdeNotification="urn:ietf:params:xml:ns:rdeNotification-1.0"
+  xmlns:rdeReport="urn:ietf:params:xml:ns:rdeReport-1.0"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <import namespace="urn:ietf:params:xml:ns:rdeReport-1.0"
+    schemaLocation="rde-report.xsd"/>
+
+  <annotation>
+    <documentation>
+      Registry Data Escrow Notification schema
+    </documentation>
+  </annotation>
+
+  <!-- Root Element -->
+  <element name="notification" type="rdeNotification:notificationType"/>
+
+  <!-- Notification -->
+  <complexType name="notificationType">
+    <sequence>
+      <element name="deaName" type="rdeNotification:nameType"/>
+      <element name="version" type="unsignedShort"/>
+      <element name="repDate" type="date"/>
+      <element name="status" type="rdeNotification:statusType"/>
+      <element name="reDate" type="dateTime" minOccurs="0"/>
+      <element name="vaDate" type="dateTime" minOccurs="0"/>
+      <element name="lastFullDate" type="date" minOccurs="0"/>
+      <element ref="rdeReport:report" minOccurs="0"/>
+    </sequence>
+  </complexType>
+
+  <simpleType name="nameType">
+    <restriction base="normalizedString">
+      <minLength value="1" />
+      <maxLength value="255" />
+    </restriction>
+  </simpleType>
+
+  <simpleType name="statusType">
+    <restriction base="token">
+      <enumeration value="DVPN"/>
+      <enumeration value="DVFN"/>
+      <enumeration value="DRFN"/>
+    </restriction>
+  </simpleType>
+</schema>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="urn:ietf:params:xml:ns:rdePolicy-1.0"
+  xmlns:rdePolicy="urn:ietf:params:xml:ns:rdePolicy-1.0"
+  xmlns:rde="urn:ietf:params:xml:ns:rde-1.0"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <import namespace="urn:ietf:params:xml:ns:rde-1.0"
+    schemaLocation="rde.xsd"/>
+
+  <annotation>
+    <documentation>
+      Registry Data Escrow Policy schema
+    </documentation>
+  </annotation>
+
+  <element name="policy" type="rdePolicy:policyType"
+    substitutionGroup="rde:content"/>
+
+  <complexType name="policyType">
+    <complexContent>
+      <extension base="rde:contentType">
+        <attribute name="scope" type="token" use="required"/>
+        <attribute name="element" type="anyURI" use="required"/>
+      </extension>
+    </complexContent>
+  </complexType>
+</schema>

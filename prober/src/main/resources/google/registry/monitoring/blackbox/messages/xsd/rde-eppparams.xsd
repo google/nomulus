@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="urn:ietf:params:xml:ns:rdeEppParams-1.0"
+  xmlns:rdeEppParams="urn:ietf:params:xml:ns:rdeEppParams-1.0"
+  xmlns:rde="urn:ietf:params:xml:ns:rde-1.0"
+  xmlns:epp="urn:ietf:params:xml:ns:epp-1.0"
+  xmlns:eppcom="urn:ietf:params:xml:ns:eppcom-1.0"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <import namespace="urn:ietf:params:xml:ns:epp-1.0"
+    schemaLocation="epp.xsd"/>
+  <import namespace="urn:ietf:params:xml:ns:eppcom-1.0"
+    schemaLocation="eppcom.xsd"/>
+  <import namespace="urn:ietf:params:xml:ns:rde-1.0"
+    schemaLocation="rde.xsd"/>
+
+  <annotation>
+    <documentation>
+      Registry Data Escrow EPP Parameters schema
+    </documentation>
+  </annotation>
+
+  <!-- Content Type -->
+  <element name="eppParams"
+    substitutionGroup="rdeEppParams:abstractEppParams"/>
+
+  <!-- Abstract Content Type -->
+  <element name="abstractEppParams"
+    type="rdeEppParams:abstractContentType"
+    substitutionGroup="rde:content" abstract="true"/>
+  <complexType name="abstractContentType">
+    <complexContent>
+      <extension base="rde:contentType">
+        <sequence>
+          <element name="version" type="epp:versionType"
+            maxOccurs="unbounded"/>
+          <element name="lang"
+            type="language" maxOccurs="unbounded"/>
+          <element name="objURI"
+            type="anyURI" maxOccurs="unbounded"/>
+          <element name="svcExtension"
+            type="epp:extURIType"
+            minOccurs="0"/>
+          <element name="dcp"
+            type="epp:dcpType"/>
+        </sequence>
+      </extension>
+    </complexContent>
+  </complexType>
+</schema>

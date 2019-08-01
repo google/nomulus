@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="urn:google:params:xml:ns:allocate-1.0"
+  xmlns:allocate="urn:google:params:xml:ns:allocate-1.0"
+  xmlns:eppcom="urn:ietf:params:xml:ns:eppcom-1.0"
+  xmlns:mark="urn:ietf:params:xml:ns:mark-1.0"
+  xmlns:launch="urn:ietf:params:xml:ns:launch-1.0"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <!-- Import common element types. -->
+  <import namespace="urn:ietf:params:xml:ns:eppcom-1.0" schemaLocation="eppcom.xsd" />
+
+  <import namespace="urn:ietf:params:xml:ns:mark-1.0" schemaLocation="mark.xsd" />
+
+  <import namespace="urn:ietf:params:xml:ns:launch-1.0" schemaLocation="launch.xsd" />
+
+  <annotation>
+    <documentation>
+      Extensible Provisioning Protocol v1.0
+      domain name extension schema for allocating domains from applications.
+      This is a proprietary, internal-only, non-public extension only for use
+      inside the Google registry.
+    </documentation>
+  </annotation>
+
+  <!-- Child elements found in EPP commands. -->
+  <element name="create" type="allocate:createType" />
+
+  <!-- Child elements for the create command -->
+  <complexType name="createType">
+    <sequence>
+      <element name="applicationRoid" type="eppcom:roidType" />
+      <element name="applicationTime" type="dateTime" />
+      <element name="smdId" minOccurs="0" type="mark:idType" />
+      <element name="notice" minOccurs="0" type="launch:createNoticeType" />
+    </sequence>
+  </complexType>
+
+</schema>

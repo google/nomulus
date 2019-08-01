@@ -56,6 +56,13 @@ public class EppModule {
   @Qualifier
   public @interface EppProtocol {}
 
+  @Provides
+  @Singleton
+  @EppProtocol
+  static Bootstrap provideEppBootstrap(Provider<Bootstrap> bootstrapProvider) {
+    return bootstrapProvider.get();
+  }
+
   /** Dagger provided {@link ProbingSequence} that probes EPP login and logout actions. */
   @Provides
   @Singleton

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<schema targetNamespace="urn:ietf:params:xml:ns:allocationToken-1.0"
+  xmlns:allocationToken="urn:ietf:params:xml:ns:allocationToken-1.0"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <annotation>
+    <documentation>
+      Extensible Provisioning Protocol v1.0
+      Allocation Token Extension.
+    </documentation>
+  </annotation>
+
+  <!-- Element used in info command to get allocation token. -->
+  <element name="info"/>
+
+  <!-- Allocation Token used in transform
+  commands and info response -->
+  <element name="allocationToken"
+    type="allocationToken:allocationTokenType"/>
+
+   <complexType name="allocationTokenType">
+    <simpleContent>
+      <extension base="token"/>
+    </simpleContent>
+  </complexType>
+
+   <!-- End of schema.-->
+</schema>

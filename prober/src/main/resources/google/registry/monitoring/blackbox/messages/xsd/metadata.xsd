@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" xmlns:metadata="urn:google:params:xml:ns:metadata-1.0"
+  targetNamespace="urn:google:params:xml:ns:metadata-1.0" elementFormDefault="qualified">
+
+  <annotation>
+    <documentation>
+      Extensible Provisioning Protocol v1.0
+      Domain name extension schema for annotating EPP operations with metadata.
+      This is a proprietary, internal-only, non-public extension only for use
+      inside the Google registry.
+    </documentation>
+  </annotation>
+
+  <!-- Child elements found in EPP commands. -->
+  <element name="metadata" type="metadata:metadata" />
+
+  <!-- Child elements for all commands -->
+  <complexType name="metadata">
+    <all>
+      <element name="reason" type="string" minOccurs="0" />
+      <element name="requestedByRegistrar" type="boolean" minOccurs="1" />
+      <element name="anchorTenant" type="boolean" minOccurs="0" default="false" />
+    </all>
+  </complexType>
+
+</schema>

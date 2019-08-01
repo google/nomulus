@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<schema targetNamespace="urn:ietf:params:xml:ns:host-1.0"
+       xmlns:host="urn:ietf:params:xml:ns:host-1.0"
+       xmlns:epp="urn:ietf:params:xml:ns:epp-1.0"
+       xmlns:eppcom="urn:ietf:params:xml:ns:eppcom-1.0"
+       xmlns="http://www.w3.org/2001/XMLSchema"
+       elementFormDefault="qualified">
+
+<!--
+Import common element types.
+-->
+ <import namespace="urn:ietf:params:xml:ns:eppcom-1.0"
+         schemaLocation="eppcom.xsd"/>
+ <import namespace="urn:ietf:params:xml:ns:epp-1.0"
+         schemaLocation="epp.xsd"/>
+
+ <annotation>
+   <documentation>
+     Extensible Provisioning Protocol v1.0
+     host provisioning schema.
+   </documentation>
+ </annotation>
+
+<!--
+Child elements found in EPP commands.
+-->
+ <element name="check" type="host:mNameType"/>
+ <element name="create" type="host:createType"/>
+ <element name="delete" type="host:sNameType"/>
+ <element name="info" type="host:sNameType"/>
+ <element name="update" type="host:updateType"/>
+
+<!--
+Child elements of the <create> command.
+-->
+ <complexType name="createType">
+   <sequence>
+     <element name="name" type="eppcom:labelType"/>
+     <element name="addr" type="host:addrType"
+      minOccurs="0" maxOccurs="unbounded"/>
+   </sequence>
+ </complexType>
+
+ <complexType name="addrType">
+   <simpleContent>
+     <extension base="host:addrStringType">
+       <attribute name="ip" type="host:ipType"
+        default="v4"/>
+     </extension>
+   </simpleContent>
+ </complexType>
+
+ <simpleType name="addrStringType">
+   <restriction base="token">
+     <minLength value="3"/>
+     <maxLength value="45"/>
+   </restriction>
+ </simpleType>
+
+ <simpleType name="ipType">
+   <restriction base="token">
+     <enumeration value="v4"/>
+     <enumeration value="v6"/>
+   </restriction>
+ </simpleType>
+
+<!--
+Child elements of the <delete> and <info> commands.
+-->
+ <complexType name="sNameType">
+   <sequence>
+     <element name="name" type="eppcom:labelType"/>
+   </sequence>
+ </complexType>
+
+<!--
+Child element of commands that accept multiple names.
+-->
+ <complexType name="mNameType">
+   <sequence>
+     <element name="name" type="eppcom:labelType"
+      maxOccurs="unbounded"/>
+   </sequence>
+ </complexType>
+<!--
+Child elements of the <update> command.
+-->
+ <complexType name="updateType">
+   <sequence>
+     <element name="name" type="eppcom:labelType"/>
+     <element name="add" type="host:addRemType"
+      minOccurs="0"/>
+     <element name="rem" type="host:addRemType"
+      minOccurs="0"/>
+     <element name="chg" type="host:chgType"
+      minOccurs="0"/>
+   </sequence>
+ </complexType>
+
+<!--
+Data elements that can be added or removed.
+-->
+ <complexType name="addRemType">
+   <sequence>
+     <element name="addr" type="host:addrType"
+      minOccurs="0" maxOccurs="unbounded"/>
+     <element name="status" type="host:statusType"
+      minOccurs="0" maxOccurs="7"/>
+   </sequence>
+ </complexType>
+
+<!--
+Data elements that can be changed.
+-->
+ <complexType name="chgType">
+   <sequence>
+     <element name="name" type="eppcom:labelType"/>
+   </sequence>
+ </complexType>
+
+<!--
+Child response elements.
+-->
+ <element name="chkData" type="host:chkDataType"/>
+ <element name="creData" type="host:creDataType"/>
+ <element name="infData" type="host:infDataType"/>
+ <element name="panData" type="host:panDataType"/>
+
+<!--
+<check> response elements.
+-->
+ <complexType name="chkDataType">
+   <sequence>
+     <element name="cd" type="host:checkType"
+      maxOccurs="unbounded"/>
+   </sequence>
+ </complexType>
+
+ <complexType name="checkType">
+   <sequence>
+     <element name="name" type="host:checkNameType"/>
+     <element name="reason" type="eppcom:reasonType"
+      minOccurs="0"/>
+   </sequence>
+ </complexType>
+
+ <complexType name="checkNameType">
+   <simpleContent>
+     <extension base="eppcom:labelType">
+       <attribute name="avail" type="boolean"
+        use="required"/>
+     </extension>
+   </simpleContent>
+ </complexType>
+
+<!--
+<create> response elements.
+-->
+ <complexType name="creDataType">
+   <sequence>
+     <element name="name" type="eppcom:labelType"/>
+     <element name="crDate" type="dateTime"/>
+   </sequence>
+ </complexType>
+
+<!--
+<info> response elements.
+-->
+ <complexType name="infDataType">
+   <sequence>
+     <element name="name" type="eppcom:labelType"/>
+     <element name="roid" type="eppcom:roidType"/>
+     <element name="status" type="host:statusType"
+      maxOccurs="7"/>
+     <element name="addr" type="host:addrType"
+      minOccurs="0" maxOccurs="unbounded"/>
+     <element name="clID" type="eppcom:clIDType"/>
+     <element name="crID" type="eppcom:clIDType"/>
+     <element name="crDate" type="dateTime"/>
+     <element name="upID" type="eppcom:clIDType"
+      minOccurs="0"/>
+     <element name="upDate" type="dateTime"
+      minOccurs="0"/>
+     <element name="trDate" type="dateTime"
+      minOccurs="0"/>
+   </sequence>
+ </complexType>
+
+<!--
+Status is a combination of attributes and an optional human-readable
+message that may be expressed in languages other than English.
+-->
+ <complexType name="statusType">
+   <simpleContent>
+     <extension base="normalizedString">
+       <attribute name="s" type="host:statusValueType"
+        use="required"/>
+       <attribute name="lang" type="language"
+        default="en"/>
+     </extension>
+   </simpleContent>
+ </complexType>
+
+ <simpleType name="statusValueType">
+   <restriction base="token">
+     <enumeration value="clientDeleteProhibited"/>
+     <enumeration value="clientUpdateProhibited"/>
+     <enumeration value="linked"/>
+     <enumeration value="ok"/>
+     <enumeration value="pendingCreate"/>
+     <enumeration value="pendingDelete"/>
+     <enumeration value="pendingTransfer"/>
+     <enumeration value="pendingUpdate"/>
+     <enumeration value="serverDeleteProhibited"/>
+     <enumeration value="serverUpdateProhibited"/>
+   </restriction>
+ </simpleType>
+
+<!--
+Pending action notification response elements.
+-->
+ <complexType name="panDataType">
+   <sequence>
+     <element name="name" type="host:paNameType"/>
+     <element name="paTRID" type="epp:trIDType"/>
+     <element name="paDate" type="dateTime"/>
+   </sequence>
+ </complexType>
+ <complexType name="paNameType">
+   <simpleContent>
+     <extension base="eppcom:labelType">
+       <attribute name="paResult" type="boolean"
+        use="required"/>
+     </extension>
+   </simpleContent>
+ </complexType>
+
+<!--
+End of schema.
+-->
+</schema>
