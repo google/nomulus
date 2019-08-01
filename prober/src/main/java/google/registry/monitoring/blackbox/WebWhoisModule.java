@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
 
+import dagger.multibindings.IntoSet;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import google.registry.monitoring.blackbox.tokens.Token;
@@ -26,6 +27,7 @@ import google.registry.monitoring.blackbox.handlers.SslClientInitializer;
 import google.registry.monitoring.blackbox.handlers.WebWhoisActionHandler;
 import google.registry.monitoring.blackbox.tokens.WebWhoisToken;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -44,11 +46,10 @@ import org.joda.time.Duration;
 @Module
 public class WebWhoisModule {
 
-  private final int httpWhoIsPort = 80;
-  private final int httpsWhoIsPort = 443;
-  private static final String HTTP_PROTOCOL_NAME = "whois_http";
-  private static final String HTTPS_PROTOCOL_NAME = "whois_https";
-  private static final String DOMAIN_PREFIX = "whois.nic.";
+  private final int HTTP_WHOIS_PORT = 80;
+  private final int HTTPS_WHOIS_PORT = 443;
+  private static final String HTTP_PROTOCOL_NAME = "http";
+  private static final String HTTPS_PROTOCOL_NAME = "https";
 
   /** Standard length of messages used by Proxy. Equates to 0.5 MB. */
   private static final int maximumMessageLengthBytes = 512 * 1024;
@@ -68,16 +69,14 @@ public class WebWhoisModule {
 
   /** {@link Provides} standard WebWhois sequence. */
   @Provides
-  @WebWhoisProtocol
+  @Singleton
+  @IntoSet
   ProbingSequence provideWebWhoisSequence(
-      @WebWhoisProtocol ProbingStep.Builder probingStepBuilder,
-      WebWhoisToken webWhoisToken,
-      @WebWhoisProtocol Bootstrap bootstrap) {
+      @WebWhoisProtocol ProbingStep probingStep,
+      WebWhoisToken webWhoisToken) {
 
-    return new ProbingSequence.Builder()
-        .addToken(webWhoisToken)
-        .setBootstrap(bootstrap)
-        .addStep(probingStepBuilder)
+    return new ProbingSequence.Builder(webWhoisToken)
+        .addStep(probingStep)
         .build();
   }
 
@@ -85,15 +84,18 @@ public class WebWhoisModule {
   /** {@link Provides} only step used in WebWhois sequence. */
   @Provides
   @WebWhoisProtocol
-  static ProbingStep.Builder provideWebWhoisStepBuilder(
+  static ProbingStep provideWebWhoisStep(
       @HttpWhoisProtocol Protocol httpWhoisProtocol,
+      @WebWhoisProtocol Bootstrap bootstrap,
       HttpRequestMessage messageTemplate,
       Duration duration) {
 
     return ProbingStep.builder()
         .setProtocol(httpWhoisProtocol)
+        .setBootstrap(bootstrap)
         .setMessageTemplate(messageTemplate)
-        .setDuration(duration);
+        .setDuration(duration)
+        .build();
   }
 
   /** {@link Provides} the {@link Protocol} that corresponds to http connection. */
@@ -124,13 +126,6 @@ public class WebWhoisModule {
         .setHandlerProviders(handlerProviders)
         .setPersistentConnection(false)
         .build();
-  }
-
-  /** {@link Provides} the prefix where we probe: "prefix.tld". */
-  @Provides
-  @Named("Web-WHOIS-Prefix")
-  String provideWhoisPrefix() {
-    return DOMAIN_PREFIX;
   }
 
 
@@ -187,10 +182,12 @@ public class WebWhoisModule {
   @Singleton
   @Provides
   @WebWhoisProtocol
-  static Bootstrap provideBootstrap(EventLoopGroup eventLoopGroup) {
+  static Bootstrap provideBootstrap(
+      EventLoopGroup eventLoopGroup,
+      Class<? extends Channel> channelClass){
     return new Bootstrap()
         .group(eventLoopGroup)
-        .channel(NioSocketChannel.class);
+        .channel(channelClass);
   }
 
   @Provides
@@ -210,13 +207,13 @@ public class WebWhoisModule {
   @Provides
   @HttpWhoisProtocol
   int provideHttpWhoisPort() {
-    return httpWhoIsPort;
+    return HTTP_WHOIS_PORT;
   }
 
   @Provides
   @HttpsWhoisProtocol
   int provideHttpsWhoisPort() {
-    return httpsWhoIsPort;
+    return HTTPS_WHOIS_PORT;
   }
 
 

@@ -15,13 +15,14 @@
 package google.registry.monitoring.blackbox;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.monitoring.blackbox.ProbingAction.CONNECTION_FUTURE_KEY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.TestUtils.DuplexMessageTest;
 import google.registry.monitoring.blackbox.TestUtils.TestProvider;
-import google.registry.monitoring.blackbox.exceptions.InternalException;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.handlers.ActionHandler;
 import google.registry.monitoring.blackbox.handlers.ConversionHandler;
 import google.registry.monitoring.blackbox.handlers.NettyRule;
@@ -107,13 +108,13 @@ public class ProbingActionTest {
         .setProtocol(protocol)
         .setDelay(Duration.ZERO)
         .setOutboundMessage(new DuplexMessageTest(TEST_MESSAGE))
-        .setHost("")
-        .setAddress(address)
+        .setHost(ADDRESS_NAME)
         .build();
   }
 
   private void setupChannel() {
     channel = new EmbeddedChannel();
+    channel.attr(CONNECTION_FUTURE_KEY).set(channel.newSucceededFuture());
   }
 
   /** Sets up a {@link ProbingAction} with existing channel using test specified attributes. */
@@ -128,7 +129,7 @@ public class ProbingActionTest {
   }
 
   @Test
-  public void testBehavior_existingChannel() throws InternalException {
+  public void testBehavior_existingChannel() throws UndeterminedStateException {
     //setup
     setupChannel();
     setupExistingChannelProtocol();

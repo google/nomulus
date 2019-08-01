@@ -49,32 +49,18 @@ public class ProbingSequence {
     private ProbingStep currentStep;
     private ProbingStep firstStep;
     private ProbingStep firstRepeatedStep;
-    private Bootstrap bootstrap;
+
     private Token startToken;
 
-    /**
-     * Adds {@link Bootstrap} that is supplied to each {@link ProbingStep}.
-     *
-     * <p>Must be called before adding {@link ProbingStep.Builder}s.</p>
-     */
-    public Builder setBootstrap(Bootstrap bootstrap) {
-      this.bootstrap = bootstrap;
-      return this;
-    }
-
-    /** Adds start token that activate {@link ProbingSequence}. */
-    public Builder addToken(Token token) {
-      startToken = token;
-      return this;
+    public Builder(Token startToken) {
+      this.startToken = startToken;
     }
 
     /**
-     * Adds {@link ProbingStep.Builder}, which is supplied with {@link Bootstrap},
+     * Adds {@link ProbingStep}, which is supplied with {@link Bootstrap},
      * built, and pointed to by the previous {@link ProbingStep} added.
      */
-    public Builder addStep(ProbingStep.Builder stepBuilder) {
-      assert (bootstrap != null);
-      ProbingStep step = stepBuilder.setBootstrap(bootstrap).build();
+    public Builder addStep(ProbingStep step) {
 
       if (currentStep == null)
         firstStep = step;
