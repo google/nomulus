@@ -30,9 +30,10 @@ public class Prober {
 
     //Obtains all Sequences provided by proberComponent
     Set<ProbingSequence> sequences = proberComponent.provideAllSequences();
-
+    System.out.println(sequences);
     //Tells Sequences to start running
     for (ProbingSequence sequence : sequences) {
+      System.out.println("test");
       sequence.start();
     }
   }

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <create>
+      <domain:create xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>@@DOMAINNAME@@</domain:name>
+        <domain:period unit="y">1</domain:period>
+        <domain:ns>
+          <domain:hostObj>ns.fake-domain.tld</domain:hostObj>
+        </domain:ns>
+        <domain:registrant>google-mon</domain:registrant>
+        <domain:contact type="admin">google-mon</domain:contact>
+        <domain:contact type="tech">google-mon</domain:contact>
+        <domain:authInfo>
+          <domain:pw>insecure</domain:pw>
+        </domain:authInfo>
+      </domain:create>
+    </create>
+    <clTRID>@@CLTRID@@</clTRID>
+  </command>
+</epp>

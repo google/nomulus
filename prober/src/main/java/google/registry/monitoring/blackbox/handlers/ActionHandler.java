@@ -57,6 +57,10 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
     finished = ctx.newPromise();
   }
 
+  public void resetFuture() {
+    finished = finished.channel().newPromise();
+  }
+
   /** Marks {@link ChannelPromise} as success */
   @Override
   public void channelRead0(ChannelHandlerContext ctx, InboundMessageType inboundMessage)

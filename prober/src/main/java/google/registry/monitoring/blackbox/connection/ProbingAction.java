@@ -99,6 +99,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
     ChannelFuture channelFuture = actionHandler.getFuture();
     channel().writeAndFlush(outboundMessage());
     channelFuture.addListeners(
+        future -> actionHandler.resetFuture(),
         //inform ProbingStep of the status of our action
         future -> {
           if (future.isSuccess())
@@ -230,10 +231,6 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
 
     abstract Optional<Channel> channel();
 
-    abstract SocketAddress address();
-
-    abstract Optional<Bootstrap> bootstrap();
-
     abstract String host();
 
     abstract ProbingAction autoBuild();
@@ -244,7 +241,6 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
         InetAddress hostAddress = InetAddress.getByName(host());
         address = new InetSocketAddress(hostAddress, protocol().port());
       } catch (UnknownHostException e) {
-        System.out.println("test");
         address = new LocalAddress(host());
       }
 

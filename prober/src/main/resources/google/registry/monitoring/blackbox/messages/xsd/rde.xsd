@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="urn:ietf:params:xml:ns:rde-1.0"
+  xmlns:rde="urn:ietf:params:xml:ns:rde-1.0"
+  xmlns:eppcom="urn:ietf:params:xml:ns:eppcom-1.0"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <annotation>
+    <documentation>
+      Registry Data Escrow schema
+    </documentation>
+  </annotation>
+
+  <import namespace="urn:ietf:params:xml:ns:eppcom-1.0" schemaLocation="eppcom.xsd"/>
+
+  <!-- Root element -->
+  <element name="deposit" type="rde:escrowDepositType"/>
+
+  <!-- RDE types -->
+  <complexType name="escrowDepositType">
+    <sequence>
+      <element name="watermark" type="dateTime"/>
+      <element name="rdeMenu" type="rde:rdeMenuType"/>
+      <element name="deletes" type="rde:deletesType" minOccurs="0"/>
+      <element name="contents" type="rde:contentsType"/>
+    </sequence>
+    <attribute name="type" type="rde:depositTypeType" use="required"/>
+    <attribute name="id" type="rde:depositIdType" use="required"/>
+    <attribute name="prevId" type="rde:depositIdType"/>
+    <attribute name="resend" type="unsignedShort" default="0"/>
+  </complexType>
+
+  <!-- Menu type -->
+  <complexType name="rdeMenuType">
+    <sequence>
+      <element name="version" type="rde:versionType"/>
+      <element name="objURI" type="anyURI" maxOccurs="unbounded"/>
+    </sequence>
+  </complexType>
+
+  <!-- Deletes Type -->
+  <complexType name="deletesType">
+    <sequence minOccurs="0" maxOccurs="unbounded">
+      <element ref="rde:delete"/>
+    </sequence>
+  </complexType>
+
+  <element name="delete" type="rde:deleteType" abstract="true"/>
+  <complexType name="deleteType">
+    <complexContent>
+      <restriction base="anyType"/>
+    </complexContent>
+  </complexType>
+
+  <!-- Contents Type -->
+  <complexType name="contentsType">
+    <sequence maxOccurs="unbounded">
+      <element ref="rde:content"/>
+    </sequence>
+  </complexType>
+
+  <element name="content" type="rde:contentType" abstract="true"/>
+  <complexType name="contentType">
+    <complexContent>
+      <restriction base="anyType"/>
+    </complexContent>
+  </complexType>
+
+  <!-- Type of deposit -->
+  <simpleType name="depositTypeType">
+    <restriction base="token">
+      <enumeration value="FULL"/>
+      <enumeration value="INCR"/>
+      <enumeration value="DIFF"/>
+    </restriction>
+  </simpleType>
+
+  <!-- Deposit identifier type -->
+  <simpleType name="depositIdType">
+    <restriction base="token">
+      <pattern value="\w{1,13}"/>
+    </restriction>
+  </simpleType>
+
+  <!-- A RDE version number is a dotted pair of decimal numbers -->
+  <simpleType name="versionType">
+    <restriction base="token">
+      <pattern value="[1-9]+\.[0-9]+"/>
+      <enumeration value="1.0"/>
+    </restriction>
+  </simpleType>
+
+  <complexType name="rrType">
+    <simpleContent>
+      <extension base="eppcom:clIDType">
+        <attribute name="client" type="eppcom:clIDType"/>
+      </extension>
+    </simpleContent>
+  </complexType>
+</schema>

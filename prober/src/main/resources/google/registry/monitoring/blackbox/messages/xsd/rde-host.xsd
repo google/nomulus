@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="urn:ietf:params:xml:ns:rdeHost-1.0"
+  xmlns:rdeHost="urn:ietf:params:xml:ns:rdeHost-1.0"
+  xmlns:rde="urn:ietf:params:xml:ns:rde-1.0"
+  xmlns:host="urn:ietf:params:xml:ns:host-1.0"
+  xmlns:eppcom="urn:ietf:params:xml:ns:eppcom-1.0"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <import namespace="urn:ietf:params:xml:ns:eppcom-1.0"
+    schemaLocation="eppcom.xsd"/>
+  <import namespace="urn:ietf:params:xml:ns:host-1.0"
+    schemaLocation="host.xsd"/>
+  <import namespace="urn:ietf:params:xml:ns:rde-1.0"
+    schemaLocation="rde.xsd"/>
+
+  <annotation>
+    <documentation>
+      Registry Data Escrow Host provisioning schema
+    </documentation>
+  </annotation>
+
+  <element name="abstractHost" type="rdeHost:abstractContentType"
+    substitutionGroup="rde:content" abstract="true"/>
+  <element name="host" substitutionGroup="rdeHost:abstractHost" />
+  <element name="delete" type="rdeHost:deleteType"
+    substitutionGroup="rde:delete"/>
+
+  <!-- Content Type -->
+  <complexType name="abstractContentType">
+    <complexContent>
+      <extension base="rde:contentType">
+        <sequence>
+          <element name="name"
+            type="eppcom:labelType"/>
+          <element name="roid"
+            type="eppcom:roidType"/>
+          <element name="status"
+            type="host:statusType" maxOccurs="7"/>
+          <element name="addr"
+            type="host:addrType" minOccurs="0"
+            maxOccurs="unbounded"/>
+          <element name="clID"
+            type="eppcom:clIDType"/>
+          <element name="crRr"
+            type="rde:rrType"/>
+          <element name="crDate"
+            type="dateTime"/>
+          <element name="upRr"
+            type="rde:rrType" minOccurs="0"/>
+          <element name="upDate"
+            type="dateTime" minOccurs="0"/>
+          <element name="trDate"
+            type="dateTime" minOccurs="0"/>
+        </sequence>
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <!-- Delete Type -->
+  <complexType name="deleteType">
+    <complexContent>
+      <extension base="rde:deleteType">
+        <choice minOccurs="0" maxOccurs="unbounded">
+          <element name="name"
+            type="eppcom:labelType"/>
+          <element name="roid"
+            type="eppcom:roidType"/>
+        </choice>
+      </extension>
+    </complexContent>
+  </complexType>
+</schema>
