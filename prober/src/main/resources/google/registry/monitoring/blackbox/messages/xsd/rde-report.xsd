@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="urn:ietf:params:xml:ns:rdeReport-1.0"
+  xmlns:rdeReport="urn:ietf:params:xml:ns:rdeReport-1.0"
+  xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0"
+  xmlns:rde="urn:ietf:params:xml:ns:rde-1.0"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <import namespace="urn:ietf:params:xml:ns:rde-1.0"
+    schemaLocation="rde.xsd"/>
+  <import namespace="urn:ietf:params:xml:ns:rdeHeader-1.0"
+    schemaLocation="rde-header.xsd" />
+
+  <annotation>
+    <documentation>
+      Registry Data Escrow Report schema
+    </documentation>
+  </annotation>
+
+  <!-- Root Element -->
+  <element name="report" type="rdeReport:reportType"/>
+
+  <!-- Report Type -->
+  <complexType name="reportType">
+    <sequence>
+      <element name="id" type="rde:depositIdType"/>
+      <element name="version" type="unsignedShort"/>
+      <element name="rydeSpecEscrow" type="token"/>
+      <element name="rydeSpecMapping" type="token"/>
+      <element name="resend" type="unsignedShort"/>
+      <element name="crDate" type="dateTime"/>
+      <element name="kind" type="rde:depositTypeType"/>
+      <element name="watermark" type="dateTime"/>
+      <element ref="rdeHeader:header"/>
+    </sequence>
+  </complexType>
+</schema>

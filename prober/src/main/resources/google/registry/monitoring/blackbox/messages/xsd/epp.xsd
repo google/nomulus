@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<schema targetNamespace="urn:ietf:params:xml:ns:epp-1.0"
+        xmlns:epp="urn:ietf:params:xml:ns:epp-1.0"
+        xmlns:eppcom="urn:ietf:params:xml:ns:eppcom-1.0"
+        xmlns="http://www.w3.org/2001/XMLSchema"
+        elementFormDefault="qualified">
+
+<!--
+Import common element types.
+-->
+  <import namespace="urn:ietf:params:xml:ns:eppcom-1.0"
+          schemaLocation="eppcom.xsd"/>
+
+  <annotation>
+    <documentation>
+      Extensible Provisioning Protocol v1.0 schema.
+    </documentation>
+  </annotation>
+
+<!--
+Every EPP XML instance must begin with this element.
+-->
+  <element name="epp" type="epp:eppType"/>
+
+<!--
+An EPP XML instance must contain a greeting, hello, command,
+response, or extension.
+-->
+  <complexType name="eppType">
+    <choice>
+      <element name="greeting" type="epp:greetingType"/>
+      <element name="hello"/>
+      <element name="command" type="epp:commandType"/>
+      <element name="response" type="epp:responseType"/>
+      <element name="extension" type="epp:extAnyType"/>
+    </choice>
+  </complexType>
+
+<!--
+A greeting is sent by a server in response to a client connection
+or <hello>.
+-->
+  <complexType name="greetingType">
+    <sequence>
+      <element name="svID" type="epp:sIDType"/>
+      <element name="svDate" type="dateTime"/>
+      <element name="svcMenu" type="epp:svcMenuType"/>
+      <element name="dcp" type="epp:dcpType"/>
+    </sequence>
+  </complexType>
+
+<!--
+Server IDs are strings with minimum and maximum length restrictions.
+-->
+  <simpleType name="sIDType">
+    <restriction base="normalizedString">
+      <minLength value="3"/>
+      <maxLength value="64"/>
+    </restriction>
+  </simpleType>
+
+<!--
+A server greeting identifies available object services.
+-->
+  <complexType name="svcMenuType">
+    <sequence>
+      <element name="version" type="epp:versionType"
+       maxOccurs="unbounded"/>
+      <element name="lang" type="language"
+       maxOccurs="unbounded"/>
+      <element name="objURI" type="anyURI"
+       maxOccurs="unbounded"/>
+      <element name="svcExtension" type="epp:extURIType"
+       minOccurs="0"/>
+    </sequence>
+  </complexType>
+
+<!--
+Data Collection Policy types.
+-->
+  <complexType name="dcpType">
+    <sequence>
+      <element name="access" type="epp:dcpAccessType"/>
+      <element name="statement" type="epp:dcpStatementType"
+       maxOccurs="unbounded"/>
+      <element name="expiry" type="epp:dcpExpiryType"
+       minOccurs="0"/>
+    </sequence>
+  </complexType>
+
+  <complexType name="dcpAccessType">
+    <choice>
+      <element name="all"/>
+      <element name="none"/>
+      <element name="null"/>
+      <element name="other"/>
+      <element name="personal"/>
+      <element name="personalAndOther"/>
+    </choice>
+  </complexType>
+
+  <complexType name="dcpStatementType">
+    <sequence>
+      <element name="purpose" type="epp:dcpPurposeType"/>
+      <element name="recipient" type="epp:dcpRecipientType"/>
+      <element name="retention" type="epp:dcpRetentionType"/>
+    </sequence>
+  </complexType>
+
+  <complexType name="dcpPurposeType">
+    <sequence>
+      <element name="admin"
+       minOccurs="0"/>
+      <element name="contact"
+       minOccurs="0"/>
+      <element name="other"
+       minOccurs="0"/>
+      <element name="prov"
+       minOccurs="0"/>
+    </sequence>
+  </complexType>
+
+  <complexType name="dcpRecipientType">
+    <sequence>
+      <element name="other"
+       minOccurs="0"/>
+      <element name="ours" type="epp:dcpOursType"
+       minOccurs="0" maxOccurs="unbounded"/>
+      <element name="public"
+       minOccurs="0"/>
+      <element name="same"
+       minOccurs="0"/>
+      <element name="unrelated"
+       minOccurs="0"/>
+    </sequence>
+  </complexType>
+
+  <complexType name="dcpOursType">
+    <sequence>
+      <element name="recDesc" type="epp:dcpRecDescType"
+       minOccurs="0"/>
+    </sequence>
+  </complexType>
+
+  <simpleType name="dcpRecDescType">
+    <restriction base="token">
+      <minLength value="1"/>
+      <maxLength value="255"/>
+    </restriction>
+  </simpleType>
+
+  <complexType name="dcpRetentionType">
+    <choice>
+      <element name="business"/>
+      <element name="indefinite"/>
+      <element name="legal"/>
+      <element name="none"/>
+      <element name="stated"/>
+    </choice>
+  </complexType>
+
+  <complexType name="dcpExpiryType">
+    <choice>
+      <element name="absolute" type="dateTime"/>
+      <element name="relative" type="duration"/>
+    </choice>
+  </complexType>
+
+<!--
+Extension framework types.
+-->
+  <complexType name="extAnyType">
+    <sequence>
+      <any namespace="##other"
+       maxOccurs="unbounded"/>
+    </sequence>
+  </complexType>
+
+  <complexType name="extURIType">
+    <sequence>
+      <element name="extURI" type="anyURI"
+       maxOccurs="unbounded"/>
+    </sequence>
+  </complexType>
+
+<!--
+An EPP version number is a dotted pair of decimal numbers.
+-->
+  <simpleType name="versionType">
+    <restriction base="token">
+      <pattern value="[1-9]+\.[0-9]+"/>
+      <enumeration value="1.0"/>
+    </restriction>
+  </simpleType>
+
+<!--
+Command types.
+-->
+  <complexType name="commandType">
+    <sequence>
+      <choice>
+        <element name="check" type="epp:readWriteType"/>
+        <element name="create" type="epp:readWriteType"/>
+        <element name="delete" type="epp:readWriteType"/>
+        <element name="info" type="epp:readWriteType"/>
+        <element name="login" type="epp:loginType"/>
+        <element name="logout"/>
+        <element name="poll" type="epp:pollType"/>
+        <element name="renew" type="epp:readWriteType"/>
+        <element name="transfer" type="epp:transferType"/>
+        <element name="update" type="epp:readWriteType"/>
+      </choice>
+      <element name="extension" type="epp:extAnyType"
+       minOccurs="0"/>
+      <element name="clTRID" type="epp:trIDStringType"
+       minOccurs="0"/>
+    </sequence>
+  </complexType>
+
+<!--
+The <login> command.
+-->
+  <complexType name="loginType">
+    <sequence>
+      <element name="clID" type="eppcom:clIDType"/>
+      <element name="pw" type="epp:pwType"/>
+      <element name="newPW" type="epp:pwType"
+       minOccurs="0"/>
+      <element name="options" type="epp:credsOptionsType"/>
+      <element name="svcs" type="epp:loginSvcType"/>
+    </sequence>
+  </complexType>
+
+  <complexType name="credsOptionsType">
+    <sequence>
+      <element name="version" type="epp:versionType"/>
+      <element name="lang" type="language"/>
+    </sequence>
+  </complexType>
+
+  <simpleType name="pwType">
+    <restriction base="token">
+      <minLength value="6"/>
+      <maxLength value="16"/>
+    </restriction>
+  </simpleType>
+
+  <complexType name="loginSvcType">
+    <sequence>
+      <element name="objURI" type="anyURI"
+       maxOccurs="unbounded"/>
+      <element name="svcExtension" type="epp:extURIType"
+       minOccurs="0"/>
+    </sequence>
+  </complexType>
+
+<!--
+The <poll> command.
+-->
+  <complexType name="pollType">
+    <attribute name="op" type="epp:pollOpType"
+     use="required"/>
+    <attribute name="msgID" type="token"/>
+  </complexType>
+
+  <simpleType name="pollOpType">
+    <restriction base="token">
+      <enumeration value="ack"/>
+      <enumeration value="req"/>
+    </restriction>
+  </simpleType>
+
+<!--
+The <transfer> command.  This is object-specific, and uses attributes
+to identify the requested operation.
+-->
+  <complexType name="transferType">
+    <sequence>
+      <any namespace="##other"/>
+    </sequence>
+    <attribute name="op" type="epp:transferOpType"
+     use="required"/>
+  </complexType>
+
+  <simpleType name="transferOpType">
+    <restriction base="token">
+      <enumeration value="approve"/>
+      <enumeration value="cancel"/>
+      <enumeration value="query"/>
+      <enumeration value="reject"/>
+      <enumeration value="request"/>
+    </restriction>
+  </simpleType>
+
+<!--
+All other object-centric commands.  EPP doesn't specify the syntax or
+semantics of object-centric command elements.  The elements MUST be
+described in detail in another schema specific to the object.
+-->
+  <complexType name="readWriteType">
+    <sequence>
+      <any namespace="##other"/>
+    </sequence>
+  </complexType>
+
+  <complexType name="trIDType">
+    <sequence>
+      <element name="clTRID" type="epp:trIDStringType"
+       minOccurs="0"/>
+      <element name="svTRID" type="epp:trIDStringType"/>
+    </sequence>
+  </complexType>
+
+  <simpleType name="trIDStringType">
+    <restriction base="token">
+      <minLength value="3"/>
+      <maxLength value="64"/>
+    </restriction>
+  </simpleType>
+
+<!--
+Response types.
+-->
+  <complexType name="responseType">
+    <sequence>
+      <element name="result" type="epp:resultType"
+       maxOccurs="unbounded"/>
+      <element name="msgQ" type="epp:msgQType"
+       minOccurs="0"/>
+
+      <element name="resData" type="epp:extAnyType"
+       minOccurs="0"/>
+      <element name="extension" type="epp:extAnyType"
+       minOccurs="0"/>
+      <element name="trID" type="epp:trIDType"/>
+    </sequence>
+  </complexType>
+
+  <complexType name="resultType">
+    <sequence>
+      <element name="msg" type="epp:msgType"/>
+      <choice minOccurs="0" maxOccurs="unbounded">
+        <element name="value" type="epp:errValueType"/>
+        <element name="extValue" type="epp:extErrValueType"/>
+      </choice>
+    </sequence>
+    <attribute name="code" type="epp:resultCodeType"
+     use="required"/>
+  </complexType>
+
+  <complexType name="errValueType" mixed="true">
+    <sequence>
+      <any namespace="##any" processContents="skip"/>
+    </sequence>
+    <anyAttribute namespace="##any" processContents="skip"/>
+  </complexType>
+
+  <complexType name="extErrValueType">
+    <sequence>
+      <element name="value" type="epp:errValueType"/>
+      <element name="reason" type="epp:msgType"/>
+    </sequence>
+  </complexType>
+
+  <complexType name="msgQType">
+    <sequence>
+      <element name="qDate" type="dateTime"
+       minOccurs="0"/>
+      <element name="msg" type="epp:mixedMsgType"
+       minOccurs="0"/>
+    </sequence>
+    <attribute name="count" type="unsignedLong"
+     use="required"/>
+    <attribute name="id" type="eppcom:minTokenType"
+     use="required"/>
+  </complexType>
+
+  <complexType name="mixedMsgType" mixed="true">
+    <sequence>
+      <any processContents="skip"
+       minOccurs="0" maxOccurs="unbounded"/>
+    </sequence>
+    <attribute name="lang" type="language"
+     default="en"/>
+  </complexType>
+
+<!--
+Human-readable text may be expressed in languages other than English.
+-->
+  <complexType name="msgType">
+    <simpleContent>
+      <extension base="normalizedString">
+        <attribute name="lang" type="language"
+         default="en"/>
+      </extension>
+    </simpleContent>
+  </complexType>
+
+<!--
+EPP result codes.
+-->
+  <simpleType name="resultCodeType">
+    <restriction base="unsignedShort">
+      <enumeration value="1000"/>
+      <enumeration value="1001"/>
+      <enumeration value="1300"/>
+      <enumeration value="1301"/>
+      <enumeration value="1500"/>
+      <enumeration value="2000"/>
+      <enumeration value="2001"/>
+      <enumeration value="2002"/>
+      <enumeration value="2003"/>
+      <enumeration value="2004"/>
+      <enumeration value="2005"/>
+      <enumeration value="2100"/>
+      <enumeration value="2101"/>
+      <enumeration value="2102"/>
+      <enumeration value="2103"/>
+      <enumeration value="2104"/>
+      <enumeration value="2105"/>
+      <enumeration value="2106"/>
+      <enumeration value="2200"/>
+      <enumeration value="2201"/>
+      <enumeration value="2202"/>
+      <enumeration value="2300"/>
+      <enumeration value="2301"/>
+      <enumeration value="2302"/>
+      <enumeration value="2303"/>
+      <enumeration value="2304"/>
+      <enumeration value="2305"/>
+      <enumeration value="2306"/>
+      <enumeration value="2307"/>
+      <enumeration value="2308"/>
+      <enumeration value="2400"/>
+      <enumeration value="2500"/>
+      <enumeration value="2501"/>
+      <enumeration value="2502"/>
+    </restriction>
+  </simpleType>
+
+<!--
+End of schema.
+-->
+</schema>

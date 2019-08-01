@@ -37,6 +37,7 @@ public class Prober {
 
     //Tells Sequences to start running
     for (ProbingSequence sequence : sequences) {
+      System.out.println("test");
       sequence.start();
     }
   }

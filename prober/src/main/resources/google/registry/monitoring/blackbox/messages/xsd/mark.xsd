@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Schema extracted from http://tools.ietf.org/html/draft-lozano-tmch-smd -->
+<schema
+  targetNamespace="urn:ietf:params:xml:ns:mark-1.0"
+  xmlns:mark="urn:ietf:params:xml:ns:mark-1.0"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <annotation>
+    <documentation>
+      Schema for representing a Trademark, also referred to
+      as Mark.
+    </documentation>
+  </annotation>
+
+  <!--
+  Abstract mark for replacement via substitution.
+  -->
+  <element name="abstractMark" type="mark:abstractMarkType"
+    abstract="true"/>
+
+  <!--
+  <mark:mark> element definition
+  -->
+  <element name="mark" type="mark:markType"
+    substitutionGroup="mark:abstractMark"/>
+
+  <!--
+  Empty type for use in extending for a mark
+  -->
+  <complexType name="abstractMarkType"/>
+
+  <!--
+  <mark:mark> child elements
+  -->
+  <complexType name="markType">
+    <complexContent>
+      <extension base="mark:abstractMarkType">
+        <sequence>
+          <element name="trademark" type="mark:trademarkType"
+            minOccurs="0" maxOccurs="unbounded"/>
+          <element name="treatyOrStatute"
+            type="mark:treatyOrStatuteType" minOccurs="0"
+                        maxOccurs="unbounded"/>
+          <element name="court" type="mark:courtType" minOccurs="0"
+            maxOccurs="unbounded"/>
+        </sequence>
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <complexType name="holderType">
+    <sequence>
+      <element name="name" type="token" minOccurs="0"/>
+      <element name="org" type="token" minOccurs="0"/>
+      <element name="addr" type="mark:addrType"/>
+      <element name="voice" type="mark:e164Type" minOccurs="0"/>
+      <element name="fax" type="mark:e164Type" minOccurs="0"/>
+      <element name="email" type="mark:minTokenType" minOccurs="0"/>
+    </sequence>
+    <attribute name="entitlement" type="mark:entitlementType"/>
+  </complexType>
+
+  <complexType name="contactType">
+    <sequence>
+      <element name="name" type="token"/>
+      <element name="org" type="token" minOccurs="0"/>
+      <element name="addr" type="mark:addrType"/>
+      <element name="voice" type="mark:e164Type"/>
+      <element name="fax" type="mark:e164Type" minOccurs="0"/>
+      <element name="email" type="mark:minTokenType"/>
+    </sequence>
+    <attribute name="type" type="mark:contactTypeType"/>
+  </complexType>
+
+  <complexType name="trademarkType">
+    <sequence>
+      <element name="id" type="mark:idType"/>
+      <element name="markName" type="token"/>
+      <element name="holder" type="mark:holderType"
+        maxOccurs="unbounded" />
+      <element name="contact" type="mark:contactType" minOccurs="0"
+        maxOccurs="unbounded"/>
+      <element name="jurisdiction" type="mark:ccType"/>
+      <element name="class" type="integer" minOccurs="0"
+        maxOccurs="unbounded"/>
+      <element name="label" type="mark:labelType" minOccurs="0"
+        maxOccurs="unbounded"/>
+      <element name="goodsAndServices" type="token" />
+      <element name="apId" type="token" minOccurs="0"/>
+      <element name="apDate" type="dateTime" minOccurs="0"/>
+      <element name="regNum" type="token"/>
+      <element name="regDate" type="dateTime"/>
+      <element name="exDate" type="dateTime" minOccurs="0"/>
+    </sequence>
+  </complexType>
+
+  <complexType name="treatyOrStatuteType">
+    <sequence>
+      <element name="id" type="mark:idType"/>
+      <element name="markName" type="token"/>
+      <element name="holder" type="mark:holderType"
+        maxOccurs="unbounded" />
+      <element name="contact" type="mark:contactType" minOccurs="0"
+        maxOccurs="unbounded"/>
+      <element name="protection" type="mark:protectionType"
+        maxOccurs="unbounded"/>
+      <element name="label" type="mark:labelType" minOccurs="0"
+        maxOccurs="unbounded"/>
+      <element name="goodsAndServices" type="token" />
+      <element name="refNum" type="token"/>
+      <element name="proDate" type="dateTime"/>
+      <element name="title" type="token"/>
+      <element name="execDate" type="dateTime"/>
+    </sequence>
+  </complexType>
+
+  <complexType name="courtType">
+    <sequence>
+      <element name="id" type="mark:idType"/>
+      <element name="markName" type="token"/>
+      <element name="holder" type="mark:holderType"
+        maxOccurs="unbounded" />
+      <element name="contact" type="mark:contactType" minOccurs="0"
+        maxOccurs="unbounded"/>
+      <element name="label" type="mark:labelType" minOccurs="0"
+        maxOccurs="unbounded"/>
+      <element name="goodsAndServices" type="token" />
+      <element name="refNum" type="token"/>
+      <element name="proDate" type="dateTime"/>
+      <element name="cc" type="mark:ccType"/>
+      <element name="region" type="token" minOccurs="0"
+        maxOccurs="unbounded"/>
+      <element name="courtName" type="token"/>
+    </sequence>
+  </complexType>
+
+  <!--
+  Address (<mark:addr>) child elements
+  -->
+  <complexType name="addrType">
+    <sequence>
+      <element name="street" type="token" minOccurs="1" maxOccurs="3"/>
+      <element name="city" type="token"/>
+      <element name="sp" type="token" minOccurs="0"/>
+      <element name="pc" type="mark:pcType" minOccurs="0"/>
+      <element name="cc" type="mark:ccType"/>
+    </sequence>
+  </complexType>
+
+  <!--
+  <mark:protection> child elements
+  -->
+  <complexType name="protectionType">
+    <sequence>
+      <element name="cc" type="mark:ccType"/>
+      <element name="region" type="token" minOccurs="0"/>
+      <element name="ruling" type="mark:ccType"
+        minOccurs="0" maxOccurs="unbounded"/>
+    </sequence>
+  </complexType>
+
+  <!--
+  Postal code definition
+  -->
+  <simpleType name="pcType">
+    <restriction base="token">
+      <maxLength value="16"/>
+    </restriction>
+  </simpleType>
+
+  <!--
+  Country code definition
+  -->
+  <simpleType name="ccType">
+    <restriction base="token">
+      <length value="2"/>
+    </restriction>
+  </simpleType>
+
+  <!--
+  Phone number with extension definition
+  -->
+  <complexType name="e164Type">
+    <simpleContent>
+      <extension base="mark:e164StringType">
+        <attribute name="x" type="token"/>
+      </extension>
+    </simpleContent>
+  </complexType>
+
+  <!--
+  Phone number with extension definition
+  -->
+  <simpleType name="e164StringType">
+    <restriction base="token">
+      <pattern value="(\+[0-9]{1,3}\.[0-9]{1,14})?"/>
+      <maxLength value="17"/>
+    </restriction>
+  </simpleType>
+
+  <!--
+  Id type definition
+  -->
+  <simpleType name="idType">
+    <restriction base="token">
+      <pattern value="\d+-\d+"/>
+    </restriction>
+  </simpleType>
+
+  <!--
+  DNS label type definition
+  -->
+  <simpleType name="labelType">
+    <restriction base="token">
+      <minLength value="1"/>
+      <maxLength value="63"/>
+      <pattern value="[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?"/>
+    </restriction>
+  </simpleType>
+
+  <!--
+  Type used for email addresses
+  -->
+  <simpleType name="minTokenType">
+    <restriction base="token">
+      <minLength value="1"/>
+    </restriction>
+  </simpleType>
+
+  <simpleType name="entitlementType">
+    <restriction base="token">
+      <enumeration value="owner"/>
+      <enumeration value="assignee"/>
+      <enumeration value="licensee"/>
+    </restriction>
+  </simpleType>
+
+  <simpleType name="contactTypeType">
+    <restriction base="token">
+      <enumeration value="owner"/>
+      <enumeration value="agent"/>
+      <enumeration value="thirdparty"/>
+    </restriction>
+  </simpleType>
+</schema>

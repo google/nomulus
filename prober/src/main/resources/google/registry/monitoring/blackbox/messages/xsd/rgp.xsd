@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<schema targetNamespace="urn:ietf:params:xml:ns:rgp-1.0"
+        xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0"
+        xmlns="http://www.w3.org/2001/XMLSchema"
+        elementFormDefault="qualified">
+
+  <annotation>
+    <documentation>
+      Extensible Provisioning Protocol v1.0
+      domain name extension schema for registry grace period
+      processing.
+    </documentation>
+  </annotation>
+
+<!--
+Child elements found in EPP commands.
+-->
+  <element name="update" type="rgp:updateType"/>
+
+<!--
+Child elements of the <update> command for the
+redemption grace period.
+-->
+  <complexType name="updateType">
+    <sequence>
+      <element name="restore" type="rgp:restoreType"/>
+    </sequence>
+  </complexType>
+
+  <complexType name="restoreType">
+    <sequence>
+      <element name="report" type="rgp:reportType"
+       minOccurs="0"/>
+    </sequence>
+    <attribute name="op" type="rgp:rgpOpType" use="required"/>
+  </complexType>
+
+<!--
+New redemption grace period operations can be defined
+by adding to this enumeration.
+-->
+  <simpleType name="rgpOpType">
+    <restriction base="token">
+      <enumeration value="request"/>
+      <enumeration value="report"/>
+    </restriction>
+  </simpleType>
+
+  <complexType name="reportType">
+    <sequence>
+      <element name="preData" type="rgp:mixedType"/>
+      <element name="postData" type="rgp:mixedType"/>
+      <element name="delTime" type="dateTime"/>
+      <element name="resTime" type="dateTime"/>
+      <element name="resReason" type="rgp:reportTextType"/>
+      <element name="statement" type="rgp:reportTextType"
+       maxOccurs="2"/>
+      <element name="other" type="rgp:mixedType"
+       minOccurs="0"/>
+    </sequence>
+  </complexType>
+
+  <complexType name="mixedType">
+    <complexContent mixed="true">
+      <restriction base="anyType">
+        <sequence>
+          <any processContents="lax"
+           minOccurs="0" maxOccurs="unbounded"/>
+        </sequence>
+      </restriction>
+    </complexContent>
+  </complexType>
+
+  <complexType name="reportTextType">
+    <complexContent mixed="true">
+      <restriction base="anyType">
+        <sequence>
+          <any processContents="lax"
+           minOccurs="0" maxOccurs="unbounded"/>
+        </sequence>
+        <attribute name="lang" type="language" default="en"/>
+      </restriction>
+    </complexContent>
+  </complexType>
+
+<!--
+Child response elements.
+-->
+  <element name="infData" type="rgp:respDataType"/>
+  <element name="upData" type="rgp:respDataType"/>
+
+<!--
+Response elements.
+-->
+  <complexType name="respDataType">
+    <sequence>
+      <element name="rgpStatus" type="rgp:statusType"
+       maxOccurs="unbounded"/>
+    </sequence>
+  </complexType>
+
+<!--
+Status is a combination of attributes and an optional
+human-readable message that may be expressed in languages
+other than English.
+-->
+  <complexType name="statusType">
+    <simpleContent>
+      <extension base="normalizedString">
+        <attribute name="s" type="rgp:statusValueType"
+         use="required"/>
+        <attribute name="lang" type="language" default="en"/>
+      </extension>
+    </simpleContent>
+  </complexType>
+
+  <simpleType name="statusValueType">
+    <restriction base="token">
+      <enumeration value="addPeriod"/>
+      <enumeration value="autoRenewPeriod"/>
+      <enumeration value="renewPeriod"/>
+      <enumeration value="transferPeriod"/>
+      <enumeration value="pendingDelete"/>
+      <enumeration value="pendingRestore"/>
+      <enumeration value="redemptionPeriod"/>
+    </restriction>
+  </simpleType>
+
+<!--
+End of schema.
+-->
+</schema>

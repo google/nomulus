@@ -62,7 +62,7 @@ public abstract class EppToken extends Token {
 
 
   @Override
-  public String getHost() {
+  public String host() {
     return host;
   }
 
@@ -111,7 +111,7 @@ public abstract class EppToken extends Token {
 
     @Override
     public Token next() {
-      return new Transient(tld, getHost());
+      return new Transient(tld, host());
     }
   }
 
@@ -133,7 +133,7 @@ public abstract class EppToken extends Token {
 
     @Override
     public Token next() {
-      return new Persistent(tld, getHost(), channel());
+      return new Persistent(tld, host(), channel());
     }
   }
 }

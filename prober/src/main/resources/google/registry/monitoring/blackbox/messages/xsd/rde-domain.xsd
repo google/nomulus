@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="urn:ietf:params:xml:ns:rdeDomain-1.0"
+  xmlns:rdeDomain="urn:ietf:params:xml:ns:rdeDomain-1.0"
+  xmlns:rde="urn:ietf:params:xml:ns:rde-1.0"
+  xmlns:rdeIDN="urn:ietf:params:xml:ns:rdeIDN-1.0"
+  xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0"
+  xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1"
+  xmlns:domain="urn:ietf:params:xml:ns:domain-1.0"
+  xmlns:eppcom="urn:ietf:params:xml:ns:eppcom-1.0"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <import namespace="urn:ietf:params:xml:ns:eppcom-1.0"
+    schemaLocation="eppcom.xsd"/>
+  <import namespace="urn:ietf:params:xml:ns:domain-1.0"
+    schemaLocation="domain.xsd"/>
+  <import namespace="urn:ietf:params:xml:ns:secDNS-1.1"
+    schemaLocation="secdns.xsd"/>
+  <import namespace="urn:ietf:params:xml:ns:rgp-1.0"
+    schemaLocation="rgp.xsd"/>
+  <import namespace="urn:ietf:params:xml:ns:rde-1.0"
+    schemaLocation="rde.xsd"/>
+  <import namespace="urn:ietf:params:xml:ns:rdeIDN-1.0"
+    schemaLocation="rde-idn.xsd"/>
+
+  <annotation>
+    <documentation>
+      Registry Data Escrow Domain provisioning schema
+    </documentation>
+  </annotation>
+
+  <element name="abstractDomain"
+    type="rdeDomain:abstractContentType"
+    substitutionGroup="rde:content" abstract="true"/>
+  <element name="domain"
+    substitutionGroup="rdeDomain:abstractDomain"/>
+  <element name="delete"
+    type="rdeDomain:deleteType"
+    substitutionGroup="rde:delete"/>
+
+  <!-- Content Type -->
+  <complexType name="abstractContentType">
+    <complexContent>
+      <extension base="rde:contentType">
+        <sequence>
+          <element name="name"
+            type="eppcom:labelType"/>
+          <element name="roid"
+            type="eppcom:roidType"/>
+          <element name="uName"
+            type="eppcom:labelType" minOccurs="0"/>
+          <element name="idnTableId"
+            type="rdeIDN:idType" minOccurs="0"/>
+          <element name="originalName"
+            type="eppcom:labelType" minOccurs="0"/>
+          <element name="status"
+            type="domain:statusType" maxOccurs="11"/>
+          <element name="rgpStatus"
+            type="rgp:statusType" minOccurs="0"
+            maxOccurs="unbounded"/>
+          <element name="registrant"
+            type="eppcom:clIDType" minOccurs="0"/>
+          <element name="contact"
+            type="domain:contactType"
+            minOccurs="0" maxOccurs="unbounded"/>
+          <element name="ns"
+            type="domain:nsType" minOccurs="0"/>
+          <element name="clID"
+            type="eppcom:clIDType"/>
+          <element name="crRr"
+            type="rde:rrType"/>
+          <element name="crDate"
+            type="dateTime" minOccurs="0"/>
+          <element name="exDate"
+            type="dateTime" minOccurs="0"/>
+          <element name="upRr"
+            type="rde:rrType" minOccurs="0"/>
+          <element name="upDate"
+            type="dateTime" minOccurs="0"/>
+          <element name="secDNS"
+            type="secDNS:dsOrKeyType" minOccurs="0"/>
+          <element name="trDate"
+            type="dateTime" minOccurs="0"/>
+          <element name="trnData"
+            type="rdeDomain:transferDataType"
+            minOccurs="0"/>
+        </sequence>
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <complexType name="transferDataType">
+    <sequence>
+      <element name="trStatus"
+        type="eppcom:trStatusType"/>
+      <element name="reRr"
+        type="rde:rrType"/>
+      <element name="reDate"
+        type="dateTime"/>
+      <element name="acRr"
+        type="rde:rrType"/>
+      <element name="acDate"
+        type="dateTime"/>
+      <element name="exDate"
+        type="dateTime" minOccurs="0"/>
+    </sequence>
+  </complexType>
+
+  <!-- Delete Type -->
+  <complexType name="deleteType">
+    <complexContent>
+      <extension base="rde:deleteType">
+        <sequence>
+          <element name="name"
+            type="eppcom:labelType" minOccurs="0"
+            maxOccurs="unbounded"/>
+        </sequence>
+      </extension>
+    </complexContent>
+  </complexType>
+</schema>

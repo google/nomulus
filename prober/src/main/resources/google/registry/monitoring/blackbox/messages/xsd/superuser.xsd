@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<schema
+    xmlns="http://www.w3.org/2001/XMLSchema"
+    xmlns:superuser="urn:google:params:xml:ns:superuser-1.0"
+    targetNamespace="urn:google:params:xml:ns:superuser-1.0"
+    elementFormDefault="qualified">
+
+  <element name="domainTransferRequest"
+           type="superuser:domainTransferRequest" />
+
+  <complexType name="domainTransferRequest">
+    <all>
+      <element name="renewalPeriod" type="superuser:periodType" />
+      <element name="automaticTransferLength" type="nonNegativeInteger" />
+    </all>
+  </complexType>
+
+  <complexType name="periodType">
+    <simpleContent>
+      <extension base="superuser:pLimitType">
+        <attribute name="unit" type="superuser:pUnitType"
+            use="required"/>
+      </extension>
+    </simpleContent>
+  </complexType>
+
+  <simpleType name="pLimitType">
+    <restriction base="unsignedShort">
+      <minInclusive value="0"/>
+      <maxInclusive value="99"/>
+    </restriction>
+  </simpleType>
+
+  <simpleType name="pUnitType">
+    <restriction base="token">
+      <enumeration value="y"/>
+      <enumeration value="m"/>
+    </restriction>
+  </simpleType>
+
+  <element name="domainDelete" type="superuser:domainDeleteType" />
+
+  <complexType name="domainDeleteType">
+    <all>
+      <element name="redemptionGracePeriodDays" type="nonNegativeInteger" />
+      <element name="pendingDeleteDays" type="nonNegativeInteger" />
+    </all>
+  </complexType>
+
+</schema>

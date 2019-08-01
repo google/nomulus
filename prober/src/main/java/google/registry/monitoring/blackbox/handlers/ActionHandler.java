@@ -71,6 +71,11 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
   /**
    * Marks {@link ChannelPromise} as success
    */
+  public void resetFuture() {
+    finished = finished.channel().newPromise();
+  }
+
+  /** Marks {@link ChannelPromise} as success */
   @Override
   public void channelRead0(ChannelHandlerContext ctx, InboundMessageType inboundMessage)
       throws FailureException, UndeterminedStateException {

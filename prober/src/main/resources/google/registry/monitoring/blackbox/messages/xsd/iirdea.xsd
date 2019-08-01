@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="urn:ietf:params:xml:ns:iirdea-1.0"
+        xmlns:iirdea="urn:ietf:params:xml:ns:iirdea-1.0"
+        xmlns="http://www.w3.org/2001/XMLSchema"
+        elementFormDefault="qualified">
+
+  <annotation>
+    <documentation>
+      ICANN interfaces for registries and data escrow agents
+    </documentation>
+  </annotation>
+
+  <element name="response" type="iirdea:responseType"/>
+
+  <complexType name="responseType">
+    <sequence>
+      <element name="result" type="iirdea:resultType"/>
+    </sequence>
+  </complexType>
+
+  <complexType name="resultType">
+    <sequence>
+      <element name="msg" type="token"/>
+      <element name="description" type="string" minOccurs="0"/>
+    </sequence>
+    <attribute name="code" type="iirdea:codeType" use="required"/>
+  </complexType>
+
+  <simpleType name="codeType">
+    <restriction base="unsignedShort">
+      <minInclusive value="1000"/>
+      <maxInclusive value="9999"/>
+    </restriction>
+  </simpleType>
+</schema>

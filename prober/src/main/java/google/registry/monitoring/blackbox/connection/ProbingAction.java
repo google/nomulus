@@ -15,6 +15,7 @@
 package google.registry.monitoring.blackbox.connection;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.flogger.StackSize.SMALL;
 import static google.registry.monitoring.blackbox.connection.Protocol.PROTOCOL_KEY;
 
@@ -117,6 +118,17 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
    * instance
    */
   public abstract Channel channel();
+
+
+  /**
+   * The {@link Protocol} instance that specifies type of connection
+   */
+  public abstract Protocol protocol();
+
+  /**
+   * The hostname of the remote host we have a connection or will make a connection to
+   */
+  public abstract String host();
 
   /**
    * The {@link Protocol} instance that specifies type of connection
@@ -260,10 +272,6 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
     abstract Protocol protocol();
 
     abstract Channel channel();
-
-    abstract SocketAddress address();
-
-    abstract Optional<Bootstrap> bootstrap();
 
     abstract String host();
 

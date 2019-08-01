@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="urn:ietf:params:xml:ns:launch-1.0" xmlns:launch="urn:ietf:params:xml:ns:launch-1.0"
+  xmlns:eppcom="urn:ietf:params:xml:ns:eppcom-1.0" xmlns:mark="urn:ietf:params:xml:ns:mark-1.0"
+  xmlns:smd="urn:ietf:params:xml:ns:signedMark-1.0" xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <!-- Import common element types. -->
+  <import namespace="urn:ietf:params:xml:ns:eppcom-1.0" schemaLocation="eppcom.xsd" />
+
+  <import namespace="urn:ietf:params:xml:ns:mark-1.0" schemaLocation="mark.xsd" />
+
+  <import namespace="urn:ietf:params:xml:ns:signedMark-1.0" schemaLocation="smd.xsd" />
+
+  <annotation>
+    <documentation>
+      Extensible Provisioning Protocol v1.0
+      domain name extension
+      schema
+      for the launch phase processing.
+    </documentation>
+  </annotation>
+
+  <!-- Child elements found in EPP commands. -->
+  <element name="check" type="launch:checkType" />
+  <element name="info" type="launch:infoType" />
+  <element name="create" type="launch:createType" />
+  <element name="update" type="launch:idContainerType" />
+  <element name="delete" type="launch:idContainerType" />
+
+  <!-- Common container of id (identifier) element -->
+  <complexType name="idContainerType">
+    <sequence>
+      <element name="phase" type="launch:phaseType" />
+      <element name="applicationID" type="launch:applicationIDType" />
+    </sequence>
+  </complexType>
+
+  <!-- Definition for application identifier -->
+  <simpleType name="applicationIDType">
+    <restriction base="token" />
+  </simpleType>
+
+  <!-- Definition for launch phase. Name is an optional attribute used to extend
+    the phase type. For example, when using the phase type value of &qt;custom&gt;, the
+    name can be used to specify the custom phase. -->
+  <complexType name="phaseType">
+    <simpleContent>
+      <extension base="launch:phaseTypeValue">
+        <attribute name="name" type="token" />
+      </extension>
+    </simpleContent>
+  </complexType>
+
+  <!-- Enumeration of for launch phase values. -->
+  <simpleType name="phaseTypeValue">
+    <restriction base="token">
+      <enumeration value="sunrise" />
+      <enumeration value="landrush" />
+      <enumeration value="claims" />
+      <enumeration value="open" />
+      <enumeration value="custom" />
+    </restriction>
+  </simpleType>
+
+
+  <!-- Definition for the sunrise code -->
+  <simpleType name="codeValue">
+    <restriction base="token">
+      <minLength value="1" />
+    </restriction>
+  </simpleType>
+
+  <complexType name="codeType">
+    <simpleContent>
+      <extension base="launch:codeValue">
+        <attribute name="validatorID" type="launch:validatorIDType"
+          use="optional" />
+      </extension>
+    </simpleContent>
+  </complexType>
+
+  <!-- Definition for the notice identifier -->
+  <simpleType name="noticeIDValue">
+    <restriction base="token">
+      <minLength value="1" />
+    </restriction>
+  </simpleType>
+
+  <complexType name="noticeIDType">
+    <simpleContent>
+      <extension base="launch:noticeIDValue">
+        <attribute name="validatorID" type="launch:validatorIDType"
+          use="optional" />
+      </extension>
+    </simpleContent>
+  </complexType>
+
+  <!-- Definition for the validator identifier -->
+  <simpleType name="validatorIDType">
+    <restriction base="token">
+      <minLength value="1" />
+    </restriction>
+  </simpleType>
+
+  <!-- Possible status values for sunrise application -->
+  <simpleType name="statusValueType">
+    <restriction base="token">
+      <enumeration value="pendingValidation" />
+      <enumeration value="validated" />
+      <enumeration value="invalid" />
+      <enumeration value="pendingAllocation" />
+      <enumeration value="allocated" />
+      <enumeration value="rejected" />
+      <enumeration value="custom" />
+    </restriction>
+  </simpleType>
+
+  <!-- Status type definition -->
+  <complexType name="statusType">
+    <simpleContent>
+      <extension base="normalizedString">
+        <attribute name="s" type="launch:statusValueType" use="required" />
+        <attribute name="lang" type="language" default="en" />
+        <attribute name="name" type="token" />
+      </extension>
+    </simpleContent>
+  </complexType>
+
+  <!-- codeMark Type that contains an optional code with mark information. -->
+  <complexType name="codeMarkType">
+    <sequence>
+      <element name="code" type="launch:codeType" minOccurs="0" />
+      <element ref="mark:abstractMark" minOccurs="0" />
+    </sequence>
+  </complexType>
+
+  <!-- Child elements for the create command -->
+  <complexType name="createType">
+    <sequence>
+      <element name="phase" type="launch:phaseType" />
+      <choice minOccurs="0">
+        <element name="codeMark" type="launch:codeMarkType" maxOccurs="unbounded" />
+        <element ref="smd:abstractSignedMark" maxOccurs="unbounded" />
+        <element ref="smd:encodedSignedMark" maxOccurs="unbounded" />
+      </choice>
+      <element name="notice" minOccurs="0" type="launch:createNoticeType" />
+    </sequence>
+    <attribute name="type" type="launch:objectType" />
+  </complexType>
+
+  <!-- Type of launch object -->
+  <simpleType name="objectType">
+    <restriction base="token">
+      <enumeration value="application" />
+      <enumeration value="registration" />
+    </restriction>
+  </simpleType>
+
+
+  <!-- Child elements of the create notice element. -->
+  <complexType name="createNoticeType">
+    <sequence>
+      <element name="noticeID" type="launch:noticeIDType" />
+      <element name="notAfter" type="dateTime" />
+      <element name="acceptedDate" type="dateTime" />
+    </sequence>
+  </complexType>
+
+
+  <!-- Child elements of check (Claims Check Command). -->
+  <complexType name="checkType">
+    <sequence>
+      <element name="phase" type="launch:phaseType" />
+    </sequence>
+    <attribute name="type" type="launch:checkFormType" default="claims" />
+  </complexType>
+
+
+  <!-- Type of check form (claims check or availability check) -->
+  <simpleType name="checkFormType">
+    <restriction base="token">
+      <enumeration value="claims" />
+      <enumeration value="avail" />
+    </restriction>
+  </simpleType>
+
+
+  <!-- Child elements of info command. -->
+  <complexType name="infoType">
+    <sequence>
+      <element name="phase" type="launch:phaseType" />
+      <element name="applicationID" type="launch:applicationIDType"
+        minOccurs="0" />
+    </sequence>
+    <attribute name="includeMark" type="boolean" default="false" />
+  </complexType>
+
+  <!-- Child response elements. -->
+  <element name="chkData" type="launch:chkDataType" />
+  <element name="creData" type="launch:idContainerType" />
+  <element name="infData" type="launch:infDataType" />
+
+  <!-- <check> response elements. -->
+  <complexType name="chkDataType">
+    <sequence>
+      <element name="phase" type="launch:phaseType" />
+      <element name="cd" type="launch:cdType" maxOccurs="unbounded" />
+    </sequence>
+  </complexType>
+
+  <complexType name="cdType">
+    <sequence>
+      <element name="name" type="launch:cdNameType" />
+      <element name="claimKey" type="launch:claimKeyType" minOccurs="0" />
+    </sequence>
+  </complexType>
+
+  <complexType name="cdNameType">
+    <simpleContent>
+      <extension base="eppcom:labelType">
+        <attribute name="exists" type="boolean" use="required" />
+      </extension>
+    </simpleContent>
+  </complexType>
+
+  <complexType name="claimKeyType">
+    <simpleContent>
+      <extension base="token">
+        <attribute name="validatorID" type="launch:validatorIDType"
+          use="optional" />
+      </extension>
+    </simpleContent>
+  </complexType>
+
+  <!-- <info> response elements -->
+  <complexType name="infDataType">
+    <sequence>
+      <element name="phase" type="launch:phaseType" />
+      <element name="applicationID" type="launch:applicationIDType"
+        minOccurs="0" />
+      <element name="status" type="launch:statusType" minOccurs="0" />
+      <element ref="mark:abstractMark" minOccurs="0" maxOccurs="unbounded" />
+    </sequence>
+  </complexType>
+
+</schema>

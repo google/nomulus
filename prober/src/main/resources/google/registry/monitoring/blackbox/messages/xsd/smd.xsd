@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Schema extracted from http://tools.ietf.org/html/draft-lozano-tmch-smd -->
+<schema
+  targetNamespace="urn:ietf:params:xml:ns:signedMark-1.0"
+  xmlns:smd="urn:ietf:params:xml:ns:signedMark-1.0"
+  xmlns:mark="urn:ietf:params:xml:ns:mark-1.0"
+  xmlns:dsig="http://www.w3.org/2000/09/xmldsig#"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <annotation>
+    <documentation>
+      Schema for representing a Signed Trademark.
+    </documentation>
+  </annotation>
+
+  <import namespace="urn:ietf:params:xml:ns:mark-1.0"
+    schemaLocation="mark.xsd" />
+  <import namespace="http://www.w3.org/2000/09/xmldsig#"
+    schemaLocation="dsig.xsd"/>
+
+  <!--
+  Abstract signed mark for replacement via substitution.
+  -->
+  <element name="abstractSignedMark" type="smd:abstractSignedMarkType"
+    abstract="true"/>
+
+  <!--
+  Empty type for use in extending for a signed mark
+  -->
+  <complexType name="abstractSignedMarkType"/>
+
+  <element name="signedMark" type="smd:signedMarkType"
+    substitutionGroup="smd:abstractSignedMark"/>
+
+  <element name="encodedSignedMark" type="smd:encodedSignedMarkType"/>
+
+  <complexType name="signedMarkType">
+    <complexContent>
+      <extension base="smd:abstractSignedMarkType">
+        <sequence>
+          <element name="id" type="mark:idType"/>
+          <element name="issuerInfo" type="smd:issuerInfoType"/>
+          <element name="notBefore" type="dateTime"/>
+          <element name="notAfter" type="dateTime"/>
+          <element ref="mark:abstractMark"/>
+          <element ref="dsig:Signature"/>
+        </sequence>
+        <attribute name="id" type="ID" use="required"/>
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <complexType name="issuerInfoType">
+    <sequence>
+      <element name="org" type="token"/>
+      <element name="email" type="mark:minTokenType"/>
+      <element name="url" type="token" minOccurs="0"/>
+      <element name="voice" type="mark:e164Type" minOccurs="0"/>
+    </sequence>
+    <attribute name="issuerID" type="token" use="required"/>
+  </complexType>
+
+  <complexType name="encodedSignedMarkType">
+    <simpleContent>
+      <extension base="token">
+        <attribute name="encoding" default="base64"/>
+      </extension>
+    </simpleContent>
+  </complexType>
+</schema>

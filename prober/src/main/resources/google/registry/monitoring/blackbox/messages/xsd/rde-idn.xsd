@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="urn:ietf:params:xml:ns:rdeIDN-1.0"
+  xmlns:rdeIDN="urn:ietf:params:xml:ns:rdeIDN-1.0"
+  xmlns:rde="urn:ietf:params:xml:ns:rde-1.0"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <import namespace="urn:ietf:params:xml:ns:rde-1.0"
+    schemaLocation="rde.xsd"/>
+
+  <annotation>
+    <documentation>
+   Registry Data Escrow IDN provisioning schema
+    </documentation>
+  </annotation>
+
+  <element name="idnTableRef" type="rdeIDN:contentType"
+    substitutionGroup="rde:content"/>
+  <element name="delete" type="rdeIDN:deleteType"
+    substitutionGroup="rde:delete"/>
+
+  <!-- Content Types -->
+  <complexType name="contentType">
+    <complexContent>
+      <extension base="rde:contentType">
+        <sequence>
+          <element name="url" type="anyURI"/>
+          <element name="urlPolicy" type="anyURI"/>
+        </sequence>
+          <attribute name="id" type="rdeIDN:idType" use="required"/>
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <complexType name="deleteType">
+    <complexContent>
+      <extension base="rde:deleteType">
+        <sequence>
+          <element name="id" type="rdeIDN:idType"/>
+        </sequence>
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <!-- Simple Types -->
+  <simpleType name="idType">
+    <restriction base="token">
+    <minLength value="1"/>
+    <maxLength value="64"/>
+    </restriction>
+  </simpleType>
+
+</schema>

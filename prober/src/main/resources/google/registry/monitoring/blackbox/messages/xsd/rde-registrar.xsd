@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="urn:ietf:params:xml:ns:rdeRegistrar-1.0"
+  xmlns:rdeRegistrar="urn:ietf:params:xml:ns:rdeRegistrar-1.0"
+  xmlns:rde="urn:ietf:params:xml:ns:rde-1.0"
+  xmlns:contact="urn:ietf:params:xml:ns:contact-1.0"
+  xmlns:domain="urn:ietf:params:xml:ns:domain-1.0"
+  xmlns:eppcom="urn:ietf:params:xml:ns:eppcom-1.0"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified">
+
+  <!-- Import common element types. -->
+  <import namespace="urn:ietf:params:xml:ns:eppcom-1.0"
+    schemaLocation="eppcom.xsd"/>
+  <import namespace="urn:ietf:params:xml:ns:domain-1.0"
+    schemaLocation="domain.xsd"/>
+  <import namespace="urn:ietf:params:xml:ns:contact-1.0"
+    schemaLocation="contact.xsd"/>
+  <import namespace="urn:ietf:params:xml:ns:rde-1.0"
+    schemaLocation="rde.xsd"/>
+
+  <annotation>
+    <documentation>
+      Registry Data Escrow registrar provisioning schema
+    </documentation>
+  </annotation>
+
+  <element name="abstractRegistrar"
+    type="rdeRegistrar:abstractContentType"
+    substitutionGroup="rde:content" abstract="true"/>
+  <element name="registrar"
+    substitutionGroup="rdeRegistrar:abstractRegistrar"/>
+  <element name="delete" type="rdeRegistrar:deleteType"
+    substitutionGroup="rde:delete"/>
+
+  <!-- Content Type -->
+  <complexType name="abstractContentType">
+    <complexContent>
+      <extension base="rde:contentType">
+        <sequence>
+          <element name="id"
+            type="eppcom:clIDType"/>
+          <element name="name"
+            type="rdeRegistrar:nameType"/>
+          <element name="gurid"
+            type="positiveInteger" minOccurs="0"/>
+          <element name="status"
+            type="rdeRegistrar:statusType"/>
+          <element name="postalInfo"
+            type="rdeRegistrar:postalInfoType"
+            maxOccurs="2"/>
+          <element name="voice"
+            type="contact:e164Type" minOccurs="0"/>
+          <element name="fax"
+            type="contact:e164Type" minOccurs="0"/>
+          <element name="email"
+            type="eppcom:minTokenType"/>
+          <element name="url"
+            type="anyURI" minOccurs="0"/>
+          <element name="whoisInfo"
+            type="rdeRegistrar:whoisInfoType" minOccurs="0"/>
+          <element name="crDate"
+            type="dateTime"/>
+          <element name="upDate"
+            type="dateTime" minOccurs="0"/>
+        </sequence>
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <simpleType name="nameType">
+    <restriction base="normalizedString">
+      <minLength value="1" />
+      <maxLength value="255" />
+    </restriction>
+  </simpleType>
+
+  <simpleType name="statusType">
+    <restriction base="token">
+      <enumeration value="ok"/>
+      <enumeration value="readonly"/>
+      <enumeration value="terminated"/>
+    </restriction>
+  </simpleType>
+
+  <complexType name="postalInfoType">
+    <sequence>
+      <element name="addr"
+        type="rdeRegistrar:addrType" />
+    </sequence>
+    <attribute name="type"
+      type="rdeRegistrar:postalInfoEnumType"
+      use="required" />
+  </complexType>
+
+  <simpleType name="postalInfoEnumType">
+    <restriction base="token">
+      <enumeration value="loc" />
+      <enumeration value="int" />
+    </restriction>
+  </simpleType>
+
+  <complexType name="addrType">
+    <sequence>
+      <element name="street"
+        type="rdeRegistrar:optPostalLineType"
+        minOccurs="0" maxOccurs="3" />
+      <element name="city"
+        type="rdeRegistrar:postalLineType" />
+      <element name="sp"
+        type="rdeRegistrar:optPostalLineType"
+        minOccurs="0" />
+      <element name="pc"
+        type="rdeRegistrar:pcType" minOccurs="0" />
+      <element name="cc"
+        type="rdeRegistrar:ccType" />
+    </sequence>
+  </complexType>
+
+  <simpleType name="postalLineType">
+    <restriction base="normalizedString">
+      <minLength value="1" />
+      <maxLength value="255" />
+    </restriction>
+  </simpleType>
+
+  <simpleType name="optPostalLineType">
+    <restriction base="normalizedString">
+      <maxLength value="255" />
+    </restriction>
+  </simpleType>
+
+  <simpleType name="pcType">
+    <restriction base="token">
+      <maxLength value="16" />
+    </restriction>
+  </simpleType>
+
+  <simpleType name="ccType">
+    <restriction base="token">
+      <length value="2" />
+    </restriction>
+  </simpleType>
+
+  <complexType name="whoisInfoType">
+    <sequence>
+      <element name="name"
+        type="eppcom:labelType" minOccurs="0"/>
+      <element name="url"
+        type="anyURI" minOccurs="0"/>
+    </sequence>
+  </complexType>
+
+  <!-- Delete Type -->
+  <complexType name="deleteType">
+    <complexContent>
+      <extension base="rde:deleteType">
+        <sequence>
+          <element name="id"
+            type="eppcom:clIDType" minOccurs="0"
+            maxOccurs="unbounded"/>
+        </sequence>
+      </extension>
+    </complexContent>
+  </complexType>
+</schema>
