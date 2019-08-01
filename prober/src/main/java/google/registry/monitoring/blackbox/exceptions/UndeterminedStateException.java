@@ -16,15 +16,16 @@ package google.registry.monitoring.blackbox.exceptions;
 
 /**
  * Base exception class for all instances when the action performed fails
- * due to the fault of the Prober.
+ * before we can determine the state of the result, meaning the status
+ * is recorded as ERROR.
  */
-public class InternalException extends Exception {
+public class UndeterminedStateException extends Exception {
 
-  public InternalException(String msg) {
+  public UndeterminedStateException(String msg) {
     super(msg);
   }
 
-  public InternalException(Throwable e) {
+  public UndeterminedStateException(Throwable e) {
     super(e);
   }
 }

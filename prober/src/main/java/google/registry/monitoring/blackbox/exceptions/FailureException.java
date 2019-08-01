@@ -17,13 +17,13 @@ package google.registry.monitoring.blackbox.exceptions;
 /**
  * Base exception class for all instances when the status of the action performed is FAILURE.
  */
-public class ResponseException extends Exception {
+public class FailureException extends Exception {
 
-  public ResponseException(String msg) {
+  public FailureException(String msg) {
     super(msg);
   }
 
-  public ResponseException(Throwable e) {
+  public FailureException(Throwable e) {
     super(e);
   }
 }
