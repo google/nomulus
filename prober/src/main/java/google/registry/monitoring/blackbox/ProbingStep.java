@@ -16,8 +16,8 @@ package google.registry.monitoring.blackbox;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.flogger.FluentLogger;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.tokens.Token;
-import google.registry.monitoring.blackbox.exceptions.InternalException;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -37,16 +37,22 @@ import org.joda.time.Duration;
 @AutoValue
 public abstract class ProbingStep implements Consumer<Token> {
 
-
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /** Necessary boolean to inform when to obtain next {@link Token}*/
-  private boolean isLastStep = false;
+  protected boolean isLastStep = false;
   private ProbingStep nextStep;
 
+  /** Time delay duration between actions. */
   abstract Duration duration();
+
+  /** {@link Protocol} type for this step. */
   abstract Protocol protocol();
+
+  /** {@link OutboundMessageType} instance that serves as template to be modified by {@link Token}. */
   abstract OutboundMessageType messageTemplate();
+
+  /** {@link Bootstrap} instance provided by parent {@link ProbingSequence} that allows for creation of new channels. */
   abstract Bootstrap bootstrap();
 
 
@@ -80,17 +86,18 @@ public abstract class ProbingStep implements Consumer<Token> {
   }
 
   /** Generates a new {@link ProbingAction} from {@code token} modified {@link OutboundMessageType} */
-  private ProbingAction generateAction(Token token) throws InternalException {
+  private ProbingAction generateAction(Token token) throws UndeterminedStateException {
     OutboundMessageType message = token.modifyMessage(messageTemplate());
     ProbingAction.Builder probingActionBuilder = ProbingAction.builder()
         .setDelay(duration())
         .setProtocol(protocol())
         .setOutboundMessage(message)
-        .setHost(token.getHost())
-        .setBootstrap(bootstrap());
+        .setHost(token.host());
 
     if (token.channel() != null)
       probingActionBuilder.setChannel(token.channel());
+    else
+      probingActionBuilder.setBootstrap(bootstrap());
 
     return probingActionBuilder.build();
   }
@@ -101,44 +108,58 @@ public abstract class ProbingStep implements Consumer<Token> {
     return (isLastStep) ? token.next() : token;
   }
 
+  /**
+   * Generates new {@link ProbingAction}, calls the action, then retrieves the result of the action.
+   *
+   * @param token - used to generate the {@link ProbingAction} by calling {@code generateAction}.
+   *
+   * <p>If unable to generate the action, or the calling the action results in an immediate error,
+   * we note an error. Otherwise, if the future marked as finished when the action is
+   * completed is marked as a success, we note a success. Otherwise, if the cause of failure
+   * will either be a failure or error. </p>
+   */
   @Override
   public void accept(Token token) {
     ProbingAction currentAction;
     //attempt to generate new action. On error, move on to next step
     try {
       currentAction = generateAction(token);
-    } catch(InternalException e) {
+    } catch(UndeterminedStateException e) {
       logger.atWarning().withCause(e).log("Error in Action Generation");
       nextStep.accept(generateNextToken(token));
       return;
     }
 
 
-
-    //call the created action
     ChannelFuture future;
-
     try {
+      //call the generated action
       future = currentAction.call();
-
-    } catch(InternalException e) {
+    } catch(UndeterminedStateException e) {
+      //On error in calling action, log error and note an error
       logger.atWarning().withCause(e).log("Error in Action Performed");
+
+      //Move on to next step in ProbingSequence
       nextStep.accept(generateNextToken(token));
       return;
     }
 
 
-    //On result, either log success and move on, or
     future.addListener(f -> {
       if (f.isSuccess()) {
+        //On a successful result, we log as a successful step, and not a success
         logger.atInfo().log(String.format("Successfully completed Probing Step: %s", this));
-        //If the next step maintains the connection, pass on the channel from this
+
       } else {
+        //On a failed result, we log the failure and note either a failure or error
         logger.atSevere().withCause(f.cause()).log("Did not result in future success");
       }
+
       if (protocol().persistentConnection())
+        //If the connection is persistent, we store the channel in the token
         token.setChannel(currentAction.channel());
 
+      //Move on the the next step in the ProbingSequence
       nextStep.accept(generateNextToken(token));
 
 
