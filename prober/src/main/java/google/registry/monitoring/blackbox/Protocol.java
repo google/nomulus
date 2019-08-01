@@ -29,7 +29,7 @@ public abstract class Protocol {
   /** {@link AttributeKey} that lets channel reference {@link Protocol} that created it. */
   public static final AttributeKey<Protocol> PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL_KEY");
 
-  abstract String name();
+  public abstract String name();
 
   public abstract int port();
 

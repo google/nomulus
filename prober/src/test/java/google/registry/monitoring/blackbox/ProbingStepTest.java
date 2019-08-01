@@ -14,6 +14,7 @@
 package google.registry.monitoring.blackbox;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.monitoring.blackbox.ProbingAction.CONNECTION_FUTURE_KEY;
 import static google.registry.monitoring.blackbox.TestUtils.dummyStep;
 import static google.registry.monitoring.blackbox.TestUtils.testStep;
 import static google.registry.testing.JUnitBackports.assertThrows;
@@ -90,7 +91,7 @@ public class ProbingStepTest {
 
   /** Sets up testToken to return arbitrary values, and no channel. Used when we create a new channel */
   private void setupNewChannelToken() {
-    testToken = new NewChannelToken("");
+    testToken = new NewChannelToken(ADDRESS_NAME);
   }
 
   /** Sets up testToken to return arbitrary value, and the embedded channel. Used for when the ProbingStep generates an ExistingChannelAction */
@@ -101,6 +102,7 @@ public class ProbingStepTest {
   /** Sets up an embedded channel to contain the two handlers we created already */
   private void setupChannel() {
     channel = new EmbeddedChannel(conversionHandler, testHandler);
+    channel.attr(CONNECTION_FUTURE_KEY).set(channel.newSucceededFuture());
   }
 
   /** Sets up our main step (firstStep) and throwaway step (dummyStep) */
