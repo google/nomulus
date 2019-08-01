@@ -17,12 +17,10 @@ package google.registry.monitoring.blackbox;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.exceptions.InternalException;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.tokens.Token;
 import google.registry.monitoring.blackbox.tokens.WebWhoisToken;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpVersion;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -37,7 +35,7 @@ public class TokenTest {
   private static String TEST_STARTER = "starter";
   private static ImmutableList<String> TEST_DOMAINS = ImmutableList.of("test");
 
-  public Token webToken = new WebWhoisToken(PREFIX, TEST_DOMAINS);
+  public Token webToken = new WebWhoisToken(TEST_DOMAINS);
 
   @Test
   public void testWebToken_MessageModificationSuccess() {
@@ -49,7 +47,7 @@ public class TokenTest {
     try {
       HttpRequestMessage secondMessage = (HttpRequestMessage) webToken.modifyMessage(message);
       assertThat(secondMessage.headers().get("host")).isEqualTo(PREFIX+TEST_DOMAINS.get(0));
-    } catch(InternalException e) {
+    } catch(UndeterminedStateException e) {
       throw new RuntimeException(e);
     }
 
