@@ -14,8 +14,8 @@
 
 package google.registry.monitoring.blackbox.handlers;
 
-import google.registry.monitoring.blackbox.exceptions.InternalException;
-import google.registry.monitoring.blackbox.exceptions.ResponseException;
+import google.registry.monitoring.blackbox.exceptions.FailureException;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.InboundMessageType;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -29,7 +29,7 @@ public class TestActionHandler extends ActionHandler {
 
   @Override
   public void channelRead0(ChannelHandlerContext ctx, InboundMessageType inboundMessage)
-      throws ResponseException, InternalException {
+      throws FailureException, UndeterminedStateException {
     receivedMessage = inboundMessage.toString();
     super.channelRead0(ctx, inboundMessage);
   }

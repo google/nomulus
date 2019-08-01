@@ -17,7 +17,7 @@ package google.registry.monitoring.blackbox.exceptions;
 /**
  * Base exception class for all instances when the Status of the task performed is ERROR
  */
-public class EppClientException extends InternalException {
+public class EppClientException extends UndeterminedStateException {
 
   public EppClientException(String msg) {
     super(msg);
