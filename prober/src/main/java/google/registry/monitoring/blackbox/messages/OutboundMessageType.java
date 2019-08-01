@@ -14,7 +14,7 @@
 
 package google.registry.monitoring.blackbox.messages;
 
-import google.registry.monitoring.blackbox.exceptions.InternalException;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 
 /**
  * Marker Interface that is implemented by all classes that serve as {@code outboundMessages} in channel pipeline
@@ -22,8 +22,9 @@ import google.registry.monitoring.blackbox.exceptions.InternalException;
 public interface OutboundMessageType {
 
   /** All {@link OutboundMessageType} implementing classes should be able to be modified by token with String arguments */
-  public OutboundMessageType modifyMessage(String... args) throws InternalException;
+  OutboundMessageType modifyMessage(String... args) throws UndeterminedStateException;
 
   /** Necessary to inform metrics collector what kind of message is sent down {@link io.netty.channel.ChannelPipeline} */
-  public String name();
+  @Override
+  String toString();
 }
