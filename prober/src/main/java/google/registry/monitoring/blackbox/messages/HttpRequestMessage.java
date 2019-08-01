@@ -66,12 +66,12 @@ public class HttpRequestMessage extends DefaultFullHttpRequest implements Outbou
       return this;
 
     } else {
-      throw new IllegalArgumentException();
+      throw new IllegalArgumentException("Wrong number of arguments present for modifying HttpRequestMessage.");
     }
   }
 
   @Override
-  public String name() {
+  public String toString() {
     return String.format("Http(s) Request on: %s", headers().get("host"));
   }
 

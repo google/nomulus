@@ -22,13 +22,12 @@ import google.registry.monitoring.blackbox.Protocol;
 import google.registry.monitoring.blackbox.WebWhoisModule.HttpWhoisProtocol;
 import google.registry.monitoring.blackbox.WebWhoisModule.HttpsWhoisProtocol;
 import google.registry.monitoring.blackbox.WebWhoisModule.WebWhoisProtocol;
-import google.registry.monitoring.blackbox.exceptions.InternalException;
-import google.registry.monitoring.blackbox.exceptions.ResponseException;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
+import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.exceptions.ConnectionException;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.messages.HttpResponseMessage;
 import google.registry.monitoring.blackbox.messages.InboundMessageType;
-import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -62,27 +61,17 @@ public class WebWhoisActionHandler extends ActionHandler {
   /** {@link HttpRequestMessage} that represents default GET message to be sent on redirect. */
   private final HttpRequestMessage requestMessage;
 
-  /** Default port for http. */
-  private int httpPort;
-
-  /** default port for https. */
-  private int httpsPort;
-
   @Inject
   public WebWhoisActionHandler(
       @WebWhoisProtocol Bootstrap bootstrap,
       @HttpWhoisProtocol Protocol httpWhoisProtocol,
       @HttpsWhoisProtocol Protocol httpsWhoisProtocol,
-      HttpRequestMessage requestMessage,
-      @HttpWhoisProtocol int httpPort,
-      @HttpsWhoisProtocol int httpsPort) {
+      HttpRequestMessage requestMessage) {
 
     this.bootstrap = bootstrap;
     this.httpWhoisProtocol = httpWhoisProtocol;
     this.httpsWhoisProtocol = httpsWhoisProtocol;
     this.requestMessage = requestMessage;
-    this.httpPort = httpPort;
-    this.httpsPort = httpsPort;
   }
 
 
@@ -93,7 +82,7 @@ public class WebWhoisActionHandler extends ActionHandler {
    */
   @Override
   public void channelRead0(ChannelHandlerContext ctx, InboundMessageType msg)
-      throws ResponseException, InternalException {
+      throws FailureException, UndeterminedStateException {
 
     HttpResponseMessage response = (HttpResponseMessage) msg;
 
@@ -112,7 +101,7 @@ public class WebWhoisActionHandler extends ActionHandler {
         url = new URL(response.headers().get("Location"));
       } catch (MalformedURLException e) {
         //in case of error, log it, and let ActionHandler's exceptionThrown method deal with it
-        throw new ResponseException("Redirected Location was invalid. Given Location was: " + response.headers().get("Location"));
+        throw new FailureException("Redirected Location was invalid. Given Location was: " + response.headers().get("Location"));
       }
       //From url, extract new host, port, and path
       String newHost = url.getHost();
@@ -123,12 +112,12 @@ public class WebWhoisActionHandler extends ActionHandler {
 
       //Construct new Protocol to reflect redirected host, path, and port
       Protocol newProtocol;
-      if (newPort == httpPort) {
+      if (url.getProtocol().equals(httpWhoisProtocol.name())) {
         newProtocol = httpWhoisProtocol;
-      } else if (newPort == httpsPort) {
+      } else if (url.getProtocol().equals(httpsWhoisProtocol.name())) {
         newProtocol = httpsWhoisProtocol;
       } else {
-        throw new ResponseException("Redirection Location port was invalid. Given port was: " + newPort);
+        throw new FailureException("Redirection Location port was invalid. Given port was: " + newPort);
       }
 
       //Obtain HttpRequestMessage with modified headers to reflect new host and path.
@@ -143,34 +132,38 @@ public class WebWhoisActionHandler extends ActionHandler {
           .setHost(newHost)
           .build();
 
-      //Mainly for testing, to check the probing action was created appropriately
-      ctx.channel().attr(PROTOCOL_KEY).set(newProtocol);
-
       //close this channel as we no longer need it
       ChannelFuture future = ctx.close();
       future.addListener(
           f -> {
-            if (f.isSuccess())
+            if (f.isSuccess()) {
               logger.atInfo().log("Successfully Closed Connection.");
-            else
+            } else {
               logger.atWarning().log("Channel was unsuccessfully closed.");
+            }
 
             //Once channel is closed, establish new connection to redirected host, and repeat same actions
             ChannelFuture secondFuture = redirectedAction.call();
 
             //Once we have a successful call, set original ChannelPromise as success to tell ProbingStep we can move on
             secondFuture.addListener(f2 -> {
-              if (f2.isSuccess())
-                finished.setSuccess();
-              else
-                finished.setFailure(f2.cause());
+              if (f2.isSuccess()) {
+                super.channelRead0(ctx, msg);
+              } else {
+                if (f2 instanceof FailureException) {
+                  throw new FailureException(f2.cause());
+                } else {
+                  throw new UndeterminedStateException(f2.cause());
+                }
+              }
+
             });
           }
       );
     } else {
       //Add in metrics Handling that informs MetricsCollector the response was a FAILURE
       logger.atWarning().log(String.format("Received unexpected response: %s", response.status()));
-      throw new ResponseException("Response received from remote site was: " + response.status());
+      throw new FailureException("Response received from remote site was: " + response.status());
 
     }
   }
