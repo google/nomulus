@@ -16,66 +16,89 @@ package google.registry.monitoring.blackbox;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.JUnitBackports.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 
-import google.registry.monitoring.blackbox.exceptions.FailureException;
-import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
+import google.registry.monitoring.blackbox.TestUtils.DuplexMessageTest;
+import google.registry.monitoring.blackbox.TestUtils.ProbingSequenceTestToken;
+import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import google.registry.monitoring.blackbox.tokens.Token;
-import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
+import io.netty.bootstrap.Bootstrap;
+import java.net.SocketAddress;
+import org.joda.time.Duration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.mockito.Mockito;
 
-/**
- * Unit Tests on {@link ProbingSequence}
- *
- * <p>First tests the construction of sequences and ensures the ordering is exactly how
- * we expect it to be.</p>
- *
- * <p>Then tests the execution of each step, by ensuring the methods treatment of any kind
- * of response from the {@link ProbingStep}s or {@link ProbingAction}s is what is expected.</p>
- */
 @RunWith(JUnit4.class)
 public class ProbingSequenceTest {
+  private final static String TEST_HOST = "TEST_HOST";
 
-  /** Default mock {@link ProbingAction} returned when generating an action with a mockStep. */
-  private ProbingAction mockAction;
+
+  private Token testToken = new ProbingSequenceTestToken();
 
   /**
-   * Default mock {@link ProbingStep} that will usually return a {@code mockAction} on call to
-   * generate action.
+   * Custom {@link ProbingStep} subclass that acts as a mock
+   * step, so we can test how well {@link ProbingSequence} builds
+   * a linked list of {@link ProbingStep}s from their {@link Builder}s.
    */
-  private ProbingStep mockStep;
+  private static class TestStep extends ProbingStep {
+    private String marker;
+    private DuplexMessageTest message;
 
-  /** Default mock {@link Token} that is passed into each {@link ProbingSequence} tested. */
-  private Token testToken;
+    /** We implement all abstract methods to simply return null, as we have no use for them here. */
+    @Override
+    Duration duration() {
+      return null;
+    }
 
-  @Before
-  public void setup() {
-    // To avoid a NullPointerException, we must have a protocol return persistent connection as
-    // false.
-    Protocol mockProtocol = Mockito.mock(Protocol.class);
-    doReturn(false).when(mockProtocol).persistentConnection();
+    @Override
+    Protocol protocol() {
+      return null;
+    }
 
-    mockAction = Mockito.mock(ProbingAction.class);
+    @Override
+    OutboundMessageType messageTemplate() {
+      return message;
+    }
 
-    //In order to avoid a NullPointerException, we must have the protocol returned that stores
-    // persistent connection as false.
-    mockStep = Mockito.mock(ProbingStep.class);
-    doReturn(mockProtocol).when(mockStep).protocol();
+    /** We want to be able to set and retrieve the bootstrap, as {@link ProbingSequence} does this. */
+    @Override
+    Bootstrap bootstrap() {
+      return null;
+    }
 
-    testToken = Mockito.mock(Token.class);
+    public TestStep(String marker) {
+      this.marker = marker;
+      message = new DuplexMessageTest(marker);
+    }
+
+    /**
+     * On a call to accept, we modify the token to reflect what the current step is, so we can get
+     * from the token a string which represents each {@link ProbingStep} {@code marker} concatenated
+     * in order.
+
+    @Override
+    public void accept(Token token) {
+      ((ProbingSequenceTestToken) token).addToHost(marker);
+      if (!isLastStep) {
+        nextStep().accept(token);
+      } else {
+        ((TestStep)nextStep()).specialAccept(token);
+      }
+    }
+    */
+
+    /** We only invoke this on what we expect to be the firstRepeatedStep marked by the sequence. */
+    public void specialAccept(Token token) {
+      ((ProbingSequenceTestToken) token).addToHost(marker);
+      return;
+    }
   }
 
   @Test
   public void testSequenceBasicConstruction_Success() {
-    ProbingStep firstStep = Mockito.mock(ProbingStep.class);
-    ProbingStep secondStep = Mockito.mock(ProbingStep.class);
-    ProbingStep thirdStep = Mockito.mock(ProbingStep.class);
+    ProbingStep firstStep = new TestStep("first");
+    ProbingStep secondStep = new TestStep("second");
+    ProbingStep thirdStep = new TestStep("third");
 
     ProbingSequence sequence = new ProbingSequence.Builder(testToken)
         .addElement(firstStep)
@@ -83,17 +106,16 @@ public class ProbingSequenceTest {
         .addElement(thirdStep)
         .build();
 
-    assertThat(sequence.next()).isEqualTo(firstStep);
-    assertThat(sequence.next()).isEqualTo(secondStep);
-    assertThat(sequence.next()).isEqualTo(thirdStep);
-    assertThat(sequence.next()).isEqualTo(firstStep);
+    sequence.start();
+
+    assertThat(testToken.host()).isEqualTo("firstsecondthirdfirst");
   }
 
   @Test
   public void testSequenceAdvancedConstruction_Success() {
-    ProbingStep firstStep = Mockito.mock(ProbingStep.class);
-    ProbingStep secondStep = Mockito.mock(ProbingStep.class);
-    ProbingStep thirdStep = Mockito.mock(ProbingStep.class);
+    ProbingStep firstStep = new TestStep("first");
+    ProbingStep secondStep = new TestStep("second");
+    ProbingStep thirdStep = new TestStep("third");
 
     ProbingSequence sequence = new ProbingSequence.Builder(testToken)
         .addElement(thirdStep)
@@ -103,83 +125,9 @@ public class ProbingSequenceTest {
         .addElement(firstStep)
         .build();
 
-    assertThat(sequence.next()).isEqualTo(thirdStep);
-    assertThat(sequence.next()).isEqualTo(secondStep);
-    assertThat(sequence.next()).isEqualTo(firstStep);
-    assertThat(sequence.next()).isEqualTo(secondStep);
-
-  }
-
-  @Test
-  public void testRunStep_Success() throws UndeterminedStateException {
-    // Create channel for the purpose of generating channel futures.
-    EmbeddedChannel channel = new EmbeddedChannel();
-
-    //Always returns a succeeded future on call to mockAction.
-    doReturn(channel.newSucceededFuture()).when(mockAction).call();
-
-    // Has mockStep always return mockAction on call to generateAction
-    doReturn(mockAction).when(mockStep).generateAction(any(Token.class));
-
-    //Dummy step that server purpose of placeholder to test ability of ProbingSequence to move on.
-    ProbingStep secondStep = Mockito.mock(ProbingStep.class);
-
-    //Build testable sequence from mocked components.
-    ProbingSequence sequence = new ProbingSequence.Builder(testToken)
-        .addElement(mockStep)
-        .addElement(secondStep)
-        .build();
-
     sequence.start();
 
-    assertThat(sequence.get()).isEqualTo(secondStep);
-  }
-
-  @Test
-  public void testRunStep_FailureRunning() throws UndeterminedStateException {
-    // Create channel for the purpose of generating channel futures.
-    EmbeddedChannel channel = new EmbeddedChannel();
-
-    // Returns a failed future when calling the generated mock action.
-    doReturn(channel.newFailedFuture(new FailureException(""))).when(mockAction).call();
-
-    // Returns mock action on call to generate action for ProbingStep.
-    doReturn(mockAction).when(mockStep).generateAction(any(Token.class));
-
-    //Dummy step that server purpose of placeholder to test ability of ProbingSequence to move on.
-    ProbingStep secondStep = Mockito.mock(ProbingStep.class);
-
-    //Build testable sequence from mocked components.
-    ProbingSequence sequence = new ProbingSequence.Builder(testToken)
-        .addElement(mockStep)
-        .addElement(secondStep)
-        .build();
-
-    sequence.start();
-
-    assertThat(sequence.get()).isEqualTo(secondStep);
-  }
-
-
-  @Test
-  public void testRunStep_FailureGenerating() throws UndeterminedStateException {
-    // Create a mock first step that returns the dummy action when called to generate an action.
-    doThrow(UndeterminedStateException.class).when(mockStep).generateAction(any(Token.class));
-
-    //Dummy step that server purpose of placeholder to test ability of ProbingSequence to move on.
-    ProbingStep secondStep = Mockito.mock(ProbingStep.class);
-
-    //Build testable sequence from mocked components.
-    ProbingSequence sequence = new ProbingSequence.Builder(testToken)
-        .addElement(mockStep)
-        .addElement(secondStep)
-        .build();
-
-    // When there is an error in action, generating, the next step is immediately called in the same
-    // thread, so we expect a NullPointerException to be thrown in this thread.
-    assertThrows(NullPointerException.class, sequence::start);
-
-    assertThat(sequence.get()).isEqualTo(secondStep);
+    assertThat(testToken.host()).isEqualTo("thirdsecondfirstsecond");
   }
 
 }
