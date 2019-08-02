@@ -15,13 +15,10 @@
 package google.registry.monitoring.blackbox;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.flogger.FluentLogger;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.tokens.Token;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelFuture;
-import java.util.function.Consumer;
 import org.joda.time.Duration;
 
 /**
@@ -35,13 +32,7 @@ import org.joda.time.Duration;
  *
  */
 @AutoValue
-public abstract class ProbingStep implements Consumer<Token> {
-
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
-  /** Necessary boolean to inform when to obtain next {@link Token}*/
-  protected boolean isLastStep = false;
-  private ProbingStep nextStep;
+public abstract class ProbingStep {
 
   /** Time delay duration between actions. */
   abstract Duration duration();
@@ -73,20 +64,8 @@ public abstract class ProbingStep implements Consumer<Token> {
     return new AutoValue_ProbingStep.Builder();
   }
 
-  void lastStep() {
-    isLastStep = true;
-  }
-
-  void nextStep(ProbingStep step) {
-    this.nextStep = step;
-  }
-
-  ProbingStep nextStep() {
-    return this.nextStep;
-  }
-
   /** Generates a new {@link ProbingAction} from {@code token} modified {@link OutboundMessageType} */
-  private ProbingAction generateAction(Token token) throws UndeterminedStateException {
+  public ProbingAction generateAction(Token token) throws UndeterminedStateException {
     OutboundMessageType message = token.modifyMessage(messageTemplate());
     ProbingAction.Builder probingActionBuilder = ProbingAction.builder()
         .setDelay(duration())
@@ -102,70 +81,6 @@ public abstract class ProbingStep implements Consumer<Token> {
     return probingActionBuilder.build();
   }
 
-
-  /** On the last step, gets the next {@link Token}. Otherwise, uses the same one. */
-  private Token generateNextToken(Token token) {
-    return (isLastStep) ? token.next() : token;
-  }
-
-  /**
-   * Generates new {@link ProbingAction}, calls the action, then retrieves the result of the action.
-   *
-   * @param token - used to generate the {@link ProbingAction} by calling {@code generateAction}.
-   *
-   * <p>If unable to generate the action, or the calling the action results in an immediate error,
-   * we note an error. Otherwise, if the future marked as finished when the action is
-   * completed is marked as a success, we note a success. Otherwise, if the cause of failure
-   * will either be a failure or error. </p>
-   */
-  @Override
-  public void accept(Token token) {
-    ProbingAction currentAction;
-    //attempt to generate new action. On error, move on to next step
-    try {
-      currentAction = generateAction(token);
-    } catch(UndeterminedStateException e) {
-      logger.atWarning().withCause(e).log("Error in Action Generation");
-      nextStep.accept(generateNextToken(token));
-      return;
-    }
-
-
-    ChannelFuture future;
-    try {
-      //call the generated action
-      future = currentAction.call();
-    } catch(Exception e) {
-      //On error in calling action, log error and note an error
-      logger.atWarning().withCause(e).log("Error in Action Performed");
-
-      //Move on to next step in ProbingSequence
-      nextStep.accept(generateNextToken(token));
-      return;
-    }
-
-
-    future.addListener(f -> {
-      if (f.isSuccess()) {
-        //On a successful result, we log as a successful step, and not a success
-        logger.atInfo().log(String.format("Successfully completed Probing Step: %s", this));
-
-      } else {
-        //On a failed result, we log the failure and note either a failure or error
-        logger.atSevere().withCause(f.cause()).log("Did not result in future success");
-      }
-
-      if (protocol().persistentConnection())
-        //If the connection is persistent, we store the channel in the token
-        token.setChannel(currentAction.channel());
-
-      //Move on the the next step in the ProbingSequence
-      nextStep.accept(generateNextToken(token));
-
-
-    });
-  }
-
   @Override
   public String toString() {
     return String.format("ProbingStep with Protocol: %s\n" +
@@ -175,5 +90,4 @@ public abstract class ProbingStep implements Consumer<Token> {
   }
 
 }
-
 

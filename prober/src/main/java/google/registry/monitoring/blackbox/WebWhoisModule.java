@@ -18,12 +18,12 @@ import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoSet;
+import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
+import google.registry.monitoring.blackbox.handlers.WebWhoisMessageHandler;
 import google.registry.monitoring.blackbox.handlers.SslClientInitializer;
 import google.registry.monitoring.blackbox.handlers.WebWhoisActionHandler;
-import google.registry.monitoring.blackbox.handlers.WebWhoisMessageHandler;
-import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.tokens.WebWhoisToken;
-import google.registry.util.CircularLinkedListIterator;
+import google.registry.util.DefaultCircularLinkedListIterator;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -72,7 +72,7 @@ public class WebWhoisModule {
       WebWhoisToken webWhoisToken) {
 
     return new ProbingSequence.Builder(webWhoisToken)
-        .addStep(probingStep)
+        .addElement(probingStep)
         .build();
   }
 
@@ -197,7 +197,7 @@ public class WebWhoisModule {
   @Provides
   @WebWhoisProtocol
   Iterator<String> provideTopLevelDomains() {
-    return new CircularLinkedListIterator.Builder<String>()
+    return new DefaultCircularLinkedListIterator.Builder<String>()
         .addElements("how", "soy" , "xn--q9jyb4c")
         .build();
   }

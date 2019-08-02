@@ -14,13 +14,21 @@
 
 package google.registry.monitoring.blackbox;
 
+import com.google.common.flogger.FluentLogger;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.tokens.Token;
+import google.registry.util.AbstractCircularLinkedListIterator;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.AbstractChannel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 
 /**
  * Represents Sequence of {@link ProbingStep}s that the Prober performs in order.
+ *
+ * <p>Inherits from {@link AbstractCircularLinkedListIterator}</p>, with element type of
+ * {@link ProbingStep} as the manner in which the sequence is carried out is analogous to
+ * the {@link AbstractCircularLinkedListIterator}
  *
  *
  * <p>Created with {@link Builder} where we specify {@link EventLoopGroup}, {@link AbstractChannel} class type,
@@ -29,65 +37,112 @@ import io.netty.channel.EventLoopGroup;
  * <p>{@link ProbingSequence} implicitly points each {@link ProbingStep} to the next one, so once the first one
  * is activated with the requisite {@link Token}, the {@link ProbingStep}s do the rest of the work.</p>
  */
-public class ProbingSequence {
-  private ProbingStep firstStep;
+public class ProbingSequence extends AbstractCircularLinkedListIterator<ProbingStep> {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /**Each {@link ProbingSequence} requires a start token to begin running. */
   private Token startToken;
 
+  /** Starts ProbingSequence by calling first {@code runStep} with {@code startToken}. */
   public void start() {
-    // calls the first step with startToken;
-    firstStep.accept(startToken);
+    runStep(startToken);
+  }
+
+  /**
+   * Generates new {@link ProbingAction} from {@link ProbingStep}, calls the action,
+   * then retrieves the result of the action.
+   *
+   * @param token - used to generate the {@link ProbingAction} by calling {@code get().generateAction}.
+   *
+   * <p>Moves on to next {@link ProbingStep} in the iterator and changes the {@link Token}
+   * to the next one if the previous step was the last one in the loop.</p>
+   *
+   * <p>If unable to generate the action, or the calling the action results in an immediate error,
+   * we note an error. Otherwise, if the future marked as finished when the action is
+   * completed is marked as a success, we note a success. Otherwise, if the cause of failure
+   * will either be a failure or error. </p>
+   */
+  private void runStep(Token token) {
+    Token finalToken;
+    if (get() == getLast())
+      finalToken = token.next();
+    else
+      finalToken = token;
+
+    //Calls next runStep
+    next();
+
+
+    ProbingAction currentAction;
+    //attempt to generate new action. On error, move on to next step
+    try {
+      currentAction = get().generateAction(finalToken);
+    } catch(UndeterminedStateException e) {
+      logger.atWarning().withCause(e).log("Error in Action Generation");
+      runStep(finalToken);
+      return;
+    }
+
+
+    ChannelFuture future;
+    try {
+      //call the generated action
+      future = currentAction.call();
+    } catch(UndeterminedStateException e) {
+      //On error in calling action, log error and note an error
+      logger.atWarning().withCause(e).log("Error in Action Performed");
+
+      //Calls next runStep
+      runStep(finalToken);
+      return;
+    }
+
+
+    future.addListener(f -> {
+      if (f.isSuccess()) {
+        //On a successful result, we log as a successful step, and not a success
+        logger.atInfo().log(String.format("Successfully completed Probing Step: %s", this));
+
+      } else {
+        //On a failed result, we log the failure and note either a failure or error
+        logger.atSevere().withCause(f.cause()).log("Did not result in future success");
+      }
+
+      if (get().protocol().persistentConnection())
+        //If the connection is persistent, we store the channel in the token
+        finalToken.setChannel(currentAction.channel());
+
+      //Calls next runStep
+      runStep(finalToken);
+
+
+    });
   }
 
   /**
    * Turns {@link ProbingStep.Builder}s into fully self-dependent sequence with
    * supplied {@link Bootstrap}.
    */
-  public static class Builder {
+  public static class Builder extends AbstractCircularLinkedListIterator.Builder<ProbingStep, Builder, ProbingSequence> {
+    private Entry<ProbingStep> firstRepeatedStepEntry;
 
-    private ProbingStep currentStep;
-    private ProbingStep firstStep;
-    private ProbingStep firstRepeatedStep;
-    private Bootstrap bootstrap;
     private Token startToken;
 
-    /**
-     * Adds {@link Bootstrap} that is supplied to each {@link ProbingStep}.
-     *
-     * <p>Must be called before adding {@link ProbingStep.Builder}s.</p>
-     */
-    public Builder setBootstrap(Bootstrap bootstrap) {
-      this.bootstrap = bootstrap;
-      return this;
-    }
-
-    /** Adds start token that activate {@link ProbingSequence}. */
-    public Builder addToken(Token token) {
-      startToken = token;
-      return this;
-    }
-
-    /**
-     * Adds {@link ProbingStep.Builder}, which is supplied with {@link Bootstrap},
-     * built, and pointed to by the previous {@link ProbingStep} added.
-     */
-    public Builder addStep(ProbingStep.Builder stepBuilder) {
-      assert (bootstrap != null);
-      ProbingStep step = stepBuilder.setBootstrap(bootstrap).build();
-
-      if (currentStep == null)
-        firstStep = step;
-      else
-        currentStep.nextStep(step);
-
-      currentStep = step;
-      return this;
+    /** This Builder must also be supplied with a {@link Token} to construct a {@link ProbingSequence}. */
+    public Builder(Token startToken) {
+      this.startToken = startToken;
     }
 
     /** We take special note of the first repeated step. */
     public Builder markFirstRepeated() {
-      firstRepeatedStep = currentStep;
+      firstRepeatedStepEntry = current;
+      return this;
+    }
+
+    /** Returns this builder as childBuilder. */
+    @Override
+    public Builder childBuilder() {
       return this;
     }
 
@@ -95,18 +150,18 @@ public class ProbingSequence {
      * Points last {@link ProbingStep} to the {@code firstRepeatedStep} and
      * calls private constructor to create {@link ProbingSequence}.
      */
+    @Override
     public ProbingSequence build() {
-      if (firstRepeatedStep == null)
-        firstRepeatedStep = firstStep;
+      if (firstRepeatedStepEntry == null)
+        firstRepeatedStepEntry = first;
 
-      currentStep.nextStep(firstRepeatedStep);
-      currentStep.lastStep();
-      return new ProbingSequence(this.firstStep, this.startToken);
+      current.setNext(firstRepeatedStepEntry);
+      return new ProbingSequence(first, current, startToken);
     }
   }
 
-  private ProbingSequence(ProbingStep firstStep, Token startToken) {
-    this.firstStep = firstStep;
+  private ProbingSequence(Entry<ProbingStep> first, Entry<ProbingStep> last, Token startToken) {
+    super(first, last);
     this.startToken = startToken;
   }
 }
