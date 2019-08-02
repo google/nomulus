@@ -16,8 +16,8 @@ package google.registry.monitoring.blackbox.handlers;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.truth.Truth.assertThat;
-
-import static google.registry.monitoring.blackbox.ProbingAction.PROBING_ACTION_KEY;
+import static google.registry.monitoring.blackbox.ProbingAction.REMOTE_ADDRESS_KEY;
+import static google.registry.monitoring.blackbox.Protocol.PROTOCOL_KEY;
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -26,6 +26,9 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.truth.ThrowableSubject;
 import google.registry.monitoring.blackbox.ProbingAction;
+import google.registry.monitoring.blackbox.ProbingActionTest;
+import google.registry.monitoring.blackbox.ProbingStepTest;
+import google.registry.monitoring.blackbox.Protocol;
 import google.registry.monitoring.blackbox.TestServers.TestServer.EchoHandler;
 import google.registry.monitoring.blackbox.TestServers.WebWhoisServer;
 import io.netty.bootstrap.Bootstrap;
@@ -53,7 +56,7 @@ import org.junit.rules.ExternalResource;
  * Helper for setting up and testing client / server connection with netty.
  *
  * <p>Code based on and almost identical to {@link google.registry.proxy.handler.NettyRule}.
- * Used in {@link SslClientInitializerTest}, {@link ProbingActionTest}, and {@link ProbingSequenceStepTest} </p>
+ * Used in {@link SslClientInitializerTest}, {@link ProbingActionTest}, and {@link ProbingStepTest} </p>
  */
 public final class NettyRule extends ExternalResource {
 
@@ -89,7 +92,8 @@ public final class NettyRule extends ExternalResource {
   /** Sets up a client channel connecting to the give local address. */
   void setUpClient(
       LocalAddress localAddress,
-      ProbingAction probingAction,
+      Protocol protocol,
+      String host,
       ChannelHandler handler) {
     checkState(echoHandler != null, "Must call setUpServer before setUpClient");
     checkState(dumpHandler == null, "Can't call setUpClient twice");
@@ -109,7 +113,9 @@ public final class NettyRule extends ExternalResource {
             .group(eventLoopGroup)
             .channel(LocalChannel.class)
             .handler(clientInitializer)
-            .attr(PROBING_ACTION_KEY, probingAction);
+            .attr(PROTOCOL_KEY, protocol)
+            .attr(REMOTE_ADDRESS_KEY, host);
+
     channel = b.connect(localAddress).syncUninterruptibly().channel();
   }
 
