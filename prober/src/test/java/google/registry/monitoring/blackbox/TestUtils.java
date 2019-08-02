@@ -16,6 +16,7 @@ package google.registry.monitoring.blackbox;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import google.registry.monitoring.blackbox.tokens.Token;
 import io.netty.buffer.ByteBuf;
@@ -79,8 +80,9 @@ public class TestUtils {
     }
 
     @Override
-    public OutboundMessageType modifyMessage(OutboundMessageType message) {
-      return message;
+    public OutboundMessageType modifyMessage(OutboundMessageType message)
+        throws UndeterminedStateException {
+      return message.modifyMessage(host);
     }
 
     @Override

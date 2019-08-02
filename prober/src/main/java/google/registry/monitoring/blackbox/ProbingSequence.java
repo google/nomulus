@@ -53,7 +53,8 @@ public class ProbingSequence extends AbstractCircularLinkedListIterator<ProbingS
    * Generates new {@link ProbingAction} from {@link ProbingStep}, calls the action,
    * then retrieves the result of the action.
    *
-   * @param token - used to generate the {@link ProbingAction} by calling {@code get().generateAction}.
+   * @param token - used to generate the {@link ProbingAction} by calling
+   * {@code get().generateAction}.
    *
    * <p>Moves on to next {@link ProbingStep} in the iterator and changes the {@link Token}
    * to the next one if the previous step was the last one in the loop.</p>
@@ -63,7 +64,7 @@ public class ProbingSequence extends AbstractCircularLinkedListIterator<ProbingS
    * completed is marked as a success, we note a success. Otherwise, if the cause of failure
    * will either be a failure or error. </p>
    */
-  private void runStep(Token token) {
+  void runStep(Token token) {
     Token finalToken;
     if (get() == getLast())
       finalToken = token.next();
@@ -89,7 +90,7 @@ public class ProbingSequence extends AbstractCircularLinkedListIterator<ProbingS
     try {
       //call the generated action
       future = currentAction.call();
-    } catch(UndeterminedStateException e) {
+    } catch(Exception e) {
       //On error in calling action, log error and note an error
       logger.atWarning().withCause(e).log("Error in Action Performed");
 
@@ -124,7 +125,9 @@ public class ProbingSequence extends AbstractCircularLinkedListIterator<ProbingS
    * Turns {@link ProbingStep.Builder}s into fully self-dependent sequence with
    * supplied {@link Bootstrap}.
    */
-  public static class Builder extends AbstractCircularLinkedListIterator.Builder<ProbingStep, Builder, ProbingSequence> {
+  public static class Builder extends AbstractCircularLinkedListIterator.Builder<ProbingStep,
+      Builder, ProbingSequence> {
+
     private Entry<ProbingStep> firstRepeatedStepEntry;
 
     private Token startToken;

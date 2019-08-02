@@ -21,6 +21,9 @@ import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.tokens.Token;
 import google.registry.monitoring.blackbox.tokens.WebWhoisToken;
+import google.registry.util.AbstractCircularLinkedListIterator;
+import google.registry.util.DefaultCircularLinkedListIterator;
+import java.util.Iterator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -36,8 +39,10 @@ public class WebWhoisTokenTest {
   private static String FIRST_TLD = "first_test";
   private static String SECOND_TLD = "second_test";
   private static String THIRD_TLD = "third_test";
-  private static ImmutableList<String> TEST_DOMAINS = ImmutableList.of(FIRST_TLD, SECOND_TLD,
-      THIRD_TLD);
+  private Iterator<String> TEST_DOMAINS =
+      new DefaultCircularLinkedListIterator.Builder<String>()
+          .addElements(FIRST_TLD, SECOND_TLD, THIRD_TLD)
+          .build();
 
   public Token webToken = new WebWhoisToken(TEST_DOMAINS);
 
@@ -49,15 +54,13 @@ public class WebWhoisTokenTest {
 
     //attempts to use Token's method for modifying the method based on its stored host
     HttpRequestMessage secondMessage = (HttpRequestMessage) webToken.modifyMessage(message);
-    assertThat(secondMessage.headers().get("host")).isEqualTo(PREFIX + TEST_DOMAINS.get(0));
+    assertThat(secondMessage.headers().get("host")).isEqualTo(PREFIX + FIRST_TLD);
   }
 
-  /**
-   * As Circular Linked List has not been implemented yet, we cannot yet wrap around, so we don't
-   * test that in testing {@code next}.
-   */
   @Test
   public void testNextToken() {
+    //Simply tests that the next token always has our expected host.
+
     assertThat(webToken.host()).isEqualTo(PREFIX + FIRST_TLD);
     webToken = webToken.next();
 
@@ -65,6 +68,9 @@ public class WebWhoisTokenTest {
     webToken = webToken.next();
 
     assertThat(webToken.host()).isEqualTo(PREFIX + THIRD_TLD);
+    webToken = webToken.next();
+
+    assertThat(webToken.host()).isEqualTo(PREFIX + FIRST_TLD);
   }
 
 }
