@@ -236,7 +236,6 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
     abstract ProbingAction autoBuild();
 
     public ProbingAction build() {
-<<<<<<< HEAD:prober/src/main/java/google/registry/monitoring/blackbox/connection/ProbingAction.java
       SocketAddress address;
       try {
         InetAddress hostAddress = InetAddress.getByName(host());

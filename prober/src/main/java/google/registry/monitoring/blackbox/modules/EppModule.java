@@ -79,6 +79,7 @@ public class EppModule {
   }
 
   /** Dagger provided {@link ProbingSequence} that probes EPP login, create, delete, and logout actions. */
+  @Provides
   @Singleton
   @IntoSet
   static ProbingSequence provideEppLoginCreateDeleteLogoutProbingSequence(

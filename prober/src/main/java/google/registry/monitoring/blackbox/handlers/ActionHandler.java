@@ -81,20 +81,12 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
         ctx.channel().pipeline().toString()));
 
     if (cause instanceof FailureException) {
-<<<<<<< HEAD
       //On FailureException, we know the response is a failure.
-=======
-      //On FailureException, we know the response is a failure. As a result,
-      //we set the status to FAILURE, then inform the MetricsHandler of this
-      status = ResponseType.FAILURE;
-      ctx.fireChannelRead(status);
->>>>>>> 0f0cc438470dd72f488107da3bfd016d3de44ae7
 
       //Since it wasn't a success, we still want to log to see what caused the FAILURE
       logger.atInfo().log(cause.getMessage());
 
       //As always, inform the ProbingStep that we successfully completed this action
-<<<<<<< HEAD
       finished.setFailure(cause);
 
     } else {
@@ -107,24 +99,6 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
       //As this was an ERROR in performing the action, we must close the channel
       ChannelFuture closedFuture = ctx.channel().close();
       closedFuture.addListener(f -> logger.atInfo().log("Unsuccessful channel connection closed"));
-=======
-      finished.setSuccess();
-
-    } else {
-      //On UndeterminedStateException, we know the response type is an error. As a result,
-      //we set the status to ERROR, then inform the MetricsHandler of this
-      status = ResponseType.ERROR;
-      ctx.fireChannelRead(status);
-
-      //Since it wasn't a success, we still log what caused the ERROR
-      logger.atWarning().log(cause.getMessage());
-      finished.setFailure(cause);
-
-      //As this was an ERROR in performing the action, we must close the channel
-      ChannelFuture closedFuture = ctx.channel().close();
-      closedFuture.addListener(f -> logger.atInfo().log("Unsuccessful channel connection closed"));
-
->>>>>>> 0f0cc438470dd72f488107da3bfd016d3de44ae7
     }
   }
 }
