@@ -14,7 +14,6 @@
 
 package google.registry.monitoring.blackbox;
 
-import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
@@ -28,17 +27,13 @@ import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpMessage;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpMessage;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpMethod;;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.concurrent.DefaultPromise;
 import java.net.SocketAddress;
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 import org.joda.time.Duration;
 
@@ -271,34 +266,6 @@ public class TestUtils {
       host += suffix;
     }
 
-  }
-
-  /**
-   * Compares two {@link FullHttpMessage} for equivalency.
-   *
-   * <p>This method is needed because an HTTP message decoded and aggregated from inbound {@link
-   * ByteBuf} is of a different class than the one written to the outbound {@link ByteBuf}, and The
-   * {@link ByteBuf} implementations that hold the content of the HTTP messages are different, even
-   * though the actual content, headers, etc are the same.
-   *
-   * <p>This method is not type-safe, msg1 & msg2 can be a request and a response, respectively. Do
-   * not use this method directly.
-   */
-  private static void assertHttpMessageEquivalent(HttpMessage msg1, HttpMessage msg2) {
-    assertThat(msg1.protocolVersion()).isEqualTo(msg2.protocolVersion());
-    assertThat(msg1.headers()).isEqualTo(msg2.headers());
-    if (msg1 instanceof FullHttpRequest && msg2 instanceof FullHttpRequest) {
-      assertThat(((FullHttpRequest) msg1).content()).isEqualTo(((FullHttpRequest) msg2).content());
-    }
-  }
-
-  public static void assertHttpResponseEquivalent(FullHttpResponse res1, FullHttpResponse res2) {
-    assertThat(res1.status()).isEqualTo(res2.status());
-    assertHttpMessageEquivalent(res1, res2);
-  }
-
-  public static void assertHttpRequestEquivalent(HttpRequest req1, HttpRequest req2) {
-    assertHttpMessageEquivalent(req1, req2);
   }
 }
 
