@@ -240,7 +240,6 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
         InetAddress hostAddress = InetAddress.getByName(host());
         address = new InetSocketAddress(hostAddress, protocol().port());
       } catch (UnknownHostException e) {
-        System.out.println("test");
         address = new LocalAddress(host());
       }
 
