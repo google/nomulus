@@ -35,6 +35,7 @@ dependencies {
     compile deps['joda-time:joda-time']
     compile deps['org.bouncycastle:bcpkix-jdk15on']
     compile deps['org.bouncycastle:bcprov-jdk15on']
+    compile project(':util')
 
     runtime deps['com.google.flogger:flogger-system-backend']
     runtime deps['com.google.auto.value:auto-value']
