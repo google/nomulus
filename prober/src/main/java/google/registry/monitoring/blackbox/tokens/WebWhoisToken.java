@@ -19,9 +19,7 @@ import google.registry.monitoring.blackbox.WebWhoisModule.WebWhoisProtocol;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import java.util.Iterator;
-import java.util.LinkedList;
 import javax.inject.Inject;
-import javax.inject.Named;
 
 /**
  * {@link Token} subtype designed for WebWhois sequence.
