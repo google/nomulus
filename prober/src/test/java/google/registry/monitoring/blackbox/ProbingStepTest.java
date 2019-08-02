@@ -172,7 +172,6 @@ public class ProbingStepTest {
 
     //checks that when the future is successful, we pass down the requisite token
     assertThat(future.get()).isEqualTo(testToken);
-
   }
 
   @Test
