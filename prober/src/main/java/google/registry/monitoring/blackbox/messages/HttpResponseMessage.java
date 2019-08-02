@@ -24,7 +24,7 @@ import io.netty.handler.codec.http.HttpVersion;
  * {@link InboundMessageType} subtype that acts identically to {@link DefaultFullHttpResponse}
  */
 public class HttpResponseMessage extends DefaultFullHttpResponse implements InboundMessageType {
-
+  
   private HttpResponseMessage(HttpVersion version, HttpResponseStatus status, ByteBuf content) {
     super(version, status, content);
   }

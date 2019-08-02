@@ -20,8 +20,6 @@ import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.IOException;
-import javax.inject.Inject;
-import javax.inject.Named;
 
 /**
  * {@link EppMessage} subclass that implements {@link OutboundMessageType}, which represents
@@ -247,7 +245,11 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
    *
    * <p>Expects back a {@link EppResponseMessage.SimpleSuccess} or
    * {@link EppResponseMessage.Failure} from server depending on
+<<<<<<< HEAD
    * if we expect the command to succeed or fail.</p>
+=======
+   * if we expect the command to succeed or fail.</p>>
+>>>>>>> 0f0cc438470dd72f488107da3bfd016d3de44ae7
    *
    * <p>Constructor takes in only Dagger provided
    * {@link EppResponseMessage}.</p>

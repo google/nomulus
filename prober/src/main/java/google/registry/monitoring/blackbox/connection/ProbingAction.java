@@ -81,7 +81,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
   /** Actual {@link Duration} of this delay */
   public abstract Duration delay();
 
-  /** {@link OutboundMessageType} instance that we write and flush down pipeline to server */
+  /** {@link OutboundMessageType} instance that actionHandler::resetFuture,we write and flush down pipeline to server */
   public abstract OutboundMessageType outboundMessage();
 
   /** {@link Channel} object that either created by or passed into this {@link ProbingAction} instance */
@@ -236,6 +236,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
     abstract ProbingAction autoBuild();
 
     public ProbingAction build() {
+<<<<<<< HEAD:prober/src/main/java/google/registry/monitoring/blackbox/connection/ProbingAction.java
       SocketAddress address;
       try {
         InetAddress hostAddress = InetAddress.getByName(host());

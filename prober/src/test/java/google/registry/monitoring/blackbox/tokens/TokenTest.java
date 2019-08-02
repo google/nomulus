@@ -21,6 +21,7 @@ import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
 import google.registry.monitoring.blackbox.messages.EppResponseMessage;
+import java.io.IOException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;

@@ -28,7 +28,6 @@ import google.registry.monitoring.blackbox.handlers.EppActionHandler;
 import google.registry.monitoring.blackbox.handlers.EppMessageHandler;
 import google.registry.monitoring.blackbox.handlers.SslClientInitializer;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
-import google.registry.monitoring.blackbox.messages.EppRequestMessage.Check;
 import google.registry.monitoring.blackbox.messages.EppResponseMessage;
 import google.registry.monitoring.blackbox.tokens.EppToken;
 import io.netty.bootstrap.Bootstrap;
@@ -80,7 +79,6 @@ public class EppModule {
   }
 
   /** Dagger provided {@link ProbingSequence} that probes EPP login, create, delete, and logout actions. */
-  @Provides
   @Singleton
   @IntoSet
   static ProbingSequence provideEppLoginCreateDeleteLogoutProbingSequence(

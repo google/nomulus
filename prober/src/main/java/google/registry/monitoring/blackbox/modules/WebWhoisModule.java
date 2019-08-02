@@ -17,9 +17,7 @@ package google.registry.monitoring.blackbox.modules;
 import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
-
 import dagger.multibindings.IntoSet;
-
 import google.registry.monitoring.blackbox.ProbingSequence;
 import google.registry.monitoring.blackbox.ProbingStep;
 import google.registry.monitoring.blackbox.connection.Protocol;

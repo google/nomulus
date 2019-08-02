@@ -41,7 +41,6 @@ import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import javax.inject.Provider;
 import org.joda.time.Duration;
