@@ -26,6 +26,8 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.truth.ThrowableSubject;
 import google.registry.monitoring.blackbox.ProbingAction;
+import google.registry.monitoring.blackbox.ProbingActionTest;
+import google.registry.monitoring.blackbox.ProbingStepTest;
 import google.registry.monitoring.blackbox.Protocol;
 import google.registry.monitoring.blackbox.TestServers.TestServer.EchoHandler;
 import google.registry.monitoring.blackbox.TestServers.WebWhoisServer;
@@ -54,7 +56,7 @@ import org.junit.rules.ExternalResource;
  * Helper for setting up and testing client / server connection with netty.
  *
  * <p>Code based on and almost identical to {@link google.registry.proxy.handler.NettyRule}.
- * Used in {@link SslClientInitializerTest}, {@link ProbingActionTest}, and {@link ProbingSequenceStepTest} </p>
+ * Used in {@link SslClientInitializerTest}, {@link ProbingActionTest}, and {@link ProbingStepTest} </p>
  */
 public final class NettyRule extends ExternalResource {
 
