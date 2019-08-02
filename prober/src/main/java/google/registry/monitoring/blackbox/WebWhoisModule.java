@@ -17,13 +17,16 @@ package google.registry.monitoring.blackbox;
 import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
+
 import dagger.multibindings.IntoSet;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
+import google.registry.monitoring.blackbox.messages.OutboundMessageType;
+import google.registry.monitoring.blackbox.tokens.Token;
 import google.registry.monitoring.blackbox.handlers.WebWhoisMessageHandler;
 import google.registry.monitoring.blackbox.handlers.SslClientInitializer;
 import google.registry.monitoring.blackbox.handlers.WebWhoisActionHandler;
 import google.registry.monitoring.blackbox.tokens.WebWhoisToken;
-import google.registry.util.DefaultCircularLinkedListIterator;
+import google.registry.util.CircularLinkedListIterator;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -31,8 +34,11 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslProvider;
 import java.util.Iterator;
+import java.util.List;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
@@ -72,7 +78,7 @@ public class WebWhoisModule {
       WebWhoisToken webWhoisToken) {
 
     return new ProbingSequence.Builder(webWhoisToken)
-        .addElement(probingStep)
+        .addStep(probingStep)
         .build();
   }
 
@@ -180,10 +186,10 @@ public class WebWhoisModule {
   @WebWhoisProtocol
   static Bootstrap provideBootstrap(
       EventLoopGroup eventLoopGroup,
-      Class<? extends Channel> channelClazz){
+      Class<? extends Channel> channelClass){
     return new Bootstrap()
         .group(eventLoopGroup)
-        .channel(channelClazz);
+        .channel(channelClass);
   }
 
   @Provides
@@ -197,7 +203,7 @@ public class WebWhoisModule {
   @Provides
   @WebWhoisProtocol
   Iterator<String> provideTopLevelDomains() {
-    return new DefaultCircularLinkedListIterator.Builder<String>()
+    return new CircularLinkedListIterator.Builder<String>()
         .addElements("how", "soy" , "xn--q9jyb4c")
         .build();
   }
