@@ -66,7 +66,10 @@ public class HttpRequestMessage extends DefaultFullHttpRequest implements Outbou
       return this;
 
     } else {
-      throw new IllegalArgumentException("Wrong number of arguments present for modifying HttpRequestMessage.");
+      throw new IllegalArgumentException(
+          String.format(
+              "Wrong number of arguments present for modifying HttpRequestMessage."
+              + " Received %d arguments instead of: " + args, args.length));
     }
   }
 
