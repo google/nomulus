@@ -135,7 +135,7 @@ public abstract class ProbingStep implements Consumer<Token> {
     try {
       //call the generated action
       future = currentAction.call();
-    } catch(UndeterminedStateException e) {
+    } catch(Exception e) {
       //On error in calling action, log error and note an error
       logger.atWarning().withCause(e).log("Error in Action Performed");
 
