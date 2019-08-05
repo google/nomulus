@@ -18,30 +18,45 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import google.registry.monitoring.blackbox.TestUtils.ProbingSequenceTestToken;
+import google.registry.monitoring.blackbox.TestUtils.TestToken;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import google.registry.monitoring.blackbox.tokens.Token;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
 import java.net.SocketAddress;
 import org.joda.time.Duration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.mockito.Mockito;
 
 @RunWith(JUnit4.class)
 public class ProbingSequenceTest {
   private final static String TEST_HOST = "TEST_HOST";
 
 
-  private Bootstrap dummyBootstrap = new Bootstrap();
-  private Token testToken = new ProbingSequenceTestToken();
+  private Token testToken = new TestToken("") {
+    @Override
+    public Channel channel() {
+      return null;
+    }
 
+    public void addToHost(String suffix) {
+      host += suffix;
+    }
+  };
+
+  private void setupMock(ProbingStep mock, ProbingStep nextStep) {
+    Mockito.when(mock.accept()).thenCallRealMethod(() -> System.out.println("test"));
+  }
   /**
    * Custom {@link ProbingStep} subclass that acts as a mock
    * step, so we can test how well {@link ProbingSequence} builds
    * a linked list of {@link ProbingStep}s from their {@link Builder}s.
    */
+
   private static class TestStep extends ProbingStep {
-    private Bootstrap bootstrap;
     private String marker;
 
     /** We implement all abstract methods to simply return null, as we have no use for them here. */
@@ -60,66 +75,13 @@ public class ProbingSequenceTest {
       return null;
     }
 
-    @Override
-    SocketAddress address() {
-      return null;
-    }
-
     /** We want to be able to set and retrieve the bootstrap, as {@link ProbingSequence} does this. */
     @Override
     Bootstrap bootstrap() {
-      return bootstrap;
+      return null;
     }
 
-    /**
-     * Builder for {@link TestStep}, that extends {@link ProbingStep.Builder} so that these can be
-     * input into the {@link ProbingSequence.Builder}.
-     */
-    public static class Builder extends ProbingStep.Builder {
-      /** We test to see if we accurately add the right bootstrap to all {@link ProbingStep}s/ */
-      private Bootstrap bootstrap;
-
-      /** We also mark each step in order to ensure that when running, they are arranged in the right order. */
-      private String marker;
-
-      @Override
-      public ProbingStep.Builder setDuration(Duration value) {
-        return this;
-      }
-
-      @Override
-      public ProbingStep.Builder setProtocol(Protocol value) {
-        return this;
-      }
-
-      @Override
-      public ProbingStep.Builder setMessageTemplate(OutboundMessageType value) {
-        return null;
-      }
-
-      @Override
-      public ProbingStep.Builder setAddress(SocketAddress address) {
-        return null;
-      }
-
-      @Override
-      public ProbingStep.Builder setBootstrap(Bootstrap value) {
-        bootstrap = value;
-        return this;
-      }
-
-      public ProbingStep.Builder addMarker(String value) {
-        marker = value;
-        return this;
-      }
-
-      @Override
-      public ProbingStep build() {
-        return new TestStep(bootstrap, marker);
-      }
-    }
-    private TestStep(Bootstrap bootstrap, String marker) {
-      this.bootstrap = bootstrap;
+    public TestStep(String marker) {
       this.marker = marker;
     }
 
@@ -147,56 +109,37 @@ public class ProbingSequenceTest {
 
   @Test
   public void testSequenceBasicConstruction_Success() {
-    ProbingStep.Builder firstStepBuilder = new TestStep.Builder().addMarker("first");
-    ProbingStep.Builder secondStepBuilder = new TestStep.Builder().addMarker("second");
-    ProbingStep.Builder thirdStepBuilder = new TestStep.Builder().addMarker("third");
+    ProbingStep firstStep = Mockito.mock(ProbingStep.class);
+    ProbingStep secondStep = Mockito.mock(ProbingStep.class);
+    ProbingStep thirdStep = Mockito.mock(ProbingStep.class);
 
-    ProbingSequence sequence = new ProbingSequence.Builder()
-        .setBootstrap(dummyBootstrap)
-        .addStep(firstStepBuilder)
-        .addStep(secondStepBuilder)
-        .addStep(thirdStepBuilder)
-        .addToken(testToken)
+    ProbingSequence sequence = new ProbingSequence.Builder(testToken)
+        .addStep(firstStep)
+        .addStep(secondStep)
+        .addStep(thirdStep)
         .build();
 
     sequence.start();
 
-    assertThat(testToken.getHost()).isEqualTo("firstsecondthirdfirst");
+    assertThat(testToken.host()).isEqualTo("firstsecondthirdfirst");
   }
 
   @Test
   public void testSequenceAdvancedConstruction_Success() {
-    ProbingStep.Builder firstStepBuilder = new TestStep.Builder().addMarker("first");
-    ProbingStep.Builder secondStepBuilder = new TestStep.Builder().addMarker("second");
-    ProbingStep.Builder thirdStepBuilder = new TestStep.Builder().addMarker("third");
+    ProbingStep firstStep = new TestStep("first");
+    ProbingStep secondStep = new TestStep("second");
+    ProbingStep thirdStep = new TestStep("third");
 
-    ProbingSequence sequence = new ProbingSequence.Builder()
-        .setBootstrap(dummyBootstrap)
-        .addStep(thirdStepBuilder)
-        .addStep(secondStepBuilder)
+    ProbingSequence sequence = new ProbingSequence.Builder(testToken)
+        .addStep(thirdStep)
+        .addStep(secondStep)
         .markFirstRepeated()
-        .addStep(firstStepBuilder)
-        .addToken(testToken)
+        .addStep(firstStep)
         .build();
 
     sequence.start();
 
-    assertThat(testToken.getHost()).isEqualTo("thirdsecondfirstsecond");
+    assertThat(testToken.host()).isEqualTo("thirdsecondfirstsecond");
   }
 
-  @Test
-  public void testSequenceConstruction_Failure() {
-    ProbingStep.Builder firstStepBuilder = new TestStep.Builder().addMarker("first");
-    ProbingStep.Builder secondStepBuilder = new TestStep.Builder().addMarker("second");
-    ProbingStep.Builder thirdStepBuilder = new TestStep.Builder().addMarker("third");
-    assertThrows(AssertionError.class, () -> {
-      ProbingSequence sequence = new ProbingSequence.Builder()
-          .addStep(firstStepBuilder)
-          .addStep(secondStepBuilder)
-          .addStep(thirdStepBuilder)
-          .addToken(testToken)
-          .setBootstrap(dummyBootstrap)
-          .build();
-    });
-  }
 }
