@@ -14,6 +14,7 @@
 
 package google.registry.monitoring.blackbox;
 
+import com.google.common.collect.ImmutableSet;
 import google.registry.monitoring.blackbox.ProberModule.ProberComponent;
 import java.util.Set;
 
@@ -29,7 +30,7 @@ public class Prober {
   public static void main(String[] args) {
 
     //Obtains WebWhois Sequence provided by proberComponent
-    Set<ProbingSequence> sequences = proberComponent.provideAllSequences();
+    Set<ProbingSequence> sequences = proberComponent.sequences();
 
     //Tells Sequences to start running
     for (ProbingSequence sequence : sequences) {
