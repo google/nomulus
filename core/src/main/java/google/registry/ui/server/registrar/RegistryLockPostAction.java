@@ -50,10 +50,16 @@ public final class RegistryLockPostAction implements Runnable, JsonActionRunner.
   private static final String PARAM_FQDN = "fullyQualifiedDomainName";
   private static final String PARAM_IS_LOCK = "isLock";
 
-  @Inject ExistingRegistryLocksRetriever existingRegistryLocksRetriever;
-  @Inject JsonActionRunner jsonActionRunner;
+  private final ExistingRegistryLocksRetriever existingRegistryLocksRetriever;
+  private final JsonActionRunner jsonActionRunner;
 
-  @Inject RegistryLockPostAction() {}
+  @Inject
+  RegistryLockPostAction(
+      ExistingRegistryLocksRetriever existingRegistryLocksRetriever,
+      JsonActionRunner jsonActionRunner) {
+    this.existingRegistryLocksRetriever = existingRegistryLocksRetriever;
+    this.jsonActionRunner = jsonActionRunner;
+  }
 
   @Override
   public void run() {
@@ -67,15 +73,13 @@ public final class RegistryLockPostAction implements Runnable, JsonActionRunner.
       String clientId = (String) input.get(PARAM_CLIENT_ID);
       checkArgument(
           !Strings.isNullOrEmpty(clientId), "Missing key for client: %s", PARAM_CLIENT_ID);
-      Registrar registrar =
-          existingRegistryLocksRetriever.getRegistrarAndVerifyLockAccess(clientId);
       String domainName = (String) input.get(PARAM_FQDN);
       checkArgument(!Strings.isNullOrEmpty(clientId), "Missing key for fqdn: %s", PARAM_FQDN);
       boolean lock = (Boolean) input.get(PARAM_IS_LOCK);
       logger.atInfo().log(
           String.format("Performing action %s to domain %s", lock ? "lock" : "unlock", domainName));
       // TODO: do the lock once we can
-      return existingRegistryLocksRetriever.getLockedDomainsMap(registrar);
+      return existingRegistryLocksRetriever.getLockedDomainsMap(clientId);
     } catch (Throwable e) {
       logger.atWarning().withCause(e).log("Failed to lock/unlock domain with input %s", input);
       return JsonResponseHelper.create(

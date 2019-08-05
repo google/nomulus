@@ -22,7 +22,6 @@ import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import com.google.gson.Gson;
-import google.registry.model.registrar.Registrar;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.Parameter;
@@ -30,12 +29,10 @@ import google.registry.request.RequestMethod;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthResult;
-import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
 import java.util.Map;
 import java.util.Optional;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Admin servlet that allows for getting locks for a particular registrar.
@@ -54,32 +51,38 @@ public final class RegistryLockGetAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Gson GSON = new Gson();
 
-  @Inject @RequestMethod Method method;
-  @Inject HttpServletRequest request;
-  @Inject Response response;
-  @Inject AuthenticatedRegistrarAccessor registrarAccessor;
-  @Inject AuthResult authResult;
-  @Inject ExistingRegistryLocksRetriever existingRegistryLocksRetriever;
-
-  @Inject @Parameter(PARAM_CLIENT_ID)
-  Optional<String> paramClientId;
+  private final Method method;
+  private final Response response;
+  private final AuthResult authResult;
+  private final ExistingRegistryLocksRetriever existingRegistryLocksRetriever;
+  private final Optional<String> paramClientId;
 
   @Inject
-  RegistryLockGetAction() {}
+  RegistryLockGetAction(
+      @RequestMethod Method method,
+      Response response,
+      AuthResult authResult,
+      ExistingRegistryLocksRetriever existingRegistryLocksRetriever,
+      @Parameter(PARAM_CLIENT_ID) Optional<String> paramClientId) {
+    this.method = method;
+    this.response = response;
+    this.authResult = authResult;
+    this.existingRegistryLocksRetriever = existingRegistryLocksRetriever;
+    this.paramClientId = paramClientId;
+  }
 
   @Override
   public void run() {
     checkArgument(Method.GET.equals(method), "Only GET requests allowed");
     checkArgument(authResult.userAuthInfo().isPresent(), "User auth info must be present");
+    checkArgument(paramClientId.isPresent(), "clientId must be present");
     response.setContentType(MediaType.JSON_UTF_8);
     response.setHeader(X_FRAME_OPTIONS, "SAMEORIGIN"); // Disallow iframing.
     response.setHeader("X-Ui-Compatible", "IE=edge"); // Ask IE not to be silly.
 
     try {
-      String clientId = paramClientId.orElse(registrarAccessor.guessClientId());
-      Registrar registrar =
-          existingRegistryLocksRetriever.getRegistrarAndVerifyLockAccess(clientId);
-      Map<String, ?> resultMap = existingRegistryLocksRetriever.getLockedDomainsMap(registrar);
+      Map<String, ?> resultMap =
+          existingRegistryLocksRetriever.getLockedDomainsMap(paramClientId.get());
       response.setPayload(GSON.toJson(resultMap));
     } catch (RegistrarAccessDeniedException e) {
       logger.atWarning().withCause(e).log(

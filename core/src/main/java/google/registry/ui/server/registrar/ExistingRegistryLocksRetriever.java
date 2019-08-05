@@ -16,6 +16,7 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.auto.value.AutoValue;
@@ -24,7 +25,6 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
-import google.registry.util.PreconditionsUtils;
 import java.util.Map;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -32,33 +32,39 @@ import org.joda.time.DateTime;
 /**
  * Utility class for retrieving existing locks by registrar client ID (if enabled for that client).
  */
-public final class ExistingRegistryLocksRetriever {
+final class ExistingRegistryLocksRetriever {
 
   private static final String LOCKS_PARAM = "locks";
   private static final String FULLY_QUALIFIED_DOMAIN_NAME_PARAM = "fullyQualifiedDomainName";
   private static final String LOCKED_TIME_PARAM = "lockedTime";
   private static final String LOCKED_BY_PARAM = "lockedBy";
 
-  @Inject AuthenticatedRegistrarAccessor registrarAccessor;
-  @Inject ExistingRegistryLocksRetriever() {}
+  private final AuthenticatedRegistrarAccessor registrarAccessor;
 
-  Registrar getRegistrarAndVerifyLockAccess(String clientId) throws RegistrarAccessDeniedException {
+  @Inject
+  ExistingRegistryLocksRetriever(AuthenticatedRegistrarAccessor registrarAccessor) {
+    this.registrarAccessor = registrarAccessor;
+  }
+
+  Map<String, ?> getLockedDomainsMap(String clientId) throws RegistrarAccessDeniedException {
+    Registrar registrar = getRegistrarAndVerifyLockAccess(clientId);
+    ImmutableList<DummyRegistrarLock> lockedDomains = getLockedDomains(registrar);
+    checkArgumentNotNull(lockedDomains);
+    return ImmutableMap.of(
+        PARAM_CLIENT_ID,
+        registrar.getClientId(),
+        LOCKS_PARAM,
+        lockedDomains.stream().map(DummyRegistrarLock::toMap).collect(toImmutableList()));
+  }
+
+  private Registrar getRegistrarAndVerifyLockAccess(String clientId) throws RegistrarAccessDeniedException {
     Registrar registrar = registrarAccessor.getRegistrar(clientId);
     verifyRegistrarLockAccess(registrar);
     return registrar;
   }
 
-  Map<String, ?> getLockedDomainsMap(Registrar registrar) {
-    ImmutableList<DummyRegistrarLock> lockedDomains = getLockedDomains(registrar);
-    PreconditionsUtils.checkArgumentNotNull(lockedDomains);
-    return ImmutableMap.of(
-        PARAM_CLIENT_ID, registrar.getClientId(),
-        LOCKS_PARAM,
-        lockedDomains.stream().map(DummyRegistrarLock::toMap).collect(toImmutableList()));
-  }
-
   private ImmutableList<DummyRegistrarLock> getLockedDomains(Registrar registrar) {
-    PreconditionsUtils.checkArgumentNotNull(registrar);
+    checkArgumentNotNull(registrar);
     return ImmutableList.of(
         DummyRegistrarLock.create("test.test", DateTime.now(UTC), "John Doe"),
         DummyRegistrarLock.create("othertest.test", DateTime.now(UTC).minusDays(20), "Jane Doe"),
@@ -66,7 +72,7 @@ public final class ExistingRegistryLocksRetriever {
   }
 
   private void verifyRegistrarLockAccess(Registrar registrar) {
-    PreconditionsUtils.checkArgumentNotNull(registrar);
+    checkArgumentNotNull(registrar);
     // TODO: check the actual value once we store it
   }
 
