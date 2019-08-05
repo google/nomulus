@@ -33,10 +33,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import org.joda.time.Duration;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -69,6 +67,8 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  private final static String HANDLER_IDENTIFIER_STRING = "ACTION_HANDLER";
+
   /** {@link AttributeKey} in channel that gives {@link ChannelFuture} that is set to success when channel is active. */
   public static final AttributeKey<ChannelFuture> CONNECTION_FUTURE_KEY = AttributeKey.valueOf("CONNECTION_FUTURE_KEY");
 
@@ -85,6 +85,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
   public abstract OutboundMessageType outboundMessage();
 
   /** {@link Channel} object that either created by or passed into this {@link ProbingAction} instance */
+  @Nullable
   public abstract Channel channel();
 
   /** The {@link Protocol} instance that specifies type of connection */
@@ -94,108 +95,89 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
   public abstract String host();
 
 
-  public void informListeners(ChannelPromise finished, ActionHandler actionHandler) {
-    // Write appropriate outboundMessage to pipeline
-    ChannelFuture channelFuture = actionHandler.getFuture();
-    channel().writeAndFlush(outboundMessage());
-    channelFuture.addListeners(
-        //inform ProbingStep of the status of our action
-        future -> {
-          if (future.isSuccess())
-            finished.setSuccess();
-          else
-            finished.setFailure(future.cause());
-        },
-        //If we don't have a persistent connection, close the connection to this channel
-        future -> {
-          if (!protocol().persistentConnection()) {
-
-            ChannelFuture closedFuture = channel().close();
-            closedFuture.addListener(
-                f -> {
-                  if (f.isSuccess())
-                    logger.atInfo().log("Closed stale channel. Moving on to next ProbingStep");
-                  else
-                    logger.atWarning()
-                        .log("Could not close channel. Stale connection still exists.");
-                }
-            );
-          }
-        }
-    );
-  }
-
   /**
-   * The method that performs the work of the actual action.
+   * Performs the work of the actual action
    *
-   * <p>First, we establish which of the handlers in the pipeline is the {@link ActionHandler}.
-   * From that, we can obtain a future that is marked as a success when we receive an expected
-   * response from the server. Then, we send the {@code outboundMessage} down the channel pipeline,
-   * and when we observe a success or failure, we inform the {@link ProbingStep} of this.</p>
+   * <p>First, checks if channel is active by setting a listener to perform the bulk of the work
+   * when the connection future is successful.</p>
+   *
+   * <p>Once the connection is successful, we establish which of the handlers in the pipeline is
+   * the {@link ActionHandler}.From that, we can obtain a future that is marked as a success when
+   * we receive an expected response from the server.</p>
+   *
+   * <p>Next, we set a timer set to a specified delay. After the delay has passed, we send the
+   * {@code outboundMessage} down the channel pipeline, and when we observe a success or failure,
+   * we inform the {@link ProbingStep} of this.</p>
    *
    * @return {@link ChannelFuture} that denotes when the action has been successfully performed.
    */
-  private ChannelFuture performAction() throws UndeterminedStateException {
-    Iterator<Map.Entry<String, ChannelHandler>> handlerIterator = channel().pipeline().iterator();
-    ActionHandler actionHandler = null;
 
-    //Finds the ActionHandler from the pipeline and initializes it.
-    while (handlerIterator.hasNext()) {
-      ChannelHandler currentHandler = handlerIterator.next().getValue();
-      if (currentHandler instanceof ActionHandler) {
-        actionHandler = (ActionHandler) currentHandler;
-        break;
-      }
-    }
-
-    //If there is no ActionHandler in our pipeline, we have an issue, and throw an UndeterminedStateException
-    if (actionHandler == null) {
-      logger.atSevere().withStackTrace(SMALL).log("ActionHandler not in Channel Pipeline");
-      throw new UndeterminedStateException("No Action Handler found in pipeline");
-    }
-
-    //ChannelPromise that we use to inform ProbingStep when we are finished.
-    ChannelPromise finished = channel().newPromise();
-
-    //Necessary for use of actionHandler in lambda expression
-    ActionHandler finalActionHandler = actionHandler;
-
-    //Every specified time frame by delay(), we perform the next action in our sequence and inform ProbingStep when finished
-    if (delay() == Duration.ZERO)
-      informListeners(finished, finalActionHandler);
-    else
-      timer.newTimeout(timeout -> informListeners(finished, finalActionHandler),
-          delay().getStandardSeconds(),
-          TimeUnit.SECONDS);
-
-
-    return finished;
-  }
 
   /** Method that calls on {@code performAction} when it is certain channel connection is established. */
   @Override
-  public ChannelFuture call() throws UndeterminedStateException {
+  public ChannelFuture call() {
     //ChannelPromise that we return
     ChannelPromise finished = channel().newPromise();
+
+    //Ensures channel has been set up with connection future as an attribute
+    checkNotNull(channel().attr(CONNECTION_FUTURE_KEY).get());
+
     //When connection is established call super.call and set returned listener to success
     channel().attr(CONNECTION_FUTURE_KEY).get().addListener(
-        (ChannelFuture channelFuture) -> {
-          if (channelFuture.isSuccess()) {
+        (ChannelFuture connectionFuture) -> {
+          if (connectionFuture.isSuccess()) {
             logger.atInfo().log(String
                 .format("Successful connection to remote host: %s at port: %d", host(),
                     protocol().port()));
-            ChannelFuture future = performAction();
-            future.addListener(
-                f -> {
-                  if (f.isSuccess())
-                    finished.setSuccess();
-                  else
-                    finished.setFailure(f.cause());
-                });
 
+            ActionHandler actionHandler;
+            try {
+              actionHandler = channel().pipeline().get(ActionHandler.class);
+            } catch (ClassCastException e) {
+              //If we don't actually have an ActionHandler instance, we have an issue, and throw an UndeterminedStateException
+              logger.atSevere().withStackTrace(SMALL).log("ActionHandler not in Channel Pipeline");
+              throw new UndeterminedStateException("No Action Handler found in pipeline");
+            }
+
+            ChannelFuture channelFuture = actionHandler.getFinishedFuture();
+
+            timer.newTimeout(timeout -> {
+                  // Write appropriate outboundMessage to pipeline
+                  channel().writeAndFlush(outboundMessage());
+                  channelFuture.addListeners(
+                      future -> {
+                        if (future.isSuccess()) {
+                          finished.setSuccess();
+                        } else {
+                          finished.setFailure(future.cause());
+                        }
+                      },
+                      //If we don't have a persistent connection, close the connection to this channel
+                      future -> {
+                        if (!protocol().persistentConnection()) {
+
+                          ChannelFuture closedFuture = channel().close();
+                          closedFuture.addListener(
+                              f -> {
+                                if (f.isSuccess()) {
+                                  logger.atInfo()
+                                      .log("Closed stale channel. Moving on to next ProbingStep");
+                                } else {
+                                  logger.atWarning()
+                                      .log(
+                                          "Could not close channel. Stale connection still exists.");
+                                }
+                              }
+                          );
+                        }
+                      }
+                  );
+                },
+                delay().getStandardSeconds(),
+                TimeUnit.SECONDS);
           } else {
             //if we receive a failure, log the failure, and close the channel
-            logger.atSevere().withCause(channelFuture.cause()).log(
+            logger.atSevere().withCause(connectionFuture.cause()).log(
                 "Cannot connect to relay channel for %s channel: %s.",
                 protocol().name(), this.channel());
             ChannelFuture unusedFuture = channel().close();
@@ -228,7 +210,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
 
     abstract Protocol protocol();
 
-    abstract Optional<Channel> channel();
+    abstract Channel channel();
 
     abstract String host();
 
@@ -243,11 +225,11 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
         address = new LocalAddress(host());
       }
 
-      checkArgument(channel().isPresent() ^ bootstrap != null, "Either Bootstrap must be supplied without Channel or Channel must be supplied without Bootstrap.");
+      checkArgument(channel() == null ^ bootstrap == null, "One and only one of bootstrap and channel must be supplied.");
       //If a channel is supplied, nothing is needed to be done
 
       //Otherwise, a Bootstrap must be supplied and be used for creating the channel
-      if (!channel().isPresent()) {
+      if (channel() == null) {
         bootstrap.handler(
             new ChannelInitializer<Channel>() {
               @Override
