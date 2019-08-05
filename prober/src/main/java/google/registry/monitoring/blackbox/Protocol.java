@@ -41,14 +41,16 @@ public abstract class Protocol {
     return new AutoValue_Protocol.Builder();
   }
 
+  /** Builder for {@link Protocol}. */
   @AutoValue.Builder
-  public static abstract class Builder {
+  public abstract static class Builder {
 
     public abstract Builder name(String value);
 
     public abstract Builder port(int num);
 
-    public abstract Builder handlerProviders(ImmutableList<Provider<? extends ChannelHandler>> providers);
+    public abstract Builder handlerProviders(
+        ImmutableList<Provider<? extends ChannelHandler>> providers);
 
     public abstract Builder persistentConnection(boolean value);
 

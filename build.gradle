@@ -236,9 +236,7 @@ subprojects {
     }
   }
 
-  if (project.name == 'util') return
-  if (project.name == 'proxy') return
-  if (project.name == 'core') return
+  if (['util', 'proxy', 'core', 'prober'].contains(project.name)) return
 
   test {
     testLogging.showStandardStreams = Boolean.parseBoolean(showAllOutput)

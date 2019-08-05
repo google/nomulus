@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-apply plugin: 'java'
-
 createUberJar('deployJar', 'proxy_server', 'google.registry.proxy.ProxyServer')
 
 task buildProxyImage(dependsOn: deployJar, type: Exec) {

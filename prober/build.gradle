@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,38 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-apply plugin: 'java'
-
 createUberJar('deployJar', 'prober', 'google.registry.monitoring.blackbox.Prober')
 
 dependencies {
-    def deps = rootProject.dependencyMap
+  def deps = rootProject.dependencyMap
 
-    compile deps['com.google.auto.value:auto-value-annotations']
-    compile deps['com.google.dagger:dagger']
-    compile deps['com.google.flogger:flogger']
-    compile deps['com.google.guava:guava']
-    compile deps['io.netty:netty-buffer']
-    compile deps['io.netty:netty-codec-http']
-    compile deps['io.netty:netty-codec']
-    compile deps['io.netty:netty-common']
-    compile deps['io.netty:netty-handler']
-    compile deps['io.netty:netty-transport']
-    compile deps['javax.inject:javax.inject']
+  compile deps['com.google.auto.value:auto-value-annotations']
+  compile deps['com.google.dagger:dagger']
+  compile deps['com.google.flogger:flogger']
+  compile deps['com.google.guava:guava']
+  compile deps['io.netty:netty-buffer']
+  compile deps['io.netty:netty-codec-http']
+  compile deps['io.netty:netty-codec']
+  compile deps['io.netty:netty-common']
+  compile deps['io.netty:netty-handler']
+  compile deps['io.netty:netty-transport']
+  compile deps['javax.inject:javax.inject']
 
-    runtime deps['com.google.flogger:flogger-system-backend']
-    runtime deps['com.google.auto.value:auto-value']
-    runtime deps['io.netty:netty-tcnative-boringssl-static']
+  runtime deps['com.google.flogger:flogger-system-backend']
+  runtime deps['com.google.auto.value:auto-value']
+  runtime deps['io.netty:netty-tcnative-boringssl-static']
 
-    testCompile deps['com.google.truth:truth']
-    testCompile deps['junit:junit']
-    testCompile deps['org.mockito:mockito-core']
-    testCompile project(':third_party')
+  testCompile deps['com.google.truth:truth']
+  testCompile deps['junit:junit']
+  testCompile deps['org.mockito:mockito-core']
+  testCompile project(':third_party')
 
-    // Include auto-value in compile until nebula-lint understands
-    // annotationProcessor
-    annotationProcessor deps['com.google.auto.value:auto-value']
-    testAnnotationProcessor deps['com.google.auto.value:auto-value']
-    annotationProcessor deps['com.google.dagger:dagger-compiler']
-    testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
+  // Include auto-value in compile until nebula-lint understands
+  // annotationProcessor
+  annotationProcessor deps['com.google.auto.value:auto-value']
+  testAnnotationProcessor deps['com.google.auto.value:auto-value']
+  annotationProcessor deps['com.google.dagger:dagger-compiler']
+  testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
 }
