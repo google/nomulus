@@ -46,7 +46,7 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
   private ChannelPromise finished;
 
   /** Returns initialized {@link ChannelPromise} to {@link ProbingAction}.*/
-  public ChannelFuture getFuture() {
+  public ChannelFuture getFinishedFuture() {
     return finished;
   }
 

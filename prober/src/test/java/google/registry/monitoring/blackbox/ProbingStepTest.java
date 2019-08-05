@@ -45,6 +45,7 @@ import io.netty.util.concurrent.DefaultPromise;
 import javax.inject.Provider;
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 /** Unit Tests for {@link ProbingSequence}s and {@link ProbingStep}s and their specific implementations*/
 public class ProbingStepTest {
@@ -191,6 +192,11 @@ public class ProbingStepTest {
     //Call accept on the first step, which should send our message through the EmbeddedChannel pipeline
     firstStep.accept(testToken);
 
+    Object msg = channel.readOutbound();
+
+    while (msg == null) {
+      msg = channel.readOutbound();
+    }
     //Ensures the accurate message is sent down the pipeline
     assertThat(((ByteBuf)channel.readOutbound()).toString(UTF_8)).isEqualTo(TEST_MESSAGE);
 
