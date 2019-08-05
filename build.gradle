@@ -109,10 +109,10 @@ task deploy {
 
 task verifyDeployment {
   group = 'deployment'
-  description = 'Ensure that one can only deploy to alpha.'
+  description = 'Ensure that one cannot deploy to production or sandbox.'
   doFirst {
-    if (rootProject.findProperty("environment") != 'alpha') {
-      throw new GradleException("Can only deploy to alpha.");
+    if (rootProject.prodOrSandboxEnv) {
+      throw new GradleException("Cannot deploy to production or sandbox.");
     }
   }
 }
