@@ -39,7 +39,6 @@ import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import javax.inject.Provider;
 import org.joda.time.Duration;
@@ -163,7 +162,7 @@ public class WebWhoisActionHandlerTest {
     setupChannel(initialProtocol, msg);
 
     //stores future
-    ChannelFuture future = actionHandler.getFuture();
+    ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(msg);
 
 
@@ -195,7 +194,7 @@ public class WebWhoisActionHandlerTest {
     setupChannel(initialProtocol, msg);
 
     //stores future
-    ChannelFuture future = actionHandler.getFuture();
+    ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(msg);
 
     //setup for checker to ensure future listener isn't triggered to early
@@ -227,7 +226,7 @@ public class WebWhoisActionHandlerTest {
       setupChannel(initialProtocol, msg);
 
       //stores future
-      ChannelFuture future = actionHandler.getFuture();
+      ChannelFuture future = actionHandler.getFinishedFuture();
       channel.writeOutbound(msg);
 
       //setup for checker to ensure future listener isn't triggered to early
@@ -261,7 +260,7 @@ public class WebWhoisActionHandlerTest {
     setupChannel(initialProtocol, msg);
 
     //stores future
-    ChannelFuture future = actionHandler.getFuture();
+    ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(msg);
 
     //setup for checker to ensure future listener isn't triggered to early
