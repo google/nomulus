@@ -39,6 +39,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.util.HashedWheelTimer;
 import javax.inject.Provider;
 import org.joda.time.Duration;
 import org.junit.Rule;
@@ -53,18 +54,13 @@ import org.junit.runners.JUnit4;
  * */
 @RunWith(JUnit4.class)
 public class ProbingActionTest {
-  /** Necessary Constants for test */
-  private final String TEST_MESSAGE = "MESSAGE_TEST";
-  private final String SECONDARY_TEST_MESSAGE = "SECONDARY_MESSAGE_TEST";
-  private final String PROTOCOL_NAME = "TEST_PROTOCOL";
-  private final String ADDRESS_NAME = "TEST_ADDRESS";
-  private final int TEST_PORT = 0;
+  private static final String TEST_MESSAGE = "MESSAGE_TEST";
+  private static final String SECONDARY_TEST_MESSAGE = "SECONDARY_MESSAGE_TEST";
+  private static final String PROTOCOL_NAME = "TEST_PROTOCOL";
+  private static final String ADDRESS_NAME = "TEST_ADDRESS";
+  private static final int TEST_PORT = 0;
 
-  private final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
-  private final LocalAddress address = new LocalAddress(ADDRESS_NAME);
-  private Bootstrap bootstrap = new Bootstrap()
-    .group(eventLoopGroup)
-    .channel(LocalChannel.class);
+  private static final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
 
   /** We use custom Test {@link ActionHandler} and {@link ConversionHandler} so test depends only on {@link ProbingAction} */
   private ActionHandler testHandler = new TestActionHandler();
@@ -73,83 +69,51 @@ public class ProbingActionTest {
   private Provider<? extends ChannelHandler> testHandlerProvider = new TestProvider<>(testHandler);
   private Provider<? extends ChannelHandler> conversionHandlerProvider = new TestProvider<>(conversionHandler);
 
-  private ProbingAction newChannelAction;
-  private ProbingAction existingChannelAction;
-  private EmbeddedChannel channel;
-  private Protocol protocol;
-
   /** Used for testing how well probing step can create connection to blackbox server */
   @Rule
   public NettyRule nettyRule = new NettyRule(eventLoopGroup);
 
-  /** Sets up a {@link Protocol} corresponding to when a new connection is created */
-  private void setupNewChannelProtocol() {
-    protocol = Protocol.builder()
-        .setHandlerProviders(ImmutableList.of(conversionHandlerProvider, testHandlerProvider))
-        .setName(PROTOCOL_NAME)
-        .setPort(TEST_PORT)
-        .setPersistentConnection(false)
-        .build();
-  }
-  /** Sets up a {@link Protocol} corresponding to when a new connection exists */
-  private void setupExistingChannelProtocol() {
-    protocol = Protocol.builder()
+
+
+
+  @Test
+  public void testBehavior_existingChannel() throws UndeterminedStateException {
+    //setup
+    EmbeddedChannel channel = new EmbeddedChannel(conversionHandler, testHandler);
+    channel.attr(CONNECTION_FUTURE_KEY).set(channel.newSucceededFuture());
+
+    // Sets up a Protocol corresponding to when a connection exists.
+    Protocol protocol = Protocol.builder()
         .setHandlerProviders(ImmutableList.of(conversionHandlerProvider, testHandlerProvider))
         .setName(PROTOCOL_NAME)
         .setPort(TEST_PORT)
         .setPersistentConnection(true)
         .build();
-  }
 
-  /** Sets up a {@link ProbingAction} that creates a channel using test specified attributes. */
-  private void setupNewChannelAction() {
-    newChannelAction = ProbingAction.builder()
-        .setBootstrap(bootstrap)
-        .setProtocol(protocol)
-        .setDelay(Duration.ZERO)
-        .setOutboundMessage(new DuplexMessageTest(TEST_MESSAGE))
-        .setHost(ADDRESS_NAME)
-        .build();
-  }
-
-  private void setupChannel() {
-    channel = new EmbeddedChannel();
-    channel.attr(CONNECTION_FUTURE_KEY).set(channel.newSucceededFuture());
-  }
-
-  /** Sets up a {@link ProbingAction} with existing channel using test specified attributes. */
-  private void setupExistingChannelAction(Channel channel) {
-    existingChannelAction = ProbingAction.builder()
+    // Sets up a  ProbingAction that creates a channel using test specified attributes.
+    ProbingAction action = ProbingAction.builder()
         .setChannel(channel)
         .setProtocol(protocol)
         .setDelay(Duration.ZERO)
         .setOutboundMessage(new DuplexMessageTest(TEST_MESSAGE))
         .setHost("")
         .build();
-  }
 
-  @Test
-  public void testBehavior_existingChannel() throws UndeterminedStateException {
-    //setup
-    setupChannel();
-    setupExistingChannelProtocol();
-    channel.pipeline().addLast(conversionHandler);
-    channel.pipeline().addLast(testHandler);
-    setupExistingChannelAction(channel);
+    //tests main function of ProbingAction
+    ChannelFuture future = action.call();
 
-
-    ChannelFuture future = existingChannelAction.call();
-
-    //Ensures that we pass in the right message to the channel and haven't marked the future as success yet
-    Object msg = channel.readOutbound();
+    //Obtains the outboundMessage passed through pipeline after delay
+    Object msg = null;
+    while (msg == null) {
+      msg = channel.readOutbound();
+    }
+    //tests the passed message is exactly what we expect
     assertThat(msg).isInstanceOf(ByteBuf.class);
-    String response = ((ByteBuf) msg).toString(UTF_8);
-    assertThat(response).isEqualTo(TEST_MESSAGE);
-    assertThat(future.isSuccess()).isFalse();
+    String request = ((ByteBuf) msg).toString(UTF_8);
+    assertThat(request).isEqualTo(TEST_MESSAGE);
 
     //after writing inbound, we should have a success
     channel.writeInbound(Unpooled.wrappedBuffer(SECONDARY_TEST_MESSAGE.getBytes(US_ASCII)));
-    future.syncUninterruptibly();
     assertThat(future.isSuccess()).isTrue();
 
     assertThat(testHandler.toString()).isEqualTo(SECONDARY_TEST_MESSAGE);
@@ -158,18 +122,40 @@ public class ProbingActionTest {
   @Test
   public void testSuccess_newChannel() throws Exception {
     //setup
-    setupNewChannelProtocol();
+
+    LocalAddress address = new LocalAddress(ADDRESS_NAME);
+    Bootstrap bootstrap = new Bootstrap()
+        .group(eventLoopGroup)
+        .channel(LocalChannel.class);
+
+    // Sets up a Protocol corresponding to when a new connection is created.
+    Protocol protocol = Protocol.builder()
+        .setHandlerProviders(ImmutableList.of(conversionHandlerProvider, testHandlerProvider))
+        .setName(PROTOCOL_NAME)
+        .setPort(TEST_PORT)
+        .setPersistentConnection(false)
+        .build();
 
     nettyRule.setUpServer(address, new ChannelInboundHandlerAdapter());
-    setupNewChannelAction();
-    ChannelFuture future = newChannelAction.call();
+
+    // Sets up a ProbingAction with existing channel using test specified attributes.
+    ProbingAction action = ProbingAction.builder()
+        .setBootstrap(bootstrap)
+        .setProtocol(protocol)
+        .setDelay(Duration.ZERO)
+        .setOutboundMessage(new DuplexMessageTest(TEST_MESSAGE))
+        .setHost(ADDRESS_NAME)
+        .build();
+
+    //tests main function of ProbingAction
+    ChannelFuture future = action.call();
 
     //Tests to see if message is properly sent to remote server
     nettyRule.assertThatCustomWorks(TEST_MESSAGE);
 
-    future.sync();
+    future.syncUninterruptibly();
     //Tests to see that, since server responds, we have set future to true
-    assertThat(future.isSuccess());
+    assertThat(future.isSuccess()).isTrue();
     assertThat(testHandler.toString()).isEqualTo(TEST_MESSAGE);
   }
 }

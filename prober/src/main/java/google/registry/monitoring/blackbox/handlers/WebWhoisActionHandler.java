@@ -93,7 +93,7 @@ public class WebWhoisActionHandler extends ActionHandler {
       //On success, we always pass message to ActionHandler's channelRead0 method.
       super.channelRead0(ctx, msg);
 
-    } else if (response.status() == HttpResponseStatus.FOUND || response.status() == HttpResponseStatus.MOVED_PERMANENTLY) {
+    } else if (response.headers().get("location") != null) {
 
       //Obtain url to be redirected to
       URL url;
@@ -106,9 +106,8 @@ public class WebWhoisActionHandler extends ActionHandler {
       //From url, extract new host, port, and path
       String newHost = url.getHost();
       String newPath = url.getPath();
-      int newPort = url.getDefaultPort();
 
-      logger.atInfo().log(String.format("Redirected to %s with host: %s, port: %d, and path: %s", url, newHost, newPort, newPath));
+      logger.atInfo().log(String.format("Redirected to %s with host: %s, port: %d, and path: %s", url, newHost, url.getDefaultPort(), newPath));
 
       //Construct new Protocol to reflect redirected host, path, and port
       Protocol newProtocol;
@@ -117,7 +116,7 @@ public class WebWhoisActionHandler extends ActionHandler {
       } else if (url.getProtocol().equals(httpsWhoisProtocol.name())) {
         newProtocol = httpsWhoisProtocol;
       } else {
-        throw new FailureException("Redirection Location port was invalid. Given port was: " + newPort);
+        throw new FailureException("Redirection Location port was invalid. Given protocol name was: " + url.getProtocol());
       }
 
       //Obtain HttpRequestMessage with modified headers to reflect new host and path.
