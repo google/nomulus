@@ -49,7 +49,7 @@ public class ProberModule {
   /** {@link Provides} one global {@link Channel} class that is used to construct a {@link io.netty.bootstrap.Bootstrap}. */
   @Provides
   @Singleton
-  Class<? extends Channel> provideChannelClass() {
+  Class<? extends Channel> provideChannelClazz() {
     return NioSocketChannel.class;
   }
   /** {@link Provides} above {@code DEFAULT_DURATION} for all provided {@link ProbingStep}s to use. */
@@ -77,7 +77,7 @@ public class ProberModule {
   public interface ProberComponent {
 
     //Standard WebWhois sequence
-    Set<ProbingSequence> provideAllSequences();
+    Set<ProbingSequence> sequences();
 
   }
 }

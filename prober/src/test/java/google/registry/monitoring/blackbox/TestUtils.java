@@ -204,7 +204,7 @@ public class TestUtils {
   }
 
   /** Basic outline for {@link Token} instances to be used in tests */
-  private static abstract class TestToken extends Token {
+  static abstract class TestToken extends Token {
     protected String host;
 
     protected TestToken(String host) {
