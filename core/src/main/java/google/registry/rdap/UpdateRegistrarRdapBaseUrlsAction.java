@@ -175,7 +175,7 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
       } catch (Throwable e) {
         // Login failures are bad but not unexpected for certain TLDs. We shouldn't store those
         // but rather should only store useful Throwables.
-        logger.atWarning().log("Error logging in to MoSAPI server: " + e.getMessage(), e);
+        logger.atWarning().log("Error logging in to MoSAPI server: " + e.getMessage());
         continue;
       }
       try {
