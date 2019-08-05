@@ -130,6 +130,7 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
     try {
       HttpRequest request =
           requestFactory.buildGetRequest(new GenericUrl(String.format(LIST_URL, tld)));
+      request.getHeaders().setAcceptEncoding("identity");
       request.getHeaders().setCookie(String.format("%s=%s", COOKIE_ID, id));
       HttpResponse response = request.execute();
 
