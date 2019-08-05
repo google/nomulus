@@ -184,10 +184,10 @@ public class WebWhoisModule {
   @WebWhoisProtocol
   static Bootstrap provideBootstrap(
       EventLoopGroup eventLoopGroup,
-      Class<? extends Channel> channelClass){
+      Class<? extends Channel> channelClazz){
     return new Bootstrap()
         .group(eventLoopGroup)
-        .channel(channelClass);
+        .channel(channelClazz);
   }
 
   @Provides
