@@ -18,27 +18,44 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import google.registry.monitoring.blackbox.TestUtils.ProbingSequenceTestToken;
+import google.registry.monitoring.blackbox.TestUtils.TestToken;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import google.registry.monitoring.blackbox.tokens.Token;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
 import java.net.SocketAddress;
 import org.joda.time.Duration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.mockito.Mockito;
 
 @RunWith(JUnit4.class)
 public class ProbingSequenceTest {
   private final static String TEST_HOST = "TEST_HOST";
 
 
-  private Token testToken = new ProbingSequenceTestToken();
+  private Token testToken = new TestToken("") {
+    @Override
+    public Channel channel() {
+      return null;
+    }
 
+    public void addToHost(String suffix) {
+      host += suffix;
+    }
+  };
+
+  private void setupMock(ProbingStep mock, ProbingStep nextStep) {
+    Mockito.when(mock.accept()).thenCallRealMethod(() -> System.out.println("test"));
+  }
   /**
    * Custom {@link ProbingStep} subclass that acts as a mock
    * step, so we can test how well {@link ProbingSequence} builds
    * a linked list of {@link ProbingStep}s from their {@link Builder}s.
    */
+
   private static class TestStep extends ProbingStep {
     private String marker;
 
@@ -92,9 +109,9 @@ public class ProbingSequenceTest {
 
   @Test
   public void testSequenceBasicConstruction_Success() {
-    ProbingStep firstStep = new TestStep("first");
-    ProbingStep secondStep = new TestStep("second");
-    ProbingStep thirdStep = new TestStep("third");
+    ProbingStep firstStep = Mockito.mock(ProbingStep.class);
+    ProbingStep secondStep = Mockito.mock(ProbingStep.class);
+    ProbingStep thirdStep = Mockito.mock(ProbingStep.class);
 
     ProbingSequence sequence = new ProbingSequence.Builder(testToken)
         .addStep(firstStep)
