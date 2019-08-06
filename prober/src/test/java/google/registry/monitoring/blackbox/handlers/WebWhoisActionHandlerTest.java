@@ -25,7 +25,6 @@ import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.ProbingAction;
 import google.registry.monitoring.blackbox.Protocol;
 import google.registry.monitoring.blackbox.TestServers.WebWhoisServer;
-import google.registry.monitoring.blackbox.TestUtils.TestProvider;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.messages.HttpResponseMessage;
@@ -64,18 +63,16 @@ public class WebWhoisActionHandlerTest {
   private static final String DUMMY_URL = "__WILL_NOT_WORK__";
   private static final Duration DEFAULT_DURATION = new Duration(0L);
   private final Protocol STANDARD_PROTOCOL = Protocol.builder()
-      .setHandlerProviders(ImmutableList.of(new TestProvider<>(new WebWhoisActionHandler(
-          null, null, null, null))))
+      .setHandlerProviders(ImmutableList.of(() -> new WebWhoisActionHandler(
+          null, null, null, null)))
       .setName("http")
       .setPersistentConnection(false)
       .setPort(HTTP_PORT)
       .build();
 
 
-  private LocalAddress address;
   private EmbeddedChannel channel;
   private ActionHandler actionHandler;
-  private ProbingAction probingAction;
   private Provider<? extends ChannelHandler> actionHandlerProvider;
   private Protocol initialProtocol;
   private HttpRequestMessage msg;
@@ -103,13 +100,13 @@ public class WebWhoisActionHandlerTest {
         STANDARD_PROTOCOL,
         messageTemplate
     );
-    actionHandlerProvider = new TestProvider<>(actionHandler);
+    actionHandlerProvider = () -> actionHandler;
   }
 
   /**
    * Sets up testing channel with requisite attributes
    */
-  private void setupChannel(Protocol protocol, HttpRequestMessage outboundMessage) {
+  private void setupChannel(Protocol protocol) {
     channel = new EmbeddedChannel(actionHandler);
     channel.attr(PROTOCOL_KEY).set(protocol);
     channel.attr(CONNECTION_FUTURE_KEY).set(channel.newSucceededFuture());
@@ -121,19 +118,8 @@ public class WebWhoisActionHandlerTest {
         .channel(LocalChannel.class);
   }
 
-  private void setupProbingActionWithoutChannel(Protocol protocol,
-      HttpRequestMessage outboundMessage, Bootstrap bootstrap, String addressString) {
-    probingAction = ProbingAction.builder()
-        .setProtocol(protocol)
-        .setOutboundMessage(outboundMessage)
-        .setDelay(DEFAULT_DURATION)
-        .setBootstrap(bootstrap)
-        .setHost(addressString)
-        .build();
-  }
-
   private void setupLocalServer(String redirectInput, String destinationInput,
-      EventLoopGroup group) {
+      EventLoopGroup group, LocalAddress address) {
     WebWhoisServer.strippedServer(group, address, redirectInput, destinationInput);
   }
 
@@ -148,7 +134,7 @@ public class WebWhoisActionHandlerTest {
   public void testBasic_responseOk() {
     //setup
     setup("", null, true);
-    setupChannel(initialProtocol, msg);
+    setupChannel(initialProtocol);
 
     //stores future
     ChannelFuture future = actionHandler.getFinishedFuture();
@@ -169,7 +155,7 @@ public class WebWhoisActionHandlerTest {
   public void testBasic_responseFailure_badRequest() {
     //setup
     setup("", null, false);
-    setupChannel(initialProtocol, msg);
+    setupChannel(initialProtocol);
 
     //stores future
     ChannelFuture future = actionHandler.getFinishedFuture();
@@ -195,7 +181,7 @@ public class WebWhoisActionHandlerTest {
   public void testBasic_responseFailure_badURL() {
     //setup
     setup("", null, false);
-    setupChannel(initialProtocol, msg);
+    setupChannel(initialProtocol);
 
     //stores future
     ChannelFuture future = actionHandler.getFinishedFuture();
@@ -224,18 +210,18 @@ public class WebWhoisActionHandlerTest {
 
     // Sets up embedded channel.
     setup("", makeBootstrap(group), false);
-    setupChannel(initialProtocol, msg);
+    setupChannel(initialProtocol);
 
     // Initializes LocalAddress with unique String.
     String host = TARGET_HOST + System.currentTimeMillis();
-    address = new LocalAddress(host);
+    LocalAddress address = new LocalAddress(host);
 
     //stores future
     ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(msg);
 
     // Sets up the local server that the handler will be redirected to.
-    setupLocalServer("", host, group);
+    setupLocalServer("", host, group, address);
 
     FullHttpResponse response =
         new HttpResponseMessage(makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY,
