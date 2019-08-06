@@ -16,7 +16,6 @@ package google.registry.monitoring.blackbox;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.monitoring.blackbox.ProberModule.ProberComponent;
-import java.util.Set;
 
 /**
  * Main class of the Prober, which obtains and starts the {@link ProbingSequence}s provided by Dagger.
@@ -30,7 +29,7 @@ public class Prober {
   public static void main(String[] args) {
 
     //Obtains WebWhois Sequence provided by proberComponent
-    Set<ProbingSequence> sequences = proberComponent.sequences();
+    ImmutableSet<ProbingSequence> sequences = ImmutableSet.copyOf(proberComponent.sequences());
 
     //Tells Sequences to start running
     for (ProbingSequence sequence : sequences) {

@@ -22,12 +22,7 @@ import static google.registry.monitoring.blackbox.handlers.SslInitializerTestUti
 import static google.registry.monitoring.blackbox.handlers.SslInitializerTestUtils.signKeyPair;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.ProbingAction;
 import google.registry.monitoring.blackbox.Protocol;
-import google.registry.monitoring.blackbox.TestUtils.DuplexMessageTest;
-import google.registry.monitoring.blackbox.messages.OutboundMessageType;
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.embedded.EmbeddedChannel;
