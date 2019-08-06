@@ -20,7 +20,6 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.TestUtils.TestProvider;
 import google.registry.monitoring.blackbox.handlers.ActionHandler;
 import google.registry.monitoring.blackbox.handlers.ConversionHandler;
 import google.registry.monitoring.blackbox.handlers.NettyRule;
@@ -64,8 +63,8 @@ public class ProbingActionTest {
   private ActionHandler testHandler = new TestActionHandler();
   private ChannelHandler conversionHandler = new ConversionHandler();
 
-  private Provider<? extends ChannelHandler> testHandlerProvider = new TestProvider<>(testHandler);
-  private Provider<? extends ChannelHandler> conversionHandlerProvider = new TestProvider<>(conversionHandler);
+  private Provider<? extends ChannelHandler> testHandlerProvider = () -> testHandler;
+  private Provider<? extends ChannelHandler> conversionHandlerProvider = () -> conversionHandler;
 
   /** Used for testing how well probing step can create connection to blackbox server */
   @Rule
@@ -156,7 +155,7 @@ public class ProbingActionTest {
     future.syncUninterruptibly();
     //Tests to see that, since server responds, we have set future to true
     assertThat(future.isSuccess()).isTrue();
-    assertThat(testHandler.toString()).isEqualTo(TEST_MESSAGE);
+    assertThat(((TestActionHandler)testHandler).getResponse().toString()).isEqualTo(TEST_MESSAGE);
   }
 }
 
