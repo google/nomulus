@@ -44,6 +44,7 @@ registry.json.locks.ExistingLock;
 /**
  * @typedef {{
  *   clientId: string,
+ *   email: string,
  *   details: !Array.<registry.json.locks.ExistingLock>
  * }}
  */

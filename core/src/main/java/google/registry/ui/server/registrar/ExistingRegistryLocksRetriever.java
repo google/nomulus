@@ -14,6 +14,7 @@
 
 package google.registry.ui.server.registrar;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -23,9 +24,9 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.registrar.Registrar;
+import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
-import java.util.Map;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
@@ -34,23 +35,30 @@ import org.joda.time.DateTime;
  */
 final class ExistingRegistryLocksRetriever {
 
+  private static final String EMAIL_PARAM = "email";
   private static final String LOCKS_PARAM = "locks";
   private static final String FULLY_QUALIFIED_DOMAIN_NAME_PARAM = "fullyQualifiedDomainName";
   private static final String LOCKED_TIME_PARAM = "lockedTime";
   private static final String LOCKED_BY_PARAM = "lockedBy";
 
   private final AuthenticatedRegistrarAccessor registrarAccessor;
+  private final AuthResult authResult;
 
   @Inject
-  ExistingRegistryLocksRetriever(AuthenticatedRegistrarAccessor registrarAccessor) {
+  ExistingRegistryLocksRetriever(
+      AuthenticatedRegistrarAccessor registrarAccessor, AuthResult authResult) {
     this.registrarAccessor = registrarAccessor;
+    this.authResult = authResult;
   }
 
-  Map<String, ?> getLockedDomainsMap(String clientId) throws RegistrarAccessDeniedException {
+  ImmutableMap<String, ?> getLockedDomainsMap(String clientId) throws RegistrarAccessDeniedException {
+    checkArgument(authResult.userAuthInfo().isPresent(), "User auth info must be present");
     Registrar registrar = getRegistrarAndVerifyLockAccess(clientId);
     ImmutableList<DummyRegistrarLock> lockedDomains = getLockedDomains(registrar);
     checkArgumentNotNull(lockedDomains);
     return ImmutableMap.of(
+        EMAIL_PARAM,
+        authResult.userAuthInfo().get().user().getEmail(),
         PARAM_CLIENT_ID,
         registrar.getClientId(),
         LOCKS_PARAM,

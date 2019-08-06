@@ -18,18 +18,28 @@
 {template .settings}
   <h1>Registry Lock</h1>
   <br>
-  {call .newLock data="all" /}
-  <div id="existing-locks-div"></div>
+  <div id="locks-content"></div>
+{/template}
+
+{template .locksContent}
+  {@param email: string}
+  {@param locks: list<[fullyQualifiedDomainName: string, lockedTime: string, lockedBy: string]>}
+
+  {call .newLock}
+    {param email: $email /}
+  {/call}
+  {call .existingLocksTable}
+    {param locks: $locks /}
+  {/call}
 {/template}
 
 {template .newLock}
+  {@param email: string}
   <div class="{css('new-registry-lock')}">
     <h2>Lock a Domain</h2>
     <br>
-    // TODO: how do we get the real email address here?
-    <p>You will be billed $20 for this operation. The lock will not be effective until you click the
-      confirmation link that will be emailed to you at placeholder@example.com after
-      confirmation.</p>
+    <p>You will be billed $20 for this operation. The lock will not take effect until you click the
+      confirmation link that will be emailed to you at {$email}.</p>
     <input type="text"
            id="lock-domain-input"
            placeholder="mydomain.example">

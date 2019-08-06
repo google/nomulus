@@ -48,24 +48,11 @@ registry.registrar.RegistryLock.prototype.runAfterRender = function(objArgs) {
   this.clientId = objArgs.clientId;
   this.xsrfToken = objArgs.xsrfToken;
 
-  // Listen to the "submit" button click as well as the enter key
-  var submitButton = goog.dom.getRequiredElement('lock-domain-submit');
-  goog.events.listen(submitButton,
-                     goog.events.EventType.CLICK,
-                     this.onLockDomain_,
-                     false,
-                     this);
-  goog.events.listen(goog.dom.getRequiredElement('lock-domain-input'),
-                     goog.events.EventType.KEYUP,
-                     this.onInputKeyUp_,
-                     false,
-                     this);
-
   // Load the existing locks and display them in the table
   goog.net.XhrIo.send('/registry-lock-get?clientId=' + objArgs.clientId,
       // note: bind this.onUnlockDomain because we lose the "this" reference in the XhrIo callback
-      // so we won't have it in fillExistingLocks_()
-      goog.bind(this.fillExistingLocks_, this, this.onUnlockDomain_));
+      // so we won't have it in fillLocksPage_()
+      goog.bind(this.fillLocksPage_, this, this.onUnlockDomain_));
 };
 
 /**
@@ -80,20 +67,34 @@ const removeModalIfExists_ = function() {
 }
 
 /**
- * Fills the locks table with the response received from the server
+ * Clears the modal and displays the locks content (lock a new domain, existing locks) that was
+ * retrieved from the server.
  * @private
  */
-registry.registrar.RegistryLock.prototype.fillExistingLocks_ = function(onUnlockClick, e) {
+registry.registrar.RegistryLock.prototype.fillLocksPage_ = function(onUnlockClick, e) {
   removeModalIfExists_();
   var response =
           /** @type {!registry.json.locks.ExistingLocksResponse} */
           (e.target.getResponseJson(registry.Resource.PARSER_BREAKER_));
-  var existingLocksDiv = goog.dom.getRequiredElement('existing-locks-div');
+  var locksContentDiv = goog.dom.getRequiredElement('locks-content');
   goog.soy.renderElement(
-      existingLocksDiv, registry.soy.registrar.registrylock.existingLocksTable,
-      {locks: response.locks});
+      locksContentDiv, registry.soy.registrar.registrylock.locksContent,
+      {locks: response.locks, email: response.email});
+
+  // Listen to the lock-domain "submit" button click as well as the enter key
+  var submitButton = goog.dom.getRequiredElement('lock-domain-submit');
+  goog.events.listen(submitButton,
+                     goog.events.EventType.CLICK,
+                     this.onLockDomain_,
+                     false,
+                     this);
+  goog.events.listen(goog.dom.getRequiredElement('lock-domain-input'),
+                     goog.events.EventType.KEYUP,
+                     this.onInputKeyUp_,
+                     false,
+                     this);
   // For all unlock buttons, listen and perform the unlock action if they're clicked
-  var unlockButtons = goog.dom.getElementsByClass('domain-unlock-button', existingLocksDiv);
+  var unlockButtons = goog.dom.getElementsByClass('domain-unlock-button', locksContentDiv);
   for (let i = 0; i < unlockButtons.length; i++) {
     goog.events.listen(unlockButtons[i], goog.events.EventType.CLICK, onUnlockClick, false, this);
   }
@@ -129,8 +130,8 @@ registry.registrar.RegistryLock.prototype.showModal_ = function(targetElement, d
 registry.registrar.RegistryLock.prototype.lockOrUnlockDomain_ = function(domain, isLock, e) {
   goog.net.XhrIo.send('/registry-lock-post',
     // note: bind this.onUnlockDomain because we lose the "this" reference in the XhrIo callback
-    // so we won't have it in fillExistingLocks_()
-    goog.bind(this.fillExistingLocks_, this, this.onUnlockDomain_),
+    // so we won't have it in fillLocksPage_()
+    goog.bind(this.fillLocksPage_, this, this.onUnlockDomain_),
     'POST',
     goog.json.serialize({
       'clientId': this.clientId,
