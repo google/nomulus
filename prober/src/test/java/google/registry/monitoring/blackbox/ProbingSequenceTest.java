@@ -15,17 +15,11 @@
 package google.registry.monitoring.blackbox;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.JUnitBackports.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
 
-import google.registry.monitoring.blackbox.TestUtils.ProbingSequenceTestToken;
-import google.registry.monitoring.blackbox.TestUtils.TestToken;
-import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
-import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import google.registry.monitoring.blackbox.tokens.Token;
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import java.net.SocketAddress;
-import org.joda.time.Duration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -33,85 +27,31 @@ import org.mockito.Mockito;
 
 @RunWith(JUnit4.class)
 public class ProbingSequenceTest {
-  private final static String TEST_HOST = "TEST_HOST";
 
 
-  private Token testToken = new TestToken("") {
-    @Override
-    public Channel channel() {
-      return null;
-    }
-
-    public void addToHost(String suffix) {
-      host += suffix;
-    }
-  };
-
-  private void setupMock(ProbingStep mock, ProbingStep nextStep) {
-    Mockito.when(mock.accept()).thenCallRealMethod(() -> System.out.println("test"));
+  private ProbingStep setupMock() {
+    ProbingStep mock = Mockito.mock(ProbingStep.class);
+    doCallRealMethod().when(mock).nextStep(any(ProbingStep.class));
+    doCallRealMethod().when(mock).nextStep();
+    return mock;
   }
-  /**
-   * Custom {@link ProbingStep} subclass that acts as a mock
-   * step, so we can test how well {@link ProbingSequence} builds
-   * a linked list of {@link ProbingStep}s from their {@link Builder}s.
-   */
 
-  private static class TestStep extends ProbingStep {
-    private String marker;
+  private static class Wrapper<T> {
 
-    /** We implement all abstract methods to simply return null, as we have no use for them here. */
-    @Override
-    Duration duration() {
-      return null;
-    }
+    T data;
 
-    @Override
-    Protocol protocol() {
-      return null;
-    }
-
-    @Override
-    OutboundMessageType messageTemplate() {
-      return null;
-    }
-
-    /** We want to be able to set and retrieve the bootstrap, as {@link ProbingSequence} does this. */
-    @Override
-    Bootstrap bootstrap() {
-      return null;
-    }
-
-    public TestStep(String marker) {
-      this.marker = marker;
-    }
-
-    /**
-     * On a call to accept, we modify the token to reflect what the current step is, so we can get
-     * from the token a string which represents each {@link ProbingStep} {@code marker} concatenated
-     * in order.
-     */
-    @Override
-    public void accept(Token token) {
-      ((ProbingSequenceTestToken) token).addToHost(marker);
-      if (!isLastStep) {
-        nextStep().accept(token);
-      } else {
-        ((TestStep)nextStep()).specialAccept(token);
-      }
-    }
-
-    /** We only invoke this on what we expect to be the firstRepeatedStep marked by the sequence. */
-    public void specialAccept(Token token) {
-      ((ProbingSequenceTestToken) token).addToHost(marker);
-      return;
+    public Wrapper(T data) {
+      this.data = data;
     }
   }
 
   @Test
   public void testSequenceBasicConstruction_Success() {
-    ProbingStep firstStep = Mockito.mock(ProbingStep.class);
-    ProbingStep secondStep = Mockito.mock(ProbingStep.class);
-    ProbingStep thirdStep = Mockito.mock(ProbingStep.class);
+    ProbingStep firstStep = setupMock();
+    ProbingStep secondStep = setupMock();
+    ProbingStep thirdStep = setupMock();
+
+    Token testToken = Mockito.mock(Token.class);
 
     ProbingSequence sequence = new ProbingSequence.Builder(testToken)
         .addStep(firstStep)
@@ -119,16 +59,25 @@ public class ProbingSequenceTest {
         .addStep(thirdStep)
         .build();
 
+    assertThat(firstStep.nextStep()).isEqualTo(secondStep);
+    assertThat(secondStep.nextStep()).isEqualTo(thirdStep);
+    assertThat(thirdStep.nextStep()).isEqualTo(firstStep);
+
+    Wrapper<Boolean> wrapper = new Wrapper<>(false);
+    doAnswer(invocation -> wrapper.data = true).when(firstStep).accept(any(Token.class));
+
     sequence.start();
 
-    assertThat(testToken.host()).isEqualTo("firstsecondthirdfirst");
+    assertThat(wrapper.data).isTrue();
   }
 
   @Test
   public void testSequenceAdvancedConstruction_Success() {
-    ProbingStep firstStep = new TestStep("first");
-    ProbingStep secondStep = new TestStep("second");
-    ProbingStep thirdStep = new TestStep("third");
+    ProbingStep firstStep = setupMock();
+    ProbingStep secondStep = setupMock();
+    ProbingStep thirdStep = setupMock();
+
+    Token testToken = Mockito.mock(Token.class);
 
     ProbingSequence sequence = new ProbingSequence.Builder(testToken)
         .addStep(thirdStep)
@@ -137,9 +86,16 @@ public class ProbingSequenceTest {
         .addStep(firstStep)
         .build();
 
+    assertThat(firstStep.nextStep()).isEqualTo(secondStep);
+    assertThat(secondStep.nextStep()).isEqualTo(firstStep);
+    assertThat(thirdStep.nextStep()).isEqualTo(secondStep);
+
+    Wrapper<Boolean> wrapper = new Wrapper<>(false);
+    doAnswer(invocation -> wrapper.data = true).when(thirdStep).accept(any(Token.class));
+
     sequence.start();
 
-    assertThat(testToken.host()).isEqualTo("thirdsecondfirstsecond");
+    assertThat(wrapper.data).isTrue();
   }
 
 }
