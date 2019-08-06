@@ -138,7 +138,6 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
               logger.atSevere().withStackTrace(SMALL).log("ActionHandler not in Channel Pipeline");
               throw new UndeterminedStateException("No Action Handler found in pipeline");
             }
-
             ChannelFuture channelFuture = actionHandler.getFinishedFuture();
 
             timer.newTimeout(timeout -> {
