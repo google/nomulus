@@ -44,6 +44,8 @@ plugins {
 
   id 'idea'
   id 'com.diffplug.gradle.spotless' version '3.18.0'
+
+  id 'jacoco'
 }
 
 wrapper {
