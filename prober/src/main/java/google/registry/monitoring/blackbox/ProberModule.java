@@ -14,11 +14,9 @@
 
 package google.registry.monitoring.blackbox;
 
-import com.google.common.collect.ImmutableList;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.monitoring.blackbox.WebWhoisModule.WebWhoisProtocol;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
