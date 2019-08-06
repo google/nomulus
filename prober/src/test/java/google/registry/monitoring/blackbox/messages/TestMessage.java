@@ -24,6 +24,10 @@ public class TestMessage implements OutboundMessageType, InboundMessageType {
 
   private String message;
 
+  public TestMessage() {
+    this("");
+  }
+
   public TestMessage(String msg) {
     message = msg;
   }

@@ -25,17 +25,16 @@ import io.netty.channel.ChannelHandlerContext;
  */
 public class TestActionHandler extends ActionHandler {
 
-  private String receivedMessage;
+  private InboundMessageType receivedMessage;
 
   @Override
   public void channelRead0(ChannelHandlerContext ctx, InboundMessageType inboundMessage)
       throws FailureException, UndeterminedStateException {
-    receivedMessage = inboundMessage.toString();
+    receivedMessage = inboundMessage;
     super.channelRead0(ctx, inboundMessage);
   }
 
-  @Override
-  public String toString() {
+  public InboundMessageType getResponse() {
     return receivedMessage;
   }
 
