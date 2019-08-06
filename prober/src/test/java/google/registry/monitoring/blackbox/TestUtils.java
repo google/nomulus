@@ -21,7 +21,6 @@ import google.registry.monitoring.blackbox.tokens.Token;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -29,7 +28,6 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
-import javax.inject.Provider;
 
 /** Utility class for various helper methods used in testing. */
 public class TestUtils {
@@ -66,21 +64,6 @@ public class TestUtils {
       response.headers().set("connection", "keep-alive");
     }
     return response;
-  }
-
-  /** {@link Provider} test subtype for the purpose of easily adding requisite {@link ChannelHandler}s to pipeline */
-  public static class TestProvider<E> implements Provider<E> {
-
-    private E obj;
-
-    public TestProvider(E obj) {
-      this.obj = obj;
-    }
-
-    @Override
-    public E get() {
-      return obj;
-    }
   }
 
   /** Basic outline for {@link Token} instances to be used in tests */
