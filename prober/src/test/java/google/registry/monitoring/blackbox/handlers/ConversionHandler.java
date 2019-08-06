@@ -17,9 +17,9 @@ package google.registry.monitoring.blackbox.handlers;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import google.registry.monitoring.blackbox.TestUtils.DuplexMessageTest;
 import google.registry.monitoring.blackbox.messages.InboundMessageType;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
+import google.registry.monitoring.blackbox.messages.TestMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
@@ -32,7 +32,7 @@ import io.netty.channel.ChannelPromise;
  *  to {@link ByteBuf}s and convert {@link ByteBuf}s to {@link InboundMessageType}
  *
  *  <p>Specific type of {@link OutboundMessageType} and {@link InboundMessageType}
- *  used for conversion is the {@link DuplexMessageTest} type.</p>
+ *  used for conversion is the {@link TestMessage} type.</p>
  */
 public class ConversionHandler extends ChannelDuplexHandler {
 
@@ -40,7 +40,7 @@ public class ConversionHandler extends ChannelDuplexHandler {
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     ByteBuf buf = (ByteBuf) msg;
-    ctx.fireChannelRead(new DuplexMessageTest(buf.toString(UTF_8)));
+    ctx.fireChannelRead(new TestMessage(buf.toString(UTF_8)));
     buf.release();
   }
 
