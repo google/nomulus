@@ -26,7 +26,6 @@ import static org.mockito.Mockito.verify;
 import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.TestUtils.ExistingChannelToken;
 import google.registry.monitoring.blackbox.TestUtils.NewChannelToken;
-import google.registry.monitoring.blackbox.TestUtils.TestProvider;
 import google.registry.monitoring.blackbox.handlers.ActionHandler;
 import google.registry.monitoring.blackbox.handlers.ConversionHandler;
 import google.registry.monitoring.blackbox.handlers.NettyRule;
@@ -90,9 +89,8 @@ public class ProbingStepTest {
   @Test
   public void testNewChannel() throws Exception {
     // Wrapper provider classes of handlers.
-    Provider<? extends ChannelHandler> testHandlerProvider = new TestProvider<>(testHandler);
-    Provider<? extends ChannelHandler> conversionHandlerProvider = new TestProvider<>(
-        conversionHandler);
+    Provider<? extends ChannelHandler> testHandlerProvider = () -> testHandler;
+    Provider<? extends ChannelHandler> conversionHandlerProvider = () -> conversionHandler;
 
     // Sets up Protocol for when we create a new channel.
     Protocol testProtocol = Protocol.builder()
@@ -142,9 +140,8 @@ public class ProbingStepTest {
   @Test
   public void testWithSequence_ExistingChannel() throws Exception {
     // Wrapper provider classes of handlers.
-    Provider<? extends ChannelHandler> testHandlerProvider = new TestProvider<>(testHandler);
-    Provider<? extends ChannelHandler> conversionHandlerProvider = new TestProvider<>(
-        conversionHandler);
+    Provider<? extends ChannelHandler> testHandlerProvider = () -> testHandler;
+    Provider<? extends ChannelHandler> conversionHandlerProvider = () -> conversionHandler;
 
     // Sets up Protocol for when a channel already exists.
     Protocol testProtocol = Protocol.builder()
