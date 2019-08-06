@@ -15,15 +15,12 @@ import io.netty.channel.nio.NioEventLoopGroup;
  * Mock Server Superclass whose subclasses implement specific behaviours we expect blackbox server to perform
  */
 public abstract class TestServer {
-  private LocalAddress localAddress;
 
   TestServer(LocalAddress localAddress, ImmutableList<? extends ChannelHandler> handlers) {
     this(new NioEventLoopGroup(1), localAddress, handlers);
   }
 
   TestServer(EventLoopGroup eventLoopGroup, LocalAddress localAddress, ImmutableList<? extends ChannelHandler> handlers) {
-    this.localAddress = localAddress;
-
     //Creates ChannelInitializer with handlers specified
     ChannelInitializer<LocalChannel> serverInitializer = new ChannelInitializer<LocalChannel>() {
       @Override
