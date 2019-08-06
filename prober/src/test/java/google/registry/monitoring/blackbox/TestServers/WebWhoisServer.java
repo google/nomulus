@@ -11,6 +11,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.local.LocalAddress;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequest;
@@ -60,7 +61,7 @@ public class WebWhoisServer extends TestServer {
    * Handler that will wither redirect client, give successful response, or give error messge
    */
   @Sharable
-  static class RedirectHandler extends ChannelDuplexHandler {
+  static class RedirectHandler extends SimpleChannelInboundHandler<HttpRequest> {
     private String redirectInput;
     private String destinationInput;
 
@@ -76,8 +77,7 @@ public class WebWhoisServer extends TestServer {
 
     /** Reads input {@link HttpRequest}, and creates appropriate {@link HttpResponseMessage} based on what header location is */
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
-      HttpRequest request = (HttpRequest) msg;
+    public void channelRead0(ChannelHandlerContext ctx, HttpRequest request) {
       HttpResponse response;
       if (request.headers().get("host").equals(redirectInput)) {
         response = new HttpResponseMessage(makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, destinationInput, true, false));
