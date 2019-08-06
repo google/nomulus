@@ -152,7 +152,8 @@ public class SslClientInitializerTest {
   @Test
   public void testSuccess_customTrustManager_acceptCertSignedByTrustedCa() throws Exception {
     LocalAddress localAddress =
-        new LocalAddress("CUSTOM_TRUST_MANAGER_ACCEPT_CERT_SIGNED_BY_TRUSTED_CA_" + sslProvider);
+        new LocalAddress(
+            "CUSTOM_TRUST_MANAGER_ACCEPT_CERT_SIGNED_BY_TRUSTED_CA_" + sslProvider);
 
     // Generate a new key pair.
     KeyPair keyPair = getKeyPair();

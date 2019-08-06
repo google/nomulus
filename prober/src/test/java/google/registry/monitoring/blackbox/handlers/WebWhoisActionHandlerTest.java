@@ -124,7 +124,9 @@ public class WebWhoisActionHandlerTest {
         .channel(LocalChannel.class);
   }
   /**Sets up probingAction for when testing redirection */
-  private void setupProbingActionWithChannel(Protocol protocol, HttpRequestMessage outboundMessage) {
+  private void setupProbingActionWithChannel(
+      Protocol protocol,
+      HttpRequestMessage outboundMessage) {
     probingAction = ProbingAction.builder()
         .setProtocol(protocol)
         .setOutboundMessage(outboundMessage)
@@ -134,7 +136,11 @@ public class WebWhoisActionHandlerTest {
         .build();
   }
 
-  private void setupProbingActionWithoutChannel(Protocol protocol, HttpRequestMessage outboundMessage, Bootstrap bootstrap, String addressString) {
+  private void setupProbingActionWithoutChannel(
+      Protocol protocol,
+      HttpRequestMessage outboundMessage,
+      Bootstrap bootstrap,
+      String addressString) {
     probingAction = ProbingAction.builder()
         .setProtocol(protocol)
         .setOutboundMessage(outboundMessage)
@@ -150,11 +156,12 @@ public class WebWhoisActionHandlerTest {
 
   @Test
   public void testBasic_responseOk() throws Exception {
-    //setup
+    // Setup
     Bootstrap bootstrap = null;
     HttpRequestMessage msg = new HttpRequestMessage(makeHttpGetRequest("", ""));
     setupActionHandler(bootstrap, msg);
-    Protocol initialProtocol = createProtocol("responseOk", 0, true);
+    Protocol initialProtocol =
+        createProtocol("responseOk", 0, true);
 
     setupChannel(initialProtocol, msg);
 
@@ -186,7 +193,8 @@ public class WebWhoisActionHandlerTest {
     Bootstrap bootstrap = null;
     HttpRequestMessage msg = new HttpRequestMessage(makeHttpGetRequest("", ""));
     setupActionHandler(bootstrap, msg);
-    Protocol initialProtocol = createProtocol("responseBad", 0, true);
+    Protocol initialProtocol =
+        createProtocol("responseBad", 0, true);
     setupChannel(initialProtocol, msg);
 
     //stores future
@@ -197,7 +205,8 @@ public class WebWhoisActionHandlerTest {
     ChannelPromise testPromise = channel.newPromise();
     future.addListener(f -> testPromise.setSuccess());
 
-    FullHttpResponse response = new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.BAD_REQUEST));
+    FullHttpResponse response =
+        new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.BAD_REQUEST));
 
     //assesses that future listener isn't triggered yet.
     assertThat(testPromise.isSuccess()).isFalse();
@@ -217,7 +226,8 @@ public class WebWhoisActionHandlerTest {
       Bootstrap bootstrap = null;
       HttpRequestMessage msg = new HttpRequestMessage(makeHttpGetRequest("", ""));
       setupActionHandler(bootstrap, msg);
-      Protocol initialProtocol = createProtocol("responseError", 0, true);
+      Protocol initialProtocol =
+          createProtocol("responseError", 0, true);
       setupChannel(initialProtocol, msg);
 
       //stores future
@@ -228,7 +238,12 @@ public class WebWhoisActionHandlerTest {
       ChannelPromise testPromise = channel.newPromise();
       future.addListener(f -> testPromise.setSuccess());
 
-      FullHttpResponse response = new HttpResponseMessage(makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, DUMMY_URL, true, false));
+      FullHttpResponse response =
+          new HttpResponseMessage(makeRedirectResponse(
+              HttpResponseStatus.MOVED_PERMANENTLY,
+              DUMMY_URL,
+              true,
+              false));
 
       //assesses that future listener isn't triggered yet.
       assertThat(testPromise.isSuccess()).isFalse();
@@ -250,7 +265,8 @@ public class WebWhoisActionHandlerTest {
         .channel(LocalChannel.class);
     HttpRequestMessage msg = new HttpRequestMessage(makeHttpGetRequest("", ""));
     setupActionHandler(bootstrap, msg);
-    Protocol initialProtocol = createProtocol("redirectHttp", 0, true);
+    Protocol initialProtocol =
+        createProtocol("redirectHttp", 0, true);
     setupChannel(initialProtocol, msg);
 
     //stores future
@@ -261,7 +277,12 @@ public class WebWhoisActionHandlerTest {
     ChannelPromise testPromise = channel.newPromise();
     future.addListener(f -> testPromise.setSuccess());
 
-    FullHttpResponse response = new HttpResponseMessage(makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, HTTP_REDIRECT + REDIRECT_HOST, true, false));
+    FullHttpResponse response =
+        new HttpResponseMessage(makeRedirectResponse(
+            HttpResponseStatus.MOVED_PERMANENTLY,
+            HTTP_REDIRECT + REDIRECT_HOST,
+            true,
+            false));
 
     //checks that future has not been set to successful or a failure
     assertThat(testPromise.isSuccess()).isFalse();
@@ -281,7 +302,8 @@ public class WebWhoisActionHandlerTest {
     String host = generateLocalAddress(TARGET_HOST);
     HttpRequestMessage msg = new HttpRequestMessage(makeHttpGetRequest(host, ""));
     setupActionHandler(null, msg);
-    Protocol initialProtocol = createProtocol("responseOk", 0, false);
+    Protocol initialProtocol =
+        createProtocol("responseOk", 0, false);
     setupLocalServer("", host);
     setupProbingActionWithoutChannel(initialProtocol, msg, makeBootstrap(group), host);
 
@@ -300,7 +322,8 @@ public class WebWhoisActionHandlerTest {
     HttpRequestMessage msg = new HttpRequestMessage(makeHttpGetRequest(DUMMY_URL, ""));
 
     setupActionHandler(null, msg);
-    Protocol initialProtocol = createProtocol("responseFalse", 0, false);
+    Protocol initialProtocol =
+        createProtocol("responseFalse", 0, false);
 
     setupLocalServer("", TARGET_HOST);
     setupProbingActionWithoutChannel(initialProtocol, msg, makeBootstrap(group), host);

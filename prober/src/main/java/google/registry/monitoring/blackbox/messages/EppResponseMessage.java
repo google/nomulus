@@ -28,11 +28,11 @@ import javax.inject.Inject;
  * expected successful response types: SimpleSuccess, Greeting, DomainExists, DomainNotExists.
  * The times in which each are expected is explained in the Javadoc for each subclass.</p>
  *
- * <p>Stores an expected clTRID and domainName which are the ones used by the {@link EppRequestMessage}
- * pointing to this {@link EppRequestMessage}.</p>
+ * <p>Stores an expected clTRID and domainName which are the ones used by the
+ * {@link EppRequestMessage} pointing to this {@link EppRequestMessage}.</p>
  *
- * <p>From the {@link ByteBuf} input, stores the corresponding {@link org.w3c.dom.Document} represented
- * and to be validated.</p>
+ * <p>From the {@link ByteBuf} input, stores the corresponding {@link org.w3c.dom.Document}
+ * represented and to be validated.</p>
  */
 public abstract class EppResponseMessage extends EppMessage implements InboundMessageType {
   /** Two main variable's whose values in the response we are verifying. */

@@ -31,9 +31,9 @@ import org.joda.time.Duration;
  * in {@link ProbingSequence}.
  *
  * <p>Holds the unchanged components in a given step of the {@link ProbingSequence}, which are
- * the {@link OutboundMessageType}, {@link Protocol}, {@link Duration}, and {@link Bootstrap} instances.
- * It then modifies these components on each loop iteration with the consumed {@link Token} and from that,
- * generates a new {@link ProbingAction} to call.</p>
+ * the {@link OutboundMessageType}, {@link Protocol}, {@link Duration}, and {@link Bootstrap}
+ * instances. It then modifies these components on each loop iteration with the consumed
+ * {@link Token} and from that, generates a new {@link ProbingAction} to call.</p>
  *
  */
 @AutoValue
@@ -51,10 +51,12 @@ public abstract class ProbingStep implements Consumer<Token> {
   /** {@link Protocol} type for this step. */
   abstract Protocol protocol();
 
-  /** {@link OutboundMessageType} instance that serves as template to be modified by {@link Token}. */
+  /** {@link OutboundMessageType} instance that serves as template to be modified by
+   * {@link Token}. */
   abstract OutboundMessageType messageTemplate();
 
-  /** {@link Bootstrap} instance provided by parent {@link ProbingSequence} that allows for creation of new channels. */
+  /** {@link Bootstrap} instance provided by parent {@link ProbingSequence} that allows for creation
+   * of new channels. */
   abstract Bootstrap bootstrap();
 
 

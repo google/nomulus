@@ -18,22 +18,23 @@ import google.registry.monitoring.blackbox.ProberModule.ProberComponent;
 import java.util.Set;
 
 /**
- * Main class of the Prober, which obtains and starts the {@link ProbingSequence}s provided by Dagger.
+ * Main class of the Prober, which obtains and starts the {@link ProbingSequence}s provided by
+ * Dagger.
  */
 public class Prober {
 
   /** Main Dagger Component */
-  private static ProberComponent proberComponent = DaggerProberModule_ProberComponent.builder().build();
+  private static ProberComponent proberComponent = DaggerProberModule_ProberComponent
+      .builder().
+          build();
 
 
   public static void main(String[] args) {
 
-    //Obtains all Sequences provided by proberComponent
+    // Obtains all Sequences provided by proberComponent.
     Set<ProbingSequence> sequences = proberComponent.provideAllSequences();
-    System.out.println(sequences);
-    //Tells Sequences to start running
+    // Tells Sequences to start running.
     for (ProbingSequence sequence : sequences) {
-      System.out.println("test");
       sequence.start();
     }
   }

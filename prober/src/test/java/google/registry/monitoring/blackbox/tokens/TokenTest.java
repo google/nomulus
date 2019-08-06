@@ -50,7 +50,8 @@ public class TokenTest {
     //attempts to use Token's method for modifying the method based on its stored host
     try {
       HttpRequestMessage secondMessage = (HttpRequestMessage) webToken.modifyMessage(message);
-      assertThat(secondMessage.headers().get("host")).isEqualTo(PREFIX+TEST_DOMAINS.get(0));
+      assertThat(secondMessage.headers().get("host"))
+          .isEqualTo(PREFIX+TEST_DOMAINS.get(0));
     } catch(UndeterminedStateException e) {
       throw new RuntimeException(e);
     }
@@ -60,7 +61,8 @@ public class TokenTest {
   public void testEppToken_MessageModificationSuccess()
       throws UndeterminedStateException {
 
-    EppRequestMessage originalMessage = new EppRequestMessage.Create(new EppResponseMessage.SimpleSuccess());
+    EppRequestMessage originalMessage =
+        new EppRequestMessage.Create(new EppResponseMessage.SimpleSuccess());
     String domainName = ((EppToken)eppToken).getCurrentDomainName();
     String clTRID = domainName.substring(0, domainName.indexOf('.'));
 

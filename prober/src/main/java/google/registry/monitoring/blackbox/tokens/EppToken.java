@@ -30,7 +30,8 @@ public abstract class EppToken extends Token {
   /** Describes the maximum possible length of generated domain name. */
   private static final int MAX_DOMAIN_PART_LENGTH = 50;
 
-  /** On every new TRID generated, we increment this static counter to help for added differentiation. */
+  /** On every new TRID generated, we increment this static counter to help for added
+   * differentiation. */
   private static int clientIdSuffix = 0;
 
   protected final String tld;
@@ -56,7 +57,8 @@ public abstract class EppToken extends Token {
 
   /** Modifies the message to reflect the new domain name and TRID */
   @Override
-  public OutboundMessageType modifyMessage(OutboundMessageType originalMessage) throws UndeterminedStateException {
+  public OutboundMessageType modifyMessage(OutboundMessageType originalMessage)
+      throws UndeterminedStateException {
     return ((EppRequestMessage) originalMessage).modifyMessage(getNewTRID(), currentDomainName);
   }
 

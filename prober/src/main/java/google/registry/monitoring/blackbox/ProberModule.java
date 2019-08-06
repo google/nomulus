@@ -33,37 +33,41 @@ import javax.inject.Singleton;
 import org.joda.time.Duration;
 
 /**
- * Dagger main module, which {@link Provides} all objects that are shared between sequences and stores
- * {@link ProberComponent}, which allows main {@link Prober} class to obtain each {@link ProbingSequence}.
+ * Dagger main module, which {@link Provides} all objects that are shared between sequences and
+ * stores {@link ProberComponent}, which allows main {@link Prober} class to obtain each
+ * {@link ProbingSequence}.
  */
 @Module
 public class ProberModule {
 
-  /** Default {@link Duration} chosen to be time between each {@link ProbingAction} call. */
-  private static final Duration DEFAULT_DURATION = Duration.standardSeconds(4);
+  /** Default {@link Duration} chosen to be time between each {@link ProbingAction} call.*/
+  private static final Duration DEFAULT_PROBE_INTERVAL = Duration.standardSeconds(4);
 
-  /** {@link Provides} one global {@link EventLoopGroup} shared by each {@link ProbingSequence}. */
+  /** {@link Provides} one global {@link EventLoopGroup} shared by each {@link ProbingSequence}.*/
   @Provides
   @Singleton
   EventLoopGroup provideEventLoopGroup() {
     return new NioEventLoopGroup();
   }
 
-  /** {@link Provides} one global {@link Channel} class that is used to construct a {@link io.netty.bootstrap.Bootstrap}. */
+  /** {@link Provides} one global {@link Channel} class that is used to construct a
+   * { @link Bootstrap} */
   @Provides
   @Singleton
   Class<? extends Channel> provideChannelClass() {
     return NioSocketChannel.class;
   }
 
-  /** {@link Provides} above {@code DEFAULT_DURATION} for all provided {@link ProbingStep}s to use. */
+  /** {@link Provides} above {@code DEFAULT_PROBE_INTERVAL} for all provided {@link ProbingStep}s to
+   * use. */
   @Provides
   @Singleton
   Duration provideDuration() {
-    return DEFAULT_DURATION;
+    return DEFAULT_PROBE_INTERVAL;
   }
 
-  /** {@link Provides} general {@link Bootstrap} for which a new instance is provided in any {@link ProbingSequence}. */
+  /** {@link Provides} general {@link Bootstrap} for which a new instance is provided in any
+   * {@link ProbingSequence}. */
   @Provides
   Bootstrap provideBootstrap(EventLoopGroup eventLoopGroup) {
     return new Bootstrap()
@@ -71,7 +75,8 @@ public class ProberModule {
         .channel(NioSocketChannel.class);
   }
 
-  /** {@link Provides} the {@link SslProvider} used by instances of {@link google.registry.monitoring.blackbox.handlers.SslClientInitializer} */
+  /** {@link Provides} the {@link SslProvider} used by instances of
+   * {@link google.registry.monitoring.blackbox.handlers.SslClientInitializer} */
   @Provides
   @Singleton
   static SslProvider provideSslProvider() {

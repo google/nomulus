@@ -50,7 +50,9 @@ public abstract class TestServer extends ExternalResource {
     this.eventLoopGroup = eventLoopGroup;
   }
 
-  protected void setupServer(LocalAddress address, ImmutableList<? extends ChannelHandler> handlers) {
+  protected void setupServer(
+      LocalAddress address,
+      ImmutableList<? extends ChannelHandler> handlers) {
 
     //Creates ChannelInitializer with handlers specified
     ChannelInitializer<LocalChannel> serverInitializer = new ChannelInitializer<LocalChannel>() {
@@ -61,7 +63,8 @@ public abstract class TestServer extends ExternalResource {
         }
       }
     };
-    //Sets up serverBootstrap with specified initializer, eventLoopGroup, and using LocalServerChannel class
+    //Sets up serverBootstrap with specified initializer, eventLoopGroup,
+    // and using LocalServerChannel class.
     ServerBootstrap serverBootstrap =
         new ServerBootstrap()
             .group(eventLoopGroup)
@@ -110,7 +113,9 @@ public abstract class TestServer extends ExternalResource {
   }
 
   protected void checkReady() {
-    checkState(channel != null, "Must call setUpClient to finish TestServer setup");
+    checkState(
+        channel != null,
+        "Must call setUpClient to finish TestServer setup");
   }
 
 

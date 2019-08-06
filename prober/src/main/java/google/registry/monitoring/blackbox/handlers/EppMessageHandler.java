@@ -37,7 +37,10 @@ public class EppMessageHandler extends ChannelDuplexHandler {
   /** Corresponding {@link EppResponseMessage} that we expect to receive back from server. */
   private EppResponseMessage response;
 
-  /** Always sets response to be {@link EppResponseMessage.Greeting} as that will be first server response. */
+  /**
+   * Always sets response to be {@link EppResponseMessage.Greeting} as that will be first server
+   * response.
+   * */
   @Inject
   public EppMessageHandler() {
     response = new EppResponseMessage.Greeting();

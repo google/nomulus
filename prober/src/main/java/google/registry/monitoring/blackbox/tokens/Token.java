@@ -47,7 +47,8 @@ public abstract class Token {
   public abstract String host();
 
   /** Modifies the {@link OutboundMessageType} in the manner necessary for each loop */
-  public abstract OutboundMessageType modifyMessage(OutboundMessageType messageType) throws UndeterminedStateException;
+  public abstract OutboundMessageType modifyMessage(OutboundMessageType messageType)
+      throws UndeterminedStateException;
 
   /** Set method for {@code channel} */
   public void setChannel(Channel channel) {

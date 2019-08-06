@@ -78,20 +78,24 @@ public class EppMessage {
    * Static variables necessary for static methods that serve as tools for {@link Document}
    * creation, conversion, and verification.
    */
-  private final static DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+  private final static DocumentBuilderFactory docBuilderFactory =
+      DocumentBuilderFactory.newInstance();
   private static final XPath xpath;
   private static final Schema eppSchema;
 
-  /** {@link Document} that represents the actual XML document sent inbound or outbound through channel pipeline. */
+  /**
+   * {@link Document} that represents the actual XML document sent inbound or outbound through
+   * channel pipeline.
+   */
   protected Document message;
 
 
-  /** Expression that expresses a result code in the {@link EppResponseMessage} that means success. */
+  /** Expression for a result code in the {@link EppResponseMessage} that means success. */
   @VisibleForTesting
   static final String XPASS_EXPRESSION =
       String.format("//eppns:result[@code>='%s'][@code<'%s']", 1000, 2000);
 
-  /** Expression that expresses a result code in the {@link EppResponseMessage} that means failure. */
+  /** Expression for a result code in the {@link EppResponseMessage} that means failure. */
   @VisibleForTesting
   static final String XFAIL_EXPRESSION =
       String.format("//eppns:result[@code>='%s'][@code<'%s']", 2000, 3000);

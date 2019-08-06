@@ -55,11 +55,13 @@ public class WebWhoisToken extends Token {
 
   /** Modifies message to reflect the new host coming from the new top level domain. */
   @Override
-  public OutboundMessageType modifyMessage(OutboundMessageType original) throws UndeterminedStateException {
+  public OutboundMessageType modifyMessage(OutboundMessageType original)
+      throws UndeterminedStateException {
     return original.modifyMessage(host());
   }
 
-  /** Returns host as the concatenation of fixed {@code prefix} and current value of {@code topLevelDomains}. */
+  /** Returns host as the concatenation of fixed {@code prefix} and current value of
+   * {@codde topLevelDomains}. */
   @Override
   public String host() {
     return PREFIX + currentDomain;

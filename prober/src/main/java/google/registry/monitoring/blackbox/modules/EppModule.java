@@ -78,7 +78,8 @@ public class EppModule {
         .build();
   }
 
-  /** Dagger provided {@link ProbingSequence} that probes EPP login, create, delete, and logout actions. */
+  /** Dagger provided {@link ProbingSequence} that probes EPP login, create, delete, and logout
+   * actions. */
   @Provides
   @Singleton
   @IntoSet
@@ -98,7 +99,8 @@ public class EppModule {
         .build();
   }
 
-  /** Dagger provided {@link ProbingSequence} that probes EPP login, create, check, delete, and logout actions. */
+  /** Dagger provided {@link ProbingSequence} that probes EPP login, create, check, delete, and
+   * logout actions. */
   @Provides
   @Singleton
   @IntoSet
@@ -242,10 +244,12 @@ public class EppModule {
   }
 
   /**
-   * Set of all possible {@link EppRequestMessage}s paired with their expected {@link EppResponseMessage}s.
+   * Set of all possible {@link EppRequestMessage}s paired with their expected
+   * {@link EppResponseMessage}s.
    */
 
-  /** {@link Provides} {@link EppRequestMessage.Hello} with only expected response of {@link EppResponseMessage.Greeting}. */
+  /** {@link Provides} {@link EppRequestMessage.Hello} with only expected response of
+   * {@link EppResponseMessage.Greeting}. */
   @Provides
   @Named("hello")
   static EppRequestMessage provideHelloRequestMessage(
@@ -253,7 +257,8 @@ public class EppModule {
     return new EppRequestMessage.Hello(greetingResponse);
   }
 
-  /** {@link Provides} {@link EppRequestMessage.Login} with expected response of {@link EppResponseMessage.SimpleSuccess}. */
+  /** {@link Provides} {@link EppRequestMessage.Login} with expected response of
+   * {@link EppResponseMessage.SimpleSuccess}. */
   @Provides
   @Named("loginSuccess")
   static EppRequestMessage provideLoginSuccessRequestMessage(
@@ -263,7 +268,8 @@ public class EppModule {
     return new EppRequestMessage.Login(simpleSuccessResponse, userId, userPassword);
   }
 
-  /** {@link Provides} {@link EppRequestMessage.Login} wit expected response of {@link EppResponseMessage.Failure}. */
+  /** {@link Provides} {@link EppRequestMessage.Login} wit expected response of
+   * {@link EppResponseMessage.Failure}. */
   @Provides
   @Named("loginFailure")
   static EppRequestMessage provideLoginFailureRequestMessage(
@@ -273,7 +279,8 @@ public class EppModule {
     return new EppRequestMessage.Login(failureResponse, userId, userPassword);
   }
 
-  /** {@link Provides} {@link EppRequestMessage.Create} with expected response of {@link EppResponseMessage.SimpleSuccess}. */
+  /** {@link Provides} {@link EppRequestMessage.Create} with expected response of
+   * {@link EppResponseMessage.SimpleSuccess}. */
   @Provides
   @Named("createSuccess")
   static EppRequestMessage provideCreateSuccessRequestMessage(
@@ -281,7 +288,8 @@ public class EppModule {
     return new EppRequestMessage.Create(simpleSuccessResponse);
   }
 
-  /** {@link Provides} {@link EppRequestMessage.Create} with expected response of {@link EppResponseMessage.Failure}. */
+  /** {@link Provides} {@link EppRequestMessage.Create} with expected response of
+   * {@link EppResponseMessage.Failure}. */
   @Provides
   @Named("createFailure")
   static EppRequestMessage provideCreateFailureRequestMessage(
@@ -289,7 +297,8 @@ public class EppModule {
     return new EppRequestMessage.Create(failureResponse);
   }
 
-  /** {@link Provides} {@link EppRequestMessage.Delete} with expected response of {@link EppResponseMessage.SimpleSuccess}. */
+  /** {@link Provides} {@link EppRequestMessage.Delete} with expected response of
+   * {@link EppResponseMessage.SimpleSuccess}. */
   @Provides
   @Named("deleteSuccess")
   static EppRequestMessage provideDeleteSuccessRequestMessage(
@@ -297,7 +306,8 @@ public class EppModule {
     return new EppRequestMessage.Delete(simpleSuccessResponse);
   }
 
-  /** {@link Provides} {@link EppRequestMessage.Delete} with expected response of {@link EppResponseMessage.Failure}. */
+  /** {@link Provides} {@link EppRequestMessage.Delete} with expected response of
+   * {@link EppResponseMessage.Failure}. */
   @Provides
   @Named("deleteFailure")
   static EppRequestMessage provideDeleteFailureRequestMessage(
@@ -305,7 +315,8 @@ public class EppModule {
     return new EppRequestMessage.Delete(failureResponse);
   }
 
-  /** {@link Provides} {@link EppRequestMessage.Logout} with only expected response of {@link EppResponseMessage.SimpleSuccess}. */
+  /** {@link Provides} {@link EppRequestMessage.Logout} with only expected response of
+   * {@link EppResponseMessage.SimpleSuccess}. */
   @Provides
   @Named("logout")
   static EppRequestMessage provideLogoutRequestMessage(
@@ -313,7 +324,8 @@ public class EppModule {
     return new EppRequestMessage.Logout(simpleSuccessResponse);
   }
 
-  /** {@link Provides} {@link EppRequestMessage.Check} with expected response of {@link EppResponseMessage.DomainExists}. */
+  /** {@link Provides} {@link EppRequestMessage.Check} with expected response of
+   * {@link EppResponseMessage.DomainExists}. */
   @Provides
   @Named("checkExists")
   static EppRequestMessage provideCheckExistsMessage(
@@ -321,7 +333,8 @@ public class EppModule {
     return new EppRequestMessage.Check(domainExistsResponse);
   }
 
-  /** {@link Provides} {@link EppRequestMessage.Check} with expected response of {@link EppResponseMessage.DomainNotExists}. */
+  /** {@link Provides} {@link EppRequestMessage.Check} with expected response of
+   * {@link EppResponseMessage.DomainNotExists}. */
   @Provides
   @Named("checkNotExists")
   static EppRequestMessage provideCheckNotExistsMessage(
@@ -344,7 +357,8 @@ public class EppModule {
         .build();
   }
 
-  /** {@link Provides} the list of providers of {@link ChannelHandler}s that are used for the EPP Protocol. */
+  /** {@link Provides} the list of providers of {@link ChannelHandler}s that are used for the EPP
+   * Protocol. */
   @Provides
   @EppProtocol
   static ImmutableList<Provider<? extends ChannelHandler>> provideEppHandlerProviders(

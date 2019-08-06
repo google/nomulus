@@ -88,7 +88,8 @@ public class CertificateModule {
 
   @Singleton
   @Provides
-  static X509Certificate[] provideCertificates(@Named("keystore") Provider<String> passwordProvider) {
+  static X509Certificate[] provideCertificates(
+      @Named("keystore") Provider<String> passwordProvider) {
     try {
       InputStream inStream = readResource("secrets/prober-client-tls-sandbox.p12");
 

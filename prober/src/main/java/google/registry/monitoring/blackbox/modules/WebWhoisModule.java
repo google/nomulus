@@ -127,7 +127,8 @@ public class WebWhoisModule {
   }
 
 
-  /** {@link Provides} the list of providers of {@link ChannelHandler}s that are used for http protocol. */
+  /** {@link Provides} the list of providers of {@link ChannelHandler}s that are used for http
+   * protocol. */
   @Provides
   @HttpWhoisProtocol
   static ImmutableList<Provider<? extends ChannelHandler>> providerHttpWhoisHandlerProviders(
@@ -142,11 +143,14 @@ public class WebWhoisModule {
         webWhoisActionHandlerProvider);
   }
 
-  /** {@link Provides} the list of providers of {@link ChannelHandler}s that are used for https protocol. */
+  /** {@link Provides} the list of providers of {@link ChannelHandler}s that are used for https
+   * i
+   * protocol. */
   @Provides
   @HttpsWhoisProtocol
   static ImmutableList<Provider<? extends ChannelHandler>> providerHttpsWhoisHandlerProviders(
-      @HttpsWhoisProtocol Provider<SslClientInitializer<NioSocketChannel>> sslClientInitializerProvider,
+      @HttpsWhoisProtocol
+          Provider<SslClientInitializer<NioSocketChannel>> sslClientInitializerProvider,
       Provider<HttpClientCodec> httpClientCodecProvider,
       Provider<HttpObjectAggregator> httpObjectAggregatorProvider,
       Provider<WebWhoisMessageHandler> messageHandlerProvider,
@@ -172,7 +176,8 @@ public class WebWhoisModule {
   /** {@link Provides} the {@link SslClientInitializer} used for the {@link HttpsWhoisProtocol}. */
   @Provides
   @HttpsWhoisProtocol
-  static SslClientInitializer<NioSocketChannel> provideSslClientInitializer(SslProvider sslProvider) {
+  static SslClientInitializer<NioSocketChannel>
+  provideSslClientInitializer(SslProvider sslProvider) {
     return new SslClientInitializer<>(sslProvider);
   }
 

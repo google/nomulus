@@ -43,7 +43,8 @@ import java.util.concurrent.Future;
  * Helper for setting up and testing client / server connection with netty.
  *
  * <p>Code based on and almost identical to {@link google.registry.proxy.handler.NettyRule}.
- * Used in {@link SslClientInitializerTest}, {@link ProbingActionTest}, and {@link ProbingSequenceStepTest} </p>
+ * Used in {@link SslClientInitializerTest}, {@link ProbingActionTest}, and
+ * {@link ProbingSequenceStepTest} </p>
  */
 public final class EchoServer extends TestServer {
 
@@ -75,9 +76,15 @@ public final class EchoServer extends TestServer {
 
   }
 
-  public void setUpClient(LocalAddress address, Protocol protocol, String host, ChannelHandler handler) {
-    checkState(echoHandler != null, "Must call setUpServer before setUpClient");
-    checkState(dumpHandler == null, "Can't call setUpClient twice");
+  public void setUpClient(
+      LocalAddress address,
+      Protocol protocol,
+      String host,
+      ChannelHandler handler) {
+    checkState(
+        echoHandler != null, "Must call setUpServer before setUpClient");
+    checkState(
+        dumpHandler == null, "Can't call setUpClient twice");
     dumpHandler = new DumpHandler();
     super.setUpClient(address, protocol, host, ImmutableList.of(handler, dumpHandler));
   }

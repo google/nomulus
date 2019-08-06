@@ -50,10 +50,10 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
   /** Key that allows for substitution of{@code clTRID} to xml template. */
   public final static String CLIENT_TRID_KEY = "//eppns:clTRID";
 
-  /** Client TRID associated with current request (modified on each call to {@code modifyMessage}. */
+  /** Client TRID associated with current request (modified on each call to {@code modifyMessage}.*/
   protected String clTRID;
 
-  /** Domain name associated with current request (modified on each call to {@code modifyMessage}. */
+  /** Domain name associated with current request (modified on each call to {@code modifyMessage}.*/
   protected String domainName;
 
   /** Filename for template of current request type. */
@@ -93,20 +93,23 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
     return this;
   }
 
-  /** Private constructor for {@link EppRequestMessage} that its subclasses use for instantiation. */
+  /** Private constructor for {@link EppRequestMessage} that its subclasses use for instantiation.*/
   private EppRequestMessage(EppResponseMessage expectedResponse, String template) {
     this.expectedResponse = expectedResponse;
     this.template = template;
   }
 
   /**
-   * Converts the current {@link org.w3c.dom.Document} message to a {@link ByteBuf} with the requisite bytes
+   * Converts the current {@link org.w3c.dom.Document} message to a {@link ByteBuf} with the
+   * requisite bytes
    *
-   * @return the {@link ByteBuf} instance that stores the bytes representing the requisite EPP Request
+   * @return the {@link ByteBuf} instance that stores the bytes representing the requisite EPP
+   * Request
    *
-   * @throws EppClientException- On the occasion that the prober can't appropriately convert the EPP XML
-   * document to a {@link ByteBuf}, the blame falls on the prober, not the server, so it throws an
-   * {@link EppClientException}, which is a subclass of the {@link UndeterminedStateException}.
+   * @throws EppClientException- On the occasion that the prober can't appropriately convert the EPP
+   * XML document to a {@link ByteBuf}, the blame falls on the prober, not the server, so it
+   * throws an {@link EppClientException}, which is a subclass of the
+   * {@link UndeterminedStateException}.
    */
   public ByteBuf bytes() throws EppClientException{
     //obtain byte array of our modified xml document

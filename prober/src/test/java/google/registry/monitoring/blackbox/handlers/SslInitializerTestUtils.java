@@ -43,7 +43,8 @@ public class SslInitializerTestUtils {
   }
 
   public static KeyPair getKeyPair() throws Exception {
-    KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", "BC");
+    KeyPairGenerator keyPairGenerator =
+        KeyPairGenerator.getInstance("RSA", "BC");
     keyPairGenerator.initialize(2048, new SecureRandom());
     return keyPairGenerator.generateKeyPair();
   }

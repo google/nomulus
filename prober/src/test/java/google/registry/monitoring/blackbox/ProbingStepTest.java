@@ -14,9 +14,9 @@
 package google.registry.monitoring.blackbox;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.monitoring.blackbox.ProbingAction.CONNECTION_FUTURE_KEY;
 import static google.registry.monitoring.blackbox.TestUtils.dummyStep;
 import static google.registry.monitoring.blackbox.TestUtils.testStep;
+import static google.registry.monitoring.blackbox.connection.ProbingAction.CONNECTION_FUTURE_KEY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -68,33 +68,41 @@ public class ProbingStepTest {
   public EchoServer echoServer = new EchoServer(eventLoopGroup);
 
 
-  /** The two main handlers we need in any test pipeline used that connects to {@link EchoServer's server}**/
+  /** The two main handlers we need in any test pipeline used that connects to {@link EchoServer}'s
+   *server}**/
   private ActionHandler testHandler = new TestActionHandler();
   private ChannelHandler conversionHandler = new ConversionHandler();
 
   /** Wrapper provider classes of these handlers */
-  private Provider<? extends ChannelHandler> testHandlerProvider = new TestProvider<>(testHandler);
-  private Provider<? extends ChannelHandler> conversionHandlerProvider = new TestProvider<>(conversionHandler);
+  private Provider<? extends ChannelHandler> testHandlerProvider =
+      new TestProvider<>(testHandler);
+  private Provider<? extends ChannelHandler> conversionHandlerProvider =
+      new TestProvider<>(conversionHandler);
 
-  /** Embedded Channel and Protocol both are stated, but not specified until we know which test we are running) */
+  /** Embedded Channel and Protocol both are stated, but not specified until we know which test we
+   * are running) */
   private EmbeddedChannel channel;
   private Protocol testProtocol;
 
 
 
-  /** Fields that correspond to instances of each of the above {@link ProbingStep} classes in the same order */
+  /** Fields that correspond to instances of each of the above {@link ProbingStep} classes in the
+   * same order */
   private ProbingStep firstStep;
   private ProbingStep dummyStep;
 
-  /** We declare the token we feed into our probing step, but will specify what kind it is, depending on if we are creating a new channel or reusing one */
+  /** We declare the token we feed into our probing step, but will specify what kind it is,
+   * depending on if we are creating a new channel or reusing one */
   private Token testToken;
 
-  /** Sets up testToken to return arbitrary values, and no channel. Used when we create a new channel */
+  /** Sets up testToken to return arbitrary values, and no channel. Used when we create a new
+   * channel */
   private void setupNewChannelToken() {
     testToken = new NewChannelToken(ADDRESS_NAME);
   }
 
-  /** Sets up testToken to return arbitrary value, and the embedded channel. Used for when the ProbingStep generates an ExistingChannelAction */
+  /** Sets up testToken to return arbitrary value, and the embedded channel. Used for when the
+   * ProbingStep generates an ExistingChannelAction */
   private void setupExistingChannelToken() {
     testToken = new ExistingChannelToken(channel, "");
   }
@@ -189,7 +197,8 @@ public class ProbingStepTest {
     assertThat(firstStep.nextStep()).isEqualTo(dummyStep);
     assertThat(dummyStep.nextStep()).isEqualTo(firstStep);
 
-    //Call accept on the first step, which should send our message through the EmbeddedChannel pipeline
+    //Call accept on the first step, which should send our message through the EmbeddedChannel
+    // pipeline
     firstStep.accept(testToken);
 
     //Ensures the accurate message is sent down the pipeline
@@ -201,7 +210,8 @@ public class ProbingStepTest {
     //Write response to our message down EmbeddedChannel pipeline
     channel.writeInbound(Unpooled.wrappedBuffer(SECONDARY_TEST_MESSAGE.getBytes(US_ASCII)));
 
-    //At this point, we should have received the message, so the future obtained should be marked as a success
+    //At this point, we should have received the message, so the future obtained should be marked
+    // as a success
     assertThat(future.isSuccess());
 
     //checks that the requisite token is passed down

@@ -90,7 +90,8 @@ public class TestUtils {
     return response;
   }
 
-  /** {@link Provider} test subtype for the purpose of easily adding requisite {@link ChannelHandler}s to pipeline */
+  /** {@link Provider} test subtype for the purpose of easily adding requisite
+   * {@link ChannelHandler}s to pipeline */
   public static class TestProvider<E> implements Provider<E> {
 
     private E obj;
@@ -105,7 +106,8 @@ public class TestUtils {
     }
   }
 
-  /** {@link InboundMessageType} and {@link OutboundMessageType} type for the purpose of containing String messages to be passed down channel */
+  /** {@link InboundMessageType} and {@link OutboundMessageType} type for the purpose of containing
+   * String messages to be passed down channel */
   public static class DuplexMessageTest implements OutboundMessageType, InboundMessageType {
 
     String message;
@@ -131,7 +133,11 @@ public class TestUtils {
   }
 
   /** {@link ProbingStep} subclass that performs probing Steps functions, without time delay */
-  public static ProbingStep testStep(Protocol protocol, String testMessage, Bootstrap bootstrap, SocketAddress address) {
+  public static ProbingStep testStep(
+      Protocol protocol,
+      String testMessage,
+      Bootstrap bootstrap,
+      SocketAddress address) {
     return ProbingStep.builder()
         .setProtocol(protocol)
         .setDuration(Duration.ZERO)
@@ -144,7 +150,8 @@ public class TestUtils {
     return new DummyStep(eventLoopGroup);
   }
 
-  /** {@link ProbingStep} subclass that is solely used to note when the previous {@link ProbingStep} has completed its action */
+  /** {@link ProbingStep} subclass that is solely used to note when the previous {@link ProbingStep}
+   * has completed its action */
   public static class DummyStep extends ProbingStep {
     private DefaultPromise<Token> future;
 

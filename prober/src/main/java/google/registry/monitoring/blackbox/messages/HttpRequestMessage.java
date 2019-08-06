@@ -38,7 +38,11 @@ public class HttpRequestMessage extends DefaultFullHttpRequest implements Outbou
   private HttpRequestMessage(HttpVersion httpVersion, HttpMethod method, String uri) {
     super(httpVersion, method, uri);
   }
-  private HttpRequestMessage(HttpVersion httpVersion, HttpMethod method, String uri, ByteBuf content) {
+  private HttpRequestMessage(
+      HttpVersion httpVersion,
+      HttpMethod method,
+      String uri,
+      ByteBuf content) {
     super(httpVersion, method, uri, content);
   }
 
@@ -66,7 +70,8 @@ public class HttpRequestMessage extends DefaultFullHttpRequest implements Outbou
       return this;
 
     } else {
-      throw new IllegalArgumentException("Wrong number of arguments present for modifying HttpRequestMessage.");
+      throw new IllegalArgumentException(
+          "Wrong number of arguments present for modifying HttpRequestMessage.");
     }
   }
 

@@ -23,11 +23,13 @@ import io.netty.channel.EventLoopGroup;
  * Represents Sequence of {@link ProbingStep}s that the Prober performs in order.
  *
  *
- * <p>Created with {@link Builder} where we specify {@link EventLoopGroup}, {@link AbstractChannel} class type,
- * then sequentially add in the {@link ProbingStep.Builder}s in order and mark which one is the first repeated step.</p>
+ * <p>Created with {@link Builder} where we specify {@link EventLoopGroup}, {@link AbstractChannel}
+ * class type, then sequentially add in the {@link ProbingStep.Builder}s in order and mark which
+ * one is the first repeated step.</p>
  *
- * <p>{@link ProbingSequence} implicitly points each {@link ProbingStep} to the next one, so once the first one
- * is activated with the requisite {@link Token}, the {@link ProbingStep}s do the rest of the work.</p>
+ * <p>{@link ProbingSequence} implicitly points each {@link ProbingStep} to the next one, so once
+ * the first one is activated with the requisite {@link Token}, the {@link ProbingStep}s do the
+ * rest of the work.</p>
  */
 public class ProbingSequence {
   private ProbingStep firstStep;

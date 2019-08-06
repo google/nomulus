@@ -35,14 +35,18 @@ public class WebWhoisMessageHandler extends ChannelDuplexHandler {
 
   /** Retains {@link HttpRequestMessage} and calls super write method. */
   @Override
-  public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+  public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
+      throws Exception {
     HttpRequestMessage request = (HttpRequestMessage) msg;
     request.retain();
     super.write(ctx, request, promise);
   }
 
 
-  /** Converts {@link FullHttpResponse} to {@link HttpResponseMessage}, so it is an {@link InboundMessageType} instance. */
+  /**
+   * Converts {@link FullHttpResponse} to {@link HttpResponseMessage}, so it is an
+   * {@link InboundMessageType} instance.
+   */
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     FullHttpResponse originalResponse = (FullHttpResponse) msg;
