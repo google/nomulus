@@ -14,38 +14,28 @@
 
 package google.registry.monitoring.blackbox.testservers;
 
-import static google.registry.monitoring.blackbox.TestUtils.makeHttpResponse;
-import static google.registry.monitoring.blackbox.TestUtils.makeRedirectResponse;
-
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.messages.HttpResponseMessage;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandler.Sharable;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.local.LocalServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
 
 /**
  * Mock Server Superclass whose subclasses implement specific behaviors we expect blackbox server to
  * perform
  */
-public class TestServer {
+public abstract class TestServer {
 
-  public TestServer(LocalAddress localAddress, ImmutableList<? extends ChannelHandler> handlers) {
+  TestServer(LocalAddress localAddress, ImmutableList<? extends ChannelHandler> handlers) {
     this(new NioEventLoopGroup(1), localAddress, handlers);
   }
 
-  public TestServer(EventLoopGroup eventLoopGroup, LocalAddress localAddress,
+  TestServer(EventLoopGroup eventLoopGroup, LocalAddress localAddress,
       ImmutableList<? extends ChannelHandler> handlers) {
     //Creates ChannelInitializer with handlers specified
     ChannelInitializer<LocalChannel> serverInitializer = new ChannelInitializer<LocalChannel>() {
@@ -68,56 +58,4 @@ public class TestServer {
 
   }
 
-  public static TestServer webWhoisServer(EventLoopGroup eventLoopGroup,
-      LocalAddress localAddress, String redirectInput, String destinationInput,
-      String destinationPath) {
-    return new TestServer(
-        eventLoopGroup,
-        localAddress,
-        ImmutableList.of(new RedirectHandler(redirectInput, destinationInput, destinationPath))
-    );
-  }
-
-  /**
-   * Handler that will wither redirect client, give successful response, or give error messge
-   */
-  @Sharable
-  static class RedirectHandler extends SimpleChannelInboundHandler<HttpRequest> {
-
-    private String redirectInput;
-    private String destinationInput;
-    private String destinationPath;
-
-    /**
-     * @param redirectInput - Server will send back redirect to {@code destinationInput} when
-     * receiving a request with this host location
-     * @param destinationInput - Server will send back an {@link HttpResponseStatus} OK response
-     * when receiving a request with this host location
-     */
-    public RedirectHandler(String redirectInput, String destinationInput, String destinationPath) {
-      this.redirectInput = redirectInput;
-      this.destinationInput = destinationInput;
-      this.destinationPath = destinationPath;
-    }
-
-    /**
-     * Reads input {@link HttpRequest}, and creates appropriate {@link HttpResponseMessage} based on
-     * what header location is
-     */
-    @Override
-    public void channelRead0(ChannelHandlerContext ctx, HttpRequest request) {
-      HttpResponse response;
-      if (request.headers().get("host").equals(redirectInput)) {
-        response = new HttpResponseMessage(
-            makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, destinationInput, true));
-      } else if (request.headers().get("host").equals(destinationInput)
-          && request.uri().equals(destinationPath)) {
-        response = new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.OK));
-      } else {
-        response = new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.BAD_REQUEST));
-      }
-      ChannelFuture unusedFuture = ctx.channel().writeAndFlush(response);
-
-    }
-  }
 }

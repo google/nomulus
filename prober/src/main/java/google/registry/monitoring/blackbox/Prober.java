@@ -18,12 +18,16 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.monitoring.blackbox.ProberModule.ProberComponent;
 
 /**
- * Main class of the Prober, which obtains and starts the {@link ProbingSequence}s provided by Dagger.
+ * Main class of the Prober, which obtains and starts the {@link ProbingSequence}s provided by
+ * Dagger.
  */
 public class Prober {
 
-  /** Main Dagger Component */
-  private static ProberComponent proberComponent = DaggerProberModule_ProberComponent.builder().build();
+  /**
+   * Main Dagger Component
+   */
+  private static ProberComponent proberComponent = DaggerProberModule_ProberComponent.builder()
+      .build();
 
 
   public static void main(String[] args) {
