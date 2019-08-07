@@ -16,12 +16,6 @@ package google.registry.monitoring.blackbox;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.monitoring.blackbox.ProbingAction.CONNECTION_FUTURE_KEY;
-import static java.nio.charset.StandardCharsets.US_ASCII;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.TestUtils.ExistingChannelToken;
@@ -34,8 +28,6 @@ import google.registry.monitoring.blackbox.handlers.TestActionHandler;
 import google.registry.monitoring.blackbox.messages.TestMessage;
 import google.registry.monitoring.blackbox.tokens.Token;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.EventLoopGroup;
@@ -43,11 +35,9 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
-import javax.inject.Provider;
 import org.joda.time.Duration;
 import org.junit.Rule;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 /** Unit Tests for {@link ProbingSequence}s and {@link ProbingStep}s and their specific implementations*/
 public class ProbingStepTest {
@@ -79,7 +69,7 @@ public class ProbingStepTest {
 
   @Test
   public void testProbingActionGenerate_embeddedChannel() throws UndeterminedStateException {
-    //setup
+    // Sets up Protocol to represent existing channel connection.
     Protocol testProtocol = Protocol.builder()
         .setHandlerProviders(ImmutableList.of(() -> conversionHandler, () -> testHandler))
         .setName(PROTOCOL_NAME)
@@ -87,17 +77,22 @@ public class ProbingStepTest {
         .setPersistentConnection(true)
         .build();
 
+    // Sets up an embedded channel to contain the two handlers we created already.
     EmbeddedChannel channel = new EmbeddedChannel(conversionHandler, testHandler);
     channel.attr(CONNECTION_FUTURE_KEY).set(channel.newSucceededFuture());
 
+    // Sets up testToken to return arbitrary value, and the embedded channel. Used for when the
+    // ProbingStep generates an ExistingChannelAction.
     Token testToken = new ExistingChannelToken(channel, SECONDARY_TEST_MESSAGE);
 
+    // Sets up generic {@link ProbingStep} that we are testing.
     ProbingStep testStep = ProbingStep.builder()
         .setMessageTemplate(new TestMessage(TEST_MESSAGE))
         .setBootstrap(bootstrap)
         .setDuration(Duration.ZERO)
         .setProtocol(testProtocol)
         .build();
+
 
     ProbingAction testAction = testStep.generateAction(testToken);
 
@@ -112,7 +107,7 @@ public class ProbingStepTest {
 
   @Test
   public void testProbingActionGenerate_newChannel() throws UndeterminedStateException {
-    //setup
+    // Sets up Protocol for when we create a new channel.
     Protocol testProtocol = Protocol.builder()
         .setHandlerProviders(ImmutableList.of(() -> conversionHandler, () -> testHandler))
         .setName(PROTOCOL_NAME)
@@ -120,8 +115,7 @@ public class ProbingStepTest {
         .setPersistentConnection(false)
         .build();
 
-    nettyRule.setUpServer(address);
-
+    // Sets up generic ProbingStep that we are testing.
     ProbingStep testStep = ProbingStep.builder()
         .setMessageTemplate(new TestMessage(TEST_MESSAGE))
         .setBootstrap(bootstrap)
@@ -132,6 +126,9 @@ public class ProbingStepTest {
     // Sets up testToken to return arbitrary values, and no channel. Used when we create a new
     // channel.
     Token testToken = new NewChannelToken(ADDRESS_NAME);
+
+    // Sets up server listening at LocalAddress so generated action can have successful connection.
+    nettyRule.setUpServer(address);
 
     ProbingAction testAction = testStep.generateAction(testToken);
 
