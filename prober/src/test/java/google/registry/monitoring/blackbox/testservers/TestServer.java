@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.monitoring.blackbox.TestServers;
+package google.registry.monitoring.blackbox.testservers;
 
 import com.google.common.collect.ImmutableList;
 import io.netty.bootstrap.ServerBootstrap;
@@ -26,7 +26,8 @@ import io.netty.channel.local.LocalServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 
 /**
- * Mock Server Superclass whose subclasses implement specific behaviors we expect blackbox server to perform
+ * Mock Server Superclass whose subclasses implement specific behaviors we expect blackbox server to
+ * perform
  */
 public abstract class TestServer {
 
@@ -34,7 +35,8 @@ public abstract class TestServer {
     this(new NioEventLoopGroup(1), localAddress, handlers);
   }
 
-  TestServer(EventLoopGroup eventLoopGroup, LocalAddress localAddress, ImmutableList<? extends ChannelHandler> handlers) {
+  TestServer(EventLoopGroup eventLoopGroup, LocalAddress localAddress,
+      ImmutableList<? extends ChannelHandler> handlers) {
     //Creates ChannelInitializer with handlers specified
     ChannelInitializer<LocalChannel> serverInitializer = new ChannelInitializer<LocalChannel>() {
       @Override
@@ -44,12 +46,13 @@ public abstract class TestServer {
         }
       }
     };
-    //Sets up serverBootstrap with specified initializer, eventLoopGroup, and using LocalServerChannel class
+    //Sets up serverBootstrap with specified initializer, eventLoopGroup, and using
+    // LocalServerChannel class
     ServerBootstrap serverBootstrap =
         new ServerBootstrap()
-        .group(eventLoopGroup)
-        .channel(LocalServerChannel.class)
-        .childHandler(serverInitializer);
+            .group(eventLoopGroup)
+            .channel(LocalServerChannel.class)
+            .childHandler(serverInitializer);
 
     ChannelFuture unusedFuture = serverBootstrap.bind(localAddress).syncUninterruptibly();
 

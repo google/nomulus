@@ -43,14 +43,16 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
 /**
  * Unit tests for {@link ProbingAction} subtypes
  *
  * <p>Attempts to test how well each {@link ProbingAction} works with an {@link ActionHandler}
  * subtype when receiving to all possible types of responses</p>
- * */
+ */
 @RunWith(JUnit4.class)
 public class ProbingActionTest {
+
   private static final String TEST_MESSAGE = "MESSAGE_TEST";
   private static final String SECONDARY_TEST_MESSAGE = "SECONDARY_MESSAGE_TEST";
   private static final String PROTOCOL_NAME = "TEST_PROTOCOL";
@@ -59,14 +61,19 @@ public class ProbingActionTest {
 
   private static final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
 
-  /** We use custom Test {@link ActionHandler} and {@link ConversionHandler} so test depends only on {@link ProbingAction} */
+  /**
+   * We use custom Test {@link ActionHandler} and {@link ConversionHandler} so test depends only on
+   * {@link ProbingAction}
+   */
   private ActionHandler testHandler = new TestActionHandler();
   private ChannelHandler conversionHandler = new ConversionHandler();
 
   private Provider<? extends ChannelHandler> testHandlerProvider = () -> testHandler;
   private Provider<? extends ChannelHandler> conversionHandlerProvider = () -> conversionHandler;
 
-  /** Used for testing how well probing step can create connection to blackbox server */
+  /**
+   * Used for testing how well probing step can create connection to blackbox server
+   */
   @Rule
   public NettyRule nettyRule = new NettyRule(eventLoopGroup);
 
@@ -152,10 +159,10 @@ public class ProbingActionTest {
     //Tests to see if message is properly sent to remote server
     nettyRule.assertReceivedMessage(TEST_MESSAGE);
 
-    future.syncUninterruptibly();
+    future = future.syncUninterruptibly();
     //Tests to see that, since server responds, we have set future to true
     assertThat(future.isSuccess()).isTrue();
-    assertThat(((TestActionHandler)testHandler).getResponse().toString()).isEqualTo(TEST_MESSAGE);
+    assertThat(((TestActionHandler) testHandler).getResponse().toString()).isEqualTo(TEST_MESSAGE);
   }
 }
 
