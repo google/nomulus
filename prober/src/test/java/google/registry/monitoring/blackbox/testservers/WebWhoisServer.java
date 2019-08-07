@@ -110,8 +110,7 @@ public class WebWhoisServer extends TestServer {
       HttpResponse response;
       if (request.headers().get("host").equals(redirectInput)) {
         response = new HttpResponseMessage(
-            makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, destinationInput, true,
-                false));
+            makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, destinationInput, true));
       } else if (request.headers().get("host").equals(destinationInput)) {
         response = new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.OK));
       } else {
