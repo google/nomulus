@@ -14,4 +14,3 @@
 
 @javax.annotation.ParametersAreNonnullByDefault
 package google.registry.xjc;
-
