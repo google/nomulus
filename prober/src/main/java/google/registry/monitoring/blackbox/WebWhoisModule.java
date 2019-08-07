@@ -17,14 +17,11 @@ package google.registry.monitoring.blackbox;
 import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
-
 import dagger.multibindings.IntoSet;
-import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
-import google.registry.monitoring.blackbox.messages.OutboundMessageType;
-import google.registry.monitoring.blackbox.tokens.Token;
-import google.registry.monitoring.blackbox.handlers.WebWhoisMessageHandler;
 import google.registry.monitoring.blackbox.handlers.SslClientInitializer;
 import google.registry.monitoring.blackbox.handlers.WebWhoisActionHandler;
+import google.registry.monitoring.blackbox.handlers.WebWhoisMessageHandler;
+import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.tokens.WebWhoisToken;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -33,16 +30,15 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslProvider;
-import java.util.List;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
 import org.joda.time.Duration;
 
-/** A module that provides the {@link Protocol}s to send HTTP(S) web WHOIS requests. */
+/**
+ * A module that provides the {@link Protocol}s to send HTTP(S) web WHOIS requests.
+ */
 @Module
 public class WebWhoisModule {
 
@@ -51,23 +47,39 @@ public class WebWhoisModule {
   private static final String HTTP_PROTOCOL_NAME = "http";
   private static final String HTTPS_PROTOCOL_NAME = "https";
 
-  /** Standard length of messages used by Proxy. Equates to 0.5 MB. */
+  /**
+   * Standard length of messages used by Proxy. Equates to 0.5 MB.
+   */
   private static final int maximumMessageLengthBytes = 512 * 1024;
 
 
-  /** Dagger qualifier to provide HTTP whois protocol related handlers and other bindings. */
+  /**
+   * Dagger qualifier to provide HTTP whois protocol related handlers and other bindings.
+   */
   @Qualifier
-  public @interface HttpWhoisProtocol {}
+  public @interface HttpWhoisProtocol {
 
-  /** Dagger qualifier to provide HTTPS whois protocol related handlers and other bindings. */
+  }
+
+  /**
+   * Dagger qualifier to provide HTTPS whois protocol related handlers and other bindings.
+   */
   @Qualifier
-  public @interface HttpsWhoisProtocol {}
+  public @interface HttpsWhoisProtocol {
 
-  /** Dagger qualifier to provide any WebWhois related bindings. */
+  }
+
+  /**
+   * Dagger qualifier to provide any WebWhois related bindings.
+   */
   @Qualifier
-  public @interface WebWhoisProtocol {}
+  public @interface WebWhoisProtocol {
 
-  /** {@link Provides} standard WebWhois sequence. */
+  }
+
+  /**
+   * {@link Provides} standard WebWhois sequence.
+   */
   @Provides
   @Singleton
   @IntoSet
@@ -81,7 +93,9 @@ public class WebWhoisModule {
   }
 
 
-  /** {@link Provides} only step used in WebWhois sequence. */
+  /**
+   * {@link Provides} only step used in WebWhois sequence.
+   */
   @Provides
   @WebWhoisProtocol
   static ProbingStep provideWebWhoisStep(
@@ -98,7 +112,9 @@ public class WebWhoisModule {
         .build();
   }
 
-  /** {@link Provides} the {@link Protocol} that corresponds to http connection. */
+  /**
+   * {@link Provides} the {@link Protocol} that corresponds to http connection.
+   */
   @Singleton
   @Provides
   @HttpWhoisProtocol
@@ -113,7 +129,9 @@ public class WebWhoisModule {
         .build();
   }
 
-  /** {@link Provides} the {@link Protocol} that corresponds to https connection. */
+  /**
+   * {@link Provides} the {@link Protocol} that corresponds to https connection.
+   */
   @Singleton
   @Provides
   @HttpsWhoisProtocol
@@ -129,7 +147,10 @@ public class WebWhoisModule {
   }
 
 
-  /** {@link Provides} the list of providers of {@link ChannelHandler}s that are used for http protocol. */
+  /**
+   * {@link Provides} the list of providers of {@link ChannelHandler}s that are used for http
+   * protocol.
+   */
   @Provides
   @HttpWhoisProtocol
   static ImmutableList<Provider<? extends ChannelHandler>> providerHttpWhoisHandlerProviders(
@@ -144,11 +165,15 @@ public class WebWhoisModule {
         webWhoisActionHandlerProvider);
   }
 
-  /** {@link Provides} the list of providers of {@link ChannelHandler}s that are used for https protocol. */
+  /**
+   * {@link Provides} the list of providers of {@link ChannelHandler}s that are used for https
+   * protocol.
+   */
   @Provides
   @HttpsWhoisProtocol
   static ImmutableList<Provider<? extends ChannelHandler>> providerHttpsWhoisHandlerProviders(
-      @HttpsWhoisProtocol Provider<SslClientInitializer<NioSocketChannel>> sslClientInitializerProvider,
+      @HttpsWhoisProtocol
+          Provider<SslClientInitializer<NioSocketChannel>> sslClientInitializerProvider,
       Provider<HttpClientCodec> httpClientCodecProvider,
       Provider<HttpObjectAggregator> httpObjectAggregatorProvider,
       Provider<WebWhoisMessageHandler> messageHandlerProvider,
@@ -171,23 +196,28 @@ public class WebWhoisModule {
     return new HttpObjectAggregator(maxContentLength);
   }
 
-  /** {@link Provides} the {@link SslClientInitializer} used for the {@link HttpsWhoisProtocol}. */
+  /**
+   * {@link Provides} the {@link SslClientInitializer} used for the {@link HttpsWhoisProtocol}.
+   */
   @Provides
   @HttpsWhoisProtocol
-  static SslClientInitializer<NioSocketChannel> provideSslClientInitializer(SslProvider sslProvider) {
+  static SslClientInitializer<NioSocketChannel> provideSslClientInitializer(
+      SslProvider sslProvider) {
     return new SslClientInitializer<>(sslProvider);
   }
 
-  /** {@link Provides} the {@link Bootstrap} used by the WebWhois sequence. */
+  /**
+   * {@link Provides} the {@link Bootstrap} used by the WebWhois sequence.
+   */
   @Singleton
   @Provides
   @WebWhoisProtocol
   static Bootstrap provideBootstrap(
       EventLoopGroup eventLoopGroup,
-      Class<? extends Channel> channelClass){
+      Class<? extends Channel> channelClazz) {
     return new Bootstrap()
         .group(eventLoopGroup)
-        .channel(channelClass);
+        .channel(channelClazz);
   }
 
   @Provides
@@ -196,12 +226,14 @@ public class WebWhoisModule {
     return maximumMessageLengthBytes;
   }
 
-  /** {@link Provides} the list of top level domains to be probed */
+  /**
+   * {@link Provides} the list of top level domains to be probed
+   */
   @Singleton
   @Provides
   @WebWhoisProtocol
   ImmutableList<String> provideTopLevelDomains() {
-    return ImmutableList.of("how", "soy" , "xn--q9jyb4c");
+    return ImmutableList.of("how", "soy", "xn--q9jyb4c");
   }
 
   @Provides
