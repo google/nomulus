@@ -58,7 +58,7 @@ public abstract class Protocol {
   }
 
   @Override
-  public String toString() {
+  public final String toString() {
     return String.format(
         "Protocol with name: %s, port: %d, providers: %s, and persistent connection: %s",
         name(),
