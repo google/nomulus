@@ -17,8 +17,8 @@ package google.registry.monitoring.blackbox.handlers;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.monitoring.blackbox.ProbingAction.CONNECTION_FUTURE_KEY;
 import static google.registry.monitoring.blackbox.Protocol.PROTOCOL_KEY;
-import static google.registry.monitoring.blackbox.TestUtils.makeHttpResponse;
 import static google.registry.monitoring.blackbox.TestUtils.makeHttpGetRequest;
+import static google.registry.monitoring.blackbox.TestUtils.makeHttpResponse;
 import static google.registry.monitoring.blackbox.TestUtils.makeRedirectResponse;
 
 import com.google.common.collect.ImmutableList;
@@ -39,7 +39,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import javax.inject.Provider;
-import org.joda.time.Duration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -54,14 +53,9 @@ import org.junit.runners.JUnit4;
 public class WebWhoisActionHandlerTest {
 
   private static final int HTTP_PORT = 80;
-  private static final int HTTPS_PORT = 443;
   private static final String HTTP_REDIRECT = "http://";
-  private static final String HTTPS_REDIRECT = "https://";
-  private static final String REDIRECT_HOST = "www.example.com";
-  private static final String REDIRECT_PATH = "/test/path";
   private static final String TARGET_HOST = "whois.nic.tld";
   private static final String DUMMY_URL = "__WILL_NOT_WORK__";
-  private static final Duration DEFAULT_DURATION = new Duration(0L);
   private final Protocol STANDARD_PROTOCOL = Protocol.builder()
       .setHandlerProviders(ImmutableList.of(() -> new WebWhoisActionHandler(
           null, null, null, null)))
@@ -177,6 +171,7 @@ public class WebWhoisActionHandlerTest {
     assertThat(future.cause() instanceof FailureException).isTrue();
   }
 
+  @SuppressWarnings("CheckReturnValue")
   @Test
   public void testBasic_responseFailure_badURL() {
     //setup

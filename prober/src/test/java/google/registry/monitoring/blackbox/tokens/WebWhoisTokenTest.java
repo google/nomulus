@@ -16,12 +16,8 @@ package google.registry.monitoring.blackbox;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
-import google.registry.monitoring.blackbox.tokens.Token;
-import google.registry.monitoring.blackbox.tokens.WebWhoisToken;
-import google.registry.util.AbstractCircularLinkedListIterator;
 import google.registry.util.DefaultCircularLinkedListIterator;
 import java.util.Iterator;
 import org.junit.Test;

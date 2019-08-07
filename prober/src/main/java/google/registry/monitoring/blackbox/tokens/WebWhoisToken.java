@@ -25,18 +25,24 @@ import javax.inject.Inject;
  * {@link Token} subtype designed for WebWhois sequence.
  *
  * <p>Between loops of a WebWhois sequence the only thing changing is the tld we
- * are probing. As a result, we maintain the list of {@code topLevelDomains} and
- * on each call to next, have our index looking at the next {@code topLevelDomain}. </p>
+ * are probing. As a result, we maintain the list of {@code topLevelDomains} and on each call to
+ * next, have our index looking at the next {@code topLevelDomain}. </p>
  */
 public class WebWhoisToken extends Token {
 
-  /** For each top level domain (tld), we probe "prefix.tld". */
-  private final static String PREFIX = "whois.nic.";
+  /**
+   * For each top level domain (tld), we probe "prefix.tld".
+   */
+  private static final String PREFIX = "whois.nic.";
 
-  /** {@link ImmutableList} of all top level domains to be probed. */
+  /**
+   * {@link ImmutableList} of all top level domains to be probed.
+   */
   private final Iterator<String> topLevelDomainsIterator;
 
-  /** Current index of {@code topLevelDomains} that represents tld we are probing. */
+  /**
+   * Current index of {@code topLevelDomains} that represents tld we are probing.
+   */
   private String currentDomain;
 
   @Inject
@@ -46,20 +52,28 @@ public class WebWhoisToken extends Token {
     currentDomain = this.topLevelDomainsIterator.next();
   }
 
-  /** Increments {@code domainsIndex} or resets it to reflect move to next top level domain. */
+  /**
+   * Increments {@code domainsIndex} or resets it to reflect move to next top level domain.
+   */
   @Override
   public WebWhoisToken next() {
     currentDomain = topLevelDomainsIterator.next();
     return this;
   }
 
-  /** Modifies message to reflect the new host coming from the new top level domain. */
+  /**
+   * Modifies message to reflect the new host coming from the new top level domain.
+   */
   @Override
-  public OutboundMessageType modifyMessage(OutboundMessageType original) throws UndeterminedStateException {
+  public OutboundMessageType modifyMessage(OutboundMessageType original)
+      throws UndeterminedStateException {
     return original.modifyMessage(host());
   }
 
-  /** Returns host as the concatenation of fixed {@code prefix} and current value of {@code topLevelDomains}. */
+  /**
+   * Returns host as the concatenation of fixed {@code prefix} and current value of {@code
+   * topLevelDomains}.
+   */
   @Override
   public String host() {
     return PREFIX + currentDomain;

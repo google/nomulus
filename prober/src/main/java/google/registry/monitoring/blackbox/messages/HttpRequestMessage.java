@@ -19,14 +19,15 @@ import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
+import java.util.Arrays;
 import javax.inject.Inject;
 
 /**
  * {@link OutboundMessageType} subtype that acts identically to {@link DefaultFullHttpRequest}.
  *
  * <p>As it is an {@link OutboundMessageType} subtype, there is a {@code modifyMessage} method
- * that modifies the request to reflect the new host and optional path. We also implement a
- * {@code name} method, which returns a standard name and the current hostname.</p>
+ * that modifies the request to reflect the new host and optional path. We also implement a {@code
+ * name} method, which returns a standard name and the current hostname.</p>
  */
 public class HttpRequestMessage extends DefaultFullHttpRequest implements OutboundMessageType {
 
@@ -38,10 +39,20 @@ public class HttpRequestMessage extends DefaultFullHttpRequest implements Outbou
   private HttpRequestMessage(HttpVersion httpVersion, HttpMethod method, String uri) {
     super(httpVersion, method, uri);
   }
-  private HttpRequestMessage(HttpVersion httpVersion, HttpMethod method, String uri, ByteBuf content) {
+
+  private HttpRequestMessage(HttpVersion httpVersion, HttpMethod method, String uri,
+      ByteBuf content) {
     super(httpVersion, method, uri, content);
   }
 
+
+  /**
+   * Used for conversion from {@link FullHttpRequest} to {@link HttpRequestMessage}
+   */
+  public HttpRequestMessage(FullHttpRequest request) {
+    this(request.protocolVersion(), request.method(), request.uri(), request.content());
+    request.headers().forEach((entry) -> headers().set(entry.getKey(), entry.getValue()));
+  }
 
   @Override
   public HttpRequestMessage setUri(String path) {
@@ -49,19 +60,16 @@ public class HttpRequestMessage extends DefaultFullHttpRequest implements Outbou
     return this;
   }
 
-  /** Used for conversion from {@link FullHttpRequest} to {@link HttpRequestMessage} */
-  public HttpRequestMessage(FullHttpRequest request) {
-    this(request.protocolVersion(), request.method(), request.uri(), request.content());
-    request.headers().forEach((entry) -> headers().set(entry.getKey(), entry.getValue()));
-  }
-
-  /** Modifies headers to reflect new host and new path if applicable. */
+  /**
+   * Modifies headers to reflect new host and new path if applicable.
+   */
   @Override
   public HttpRequestMessage modifyMessage(String... args) throws IllegalArgumentException {
     if (args.length == 1 || args.length == 2) {
       headers().set("host", args[0]);
-      if (args.length == 2)
+      if (args.length == 2) {
         setUri(args[1]);
+      }
 
       return this;
 
@@ -69,7 +77,7 @@ public class HttpRequestMessage extends DefaultFullHttpRequest implements Outbou
       throw new IllegalArgumentException(
           String.format(
               "Wrong number of arguments present for modifying HttpRequestMessage."
-              + " Received %d arguments instead of: " + args, args.length));
+                  + " Received %d arguments instead of: " + Arrays.toString(args), args.length));
     }
   }
 

@@ -28,36 +28,22 @@ import javax.inject.Singleton;
 import org.joda.time.Duration;
 
 /**
- * Dagger main module, which {@link Provides} all objects that are shared between sequences and stores
- * {@link ProberComponent}, which allows main {@link Prober} class to obtain each {@link ProbingSequence}.
+ * Dagger main module, which {@link Provides} all objects that are shared between sequences and
+ * stores {@link ProberComponent}, which allows main {@link Prober} class to obtain each {@link
+ * ProbingSequence}.
  */
 @Module
 public class ProberModule {
 
-  /** Default {@link Duration} chosen to be time between each {@link ProbingAction} call. */
+  /**
+   * Default {@link Duration} chosen to be time between each {@link ProbingAction} call.
+   */
   private static final Duration DEFAULT_DURATION = Duration.standardSeconds(4);
 
-  /** {@link Provides} one global {@link EventLoopGroup} shared by each {@link ProbingSequence}. */
-  @Provides
-  @Singleton
-  EventLoopGroup provideEventLoopGroup() {
-    return new NioEventLoopGroup();
-  }
-
-  /** {@link Provides} one global {@link Channel} class that is used to construct a {@link io.netty.bootstrap.Bootstrap}. */
-  @Provides
-  @Singleton
-  Class<? extends Channel> provideChannelClazz() {
-    return NioSocketChannel.class;
-  }
-  /** {@link Provides} above {@code DEFAULT_DURATION} for all provided {@link ProbingStep}s to use. */
-  @Provides
-  @Singleton
-  Duration provideDuration() {
-    return DEFAULT_DURATION;
-  }
-
-  /** {@link Provides} the {@link SslProvider} used by instances of {@link google.registry.monitoring.blackbox.handlers.SslClientInitializer} */
+  /**
+   * {@link Provides} the {@link SslProvider} used by instances of {@link
+   * google.registry.monitoring.blackbox.handlers.SslClientInitializer}
+   */
   @Provides
   @Singleton
   static SslProvider provideSslProvider() {
@@ -65,7 +51,37 @@ public class ProberModule {
     return OpenSsl.isAvailable() ? SslProvider.OPENSSL : SslProvider.JDK;
   }
 
-  /** Root level {@link Component} that provides each {@link ProbingSequence}. */
+  /**
+   * {@link Provides} one global {@link EventLoopGroup} shared by each {@link ProbingSequence}.
+   */
+  @Provides
+  @Singleton
+  EventLoopGroup provideEventLoopGroup() {
+    return new NioEventLoopGroup();
+  }
+
+  /**
+   * {@link Provides} one global {@link Channel} class that is used to construct a {@link
+   * io.netty.bootstrap.Bootstrap}.
+   */
+  @Provides
+  @Singleton
+  Class<? extends Channel> provideChannelClazz() {
+    return NioSocketChannel.class;
+  }
+
+  /**
+   * {@link Provides} above {@code DEFAULT_DURATION} for all provided {@link ProbingStep}s to use.
+   */
+  @Provides
+  @Singleton
+  Duration provideDuration() {
+    return DEFAULT_DURATION;
+  }
+
+  /**
+   * Root level {@link Component} that provides each {@link ProbingSequence}.
+   */
   @Singleton
   @Component(
       modules = {
