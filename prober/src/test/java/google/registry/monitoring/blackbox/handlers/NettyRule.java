@@ -28,7 +28,7 @@ import com.google.common.truth.ThrowableSubject;
 import google.registry.monitoring.blackbox.ProbingActionTest;
 import google.registry.monitoring.blackbox.ProbingStepTest;
 import google.registry.monitoring.blackbox.Protocol;
-import google.registry.monitoring.blackbox.TestServers.WebWhoisServer;
+import google.registry.monitoring.blackbox.testservers.WebWhoisServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;

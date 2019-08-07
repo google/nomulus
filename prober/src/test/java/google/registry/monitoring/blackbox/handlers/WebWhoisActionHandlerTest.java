@@ -24,7 +24,7 @@ import static google.registry.monitoring.blackbox.TestUtils.makeRedirectResponse
 import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.ProbingAction;
 import google.registry.monitoring.blackbox.Protocol;
-import google.registry.monitoring.blackbox.TestServers.WebWhoisServer;
+import google.registry.monitoring.blackbox.testservers.WebWhoisServer;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.messages.HttpResponseMessage;
