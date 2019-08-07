@@ -65,7 +65,7 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
   public void channelRead0(ChannelHandlerContext ctx, InboundMessageType inboundMessage)
       throws FailureException, UndeterminedStateException {
 
-    finished.setSuccess();
+    ChannelFuture unusedFuture = finished.setSuccess();
   }
 
   /**
@@ -86,14 +86,14 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
       logger.atInfo().log(cause.getMessage());
 
       //As always, inform the ProbingStep that we successfully completed this action
-      finished.setFailure(cause);
+      ChannelFuture unusedFuture = finished.setFailure(cause);
 
     } else {
       //On UndeterminedStateException, we know the response type is an error.
 
       //Since it wasn't a success, we still log what caused the ERROR
       logger.atWarning().log(cause.getMessage());
-      finished.setFailure(cause);
+      ChannelFuture unusedFuture = finished.setFailure(cause);
 
       //As this was an ERROR in performing the action, we must close the channel
       ChannelFuture closedFuture = ctx.channel().close();
