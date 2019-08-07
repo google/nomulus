@@ -86,7 +86,7 @@ public class WebWhoisActionHandler extends ActionHandler {
 
     HttpResponseMessage response = (HttpResponseMessage) msg;
 
-    if (response.status() == HttpResponseStatus.OK) {
+    if (response.status().equals(HttpResponseStatus.OK)) {
       logger.atInfo().log("Received Successful HttpResponseStatus");
       logger.atInfo().log("Response Received: " + response);
 

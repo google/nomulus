@@ -105,7 +105,7 @@ public abstract class ProbingStep implements Consumer<Token> {
 
   /** On the last step, gets the next {@link Token}. Otherwise, uses the same one. */
   private Token generateNextToken(Token token) {
-    return (isLastStep) ? token.next() : token;
+    return isLastStep ? token.next() : token;
   }
 
   /**
@@ -167,7 +167,7 @@ public abstract class ProbingStep implements Consumer<Token> {
   }
 
   @Override
-  public String toString() {
+  public final String toString() {
     return String.format("ProbingStep with Protocol: %s\n" +
         "OutboundMessage: %s\n",
         protocol(),
