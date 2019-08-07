@@ -20,8 +20,6 @@ import static google.registry.monitoring.blackbox.Protocol.PROTOCOL_KEY;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.flogger.FluentLogger;
-
-import google.registry.monitoring.blackbox.ProbingAction;
 import google.registry.monitoring.blackbox.Protocol;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -65,7 +63,8 @@ public class SslClientInitializer<C extends Channel> extends ChannelInitializer<
     this(sslProvider, null, null, null);
   }
 
-  public SslClientInitializer(SslProvider sslProvider, Supplier<PrivateKey> privateKeySupplier, Supplier<X509Certificate[]> certificateSupplier) {
+  public SslClientInitializer(SslProvider sslProvider, Supplier<PrivateKey> privateKeySupplier,
+      Supplier<X509Certificate[]> certificateSupplier) {
     //We use the default trust store here as well, setting trustCertificates to null
     this(sslProvider, null, privateKeySupplier, certificateSupplier);
   }
@@ -99,8 +98,10 @@ public class SslClientInitializer<C extends Channel> extends ChannelInitializer<
         SslContextBuilder.forClient()
             .sslProvider(sslProvider)
             .trustManager(trustedCertificates);
-    if (privateKeySupplier != null && certificateSupplier != null)
-      sslContextBuilder = sslContextBuilder.keyManager(privateKeySupplier.get(), certificateSupplier.get());
+    if (privateKeySupplier != null && certificateSupplier != null) {
+      sslContextBuilder = sslContextBuilder
+          .keyManager(privateKeySupplier.get(), certificateSupplier.get());
+    }
 
     SslHandler sslHandler = sslContextBuilder
         .build()

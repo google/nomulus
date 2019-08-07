@@ -48,29 +48,39 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-/** Unit Tests for {@link ProbingSequence}s and {@link ProbingStep}s and their specific implementations*/
+/**
+ * Unit Tests for {@link ProbingSequence}s and {@link ProbingStep}s and their specific
+ * implementations
+ */
 public class ProbingStepTest {
 
-  /** Basic Constants necessary for tests */
-  private final static String ADDRESS_NAME = "TEST_ADDRESS";
-  private final static String PROTOCOL_NAME = "TEST_PROTOCOL";
-  private final static int PROTOCOL_PORT = 0;
-  private final static String TEST_MESSAGE = "TEST_MESSAGE";
-  private final static String SECONDARY_TEST_MESSAGE = "SECONDARY_TEST_MESSAGE";
+  /**
+   * Basic Constants necessary for tests
+   */
+  private static final String ADDRESS_NAME = "TEST_ADDRESS";
+  private static final String PROTOCOL_NAME = "TEST_PROTOCOL";
+  private static final int PROTOCOL_PORT = 0;
+  private static final String TEST_MESSAGE = "TEST_MESSAGE";
+  private static final String SECONDARY_TEST_MESSAGE = "SECONDARY_TEST_MESSAGE";
+  private static final LocalAddress ADDRESS = new LocalAddress(ADDRESS_NAME);
 
   private final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
   private final Bootstrap bootstrap = new Bootstrap()
       .group(eventLoopGroup)
       .channel(LocalChannel.class);
 
-  private final static LocalAddress address = new LocalAddress(ADDRESS_NAME);
 
-  /** Used for testing how well probing step can create connection to blackbox server */
+  /**
+   * Used for testing how well probing step can create connection to blackbox server
+   */
   @Rule
   public NettyRule nettyRule = new NettyRule(eventLoopGroup);
 
 
-  /** The two main handlers we need in any test pipeline used that connects to {@link NettyRule's server}**/
+  /**
+   * The two main handlers we need in any test pipeline used that connects to {@link NettyRule's
+   * server}
+   **/
   private ActionHandler testHandler = new TestActionHandler();
   private ChannelHandler conversionHandler = new ConversionHandler();
 
@@ -119,7 +129,7 @@ public class ProbingStepTest {
     Token testToken = new NewChannelToken(ADDRESS_NAME);
 
     //Set up blackbox server that receives our messages then echoes them back to us
-    nettyRule.setUpServer(address);
+    nettyRule.setUpServer(ADDRESS);
 
     //checks that the ProbingSteps are appropriately pointing to each other
     assertThat(firstStep.nextStep()).isEqualTo(dummyStep);
@@ -179,7 +189,8 @@ public class ProbingStepTest {
     assertThat(firstStep.nextStep()).isEqualTo(dummyStep);
     assertThat(dummyStep.nextStep()).isEqualTo(firstStep);
 
-    //Call accept on the first step, which should send our message through the EmbeddedChannel pipeline
+    //Call accept on the first step, which should send our message through the EmbeddedChannel
+    // pipeline
     firstStep.accept(testToken);
 
     Object msg = channel.readOutbound();
@@ -188,7 +199,7 @@ public class ProbingStepTest {
       msg = channel.readOutbound();
     }
     //Ensures the accurate message is sent down the pipeline
-    assertThat(((ByteBuf)channel.readOutbound()).toString(UTF_8)).isEqualTo(TEST_MESSAGE);
+    assertThat(((ByteBuf) channel.readOutbound()).toString(UTF_8)).isEqualTo(TEST_MESSAGE);
 
     //Write response to our message down EmbeddedChannel pipeline
     channel.writeInbound(Unpooled.wrappedBuffer(SECONDARY_TEST_MESSAGE.getBytes(US_ASCII)));

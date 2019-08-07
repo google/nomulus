@@ -23,16 +23,21 @@ import io.netty.channel.EventLoopGroup;
  * Represents Sequence of {@link ProbingStep}s that the Prober performs in order.
  *
  *
- * <p>Created with {@link Builder} where we specify {@link EventLoopGroup}, {@link AbstractChannel} class type,
- * then sequentially add in the {@link ProbingStep.Builder}s in order and mark which one is the first repeated step.</p>
+ * <p>Created with {@link Builder} where we specify {@link EventLoopGroup}, {@link AbstractChannel}
+ * class type, then sequentially add in the {@link ProbingStep.Builder}s in order and mark which one
+ * is the first repeated step.</p>
  *
- * <p>{@link ProbingSequence} implicitly points each {@link ProbingStep} to the next one, so once the first one
- * is activated with the requisite {@link Token}, the {@link ProbingStep}s do the rest of the work.</p>
+ * <p>{@link ProbingSequence} implicitly points each {@link ProbingStep} to the next one, so once
+ * the first one is activated with the requisite {@link Token}, the {@link ProbingStep}s do the rest
+ * of the work.</p>
  */
 public class ProbingSequence {
+
   private ProbingStep firstStep;
 
-  /**Each {@link ProbingSequence} requires a start token to begin running. */
+  /**
+   * Each {@link ProbingSequence} requires a start token to begin running.
+   */
   private Token startToken;
 
   public void start() {
@@ -41,8 +46,8 @@ public class ProbingSequence {
   }
 
   /**
-   * Turns {@link ProbingStep.Builder}s into fully self-dependent sequence with
-   * supplied {@link Bootstrap}.
+   * Turns {@link ProbingStep.Builder}s into fully self-dependent sequence with supplied {@link
+   * Bootstrap}.
    */
   public static class Builder {
 
@@ -57,33 +62,37 @@ public class ProbingSequence {
     }
 
     /**
-     * Adds {@link ProbingStep}, which is supplied with {@link Bootstrap},
-     * built, and pointed to by the previous {@link ProbingStep} added.
+     * Adds {@link ProbingStep}, which is supplied with {@link Bootstrap}, built, and pointed to by
+     * the previous {@link ProbingStep} added.
      */
     public Builder addStep(ProbingStep step) {
 
-      if (currentStep == null)
+      if (currentStep == null) {
         firstStep = step;
-      else
+      } else {
         currentStep.nextStep(step);
+      }
 
       currentStep = step;
       return this;
     }
 
-    /** We take special note of the first repeated step. */
+    /**
+     * We take special note of the first repeated step.
+     */
     public Builder markFirstRepeated() {
       firstRepeatedStep = currentStep;
       return this;
     }
 
     /**
-     * Points last {@link ProbingStep} to the {@code firstRepeatedStep} and
-     * calls private constructor to create {@link ProbingSequence}.
+     * Points last {@link ProbingStep} to the {@code firstRepeatedStep} and calls private
+     * constructor to create {@link ProbingSequence}.
      */
     public ProbingSequence build() {
-      if (firstRepeatedStep == null)
+      if (firstRepeatedStep == null) {
         firstRepeatedStep = firstStep;
+      }
 
       currentStep.nextStep(firstRepeatedStep);
       currentStep.lastStep();

@@ -14,17 +14,15 @@
 
 package google.registry.monitoring.blackbox.handlers;
 
-import static google.registry.monitoring.blackbox.Protocol.PROTOCOL_KEY;
-
 import com.google.common.flogger.FluentLogger;
 import google.registry.monitoring.blackbox.ProbingAction;
 import google.registry.monitoring.blackbox.Protocol;
 import google.registry.monitoring.blackbox.WebWhoisModule.HttpWhoisProtocol;
 import google.registry.monitoring.blackbox.WebWhoisModule.HttpsWhoisProtocol;
 import google.registry.monitoring.blackbox.WebWhoisModule.WebWhoisProtocol;
-import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
-import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.exceptions.ConnectionException;
+import google.registry.monitoring.blackbox.exceptions.FailureException;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.messages.HttpResponseMessage;
 import google.registry.monitoring.blackbox.messages.InboundMessageType;
@@ -38,10 +36,11 @@ import javax.inject.Inject;
 import org.joda.time.Duration;
 
 /**
- *Subclass of {@link ActionHandler} that deals with the WebWhois Sequence
+ * Subclass of {@link ActionHandler} that deals with the WebWhois Sequence
  *
- * <p> Main purpose is to verify {@link HttpResponseMessage} received is valid. If the response implies a redirection
- * it follows the redirection until either an Error Response is received, or {@link HttpResponseStatus.OK} is received</p>
+ * <p> Main purpose is to verify {@link HttpResponseMessage} received is valid. If the response
+ * implies a redirection it follows the redirection until either an Error Response is received, or
+ * {@link HttpResponseStatus.OK} is received</p>
  */
 public class WebWhoisActionHandler extends ActionHandler {
 
@@ -49,16 +48,24 @@ public class WebWhoisActionHandler extends ActionHandler {
 
   /** Dagger injected components necessary for redirect responses: */
 
-  /** {@link Bootstrap} necessary for remaking connection on redirect response. */
+  /**
+   * {@link Bootstrap} necessary for remaking connection on redirect response.
+   */
   private final Bootstrap bootstrap;
 
-  /** {@link Protocol} for when redirected to http endpoint. */
+  /**
+   * {@link Protocol} for when redirected to http endpoint.
+   */
   private final Protocol httpWhoisProtocol;
 
-  /** {@link Protocol} for when redirected to https endpoint. */
+  /**
+   * {@link Protocol} for when redirected to https endpoint.
+   */
   private final Protocol httpsWhoisProtocol;
 
-  /** {@link HttpRequestMessage} that represents default GET message to be sent on redirect. */
+  /**
+   * {@link HttpRequestMessage} that represents default GET message to be sent on redirect.
+   */
   private final HttpRequestMessage requestMessage;
 
   @Inject
@@ -76,9 +83,10 @@ public class WebWhoisActionHandler extends ActionHandler {
 
 
   /**
-   * After receiving {@link HttpResponseMessage}, either notes success and marks future as finished, notes an error
-   * in the received {@link URL} and throws a {@link ConnectionException}, received a response indicating a Failure,
-   * or receives a redirection response, where it follows the redirects until receiving one of the previous three responses.
+   * After receiving {@link HttpResponseMessage}, either notes success and marks future as finished,
+   * notes an error in the received {@link URL} and throws a {@link ConnectionException}, received a
+   * response indicating a Failure, or receives a redirection response, where it follows the
+   * redirects until receiving one of the previous three responses.
    */
   @Override
   public void channelRead0(ChannelHandlerContext ctx, InboundMessageType msg)
@@ -101,13 +109,17 @@ public class WebWhoisActionHandler extends ActionHandler {
         url = new URL(response.headers().get("Location"));
       } catch (MalformedURLException e) {
         //in case of error, log it, and let ActionHandler's exceptionThrown method deal with it
-        throw new FailureException("Redirected Location was invalid. Given Location was: " + response.headers().get("Location"));
+        throw new FailureException(
+            "Redirected Location was invalid. Given Location was: " + response.headers()
+                .get("Location"));
       }
       //From url, extract new host, port, and path
       String newHost = url.getHost();
       String newPath = url.getPath();
 
-      logger.atInfo().log(String.format("Redirected to %s with host: %s, port: %d, and path: %s", url, newHost, url.getDefaultPort(), newPath));
+      logger.atInfo().log(String
+          .format("Redirected to %s with host: %s, port: %d, and path: %s", url, newHost,
+              url.getDefaultPort(), newPath));
 
       //Construct new Protocol to reflect redirected host, path, and port
       Protocol newProtocol;
@@ -116,7 +128,8 @@ public class WebWhoisActionHandler extends ActionHandler {
       } else if (url.getProtocol().equals(httpsWhoisProtocol.name())) {
         newProtocol = httpsWhoisProtocol;
       } else {
-        throw new FailureException("Redirection Location port was invalid. Given protocol name was: " + url.getProtocol());
+        throw new FailureException(
+            "Redirection Location port was invalid. Given protocol name was: " + url.getProtocol());
       }
 
       //Obtain HttpRequestMessage with modified headers to reflect new host and path.
@@ -141,10 +154,12 @@ public class WebWhoisActionHandler extends ActionHandler {
               logger.atWarning().log("Channel was unsuccessfully closed.");
             }
 
-            //Once channel is closed, establish new connection to redirected host, and repeat same actions
+            //Once channel is closed, establish new connection to redirected host, and repeat
+            // same actions
             ChannelFuture secondFuture = redirectedAction.call();
 
-            //Once we have a successful call, set original ChannelPromise as success to tell ProbingStep we can move on
+            //Once we have a successful call, set original ChannelPromise as success to tell
+            // ProbingStep we can move on
             secondFuture.addListener(f2 -> {
               if (f2.isSuccess()) {
                 super.channelRead0(ctx, msg);

@@ -20,8 +20,8 @@ import google.registry.monitoring.blackbox.messages.InboundMessageType;
 import io.netty.channel.ChannelHandlerContext;
 
 /**
- * Concrete implementation of {@link ActionHandler} that does nothing different from
- * parent class other than store and return the {@code inboundMessage}
+ * Concrete implementation of {@link ActionHandler} that does nothing different from parent class
+ * other than store and return the {@code inboundMessage}
  */
 public class TestActionHandler extends ActionHandler {
 

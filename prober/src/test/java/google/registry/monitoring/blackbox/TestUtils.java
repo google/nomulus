@@ -29,7 +29,9 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 
-/** Utility class for various helper methods used in testing. */
+/**
+ * Utility class for various helper methods used in testing.
+ */
 public class TestUtils {
 
   public static FullHttpRequest makeHttpGetRequest(String host, String path) {
@@ -52,7 +54,9 @@ public class TestUtils {
     return response;
   }
 
-  /** Creates HttpResponse given status, redirection location, and other necessary inputs */
+  /**
+   * Creates HttpResponse given status, redirection location, and other necessary inputs
+   */
   public static FullHttpResponse makeRedirectResponse(
       HttpResponseStatus status, String location, boolean keepAlive, boolean hsts) {
     FullHttpResponse response = makeHttpResponse("", status);
@@ -66,13 +70,17 @@ public class TestUtils {
     return response;
   }
 
-  /** Basic outline for {@link Token} instances to be used in tests */
-  static abstract class TestToken extends Token {
+  /**
+   * Basic outline for {@link Token} instances to be used in tests
+   */
+  abstract static class TestToken extends Token {
+
     protected String host;
 
     protected TestToken(String host) {
       this.host = host;
     }
+
     @Override
     public Token next() {
       return this;
@@ -90,28 +98,28 @@ public class TestUtils {
 
   }
 
-  /** {@link TestToken} instance that creates new channel */
+  /**
+   * {@link TestToken} instance that creates new channel
+   */
   public static class NewChannelToken extends TestToken {
+
     public NewChannelToken(String host) {
       super(host);
     }
+
     @Override
     public Channel channel() {
       return null;
     }
   }
 
-  /** {@link TestToken} instance that passes in existing channel */
+  /**
+   * {@link TestToken} instance that passes in existing channel
+   */
   public static class ExistingChannelToken extends TestToken {
-    private Channel channel;
-
     public ExistingChannelToken(Channel channel, String host) {
       super(host);
       this.channel = channel;
-    }
-    @Override
-    public Channel channel() {
-      return channel;
     }
   }
 }
