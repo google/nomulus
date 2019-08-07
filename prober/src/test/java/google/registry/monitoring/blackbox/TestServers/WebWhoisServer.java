@@ -20,7 +20,6 @@ import static google.registry.monitoring.blackbox.TestUtils.makeRedirectResponse
 import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.messages.HttpResponseMessage;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;

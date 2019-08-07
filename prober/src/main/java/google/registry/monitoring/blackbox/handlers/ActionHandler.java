@@ -33,8 +33,11 @@ import io.netty.channel.ChannelPromise;
  * <p> The {@link ActionHandler} skeleton exists for a few main purposes. First, it returns a {@link ChannelPromise},
  * which informs the {@link ProbingAction} in charge that a response has been read.
  * Second, with any exception thrown, the connection is closed, and the ProbingAction governing this channel is informed
- * of the error, lastly, given the type of error, the status of the {@link ResponseType} is marked as a {@code FAILURE}
- * or {@code ERROR}. If no exception is thrown and the message reached {@code channelRead0}, then it is marked as {@code SUCCESS}.</p>
+ * of the error. If the error is an instance of a {@link FailureException} {@code finished} is
+ * marked as a failure with cause {@link FailureException}. If it is any other type of error, it
+ * is treated as an {@link UndeterminedStateException} and {@code finished} set as a failure with
+ * the same cause as what caused the exception. Lastly, if no error is thrown, we know the action
+ * completed as a success, and, as such, we mark {@code finished} as a success.</p>
  *
  * <p>Subclasses specify further work to be done for specific kinds of channel pipelines. </p>
  */
