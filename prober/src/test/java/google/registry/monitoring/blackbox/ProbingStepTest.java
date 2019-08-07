@@ -99,6 +99,7 @@ public class ProbingStepTest {
         .setProtocol(testProtocol)
         .build();
 
+
     ProbingAction testAction = testStep.generateAction(testToken);
 
     assertThat(testAction.channel()).isEqualTo(channel);
