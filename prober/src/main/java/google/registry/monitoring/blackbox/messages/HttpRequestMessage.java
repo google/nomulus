@@ -19,6 +19,7 @@ import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
+import java.util.Arrays;
 import javax.inject.Inject;
 
 /**
@@ -69,7 +70,7 @@ public class HttpRequestMessage extends DefaultFullHttpRequest implements Outbou
       throw new IllegalArgumentException(
           String.format(
               "Wrong number of arguments present for modifying HttpRequestMessage."
-              + " Received %d arguments instead of: " + args, args.length));
+                  + " Received %d arguments instead of: " + Arrays.toString(args), args.length));
     }
   }
 
