@@ -16,28 +16,30 @@ package google.registry.monitoring.blackbox.handlers;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.monitoring.blackbox.ProbingAction;
-import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.InboundMessageType;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
- *Superclass of all {@link io.netty.channel.ChannelHandler}s placed at end of channel pipeline
+ * Superclass of all {@link io.netty.channel.ChannelHandler}s placed at end of channel pipeline
  *
- * <p> {@link ActionHandler} inherits from {@link SimpleChannelInboundHandler< InboundMessageType >}, as it should only be passed in
- * messages that implement the {@link InboundMessageType} interface.</p>
+ * <p> {@link ActionHandler} inherits from {@link SimpleChannelInboundHandler< InboundMessageType
+ * >}, as it should only be passed in messages that implement the {@link InboundMessageType}
+ * interface.</p>
  *
- * <p> The {@link ActionHandler} skeleton exists for a few main purposes. First, it returns a {@link ChannelPromise},
- * which informs the {@link ProbingAction} in charge that a response has been read.
- * Second, with any exception thrown, the connection is closed, and the ProbingAction governing this channel is informed
- * of the error. If the error is an instance of a {@link FailureException} {@code finished} is
- * marked as a failure with cause {@link FailureException}. If it is any other type of error, it
- * is treated as an {@link UndeterminedStateException} and {@code finished} set as a failure with
- * the same cause as what caused the exception. Lastly, if no error is thrown, we know the action
- * completed as a success, and, as such, we mark {@code finished} as a success.</p>
+ * <p> The {@link ActionHandler} skeleton exists for a few main purposes. First, it returns a
+ * {@link
+ * ChannelPromise}, which informs the {@link ProbingAction} in charge that a response has been read.
+ * Second, with any exception thrown, the connection is closed, and the ProbingAction governing this
+ * channel is informed of the error. If the error is an instance of a {@link FailureException}
+ * {@code finished} is marked as a failure with cause {@link FailureException}. If it is any other
+ * type of error, it is treated as an {@link UndeterminedStateException} and {@code finished} set as
+ * a failure with the same cause as what caused the exception. Lastly, if no error is thrown, we
+ * know the action completed as a success, and, as such, we mark {@code finished} as a success.</p>
  *
  * <p>Subclasses specify further work to be done for specific kinds of channel pipelines. </p>
  */
@@ -45,22 +47,30 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  /** {@link ChannelPromise} that informs {@link ProbingAction} if response has been received. */
+  /**
+   * {@link ChannelPromise} that informs {@link ProbingAction} if response has been received.
+   */
   private ChannelPromise finished;
 
-  /** Returns initialized {@link ChannelPromise} to {@link ProbingAction}.*/
+  /**
+   * Returns initialized {@link ChannelPromise} to {@link ProbingAction}.
+   */
   public ChannelFuture getFinishedFuture() {
     return finished;
   }
 
-  /** Initializes {@link ChannelPromise}*/
+  /**
+   * Initializes {@link ChannelPromise}
+   */
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) {
     //Once handler is added to channel pipeline, initialize channel and future for this handler
     finished = ctx.newPromise();
   }
 
-  /** Marks {@link ChannelPromise} as success */
+  /**
+   * Marks {@link ChannelPromise} as success
+   */
   @Override
   public void channelRead0(ChannelHandlerContext ctx, InboundMessageType inboundMessage)
       throws FailureException, UndeterminedStateException {
@@ -69,8 +79,8 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
   }
 
   /**
-   * Logs the channel and pipeline that caused error, closes channel, then informs
-   * {@link ProbingAction} listeners of error.
+   * Logs the channel and pipeline that caused error, closes channel, then informs {@link
+   * ProbingAction} listeners of error.
    */
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {

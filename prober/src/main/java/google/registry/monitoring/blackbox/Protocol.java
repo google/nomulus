@@ -26,23 +26,30 @@ import javax.inject.Provider;
 @AutoValue
 public abstract class Protocol {
 
-  /** {@link AttributeKey} that lets channel reference {@link Protocol} that created it. */
+  /**
+   * {@link AttributeKey} that lets channel reference {@link Protocol} that created it.
+   */
   public static final AttributeKey<Protocol> PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL_KEY");
 
   public abstract String name();
 
   public abstract int port();
 
-  /** The {@link ChannelHandler} providers to use for the protocol, in order. */
+  /**
+   * The {@link ChannelHandler} providers to use for the protocol, in order.
+   */
   abstract ImmutableList<Provider<? extends ChannelHandler>> handlerProviders();
 
-  /** Boolean that notes if connection associated with Protocol is persistent.*/
+  /**
+   * Boolean that notes if connection associated with Protocol is persistent.
+   */
   abstract boolean persistentConnection();
 
   public static Builder builder() {
     return new AutoValue_Protocol.Builder();
   }
 
+  /** Default {@link AutoValue.Builder} for {@link Protocol}. */
   @AutoValue.Builder
   public abstract static class Builder {
 
@@ -50,7 +57,8 @@ public abstract class Protocol {
 
     public abstract Builder setPort(int num);
 
-    public abstract Builder setHandlerProviders(ImmutableList<Provider<? extends ChannelHandler>> providers);
+    public abstract Builder setHandlerProviders(
+        ImmutableList<Provider<? extends ChannelHandler>> providers);
 
     public abstract Builder setPersistentConnection(boolean value);
 
