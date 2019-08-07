@@ -60,7 +60,7 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
     finished = ctx.newPromise();
   }
 
-  /** Marks {@link ResponseType} and {@link ChannelPromise} as success */
+  /** Marks {@link ChannelPromise} as success */
   @Override
   public void channelRead0(ChannelHandlerContext ctx, InboundMessageType inboundMessage)
       throws FailureException, UndeterminedStateException {
