@@ -25,14 +25,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.truth.ThrowableSubject;
-import google.registry.monitoring.blackbox.ProbingAction;
 import google.registry.monitoring.blackbox.ProbingActionTest;
 import google.registry.monitoring.blackbox.ProbingStepTest;
 import google.registry.monitoring.blackbox.Protocol;
-import google.registry.monitoring.blackbox.TestServers.TestServer.EchoHandler;
-import google.registry.monitoring.blackbox.TestServers.WebWhoisServer;
+import google.registry.monitoring.blackbox.testservers.WebWhoisServer;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -44,7 +41,6 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
-import io.netty.channel.local.LocalServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.ReferenceCountUtil;
 import java.util.concurrent.CompletableFuture;
@@ -55,11 +51,11 @@ import org.junit.rules.ExternalResource;
 /**
  * Helper for setting up and testing client / server connection with netty.
  *
- * <p>Code based on and almost identical to {@link google.registry.proxy.handler.NettyRule}.
- * Used in {@link SslClientInitializerTest}, {@link ProbingActionTest}, and {@link ProbingStepTest} </p>
+ * <p>Code based on and almost identical to {@code NettyRule} in the proxy.
+ * Used in {@link SslClientInitializerTest}, {@link ProbingActionTest}, and {@link ProbingStepTest}
+ * </p>
  */
 public final class NettyRule extends ExternalResource {
-
 
 
   // All I/O operations are done inside the single thread within this event loop group, which is
@@ -68,11 +64,12 @@ public final class NettyRule extends ExternalResource {
   public NettyRule() {
     eventLoopGroup = new NioEventLoopGroup(1);
   }
+
   public NettyRule(EventLoopGroup e) {
     eventLoopGroup = e;
   }
+
   private final EventLoopGroup eventLoopGroup;
-  private WebWhoisServer webWhoisServer;
 
   // Handler attached to server's channel to record the request received.
   private EchoHandler echoHandler;
@@ -82,14 +79,20 @@ public final class NettyRule extends ExternalResource {
 
   private Channel channel;
 
-  /** Sets up a server channel bound to the given local address. */
-  public void setUpServer(LocalAddress localAddress, ChannelHandler handler) {
+  /**
+   * Sets up a server channel bound to the given local address.
+   */
+  public void setUpServer(LocalAddress localAddress, ChannelHandler... handlers) {
     checkState(echoHandler == null, "Can't call setUpServer twice");
     echoHandler = new EchoHandler();
-    webWhoisServer = new WebWhoisServer(eventLoopGroup, localAddress, ImmutableList.of(handler, echoHandler));
+
+    new WebWhoisServer(eventLoopGroup, localAddress,
+        ImmutableList.<ChannelHandler>builder().add(handlers).add(echoHandler).build());
   }
 
-  /** Sets up a client channel connecting to the give local address. */
+  /**
+   * Sets up a client channel connecting to the give local address.
+   */
   void setUpClient(
       LocalAddress localAddress,
       Protocol protocol,
@@ -123,8 +126,10 @@ public final class NettyRule extends ExternalResource {
     checkState(channel != null, "Must call setUpClient to finish NettyRule setup");
   }
 
-  /** Test that custom setup to send message to current server sends right message */
-  public void assertThatCustomWorks(String message) throws Exception {
+  /**
+   * Test that custom setup to send message to current server sends right message
+   */
+  public void assertReceivedMessage(String message) throws Exception {
     assertThat(echoHandler.getRequestFuture().get()).isEqualTo(message);
 
   }
@@ -132,9 +137,9 @@ public final class NettyRule extends ExternalResource {
   /**
    * Test that a message can go through, both inbound and outbound.
    *
-   * <p>The client writes the message to the server, which echos it back and saves the string in its
-   * promise. The client receives the echo and saves it in its promise. All these activities happens
-   * in the I/O thread, and this call itself returns immediately.
+   * <p>The client writes the message to the server, which echos it back and saves the string in
+   * its promise. The client receives the echo and saves it in its promise. All these activities
+   * happens in the I/O thread, and this call itself returns immediately.
    */
   void assertThatMessagesWork() throws Exception {
     checkReady();
@@ -165,8 +170,42 @@ public final class NettyRule extends ExternalResource {
   }
 
 
+  /**
+   * A handler that echoes back its inbound message. The message is also saved in a promise for
+   * inspection later.
+   */
+  public static class EchoHandler extends ChannelInboundHandlerAdapter {
 
-  /** A handler that dumps its inbound message to a promise that can be inspected later. */
+    private final CompletableFuture<String> requestFuture = new CompletableFuture<>();
+
+    public Future<String> getRequestFuture() {
+      return requestFuture;
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+      // In the test we only send messages of type ByteBuf.
+
+      assertThat(msg).isInstanceOf(ByteBuf.class);
+      String request = ((ByteBuf) msg).toString(UTF_8);
+      // After the message is written back to the client, fulfill the promise.
+      ChannelFuture unusedFuture =
+          ctx.writeAndFlush(msg).addListener(f -> requestFuture.complete(request));
+    }
+
+    /**
+     * Saves any inbound error as the cause of the promise failure.
+     */
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+      ChannelFuture unusedFuture =
+          ctx.channel().closeFuture().addListener(f -> requestFuture.completeExceptionally(cause));
+    }
+  }
+
+  /**
+   * A handler that dumps its inbound message to a promise that can be inspected later.
+   */
   private static class DumpHandler extends ChannelInboundHandlerAdapter {
 
     private final CompletableFuture<String> responseFuture = new CompletableFuture<>();
@@ -187,7 +226,9 @@ public final class NettyRule extends ExternalResource {
       responseFuture.complete(response);
     }
 
-    /** Saves any inbound error into the failure cause of the promise. */
+    /**
+     * Saves any inbound error into the failure cause of the promise.
+     */
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
       ctx.channel().closeFuture().addListener(f -> responseFuture.completeExceptionally(cause));
