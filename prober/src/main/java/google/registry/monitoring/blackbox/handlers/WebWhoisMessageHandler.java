@@ -24,25 +24,32 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import javax.inject.Inject;
 
 /**
- * {@link io.netty.channel.ChannelHandler} that converts inbound {@link FullHttpResponse}
- * to custom type {@link HttpResponseMessage} and retains {@link HttpRequestMessage}
- * in case of reuse for redirection.
+ * {@link io.netty.channel.ChannelHandler} that converts inbound {@link FullHttpResponse} to custom
+ * type {@link HttpResponseMessage} and retains {@link HttpRequestMessage} in case of reuse for
+ * redirection.
  */
 public class WebWhoisMessageHandler extends ChannelDuplexHandler {
 
   @Inject
-  public WebWhoisMessageHandler() {}
+  public WebWhoisMessageHandler() {
+  }
 
-  /** Retains {@link HttpRequestMessage} and calls super write method. */
+  /**
+   * Retains {@link HttpRequestMessage} and calls super write method.
+   */
   @Override
-  public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+  public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
+      throws Exception {
     HttpRequestMessage request = (HttpRequestMessage) msg;
     request.retain();
     super.write(ctx, request, promise);
   }
 
 
-  /** Converts {@link FullHttpResponse} to {@link HttpResponseMessage}, so it is an {@link InboundMessageType} instance. */
+  /**
+   * Converts {@link FullHttpResponse} to {@link HttpResponseMessage}, so it is an {@link
+   * InboundMessageType} instance.
+   */
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     FullHttpResponse originalResponse = (FullHttpResponse) msg;
