@@ -67,8 +67,6 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private final static String HANDLER_IDENTIFIER_STRING = "ACTION_HANDLER";
-
   /** {@link AttributeKey} in channel that gives {@link ChannelFuture} that is set to success when channel is active. */
   public static final AttributeKey<ChannelFuture> CONNECTION_FUTURE_KEY = AttributeKey.valueOf("CONNECTION_FUTURE_KEY");
 
@@ -142,13 +140,14 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
 
             timer.newTimeout(timeout -> {
                   // Write appropriate outboundMessage to pipeline
-                  channel().writeAndFlush(outboundMessage());
+                  ChannelFuture unusedFutureWriteAndFlush =
+                      channel().writeAndFlush(outboundMessage());
                   channelFuture.addListeners(
                       future -> {
                         if (future.isSuccess()) {
-                          finished.setSuccess();
+                          ChannelFuture unusedFuture = finished.setSuccess();
                         } else {
-                          finished.setFailure(future.cause());
+                          ChannelFuture unusedFuture = finished.setFailure(future.cause());
                         }
                       },
                       //If we don't have a persistent connection, close the connection to this channel
@@ -276,7 +275,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
 
 
   @Override
-  public String toString() {
+  public final String toString() {
     return String.format(
         "ProbingAction with delay: %d\n" +
             "outboundMessage: %s\n" +
