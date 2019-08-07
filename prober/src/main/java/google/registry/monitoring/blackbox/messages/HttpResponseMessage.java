@@ -29,8 +29,10 @@ public class HttpResponseMessage extends DefaultFullHttpResponse implements Inbo
     super(version, status, content);
   }
 
-  /** Used for pipeline conversion from {@link FullHttpResponse} to {@link HttpResponseMessage} */
-  public HttpResponseMessage (FullHttpResponse response) {
+  /**
+   * Used for pipeline conversion from {@link FullHttpResponse} to {@link HttpResponseMessage}
+   */
+  public HttpResponseMessage(FullHttpResponse response) {
     this(response.protocolVersion(), response.status(), response.content());
 
     response.headers().forEach((entry) -> headers().set(entry.getKey(), entry.getValue()));
