@@ -16,12 +16,8 @@ package google.registry.monitoring.blackbox;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
-import google.registry.monitoring.blackbox.messages.OutboundMessageType;
-import google.registry.monitoring.blackbox.tokens.Token;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -69,62 +65,6 @@ public class TestUtils {
       response.headers().set("connection", "keep-alive");
     }
     return response;
-  }
-
-  /**
-   * Basic outline for {@link Token} instances to be used in tests
-   */
-  abstract static class TestToken extends Token {
-
-    protected String host;
-
-    protected TestToken(String host) {
-      this.host = host;
-    }
-
-    @Override
-    public Token next() {
-      return this;
-    }
-
-    @Override
-    public OutboundMessageType modifyMessage(OutboundMessageType message)
-        throws UndeterminedStateException {
-      return message.modifyMessage(host);
-    }
-
-    @Override
-    public String host() {
-      return host;
-    }
-
-  }
-
-  /**
-   * {@link TestToken} instance that creates new channel
-   */
-  public static class NewChannelToken extends TestToken {
-
-    public NewChannelToken(String host) {
-      super(host);
-    }
-
-    @Override
-    public Channel channel() {
-      return null;
-    }
-  }
-
-  /**
-   * {@link TestToken} instance that passes in existing channel
-   */
-  public static class ExistingChannelToken extends TestToken {
-
-
-    public ExistingChannelToken(Channel channel, String host) {
-      super(host);
-      this.channel = channel;
-    }
   }
 }
 
