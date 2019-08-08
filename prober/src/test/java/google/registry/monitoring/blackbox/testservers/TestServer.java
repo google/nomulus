@@ -14,44 +14,39 @@
 
 package google.registry.monitoring.blackbox.testservers;
 
-import static com.google.common.truth.Truth.assertThat;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static google.registry.monitoring.blackbox.TestUtils.makeHttpResponse;
+import static google.registry.monitoring.blackbox.TestUtils.makeRedirectResponse;
 
 import com.google.common.collect.ImmutableList;
+import google.registry.monitoring.blackbox.messages.HttpResponseMessage;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.local.LocalServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
 
 /**
  * Mock Server Superclass whose subclasses implement specific behaviors we expect blackbox server to
  * perform
  */
-public abstract class TestServer {
-  private LocalAddress localAddress;
+public class TestServer {
 
-  TestServer(LocalAddress localAddress, ImmutableList<? extends ChannelHandler> handlers) {
+  public TestServer(LocalAddress localAddress, ImmutableList<? extends ChannelHandler> handlers) {
     this(new NioEventLoopGroup(1), localAddress, handlers);
   }
 
-<<<<<<<< HEAD:prober/src/test/java/google/registry/monitoring/blackbox/testservers/TestServer.java
-  TestServer(EventLoopGroup eventLoopGroup, LocalAddress localAddress,
+  public TestServer(EventLoopGroup eventLoopGroup, LocalAddress localAddress,
       ImmutableList<? extends ChannelHandler> handlers) {
-========
-  TestServer(EventLoopGroup eventLoopGroup, LocalAddress localAddress, ImmutableList<? extends ChannelHandler> handlers) {
-    this.localAddress = localAddress;
-
->>>>>>>> 949be9b42... Fixed files to pass all style tests:prober/src/test/java/google/registry/monitoring/blackbox/TestServers/TestServer.java
     //Creates ChannelInitializer with handlers specified
     ChannelInitializer<LocalChannel> serverInitializer = new ChannelInitializer<LocalChannel>() {
       @Override
@@ -72,35 +67,57 @@ public abstract class TestServer {
     ChannelFuture unusedFuture = serverBootstrap.bind(localAddress).syncUninterruptibly();
 
   }
-  /**
-   * A handler that echoes back its inbound message. The message is also saved in a promise for
-   * inspection later.
-   */
-  public static class EchoHandler extends ChannelInboundHandlerAdapter {
 
-    private final CompletableFuture<String> requestFuture = new CompletableFuture<>();
-
-    public Future<String> getRequestFuture() {
-      return requestFuture;
-    }
-
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-      // In the test we only send messages of type ByteBuf.
-
-      assertThat(msg).isInstanceOf(ByteBuf.class);
-      String request = ((ByteBuf) msg).toString(UTF_8);
-      // After the message is written back to the client, fulfill the promise.
-      ChannelFuture unusedFuture =
-          ctx.writeAndFlush(msg).addListener(f -> requestFuture.complete(request));
-    }
-
-    /** Saves any inbound error as the cause of the promise failure. */
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-      ChannelFuture unusedFuture =
-          ctx.channel().closeFuture().addListener(f -> requestFuture.completeExceptionally(cause));
-    }
+  public static TestServer webWhoisServer(EventLoopGroup eventLoopGroup,
+      LocalAddress localAddress, String redirectInput, String destinationInput,
+      String destinationPath) {
+    return new TestServer(
+        eventLoopGroup,
+        localAddress,
+        ImmutableList.of(new RedirectHandler(redirectInput, destinationInput, destinationPath))
+    );
   }
 
+  /**
+   * Handler that will wither redirect client, give successful response, or give error messge
+   */
+  @Sharable
+  static class RedirectHandler extends SimpleChannelInboundHandler<HttpRequest> {
+
+    private String redirectInput;
+    private String destinationInput;
+    private String destinationPath;
+
+    /**
+     * @param redirectInput - Server will send back redirect to {@code destinationInput} when
+     * receiving a request with this host location
+     * @param destinationInput - Server will send back an {@link HttpResponseStatus} OK response
+     * when receiving a request with this host location
+     */
+    public RedirectHandler(String redirectInput, String destinationInput, String destinationPath) {
+      this.redirectInput = redirectInput;
+      this.destinationInput = destinationInput;
+      this.destinationPath = destinationPath;
+    }
+
+    /**
+     * Reads input {@link HttpRequest}, and creates appropriate {@link HttpResponseMessage} based on
+     * what header location is
+     */
+    @Override
+    public void channelRead0(ChannelHandlerContext ctx, HttpRequest request) {
+      HttpResponse response;
+      if (request.headers().get("host").equals(redirectInput)) {
+        response = new HttpResponseMessage(
+            makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, destinationInput, true));
+      } else if (request.headers().get("host").equals(destinationInput)
+          && request.uri().equals(destinationPath)) {
+        response = new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.OK));
+      } else {
+        response = new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.BAD_REQUEST));
+      }
+      ChannelFuture unusedFuture = ctx.channel().writeAndFlush(response);
+
+    }
+  }
 }

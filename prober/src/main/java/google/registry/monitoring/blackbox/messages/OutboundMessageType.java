@@ -17,7 +17,8 @@ package google.registry.monitoring.blackbox.messages;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 
 /**
- * Marker Interface that is implemented by all classes that serve as {@code outboundMessages} in channel pipeline
+ * Marker Interface that is implemented by all classes that serve as {@code outboundMessages} in
+ * channel pipeline
  */
 public interface OutboundMessageType {
 

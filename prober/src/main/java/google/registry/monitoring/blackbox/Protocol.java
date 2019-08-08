@@ -60,9 +60,11 @@ public abstract class Protocol {
     );
   }
 
-  /** Standard {@link AutoValue.Builder} for {@link Protocol}. */
+  /**
+   * Default {@link AutoValue.Builder} for {@link Protocol}.
+   */
   @AutoValue.Builder
-  public static abstract class Builder {
+  public abstract static class Builder {
 
     public abstract Builder setName(String value);
 
