@@ -30,13 +30,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
-import javax.inject.Provider;
 import org.joda.time.Duration;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -60,7 +58,11 @@ public class ProbingActionTest {
   private static final int TEST_PORT = 0;
 
   private static final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
-
+  /**
+   * Used for testing how well probing step can create connection to blackbox server
+   */
+  @Rule
+  public NettyRule nettyRule = new NettyRule(eventLoopGroup);
   /**
    * We use custom Test {@link ActionHandler} and {@link ConversionHandler} so test depends only on
    * {@link ProbingAction}
@@ -68,26 +70,18 @@ public class ProbingActionTest {
   private ActionHandler testHandler = new TestActionHandler();
   private ChannelHandler conversionHandler = new ConversionHandler();
 
-  private Provider<? extends ChannelHandler> testHandlerProvider = () -> testHandler;
-  private Provider<? extends ChannelHandler> conversionHandlerProvider = () -> conversionHandler;
-
-  /**
-   * Used for testing how well probing step can create connection to blackbox server
-   */
-  @Rule
-  public NettyRule nettyRule = new NettyRule(eventLoopGroup);
-
-
+  //TODO - Currently, this test fails to receive outbound messages from the embedded channel, which
+  // we will fix in a later release.
   @Ignore
   @Test
-  public void testBehavior_existingChannel() {
+  public void testSuccess_existingChannel() {
     //setup
     EmbeddedChannel channel = new EmbeddedChannel(conversionHandler, testHandler);
     channel.attr(CONNECTION_FUTURE_KEY).set(channel.newSucceededFuture());
 
     // Sets up a Protocol corresponding to when a connection exists.
     Protocol protocol = Protocol.builder()
-        .setHandlerProviders(ImmutableList.of(conversionHandlerProvider, testHandlerProvider))
+        .setHandlerProviders(ImmutableList.of(() -> conversionHandler, () -> testHandler))
         .setName(PROTOCOL_NAME)
         .setPort(TEST_PORT)
         .setPersistentConnection(true)
@@ -136,13 +130,13 @@ public class ProbingActionTest {
 
     // Sets up a Protocol corresponding to when a new connection is created.
     Protocol protocol = Protocol.builder()
-        .setHandlerProviders(ImmutableList.of(conversionHandlerProvider, testHandlerProvider))
+        .setHandlerProviders(ImmutableList.of(() -> conversionHandler, () -> testHandler))
         .setName(PROTOCOL_NAME)
         .setPort(TEST_PORT)
         .setPersistentConnection(false)
         .build();
 
-    nettyRule.setUpServer(address, new ChannelInboundHandlerAdapter());
+    nettyRule.setUpServer(address);
 
     // Sets up a ProbingAction with existing channel using test specified attributes.
     ProbingAction action = ProbingAction.builder()

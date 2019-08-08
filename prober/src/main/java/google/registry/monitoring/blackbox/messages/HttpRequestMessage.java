@@ -46,18 +46,18 @@ public class HttpRequestMessage extends DefaultFullHttpRequest implements Outbou
   }
 
 
-  @Override
-  public HttpRequestMessage setUri(String path) {
-    super.setUri(path);
-    return this;
-  }
-
   /**
    * Used for conversion from {@link FullHttpRequest} to {@link HttpRequestMessage}
    */
   public HttpRequestMessage(FullHttpRequest request) {
     this(request.protocolVersion(), request.method(), request.uri(), request.content());
     request.headers().forEach((entry) -> headers().set(entry.getKey(), entry.getValue()));
+  }
+
+  @Override
+  public HttpRequestMessage setUri(String path) {
+    super.setUri(path);
+    return this;
   }
 
   /**
@@ -77,7 +77,8 @@ public class HttpRequestMessage extends DefaultFullHttpRequest implements Outbou
       throw new IllegalArgumentException(
           String.format(
               "Wrong number of arguments present for modifying HttpRequestMessage."
-                  + " Received %d arguments instead of: " + Arrays.toString(args), args.length));
+                  + " Received %d arguments instead of 2. Received arguments: "
+                  + Arrays.toString(args), args.length));
     }
   }
 

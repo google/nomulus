@@ -31,6 +31,10 @@ public abstract class Protocol {
    */
   public static final AttributeKey<Protocol> PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL_KEY");
 
+  public static Builder builder() {
+    return new AutoValue_Protocol.Builder();
+  }
+
   public abstract String name();
 
   public abstract int port();
@@ -45,11 +49,20 @@ public abstract class Protocol {
    */
   abstract boolean persistentConnection();
 
-  public static Builder builder() {
-    return new AutoValue_Protocol.Builder();
+  @Override
+  public final String toString() {
+    return String.format(
+        "Protocol with name: %s, port: %d, providers: %s, and persistent connection: %s",
+        name(),
+        port(),
+        handlerProviders(),
+        persistentConnection()
+    );
   }
 
-  /** Default {@link AutoValue.Builder} for {@link Protocol}. */
+  /**
+   * Default {@link AutoValue.Builder} for {@link Protocol}.
+   */
   @AutoValue.Builder
   public abstract static class Builder {
 
@@ -63,16 +76,5 @@ public abstract class Protocol {
     public abstract Builder setPersistentConnection(boolean value);
 
     public abstract Protocol build();
-  }
-
-  @Override
-  public final String toString() {
-    return String.format(
-        "Protocol with name: %s, port: %d, providers: %s, and persistent connection: %s",
-        name(),
-        port(),
-        handlerProviders(),
-        persistentConnection()
-    );
   }
 }

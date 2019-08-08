@@ -71,26 +71,6 @@ public class SslClientInitializerTest {
    * Fake port to test if the SSL engine gets the correct peer port.
    */
   private static final int SSL_PORT = 12345;
-
-  @Rule
-  public NettyRule nettyRule = new NettyRule();
-
-  @Parameter(0)
-  public SslProvider sslProvider;
-
-  // We do our best effort to test all available SSL providers.
-  @Parameters(name = "{0}")
-  public static SslProvider[] data() {
-    return OpenSsl.isAvailable()
-        ? new SslProvider[]{SslProvider.JDK, SslProvider.OPENSSL}
-        : new SslProvider[]{SslProvider.JDK};
-  }
-
-  /**
-   * Saves the SNI hostname received by the server, if sent by the client.
-   */
-  private String sniHostReceived;
-
   /**
    * Fake protocol saved in channel attribute.
    */
@@ -100,6 +80,22 @@ public class SslClientInitializerTest {
       .setHandlerProviders(ImmutableList.of())
       .setPersistentConnection(false)
       .build();
+  @Rule
+  public NettyRule nettyRule = new NettyRule();
+  @Parameter(0)
+  public SslProvider sslProvider;
+  /**
+   * Saves the SNI hostname received by the server, if sent by the client.
+   */
+  private String sniHostReceived;
+
+  // We do our best effort to test all available SSL providers.
+  @Parameters(name = "{0}")
+  public static SslProvider[] data() {
+    return OpenSsl.isAvailable()
+        ? new SslProvider[]{SslProvider.JDK, SslProvider.OPENSSL}
+        : new SslProvider[]{SslProvider.JDK};
+  }
 
   private ChannelHandler getServerHandler(PrivateKey privateKey, X509Certificate certificate)
       throws Exception {
