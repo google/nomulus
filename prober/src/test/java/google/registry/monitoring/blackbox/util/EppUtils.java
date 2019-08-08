@@ -1,29 +1,33 @@
-package google.registry.monitoring.blackbox.servers;
+// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package google.registry.monitoring.blackbox.util;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.exceptions.EppClientException;
-import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.messages.EppMessage;
-import google.registry.monitoring.blackbox.messages.EppRequestMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.local.LocalAddress;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-public class EppServer extends TestServer {
+public class EppUtils {
 
   private static final int HEADER_LENGTH = 4;
   private static DocumentBuilderFactory factory;
@@ -40,15 +44,6 @@ public class EppServer extends TestServer {
     }
   }
 
-  private EppHandler handler;
-
-  private EppServer() {
-    super();
-  }
-
-  private EppServer(EventLoopGroup eventLoopGroup) {
-    super(eventLoopGroup);
-  }
 
   /**
    * Return a simple default greeting as a String.
@@ -161,67 +156,4 @@ public class EppServer extends TestServer {
 
     return buf;
   }
-
-  public static EppServer defaultServer(EventLoopGroup group, LocalAddress address) {
-    EppServer defaultServer = new EppServer(group);
-    defaultServer.setupServer(address, new EppHandler());
-
-    return defaultServer;
-  }
-
-  private void setupServer(LocalAddress address, EppHandler handler) {
-    super.setupServer(address, ImmutableList.of(handler));
-    this.handler = handler;
-  }
-
-  private static class EppHandler extends ChannelDuplexHandler {
-
-    Document doc;
-    private ChannelPromise future;
-    private Channel channel;
-
-    @Override
-    public void handlerAdded(ChannelHandlerContext ctx) {
-      future = ctx.newPromise();
-      channel = ctx.channel();
-    }
-
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
-      ByteBuf buf = (ByteBuf) msg;
-      int capacity = buf.readInt() - 4;
-
-      byte[] messageBytes = new byte[capacity];
-      buf.readBytes(messageBytes);
-
-      try {
-        doc = EppMessage.byteArrayToXmlDoc(messageBytes);
-        future.setSuccess();
-      } catch (FailureException e) {
-        future.setFailure(e);
-      }
-    }
-
-    public String getClTRID() {
-      return EppMessage.getElementValue(doc, EppRequestMessage.CLIENT_TRID_KEY);
-    }
-
-    public String getDomainName() {
-      return EppMessage.getElementValue(doc, EppRequestMessage.DOMAIN_KEY);
-    }
-
-    public String getUserId() {
-      return EppMessage.getElementValue(doc, EppRequestMessage.CLIENT_ID_KEY);
-    }
-
-    public String getPassword() {
-      return EppMessage.getElementValue(doc, EppRequestMessage.CLIENT_PASSWORD_KEY);
-    }
-
-    public void sendResponse(String response) throws SAXException, IOException, EppClientException {
-      channel.writeAndFlush(stringToByteBuf(response)
-      );
-    }
-  }
-
 }

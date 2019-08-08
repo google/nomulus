@@ -74,7 +74,23 @@ public class CertificateModule {
       String alias = ks.aliases().nextElement();
       return (PrivateKey) ks.getKey(alias, "passphrase".toCharArray());
     } catch (IOException | GeneralSecurityException e) {
-      return PrivateKey.;
+      return new PrivateKey(){
+
+        @Override
+        public String getAlgorithm() {
+          return null;
+        }
+
+        @Override
+        public String getFormat() {
+          return null;
+        }
+
+        @Override
+        public byte[] getEncoded() {
+          return new byte[0];
+        }
+      };
     }
   }
 
@@ -92,7 +108,7 @@ public class CertificateModule {
       return new X509Certificate[]{(X509Certificate) ks.getCertificate(alias)};
     } catch (Exception e) {
       logger.atWarning().withCause(e).log();
-      return null;
+      return new X509Certificate[]{};
     }
   }
 }

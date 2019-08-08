@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.monitoring.blackbox;
+package google.registry.monitoring.blackbox.util;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -29,7 +29,7 @@ import io.netty.handler.codec.http.HttpVersion;
 /**
  * Utility class for various helper methods used in testing.
  */
-public class TestUtils {
+public class WebWhoisUtils {
 
   public static FullHttpRequest makeHttpGetRequest(String host, String path) {
     FullHttpRequest request =

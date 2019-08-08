@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.monitoring.blackbox;
+package google.registry.monitoring.blackbox.connection;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.monitoring.blackbox.connection.ProbingAction.CONNECTION_FUTURE_KEY;
@@ -20,8 +20,6 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.connection.ProbingAction;
-import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.handlers.ActionHandler;
 import google.registry.monitoring.blackbox.handlers.ConversionHandler;
 import google.registry.monitoring.blackbox.handlers.NettyRule;

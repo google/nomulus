@@ -16,8 +16,6 @@ apply plugin: 'java'
 
 createUberJar('deployJar', 'prober', 'google.registry.monitoring.blackbox.Prober')
 
-
-
 dependencies {
     def deps = rootProject.dependencyMap
 
@@ -37,6 +35,7 @@ dependencies {
     compile deps['joda-time:joda-time']
     compile deps['org.bouncycastle:bcpkix-jdk15on']
     compile deps['org.bouncycastle:bcprov-jdk15on']
+    compile project(':util')
 
     runtime deps['com.google.flogger:flogger-system-backend']
     runtime deps['com.google.auto.value:auto-value']
@@ -46,7 +45,6 @@ dependencies {
     testCompile deps['junit:junit']
     testCompile deps['org.mockito:mockito-core']
     testCompile project(':third_party')
-    //testCompile project(path: ':core', configuration: 'testRuntime')
 
     // Include auto-value in compile until nebula-lint understands
     // annotationProcessor
@@ -54,9 +52,4 @@ dependencies {
     testAnnotationProcessor deps['com.google.auto.value:auto-value']
     annotationProcessor deps['com.google.dagger:dagger-compiler']
     testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
-}
-
-task(runMain, dependsOn: 'classes', type: JavaExec) {
-    main = 'google.registry.monitoring.blackbox.Prober'
-    classpath = sourceSets.main.runtimeClasspath
 }

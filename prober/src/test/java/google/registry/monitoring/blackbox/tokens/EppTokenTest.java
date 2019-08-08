@@ -19,9 +19,11 @@ import static com.google.common.truth.Truth.assertThat;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
 import google.registry.monitoring.blackbox.messages.EppResponseMessage;
+import io.netty.channel.Channel;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.mockito.Mockito;
 
 /**
  * Unit Tests for each {@link Token} subtype (just {@link WebWhoisToken} for now)
@@ -32,19 +34,20 @@ public class EppTokenTest {
   private static String TEST_HOST = "host";
   private static String TEST_TLD = "tld";
 
-  private Token eppToken = new EppToken.Persistent(TEST_TLD, TEST_HOST);
-
+  private EppToken persistentEppToken = new EppToken.Persistent(TEST_TLD, TEST_HOST);
+  private EppToken transientEppToken = new EppToken.Transient(TEST_TLD, TEST_HOST);
 
   @Test
-  public void testMessageModificationSuccess()
+  public void testMessageModificationSuccess_PersistentToken()
       throws UndeterminedStateException {
 
     EppRequestMessage originalMessage = new EppRequestMessage.Create(
         new EppResponseMessage.SimpleSuccess());
-    String domainName = ((EppToken) eppToken).getCurrentDomainName();
+    String domainName = persistentEppToken.getCurrentDomainName();
     String clTRID = domainName.substring(0, domainName.indexOf('.'));
 
-    EppRequestMessage modifiedMessage = (EppRequestMessage) eppToken.modifyMessage(originalMessage);
+    EppRequestMessage modifiedMessage =
+        (EppRequestMessage) persistentEppToken.modifyMessage(originalMessage);
 
     //ensure element values are what they should be
     assertThat(modifiedMessage.getElementValue("//domainns:name")).isEqualTo(domainName);
@@ -52,4 +55,45 @@ public class EppTokenTest {
 
   }
 
+  @Test
+  public void testMessageModificationSuccess_TransientToken()
+      throws UndeterminedStateException {
+
+    EppRequestMessage originalMessage = new EppRequestMessage.Create(
+        new EppResponseMessage.SimpleSuccess());
+    String domainName = transientEppToken.getCurrentDomainName();
+    String clTRID = domainName.substring(0, domainName.indexOf('.'));
+
+    EppRequestMessage modifiedMessage =
+        (EppRequestMessage) transientEppToken.modifyMessage(originalMessage);
+
+    //ensure element values are what they should be
+    assertThat(modifiedMessage.getElementValue("//domainns:name")).isEqualTo(domainName);
+    assertThat(modifiedMessage.getElementValue("//eppns:clTRID")).isNotEqualTo(clTRID);
+
+  }
+
+  @Test
+  public void testNext_persistentToken() {
+    String domainName = persistentEppToken.getCurrentDomainName();
+    Channel mockChannel = Mockito.mock(Channel.class);
+    persistentEppToken.setChannel(mockChannel);
+
+    EppToken nextToken = (EppToken) persistentEppToken.next();
+
+    assertThat(nextToken.getCurrentDomainName()).isNotEqualTo(domainName);
+    assertThat(nextToken.channel()).isEqualTo(mockChannel);
+  }
+
+  @Test
+  public void testNext_transientToken() {
+    String domainName = transientEppToken.getCurrentDomainName();
+    Channel mockChannel = Mockito.mock(Channel.class);
+    transientEppToken.setChannel(mockChannel);
+
+    EppToken nextToken = (EppToken) transientEppToken.next();
+
+    assertThat(nextToken.getCurrentDomainName()).isNotEqualTo(domainName);
+    assertThat(nextToken.channel()).isNull();
+  }
 }

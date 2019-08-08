@@ -131,16 +131,6 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
   public abstract String host();
 
   /**
-   * The {@link Protocol} instance that specifies type of connection
-   */
-  public abstract Protocol protocol();
-
-  /**
-   * The hostname of the remote host we have a connection or will make a connection to
-   */
-  public abstract String host();
-
-  /**
    * Performs the work of the actual action.
    *
    * <p>First, checks if channel is active by setting a listener to perform the bulk of the work
