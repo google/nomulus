@@ -55,7 +55,7 @@ public class WebWhoisActionHandlerTest {
   private static final String HTTP_REDIRECT = "http://";
   private static final String TARGET_HOST = "whois.nic.tld";
   private static final String DUMMY_URL = "__WILL_NOT_WORK__";
-  private final Protocol STANDARD_PROTOCOL = Protocol.builder()
+  private final Protocol standardProtocol = Protocol.builder()
       .setHandlerProviders(ImmutableList.of(() -> new WebWhoisActionHandler(
           null, null, null, null)))
       .setName("http")
@@ -89,8 +89,8 @@ public class WebWhoisActionHandlerTest {
   private void setupActionHandler(Bootstrap bootstrap, HttpRequestMessage messageTemplate) {
     actionHandler = new WebWhoisActionHandler(
         bootstrap,
-        STANDARD_PROTOCOL,
-        STANDARD_PROTOCOL,
+        standardProtocol,
+        standardProtocol,
         messageTemplate
     );
     actionHandlerProvider = () -> actionHandler;
@@ -146,27 +146,26 @@ public class WebWhoisActionHandlerTest {
     setup("", null, false);
     setupChannel(initialProtocol);
 
-    //stores future
+    // Stores future that informs when action is completed.
     ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(msg);
 
     FullHttpResponse response = new HttpResponseMessage(
         makeHttpResponse(HttpResponseStatus.BAD_REQUEST));
 
-    //assesses that future listener isn't triggered yet.
+    // Assesses that future listener isn't triggered yet.
     assertThat(future.isDone()).isFalse();
 
     channel.writeInbound(response);
 
-    //assesses that listener is triggered, but event is not success
+    // Assesses that listener is triggered, but event is not success
     assertThat(future.isDone()).isTrue();
     assertThat(future.isSuccess()).isFalse();
 
-    //ensures Protocol is the same
+    // Ensures that we fail as a result of a FailureException.
     assertThat(future.cause() instanceof FailureException).isTrue();
   }
 
-  @SuppressWarnings("CheckReturnValue")
   @Test
   public void testBasic_responseFailure_badURL() {
     //setup
@@ -189,8 +188,8 @@ public class WebWhoisActionHandlerTest {
     assertThat(future.isDone()).isTrue();
     assertThat(future.isSuccess()).isFalse();
 
-    //ensures Protocol is the same
-    assertThat(future.cause() instanceof FailureException);
+    // Ensures that we fail as a result of a FailureException.
+    assertThat(future.cause() instanceof FailureException).isTrue();
   }
 
   @Test
@@ -203,22 +202,21 @@ public class WebWhoisActionHandlerTest {
     setupChannel(initialProtocol);
 
     // Initializes LocalAddress with unique String.
-    String host = TARGET_HOST + System.currentTimeMillis();
-    LocalAddress address = new LocalAddress(host);
+    LocalAddress address = new LocalAddress(TARGET_HOST);
 
     //stores future
     ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(msg);
 
-    // Stores path.
+    // Path that we test WebWhoisActionHandler uses.
     String path = "/test";
 
     // Sets up the local server that the handler will be redirected to.
-    TestServer.webWhoisServer(group, address, "", host, path);
+    TestServer.webWhoisServer(group, address, "", TARGET_HOST, path);
 
     FullHttpResponse response =
         new HttpResponseMessage(makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY,
-            HTTP_REDIRECT + host + path, true));
+            HTTP_REDIRECT + TARGET_HOST + path, true));
 
     //checks that future has not been set to successful or a failure
     assertThat(future.isDone()).isFalse();

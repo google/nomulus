@@ -101,7 +101,9 @@ public class WebWhoisActionHandler extends ActionHandler {
       //On success, we always pass message to ActionHandler's channelRead0 method.
       super.channelRead0(ctx, msg);
 
-    } else if (response.headers().get("location") != null) {
+    } else if (response.status().equals(HttpResponseStatus.MOVED_PERMANENTLY)
+        || response.status().equals(HttpResponseStatus.FOUND)) {
+      //TODO - Fix checker to better determine when we have encountered a redirection response.
 
       //Obtain url to be redirected to
       URL url;

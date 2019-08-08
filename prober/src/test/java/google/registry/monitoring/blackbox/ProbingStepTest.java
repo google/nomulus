@@ -16,15 +16,17 @@ package google.registry.monitoring.blackbox;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.monitoring.blackbox.ProbingAction.CONNECTION_FUTURE_KEY;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.TestUtils.ExistingChannelToken;
-import google.registry.monitoring.blackbox.TestUtils.NewChannelToken;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.handlers.ActionHandler;
 import google.registry.monitoring.blackbox.handlers.ConversionHandler;
 import google.registry.monitoring.blackbox.handlers.NettyRule;
 import google.registry.monitoring.blackbox.handlers.TestActionHandler;
+import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import google.registry.monitoring.blackbox.messages.TestMessage;
 import google.registry.monitoring.blackbox.tokens.Token;
 import io.netty.bootstrap.Bootstrap;
@@ -38,6 +40,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import org.joda.time.Duration;
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 /**
  * Unit Tests for {@link ProbingSequence}s and {@link ProbingStep}s and their specific
@@ -72,6 +75,19 @@ public class ProbingStepTest {
   private ActionHandler testHandler = new TestActionHandler();
   private ChannelHandler conversionHandler = new ConversionHandler();
 
+  /**
+   * Creates mock {@link Token} object that returns the host and returns unchanged message when
+   * modifying it.
+   */
+  private Token testToken(String host) throws UndeterminedStateException {
+    Token token = Mockito.mock(Token.class);
+    doReturn(host).when(token).host();
+    doAnswer(answer -> ((OutboundMessageType) answer.getArgument(0)).modifyMessage(host))
+        .when(token)
+        .modifyMessage(any(OutboundMessageType.class));
+
+    return token;
+  }
 
   @Test
   public void testProbingActionGenerate_embeddedChannel() throws UndeterminedStateException {
@@ -89,7 +105,8 @@ public class ProbingStepTest {
 
     // Sets up testToken to return arbitrary value, and the embedded channel. Used for when the
     // ProbingStep generates an ExistingChannelAction.
-    Token testToken = new ExistingChannelToken(channel, SECONDARY_TEST_MESSAGE);
+    Token testToken = testToken(SECONDARY_TEST_MESSAGE);
+    doReturn(channel).when(testToken).channel();
 
     // Sets up generic {@link ProbingStep} that we are testing.
     ProbingStep testStep = ProbingStep.builder()
@@ -130,7 +147,7 @@ public class ProbingStepTest {
 
     // Sets up testToken to return arbitrary values, and no channel. Used when we create a new
     // channel.
-    Token testToken = new NewChannelToken(ADDRESS_NAME);
+    Token testToken = testToken(ADDRESS_NAME);
 
     // Sets up server listening at LocalAddress so generated action can have successful connection.
     nettyRule.setUpServer(address);

@@ -42,7 +42,6 @@ import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 import org.joda.time.Duration;
 
@@ -117,11 +116,20 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
    * {@link Channel} object that either created by or passed into this {@link ProbingAction}
    * instance
    */
-  @Nullable
   public abstract Channel channel();
 
   /**
-   * Performs the work of the actual action
+   * The {@link Protocol} instance that specifies type of connection
+   */
+  public abstract Protocol protocol();
+
+  /**
+   * The hostname of the remote host we have a connection or will make a connection to
+   */
+  public abstract String host();
+
+  /**
+   * Performs the work of the actual action.
    *
    * <p>First, checks if channel is active by setting a listener to perform the bulk of the work
    * when the connection future is successful.</p>
@@ -135,21 +143,6 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
    * we inform the {@link ProbingStep} of this.</p>
    *
    * @return {@link ChannelFuture} that denotes when the action has been successfully performed.
-   */
-
-  /**
-   * The {@link Protocol} instance that specifies type of connection
-   */
-  public abstract Protocol protocol();
-
-  /**
-   * The hostname of the remote host we have a connection or will make a connection to
-   */
-  public abstract String host();
-
-  /**
-   * Method that calls on {@code performAction} when it is certain channel connection is
-   * established.
    */
   @Override
   public ChannelFuture call() {
@@ -180,7 +173,8 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
 
             timer.newTimeout(timeout -> {
                   // Write appropriate outboundMessage to pipeline
-                  ChannelFuture unusedflushFuture = channel().writeAndFlush(outboundMessage());
+                  ChannelFuture unusedFutureWriteAndFlush =
+                      channel().writeAndFlush(outboundMessage());
                   channelFuture.addListeners(
                       future -> {
                         if (future.isSuccess()) {
@@ -272,6 +266,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
     abstract ProbingAction autoBuild();
 
     public ProbingAction build() {
+      // Sets SocketAddress to bind to.
       SocketAddress address;
       try {
         InetAddress hostAddress = InetAddress.getByName(host());
@@ -280,12 +275,20 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
         address = new LocalAddress(host());
       }
 
-      checkArgument(channel() == null ^ bootstrap == null,
+      //Sets channel supplied or to be created.
+      Channel channel;
+      try {
+        channel = channel();
+      } catch (IllegalStateException e) {
+        channel = null;
+      }
+
+      checkArgument(channel == null ^ bootstrap == null,
           "One and only one of bootstrap and channel must be supplied.");
       //If a channel is supplied, nothing is needed to be done
 
       //Otherwise, a Bootstrap must be supplied and be used for creating the channel
-      if (channel() == null) {
+      if (channel == null) {
         bootstrap.handler(
             new ChannelInitializer<Channel>() {
               @Override
