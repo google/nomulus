@@ -42,56 +42,14 @@ import org.joda.time.Duration;
 @Module
 public class WebWhoisModule {
 
-  private final int HTTP_WHOIS_PORT = 80;
-  private final int HTTPS_WHOIS_PORT = 443;
   private static final String HTTP_PROTOCOL_NAME = "http";
   private static final String HTTPS_PROTOCOL_NAME = "https";
-
   /**
    * Standard length of messages used by Proxy. Equates to 0.5 MB.
    */
   private static final int maximumMessageLengthBytes = 512 * 1024;
-
-
-  /**
-   * Dagger qualifier to provide HTTP whois protocol related handlers and other bindings.
-   */
-  @Qualifier
-  public @interface HttpWhoisProtocol {
-
-  }
-
-  /**
-   * Dagger qualifier to provide HTTPS whois protocol related handlers and other bindings.
-   */
-  @Qualifier
-  public @interface HttpsWhoisProtocol {
-
-  }
-
-  /**
-   * Dagger qualifier to provide any WebWhois related bindings.
-   */
-  @Qualifier
-  public @interface WebWhoisProtocol {
-
-  }
-
-  /**
-   * {@link Provides} standard WebWhois sequence.
-   */
-  @Provides
-  @Singleton
-  @IntoSet
-  ProbingSequence provideWebWhoisSequence(
-      @WebWhoisProtocol ProbingStep probingStep,
-      WebWhoisToken webWhoisToken) {
-
-    return new ProbingSequence.Builder(webWhoisToken)
-        .addStep(probingStep)
-        .build();
-  }
-
+  private final int HTTP_WHOIS_PORT = 80;
+  private final int HTTPS_WHOIS_PORT = 443;
 
   /**
    * {@link Provides} only step used in WebWhois sequence.
@@ -145,7 +103,6 @@ public class WebWhoisModule {
         .setPersistentConnection(false)
         .build();
   }
-
 
   /**
    * {@link Provides} the list of providers of {@link ChannelHandler}s that are used for http
@@ -220,6 +177,21 @@ public class WebWhoisModule {
         .channel(channelClazz);
   }
 
+  /**
+   * {@link Provides} standard WebWhois sequence.
+   */
+  @Provides
+  @Singleton
+  @IntoSet
+  ProbingSequence provideWebWhoisSequence(
+      @WebWhoisProtocol ProbingStep probingStep,
+      WebWhoisToken webWhoisToken) {
+
+    return new ProbingSequence.Builder(webWhoisToken)
+        .addStep(probingStep)
+        .build();
+  }
+
   @Provides
   @WebWhoisProtocol
   int provideMaximumMessageLengthBytes() {
@@ -246,6 +218,30 @@ public class WebWhoisModule {
   @HttpsWhoisProtocol
   int provideHttpsWhoisPort() {
     return HTTPS_WHOIS_PORT;
+  }
+
+  /**
+   * Dagger qualifier to provide HTTP whois protocol related handlers and other bindings.
+   */
+  @Qualifier
+  public @interface HttpWhoisProtocol {
+
+  }
+
+  /**
+   * Dagger qualifier to provide HTTPS whois protocol related handlers and other bindings.
+   */
+  @Qualifier
+  public @interface HttpsWhoisProtocol {
+
+  }
+
+  /**
+   * Dagger qualifier to provide any WebWhois related bindings.
+   */
+  @Qualifier
+  public @interface WebWhoisProtocol {
+
   }
 
 

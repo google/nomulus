@@ -42,7 +42,6 @@ import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 import org.joda.time.Duration;
 
@@ -67,25 +66,41 @@ import org.joda.time.Duration;
 @AutoValue
 public abstract class ProbingAction implements Callable<ChannelFuture> {
 
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
   /**
    * {@link AttributeKey} in channel that gives {@link ChannelFuture} that is set to success when
    * channel is active.
    */
   public static final AttributeKey<ChannelFuture> CONNECTION_FUTURE_KEY = AttributeKey
       .valueOf("CONNECTION_FUTURE_KEY");
-
   /**
    * {@link AttributeKey} in channel that gives the information of the channel's host.
    */
   public static final AttributeKey<String> REMOTE_ADDRESS_KEY = AttributeKey
       .valueOf("REMOTE_ADDRESS_KEY");
-
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   /**
    * {@link Timer} that rate limits probing
    */
   private static final Timer timer = new HashedWheelTimer();
+
+  public static Builder builder() {
+    return new AutoValue_ProbingAction.Builder();
+  }
+
+  /**
+   * Adds provided {@link ChannelHandler}s to the {@link ChannelPipeline} specified
+   *
+   * @param channelPipeline is pipeline associated with channel that we want to add handlers to
+   * @param handlerProviders are a list of provider objects that give us the requisite handlers Adds
+   * to the pipeline, the list of handlers in the order specified
+   */
+  private static void addHandlers(
+      ChannelPipeline channelPipeline,
+      ImmutableList<Provider<? extends ChannelHandler>> handlerProviders) {
+    for (Provider<? extends ChannelHandler> handlerProvider : handlerProviders) {
+      channelPipeline.addLast(handlerProvider.get());
+    }
+  }
 
   /**
    * Actual {@link Duration} of this delay
@@ -101,7 +116,6 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
    * {@link Channel} object that either created by or passed into this {@link ProbingAction}
    * instance
    */
-  @Nullable
   public abstract Channel channel();
 
   /**
@@ -115,7 +129,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
   public abstract String host();
 
   /**
-   * Performs the work of the actual action
+   * Performs the work of the actual action.
    *
    * <p>First, checks if channel is active by setting a listener to perform the bulk of the work
    * when the connection future is successful.</p>
@@ -129,12 +143,6 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
    * we inform the {@link ProbingStep} of this.</p>
    *
    * @return {@link ChannelFuture} that denotes when the action has been successfully performed.
-   */
-
-
-  /**
-   * Method that calls on {@code performAction} when it is certain channel connection is
-   * established.
    */
   @Override
   public ChannelFuture call() {
@@ -212,6 +220,19 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
     return finished;
   }
 
+  @Override
+  public final String toString() {
+    return String.format(
+        "ProbingAction with delay: %d\n"
+            + "outboundMessage: %s\n"
+            + "protocol: %s\n"
+            + "host: %s\n",
+        delay().getStandardSeconds(),
+        outboundMessage(),
+        protocol(),
+        host()
+    );
+  }
 
   /**
    * {@link AutoValue.Builder} that does work of creating connection when not already present.
@@ -245,6 +266,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
     abstract ProbingAction autoBuild();
 
     public ProbingAction build() {
+      // Sets SocketAddress to bind to.
       SocketAddress address;
       try {
         InetAddress hostAddress = InetAddress.getByName(host());
@@ -253,12 +275,20 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
         address = new LocalAddress(host());
       }
 
-      checkArgument(channel() == null ^ bootstrap == null,
+      //Sets channel supplied or to be created.
+      Channel channel;
+      try {
+        channel = channel();
+      } catch (IllegalStateException e) {
+        channel = null;
+      }
+
+      checkArgument(channel == null ^ bootstrap == null,
           "One and only one of bootstrap and channel must be supplied.");
       //If a channel is supplied, nothing is needed to be done
 
       //Otherwise, a Bootstrap must be supplied and be used for creating the channel
-      if (channel() == null) {
+      if (channel == null) {
         bootstrap.handler(
             new ChannelInitializer<Channel>() {
               @Override
@@ -282,39 +312,5 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
       //now we can actually build the ProbingAction
       return autoBuild();
     }
-  }
-
-  public static Builder builder() {
-    return new AutoValue_ProbingAction.Builder();
-  }
-
-  /**
-   * Adds provided {@link ChannelHandler}s to the {@link ChannelPipeline} specified
-   *
-   * @param channelPipeline is pipeline associated with channel that we want to add handlers to
-   * @param handlerProviders are a list of provider objects that give us the requisite handlers Adds
-   * to the pipeline, the list of handlers in the order specified
-   */
-  private static void addHandlers(
-      ChannelPipeline channelPipeline,
-      ImmutableList<Provider<? extends ChannelHandler>> handlerProviders) {
-    for (Provider<? extends ChannelHandler> handlerProvider : handlerProviders) {
-      channelPipeline.addLast(handlerProvider.get());
-    }
-  }
-
-
-  @Override
-  public final String toString() {
-    return String.format(
-        "ProbingAction with delay: %d\n"
-            + "outboundMessage: %s\n"
-            + "protocol: %s\n"
-            + "host: %s\n",
-        delay().getStandardSeconds(),
-        outboundMessage(),
-        protocol(),
-        host()
-    );
   }
 }
