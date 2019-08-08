@@ -40,6 +40,11 @@ public class ProbingSequence {
    */
   private Token startToken;
 
+  private ProbingSequence(ProbingStep firstStep, Token startToken) {
+    this.firstStep = firstStep;
+    this.startToken = startToken;
+  }
+
   public void start() {
     // calls the first step with startToken;
     firstStep.accept(startToken);
@@ -98,11 +103,6 @@ public class ProbingSequence {
       currentStep.lastStep();
       return new ProbingSequence(this.firstStep, this.startToken);
     }
-  }
-
-  private ProbingSequence(ProbingStep firstStep, Token startToken) {
-    this.firstStep = firstStep;
-    this.startToken = startToken;
   }
 }
 

@@ -26,7 +26,7 @@ import google.registry.monitoring.blackbox.Protocol;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.messages.HttpResponseMessage;
-import google.registry.monitoring.blackbox.testservers.WebWhoisServer;
+import google.registry.monitoring.blackbox.testservers.TestServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
@@ -111,10 +111,6 @@ public class WebWhoisActionHandlerTest {
         .channel(LocalChannel.class);
   }
 
-  private void setupLocalServer(String redirectInput, String destinationInput,
-      EventLoopGroup group, LocalAddress address) {
-    WebWhoisServer.strippedServer(group, address, redirectInput, destinationInput);
-  }
 
   private void setup(String hostName, Bootstrap bootstrap, boolean persistentConnection) {
     msg = new HttpRequestMessage(makeHttpGetRequest(hostName, ""));
@@ -150,27 +146,26 @@ public class WebWhoisActionHandlerTest {
     setup("", null, false);
     setupChannel(initialProtocol);
 
-    //stores future
+    // Stores future that informs when action is completed.
     ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(msg);
 
     FullHttpResponse response = new HttpResponseMessage(
         makeHttpResponse(HttpResponseStatus.BAD_REQUEST));
 
-    //assesses that future listener isn't triggered yet.
+    // Assesses that future listener isn't triggered yet.
     assertThat(future.isDone()).isFalse();
 
     channel.writeInbound(response);
 
-    //assesses that listener is triggered, but event is not success
+    // Assesses that listener is triggered, but event is not success
     assertThat(future.isDone()).isTrue();
     assertThat(future.isSuccess()).isFalse();
 
-    //ensures Protocol is the same
+    // Ensures that we fail as a result of a FailureException.
     assertThat(future.cause() instanceof FailureException).isTrue();
   }
 
-  @SuppressWarnings("CheckReturnValue")
   @Test
   public void testBasic_responseFailure_badURL() {
     //setup
@@ -182,7 +177,7 @@ public class WebWhoisActionHandlerTest {
     channel.writeOutbound(msg);
 
     FullHttpResponse response = new HttpResponseMessage(
-        makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, DUMMY_URL, true, false));
+        makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, DUMMY_URL, true));
 
     //assesses that future listener isn't triggered yet.
     assertThat(future.isDone()).isFalse();
@@ -193,8 +188,8 @@ public class WebWhoisActionHandlerTest {
     assertThat(future.isDone()).isTrue();
     assertThat(future.isSuccess()).isFalse();
 
-    //ensures Protocol is the same
-    assertThat(future.cause() instanceof FailureException);
+    // Ensures that we fail as a result of a FailureException.
+    assertThat(future.cause() instanceof FailureException).isTrue();
   }
 
   @Test
@@ -207,19 +202,21 @@ public class WebWhoisActionHandlerTest {
     setupChannel(initialProtocol);
 
     // Initializes LocalAddress with unique String.
-    String host = TARGET_HOST + System.currentTimeMillis();
-    LocalAddress address = new LocalAddress(host);
+    LocalAddress address = new LocalAddress(TARGET_HOST);
 
     //stores future
     ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(msg);
 
+    // Path that we test WebWhoisActionHandler uses.
+    String path = "/test";
+
     // Sets up the local server that the handler will be redirected to.
-    setupLocalServer("", host, group, address);
+    TestServer.webWhoisServer(group, address, "", TARGET_HOST, path);
 
     FullHttpResponse response =
         new HttpResponseMessage(makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY,
-            HTTP_REDIRECT + host, true, false));
+            HTTP_REDIRECT + TARGET_HOST + path, true));
 
     //checks that future has not been set to successful or a failure
     assertThat(future.isDone()).isFalse();

@@ -44,6 +44,10 @@ public abstract class ProbingStep implements Consumer<Token> {
   protected boolean isLastStep = false;
   private ProbingStep nextStep;
 
+  public static Builder builder() {
+    return new AutoValue_ProbingStep.Builder();
+  }
+
   /**
    * Time delay duration between actions.
    */
@@ -64,26 +68,6 @@ public abstract class ProbingStep implements Consumer<Token> {
    * of new channels.
    */
   abstract Bootstrap bootstrap();
-
-
-  /** Default {@link AutoValue.Builder} for {@link ProbingStep}. */
-  @AutoValue.Builder
-  public abstract static class Builder {
-
-    public abstract Builder setDuration(Duration value);
-
-    public abstract Builder setProtocol(Protocol value);
-
-    public abstract Builder setMessageTemplate(OutboundMessageType value);
-
-    public abstract Builder setBootstrap(Bootstrap value);
-
-    public abstract ProbingStep build();
-  }
-
-  public static Builder builder() {
-    return new AutoValue_ProbingStep.Builder();
-  }
 
   void lastStep() {
     isLastStep = true;
@@ -116,7 +100,6 @@ public abstract class ProbingStep implements Consumer<Token> {
 
     return probingActionBuilder.build();
   }
-
 
   /**
    * On the last step, gets the next {@link Token}. Otherwise, uses the same one.
@@ -172,7 +155,7 @@ public abstract class ProbingStep implements Consumer<Token> {
       }
 
       if (protocol().persistentConnection()) {
-      //If the connection is persistent, we store the channel in the token
+        //If the connection is persistent, we store the channel in the token
         token.setChannel(currentAction.channel());
       }
 
@@ -189,6 +172,23 @@ public abstract class ProbingStep implements Consumer<Token> {
             + "OutboundMessage: %s\n",
         protocol(),
         messageTemplate().getClass().getName());
+  }
+
+  /**
+   * Default {@link AutoValue.Builder} for {@link ProbingStep}.
+   */
+  @AutoValue.Builder
+  public abstract static class Builder {
+
+    public abstract Builder setDuration(Duration value);
+
+    public abstract Builder setProtocol(Protocol value);
+
+    public abstract Builder setMessageTemplate(OutboundMessageType value);
+
+    public abstract Builder setBootstrap(Bootstrap value);
+
+    public abstract ProbingStep build();
   }
 
 }

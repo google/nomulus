@@ -16,10 +16,12 @@ package google.registry.monitoring.blackbox;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import google.registry.monitoring.blackbox.tokens.Token;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -28,30 +30,30 @@ import org.mockito.Mockito;
 @RunWith(JUnit4.class)
 public class ProbingSequenceTest {
 
+  private ProbingStep firstStep;
+  private ProbingStep secondStep;
+  private ProbingStep thirdStep;
 
-  private ProbingStep setupMock() {
+  private Token testToken;
+
+  private ProbingStep setupMockStep() {
     ProbingStep mock = Mockito.mock(ProbingStep.class);
     doCallRealMethod().when(mock).nextStep(any(ProbingStep.class));
     doCallRealMethod().when(mock).nextStep();
     return mock;
   }
 
-  private static class Wrapper<T> {
+  @Before
+  public void setup() {
+    firstStep = setupMockStep();
+    secondStep = setupMockStep();
+    thirdStep = setupMockStep();
 
-    T data;
-
-    public Wrapper(T data) {
-      this.data = data;
-    }
+    testToken = Mockito.mock(Token.class);
   }
 
   @Test
   public void testSequenceBasicConstruction_Success() {
-    ProbingStep firstStep = setupMock();
-    ProbingStep secondStep = setupMock();
-    ProbingStep thirdStep = setupMock();
-
-    Token testToken = Mockito.mock(Token.class);
 
     ProbingSequence sequence = new ProbingSequence.Builder(testToken)
         .addStep(firstStep)
@@ -63,21 +65,13 @@ public class ProbingSequenceTest {
     assertThat(secondStep.nextStep()).isEqualTo(thirdStep);
     assertThat(thirdStep.nextStep()).isEqualTo(firstStep);
 
-    Wrapper<Boolean> wrapper = new Wrapper<>(false);
-    doAnswer(invocation -> wrapper.data = true).when(firstStep).accept(any(Token.class));
-
     sequence.start();
 
-    assertThat(wrapper.data).isTrue();
+    verify(firstStep, times(1)).accept(testToken);
   }
 
   @Test
   public void testSequenceAdvancedConstruction_Success() {
-    ProbingStep firstStep = setupMock();
-    ProbingStep secondStep = setupMock();
-    ProbingStep thirdStep = setupMock();
-
-    Token testToken = Mockito.mock(Token.class);
 
     ProbingSequence sequence = new ProbingSequence.Builder(testToken)
         .addStep(thirdStep)
@@ -90,12 +84,9 @@ public class ProbingSequenceTest {
     assertThat(secondStep.nextStep()).isEqualTo(firstStep);
     assertThat(thirdStep.nextStep()).isEqualTo(secondStep);
 
-    Wrapper<Boolean> wrapper = new Wrapper<>(false);
-    doAnswer(invocation -> wrapper.data = true).when(thirdStep).accept(any(Token.class));
-
     sequence.start();
 
-    assertThat(wrapper.data).isTrue();
+    verify(thirdStep, times(1)).accept(testToken);
   }
 
 }

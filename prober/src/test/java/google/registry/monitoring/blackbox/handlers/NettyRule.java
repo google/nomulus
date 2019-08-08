@@ -28,7 +28,7 @@ import com.google.common.truth.ThrowableSubject;
 import google.registry.monitoring.blackbox.ProbingActionTest;
 import google.registry.monitoring.blackbox.ProbingStepTest;
 import google.registry.monitoring.blackbox.Protocol;
-import google.registry.monitoring.blackbox.testservers.WebWhoisServer;
+import google.registry.monitoring.blackbox.testservers.TestServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -58,6 +58,13 @@ import org.junit.rules.ExternalResource;
 public final class NettyRule extends ExternalResource {
 
 
+  private final EventLoopGroup eventLoopGroup;
+  // Handler attached to server's channel to record the request received.
+  private EchoHandler echoHandler;
+  // Handler attached to client's channel to record the response received.
+  private DumpHandler dumpHandler;
+  private Channel channel;
+
   // All I/O operations are done inside the single thread within this event loop group, which is
   // different from the main test thread. Therefore synchronizations are required to make sure that
   // certain I/O activities are finished when assertions are performed.
@@ -69,15 +76,10 @@ public final class NettyRule extends ExternalResource {
     eventLoopGroup = e;
   }
 
-  private final EventLoopGroup eventLoopGroup;
-
-  // Handler attached to server's channel to record the request received.
-  private EchoHandler echoHandler;
-
-  // Handler attached to client's channel to record the response received.
-  private DumpHandler dumpHandler;
-
-  private Channel channel;
+  private static void writeToChannelAndFlush(Channel channel, String data) {
+    ChannelFuture unusedFuture =
+        channel.writeAndFlush(Unpooled.wrappedBuffer(data.getBytes(US_ASCII)));
+  }
 
   /**
    * Sets up a server channel bound to the given local address.
@@ -86,7 +88,7 @@ public final class NettyRule extends ExternalResource {
     checkState(echoHandler == null, "Can't call setUpServer twice");
     echoHandler = new EchoHandler();
 
-    new WebWhoisServer(eventLoopGroup, localAddress,
+    new TestServer(eventLoopGroup, localAddress,
         ImmutableList.<ChannelHandler>builder().add(handlers).add(echoHandler).build());
   }
 
@@ -169,6 +171,10 @@ public final class NettyRule extends ExternalResource {
             assertThrows(ExecutionException.class, () -> dumpHandler.getResponseFuture().get())));
   }
 
+  @Override
+  protected void after() {
+    Future<?> unusedFuture = eventLoopGroup.shutdownGracefully();
+  }
 
   /**
    * A handler that echoes back its inbound message. The message is also saved in a promise for
@@ -233,16 +239,6 @@ public final class NettyRule extends ExternalResource {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
       ctx.channel().closeFuture().addListener(f -> responseFuture.completeExceptionally(cause));
     }
-  }
-
-  @Override
-  protected void after() {
-    Future<?> unusedFuture = eventLoopGroup.shutdownGracefully();
-  }
-
-  private static void writeToChannelAndFlush(Channel channel, String data) {
-    ChannelFuture unusedFuture =
-        channel.writeAndFlush(Unpooled.wrappedBuffer(data.getBytes(US_ASCII)));
   }
 }
 

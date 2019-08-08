@@ -41,6 +41,17 @@ public class ProberModule {
   private static final Duration DEFAULT_DURATION = Duration.standardSeconds(4);
 
   /**
+   * {@link Provides} the {@link SslProvider} used by instances of {@link
+   * google.registry.monitoring.blackbox.handlers.SslClientInitializer}
+   */
+  @Provides
+  @Singleton
+  static SslProvider provideSslProvider() {
+    // Prefer OpenSSL.
+    return OpenSsl.isAvailable() ? SslProvider.OPENSSL : SslProvider.JDK;
+  }
+
+  /**
    * {@link Provides} one global {@link EventLoopGroup} shared by each {@link ProbingSequence}.
    */
   @Provides
@@ -66,17 +77,6 @@ public class ProberModule {
   @Singleton
   Duration provideDuration() {
     return DEFAULT_DURATION;
-  }
-
-  /**
-   * {@link Provides} the {@link SslProvider} used by instances of {@link
-   * google.registry.monitoring.blackbox.handlers.SslClientInitializer}
-   */
-  @Provides
-  @Singleton
-  static SslProvider provideSslProvider() {
-    // Prefer OpenSSL.
-    return OpenSsl.isAvailable() ? SslProvider.OPENSSL : SslProvider.JDK;
   }
 
   /**

@@ -27,19 +27,19 @@ import io.netty.channel.SimpleChannelInboundHandler;
 /**
  * Superclass of all {@link io.netty.channel.ChannelHandler}s placed at end of channel pipeline
  *
- * <p> {@link ActionHandler} inherits from {@link SimpleChannelInboundHandler< InboundMessageType
- * >}, as it should only be passed in messages that implement the {@link InboundMessageType}
+ * <p> {@link ActionHandler} inherits from {@link SimpleChannelInboundHandler<InboundMessageType>},
+ * as it should only be passed in messages that implement the {@link InboundMessageType}
  * interface.</p>
  *
  * <p> The {@link ActionHandler} skeleton exists for a few main purposes. First, it returns a
- * {@link
- * ChannelPromise}, which informs the {@link ProbingAction} in charge that a response has been read.
- * Second, with any exception thrown, the connection is closed, and the ProbingAction governing this
- * channel is informed of the error. If the error is an instance of a {@link FailureException}
- * {@code finished} is marked as a failure with cause {@link FailureException}. If it is any other
- * type of error, it is treated as an {@link UndeterminedStateException} and {@code finished} set as
- * a failure with the same cause as what caused the exception. Lastly, if no error is thrown, we
- * know the action completed as a success, and, as such, we mark {@code finished} as a success.</p>
+ * {@link ChannelPromise}, which informs the {@link ProbingAction} in charge that a response has
+ * been read. Second, with any exception thrown, the connection is closed, and the ProbingAction
+ * governing this channel is informed of the error. If the error is an instance of a {@link
+ * FailureException} {@code finished} is marked as a failure with cause {@link FailureException}. If
+ * it is any other type of error, it is treated as an {@link UndeterminedStateException} and {@code
+ * finished} set as a failure with the same cause as what caused the exception. Lastly, if no error
+ * is thrown, we know the action completed as a success, and, as such, we mark {@code finished} as a
+ * success.</p>
  *
  * <p>Subclasses specify further work to be done for specific kinds of channel pipelines. </p>
  */
