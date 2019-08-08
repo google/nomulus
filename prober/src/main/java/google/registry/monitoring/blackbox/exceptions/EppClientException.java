@@ -15,9 +15,8 @@
 package google.registry.monitoring.blackbox.exceptions;
 
 /**
- * Subclass of {@link UndeterminedStateException} that represents all instances when
- * the action performed failed due to the fault of the Prober when the action
- * is an EPP action.
+ * Subclass of {@link UndeterminedStateException} that represents all instances when the action
+ * performed failed due to the fault of the Prober when the action is an EPP action.
  */
 public class EppClientException extends UndeterminedStateException {
 

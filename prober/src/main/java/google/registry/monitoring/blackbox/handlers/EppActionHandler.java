@@ -14,15 +14,15 @@
 
 package google.registry.monitoring.blackbox.handlers;
 
-import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.EppResponseMessage;
 import google.registry.monitoring.blackbox.messages.InboundMessageType;
 import io.netty.channel.ChannelHandlerContext;
 import javax.inject.Inject;
 
 /**
- *Subclass of {@link ActionHandler} that deals with the Epp Sequence
+ * Subclass of {@link ActionHandler} that deals with the Epp Sequence
  *
  * <p> Main purpose is to verify {@link EppResponseMessage} received is valid. If not it throws
  * the requisite error which is dealt with by the parent {@link ActionHandler}</p>
@@ -30,7 +30,8 @@ import javax.inject.Inject;
 public class EppActionHandler extends ActionHandler {
 
   @Inject
-  public EppActionHandler() {}
+  public EppActionHandler() {
+  }
 
   /**
    * Decodes the received response to ensure that it is what we expect
@@ -42,7 +43,8 @@ public class EppActionHandler extends ActionHandler {
       throws FailureException, UndeterminedStateException {
     EppResponseMessage response = (EppResponseMessage) msg;
 
-    //Based on the expected response type, will throw ResponseFailure if we don't receive a successful EPP response
+    //Based on the expected response type, will throw ResponseFailure if we don't receive a
+    // successful EPP response
     response.verify();
     super.channelRead0(ctx, msg);
   }

@@ -22,8 +22,8 @@ import static google.registry.monitoring.blackbox.connection.Protocol.PROTOCOL_K
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
-import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.ProbingStep;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.handlers.ActionHandler;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import io.netty.bootstrap.Bootstrap;

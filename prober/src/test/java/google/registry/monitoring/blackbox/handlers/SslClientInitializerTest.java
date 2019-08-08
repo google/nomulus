@@ -22,8 +22,8 @@ import static google.registry.monitoring.blackbox.handlers.SslInitializerTestUti
 import static google.registry.monitoring.blackbox.handlers.SslInitializerTestUtils.signKeyPair;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.testservers.EchoServer;
 import google.registry.monitoring.blackbox.connection.Protocol;
+import google.registry.monitoring.blackbox.testservers.EchoServer;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.embedded.EmbeddedChannel;

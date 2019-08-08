@@ -16,7 +16,6 @@ package google.registry.monitoring.blackbox.servers;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.truth.Truth.assertThat;
-
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -43,10 +42,17 @@ import java.util.concurrent.Future;
  * Helper for setting up and testing client / server connection with netty.
  *
  * <p>Code based on and almost identical to {@link google.registry.proxy.handler.NettyRule}.
- * Used in {@link SslClientInitializerTest}, {@link ProbingActionTest}, and {@link ProbingSequenceStepTest} </p>
+ * Used in {@link SslClientInitializerTest}, {@link ProbingActionTest}, and {@link
+ * ProbingSequenceStepTest} </p>
  */
 public final class EchoServer extends TestServer {
 
+
+  // Handler attached to server's channel to record the request received.
+  private EchoHandler echoHandler;
+  // Handler attached to client's channel to record the success received.
+  private DumpHandler dumpHandler;
+  private int port;
 
   // All I/O operations are done inside the single thread within this event loop group, which is
   // different from the main test thread. Therefore synchronizations are required to make sure that
@@ -54,20 +60,19 @@ public final class EchoServer extends TestServer {
   public EchoServer() {
     super();
   }
+
   public EchoServer(EventLoopGroup eventLoopGroup) {
     super(eventLoopGroup);
   }
 
-  // Handler attached to server's channel to record the request received.
-  private EchoHandler echoHandler;
+  private static void writeToChannelAndFlush(Channel channel, String data) {
+    ChannelFuture unusedFuture =
+        channel.writeAndFlush(Unpooled.wrappedBuffer(data.getBytes(US_ASCII)));
+  }
 
-  // Handler attached to client's channel to record the success received.
-  private DumpHandler dumpHandler;
-
-  private int port;
-
-
-  /** Sets up a server channel bound to the given port */
+  /**
+   * Sets up a server channel bound to the given port
+   */
   public void setUpServer(LocalAddress address, ChannelHandler handler) {
     checkState(echoHandler == null, "Can't call setUpServer twice");
     echoHandler = new EchoHandler();
@@ -75,7 +80,8 @@ public final class EchoServer extends TestServer {
 
   }
 
-  public void setUpClient(LocalAddress address, Protocol protocol, String host, ChannelHandler handler) {
+  public void setUpClient(LocalAddress address, Protocol protocol, String host,
+      ChannelHandler handler) {
     checkState(echoHandler != null, "Must call setUpServer before setUpClient");
     checkState(dumpHandler == null, "Can't call setUpClient twice");
     dumpHandler = new DumpHandler();
@@ -99,9 +105,9 @@ public final class EchoServer extends TestServer {
   /**
    * Test that a message can go through, both inbound and outbound.
    *
-   * <p>The client writes the message to the server, which echos it back and saves the string in its
-   * promise. The client receives the echo and saves it in its promise. All these activities happens
-   * in the I/O thread, and this call itself returns immediately.
+   * <p>The client writes the message to the server, which echos it back and saves the string in
+   * its promise. The client receives the echo and saves it in its promise. All these activities
+   * happens in the I/O thread, and this call itself returns immediately.
    */
   public void assertThatMessagesWork() throws Exception {
     checkReady();
@@ -112,12 +118,17 @@ public final class EchoServer extends TestServer {
     assertThat(dumpHandler.getResponseFuture().get()).isEqualTo("Hello, world!");
   }
 
-
-
-  /** Test that custom setup to send message to current server sends right message */
+  /**
+   * Test that custom setup to send message to current server sends right message
+   */
   public void assertThatCustomWorks(String message) throws Exception {
     assertThat(echoHandler.getRequestFuture().get()).isEqualTo(message);
 
+  }
+
+  @Override
+  protected void after() {
+    Future<?> unusedFuture = eventLoopGroup.shutdownGracefully();
   }
 
   /**
@@ -143,7 +154,9 @@ public final class EchoServer extends TestServer {
           ctx.writeAndFlush(msg).addListener(f -> requestFuture.complete(request));
     }
 
-    /** Saves any inbound error as the cause of the promise failure. */
+    /**
+     * Saves any inbound error as the cause of the promise failure.
+     */
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
       ChannelFuture unusedFuture =
@@ -151,7 +164,9 @@ public final class EchoServer extends TestServer {
     }
   }
 
-  /** A handler that dumps its inbound message to a promise that can be inspected later. */
+  /**
+   * A handler that dumps its inbound message to a promise that can be inspected later.
+   */
   private static class DumpHandler extends ChannelInboundHandlerAdapter {
 
     private final CompletableFuture<String> responseFuture = new CompletableFuture<>();
@@ -172,22 +187,13 @@ public final class EchoServer extends TestServer {
       responseFuture.complete(response);
     }
 
-    /** Saves any inbound error into the failure cause of the promise. */
+    /**
+     * Saves any inbound error into the failure cause of the promise.
+     */
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
       ctx.channel().closeFuture().addListener(f -> responseFuture.completeExceptionally(cause));
     }
-  }
-
-  @Override
-  protected void after() {
-    Future<?> unusedFuture = eventLoopGroup.shutdownGracefully();
-  }
-
-
-  private static void writeToChannelAndFlush(Channel channel, String data) {
-    ChannelFuture unusedFuture =
-        channel.writeAndFlush(Unpooled.wrappedBuffer(data.getBytes(US_ASCII)));
   }
 }
 

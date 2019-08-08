@@ -16,9 +16,7 @@ package google.registry.monitoring.blackbox.tokens;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
-import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
 import google.registry.monitoring.blackbox.messages.EppResponseMessage;
 import org.junit.Test;
@@ -41,8 +39,9 @@ public class EppTokenTest {
   public void testMessageModificationSuccess()
       throws UndeterminedStateException {
 
-    EppRequestMessage originalMessage = new EppRequestMessage.Create(new EppResponseMessage.SimpleSuccess());
-    String domainName = ((EppToken)eppToken).getCurrentDomainName();
+    EppRequestMessage originalMessage = new EppRequestMessage.Create(
+        new EppResponseMessage.SimpleSuccess());
+    String domainName = ((EppToken) eppToken).getCurrentDomainName();
     String clTRID = domainName.substring(0, domainName.indexOf('.'));
 
     EppRequestMessage modifiedMessage = (EppRequestMessage) eppToken.modifyMessage(originalMessage);

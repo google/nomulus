@@ -14,20 +14,12 @@
 
 package google.registry.monitoring.blackbox.modules;
 
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Suppliers.memoizeWithExpiration;
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.util.ResourceUtils.readResourceBytes;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.monitoring.blackbox.messages.EppMessage;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
@@ -81,14 +73,15 @@ public class CertificateModule {
 
       String alias = ks.aliases().nextElement();
       return (PrivateKey) ks.getKey(alias, "passphrase".toCharArray());
-    } catch(IOException | GeneralSecurityException e) {
-      return null;
+    } catch (IOException | GeneralSecurityException e) {
+      return PrivateKey.;
     }
   }
 
   @Singleton
   @Provides
-  static X509Certificate[] provideCertificates(@Named("keystore") Provider<String> passwordProvider) {
+  static X509Certificate[] provideCertificates(
+      @Named("keystore") Provider<String> passwordProvider) {
     try {
       InputStream inStream = readResource("secrets/prober-client-tls-sandbox.p12");
 
@@ -96,8 +89,8 @@ public class CertificateModule {
       ks.load(inStream, passwordProvider.get().toCharArray());
 
       String alias = ks.aliases().nextElement();
-      return new X509Certificate[] {(X509Certificate) ks.getCertificate(alias)};
-    } catch(Exception e) {
+      return new X509Certificate[]{(X509Certificate) ks.getCertificate(alias)};
+    } catch (Exception e) {
       logger.atWarning().withCause(e).log();
       return null;
     }

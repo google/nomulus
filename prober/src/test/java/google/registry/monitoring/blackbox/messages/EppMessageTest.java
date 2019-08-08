@@ -4,9 +4,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import google.registry.monitoring.blackbox.exceptions.EppClientException;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.servers.EppServer;
-import google.registry.monitoring.blackbox.exceptions.EppClientException;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collections;

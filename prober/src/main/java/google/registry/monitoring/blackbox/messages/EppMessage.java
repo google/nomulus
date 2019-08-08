@@ -61,41 +61,27 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 /**
- * Superclass of {@link EppRequestMessage} and {@link EppResponseMessage} that represents
- * skeleton of any kind of EPP message, whether inbound or outbound.
+ * Superclass of {@link EppRequestMessage} and {@link EppResponseMessage} that represents skeleton
+ * of any kind of EPP message, whether inbound or outbound.
  *
  * <p>Houses number of static methods for use of conversion between String and bytes to
- * {@link Document} type, which represents an XML Document, the type of which is used for
- * EPP messages.</p>
+ * {@link Document} type, which represents an XML Document, the type of which is used for EPP
+ * messages.</p>
  */
 public class EppMessage {
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
-  /** Standard EPP header number of bytes (size of int). */
-  protected static int HEADER_LENGTH = 4;
 
   /**
-   * Static variables necessary for static methods that serve as tools for {@link Document}
-   * creation, conversion, and verification.
+   * Expression that expresses a result code in the {@link EppResponseMessage} that means success.
    */
-  private final static DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
-  private static final XPath xpath;
-  private static final Schema eppSchema;
-
-  /** {@link Document} that represents the actual XML document sent inbound or outbound through channel pipeline. */
-  protected Document message;
-
-
-  /** Expression that expresses a result code in the {@link EppResponseMessage} that means success. */
   @VisibleForTesting
   static final String XPASS_EXPRESSION =
       String.format("//eppns:result[@code>='%s'][@code<'%s']", 1000, 2000);
-
-  /** Expression that expresses a result code in the {@link EppResponseMessage} that means failure. */
+  /**
+   * Expression that expresses a result code in the {@link EppResponseMessage} that means failure.
+   */
   @VisibleForTesting
   static final String XFAIL_EXPRESSION =
       String.format("//eppns:result[@code>='%s'][@code<'%s']", 2000, 3000);
-
   // "Security" errors from RFC 5730, plus the error we get when we end
   // up no longer logged (see b/28196510).
   // 2002    "Command use error"
@@ -106,7 +92,16 @@ public class EppMessage {
   static final String AUTHENTICATION_ERROR =
       "//eppns:epp/eppns:response/eppns:result[@code!='2002' and @code!='2200' "
           + "and @code!='2201' and @code!='2202']";
-
+  static final String VALID_SLD_LABEL_REGEX;
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  /**
+   * Static variables necessary for static methods that serve as tools for {@link Document}
+   * creation, conversion, and verification.
+   */
+  private final static DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory
+      .newInstance();
+  private static final XPath xpath;
+  private static final Schema eppSchema;
   // As per RFC 1035 section 2.3.4 http://tools.ietf.org/html/rfc1035#page-10 and updated by
   // http://tools.ietf.org/html/rfc1123#page-13 which suggests a domain part length
   // of 255 SHOULD be supported, so we are permitting something close to that, but reserve
@@ -115,7 +110,11 @@ public class EppMessage {
   private static final int MAX_SLD_DOMAIN_LABEL_LENGTH = 255;
   private static final String VALID_DOMAIN_PART_REGEX;
   private static final String VALID_TLD_PART_REGEX;
-  static final String VALID_SLD_LABEL_REGEX;
+  /**
+   * Standard EPP header number of bytes (size of int).
+   */
+  protected static int HEADER_LENGTH = 4;
+
   static {
     // tld label part may contain a dot and end with a dot, and must
     // start and end with 0-9 or a-zA-Z but may contain any number of
@@ -139,7 +138,7 @@ public class EppMessage {
     String path = "./xsd/";
     StreamSource[] sources;
     try {
-      sources = new StreamSource[] {
+      sources = new StreamSource[]{
           new StreamSource(readResource(path + "eppcom.xsd")),
           new StreamSource(readResource(path + "epp.xsd")),
           new StreamSource(readResource(path + "host.xsd")),
@@ -158,7 +157,15 @@ public class EppMessage {
     }
   }
 
-  /** Helper method that reads resource existing in same package as {@link EppMessage} class. */
+  /**
+   * {@link Document} that represents the actual XML document sent inbound or outbound through
+   * channel pipeline.
+   */
+  protected Document message;
+
+  /**
+   * Helper method that reads resource existing in same package as {@link EppMessage} class.
+   */
   private static InputStream readResource(String filename)
       throws IOException {
     return readResourceBytes(EppMessage.class, filename).openStream();
@@ -180,7 +187,197 @@ public class EppMessage {
   }
 
   /**
-   * Implements the {@link NamespaceContext} interface and adds an EPP namespace URI (prefix eppns).
+   * Verify an XML Document as an EPP Response using the provided XPath expressions.
+   *
+   * <p>This will first validate the document against the EPP schema, then run through the list
+   * of xpath expressions -- so those need only look for specific EPP elements + values.
+   *
+   * @param xml the XML Document containing the EPP reponse to verify
+   * @param expressions a list of XPath expressions to query the document with.
+   * @param validate a boolean flag to control if schema validation occurs (useful for testing)
+   * @throws IOException if InputStream throws one
+   * @throws EppClientException if the EPP response cannot be read, parsed, or doesn't containing
+   * matching data specified in expressions
+   */
+  protected static void verifyEppResponse(Document xml, List<String> expressions, boolean validate)
+      throws FailureException {
+    if (validate) {
+      try {
+        eppValidate(xml);
+      } catch (SAXException | IOException e) {
+        throw new FailureException(e);
+      }
+    }
+    try {
+      for (String exp : expressions) {
+        NodeList nodes = (NodeList) xpath.evaluate(exp, xml, XPathConstants.NODESET);
+        if (nodes.getLength() == 0) {
+          throw new FailureException("invalid EPP response. failed expression " + exp);
+        }
+      }
+    } catch (XPathExpressionException e) {
+      throw new FailureException(e);
+    }
+  }
+
+  /**
+   * A helper method to extract a value from an element in an XML document.
+   *
+   * @return the text value for the element, or null is the element is not found
+   */
+  public static String getElementValue(Document xml, String expression) {
+    try {
+      return (String) xpath.evaluate(expression, xml, XPathConstants.STRING);
+    } catch (XPathExpressionException e) {
+      logger.atSevere().withCause(e).log("Bad expression: %s", expression);
+      return null;
+    }
+  }
+
+  /**
+   * A helper method to transform an XML Document to a string. - e.g. a returned string might look
+   * like the following for a Document with a root element of "foo" that has a child element of
+   * "bar" which has text of "baz":<br> {@code '<foo><bar>baz</bar></foo>'}
+   *
+   * @param xml the Document to transform
+   * @return the resulting string or {@code null} if {@code xml} is {@code null}.
+   * @throws EppClientException if the transform fails
+   */
+  @Nullable
+  public static String xmlDocToString(@Nullable Document xml) throws EppClientException {
+    if (xml == null) {
+      return null;
+    }
+    try {
+      Transformer transformer = TransformerFactory.newInstance().newTransformer();
+      StreamResult result = new StreamResult(new StringWriter());
+      DOMSource source = new DOMSource(xml);
+      transformer.transform(source, result);
+      return result.getWriter().toString();
+    } catch (TransformerException e) {
+      throw new EppClientException(e);
+    }
+  }
+
+  /**
+   * A helper method to transform an XML Document to a byte array using the XML Encoding when
+   * converting from a String (see xmlDocToString).
+   *
+   * @param xml the Document to transform
+   * @return the resulting byte array.
+   * @throws EppClientException if the transform fails
+   */
+  public static byte[] xmlDocToByteArray(Document xml) throws EppClientException {
+    try {
+      Transformer transformer = TransformerFactory.newInstance().newTransformer();
+      StreamResult result = new StreamResult(new StringWriter());
+      DOMSource source = new DOMSource(xml);
+      transformer.transform(source, result);
+      String resultString = result.getWriter().toString();
+      if (isNullOrEmpty(resultString)) {
+        throw new EppClientException("unknown error converting Document to intermediate string");
+      }
+      String encoding = xml.getXmlEncoding();
+      // this is actually not a problem since we can just use the default
+      if (encoding == null) {
+        encoding = Charset.defaultCharset().name();
+      }
+      return resultString.getBytes(encoding);
+    } catch (TransformerException | UnsupportedEncodingException e) {
+      throw new EppClientException(e);
+    }
+  }
+
+  /**
+   * A helper method to transform an byte array to an XML {@link Document} using {@code
+   * docBuilderFactory}
+   *
+   * @param responseBuffer the byte array to transform
+   * @return the resulting Document
+   * @throws EppClientException if the transform fails
+   */
+  public static Document byteArrayToXmlDoc(byte[] responseBuffer)
+      throws FailureException {
+    Document xml;
+    try {
+      DocumentBuilder builder = docBuilderFactory.newDocumentBuilder();
+      ByteArrayInputStream byteStream = new ByteArrayInputStream(responseBuffer);
+      xml = builder.parse(byteStream);
+    } catch (ParserConfigurationException | SAXException | IOException e) {
+      throw new FailureException(e);
+    }
+    return xml;
+
+  }
+
+  /**
+   * Reads one of a set of EPP templates (included as resources in our jar) and finds nodes using an
+   * xpath expression, then replaces the node value of the first child, returning the transformed
+   * XML as a Document.
+   *
+   * <p>E.g. to replace the value "@@CLTRID@@" in the {@code <expectedClTRID>}
+   * node with a client transaction ID, use the mapping {@code <"//domainns:clTRID",
+   * "AAA-123-BBBB">} (or whatever the ID is).
+   *
+   * @param template the relative (unqualified) name of the template file to use
+   * @param replacements a map of strings to replace in the template keyed by the xpath expression
+   * to use to find the nodes to operate on with the value being the text to use as the replacement
+   * @return the transformed EPP document
+   * @throws IOException if the template cannot be read
+   * @throws EppClientException if there are issues parsing the template or evaluating the xpath
+   * expression, or if the resulting document is not valid EPP
+   * @throws IllegalArgumentException if the xpath expression query yields anything other than an
+   * Element node type
+   */
+  public static Document getEppDocFromTemplate(String template, Map<String, String> replacements)
+      throws IOException, EppClientException {
+    Document xmlDoc;
+
+    try (InputStream is = readResource(template)) {
+      DocumentBuilder builder = docBuilderFactory.newDocumentBuilder();
+      xmlDoc = builder.parse(is);
+      for (String key : replacements.keySet()) {
+        NodeList nodes = (NodeList) xpath.evaluate(key, xmlDoc, XPathConstants.NODESET);
+        for (int i = 0; i < nodes.getLength(); i++) {
+          Node node = nodes.item(i);
+          if (node.getNodeType() != Node.ELEMENT_NODE) {
+            throw new IllegalArgumentException(
+                String.format("xpath expression (%s) must result in Element nodes, got %s",
+                    key, node.getNodeType()));
+          }
+          node.getFirstChild().setNodeValue(replacements.get(key));
+        }
+      }
+
+      eppValidate(xmlDoc);
+    } catch (SAXException | XPathExpressionException | ParserConfigurationException e) {
+      throw new EppClientException(e);
+    }
+    return xmlDoc;
+  }
+
+  @Nullable
+  public String getElementValue(String expression) {
+    try {
+      return (String) xpath.evaluate(expression, message, XPathConstants.STRING);
+    } catch (XPathExpressionException e) {
+      logger.atSevere().withCause(e).log("Bad expression: %s", expression);
+      return null;
+    }
+  }
+
+  @Override
+  public String toString() {
+    try {
+      return xmlDocToString(message);
+    } catch (EppClientException e) {
+      return "No Message Found";
+    }
+  }
+
+  /**
+   * Implements the {@link NamespaceContext} interface and adds an EPP namespace URI (prefix
+   * eppns).
    */
   static class EppNamespaceContext implements NamespaceContext {
 
@@ -218,6 +415,7 @@ public class EppMessage {
         nsUriMap.put(namespaceURI, prefixSet);
       }
     }
+
     @Override
     public String getNamespaceURI(String prefix) {
       checkArgument(!isNullOrEmpty(prefix), "prefix");
@@ -238,201 +436,6 @@ public class EppMessage {
       } else {
         return Collections.emptyIterator();
       }
-    }
-  }
-
-  /**
-   * Verify an XML Document as an EPP Response using the provided XPath expressions.
-   *
-   * <p>This will first validate the document against the EPP schema, then run through the list
-   * of xpath expressions -- so those need only look for specific EPP elements + values.
-   *
-   * @param xml the XML Document containing the EPP reponse to verify
-   * @param expressions a list of XPath expressions to query the document with.
-   * @param validate a boolean flag to control if schema validation occurs (useful for testing)
-   *
-   * @throws IOException if InputStream throws one
-   * @throws EppClientException if the EPP response cannot be read, parsed, or doesn't containing
-   *     matching data specified in expressions
-   */
-  protected static void verifyEppResponse(Document xml, List<String> expressions, boolean validate)
-      throws FailureException {
-    if (validate) {
-      try {
-        eppValidate(xml);
-      } catch (SAXException | IOException e) {
-        throw new FailureException(e);
-      }
-    }
-    try {
-      for (String exp : expressions) {
-        NodeList nodes = (NodeList) xpath.evaluate(exp, xml, XPathConstants.NODESET);
-        if (nodes.getLength() == 0) {
-          throw new FailureException("invalid EPP response. failed expression " + exp);
-        }
-      }
-    } catch (XPathExpressionException e) {
-      throw new FailureException(e);
-    }
-  }
-
-  /**
-   * A helper method to extract a value from an element in an XML document.
-   *
-   * @return the text value for the element, or null is the element is not found
-   */
-  public static String getElementValue(Document xml, String expression) {
-    try {
-      return (String) xpath.evaluate(expression, xml, XPathConstants.STRING);
-    } catch (XPathExpressionException e) {
-      logger.atSevere().withCause(e).log("Bad expression: %s", expression);
-      return null;
-    }
-  }
-
-  @Nullable
-  public String getElementValue(String expression) {
-    try {
-      return (String) xpath.evaluate(expression, message, XPathConstants.STRING);
-    } catch (XPathExpressionException e) {
-      logger.atSevere().withCause(e).log("Bad expression: %s", expression);
-      return null;
-    }
-  }
-
-  /**
-   * A helper method to transform an XML Document to a string.
-   * - e.g. a returned string might look like the following for a Document with a root element
-   * of "foo" that has a child element of "bar" which has text of "baz":<br>
-   * {@code '<foo><bar>baz</bar></foo>'}
-   *
-   * @param xml the Document to transform
-   * @return the resulting string or {@code null} if {@code xml} is {@code null}.
-   * @throws EppClientException if the transform fails
-   */
-  @Nullable
-  public static String xmlDocToString(@Nullable Document xml) throws EppClientException {
-    if (xml == null) {
-      return null;
-    }
-    try {
-      Transformer transformer = TransformerFactory.newInstance().newTransformer();
-      StreamResult result = new StreamResult(new StringWriter());
-      DOMSource source = new DOMSource(xml);
-      transformer.transform(source, result);
-      return result.getWriter().toString();
-    } catch (TransformerException e) {
-      throw new EppClientException(e);
-    }
-  }
-
-
-  /**
-   * A helper method to transform an XML Document to a byte array
-   * using the XML Encoding when converting from a String (see
-   * xmlDocToString).
-   *
-   * @param xml the Document to transform
-   * @return the resulting byte array.
-   * @throws EppClientException if the transform fails
-   */
-  public static byte[] xmlDocToByteArray(Document xml) throws EppClientException {
-    try {
-      Transformer transformer = TransformerFactory.newInstance().newTransformer();
-      StreamResult result = new StreamResult(new StringWriter());
-      DOMSource source = new DOMSource(xml);
-      transformer.transform(source, result);
-      String resultString = result.getWriter().toString();
-      if (isNullOrEmpty(resultString)) {
-        throw new EppClientException("unknown error converting Document to intermediate string");
-      }
-      String encoding = xml.getXmlEncoding();
-      // this is actually not a problem since we can just use the default
-      if (encoding == null) {
-        encoding = Charset.defaultCharset().name();
-      }
-      return resultString.getBytes(encoding);
-    } catch (TransformerException | UnsupportedEncodingException e) {
-      throw new EppClientException(e);
-    }
-  }
-  /**
-   * A helper method to transform an byte array to an XML
-   * {@link Document} using {@code docBuilderFactory}
-   *
-   * @param responseBuffer the byte array to transform
-   * @return the resulting Document
-   * @throws EppClientException if the transform fails
-   */
-  public static Document byteArrayToXmlDoc(byte[] responseBuffer)
-      throws FailureException {
-    Document xml;
-    try {
-      DocumentBuilder builder = docBuilderFactory.newDocumentBuilder();
-      ByteArrayInputStream byteStream = new ByteArrayInputStream(responseBuffer);
-      xml = builder.parse(byteStream);
-    } catch (ParserConfigurationException | SAXException | IOException e) {
-      throw new FailureException(e);
-    }
-    return xml;
-
-  }
-
-  /**
-   * Reads one of a set of EPP templates (included as resources in our
-   * jar) and finds nodes using an xpath expression, then replaces the
-   * node value of the first child, returning the transformed XML as a
-   * Document.
-   *
-   * <p>E.g. to replace the value "@@CLTRID@@" in the {@code <expectedClTRID>}
-   * node with a client transaction ID, use the mapping
-   * {@code <"//domainns:clTRID", "AAA-123-BBBB">} (or whatever the ID is).
-   *
-   * @param template the relative (unqualified) name of the template file to use
-   * @param replacements a map of strings to replace in the template
-   *     keyed by the xpath expression to use to find the nodes to operate
-   *     on with the value being the text to use as the replacement
-   * @return the transformed EPP document
-   * @throws IOException if the template cannot be read
-   * @throws EppClientException if there are issues parsing the
-   *     template or evaluating the xpath expression, or if the resulting
-   *     document is not valid EPP
-   * @throws IllegalArgumentException if the xpath expression query
-   *     yields anything other than an Element node type
-   */
-  public static Document getEppDocFromTemplate(String template, Map<String, String> replacements)
-      throws IOException, EppClientException {
-    Document xmlDoc;
-
-    try (InputStream is = readResource(template)) {
-      DocumentBuilder builder = docBuilderFactory.newDocumentBuilder();
-      xmlDoc = builder.parse(is);
-      for (String key : replacements.keySet()) {
-        NodeList nodes = (NodeList) xpath.evaluate(key, xmlDoc, XPathConstants.NODESET);
-        for (int i = 0; i < nodes.getLength(); i++) {
-          Node node = nodes.item(i);
-          if (node.getNodeType() != Node.ELEMENT_NODE) {
-            throw new IllegalArgumentException(
-                String.format("xpath expression (%s) must result in Element nodes, got %s",
-                    key, node.getNodeType()));
-          }
-          node.getFirstChild().setNodeValue(replacements.get(key));
-        }
-      }
-
-      eppValidate(xmlDoc);
-    } catch (SAXException | XPathExpressionException | ParserConfigurationException e) {
-      throw new EppClientException(e);
-    }
-    return xmlDoc;
-  }
-
-  @Override
-  public String toString() {
-    try {
-      return xmlDocToString(message);
-    } catch (EppClientException e) {
-      return "No Message Found";
     }
   }
 

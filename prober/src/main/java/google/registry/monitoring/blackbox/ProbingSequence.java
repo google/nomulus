@@ -15,6 +15,8 @@
 package google.registry.monitoring.blackbox;
 
 import com.google.common.flogger.FluentLogger;
+import google.registry.monitoring.blackbox.connection.ProbingAction;
+import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.exceptions.UnrecoverableStateException;
 import google.registry.monitoring.blackbox.tokens.Token;
 import google.registry.util.CircularList;
