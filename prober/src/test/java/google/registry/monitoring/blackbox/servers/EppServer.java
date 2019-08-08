@@ -45,13 +45,9 @@ public class EppServer extends TestServer {
   private EppServer() {
     super();
   }
+
   private EppServer(EventLoopGroup eventLoopGroup) {
     super(eventLoopGroup);
-  }
-
-  private void setupServer(LocalAddress address, EppHandler handler) {
-    super.setupServer(address, ImmutableList.of(handler));
-    this.handler = handler;
   }
 
   /**
@@ -98,26 +94,26 @@ public class EppServer extends TestServer {
    * @return the EPP success message as a string
    */
   public static String getBasicResponse(int resCode, String resMsg, String clTRID, String svTRID) {
-      String response =
-          "<?xml version='1.0' encoding='UTF-8'?><epp"
-              + " xmlns='urn:ietf:params:xml:ns:epp-1.0'>\n"
-              + "\t<response>\n"
-              + "\t\t<result code='%d'>\n"
-              + "\t\t\t<msg>%s</msg>\n"
-              + "\t\t</result>\n"
-              + "\t\t<trID>\n"
-              + "\t\t\t<clTRID>%s</clTRID>\n"
-              + "\t\t\t<svTRID>%s</svTRID>\n"
-              + "\t\t</trID>\n"
-              + "\t</response>\n"
-              + "</epp>";
-      return String.format(response, resCode, resMsg, clTRID, svTRID);
+    String response =
+        "<?xml version='1.0' encoding='UTF-8'?><epp"
+            + " xmlns='urn:ietf:params:xml:ns:epp-1.0'>\n"
+            + "\t<response>\n"
+            + "\t\t<result code='%d'>\n"
+            + "\t\t\t<msg>%s</msg>\n"
+            + "\t\t</result>\n"
+            + "\t\t<trID>\n"
+            + "\t\t\t<clTRID>%s</clTRID>\n"
+            + "\t\t\t<svTRID>%s</svTRID>\n"
+            + "\t\t</trID>\n"
+            + "\t</response>\n"
+            + "</epp>";
+    return String.format(response, resCode, resMsg, clTRID, svTRID);
   }
 
   /**
-   * Return a domain CheckSuccess success as a string. These always have a result
-   * code of 1000 unless something unusual occurred. The success or failure is evaulated against
-   * expectation of availability rather than result code in this case.
+   * Return a domain CheckSuccess success as a string. These always have a result code of 1000
+   * unless something unusual occurred. The success or failure is evaulated against expectation of
+   * availability rather than result code in this case.
    *
    * @param availCode the availability code to use
    * @param domain the domain the check success is for
@@ -148,7 +144,6 @@ public class EppServer extends TestServer {
             + "\t</response>\n"
             + "</epp>";
 
-  
     return String.format(response, availCode, domain, clTRID, svTRID);
   }
 
@@ -167,11 +162,23 @@ public class EppServer extends TestServer {
     return buf;
   }
 
+  public static EppServer defaultServer(EventLoopGroup group, LocalAddress address) {
+    EppServer defaultServer = new EppServer(group);
+    defaultServer.setupServer(address, new EppHandler());
+
+    return defaultServer;
+  }
+
+  private void setupServer(LocalAddress address, EppHandler handler) {
+    super.setupServer(address, ImmutableList.of(handler));
+    this.handler = handler;
+  }
+
   private static class EppHandler extends ChannelDuplexHandler {
 
+    Document doc;
     private ChannelPromise future;
     private Channel channel;
-    Document doc;
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) {
@@ -190,7 +197,7 @@ public class EppServer extends TestServer {
       try {
         doc = EppMessage.byteArrayToXmlDoc(messageBytes);
         future.setSuccess();
-      } catch(FailureException e) {
+      } catch (FailureException e) {
         future.setFailure(e);
       }
     }
@@ -215,13 +222,6 @@ public class EppServer extends TestServer {
       channel.writeAndFlush(stringToByteBuf(response)
       );
     }
-  }
-
-  public static EppServer defaultServer(EventLoopGroup group, LocalAddress address) {
-    EppServer defaultServer = new EppServer(group);
-    defaultServer.setupServer(address, new EppHandler());
-
-    return defaultServer;
   }
 
 }

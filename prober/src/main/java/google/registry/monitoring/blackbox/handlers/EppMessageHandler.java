@@ -20,29 +20,37 @@ import google.registry.monitoring.blackbox.messages.EppRequestMessage;
 import google.registry.monitoring.blackbox.messages.EppResponseMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import javax.inject.Inject;
 
 /**
- * {@link io.netty.channel.ChannelHandler} that converts inbound {@link ByteBuf}
- * to custom type {@link EppResponseMessage} and similarly converts the outbound
- * {@link EppRequestMessage} to a {@link ByteBuf}. Always comes right before
- * {@link EppActionHandler} in channel pipeline.
+ * {@link io.netty.channel.ChannelHandler} that converts inbound {@link ByteBuf} to custom type
+ * {@link EppResponseMessage} and similarly converts the outbound {@link EppRequestMessage} to a
+ * {@link ByteBuf}. Always comes right before {@link EppActionHandler} in channel pipeline.
  */
 public class EppMessageHandler extends ChannelDuplexHandler {
+
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  /** Corresponding {@link EppResponseMessage} that we expect to receive back from server. */
+  /**
+   * Corresponding {@link EppResponseMessage} that we expect to receive back from server.
+   */
   private EppResponseMessage response;
 
-  /** Always sets response to be {@link EppResponseMessage.Greeting} as that will be first server response. */
+  /**
+   * Always sets response to be {@link EppResponseMessage.Greeting} as that will be first server
+   * response.
+   */
   @Inject
   public EppMessageHandler() {
     response = new EppResponseMessage.Greeting();
   }
 
-  /** Performs conversion to {@link ByteBuf}. */
+  /**
+   * Performs conversion to {@link ByteBuf}.
+   */
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
       throws Exception {
@@ -54,11 +62,13 @@ public class EppMessageHandler extends ChannelDuplexHandler {
       response = request.getExpectedResponse();
 
       //then we write the ByteBuf representation of the EPP message to the server
-      ctx.write(request.bytes(), promise);
+      ChannelFuture unusedFuture = ctx.write(request.bytes(), promise);
     }
   }
 
-  /** Performs conversion from {@link ByteBuf} */
+  /**
+   * Performs conversion from {@link ByteBuf}
+   */
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg)
       throws FailureException {
@@ -67,10 +77,10 @@ public class EppMessageHandler extends ChannelDuplexHandler {
       ByteBuf buf = (ByteBuf) msg;
       response.getDocument(buf);
       logger.atInfo().log(response.toString());
-    } catch(FailureException e) {
+    } catch (FailureException e) {
 
       //otherwise we log that it was unsuccessful and throw the requisite error
-      logger.atInfo().withCause(e);
+      logger.atInfo().withCause(e).log("Failure in current step.");
       throw e;
     }
     //pass response to the ActionHandler in the pipeline

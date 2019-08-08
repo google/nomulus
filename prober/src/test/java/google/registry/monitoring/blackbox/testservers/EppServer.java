@@ -45,13 +45,9 @@ public class EppServer extends TestServer {
   private EppServer() {
     super();
   }
+
   private EppServer(EventLoopGroup eventLoopGroup) {
     super(eventLoopGroup);
-  }
-
-  private void setupServer(LocalAddress address, EppHandler handler) {
-    super.setupServer(address, ImmutableList.of(handler));
-    this.handler = handler;
   }
 
   /**
@@ -99,8 +95,11 @@ public class EppServer extends TestServer {
    */
   public static String getBasicResponse(int resCode, String resMsg, String clTRID, String svTRID) {
     String response =
-        "<?xml version='1.0' encoding='UTF-8'?><epp xmlns='urn:ietf:params:xml:ns:epp-1.0' xmlns:contact='urn:ietf:params:xml:ns:contact-1.0'"
-            + "xmlns:domain='urn:ietf:params:xml:ns:domain-1.0' xmlns:fee='urn:ietf:params:xml:ns:fee-0.6' xmlns:fee11='urn:ietf:params:xml:ns:fee-0.11'\n"
+        "<?xml version='1.0' encoding='UTF-8'?><epp xmlns='urn:ietf:params:xml:ns:epp-1.0' "
+            + "xmlns:contact='urn:ietf:params:xml:ns:contact-1.0'"
+            + "xmlns:domain='urn:ietf:params:xml:ns:domain-1.0' "
+            + "xmlns:fee='urn:ietf:params:xml:ns:fee-0.6' "
+            + "xmlns:fee11='urn:ietf:params:xml:ns:fee-0.11'\n"
             + "\t<success>\n"
             + "\t\t<result code='1000'>\n"
             + "\t\t\t<msg>Command completed successfully</msg>\n"
@@ -114,23 +113,10 @@ public class EppServer extends TestServer {
     return String.format(response, resCode, resMsg, clTRID, svTRID);
   }
 
-/*
-<?xml version="1.0" encoding="UTF-8"?><epp xmlns="urn:ietf:params:xml:ns:epp-1.0" xmlns:contact="urn:ietf:params:xml:ns:contact-1.0" xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xmlns:fee="urn:ietf:params:xml:ns:fee-0.6" xmlns:fee11="urn:ietf:params:xml:ns:fee-0.11" xmlns:fee12="urn:ietf:params:xml:ns:fee-0.12" xmlns:host="urn:ietf:params:xml:ns:host-1.0" xmlns:launch="urn:ietf:params:xml:ns:launch-1.0" xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0" xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1">
-    <success>
-        <result code="1000">
-            <msg>Command completed successfully</msg>
-        </result>
-        <trID>
-            <clTRID>prober-localhost-1563983097745-2</clTRID>
-            <svTRID>YHxSIVahRRyzmBPHNdwQbQ==-236c2</svTRID>
-        </trID>
-    </success>
-</epp>
-*/
   /**
-   * Return a domain CHECK success as a string. These always have a result
-   * code of 1000 unless something unusual occurred. The success or failure is evaulated against
-   * expectation of availability rather than result code in this case.
+   * Return a domain CHECK success as a string. These always have a result code of 1000 unless
+   * something unusual occurred. The success or failure is evaulated against expectation of
+   * availability rather than result code in this case.
    *
    * @param availCode the availability code to use
    * @param domain the domain the check success is for
@@ -155,10 +141,29 @@ public class EppServer extends TestServer {
     return String.format(response, availCode, domain, clTRID, svTRID);
   }
 
+/*
+<?xml version="1.0" encoding="UTF-8"?><epp xmlns="urn:ietf:params:xml:ns:epp-1.0"
+xmlns:contact="urn:ietf:params:xml:ns:contact-1.0" xmlns:domain="urn:ietf:params:xml:ns:domain-1
+.0" xmlns:fee="urn:ietf:params:xml:ns:fee-0.6" xmlns:fee11="urn:ietf:params:xml:ns:fee-0.11"
+xmlns:fee12="urn:ietf:params:xml:ns:fee-0.12" xmlns:host="urn:ietf:params:xml:ns:host-1.0"
+xmlns:launch="urn:ietf:params:xml:ns:launch-1.0" xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0"
+xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1">
+    <success>
+        <result code="1000">
+            <msg>Command completed successfully</msg>
+        </result>
+        <trID>
+            <clTRID>prober-localhost-1563983097745-2</clTRID>
+            <svTRID>YHxSIVahRRyzmBPHNdwQbQ==-236c2</svTRID>
+        </trID>
+    </success>
+</epp>
+*/
+
   /**
-   * Return a domain CLAIMSCHECK success as a string. These always have a result
-   * code of 1000 unless something unusual occurred. The success or failure is evaulated against
-   * expectation of availability rather than result code in this case.
+   * Return a domain CLAIMSCHECK success as a string. These always have a result code of 1000 unless
+   * something unusual occurred. The success or failure is evaulated against expectation of
+   * availability rather than result code in this case.
    *
    * @param availCode the availability code to use
    * @param domain the domain the check success is for
@@ -210,11 +215,23 @@ public class EppServer extends TestServer {
     return buf;
   }
 
+  public static EppServer defaultServer(EventLoopGroup group, LocalAddress address) {
+    EppServer defaultServer = new EppServer(group);
+    defaultServer.setupServer(address, new EppHandler());
+
+    return defaultServer;
+  }
+
+  private void setupServer(LocalAddress address, EppHandler handler) {
+    super.setupServer(address, ImmutableList.of(handler));
+    this.handler = handler;
+  }
+
   private static class EppHandler extends ChannelDuplexHandler {
 
+    Document doc;
     private ChannelPromise future;
     private Channel channel;
-    Document doc;
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) {
@@ -233,7 +250,7 @@ public class EppServer extends TestServer {
       try {
         doc = EppMessage.byteArrayToXmlDoc(messageBytes);
         future.setSuccess();
-      } catch(FailureException e) {
+      } catch (FailureException e) {
         future.setFailure(e);
       }
     }
@@ -258,13 +275,6 @@ public class EppServer extends TestServer {
       channel.writeAndFlush(stringToByteBuf(response)
       );
     }
-  }
-
-  public static EppServer defaultServer(EventLoopGroup group, LocalAddress address) {
-    EppServer defaultServer = new EppServer(group);
-    defaultServer.setupServer(address, new EppHandler());
-
-    return defaultServer;
   }
 
 }

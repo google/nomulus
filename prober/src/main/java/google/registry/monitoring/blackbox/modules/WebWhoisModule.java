@@ -18,14 +18,13 @@ import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoSet;
-
 import google.registry.monitoring.blackbox.ProbingSequence;
 import google.registry.monitoring.blackbox.ProbingStep;
 import google.registry.monitoring.blackbox.connection.Protocol;
-import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
-import google.registry.monitoring.blackbox.handlers.WebWhoisMessageHandler;
 import google.registry.monitoring.blackbox.handlers.SslClientInitializer;
 import google.registry.monitoring.blackbox.handlers.WebWhoisActionHandler;
+import google.registry.monitoring.blackbox.handlers.WebWhoisMessageHandler;
+import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.tokens.WebWhoisToken;
 import google.registry.util.CircularList;
 import io.netty.bootstrap.Bootstrap;
@@ -42,8 +41,8 @@ import javax.inject.Singleton;
 import org.joda.time.Duration;
 
 /**
- * A module that provides the components necessary for and the overall
- * {@link ProbingSequence} to probe WebWHOIS.
+ * A module that provides the components necessary for and the overall {@link ProbingSequence} to
+ * probe WebWHOIS.
  */
 @Module
 public class WebWhoisModule {

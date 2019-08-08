@@ -27,10 +27,15 @@ import javax.inject.Named;
  */
 public abstract class EppToken extends Token {
 
-  /** Describes the maximum possible length of generated domain name. */
+  /**
+   * Describes the maximum possible length of generated domain name.
+   */
   private static final int MAX_DOMAIN_PART_LENGTH = 50;
 
-  /** On every new TRID generated, we increment this static counter to help for added differentiation. */
+  /**
+   * On every new TRID generated, we increment this static counter to help for added
+   * differentiation.
+   */
   private static int clientIdSuffix = 0;
 
   protected final String tld;
@@ -38,8 +43,8 @@ public abstract class EppToken extends Token {
   private String currentDomainName;
 
   /**
-   * Always the constructor used to provide any {@link EppToken}, with {@code tld}
-   * and {@code host} specified by Dagger.
+   * Always the constructor used to provide any {@link EppToken}, with {@code tld} and {@code host}
+   * specified by Dagger.
    */
   protected EppToken(String tld, String host) {
     this.tld = tld;
@@ -48,15 +53,20 @@ public abstract class EppToken extends Token {
   }
 
 
-  /** Constructor used when passing on same {@link Channel} to next {@link Token}. */
+  /**
+   * Constructor used when passing on same {@link Channel} to next {@link Token}.
+   */
   protected EppToken(String tld, String host, Channel channel) {
     this(tld, host);
     setChannel(channel);
   }
 
-  /** Modifies the message to reflect the new domain name and TRID */
+  /**
+   * Modifies the message to reflect the new domain name and TRID
+   */
   @Override
-  public OutboundMessageType modifyMessage(OutboundMessageType originalMessage) throws UndeterminedStateException {
+  public OutboundMessageType modifyMessage(OutboundMessageType originalMessage)
+      throws UndeterminedStateException {
     return ((EppRequestMessage) originalMessage).modifyMessage(getNewTRID(), currentDomainName);
   }
 
@@ -70,6 +80,7 @@ public abstract class EppToken extends Token {
   String getCurrentDomainName() {
     return currentDomainName;
   }
+
   /**
    * Return a unique string usable as an EPP client transaction ID.
    *
@@ -84,7 +95,9 @@ public abstract class EppToken extends Token {
         clientIdSuffix++);
   }
 
-  /** Return a fully qualified domain label to use, derived from the client transaction ID. */
+  /**
+   * Return a fully qualified domain label to use, derived from the client transaction ID.
+   */
   private String newDomainName(String clTRID) {
     String sld;
     // not sure if the local hostname will stick to RFC validity rules
@@ -99,11 +112,12 @@ public abstract class EppToken extends Token {
 
 
   /**
-   * {@link EppToken} Subclass that represents a token used in a transient sequence,
-   * meaning the connection is remade on each new iteration of the
+   * {@link EppToken} Subclass that represents a token used in a transient sequence, meaning the
+   * connection is remade on each new iteration of the
    * {@link google.registry.monitoring.blackbox.ProbingSequence}.
    */
   public static class Transient extends EppToken {
+
     @Inject
     public Transient(@Named("eppTld") String tld, @Named("eppHost") String host) {
       super(tld, host);
@@ -116,18 +130,21 @@ public abstract class EppToken extends Token {
   }
 
   /**
-   * {@link EppToken} Subclass that represents a token used in a persistent sequence,
-   * meaning the connection is maintained on each new iteration of the
+   * {@link EppToken} Subclass that represents a token used in a persistent sequence, meaning the
+   * connection is maintained on each new iteration of the
    * {@link google.registry.monitoring.blackbox.ProbingSequence}.
    */
   public static class Persistent extends EppToken {
+
     @Inject
     public Persistent(@Named("eppTld") String tld, @Named("eppHost") String host) {
       super(tld, host);
     }
 
-    /** Constructor used on call to {@code next} to preserve channel. */
-    private Persistent (String tld, String host, Channel channel) {
+    /**
+     * Constructor used on call to {@code next} to preserve channel.
+     */
+    private Persistent(String tld, String host, Channel channel) {
       super(tld, host, channel);
     }
 

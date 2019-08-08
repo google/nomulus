@@ -15,7 +15,6 @@
 package google.registry.monitoring.blackbox.servers;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.truth.Truth.assertThat;
 import static google.registry.monitoring.blackbox.connection.ProbingAction.REMOTE_ADDRESS_KEY;
 import static google.registry.monitoring.blackbox.connection.Protocol.PROTOCOL_KEY;
 
@@ -35,7 +34,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import org.junit.rules.ExternalResource;
 
 /**
- * Mock Server Superclass whose subclasses implement specific behaviors we expect blackbox server to perform.
+ * Mock Server Superclass whose subclasses implement specific behaviors we expect blackbox server to
+ * perform.
  */
 public abstract class TestServer extends ExternalResource {
 
@@ -50,7 +50,8 @@ public abstract class TestServer extends ExternalResource {
     this.eventLoopGroup = eventLoopGroup;
   }
 
-  protected void setupServer(LocalAddress address, ImmutableList<? extends ChannelHandler> handlers) {
+  protected void setupServer(LocalAddress address,
+      ImmutableList<? extends ChannelHandler> handlers) {
 
     //Creates ChannelInitializer with handlers specified
     ChannelInitializer<LocalChannel> serverInitializer = new ChannelInitializer<LocalChannel>() {
@@ -61,7 +62,8 @@ public abstract class TestServer extends ExternalResource {
         }
       }
     };
-    //Sets up serverBootstrap with specified initializer, eventLoopGroup, and using LocalServerChannel class
+    //Sets up serverBootstrap with specified initializer, eventLoopGroup, and using
+    // LocalServerChannel class
     ServerBootstrap serverBootstrap =
         new ServerBootstrap()
             .group(eventLoopGroup)
@@ -78,7 +80,9 @@ public abstract class TestServer extends ExternalResource {
     }
   }
 
-  /** Sets up a client channel connecting to the give local address. */
+  /**
+   * Sets up a client channel connecting to the give local address.
+   */
   void setUpClient(
       LocalAddress localAddress,
       Protocol protocol,
@@ -89,8 +93,9 @@ public abstract class TestServer extends ExternalResource {
           @Override
           protected void initChannel(LocalChannel ch) throws Exception {
             // Add the given handler
-            for (ChannelHandler handler: handlers)
+            for (ChannelHandler handler : handlers) {
               ch.pipeline().addLast(handler);
+            }
           }
         };
     Bootstrap b =
@@ -112,12 +117,6 @@ public abstract class TestServer extends ExternalResource {
   protected void checkReady() {
     checkState(channel != null, "Must call setUpClient to finish TestServer setup");
   }
-
-
-
-
-
-
 
 
 }

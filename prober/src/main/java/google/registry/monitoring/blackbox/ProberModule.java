@@ -17,12 +17,12 @@ package google.registry.monitoring.blackbox;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
-import io.netty.channel.Channel;
 import google.registry.monitoring.blackbox.connection.ProbingAction;
 import google.registry.monitoring.blackbox.modules.CertificateModule;
 import google.registry.monitoring.blackbox.modules.EppModule;
 import google.registry.monitoring.blackbox.modules.WebWhoisModule;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -84,7 +84,10 @@ public class ProberModule {
     return DEFAULT_DURATION;
   }
 
-  /** {@link Provides} general {@link Bootstrap} for which a new instance is provided in any {@link ProbingSequence}. */
+  /**
+   * {@link Provides} general {@link Bootstrap} for which a new instance is provided in any {@link
+   * ProbingSequence}.
+   */
   @Provides
   Bootstrap provideBootstrap(EventLoopGroup eventLoopGroup) {
     return new Bootstrap()
@@ -92,7 +95,9 @@ public class ProberModule {
         .channel(NioSocketChannel.class);
   }
 
-  /** Root level {@link Component} that provides each {@link ProbingSequence}. */
+  /**
+   * Root level {@link Component} that provides each {@link ProbingSequence}.
+   */
   @Singleton
   @Component(
       modules = {

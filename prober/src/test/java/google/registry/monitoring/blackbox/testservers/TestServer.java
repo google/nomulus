@@ -50,7 +50,8 @@ public abstract class TestServer extends ExternalResource {
     this.eventLoopGroup = eventLoopGroup;
   }
 
-  protected void setupServer(LocalAddress address, ImmutableList<? extends ChannelHandler> handlers) {
+  protected void setupServer(LocalAddress address,
+      ImmutableList<? extends ChannelHandler> handlers) {
 
     //Creates ChannelInitializer with handlers specified
     ChannelInitializer<LocalChannel> serverInitializer = new ChannelInitializer<LocalChannel>() {
@@ -78,7 +79,9 @@ public abstract class TestServer extends ExternalResource {
     }
   }
 
-  /** Sets up a client channel connecting to the give local address. */
+  /**
+   * Sets up a client channel connecting to the give local address.
+   */
   void setUpClient(
       LocalAddress localAddress,
       Protocol protocol,
@@ -89,8 +92,9 @@ public abstract class TestServer extends ExternalResource {
           @Override
           protected void initChannel(LocalChannel ch) throws Exception {
             // Add the given handler
-            for (ChannelHandler handler: handlers)
+            for (ChannelHandler handler : handlers) {
               ch.pipeline().addLast(handler);
+            }
           }
         };
     Bootstrap b =
