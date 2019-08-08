@@ -40,7 +40,6 @@ import google.registry.model.ofy.CommitLogMutation;
 import google.registry.model.registry.Registry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
@@ -168,7 +167,7 @@ public final class EppResourceUtils {
    * @param now the logical time of the check
    */
   public static <T extends EppResource> Set<String> checkResourcesExist(
-      Class<T> clazz, List<String> uniqueIds, final DateTime now) {
+      Class<T> clazz, Iterable<String> uniqueIds, final DateTime now) {
     return ForeignKeyIndex.load(clazz, uniqueIds, now).keySet();
   }
 

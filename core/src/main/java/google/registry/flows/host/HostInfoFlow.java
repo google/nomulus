@@ -15,9 +15,9 @@
 package google.registry.flows.host;
 
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
-import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.model.EppResourceUtils.isLinked;
+import static google.registry.model.host.HostDaoFactory.hostDao;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 
 import com.google.common.collect.ImmutableSet;
@@ -65,7 +65,7 @@ public final class HostInfoFlow implements Flow {
     validateClientIsLoggedIn(clientId);
     validateHostName(targetId);
     DateTime now = clock.nowUtc();
-    HostResource host = loadAndVerifyExistence(HostResource.class, targetId, now);
+    HostResource host = hostDao().findByFqhn(targetId, now);
     ImmutableSet.Builder<StatusValue> statusValues = new ImmutableSet.Builder<>();
     statusValues.addAll(host.getStatusValues());
     if (isLinked(Key.create(host), now)) {

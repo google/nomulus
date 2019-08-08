@@ -21,12 +21,12 @@ import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainNotInPendingDelete;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainOwnership;
 import static google.registry.model.EppResourceUtils.createRepoId;
+import static google.registry.model.host.HostDaoFactory.hostDao;
+import static google.registry.model.host.HostHistoryDaoFactory.hostHistoryDao;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
-import static google.registry.util.CollectionUtils.union;
 
-import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.dns.DnsQueue;
@@ -40,16 +40,14 @@ import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
-import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.CreateData.HostCreateData;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.host.HostCommand.Create;
+import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
-import google.registry.model.index.EppResourceIndex;
-import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
@@ -130,30 +128,25 @@ public final class HostCreateFlow implements TransactionalFlow {
             .setRepoId(createRepoId(ObjectifyService.allocateId(), roidSuffix))
             .setSuperordinateDomain(superordinateDomain.map(Key::create).orElse(null))
             .build();
+    hostDao().save(newHost);
+    hostDao().updateIndex(newHost, now, Optional.empty());
+
     historyBuilder
         .setType(HistoryEntry.Type.HOST_CREATE)
         .setModificationTime(now)
         .setParent(Key.create(newHost));
-    ImmutableSet<ImmutableObject> entitiesToSave =
-        ImmutableSet.of(
-            newHost,
-            historyBuilder.build(),
-            ForeignKeyIndex.create(newHost, newHost.getDeletionTime()),
-            EppResourceIndex.create(Key.create(newHost)));
+    hostHistoryDao().save(HostHistory.create(historyBuilder.build(), newHost));
+
     if (superordinateDomain.isPresent()) {
-      entitiesToSave =
-          union(
-              entitiesToSave,
-              superordinateDomain
-                  .get()
-                  .asBuilder()
-                  .addSubordinateHost(command.getFullyQualifiedHostName())
-                  .build());
       // Only update DNS if this is a subordinate host. External hosts have no glue to write, so
       // they are only written as NS records from the referencing domain.
       dnsQueue.addHostRefreshTask(targetId);
+      ofy().save().entity(superordinateDomain
+          .get()
+          .asBuilder()
+          .addSubordinateHost(command.getFullyQualifiedHostName())
+          .build());
     }
-    ofy().save().entities(entitiesToSave);
     return responseBuilder.setResData(HostCreateData.create(targetId, now)).build();
   }
 

@@ -21,6 +21,8 @@ import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
+import static google.registry.model.host.HostDaoFactory.hostDao;
+import static google.registry.model.host.HostHistoryDaoFactory.hostHistoryDao;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
@@ -40,6 +42,7 @@ import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppResponse;
+import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
@@ -105,11 +108,12 @@ public final class HostDeleteFlow implements TransactionalFlow {
         existingHost, tm().getTransactionTime(), clientId, trid, isSuperuser);
     HostResource newHost =
         existingHost.asBuilder().addStatusValue(StatusValue.PENDING_DELETE).build();
+    hostDao().save(newHost);
     historyBuilder
         .setType(HistoryEntry.Type.HOST_PENDING_DELETE)
         .setModificationTime(now)
         .setParent(Key.create(existingHost));
-    ofy().save().<Object>entities(newHost, historyBuilder.build());
+    hostHistoryDao().save(HostHistory.create(historyBuilder.build(), newHost));
     return responseBuilder.setResultFromCode(SUCCESS_WITH_ACTION_PENDING).build();
   }
 }

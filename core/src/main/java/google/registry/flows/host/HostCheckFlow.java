@@ -16,7 +16,7 @@ package google.registry.flows.host;
 
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyTargetIdCount;
-import static google.registry.model.EppResourceUtils.checkResourcesExist;
+import static google.registry.model.host.HostDaoFactory.hostDao;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.config.RegistryConfig.Config;
@@ -30,7 +30,6 @@ import google.registry.model.eppoutput.CheckData.HostCheck;
 import google.registry.model.eppoutput.CheckData.HostCheckData;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.host.HostCommand.Check;
-import google.registry.model.host.HostResource;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.util.Clock;
 import java.util.List;
@@ -61,7 +60,7 @@ public final class HostCheckFlow implements Flow {
     validateClientIsLoggedIn(clientId);
     List<String> targetIds = ((Check) resourceCommand).getTargetIds();
     verifyTargetIdCount(targetIds, maxChecks);
-    Set<String> existingIds = checkResourcesExist(HostResource.class, targetIds, clock.nowUtc());
+    Set<String> existingIds = hostDao().checkExistsByFqhn(targetIds, clock.nowUtc());
     ImmutableList.Builder<HostCheck> checks = new ImmutableList.Builder<>();
     for (String id : targetIds) {
       boolean unused = !existingIds.contains(id);

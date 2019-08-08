@@ -18,7 +18,6 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.collect.Sets.union;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.checkSameValuesNotAddedAndRemoved;
-import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyAllStatusesAreClientSettable;
 import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
@@ -26,7 +25,8 @@ import static google.registry.flows.host.HostFlowUtils.lookupSuperordinateDomain
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainNotInPendingDelete;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainOwnership;
-import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
+import static google.registry.model.host.HostDaoFactory.hostDao;
+import static google.registry.model.host.HostHistoryDaoFactory.hostHistoryDao;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
@@ -47,7 +47,6 @@ import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.model.EppResource;
-import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.StatusValue;
@@ -56,8 +55,8 @@ import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.host.HostCommand.Update;
 import google.registry.model.host.HostCommand.Update.AddRemove;
 import google.registry.model.host.HostCommand.Update.Change;
+import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
-import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import java.util.Objects;
@@ -132,7 +131,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
     String suppliedNewHostName = change.getFullyQualifiedHostName();
     DateTime now = tm().getTransactionTime();
     validateHostName(targetId);
-    HostResource existingHost = loadAndVerifyExistence(HostResource.class, targetId, now);
+    HostResource existingHost = hostDao().findByFqhn(targetId, now);
     boolean isHostRename = suppliedNewHostName != null;
     String oldHostName = targetId;
     String newHostName = firstNonNull(suppliedNewHostName, oldHostName);
@@ -146,7 +145,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
     EppResource owningResource = firstNonNull(oldSuperordinateDomain, existingHost);
     verifyUpdateAllowed(
         command, existingHost, newSuperordinateDomain.orElse(null), owningResource, isHostRename);
-    if (isHostRename && loadAndGetKey(HostResource.class, newHostName, now) != null) {
+    if (isHostRename && hostDao().checkExistsByFqhn(newHostName, now)) {
       throw new HostAlreadyExistsException(newHostName);
     }
     AddRemove add = command.getInnerAdd();
@@ -187,23 +186,19 @@ public final class HostUpdateFlow implements TransactionalFlow {
         .setPersistedCurrentSponsorClientId(newPersistedClientId)
         .build();
     verifyHasIpsIffIsExternal(command, existingHost, newHost);
-    ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
-    entitiesToSave.add(newHost);
-    // Keep the {@link ForeignKeyIndex} for this host up to date.
+    hostDao().save(newHost);
+    hostDao().updateIndex(newHost, now, Optional.of(existingHost));
     if (isHostRename) {
-      // Update the foreign key for the old host name and save one for the new host name.
-      entitiesToSave.add(
-          ForeignKeyIndex.create(existingHost, now),
-          ForeignKeyIndex.create(newHost, newHost.getDeletionTime()));
       updateSuperordinateDomains(existingHost, newHost);
     }
     enqueueTasks(existingHost, newHost);
-    entitiesToSave.add(historyBuilder
+    HistoryEntry historyEntry = historyBuilder
         .setType(HistoryEntry.Type.HOST_UPDATE)
         .setModificationTime(now)
         .setParent(Key.create(existingHost))
-        .build());
-    ofy().save().entities(entitiesToSave.build());
+        .build();
+    hostHistoryDao().save(HostHistory.create(historyEntry, newHost));
+
     return responseBuilder.build();
   }
 

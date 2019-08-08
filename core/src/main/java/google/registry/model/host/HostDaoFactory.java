@@ -12,25 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.transaction;
+package google.registry.model.host;
 
-import google.registry.model.ofy.DatastoreTransactionManager;
+/** Factory class to create {@link HostDao} instance. */
+public class HostDaoFactory {
+  private static HostDao DAO = createHostDao();
 
-/** Factory class to create {@link TransactionManager} instance. */
-public class TransactionManagerFactory {
+  private HostDaoFactory() {}
 
-  private static final TransactionManager TM = createTransactionManager();
-
-  private TransactionManagerFactory() {}
-
-  private static TransactionManager createTransactionManager() {
+  private static HostDao createHostDao() {
     // TODO: Conditionally returns the corresponding implementation once we have
-    //  CloudSqlTransactionManager
-    return new DatastoreTransactionManager(null);
+    //  HostCloudSqlDao
+    return new HostDatastoreDao();
   }
 
-  /** Returns {@link TransactionManager} instance. */
-  public static TransactionManager tm() {
-    return TM;
+  /** Returns the instance of {@link HostDao}. */
+  public static HostDao hostDao() {
+    return DAO;
   }
 }
