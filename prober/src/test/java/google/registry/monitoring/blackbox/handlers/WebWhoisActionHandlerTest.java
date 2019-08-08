@@ -15,14 +15,14 @@
 package google.registry.monitoring.blackbox.handlers;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.monitoring.blackbox.ProbingAction.CONNECTION_FUTURE_KEY;
-import static google.registry.monitoring.blackbox.Protocol.PROTOCOL_KEY;
-import static google.registry.monitoring.blackbox.TestUtils.makeHttpGetRequest;
-import static google.registry.monitoring.blackbox.TestUtils.makeHttpResponse;
-import static google.registry.monitoring.blackbox.TestUtils.makeRedirectResponse;
+import static google.registry.monitoring.blackbox.connection.ProbingAction.CONNECTION_FUTURE_KEY;
+import static google.registry.monitoring.blackbox.connection.Protocol.PROTOCOL_KEY;
+import static google.registry.monitoring.blackbox.util.WebWhoisUtils.makeHttpGetRequest;
+import static google.registry.monitoring.blackbox.util.WebWhoisUtils.makeHttpResponse;
+import static google.registry.monitoring.blackbox.util.WebWhoisUtils.makeRedirectResponse;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.Protocol;
+import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.messages.HttpResponseMessage;

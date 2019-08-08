@@ -98,7 +98,7 @@ public class EppMessage {
    * Static variables necessary for static methods that serve as tools for {@link Document}
    * creation, conversion, and verification.
    */
-  private final static DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory
+  private static final DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory
       .newInstance();
   private static final XPath xpath;
   private static final Schema eppSchema;

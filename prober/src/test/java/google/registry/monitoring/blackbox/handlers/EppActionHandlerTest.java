@@ -1,3 +1,17 @@
+// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License
+
 package google.registry.monitoring.blackbox.handlers;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -8,7 +22,7 @@ import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
 import google.registry.monitoring.blackbox.messages.EppResponseMessage;
-import google.registry.monitoring.blackbox.testservers.EppServer;
+import google.registry.monitoring.blackbox.util.EppUtils;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -42,10 +56,10 @@ public class EppActionHandlerTest {
   private static final String FAILURE_MSG = "FAILURE IN ACTION PERFORMED";
   private static final int SUCCESS_RESULT_CODE = 1000;
   private static final int FAILURE_RESULT_CODE = 2500;
+
   @Parameter(0)
   public EppRequestMessage messageType;
   private EmbeddedChannel channel;
-  private StatusHandler statusHandler;
   private EppActionHandler actionHandler;
   private EppMessageHandler messageHandler;
 
@@ -70,7 +84,6 @@ public class EppActionHandlerTest {
    */
   @Before
   public void setup() throws EppClientException {
-    statusHandler = new StatusHandler();
     actionHandler = new EppActionHandler();
     messageHandler = new EppMessageHandler();
 
@@ -84,36 +97,36 @@ public class EppActionHandlerTest {
   private String getResponseString(EppResponseMessage response, boolean fail, String clTRID) {
     if (response instanceof EppResponseMessage.Greeting) {
       if (fail) {
-        return EppServer.getBasicResponse(
+        return EppUtils.getBasicResponse(
             SUCCESS_RESULT_CODE,
             SUCCESS_MSG,
             clTRID,
             SERVER_ID);
       } else {
-        return EppServer.getDefaultGreeting();
+        return EppUtils.getDefaultGreeting();
       }
     } else if (response instanceof EppResponseMessage.DomainExists) {
-      return EppServer.getCheckDomainResponse(
+      return EppUtils.getCheckDomainResponse(
           fail,
           DOMAIN_NAME,
           clTRID,
           SERVER_ID);
     } else if (response instanceof EppResponseMessage.DomainNotExists) {
-      return EppServer.getCheckDomainResponse(
+      return EppUtils.getCheckDomainResponse(
           !fail,
           DOMAIN_NAME,
           clTRID,
           SERVER_ID);
     } else if (response instanceof EppResponseMessage.SimpleSuccess) {
-      return EppServer.getBasicResponse(
-          (fail) ? FAILURE_RESULT_CODE : SUCCESS_RESULT_CODE,
-          (fail) ? FAILURE_MSG : SUCCESS_MSG,
+      return EppUtils.getBasicResponse(
+          fail ? FAILURE_RESULT_CODE : SUCCESS_RESULT_CODE,
+          fail ? FAILURE_MSG : SUCCESS_MSG,
           clTRID,
           SERVER_ID);
     } else {
-      return EppServer.getBasicResponse(
-          (fail) ? SUCCESS_RESULT_CODE : FAILURE_RESULT_CODE,
-          (fail) ? SUCCESS_MSG : FAILURE_MSG,
+      return EppUtils.getBasicResponse(
+          fail ? SUCCESS_RESULT_CODE : FAILURE_RESULT_CODE,
+          fail ? SUCCESS_MSG : FAILURE_MSG,
           clTRID,
           SERVER_ID);
     }
@@ -123,18 +136,18 @@ public class EppActionHandlerTest {
   public void testBasicAction_Success_Embedded()
       throws SAXException, IOException, EppClientException, FailureException {
     //We simply use an embedded channel in this instance
-    setupEmbeddedChannel(actionHandler, statusHandler);
+    setupEmbeddedChannel(actionHandler);
 
     ChannelFuture future = actionHandler.getFinishedFuture();
 
     EppResponseMessage response = messageType.getExpectedResponse();
 
-    response.getDocument(EppServer.stringToByteBuf(
+    response.getDocument(EppUtils.stringToByteBuf(
         getResponseString(messageType.getExpectedResponse(), false, USER_CLIENT_TRID)));
 
     channel.writeInbound(response);
 
-    future.syncUninterruptibly();
+    ChannelFuture unusedFuture = future.syncUninterruptibly();
 
     assertThat(future.isSuccess()).isTrue();
   }
@@ -143,42 +156,44 @@ public class EppActionHandlerTest {
   public void testBasicAction_FailCode_Embedded()
       throws SAXException, IOException, EppClientException, FailureException {
     //We simply use an embedded channel in this instance
-    setupEmbeddedChannel(actionHandler, statusHandler);
+    setupEmbeddedChannel(actionHandler);
 
     ChannelFuture future = actionHandler.getFinishedFuture();
 
     EppResponseMessage response = messageType.getExpectedResponse();
 
-    response.getDocument(EppServer.stringToByteBuf(
+    response.getDocument(EppUtils.stringToByteBuf(
         getResponseString(messageType.getExpectedResponse(), true, USER_CLIENT_TRID)));
 
     channel.writeInbound(response);
 
-    assertThrows(FailureException.class, future::syncUninterruptibly);
+    assertThrows(FailureException.class, () -> {
+      ChannelFuture unusedFuture = future.syncUninterruptibly();
+    });
   }
 
   @Test
   public void testBasicAction_FailTRID_Embedded()
       throws SAXException, IOException, EppClientException, FailureException {
     //We simply use an embedded channel in this instance
-    setupEmbeddedChannel(actionHandler, statusHandler);
+    setupEmbeddedChannel(actionHandler);
 
     ChannelFuture future = actionHandler.getFinishedFuture();
 
     EppResponseMessage response = messageType.getExpectedResponse();
 
-    response.getDocument(EppServer.stringToByteBuf(
+    response.getDocument(EppUtils.stringToByteBuf(
         getResponseString(messageType.getExpectedResponse(), false, FAILURE_TRID)));
 
     channel.writeInbound(response);
 
-    future.syncUninterruptibly();
-
     if (messageType instanceof EppRequestMessage.Hello) {
-      future.syncUninterruptibly();
+      ChannelFuture unusedFuture = future.syncUninterruptibly();
       assertThat(future.isSuccess()).isTrue();
     } else {
-      assertThrows(FailureException.class, future::syncUninterruptibly);
+      assertThrows(FailureException.class, () -> {
+        ChannelFuture unusedFuture = future.syncUninterruptibly();
+      });
     }
   }
 
@@ -186,15 +201,15 @@ public class EppActionHandlerTest {
   public void testIntegratedAction_Success_Embedded()
       throws IOException, SAXException, UndeterminedStateException {
     //We simply use an embedded channel in this instance
-    setupEmbeddedChannel(messageHandler, actionHandler, statusHandler);
+    setupEmbeddedChannel(messageHandler, actionHandler);
 
     ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(messageType);
 
-    channel.writeInbound(EppServer.stringToByteBuf(
+    channel.writeInbound(EppUtils.stringToByteBuf(
         getResponseString(messageType.getExpectedResponse(), false, USER_CLIENT_TRID)));
 
-    future.syncUninterruptibly();
+    ChannelFuture unusedFuture = future.syncUninterruptibly();
 
     assertThat(future.isSuccess()).isTrue();
   }
@@ -203,36 +218,38 @@ public class EppActionHandlerTest {
   public void testIntegratedAction_FailCode_Embedded()
       throws IOException, SAXException, UndeterminedStateException {
     //We simply use an embedded channel in this instance
-    setupEmbeddedChannel(messageHandler, actionHandler, statusHandler);
+    setupEmbeddedChannel(messageHandler, actionHandler);
 
     ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(messageType);
 
-    channel.writeInbound(EppServer.stringToByteBuf(
+    channel.writeInbound(EppUtils.stringToByteBuf(
         getResponseString(messageType.getExpectedResponse(), true, USER_CLIENT_TRID)));
 
-    assertThrows(FailureException.class, future::syncUninterruptibly);
+    assertThrows(FailureException.class, () -> {
+      ChannelFuture unusedFuture = future.syncUninterruptibly();
+    });
   }
 
   @Test
   public void testIntegratedAction_FailTRID_Embedded()
       throws IOException, SAXException, UndeterminedStateException {
     //We simply use an embedded channel in this instance
-    setupEmbeddedChannel(messageHandler, actionHandler, statusHandler);
+    setupEmbeddedChannel(messageHandler, actionHandler);
 
     ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(messageType);
 
-    channel.writeInbound(EppServer.stringToByteBuf(
+    channel.writeInbound(EppUtils.stringToByteBuf(
         getResponseString(messageType.getExpectedResponse(), false, FAILURE_TRID)));
 
-    future.syncUninterruptibly();
-
     if (messageType instanceof EppRequestMessage.Hello) {
-      future.syncUninterruptibly();
+      ChannelFuture unusedFuture = future.syncUninterruptibly();
       assertThat(future.isSuccess()).isTrue();
     } else {
-      assertThrows(FailureException.class, future::syncUninterruptibly);
+      assertThrows(FailureException.class, () -> {
+        ChannelFuture unusedFuture = future.syncUninterruptibly();
+      });
     }
   }
 }

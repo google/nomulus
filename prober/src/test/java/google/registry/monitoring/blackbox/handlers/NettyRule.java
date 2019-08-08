@@ -16,8 +16,8 @@ package google.registry.monitoring.blackbox.handlers;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.monitoring.blackbox.ProbingAction.REMOTE_ADDRESS_KEY;
-import static google.registry.monitoring.blackbox.Protocol.PROTOCOL_KEY;
+import static google.registry.monitoring.blackbox.connection.ProbingAction.REMOTE_ADDRESS_KEY;
+import static google.registry.monitoring.blackbox.connection.Protocol.PROTOCOL_KEY;
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -25,9 +25,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.truth.ThrowableSubject;
-import google.registry.monitoring.blackbox.ProbingActionTest;
 import google.registry.monitoring.blackbox.ProbingStepTest;
-import google.registry.monitoring.blackbox.Protocol;
+import google.registry.monitoring.blackbox.connection.ProbingActionTest;
+import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.testservers.TestServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -57,12 +57,13 @@ import org.junit.rules.ExternalResource;
  */
 public final class NettyRule extends ExternalResource {
 
-
   private final EventLoopGroup eventLoopGroup;
+
   // Handler attached to server's channel to record the request received.
   private EchoHandler echoHandler;
   // Handler attached to client's channel to record the response received.
   private DumpHandler dumpHandler;
+
   private Channel channel;
 
   // All I/O operations are done inside the single thread within this event loop group, which is

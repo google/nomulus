@@ -41,22 +41,22 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
   /**
    * Key that allows for substitution of{@code domainName} to xml template.
    */
-  public final static String DOMAIN_KEY = "//domainns:name";
+  public static final String DOMAIN_KEY = "//domainns:name";
 
   /**
    * Key that allows for substitution of epp user id to xml template.
    */
-  public final static String CLIENT_ID_KEY = "//eppns:clID";
+  public static final String CLIENT_ID_KEY = "//eppns:clID";
 
   /**
    * Key that allows for substitution of epp password to xml template.
    */
-  public final static String CLIENT_PASSWORD_KEY = "//eppns:pw";
+  public static final String CLIENT_PASSWORD_KEY = "//eppns:pw";
 
   /**
    * Key that allows for substitution of{@code clTRID} to xml template.
    */
-  public final static String CLIENT_TRID_KEY = "//eppns:clTRID";
+  public static final String CLIENT_TRID_KEY = "//eppns:clTRID";
 
   /**
    * Client TRID associated with current request (modified on each call to {@code modifyMessage}.
