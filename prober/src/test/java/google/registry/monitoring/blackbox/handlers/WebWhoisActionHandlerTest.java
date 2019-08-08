@@ -22,12 +22,11 @@ import static google.registry.monitoring.blackbox.TestUtils.makeHttpResponse;
 import static google.registry.monitoring.blackbox.TestUtils.makeRedirectResponse;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.ProbingAction;
 import google.registry.monitoring.blackbox.Protocol;
-import google.registry.monitoring.blackbox.testservers.WebWhoisServer;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.messages.HttpResponseMessage;
+import google.registry.monitoring.blackbox.testservers.TestServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
@@ -112,10 +111,6 @@ public class WebWhoisActionHandlerTest {
         .channel(LocalChannel.class);
   }
 
-  private void setupLocalServer(String redirectInput, String destinationInput,
-      EventLoopGroup group, LocalAddress address) {
-    WebWhoisServer.strippedServer(group, address, redirectInput, destinationInput);
-  }
 
   private void setup(String hostName, Bootstrap bootstrap, boolean persistentConnection) {
     msg = new HttpRequestMessage(makeHttpGetRequest(hostName, ""));
@@ -183,7 +178,7 @@ public class WebWhoisActionHandlerTest {
     channel.writeOutbound(msg);
 
     FullHttpResponse response = new HttpResponseMessage(
-        makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, DUMMY_URL, true, false));
+        makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, DUMMY_URL, true));
 
     //assesses that future listener isn't triggered yet.
     assertThat(future.isDone()).isFalse();
@@ -215,12 +210,15 @@ public class WebWhoisActionHandlerTest {
     ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(msg);
 
+    // Stores path.
+    String path = "/test";
+
     // Sets up the local server that the handler will be redirected to.
-    setupLocalServer("", host, group, address);
+    TestServer.webWhoisServer(group, address, "", host, path);
 
     FullHttpResponse response =
         new HttpResponseMessage(makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY,
-            HTTP_REDIRECT + host, true, false));
+            HTTP_REDIRECT + host + path, true));
 
     //checks that future has not been set to successful or a failure
     assertThat(future.isDone()).isFalse();

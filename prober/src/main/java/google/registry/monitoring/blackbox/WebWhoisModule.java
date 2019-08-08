@@ -123,7 +123,6 @@ public class WebWhoisModule {
         messageHandlerProvider,
         webWhoisActionHandlerProvider);
   }
-
   /**
    * {@link Provides} the list of providers of {@link ChannelHandler}s that are used for https
    * protocol.

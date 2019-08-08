@@ -28,7 +28,7 @@ import com.google.common.truth.ThrowableSubject;
 import google.registry.monitoring.blackbox.ProbingActionTest;
 import google.registry.monitoring.blackbox.ProbingStepTest;
 import google.registry.monitoring.blackbox.Protocol;
-import google.registry.monitoring.blackbox.testservers.WebWhoisServer;
+import google.registry.monitoring.blackbox.testservers.TestServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -88,7 +88,7 @@ public final class NettyRule extends ExternalResource {
     checkState(echoHandler == null, "Can't call setUpServer twice");
     echoHandler = new EchoHandler();
 
-    new WebWhoisServer(eventLoopGroup, localAddress,
+    new TestServer(eventLoopGroup, localAddress,
         ImmutableList.<ChannelHandler>builder().add(handlers).add(echoHandler).build());
   }
 
