@@ -22,6 +22,7 @@ import com.google.monitoring.metrics.EventMetric;
 import com.google.monitoring.metrics.LabelDescriptor;
 import com.google.monitoring.metrics.MetricRegistryImpl;
 import google.registry.request.auth.AuthLevel;
+import java.util.Arrays;
 import org.joda.time.Duration;
 
 class RequestMetrics {
@@ -50,12 +51,24 @@ class RequestMetrics {
       Duration duration, String path, Action.Method method, AuthLevel authLevel, boolean success) {
     requestDurationMetric.record(
         duration.getMillis(),
-        path,
+        transformPath(path),
         String.valueOf(method),
         String.valueOf(authLevel),
         String.valueOf(success));
     logger.atInfo().log(
         "Action called for path=%s, method=%s, authLevel=%s, success=%s. Took: %.3fs",
         path, method, authLevel, success, duration.getMillis() / 1000d);
+  }
+
+  private String transformPath(String path) {
+    // We want to bucket RDAP requests by type to use less metric space,
+    // e.g. "/rdap/domains" rather than "/rdap/domains/foo.tld"
+    if (path.startsWith("/rdap")) {
+      String[] splitPath = path.split("/");
+      // First element of the split path is the empty string, so grab that + rdap + the request type
+      String[] rdapBucket = Arrays.copyOfRange(splitPath, 0, Math.max(3, splitPath.length));
+      return String.join("/", rdapBucket);
+    }
+    return path;
   }
 }
