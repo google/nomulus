@@ -19,7 +19,6 @@ import static google.registry.testing.JUnitBackports.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import google.registry.monitoring.blackbox.exceptions.FailureException;
@@ -40,6 +39,10 @@ import org.mockito.Mockito;
  *
  * <p>Then tests the execution of each step, by ensuring the methods treatment of any kind
  * of response from the {@link ProbingStep}s or {@link ProbingAction}s is what is expected.</p>
+ *
+ * <p>On every test that runs the sequence, in order for the sequence to stop, we expect an
+ * error to be thrown on calling token.next(), as it should return null, which will create a
+ * {@link NullPointerException}, ending the sequence after the last step has been performed.</p>
  */
 @RunWith(JUnit4.class)
 public class ProbingSequenceTest {
@@ -47,18 +50,19 @@ public class ProbingSequenceTest {
   /**
    * Default mock {@link ProbingAction} returned when generating an action with a mockStep.
    */
-  private ProbingAction mockAction;
+  private ProbingAction mockAction = Mockito.mock(ProbingAction.class);
 
   /**
    * Default mock {@link ProbingStep} that will usually return a {@code mockAction} on call to
    * generate action.
    */
-  private ProbingStep mockStep;
+  private ProbingStep mockStep = Mockito.mock(ProbingStep.class);
+
 
   /**
    * Default mock {@link Token} that is passed into each {@link ProbingSequence} tested.
    */
-  private Token testToken;
+  private Token testToken = Mockito.mock(Token.class);
 
   @Before
   public void setup() {
@@ -67,14 +71,9 @@ public class ProbingSequenceTest {
     Protocol mockProtocol = Mockito.mock(Protocol.class);
     doReturn(false).when(mockProtocol).persistentConnection();
 
-    mockAction = Mockito.mock(ProbingAction.class);
-
     //In order to avoid a NullPointerException, we must have the protocol returned that stores
     // persistent connection as false.
-    mockStep = Mockito.mock(ProbingStep.class);
     doReturn(mockProtocol).when(mockStep).protocol();
-
-    testToken = Mockito.mock(Token.class);
   }
 
   @Test
@@ -149,7 +148,7 @@ public class ProbingSequenceTest {
 
     sequence.start();
 
-    verify(mockStep, times(1)).generateAction(testToken);
+    verify(secondStep).generateAction(testToken);
   }
 
   @Test
@@ -174,7 +173,7 @@ public class ProbingSequenceTest {
 
     sequence.start();
 
-    verify(mockStep, times(1)).generateAction(testToken);
+    verify(secondStep).generateAction(testToken);
   }
 
 
@@ -192,11 +191,25 @@ public class ProbingSequenceTest {
         .add(secondStep)
         .build();
 
-    // When there is an error in action, generating, the next step is immediately called in the same
-    // thread, so we expect a NullPointerException to be thrown in this thread.
-    assertThrows(NullPointerException.class, sequence::start);
+    // Since we are in main thread when the initial error is thrown, we can't expect the
+    // NullPointerException to just halt the flow, as it will be thrown in the main thread, not
+    // in ones created with future listeners. As a result, we need token.next() to throw a custom
+    // error which we expect. We call this CustomException.
+    class CustomException extends RuntimeException {
+      public CustomException(String msg) {
+        super(msg);
+      }
+    }
 
-    verify(mockStep, times(1)).generateAction(testToken);
+    //Now we tell testToken.next() to throw this exception
+    doThrow(new CustomException("end of sequence")).when(testToken).next();
+
+    //Finally verify sequence is ended by this. All of this is only used to ensure sequence is
+    // safely ended
+    assertThrows(CustomException.class, sequence::start);
+
+    //Now we once again verify that we reach the second step despite the initial error being
+    // thrown and we do this by checking if the second steps generateAction function is called.
+    verify(secondStep).generateAction(testToken);
   }
-
 }
