@@ -51,6 +51,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.joda.time.DateTime;
@@ -63,6 +64,13 @@ import org.joda.time.DateTime;
             + "printing each token to stdout.")
 @NonFinalForTesting
 class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
+
+  @Parameter(
+      names = {"--tokens"},
+      description =
+          "Comma-separated list of exact tokens to generate, otherwise use --prefix or "
+              + "--domain_names_file to generate tokens if the exact strings do not matter")
+  private List<String> tokenStrings;
 
   @Parameter(
       names = {"-p", "--prefix"},
@@ -132,9 +140,19 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() throws IOException {
+    int inputMethods = 0;
+    if (numTokens > 0) {
+      inputMethods++;
+    }
+    if (domainNamesFile != null) {
+      inputMethods++;
+    }
+    if (tokenStrings != null && !tokenStrings.isEmpty()) {
+      inputMethods++;
+    }
     checkArgument(
-        (numTokens > 0) ^ (domainNamesFile != null),
-        "Must specify either --number or --domain_names_file, but not both");
+        inputMethods == 1,
+        "Must specify exactly one of '--number', '--domain_names_file', and '--tokens'");
 
     checkArgument(
         !(UNLIMITED_USE.equals(tokenType) && CollectionUtils.isNullOrEmpty(tokenStatusTransitions)),
@@ -163,6 +181,10 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
       numTokens = domainNames.size();
     }
 
+    if (tokenStrings != null) {
+      verifyTokenStringsDoNotExist();
+    }
+
     checkArgument(
         tokenLength > 0 || numTokens == 1,
         "When specifying a token length of 0, one can only generate one token");
@@ -170,8 +192,7 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
     int tokensSaved = 0;
     do {
       ImmutableSet<AllocationToken> tokens =
-          generateTokens(BATCH_SIZE).stream()
-              .limit(numTokens - tokensSaved)
+          getNextTokenBatch(tokensSaved)
               .map(
                   t -> {
                     AllocationToken.Builder token =
@@ -191,6 +212,24 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
       // Wrap in a retrier to deal with transient 404 errors (thrown as RemoteApiExceptions).
       tokensSaved += retrier.callWithRetry(() -> saveTokens(tokens), RemoteApiException.class);
     } while (tokensSaved < numTokens);
+  }
+
+  private void verifyTokenStringsDoNotExist() {
+    ImmutableSet<String> existingTokenStrings =
+        getExistingTokenStrings(ImmutableSet.copyOf(tokenStrings));
+    checkArgument(
+        existingTokenStrings.isEmpty(),
+        String.format(
+            "Cannot create specified tokens; the following tokens already exist: %s",
+            existingTokenStrings));
+  }
+
+  private Stream<String> getNextTokenBatch(int tokensSaved) {
+    if (tokenStrings != null) {
+      return tokenStrings.stream();
+    } else {
+      return generateTokens(BATCH_SIZE).stream().limit(numTokens - tokensSaved);
+    }
   }
 
   @VisibleForTesting
@@ -214,14 +253,17 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
         stringGenerator.createStrings(tokenLength, count).stream()
             .map(s -> prefix + s)
             .collect(toImmutableSet());
+    ImmutableSet<String> existingTokenStrings = getExistingTokenStrings(candidates);
+    return ImmutableSet.copyOf(difference(candidates, existingTokenStrings));
+  }
+
+  private ImmutableSet<String> getExistingTokenStrings(ImmutableSet<String> candidates) {
     ImmutableSet<Key<AllocationToken>> existingTokenKeys =
         candidates.stream()
             .map(input -> Key.create(AllocationToken.class, input))
             .collect(toImmutableSet());
-    ImmutableSet<String> existingTokenStrings =
-        ofy().load().keys(existingTokenKeys).values().stream()
-            .map(AllocationToken::getToken)
-            .collect(toImmutableSet());
-    return ImmutableSet.copyOf(difference(candidates, existingTokenStrings));
+    return ofy().load().keys(existingTokenKeys).values().stream()
+        .map(AllocationToken::getToken)
+        .collect(toImmutableSet());
   }
 }

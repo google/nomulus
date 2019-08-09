@@ -173,6 +173,13 @@ public class GenerateAllocationTokensCommandTest
   }
 
   @Test
+  public void testSuccess_specifyTokens() throws Exception {
+    runCommand("--tokens", "foobar,foobaz");
+    assertAllocationTokens(createToken("foobar", null, null), createToken("foobaz", null, null));
+    assertInStdout("foobar", "foobaz");
+  }
+
+  @Test
   public void testSuccess_oneTokenWithOnlyPrefix() throws Exception {
     runCommand("--prefix", "foobar", "--number", "1", "--length", "0");
     assertAllocationTokens(createToken("foobar", null, null));
@@ -185,7 +192,7 @@ public class GenerateAllocationTokensCommandTest
         assertThrows(IllegalArgumentException.class, () -> runCommand("--prefix", "FEET"));
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("Must specify either --number or --domain_names_file, but not both");
+        .isEqualTo("Must specify exactly one of '--number', '--domain_names_file', and '--tokens'");
   }
 
   @Test
@@ -200,7 +207,47 @@ public class GenerateAllocationTokensCommandTest
                     "--domain_names_file", "/path/to/blaaaaah"));
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("Must specify either --number or --domain_names_file, but not both");
+        .isEqualTo("Must specify exactly one of '--number', '--domain_names_file', and '--tokens'");
+  }
+
+  @Test
+  public void testFailure_mustNotSpecifyBothNumberOfTokensAndTokenStrings() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommand(
+                    "--prefix", "FEET",
+                    "--number", "999",
+                    "--tokens", "token1,token2"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Must specify exactly one of '--number', '--domain_names_file', and '--tokens'");
+  }
+
+  @Test
+  public void testFailure_mustNotSpecifyBothTokenStringsAndDomainsFile() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommand(
+                    "--prefix", "FEET",
+                    "--tokens", "token1,token2",
+                    "--domain_names_file", "/path/to/blaaaaah"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Must specify exactly one of '--number', '--domain_names_file', and '--tokens'");
+  }
+
+  @Test
+  public void testFailure_specifiesAlreadyExistingToken() throws Exception {
+    runCommand("--tokens", "foobar");
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> runCommand("--tokens", "foobar,foobaz"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Cannot create specified tokens; the following tokens already exist: [foobar]");
   }
 
   @Test
