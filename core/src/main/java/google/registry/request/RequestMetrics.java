@@ -51,7 +51,7 @@ class RequestMetrics {
       Duration duration, String path, Action.Method method, AuthLevel authLevel, boolean success) {
     requestDurationMetric.record(
         duration.getMillis(),
-        transformPath(path),
+        truncatePath(path),
         String.valueOf(method),
         String.valueOf(authLevel),
         String.valueOf(success));
@@ -60,7 +60,7 @@ class RequestMetrics {
         path, method, authLevel, success, duration.getMillis() / 1000d);
   }
 
-  private String transformPath(String path) {
+  private static String truncatePath(String path) {
     // We want to bucket RDAP requests by type to use less metric space,
     // e.g. "/rdap/domains" rather than "/rdap/domains/foo.tld"
     if (path.startsWith("/rdap")) {
