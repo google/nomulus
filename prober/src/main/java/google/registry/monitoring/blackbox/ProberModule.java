@@ -43,7 +43,7 @@ public class ProberModule {
   /**
    * Default {@link Duration} chosen to be time between each {@link ProbingAction} call.
    */
-  private static final Duration DEFAULT_DURATION = Duration.standardSeconds(4);
+  private static final Duration DEFAULT_PROBER_INTERVAL = Duration.standardSeconds(4);
 
   /**
    * {@link Provides} the {@link SslProvider} used by instances of {@link
@@ -76,12 +76,13 @@ public class ProberModule {
   }
 
   /**
-   * {@link Provides} above {@code DEFAULT_DURATION} for all provided {@link ProbingStep}s to use.
+   * {@link Provides} above {@code DEFAULT_PROBER_INTERVAL} for all provided {@link ProbingStep}s to
+   * use.
    */
   @Provides
   @Singleton
-  Duration provideDuration() {
-    return DEFAULT_DURATION;
+  Duration provideProbeInterval() {
+    return DEFAULT_PROBER_INTERVAL;
   }
 
   /**
