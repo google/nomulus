@@ -62,24 +62,6 @@ public class EppMetrics {
               "count",
               LABEL_DESCRIPTORS_BY_TLD);
 
-  private static final EventMetric processingTimeByRegistrar =
-      MetricRegistryImpl.getDefault()
-          .newEventMetric(
-              "/epp/processing_time",
-              "EPP Processing Time By Registrar",
-              "milliseconds",
-              LABEL_DESCRIPTORS_BY_REGISTRAR,
-              DEFAULT_FITTER);
-
-  private static final EventMetric processingTimeByTld =
-      MetricRegistryImpl.getDefault()
-          .newEventMetric(
-              "/epp/processing_time_by_tld",
-              "EPP Processing Time By TLD",
-              "milliseconds",
-              LABEL_DESCRIPTORS_BY_TLD,
-              DEFAULT_FITTER);
-
   private static final EventMetric requestTime =
       MetricRegistryImpl.getDefault()
           .newEventMetric(
@@ -118,10 +100,7 @@ public class EppMetrics {
     long processingTime =
         metric.getEndTimestamp().getMillis() - metric.getStartTimestamp().getMillis();
     String commandName = metric.getCommandName().orElse("");
-    processingTimeByRegistrar
-        .record(processingTime, commandName, metric.getClientId().orElse(""), eppStatusCode);
     String tld = metric.getTld().orElse("");
-    processingTimeByTld.record(processingTime, commandName, tld, eppStatusCode);
     requestTime.record(processingTime, commandName, getTrafficType(tld).toString(), eppStatusCode);
   }
 

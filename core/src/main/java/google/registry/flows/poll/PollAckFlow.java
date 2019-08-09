@@ -21,6 +21,7 @@ import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_NO_MESSAG
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.makePollMessageExternalId;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.parsePollMessageExternalId;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.googlecode.objectify.Key;
@@ -78,7 +79,7 @@ public class PollAckFlow implements TransactionalFlow {
       throw new InvalidMessageIdException(messageId);
     }
 
-    final DateTime now = ofy().getTransactionTime();
+    final DateTime now = tm().getTransactionTime();
 
     // Load the message to be acked. If a message is queued to be delivered in the future, we treat
     // it as if it doesn't exist yet. Same for if the message ID year isn't the same as the actual
@@ -124,7 +125,7 @@ public class PollAckFlow implements TransactionalFlow {
     // acked, then we return a special status code indicating that. Note that the query will
     // include the message being acked.
 
-    int messageCount = ofy().doTransactionless(() -> getPollMessagesQuery(clientId, now).count());
+    int messageCount = tm().doTransactionless(() -> getPollMessagesQuery(clientId, now).count());
     if (!includeAckedMessageInCount) {
       messageCount--;
     }

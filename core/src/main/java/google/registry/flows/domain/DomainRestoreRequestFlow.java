@@ -27,6 +27,7 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyPremiumNameIsNo
 import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActive;
 import static google.registry.model.ResourceTransferUtils.updateForeignKeyIndexDeletionTime;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.collect.ImmutableList;
@@ -133,7 +134,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
     validateClientIsLoggedIn(clientId);
     verifyRegistrarIsActive(clientId);
     Update command = (Update) resourceCommand;
-    DateTime now = ofy().getTransactionTime();
+    DateTime now = tm().getTransactionTime();
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
     FeesAndCredits feesAndCredits =
         pricingLogic.getRestorePrice(Registry.get(existingDomain.getTld()), targetId, now);

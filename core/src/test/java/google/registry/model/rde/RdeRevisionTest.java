@@ -19,6 +19,7 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.model.rde.RdeRevision.getNextRevision;
 import static google.registry.model.rde.RdeRevision.saveRevision;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import com.google.common.base.VerifyException;
@@ -50,8 +51,8 @@ public class RdeRevisionTest {
 
   @Test
   public void testSaveRevision_objectDoesntExist_newRevisionIsZero_nextRevIsOne() {
-    ofy().transact(() -> saveRevision("despondency", DateTime.parse("1984-12-18TZ"), FULL, 0));
-    ofy()
+    tm().transact(() -> saveRevision("despondency", DateTime.parse("1984-12-18TZ"), FULL, 0));
+    tm()
         .transact(
             () ->
                 assertThat(getNextRevision("despondency", DateTime.parse("1984-12-18TZ"), FULL))
@@ -64,7 +65,7 @@ public class RdeRevisionTest {
         assertThrows(
             VerifyException.class,
             () ->
-                ofy()
+                tm()
                     .transact(
                         () ->
                             saveRevision("despondency", DateTime.parse("1984-12-18TZ"), FULL, 1)));
@@ -78,7 +79,7 @@ public class RdeRevisionTest {
         assertThrows(
             VerifyException.class,
             () ->
-                ofy()
+                tm()
                     .transact(
                         () -> saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 0)));
     assertThat(thrown).hasMessageThat().contains("object already created");
@@ -87,8 +88,8 @@ public class RdeRevisionTest {
   @Test
   public void testSaveRevision_objectExistsAtZero_newRevisionIsOne_nextRevIsTwo() {
     save("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 0);
-    ofy().transact(() -> saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 1));
-    ofy()
+    tm().transact(() -> saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 1));
+    tm()
         .transact(
             () ->
                 assertThat(getNextRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL))
@@ -102,7 +103,7 @@ public class RdeRevisionTest {
         assertThrows(
             VerifyException.class,
             () ->
-                ofy()
+                tm()
                     .transact(
                         () -> saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 2)));
     assertThat(thrown).hasMessageThat().contains("should be at 1 ");
@@ -114,7 +115,7 @@ public class RdeRevisionTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                ofy()
+                tm()
                     .transact(
                         () ->
                             saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, -1)));

@@ -17,6 +17,7 @@ package google.registry.rdap;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.api.client.http.GenericUrl;
@@ -130,6 +131,7 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
     try {
       HttpRequest request =
           requestFactory.buildGetRequest(new GenericUrl(String.format(LIST_URL, tld)));
+      request.getHeaders().setAcceptEncoding("identity");
       request.getHeaders().setCookie(String.format("%s=%s", COOKIE_ID, id));
       HttpResponse response = request.execute();
 
@@ -175,7 +177,7 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
       } catch (Throwable e) {
         // Login failures are bad but not unexpected for certain TLDs. We shouldn't store those
         // but rather should only store useful Throwables.
-        logger.atWarning().log("Error logging in to MoSAPI server: " + e.getMessage(), e);
+        logger.atWarning().log("Error logging in to MoSAPI server: " + e.getMessage());
         continue;
       }
       try {
@@ -196,7 +198,7 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
     ImmutableSetMultimap<String, String> ianaToBaseUrls = getRdapBaseUrlsPerIanaId();
 
     for (Key<Registrar> registrarKey : ofy().load().type(Registrar.class).keys()) {
-      ofy()
+      tm()
           .transact(
               () -> {
                 Registrar registrar = ofy().load().key(registrarKey).now();

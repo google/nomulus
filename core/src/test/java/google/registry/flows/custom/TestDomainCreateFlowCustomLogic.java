@@ -14,7 +14,7 @@
 
 package google.registry.flows.custom;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;
@@ -35,7 +35,7 @@ public class TestDomainCreateFlowCustomLogic extends DomainCreateFlowCustomLogic
       PollMessage extraPollMessage =
           new PollMessage.OneTime.Builder()
               .setParent(parameters.historyEntry())
-              .setEventTime(ofy().getTransactionTime())
+              .setEventTime(tm().getTransactionTime())
               .setClientId(getSessionMetadata().getClientId())
               .setMsg("Custom logic was triggered")
               .build();

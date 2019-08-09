@@ -23,7 +23,6 @@ import com.beust.jcommander.ParameterException;
 import com.google.api.services.cloudkms.v1.CloudKMS;
 import com.google.api.services.cloudkms.v1.model.DecryptRequest;
 import com.google.api.services.storage.Storage;
-import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.flogger.LoggerConfig;
 import com.google.monitoring.metrics.MetricReporter;
@@ -49,7 +48,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -223,19 +221,10 @@ public class ProxyModule {
       GoogleCredentialsBundle credentialsBundle, ProxyConfig config) {
     return () -> {
       GoogleCredentials credentials = credentialsBundle.getGoogleCredentials();
-      AccessToken accessToken = credentials.getAccessToken();
-      Date nextExpirationTime =
-          new Date(
-              System.currentTimeMillis() + config.accessTokenRefreshBeforeExpirationSeconds * 1000);
-      // If we never obtained an access token, the expiration time is null.
-      if (accessToken == null
-          // If we have an access token, make sure to refresh it ahead of time.
-          || accessToken.getExpirationTime().before(nextExpirationTime)) {
-        try {
-          credentials.refresh();
-        } catch (IOException e) {
-          throw new RuntimeException("Cannot refresh access token.", e);
-        }
+      try {
+        credentials.refreshIfExpired();
+      } catch (IOException e) {
+        throw new RuntimeException("Cannot refresh access token.", e);
       }
       return credentials.getAccessToken().getTokenValue();
     };

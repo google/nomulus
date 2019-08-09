@@ -19,6 +19,7 @@ import static google.registry.config.RegistryEnvironment.PRODUCTION;
 import static google.registry.mapreduce.MapreduceRunner.PARAM_DRY_RUN;
 import static google.registry.mapreduce.inputs.EppResourceInputs.createEntityInput;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 
 import com.google.appengine.tools.mapreduce.Mapper;
@@ -124,7 +125,7 @@ public class DeleteLoadTestDataAction implements Runnable {
           Key.create(EppResourceIndex.create(Key.create(resource)));
       final Key<? extends ForeignKeyIndex<?>> fki = ForeignKeyIndex.createKey(resource);
       int numEntitiesDeleted =
-          ofy()
+          tm()
               .transact(
                   () -> {
                     // This ancestor query selects all descendant entities.

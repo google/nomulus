@@ -38,7 +38,7 @@ import static google.registry.flows.domain.DomainFlowUtils.validateRegistrantAll
 import static google.registry.flows.domain.DomainFlowUtils.validateRequiredContactsPresent;
 import static google.registry.flows.domain.DomainFlowUtils.verifyClientUpdateNotProhibited;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPendingDelete;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
@@ -154,7 +154,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     flowCustomLogic.beforeValidation();
     extensionManager.validate();
     validateClientIsLoggedIn(clientId);
-    DateTime now = ofy().getTransactionTime();
+    DateTime now = tm().getTransactionTime();
     Update command = cloneAndLinkReferences((Update) resourceCommand, now);
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
     verifyUpdateAllowed(command, existingDomain, now);

@@ -23,6 +23,7 @@ import static google.registry.model.ResourceTransferUtils.updateForeignKeyIndexD
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registries.getTldsOfType;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_DELETE;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
 import static org.joda.time.DateTimeZone.UTC;
@@ -219,7 +220,7 @@ public class DeleteProberDataAction implements Runnable {
       final Key<? extends ForeignKeyIndex<?>> fki = ForeignKeyIndex.createKey(domain);
 
       int entitiesDeleted =
-          ofy()
+          tm()
               .transact(
                   () -> {
                     // This ancestor query selects all descendant HistoryEntries, BillingEvents,
@@ -245,16 +246,16 @@ public class DeleteProberDataAction implements Runnable {
     }
 
     private void softDeleteDomain(final DomainBase domain) {
-      ofy().transactNew(() -> {
+      tm().transactNew(() -> {
           DomainBase deletedDomain = domain
               .asBuilder()
-              .setDeletionTime(ofy().getTransactionTime())
+              .setDeletionTime(tm().getTransactionTime())
               .setStatusValues(null)
               .build();
           HistoryEntry historyEntry = new HistoryEntry.Builder()
               .setParent(domain)
               .setType(DOMAIN_DELETE)
-              .setModificationTime(ofy().getTransactionTime())
+              .setModificationTime(tm().getTransactionTime())
               .setBySuperuser(true)
               .setReason("Deletion of prober data")
               .setClientId(registryAdminClientId)

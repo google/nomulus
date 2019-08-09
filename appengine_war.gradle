@@ -12,24 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-def environments = ['production', 'sandbox', 'alpha', 'crash']
-
-def projects = ['production': 'domain-registry',
-                'sandbox'   : 'domain-registry-sandbox',
-                'alpha'     : 'domain-registry-alpha',
-                'crash'     : 'domain-registry-crash']
-
-
-def environment = rootProject.findProperty("environment")
-if (environment == null) {
-    environment = 'production'
-}
-def gcpProject = projects[environment]
-if (gcpProject == null) {
-    throw new GradleException("-Penvironment must be one of ${environments}.")
-}
-
+apply from: "${rootDir.path}/projects.gradle"
 apply plugin: 'war'
+
+def environment = rootProject.environment
+def gcpProject = rootProject.gcpProject
 
 // Set this directory before applying the appengine plugin so that the
 // plugin will recognize this as an app-engine standard app (and also
@@ -77,8 +64,8 @@ appengine {
     deploy {
         // appengineDeployAll task requires the version to be set. So,
         // this config lets gcloud select a version name when deploying
-        // to alpha from our workstation.
-        if (environment != 'production' && environment != 'sandbox') {
+        // to alpha or sandbox from our workstation.
+        if (!rootProject.prodOrSandboxEnv) {
             version = 'GCLOUD_CONFIG'
         }
         projectId = gcpProject
@@ -91,4 +78,4 @@ dependencies {
 
 rootProject.deploy.dependsOn appengineDeployAll
 rootProject.stage.dependsOn appengineStage
-appengineDeploy.dependsOn rootProject.verifyDeployment
+appengineDeployAll.dependsOn rootProject.verifyDeployment

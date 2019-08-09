@@ -28,6 +28,7 @@ import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomain
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainOwnership;
 import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.google.common.collect.ImmutableSet;
@@ -129,7 +130,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
     Update command = (Update) resourceCommand;
     Change change = command.getInnerChange();
     String suppliedNewHostName = change.getFullyQualifiedHostName();
-    DateTime now = ofy().getTransactionTime();
+    DateTime now = tm().getTransactionTime();
     validateHostName(targetId);
     HostResource existingHost = loadAndVerifyExistence(HostResource.class, targetId, now);
     boolean isHostRename = suppliedNewHostName != null;
@@ -271,7 +272,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
       }
       // We must also enqueue updates for all domains that use this host as their nameserver so
       // that their NS records can be updated to point at the new name.
-      asyncTaskEnqueuer.enqueueAsyncDnsRefresh(existingHost, ofy().getTransactionTime());
+      asyncTaskEnqueuer.enqueueAsyncDnsRefresh(existingHost, tm().getTransactionTime());
     }
   }
 

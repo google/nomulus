@@ -6,6 +6,10 @@
   line-height: 140%;
 }
 
+a:hover, a:focus {
+  text-decoration: underline
+}
+
 .whoAreYou {
   width: 50%;
   margin: 5em auto;

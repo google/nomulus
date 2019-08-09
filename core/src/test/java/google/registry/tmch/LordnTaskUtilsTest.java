@@ -16,6 +16,7 @@ package google.registry.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.persistActiveContact;
@@ -95,7 +96,7 @@ public class LordnTaskUtilsTest {
 
   @Test
   public void test_oteRegistrarWithNullIanaId() {
-    ofy()
+    tm()
         .transact(
             () ->
                 ofy()
@@ -130,6 +131,6 @@ public class LordnTaskUtilsTest {
   public void test_enqueueDomainBaseTask_throwsNpeOnNullDomain() {
     assertThrows(
         NullPointerException.class,
-        () -> ofy().transactNew(() -> LordnTaskUtils.enqueueDomainBaseTask(null)));
+        () -> tm().transactNew(() -> LordnTaskUtils.enqueueDomainBaseTask(null)));
   }
 }

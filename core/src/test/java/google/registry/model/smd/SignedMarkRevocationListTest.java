@@ -17,6 +17,7 @@ package google.registry.model.smd;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.smd.SignedMarkRevocationList.SHARD_SIZE;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.Duration.standardDays;
@@ -46,13 +47,13 @@ public class SignedMarkRevocationListTest {
     assertThrows(
         SignedMarkRevocationList.UnshardedSaveException.class,
         () ->
-            ofy()
+            tm()
                 .transact(
                     () -> {
                       SignedMarkRevocationList smdrl =
                           SignedMarkRevocationList.create(
-                              ofy().getTransactionTime(),
-                              ImmutableMap.of("a", ofy().getTransactionTime()));
+                              tm().getTransactionTime(),
+                              ImmutableMap.of("a", tm().getTransactionTime()));
                       smdrl.id = 1; // Without an id this won't save anyways.
                       ofy().saveWithoutBackup().entity(smdrl).now();
                     }));

@@ -16,6 +16,7 @@ package google.registry.model.translators;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.Duration.standardDays;
 import static org.joda.time.Duration.standardHours;
 
@@ -66,7 +67,7 @@ public class CommitLogRevisionsTranslatorFactoryTest {
   }
 
   private void save(final TestObject object) {
-    ofy().transact(() -> ofy().save().entity(object));
+    tm().transact(() -> ofy().save().entity(object));
   }
 
   private TestObject reload() {
@@ -150,7 +151,7 @@ public class CommitLogRevisionsTranslatorFactoryTest {
     save(new TestObject());
     clock.advanceBy(standardDays(1));
     com.google.appengine.api.datastore.Entity entity =
-        ofy().transactNewReadOnly(() -> ofy().save().toEntity(reload()));
+        tm().transactNewReadOnly(() -> ofy().save().toEntity(reload()));
     assertThat(entity.getProperties().keySet()).containsExactly("revisions.key", "revisions.value");
     assertThat(entity.getProperties()).containsEntry(
         "revisions.key", ImmutableList.of(START_TIME.toDate(), START_TIME.plusDays(1).toDate()));
@@ -167,7 +168,7 @@ public class CommitLogRevisionsTranslatorFactoryTest {
   @Test
   public void testLoad_missingRevisionRawProperties_createsEmptyObject() {
     com.google.appengine.api.datastore.Entity entity =
-        ofy().transactNewReadOnly(() -> ofy().save().toEntity(new TestObject()));
+        tm().transactNewReadOnly(() -> ofy().save().toEntity(new TestObject()));
     entity.removeProperty("revisions.key");
     entity.removeProperty("revisions.value");
     TestObject object = ofy().load().fromEntity(entity);

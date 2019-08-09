@@ -23,6 +23,7 @@ import static google.registry.flows.contact.ContactFlowUtils.createGainingTransf
 import static google.registry.flows.contact.ContactFlowUtils.createTransferResponse;
 import static google.registry.model.ResourceTransferUtils.approvePendingTransfer;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
@@ -78,7 +79,7 @@ public final class ContactTransferApproveFlow implements TransactionalFlow {
     extensionManager.register(MetadataExtension.class);
     extensionManager.validate();
     validateClientIsLoggedIn(clientId);
-    DateTime now = ofy().getTransactionTime();
+    DateTime now = tm().getTransactionTime();
     ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, existingContact);
     verifyHasPendingTransfer(existingContact);

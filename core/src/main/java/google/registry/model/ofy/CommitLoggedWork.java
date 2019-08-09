@@ -28,10 +28,9 @@ import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.VoidWork;
-import com.googlecode.objectify.Work;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.ImmutableObject;
+import google.registry.model.transaction.TransactionManager.Work;
 import google.registry.util.Clock;
 import java.util.HashSet;
 import java.util.Map;
@@ -40,7 +39,7 @@ import java.util.Set;
 import org.joda.time.DateTime;
 
 /** Wrapper for {@link Work} that associates a time with each attempt. */
-class CommitLoggedWork<R> extends VoidWork {
+class CommitLoggedWork<R> implements Runnable {
 
   private final Work<R> work;
   private final Clock clock;
@@ -74,8 +73,8 @@ class CommitLoggedWork<R> extends VoidWork {
    */
   protected ImmutableSet<ImmutableObject> mutations = ImmutableSet.of();
 
-  /** Lifecycle marker to track whether {@link #vrun} has been called. */
-  private boolean vrunCalled;
+  /** Lifecycle marker to track whether {@link #run} has been called. */
+  private boolean runCalled;
 
   CommitLoggedWork(Work<R> work, Clock clock) {
     this.work = work;
@@ -87,26 +86,26 @@ class CommitLoggedWork<R> extends VoidWork {
   }
 
   boolean hasRun() {
-    return vrunCalled;
+    return runCalled;
   }
 
   R getResult() {
-    checkState(vrunCalled, "Cannot call getResult() before vrun()");
+    checkState(runCalled, "Cannot call getResult() before run()");
     return result;
   }
 
   CommitLogManifest getManifest() {
-    checkState(vrunCalled, "Cannot call getManifest() before vrun()");
+    checkState(runCalled, "Cannot call getManifest() before run()");
     return manifest;
   }
 
   ImmutableSet<ImmutableObject> getMutations() {
-    checkState(vrunCalled, "Cannot call getMutations() before vrun()");
+    checkState(runCalled, "Cannot call getMutations() before run()");
     return mutations;
   }
 
   @Override
-  public void vrun() {
+  public void run() {
     // The previous time will generally be null, except when using transactNew.
     TransactionInfo previous = Ofy.TRANSACTION_INFO.get();
     // Set the time to be used for "now" within the transaction.
@@ -117,7 +116,7 @@ class CommitLoggedWork<R> extends VoidWork {
     } finally {
       Ofy.TRANSACTION_INFO.set(previous);
     }
-    vrunCalled = true;
+    runCalled = true;
   }
 
   /** Records all mutations enrolled by this transaction to a {@link CommitLogManifest} entry. */

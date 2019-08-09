@@ -27,8 +27,10 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.common.Cursor;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogCheckpoint;
+import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
+import google.registry.model.transaction.TransactionManager;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
@@ -54,6 +56,7 @@ public class CommitLogCheckpointStrategyTest {
 
   final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
   final Ofy ofy = new Ofy(clock);
+  final TransactionManager tm = new DatastoreTransactionManager(ofy);
   final CommitLogCheckpointStrategy strategy = new CommitLogCheckpointStrategy();
 
   /**
@@ -289,17 +292,17 @@ public class CommitLogCheckpointStrategyTest {
 
   private void writeCommitLogToBucket(final int bucketId) {
     fakeBucketIdSupplier.value = bucketId;
-    ofy.transact(
+    tm.transact(
         () -> {
           Cursor cursor =
-              Cursor.create(RDE_REPORT, ofy.getTransactionTime(), Registry.get("tld" + bucketId));
+              Cursor.create(RDE_REPORT, tm.getTransactionTime(), Registry.get("tld" + bucketId));
           ofy().save().entity(cursor);
         });
     fakeBucketIdSupplier.value = null;
   }
 
   private void saveBucketWithLastWrittenTime(final int bucketId, final DateTime lastWrittenTime) {
-    ofy.transact(
+    tm.transact(
         () ->
             ofy.saveWithoutBackup()
                 .entity(

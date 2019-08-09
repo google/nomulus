@@ -16,7 +16,7 @@ package google.registry.tmch;
 
 import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.appengine.api.taskqueue.TaskOptions.Method;
@@ -47,7 +47,7 @@ public final class LordnTaskUtils {
    * Enqueues a task in the LORDN queue representing a line of CSV for LORDN export.
    */
   public static void enqueueDomainBaseTask(DomainBase domain) {
-    ofy().assertInTransaction();
+    tm().assertInTransaction();
     // This method needs to use ofy transactionTime as the DomainBase's creationTime because
     // CreationTime isn't yet populated when this method is called during the resource flow.
     String tld = domain.getTld();
@@ -55,12 +55,12 @@ public final class LordnTaskUtils {
       getQueue(QUEUE_SUNRISE).add(TaskOptions.Builder
           .withTag(tld)
           .method(Method.PULL)
-          .payload(getCsvLineForSunriseDomain(domain, ofy().getTransactionTime())));
+          .payload(getCsvLineForSunriseDomain(domain, tm().getTransactionTime())));
     } else {
       getQueue(QUEUE_CLAIMS).add(TaskOptions.Builder
           .withTag(tld)
           .method(Method.PULL)
-          .payload(getCsvLineForClaimsDomain(domain, ofy().getTransactionTime())));
+          .payload(getCsvLineForClaimsDomain(domain, tm().getTransactionTime())));
     }
   }
 

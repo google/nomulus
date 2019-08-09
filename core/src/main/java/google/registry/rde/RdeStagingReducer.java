@@ -21,6 +21,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
@@ -202,7 +203,7 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
       logger.atInfo().log("Manual operation; not advancing cursor or enqueuing upload task");
       return;
     }
-    ofy()
+    tm()
         .transact(
             () -> {
               Registry registry = Registry.get(tld);

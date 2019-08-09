@@ -42,11 +42,11 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActi
 import static google.registry.flows.domain.DomainFlowUtils.verifyUnitIsYears;
 import static google.registry.model.EppResourceUtils.createDomainRepoId;
 import static google.registry.model.eppcommon.StatusValue.SERVER_HOLD;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.registry.Registry.TldState.QUIET_PERIOD;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
 import static google.registry.model.registry.label.ReservationType.NAME_COLLISION;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 
@@ -221,7 +221,7 @@ public class DomainCreateFlow implements TransactionalFlow {
     extensionManager.validate();
     validateClientIsLoggedIn(clientId);
     verifyRegistrarIsActive(clientId);
-    DateTime now = ofy().getTransactionTime();
+    DateTime now = tm().getTransactionTime();
     DomainCommand.Create command = cloneAndLinkReferences((Create) resourceCommand, now);
     Period period = command.getPeriod();
     verifyUnitIsYears(period);

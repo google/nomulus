@@ -20,6 +20,7 @@ import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterrup
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.ofy.Ofy.getBaseEntityClassFromEntityOrKey;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.newContactResource;
 import static google.registry.testing.DatastoreHelper.persistActiveContact;
@@ -35,8 +36,6 @@ import com.google.appengine.api.datastore.DatastoreTimeoutException;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.taskqueue.TransientFailureException;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.VoidWork;
-import com.googlecode.objectify.Work;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.OnSave;
@@ -46,6 +45,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.transaction.TransactionManager.Work;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
@@ -114,7 +114,7 @@ public class OfyTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                ofy()
+                tm()
                     .transact(
                         () -> {
                           ofy().save().entity(someObject);
@@ -129,7 +129,7 @@ public class OfyTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                ofy()
+                tm()
                     .transact(
                         () -> {
                           ofy().delete().entity(someObject);
@@ -144,7 +144,7 @@ public class OfyTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                ofy()
+                tm()
                     .transact(
                         () -> {
                           ofy().save().entity(someObject);
@@ -159,7 +159,7 @@ public class OfyTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                ofy()
+                tm()
                     .transact(
                         () -> {
                           ofy().delete().entity(someObject);
@@ -172,7 +172,7 @@ public class OfyTest {
   public void testSavingKeyTwiceInOneCall() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> ofy().transact(() -> ofy().save().entities(someObject, someObject)));
+        () -> tm().transact(() -> ofy().save().entities(someObject, someObject)));
   }
 
   /** Simple entity class with lifecycle callbacks. */
@@ -212,7 +212,7 @@ public class OfyTest {
   public void testLifecycleCallbacks_loadFromDatastore() {
     ofy().factory().register(LifecycleObject.class);
     final LifecycleObject object = new LifecycleObject();
-    ofy().transact(() -> ofy().save().entity(object).now());
+    tm().transact(() -> ofy().save().entity(object).now());
     assertThat(object.onSaveCalled).isTrue();
     ofy().clearSessionCache();
     assertThat(ofy().load().entity(object).now().onLoadCalled).isTrue();
@@ -221,25 +221,25 @@ public class OfyTest {
   /** Avoid regressions of b/21309102 where transaction time did not change on each retry. */
   @Test
   public void testTransact_getsNewTimestampOnEachTry() {
-    ofy().transact(new VoidWork() {
+    tm().transact(new Runnable() {
 
       DateTime firstAttemptTime;
 
       @Override
-      public void vrun() {
+      public void run() {
         if (firstAttemptTime == null) {
           // Sleep a bit to ensure that the next attempt is at a new millisecond.
-          firstAttemptTime = ofy().getTransactionTime();
+          firstAttemptTime = tm().getTransactionTime();
           sleepUninterruptibly(10, MILLISECONDS);
           throw new ConcurrentModificationException();
         }
-        assertThat(ofy().getTransactionTime()).isGreaterThan(firstAttemptTime);
+        assertThat(tm().getTransactionTime()).isGreaterThan(firstAttemptTime);
       }});
   }
 
   @Test
   public void testTransact_transientFailureException_retries() {
-    assertThat(ofy().transact(new Work<Integer>() {
+    assertThat(tm().transact(new Work<Integer>() {
 
       int count = 0;
 
@@ -255,7 +255,7 @@ public class OfyTest {
 
   @Test
   public void testTransact_datastoreTimeoutException_noManifest_retries() {
-    assertThat(ofy().transact(new Work<Integer>() {
+    assertThat(tm().transact(new Work<Integer>() {
 
       int count = 0;
 
@@ -273,7 +273,7 @@ public class OfyTest {
 
   @Test
   public void testTransact_datastoreTimeoutException_manifestNotWrittenToDatastore_retries() {
-    assertThat(ofy().transact(new Work<Integer>() {
+    assertThat(tm().transact(new Work<Integer>() {
 
       int count = 0;
 
@@ -292,17 +292,18 @@ public class OfyTest {
   @Test
   public void testTransact_datastoreTimeoutException_manifestWrittenToDatastore_returnsSuccess() {
     // A work unit that throws if it is ever retried.
-    VoidWork work = new VoidWork() {
+    Work work = new Work<Void>() {
       boolean firstCallToVrun = true;
 
       @Override
-      public void vrun() {
+      public Void run() {
         if (firstCallToVrun) {
           firstCallToVrun = false;
           ofy().save().entity(someObject);
-          return;
+          return null;
         }
         fail("Shouldn't have retried.");
+        return null;
       }};
     // A commit logged work that throws on the first attempt to get its result.
     CommitLoggedWork<Void> commitLoggedWork = new CommitLoggedWork<Void>(work, new SystemClock()) {
@@ -322,7 +323,7 @@ public class OfyTest {
   }
 
   void doReadOnlyRetryTest(final RuntimeException e) {
-    assertThat(ofy().transactNewReadOnly(new Work<Integer>() {
+    assertThat(tm().transactNewReadOnly(new Work<Integer>() {
 
       int count = 0;
 

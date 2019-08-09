@@ -32,13 +32,13 @@ import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Objectify;
 import com.googlecode.objectify.ObjectifyFactory;
-import com.googlecode.objectify.Work;
 import com.googlecode.objectify.cmd.Deleter;
 import com.googlecode.objectify.cmd.Loader;
 import com.googlecode.objectify.cmd.Saver;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.VirtualEntity;
 import google.registry.model.ofy.ReadOnlyWork.KillTransactionException;
+import google.registry.model.transaction.TransactionManager.Work;
 import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
 import google.registry.util.Sleeper;
@@ -111,11 +111,11 @@ public class Ofy {
     ofy().clear();
   }
 
-  public boolean inTransaction() {
+  boolean inTransaction() {
     return ofy().getTransaction() != null;
   }
 
-  public void assertInTransaction() {
+  void assertInTransaction() {
     checkState(inTransaction(), "Must be called in a transaction");
   }
 
@@ -194,7 +194,7 @@ public class Ofy {
   }
 
   /** Execute a transaction. */
-  public <R> R transact(Work<R> work) {
+  <R> R transact(Work<R> work) {
     // If we are already in a transaction, don't wrap in a CommitLoggedWork.
     return inTransaction() ? work.run() : transactNew(work);
   }
@@ -205,7 +205,7 @@ public class Ofy {
    * <p>This overload is used for transactions that don't return a value, formerly implemented using
    * VoidWork.
    */
-  public void transact(Runnable work) {
+  void transact(Runnable work) {
     transact(
         () -> {
           work.run();
@@ -214,7 +214,7 @@ public class Ofy {
   }
 
   /** Pause the current transaction (if any) and complete this one before returning to it. */
-  public <R> R transactNew(Work<R> work) {
+  <R> R transactNew(Work<R> work) {
     // Wrap the Work in a CommitLoggedWork so that we can give transactions a frozen view of time
     // and maintain commit logs for them.
     return transactCommitLoggedWork(new CommitLoggedWork<>(work, getClock()));
@@ -226,7 +226,7 @@ public class Ofy {
    * <p>This overload is used for transactions that don't return a value, formerly implemented using
    * VoidWork.
    */
-  public void transactNew(Runnable work) {
+  void transactNew(Runnable work) {
     transactNew(
         () -> {
           work.run();
@@ -246,7 +246,10 @@ public class Ofy {
         true;
         attempt++, sleepMillis *= 2) {
       try {
-        ofy().transactNew(work);
+        ofy().transactNew(() -> {
+          work.run();
+          return null;
+        });
         return work.getResult();
       } catch (TransientFailureException
           | TimestampInversionException
@@ -295,10 +298,13 @@ public class Ofy {
   }
 
   /** A read-only transaction is useful to get strongly consistent reads at a shared timestamp. */
-  public <R> R transactNewReadOnly(Work<R> work) {
+  <R> R transactNewReadOnly(Work<R> work) {
     ReadOnlyWork<R> readOnlyWork = new ReadOnlyWork<>(work, getClock());
     try {
-      ofy().transactNew(readOnlyWork);
+      ofy().transactNew(() -> {
+        readOnlyWork.run();
+        return null;
+      });
     } catch (TransientFailureException | DatastoreTimeoutException | DatastoreFailureException e) {
       // These are always retryable for a read-only operation.
       return transactNewReadOnly(work);
@@ -309,7 +315,7 @@ public class Ofy {
     throw new AssertionError();  // How on earth did we get here?
   }
 
-  public void transactNewReadOnly(Runnable work) {
+  void transactNewReadOnly(Runnable work) {
     transactNewReadOnly(
         () -> {
           work.run();
@@ -318,7 +324,7 @@ public class Ofy {
   }
 
   /** Execute some work in a transactionless context. */
-  public <R> R doTransactionless(Work<R> work) {
+  <R> R doTransactionless(Work<R> work) {
     try {
       com.googlecode.objectify.ObjectifyService.push(
           com.googlecode.objectify.ObjectifyService.ofy().transactionless());
@@ -347,7 +353,7 @@ public class Ofy {
   }
 
   /** Get the time associated with the start of this particular transaction attempt. */
-  public DateTime getTransactionTime() {
+  DateTime getTransactionTime() {
     assertInTransaction();
     return TRANSACTION_INFO.get().transactionTime;
   }

@@ -20,6 +20,7 @@ import static google.registry.flows.contact.ContactFlowUtils.validateAsciiPostal
 import static google.registry.flows.contact.ContactFlowUtils.validateContactAgainstPolicy;
 import static google.registry.model.EppResourceUtils.createRepoId;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
@@ -71,7 +72,7 @@ public final class ContactCreateFlow implements TransactionalFlow {
     extensionManager.validate();
     validateClientIsLoggedIn(clientId);
     Create command = (Create) resourceCommand;
-    DateTime now = ofy().getTransactionTime();
+    DateTime now = tm().getTransactionTime();
     verifyResourceDoesNotExist(ContactResource.class, targetId, now, clientId);
     ContactResource newContact =
         new ContactResource.Builder()

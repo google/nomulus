@@ -16,6 +16,7 @@ package google.registry.model.common;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import google.registry.testing.AppEngineRule;
 import org.junit.After;
@@ -46,7 +47,7 @@ public class GaeUserIdConverterTest {
 
   @Test
   public void testSuccess_inTransaction() {
-    ofy()
+    tm()
         .transactNew(
             () ->
                 assertThat(GaeUserIdConverter.convertEmailAddressToGaeUserId("example@example.com"))

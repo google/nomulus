@@ -21,6 +21,7 @@ import static google.registry.flows.domain.DomainFlowUtils.newAutorenewPollMessa
 import static google.registry.flows.domain.DomainFlowUtils.updateAutorenewRecurrenceEndTime;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.leapSafeSubtractYears;
 
@@ -153,15 +154,15 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
   @Override
   protected String execute() {
     for (String domainName : mainParameters) {
-      ofy().transact(() -> unrenewDomain(domainName));
+      tm().transact(() -> unrenewDomain(domainName));
       System.out.printf("Unrenewed %s\n", domainName);
     }
     return "Successfully unrenewed all domains.";
   }
 
   private void unrenewDomain(String domainName) {
-    ofy().assertInTransaction();
-    DateTime now = ofy().getTransactionTime();
+    tm().assertInTransaction();
+    DateTime now = tm().getTransactionTime();
     Optional<DomainBase> domainOptional =
         loadByForeignKey(DomainBase.class, domainName, now);
     // Transactional sanity checks on the off chance that something changed between init() running

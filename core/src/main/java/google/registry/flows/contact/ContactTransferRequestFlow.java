@@ -24,6 +24,7 @@ import static google.registry.flows.contact.ContactFlowUtils.createLosingTransfe
 import static google.registry.flows.contact.ContactFlowUtils.createTransferResponse;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
@@ -91,7 +92,7 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
     extensionManager.register(MetadataExtension.class);
     extensionManager.validate();
     validateClientIsLoggedIn(gainingClientId);
-    DateTime now = ofy().getTransactionTime();
+    DateTime now = tm().getTransactionTime();
     ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
     verifyAuthInfoPresentForResourceTransfer(authInfo);
     verifyAuthInfo(authInfo.get(), existingContact);

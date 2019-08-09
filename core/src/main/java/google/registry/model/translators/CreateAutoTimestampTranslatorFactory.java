@@ -15,7 +15,7 @@
 package google.registry.model.translators;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.model.CreateAutoTimestamp;
@@ -46,7 +46,7 @@ public class CreateAutoTimestampTranslatorFactory
       /** Save a timestamp, setting it to the current time if it did not have a previous value. */
       @Override
       public Date saveValue(CreateAutoTimestamp pojoValue) {
-        return firstNonNull(pojoValue.getTimestamp(), ofy().getTransactionTime()).toDate();
+        return firstNonNull(pojoValue.getTimestamp(), tm().getTransactionTime()).toDate();
       }};
   }
 }
