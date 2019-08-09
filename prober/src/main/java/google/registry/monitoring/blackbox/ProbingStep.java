@@ -86,7 +86,9 @@ public abstract class ProbingStep {
         messageTemplate().getClass().getName());
   }
 
-  /** Standard {@link AutoValue.Builder} for {@link ProbingStep}. */
+  /**
+   * Standard {@link AutoValue.Builder} for {@link ProbingStep}.
+   */
   @AutoValue.Builder
   public abstract static class Builder {
 
@@ -100,6 +102,5 @@ public abstract class ProbingStep {
 
     public abstract ProbingStep build();
   }
-
 }
 

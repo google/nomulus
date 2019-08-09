@@ -18,8 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
-import google.registry.util.DefaultCircularLinkedListIterator;
-import java.util.Iterator;
+import google.registry.util.CircularList;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -35,12 +34,12 @@ public class WebWhoisTokenTest {
   private static final String FIRST_TLD = "first_test";
   private static final String SECOND_TLD = "second_test";
   private static final String THIRD_TLD = "third_test";
-  private final Iterator<String> TEST_DOMAINS =
-      new DefaultCircularLinkedListIterator.Builder<String>()
-          .addElements(FIRST_TLD, SECOND_TLD, THIRD_TLD)
+  private final CircularList<String> testDomains =
+      new CircularList.Builder<String>()
+          .add(FIRST_TLD, SECOND_TLD, THIRD_TLD)
           .build();
 
-  public Token webToken = new WebWhoisToken(TEST_DOMAINS);
+  public Token webToken = new WebWhoisToken(testDomains);
 
   @Test
   public void testMessageModification() throws UndeterminedStateException {

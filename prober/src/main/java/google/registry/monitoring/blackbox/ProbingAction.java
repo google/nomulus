@@ -135,12 +135,12 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
    * when the connection future is successful.</p>
    *
    * <p>Once the connection is successful, we establish which of the handlers in the pipeline is
-   * the {@link ActionHandler}.From that, we can obtain a future that is marked as a success when
-   * we receive an expected response from the server.</p>
+   * the {@link ActionHandler}.From that, we can obtain a future that is marked as a success when we
+   * receive an expected response from the server.</p>
    *
    * <p>Next, we set a timer set to a specified delay. After the delay has passed, we send the
-   * {@code outboundMessage} down the channel pipeline, and when we observe a success or failure,
-   * we inform the {@link ProbingStep} of this.</p>
+   * {@code outboundMessage} down the channel pipeline, and when we observe a success or failure, we
+   * inform the {@link ProbingStep} of this.</p>
    *
    * @return {@link ChannelFuture} that denotes when the action has been successfully performed.
    */

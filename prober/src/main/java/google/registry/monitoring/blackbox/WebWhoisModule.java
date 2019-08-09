@@ -23,7 +23,7 @@ import google.registry.monitoring.blackbox.handlers.WebWhoisActionHandler;
 import google.registry.monitoring.blackbox.handlers.WebWhoisMessageHandler;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
 import google.registry.monitoring.blackbox.tokens.WebWhoisToken;
-import google.registry.util.DefaultCircularLinkedListIterator;
+import google.registry.util.CircularList;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -32,7 +32,6 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.ssl.SslProvider;
-import java.util.Iterator;
 import javax.inject.Provider;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
@@ -50,8 +49,8 @@ public class WebWhoisModule {
    * Standard length of messages used by Proxy. Equates to 0.5 MB.
    */
   private static final int maximumMessageLengthBytes = 512 * 1024;
-  private final int HTTP_WHOIS_PORT = 80;
-  private final int HTTPS_WHOIS_PORT = 443;
+  private static final int HTTP_WHOIS_PORT = 80;
+  private static final int HTTPS_WHOIS_PORT = 443;
 
   /**
    * {@link Provides} only step used in WebWhois sequence.
@@ -123,6 +122,7 @@ public class WebWhoisModule {
         messageHandlerProvider,
         webWhoisActionHandlerProvider);
   }
+
   /**
    * {@link Provides} the list of providers of {@link ChannelHandler}s that are used for https
    * protocol.
@@ -189,7 +189,7 @@ public class WebWhoisModule {
       WebWhoisToken webWhoisToken) {
 
     return new ProbingSequence.Builder(webWhoisToken)
-        .addElement(probingStep)
+        .add(probingStep)
         .build();
   }
 
@@ -205,9 +205,9 @@ public class WebWhoisModule {
   @Singleton
   @Provides
   @WebWhoisProtocol
-  Iterator<String> provideTopLevelDomains() {
-    return new DefaultCircularLinkedListIterator.Builder<String>()
-        .addElements("how", "soy", "xn--q9jyb4c")
+  CircularList<String> provideTopLevelDomains() {
+    return new CircularList.Builder<String>()
+        .add("how", "soy", "xn--q9jyb4c")
         .build();
   }
 

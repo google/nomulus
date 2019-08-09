@@ -18,7 +18,7 @@ import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.WebWhoisModule.WebWhoisProtocol;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
-import java.util.Iterator;
+import google.registry.util.CircularList;
 import javax.inject.Inject;
 
 /**
@@ -38,26 +38,20 @@ public class WebWhoisToken extends Token {
   /**
    * {@link ImmutableList} of all top level domains to be probed.
    */
-  private final Iterator<String> topLevelDomainsIterator;
-
-  /**
-   * Current index of {@code topLevelDomains} that represents tld we are probing.
-   */
-  private String currentDomain;
+  private CircularList<String> topLevelDomainsList;
 
   @Inject
-  public WebWhoisToken(@WebWhoisProtocol Iterator<String> topLevelDomainsIterator) {
+  public WebWhoisToken(@WebWhoisProtocol CircularList<String> topLevelDomainsList) {
 
-    this.topLevelDomainsIterator = topLevelDomainsIterator;
-    currentDomain = this.topLevelDomainsIterator.next();
+    this.topLevelDomainsList = topLevelDomainsList;
   }
 
   /**
-   * Increments {@code domainsIndex} or resets it to reflect move to next top level domain.
+   * Moves on to next top level domain in {@code topLevelDomainsList}.
    */
   @Override
   public WebWhoisToken next() {
-    currentDomain = topLevelDomainsIterator.next();
+    topLevelDomainsList = topLevelDomainsList.next();
     return this;
   }
 
@@ -76,7 +70,7 @@ public class WebWhoisToken extends Token {
    */
   @Override
   public String host() {
-    return PREFIX + currentDomain;
+    return PREFIX + topLevelDomainsList.get();
   }
 }
 

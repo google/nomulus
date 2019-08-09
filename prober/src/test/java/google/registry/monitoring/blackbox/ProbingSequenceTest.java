@@ -19,6 +19,8 @@ import static google.registry.testing.JUnitBackports.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
@@ -82,15 +84,21 @@ public class ProbingSequenceTest {
     ProbingStep thirdStep = Mockito.mock(ProbingStep.class);
 
     ProbingSequence sequence = new ProbingSequence.Builder(testToken)
-        .addElement(firstStep)
-        .addElement(secondStep)
-        .addElement(thirdStep)
+        .add(firstStep)
+        .add(secondStep)
+        .add(thirdStep)
         .build();
 
-    assertThat(sequence.next()).isEqualTo(firstStep);
-    assertThat(sequence.next()).isEqualTo(secondStep);
-    assertThat(sequence.next()).isEqualTo(thirdStep);
-    assertThat(sequence.next()).isEqualTo(firstStep);
+    assertThat(sequence.get()).isEqualTo(firstStep);
+    sequence = sequence.next();
+
+    assertThat(sequence.get()).isEqualTo(secondStep);
+    sequence = sequence.next();
+
+    assertThat(sequence.get()).isEqualTo(thirdStep);
+    sequence = sequence.next();
+
+    assertThat(sequence.get()).isEqualTo(firstStep);
   }
 
   @Test
@@ -100,17 +108,22 @@ public class ProbingSequenceTest {
     ProbingStep thirdStep = Mockito.mock(ProbingStep.class);
 
     ProbingSequence sequence = new ProbingSequence.Builder(testToken)
-        .addElement(thirdStep)
-        .addElement(secondStep)
-        .childBuilder()
+        .add(thirdStep)
+        .add(secondStep)
         .markFirstRepeated()
-        .addElement(firstStep)
+        .add(firstStep)
         .build();
 
-    assertThat(sequence.next()).isEqualTo(thirdStep);
-    assertThat(sequence.next()).isEqualTo(secondStep);
-    assertThat(sequence.next()).isEqualTo(firstStep);
-    assertThat(sequence.next()).isEqualTo(secondStep);
+    assertThat(sequence.get()).isEqualTo(thirdStep);
+    sequence = sequence.next();
+
+    assertThat(sequence.get()).isEqualTo(secondStep);
+    sequence = sequence.next();
+
+    assertThat(sequence.get()).isEqualTo(firstStep);
+    sequence = sequence.next();
+
+    assertThat(sequence.get()).isEqualTo(secondStep);
 
   }
 
@@ -130,13 +143,13 @@ public class ProbingSequenceTest {
 
     //Build testable sequence from mocked components.
     ProbingSequence sequence = new ProbingSequence.Builder(testToken)
-        .addElement(mockStep)
-        .addElement(secondStep)
+        .add(mockStep)
+        .add(secondStep)
         .build();
 
     sequence.start();
 
-    assertThat(sequence.get()).isEqualTo(secondStep);
+    verify(mockStep, times(1)).generateAction(testToken);
   }
 
   @Test
@@ -155,13 +168,13 @@ public class ProbingSequenceTest {
 
     //Build testable sequence from mocked components.
     ProbingSequence sequence = new ProbingSequence.Builder(testToken)
-        .addElement(mockStep)
-        .addElement(secondStep)
+        .add(mockStep)
+        .add(secondStep)
         .build();
 
     sequence.start();
 
-    assertThat(sequence.get()).isEqualTo(secondStep);
+    verify(mockStep, times(1)).generateAction(testToken);
   }
 
 
@@ -175,15 +188,15 @@ public class ProbingSequenceTest {
 
     //Build testable sequence from mocked components.
     ProbingSequence sequence = new ProbingSequence.Builder(testToken)
-        .addElement(mockStep)
-        .addElement(secondStep)
+        .add(mockStep)
+        .add(secondStep)
         .build();
 
     // When there is an error in action, generating, the next step is immediately called in the same
     // thread, so we expect a NullPointerException to be thrown in this thread.
     assertThrows(NullPointerException.class, sequence::start);
 
-    assertThat(sequence.get()).isEqualTo(secondStep);
+    verify(mockStep, times(1)).generateAction(testToken);
   }
 
 }
