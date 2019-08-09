@@ -44,12 +44,13 @@ public class WebWhoisModule {
 
   private static final String HTTP_PROTOCOL_NAME = "http";
   private static final String HTTPS_PROTOCOL_NAME = "https";
+  private static final int HTTP_WHOIS_PORT = 80;
+  private static final int HTTPS_WHOIS_PORT = 443;
+
   /**
    * Standard length of messages used by Proxy. Equates to 0.5 MB.
    */
   private static final int maximumMessageLengthBytes = 512 * 1024;
-  private final int HTTP_WHOIS_PORT = 80;
-  private final int HTTPS_WHOIS_PORT = 443;
 
   /**
    * {@link Provides} only step used in WebWhois sequence.
