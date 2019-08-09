@@ -16,13 +16,15 @@ package google.registry.request;
 
 import static com.google.monitoring.metrics.EventMetric.DEFAULT_FITTER;
 
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.monitoring.metrics.EventMetric;
 import com.google.monitoring.metrics.LabelDescriptor;
 import com.google.monitoring.metrics.MetricRegistryImpl;
 import google.registry.request.auth.AuthLevel;
-import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.joda.time.Duration;
 
 class RequestMetrics {
@@ -64,10 +66,9 @@ class RequestMetrics {
     // We want to bucket RDAP requests by type to use less metric space,
     // e.g. "/rdap/domains" rather than "/rdap/domains/foo.tld"
     if (path.startsWith("/rdap")) {
-      String[] splitPath = path.split("/");
-      // First element of the split path is the empty string, so grab that + rdap + the request type
-      String[] rdapBucket = Arrays.copyOfRange(splitPath, 0, Math.max(3, splitPath.length));
-      return String.join("/", rdapBucket);
+      List<String> splitPath = Splitter.on("/").omitEmptyStrings().splitToList(path);
+      splitPath = splitPath.subList(0, Math.min(2, splitPath.size()));
+      return splitPath.stream().collect(Collectors.joining("/", "/", "/"));
     }
     return path;
   }
