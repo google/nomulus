@@ -73,9 +73,9 @@ public class EppModule {
       @Named("loginSuccess") ProbingStep loginSuccessStep,
       @Named("logout") ProbingStep logoutStep) {
     return new ProbingSequence.Builder(token)
-        .addElement(helloStep)
-        .addElement(loginSuccessStep)
-        .addElement(logoutStep)
+        .add(helloStep)
+        .add(loginSuccessStep)
+        .add(logoutStep)
         .build();
   }
 
@@ -94,11 +94,11 @@ public class EppModule {
       @Named("deleteSuccess") ProbingStep deleteSuccessStep,
       @Named("logout") ProbingStep logoutStep) {
     return new ProbingSequence.Builder(token)
-        .addElement(helloStep)
-        .addElement(loginSuccessStep)
-        .addElement(createSuccessStep)
-        .addElement(deleteSuccessStep)
-        .addElement(logoutStep)
+        .add(helloStep)
+        .add(loginSuccessStep)
+        .add(createSuccessStep)
+        .add(deleteSuccessStep)
+        .add(logoutStep)
         .build();
   }
 
@@ -119,13 +119,13 @@ public class EppModule {
       @Named("checkNotExists") ProbingStep checkStepSecond,
       @Named("logout") ProbingStep logoutStep) {
     return new ProbingSequence.Builder(token)
-        .addElement(helloStep)
-        .addElement(loginSuccessStep)
-        .addElement(createSuccessStep)
-        .addElement(checkStepFirst)
-        .addElement(deleteSuccessStep)
-        .addElement(checkStepSecond)
-        .addElement(logoutStep)
+        .add(helloStep)
+        .add(loginSuccessStep)
+        .add(createSuccessStep)
+        .add(checkStepFirst)
+        .add(deleteSuccessStep)
+        .add(checkStepSecond)
+        .add(logoutStep)
         .build();
   }
 
