@@ -35,7 +35,9 @@ import google.registry.monitoring.blackbox.messages.EppMessage;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
 import google.registry.monitoring.blackbox.messages.EppResponseMessage;
 import google.registry.monitoring.blackbox.modules.CertificateModule.LocalSecrets;
+import google.registry.monitoring.blackbox.metrics.MetricsCollector;
 import google.registry.monitoring.blackbox.tokens.EppToken;
+import google.registry.util.Clock;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -86,13 +88,15 @@ public class EppModule {
   @IntoSet
   static ProbingSequence provideEppLoginCreateCheckDeleteCheckProbingSequence(
       EppToken.Persistent token,
+      MetricsCollector metrics,
+      Clock clock,
       @Named("hello") ProbingStep helloStep,
       @Named("loginSuccess") ProbingStep loginSuccessStep,
       @Named("createSuccess") ProbingStep createSuccessStep,
       @Named("checkExists") ProbingStep checkStepFirst,
       @Named("deleteSuccess") ProbingStep deleteSuccessStep,
       @Named("checkNotExists") ProbingStep checkStepSecond) {
-    return new ProbingSequence.Builder(token)
+    return new ProbingSequence.Builder(token, metrics, clock)
         .add(helloStep)
         .add(loginSuccessStep)
         .add(createSuccessStep)
@@ -112,6 +116,8 @@ public class EppModule {
   @IntoSet
   static ProbingSequence provideEppLoginCreateCheckDeleteCheckLogoutProbingSequence(
       EppToken.Transient token,
+      MetricsCollector metrics,
+      Clock clock,
       @Named("hello") ProbingStep helloStep,
       @Named("loginSuccess") ProbingStep loginSuccessStep,
       @Named("createSuccess") ProbingStep createSuccessStep,
@@ -119,7 +125,7 @@ public class EppModule {
       @Named("deleteSuccess") ProbingStep deleteSuccessStep,
       @Named("checkNotExists") ProbingStep checkStepSecond,
       @Named("logout") ProbingStep logoutStep) {
-    return new ProbingSequence.Builder(token)
+    return new ProbingSequence.Builder(token, metrics, clock)
         .add(helloStep)
         .add(loginSuccessStep)
         .add(createSuccessStep)

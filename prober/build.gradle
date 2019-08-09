@@ -25,6 +25,7 @@ dependencies {
     compile deps['com.google.dagger:dagger']
     compile deps['com.google.flogger:flogger']
     compile deps['com.google.guava:guava']
+    compile deps['com.google.monitoring-client:metrics']
     compile deps['io.netty:netty-buffer']
     compile deps['io.netty:netty-codec-http']
     compile deps['io.netty:netty-codec']
@@ -41,6 +42,7 @@ dependencies {
     runtime deps['com.google.auto.value:auto-value']
     runtime deps['io.netty:netty-tcnative-boringssl-static']
 
+    testCompile deps['com.google.monitoring-client:contrib']
     testCompile deps['com.google.truth:truth']
     testCompile deps['junit:junit']
     testCompile deps['org.mockito:mockito-core']

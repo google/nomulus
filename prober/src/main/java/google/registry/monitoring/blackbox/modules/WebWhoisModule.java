@@ -25,8 +25,10 @@ import google.registry.monitoring.blackbox.handlers.SslClientInitializer;
 import google.registry.monitoring.blackbox.handlers.WebWhoisActionHandler;
 import google.registry.monitoring.blackbox.handlers.WebWhoisMessageHandler;
 import google.registry.monitoring.blackbox.messages.HttpRequestMessage;
+import google.registry.monitoring.blackbox.metrics.MetricsCollector;
 import google.registry.monitoring.blackbox.tokens.WebWhoisToken;
 import google.registry.util.CircularList;
+import google.registry.util.Clock;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -172,9 +174,13 @@ public class WebWhoisModule {
   @Singleton
   @IntoSet
   ProbingSequence provideWebWhoisSequence(
-      @WebWhoisProtocol ProbingStep probingStep, WebWhoisToken webWhoisToken) {
-
-    return new ProbingSequence.Builder(webWhoisToken).add(probingStep).build();
+      @WebWhoisProtocol ProbingStep probingStep,
+      WebWhoisToken webWhoisToken,
+      MetricsCollector metrics,
+      Clock clock) {
+    return new ProbingSequence.Builder(webWhoisToken, metrics, clock)
+        .add(probingStep)
+        .build();
   }
 
   @Provides

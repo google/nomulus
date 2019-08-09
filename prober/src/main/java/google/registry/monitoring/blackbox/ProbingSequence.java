@@ -17,8 +17,10 @@ package google.registry.monitoring.blackbox;
 import com.google.common.flogger.FluentLogger;
 import google.registry.monitoring.blackbox.connection.ProbingAction;
 import google.registry.monitoring.blackbox.exceptions.UnrecoverableStateException;
+import google.registry.monitoring.blackbox.metrics.MetricsCollector;
 import google.registry.monitoring.blackbox.tokens.Token;
 import google.registry.util.CircularList;
+import google.registry.util.Clock;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.AbstractChannel;
 import io.netty.channel.ChannelFuture;
@@ -45,7 +47,19 @@ public class ProbingSequence extends CircularList<ProbingStep> {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  /** Each {@link ProbingSequence} requires a start token to begin running. */
+  /**
+   * Shared {@link MetricsCollector} used to record metrics on any step performed.
+   */
+  private MetricsCollector metrics;
+
+  /**
+   * Shared {@link Clock} used to record latency on any step performed.
+   */
+  private Clock clock;
+
+  /**
+   * Each {@link ProbingSequence} requires a start token to begin running.
+   */
   private Token startToken;
 
   /**
@@ -57,9 +71,16 @@ public class ProbingSequence extends CircularList<ProbingStep> {
   /** {@link ProbingSequence} object that represents first step in the sequence. */
   private ProbingSequence first;
 
-  /** Standard constructor for {@link ProbingSequence} in the list that assigns value and token. */
-  private ProbingSequence(ProbingStep value, Token startToken) {
+  /**
+   * Standard Constructor for first {@link ProbingSequence} in the list that assigns value and
+   * token.
+   */
+  private ProbingSequence(ProbingStep value, MetricsCollector metrics, Clock clock,
+      Token startToken) {
+
     super(value);
+    this.metrics = metrics;
+    this.clock = clock;
     this.startToken = startToken;
   }
 
@@ -95,6 +116,8 @@ public class ProbingSequence extends CircularList<ProbingStep> {
    *     get().generateAction}.
    */
   private void runStep(Token token) {
+    long start = clock.nowUtc().getMillis();
+
     ProbingAction currentAction;
     ChannelFuture future;
 
@@ -181,12 +204,18 @@ public class ProbingSequence extends CircularList<ProbingStep> {
 
     private Token startToken;
 
+    private MetricsCollector metrics;
+
+    private Clock clock;
+
     /**
      * This Builder must also be supplied with a {@link Token} to construct a {@link
      * ProbingSequence}.
      */
-    public Builder(Token startToken) {
+    public Builder(Token startToken, MetricsCollector metrics, Clock clock) {
       this.startToken = startToken;
+      this.metrics = metrics;
+      this.clock = clock;
     }
 
     /** We take special note of the first repeated step. */
@@ -205,7 +234,7 @@ public class ProbingSequence extends CircularList<ProbingStep> {
 
     @Override
     protected ProbingSequence create(ProbingStep value) {
-      return new ProbingSequence(value, startToken);
+      return new ProbingSequence(value, metrics, clock, startToken);
     }
 
     /**

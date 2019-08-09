@@ -21,6 +21,8 @@ import google.registry.monitoring.blackbox.connection.ProbingAction;
 import google.registry.monitoring.blackbox.modules.CertificateModule;
 import google.registry.monitoring.blackbox.modules.EppModule;
 import google.registry.monitoring.blackbox.modules.WebWhoisModule;
+import google.registry.util.Clock;
+import google.registry.util.SystemClock;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
@@ -54,7 +56,16 @@ public class ProberModule {
     return OpenSsl.isAvailable() ? SslProvider.OPENSSL : SslProvider.JDK;
   }
 
-  /** {@link Provides} one global {@link EventLoopGroup} shared by each {@link ProbingSequence}. */
+  /** {@link Provides} one global {@link Clock} shared by each {@link ProbingSequence}. */
+  @Provides
+  @Singleton
+  static Clock provideClock() {
+    return new SystemClock();
+  }
+
+  /**
+   * {@link Provides} one global {@link EventLoopGroup} shared by each {@link ProbingSequence}.
+   */
   @Provides
   @Singleton
   EventLoopGroup provideEventLoopGroup() {
