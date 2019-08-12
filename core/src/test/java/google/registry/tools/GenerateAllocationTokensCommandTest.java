@@ -184,9 +184,12 @@ public class GenerateAllocationTokensCommandTest
 
   @Test
   public void testSuccess_specifyManyTokens() throws Exception {
+    command.stringGenerator =
+        new DeterministicStringGenerator(Alphabets.BASE_58, Rule.PREPEND_COUNTER);
     Collection<String> sampleTokens = command.stringGenerator.createStrings(13, 100);
     runCommand("--tokens", Joiner.on(",").join(sampleTokens));
     assertInStdout(Iterables.toArray(sampleTokens, String.class));
+    assertThat(ofy().load().type(AllocationToken.class).count()).isEqualTo(100);
   }
 
   @Test
