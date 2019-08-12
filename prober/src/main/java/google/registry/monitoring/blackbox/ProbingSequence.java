@@ -15,7 +15,6 @@
 package google.registry.monitoring.blackbox;
 
 import com.google.common.flogger.FluentLogger;
-import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.exceptions.UnrecoverableStateException;
 import google.registry.monitoring.blackbox.tokens.Token;
 import google.registry.util.CircularList;
@@ -27,10 +26,13 @@ import io.netty.channel.EventLoopGroup;
 /**
  * Represents Sequence of {@link ProbingStep}s that the Prober performs in order.
  *
- * <p>Inherits from {@link CircularList}</p>, with element type of
- * {@link ProbingStep} as the manner in which the sequence is carried out is analogous to the {@link
- * CircularList}
- *
+ * <p>Inherits from {@link CircularList}, with element type of
+ * {@link ProbingStep} as the manner in which the sequence is carried out is similar to the {@link
+ * CircularList}. However, the {@link Builder} of {@link ProbingSequence} override
+ * {@link CircularList.AbstractBuilder} allowing for more customized flows, that are looped, but
+ * not necessarily entirely circular.
+ * Example: first -> second -> third -> fourth -> second -> third -> fourth -> second -> ...
+ * </p>
  *
  * <p>Created with {@link Builder} where we specify {@link EventLoopGroup}, {@link AbstractChannel}
  * class type, then sequentially add in the {@link ProbingStep.Builder}s in order and mark which one
@@ -55,6 +57,9 @@ public class ProbingSequence extends CircularList<ProbingStep> {
    */
   private boolean lastStep = false;
 
+  /**
+   * {@link ProbingSequence} object that represents first step in the sequence.
+   */
   private ProbingSequence first;
 
 
@@ -64,10 +69,6 @@ public class ProbingSequence extends CircularList<ProbingStep> {
   private ProbingSequence(ProbingStep value, Token startToken) {
     super(value);
     this.startToken = startToken;
-  }
-
-  private void setFirst(ProbingSequence first) {
-    this.first = first;
   }
 
   /**
@@ -109,29 +110,24 @@ public class ProbingSequence extends CircularList<ProbingStep> {
    */
   private void runStep(Token token) {
     ProbingAction currentAction;
-    // Attempt to generate new action. On error, move on to next step.
-    try {
-      currentAction = get().generateAction(token);
-    } catch (UnrecoverableStateException e) {
-      // On an UnrecoverableStateException, terminate the sequence.
-      logger.atSevere().withCause(e).log("Unrecoverable error in generating action.");
-      return;
-
-    } catch (UndeterminedStateException e) {
-      // On a standard UndeterminedStateException, restart the sequence at the very first step.
-      logger.atWarning().withCause(e).log("Error in action generation.");
-
-      restartSequence();
-      return;
-    }
-
     ChannelFuture future;
+
     try {
+      // Attempt to generate new action. On error, move on to next step.
+      currentAction = get().generateAction(token);
+
       // Call the generated action.
       future = currentAction.call();
+
+    } catch (UnrecoverableStateException e) {
+      // On an UnrecoverableStateException, terminate the sequence.
+      logger.atSevere().withCause(e).log(
+          "Unrecoverable error in generating or calling action.");
+      return;
+
     } catch (Exception e) {
-      // On error in calling action, log error and note an error.
-      logger.atWarning().withCause(e).log("Error in Action Performed");
+      // On any other type of error, restart the sequence at the very first step.
+      logger.atWarning().withCause(e).log("Error in generating or calling action.");
 
       // Restart the sequence at the very first step.
       restartSequence();
@@ -219,7 +215,7 @@ public class ProbingSequence extends CircularList<ProbingStep> {
     @Override
     public Builder add(ProbingStep value) {
       super.add(value);
-      current.setFirst(first);
+      current.first = first;
 
       return this;
     }
