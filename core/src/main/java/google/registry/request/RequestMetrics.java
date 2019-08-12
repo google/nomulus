@@ -69,7 +69,8 @@ class RequestMetrics {
     // e.g. "/rdap/domains" rather than "/rdap/domains/foo.tld"
     if (path.startsWith("/rdap")) {
       List<String> splitPath = Splitter.on("/").omitEmptyStrings().splitToList(path);
-      return Streams.stream(Iterables.limit(splitPath, 2)).collect(Collectors.joining("/", "/", "/"));
+      return Streams.stream(Iterables.limit(splitPath, 2))
+          .collect(Collectors.joining("/", "/", "/"));
     }
     return path;
   }
