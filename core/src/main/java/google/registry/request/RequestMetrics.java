@@ -18,6 +18,8 @@ import static com.google.monitoring.metrics.EventMetric.DEFAULT_FITTER;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.google.monitoring.metrics.EventMetric;
 import com.google.monitoring.metrics.LabelDescriptor;
@@ -67,8 +69,7 @@ class RequestMetrics {
     // e.g. "/rdap/domains" rather than "/rdap/domains/foo.tld"
     if (path.startsWith("/rdap")) {
       List<String> splitPath = Splitter.on("/").omitEmptyStrings().splitToList(path);
-      splitPath = splitPath.subList(0, Math.min(2, splitPath.size()));
-      return splitPath.stream().collect(Collectors.joining("/", "/", "/"));
+      return Streams.stream(Iterables.limit(splitPath, 2)).collect(Collectors.joining("/", "/", "/")));
     }
     return path;
   }
