@@ -16,6 +16,7 @@ package google.registry.monitoring.blackbox;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
+import google.registry.monitoring.blackbox.exceptions.UnrecoverableStateException;
 import google.registry.monitoring.blackbox.tokens.Token;
 import google.registry.util.CircularList;
 import io.netty.bootstrap.Bootstrap;
@@ -54,19 +55,19 @@ public class ProbingSequence extends CircularList<ProbingStep> {
    */
   private boolean lastStep = false;
 
-  /**
-   * Standard constructor for {@link ProbingSequence} that assigns value to the node.
-   */
-  private ProbingSequence(ProbingStep value) {
-    super(value);
-  }
+  private ProbingSequence first;
+
 
   /**
-   * Constructor for first {@link ProbingSequence} in the list that assigns value and token.
+   * Standard constructor for {@link ProbingSequence} in the list that assigns value and token.
    */
   private ProbingSequence(ProbingStep value, Token startToken) {
-    this(value);
+    super(value);
     this.startToken = startToken;
+  }
+
+  private void setFirst(ProbingSequence first) {
+    this.first = first;
   }
 
   /**
@@ -108,47 +109,59 @@ public class ProbingSequence extends CircularList<ProbingStep> {
    */
   private void runStep(Token token) {
     ProbingAction currentAction;
-    //attempt to generate new action. On error, move on to next step
+    // Attempt to generate new action. On error, move on to next step.
     try {
       currentAction = get().generateAction(token);
+    } catch (UnrecoverableStateException e) {
+      // On an UnrecoverableStateException, terminate the sequence.
+      logger.atSevere().withCause(e).log("Unrecoverable error in generating action.");
+      return;
+
     } catch (UndeterminedStateException e) {
-      logger.atWarning().withCause(e).log("Error in Action Generation");
-      runNextStep(token);
+      // On a standard UndeterminedStateException, restart the sequence at the very first step.
+      logger.atWarning().withCause(e).log("Error in action generation.");
+
+      restartSequence();
       return;
     }
 
     ChannelFuture future;
     try {
-      //call the generated action
+      // Call the generated action.
       future = currentAction.call();
     } catch (Exception e) {
-      //On error in calling action, log error and note an error
+      // On error in calling action, log error and note an error.
       logger.atWarning().withCause(e).log("Error in Action Performed");
 
-      //Calls next runStep
-      runNextStep(token);
+      // Restart the sequence at the very first step.
+      restartSequence();
       return;
     }
 
     future.addListener(f -> {
       if (f.isSuccess()) {
-        //On a successful result, we log as a successful step, and not a success
+        // On a successful result, we log as a successful step, and note a success.
         logger.atInfo().log(String.format("Successfully completed Probing Step: %s", this));
 
       } else {
-        //On a failed result, we log the failure and note either a failure or error
+        // On a failed result, we log the failure and note either a failure or error.
         logger.atSevere().withCause(f.cause()).log("Did not result in future success");
+
+        // If not unrecoverable, we restart the sequence.
+        if (!(f.cause() instanceof UnrecoverableStateException)) {
+          restartSequence();
+        }
+        // Otherwise, we just terminate the full sequence.
+        return;
       }
 
       if (get().protocol().persistentConnection()) {
-        //If the connection is persistent, we store the channel in the token
-
+        // If the connection is persistent, we store the channel in the token.
         token.setChannel(currentAction.channel());
       }
 
       //Calls next runStep
       runNextStep(token);
-
 
     });
   }
@@ -160,7 +173,21 @@ public class ProbingSequence extends CircularList<ProbingStep> {
   private void runNextStep(Token token) {
     token = lastStep ? token.next() : token;
     next().runStep(token);
+  }
 
+  /**
+   * Helper method to restart the sequence at the very first step, with a channel-less {@link
+   * Token}.
+   */
+  private void restartSequence() {
+    // Gets next possible token to insure no replicated domains used.
+    Token restartToken = startToken.next();
+
+    // Makes sure channel from original token isn't passed down.
+    restartToken.setChannel(null);
+
+    // Runs the very first step with starting token.
+    first.runStep(restartToken);
   }
 
   /**
@@ -192,16 +219,14 @@ public class ProbingSequence extends CircularList<ProbingStep> {
     @Override
     public Builder add(ProbingStep value) {
       super.add(value);
+      current.setFirst(first);
+
       return this;
     }
 
     @Override
     protected ProbingSequence create(ProbingStep value) {
-      if (first == null) {
-        return new ProbingSequence(value, startToken);
-      } else {
-        return new ProbingSequence(value);
-      }
+      return new ProbingSequence(value, startToken);
     }
 
     /**
