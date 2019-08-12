@@ -50,31 +50,26 @@ import org.mockito.Mockito;
  */
 public class ProbingStepTest {
 
-  /**
-   * Basic Constants necessary for tests
-   */
+  /** Basic Constants necessary for tests */
   private static final String ADDRESS_NAME = "TEST_ADDRESS";
+
   private static final String PROTOCOL_NAME = "TEST_PROTOCOL";
   private static final int PROTOCOL_PORT = 0;
   private static final String TEST_MESSAGE = "TEST_MESSAGE";
   private static final String SECONDARY_TEST_MESSAGE = "SECONDARY_TEST_MESSAGE";
   private static final LocalAddress address = new LocalAddress(ADDRESS_NAME);
   private final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
-  private final Bootstrap bootstrap = new Bootstrap()
-      .group(eventLoopGroup)
-      .channel(LocalChannel.class);
-  /**
-   * Used for testing how well probing step can create connection to blackbox server
-   */
-  @Rule
-  public NettyRule nettyRule = new NettyRule(eventLoopGroup);
-
+  private final Bootstrap bootstrap =
+      new Bootstrap().group(eventLoopGroup).channel(LocalChannel.class);
+  /** Used for testing how well probing step can create connection to blackbox server */
+  @Rule public NettyRule nettyRule = new NettyRule(eventLoopGroup);
 
   /**
    * The two main handlers we need in any test pipeline used that connects to {@link NettyRule's
    * server}
-   **/
+   */
   private ActionHandler testHandler = new TestActionHandler();
+
   private ChannelHandler conversionHandler = new ConversionHandler();
 
   /**
@@ -94,12 +89,13 @@ public class ProbingStepTest {
   @Test
   public void testProbingActionGenerate_embeddedChannel() throws UndeterminedStateException {
     // Sets up Protocol to represent existing channel connection.
-    Protocol testProtocol = Protocol.builder()
-        .setHandlerProviders(ImmutableList.of(() -> conversionHandler, () -> testHandler))
-        .setName(PROTOCOL_NAME)
-        .setPort(PROTOCOL_PORT)
-        .setPersistentConnection(true)
-        .build();
+    Protocol testProtocol =
+        Protocol.builder()
+            .setHandlerProviders(ImmutableList.of(() -> conversionHandler, () -> testHandler))
+            .setName(PROTOCOL_NAME)
+            .setPort(PROTOCOL_PORT)
+            .setPersistentConnection(true)
+            .build();
 
     // Sets up an embedded channel to contain the two handlers we created already.
     EmbeddedChannel channel = new EmbeddedChannel(conversionHandler, testHandler);
@@ -111,12 +107,13 @@ public class ProbingStepTest {
     doReturn(channel).when(testToken).channel();
 
     // Sets up generic {@link ProbingStep} that we are testing.
-    ProbingStep testStep = ProbingStep.builder()
-        .setMessageTemplate(new TestMessage(TEST_MESSAGE))
-        .setBootstrap(bootstrap)
-        .setDuration(Duration.ZERO)
-        .setProtocol(testProtocol)
-        .build();
+    ProbingStep testStep =
+        ProbingStep.builder()
+            .setMessageTemplate(new TestMessage(TEST_MESSAGE))
+            .setBootstrap(bootstrap)
+            .setDuration(Duration.ZERO)
+            .setProtocol(testProtocol)
+            .build();
 
     ProbingAction testAction = testStep.generateAction(testToken);
 
@@ -125,27 +122,27 @@ public class ProbingStepTest {
     assertThat(testAction.outboundMessage().toString()).isEqualTo(SECONDARY_TEST_MESSAGE);
     assertThat(testAction.host()).isEqualTo(SECONDARY_TEST_MESSAGE);
     assertThat(testAction.protocol()).isEqualTo(testProtocol);
-
-
   }
 
   @Test
   public void testProbingActionGenerate_newChannel() throws UndeterminedStateException {
     // Sets up Protocol for when we create a new channel.
-    Protocol testProtocol = Protocol.builder()
-        .setHandlerProviders(ImmutableList.of(() -> conversionHandler, () -> testHandler))
-        .setName(PROTOCOL_NAME)
-        .setPort(PROTOCOL_PORT)
-        .setPersistentConnection(false)
-        .build();
+    Protocol testProtocol =
+        Protocol.builder()
+            .setHandlerProviders(ImmutableList.of(() -> conversionHandler, () -> testHandler))
+            .setName(PROTOCOL_NAME)
+            .setPort(PROTOCOL_PORT)
+            .setPersistentConnection(false)
+            .build();
 
     // Sets up generic ProbingStep that we are testing.
-    ProbingStep testStep = ProbingStep.builder()
-        .setMessageTemplate(new TestMessage(TEST_MESSAGE))
-        .setBootstrap(bootstrap)
-        .setDuration(Duration.ZERO)
-        .setProtocol(testProtocol)
-        .build();
+    ProbingStep testStep =
+        ProbingStep.builder()
+            .setMessageTemplate(new TestMessage(TEST_MESSAGE))
+            .setBootstrap(bootstrap)
+            .setDuration(Duration.ZERO)
+            .setProtocol(testProtocol)
+            .build();
 
     // Sets up testToken to return arbitrary values, and no channel. Used when we create a new
     // channel.
@@ -164,7 +161,5 @@ public class ProbingStepTest {
     assertThat(testAction.outboundMessage().toString()).isEqualTo(ADDRESS_NAME);
     assertThat(testAction.host()).isEqualTo(ADDRESS_NAME);
     assertThat(testAction.protocol()).isEqualTo(testProtocol);
-
-
   }
 }

@@ -24,14 +24,13 @@ import javax.inject.Inject;
 /**
  * Subclass of {@link ActionHandler} that deals with the Epp Sequence
  *
- * <p> Main purpose is to verify {@link EppResponseMessage} received is valid. If not it throws
- * the requisite error which is dealt with by the parent {@link ActionHandler}</p>
+ * <p>Main purpose is to verify {@link EppResponseMessage} received is valid. If not it throws the
+ * requisite error which is dealt with by the parent {@link ActionHandler}
  */
 public class EppActionHandler extends ActionHandler {
 
   @Inject
-  public EppActionHandler() {
-  }
+  public EppActionHandler() {}
 
   /**
    * Decodes the received response to ensure that it is what we expect
@@ -43,7 +42,7 @@ public class EppActionHandler extends ActionHandler {
       throws FailureException, UndeterminedStateException {
     EppResponseMessage response = (EppResponseMessage) msg;
 
-    //Based on the expected response type, will throw ResponseFailure if we don't receive a
+    // Based on the expected response type, will throw ResponseFailure if we don't receive a
     // successful EPP response
     response.verify();
     super.channelRead0(ctx, msg);

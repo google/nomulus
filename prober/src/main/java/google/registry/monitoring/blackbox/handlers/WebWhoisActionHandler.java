@@ -38,9 +38,9 @@ import org.joda.time.Duration;
 /**
  * Subclass of {@link ActionHandler} that deals with the WebWhois Sequence
  *
- * <p> Main purpose is to verify {@link HttpResponseMessage} received is valid. If the response
+ * <p>Main purpose is to verify {@link HttpResponseMessage} received is valid. If the response
  * implies a redirection it follows the redirection until either an Error Response is received, or
- * {@link HttpResponseStatus.OK} is received</p>
+ * {@link HttpResponseStatus.OK} is received
  */
 public class WebWhoisActionHandler extends ActionHandler {
 
@@ -48,24 +48,16 @@ public class WebWhoisActionHandler extends ActionHandler {
 
   /** Dagger injected components necessary for redirect responses: */
 
-  /**
-   * {@link Bootstrap} necessary for remaking connection on redirect response.
-   */
+  /** {@link Bootstrap} necessary for remaking connection on redirect response. */
   private final Bootstrap bootstrap;
 
-  /**
-   * {@link Protocol} for when redirected to http endpoint.
-   */
+  /** {@link Protocol} for when redirected to http endpoint. */
   private final Protocol httpWhoisProtocol;
 
-  /**
-   * {@link Protocol} for when redirected to https endpoint.
-   */
+  /** {@link Protocol} for when redirected to https endpoint. */
   private final Protocol httpsWhoisProtocol;
 
-  /**
-   * {@link HttpRequestMessage} that represents default GET message to be sent on redirect.
-   */
+  /** {@link HttpRequestMessage} that represents default GET message to be sent on redirect. */
   private final HttpRequestMessage requestMessage;
 
   @Inject
@@ -80,7 +72,6 @@ public class WebWhoisActionHandler extends ActionHandler {
     this.httpsWhoisProtocol = httpsWhoisProtocol;
     this.requestMessage = requestMessage;
   }
-
 
   /**
    * After receiving {@link HttpResponseMessage}, either notes success and marks future as finished,
@@ -98,32 +89,33 @@ public class WebWhoisActionHandler extends ActionHandler {
       logger.atInfo().log("Received Successful HttpResponseStatus");
       logger.atInfo().log("Response Received: " + response);
 
-      //On success, we always pass message to ActionHandler's channelRead0 method.
+      // On success, we always pass message to ActionHandler's channelRead0 method.
       super.channelRead0(ctx, msg);
 
     } else if (response.status().equals(HttpResponseStatus.MOVED_PERMANENTLY)
         || response.status().equals(HttpResponseStatus.FOUND)) {
-      //TODO - Fix checker to better determine when we have encountered a redirection response.
+      // TODO - Fix checker to better determine when we have encountered a redirection response.
 
-      //Obtain url to be redirected to
+      // Obtain url to be redirected to
       URL url;
       try {
         url = new URL(response.headers().get("Location"));
       } catch (MalformedURLException e) {
-        //in case of error, log it, and let ActionHandler's exceptionThrown method deal with it
+        // in case of error, log it, and let ActionHandler's exceptionThrown method deal with it
         throw new FailureException(
-            "Redirected Location was invalid. Given Location was: " + response.headers()
-                .get("Location"));
+            "Redirected Location was invalid. Given Location was: "
+                + response.headers().get("Location"));
       }
-      //From url, extract new host, port, and path
+      // From url, extract new host, port, and path
       String newHost = url.getHost();
       String newPath = url.getPath();
 
-      logger.atInfo().log(String
-          .format("Redirected to %s with host: %s, port: %d, and path: %s", url, newHost,
-              url.getDefaultPort(), newPath));
+      logger.atInfo().log(
+          String.format(
+              "Redirected to %s with host: %s, port: %d, and path: %s",
+              url, newHost, url.getDefaultPort(), newPath));
 
-      //Construct new Protocol to reflect redirected host, path, and port
+      // Construct new Protocol to reflect redirected host, path, and port
       Protocol newProtocol;
       if (url.getProtocol().equals(httpWhoisProtocol.name())) {
         newProtocol = httpWhoisProtocol;
@@ -134,19 +126,21 @@ public class WebWhoisActionHandler extends ActionHandler {
             "Redirection Location port was invalid. Given protocol name was: " + url.getProtocol());
       }
 
-      //Obtain HttpRequestMessage with modified headers to reflect new host and path.
+      // Obtain HttpRequestMessage with modified headers to reflect new host and path.
       HttpRequestMessage httpRequest = requestMessage.modifyMessage(newHost, newPath);
 
-      //Create new probingAction that takes in the new Protocol and HttpRequestMessage with no delay
-      ProbingAction redirectedAction = ProbingAction.builder()
-          .setBootstrap(bootstrap)
-          .setProtocol(newProtocol)
-          .setOutboundMessage(httpRequest)
-          .setDelay(Duration.ZERO)
-          .setHost(newHost)
-          .build();
+      // Create new probingAction that takes in the new Protocol and HttpRequestMessage with no
+      // delay
+      ProbingAction redirectedAction =
+          ProbingAction.builder()
+              .setBootstrap(bootstrap)
+              .setProtocol(newProtocol)
+              .setOutboundMessage(httpRequest)
+              .setDelay(Duration.ZERO)
+              .setHost(newHost)
+              .build();
 
-      //close this channel as we no longer need it
+      // close this channel as we no longer need it
       ChannelFuture future = ctx.close();
       future.addListener(
           f -> {
@@ -156,32 +150,29 @@ public class WebWhoisActionHandler extends ActionHandler {
               logger.atWarning().log("Channel was unsuccessfully closed.");
             }
 
-            //Once channel is closed, establish new connection to redirected host, and repeat
+            // Once channel is closed, establish new connection to redirected host, and repeat
             // same actions
             ChannelFuture secondFuture = redirectedAction.call();
 
-            //Once we have a successful call, set original ChannelPromise as success to tell
+            // Once we have a successful call, set original ChannelPromise as success to tell
             // ProbingStep we can move on
-            secondFuture.addListener(f2 -> {
-              if (f2.isSuccess()) {
-                super.channelRead0(ctx, msg);
-              } else {
-                if (f2 instanceof FailureException) {
-                  throw new FailureException(f2.cause());
-                } else {
-                  throw new UndeterminedStateException(f2.cause());
-                }
-              }
-
-            });
-          }
-      );
+            secondFuture.addListener(
+                f2 -> {
+                  if (f2.isSuccess()) {
+                    super.channelRead0(ctx, msg);
+                  } else {
+                    if (f2 instanceof FailureException) {
+                      throw new FailureException(f2.cause());
+                    } else {
+                      throw new UndeterminedStateException(f2.cause());
+                    }
+                  }
+                });
+          });
     } else {
-      //Add in metrics Handling that informs MetricsCollector the response was a FAILURE
+      // Add in metrics Handling that informs MetricsCollector the response was a FAILURE
       logger.atWarning().log(String.format("Received unexpected response: %s", response.status()));
       throw new FailureException("Response received from remote site was: " + response.status());
-
     }
   }
 }
-

@@ -24,20 +24,16 @@ import javax.inject.Inject;
 /**
  * {@link Token} subtype designed for WebWhois sequence.
  *
- * <p>Between loops of a WebWhois sequence the only thing changing is the tld we
- * are probing. As a result, we maintain the list of {@code topLevelDomains} and on each call to
- * next, have our index looking at the next {@code topLevelDomain}. </p>
+ * <p>Between loops of a WebWhois sequence the only thing changing is the tld we are probing. As a
+ * result, we maintain the list of {@code topLevelDomains} and on each call to next, have our index
+ * looking at the next {@code topLevelDomain}.
  */
 public class WebWhoisToken extends Token {
 
-  /**
-   * For each top level domain (tld), we probe "prefix.tld".
-   */
+  /** For each top level domain (tld), we probe "prefix.tld". */
   private static final String PREFIX = "whois.nic.";
 
-  /**
-   * {@link ImmutableList} of all top level domains to be probed.
-   */
+  /** {@link ImmutableList} of all top level domains to be probed. */
   private CircularList<String> topLevelDomainsList;
 
   @Inject
@@ -46,18 +42,14 @@ public class WebWhoisToken extends Token {
     this.topLevelDomainsList = topLevelDomainsList;
   }
 
-  /**
-   * Moves on to next top level domain in {@code topLevelDomainsList}.
-   */
+  /** Moves on to next top level domain in {@code topLevelDomainsList}. */
   @Override
   public WebWhoisToken next() {
     topLevelDomainsList = topLevelDomainsList.next();
     return this;
   }
 
-  /**
-   * Modifies message to reflect the new host coming from the new top level domain.
-   */
+  /** Modifies message to reflect the new host coming from the new top level domain. */
   @Override
   public OutboundMessageType modifyMessage(OutboundMessageType original)
       throws UndeterminedStateException {
@@ -73,4 +65,3 @@ public class WebWhoisToken extends Token {
     return PREFIX + topLevelDomainsList.get();
   }
 }
-

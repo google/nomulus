@@ -26,9 +26,7 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 
-/**
- * Utility class for various helper methods used in testing.
- */
+/** Utility class for various helper methods used in testing. */
 public class WebWhoisUtils {
 
   public static FullHttpRequest makeHttpGetRequest(String host, String path) {
@@ -51,9 +49,7 @@ public class WebWhoisUtils {
     return response;
   }
 
-  /**
-   * Creates HttpResponse given status, redirection location, and other necessary inputs
-   */
+  /** Creates HttpResponse given status, redirection location, and other necessary inputs */
   public static FullHttpResponse makeRedirectResponse(
       HttpResponseStatus status, String location, boolean keepAlive) {
     FullHttpResponse response = makeHttpResponse("", status);
@@ -67,4 +63,3 @@ public class WebWhoisUtils {
     return response;
   }
 }
-

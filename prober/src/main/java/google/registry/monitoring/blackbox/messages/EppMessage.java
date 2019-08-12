@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package google.registry.monitoring.blackbox.messages;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -64,9 +63,8 @@ import org.xml.sax.SAXException;
  * Superclass of {@link EppRequestMessage} and {@link EppResponseMessage} that represents skeleton
  * of any kind of EPP message, whether inbound or outbound.
  *
- * <p>Houses number of static methods for use of conversion between String and bytes to
- * {@link Document} type, which represents an XML Document, the type of which is used for EPP
- * messages.</p>
+ * <p>Houses number of static methods for use of conversion between String and bytes to {@link
+ * Document} type, which represents an XML Document, the type of which is used for EPP messages.
  */
 public class EppMessage {
 
@@ -92,14 +90,16 @@ public class EppMessage {
   static final String AUTHENTICATION_ERROR =
       "//eppns:epp/eppns:response/eppns:result[@code!='2002' and @code!='2200' "
           + "and @code!='2201' and @code!='2202']";
+
   static final String VALID_SLD_LABEL_REGEX;
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   /**
    * Static variables necessary for static methods that serve as tools for {@link Document}
    * creation, conversion, and verification.
    */
-  private static final DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory
-      .newInstance();
+  private static final DocumentBuilderFactory docBuilderFactory =
+      DocumentBuilderFactory.newInstance();
+
   private static final XPath xpath;
   private static final Schema eppSchema;
   // As per RFC 1035 section 2.3.4 http://tools.ietf.org/html/rfc1035#page-10 and updated by
@@ -110,26 +110,25 @@ public class EppMessage {
   private static final int MAX_SLD_DOMAIN_LABEL_LENGTH = 255;
   private static final String VALID_DOMAIN_PART_REGEX;
   private static final String VALID_TLD_PART_REGEX;
-  /**
-   * Standard EPP header number of bytes (size of int).
-   */
+  /** Standard EPP header number of bytes (size of int). */
   protected static int HEADER_LENGTH = 4;
 
   static {
     // tld label part may contain a dot and end with a dot, and must
     // start and end with 0-9 or a-zA-Z but may contain any number of
     // dashes (minus signs "-") in between (even consecutive)
-    VALID_TLD_PART_REGEX = String.format(
-        "\\p{Alnum}[-\\p{Alnum}]{0,%s}\\.{0,1}[-\\p{Alnum}]{0,%s}\\p{Alnum}",
-        (MAX_DOMAIN_PART_LENGTH - 2), (MAX_DOMAIN_PART_LENGTH - 2));
+    VALID_TLD_PART_REGEX =
+        String.format(
+            "\\p{Alnum}[-\\p{Alnum}]{0,%s}\\.{0,1}[-\\p{Alnum}]{0,%s}\\p{Alnum}",
+            (MAX_DOMAIN_PART_LENGTH - 2), (MAX_DOMAIN_PART_LENGTH - 2));
     // domain label part ("left" of the tld) must start and end with 0-9 or a-zA-Z but
     // may contain any number of dashes (minus signs "-") in between (even consecutive)
-    VALID_DOMAIN_PART_REGEX = String.format("\\p{Alnum}[-\\p{Alnum}]{0,%s}\\p{Alnum}",
-        (MAX_DOMAIN_PART_LENGTH - 2));
-    VALID_SLD_LABEL_REGEX = String.format("(?=.{4,%s})%s\\.%s(\\.)*",
-        MAX_SLD_DOMAIN_LABEL_LENGTH,
-        VALID_DOMAIN_PART_REGEX,
-        VALID_TLD_PART_REGEX);
+    VALID_DOMAIN_PART_REGEX =
+        String.format("\\p{Alnum}[-\\p{Alnum}]{0,%s}\\p{Alnum}", (MAX_DOMAIN_PART_LENGTH - 2));
+    VALID_SLD_LABEL_REGEX =
+        String.format(
+            "(?=.{4,%s})%s\\.%s(\\.)*",
+            MAX_SLD_DOMAIN_LABEL_LENGTH, VALID_DOMAIN_PART_REGEX, VALID_TLD_PART_REGEX);
 
     xpath = XPathFactory.newInstance().newXPath();
     xpath.setNamespaceContext(new EppNamespaceContext());
@@ -138,18 +137,19 @@ public class EppMessage {
     String path = "./xsd/";
     StreamSource[] sources;
     try {
-      sources = new StreamSource[]{
-          new StreamSource(readResource(path + "eppcom.xsd")),
-          new StreamSource(readResource(path + "epp.xsd")),
-          new StreamSource(readResource(path + "host.xsd")),
-          new StreamSource(readResource(path + "contact.xsd")),
-          new StreamSource(readResource(path + "domain.xsd")),
-          new StreamSource(readResource(path + "rgp.xsd")),
-          new StreamSource(readResource(path + "mark.xsd")),
-          new StreamSource(readResource(path + "dsig.xsd")),
-          new StreamSource(readResource(path + "smd.xsd")),
-          new StreamSource(readResource(path + "launch.xsd")),
-      };
+      sources =
+          new StreamSource[] {
+            new StreamSource(readResource(path + "eppcom.xsd")),
+            new StreamSource(readResource(path + "epp.xsd")),
+            new StreamSource(readResource(path + "host.xsd")),
+            new StreamSource(readResource(path + "contact.xsd")),
+            new StreamSource(readResource(path + "domain.xsd")),
+            new StreamSource(readResource(path + "rgp.xsd")),
+            new StreamSource(readResource(path + "mark.xsd")),
+            new StreamSource(readResource(path + "dsig.xsd")),
+            new StreamSource(readResource(path + "smd.xsd")),
+            new StreamSource(readResource(path + "launch.xsd")),
+          };
       SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
       eppSchema = schemaFactory.newSchema(sources);
     } catch (SAXException | IOException e) {
@@ -163,14 +163,10 @@ public class EppMessage {
    */
   protected Document message;
 
-  /**
-   * Helper method that reads resource existing in same package as {@link EppMessage} class.
-   */
-  private static InputStream readResource(String filename)
-      throws IOException {
+  /** Helper method that reads resource existing in same package as {@link EppMessage} class. */
+  private static InputStream readResource(String filename) throws IOException {
     return readResourceBytes(EppMessage.class, filename).openStream();
   }
-
 
   /**
    * Validate an EPP XML document against the set of XSD files that make up the EPP XML Schema.
@@ -189,15 +185,15 @@ public class EppMessage {
   /**
    * Verify an XML Document as an EPP Response using the provided XPath expressions.
    *
-   * <p>This will first validate the document against the EPP schema, then run through the list
-   * of xpath expressions -- so those need only look for specific EPP elements + values.
+   * <p>This will first validate the document against the EPP schema, then run through the list of
+   * xpath expressions -- so those need only look for specific EPP elements + values.
    *
    * @param xml the XML Document containing the EPP reponse to verify
    * @param expressions a list of XPath expressions to query the document with.
    * @param validate a boolean flag to control if schema validation occurs (useful for testing)
    * @throws IOException if InputStream throws one
    * @throws EppClientException if the EPP response cannot be read, parsed, or doesn't containing
-   * matching data specified in expressions
+   *     matching data specified in expressions
    */
   protected static void verifyEppResponse(Document xml, List<String> expressions, boolean validate)
       throws FailureException {
@@ -237,7 +233,8 @@ public class EppMessage {
   /**
    * A helper method to transform an XML Document to a string. - e.g. a returned string might look
    * like the following for a Document with a root element of "foo" that has a child element of
-   * "bar" which has text of "baz":<br> {@code '<foo><bar>baz</bar></foo>'}
+   * "bar" which has text of "baz":<br>
+   * {@code '<foo><bar>baz</bar></foo>'}
    *
    * @param xml the Document to transform
    * @return the resulting string or {@code null} if {@code xml} is {@code null}.
@@ -296,8 +293,7 @@ public class EppMessage {
    * @return the resulting Document
    * @throws EppClientException if the transform fails
    */
-  public static Document byteArrayToXmlDoc(byte[] responseBuffer)
-      throws FailureException {
+  public static Document byteArrayToXmlDoc(byte[] responseBuffer) throws FailureException {
     Document xml;
     try {
       DocumentBuilder builder = docBuilderFactory.newDocumentBuilder();
@@ -307,7 +303,6 @@ public class EppMessage {
       throw new FailureException(e);
     }
     return xml;
-
   }
 
   /**
@@ -315,19 +310,20 @@ public class EppMessage {
    * xpath expression, then replaces the node value of the first child, returning the transformed
    * XML as a Document.
    *
-   * <p>E.g. to replace the value "@@CLTRID@@" in the {@code <expectedClTRID>}
-   * node with a client transaction ID, use the mapping {@code <"//domainns:clTRID",
-   * "AAA-123-BBBB">} (or whatever the ID is).
+   * <p>E.g. to replace the value "@@CLTRID@@" in the {@code <expectedClTRID>} node with a client
+   * transaction ID, use the mapping {@code <"//domainns:clTRID", "AAA-123-BBBB">} (or whatever the
+   * ID is).
    *
    * @param template the relative (unqualified) name of the template file to use
    * @param replacements a map of strings to replace in the template keyed by the xpath expression
-   * to use to find the nodes to operate on with the value being the text to use as the replacement
+   *     to use to find the nodes to operate on with the value being the text to use as the
+   *     replacement
    * @return the transformed EPP document
    * @throws IOException if the template cannot be read
    * @throws EppClientException if there are issues parsing the template or evaluating the xpath
-   * expression, or if the resulting document is not valid EPP
+   *     expression, or if the resulting document is not valid EPP
    * @throws IllegalArgumentException if the xpath expression query yields anything other than an
-   * Element node type
+   *     Element node type
    */
   public static Document getEppDocFromTemplate(String template, Map<String, String> replacements)
       throws IOException, EppClientException {
@@ -342,7 +338,8 @@ public class EppMessage {
           Node node = nodes.item(i);
           if (node.getNodeType() != Node.ELEMENT_NODE) {
             throw new IllegalArgumentException(
-                String.format("xpath expression (%s) must result in Element nodes, got %s",
+                String.format(
+                    "xpath expression (%s) must result in Element nodes, got %s",
                     key, node.getNodeType()));
           }
           node.getFirstChild().setNodeValue(replacements.get(key));
@@ -376,8 +373,7 @@ public class EppMessage {
   }
 
   /**
-   * Implements the {@link NamespaceContext} interface and adds an EPP namespace URI (prefix
-   * eppns).
+   * Implements the {@link NamespaceContext} interface and adds an EPP namespace URI (prefix eppns).
    */
   static class EppNamespaceContext implements NamespaceContext {
 
@@ -397,7 +393,6 @@ public class EppMessage {
         // this should never happen here but if it does, we just turn it into a runtime exception
         throw new IllegalArgumentException(e);
       }
-
     }
 
     void addNamespace(String prefix, String namespaceURI) throws Exception {
@@ -438,5 +433,4 @@ public class EppMessage {
       }
     }
   }
-
 }

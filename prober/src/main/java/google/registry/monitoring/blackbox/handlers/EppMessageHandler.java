@@ -34,9 +34,7 @@ public class EppMessageHandler extends ChannelDuplexHandler {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  /**
-   * Corresponding {@link EppResponseMessage} that we expect to receive back from server.
-   */
+  /** Corresponding {@link EppResponseMessage} that we expect to receive back from server. */
   private EppResponseMessage response;
 
   /**
@@ -48,42 +46,37 @@ public class EppMessageHandler extends ChannelDuplexHandler {
     response = new EppResponseMessage.Greeting();
   }
 
-  /**
-   * Performs conversion to {@link ByteBuf}.
-   */
+  /** Performs conversion to {@link ByteBuf}. */
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
       throws Exception {
 
-    //If the message is Hello, don't actually pass it on, just wait for server greeting.
+    // If the message is Hello, don't actually pass it on, just wait for server greeting.
     if (!(msg instanceof EppRequestMessage.Hello)) {
-      //otherwise, we store what we expect a successful response to be
+      // otherwise, we store what we expect a successful response to be
       EppRequestMessage request = (EppRequestMessage) msg;
       response = request.getExpectedResponse();
 
-      //then we write the ByteBuf representation of the EPP message to the server
+      // then we write the ByteBuf representation of the EPP message to the server
       ChannelFuture unusedFuture = ctx.write(request.bytes(), promise);
     }
   }
 
-  /**
-   * Performs conversion from {@link ByteBuf}
-   */
+  /** Performs conversion from {@link ByteBuf} */
   @Override
-  public void channelRead(ChannelHandlerContext ctx, Object msg)
-      throws FailureException {
+  public void channelRead(ChannelHandlerContext ctx, Object msg) throws FailureException {
     try {
-      //attempt to get response document from ByteBuf
+      // attempt to get response document from ByteBuf
       ByteBuf buf = (ByteBuf) msg;
       response.getDocument(buf);
       logger.atInfo().log(response.toString());
     } catch (FailureException e) {
 
-      //otherwise we log that it was unsuccessful and throw the requisite error
+      // otherwise we log that it was unsuccessful and throw the requisite error
       logger.atInfo().withCause(e).log("Failure in current step.");
       throw e;
     }
-    //pass response to the ActionHandler in the pipeline
+    // pass response to the ActionHandler in the pipeline
     ctx.fireChannelRead(response);
   }
 }

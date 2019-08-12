@@ -57,18 +57,21 @@ public class TestServer {
     this(new NioEventLoopGroup(1), localAddress, handlers);
   }
 
-  public TestServer(EventLoopGroup eventLoopGroup, LocalAddress localAddress,
+  public TestServer(
+      EventLoopGroup eventLoopGroup,
+      LocalAddress localAddress,
       ImmutableList<? extends ChannelHandler> handlers) {
-    //Creates ChannelInitializer with handlers specified
-    ChannelInitializer<LocalChannel> serverInitializer = new ChannelInitializer<LocalChannel>() {
-      @Override
-      protected void initChannel(LocalChannel ch) {
-        for (ChannelHandler handler : handlers) {
-          ch.pipeline().addLast(handler);
-        }
-      }
-    };
-    //Sets up serverBootstrap with specified initializer, eventLoopGroup, and using
+    // Creates ChannelInitializer with handlers specified
+    ChannelInitializer<LocalChannel> serverInitializer =
+        new ChannelInitializer<LocalChannel>() {
+          @Override
+          protected void initChannel(LocalChannel ch) {
+            for (ChannelHandler handler : handlers) {
+              ch.pipeline().addLast(handler);
+            }
+          }
+        };
+    // Sets up serverBootstrap with specified initializer, eventLoopGroup, and using
     // LocalServerChannel class
     ServerBootstrap serverBootstrap =
         new ServerBootstrap()
@@ -77,30 +80,25 @@ public class TestServer {
             .childHandler(serverInitializer);
 
     ChannelFuture unusedFuture = serverBootstrap.bind(localAddress).syncUninterruptibly();
-
   }
 
-  public static TestServer webWhoisServer(EventLoopGroup eventLoopGroup,
-      LocalAddress localAddress, String redirectInput, String destinationInput,
+  public static TestServer webWhoisServer(
+      EventLoopGroup eventLoopGroup,
+      LocalAddress localAddress,
+      String redirectInput,
+      String destinationInput,
       String destinationPath) {
     return new TestServer(
         eventLoopGroup,
         localAddress,
-        ImmutableList.of(new RedirectHandler(redirectInput, destinationInput, destinationPath))
-    );
+        ImmutableList.of(new RedirectHandler(redirectInput, destinationInput, destinationPath)));
   }
 
   public static TestServer eppServer(EventLoopGroup eventLoopGroup, LocalAddress localAddress) {
-    return new TestServer(
-        eventLoopGroup,
-        localAddress,
-        ImmutableList.of(new EppHandler())
-    );
+    return new TestServer(eventLoopGroup, localAddress, ImmutableList.of(new EppHandler()));
   }
 
-  /**
-   * Handler that will wither redirect client, give successful response, or give error messge
-   */
+  /** Handler that will wither redirect client, give successful response, or give error messge */
   @Sharable
   static class RedirectHandler extends SimpleChannelInboundHandler<HttpRequest> {
 
@@ -110,9 +108,9 @@ public class TestServer {
 
     /**
      * @param redirectInput - Server will send back redirect to {@code destinationInput} when
-     * receiving a request with this host location
+     *     receiving a request with this host location
      * @param destinationInput - Server will send back an {@link HttpResponseStatus} OK response
-     * when receiving a request with this host location
+     *     when receiving a request with this host location
      */
     public RedirectHandler(String redirectInput, String destinationInput, String destinationPath) {
       this.redirectInput = redirectInput;
@@ -128,8 +126,9 @@ public class TestServer {
     public void channelRead0(ChannelHandlerContext ctx, HttpRequest request) {
       HttpResponse response;
       if (request.headers().get("host").equals(redirectInput)) {
-        response = new HttpResponseMessage(
-            makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, destinationInput, true));
+        response =
+            new HttpResponseMessage(
+                makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, destinationInput, true));
       } else if (request.headers().get("host").equals(destinationInput)
           && request.uri().equals(destinationPath)) {
         response = new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.OK));
@@ -137,7 +136,6 @@ public class TestServer {
         response = new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.BAD_REQUEST));
       }
       ChannelFuture unusedFuture = ctx.channel().writeAndFlush(response);
-
     }
   }
 

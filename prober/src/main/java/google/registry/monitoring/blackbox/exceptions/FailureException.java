@@ -14,9 +14,7 @@
 
 package google.registry.monitoring.blackbox.exceptions;
 
-/**
- * Base exception class for all instances when the status of the action performed is FAILURE.
- */
+/** Base exception class for all instances when the status of the action performed is FAILURE. */
 public class FailureException extends Exception {
 
   public FailureException(String msg) {

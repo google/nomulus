@@ -22,14 +22,10 @@ import io.netty.channel.Channel;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-/**
- * {@link Token} subtype that deals performs specified actions for the EPP sequence.
- */
+/** {@link Token} subtype that deals performs specified actions for the EPP sequence. */
 public abstract class EppToken extends Token {
 
-  /**
-   * Describes the maximum possible length of generated domain name.
-   */
+  /** Describes the maximum possible length of generated domain name. */
   private static final int MAX_DOMAIN_PART_LENGTH = 50;
 
   /**
@@ -52,24 +48,18 @@ public abstract class EppToken extends Token {
     currentDomainName = newDomainName(getNewTRID());
   }
 
-
-  /**
-   * Constructor used when passing on same {@link Channel} to next {@link Token}.
-   */
+  /** Constructor used when passing on same {@link Channel} to next {@link Token}. */
   protected EppToken(String tld, String host, Channel channel) {
     this(tld, host);
     setChannel(channel);
   }
 
-  /**
-   * Modifies the message to reflect the new domain name and TRID
-   */
+  /** Modifies the message to reflect the new domain name and TRID */
   @Override
   public OutboundMessageType modifyMessage(OutboundMessageType originalMessage)
       throws UndeterminedStateException {
     return ((EppRequestMessage) originalMessage).modifyMessage(getNewTRID(), currentDomainName);
   }
-
 
   @Override
   public String host() {
@@ -86,18 +76,14 @@ public abstract class EppToken extends Token {
    *
    * <p><b>Warning:</b> The prober cleanup servlet relies on the timestamp being in the third
    * position when splitting on dashes. Do not change this format without updating that code as
-   * well.</p>
+   * well.
    */
   private synchronized String getNewTRID() {
-    return String.format("prober-%s-%d-%d",
-        "localhost",
-        System.currentTimeMillis(),
-        clientIdSuffix++);
+    return String.format(
+        "prober-%s-%d-%d", "localhost", System.currentTimeMillis(), clientIdSuffix++);
   }
 
-  /**
-   * Return a fully qualified domain label to use, derived from the client transaction ID.
-   */
+  /** Return a fully qualified domain label to use, derived from the client transaction ID. */
   private String newDomainName(String clTRID) {
     String sld;
     // not sure if the local hostname will stick to RFC validity rules
@@ -106,15 +92,14 @@ public abstract class EppToken extends Token {
     } else {
       sld = clTRID;
     }
-    //insert top level domain here
+    // insert top level domain here
     return String.format("%s.%s", sld, tld);
   }
 
-
   /**
    * {@link EppToken} Subclass that represents a token used in a transient sequence, meaning the
-   * connection is remade on each new iteration of the
-   * {@link google.registry.monitoring.blackbox.ProbingSequence}.
+   * connection is remade on each new iteration of the {@link
+   * google.registry.monitoring.blackbox.ProbingSequence}.
    */
   public static class Transient extends EppToken {
 
@@ -131,8 +116,8 @@ public abstract class EppToken extends Token {
 
   /**
    * {@link EppToken} Subclass that represents a token used in a persistent sequence, meaning the
-   * connection is maintained on each new iteration of the
-   * {@link google.registry.monitoring.blackbox.ProbingSequence}.
+   * connection is maintained on each new iteration of the {@link
+   * google.registry.monitoring.blackbox.ProbingSequence}.
    */
   public static class Persistent extends EppToken {
 
@@ -141,9 +126,7 @@ public abstract class EppToken extends Token {
       super(tld, host);
     }
 
-    /**
-     * Constructor used on call to {@code next} to preserve channel.
-     */
+    /** Constructor used on call to {@code next} to preserve channel. */
     private Persistent(String tld, String host, Channel channel) {
       super(tld, host, channel);
     }

@@ -20,15 +20,11 @@ import io.netty.channel.ChannelHandler;
 import io.netty.util.AttributeKey;
 import javax.inject.Provider;
 
-/**
- * {@link AutoValue} class that stores all unchanged variables necessary for type of connection.
- */
+/** {@link AutoValue} class that stores all unchanged variables necessary for type of connection. */
 @AutoValue
 public abstract class Protocol {
 
-  /**
-   * {@link AttributeKey} that lets channel reference {@link Protocol} that created it.
-   */
+  /** {@link AttributeKey} that lets channel reference {@link Protocol} that created it. */
   public static final AttributeKey<Protocol> PROTOCOL_KEY = AttributeKey.valueOf("PROTOCOL_KEY");
 
   public static Builder builder() {
@@ -39,30 +35,20 @@ public abstract class Protocol {
 
   public abstract int port();
 
-  /**
-   * The {@link ChannelHandler} providers to use for the protocol, in order.
-   */
+  /** The {@link ChannelHandler} providers to use for the protocol, in order. */
   public abstract ImmutableList<Provider<? extends ChannelHandler>> handlerProviders();
 
-  /**
-   * Boolean that notes if connection associated with Protocol is persistent.
-   */
+  /** Boolean that notes if connection associated with Protocol is persistent. */
   public abstract boolean persistentConnection();
 
   @Override
   public final String toString() {
     return String.format(
         "Protocol with name: %s, port: %d, providers: %s, and persistent connection: %s",
-        name(),
-        port(),
-        handlerProviders(),
-        persistentConnection()
-    );
+        name(), port(), handlerProviders(), persistentConnection());
   }
 
-  /**
-   * Default {@link AutoValue.Builder} for {@link Protocol}.
-   */
+  /** Default {@link AutoValue.Builder} for {@link Protocol}. */
   @AutoValue.Builder
   public abstract static class Builder {
 

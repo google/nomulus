@@ -63,8 +63,9 @@ public class EppMessageTest {
     xmlDoc = builder.parse(byteStream);
 
     DocumentBuilder greetingBuilder = factory.newDocumentBuilder();
-    greeting = greetingBuilder.parse(new ByteArrayInputStream(
-        EppUtils.getDefaultGreeting().getBytes(UTF_8)));
+    greeting =
+        greetingBuilder.parse(
+            new ByteArrayInputStream(EppUtils.getDefaultGreeting().getBytes(UTF_8)));
   }
 
   @Test
@@ -84,8 +85,9 @@ public class EppMessageTest {
     xml.setXmlVersion("1.0");
     // setting stand alone to true removes this from the processing instructions
     xml.setXmlStandalone(true);
-    String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        + "<doc><title>test</title><meta version=\"1.0\"/></doc>";
+    String expected =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            + "<doc><title>test</title><meta version=\"1.0\"/></doc>";
     String actual = EppMessage.xmlDocToString(xml);
     assertThat(actual).isEqualTo(expected);
   }
@@ -107,8 +109,9 @@ public class EppMessageTest {
     xml.setXmlVersion("1.0");
     // setting stand alone to true removes this from the processing instructions
     xml.setXmlStandalone(true);
-    String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        + "<doc><title>test</title><meta version=\"1.0\"/></doc>";
+    String expected =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            + "<doc><title>test</title><meta version=\"1.0\"/></doc>";
     byte[] actual = EppMessage.xmlDocToByteArray(xml);
     assertThat(actual).isEqualTo(expected.getBytes(UTF_8));
   }

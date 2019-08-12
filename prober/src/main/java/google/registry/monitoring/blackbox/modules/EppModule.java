@@ -51,9 +51,7 @@ public class EppModule {
   private static final int EPP_PORT = 700;
   private static final String EPP_PROTOCOL_NAME = "epp";
 
-  /**
-   * Dagger provided {@link ProbingSequence} that probes EPP login and logout actions.
-   */
+  /** Dagger provided {@link ProbingSequence} that probes EPP login and logout actions. */
   @Provides
   @Singleton
   @EppProtocol
@@ -61,9 +59,7 @@ public class EppModule {
     return bootstrapProvider.get();
   }
 
-  /**
-   * Dagger provided {@link ProbingSequence} that probes EPP login and logout actions.
-   */
+  /** Dagger provided {@link ProbingSequence} that probes EPP login and logout actions. */
   @Provides
   @Singleton
   @IntoSet
@@ -132,8 +128,8 @@ public class EppModule {
   /**
    * Provides {@link ProbingStep} that establishes initial connection to EPP server.
    *
-   * <p>Always necessary as first step for any EPP {@link ProbingSequence} and first repeated
-   * step for any {@link ProbingSequence} that doesn't stay logged in (transient).</p>
+   * <p>Always necessary as first step for any EPP {@link ProbingSequence} and first repeated step
+   * for any {@link ProbingSequence} that doesn't stay logged in (transient).
    */
   @Provides
   @Named("hello")
@@ -150,9 +146,7 @@ public class EppModule {
         .build();
   }
 
-  /**
-   * {@link Provides} {@link ProbingStep} that logs into the EPP server.
-   */
+  /** {@link Provides} {@link ProbingStep} that logs into the EPP server. */
   @Provides
   @Named("loginSuccess")
   static ProbingStep provideEppLoginSuccessStep(
@@ -168,9 +162,7 @@ public class EppModule {
         .build();
   }
 
-  /**
-   * {@link Provides} {@link ProbingStep} that creates a new domain on EPP server.
-   */
+  /** {@link Provides} {@link ProbingStep} that creates a new domain on EPP server. */
   @Provides
   @Named("createSuccess")
   static ProbingStep provideEppCreateSuccessStep(
@@ -186,9 +178,7 @@ public class EppModule {
         .build();
   }
 
-  /**
-   * {@link Provides} {@link ProbingStep} that built, checks a domain exists on EPP server.
-   */
+  /** {@link Provides} {@link ProbingStep} that built, checks a domain exists on EPP server. */
   @Provides
   @Named("checkExists")
   static ProbingStep provideEppCheckExistsStep(
@@ -204,9 +194,7 @@ public class EppModule {
         .build();
   }
 
-  /**
-   * {@link Provides} {@link ProbingStep} that checks a domain doesn't exist on EPP server.
-   */
+  /** {@link Provides} {@link ProbingStep} that checks a domain doesn't exist on EPP server. */
   @Provides
   @Named("checkNotExists")
   static ProbingStep provideEppCheckNotExistsStep(
@@ -222,9 +210,7 @@ public class EppModule {
         .build();
   }
 
-  /**
-   * {@link Provides} {@link ProbingStep} that deletes a domain from EPP server.
-   */
+  /** {@link Provides} {@link ProbingStep} that deletes a domain from EPP server. */
   @Provides
   @Named("deleteSuccess")
   static ProbingStep provideEppDeleteSuccessStep(
@@ -240,9 +226,7 @@ public class EppModule {
         .build();
   }
 
-  /**
-   * {@link Provides} {@link ProbingStep} that logs out of EPP server.
-   */
+  /** {@link Provides} {@link ProbingStep} that logs out of EPP server. */
   @Provides
   @Named("logout")
   static ProbingStep provideEppLogoutStep(
@@ -270,8 +254,8 @@ public class EppModule {
   }
 
   /**
-   * Set of all possible {@link EppRequestMessage}s paired with their expected
-   * {@link EppResponseMessage}s.
+   * Set of all possible {@link EppRequestMessage}s paired with their expected {@link
+   * EppResponseMessage}s.
    */
 
   /**
@@ -377,9 +361,7 @@ public class EppModule {
     return new EppRequestMessage.Check(domainNotExistsResponse);
   }
 
-  /**
-   * {@link Provides} {@link Protocol} that represents an EPP connection.
-   */
+  /** {@link Provides} {@link Protocol} that represents an EPP connection. */
   @Singleton
   @Provides
   @EppProtocol
@@ -405,14 +387,10 @@ public class EppModule {
       Provider<EppMessageHandler> eppMessageHandlerProvider,
       Provider<EppActionHandler> eppActionHandlerProvider) {
     return ImmutableList.of(
-        sslClientInitializerProvider,
-        eppMessageHandlerProvider,
-        eppActionHandlerProvider);
+        sslClientInitializerProvider, eppMessageHandlerProvider, eppActionHandlerProvider);
   }
 
-  /**
-   * {@link Provides} the {@link SslClientInitializer} used for the {@link EppProtocol}.
-   */
+  /** {@link Provides} the {@link SslClientInitializer} used for the {@link EppProtocol}. */
   @Provides
   @EppProtocol
   static SslClientInitializer<NioSocketChannel> provideSslClientInitializer(
@@ -453,11 +431,7 @@ public class EppModule {
     return EPP_PORT;
   }
 
-  /**
-   * Dagger qualifier to provide EPP protocol related handlers and other bindings.
-   */
+  /** Dagger qualifier to provide EPP protocol related handlers and other bindings. */
   @Qualifier
-  public @interface EppProtocol {
-
-  }
+  public @interface EppProtocol {}
 }

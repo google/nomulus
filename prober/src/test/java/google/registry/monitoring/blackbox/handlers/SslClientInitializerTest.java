@@ -62,40 +62,33 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class SslClientInitializerTest {
 
-  /**
-   * Fake host to test if the SSL engine gets the correct peer host.
-   */
+  /** Fake host to test if the SSL engine gets the correct peer host. */
   private static final String SSL_HOST = "www.example.tld";
 
-  /**
-   * Fake port to test if the SSL engine gets the correct peer port.
-   */
+  /** Fake port to test if the SSL engine gets the correct peer port. */
   private static final int SSL_PORT = 12345;
-  /**
-   * Fake protocol saved in channel attribute.
-   */
-  private static final Protocol PROTOCOL = Protocol.builder()
-      .setName("ssl")
-      .setPort(SSL_PORT)
-      .setHandlerProviders(ImmutableList.of())
-      .setPersistentConnection(false)
-      .build();
-  @Rule
-  public NettyRule nettyRule = new NettyRule();
+  /** Fake protocol saved in channel attribute. */
+  private static final Protocol PROTOCOL =
+      Protocol.builder()
+          .setName("ssl")
+          .setPort(SSL_PORT)
+          .setHandlerProviders(ImmutableList.of())
+          .setPersistentConnection(false)
+          .build();
+
+  @Rule public NettyRule nettyRule = new NettyRule();
 
   @Parameter(0)
   public SslProvider sslProvider;
-  /**
-   * Saves the SNI hostname received by the server, if sent by the client.
-   */
+  /** Saves the SNI hostname received by the server, if sent by the client. */
   private String sniHostReceived;
 
   // We do our best effort to test all available SSL providers.
   @Parameters(name = "{0}")
   public static SslProvider[] data() {
     return OpenSsl.isAvailable()
-        ? new SslProvider[]{SslProvider.JDK, SslProvider.OPENSSL}
-        : new SslProvider[]{SslProvider.JDK};
+        ? new SslProvider[] {SslProvider.JDK, SslProvider.OPENSSL}
+        : new SslProvider[] {SslProvider.JDK};
   }
 
   private ChannelHandler getServerHandler(PrivateKey privateKey, X509Certificate certificate)
@@ -171,7 +164,7 @@ public class SslClientInitializerTest {
 
     // Set up the client to trust the self signed cert used to sign the cert that server provides.
     SslClientInitializer<LocalChannel> sslClientInitializer =
-        new SslClientInitializer<>(sslProvider, new X509Certificate[]{ssc.cert()});
+        new SslClientInitializer<>(sslProvider, new X509Certificate[] {ssc.cert()});
 
     nettyRule.setUpClient(localAddress, PROTOCOL, SSL_HOST, sslClientInitializer);
 
@@ -200,7 +193,7 @@ public class SslClientInitializerTest {
 
     // Set up the client to trust the self signed cert used to sign the cert that server provides.
     SslClientInitializer<LocalChannel> sslClientInitializer =
-        new SslClientInitializer<>(sslProvider, new X509Certificate[]{ssc.cert()});
+        new SslClientInitializer<>(sslProvider, new X509Certificate[] {ssc.cert()});
 
     nettyRule.setUpClient(localAddress, PROTOCOL, SSL_HOST, sslClientInitializer);
 
@@ -212,4 +205,3 @@ public class SslClientInitializerTest {
     assertThat(nettyRule.getChannel().isActive()).isFalse();
   }
 }
-

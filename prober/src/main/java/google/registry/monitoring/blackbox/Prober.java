@@ -23,19 +23,16 @@ import google.registry.monitoring.blackbox.ProberModule.ProberComponent;
  */
 public class Prober {
 
-  /**
-   * Main Dagger Component
-   */
-  private static ProberComponent proberComponent = DaggerProberModule_ProberComponent.builder()
-      .build();
-
+  /** Main Dagger Component */
+  private static ProberComponent proberComponent =
+      DaggerProberModule_ProberComponent.builder().build();
 
   public static void main(String[] args) {
 
-    //Obtains WebWhois Sequence provided by proberComponent
+    // Obtains WebWhois Sequence provided by proberComponent
     ImmutableSet<ProbingSequence> sequences = ImmutableSet.copyOf(proberComponent.sequences());
 
-    //Tells Sequences to start running
+    // Tells Sequences to start running
     for (ProbingSequence sequence : sequences) {
       sequence.start();
     }

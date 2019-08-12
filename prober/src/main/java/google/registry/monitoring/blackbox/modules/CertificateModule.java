@@ -49,8 +49,7 @@ public class CertificateModule {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private static InputStream readResource(String filename)
-      throws IOException {
+  private static InputStream readResource(String filename) throws IOException {
     return readResourceBytes(CertificateModule.class, filename).openStream();
   }
 
@@ -60,7 +59,6 @@ public class CertificateModule {
   static String keystorePasswordProvider() {
     return readResourceUtf8(CertificateModule.class, "secrets/keystore_password.txt");
   }
-
 
   @Singleton
   @Provides
@@ -74,7 +72,7 @@ public class CertificateModule {
       String alias = ks.aliases().nextElement();
       return (PrivateKey) ks.getKey(alias, "passphrase".toCharArray());
     } catch (IOException | GeneralSecurityException e) {
-      return new PrivateKey(){
+      return new PrivateKey() {
 
         @Override
         public String getAlgorithm() {
@@ -105,10 +103,10 @@ public class CertificateModule {
       ks.load(inStream, passwordProvider.get().toCharArray());
 
       String alias = ks.aliases().nextElement();
-      return new X509Certificate[]{(X509Certificate) ks.getCertificate(alias)};
+      return new X509Certificate[] {(X509Certificate) ks.getCertificate(alias)};
     } catch (Exception e) {
       logger.atWarning().withCause(e).log();
-      return new X509Certificate[]{};
+      return new X509Certificate[] {};
     }
   }
 }

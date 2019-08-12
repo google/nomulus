@@ -52,14 +52,10 @@ public class WebWhoisModule {
   private static final int HTTP_WHOIS_PORT = 80;
   private static final int HTTPS_WHOIS_PORT = 443;
 
-  /**
-   * Standard length of messages used by Proxy. Equates to 0.5 MB.
-   */
+  /** Standard length of messages used by Proxy. Equates to 0.5 MB. */
   private static final int maximumMessageLengthBytes = 512 * 1024;
 
-  /**
-   * {@link Provides} only step used in WebWhois sequence.
-   */
+  /** {@link Provides} only step used in WebWhois sequence. */
   @Provides
   @WebWhoisProtocol
   static ProbingStep provideWebWhoisStep(
@@ -76,9 +72,7 @@ public class WebWhoisModule {
         .build();
   }
 
-  /**
-   * {@link Provides} the {@link Protocol} that corresponds to http connection.
-   */
+  /** {@link Provides} the {@link Protocol} that corresponds to http connection. */
   @Singleton
   @Provides
   @HttpWhoisProtocol
@@ -93,9 +87,7 @@ public class WebWhoisModule {
         .build();
   }
 
-  /**
-   * {@link Provides} the {@link Protocol} that corresponds to https connection.
-   */
+  /** {@link Provides} the {@link Protocol} that corresponds to https connection. */
   @Singleton
   @Provides
   @HttpsWhoisProtocol
@@ -158,9 +150,7 @@ public class WebWhoisModule {
     return new HttpObjectAggregator(maxContentLength);
   }
 
-  /**
-   * {@link Provides} the {@link SslClientInitializer} used for the {@link HttpsWhoisProtocol}.
-   */
+  /** {@link Provides} the {@link SslClientInitializer} used for the {@link HttpsWhoisProtocol}. */
   @Provides
   @HttpsWhoisProtocol
   static SslClientInitializer<NioSocketChannel> provideSslClientInitializer(
@@ -168,33 +158,23 @@ public class WebWhoisModule {
     return new SslClientInitializer<>(sslProvider);
   }
 
-  /**
-   * {@link Provides} the {@link Bootstrap} used by the WebWhois sequence.
-   */
+  /** {@link Provides} the {@link Bootstrap} used by the WebWhois sequence. */
   @Singleton
   @Provides
   @WebWhoisProtocol
   static Bootstrap provideBootstrap(
-      EventLoopGroup eventLoopGroup,
-      Class<? extends Channel> channelClazz) {
-    return new Bootstrap()
-        .group(eventLoopGroup)
-        .channel(channelClazz);
+      EventLoopGroup eventLoopGroup, Class<? extends Channel> channelClazz) {
+    return new Bootstrap().group(eventLoopGroup).channel(channelClazz);
   }
 
-  /**
-   * {@link Provides} standard WebWhois sequence.
-   */
+  /** {@link Provides} standard WebWhois sequence. */
   @Provides
   @Singleton
   @IntoSet
   ProbingSequence provideWebWhoisSequence(
-      @WebWhoisProtocol ProbingStep probingStep,
-      WebWhoisToken webWhoisToken) {
+      @WebWhoisProtocol ProbingStep probingStep, WebWhoisToken webWhoisToken) {
 
-    return new ProbingSequence.Builder(webWhoisToken)
-        .add(probingStep)
-        .build();
+    return new ProbingSequence.Builder(webWhoisToken).add(probingStep).build();
   }
 
   @Provides
@@ -203,16 +183,12 @@ public class WebWhoisModule {
     return maximumMessageLengthBytes;
   }
 
-  /**
-   * {@link Provides} the list of top level domains to be probed
-   */
+  /** {@link Provides} the list of top level domains to be probed */
   @Singleton
   @Provides
   @WebWhoisProtocol
   CircularList<String> provideTopLevelDomains() {
-    return new CircularList.Builder<String>()
-        .add("how", "soy", "xn--q9jyb4c")
-        .build();
+    return new CircularList.Builder<String>().add("how", "soy", "xn--q9jyb4c").build();
   }
 
   @Provides
@@ -227,28 +203,15 @@ public class WebWhoisModule {
     return HTTPS_WHOIS_PORT;
   }
 
-  /**
-   * Dagger qualifier to provide HTTP whois protocol related handlers and other bindings.
-   */
+  /** Dagger qualifier to provide HTTP whois protocol related handlers and other bindings. */
   @Qualifier
-  public @interface HttpWhoisProtocol {
+  public @interface HttpWhoisProtocol {}
 
-  }
-
-  /**
-   * Dagger qualifier to provide HTTPS whois protocol related handlers and other bindings.
-   */
+  /** Dagger qualifier to provide HTTPS whois protocol related handlers and other bindings. */
   @Qualifier
-  public @interface HttpsWhoisProtocol {
+  public @interface HttpsWhoisProtocol {}
 
-  }
-
-  /**
-   * Dagger qualifier to provide any WebWhois related bindings.
-   */
+  /** Dagger qualifier to provide any WebWhois related bindings. */
   @Qualifier
-  public @interface WebWhoisProtocol {
-
-  }
+  public @interface WebWhoisProtocol {}
 }
-

@@ -51,9 +51,8 @@ import org.junit.rules.ExternalResource;
 /**
  * Helper for setting up and testing client / server connection with netty.
  *
- * <p>Code based on and almost identical to {@code NettyRule} in the proxy.
- * Used in {@link SslClientInitializerTest}, {@link ProbingActionTest}, and {@link ProbingStepTest}
- * </p>
+ * <p>Code based on and almost identical to {@code NettyRule} in the proxy. Used in {@link
+ * SslClientInitializerTest}, {@link ProbingActionTest}, and {@link ProbingStepTest}
  */
 public final class NettyRule extends ExternalResource {
 
@@ -82,25 +81,20 @@ public final class NettyRule extends ExternalResource {
         channel.writeAndFlush(Unpooled.wrappedBuffer(data.getBytes(US_ASCII)));
   }
 
-  /**
-   * Sets up a server channel bound to the given local address.
-   */
+  /** Sets up a server channel bound to the given local address. */
   public void setUpServer(LocalAddress localAddress, ChannelHandler... handlers) {
     checkState(echoHandler == null, "Can't call setUpServer twice");
     echoHandler = new EchoHandler();
 
-    new TestServer(eventLoopGroup, localAddress,
+    new TestServer(
+        eventLoopGroup,
+        localAddress,
         ImmutableList.<ChannelHandler>builder().add(handlers).add(echoHandler).build());
   }
 
-  /**
-   * Sets up a client channel connecting to the give local address.
-   */
+  /** Sets up a client channel connecting to the give local address. */
   void setUpClient(
-      LocalAddress localAddress,
-      Protocol protocol,
-      String host,
-      ChannelHandler handler) {
+      LocalAddress localAddress, Protocol protocol, String host, ChannelHandler handler) {
     checkState(echoHandler != null, "Must call setUpServer before setUpClient");
     checkState(dumpHandler == null, "Can't call setUpClient twice");
     dumpHandler = new DumpHandler();
@@ -129,20 +123,17 @@ public final class NettyRule extends ExternalResource {
     checkState(channel != null, "Must call setUpClient to finish NettyRule setup");
   }
 
-  /**
-   * Test that custom setup to send message to current server sends right message
-   */
+  /** Test that custom setup to send message to current server sends right message */
   public void assertReceivedMessage(String message) throws Exception {
     assertThat(echoHandler.getRequestFuture().get()).isEqualTo(message);
-
   }
 
   /**
    * Test that a message can go through, both inbound and outbound.
    *
-   * <p>The client writes the message to the server, which echos it back and saves the string in
-   * its promise. The client receives the echo and saves it in its promise. All these activities
-   * happens in the I/O thread, and this call itself returns immediately.
+   * <p>The client writes the message to the server, which echos it back and saves the string in its
+   * promise. The client receives the echo and saves it in its promise. All these activities happens
+   * in the I/O thread, and this call itself returns immediately.
    */
   void assertThatMessagesWork() throws Exception {
     checkReady();
@@ -200,9 +191,7 @@ public final class NettyRule extends ExternalResource {
           ctx.writeAndFlush(msg).addListener(f -> requestFuture.complete(request));
     }
 
-    /**
-     * Saves any inbound error as the cause of the promise failure.
-     */
+    /** Saves any inbound error as the cause of the promise failure. */
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
       ChannelFuture unusedFuture =
@@ -210,9 +199,7 @@ public final class NettyRule extends ExternalResource {
     }
   }
 
-  /**
-   * A handler that dumps its inbound message to a promise that can be inspected later.
-   */
+  /** A handler that dumps its inbound message to a promise that can be inspected later. */
   private static class DumpHandler extends ChannelInboundHandlerAdapter {
 
     private final CompletableFuture<String> responseFuture = new CompletableFuture<>();
@@ -233,13 +220,10 @@ public final class NettyRule extends ExternalResource {
       responseFuture.complete(response);
     }
 
-    /**
-     * Saves any inbound error into the failure cause of the promise.
-     */
+    /** Saves any inbound error into the failure cause of the promise. */
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
       ctx.channel().closeFuture().addListener(f -> responseFuture.completeExceptionally(cause));
     }
   }
 }
-

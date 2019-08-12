@@ -45,8 +45,8 @@ import org.junit.runners.JUnit4;
 /**
  * Unit tests for {@link WebWhoisActionHandler}.
  *
- * <p>Attempts to test how well {@link WebWhoisActionHandler} works
- * when responding to all possible types of responses </p>
+ * <p>Attempts to test how well {@link WebWhoisActionHandler} works when responding to all possible
+ * types of responses
  */
 @RunWith(JUnit4.class)
 public class WebWhoisActionHandlerTest {
@@ -55,14 +55,14 @@ public class WebWhoisActionHandlerTest {
   private static final String HTTP_REDIRECT = "http://";
   private static final String TARGET_HOST = "whois.nic.tld";
   private static final String DUMMY_URL = "__WILL_NOT_WORK__";
-  private final Protocol standardProtocol = Protocol.builder()
-      .setHandlerProviders(ImmutableList.of(() -> new WebWhoisActionHandler(
-          null, null, null, null)))
-      .setName("http")
-      .setPersistentConnection(false)
-      .setPort(HTTP_PORT)
-      .build();
-
+  private final Protocol standardProtocol =
+      Protocol.builder()
+          .setHandlerProviders(
+              ImmutableList.of(() -> new WebWhoisActionHandler(null, null, null, null)))
+          .setName("http")
+          .setPersistentConnection(false)
+          .setPort(HTTP_PORT)
+          .build();
 
   private EmbeddedChannel channel;
   private ActionHandler actionHandler;
@@ -70,10 +70,7 @@ public class WebWhoisActionHandlerTest {
   private Protocol initialProtocol;
   private HttpRequestMessage msg;
 
-
-  /**
-   * Creates default protocol with empty list of handlers and specified other inputs
-   */
+  /** Creates default protocol with empty list of handlers and specified other inputs */
   private Protocol createProtocol(String name, int port, boolean persistentConnection) {
     return Protocol.builder()
         .setName(name)
@@ -83,22 +80,14 @@ public class WebWhoisActionHandlerTest {
         .build();
   }
 
-  /**
-   * Initializes new WebWhoisActionHandler
-   */
+  /** Initializes new WebWhoisActionHandler */
   private void setupActionHandler(Bootstrap bootstrap, HttpRequestMessage messageTemplate) {
-    actionHandler = new WebWhoisActionHandler(
-        bootstrap,
-        standardProtocol,
-        standardProtocol,
-        messageTemplate
-    );
+    actionHandler =
+        new WebWhoisActionHandler(bootstrap, standardProtocol, standardProtocol, messageTemplate);
     actionHandlerProvider = () -> actionHandler;
   }
 
-  /**
-   * Sets up testing channel with requisite attributes
-   */
+  /** Sets up testing channel with requisite attributes */
   private void setupChannel(Protocol protocol) {
     channel = new EmbeddedChannel(actionHandler);
     channel.attr(PROTOCOL_KEY).set(protocol);
@@ -106,43 +95,39 @@ public class WebWhoisActionHandlerTest {
   }
 
   private Bootstrap makeBootstrap(EventLoopGroup group) {
-    return new Bootstrap()
-        .group(group)
-        .channel(LocalChannel.class);
+    return new Bootstrap().group(group).channel(LocalChannel.class);
   }
-
 
   private void setup(String hostName, Bootstrap bootstrap, boolean persistentConnection) {
     msg = new HttpRequestMessage(makeHttpGetRequest(hostName, ""));
     setupActionHandler(bootstrap, msg);
     initialProtocol = createProtocol("testProtocol", 0, persistentConnection);
-
   }
 
   @Test
   public void testBasic_responseOk() {
-    //setup
+    // setup
     setup("", null, true);
     setupChannel(initialProtocol);
 
-    //stores future
+    // stores future
     ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(msg);
 
     FullHttpResponse response = new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.OK));
 
-    //assesses that future listener isn't triggered yet.
+    // assesses that future listener isn't triggered yet.
     assertThat(future.isDone()).isFalse();
 
     channel.writeInbound(response);
 
-    //assesses that we successfully received good response and protocol is unchanged
+    // assesses that we successfully received good response and protocol is unchanged
     assertThat(future.isSuccess()).isTrue();
   }
 
   @Test
   public void testBasic_responseFailure_badRequest() {
-    //setup
+    // setup
     setup("", null, false);
     setupChannel(initialProtocol);
 
@@ -150,8 +135,8 @@ public class WebWhoisActionHandlerTest {
     ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(msg);
 
-    FullHttpResponse response = new HttpResponseMessage(
-        makeHttpResponse(HttpResponseStatus.BAD_REQUEST));
+    FullHttpResponse response =
+        new HttpResponseMessage(makeHttpResponse(HttpResponseStatus.BAD_REQUEST));
 
     // Assesses that future listener isn't triggered yet.
     assertThat(future.isDone()).isFalse();
@@ -168,23 +153,24 @@ public class WebWhoisActionHandlerTest {
 
   @Test
   public void testBasic_responseFailure_badURL() {
-    //setup
+    // setup
     setup("", null, false);
     setupChannel(initialProtocol);
 
-    //stores future
+    // stores future
     ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(msg);
 
-    FullHttpResponse response = new HttpResponseMessage(
-        makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, DUMMY_URL, true));
+    FullHttpResponse response =
+        new HttpResponseMessage(
+            makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY, DUMMY_URL, true));
 
-    //assesses that future listener isn't triggered yet.
+    // assesses that future listener isn't triggered yet.
     assertThat(future.isDone()).isFalse();
 
     channel.writeInbound(response);
 
-    //assesses that listener is triggered, and event is success
+    // assesses that listener is triggered, and event is success
     assertThat(future.isDone()).isTrue();
     assertThat(future.isSuccess()).isFalse();
 
@@ -204,7 +190,7 @@ public class WebWhoisActionHandlerTest {
     // Initializes LocalAddress with unique String.
     LocalAddress address = new LocalAddress(TARGET_HOST);
 
-    //stores future
+    // stores future
     ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(msg);
 
@@ -215,18 +201,19 @@ public class WebWhoisActionHandlerTest {
     TestServer.webWhoisServer(group, address, "", TARGET_HOST, path);
 
     FullHttpResponse response =
-        new HttpResponseMessage(makeRedirectResponse(HttpResponseStatus.MOVED_PERMANENTLY,
-            HTTP_REDIRECT + TARGET_HOST + path, true));
+        new HttpResponseMessage(
+            makeRedirectResponse(
+                HttpResponseStatus.MOVED_PERMANENTLY, HTTP_REDIRECT + TARGET_HOST + path, true));
 
-    //checks that future has not been set to successful or a failure
+    // checks that future has not been set to successful or a failure
     assertThat(future.isDone()).isFalse();
 
     channel.writeInbound(response);
 
-    //makes sure old channel is shut down when attempting redirection
+    // makes sure old channel is shut down when attempting redirection
     assertThat(channel.isActive()).isFalse();
 
-    //assesses that we successfully received good response and protocol is unchanged
+    // assesses that we successfully received good response and protocol is unchanged
     assertThat(future.syncUninterruptibly().isSuccess()).isTrue();
   }
 }

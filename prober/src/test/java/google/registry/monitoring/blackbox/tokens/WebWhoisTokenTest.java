@@ -23,9 +23,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/**
- * Unit Tests for {@link WebWhoisToken}
- */
+/** Unit Tests for {@link WebWhoisToken} */
 @RunWith(JUnit4.class)
 public class WebWhoisTokenTest {
 
@@ -35,19 +33,17 @@ public class WebWhoisTokenTest {
   private static final String SECOND_TLD = "second_test";
   private static final String THIRD_TLD = "third_test";
   private final CircularList<String> testDomains =
-      new CircularList.Builder<String>()
-          .add(FIRST_TLD, SECOND_TLD, THIRD_TLD)
-          .build();
+      new CircularList.Builder<String>().add(FIRST_TLD, SECOND_TLD, THIRD_TLD).build();
 
   public Token webToken = new WebWhoisToken(testDomains);
 
   @Test
   public void testMessageModification() throws UndeterminedStateException {
-    //creates Request message with header
+    // creates Request message with header
     HttpRequestMessage message = new HttpRequestMessage();
     message.headers().set("host", HOST);
 
-    //attempts to use Token's method for modifying the method based on its stored host
+    // attempts to use Token's method for modifying the method based on its stored host
     HttpRequestMessage secondMessage = (HttpRequestMessage) webToken.modifyMessage(message);
     assertThat(secondMessage.headers().get("host")).isEqualTo(PREFIX + FIRST_TLD);
   }
@@ -69,5 +65,4 @@ public class WebWhoisTokenTest {
 
     assertThat(webToken.host()).isEqualTo(PREFIX + FIRST_TLD);
   }
-
 }

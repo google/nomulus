@@ -38,8 +38,8 @@ import javax.net.ssl.SSLParameters;
 /**
  * Adds a client side SSL handler to the channel pipeline.
  *
- * <p> Code is close to unchanged from {@link SslClientInitializer}</p> in proxy, but is modified
- * for revised overall structure of connections, and to accomdate EPP connections </p>
+ * <p>Code is close to unchanged from {@link SslClientInitializer} in proxy, but is modified for
+ * revised overall structure of connections, and to accomdate EPP connections
  *
  * <p>This <b>must</b> be the first handler provided for any handler provider list, if it is
  * provided. The type parameter {@code C} is needed so that unit tests can construct this handler
@@ -58,13 +58,15 @@ public class SslClientInitializer<C extends Channel> extends ChannelInitializer<
 
   public SslClientInitializer(SslProvider sslProvider) {
     // null uses the system default trust store.
-    //Used for WebWhois, so we don't care about privateKey and certificates, setting them to null
+    // Used for WebWhois, so we don't care about privateKey and certificates, setting them to null
     this(sslProvider, null, null, null);
   }
 
-  public SslClientInitializer(SslProvider sslProvider, Provider<PrivateKey> privateKeyProvider,
+  public SslClientInitializer(
+      SslProvider sslProvider,
+      Provider<PrivateKey> privateKeyProvider,
       Provider<X509Certificate[]> certificateProvider) {
-    //We use the default trust store here as well, setting trustCertificates to null
+    // We use the default trust store here as well, setting trustCertificates to null
     this(sslProvider, null, privateKeyProvider, certificateProvider);
   }
 
@@ -91,20 +93,17 @@ public class SslClientInitializer<C extends Channel> extends ChannelInitializer<
     Protocol protocol = channel.attr(PROTOCOL_KEY).get();
     String host = channel.attr(REMOTE_ADDRESS_KEY).get();
 
-    //Builds SslHandler from Protocol, and based on if we require a privateKey and certificate
+    // Builds SslHandler from Protocol, and based on if we require a privateKey and certificate
     checkNotNull(protocol, "Protocol is not set for channel: %s", channel);
     SslContextBuilder sslContextBuilder =
-        SslContextBuilder.forClient()
-            .sslProvider(sslProvider)
-            .trustManager(trustedCertificates);
+        SslContextBuilder.forClient().sslProvider(sslProvider).trustManager(trustedCertificates);
     if (privateKeyProvider != null && certificateProvider != null) {
-      sslContextBuilder = sslContextBuilder
-          .keyManager(privateKeyProvider.get(), certificateProvider.get());
+      sslContextBuilder =
+          sslContextBuilder.keyManager(privateKeyProvider.get(), certificateProvider.get());
     }
 
-    SslHandler sslHandler = sslContextBuilder
-        .build()
-        .newHandler(channel.alloc(), host, protocol.port());
+    SslHandler sslHandler =
+        sslContextBuilder.build().newHandler(channel.alloc(), host, protocol.port());
 
     // Enable hostname verification.
     SSLEngine sslEngine = sslHandler.engine();
@@ -115,4 +114,3 @@ public class SslClientInitializer<C extends Channel> extends ChannelInitializer<
     channel.pipeline().addLast(sslHandler);
   }
 }
-

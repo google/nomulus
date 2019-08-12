@@ -27,10 +27,10 @@ import org.joda.time.Duration;
  * {@link AutoValue} class that represents generator of actions performed at each step in {@link
  * ProbingSequence}.
  *
- * <p>Holds the unchanged components in a given step of the {@link ProbingSequence}, which are
- * the {@link OutboundMessageType}, {@link Protocol}, {@link Duration}, and {@link Bootstrap}
- * instances. It then modifies these components on each loop iteration with the consumed {@link
- * Token} and from that, generates a new {@link ProbingAction} to call.</p>
+ * <p>Holds the unchanged components in a given step of the {@link ProbingSequence}, which are the
+ * {@link OutboundMessageType}, {@link Protocol}, {@link Duration}, and {@link Bootstrap} instances.
+ * It then modifies these components on each loop iteration with the consumed {@link Token} and from
+ * that, generates a new {@link ProbingAction} to call.
  */
 @AutoValue
 public abstract class ProbingStep {
@@ -39,14 +39,10 @@ public abstract class ProbingStep {
     return new AutoValue_ProbingStep.Builder();
   }
 
-  /**
-   * Time delay duration between actions.
-   */
+  /** Time delay duration between actions. */
   abstract Duration duration();
 
-  /**
-   * {@link Protocol} type for this step.
-   */
+  /** {@link Protocol} type for this step. */
   abstract Protocol protocol();
 
   /**
@@ -65,11 +61,12 @@ public abstract class ProbingStep {
    */
   public ProbingAction generateAction(Token token) throws UndeterminedStateException {
     OutboundMessageType message = token.modifyMessage(messageTemplate());
-    ProbingAction.Builder probingActionBuilder = ProbingAction.builder()
-        .setDelay(duration())
-        .setProtocol(protocol())
-        .setOutboundMessage(message)
-        .setHost(token.host());
+    ProbingAction.Builder probingActionBuilder =
+        ProbingAction.builder()
+            .setDelay(duration())
+            .setProtocol(protocol())
+            .setOutboundMessage(message)
+            .setHost(token.host());
 
     if (token.channel() != null) {
       probingActionBuilder.setChannel(token.channel());
@@ -82,15 +79,12 @@ public abstract class ProbingStep {
 
   @Override
   public final String toString() {
-    return String.format("ProbingStep with Protocol: %s\n"
-            + "OutboundMessage: %s\n",
-        protocol(),
-        messageTemplate().getClass().getName());
+    return String.format(
+        "ProbingStep with Protocol: %s\n" + "OutboundMessage: %s\n",
+        protocol(), messageTemplate().getClass().getName());
   }
 
-  /**
-   * Standard {@link AutoValue.Builder} for {@link ProbingStep}.
-   */
+  /** Standard {@link AutoValue.Builder} for {@link ProbingStep}. */
   @AutoValue.Builder
   public abstract static class Builder {
 
@@ -105,4 +99,3 @@ public abstract class ProbingStep {
     public abstract ProbingStep build();
   }
 }
-

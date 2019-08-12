@@ -25,9 +25,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mockito.Mockito;
 
-/**
- * Unit Tests for each {@link Token} subtype (just {@link WebWhoisToken} for now)
- */
+/** Unit Tests for each {@link Token} subtype (just {@link WebWhoisToken} for now) */
 @RunWith(JUnit4.class)
 public class EppTokenTest {
 
@@ -38,39 +36,35 @@ public class EppTokenTest {
   private EppToken transientEppToken = new EppToken.Transient(TEST_TLD, TEST_HOST);
 
   @Test
-  public void testMessageModificationSuccess_PersistentToken()
-      throws UndeterminedStateException {
+  public void testMessageModificationSuccess_PersistentToken() throws UndeterminedStateException {
 
-    EppRequestMessage originalMessage = new EppRequestMessage.Create(
-        new EppResponseMessage.SimpleSuccess());
+    EppRequestMessage originalMessage =
+        new EppRequestMessage.Create(new EppResponseMessage.SimpleSuccess());
     String domainName = persistentEppToken.getCurrentDomainName();
     String clTRID = domainName.substring(0, domainName.indexOf('.'));
 
     EppRequestMessage modifiedMessage =
         (EppRequestMessage) persistentEppToken.modifyMessage(originalMessage);
 
-    //ensure element values are what they should be
+    // ensure element values are what they should be
     assertThat(modifiedMessage.getElementValue("//domainns:name")).isEqualTo(domainName);
     assertThat(modifiedMessage.getElementValue("//eppns:clTRID")).isNotEqualTo(clTRID);
-
   }
 
   @Test
-  public void testMessageModificationSuccess_TransientToken()
-      throws UndeterminedStateException {
+  public void testMessageModificationSuccess_TransientToken() throws UndeterminedStateException {
 
-    EppRequestMessage originalMessage = new EppRequestMessage.Create(
-        new EppResponseMessage.SimpleSuccess());
+    EppRequestMessage originalMessage =
+        new EppRequestMessage.Create(new EppResponseMessage.SimpleSuccess());
     String domainName = transientEppToken.getCurrentDomainName();
     String clTRID = domainName.substring(0, domainName.indexOf('.'));
 
     EppRequestMessage modifiedMessage =
         (EppRequestMessage) transientEppToken.modifyMessage(originalMessage);
 
-    //ensure element values are what they should be
+    // ensure element values are what they should be
     assertThat(modifiedMessage.getElementValue("//domainns:name")).isEqualTo(domainName);
     assertThat(modifiedMessage.getElementValue("//eppns:clTRID")).isNotEqualTo(clTRID);
-
   }
 
   @Test

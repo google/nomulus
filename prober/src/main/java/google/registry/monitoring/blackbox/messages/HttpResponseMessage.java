@@ -20,18 +20,14 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 
-/**
- * {@link InboundMessageType} subtype that acts identically to {@link DefaultFullHttpResponse}
- */
+/** {@link InboundMessageType} subtype that acts identically to {@link DefaultFullHttpResponse} */
 public class HttpResponseMessage extends DefaultFullHttpResponse implements InboundMessageType {
 
   private HttpResponseMessage(HttpVersion version, HttpResponseStatus status, ByteBuf content) {
     super(version, status, content);
   }
 
-  /**
-   * Used for pipeline conversion from {@link FullHttpResponse} to {@link HttpResponseMessage}
-   */
+  /** Used for pipeline conversion from {@link FullHttpResponse} to {@link HttpResponseMessage} */
   public HttpResponseMessage(FullHttpResponse response) {
     this(response.protocolVersion(), response.status(), response.content());
 

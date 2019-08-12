@@ -25,9 +25,9 @@ import javax.inject.Inject;
 /**
  * {@link OutboundMessageType} subtype that acts identically to {@link DefaultFullHttpRequest}.
  *
- * <p>As it is an {@link OutboundMessageType} subtype, there is a {@code modifyMessage} method
- * that modifies the request to reflect the new host and optional path. We also implement a {@code
- * name} method, which returns a standard name and the current hostname.</p>
+ * <p>As it is an {@link OutboundMessageType} subtype, there is a {@code modifyMessage} method that
+ * modifies the request to reflect the new host and optional path. We also implement a {@code name}
+ * method, which returns a standard name and the current hostname.
  */
 public class HttpRequestMessage extends DefaultFullHttpRequest implements OutboundMessageType {
 
@@ -40,15 +40,12 @@ public class HttpRequestMessage extends DefaultFullHttpRequest implements Outbou
     super(httpVersion, method, uri);
   }
 
-  private HttpRequestMessage(HttpVersion httpVersion, HttpMethod method, String uri,
-      ByteBuf content) {
+  private HttpRequestMessage(
+      HttpVersion httpVersion, HttpMethod method, String uri, ByteBuf content) {
     super(httpVersion, method, uri, content);
   }
 
-
-  /**
-   * Used for conversion from {@link FullHttpRequest} to {@link HttpRequestMessage}
-   */
+  /** Used for conversion from {@link FullHttpRequest} to {@link HttpRequestMessage} */
   public HttpRequestMessage(FullHttpRequest request) {
     this(request.protocolVersion(), request.method(), request.uri(), request.content());
     request.headers().forEach((entry) -> headers().set(entry.getKey(), entry.getValue()));
@@ -60,9 +57,7 @@ public class HttpRequestMessage extends DefaultFullHttpRequest implements Outbou
     return this;
   }
 
-  /**
-   * Modifies headers to reflect new host and new path if applicable.
-   */
+  /** Modifies headers to reflect new host and new path if applicable. */
   @Override
   public HttpRequestMessage modifyMessage(String... args) throws IllegalArgumentException {
     if (args.length == 1 || args.length == 2) {
@@ -78,7 +73,8 @@ public class HttpRequestMessage extends DefaultFullHttpRequest implements Outbou
           String.format(
               "Wrong number of arguments present for modifying HttpRequestMessage."
                   + " Received %d arguments instead of 2. Received arguments: "
-                  + Arrays.toString(args), args.length));
+                  + Arrays.toString(args),
+              args.length));
     }
   }
 
@@ -86,5 +82,4 @@ public class HttpRequestMessage extends DefaultFullHttpRequest implements Outbou
   public String toString() {
     return String.format("Http(s) Request on: %s", headers().get("host"));
   }
-
 }

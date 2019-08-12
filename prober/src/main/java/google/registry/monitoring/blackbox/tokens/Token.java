@@ -24,12 +24,12 @@ import io.netty.channel.Channel;
  * Superclass that represents information passed to each {@link ProbingStep} in a single loop of a
  * {@link ProbingSequence}.
  *
- * <p>Modifies the message passed in to reflect information relevant to a single loop
- * in a {@link ProbingSequence}. Additionally, passes on channel that remains unchanged within a
- * loop of the sequence.</p>
+ * <p>Modifies the message passed in to reflect information relevant to a single loop in a {@link
+ * ProbingSequence}. Additionally, passes on channel that remains unchanged within a loop of the
+ * sequence.
  *
- * <p>Also obtains the next {@link Token} corresponding to the next iteration of a loop
- * in the sequence.</p>
+ * <p>Also obtains the next {@link Token} corresponding to the next iteration of a loop in the
+ * sequence.
  */
 public abstract class Token {
 
@@ -40,32 +40,22 @@ public abstract class Token {
    */
   protected Channel channel;
 
-  /**
-   * Obtains next {@link Token} for next loop in sequence.
-   */
+  /** Obtains next {@link Token} for next loop in sequence. */
   public abstract Token next();
 
-  /**
-   * String corresponding to host that is relevant for loop in sequence.
-   */
+  /** String corresponding to host that is relevant for loop in sequence. */
   public abstract String host();
 
-  /**
-   * Modifies the {@link OutboundMessageType} in the manner necessary for each loop
-   */
+  /** Modifies the {@link OutboundMessageType} in the manner necessary for each loop */
   public abstract OutboundMessageType modifyMessage(OutboundMessageType messageType)
       throws UndeterminedStateException;
 
-  /**
-   * Set method for {@code channel}
-   */
+  /** Set method for {@code channel} */
   public void setChannel(Channel channel) {
     this.channel = channel;
   }
 
-  /**
-   * Get method for {@code channel}.
-   */
+  /** Get method for {@code channel}. */
   public Channel channel() {
     return this.channel;
   }

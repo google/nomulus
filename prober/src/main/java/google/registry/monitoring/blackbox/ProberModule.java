@@ -40,9 +40,7 @@ import org.joda.time.Duration;
 @Module
 public class ProberModule {
 
-  /**
-   * Default {@link Duration} chosen to be time between each {@link ProbingAction} call.
-   */
+  /** Default {@link Duration} chosen to be time between each {@link ProbingAction} call. */
   private static final Duration DEFAULT_PROBER_INTERVAL = Duration.standardSeconds(4);
 
   /**
@@ -56,9 +54,7 @@ public class ProberModule {
     return OpenSsl.isAvailable() ? SslProvider.OPENSSL : SslProvider.JDK;
   }
 
-  /**
-   * {@link Provides} one global {@link EventLoopGroup} shared by each {@link ProbingSequence}.
-   */
+  /** {@link Provides} one global {@link EventLoopGroup} shared by each {@link ProbingSequence}. */
   @Provides
   @Singleton
   EventLoopGroup provideEventLoopGroup() {
@@ -91,25 +87,21 @@ public class ProberModule {
    */
   @Provides
   Bootstrap provideBootstrap(EventLoopGroup eventLoopGroup) {
-    return new Bootstrap()
-        .group(eventLoopGroup)
-        .channel(NioSocketChannel.class);
+    return new Bootstrap().group(eventLoopGroup).channel(NioSocketChannel.class);
   }
 
-  /**
-   * Root level {@link Component} that provides each {@link ProbingSequence}.
-   */
+  /** Root level {@link Component} that provides each {@link ProbingSequence}. */
   @Singleton
   @Component(
       modules = {
-          ProberModule.class,
-          WebWhoisModule.class,
-          EppModule.class,
-          CertificateModule.class
+        ProberModule.class,
+        WebWhoisModule.class,
+        EppModule.class,
+        CertificateModule.class
       })
   public interface ProberComponent {
 
-    //Standard WebWhois sequence
+    // Standard WebWhois sequence
     Set<ProbingSequence> sequences();
   }
 }

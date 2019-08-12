@@ -44,10 +44,7 @@ public class EppUtils {
     }
   }
 
-
-  /**
-   * Return a simple default greeting as a String.
-   */
+  /** Return a simple default greeting as a String. */
   public static String getDefaultGreeting() {
     String greeting =
         "<?xml version='1.0' encoding='UTF-8' standalone='no'?>"
@@ -144,8 +141,9 @@ public class EppUtils {
 
   public static ByteBuf stringToByteBuf(String message)
       throws IOException, SAXException, EppClientException {
-    byte[] bytestream = EppMessage.xmlDocToByteArray(
-        builder.parse(new ByteArrayInputStream(message.getBytes(UTF_8))));
+    byte[] bytestream =
+        EppMessage.xmlDocToByteArray(
+            builder.parse(new ByteArrayInputStream(message.getBytes(UTF_8))));
 
     int capacity = HEADER_LENGTH + bytestream.length;
 

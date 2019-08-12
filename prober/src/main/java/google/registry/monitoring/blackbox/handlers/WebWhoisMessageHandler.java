@@ -31,12 +31,9 @@ import javax.inject.Inject;
 public class WebWhoisMessageHandler extends ChannelDuplexHandler {
 
   @Inject
-  public WebWhoisMessageHandler() {
-  }
+  public WebWhoisMessageHandler() {}
 
-  /**
-   * Retains {@link HttpRequestMessage} and calls super write method.
-   */
+  /** Retains {@link HttpRequestMessage} and calls super write method. */
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
       throws Exception {
@@ -44,7 +41,6 @@ public class WebWhoisMessageHandler extends ChannelDuplexHandler {
     request.retain();
     super.write(ctx, request, promise);
   }
-
 
   /**
    * Converts {@link FullHttpResponse} to {@link HttpResponseMessage}, so it is an {@link
