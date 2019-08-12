@@ -14,6 +14,7 @@
 
 package google.registry.testing;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Lists.charactersOf;
 
 import com.google.common.collect.Iterators;
@@ -58,6 +59,7 @@ public class DeterministicStringGenerator extends StringGenerator {
    */
   @Override
   public String createString(int length) {
+    checkArgument(length > 0, "String length must be positive.");
     StringBuilder password = new StringBuilder();
     for (int i = 0; i < length; i++) {
       password.append(iterator.next());

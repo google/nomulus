@@ -155,6 +155,10 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
         "Must specify exactly one of '--number', '--domain_names_file', and '--tokens'");
 
     checkArgument(
+        tokenLength > 0,
+        "Token length should not be 0. To generate exact tokens, use the --tokens parameter.");
+
+    checkArgument(
         !(UNLIMITED_USE.equals(tokenType) && CollectionUtils.isNullOrEmpty(tokenStatusTransitions)),
         "For UNLIMITED_USE tokens, must specify --token_status_transitions");
 
@@ -184,10 +188,6 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
     if (tokenStrings != null) {
       verifyTokenStringsDoNotExist();
     }
-
-    checkArgument(
-        tokenLength > 0 || numTokens == 1,
-        "When specifying a token length of 0, one can only generate one token");
 
     int tokensSaved = 0;
     do {
