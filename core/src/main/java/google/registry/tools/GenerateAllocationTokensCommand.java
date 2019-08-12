@@ -35,6 +35,8 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
 import com.google.common.io.Files;
 import com.googlecode.objectify.Key;
 import google.registry.model.domain.token.AllocationToken;
@@ -140,6 +142,49 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() throws IOException {
+    verifyInput();
+    if (tokenStrings != null) {
+      numTokens = tokenStrings.size();
+    }
+    Deque<String> domainNames;
+    if (domainNamesFile == null) {
+      domainNames = null;
+    } else {
+      domainNames =
+          newArrayDeque(
+              Splitter.on('\n')
+                  .omitEmptyStrings()
+                  .trimResults()
+                  .split(Files.asCharSource(new File(domainNamesFile), UTF_8).read()));
+      numTokens = domainNames.size();
+    }
+
+    int tokensSaved = 0;
+    do {
+      ImmutableSet<AllocationToken> tokens =
+          getNextTokenBatch(tokensSaved)
+              .map(
+                  t -> {
+                    AllocationToken.Builder token =
+                        new AllocationToken.Builder()
+                            .setToken(t)
+                            .setTokenType(tokenType == null ? SINGLE_USE : tokenType)
+                            .setAllowedClientIds(ImmutableSet.copyOf(nullToEmpty(allowedClientIds)))
+                            .setAllowedTlds(ImmutableSet.copyOf(nullToEmpty(allowedTlds)))
+                            .setDiscountFraction(discountFraction);
+                    Optional.ofNullable(tokenStatusTransitions)
+                        .ifPresent(token::setTokenStatusTransitions);
+                    Optional.ofNullable(domainNames)
+                        .ifPresent(d -> token.setDomainName(d.removeFirst()));
+                    return token.build();
+                  })
+              .collect(toImmutableSet());
+      // Wrap in a retrier to deal with transient 404 errors (thrown as RemoteApiExceptions).
+      tokensSaved += retrier.callWithRetry(() -> saveTokens(tokens), RemoteApiException.class);
+    } while (tokensSaved < numTokens);
+  }
+
+  private void verifyInput() {
     int inputMethods = 0;
     if (numTokens > 0) {
       inputMethods++;
@@ -172,46 +217,9 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
         !ImmutableList.of("").equals(allowedTlds),
         "Either omit --allowed_tlds if all TLDs are allowed, or include a comma-separated list");
 
-    Deque<String> domainNames;
-    if (domainNamesFile == null) {
-      domainNames = null;
-    } else {
-      domainNames =
-          newArrayDeque(
-              Splitter.on('\n')
-                  .omitEmptyStrings()
-                  .trimResults()
-                  .split(Files.asCharSource(new File(domainNamesFile), UTF_8).read()));
-      numTokens = domainNames.size();
-    }
-
     if (tokenStrings != null) {
       verifyTokenStringsDoNotExist();
     }
-
-    int tokensSaved = 0;
-    do {
-      ImmutableSet<AllocationToken> tokens =
-          getNextTokenBatch(tokensSaved)
-              .map(
-                  t -> {
-                    AllocationToken.Builder token =
-                        new AllocationToken.Builder()
-                            .setToken(t)
-                            .setTokenType(tokenType == null ? SINGLE_USE : tokenType)
-                            .setAllowedClientIds(ImmutableSet.copyOf(nullToEmpty(allowedClientIds)))
-                            .setAllowedTlds(ImmutableSet.copyOf(nullToEmpty(allowedTlds)))
-                            .setDiscountFraction(discountFraction);
-                    Optional.ofNullable(tokenStatusTransitions)
-                        .ifPresent(token::setTokenStatusTransitions);
-                    Optional.ofNullable(domainNames)
-                        .ifPresent(d -> token.setDomainName(d.removeFirst()));
-                    return token.build();
-                  })
-              .collect(toImmutableSet());
-      // Wrap in a retrier to deal with transient 404 errors (thrown as RemoteApiExceptions).
-      tokensSaved += retrier.callWithRetry(() -> saveTokens(tokens), RemoteApiException.class);
-    } while (tokensSaved < numTokens);
   }
 
   private void verifyTokenStringsDoNotExist() {
@@ -226,7 +234,7 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
 
   private Stream<String> getNextTokenBatch(int tokensSaved) {
     if (tokenStrings != null) {
-      return tokenStrings.stream();
+      return Streams.stream(Iterables.limit(Iterables.skip(tokenStrings, tokensSaved), BATCH_SIZE));
     } else {
       return generateTokens(BATCH_SIZE).stream().limit(numTokens - tokensSaved);
     }

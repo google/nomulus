@@ -28,9 +28,11 @@ import static org.mockito.Mockito.spy;
 
 import com.beust.jcommander.ParameterException;
 import com.google.appengine.tools.remoteapi.RemoteApiException;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
 import com.googlecode.objectify.Key;
 import google.registry.model.domain.token.AllocationToken;
@@ -43,6 +45,7 @@ import google.registry.testing.FakeSleeper;
 import google.registry.util.Retrier;
 import google.registry.util.StringGenerator.Alphabets;
 import java.io.File;
+import java.util.Collection;
 import java.util.function.Function;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
@@ -180,6 +183,13 @@ public class GenerateAllocationTokensCommandTest
   }
 
   @Test
+  public void testSuccess_specifyManyTokens() throws Exception {
+    Collection<String> sampleTokens = command.stringGenerator.createStrings(13, 100);
+    runCommand("--tokens", Joiner.on(",").join(sampleTokens));
+    assertInStdout(Iterables.toArray(sampleTokens, String.class));
+  }
+
+  @Test
   public void testFailure_mustSpecifyNumberOfTokensOrDomainsFile() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommand("--prefix", "FEET"));
@@ -236,6 +246,7 @@ public class GenerateAllocationTokensCommandTest
   @Test
   public void testFailure_specifiesAlreadyExistingToken() throws Exception {
     runCommand("--tokens", "foobar");
+    beforeCommandTestCase(); // reset the command variables
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommand("--tokens", "foobar,foobaz"));
     assertThat(thrown)
