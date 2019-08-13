@@ -33,9 +33,7 @@ import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 
-/**
- * Utility class that provides methods used by {@link SslClientInitializerTest}
- */
+/** Utility class that provides methods used by {@link SslClientInitializerTest} */
 public class SslInitializerTestUtils {
 
   static {
@@ -74,10 +72,7 @@ public class SslInitializerTestUtils {
    * @param certs The certificate that the server should provide.
    * @return The SSL session in current channel, can be used for further validation.
    */
-  static SSLSession setUpSslChannel(
-      Channel channel,
-      X509Certificate... certs)
-      throws Exception {
+  static SSLSession setUpSslChannel(Channel channel, X509Certificate... certs) throws Exception {
     SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
     // Wait till the handshake is complete.
     sslHandler.handshakeFuture().get();
@@ -92,4 +87,3 @@ public class SslInitializerTestUtils {
     return sslHandler.engine().getSession();
   }
 }
-

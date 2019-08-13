@@ -37,6 +37,4 @@ public class TestActionHandler extends ActionHandler {
   public InboundMessageType getResponse() {
     return receivedMessage;
   }
-
 }
-
