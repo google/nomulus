@@ -66,8 +66,9 @@ public class ClaimsListShardTest {
 
   @Test
   public void testGet_safelyLoadsEmptyClaimsList_whenNoShardsExist() {
-    assertThat(ClaimsListShard.get().labelsToKeys).isEmpty();
-    assertThat(ClaimsListShard.get().creationTime).isEqualTo(START_OF_TIME);
+    assertThat(ClaimsListCache.get().getLabelsToKeys()).isEmpty();
+    assertThat(ClaimsListCache.get().getCreationTimestamp())
+        .isEqualTo(START_OF_TIME);
   }
 
   @Test
@@ -81,11 +82,11 @@ public class ClaimsListShardTest {
     // Save it with sharding, and make sure that reloading it works.
     ClaimsListShard unsharded = ClaimsListShard.create(now, ImmutableMap.copyOf(labelsToKeys));
     unsharded.save(shardSize);
-    assertThat(ClaimsListShard.get().labelsToKeys).isEqualTo(unsharded.labelsToKeys);
+    assertThat(ClaimsListCache.get().getLabelsToKeys()).isEqualTo(unsharded.labelsToKeys);
     List<ClaimsListShard> shards1 = ofy().load().type(ClaimsListShard.class).list();
     assertThat(shards1).hasSize(4);
-    assertThat(ClaimsListShard.get().getClaimKey("1")).hasValue("1");
-    assertThat(ClaimsListShard.get().getClaimKey("a")).isEmpty();
+    assertThat(ClaimsListCache.get().getClaimKey("1")).hasValue("1");
+    assertThat(ClaimsListCache.get().getClaimKey("a")).isEmpty();
     assertThat(ClaimsListShard.getCurrentRevision()).isEqualTo(shards1.get(0).parent);
 
     // Create a smaller ClaimsList that will need only 2 shards to save.
@@ -96,8 +97,8 @@ public class ClaimsListShardTest {
     unsharded = ClaimsListShard.create(now.plusDays(1), ImmutableMap.copyOf(labelsToKeys));
     unsharded.save(shardSize);
     ofy().clearSessionCache();
-    assertThat(ClaimsListShard.get().labelsToKeys).hasSize(unsharded.labelsToKeys.size());
-    assertThat(ClaimsListShard.get().labelsToKeys).isEqualTo(unsharded.labelsToKeys);
+    assertThat(ClaimsListCache.get().getLabelsToKeys()).hasSize(unsharded.labelsToKeys.size());
+    assertThat(ClaimsListCache.get().getLabelsToKeys()).isEqualTo(unsharded.labelsToKeys);
     List<ClaimsListShard> shards2 = ofy().load().type(ClaimsListShard.class).list();
     assertThat(shards2).hasSize(2);
 

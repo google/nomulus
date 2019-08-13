@@ -14,13 +14,14 @@
 
 package google.registry.tmch;
 
+import static google.registry.model.tmch.ClaimsListDaoFactory.claimsListDao;
 import static google.registry.request.Action.Method.POST;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.keyring.api.KeyModule.Key;
-import google.registry.model.tmch.ClaimsListShard;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
+import google.registry.schema.tmch.ClaimsList;
 import java.io.IOException;
 import java.security.SignatureException;
 import java.util.List;
@@ -54,10 +55,10 @@ public final class TmchDnlAction implements Runnable {
     } catch (SignatureException | IOException | PGPException e) {
       throw new RuntimeException(e);
     }
-    ClaimsListShard claims = ClaimsListParser.parse(lines);
-    claims.save();
+    ClaimsList claims = ClaimsListParser.parse(lines);
+    claimsListDao().save(claims);
     logger.atInfo().log(
         "Inserted %,d claims into Datastore, created at %s",
-        claims.size(), claims.getCreationTime());
+        claims.getLabelsToKeys().size(), claims.getCreationTimestamp());
   }
 }

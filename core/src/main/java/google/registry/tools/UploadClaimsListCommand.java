@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.model.tmch.ClaimsListDaoFactory.claimsListDao;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import com.beust.jcommander.Parameter;
@@ -22,6 +23,7 @@ import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import google.registry.model.tmch.ClaimsListShard;
+import google.registry.schema.tmch.ClaimsList;
 import google.registry.tmch.ClaimsListParser;
 import java.io.File;
 import java.io.IOException;
@@ -37,7 +39,7 @@ final class UploadClaimsListCommand extends ConfirmingCommand implements Command
 
   private String claimsListFilename;
 
-  private ClaimsListShard claimsList;
+  private ClaimsList claimsList;
 
   @Override
   protected void init() throws IOException {
@@ -56,7 +58,7 @@ final class UploadClaimsListCommand extends ConfirmingCommand implements Command
 
   @Override
   public String execute() {
-    claimsList.save();
+    claimsListDao().save(claimsList);
     return String.format("Successfully uploaded claims list %s", claimsListFilename);
   }
 }

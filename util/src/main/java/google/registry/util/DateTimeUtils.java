@@ -15,10 +15,15 @@
 package google.registry.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
@@ -85,5 +90,22 @@ public class DateTimeUtils {
   public static DateTime leapSafeSubtractYears(DateTime now, int years) {
     checkArgument(years >= 0);
     return years == 0 ? now : now.minusYears(1).minusYears(years - 1);
+  }
+
+  /** Converts the given {@link ZonedDateTime} to {@link DateTime}. */
+  public static DateTime toJodaDateTime(ZonedDateTime zonedDateTime) {
+    checkNotNull(zonedDateTime);
+    ZoneId zoneId = zonedDateTime.getZone();
+    checkState(zoneId != null, "ZoneId is null for the given zonedDateTime");
+    checkState(zoneId.getId() != null, "Id is null the for the given zoneId");
+    return new DateTime(
+        zonedDateTime.toInstant().toEpochMilli(), DateTimeZone.forID(zoneId.getId()));
+  }
+
+  /** Converts the given {@link DateTime} to {@link ZonedDateTime}. */
+  public static ZonedDateTime toZonedDateTime(DateTime dateTime) {
+    checkNotNull(dateTime);
+    ZoneId zoneId = ZoneId.of(dateTime.getZone().getID());
+    return ZonedDateTime.ofInstant(Instant.ofEpochMilli(dateTime.getMillis()), zoneId);
   }
 }
