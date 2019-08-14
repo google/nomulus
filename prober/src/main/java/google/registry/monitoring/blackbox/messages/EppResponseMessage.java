@@ -14,10 +14,10 @@
 
 package google.registry.monitoring.blackbox.messages;
 
-import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import io.netty.buffer.ByteBuf;
-import javax.inject.Inject;
+import java.util.List;
+import java.util.function.BiFunction;
 
 /**
  * {@link EppMessage} subclass that implements {@link InboundMessageType}, which represents an
@@ -33,30 +33,55 @@ import javax.inject.Inject;
  * <p>From the {@link ByteBuf} input, stores the corresponding {@link org.w3c.dom.Document}
  * represented and to be validated.
  */
-public abstract class EppResponseMessage extends EppMessage implements InboundMessageType {
+public class EppResponseMessage extends EppMessage implements InboundMessageType {
 
-  /** Two main variable's whose values in the response we are verifying. */
-  protected String expectedClTRID;
+  /**
+   * Specifies type of {@link EppResponseMessage}.
+   *
+   * <p>All possible names are: success, failure, domainExists, domainNotExists, greeting.
+   */
+  private final String name;
 
-  protected String expectedDomainName;
+  /** Lambda expression that returns a checkList from input clTRID and domain Strings. */
+  private final BiFunction<String, String, List<String>> getCheckList;
+
+  /** Domain name we expect to receive in current response. */
+  private String expectedDomainName;
+
+  /** ClTRID we expect to receive in current response. */
+  private String expectedClTRID;
 
   /** Verifies that the response recorded is what we expect from the request sent. */
-  public abstract void verify() throws FailureException;
+  public void verify() throws FailureException {
+    verifyEppResponse(message, getCheckList.apply(expectedClTRID, expectedDomainName), true);
+  }
 
   /** Extracts {@link org.w3c.dom.Document} from the {@link ByteBuf} input. */
   public void getDocument(ByteBuf buf) throws FailureException {
-    int capacity = buf.readInt() - 4;
-    byte[] response = new byte[capacity];
-
+    // Convert ByteBuf to byte array.
+    byte[] response = new byte[buf.readableBytes()];
     buf.readBytes(response);
+
+    // Convert byte array to Document.
     message = byteArrayToXmlDoc(response);
   }
 
+  /** Updates {@code expectedClTRID} and {@code expectedDomainName} fields. */
   void updateInformation(String expectedClTRID, String expectedDomainName) {
     this.expectedClTRID = expectedClTRID;
     this.expectedDomainName = expectedDomainName;
   }
 
+  public EppResponseMessage(String name, BiFunction<String, String, List<String>> getCheckList) {
+    this.name = name;
+    this.getCheckList = getCheckList;
+  }
+
+  public String name() {
+    return name;
+  }
+}
+/*
   /**
    * {@link EppResponseMessage} subclass that represents basic successful response containing only
    * the {@code clTRID}.
@@ -64,13 +89,12 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
    * <p>Is the expected response for {@link EppRequestMessage.Login}, {@link
    * EppRequestMessage.Create}, and {@link EppRequestMessage.Delete} when we expect successes and is
    * always the expected response for {@link EppRequestMessage.Logout}.
-   */
   public static class SimpleSuccess extends EppResponseMessage {
 
     @Inject
     public SimpleSuccess() {}
 
-    /** Verifies document structure, successful result code, and accurate clTRID. */
+    /** Verifies document structure, successful result code, and accurate clTRID.
     @Override
     public void verify() throws FailureException {
       verifyEppResponse(
@@ -87,13 +111,12 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
    *
    * <p>Is the expected response for {@link EppRequestMessage.Check} when we expect the domain to
    * exist on the server.
-   */
   public static class DomainExists extends EppResponseMessage {
 
     @Inject
     public DomainExists() {}
 
-    /** Verifies document structure, result code, clTRID, and that the domainName exists. */
+    /** Verifies document structure, result code, clTRID, and that the domainName exists.
     @Override
     public void verify() throws FailureException {
       verifyEppResponse(
@@ -112,13 +135,12 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
    *
    * <p>Is the expected response for {@link EppRequestMessage.Check} when we expect the domain to
    * not exist on the server.
-   */
   public static class DomainNotExists extends EppResponseMessage {
 
     @Inject
     public DomainNotExists() {}
 
-    /** Verifies document structure, result code, clTRID, and that the domainName doesn't exist. */
+    /** Verifies document structure, result code, clTRID, and that the domainName doesn't exist.
     @Override
     public void verify() throws FailureException {
       verifyEppResponse(
@@ -136,13 +158,12 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
    * after initial connection established.
    *
    * <p>Is the expected response for a successful {@link EppRequestMessage.Hello}.
-   */
   public static class Greeting extends EppResponseMessage {
 
     @Inject
     public Greeting() {}
 
-    /** Verifies document structure and that the type is a greeting. */
+    /** Verifies document structure and that the type is a greeting.
     @Override
     public void verify() throws FailureException {
       verifyEppResponse(message, ImmutableList.of("//eppns:greeting"), true);
@@ -155,13 +176,12 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
    *
    * <p>Is the expected response for {@link EppRequestMessage.Login}, {@link
    * EppRequestMessage.Create}, and {@link EppRequestMessage.Delete} when we expect failures.
-   */
   public static class Failure extends EppResponseMessage {
 
     @Inject
     public Failure() {}
 
-    /** Verifies document structure and that the type is a greeting. */
+    /** Verifies document structure and that the type is a greeting.
     @Override
     public void verify() throws FailureException {
       verifyEppResponse(
@@ -172,3 +192,5 @@ public abstract class EppResponseMessage extends EppMessage implements InboundMe
     }
   }
 }
+
+ */

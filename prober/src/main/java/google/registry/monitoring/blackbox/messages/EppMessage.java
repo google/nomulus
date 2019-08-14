@@ -63,22 +63,40 @@ import org.xml.sax.SAXException;
  * Superclass of {@link EppRequestMessage} and {@link EppResponseMessage} that represents skeleton
  * of any kind of EPP message, whether inbound or outbound.
  *
+ * <p>NOTE: Most static methods are copied over from
+ * //java/com/google/domain/registry/monitoring/blackbox/EppHelper.java
+ *
  * <p>Houses number of static methods for use of conversion between String and bytes to {@link
  * Document} type, which represents an XML Document, the type of which is used for EPP messages.
  */
 public class EppMessage {
 
+  /** Key that allows for substitution of{@code domainName} to xml template. */
+  public static final String DOMAIN_KEY = "//domainns:name";
+
+  /** Key that allows for substitution of epp user id to xml template. */
+  public static final String CLIENT_ID_KEY = "//eppns:clID";
+
+  /** Key that allows for substitution of epp password to xml template. */
+  public static final String CLIENT_PASSWORD_KEY = "//eppns:pw";
+
+  /** Key that allows for substitution of{@code clTRID} to xml template. */
+  public static final String CLIENT_TRID_KEY = "//eppns:clTRID";
+
+  /** Key that allows for substitution of{@code svTRID} to xml template. */
+  public static final String SERVER_TRID_KEY = "//eppns:svTRID";
+
   /**
    * Expression that expresses a result code in the {@link EppResponseMessage} that means success.
    */
   @VisibleForTesting
-  static final String XPASS_EXPRESSION =
+  public static final String XPASS_EXPRESSION =
       String.format("//eppns:result[@code>='%s'][@code<'%s']", 1000, 2000);
   /**
    * Expression that expresses a result code in the {@link EppResponseMessage} that means failure.
    */
   @VisibleForTesting
-  static final String XFAIL_EXPRESSION =
+  public static final String XFAIL_EXPRESSION =
       String.format("//eppns:result[@code>='%s'][@code<'%s']", 2000, 3000);
   // "Security" errors from RFC 5730, plus the error we get when we end
   // up no longer logged (see b/28196510).

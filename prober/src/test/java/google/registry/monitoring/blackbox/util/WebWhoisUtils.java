@@ -26,7 +26,7 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 
-/** Utility class for various helper methods used in testing. */
+/** Houses static utility functions for testing WebWHOIS components of Prober. */
 public class WebWhoisUtils {
 
   public static FullHttpRequest makeHttpGetRequest(String host, String path) {

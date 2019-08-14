@@ -33,7 +33,8 @@ public class EppActionHandler extends ActionHandler {
   public EppActionHandler() {}
 
   /**
-   * Decodes the received response to ensure that it is what we expect
+   * Decodes the received response to ensure that it is what we expect and resets future in case
+   * {@link EppActionHandler} is reused.
    *
    * @throws FailureException if we receive a failed response from the server
    */
@@ -46,5 +47,8 @@ public class EppActionHandler extends ActionHandler {
     // successful EPP response.
     response.verify();
     super.channelRead0(ctx, msg);
+
+    // Reset future as there is potential to reuse same ActionHandler for a different ProbingAction
+    finished = ctx.channel().newPromise();
   }
 }

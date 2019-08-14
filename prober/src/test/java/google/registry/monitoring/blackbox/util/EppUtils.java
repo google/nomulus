@@ -14,144 +14,184 @@
 
 package google.registry.monitoring.blackbox.util;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static google.registry.monitoring.blackbox.messages.EppMessage.CLIENT_ID_KEY;
+import static google.registry.monitoring.blackbox.messages.EppMessage.CLIENT_PASSWORD_KEY;
+import static google.registry.monitoring.blackbox.messages.EppMessage.CLIENT_TRID_KEY;
+import static google.registry.monitoring.blackbox.messages.EppMessage.DOMAIN_KEY;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import google.registry.monitoring.blackbox.exceptions.EppClientException;
 import google.registry.monitoring.blackbox.messages.EppMessage;
+import google.registry.monitoring.blackbox.messages.EppRequestMessage;
+import google.registry.monitoring.blackbox.messages.EppResponseMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import org.xml.sax.SAXException;
+import org.w3c.dom.Document;
 
+/** Houses static utility functions for testing EPP components of Prober. */
 public class EppUtils {
 
-  private static final int HEADER_LENGTH = 4;
-  private static DocumentBuilderFactory factory;
-  private static DocumentBuilder builder;
-
-  static {
-    factory = DocumentBuilderFactory.newInstance();
-    factory.setNamespaceAware(true);
-
-    try {
-      builder = factory.newDocumentBuilder();
-    } catch (ParserConfigurationException e) {
-      throw new ExceptionInInitializerError(e);
-    }
-  }
-
-  /** Return a simple default greeting as a String. */
-  public static String getDefaultGreeting() {
-    String greeting =
-        "<?xml version='1.0' encoding='UTF-8' standalone='no'?>"
-            + "<epp xmlns='urn:ietf:params:xml:ns:epp-1.0'>"
-            + "<greeting>"
-            + "<svID>Test EPP server</svID>"
-            + "<svDate>2000-06-08T22:00:00.0Z</svDate>"
-            + "<svcMenu>"
-            + "<version>1.0</version>"
-            + "<lang>en</lang>"
-            + "<lang>fr</lang>"
-            + "<objURI>urn:ietf:params:xml:ns:obj1</objURI>"
-            + "<objURI>urn:ietf:params:xml:ns:obj2</objURI>"
-            + "<objURI>urn:ietf:params:xml:ns:obj3</objURI>"
-            + "<svcExtension>"
-            + "<extURI>http://custom/obj1ext-1.0</extURI>"
-            + "</svcExtension>"
-            + "</svcMenu>"
-            + "<dcp>"
-            + "<access><all/></access>"
-            + "<statement>"
-            + "<purpose><admin/><prov/></purpose>"
-            + "<recipient><ours/><public/></recipient>"
-            + "<retention><stated/></retention>"
-            + "</statement>"
-            + "</dcp>"
-            + "</greeting>"
-            + "</epp>";
-    return greeting;
+  /** Return a simple default greeting as a {@link Document}. */
+  public static Document getGreeting() throws IOException, EppClientException {
+    return EppMessage.getEppDocFromTemplate("greeting.xml", ImmutableMap.of());
   }
 
   /**
-   * Return a simple EPP success as a string.
+   * Return a basic response as a {@link Document}.
    *
-   * @param resCode the result code for the success
-   * @param resMsg the message to include in the success
+   * @param success specifies if response shows a success or failure
    * @param clTRID the client transaction ID
    * @param svTRID the server transaction ID
-   * @return the EPP success message as a string
+   * @return the EPP basic response as a {@link Document}.
    */
-  public static String getBasicResponse(int resCode, String resMsg, String clTRID, String svTRID) {
-    String response =
-        "<?xml version='1.0' encoding='UTF-8'?><epp"
-            + " xmlns='urn:ietf:params:xml:ns:epp-1.0'>\n"
-            + "\t<response>\n"
-            + "\t\t<result code='%d'>\n"
-            + "\t\t\t<msg>%s</msg>\n"
-            + "\t\t</result>\n"
-            + "\t\t<trID>\n"
-            + "\t\t\t<clTRID>%s</clTRID>\n"
-            + "\t\t\t<svTRID>%s</svTRID>\n"
-            + "\t\t</trID>\n"
-            + "\t</response>\n"
-            + "</epp>";
-    return String.format(response, resCode, resMsg, clTRID, svTRID);
+  public static Document getBasicResponse(boolean success, String clTRID, String svTRID)
+      throws IOException, EppClientException {
+
+    String template = success ? "success_response.xml" : "failed_response.xml";
+
+    return EppMessage.getEppDocFromTemplate(
+        template,
+        ImmutableMap.of(
+            EppRequestMessage.CLIENT_TRID_KEY, clTRID, EppMessage.SERVER_TRID_KEY, svTRID));
   }
 
   /**
-   * Return a domain CheckSuccess success as a string. These always have a result code of 1000
-   * unless something unusual occurred. The success or failure is evaulated against expectation of
-   * availability rather than result code in this case.
+   * Return a domain check response as a {@link Document}.
    *
-   * @param availCode the availability code to use
+   * @param exists specifies if response shows that domain name exists on server or doesn't
+   * @param clTRID the client transaction ID
+   * @param svTRID the server transaction ID
    * @param domain the domain the check success is for
-   * @param clTRID the client transaction ID
-   * @param svTRID the server transaction ID
-   * @return the EPP success message as a string
-   * @throws IllegalArgumentException if availability code is anything other than 0 or 1
+   * @return the EPP check response as a {@link Document}.
    */
-  public static String getCheckDomainResponse(
-      boolean availCode, String domain, String clTRID, String svTRID) {
-    String response =
-        "<?xml version='1.0' encoding='UTF-8'?><epp xmlns='urn:ietf:params:xml:ns:epp-1.0'>\n"
-            + "\t<response>\n"
-            + "\t\t<result code='1000'>\n"
-            + "\t\t\t<msg>Generic Message</msg>\n"
-            + "\t\t</result>\n"
-            + "\t\t<resData>\n"
-            + "\t\t\t<domain:chkData xmlns:domain='urn:ietf:params:xml:ns:domain-1.0'>\n"
-            + "\t\t\t\t<domain:cd>\n"
-            + "\t\t\t\t\t<domain:name avail='%s'>%s</domain:name>\n"
-            + "\t\t\t\t</domain:cd>\n"
-            + "\t\t\t</domain:chkData>\n"
-            + "\t\t</resData>\n"
-            + "\t\t<trID>\n"
-            + "\t\t\t<clTRID>%s</clTRID>\n"
-            + "\t\t\t<svTRID>%s</svTRID>\n"
-            + "\t\t</trID>\n"
-            + "\t</response>\n"
-            + "</epp>";
+  public static Document getDomainCheck(boolean exists, String clTRID, String svTRID, String domain)
+      throws IOException, EppClientException {
 
-    return String.format(response, availCode, domain, clTRID, svTRID);
+    String template = exists ? "domain_exists.xml" : "domain_not_exists.xml";
+
+    return EppMessage.getEppDocFromTemplate(
+        template,
+        ImmutableMap.of(
+            EppRequestMessage.CLIENT_TRID_KEY, clTRID,
+            EppMessage.SERVER_TRID_KEY, svTRID,
+            EppMessage.DOMAIN_KEY, domain));
   }
 
-  public static ByteBuf stringToByteBuf(String message)
-      throws IOException, SAXException, EppClientException {
-    byte[] bytestream =
-        EppMessage.xmlDocToByteArray(
-            builder.parse(new ByteArrayInputStream(message.getBytes(UTF_8))));
+  /** Converts {@link Document} to {@link ByteBuf}. */
+  public static ByteBuf docToByteBuf(Document message) throws EppClientException {
+    byte[] bytestream = EppMessage.xmlDocToByteArray(message);
 
-    int capacity = HEADER_LENGTH + bytestream.length;
+    ByteBuf buf = Unpooled.buffer(bytestream.length);
 
-    ByteBuf buf = Unpooled.buffer(capacity);
-
-    buf.writeInt(capacity);
     buf.writeBytes(bytestream);
 
     return buf;
+  }
+
+  /** Returns standard hello request with supplied response. */
+  public static EppRequestMessage getHelloMessage(EppResponseMessage greetingResponse) {
+    return new EppRequestMessage(greetingResponse, null, (a, b) -> ImmutableMap.of());
+  }
+
+  /** Returns standard login request with supplied userId, userPassword, and response. */
+  public static EppRequestMessage getLoginMessage(
+      EppResponseMessage response, String userId, String userPassword) {
+    return new EppRequestMessage(
+        response,
+        "login.xml",
+        (clTRID, domain) ->
+            ImmutableMap.of(
+                CLIENT_TRID_KEY, clTRID,
+                CLIENT_ID_KEY, userId,
+                CLIENT_PASSWORD_KEY, userPassword));
+  }
+
+  /** Returns standard create request with supplied response. */
+  public static EppRequestMessage getCreateMessage(EppResponseMessage response) {
+    return new EppRequestMessage(
+        response,
+        "create.xml",
+        (clTRID, domain) ->
+            ImmutableMap.of(
+                CLIENT_TRID_KEY, clTRID,
+                DOMAIN_KEY, domain));
+  }
+
+  /** Returns standard delete request with supplied response. */
+  public static EppRequestMessage getDeleteMessage(EppResponseMessage response) {
+    return new EppRequestMessage(
+        response,
+        "delete.xml",
+        (clTRID, domain) ->
+            ImmutableMap.of(
+                CLIENT_TRID_KEY, clTRID,
+                DOMAIN_KEY, domain));
+  }
+
+  /** Returns standard logout request with supplied response. */
+  public static EppRequestMessage getLogoutMessage(EppResponseMessage successResponse) {
+    return new EppRequestMessage(
+        successResponse,
+        "logout.xml",
+        (clTRID, domain) -> ImmutableMap.of(CLIENT_TRID_KEY, clTRID));
+  }
+
+  /** Returns standard check request with supplied response. */
+  public static EppRequestMessage getCheckMessage(EppResponseMessage response) {
+    return new EppRequestMessage(
+        response,
+        "check.xml",
+        (clTRID, domain) ->
+            ImmutableMap.of(
+                CLIENT_TRID_KEY, clTRID,
+                DOMAIN_KEY, domain));
+  }
+
+  /** Returns standard success response. */
+  public static EppResponseMessage getSuccessResponse() {
+    return new EppResponseMessage(
+        "success",
+        (clTRID, domain) ->
+            ImmutableList.of(
+                String.format("//eppns:clTRID[.='%s']", clTRID), EppMessage.XPASS_EXPRESSION));
+  }
+
+  /** Returns standard failure response. */
+  public static EppResponseMessage getFailureResponse() {
+    return new EppResponseMessage(
+        "failure",
+        (clTRID, domain) ->
+            ImmutableList.of(
+                String.format("//eppns:clTRID[.='%s']", clTRID), EppMessage.XFAIL_EXPRESSION));
+  }
+
+  /** Returns standard domainExists response. */
+  public static EppResponseMessage getDomainExistsResponse() {
+    return new EppResponseMessage(
+        "domainExists",
+        (clTRID, domain) ->
+            ImmutableList.of(
+                String.format("//eppns:clTRID[.='%s']", clTRID),
+                String.format("//domainns:name[@avail='false'][.='%s']", domain),
+                EppMessage.XPASS_EXPRESSION));
+  }
+
+  /** Returns standard domainNotExists response. */
+  public static EppResponseMessage getDomainNotExistsResponse() {
+    return new EppResponseMessage(
+        "domainNotExists",
+        (clTRID, domain) ->
+            ImmutableList.of(
+                String.format("//eppns:clTRID[.='%s']", clTRID),
+                String.format("//domainns:name[@avail='true'][.='%s']", domain),
+                EppMessage.XPASS_EXPRESSION));
+  }
+
+  /** Returns standard greeting response. */
+  public static EppResponseMessage getGreetingResponse() {
+    return new EppResponseMessage(
+        "greeting", (clTRID, domain) -> ImmutableList.of("//eppns:greeting"));
   }
 }

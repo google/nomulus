@@ -46,7 +46,7 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /** {@link ChannelPromise} that informs {@link ProbingAction} if response has been received. */
-  private ChannelPromise finished;
+  protected ChannelPromise finished;
 
   /** Returns initialized {@link ChannelPromise} to {@link ProbingAction}. */
   public ChannelFuture getFinishedFuture() {
@@ -58,11 +58,6 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
   public void handlerAdded(ChannelHandlerContext ctx) {
     // Once handler is added to channel pipeline, initialize channel and future for this handler
     finished = ctx.newPromise();
-  }
-
-  /** Resets {@link ChannelPromise} when reusing the same {@link ActionHandler} for a new action. */
-  public void resetFuture() {
-    finished = finished.channel().newPromise();
   }
 
   /** Marks {@link ChannelPromise} as success */

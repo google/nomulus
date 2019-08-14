@@ -19,6 +19,8 @@ import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -28,11 +30,8 @@ public abstract class EppToken extends Token {
   /** Describes the maximum possible length of generated domain name. */
   private static final int MAX_DOMAIN_PART_LENGTH = 50;
 
-  /**
-   * On every new TRID generated, we increment this static counter to help for added
-   * differentiation.
-   */
-  private static int clientIdSuffix = 0;
+  /** Suffix added for differentiation between two TRID in case they have the same timestamp. */
+  private static AtomicInteger clientIdSuffix = new AtomicInteger();
 
   protected final String tld;
   private String host;
@@ -78,9 +77,13 @@ public abstract class EppToken extends Token {
    * position when splitting on dashes. Do not change this format without updating that code as
    * well.
    */
-  private synchronized String getNewTRID() {
+  private String getNewTRID() {
+    // TODO - Determine how prober cleanup servlet finds domains needed to be removed and format
+    // the last digit accordingly. For now we keep a zero in the place of hte old prober's
+    // clientIdSuffix.
     return String.format(
-        "prober-%s-%d-%d", "localhost", System.currentTimeMillis(), clientIdSuffix++);
+        "prober-%s-%d-%d",
+        "localhost", System.currentTimeMillis(), clientIdSuffix.incrementAndGet());
   }
 
   /** Return a fully qualified domain label to use, derived from the client transaction ID. */
@@ -110,6 +113,9 @@ public abstract class EppToken extends Token {
 
     @Override
     public Token next() {
+      if (channel != null) {
+        ChannelFuture unusedFuture = channel.close();
+      }
       return new Transient(tld, host());
     }
   }

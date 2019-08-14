@@ -40,15 +40,13 @@ import org.xml.sax.SAXException;
 @RunWith(JUnit4.class)
 public class EppMessageTest {
 
-  String xmlString = null;
-  Document xmlDoc = null;
-  Document greeting = null;
-  DocumentBuilderFactory factory = null;
-  DocumentBuilder builder = null;
+  private Document xmlDoc = null;
+  private Document greeting = null;
+  private DocumentBuilder builder = null;
 
   @Before
   public void setUp() throws Exception {
-    xmlString =
+    String xmlString =
         "<epp>"
             + "<textAndAttr myAttr1='1'>text1</textAndAttr>"
             + "<textNoAttr>text2</textNoAttr>"
@@ -57,15 +55,12 @@ public class EppMessageTest {
             + "<textAndAttrSplitRepeated myAttr3='3'/>"
             + "</epp>";
     ByteArrayInputStream byteStream = new ByteArrayInputStream(xmlString.getBytes(UTF_8));
-    factory = DocumentBuilderFactory.newInstance();
+    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     factory.setNamespaceAware(true);
     builder = factory.newDocumentBuilder();
     xmlDoc = builder.parse(byteStream);
 
-    DocumentBuilder greetingBuilder = factory.newDocumentBuilder();
-    greeting =
-        greetingBuilder.parse(
-            new ByteArrayInputStream(EppUtils.getDefaultGreeting().getBytes(UTF_8)));
+    greeting = EppUtils.getGreeting();
   }
 
   @Test

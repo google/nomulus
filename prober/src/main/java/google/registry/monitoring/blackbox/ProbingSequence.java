@@ -68,7 +68,7 @@ public class ProbingSequence extends CircularList<ProbingStep> {
     lastStep = true;
   }
 
-  /** Obtains next {@link ProbingSequence} in sequence instead of next {@link CircularList}. */
+  /** Obtains next {@link ProbingSequence} in sequence. */
   @Override
   public ProbingSequence next() {
     return (ProbingSequence) super.next();

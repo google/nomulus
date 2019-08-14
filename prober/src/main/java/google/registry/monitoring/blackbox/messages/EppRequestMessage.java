@@ -20,6 +20,8 @@ import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.IOException;
+import java.util.Map;
+import java.util.function.BiFunction;
 
 /**
  * {@link EppMessage} subclass that implements {@link OutboundMessageType}, which represents an
@@ -36,47 +38,36 @@ import java.io.IOException;
  * <p>Stores a clTRID and domainName which is modified each time the token calls {@code
  * modifyMessage}. These will also modify the EPP request sent to the server.
  */
-public abstract class EppRequestMessage extends EppMessage implements OutboundMessageType {
-
-  /** Key that allows for substitution of{@code domainName} to xml template. */
-  public static final String DOMAIN_KEY = "//domainns:name";
-
-  /** Key that allows for substitution of epp user id to xml template. */
-  public static final String CLIENT_ID_KEY = "//eppns:clID";
-
-  /** Key that allows for substitution of epp password to xml template. */
-  public static final String CLIENT_PASSWORD_KEY = "//eppns:pw";
-
-  /** Key that allows for substitution of{@code clTRID} to xml template. */
-  public static final String CLIENT_TRID_KEY = "//eppns:clTRID";
-
-  /**
-   * Client TRID associated with current request (modified on each call to {@code modifyMessage}.
-   */
-  protected String clTRID;
-
-  /**
-   * Domain name associated with current request (modified on each call to {@code modifyMessage}.
-   */
-  protected String domainName;
-
-  /** Filename for template of current request type. */
-  private String template;
+public class EppRequestMessage extends EppMessage implements OutboundMessageType {
 
   /** Corresponding {@link EppResponseMessage} that we expect to receive on a successful request. */
   private EppResponseMessage expectedResponse;
 
+  /** Filename for template of current request type. */
+  private String template;
+
+  /**
+   * {@link ImmutableMap} of replacements that is indicative of each type of {@link
+   * EppRequestMessage}
+   */
+  private BiFunction<String, String, Map<String, String>> getReplacements;
+
   /**
    * Private constructor for {@link EppRequestMessage} that its subclasses use for instantiation.
    */
-  private EppRequestMessage(EppResponseMessage expectedResponse, String template) {
+  public EppRequestMessage(
+      EppResponseMessage expectedResponse,
+      String template,
+      BiFunction<String, String, Map<String, String>> getReplacements) {
+
     this.expectedResponse = expectedResponse;
     this.template = template;
+    this.getReplacements = getReplacements;
   }
 
   /**
-   * From the input {@code clTRID} and {@code domainName}, modifies the template EPP XML document to
-   * reflect new parameters.
+   * From the input {@code clTRID} and {@code domainName}, modifies the template EPP XML document
+   * and the {@code expectedResponse} to reflect new parameters.
    *
    * @param args - should always be two Strings: The first one is {@code expectedClTRID} and the
    *     second one is {@code domainName}.
@@ -87,20 +78,24 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
    */
   @Override
   public EppRequestMessage modifyMessage(String... args) throws EppClientException {
-    clTRID = args[0];
-    domainName = args[1];
+    // First argument should always be clTRID.
+    String clTRID = args[0];
 
-    try {
-      message =
-          getEppDocFromTemplate(
-              template,
-              ImmutableMap.of(
-                  DOMAIN_KEY, domainName,
-                  CLIENT_TRID_KEY, clTRID));
+    // Second argument should always be domainName.
+    String domainName = args[1];
 
-    } catch (IOException e) {
-      throw new EppClientException(e);
+    if (template != null) {
+      // Checks if we are sending an actual EPP request to the server (if template is null, than
+      // we just expect a response.
+      try {
+        message = getEppDocFromTemplate(template, getReplacements.apply(clTRID, domainName));
+      } catch (IOException e) {
+        throw new EppClientException(e);
+      }
     }
+    // Update the EppResponseMessage associated with this EppRequestMessage to reflect changed
+    // parameters on this step.
+    expectedResponse.updateInformation(clTRID, domainName);
     return this;
   }
 
@@ -119,28 +114,19 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
     // obtain byte array of our modified xml document
     byte[] bytestream = xmlDocToByteArray(message);
 
-    // standard xml formatting stores capacity first then the document in bytes,
-    // so we store
-    int capacity = HEADER_LENGTH + bytestream.length;
-
-    ByteBuf buf = Unpooled.buffer(capacity);
-
-    buf.writeInt(capacity);
+    // Move bytes to a ByteBuf.
+    ByteBuf buf = Unpooled.buffer(bytestream.length);
     buf.writeBytes(bytestream);
 
     return buf;
   }
 
-  /**
-   * Updates expected information in the {@link EppResponseMessage} corresponding to this {@link
-   * EppRequestMessage} instance to reflect updated {@code clTRID} and {@code domainName} and
-   * returns it.
-   */
+  /** */
   public EppResponseMessage getExpectedResponse() {
-    expectedResponse.updateInformation(clTRID, domainName);
     return expectedResponse;
   }
-
+}
+/*
   /**
    * {@link EppRequestMessage} subclass that represents initial connection with server.
    *
@@ -148,7 +134,6 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
    * server.
    *
    * <p>Constructor takes in only the Dagger provided {@link EppResponseMessage.Greeting}.
-   */
   public static class Hello extends EppRequestMessage {
 
     public Hello(EppResponseMessage greetingResponse) {
@@ -178,12 +163,11 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
    * we expect to receive back.
    *
    * <p>Message is modified each time solely to reflect new {@code clTRID}.
-   */
   public static class Login extends EppRequestMessage {
 
     private static final String template = "login.xml";
 
-    /** We store the clientId and password, which are necessary for the login EPP message. */
+     We store the clientId and password, which are necessary for the login EPP message.
     private String eppClientId;
 
     private String eppClientPassword;
@@ -231,7 +215,6 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
    * <p>Constructor takes in only Dagger provided {@link EppResponseMessage}.
    *
    * <p>Message is modified using parent {@code modifyMessage}.
-   */
   public static class Check extends EppRequestMessage {
 
     private static final String template = "check.xml";
@@ -256,7 +239,6 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
    * <p>Constructor takes in only Dagger provided {@link EppResponseMessage}.
    *
    * <p>Message is modified using parent {@code modifyMessage}.
-   */
   public static class Create extends EppRequestMessage {
 
     private static final String template = "create.xml";
@@ -282,7 +264,6 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
    * <p>Constructor takes in only Dagger provided {@link EppResponseMessage}.
    *
    * <p>Message is modified using parent {@code modifyMessage}.
-   */
   public static class Delete extends EppRequestMessage {
 
     private static final String template = "delete.xml";
@@ -305,7 +286,6 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
    * <p>Constructor takes in only Dagger provided {@link EppResponseMessage}.
    *
    * <p>Message is modified each time solely to reflect new {@code clTRID}.
-   */
   public static class Logout extends EppRequestMessage {
 
     private static final String template = "logout.xml";
@@ -333,3 +313,5 @@ public abstract class EppRequestMessage extends EppMessage implements OutboundMe
     }
   }
 }
+
+ */

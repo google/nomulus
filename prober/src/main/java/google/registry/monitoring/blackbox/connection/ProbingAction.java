@@ -20,7 +20,6 @@ import static com.google.common.flogger.StackSize.SMALL;
 import static google.registry.monitoring.blackbox.connection.Protocol.PROTOCOL_KEY;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import google.registry.monitoring.blackbox.ProbingStep;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
@@ -31,7 +30,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.local.LocalAddress;
 import io.netty.util.AttributeKey;
@@ -66,37 +64,24 @@ import org.joda.time.Duration;
 @AutoValue
 public abstract class ProbingAction implements Callable<ChannelFuture> {
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
   /**
    * {@link AttributeKey} in channel that gives {@link ChannelFuture} that is set to success when
    * channel is active.
    */
   public static final AttributeKey<ChannelFuture> CONNECTION_FUTURE_KEY =
       AttributeKey.valueOf("CONNECTION_FUTURE_KEY");
+
   /** {@link AttributeKey} in channel that gives the information of the channel's host. */
   public static final AttributeKey<String> REMOTE_ADDRESS_KEY =
       AttributeKey.valueOf("REMOTE_ADDRESS_KEY");
 
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   /** {@link Timer} that rate limits probing */
   private static final Timer timer = new HashedWheelTimer();
 
   public static Builder builder() {
     return new AutoValue_ProbingAction.Builder();
-  }
-
-  /**
-   * Adds provided {@link ChannelHandler}s to the {@link ChannelPipeline} specified
-   *
-   * @param channelPipeline is pipeline associated with channel that we want to add handlers to
-   * @param handlerProviders are a list of provider objects that give us the requisite handlers Adds
-   *     to the pipeline, the list of handlers in the order specified
-   */
-  private static void addHandlers(
-      ChannelPipeline channelPipeline,
-      ImmutableList<Provider<? extends ChannelHandler>> handlerProviders) {
-    for (Provider<? extends ChannelHandler> handlerProvider : handlerProviders) {
-      channelPipeline.addLast(handlerProvider.get());
-    }
   }
 
   /** Actual {@link Duration} of this delay */
@@ -106,7 +91,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
   public abstract OutboundMessageType outboundMessage();
 
   /**
-   * {@link Channel} object that either created by or passed into this {@link ProbingAction}
+   * {@link Channel} object that is either created by or passed into this {@link ProbingAction}
    * instance
    */
   public abstract Channel channel();
@@ -158,8 +143,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
                   actionHandler = channel().pipeline().get(ActionHandler.class);
                 } catch (ClassCastException e) {
                   // If we don't actually have an ActionHandler instance, we have an issue, and
-                  // throw
-                  // an UndeterminedStateException
+                  // throw an UndeterminedStateException.
                   logger.atSevere().withStackTrace(SMALL).log(
                       "ActionHandler not in Channel Pipeline");
                   throw new UndeterminedStateException("No Action Handler found in pipeline");
@@ -172,7 +156,6 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
                       ChannelFuture unusedFutureWriteAndFlush =
                           channel().writeAndFlush(outboundMessage());
                       channelFuture.addListeners(
-                          future -> actionHandler.resetFuture(),
                           future -> {
                             if (future.isSuccess()) {
                               ChannelFuture unusedFuture = finished.setSuccess();
@@ -193,8 +176,8 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
                                           "Closed stale channel. Moving on to next ProbingStep");
                                     } else {
                                       logger.atWarning().log(
-                                          "Could not close channel. Stale connection still exists"
-                                              + ".");
+                                          "Issue closing stale channel. Most likely already "
+                                              + "closed.");
                                     }
                                   });
                             }
@@ -259,6 +242,9 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
         InetAddress hostAddress = InetAddress.getByName(host());
         address = new InetSocketAddress(hostAddress, protocol().port());
       } catch (UnknownHostException e) {
+        // If the supplied host isn't a valid one, we assume we are using a test host, meaning we
+        // are using a LocalAddress as our SocketAddress. If this isn't the case, we will anyways
+        // throw an error from now being able to connect to the LocalAddress.
         address = new LocalAddress(host());
       }
 
@@ -282,8 +268,11 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
                 new ChannelInitializer<Channel>() {
                   @Override
                   protected void initChannel(Channel outboundChannel) throws Exception {
-                    // Uses Handlers from Protocol to fill pipeline
-                    addHandlers(outboundChannel.pipeline(), protocol().handlerProviders());
+                    // Uses Handlers from Protocol to fill pipeline in order of provided handlers.
+                    for (Provider<? extends ChannelHandler> handlerProvider :
+                        protocol().handlerProviders()) {
+                      outboundChannel.pipeline().addLast(handlerProvider.get());
+                    }
                   }
                 })
             .attr(PROTOCOL_KEY, protocol())

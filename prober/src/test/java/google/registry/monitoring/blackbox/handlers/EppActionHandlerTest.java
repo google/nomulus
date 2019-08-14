@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 /**
@@ -52,70 +53,59 @@ public class EppActionHandlerTest {
   private static final String FAILURE_TRID = "TEST_FAILURE_TRID";
   private static final String DOMAIN_NAME = "TEST_DOMAIN_NAME.test";
   private static final String SERVER_ID = "TEST_SERVER_ID";
-  private static final String SUCCESS_MSG = "SUCCESSFUL ACTION PERFORMED";
-  private static final String FAILURE_MSG = "FAILURE IN ACTION PERFORMED";
-  private static final int SUCCESS_RESULT_CODE = 1000;
-  private static final int FAILURE_RESULT_CODE = 2500;
 
   @Parameter(0)
-  public EppRequestMessage messageType;
+  public EppRequestMessage message;
 
   private EmbeddedChannel channel;
-  private EppActionHandler actionHandler;
-  private EppMessageHandler messageHandler;
+  private EppActionHandler actionHandler = new EppActionHandler();
+  private EppMessageHandler messageHandler = new EppMessageHandler(EppUtils.getGreetingResponse());
 
   // We test all relevant EPP actions
   @Parameters(name = "{0}")
   public static EppRequestMessage[] data() {
     return new EppRequestMessage[] {
-      new EppRequestMessage.Hello(new EppResponseMessage.Greeting()),
-      new EppRequestMessage.Login(new EppResponseMessage.SimpleSuccess(), USER_ID, USER_PASSWORD),
-      new EppRequestMessage.Create(new EppResponseMessage.SimpleSuccess()),
-      new EppRequestMessage.Create(new EppResponseMessage.Failure()),
-      new EppRequestMessage.Delete(new EppResponseMessage.SimpleSuccess()),
-      new EppRequestMessage.Delete(new EppResponseMessage.Failure()),
-      new EppRequestMessage.Logout(new EppResponseMessage.SimpleSuccess()),
-      new EppRequestMessage.Check(new EppResponseMessage.DomainExists()),
-      new EppRequestMessage.Check(new EppResponseMessage.DomainNotExists())
+      EppUtils.getHelloMessage(EppUtils.getGreetingResponse()),
+      EppUtils.getLoginMessage(EppUtils.getSuccessResponse(), USER_ID, USER_PASSWORD),
+      EppUtils.getCreateMessage(EppUtils.getSuccessResponse()),
+      EppUtils.getCreateMessage(EppUtils.getFailureResponse()),
+      EppUtils.getDeleteMessage(EppUtils.getSuccessResponse()),
+      EppUtils.getDeleteMessage(EppUtils.getFailureResponse()),
+      EppUtils.getLogoutMessage(EppUtils.getSuccessResponse()),
+      EppUtils.getCheckMessage(EppUtils.getDomainExistsResponse()),
+      EppUtils.getCheckMessage(EppUtils.getDomainNotExistsResponse())
     };
   }
 
   /** Setup main three handlers to be used in pipeline. */
   @Before
   public void setup() throws EppClientException {
-    actionHandler = new EppActionHandler();
-    messageHandler = new EppMessageHandler();
-
-    messageType.modifyMessage(USER_CLIENT_TRID, DOMAIN_NAME);
+    message.modifyMessage(USER_CLIENT_TRID, DOMAIN_NAME);
   }
 
   private void setupEmbeddedChannel(ChannelHandler... handlers) {
     channel = new EmbeddedChannel(handlers);
   }
 
-  private String getResponseString(EppResponseMessage response, boolean fail, String clTRID) {
-    if (response instanceof EppResponseMessage.Greeting) {
+  private Document getResponse(EppResponseMessage response, boolean fail, String clTRID)
+      throws IOException, EppClientException {
+    if (response.name().equals("greeting")) {
       if (fail) {
-        return EppUtils.getBasicResponse(SUCCESS_RESULT_CODE, SUCCESS_MSG, clTRID, SERVER_ID);
+        return EppUtils.getBasicResponse(true, clTRID, SERVER_ID);
       } else {
-        return EppUtils.getDefaultGreeting();
+        return EppUtils.getGreeting();
       }
-    } else if (response instanceof EppResponseMessage.DomainExists) {
-      return EppUtils.getCheckDomainResponse(fail, DOMAIN_NAME, clTRID, SERVER_ID);
-    } else if (response instanceof EppResponseMessage.DomainNotExists) {
-      return EppUtils.getCheckDomainResponse(!fail, DOMAIN_NAME, clTRID, SERVER_ID);
-    } else if (response instanceof EppResponseMessage.SimpleSuccess) {
-      return EppUtils.getBasicResponse(
-          fail ? FAILURE_RESULT_CODE : SUCCESS_RESULT_CODE,
-          fail ? FAILURE_MSG : SUCCESS_MSG,
-          clTRID,
-          SERVER_ID);
+    } else if (response.name().equals("domainExists")) {
+      return EppUtils.getDomainCheck(!fail, clTRID, SERVER_ID, DOMAIN_NAME);
+
+    } else if (response.name().equals("domainNotExists")) {
+      return EppUtils.getDomainCheck(fail, clTRID, SERVER_ID, DOMAIN_NAME);
+
+    } else if (response.name().equals("success")) {
+      return EppUtils.getBasicResponse(!fail, clTRID, SERVER_ID);
+
     } else {
-      return EppUtils.getBasicResponse(
-          fail ? SUCCESS_RESULT_CODE : FAILURE_RESULT_CODE,
-          fail ? SUCCESS_MSG : FAILURE_MSG,
-          clTRID,
-          SERVER_ID);
+      return EppUtils.getBasicResponse(fail, clTRID, SERVER_ID);
     }
   }
 
@@ -127,11 +117,10 @@ public class EppActionHandlerTest {
 
     ChannelFuture future = actionHandler.getFinishedFuture();
 
-    EppResponseMessage response = messageType.getExpectedResponse();
+    EppResponseMessage response = message.getExpectedResponse();
 
     response.getDocument(
-        EppUtils.stringToByteBuf(
-            getResponseString(messageType.getExpectedResponse(), false, USER_CLIENT_TRID)));
+        EppUtils.docToByteBuf(getResponse(message.getExpectedResponse(), false, USER_CLIENT_TRID)));
 
     channel.writeInbound(response);
 
@@ -148,11 +137,10 @@ public class EppActionHandlerTest {
 
     ChannelFuture future = actionHandler.getFinishedFuture();
 
-    EppResponseMessage response = messageType.getExpectedResponse();
+    EppResponseMessage response = message.getExpectedResponse();
 
     response.getDocument(
-        EppUtils.stringToByteBuf(
-            getResponseString(messageType.getExpectedResponse(), true, USER_CLIENT_TRID)));
+        EppUtils.docToByteBuf(getResponse(message.getExpectedResponse(), true, USER_CLIENT_TRID)));
 
     channel.writeInbound(response);
 
@@ -171,15 +159,14 @@ public class EppActionHandlerTest {
 
     ChannelFuture future = actionHandler.getFinishedFuture();
 
-    EppResponseMessage response = messageType.getExpectedResponse();
+    EppResponseMessage response = message.getExpectedResponse();
 
     response.getDocument(
-        EppUtils.stringToByteBuf(
-            getResponseString(messageType.getExpectedResponse(), false, FAILURE_TRID)));
+        EppUtils.docToByteBuf(getResponse(message.getExpectedResponse(), false, FAILURE_TRID)));
 
     channel.writeInbound(response);
 
-    if (messageType instanceof EppRequestMessage.Hello) {
+    if (message.getExpectedResponse().name().equals("greeting")) {
       ChannelFuture unusedFuture = future.syncUninterruptibly();
       assertThat(future.isSuccess()).isTrue();
     } else {
@@ -198,11 +185,10 @@ public class EppActionHandlerTest {
     setupEmbeddedChannel(messageHandler, actionHandler);
 
     ChannelFuture future = actionHandler.getFinishedFuture();
-    channel.writeOutbound(messageType);
+    channel.writeOutbound(message);
 
     channel.writeInbound(
-        EppUtils.stringToByteBuf(
-            getResponseString(messageType.getExpectedResponse(), false, USER_CLIENT_TRID)));
+        EppUtils.docToByteBuf(getResponse(message.getExpectedResponse(), false, USER_CLIENT_TRID)));
 
     ChannelFuture unusedFuture = future.syncUninterruptibly();
 
@@ -216,11 +202,10 @@ public class EppActionHandlerTest {
     setupEmbeddedChannel(messageHandler, actionHandler);
 
     ChannelFuture future = actionHandler.getFinishedFuture();
-    channel.writeOutbound(messageType);
+    channel.writeOutbound(message);
 
     channel.writeInbound(
-        EppUtils.stringToByteBuf(
-            getResponseString(messageType.getExpectedResponse(), true, USER_CLIENT_TRID)));
+        EppUtils.docToByteBuf(getResponse(message.getExpectedResponse(), true, USER_CLIENT_TRID)));
 
     assertThrows(
         FailureException.class,
@@ -236,13 +221,12 @@ public class EppActionHandlerTest {
     setupEmbeddedChannel(messageHandler, actionHandler);
 
     ChannelFuture future = actionHandler.getFinishedFuture();
-    channel.writeOutbound(messageType);
+    channel.writeOutbound(message);
 
     channel.writeInbound(
-        EppUtils.stringToByteBuf(
-            getResponseString(messageType.getExpectedResponse(), false, FAILURE_TRID)));
+        EppUtils.docToByteBuf(getResponse(message.getExpectedResponse(), false, FAILURE_TRID)));
 
-    if (messageType instanceof EppRequestMessage.Hello) {
+    if (message.getExpectedResponse().name().equals("greeting")) {
       ChannelFuture unusedFuture = future.syncUninterruptibly();
       assertThat(future.isSuccess()).isTrue();
     } else {

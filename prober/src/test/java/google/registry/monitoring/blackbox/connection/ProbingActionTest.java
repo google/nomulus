@@ -58,8 +58,10 @@ public class ProbingActionTest {
   private static final int TEST_PORT = 0;
 
   private static final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
+
   /** Used for testing how well probing step can create connection to blackbox server */
   @Rule public NettyRule nettyRule = new NettyRule(eventLoopGroup);
+
   /**
    * We use custom Test {@link ActionHandler} and {@link ConversionHandler} so test depends only on
    * {@link ProbingAction}

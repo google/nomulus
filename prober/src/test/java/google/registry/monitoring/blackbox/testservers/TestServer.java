@@ -18,15 +18,11 @@ import static google.registry.monitoring.blackbox.util.WebWhoisUtils.makeHttpRes
 import static google.registry.monitoring.blackbox.util.WebWhoisUtils.makeRedirectResponse;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.exceptions.EppClientException;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.messages.EppMessage;
-import google.registry.monitoring.blackbox.messages.EppRequestMessage;
 import google.registry.monitoring.blackbox.messages.HttpResponseMessage;
-import google.registry.monitoring.blackbox.util.EppUtils;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
@@ -43,9 +39,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import java.io.IOException;
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 /**
  * Mock Server Superclass whose subclasses implement specific behaviors we expect blackbox server to
@@ -143,20 +137,17 @@ public class TestServer {
 
     Document doc;
     private ChannelPromise future;
-    private Channel channel;
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) {
       future = ctx.newPromise();
-      channel = ctx.channel();
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
       ByteBuf buf = (ByteBuf) msg;
-      int capacity = buf.readInt() - 4;
 
-      byte[] messageBytes = new byte[capacity];
+      byte[] messageBytes = new byte[buf.readableBytes()];
       buf.readBytes(messageBytes);
 
       try {
@@ -165,26 +156,6 @@ public class TestServer {
       } catch (FailureException e) {
         ChannelFuture unusedFuture = future.setFailure(e);
       }
-    }
-
-    public String getClTRID() {
-      return EppMessage.getElementValue(doc, EppRequestMessage.CLIENT_TRID_KEY);
-    }
-
-    public String getDomainName() {
-      return EppMessage.getElementValue(doc, EppRequestMessage.DOMAIN_KEY);
-    }
-
-    public String getUserId() {
-      return EppMessage.getElementValue(doc, EppRequestMessage.CLIENT_ID_KEY);
-    }
-
-    public String getPassword() {
-      return EppMessage.getElementValue(doc, EppRequestMessage.CLIENT_PASSWORD_KEY);
-    }
-
-    public void sendResponse(String response) throws SAXException, IOException, EppClientException {
-      ChannelFuture unusedFuture = channel.writeAndFlush(EppUtils.stringToByteBuf(response));
     }
   }
 }

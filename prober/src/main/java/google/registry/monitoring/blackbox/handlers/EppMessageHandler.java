@@ -24,6 +24,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  * {@link io.netty.channel.ChannelHandler} that converts inbound {@link ByteBuf} to custom type
@@ -34,16 +35,16 @@ public class EppMessageHandler extends ChannelDuplexHandler {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  /** Corresponding {@link EppResponseMessage} that we expect to receive back from server. */
+  /**
+   * Corresponding {@link EppResponseMessage} that we expect to receive back from server.
+   *
+   * <p>We always expect the first response to be an {@link EppResponseMessage.Greeting}.
+   */
   private EppResponseMessage response;
 
-  /**
-   * Always sets response to be {@link EppResponseMessage.Greeting} as that will be first server
-   * response.
-   */
   @Inject
-  public EppMessageHandler() {
-    response = new EppResponseMessage.Greeting();
+  public EppMessageHandler(@Named("greeting") EppResponseMessage greetingResponse) {
+    response = greetingResponse;
   }
 
   /** Performs conversion to {@link ByteBuf}. */
@@ -52,11 +53,11 @@ public class EppMessageHandler extends ChannelDuplexHandler {
       throws Exception {
 
     // If the message is Hello, don't actually pass it on, just wait for server greeting.
-    if (!(msg instanceof EppRequestMessage.Hello)) {
-      // otherwise, we store what we expect a successful response to be
-      EppRequestMessage request = (EppRequestMessage) msg;
-      response = request.getExpectedResponse();
+    // otherwise, we store what we expect a successful response to be
+    EppRequestMessage request = (EppRequestMessage) msg;
+    response = request.getExpectedResponse();
 
+    if (!response.name().equals("greeting")) {
       // then we write the ByteBuf representation of the EPP message to the server
       ChannelFuture unusedFuture = ctx.write(request.bytes(), promise);
     }

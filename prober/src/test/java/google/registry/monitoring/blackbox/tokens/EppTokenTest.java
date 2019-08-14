@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
-import google.registry.monitoring.blackbox.messages.EppResponseMessage;
+import google.registry.monitoring.blackbox.util.EppUtils;
 import io.netty.channel.Channel;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,8 +38,7 @@ public class EppTokenTest {
   @Test
   public void testMessageModificationSuccess_PersistentToken() throws UndeterminedStateException {
 
-    EppRequestMessage originalMessage =
-        new EppRequestMessage.Create(new EppResponseMessage.SimpleSuccess());
+    EppRequestMessage originalMessage = EppUtils.getCreateMessage(EppUtils.getSuccessResponse());
     String domainName = persistentEppToken.getCurrentDomainName();
     String clTRID = domainName.substring(0, domainName.indexOf('.'));
 
@@ -54,8 +53,7 @@ public class EppTokenTest {
   @Test
   public void testMessageModificationSuccess_TransientToken() throws UndeterminedStateException {
 
-    EppRequestMessage originalMessage =
-        new EppRequestMessage.Create(new EppResponseMessage.SimpleSuccess());
+    EppRequestMessage originalMessage = EppUtils.getCreateMessage(EppUtils.getSuccessResponse());
     String domainName = transientEppToken.getCurrentDomainName();
     String clTRID = domainName.substring(0, domainName.indexOf('.'));
 
