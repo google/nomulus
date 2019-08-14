@@ -250,7 +250,7 @@ dependencies {
   compile deps['org.hibernate:hibernate-core']
   testCompile deps['junit:junit']
   testCompile deps['org.mockito:mockito-core']
-  compile deps['org.postgresql:postgresql']
+  runtime deps['org.postgresql:postgresql']
 
   // Indirect dependency found by undeclared-dependency check. Such
   // dependencies should go after all other compile and testCompile
