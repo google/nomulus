@@ -131,6 +131,12 @@ final class RegistrarContactCommand extends MutatingCommand {
       arity = 1)
   private Boolean visibleInDomainWhoisAsAbuse;
 
+  @Nullable
+  @Parameter(
+      names = "--registry_lock_password",
+      description = "Enable registry lock for this contact with the provided password")
+  private String registryLockPassword;
+
   @Parameter(
       names = {"-o", "--output"},
       description = "Output file when --mode=LIST",
@@ -260,6 +266,9 @@ final class RegistrarContactCommand extends MutatingCommand {
     if (visibleInDomainWhoisAsAbuse != null) {
       builder.setVisibleInDomainWhoisAsAbuse(visibleInDomainWhoisAsAbuse);
     }
+    if (registryLockPassword != null) {
+      builder.setRegistryLockPassword(registryLockPassword);
+    }
     return builder.build();
   }
 
@@ -300,6 +309,9 @@ final class RegistrarContactCommand extends MutatingCommand {
       } else {
         builder.setGaeUserId(null);
       }
+    }
+    if (registryLockPassword != null) {
+      builder.setRegistryLockPassword(registryLockPassword);
     }
     return builder.build();
   }

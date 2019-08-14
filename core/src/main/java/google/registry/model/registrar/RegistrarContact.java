@@ -14,16 +14,21 @@
 
 package google.registry.model.registrar;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
+import static com.google.common.io.BaseEncoding.base64;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.registrar.RegistrarPasswords.SALT_SUPPLIER;
+import static google.registry.model.registrar.RegistrarPasswords.hashPassword;
 import static google.registry.model.registrar.Registrar.checkValidEmail;
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.base.Enums;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Streams;
@@ -135,6 +140,15 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
    */
   boolean visibleInDomainWhoisAsAbuse = false;
 
+  /**
+   * A hashed password that exists iff this contact is registry-lock-enabled. The hash is a base64
+   * encoded SHA256 string.
+   */
+  String registryLockPasswordHash;
+
+  /** Randomly generated hash salt. */
+  String salt;
+
   public static ImmutableSet<Type> typesFromCSV(String csv) {
     return typesFromStrings(Arrays.asList(csv.split(",")));
   }
@@ -211,6 +225,15 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
 
   public Builder asBuilder() {
     return new Builder(clone(this));
+  }
+
+  public boolean isRegistryLockEnabled() {
+    return registryLockPasswordHash != null && salt != null;
+  }
+
+  public boolean testRegistryLockPassword(String registryLockPassword) {
+    checkArgument(isRegistryLockEnabled(), "Registry lock not enabled for this contact");
+    return hashPassword(registryLockPassword, salt).equals(registryLockPasswordHash);
   }
 
   /**
@@ -344,6 +367,15 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
 
     public Builder setGaeUserId(String gaeUserId) {
       getInstance().gaeUserId = gaeUserId;
+      return this;
+    }
+
+    public Builder setRegistryLockPassword(String registryLockPassword) {
+      checkArgument(
+          !Strings.isNullOrEmpty(registryLockPassword), "Registry lock password was null or empty");
+      getInstance().salt = base64().encode(SALT_SUPPLIER.get());
+      getInstance().registryLockPasswordHash =
+          hashPassword(registryLockPassword, getInstance().salt);
       return this;
     }
   }
