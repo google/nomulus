@@ -53,11 +53,11 @@ public class EppResponseMessage extends EppMessage implements InboundMessageType
   private String expectedDomainName;
 
   /** ClTRID we expect to receive in current response. */
-  private String expectedClTRID;
+  private String expectedClTrid;
 
   /** Verifies that the response recorded is what we expect from the request sent. */
   public void verify() throws FailureException {
-    verifyEppResponse(message, getCheckList.apply(expectedClTRID, expectedDomainName), true);
+    verifyEppResponse(message, getCheckList.apply(expectedClTrid, expectedDomainName), true);
   }
 
   /** Extracts {@link org.w3c.dom.Document} from the {@link ByteBuf} input. */
@@ -70,9 +70,9 @@ public class EppResponseMessage extends EppMessage implements InboundMessageType
     message = byteArrayToXmlDoc(response);
   }
 
-  /** Updates {@code expectedClTRID} and {@code expectedDomainName} fields. */
-  void updateInformation(String expectedClTRID, String expectedDomainName) {
-    this.expectedClTRID = expectedClTRID;
+  /** Updates {@code expectedClTrid} and {@code expectedDomainName} fields. */
+  void updateInformation(String expectedClTrid, String expectedDomainName) {
+    this.expectedClTrid = expectedClTrid;
     this.expectedDomainName = expectedDomainName;
   }
 

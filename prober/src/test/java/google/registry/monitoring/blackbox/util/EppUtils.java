@@ -42,11 +42,11 @@ public class EppUtils {
    * Return a basic response as a {@link Document}.
    *
    * @param success specifies if response shows a success or failure
-   * @param clTRID the client transaction ID
-   * @param svTRID the server transaction ID
+   * @param clTrid the client transaction ID
+   * @param svTrid the server transaction ID
    * @return the EPP basic response as a {@link Document}.
    */
-  public static Document getBasicResponse(boolean success, String clTRID, String svTRID)
+  public static Document getBasicResponse(boolean success, String clTrid, String svTrid)
       throws IOException, EppClientException {
 
     String template = success ? "success_response.xml" : "failed_response.xml";
@@ -54,19 +54,19 @@ public class EppUtils {
     return EppMessage.getEppDocFromTemplate(
         template,
         ImmutableMap.of(
-            EppRequestMessage.CLIENT_TRID_KEY, clTRID, EppMessage.SERVER_TRID_KEY, svTRID));
+            EppRequestMessage.CLIENT_TRID_KEY, clTrid, EppMessage.SERVER_TRID_KEY, svTrid));
   }
 
   /**
    * Return a domain check response as a {@link Document}.
    *
    * @param exists specifies if response shows that domain name exists on server or doesn't
-   * @param clTRID the client transaction ID
-   * @param svTRID the server transaction ID
+   * @param clTrid the client transaction ID
+   * @param svTrid the server transaction ID
    * @param domain the domain the check success is for
    * @return the EPP check response as a {@link Document}.
    */
-  public static Document getDomainCheck(boolean exists, String clTRID, String svTRID, String domain)
+  public static Document getDomainCheck(boolean exists, String clTrid, String svTrid, String domain)
       throws IOException, EppClientException {
 
     String template = exists ? "domain_exists.xml" : "domain_not_exists.xml";
@@ -74,8 +74,8 @@ public class EppUtils {
     return EppMessage.getEppDocFromTemplate(
         template,
         ImmutableMap.of(
-            EppRequestMessage.CLIENT_TRID_KEY, clTRID,
-            EppMessage.SERVER_TRID_KEY, svTRID,
+            EppRequestMessage.CLIENT_TRID_KEY, clTrid,
+            EppMessage.SERVER_TRID_KEY, svTrid,
             EppMessage.DOMAIN_KEY, domain));
   }
 
@@ -101,9 +101,9 @@ public class EppUtils {
     return new EppRequestMessage(
         response,
         "login.xml",
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableMap.of(
-                CLIENT_TRID_KEY, clTRID,
+                CLIENT_TRID_KEY, clTrid,
                 CLIENT_ID_KEY, userId,
                 CLIENT_PASSWORD_KEY, userPassword));
   }
@@ -113,9 +113,9 @@ public class EppUtils {
     return new EppRequestMessage(
         response,
         "create.xml",
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableMap.of(
-                CLIENT_TRID_KEY, clTRID,
+                CLIENT_TRID_KEY, clTrid,
                 DOMAIN_KEY, domain));
   }
 
@@ -124,9 +124,9 @@ public class EppUtils {
     return new EppRequestMessage(
         response,
         "delete.xml",
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableMap.of(
-                CLIENT_TRID_KEY, clTRID,
+                CLIENT_TRID_KEY, clTrid,
                 DOMAIN_KEY, domain));
   }
 
@@ -135,7 +135,7 @@ public class EppUtils {
     return new EppRequestMessage(
         successResponse,
         "logout.xml",
-        (clTRID, domain) -> ImmutableMap.of(CLIENT_TRID_KEY, clTRID));
+        (clTrid, domain) -> ImmutableMap.of(CLIENT_TRID_KEY, clTrid));
   }
 
   /** Returns standard check request with supplied response. */
@@ -143,9 +143,9 @@ public class EppUtils {
     return new EppRequestMessage(
         response,
         "check.xml",
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableMap.of(
-                CLIENT_TRID_KEY, clTRID,
+                CLIENT_TRID_KEY, clTrid,
                 DOMAIN_KEY, domain));
   }
 
@@ -153,27 +153,27 @@ public class EppUtils {
   public static EppResponseMessage getSuccessResponse() {
     return new EppResponseMessage(
         "success",
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableList.of(
-                String.format("//eppns:clTRID[.='%s']", clTRID), EppMessage.XPASS_EXPRESSION));
+                String.format("//eppns:clTRID[.='%s']", clTrid), EppMessage.XPASS_EXPRESSION));
   }
 
   /** Returns standard failure response. */
   public static EppResponseMessage getFailureResponse() {
     return new EppResponseMessage(
         "failure",
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableList.of(
-                String.format("//eppns:clTRID[.='%s']", clTRID), EppMessage.XFAIL_EXPRESSION));
+                String.format("//eppns:clTRID[.='%s']", clTrid), EppMessage.XFAIL_EXPRESSION));
   }
 
   /** Returns standard domainExists response. */
   public static EppResponseMessage getDomainExistsResponse() {
     return new EppResponseMessage(
         "domainExists",
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableList.of(
-                String.format("//eppns:clTRID[.='%s']", clTRID),
+                String.format("//eppns:clTRID[.='%s']", clTrid),
                 String.format("//domainns:name[@avail='false'][.='%s']", domain),
                 EppMessage.XPASS_EXPRESSION));
   }
@@ -182,9 +182,9 @@ public class EppUtils {
   public static EppResponseMessage getDomainNotExistsResponse() {
     return new EppResponseMessage(
         "domainNotExists",
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableList.of(
-                String.format("//eppns:clTRID[.='%s']", clTRID),
+                String.format("//eppns:clTRID[.='%s']", clTrid),
                 String.format("//domainns:name[@avail='true'][.='%s']", domain),
                 EppMessage.XPASS_EXPRESSION));
   }
@@ -192,6 +192,6 @@ public class EppUtils {
   /** Returns standard greeting response. */
   public static EppResponseMessage getGreetingResponse() {
     return new EppResponseMessage(
-        "greeting", (clTRID, domain) -> ImmutableList.of("//eppns:greeting"));
+        "greeting", (clTrid, domain) -> ImmutableList.of("//eppns:greeting"));
   }
 }

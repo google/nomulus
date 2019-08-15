@@ -114,7 +114,8 @@ public class ProbingActionTest {
     // Ensures that we haven't marked future as done until response is received.
     assertThat(future.isDone()).isFalse();
 
-    // after writing inbound, we should have a success
+    // After writing inbound, we should have a success as we use an EmbeddedChannel, ensuring all
+    // operations happen on the main thread - i.e. synchronously.
     channel.writeInbound(Unpooled.wrappedBuffer(SECONDARY_TEST_MESSAGE.getBytes(US_ASCII)));
     assertThat(future.isSuccess()).isTrue();
 

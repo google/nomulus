@@ -80,10 +80,10 @@ public class EppMessage {
   /** Key that allows for substitution of epp password to xml template. */
   public static final String CLIENT_PASSWORD_KEY = "//eppns:pw";
 
-  /** Key that allows for substitution of{@code clTRID} to xml template. */
+  /** Key that allows for substitution of{@code clTrid} to xml template. */
   public static final String CLIENT_TRID_KEY = "//eppns:clTRID";
 
-  /** Key that allows for substitution of{@code svTRID} to xml template. */
+  /** Key that allows for substitution of{@code svTrid} to xml template. */
   public static final String SERVER_TRID_KEY = "//eppns:svTRID";
 
   /**
@@ -328,7 +328,7 @@ public class EppMessage {
    * xpath expression, then replaces the node value of the first child, returning the transformed
    * XML as a Document.
    *
-   * <p>E.g. to replace the value "@@CLTRID@@" in the {@code <expectedClTRID>} node with a client
+   * <p>E.g. to replace the value "@@CLTRID@@" in the {@code <clTRID>} node with a client
    * transaction ID, use the mapping {@code <"//domainns:clTRID", "AAA-123-BBBB">} (or whatever the
    * ID is).
    *

@@ -40,14 +40,14 @@ public class EppTokenTest {
 
     EppRequestMessage originalMessage = EppUtils.getCreateMessage(EppUtils.getSuccessResponse());
     String domainName = persistentEppToken.getCurrentDomainName();
-    String clTRID = domainName.substring(0, domainName.indexOf('.'));
+    String clTrid = domainName.substring(0, domainName.indexOf('.'));
 
     EppRequestMessage modifiedMessage =
         (EppRequestMessage) persistentEppToken.modifyMessage(originalMessage);
 
     // ensure element values are what they should be
     assertThat(modifiedMessage.getElementValue("//domainns:name")).isEqualTo(domainName);
-    assertThat(modifiedMessage.getElementValue("//eppns:clTRID")).isNotEqualTo(clTRID);
+    assertThat(modifiedMessage.getElementValue("//eppns:clTRID")).isNotEqualTo(clTrid);
   }
 
   @Test
@@ -55,14 +55,14 @@ public class EppTokenTest {
 
     EppRequestMessage originalMessage = EppUtils.getCreateMessage(EppUtils.getSuccessResponse());
     String domainName = transientEppToken.getCurrentDomainName();
-    String clTRID = domainName.substring(0, domainName.indexOf('.'));
+    String clTrid = domainName.substring(0, domainName.indexOf('.'));
 
     EppRequestMessage modifiedMessage =
         (EppRequestMessage) transientEppToken.modifyMessage(originalMessage);
 
     // ensure element values are what they should be
     assertThat(modifiedMessage.getElementValue("//domainns:name")).isEqualTo(domainName);
-    assertThat(modifiedMessage.getElementValue("//eppns:clTRID")).isNotEqualTo(clTRID);
+    assertThat(modifiedMessage.getElementValue("//eppns:clTRID")).isNotEqualTo(clTrid);
   }
 
   @Test

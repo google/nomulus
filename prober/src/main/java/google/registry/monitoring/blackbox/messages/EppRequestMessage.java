@@ -70,11 +70,11 @@ public class EppRequestMessage extends EppMessage implements OutboundMessageType
   }
 
   /**
-   * From the input {@code clTRID} and {@code domainName}, modifies the template EPP XML document
+   * From the input {@code clTrid} and {@code domainName}, modifies the template EPP XML document
    * and the {@code expectedResponse} to reflect new parameters.
    *
-   * @param args - should always be two Strings: The first one is {@code expectedClTRID} and the
-   *     second one is {@code domainName}.
+   * @param args - should always be two Strings: The first one is {@code clTrid} and the second one
+   *     is {@code domainName}.
    * @return the current {@link EppRequestMessage} instance.
    * @throws EppClientException - On the occasion that the prober can't appropriately modify the EPP
    *     XML document, the blame falls on the prober, not the server, so it throws an {@link
@@ -83,7 +83,7 @@ public class EppRequestMessage extends EppMessage implements OutboundMessageType
   @Override
   public EppRequestMessage modifyMessage(String... args) throws EppClientException {
     // First argument should always be clTRID.
-    String clTRID = args[0];
+    String clTrid = args[0];
 
     // Second argument should always be domainName.
     String domainName = args[1];
@@ -92,14 +92,14 @@ public class EppRequestMessage extends EppMessage implements OutboundMessageType
       // Checks if we are sending an actual EPP request to the server (if template is null, than
       // we just expect a response.
       try {
-        message = getEppDocFromTemplate(template, getReplacements.apply(clTRID, domainName));
+        message = getEppDocFromTemplate(template, getReplacements.apply(clTrid, domainName));
       } catch (IOException e) {
         throw new EppClientException(e);
       }
     }
     // Update the EppResponseMessage associated with this EppRequestMessage to reflect changed
     // parameters on this step.
-    expectedResponse.updateInformation(clTRID, domainName);
+    expectedResponse.updateInformation(clTrid, domainName);
     return this;
   }
 

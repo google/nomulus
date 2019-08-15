@@ -89,6 +89,8 @@ public class TestServer {
   }
 
   public static TestServer eppServer(EventLoopGroup eventLoopGroup, LocalAddress localAddress) {
+    // TODO - add LengthFieldBasedFrameDecoder to handlers in pipeline if necessary for future
+    // tests.
     return new TestServer(eventLoopGroup, localAddress, ImmutableList.of(new EppHandler()));
   }
 
@@ -140,6 +142,7 @@ public class TestServer {
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) {
+      // TODO - pass EppMessage into future to easily read attributes of message.
       future = ctx.newPromise();
     }
 
@@ -149,6 +152,9 @@ public class TestServer {
 
       byte[] messageBytes = new byte[buf.readableBytes()];
       buf.readBytes(messageBytes);
+
+      // TODO - Break ByteBuf into multiple pieces to test how well it works with
+      // LengthFieldBasedFrameDecoder.
 
       try {
         doc = EppMessage.byteArrayToXmlDoc(messageBytes);

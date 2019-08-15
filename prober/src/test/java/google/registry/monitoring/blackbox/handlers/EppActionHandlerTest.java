@@ -87,25 +87,25 @@ public class EppActionHandlerTest {
     channel = new EmbeddedChannel(handlers);
   }
 
-  private Document getResponse(EppResponseMessage response, boolean fail, String clTRID)
+  private Document getResponse(EppResponseMessage response, boolean fail, String clTrid)
       throws IOException, EppClientException {
     if (response.name().equals("greeting")) {
       if (fail) {
-        return EppUtils.getBasicResponse(true, clTRID, SERVER_ID);
+        return EppUtils.getBasicResponse(true, clTrid, SERVER_ID);
       } else {
         return EppUtils.getGreeting();
       }
     } else if (response.name().equals("domainExists")) {
-      return EppUtils.getDomainCheck(!fail, clTRID, SERVER_ID, DOMAIN_NAME);
+      return EppUtils.getDomainCheck(!fail, clTrid, SERVER_ID, DOMAIN_NAME);
 
     } else if (response.name().equals("domainNotExists")) {
-      return EppUtils.getDomainCheck(fail, clTRID, SERVER_ID, DOMAIN_NAME);
+      return EppUtils.getDomainCheck(fail, clTrid, SERVER_ID, DOMAIN_NAME);
 
     } else if (response.name().equals("success")) {
-      return EppUtils.getBasicResponse(!fail, clTRID, SERVER_ID);
+      return EppUtils.getBasicResponse(!fail, clTrid, SERVER_ID);
 
     } else {
-      return EppUtils.getBasicResponse(fail, clTRID, SERVER_ID);
+      return EppUtils.getBasicResponse(fail, clTrid, SERVER_ID);
     }
   }
 

@@ -272,9 +272,9 @@ public class EppModule {
     return new EppRequestMessage(
         successResponse,
         loginTemplate,
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableMap.of(
-                CLIENT_TRID_KEY, clTRID,
+                CLIENT_TRID_KEY, clTrid,
                 CLIENT_ID_KEY, userId,
                 CLIENT_PASSWORD_KEY, userPassword));
   }
@@ -290,9 +290,9 @@ public class EppModule {
     return new EppRequestMessage(
         failureResponse,
         loginTemplate,
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableMap.of(
-                CLIENT_TRID_KEY, clTRID,
+                CLIENT_TRID_KEY, clTrid,
                 CLIENT_ID_KEY, userId,
                 CLIENT_PASSWORD_KEY, userPassword));
   }
@@ -306,9 +306,9 @@ public class EppModule {
     return new EppRequestMessage(
         successResponse,
         createTemplate,
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableMap.of(
-                CLIENT_TRID_KEY, clTRID,
+                CLIENT_TRID_KEY, clTrid,
                 DOMAIN_KEY, domain));
   }
 
@@ -321,9 +321,9 @@ public class EppModule {
     return new EppRequestMessage(
         failureResponse,
         createTemplate,
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableMap.of(
-                CLIENT_TRID_KEY, clTRID,
+                CLIENT_TRID_KEY, clTrid,
                 DOMAIN_KEY, domain));
   }
 
@@ -336,9 +336,9 @@ public class EppModule {
     return new EppRequestMessage(
         successResponse,
         deleteTemplate,
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableMap.of(
-                CLIENT_TRID_KEY, clTRID,
+                CLIENT_TRID_KEY, clTrid,
                 DOMAIN_KEY, domain));
   }
 
@@ -351,9 +351,9 @@ public class EppModule {
     return new EppRequestMessage(
         failureResponse,
         deleteTemplate,
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableMap.of(
-                CLIENT_TRID_KEY, clTRID,
+                CLIENT_TRID_KEY, clTrid,
                 DOMAIN_KEY, domain));
   }
 
@@ -366,7 +366,7 @@ public class EppModule {
     return new EppRequestMessage(
         successResponse,
         logoutTemplate,
-        (clTRID, domain) -> ImmutableMap.of(CLIENT_TRID_KEY, clTRID));
+        (clTrid, domain) -> ImmutableMap.of(CLIENT_TRID_KEY, clTrid));
   }
 
   /** {@link Provides} check {@link EppRequestMessage} with expected response of domainExists. */
@@ -378,9 +378,9 @@ public class EppModule {
     return new EppRequestMessage(
         domainExistsResponse,
         checkTemplate,
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableMap.of(
-                CLIENT_TRID_KEY, clTRID,
+                CLIENT_TRID_KEY, clTrid,
                 DOMAIN_KEY, domain));
   }
 
@@ -393,9 +393,9 @@ public class EppModule {
     return new EppRequestMessage(
         domainNotExistsResponse,
         checkTemplate,
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableMap.of(
-                CLIENT_TRID_KEY, clTRID,
+                CLIENT_TRID_KEY, clTrid,
                 DOMAIN_KEY, domain));
   }
 
@@ -404,9 +404,9 @@ public class EppModule {
   static EppResponseMessage provideSuccessResponse() {
     return new EppResponseMessage(
         "success",
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableList.of(
-                String.format("//eppns:clTRID[.='%s']", clTRID), EppMessage.XPASS_EXPRESSION));
+                String.format("//eppns:clTRID[.='%s']", clTrid), EppMessage.XPASS_EXPRESSION));
   }
 
   @Provides
@@ -414,9 +414,9 @@ public class EppModule {
   static EppResponseMessage provideFailureResponse() {
     return new EppResponseMessage(
         "failure",
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableList.of(
-                String.format("//eppns:clTRID[.='%s']", clTRID), EppMessage.XFAIL_EXPRESSION));
+                String.format("//eppns:clTRID[.='%s']", clTrid), EppMessage.XFAIL_EXPRESSION));
   }
 
   @Provides
@@ -424,9 +424,9 @@ public class EppModule {
   static EppResponseMessage provideDomainExistsResponse() {
     return new EppResponseMessage(
         "domainExists",
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableList.of(
-                String.format("//eppns:clTRID[.='%s']", clTRID),
+                String.format("//eppns:clTRID[.='%s']", clTrid),
                 String.format("//domainns:name[@avail='false'][.='%s']", domain),
                 EppMessage.XPASS_EXPRESSION));
   }
@@ -436,9 +436,9 @@ public class EppModule {
   static EppResponseMessage provideDomainNotExistsResponse() {
     return new EppResponseMessage(
         "domainNotExists",
-        (clTRID, domain) ->
+        (clTrid, domain) ->
             ImmutableList.of(
-                String.format("//eppns:clTRID[.='%s']", clTRID),
+                String.format("//eppns:clTRID[.='%s']", clTrid),
                 String.format("//domainns:name[@avail='true'][.='%s']", domain),
                 EppMessage.XPASS_EXPRESSION));
   }
@@ -447,7 +447,7 @@ public class EppModule {
   @Named("greeting")
   static EppResponseMessage provideGreetingResponse() {
     return new EppResponseMessage(
-        "greeting", (clTRID, domain) -> ImmutableList.of("//eppns:greeting"));
+        "greeting", (clTrid, domain) -> ImmutableList.of("//eppns:greeting"));
   }
 
   /** {@link Provides} filename of template for login EPP request. */
