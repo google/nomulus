@@ -366,16 +366,16 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
 
   @Test
   public void testSuccess_allowRegistryLock() throws Exception {
-    assertThat(loadRegistrar("NewRegistrar").getRegistryLockAllowed()).isFalse();
+    assertThat(loadRegistrar("NewRegistrar").isRegistryLockAllowed()).isFalse();
     runCommandForced("--registry_lock_allowed=true", "NewRegistrar");
-    assertThat(loadRegistrar("NewRegistrar").getRegistryLockAllowed()).isTrue();
+    assertThat(loadRegistrar("NewRegistrar").isRegistryLockAllowed()).isTrue();
   }
 
   @Test
   public void testSuccess_disallowRegistryLock() throws Exception {
     persistResource(loadRegistrar("NewRegistrar").asBuilder().setRegistryLockAllowed(true).build());
     runCommandForced("--registry_lock_allowed=false", "NewRegistrar");
-    assertThat(loadRegistrar("NewRegistrar").getRegistryLockAllowed()).isFalse();
+    assertThat(loadRegistrar("NewRegistrar").isRegistryLockAllowed()).isFalse();
   }
 
   @Test

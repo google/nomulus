@@ -88,7 +88,7 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
     assertThat(registrar.getCreationTime()).isIn(Range.closed(before, after));
     assertThat(registrar.getLastUpdateTime()).isEqualTo(registrar.getCreationTime());
     assertThat(registrar.getBlockPremiumNames()).isFalse();
-    assertThat(registrar.getRegistryLockAllowed()).isFalse();
+    assertThat(registrar.isRegistryLockAllowed()).isFalse();
     assertThat(registrar.getPoNumber()).isEmpty();
     assertThat(registrar.getIcannReferralEmail()).isEqualTo("foo@bar.test");
 
@@ -786,7 +786,7 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
 
     Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
     assertThat(registrar).isPresent();
-    assertThat(registrar.get().getRegistryLockAllowed()).isTrue();
+    assertThat(registrar.get().isRegistryLockAllowed()).isTrue();
   }
 
   @Test
@@ -808,7 +808,7 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
 
     Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
     assertThat(registrar).isPresent();
-    assertThat(registrar.get().getRegistryLockAllowed()).isFalse();
+    assertThat(registrar.get().isRegistryLockAllowed()).isFalse();
   }
 
   @Test

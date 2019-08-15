@@ -409,7 +409,7 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
    */
   boolean contactsRequireSyncing = true;
 
-  /** Whether or not registry lock is enabled for this registrar. */
+  /** Whether or not registry lock is allowed for this registrar. */
   boolean registryLockAllowed = false;
 
   @NonFinalForTesting
@@ -548,7 +548,7 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
     return contactsRequireSyncing;
   }
 
-  public boolean getRegistryLockAllowed() {
+  public boolean isRegistryLockAllowed() {
     return registryLockAllowed;
   }
 
