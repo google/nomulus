@@ -30,8 +30,8 @@ import static google.registry.config.RegistryConfig.getDefaultRegistrarWhoisServ
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.registrar.RegistrarPasswords.hashPassword;
-import static google.registry.model.registrar.RegistrarPasswords.SALT_SUPPLIER;
+import static google.registry.util.PasswordUtils.hashPassword;
+import static google.registry.util.PasswordUtils.SALT_SUPPLIER;
 import static google.registry.model.registry.Registries.assertTldsExist;
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;

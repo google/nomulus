@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.registrar;
+package google.registry.util;
 
 import static com.google.common.io.BaseEncoding.base64;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import com.google.common.base.Supplier;
 import java.security.MessageDigest;
@@ -23,23 +23,25 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
 /** Common utility class to handle password hashing and salting */
-public final class RegistrarPasswords {
+public final class PasswordUtils {
 
-  static final Supplier<byte[]> SALT_SUPPLIER =
+  public static final Supplier<byte[]> SALT_SUPPLIER =
       () -> {
-        // There are 32 bytes in a sha-256 hash, and the salt should generally be the same size.
+        // There are 32 bytes in a SHA-256 hash, and the salt should generally be the same size.
         byte[] salt = new byte[32];
         new SecureRandom().nextBytes(salt);
         return salt;
       };
 
-  static String hashPassword(String password, String salt) {
+  public static String hashPassword(String password, String salt) {
     try {
       return base64()
-          .encode(MessageDigest.getInstance("SHA-256").digest((password + salt).getBytes(UTF_8)));
+          .encode(
+              MessageDigest.getInstance("SHA-256").digest((password + salt).getBytes(US_ASCII)));
     } catch (NoSuchAlgorithmException e) {
       // All implementations of MessageDigest are required to support SHA-256.
-      throw new RuntimeException(e);
+      throw new RuntimeException(
+          "All MessageDigest implementations are required to support SHA-256 but this didn't", e);
     }
   }
 }
