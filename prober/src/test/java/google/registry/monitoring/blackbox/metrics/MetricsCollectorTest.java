@@ -39,13 +39,14 @@ public class MetricsCollectorTest {
   }
 
   @Test
-  public void testSuccess_oneRecord() {
+  public void testOneRecord() {
     metrics.recordResult(protocol, actionName, ResponseType.SUCCESS, 100);
 
     assertThat(MetricsCollector.responsesCounter)
         .hasValueForLabels(1, protocol, actionName, ResponseType.SUCCESS.name())
         .and()
         .hasNoOtherValues();
+
     assertThat(MetricsCollector.latencyMs)
         .hasDataSetForLabels(
             ImmutableSet.of(100), protocol, actionName, ResponseType.SUCCESS.name())
@@ -54,13 +55,15 @@ public class MetricsCollectorTest {
   }
 
   @Test
-  public void testSuccess_multipleRecords_same() {
+  public void testMultipleRecords_sameStatus() {
     metrics.recordResult(protocol, actionName, ResponseType.FAILURE, 100);
     metrics.recordResult(protocol, actionName, ResponseType.FAILURE, 200);
+
     assertThat(MetricsCollector.responsesCounter)
         .hasValueForLabels(2, protocol, actionName, ResponseType.FAILURE.name())
         .and()
         .hasNoOtherValues();
+
     assertThat(MetricsCollector.latencyMs)
         .hasDataSetForLabels(
             ImmutableSet.of(100, 200), protocol, actionName, ResponseType.FAILURE.name())
@@ -69,15 +72,17 @@ public class MetricsCollectorTest {
   }
 
   @Test
-  public void testSuccess_multipleRecords_differentStatus() {
+  public void testMultipleRecords_differentStatus() {
     metrics.recordResult(protocol, actionName, ResponseType.SUCCESS, 100);
     metrics.recordResult(protocol, actionName, ResponseType.FAILURE, 200);
+
     assertThat(MetricsCollector.responsesCounter)
         .hasValueForLabels(1, protocol, actionName, ResponseType.SUCCESS.name())
         .and()
         .hasValueForLabels(1, protocol, actionName, ResponseType.FAILURE.name())
         .and()
         .hasNoOtherValues();
+
     assertThat(MetricsCollector.latencyMs)
         .hasDataSetForLabels(
             ImmutableSet.of(100), protocol, actionName, ResponseType.SUCCESS.name())

@@ -44,6 +44,12 @@ import java.util.function.BiFunction;
  */
 public class EppRequestMessage extends EppMessage implements OutboundMessageType {
 
+  /**
+   * String that describes the type of EppRequestMessage: hello, login, create, check, delete,
+   * logout.
+   */
+  private String name;
+
   /** Corresponding {@link EppResponseMessage} that we expect to receive on a successful request. */
   private EppResponseMessage expectedResponse;
 
@@ -60,10 +66,12 @@ public class EppRequestMessage extends EppMessage implements OutboundMessageType
    * Private constructor for {@link EppRequestMessage} that its subclasses use for instantiation.
    */
   public EppRequestMessage(
+      String name,
       EppResponseMessage expectedResponse,
       String template,
       BiFunction<String, String, Map<String, String>> getReplacements) {
 
+    this.name = name;
     this.expectedResponse = expectedResponse;
     this.template = template;
     this.getReplacements = getReplacements;
@@ -125,8 +133,13 @@ public class EppRequestMessage extends EppMessage implements OutboundMessageType
     return buf;
   }
 
-  /** */
+  /** Returns the {@link EppResponseMessage} we expect. */
   public EppResponseMessage getExpectedResponse() {
     return expectedResponse;
+  }
+
+  @Override
+  public String name() {
+    return name + " " + expectedResponse.name();
   }
 }

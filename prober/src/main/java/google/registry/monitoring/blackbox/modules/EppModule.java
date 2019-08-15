@@ -259,7 +259,7 @@ public class EppModule {
   static EppRequestMessage provideHelloRequestMessage(
       @Named("greeting") EppResponseMessage greetingResponse) {
 
-    return new EppRequestMessage(greetingResponse, null, (a, b) -> ImmutableMap.of());
+    return new EppRequestMessage("hello", greetingResponse, null, (a, b) -> ImmutableMap.of());
   }
 
   /**
@@ -276,6 +276,7 @@ public class EppModule {
       @Named("eppUserId") String userId,
       @Named("eppPassword") String userPassword) {
     return new EppRequestMessage(
+        "login",
         successResponse,
         loginTemplate,
         (clTrid, domain) ->
@@ -294,6 +295,7 @@ public class EppModule {
       @Named("eppUserId") String userId,
       @Named("eppPassword") String userPassword) {
     return new EppRequestMessage(
+        "login",
         failureResponse,
         loginTemplate,
         (clTrid, domain) ->
@@ -310,6 +312,7 @@ public class EppModule {
       @Named("success") EppResponseMessage successResponse,
       @Named("create") String createTemplate) {
     return new EppRequestMessage(
+        "create",
         successResponse,
         createTemplate,
         (clTrid, domain) ->
@@ -325,6 +328,7 @@ public class EppModule {
       @Named("failure") EppResponseMessage failureResponse,
       @Named("create") String createTemplate) {
     return new EppRequestMessage(
+        "create",
         failureResponse,
         createTemplate,
         (clTrid, domain) ->
@@ -340,6 +344,7 @@ public class EppModule {
       @Named("success") EppResponseMessage successResponse,
       @Named("delete") String deleteTemplate) {
     return new EppRequestMessage(
+        "delete",
         successResponse,
         deleteTemplate,
         (clTrid, domain) ->
@@ -355,6 +360,7 @@ public class EppModule {
       @Named("failure") EppResponseMessage failureResponse,
       @Named("delete") String deleteTemplate) {
     return new EppRequestMessage(
+        "delete",
         failureResponse,
         deleteTemplate,
         (clTrid, domain) ->
@@ -370,6 +376,7 @@ public class EppModule {
       @Named("success") EppResponseMessage successResponse,
       @Named("logout") String logoutTemplate) {
     return new EppRequestMessage(
+        "logout",
         successResponse,
         logoutTemplate,
         (clTrid, domain) -> ImmutableMap.of(CLIENT_TRID_KEY, clTrid));
@@ -382,6 +389,7 @@ public class EppModule {
       @Named("domainExists") EppResponseMessage domainExistsResponse,
       @Named("check") String checkTemplate) {
     return new EppRequestMessage(
+        "check",
         domainExistsResponse,
         checkTemplate,
         (clTrid, domain) ->
@@ -397,6 +405,7 @@ public class EppModule {
       @Named("domainNotExists") EppResponseMessage domainNotExistsResponse,
       @Named("check") String checkTemplate) {
     return new EppRequestMessage(
+        "check",
         domainNotExistsResponse,
         checkTemplate,
         (clTrid, domain) ->

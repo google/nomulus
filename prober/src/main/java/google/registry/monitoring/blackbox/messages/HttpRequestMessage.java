@@ -79,7 +79,7 @@ public class HttpRequestMessage extends DefaultFullHttpRequest implements Outbou
   }
 
   @Override
-  public String toString() {
+  public String name() {
     return String.format("Http(s) Request on: %s", headers().get("host"));
   }
 }

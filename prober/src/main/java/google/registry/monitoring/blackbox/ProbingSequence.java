@@ -16,6 +16,7 @@ package google.registry.monitoring.blackbox;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.monitoring.blackbox.connection.ProbingAction;
+import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.exceptions.UnrecoverableStateException;
 import google.registry.monitoring.blackbox.metrics.MetricsCollector;
 import google.registry.monitoring.blackbox.tokens.Token;
@@ -125,11 +126,25 @@ public class ProbingSequence extends CircularList<ProbingStep> {
     } catch (UnrecoverableStateException e) {
       // On an UnrecoverableStateException, terminate the sequence.
       logger.atSevere().withCause(e).log("Unrecoverable error in generating or calling action.");
+
+      // Records gathered metrics.
+      metrics.recordResult(
+          get().protocol().name(),
+          get().messageTemplate().name(),
+          MetricsCollector.ResponseType.ERROR,
+          clock.nowUtc().getMillis() - start);
       return;
 
     } catch (Exception e) {
       // On any other type of error, restart the sequence at the very first step.
       logger.atWarning().withCause(e).log("Error in generating or calling action.");
+
+      // Records gathered metrics.
+      metrics.recordResult(
+          get().protocol().name(),
+          get().messageTemplate().name(),
+          MetricsCollector.ResponseType.ERROR,
+          clock.nowUtc().getMillis() - start);
 
       // Restart the sequence at the very first step.
       restartSequence();
@@ -142,9 +157,30 @@ public class ProbingSequence extends CircularList<ProbingStep> {
             // On a successful result, we log as a successful step, and note a success.
             logger.atInfo().log(String.format("Successfully completed Probing Step: %s", this));
 
+            // Records gathered metrics.
+            metrics.recordResult(
+                get().protocol().name(),
+                get().messageTemplate().name(),
+                MetricsCollector.ResponseType.SUCCESS,
+                clock.nowUtc().getMillis() - start);
           } else {
             // On a failed result, we log the failure and note either a failure or error.
             logger.atSevere().withCause(f.cause()).log("Did not result in future success");
+
+            // Records gathered metrics as either FAILURE or ERROR depending on future's cause.
+            if (f.cause() instanceof FailureException) {
+              metrics.recordResult(
+                  get().protocol().name(),
+                  get().messageTemplate().name(),
+                  MetricsCollector.ResponseType.FAILURE,
+                  clock.nowUtc().getMillis() - start);
+            } else {
+              metrics.recordResult(
+                  get().protocol().name(),
+                  get().messageTemplate().name(),
+                  MetricsCollector.ResponseType.ERROR,
+                  clock.nowUtc().getMillis() - start);
+            }
 
             // If not unrecoverable, we restart the sequence.
             if (!(f.cause() instanceof UnrecoverableStateException)) {

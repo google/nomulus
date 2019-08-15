@@ -27,6 +27,7 @@ import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.exceptions.UnrecoverableStateException;
+import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import google.registry.monitoring.blackbox.metrics.MetricsCollector;
 import google.registry.monitoring.blackbox.tokens.Token;
 import google.registry.util.Clock;
@@ -75,6 +76,12 @@ public class ProbingSequenceTest {
   private Protocol mockProtocol = Mockito.mock(Protocol.class);
 
   /**
+   * Default mock {@link OutboundMessageType} returned by {@code mockStep} and occasionally other
+   * mock {@link ProbingStep}s.
+   */
+  OutboundMessageType mockMessage = Mockito.mock(OutboundMessageType.class);
+
+  /**
    * {@link EmbeddedChannel} used to create new {@link ChannelPromise} objects returned by mock
    * {@link ProbingAction}s on their {@code call} methods.
    */
@@ -95,6 +102,9 @@ public class ProbingSequenceTest {
     // In order to avoid a NullPointerException, we must have the protocol returned that stores
     // persistent connection as false.
     doReturn(mockProtocol).when(mockStep).protocol();
+
+    doReturn("test").when(mockMessage).name();
+    doReturn(mockMessage).when(mockStep).messageTemplate();
 
     // Allows for test if channel is accurately set.
     doCallRealMethod().when(mockToken).setChannel(any(Channel.class));
@@ -218,6 +228,10 @@ public class ProbingSequenceTest {
     // Necessary for success of ProbingSequence runStep method as it calls get().protocol().
     doReturn(mockProtocol).when(secondStep).protocol();
 
+    // Necessary for success of ProbingSequence recording metrics as it calls get()
+    // .messageTemplate.name().
+    doReturn(mockMessage).when(secondStep).messageTemplate();
+
     // We ensure that secondStep has necessary attributes to be successful step to pass on to
     // mockStep once more.
     doReturn(channel.newSucceededFuture()).when(secondAction).call();
@@ -322,16 +336,7 @@ public class ProbingSequenceTest {
     // Create a mock first step that returns the dummy action when called to generate an action.
     doThrow(UndeterminedStateException.class).when(mockStep).generateAction(mockToken);
 
-    // Dummy step that server purpose of placeholder to test ability of ProbingSequence to move on.
-    ProbingStep secondStep = Mockito.mock(ProbingStep.class);
-
-    // Build testable sequence from mocked components.
-    ProbingSequence sequence =
-        new ProbingSequence.Builder(mockToken, metrics, clock)
-            .add(mockStep)
-            .add(secondStep)
-            .build();
-
+    // Tests generic behavior we expect when we fail in generating or calling an action.
     testActionFailure();
 
     // We expect to have never called this action, as we fail each time whenever generating actions.

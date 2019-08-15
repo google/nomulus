@@ -92,13 +92,14 @@ public class EppUtils {
 
   /** Returns standard hello request with supplied response. */
   public static EppRequestMessage getHelloMessage(EppResponseMessage greetingResponse) {
-    return new EppRequestMessage(greetingResponse, null, (a, b) -> ImmutableMap.of());
+    return new EppRequestMessage("hello", greetingResponse, null, (a, b) -> ImmutableMap.of());
   }
 
   /** Returns standard login request with supplied userId, userPassword, and response. */
   public static EppRequestMessage getLoginMessage(
       EppResponseMessage response, String userId, String userPassword) {
     return new EppRequestMessage(
+        "login",
         response,
         "login.xml",
         (clTrid, domain) ->
@@ -111,6 +112,7 @@ public class EppUtils {
   /** Returns standard create request with supplied response. */
   public static EppRequestMessage getCreateMessage(EppResponseMessage response) {
     return new EppRequestMessage(
+        "create",
         response,
         "create.xml",
         (clTrid, domain) ->
@@ -122,6 +124,7 @@ public class EppUtils {
   /** Returns standard delete request with supplied response. */
   public static EppRequestMessage getDeleteMessage(EppResponseMessage response) {
     return new EppRequestMessage(
+        "delete",
         response,
         "delete.xml",
         (clTrid, domain) ->
@@ -133,6 +136,7 @@ public class EppUtils {
   /** Returns standard logout request with supplied response. */
   public static EppRequestMessage getLogoutMessage(EppResponseMessage successResponse) {
     return new EppRequestMessage(
+        "logout",
         successResponse,
         "logout.xml",
         (clTrid, domain) -> ImmutableMap.of(CLIENT_TRID_KEY, clTrid));
@@ -141,6 +145,7 @@ public class EppUtils {
   /** Returns standard check request with supplied response. */
   public static EppRequestMessage getCheckMessage(EppResponseMessage response) {
     return new EppRequestMessage(
+        "check",
         response,
         "check.xml",
         (clTrid, domain) ->

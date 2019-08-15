@@ -38,4 +38,9 @@ public class TestMessage implements OutboundMessageType, InboundMessageType {
     message = args[0];
     return this;
   }
+
+  @Override
+  public String name() {
+    return message;
+  }
 }

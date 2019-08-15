@@ -30,8 +30,8 @@ public interface OutboundMessageType {
 
   /**
    * Necessary to inform metrics collector what kind of message is sent down {@link
-   * io.netty.channel.ChannelPipeline}
+   * io.netty.channel.ChannelPipeline}. Not equivalent to toString, as to different instances will
+   * have the same name if they perform the same action.
    */
-  @Override
-  String toString();
+  String name();
 }
