@@ -71,7 +71,7 @@ import org.xml.sax.SAXException;
  */
 public class EppMessage {
 
-  /** Key that allows for substitution of{@code domainName} to xml template. */
+  /** Key that allows for substitution of {@code domainName} to xml template. */
   public static final String DOMAIN_KEY = "//domainns:name";
 
   /** Key that allows for substitution of epp user id to xml template. */

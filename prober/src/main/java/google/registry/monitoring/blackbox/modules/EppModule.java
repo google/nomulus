@@ -66,7 +66,7 @@ public class EppModule {
   private static final int maximumMessageLengthBytes = 512 * 1024;
 
   /** Standard EPP header length. */
-  // TODO - replace with confix specified header length (still 4).
+  // TODO - replace with config specified header length (still 4).
   private static final int eppHeaderLengthBytes = 4;
 
   /** Dagger provided {@link ProbingSequence} that probes EPP login and logout actions. */
@@ -109,7 +109,7 @@ public class EppModule {
    */
   @Provides
   @Singleton
-  // @IntoSet
+  @IntoSet
   static ProbingSequence provideEppLoginCreateCheckDeleteCheckLogoutProbingSequence(
       EppToken.Transient token,
       @Named("hello") ProbingStep helloStep,

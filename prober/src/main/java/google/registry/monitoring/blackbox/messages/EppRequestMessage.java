@@ -27,13 +27,17 @@ import java.util.function.BiFunction;
  * {@link EppMessage} subclass that implements {@link OutboundMessageType}, which represents an
  * outbound Epp message.
  *
- * <p>There are 6 specific types of this {@link EppRequestMessage}, which represent the facets of
- * the 5 basic EPP commands we are attempting to probe. The original 5 are: LOGIN, CREATE, CHECK,
- * DELETE, LOGOUT.
+ * <p>In modifying the {@code getReplacements} field of {@link EppRequestMessage} and the template,
+ * we can represent the the 5 basic EPP commands we are attempting to probe. The original 5 are:
+ * LOGIN, CREATE, CHECK, DELETE, LOGOUT.
  *
- * <p>In turn, there are 6 similar types: Hello, Login, Create, Check, Delete, and Logout. The only
- * difference is that we added a hello command that simply waits for the server to send a greeting,
- * then moves on to the Login action.
+ * <p>In turn, we equivalently create 10 different EPP commands probed: Hello - checks for Greeting
+ * response, Login expecting success, Login expecting Failure, Create expecting Success, Create
+ * expecting Failure, Check that the domain exists, Check that the domain doesn't exist, Delete
+ * expecting Success, Delete expecting Failure, and Logout expecting Success.
+ *
+ * <p>The main difference is that we added a hello command that simply waits for the server to send
+ * a greeting, then moves on to the Login action.
  *
  * <p>Stores a clTRID and domainName which is modified each time the token calls {@code
  * modifyMessage}. These will also modify the EPP request sent to the server.
@@ -126,192 +130,3 @@ public class EppRequestMessage extends EppMessage implements OutboundMessageType
     return expectedResponse;
   }
 }
-/*
-  /**
-   * {@link EppRequestMessage} subclass that represents initial connection with server.
-   *
-   * <p>No actual message is sent, but expects back a {@link EppResponseMessage.Greeting} from the
-   * server.
-   *
-   * <p>Constructor takes in only the Dagger provided {@link EppResponseMessage.Greeting}.
-  public static class Hello extends EppRequestMessage {
-
-    public Hello(EppResponseMessage greetingResponse) {
-      super(greetingResponse, null);
-    }
-
-    @Override
-    public EppRequestMessage modifyMessage(String... args) {
-      return this;
-    }
-
-    @Override
-    public String toString() {
-      return "Hello Action";
-    }
-  }
-
-  /**
-   * {@link EppRequestMessage} subclass that represents message sent to login to the EPP server.
-   *
-   * <p>Expects back a {@link EppResponseMessage.SimpleSuccess} or {@link
-   * EppResponseMessage.Failure} from server depending on if we expect the command to succeed or
-   * fail.
-   *
-   * <p>Constructor takes in Dagger provided {@code eppClientId} and {@code eppClientPassword} to
-   * login to the server. Additionally, the {@link EppResponseMessage} is provided, as that is what
-   * we expect to receive back.
-   *
-   * <p>Message is modified each time solely to reflect new {@code clTRID}.
-  public static class Login extends EppRequestMessage {
-
-    private static final String template = "login.xml";
-
-     We store the clientId and password, which are necessary for the login EPP message.
-    private String eppClientId;
-
-    private String eppClientPassword;
-
-    public Login(EppResponseMessage response, String eppClientId, String eppClientPassword) {
-      super(response, template);
-
-      this.eppClientId = eppClientId;
-      this.eppClientPassword = eppClientPassword;
-    }
-
-    @Override
-    public EppRequestMessage modifyMessage(String... args) throws EppClientException {
-      clTRID = args[0];
-      domainName = args[1];
-
-      try {
-        message =
-            getEppDocFromTemplate(
-                template,
-                ImmutableMap.of(
-                    CLIENT_ID_KEY, eppClientId,
-                    CLIENT_PASSWORD_KEY, eppClientPassword,
-                    CLIENT_TRID_KEY, clTRID));
-
-      } catch (IOException e) {
-        throw new EppClientException(e);
-      }
-      return this;
-    }
-
-    @Override
-    public String toString() {
-      return "Login Action";
-    }
-  }
-
-  /**
-   * {@link EppRequestMessage} subclass that represents message sent to check that a given domain
-   * exists on the server's EPP records.
-   *
-   * <p>Expects back a {@link EppResponseMessage.DomainExists} or {@link
-   * EppResponseMessage.DomainNotExists} from server.
-   *
-   * <p>Constructor takes in only Dagger provided {@link EppResponseMessage}.
-   *
-   * <p>Message is modified using parent {@code modifyMessage}.
-  public static class Check extends EppRequestMessage {
-
-    private static final String template = "check.xml";
-
-    public Check(EppResponseMessage response) {
-      super(response, template);
-    }
-
-    @Override
-    public String toString() {
-      return "Check Action";
-    }
-  }
-
-  /**
-   * {@link EppRequestMessage} subclass that represents message sent to create a new domain.
-   *
-   * <p>Expects back a {@link EppResponseMessage.SimpleSuccess} or {@link
-   * EppResponseMessage.Failure} from server depending on if we expect the command to succeed or
-   * fail.
-   *
-   * <p>Constructor takes in only Dagger provided {@link EppResponseMessage}.
-   *
-   * <p>Message is modified using parent {@code modifyMessage}.
-  public static class Create extends EppRequestMessage {
-
-    private static final String template = "create.xml";
-
-    public Create(EppResponseMessage response) {
-      super(response, template);
-    }
-
-    @Override
-    public String toString() {
-      return "Create Action";
-    }
-  }
-
-  /**
-   * {@link EppRequestMessage} subclass that represents message sent to delete records of a given
-   * domain.
-   *
-   * <p>Expects back a {@link EppResponseMessage.SimpleSuccess} or {@link
-   * EppResponseMessage.Failure} from server depending on if we expect the command to succeed or
-   * fail.
-   *
-   * <p>Constructor takes in only Dagger provided {@link EppResponseMessage}.
-   *
-   * <p>Message is modified using parent {@code modifyMessage}.
-  public static class Delete extends EppRequestMessage {
-
-    private static final String template = "delete.xml";
-
-    public Delete(EppResponseMessage response) {
-      super(response, template);
-    }
-
-    @Override
-    public String toString() {
-      return "Delete Action";
-    }
-  }
-
-  /**
-   * {@link EppRequestMessage} subclass that represents message sent to logout of EPP server.
-   *
-   * <p>Expects back a {@link EppResponseMessage.SimpleSuccess} from server.
-   *
-   * <p>Constructor takes in only Dagger provided {@link EppResponseMessage}.
-   *
-   * <p>Message is modified each time solely to reflect new {@code clTRID}.
-  public static class Logout extends EppRequestMessage {
-
-    private static final String template = "logout.xml";
-
-    public Logout(EppResponseMessage response) {
-      super(response, template);
-    }
-
-    @Override
-    public EppRequestMessage modifyMessage(String... args) throws EppClientException {
-      clTRID = args[0];
-      domainName = args[1];
-
-      try {
-        message = getEppDocFromTemplate(template, ImmutableMap.of(CLIENT_TRID_KEY, clTRID));
-      } catch (IOException e) {
-        throw new EppClientException(e);
-      }
-      return this;
-    }
-
-    @Override
-    public String toString() {
-      return "Logout Action";
-    }
-  }
-}
-
- */

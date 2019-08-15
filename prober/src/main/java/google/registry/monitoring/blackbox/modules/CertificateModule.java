@@ -28,10 +28,10 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
+import org.joda.time.Duration;
 
 /**
  * Dagger module that provides bindings needed to inject server certificate chain and private key.
@@ -60,9 +60,9 @@ public class CertificateModule {
   }
 
   @Provides
-  @Named("duration")
-  static int provideDurationStorage() {
-    return 2;
+  @LocalSecrets
+  static Duration provideCacheDuration() {
+    return Duration.standardSeconds(2);
   }
 
   @Singleton
@@ -108,8 +108,9 @@ public class CertificateModule {
   @Provides
   @LocalSecrets
   static Supplier<PrivateKey> providePrivatekeySupplier(
-      @LocalSecrets Provider<PrivateKey> privateKeyProvider, @Named("duration") int duration) {
-    return memoizeWithExpiration(privateKeyProvider::get, duration, TimeUnit.SECONDS);
+      @LocalSecrets Provider<PrivateKey> privateKeyProvider, @LocalSecrets Duration duration) {
+    return memoizeWithExpiration(
+        privateKeyProvider::get, duration.getStandardSeconds(), TimeUnit.SECONDS);
   }
 
   @Singleton
@@ -117,7 +118,8 @@ public class CertificateModule {
   @LocalSecrets
   static Supplier<X509Certificate[]> provideCertificatesSupplier(
       @LocalSecrets Provider<X509Certificate[]> certificatesProvider,
-      @Named("duration") int duration) {
-    return memoizeWithExpiration(certificatesProvider::get, duration, TimeUnit.SECONDS);
+      @LocalSecrets Duration duration) {
+    return memoizeWithExpiration(
+        certificatesProvider::get, duration.getStandardSeconds(), TimeUnit.SECONDS);
   }
 }

@@ -19,7 +19,6 @@ import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException
 import google.registry.monitoring.blackbox.messages.EppRequestMessage;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -78,9 +77,6 @@ public abstract class EppToken extends Token {
    * well.
    */
   private String getNewTRID() {
-    // TODO - Determine how prober cleanup servlet finds domains needed to be removed and format
-    // the last digit accordingly. For now we keep a zero in the place of hte old prober's
-    // clientIdSuffix.
     return String.format(
         "prober-%s-%d-%d",
         "localhost", System.currentTimeMillis(), clientIdSuffix.incrementAndGet());
@@ -113,9 +109,6 @@ public abstract class EppToken extends Token {
 
     @Override
     public Token next() {
-      if (channel != null) {
-        ChannelFuture unusedFuture = channel.close();
-      }
       return new Transient(tld, host());
     }
   }
