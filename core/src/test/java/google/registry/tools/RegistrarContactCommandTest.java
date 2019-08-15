@@ -378,7 +378,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
         "foobar",
         "NewRegistrar");
     RegistrarContact registrarContact = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
-    assertThat(registrarContact.isRegistryLockEnabled()).isTrue();
+    assertThat(registrarContact.isRegistryLockAllowed()).isTrue();
     assertThat(registrarContact.testRegistryLockPassword("foobar")).isTrue();
     assertThat(registrarContact.testRegistryLockPassword("foobaz")).isFalse();
   }
@@ -393,7 +393,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
                 .setName("Jim Doe")
                 .setEmailAddress("jim.doe@example.com")
                 .build());
-    assertThat(registrarContact.isRegistryLockEnabled()).isFalse();
+    assertThat(registrarContact.isRegistryLockAllowed()).isFalse();
     assertThrows(
         IllegalArgumentException.class, () -> registrarContact.testRegistryLockPassword("foo"));
     runCommandForced(
@@ -402,7 +402,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
         "--registry_lock_password=foobar",
         "NewRegistrar");
     RegistrarContact newContact = reloadResource(registrarContact);
-    assertThat(newContact.isRegistryLockEnabled()).isTrue();
+    assertThat(newContact.isRegistryLockAllowed()).isTrue();
     assertThat(newContact.testRegistryLockPassword("foobar")).isTrue();
     assertThat(newContact.testRegistryLockPassword("foobaz")).isFalse();
   }

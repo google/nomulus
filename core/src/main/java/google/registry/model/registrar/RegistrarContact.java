@@ -20,9 +20,9 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.io.BaseEncoding.base64;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.registrar.Registrar.checkValidEmail;
 import static google.registry.model.registrar.RegistrarPasswords.SALT_SUPPLIER;
 import static google.registry.model.registrar.RegistrarPasswords.hashPassword;
-import static google.registry.model.registrar.Registrar.checkValidEmail;
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
 import static java.util.stream.Collectors.joining;
@@ -227,12 +227,12 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
     return new Builder(clone(this));
   }
 
-  public boolean isRegistryLockEnabled() {
+  public boolean isRegistryLockAllowed() {
     return registryLockPasswordHash != null && salt != null;
   }
 
   public boolean testRegistryLockPassword(String registryLockPassword) {
-    checkArgument(isRegistryLockEnabled(), "Registry lock not enabled for this contact");
+    checkArgument(isRegistryLockAllowed(), "Registry lock action not allowed for this contact.");
     return hashPassword(registryLockPassword, salt).equals(registryLockPasswordHash);
   }
 
