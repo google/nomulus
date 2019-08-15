@@ -24,9 +24,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/**
- * Unit tests for {@link MetricsCollector}.
- */
+/** Unit tests for {@link MetricsCollector}. */
 @RunWith(JUnit4.class)
 public class MetricsCollectorTest {
 
@@ -49,8 +47,8 @@ public class MetricsCollectorTest {
         .and()
         .hasNoOtherValues();
     assertThat(MetricsCollector.latencyMs)
-        .hasDataSetForLabels(ImmutableSet.of(100), protocol, actionName,
-            ResponseType.SUCCESS.name())
+        .hasDataSetForLabels(
+            ImmutableSet.of(100), protocol, actionName, ResponseType.SUCCESS.name())
         .and()
         .hasNoOtherValues();
   }
@@ -64,8 +62,8 @@ public class MetricsCollectorTest {
         .and()
         .hasNoOtherValues();
     assertThat(MetricsCollector.latencyMs)
-        .hasDataSetForLabels(ImmutableSet.of(100, 200), protocol, actionName,
-            ResponseType.FAILURE.name())
+        .hasDataSetForLabels(
+            ImmutableSet.of(100, 200), protocol, actionName, ResponseType.FAILURE.name())
         .and()
         .hasNoOtherValues();
   }
@@ -81,11 +79,11 @@ public class MetricsCollectorTest {
         .and()
         .hasNoOtherValues();
     assertThat(MetricsCollector.latencyMs)
-        .hasDataSetForLabels(ImmutableSet.of(100), protocol, actionName,
-            ResponseType.SUCCESS.name())
+        .hasDataSetForLabels(
+            ImmutableSet.of(100), protocol, actionName, ResponseType.SUCCESS.name())
         .and()
-        .hasDataSetForLabels(ImmutableSet.of(200), protocol, actionName,
-            ResponseType.FAILURE.name())
+        .hasDataSetForLabels(
+            ImmutableSet.of(200), protocol, actionName, ResponseType.FAILURE.name())
         .and()
         .hasNoOtherValues();
   }

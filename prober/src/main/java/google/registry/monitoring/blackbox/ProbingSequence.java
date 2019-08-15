@@ -47,19 +47,13 @@ public class ProbingSequence extends CircularList<ProbingStep> {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  /**
-   * Shared {@link MetricsCollector} used to record metrics on any step performed.
-   */
+  /** Shared {@link MetricsCollector} used to record metrics on any step performed. */
   private MetricsCollector metrics;
 
-  /**
-   * Shared {@link Clock} used to record latency on any step performed.
-   */
+  /** Shared {@link Clock} used to record latency on any step performed. */
   private Clock clock;
 
-  /**
-   * Each {@link ProbingSequence} requires a start token to begin running.
-   */
+  /** Each {@link ProbingSequence} requires a start token to begin running. */
   private Token startToken;
 
   /**
@@ -75,8 +69,8 @@ public class ProbingSequence extends CircularList<ProbingStep> {
    * Standard Constructor for first {@link ProbingSequence} in the list that assigns value and
    * token.
    */
-  private ProbingSequence(ProbingStep value, MetricsCollector metrics, Clock clock,
-      Token startToken) {
+  private ProbingSequence(
+      ProbingStep value, MetricsCollector metrics, Clock clock, Token startToken) {
 
     super(value);
     this.metrics = metrics;

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package google.registry.monitoring.blackbox.metrics;
 
 import com.google.common.collect.ImmutableSet;
@@ -25,9 +24,7 @@ import google.registry.util.NonFinalForTesting;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-/**
- * Metrics collection instrumentation.
- */
+/** Metrics collection instrumentation. */
 @Singleton
 public class MetricsCollector {
 
@@ -58,8 +55,7 @@ public class MetricsCollector {
               DEFAULT_LATENCY_FITTER);
 
   @Inject
-  MetricsCollector() {
-  }
+  MetricsCollector() {}
 
   /**
    * Resets all backend metrics.
@@ -73,16 +69,16 @@ public class MetricsCollector {
   }
 
   @NonFinalForTesting
-  public void recordResult(String protocolName, String actionName, ResponseType response,
-      long latency) {
+  public void recordResult(
+      String protocolName, String actionName, ResponseType response, long latency) {
     latencyMs.record(latency, protocolName, actionName, response.name());
     responsesCounter.increment(protocolName, actionName, response.name());
   }
 
   /** Three standard Response types to be recorded as metrics: SUCCESS, FAILURE, or ERROR. */
   public enum ResponseType {
-    SUCCESS, FAILURE, ERROR
+    SUCCESS,
+    FAILURE,
+    ERROR
   }
 }
-
-

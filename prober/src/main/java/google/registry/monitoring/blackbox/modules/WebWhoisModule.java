@@ -178,9 +178,7 @@ public class WebWhoisModule {
       WebWhoisToken webWhoisToken,
       MetricsCollector metrics,
       Clock clock) {
-    return new ProbingSequence.Builder(webWhoisToken, metrics, clock)
-        .add(probingStep)
-        .build();
+    return new ProbingSequence.Builder(webWhoisToken, metrics, clock).add(probingStep).build();
   }
 
   @Provides

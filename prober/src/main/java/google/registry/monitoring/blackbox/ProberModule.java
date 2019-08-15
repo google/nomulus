@@ -63,9 +63,7 @@ public class ProberModule {
     return new SystemClock();
   }
 
-  /**
-   * {@link Provides} one global {@link EventLoopGroup} shared by each {@link ProbingSequence}.
-   */
+  /** {@link Provides} one global {@link EventLoopGroup} shared by each {@link ProbingSequence}. */
   @Provides
   @Singleton
   EventLoopGroup provideEventLoopGroup() {

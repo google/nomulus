@@ -27,11 +27,11 @@ import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.exceptions.FailureException;
 import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
 import google.registry.monitoring.blackbox.exceptions.UnrecoverableStateException;
+import google.registry.monitoring.blackbox.metrics.MetricsCollector;
 import google.registry.monitoring.blackbox.tokens.Token;
+import google.registry.util.Clock;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
-import google.registry.monitoring.blackbox.metrics.MetricsCollector;
-import google.registry.util.Clock;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -80,14 +80,10 @@ public class ProbingSequenceTest {
    */
   private EmbeddedChannel channel = new EmbeddedChannel();
 
-  /**
-   * Default mock {@link MetricsCollector} passed into each {@link ProbingSequence} tested
-   */
+  /** Default mock {@link MetricsCollector} passed into each {@link ProbingSequence} tested */
   private MetricsCollector metrics;
 
-  /**
-   * Default mock {@link Clock} passed into each {@link ProbingSequence} tested
-   */
+  /** Default mock {@link Clock} passed into each {@link ProbingSequence} tested */
   private Clock clock;
 
   @Before
@@ -121,11 +117,12 @@ public class ProbingSequenceTest {
     ProbingStep secondStep = Mockito.mock(ProbingStep.class);
     ProbingStep thirdStep = Mockito.mock(ProbingStep.class);
 
-    ProbingSequence sequence = new ProbingSequence.Builder(mockToken, metrics, clock)
-        .add(firstStep)
-        .add(secondStep)
-        .add(thirdStep)
-        .build();
+    ProbingSequence sequence =
+        new ProbingSequence.Builder(mockToken, metrics, clock)
+            .add(firstStep)
+            .add(secondStep)
+            .add(thirdStep)
+            .build();
 
     assertThat(sequence.get()).isEqualTo(firstStep);
     sequence = sequence.next();
@@ -145,12 +142,13 @@ public class ProbingSequenceTest {
     ProbingStep secondStep = Mockito.mock(ProbingStep.class);
     ProbingStep thirdStep = Mockito.mock(ProbingStep.class);
 
-    ProbingSequence sequence = new ProbingSequence.Builder(mockToken, metrics, clock)
-        .add(thirdStep)
-        .add(secondStep)
-        .markFirstRepeated()
-        .add(firstStep)
-        .build();
+    ProbingSequence sequence =
+        new ProbingSequence.Builder(mockToken, metrics, clock)
+            .add(thirdStep)
+            .add(secondStep)
+            .markFirstRepeated()
+            .add(firstStep)
+            .build();
 
     assertThat(sequence.get()).isEqualTo(thirdStep);
     sequence = sequence.next();
@@ -181,11 +179,12 @@ public class ProbingSequenceTest {
         .call();
     doReturn(secondAction).when(secondStep).generateAction(mockToken);
 
-    //Build testable sequence from mocked components.
-    ProbingSequence sequence = new ProbingSequence.Builder(mockToken, metrics, clock)
-        .add(mockStep)
-        .add(secondStep)
-        .build();
+    // Build testable sequence from mocked components.
+    ProbingSequence sequence =
+        new ProbingSequence.Builder(mockToken, metrics, clock)
+            .add(mockStep)
+            .add(secondStep)
+            .build();
 
     sequence.start();
 
@@ -237,7 +236,10 @@ public class ProbingSequenceTest {
 
     // Build testable sequence from mocked components.
     ProbingSequence sequence =
-        new ProbingSequence.Builder(mockToken, metrics, clock).add(mockStep).add(secondStep).build();
+        new ProbingSequence.Builder(mockToken, metrics, clock)
+            .add(mockStep)
+            .add(secondStep)
+            .build();
 
     sequence.start();
 
@@ -276,10 +278,11 @@ public class ProbingSequenceTest {
     doThrow(new UnrecoverableStateException("")).when(mockStep).generateAction(secondToken);
 
     // Build testable sequence from mocked components.
-    ProbingSequence sequence = new ProbingSequence.Builder(mockToken, metrics, clock)
-        .add(mockStep)
-        .add(secondStep)
-        .build();
+    ProbingSequence sequence =
+        new ProbingSequence.Builder(mockToken, metrics, clock)
+            .add(mockStep)
+            .add(secondStep)
+            .build();
 
     sequence.start();
 
@@ -319,14 +322,15 @@ public class ProbingSequenceTest {
     // Create a mock first step that returns the dummy action when called to generate an action.
     doThrow(UndeterminedStateException.class).when(mockStep).generateAction(mockToken);
 
-    //Dummy step that server purpose of placeholder to test ability of ProbingSequence to move on.
+    // Dummy step that server purpose of placeholder to test ability of ProbingSequence to move on.
     ProbingStep secondStep = Mockito.mock(ProbingStep.class);
 
-    //Build testable sequence from mocked components.
-    ProbingSequence sequence = new ProbingSequence.Builder(mockToken, metrics, clock)
-        .add(mockStep)
-        .add(secondStep)
-        .build();
+    // Build testable sequence from mocked components.
+    ProbingSequence sequence =
+        new ProbingSequence.Builder(mockToken, metrics, clock)
+            .add(mockStep)
+            .add(secondStep)
+            .build();
 
     testActionFailure();
 
