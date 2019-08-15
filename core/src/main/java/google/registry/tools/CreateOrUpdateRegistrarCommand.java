@@ -236,10 +236,10 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
 
   @Nullable
   @Parameter(
-      names = "--registry_lock_enabled",
-      description = "Whether this registrar has registry lock enabled",
+      names = "--registry_lock_allowed",
+      description = "Whether this registrar is allowed to use registry lock",
       arity = 1)
-  private Boolean registryLockEnabled;
+  private Boolean registryLockAllowed;
 
   @Nullable
   @Parameter(
@@ -400,7 +400,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       }
       Optional.ofNullable(blockPremiumNames).ifPresent(builder::setBlockPremiumNames);
       Optional.ofNullable(contactsRequireSyncing).ifPresent(builder::setContactsRequireSyncing);
-      Optional.ofNullable(registryLockEnabled).ifPresent(builder::setRegistryLockEnabled);
+      Optional.ofNullable(registryLockAllowed).ifPresent(builder::setRegistryLockAllowed);
       Optional.ofNullable(phonePasscode).ifPresent(builder::setPhonePasscode);
       Optional.ofNullable(icannReferralEmail).ifPresent(builder::setIcannReferralEmail);
       Optional.ofNullable(whoisServer).ifPresent(builder::setWhoisServer);

@@ -410,7 +410,7 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
   boolean contactsRequireSyncing = true;
 
   /** Whether or not registry lock is enabled for this registrar. */
-  boolean registryLockEnabled = false;
+  boolean registryLockAllowed = false;
 
   @NonFinalForTesting
   private static Supplier<byte[]> saltSupplier =
@@ -548,8 +548,8 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
     return contactsRequireSyncing;
   }
 
-  public boolean getRegistryLockEnabled() {
-    return registryLockEnabled;
+  public boolean getRegistryLockAllowed() {
+    return registryLockAllowed;
   }
 
   public String getUrl() {
@@ -902,8 +902,8 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
       return this;
     }
 
-    public Builder setRegistryLockEnabled(boolean registryLockEnabled) {
-      getInstance().registryLockEnabled = registryLockEnabled;
+    public Builder setRegistryLockAllowed(boolean registryLockAllowed) {
+      getInstance().registryLockAllowed = registryLockAllowed;
       return this;
     }
 

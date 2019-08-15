@@ -409,6 +409,7 @@ class google.registry.model.registrar.Registrar {
   @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
   boolean blockPremiumNames;
   boolean contactsRequireSyncing;
+  boolean registryLockAllowed;
   google.registry.model.CreateAutoTimestamp creationTime;
   google.registry.model.UpdateAutoTimestamp lastUpdateTime;
   google.registry.model.registrar.Registrar$State state;
