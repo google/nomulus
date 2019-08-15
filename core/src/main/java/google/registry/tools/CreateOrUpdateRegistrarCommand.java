@@ -236,6 +236,13 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
 
   @Nullable
   @Parameter(
+      names = "--registry_lock_enabled",
+      description = "Whether this registrar has registry lock enabled",
+      arity = 1)
+  private Boolean registryLockEnabled;
+
+  @Nullable
+  @Parameter(
       names = "--drive_folder_id",
       description = "Id (not full URL) of this registrar's folder in Drive",
       converter = OptionalStringParameter.class,
@@ -393,6 +400,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       }
       Optional.ofNullable(blockPremiumNames).ifPresent(builder::setBlockPremiumNames);
       Optional.ofNullable(contactsRequireSyncing).ifPresent(builder::setContactsRequireSyncing);
+      Optional.ofNullable(registryLockEnabled).ifPresent(builder::setRegistryLockEnabled);
       Optional.ofNullable(phonePasscode).ifPresent(builder::setPhonePasscode);
       Optional.ofNullable(icannReferralEmail).ifPresent(builder::setIcannReferralEmail);
       Optional.ofNullable(whoisServer).ifPresent(builder::setWhoisServer);
