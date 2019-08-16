@@ -21,10 +21,10 @@ import static com.google.common.collect.Sets.difference;
 import static com.google.common.io.BaseEncoding.base64;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registrar.Registrar.checkValidEmail;
-import static google.registry.util.PasswordUtils.SALT_SUPPLIER;
-import static google.registry.util.PasswordUtils.hashPassword;
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
+import static google.registry.util.PasswordUtils.SALT_SUPPLIER;
+import static google.registry.util.PasswordUtils.hashPassword;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.base.Enums;
@@ -141,6 +141,12 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
   boolean visibleInDomainWhoisAsAbuse = false;
 
   /**
+   * Whether or not the contact is allowed to set their registry lock password through the registrar
+   * console. This will be set to false on contact creation and when the user sets a password.
+   */
+  boolean allowedToSetRegistryLockPassword = false;
+
+  /**
    * A hashed password that exists iff this contact is registry-lock-enabled. The hash is a base64
    * encoded SHA256 string.
    */
@@ -227,12 +233,16 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
     return new Builder(clone(this));
   }
 
+  public boolean isAllowedToSetRegistryLockPassword() {
+    return allowedToSetRegistryLockPassword;
+  }
+
   public boolean isRegistryLockAllowed() {
     return registryLockPasswordHash != null && salt != null;
   }
 
   public boolean testRegistryLockPassword(String registryLockPassword) {
-    checkArgument(isRegistryLockAllowed(), "Registry lock action not allowed for this contact.");
+    checkArgument(isRegistryLockAllowed(), "This contact has no registry lock password.");
     return hashPassword(registryLockPassword, salt).equals(registryLockPasswordHash);
   }
 
@@ -370,12 +380,25 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
       return this;
     }
 
+    public Builder setAllowedToSetRegistryLockPassword(boolean allowedToSetRegistryLockPassword) {
+      if (allowedToSetRegistryLockPassword) {
+        getInstance().salt = null;
+        getInstance().registryLockPasswordHash = null;
+      }
+      getInstance().allowedToSetRegistryLockPassword = allowedToSetRegistryLockPassword;
+      return this;
+    }
+
     public Builder setRegistryLockPassword(String registryLockPassword) {
+      checkArgument(
+          getInstance().allowedToSetRegistryLockPassword,
+          "Not allowed to set registry lock password for this contact");
       checkArgument(
           !Strings.isNullOrEmpty(registryLockPassword), "Registry lock password was null or empty");
       getInstance().salt = base64().encode(SALT_SUPPLIER.get());
       getInstance().registryLockPasswordHash =
           hashPassword(registryLockPassword, getInstance().salt);
+      getInstance().allowedToSetRegistryLockPassword = false;
       return this;
     }
   }

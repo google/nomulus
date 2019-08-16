@@ -469,6 +469,7 @@ class google.registry.model.registrar.RegistrarAddress {
 class google.registry.model.registrar.RegistrarContact {
   @Id java.lang.String emailAddress;
   @Parent com.googlecode.objectify.Key<google.registry.model.registrar.Registrar> parent;
+  boolean allowedToSetRegistryLockPassword;
   boolean visibleInDomainWhoisAsAbuse;
   boolean visibleInWhoisAsAdmin;
   boolean visibleInWhoisAsTech;
