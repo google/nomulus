@@ -36,7 +36,6 @@ import google.registry.tools.params.ParameterFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.List;
 import org.junit.Before;
@@ -76,10 +75,8 @@ public abstract class CommandTestCase<C extends Command> {
     // Ensure the UNITTEST environment has been set before constructing a new command instance.
     RegistryToolEnvironment.UNITTEST.setup(systemPropertyRule);
     command = newCommandInstance();
-    System.out.println("XXX Before stealing output...");
-    System.setOut(new PrintStream(new OutputSplitter(System.out, stdout)));
-    System.setErr(new PrintStream(new OutputSplitter(System.err, stderr)));
-    System.out.println("XXX After stealing output...");
+    System.setOut(new PrintStream(stdout));
+    System.setErr(new PrintStream(stderr));
   }
 
   void runCommandInEnvironment(RegistryToolEnvironment env, String... args) throws Exception {
@@ -222,46 +219,6 @@ public abstract class CommandTestCase<C extends Command> {
           new TypeToken<C>(getClass()) {}.getRawType().getDeclaredConstructor().newInstance();
     } catch (InstantiationException | IllegalAccessException e) {
       throw new RuntimeException(e);
-    }
-  }
-
-  static class OutputSplitter extends OutputStream {
-
-    OutputStream a, b;
-
-    OutputSplitter(OutputStream a, OutputStream b) {
-      this.a = a;
-      this.b = b;
-    }
-
-    @Override
-    public void write(byte[] data) throws IOException {
-      a.write(data);
-      b.write(data);
-    }
-
-    @Override
-    public void write(byte[] data, int off, int len) throws IOException {
-      a.write(data, off, len);
-      b.write(data, off, len);
-    }
-
-    @Override
-    public void close() throws IOException {
-      a.close();
-      b.close();
-    }
-
-    @Override
-    public void flush() throws IOException {
-      a.close();
-      b.close();
-    }
-
-    @Override
-    public void write(int val) throws IOException {
-      a.write(val);
-      b.write(val);
     }
   }
 }
