@@ -32,8 +32,8 @@ import org.hibernate.tool.schema.TargetType;
  * converted. After converting a class, a call to "addAnnotatedClass()" for the new class must be
  * added to the code below.
  */
-@Parameters(separators = " =", commandDescription = "")
-public class GenerateSchemaCommand implements Command {
+@Parameters(separators = " =", commandDescription = "Generate postgresql schema.")
+public class GenerateSqlSchemaCommand implements Command {
 
   public static final int POSTGRESQL_PORT = 5432;
 
@@ -55,14 +55,13 @@ public class GenerateSchemaCommand implements Command {
   @Override
   public void run() {
     Map<String, String> settings = new HashMap<>();
-    settings.put("connection.driver_class", "com.mysql.jdbc.Driver");
     settings.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQL9Dialect");
     settings.put(
         "hibernate.connection.url",
         "jdbc:postgresql://" + databaseHost + ":" + databasePort + "/postgres?useSSL=false");
     settings.put("hibernate.connection.username", "postgres");
     settings.put("hibernate.connection.password", "domain-registry");
-    settings.put("hibernate.hbm2ddl.auto", "create");
+    settings.put("hibernate.hbm2ddl.auto", "none");
     settings.put("show_sql", "true");
 
     MetadataSources metadata =

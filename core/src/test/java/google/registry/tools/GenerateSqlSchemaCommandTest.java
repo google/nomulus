@@ -24,27 +24,29 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
+
 
 @RunWith(JUnit4.class)
-public class GenerateSchemaCommandTest extends CommandTestCase<GenerateSchemaCommand> {
+public class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSchemaCommand> {
 
   private String containerHostName;
   private int containerPort;
 
   @Rule public TemporaryFolder tmp = new TemporaryFolder();
 
-  @Rule
-  public GenericContainer postgres =
-      new GenericContainer("postgres:9.6.12")
-          .withExposedPorts(GenerateSchemaCommand.POSTGRESQL_PORT);
+  @Rule public PostgreSQLContainer postgres =
+      new PostgreSQLContainer()
+          .withDatabaseName("postgres")
+          .withUsername("postgres")
+          .withPassword("domain-registry");
 
-  public GenerateSchemaCommandTest() {}
+  public GenerateSqlSchemaCommandTest() {}
 
   @Before
   public void setUp() {
     containerHostName = postgres.getContainerIpAddress();
-    containerPort = postgres.getMappedPort(GenerateSchemaCommand.POSTGRESQL_PORT);
+    containerPort = postgres.getMappedPort(GenerateSqlSchemaCommand.POSTGRESQL_PORT);
   }
 
   @Test

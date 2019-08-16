@@ -53,15 +53,19 @@ def fragileTestPatterns = [
     // Test Datastore inexplicably aborts transaction.
     "google/registry/model/tmch/ClaimsListShardTest.*",
     // Creates large object (64MBytes), occasionally throws OOM error.
-    "google/registry/model/server/KmsSecretRevisionTest.*"
+    "google/registry/model/server/KmsSecretRevisionTest.*",
+    "google/registry/tools/GenerateSqlSchemaCommandTest.*",
+    "google/registry/webdriver/*",
 ]
 
 // Tests that fail when running Gradle in a docker container, e. g. when
 // building the release artifacts in Google Cloud Build.
 def dockerIncompatibleTestPatterns = [
     // The webdriver tests start headless Chrome in a Docker container,
-    // resulting in Docker-in-Docker complications.
+    // resulting in Docker-in-Docker complications.  Likewise,
+    // GenerateSqlSchemaCommandTest launches postgresql in a docker container.
     "google/registry/webdriver/*",
+    "google/registry/tools/GenerateSqlSchemaCommandTest.*",
     // PathParameterTest includes tests which validate that file permissions are
     // respected. However when running in Docker the user is root by default, so
     // every file is read/write-able. There is no way to exclude specific test
@@ -214,13 +218,16 @@ dependencies {
   compile deps['org.bouncycastle:bcpg-jdk15on']
   testCompile deps['org.bouncycastle:bcpkix-jdk15on']
   compile deps['org.bouncycastle:bcprov-jdk15on']
+  compile deps['org.hibernate:hibernate-core']
   compile deps['org.joda:joda-money']
   compile deps['org.json:json']
   testCompile deps['org.mortbay.jetty:jetty']
+  runtimeOnly deps['org.postgresql:postgresql']
   testCompile deps['org.seleniumhq.selenium:selenium-api']
   testCompile deps['org.seleniumhq.selenium:selenium-chrome-driver']
   testCompile deps['org.seleniumhq.selenium:selenium-java']
   testCompile deps['org.seleniumhq.selenium:selenium-remote-driver']
+  testCompile deps['org.testcontainers:postgresql']
   testCompile deps['org.testcontainers:selenium']
   compile deps['xerces:xmlParserAPIs']
   compile deps['xpp3:xpp3']
