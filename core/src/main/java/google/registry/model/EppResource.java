@@ -50,10 +50,13 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import javax.persistence.MappedSuperclass;
+import javax.persistence.Transient;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /** An EPP entity object (i.e. a domain, contact, or host). */
+@MappedSuperclass
 public abstract class EppResource extends BackupGroupRoot implements Buildable {
 
   /**
@@ -62,8 +65,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
    * <p>This is in the (\w|_){1,80}-\w{1,8} format specified by RFC 5730 for roidType.
    * @see <a href="https://tools.ietf.org/html/rfc5730">RFC 5730</a>
    */
-  @Id
-  String repoId;
+  @Id @javax.persistence.Id String repoId;
 
   /** The ID of the registrar that is currently sponsoring this resource. */
   @Index
@@ -85,8 +87,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   // Map the method to XML, not the field, because if we map the field (with an adaptor class) it
   // will never be omitted from the xml even if the timestamp inside creationTime is null and we
   // return null from the adaptor. (Instead it gets written as an empty tag.)
-  @Index
-  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  @Index @Transient CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /**
    * The time when this resource was or will be deleted.
@@ -115,7 +116,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   DateTime lastEppUpdateTime;
 
   /** Status values associated with this resource. */
-  Set<StatusValue> status;
+  @Transient Set<StatusValue> status;
 
   /**
    * Sorted map of {@link DateTime} keys (modified time) to {@link CommitLogManifest} entries.

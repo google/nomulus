@@ -69,6 +69,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
+import javax.persistence.Transient;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 
@@ -83,6 +84,8 @@ import org.joda.time.Interval;
  */
 @ReportedOn
 @Entity
+@javax.persistence.Entity
+@javax.persistence.Table(name = "domain")
 @ExternalMessagingName("domain")
 public class DomainBase extends EppResource
     implements ForeignKeyedEppResource, ResourceWithTransferData {
@@ -115,18 +118,17 @@ public class DomainBase extends EppResource
   String tld;
 
   /** References to hosts that are the nameservers for the domain. */
-  @Index
-  Set<Key<HostResource>> nsHosts;
+  @Index @Transient Set<Key<HostResource>> nsHosts;
 
   /**
    * The union of the contacts visible via {@link #getContacts} and {@link #getRegistrant}.
    *
    * <p>These are stored in one field so that we can query across all contacts at once.
    */
-  Set<DesignatedContact> allContacts;
+  @Transient Set<DesignatedContact> allContacts;
 
   /** Authorization info (aka transfer secret) of the domain. */
-  DomainAuthInfo authInfo;
+  @Transient DomainAuthInfo authInfo;
 
   /**
    * Data used to construct DS records for this domain.
@@ -134,14 +136,13 @@ public class DomainBase extends EppResource
    * <p>This is {@literal @}XmlTransient because it needs to be returned under the "extension" tag
    * of an info response rather than inside the "infData" tag.
    */
-  Set<DelegationSignerData> dsData;
+  @Transient Set<DelegationSignerData> dsData;
 
   /**
    * The claims notice supplied when this application or domain was created, if there was one. It's
    * {@literal @}XmlTransient because it's not returned in an info response.
    */
-  @IgnoreSave(IfNull.class)
-  LaunchNotice launchNotice;
+  @IgnoreSave(IfNull.class) @Transient LaunchNotice launchNotice;
 
   /**
    * Name of first IDN table associated with TLD that matched the characters in this domain label.
@@ -152,7 +153,7 @@ public class DomainBase extends EppResource
   String idnTableName;
 
   /** Fully qualified host names of this domain's active subordinate hosts. */
-  Set<String> subordinateHosts;
+  @Transient Set<String> subordinateHosts;
 
   /** When this domain's registration will expire. */
   DateTime registrationExpirationTime;
@@ -187,7 +188,7 @@ public class DomainBase extends EppResource
   Key<PollMessage.Autorenew> autorenewPollMessage;
 
   /** The unexpired grace periods for this domain (some of which may not be active yet). */
-  Set<GracePeriod> gracePeriods;
+  @Transient Set<GracePeriod> gracePeriods;
 
   /**
    * The id of the signed mark that was used to create this domain in sunrise.
@@ -198,7 +199,7 @@ public class DomainBase extends EppResource
   String smdId;
 
   /** Data about any pending or past transfers on this domain. */
-  TransferData transferData;
+  @Transient TransferData transferData;
 
   /**
    * The time that this resource was last transferred.

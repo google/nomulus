@@ -76,6 +76,9 @@
       "moduleLicense": "BSD style"
     },
     {
+      "moduleLicense": "BSD-2-Clause"
+    },
+    {
       "moduleLicense": "New BSD License"
     },
     {
@@ -83,6 +86,9 @@
     },
     {
       "moduleLicense": "The BSD License"
+    },
+    {
+      "moduleLicense": "The PostgreSQL License"
     },
     {
       "moduleLicense": "CC0 1.0 Universal License"
@@ -104,6 +110,9 @@
     },
     {
       "moduleLicense": "\\n                Dual license consisting of the CDDL v1.1 and GPL v2\\n            "
+    },
+    {
+      "moduleLicense": "Eclipse Distribution License v. 1.0"
     },
     {
       "moduleLicense": "Eclipse Public License - Version 1.0"
@@ -134,6 +143,9 @@
     },
     {
       "moduleLicense": "GNU Lesser Public License"
+    },
+    {
+      "moduleLicense": "GNU Library General Public License v2.1 or later"
     },
     {
       "moduleLicense": "The Go license"
