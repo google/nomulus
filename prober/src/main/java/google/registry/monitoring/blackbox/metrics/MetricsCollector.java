@@ -44,7 +44,8 @@ public class MetricsCollector {
   private static final ImmutableSet<LabelDescriptor> LABELS =
       ImmutableSet.of(
           LabelDescriptor.create("protocol", "Name of the protocol."),
-          LabelDescriptor.create("action", "Type of action"),
+          LabelDescriptor.create("request", "Name of outbound request"),
+          LabelDescriptor.create("response", "Name of inbound response"),
           LabelDescriptor.create("responseType", "Status of action performed"));
 
   static final IncrementableMetric responsesCounter =
@@ -80,8 +81,12 @@ public class MetricsCollector {
 
   @NonFinalForTesting
   public void recordResult(
-      String protocolName, String actionName, ResponseType response, long latency) {
-    latencyMs.record(latency, protocolName, actionName, response.name());
-    responsesCounter.increment(protocolName, actionName, response.name());
+      String protocolName,
+      String requestName,
+      String responseName,
+      ResponseType status,
+      long latency) {
+    latencyMs.record(latency, protocolName, requestName, responseName, status.name());
+    responsesCounter.increment(protocolName, requestName, responseName, status.name());
   }
 }

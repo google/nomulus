@@ -28,7 +28,8 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class MetricsCollectorTest {
 
-  private final String actionName = "blah12345";
+  private final String requestName = "request";
+  private final String responseName = "response";
   private final String protocol = "protocol";
 
   private final MetricsCollector metrics = new MetricsCollector();
@@ -40,55 +41,59 @@ public class MetricsCollectorTest {
 
   @Test
   public void testOneRecord() {
-    metrics.recordResult(protocol, actionName, ResponseType.SUCCESS, 100);
+    metrics.recordResult(protocol, requestName, responseName, ResponseType.SUCCESS, 100);
 
     assertThat(MetricsCollector.responsesCounter)
-        .hasValueForLabels(1, protocol, actionName, ResponseType.SUCCESS.name())
+        .hasValueForLabels(1, protocol, requestName, responseName, ResponseType.SUCCESS.name())
         .and()
         .hasNoOtherValues();
 
     assertThat(MetricsCollector.latencyMs)
         .hasDataSetForLabels(
-            ImmutableSet.of(100), protocol, actionName, ResponseType.SUCCESS.name())
+            ImmutableSet.of(100), protocol, requestName, responseName, ResponseType.SUCCESS.name())
         .and()
         .hasNoOtherValues();
   }
 
   @Test
   public void testMultipleRecords_sameStatus() {
-    metrics.recordResult(protocol, actionName, ResponseType.FAILURE, 100);
-    metrics.recordResult(protocol, actionName, ResponseType.FAILURE, 200);
+    metrics.recordResult(protocol, requestName, responseName, ResponseType.FAILURE, 100);
+    metrics.recordResult(protocol, requestName, responseName, ResponseType.FAILURE, 200);
 
     assertThat(MetricsCollector.responsesCounter)
-        .hasValueForLabels(2, protocol, actionName, ResponseType.FAILURE.name())
+        .hasValueForLabels(2, protocol, requestName, responseName, ResponseType.FAILURE.name())
         .and()
         .hasNoOtherValues();
 
     assertThat(MetricsCollector.latencyMs)
         .hasDataSetForLabels(
-            ImmutableSet.of(100, 200), protocol, actionName, ResponseType.FAILURE.name())
+            ImmutableSet.of(100, 200),
+            protocol,
+            requestName,
+            responseName,
+            ResponseType.FAILURE.name())
         .and()
         .hasNoOtherValues();
   }
 
   @Test
   public void testMultipleRecords_differentStatus() {
-    metrics.recordResult(protocol, actionName, ResponseType.SUCCESS, 100);
-    metrics.recordResult(protocol, actionName, ResponseType.FAILURE, 200);
+    metrics.recordResult(protocol, requestName, responseName, ResponseType.SUCCESS, 100);
+    metrics.recordResult(protocol, requestName, responseName, ResponseType.FAILURE, 200);
 
     assertThat(MetricsCollector.responsesCounter)
-        .hasValueForLabels(1, protocol, actionName, ResponseType.SUCCESS.name())
+        .hasValueForLabels(1, protocol, requestName, responseName, ResponseType.SUCCESS.name())
         .and()
-        .hasValueForLabels(1, protocol, actionName, ResponseType.FAILURE.name())
+        .hasValueForLabels(1, protocol, requestName, responseName, ResponseType.FAILURE.name())
         .and()
         .hasNoOtherValues();
 
     assertThat(MetricsCollector.latencyMs)
         .hasDataSetForLabels(
-            ImmutableSet.of(100), protocol, actionName, ResponseType.SUCCESS.name())
+            ImmutableSet.of(100), protocol, requestName, responseName, ResponseType.SUCCESS.name())
         .and()
         .hasDataSetForLabels(
-            ImmutableSet.of(200), protocol, actionName, ResponseType.FAILURE.name())
+            ImmutableSet.of(200), protocol, requestName, responseName, ResponseType.FAILURE.name())
         .and()
         .hasNoOtherValues();
   }

@@ -131,6 +131,7 @@ public class ProbingSequence extends CircularList<ProbingStep> {
       metrics.recordResult(
           get().protocol().name(),
           get().messageTemplate().name(),
+          get().messageTemplate().responseName(),
           MetricsCollector.ResponseType.ERROR,
           clock.nowUtc().getMillis() - start);
       return;
@@ -143,6 +144,7 @@ public class ProbingSequence extends CircularList<ProbingStep> {
       metrics.recordResult(
           get().protocol().name(),
           get().messageTemplate().name(),
+          get().messageTemplate().responseName(),
           MetricsCollector.ResponseType.ERROR,
           clock.nowUtc().getMillis() - start);
 
@@ -161,6 +163,7 @@ public class ProbingSequence extends CircularList<ProbingStep> {
             metrics.recordResult(
                 get().protocol().name(),
                 get().messageTemplate().name(),
+                get().messageTemplate().responseName(),
                 MetricsCollector.ResponseType.SUCCESS,
                 clock.nowUtc().getMillis() - start);
           } else {
@@ -172,12 +175,14 @@ public class ProbingSequence extends CircularList<ProbingStep> {
               metrics.recordResult(
                   get().protocol().name(),
                   get().messageTemplate().name(),
+                  get().messageTemplate().responseName(),
                   MetricsCollector.ResponseType.FAILURE,
                   clock.nowUtc().getMillis() - start);
             } else {
               metrics.recordResult(
                   get().protocol().name(),
                   get().messageTemplate().name(),
+                  get().messageTemplate().responseName(),
                   MetricsCollector.ResponseType.ERROR,
                   clock.nowUtc().getMillis() - start);
             }

@@ -61,6 +61,7 @@ public class ProbingSequenceTest {
 
   private static final String PROTOCOL_NAME = "PROTOCOL";
   private static final String MESSAGE_NAME = "MESSAGE";
+  private static final String RESPONSE_NAME = "RESPONSE";
   private static final Duration LATENCY = Duration.millis(2L);
 
   /** Default mock {@link ProbingAction} returned when generating an action with a mockStep. */
@@ -111,6 +112,7 @@ public class ProbingSequenceTest {
     doReturn(mockProtocol).when(mockStep).protocol();
 
     doReturn(MESSAGE_NAME).when(mockMessage).name();
+    doReturn(RESPONSE_NAME).when(mockMessage).responseName();
     doReturn(mockMessage).when(mockStep).messageTemplate();
 
     // Allows for test if channel is accurately set.
@@ -222,7 +224,8 @@ public class ProbingSequenceTest {
     // Verifies that metrics records the right kind of result (a success with the input protocol
     // name and message name).
     verify(metrics)
-        .recordResult(PROTOCOL_NAME, MESSAGE_NAME, ResponseType.SUCCESS, LATENCY.getMillis());
+        .recordResult(
+            PROTOCOL_NAME, MESSAGE_NAME, RESPONSE_NAME, ResponseType.SUCCESS, LATENCY.getMillis());
   }
 
   @Test
@@ -303,12 +306,14 @@ public class ProbingSequenceTest {
     // Verifies that metrics records the right kind of result (a success with the input protocol
     // name and message name) two times: once for mockStep and once for secondStep.
     verify(metrics, times(2))
-        .recordResult(PROTOCOL_NAME, MESSAGE_NAME, ResponseType.SUCCESS, LATENCY.getMillis());
+        .recordResult(
+            PROTOCOL_NAME, MESSAGE_NAME, RESPONSE_NAME, ResponseType.SUCCESS, LATENCY.getMillis());
 
     // Verify that on second pass, since we purposely throw UnrecoverableStateException, we
     // record the ERROR. Also, we haven't had any time pass in the fake clock, so recorded
     // latency should be 0.
-    verify(metrics).recordResult(PROTOCOL_NAME, MESSAGE_NAME, ResponseType.ERROR, 0L);
+    verify(metrics)
+        .recordResult(PROTOCOL_NAME, MESSAGE_NAME, RESPONSE_NAME, ResponseType.ERROR, 0L);
   }
 
   /**
@@ -386,12 +391,14 @@ public class ProbingSequenceTest {
     // Verifies that metrics records the right kind of result (a failure with the input protocol
     // name and message name).
     verify(metrics)
-        .recordResult(PROTOCOL_NAME, MESSAGE_NAME, ResponseType.FAILURE, LATENCY.getMillis());
+        .recordResult(
+            PROTOCOL_NAME, MESSAGE_NAME, RESPONSE_NAME, ResponseType.FAILURE, LATENCY.getMillis());
 
     // Verify that on second pass, since we purposely throw UnrecoverableStateException, we
     // record the ERROR. We also should make sure LATENCY seconds have passed.
     verify(metrics)
-        .recordResult(PROTOCOL_NAME, MESSAGE_NAME, ResponseType.ERROR, LATENCY.getMillis());
+        .recordResult(
+            PROTOCOL_NAME, MESSAGE_NAME, RESPONSE_NAME, ResponseType.ERROR, LATENCY.getMillis());
   }
 
   @Test
@@ -415,6 +422,7 @@ public class ProbingSequenceTest {
     // Verify that we record two errors, first for being unable to generate the action, second
     // for terminating the sequence.
     verify(metrics, times(2))
-        .recordResult(PROTOCOL_NAME, MESSAGE_NAME, ResponseType.ERROR, LATENCY.getMillis());
+        .recordResult(
+            PROTOCOL_NAME, MESSAGE_NAME, RESPONSE_NAME, ResponseType.ERROR, LATENCY.getMillis());
   }
 }

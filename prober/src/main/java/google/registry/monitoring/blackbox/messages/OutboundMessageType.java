@@ -34,4 +34,11 @@ public interface OutboundMessageType {
    * have the same name if they perform the same action.
    */
   String name();
+
+  /**
+   * Necessary to inform metrics collector what kind of message is sent inbound {@link
+   * io.netty.channel.ChannelPipeline}. Equivalent to {@code name} but for {@link
+   * InboundMessageType}.
+   */
+  String responseName();
 }

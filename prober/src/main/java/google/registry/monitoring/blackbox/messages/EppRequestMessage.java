@@ -140,6 +140,11 @@ public class EppRequestMessage extends EppMessage implements OutboundMessageType
 
   @Override
   public String name() {
-    return name + " " + expectedResponse.name();
+    return name;
+  }
+
+  @Override
+  public String responseName() {
+    return expectedResponse.name();
   }
 }
