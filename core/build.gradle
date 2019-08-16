@@ -254,7 +254,7 @@ dependencies {
   testCompile deps['org.hamcrest:hamcrest-all']
   testCompile deps['org.hamcrest:hamcrest-core']
   testCompile deps['org.hamcrest:hamcrest-library']
-  compile deps['org.hibernate:hibernate-core']
+  compile deps['org.hibernate:hibernate-hikaricp']
   testCompile deps['junit:junit']
   testCompile deps['org.mockito:mockito-core']
   runtime deps['org.postgresql:postgresql']
