@@ -16,6 +16,8 @@ package google.registry.monitoring.blackbox;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -29,12 +31,13 @@ import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException
 import google.registry.monitoring.blackbox.exceptions.UnrecoverableStateException;
 import google.registry.monitoring.blackbox.messages.OutboundMessageType;
 import google.registry.monitoring.blackbox.metrics.MetricsCollector;
+import google.registry.monitoring.blackbox.metrics.MetricsCollector.ResponseType;
 import google.registry.monitoring.blackbox.tokens.Token;
+import google.registry.testing.FakeClock;
 import google.registry.util.Clock;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,6 +59,9 @@ import org.mockito.Mockito;
  */
 @RunWith(JUnit4.class)
 public class ProbingSequenceTest {
+
+  private static final String PROTOCOL_NAME = "PROTOCOL";
+  private static final String MESSAGE_NAME = "MESSAGE";
 
   /** Default mock {@link ProbingAction} returned when generating an action with a mockStep. */
   private ProbingAction mockAction = Mockito.mock(ProbingAction.class);
@@ -79,7 +85,7 @@ public class ProbingSequenceTest {
    * Default mock {@link OutboundMessageType} returned by {@code mockStep} and occasionally other
    * mock {@link ProbingStep}s.
    */
-  OutboundMessageType mockMessage = Mockito.mock(OutboundMessageType.class);
+  private OutboundMessageType mockMessage = Mockito.mock(OutboundMessageType.class);
 
   /**
    * {@link EmbeddedChannel} used to create new {@link ChannelPromise} objects returned by mock
@@ -88,22 +94,23 @@ public class ProbingSequenceTest {
   private EmbeddedChannel channel = new EmbeddedChannel();
 
   /** Default mock {@link MetricsCollector} passed into each {@link ProbingSequence} tested */
-  private MetricsCollector metrics;
+  private MetricsCollector metrics = Mockito.mock(MetricsCollector.class);
 
   /** Default mock {@link Clock} passed into each {@link ProbingSequence} tested */
-  private Clock clock;
+  private Clock clock = new FakeClock();
 
   @Before
   public void setup() {
     // To avoid a NullPointerException, we must have a protocol return persistent connection as
     // false.
     doReturn(true).when(mockProtocol).persistentConnection();
+    doReturn(PROTOCOL_NAME).when(mockProtocol).name();
 
     // In order to avoid a NullPointerException, we must have the protocol returned that stores
     // persistent connection as false.
     doReturn(mockProtocol).when(mockStep).protocol();
 
-    doReturn("test").when(mockMessage).name();
+    doReturn(MESSAGE_NAME).when(mockMessage).name();
     doReturn(mockMessage).when(mockStep).messageTemplate();
 
     // Allows for test if channel is accurately set.
@@ -112,13 +119,6 @@ public class ProbingSequenceTest {
 
     // Allows call to mockAction to retrieve mocked channel.
     doReturn(channel).when(mockAction).channel();
-    // Both testToken and metrics are simple mocks that don't need to perform any special actions.
-    metrics = Mockito.mock(MetricsCollector.class);
-
-    // Our clock must return a valid datetime on nowUtc() for the ProbingSequence to successfully
-    // call runStep without an exception.
-    clock = Mockito.mock(Clock.class);
-    doReturn(new DateTime()).when(clock).nowUtc();
   }
 
   @Test
@@ -211,6 +211,11 @@ public class ProbingSequenceTest {
 
     // We should have modified the token's channel after the first, succeeded step.
     assertThat(mockToken.channel()).isEqualTo(channel);
+
+    // Verifies that metrics records the right kind of result (a success with the input protocol
+    // name and message name).
+    verify(metrics)
+        .recordResult(eq(PROTOCOL_NAME), eq(MESSAGE_NAME), eq(ResponseType.SUCCESS), anyLong());
   }
 
   @Test
@@ -272,6 +277,16 @@ public class ProbingSequenceTest {
 
     // We should have modified the token's channel after the first, succeeded step.
     assertThat(mockToken.channel()).isEqualTo(channel);
+
+    // Verifies that metrics records the right kind of result (a success with the input protocol
+    // name and message name) two times: once for mockStep and once for secondStep.
+    verify(metrics, times(2))
+        .recordResult(eq(PROTOCOL_NAME), eq(MESSAGE_NAME), eq(ResponseType.SUCCESS), anyLong());
+
+    // Verify that on second pass, since we purposely throw UnrecoverableStateException, we
+    // record the ERROR.
+    verify(metrics)
+        .recordResult(eq(PROTOCOL_NAME), eq(MESSAGE_NAME), eq(ResponseType.ERROR), anyLong());
   }
 
   /**
@@ -329,6 +344,16 @@ public class ProbingSequenceTest {
     // We only expect to have called this action once, as we only get it from one generateAction
     // call.
     verify(mockAction).call();
+
+    // Verifies that metrics records the right kind of result (a failure with the input protocol
+    // name and message name).
+    verify(metrics)
+        .recordResult(eq(PROTOCOL_NAME), eq(MESSAGE_NAME), eq(ResponseType.FAILURE), anyLong());
+
+    // Verify that on second pass, since we purposely throw UnrecoverableStateException, we
+    // record the ERROR.
+    verify(metrics)
+        .recordResult(eq(PROTOCOL_NAME), eq(MESSAGE_NAME), eq(ResponseType.ERROR), anyLong());
   }
 
   @Test
@@ -341,5 +366,10 @@ public class ProbingSequenceTest {
 
     // We expect to have never called this action, as we fail each time whenever generating actions.
     verify(mockAction, times(0)).call();
+
+    // Verify that we record two errors, first for being unable to generate the action, second
+    // for terminating the sequence.
+    verify(metrics, times(2))
+        .recordResult(eq(PROTOCOL_NAME), eq(MESSAGE_NAME), eq(ResponseType.ERROR), anyLong());
   }
 }

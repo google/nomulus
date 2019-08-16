@@ -28,23 +28,33 @@ import javax.inject.Singleton;
 @Singleton
 public class MetricsCollector {
 
+  /** Three standard Response types to be recorded as metrics: SUCCESS, FAILURE, or ERROR. */
+  public enum ResponseType {
+    SUCCESS,
+    FAILURE,
+    ERROR
+  }
+
   // Maximum 1 hour latency, this is not specified by the spec, but given we have a one hour idle
   // timeout, it seems reasonable that maximum latency is set to 1 hour as well. If we are
   // approaching anywhere near 1 hour latency, we'd be way out of SLO anyway.
   private static final ExponentialFitter DEFAULT_LATENCY_FITTER =
       ExponentialFitter.create(22, 2, 1.0);
+
   private static final ImmutableSet<LabelDescriptor> LABELS =
       ImmutableSet.of(
           LabelDescriptor.create("protocol", "Name of the protocol."),
-          LabelDescriptor.create("action", "type of action"),
+          LabelDescriptor.create("action", "Type of action"),
           LabelDescriptor.create("responseType", "Status of action performed"));
+
   static final IncrementableMetric responsesCounter =
       MetricRegistryImpl.getDefault()
           .newIncrementableMetric(
               "/prober/responses",
-              "Total number of responses received by the backend.",
+              "Total number of responses received by the prober.",
               "Responses",
               LABELS);
+
   static final EventMetric latencyMs =
       MetricRegistryImpl.getDefault()
           .newEventMetric(
@@ -73,12 +83,5 @@ public class MetricsCollector {
       String protocolName, String actionName, ResponseType response, long latency) {
     latencyMs.record(latency, protocolName, actionName, response.name());
     responsesCounter.increment(protocolName, actionName, response.name());
-  }
-
-  /** Three standard Response types to be recorded as metrics: SUCCESS, FAILURE, or ERROR. */
-  public enum ResponseType {
-    SUCCESS,
-    FAILURE,
-    ERROR
   }
 }

@@ -47,6 +47,7 @@ dependencies {
     testCompile deps['junit:junit']
     testCompile deps['org.mockito:mockito-core']
     testCompile project(':third_party')
+    testCompile project(path: ':core', configuration: 'testRuntime')
 
     // Include auto-value in compile until nebula-lint understands
     // annotationProcessor

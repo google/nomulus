@@ -67,7 +67,7 @@ public class ProbingSequence extends CircularList<ProbingStep> {
   private ProbingSequence first;
 
   /**
-   * Standard Constructor for first {@link ProbingSequence} in the list that assigns value and
+   * Standard constructor for first {@link ProbingSequence} in the list that assigns value and
    * token.
    */
   private ProbingSequence(
