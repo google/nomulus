@@ -14,17 +14,17 @@
 
 package google.registry.monitoring.blackbox.util;
 
-import static google.registry.monitoring.blackbox.messages.EppMessage.CLIENT_ID_KEY;
-import static google.registry.monitoring.blackbox.messages.EppMessage.CLIENT_PASSWORD_KEY;
-import static google.registry.monitoring.blackbox.messages.EppMessage.CLIENT_TRID_KEY;
-import static google.registry.monitoring.blackbox.messages.EppMessage.DOMAIN_KEY;
+import static google.registry.monitoring.blackbox.message.EppMessage.CLIENT_ID_KEY;
+import static google.registry.monitoring.blackbox.message.EppMessage.CLIENT_PASSWORD_KEY;
+import static google.registry.monitoring.blackbox.message.EppMessage.CLIENT_TRID_KEY;
+import static google.registry.monitoring.blackbox.message.EppMessage.DOMAIN_KEY;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import google.registry.monitoring.blackbox.exceptions.EppClientException;
-import google.registry.monitoring.blackbox.messages.EppMessage;
-import google.registry.monitoring.blackbox.messages.EppRequestMessage;
-import google.registry.monitoring.blackbox.messages.EppResponseMessage;
+import google.registry.monitoring.blackbox.exception.EppClientException;
+import google.registry.monitoring.blackbox.message.EppMessage;
+import google.registry.monitoring.blackbox.message.EppRequestMessage;
+import google.registry.monitoring.blackbox.message.EppResponseMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.IOException;

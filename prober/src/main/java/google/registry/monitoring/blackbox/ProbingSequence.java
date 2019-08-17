@@ -16,10 +16,10 @@ package google.registry.monitoring.blackbox;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.monitoring.blackbox.connection.ProbingAction;
-import google.registry.monitoring.blackbox.exceptions.FailureException;
-import google.registry.monitoring.blackbox.exceptions.UnrecoverableStateException;
-import google.registry.monitoring.blackbox.metrics.MetricsCollector;
-import google.registry.monitoring.blackbox.tokens.Token;
+import google.registry.monitoring.blackbox.exception.FailureException;
+import google.registry.monitoring.blackbox.exception.UnrecoverableStateException;
+import google.registry.monitoring.blackbox.metric.MetricsCollector;
+import google.registry.monitoring.blackbox.token.Token;
 import google.registry.util.CircularList;
 import google.registry.util.Clock;
 import io.netty.bootstrap.Bootstrap;

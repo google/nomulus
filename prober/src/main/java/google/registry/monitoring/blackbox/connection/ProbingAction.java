@@ -22,9 +22,9 @@ import static google.registry.monitoring.blackbox.connection.Protocol.PROTOCOL_K
 import com.google.auto.value.AutoValue;
 import com.google.common.flogger.FluentLogger;
 import google.registry.monitoring.blackbox.ProbingStep;
-import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
-import google.registry.monitoring.blackbox.handlers.ActionHandler;
-import google.registry.monitoring.blackbox.messages.OutboundMessageType;
+import google.registry.monitoring.blackbox.exception.UndeterminedStateException;
+import google.registry.monitoring.blackbox.handler.ActionHandler;
+import google.registry.monitoring.blackbox.message.OutboundMessageType;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;

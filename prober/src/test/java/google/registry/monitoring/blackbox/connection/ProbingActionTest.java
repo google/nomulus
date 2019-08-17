@@ -20,11 +20,11 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.monitoring.blackbox.handlers.ActionHandler;
-import google.registry.monitoring.blackbox.handlers.ConversionHandler;
-import google.registry.monitoring.blackbox.handlers.NettyRule;
-import google.registry.monitoring.blackbox.handlers.TestActionHandler;
-import google.registry.monitoring.blackbox.messages.TestMessage;
+import google.registry.monitoring.blackbox.handler.ActionHandler;
+import google.registry.monitoring.blackbox.handler.ConversionHandler;
+import google.registry.monitoring.blackbox.handler.NettyRule;
+import google.registry.monitoring.blackbox.handler.TestActionHandler;
+import google.registry.monitoring.blackbox.message.TestMessage;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;

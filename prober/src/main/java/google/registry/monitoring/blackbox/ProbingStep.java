@@ -17,9 +17,9 @@ package google.registry.monitoring.blackbox;
 import com.google.auto.value.AutoValue;
 import google.registry.monitoring.blackbox.connection.ProbingAction;
 import google.registry.monitoring.blackbox.connection.Protocol;
-import google.registry.monitoring.blackbox.exceptions.UndeterminedStateException;
-import google.registry.monitoring.blackbox.messages.OutboundMessageType;
-import google.registry.monitoring.blackbox.tokens.Token;
+import google.registry.monitoring.blackbox.exception.UndeterminedStateException;
+import google.registry.monitoring.blackbox.message.OutboundMessageType;
+import google.registry.monitoring.blackbox.token.Token;
 import io.netty.bootstrap.Bootstrap;
 import org.joda.time.Duration;
 

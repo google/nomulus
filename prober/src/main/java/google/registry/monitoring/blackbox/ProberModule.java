@@ -18,9 +18,9 @@ import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.monitoring.blackbox.connection.ProbingAction;
-import google.registry.monitoring.blackbox.modules.CertificateModule;
-import google.registry.monitoring.blackbox.modules.EppModule;
-import google.registry.monitoring.blackbox.modules.WebWhoisModule;
+import google.registry.monitoring.blackbox.module.CertificateModule;
+import google.registry.monitoring.blackbox.module.EppModule;
+import google.registry.monitoring.blackbox.module.WebWhoisModule;
 import google.registry.util.Clock;
 import google.registry.util.SystemClock;
 import io.netty.bootstrap.Bootstrap;
@@ -47,7 +47,7 @@ public class ProberModule {
 
   /**
    * {@link Provides} the {@link SslProvider} used by instances of {@link
-   * google.registry.monitoring.blackbox.handlers.SslClientInitializer}
+   * google.registry.monitoring.blackbox.handler.SslClientInitializer}
    */
   @Provides
   @Singleton
