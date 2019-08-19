@@ -77,7 +77,7 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
     Optional<Registrar> registrarOptional = Registrar.loadByClientId("clientz");
     assertThat(registrarOptional).isPresent();
     Registrar registrar = registrarOptional.get();
-    assertThat(registrar.testPassword("some_password")).isTrue();
+    assertThat(registrar.verifyPassword("some_password")).isTrue();
     assertThat(registrar.getType()).isEqualTo(Registrar.Type.REAL);
     assertThat(registrar.getIanaIdentifier()).isEqualTo(8);
     assertThat(registrar.getState()).isEqualTo(Registrar.State.ACTIVE);
@@ -118,7 +118,7 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
 
     Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
     assertThat(registrar).isPresent();
-    assertThat(registrar.get().testPassword("some_password")).isTrue();
+    assertThat(registrar.get().verifyPassword("some_password")).isTrue();
   }
 
   @Test

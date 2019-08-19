@@ -145,7 +145,7 @@ public class TlsCredentials implements TransportCredentials {
 
   private void validatePassword(Registrar registrar, String password)
       throws BadRegistrarPasswordException {
-    if (!registrar.testPassword(password)) {
+    if (!registrar.verifyPassword(password)) {
       throw new BadRegistrarPasswordException();
     }
   }

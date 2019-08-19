@@ -418,16 +418,15 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
                 .setAllowedToSetRegistryLockPassword(true)
                 .setRegistryLockPassword("hi")
                 .build());
-    assertThat(registrarContact.testRegistryLockPassword("hi")).isTrue();
-    assertThat(registrarContact.testRegistryLockPassword("hello")).isFalse();
+    assertThat(registrarContact.verifyRegistryLockPassword("hi")).isTrue();
+    assertThat(registrarContact.verifyRegistryLockPassword("hello")).isFalse();
     runCommandForced(
         "--mode=UPDATE",
         "--email=jim.doe@example.com",
         "--allowed_to_set_registry_lock_password=true",
         "NewRegistrar");
-    RegistrarContact updatedContact = reloadResource(registrarContact);
-    assertThrows(
-        IllegalArgumentException.class, () -> updatedContact.testRegistryLockPassword("hi"));
+    registrarContact = reloadResource(registrarContact);
+    assertThat(registrarContact.verifyRegistryLockPassword("hi")).isFalse();
   }
 
   @Test

@@ -206,7 +206,7 @@ public final class ConsoleRegistrarCreatorActionTest {
     assertThat(registrar.getIanaIdentifier()).isEqualTo(12321L);
     assertThat(registrar.getIcannReferralEmail()).isEqualTo("icann@example.com");
     assertThat(registrar.getEmailAddress()).isEqualTo("icann@example.com");
-    assertThat(registrar.testPassword("abcdefghijklmnop")).isTrue();
+    assertThat(registrar.verifyPassword("abcdefghijklmnop")).isTrue();
     assertThat(registrar.getPhonePasscode()).isEqualTo("31415");
     assertThat(registrar.getState()).isEqualTo(Registrar.State.PENDING);
     assertThat(registrar.getType()).isEqualTo(Registrar.Type.REAL);
@@ -411,7 +411,7 @@ public final class ConsoleRegistrarCreatorActionTest {
 
     Registrar registrar = loadByClientId("myclientid").orElse(null);
     assertThat(registrar).isNotNull();
-    assertThat(registrar.testPassword("SomePassword")).isTrue();
+    assertThat(registrar.verifyPassword("SomePassword")).isTrue();
     assertThat(registrar.getPhonePasscode()).isEqualTo("10203");
   }
 

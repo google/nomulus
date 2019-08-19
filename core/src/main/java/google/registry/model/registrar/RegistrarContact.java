@@ -16,6 +16,7 @@ package google.registry.model.registrar;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.io.BaseEncoding.base64;
@@ -28,7 +29,6 @@ import static google.registry.util.PasswordUtils.hashPassword;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.base.Enums;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Streams;
@@ -153,7 +153,7 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
   String registryLockPasswordHash;
 
   /** Randomly generated hash salt. */
-  String salt;
+  String registryLockPasswordSalt;
 
   public static ImmutableSet<Type> typesFromCSV(String csv) {
     return typesFromStrings(Arrays.asList(csv.split(",")));
@@ -238,27 +238,34 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
   }
 
   public boolean isRegistryLockAllowed() {
-    return registryLockPasswordHash != null && salt != null;
+    return registryLockPasswordHash != null && registryLockPasswordSalt != null;
   }
 
-  public boolean testRegistryLockPassword(String registryLockPassword) {
-    checkArgument(isRegistryLockAllowed(), "This contact has no registry lock password.");
-    return hashPassword(registryLockPassword, salt).equals(registryLockPasswordHash);
+  public boolean verifyRegistryLockPassword(String registryLockPassword) {
+    if (isNullOrEmpty(registryLockPassword)
+        || isNullOrEmpty(registryLockPasswordSalt)
+        || isNullOrEmpty(registryLockPasswordHash)) {
+      return false;
+    }
+    return hashPassword(registryLockPassword, registryLockPasswordSalt)
+        .equals(registryLockPasswordHash);
   }
 
   /**
    * Returns a string representation that's human friendly.
    *
-   * <p>The output will look something like this:<pre>   {@code
+   * <p>The output will look something like this:
    *
-   *   Some Person
-   *   person@example.com
-   *   Tel: +1.2125650666
-   *   Types: [ADMIN, WHOIS]
-   *   Visible in WHOIS as Admin contact: Yes
-   *   Visible in WHOIS as Technical contact: No
-   *   GAE-UserID: 1234567890
-   *   Registrar-Console access: Yes}</pre>
+   * <pre>{@code
+   * Some Person
+   * person@example.com
+   * Tel: +1.2125650666
+   * Types: [ADMIN, WHOIS]
+   * Visible in WHOIS as Admin contact: Yes
+   * Visible in WHOIS as Technical contact: No
+   * GAE-UserID: 1234567890
+   * Registrar-Console access: Yes
+   * }</pre>
    */
   public String toStringMultilinePlainText() {
     StringBuilder result = new StringBuilder(256);
@@ -383,7 +390,7 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
 
     public Builder setAllowedToSetRegistryLockPassword(boolean allowedToSetRegistryLockPassword) {
       if (allowedToSetRegistryLockPassword) {
-        getInstance().salt = null;
+        getInstance().registryLockPasswordSalt = null;
         getInstance().registryLockPasswordHash = null;
       }
       getInstance().allowedToSetRegistryLockPassword = allowedToSetRegistryLockPassword;
@@ -395,10 +402,10 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
           getInstance().allowedToSetRegistryLockPassword,
           "Not allowed to set registry lock password for this contact");
       checkArgument(
-          !Strings.isNullOrEmpty(registryLockPassword), "Registry lock password was null or empty");
-      getInstance().salt = base64().encode(SALT_SUPPLIER.get());
+          !isNullOrEmpty(registryLockPassword), "Registry lock password was null or empty");
+      getInstance().registryLockPasswordSalt = base64().encode(SALT_SUPPLIER.get());
       getInstance().registryLockPasswordHash =
-          hashPassword(registryLockPassword, getInstance().salt);
+          hashPassword(registryLockPassword, getInstance().registryLockPasswordSalt);
       getInstance().allowedToSetRegistryLockPassword = false;
       return this;
     }

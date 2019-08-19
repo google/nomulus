@@ -23,7 +23,7 @@ import google.registry.model.registrar.Registrar;
 public class PasswordOnlyTransportCredentials implements TransportCredentials {
   @Override
   public void validate(Registrar r, String password) throws AuthenticationErrorException {
-    if (!r.testPassword(password)) {
+    if (!r.verifyPassword(password)) {
       throw new BadRegistrarPasswordException();
     }
   }

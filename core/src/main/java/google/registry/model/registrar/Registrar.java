@@ -630,7 +630,7 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
     return phoneNumber;
   }
 
-  public boolean testPassword(String password) {
+  public boolean verifyPassword(String password) {
     return hashPassword(password, salt).equals(passwordHash);
   }
 

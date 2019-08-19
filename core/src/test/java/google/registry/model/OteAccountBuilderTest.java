@@ -153,7 +153,7 @@ public final class OteAccountBuilderTest {
   public void testCreateOteEntities_setPassword() {
     OteAccountBuilder.forClientId("myclientid").setPassword("myPassword").buildAndPersist();
 
-    assertThat(Registrar.loadByClientId("myclientid-3").get().testPassword("myPassword")).isTrue();
+    assertThat(Registrar.loadByClientId("myclientid-3").get().verifyPassword("myPassword")).isTrue();
   }
 
   @Test
@@ -268,7 +268,7 @@ public final class OteAccountBuilderTest {
         .addContact("email@example.com")
         .buildAndPersist();
 
-    assertThat(Registrar.loadByClientId("myclientid-3").get().testPassword("oldPassword")).isTrue();
+    assertThat(Registrar.loadByClientId("myclientid-3").get().verifyPassword("oldPassword")).isTrue();
 
     OteAccountBuilder.forClientId("myclientid")
         .setPassword("newPassword")
@@ -276,9 +276,9 @@ public final class OteAccountBuilderTest {
         .setReplaceExisting(true)
         .buildAndPersist();
 
-    assertThat(Registrar.loadByClientId("myclientid-3").get().testPassword("oldPassword"))
+    assertThat(Registrar.loadByClientId("myclientid-3").get().verifyPassword("oldPassword"))
         .isFalse();
-    assertThat(Registrar.loadByClientId("myclientid-3").get().testPassword("newPassword")).isTrue();
+    assertThat(Registrar.loadByClientId("myclientid-3").get().verifyPassword("newPassword")).isTrue();
   }
 
   @Test

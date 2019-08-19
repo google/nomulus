@@ -180,7 +180,7 @@ public final class ConsoleOteSetupActionTest {
 
     // We just check some samples to make sure OteAccountBuilder was called successfully. We aren't
     // checking that all the entities are there or that they have the correct values.
-    assertThat(loadByClientId("myclientid-4").get().testPassword("SomePassword"))
+    assertThat(loadByClientId("myclientid-4").get().verifyPassword("SomePassword"))
         .isTrue();
     assertThat(response.getPayload())
         .contains("<h1>OT&E successfully created for registrar myclientid!</h1>");
