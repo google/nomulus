@@ -54,6 +54,8 @@ public class GenerateSqlSchemaCommand implements Command {
 
   @Override
   public void run() {
+    // TODO(mmuller): Optionally (and perhaps by default) start a postgresql instance container
+    // rather than relying on the user to have one to connect to.
     Map<String, String> settings = new HashMap<>();
     settings.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQL9Dialect");
     settings.put(
