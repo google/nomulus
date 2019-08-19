@@ -218,7 +218,6 @@ dependencies {
   compile deps['org.bouncycastle:bcpg-jdk15on']
   testCompile deps['org.bouncycastle:bcpkix-jdk15on']
   compile deps['org.bouncycastle:bcprov-jdk15on']
-  compile deps['org.hibernate:hibernate-core']
   compile deps['org.joda:joda-money']
   compile deps['org.json:json']
   testCompile deps['org.mortbay.jetty:jetty']

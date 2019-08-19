@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence
+          http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd"
+    version="2.2">
+  <persistence-unit name="nomulus" transaction-type="RESOURCE_LOCAL">
+    <description>
+      Persistence unit for the Nomulus Cloud SQL database.
+    </description>
+    <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+    <!--
+      All JPA entities must be enumerated here. JPA does not support auto detection.
+
+      Note that Hibernate's auto detection functionality (hibernate.archive.autodection)
+      does not meet our needs. It only scans archives, not the 'classes' folders. So we
+      are left with two options:
+      *  Move tests to another (sub)project. This is not a big problem, but feels unnatural.
+      *  Use Hibernate's ServiceRegistry for bootstrapping (not JPA-compliant)
+    -->
+    <class>google.registry.model.domain.DomainBase</class>
+
+    <!-- TODO(weiminyu): check out application-layer validation. -->
+    <validation-mode>NONE</validation-mode>
+  </persistence-unit>
+</persistence>

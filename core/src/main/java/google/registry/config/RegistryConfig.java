@@ -112,7 +112,7 @@ public final class RegistryConfig {
     }
 
     /**
-     * The product name of this specific registry.  Used throughout the registrar console.
+     * The product name of this specific registry. Used throughout the registrar console.
      *
      * @see google.registry.ui.server.registrar.ConsoleUiAction
      */
@@ -123,11 +123,11 @@ public final class RegistryConfig {
     }
 
     /**
-     * Returns the roid suffix to be used for the roids of all contacts and hosts.  E.g. a value of
+     * Returns the roid suffix to be used for the roids of all contacts and hosts. E.g. a value of
      * "ROID" would end up creating roids that look like "ABC123-ROID".
      *
      * @see <a href="http://www.iana.org/assignments/epp-repository-ids/epp-repository-ids.xhtml">
-     *      Extensible Provisioning Protocol (EPP) Repository Identifiers</a>
+     *     Extensible Provisioning Protocol (EPP) Repository Identifiers</a>
      */
     @Provides
     @Config("contactAndHostRoidSuffix")
@@ -136,7 +136,7 @@ public final class RegistryConfig {
     }
 
     /**
-     * The e-mail address for questions about integrating with the registry.  Used in the
+     * The e-mail address for questions about integrating with the registry. Used in the
      * "contact-us" section of the registrar console.
      *
      * @see google.registry.ui.server.registrar.ConsoleUiAction
@@ -148,7 +148,7 @@ public final class RegistryConfig {
     }
 
     /**
-     * The e-mail address for general support.  Used in the "contact-us" section of the registrar
+     * The e-mail address for general support. Used in the "contact-us" section of the registrar
      * console.
      *
      * @see google.registry.ui.server.registrar.ConsoleUiAction
@@ -160,7 +160,7 @@ public final class RegistryConfig {
     }
 
     /**
-     * The "From" e-mail address for announcements.  Used in the "contact-us" section of the
+     * The "From" e-mail address for announcements. Used in the "contact-us" section of the
      * registrar console.
      *
      * @see google.registry.ui.server.registrar.ConsoleUiAction
@@ -172,7 +172,7 @@ public final class RegistryConfig {
     }
 
     /**
-     * The contact phone number.  Used in the "contact-us" section of the registrar console.
+     * The contact phone number. Used in the "contact-us" section of the registrar console.
      *
      * @see google.registry.ui.server.registrar.ConsoleUiAction
      */
@@ -1040,8 +1040,8 @@ public final class RegistryConfig {
     }
 
     /**
-     * The global automatic transfer length for contacts.  After this amount of time has
-     * elapsed, the transfer is automatically approved.
+     * The global automatic transfer length for contacts. After this amount of time has elapsed, the
+     * transfer is automatically approved.
      *
      * @see google.registry.flows.contact.ContactTransferRequestFlow
      */
@@ -1196,7 +1196,7 @@ public final class RegistryConfig {
     /**
      * Provides the OAuth scopes that authentication logic should detect on access tokens.
      *
-     * <p>This list should be a superset of the required OAuth scope set provided below.  Note that
+     * <p>This list should be a superset of the required OAuth scope set provided below. Note that
      * ideally, this setting would not be required and all scopes on an access token would be
      * detected automatically, but that is not the case due to the way {@code OAuthService} works.
      *
@@ -1297,9 +1297,7 @@ public final class RegistryConfig {
     }
   }
 
-  /**
-   * Returns the App Engine project ID, which is based off the environment name.
-   */
+  /** Returns the App Engine project ID, which is based off the environment name. */
   public static String getProjectId() {
     return CONFIG_SETTINGS.get().appEngine.projectId;
   }
@@ -1451,18 +1449,49 @@ public final class RegistryConfig {
     return CONFIG_SETTINGS.get().registryPolicy.defaultRegistrarWhoisServer;
   }
 
-  /**
-   * Returns the number of {@code EppResourceIndex} buckets to be used.
-   */
+  /** Returns the number of {@code EppResourceIndex} buckets to be used. */
   public static int getEppResourceIndexBucketCount() {
     return CONFIG_SETTINGS.get().datastore.eppResourceIndexBucketsNum;
   }
 
-  /**
-   * Returns the base retry duration that gets doubled after each failure within {@code Ofy}.
-   */
+  /** Returns the base retry duration that gets doubled after each failure within {@code Ofy}. */
   public static Duration getBaseOfyRetryDuration() {
     return Duration.millis(CONFIG_SETTINGS.get().datastore.baseOfyRetryMillis);
+  }
+
+  /** Returns the default database transaction isolation. */
+  public static String getHibernateConnectionIsolation() {
+    return CONFIG_SETTINGS.get().hibernate.connectionIsolation;
+  }
+
+  /** Returns true if hibernate.show_sql is enabled. */
+  public static String getHibernateLogSqlQueries() {
+    return CONFIG_SETTINGS.get().hibernate.logSqlQueries;
+  }
+
+  /** Returns true if schema modification is allowed. */
+  public static String getHibernateHbm2ddlAuto() {
+    return CONFIG_SETTINGS.get().hibernate.hbm2ddlAuto;
+  }
+
+  /** Returns the connection timeout for HikariCP. */
+  public static String getHibernateHikariConnectionTimeout() {
+    return CONFIG_SETTINGS.get().hibernate.hikariConnectionTimeout;
+  }
+
+  /** Returns the minimum idle connections for HikariCP. */
+  public static String getHibernateHikariMinimumIdle() {
+    return CONFIG_SETTINGS.get().hibernate.hikariMinimumIdle;
+  }
+
+  /** Returns the maximum pool size for HikariCP. */
+  public static String getHibernateHikariMaximumPoolSize() {
+    return CONFIG_SETTINGS.get().hibernate.hikariMaximumPoolSize;
+  }
+
+  /** Returns the idle timeout for HikariCP. */
+  public static String getHibernateHikariIdleTimeout() {
+    return CONFIG_SETTINGS.get().hibernate.hikariIdleTimeout;
   }
 
   /** Returns the roid suffix to be used for the roids of all contacts and hosts. */
