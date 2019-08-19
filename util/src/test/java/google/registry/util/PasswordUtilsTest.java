@@ -44,5 +44,7 @@ public final class PasswordUtilsTest {
     String hashedPassword = hashPassword(password, salt);
     assertThat(hashedPassword).isEqualTo(hashPassword(password, salt));
     assertThat(hashedPassword).isNotEqualTo(hashPassword(password + "a", salt));
+    String secondSalt = base64().encode(SALT_SUPPLIER.get());
+    assertThat(hashedPassword).isNotEqualTo(hashPassword(password, secondSalt));
   }
 }
