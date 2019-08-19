@@ -191,6 +191,26 @@ datastore:
   # doubles after each failure).
   baseOfyRetryMillis: 100
 
+hibernate:
+  # Make 'SERIALIZABLE' the default isolation level to ensure correctness.
+  #
+  # Entities that are never involved in multi-table transactions may use optimistic
+  # locks and a less strict isolation level. We may lower individual transaction's
+  # isolation level using a framework-dependent method.
+  #
+  # Alternatively, if a use case calls for, we may also use a lower isolation level
+  # but lock tables explicitly, either using framework-dependent API, or execute
+  # "select table for update" statements directly.
+  connectionIsolation: TRANSACTION_SERIALIZABLE
+  # Whether to log all SQL queries to App Engine logs. Overridable at runtime.
+  logSqlQueries: false
+
+  # Connection pool configurations.
+  hikariConnectionTimeout: 20000
+  hikariMinimumIdle: 0
+  hikariMaximumPoolSize: 20
+  hikariIdleTimeout: 300000
+
 cloudDns:
   # Set both properties to null in Production.
   # The root url for the Cloud DNS API.  Set this to a non-null value to
