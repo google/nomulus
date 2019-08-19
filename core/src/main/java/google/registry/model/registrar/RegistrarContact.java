@@ -238,7 +238,7 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
   }
 
   public boolean isRegistryLockAllowed() {
-    return registryLockPasswordHash != null && registryLockPasswordSalt != null;
+    return !isNullOrEmpty(registryLockPasswordHash) && !isNullOrEmpty(registryLockPasswordSalt);
   }
 
   public boolean verifyRegistryLockPassword(String registryLockPassword) {
