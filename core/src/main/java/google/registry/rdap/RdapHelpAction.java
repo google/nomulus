@@ -64,7 +64,12 @@ public class RdapHelpAction extends RdapActionBase {
             "help/XXXX")
         .addLink(
             Link.builder().setHref(RDAP_HELP_LINK).setRel("alternate").setType("text/html").build())
-        .addLink(Link.builder().setHref(selfLinkValue).setRel("self").setType("text/html").build())
+        .addLink(
+            Link.builder()
+                .setHref(selfLinkValue)
+                .setRel("self")
+                .setType("application/rdap+json")
+                .build())
         .build();
   }
 

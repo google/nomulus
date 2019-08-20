@@ -31,7 +31,7 @@
         },
         {
           "rel": "self",
-          "type": "text/html",
+          "type": "application/rdap+json",
           "href": "https://example.tld/rdap/help"
         }
       ]
