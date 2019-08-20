@@ -7,7 +7,6 @@
   "links":
   [
     {
-      "value": "https://example.tld/rdap/nameserver/ns1.cat.xn--q9jyb4c",
       "rel": "self",
       "href": "https://example.tld/rdap/nameserver/ns1.cat.xn--q9jyb4c",
       "type": "application/rdap+json"
@@ -28,7 +27,6 @@
       "links":
       [
         {
-          "value": "https://example.tld/rdap/entity/1",
           "rel": "self",
           "href": "https://example.tld/rdap/entity/1",
           "type": "application/rdap+json"

@@ -14,7 +14,6 @@
   "links":
   [
     {
-      "value": "https://example.tld/rdap/domain/fish.xn--q9jyb4c",
       "rel": "self",
       "href": "https://example.tld/rdap/domain/fish.xn--q9jyb4c",
       "type": "application/rdap+json"
@@ -22,14 +21,12 @@
     {
       "href": "https://rdap.example.com/withSlash/domain/fish.xn--q9jyb4c",
       "type": "application/rdap+json",
-      "rel": "related",
-      "value": "https://rdap.example.com/withSlash/domain/fish.xn--q9jyb4c"
+      "rel": "related"
     },
     {
       "href": "https://rdap.example.com/withoutSlash/domain/fish.xn--q9jyb4c",
       "type": "application/rdap+json",
-      "rel": "related",
-      "value": "https://rdap.example.com/withoutSlash/domain/fish.xn--q9jyb4c"
+      "rel": "related"
     }
   ],
   "events": [
@@ -60,7 +57,6 @@
       "links":
       [
         {
-          "value": "https://example.tld/rdap/entity/1",
           "rel": "self",
           "href": "https://example.tld/rdap/entity/1",
           "type": "application/rdap+json"
@@ -97,7 +93,6 @@
       "roles": ["administrative", "technical", "registrant"],
       "links": [
         {
-          "value": "https://example.tld/rdap/entity/2-ROID",
           "rel": "self",
           "href": "https://example.tld/rdap/entity/2-ROID",
           "type": "application/rdap+json"

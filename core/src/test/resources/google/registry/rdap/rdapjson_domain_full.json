@@ -13,19 +13,16 @@
   "links" :
   [
     {
-      "value" : "https://example.tld/rdap/domain/cat.xn--q9jyb4c",
       "rel" : "self",
       "href" : "https://example.tld/rdap/domain/cat.xn--q9jyb4c",
       "type" : "application/rdap+json"
     },
     {
-      "value" : "https://rdap.example.com/withSlash/domain/cat.xn--q9jyb4c",
       "rel" : "related",
       "href" : "https://rdap.example.com/withSlash/domain/cat.xn--q9jyb4c",
       "type" : "application/rdap+json"
     },
     {
-      "value" : "https://rdap.example.com/withoutSlash/domain/cat.xn--q9jyb4c",
       "rel" : "related",
       "href" : "https://rdap.example.com/withoutSlash/domain/cat.xn--q9jyb4c",
       "type" : "application/rdap+json"
@@ -64,7 +61,6 @@
       "unicodeName" : "ns1.cat.みんな",
       "links" : [
         {
-          "value" : "https://example.tld/rdap/nameserver/ns1.cat.xn--q9jyb4c",
           "rel" : "self",
           "href" : "https://example.tld/rdap/nameserver/ns1.cat.xn--q9jyb4c",
           "type" : "application/rdap+json"
@@ -85,7 +81,6 @@
       "unicodeName" : "ns2.cat.みんな",
       "links" : [
         {
-          "value" : "https://example.tld/rdap/nameserver/ns2.cat.xn--q9jyb4c",
           "rel" : "self",
           "href" : "https://example.tld/rdap/nameserver/ns2.cat.xn--q9jyb4c",
           "type" : "application/rdap+json"
@@ -114,7 +109,6 @@
       "links" :
       [
         {
-          "value" : "https://example.tld/rdap/entity/1",
           "rel" : "self",
           "href" : "https://example.tld/rdap/entity/1",
           "type" : "application/rdap+json"
@@ -152,7 +146,6 @@
       "links" :
       [
         {
-          "value" : "https://example.tld/rdap/entity/4-ROID",
           "rel" : "self",
           "href" : "https://example.tld/rdap/entity/4-ROID",
           "type" : "application/rdap+json"
@@ -203,7 +196,6 @@
       "links" :
       [
         {
-          "value" : "https://example.tld/rdap/entity/6-ROID",
           "rel" : "self",
           "href" : "https://example.tld/rdap/entity/6-ROID",
           "type" : "application/rdap+json"
@@ -253,7 +245,6 @@
       "links" :
       [
         {
-          "value" : "https://example.tld/rdap/entity/2-ROID",
           "rel" : "self",
           "href" : "https://example.tld/rdap/entity/2-ROID",
           "type" : "application/rdap+json"

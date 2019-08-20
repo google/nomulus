@@ -44,7 +44,6 @@ public class RdapIcannStandardInformation {
                   + " https://icann.org/epp")
           .addLink(
               Link.builder()
-                  .setValue("https://icann.org/epp")
                   .setRel("alternate")
                   .setHref("https://icann.org/epp")
                   .setType("text/html")
@@ -59,7 +58,6 @@ public class RdapIcannStandardInformation {
               "URL of the ICANN RDDS Inaccuracy Complaint Form: https://www.icann.org/wicf")
           .addLink(
               Link.builder()
-                  .setValue("https://www.icann.org/wicf")
                   .setRel("alternate")
                   .setHref("https://www.icann.org/wicf")
                   .setType("text/html")
@@ -145,8 +143,6 @@ public class RdapIcannStandardInformation {
           .setType(Remark.Type.OBJECT_REDACTED_AUTHORIZATION)
           .addLink(
               Link.builder()
-                  .setValue(
-                      "https://github.com/google/nomulus/blob/master/docs/rdap.md#authentication")
                   .setRel("alternate")
                   .setHref(
                       "https://github.com/google/nomulus/blob/master/docs/rdap.md#authentication")

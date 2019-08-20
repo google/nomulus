@@ -13,8 +13,7 @@
     {
       "href": "https://example.tld/rdap/nameserver/%PUNYCODENAME%",
       "type": "application/rdap+json",
-      "rel": "self",
-      "value": "https://example.tld/rdap/nameserver/%PUNYCODENAME%"
+      "rel": "self"
     }
   ],
   "ipAddresses": {
@@ -36,7 +35,6 @@
       "links" :
       [
         {
-          "value" : "https://example.tld/rdap/entity/1",
           "rel" : "self",
           "href" : "https://example.tld/rdap/entity/1",
           "type" : "application/rdap+json"

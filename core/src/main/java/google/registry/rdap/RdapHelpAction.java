@@ -47,13 +47,7 @@ public class RdapHelpAction extends RdapActionBase {
   }
 
   private Notice createHelpNotice() {
-    String linkValue = rdapJsonFormatter.makeRdapServletRelativeUrl("help");
-    Link.Builder linkBuilder =
-        Link.builder()
-            .setValue(linkValue)
-            .setRel("alternate")
-            .setHref(RDAP_HELP_LINK)
-            .setType("text/html");
+    String selfLinkValue = rdapJsonFormatter.makeRdapServletRelativeUrl("help");
     return Notice.builder()
         .setTitle("RDAP Help")
         .setDescription(
@@ -68,13 +62,14 @@ public class RdapHelpAction extends RdapActionBase {
             "entities?fn=XXXX",
             "entities?handle=XXXX",
             "help/XXXX")
-        .addLink(linkBuilder.build())
+        .addLink(
+            Link.builder().setHref(RDAP_HELP_LINK).setRel("alternate").setType("text/html").build())
+        .addLink(Link.builder().setHref(selfLinkValue).setRel("self").setType("text/html").build())
         .build();
   }
 
   @Override
-  public HelpResponse getJsonObjectForResource(
-      String pathSearchString, boolean isHeadRequest) {
+  public HelpResponse getJsonObjectForResource(String pathSearchString, boolean isHeadRequest) {
     if (pathSearchString.isEmpty() || pathSearchString.equals("/")) {
       return HelpResponse.create(Optional.of(createHelpNotice()));
     }

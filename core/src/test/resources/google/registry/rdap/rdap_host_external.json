@@ -12,8 +12,7 @@
     {
       "href": "https://example.tld/rdap/nameserver/%NAME%",
       "type": "application/rdap+json",
-      "rel": "self",
-      "value": "https://example.tld/rdap/nameserver/%NAME%"
+      "rel": "self"
     }
   ],
   "ldhName": "%NAME%",
@@ -32,7 +31,6 @@
       "links" :
       [
         {
-          "value" : "https://example.tld/rdap/entity/1",
           "rel" : "self",
           "href" : "https://example.tld/rdap/entity/1",
           "type" : "application/rdap+json"
