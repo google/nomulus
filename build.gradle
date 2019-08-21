@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+
 buildscript {
   if (rootProject.enableDependencyLocking.toBoolean()) {
     // Lock buildscript dependencies.
@@ -254,6 +257,31 @@ subprojects {
       include "${project.relativePath}/"
     }
   }
+}
+
+// If "-P verboseTestOutput=true" is passed in, configure all subprojects to dump all of their
+// output and final test status (pass/fail, errors) for each test class.
+if (verboseTestOutput) {
+  gradle.projectsEvaluated({
+    subprojects {
+      tasks.withType(Test) {
+        testLogging {
+          events TestLogEvent.FAILED, TestLogEvent.PASSED, TestLogEvent.SKIPPED,
+              TestLogEvent.STANDARD_OUT, TestLogEvent.STANDARD_ERROR
+          exceptionFormat TestExceptionFormat.FULL
+          showExceptions true
+          showCauses true
+          showStackTraces true
+
+          afterSuite { desc, result ->
+            println "Results: ${result.resultType}, " +
+                "${result.successfulTestCount}/${result.testCount} tests " +
+                "passed, ${result.failedTestCount} failures.";
+          }
+        }
+      }
+    }
+  })
 }
 
 task checkDependenciesDotGradle {
