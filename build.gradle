@@ -261,6 +261,10 @@ subprojects {
 
 // If "-P verboseTestOutput=true" is passed in, configure all subprojects to dump all of their
 // output and final test status (pass/fail, errors) for each test class.
+//
+// Note that we can't do this in the main subprojects section above because that's evaluated before
+// the subproject build files and the test tasks haven't been defined yet.  We have to do it from
+// the projectsEvaluted hook, which gets called after the subprojects are configured.
 if (verboseTestOutput) {
   gradle.projectsEvaluated({
     subprojects {
