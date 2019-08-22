@@ -30,12 +30,9 @@ gcs_prefix="storage.googleapis.com/domain-registry-maven-repository"
 if [ "${environment}" == tool ]
 then
   mkdir -p "${dest}"
-
   ./gradlew clean :core:buildToolImage \
     -PmavenUrl=https://"${gcs_prefix}"/maven \
     -PpluginsUrl=https://"${gcs_prefix}"/plugins
-
-  mv core/build/libs/nomulus.jar "${dest}"
 else
   dest="${dest}/$1"
   mkdir -p "${dest}"
