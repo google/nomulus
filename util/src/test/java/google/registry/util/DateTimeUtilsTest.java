@@ -24,9 +24,14 @@ import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.latestOf;
 import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 import static google.registry.util.DateTimeUtils.leapSafeSubtractYears;
+import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toZonedDateTime;
 
 import com.google.common.collect.ImmutableList;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -93,5 +98,37 @@ public class DateTimeUtilsTest {
   @Test
   public void testFailure_latestOfEmpty() {
     assertThrows(IllegalArgumentException.class, () -> earliestOf(ImmutableList.of()));
+  }
+
+  @Test
+  public void testSuccess_toZonedDateTime() {
+    DateTime dateTime = DateTime.now(DateTimeZone.UTC);
+    ZonedDateTime zonedDateTime = toZonedDateTime(dateTime);
+    assertThat(zonedDateTime.toInstant().toEpochMilli()).isEqualTo(dateTime.getMillis());
+    assertThat(zonedDateTime.getZone().getId()).isEqualTo("UTC");
+  }
+
+  @Test
+  public void testSuccess_toZonedDateTime_preservesTimeZone() {
+    DateTime dateTime = DateTime.now(DateTimeZone.forID("America/Los_Angeles"));
+    ZonedDateTime zonedDateTime = toZonedDateTime(dateTime);
+    assertThat(zonedDateTime.toInstant().toEpochMilli()).isEqualTo(dateTime.getMillis());
+    assertThat(zonedDateTime.getZone().getId()).isEqualTo("America/Los_Angeles");
+  }
+
+  @Test
+  public void testSuccess_toDateTime() {
+    ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("UTC"));
+    DateTime dateTime = toDateTime(zonedDateTime);
+    assertThat(dateTime.getMillis()).isEqualTo(zonedDateTime.toInstant().toEpochMilli());
+    assertThat(dateTime.getZone().getID()).isEqualTo("UTC");
+  }
+
+  @Test
+  public void testSuccess_toDateTime_preservesTimeZone() {
+    ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("America/Los_Angeles"));
+    DateTime dateTime = toDateTime(zonedDateTime);
+    assertThat(dateTime.getMillis()).isEqualTo(zonedDateTime.toInstant().toEpochMilli());
+    assertThat(dateTime.getZone().getID()).isEqualTo("America/Los_Angeles");
   }
 }
