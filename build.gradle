@@ -265,7 +265,7 @@ subprojects {
 // Note that we can't do this in the main subprojects section above because that's evaluated before
 // the subproject build files and the test tasks haven't been defined yet.  We have to do it from
 // the projectsEvaluted hook, which gets called after the subprojects are configured.
-if (verboseTestOutput) {
+if (verboseTestOutput.toBoolean()) {
   gradle.projectsEvaluated({
     subprojects {
       tasks.withType(Test) {
