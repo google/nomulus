@@ -40,7 +40,7 @@ plugins {
   id 'net.ltgt.apt' version '0.19' apply false
   id 'net.ltgt.errorprone' version '0.6.1'
   id 'checkstyle'
-  id 'com.github.johnrengelman.shadow' version '5.0.0'
+  id 'com.github.johnrengelman.shadow' version '5.1.0'
 
   // NodeJs plugin
   id "com.moowork.node" version "1.2.0"
@@ -162,8 +162,8 @@ subprojects {
         attributes 'Main-Class': mainClass
       }
       zip64 = true
-      classifier = null
-      version = null
+      classifier = ''
+      archiveVersion = ''
       configurations = [project.configurations.runtimeClasspath]
       from project.sourceSets.main.output
       // Excludes signature files that accompany some dependency jars, like
