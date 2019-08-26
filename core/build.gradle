@@ -563,6 +563,10 @@ task fragileTest(type: Test) {
   exclude "**/*TestCase.*", "**/*TestSuite.*"
   include fragileTestPatterns
 
+  if (rootProject.findProperty("skipDockerIncompatibleTests") == "true") {
+    exclude dockerIncompatibleTestPatterns
+  }
+
   // Run every test class in a freshly started process.
   forkEvery 1
 
