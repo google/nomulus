@@ -53,6 +53,8 @@
   {@param? description: ?}  /** Input field description. */
   {@param? placeholder: ?}  /** Placeholder text. */
   {@param? readonly: ?}
+  {@param? disabled: ?}
+  {@param? isPassword: ?}
   <tr class="{css('kd-settings-pane-section')}">
     <td>
       <label for="{if isNonnull($namePrefix)}{$namePrefix + $name}{else}{$name}{/if}"
@@ -70,19 +72,25 @@
     <td class="{css('setting')}">
       <input id="{if isNonnull($namePrefix)}{$namePrefix + $name}{else}{$name}{/if}"
              name="{if isNonnull($namePrefix)}{$namePrefix + $name}{else}{$name}{/if}"
-             {if isNonnull($item)}
-               {if isNonnull($itemPrefix) and isNonnull($item[$itemPrefix + $name])}
-                 value="{$item[$itemPrefix + $name]['keyValue'] ?: $item[$itemPrefix + $name]}"
-               {elseif isNonnull($item[$name])}
-                 value="{$item[$name]['keyValue'] ?: $item[$name]}"
-               {/if}
-             {/if}
-             {if isNonnull($placeholder) and not $readonly}
-               placeholder="{$placeholder}"
-             {/if}
-             {if $readonly}
-               readonly
-             {/if}>
+          {if isNonnull($item)}
+            {if isNonnull($itemPrefix) and isNonnull($item[$itemPrefix + $name])}
+             value="{$item[$itemPrefix + $name]['keyValue'] ?: $item[$itemPrefix + $name]}"
+            {elseif isNonnull($item[$name])}
+             value="{$item[$name]['keyValue'] ?: $item[$name]}"
+            {/if}
+          {/if}
+          {if isNonnull($placeholder) and not $readonly}
+             placeholder="{$placeholder}"
+          {/if}
+          {if $readonly}
+             readonly
+          {/if}
+          {if $disabled}
+             disabled
+          {/if}
+          {if $isPassword}
+             type="password"
+          {/if}>
     </td>
   </tr>
 {/template}
