@@ -80,8 +80,7 @@ if [[ $# -eq 1 && $1 == "check" ]]; then
 elif [[ $# -eq 1 && $1 == "format" ]]; then
   callGoogleJavaFormatDiff "format"
 elif [[ $# -eq 1 && $1 == "show" ]]; then
-  callResult=$(callGoogleJavaFormatDiff "show") || exit $?
-  echo "${callResult}"
+  callGoogleJavaFormatDiff "show"
 else
   echo "${USAGE}"
 fi
