@@ -123,24 +123,3 @@ jacocoTestCoverageVerification {
     }
   }
 }
-
-// Applies Google Java format to changed lines in Github repo.
-// The default baseline commit is 'upstream/master', and can be overridden
-// with the 'baseCommit' property.
-task javaFormatGithubDiff(type: Exec) {
-  def baseCommit =
-      project.hasProperty('baseCommit') ? ${baseCommit} : 'upstream/master'
-  def scriptDir = rootDir.path.endsWith('buildSrc')
-      ? "${rootDir}/../java-format"
-      : "${rootDir}/java-format"
-  def workDir = rootDir.path.endsWith('buildSrc')
-      ? "${rootDir}/.."
-      : rootDir
-  def formtDiffScript = "${scriptDir}/google-java-format-diff.py"
-  def googleJavaFormatJarArg =
-      "--google-java-format-jar  ${scriptDir}/google-java-format-1.7-all-deps.jar"
-
-  workingDir workDir
-  commandLine 'bash', '-c',
-      "git diff -U0 ${baseCommit} ${projectDir} | ${formtDiffScript} -p1 -i ${googleJavaFormatJarArg}"
-}
