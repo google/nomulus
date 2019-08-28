@@ -13,8 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# This script builds the GAE artifacts for a given environment, moves the
-# artifacts for all services to a designated location, and then creates a
+# This script prepares the proxy k8s manifest, pushes it to the clusters, and
+# kills all running pods to force k8s to create new pods using the just-pushed
+# manifest.
 
 if [[ $# -ne 1 ]]; then
  echo "Usage: $0 alpha|crash"
@@ -34,10 +35,9 @@ do
   sed s/GCP_PROJECT/${project}/g "./kubernetes/proxy-deployment-${environment}.yaml" | \
   kubectl replace -f -
   # Alpha does not have canary
-  if [[ ${environment} != "alpha" ]]
-  then
-  sed s/GCP_PROJECT/${project}/g "./kubernetes/proxy-deployment-${environment}-canary.yaml" | \
-  kubectl replace -f -
+  if [[ ${environment} != "alpha" ]]; then
+    sed s/GCP_PROJECT/${project}/g "./kubernetes/proxy-deployment-${environment}-canary.yaml" | \
+    kubectl replace -f -
   fi
   kubectl delete pods --all
 done < <(gcloud container clusters list --project ${project} | grep proxy-cluster)
