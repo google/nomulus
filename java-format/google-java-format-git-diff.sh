@@ -23,7 +23,9 @@
 # fork point from origin/master, and formats the modified lines between
 # the fork point and the HEAD of the current branch.
 
-read -r -d '' USAGE << EOM
+set -e
+
+USAGE="
 $(basename "$0") [--help] check|format|show
 Incrementally format modified java lines in Git.
 
@@ -31,31 +33,27 @@ where:
     --help  show this help text
     check  check if formatting is necessary
     format format files in place
-    show   show the effect of the formatting as unified diff
-EOM
+    show   show the effect of the formatting as unified diff"
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+SCRIPT_DIR="$(realpath $(dirname $0))"
 
 function callGoogleJavaFormatDiff() {
   local forkPoint
-  forkPoint=$(git merge-base --fork-point origin/master) || exit $?
+  forkPoint=$(git merge-base --fork-point origin/master)
 
   local callResult
   case "$1" in
     "check")
       callResult=$(git diff -U0 ${forkPoint} | \
-          ${SCRIPT_DIR}/google-java-format-diff.py -p1 | wc -l; \
-          exit $((${PIPESTATUS[0]} | ${PIPESTATUS[1]}))) || exit $?
+          ${SCRIPT_DIR}/google-java-format-diff.py -p1 | wc -l)
       ;;
     "format")
       callResult=$(git diff -U0 ${forkPoint} | \
-          ${SCRIPT_DIR}/google-java-format-diff.py -p1 -i; \
-          exit $((${PIPESTATUS[0]} | ${PIPESTATUS[1]}))) || exit $?
+          ${SCRIPT_DIR}/google-java-format-diff.py -p1 -i)
       ;;
     "show")
       callResult=$(git diff -U0 ${forkPoint} | \
-          ${SCRIPT_DIR}/google-java-format-diff.py -p1; \
-          exit $((${PIPESTATUS[0]} | ${PIPESTATUS[1]}))) || exit $?
+          ${SCRIPT_DIR}/google-java-format-diff.py -p1)
       ;;
   esac
   echo "${callResult}"
@@ -64,7 +62,7 @@ function callGoogleJavaFormatDiff() {
 
 function isJavaFormatNeededOnDiffs() {
   local modifiedLineCount
-  modifiedLineCount=$(callGoogleJavaFormatDiff "check") || exit $?
+  modifiedLineCount=$(callGoogleJavaFormatDiff "check")
 
   if [[ ${modifiedLineCount} -ne 0 ]]; then
     echo "true"
