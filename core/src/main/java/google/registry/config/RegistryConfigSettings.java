@@ -25,6 +25,7 @@ public class RegistryConfigSettings {
   public CredentialOAuth credentialOAuth;
   public RegistryPolicy registryPolicy;
   public Datastore datastore;
+  public Hibernate hibernate;
   public CloudDns cloudDns;
   public Caching caching;
   public IcannReporting icannReporting;
@@ -103,6 +104,17 @@ public class RegistryConfigSettings {
     public int commitLogBucketsNum;
     public int eppResourceIndexBucketsNum;
     public int baseOfyRetryMillis;
+  }
+
+  /** Configuration for Hibernate. */
+  public static class Hibernate {
+    public String connectionIsolation;
+    public String logSqlQueries;
+    public String hbm2ddlAuto;
+    public String hikariConnectionTimeout;
+    public String hikariMinimumIdle;
+    public String hikariMaximumPoolSize;
+    public String hikariIdleTimeout;
   }
 
   /** Configuration for Apache Beam (Cloud Dataflow). */

@@ -9,8 +9,8 @@ com.diffplug.gradle.spotless:com.diffplug.gradle.spotless.gradle.plugin:3.18.0
 com.diffplug.spotless:spotless-lib-extra:1.18.0
 com.diffplug.spotless:spotless-lib:1.18.0
 com.diffplug.spotless:spotless-plugin-gradle:3.18.0
-com.github.jengelman.gradle.plugins:shadow:5.0.0
-com.github.johnrengelman.shadow:com.github.johnrengelman.shadow.gradle.plugin:5.0.0
+com.github.jengelman.gradle.plugins:shadow:5.1.0
+com.github.johnrengelman.shadow:com.github.johnrengelman.shadow.gradle.plugin:5.1.0
 com.google.cloud.tools:appengine-gradle-plugin:2.0.1
 com.google.cloud.tools:appengine-plugins-core:0.7.5
 com.google.code.findbugs:jsr305:3.0.2

@@ -369,6 +369,67 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
+  public void testCreate_setAllowedToSetRegistryLockPassword() throws Exception {
+    runCommandForced(
+        "--mode=CREATE",
+        "--name=Jim Doe",
+        "--email=jim.doe@example.com",
+        "--allowed_to_set_registry_lock_password=true",
+        "NewRegistrar");
+    RegistrarContact registrarContact = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
+    assertThat(registrarContact.isAllowedToSetRegistryLockPassword()).isTrue();
+    registrarContact.asBuilder().setRegistryLockPassword("foo");
+  }
+
+  @Test
+  public void testUpdate_setAllowedToSetRegistryLockPassword() throws Exception {
+    Registrar registrar = loadRegistrar("NewRegistrar");
+    RegistrarContact registrarContact =
+        persistSimpleResource(
+            new RegistrarContact.Builder()
+                .setParent(registrar)
+                .setName("Jim Doe")
+                .setEmailAddress("jim.doe@example.com")
+                .build());
+    assertThat(registrarContact.isAllowedToSetRegistryLockPassword()).isFalse();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> registrarContact.asBuilder().setRegistryLockPassword("foo"));
+    runCommandForced(
+        "--mode=UPDATE",
+        "--email=jim.doe@example.com",
+        "--allowed_to_set_registry_lock_password=true",
+        "NewRegistrar");
+    RegistrarContact newContact = reloadResource(registrarContact);
+    assertThat(newContact.isAllowedToSetRegistryLockPassword()).isTrue();
+    // should be allowed to set the password now
+    newContact.asBuilder().setRegistryLockPassword("foo");
+  }
+
+  @Test
+  public void testUpdate_setAllowedToSetRegistryLockPassword_removesOldPassword() throws Exception {
+    Registrar registrar = loadRegistrar("NewRegistrar");
+    RegistrarContact registrarContact =
+        persistSimpleResource(
+            new RegistrarContact.Builder()
+                .setParent(registrar)
+                .setName("Jim Doe")
+                .setEmailAddress("jim.doe@example.com")
+                .setAllowedToSetRegistryLockPassword(true)
+                .setRegistryLockPassword("hi")
+                .build());
+    assertThat(registrarContact.verifyRegistryLockPassword("hi")).isTrue();
+    assertThat(registrarContact.verifyRegistryLockPassword("hello")).isFalse();
+    runCommandForced(
+        "--mode=UPDATE",
+        "--email=jim.doe@example.com",
+        "--allowed_to_set_registry_lock_password=true",
+        "NewRegistrar");
+    registrarContact = reloadResource(registrarContact);
+    assertThat(registrarContact.verifyRegistryLockPassword("hi")).isFalse();
+  }
+
+  @Test
   public void testCreate_failure_badEmail() {
     IllegalArgumentException thrown =
         assertThrows(

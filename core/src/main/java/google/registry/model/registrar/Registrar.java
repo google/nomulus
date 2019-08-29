@@ -34,10 +34,11 @@ import static google.registry.model.registry.Registries.assertTldsExist;
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
+import static google.registry.util.PasswordUtils.SALT_SUPPLIER;
+import static google.registry.util.PasswordUtils.hashPassword;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.X509Utils.getCertificateHash;
 import static google.registry.util.X509Utils.loadCertificate;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Comparator.comparing;
 import static java.util.function.Predicate.isEqual;
 
@@ -73,10 +74,6 @@ import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.registrar.Registrar.BillingAccountEntry.CurrencyMapper;
 import google.registry.model.registry.Registry;
 import google.registry.util.CidrAddressBlock;
-import google.registry.util.NonFinalForTesting;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.cert.CertificateParsingException;
 import java.util.Comparator;
 import java.util.List;
@@ -412,15 +409,6 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
   /** Whether or not registry lock is allowed for this registrar. */
   boolean registryLockAllowed = false;
 
-  @NonFinalForTesting
-  private static Supplier<byte[]> saltSupplier =
-      () -> {
-        // There are 32 bytes in a sha-256 hash, and the salt should generally be the same size.
-        byte[] salt = new byte[32];
-        new SecureRandom().nextBytes(salt);
-        return salt;
-      };
-
   public String getClientId() {
     return clientIdentifier;
   }
@@ -634,16 +622,6 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
         .build();
   }
 
-  private String hashPassword(String password) {
-    try {
-      return base64()
-          .encode(MessageDigest.getInstance("SHA-256").digest((password + salt).getBytes(UTF_8)));
-    } catch (NoSuchAlgorithmException e) {
-      // All implementations of MessageDigest are required to support SHA-256.
-      throw new RuntimeException(e);
-    }
-  }
-
   private static String checkValidPhoneNumber(String phoneNumber) {
     checkArgument(
         E164_PATTERN.matcher(phoneNumber).matches(),
@@ -652,8 +630,8 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
     return phoneNumber;
   }
 
-  public boolean testPassword(String password) {
-    return hashPassword(password).equals(passwordHash);
+  public boolean verifyPassword(String password) {
+    return hashPassword(password, salt).equals(passwordHash);
   }
 
   public String getPhonePasscode() {
@@ -888,8 +866,8 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
       checkArgument(
           Range.closed(6, 16).contains(nullToEmpty(password).length()),
           "Password must be 6-16 characters long.");
-      getInstance().salt = base64().encode(saltSupplier.get());
-      getInstance().passwordHash = getInstance().hashPassword(password);
+      getInstance().salt = base64().encode(SALT_SUPPLIER.get());
+      getInstance().passwordHash = hashPassword(password, getInstance().salt);
       return this;
     }
 

@@ -44,9 +44,9 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
 
   @Test
   public void testSuccess_password() throws Exception {
-    assertThat(loadRegistrar("NewRegistrar").testPassword("some_password")).isFalse();
+    assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isFalse();
     runCommand("--password=some_password", "--force", "NewRegistrar");
-    assertThat(loadRegistrar("NewRegistrar").testPassword("some_password")).isTrue();
+    assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isTrue();
   }
 
   @Test
@@ -814,10 +814,10 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
     Registrar registrar =
         persistResource(
             loadRegistrar("NewRegistrar").asBuilder().setPoNumber(Optional.of("1664")).build());
-    assertThat(registrar.testPassword("some_password")).isFalse();
+    assertThat(registrar.verifyPassword("some_password")).isFalse();
     runCommand("--password=some_password", "--force", "NewRegistrar");
     Registrar reloadedRegistrar = loadRegistrar("NewRegistrar");
-    assertThat(reloadedRegistrar.testPassword("some_password")).isTrue();
+    assertThat(reloadedRegistrar.verifyPassword("some_password")).isTrue();
     assertThat(reloadedRegistrar.getPoNumber()).hasValue("1664");
   }
 

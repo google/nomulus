@@ -115,7 +115,7 @@ ext {
       'org.hamcrest:hamcrest-all:1.3',
       'org.hamcrest:hamcrest-core:1.3',
       'org.hamcrest:hamcrest-library:1.3',
-      'org.hibernate:hibernate-core:5.4.4.Final',
+      'org.hibernate:hibernate-hikaricp:5.4.4.Final',
       'org.joda:joda-money:0.10.0',
       'org.json:json:20160810',
       'org.mockito:mockito-core:2.25.0',
@@ -125,8 +125,8 @@ ext {
       'org.seleniumhq.selenium:selenium-chrome-driver:3.141.59',
       'org.seleniumhq.selenium:selenium-java:3.141.59',
       'org.seleniumhq.selenium:selenium-remote-driver:3.141.59',
+      'org.testcontainers:postgresql:1.11.3',
       'org.testcontainers:selenium:1.10.7',
-      'org.testcontainers:postgresql:1.8.3',
       'org.yaml:snakeyaml:1.17',
       'xerces:xmlParserAPIs:2.6.2',
       'xpp3:xpp3:1.1.4c'

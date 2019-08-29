@@ -105,7 +105,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
     assertThat(registrar.getAllowedTlds()).containsExactlyElementsIn(ImmutableSet.of(allowedTld));
     assertThat(registrar.getRegistrarName()).isEqualTo(registrarName);
     assertThat(registrar.getState()).isEqualTo(ACTIVE);
-    assertThat(registrar.testPassword(password)).isTrue();
+    assertThat(registrar.verifyPassword(password)).isTrue();
     assertThat(registrar.getIpAddressWhitelist()).isEqualTo(ipWhitelist);
     assertThat(registrar.getClientCertificateHash()).isEqualTo(SAMPLE_CERT_HASH);
     // If certificate hash is provided, there's no certificate file stored with the registrar.

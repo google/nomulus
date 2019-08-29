@@ -469,6 +469,7 @@ class google.registry.model.registrar.RegistrarAddress {
 class google.registry.model.registrar.RegistrarContact {
   @Id java.lang.String emailAddress;
   @Parent com.googlecode.objectify.Key<google.registry.model.registrar.Registrar> parent;
+  boolean allowedToSetRegistryLockPassword;
   boolean visibleInDomainWhoisAsAbuse;
   boolean visibleInWhoisAsAdmin;
   boolean visibleInWhoisAsTech;
@@ -476,6 +477,8 @@ class google.registry.model.registrar.RegistrarContact {
   java.lang.String gaeUserId;
   java.lang.String name;
   java.lang.String phoneNumber;
+  java.lang.String registryLockPasswordHash;
+  java.lang.String registryLockPasswordSalt;
   java.util.Set<google.registry.model.registrar.RegistrarContact$Type> types;
 }
 enum google.registry.model.registrar.RegistrarContact$Type {
