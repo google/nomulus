@@ -102,7 +102,7 @@ public class DateTimeUtils {
    * Converts a java.time {@link ZonedDateTime} object to an equivalent Joda {@link DateTime}
    * object.
    */
-  public static DateTime toDateTime(ZonedDateTime zonedDateTime) {
+  public static DateTime toJodaDateTime(ZonedDateTime zonedDateTime) {
     return new DateTime(
         zonedDateTime.toInstant().toEpochMilli(),
         DateTimeZone.forID(zonedDateTime.getZone().getId()));

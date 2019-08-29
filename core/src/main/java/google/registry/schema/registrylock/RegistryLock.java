@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.lock;
+package google.registry.schema.registrylock;
 
-import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toJodaDateTime;
 import static google.registry.util.DateTimeUtils.toZonedDateTime;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -129,15 +129,15 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   }
 
   public DateTime getCreationTimestamp() {
-    return toDateTime(creationTimestamp);
+    return toJodaDateTime(creationTimestamp);
   }
 
   public DateTime getLockTimestamp() {
-    return toDateTime(lockTimestamp);
+    return toJodaDateTime(lockTimestamp);
   }
 
   public DateTime getUnlockTimestamp() {
-    return toDateTime(unlockTimestamp);
+    return toJodaDateTime(unlockTimestamp);
   }
 
   public String getVerificationCode() {
@@ -161,7 +161,7 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
     return new Builder(clone(this));
   }
 
-  /** Builder for {@link google.registry.schema.lock.RegistryLock}. */
+  /** Builder for {@link google.registry.schema.registrylock.RegistryLock}. */
   public static class Builder extends Buildable.Builder<RegistryLock> {
     public Builder() {}
 

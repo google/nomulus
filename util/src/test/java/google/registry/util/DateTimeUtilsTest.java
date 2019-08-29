@@ -24,7 +24,7 @@ import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.latestOf;
 import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 import static google.registry.util.DateTimeUtils.leapSafeSubtractYears;
-import static google.registry.util.DateTimeUtils.toDateTime;
+import static google.registry.util.DateTimeUtils.toJodaDateTime;
 import static google.registry.util.DateTimeUtils.toZonedDateTime;
 
 import com.google.common.collect.ImmutableList;
@@ -117,17 +117,17 @@ public class DateTimeUtilsTest {
   }
 
   @Test
-  public void testSuccess_toDateTime() {
+  public void testSuccess_toJodaDateTime() {
     ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("UTC"));
-    DateTime dateTime = toDateTime(zonedDateTime);
+    DateTime dateTime = toJodaDateTime(zonedDateTime);
     assertThat(dateTime.getMillis()).isEqualTo(zonedDateTime.toInstant().toEpochMilli());
     assertThat(dateTime.getZone().getID()).isEqualTo("UTC");
   }
 
   @Test
-  public void testSuccess_toDateTime_preservesTimeZone() {
+  public void testSuccess_toJodaDateTime_preservesTimeZone() {
     ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("America/Los_Angeles"));
-    DateTime dateTime = toDateTime(zonedDateTime);
+    DateTime dateTime = toJodaDateTime(zonedDateTime);
     assertThat(dateTime.getMillis()).isEqualTo(zonedDateTime.toInstant().toEpochMilli());
     assertThat(dateTime.getZone().getID()).isEqualTo("America/Los_Angeles");
   }
