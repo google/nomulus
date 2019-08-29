@@ -47,7 +47,6 @@ public class RdapHelpAction extends RdapActionBase {
   }
 
   private Notice createHelpNotice() {
-    String selfLinkValue = rdapJsonFormatter.makeRdapServletRelativeUrl("help");
     return Notice.builder()
         .setTitle("RDAP Help")
         .setDescription(
@@ -66,7 +65,7 @@ public class RdapHelpAction extends RdapActionBase {
             Link.builder().setHref(RDAP_HELP_LINK).setRel("alternate").setType("text/html").build())
         .addLink(
             Link.builder()
-                .setHref(selfLinkValue)
+                .setHref(rdapJsonFormatter.makeRdapServletRelativeUrl("help"))
                 .setRel("self")
                 .setType("application/rdap+json")
                 .build())
