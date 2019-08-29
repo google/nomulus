@@ -44,8 +44,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 final class RegistryCli implements AutoCloseable, CommandRunner {
 
   // The environment parameter is parsed twice: once here, and once with {@link
-  // RegistryToolEnvironment#parseFromArgs} in the {@link RegistryTool#main} or {@link
-  // GtechTool#main} functions.
+  // RegistryToolEnvironment#parseFromArgs} in the {@link RegistryTool#main} function.
   //
   // The flag names must be in sync between the two, and also - this is ugly and we should feel bad.
   @Parameter(
