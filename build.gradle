@@ -95,11 +95,6 @@ tasks.build.dependsOn(tasks.checkLicense)
 
 // Provide defaults for all of the project properties.
 
-// showAllOutput: boolean.  If true, dump all test output during the build.
-if (!project.hasProperty('showAllOutput')) {
-  ext.showAllOutput = 'false'
-}
-
 // Only do linting if the build is successful.
 gradleLint.autoLintAfterFailure = false
 
@@ -242,10 +237,6 @@ subprojects {
   }
 
   if (['util', 'proxy', 'core', 'prober'].contains(project.name)) return
-
-  test {
-    testLogging.showStandardStreams = Boolean.parseBoolean(showAllOutput)
-  }
 
   ext.relativePath = "google/registry/${project.name}"
 
