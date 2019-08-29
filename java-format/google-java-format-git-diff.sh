@@ -22,6 +22,10 @@
 # 'git merge-base --fork-point origin/master' command to find the latest
 # fork point from origin/master, and formats the modified lines between
 # the fork point and the HEAD of the current branch.
+#
+# Background: existing code base does not conform to Google Java format. Since
+# the team wants to keep the 'blame' feature (find last modifier of a line)
+# usable, we do not want to reformat existing code.
 
 set -e
 
