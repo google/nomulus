@@ -16,6 +16,7 @@ package google.registry.webdriver;
 
 import static google.registry.server.Fixture.BASIC;
 import static google.registry.server.Route.route;
+import static google.registry.testing.AppEngineRule.makeRegistrarContact2;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -127,6 +128,35 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     Thread.sleep(1000);
     driver.waitForElement(By.tagName("h1"));
     driver.waitForElement(By.id("reg-app-btn-edit")).click();
+    driver.diffPage("page");
+  }
+
+  @Test
+  public void settingsContactEdit_setRegistryLockPassword() throws Throwable {
+    server.runInAppEngineEnvironment(
+        () -> {
+          persistResource(
+              makeRegistrarContact2()
+                  .asBuilder()
+                  .setAllowedToSetRegistryLockPassword(true)
+                  .build());
+          return null;
+        });
+    driver.manage().window().setSize(new Dimension(1050, 2000));
+    driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
+    Thread.sleep(1000);
+    driver.waitForElement(By.tagName("h1"));
+    driver.waitForElement(By.id("reg-app-btn-edit")).click();
+    driver.diffPage("page");
+  }
+
+  @Test
+  public void settingsContactAdd() throws Throwable {
+    driver.manage().window().setSize(new Dimension(1050, 2000));
+    driver.get(server.getUrl("/registrar#contact-settings"));
+    Thread.sleep(1000);
+    driver.waitForElement(By.tagName("h1"));
+    driver.waitForElement(By.id("reg-app-btn-add")).click();
     driver.diffPage("page");
   }
 
