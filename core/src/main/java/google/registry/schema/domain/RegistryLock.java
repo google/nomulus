@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.registrylock;
+package google.registry.schema.domain;
 
 import static google.registry.util.DateTimeUtils.toJodaDateTime;
 import static google.registry.util.DateTimeUtils.toZonedDateTime;
@@ -161,7 +161,7 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
     return new Builder(clone(this));
   }
 
-  /** Builder for {@link google.registry.schema.registrylock.RegistryLock}. */
+  /** Builder for {@link google.registry.schema.domain.RegistryLock}. */
   public static class Builder extends Buildable.Builder<RegistryLock> {
     public Builder() {}
 
