@@ -61,11 +61,10 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
     UNLOCK
   }
 
-  /** Describes if a domain is not locked, locked, or if a lock has been requested. */
+  /** Describes whether the action is pending or has been verified. */
   public enum LockStatus {
-    NOT_LOCKED,
     PENDING,
-    LOCKED
+    COMPLETED
   }
 
   @Id
@@ -85,23 +84,36 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   @Column(name = "registrar_contact_id", nullable = false)
   private String registrarContactId;
 
+  /**
+   * Lock action is immutable and describes whether the action performed was a lock or an unlock.
+   */
   @Enumerated(EnumType.STRING)
   @Column(name = "lock_action", nullable = false)
   private LockAction lockAction;
 
+  /**
+   * When the lock is first requested, the status is PENDING. After the lock is verified, the status
+   * moves to COMPLETED and never changes again. Further locks or unlocks are new objects.
+   */
   @Enumerated(EnumType.STRING)
   @Column(name = "lock_status", nullable = false)
   private LockStatus lockStatus;
 
+  /** Creation timestamp is when the lock/unlock is first requested. */
   @Column(name = "creation_timestamp", nullable = false)
   private ZonedDateTime creationTimestamp;
 
-  @Column(name = "lock_timestamp")
-  private ZonedDateTime lockTimestamp;
+  /**
+   * Completion timestamp is when the user has verified the lock/unlock, when this object de facto
+   * becomes immutable.
+   */
+  @Column(name = "completion_timestamp")
+  private ZonedDateTime completionTimestamp;
 
-  @Column(name = "unlock_timestamp")
-  private ZonedDateTime unlockTimestamp;
-
+  /**
+   * The user must provide the random verification code in order to complete the lock and move the
+   * status from PENDING to COMPLETED.
+   */
   @Column(name = "verification_code", nullable = false, unique = true)
   private String verificationCode;
 
@@ -132,12 +144,8 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
     return toJodaDateTime(creationTimestamp);
   }
 
-  public DateTime getLockTimestamp() {
-    return toJodaDateTime(lockTimestamp);
-  }
-
-  public DateTime getUnlockTimestamp() {
-    return toJodaDateTime(unlockTimestamp);
+  public DateTime getCompletionTimestamp() {
+    return toJodaDateTime(completionTimestamp);
   }
 
   public String getVerificationCode() {
@@ -212,13 +220,8 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
       return this;
     }
 
-    public Builder setLockTimestamp(DateTime lockTimestamp) {
-      getInstance().lockTimestamp = toZonedDateTime(lockTimestamp);
-      return this;
-    }
-
-    public Builder setUnlockTimestamp(DateTime unlockTimestamp) {
-      getInstance().unlockTimestamp = toZonedDateTime(unlockTimestamp);
+    public Builder setCompletionTimestamp(DateTime lockTimestamp) {
+      getInstance().completionTimestamp = toZonedDateTime(lockTimestamp);
       return this;
     }
 
