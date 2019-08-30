@@ -453,8 +453,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
                         new FormException(
                             "Not allowed to set registry lock password directly on new contact"));
         if (!existingContact.isAllowedToSetRegistryLockPassword()) {
-          throw new FormException(
-              "Registrar contact not allowed to set registry lock password");
+          throw new FormException("Registrar contact not allowed to set registry lock password");
         }
       }
     }
