@@ -16,6 +16,7 @@ package google.registry.webdriver;
 
 import static google.registry.server.Fixture.BASIC;
 import static google.registry.server.Route.route;
+import static google.registry.testing.AppEngineRule.makeRegistrar2;
 import static google.registry.testing.AppEngineRule.makeRegistrarContact2;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
@@ -140,6 +141,43 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
                   .asBuilder()
                   .setAllowedToSetRegistryLockPassword(true)
                   .build());
+          persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build());
+          return null;
+        });
+    driver.manage().window().setSize(new Dimension(1050, 2000));
+    driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
+    Thread.sleep(1000);
+    driver.waitForElement(By.tagName("h1"));
+    driver.waitForElement(By.id("reg-app-btn-edit")).click();
+    driver.diffPage("page");
+  }
+
+  @Test
+  public void settingsContactEdit_setRegistryLockPassword_alreadySet() throws Throwable {
+    server.runInAppEngineEnvironment(
+        () -> {
+          persistResource(
+              makeRegistrarContact2()
+                  .asBuilder()
+                  .setAllowedToSetRegistryLockPassword(true)
+                  .setRegistryLockPassword("hi")
+                  .build());
+          persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build());
+          return null;
+        });
+    driver.manage().window().setSize(new Dimension(1050, 2000));
+    driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
+    Thread.sleep(1000);
+    driver.waitForElement(By.tagName("h1"));
+    driver.waitForElement(By.id("reg-app-btn-edit")).click();
+    driver.diffPage("page");
+  }
+
+  @Test
+  public void settingsContactEdit_setRegistryLockPassword_notAllowedForContact() throws Throwable {
+    server.runInAppEngineEnvironment(
+        () -> {
+          persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build());
           return null;
         });
     driver.manage().window().setSize(new Dimension(1050, 2000));

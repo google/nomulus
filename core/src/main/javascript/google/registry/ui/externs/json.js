@@ -117,7 +117,8 @@ registry.json.Response.prototype.results;
  *   localizedAddress: registry.json.RegistrarAddress,
  *   whoisServer: (string?|undefined),
  *   referralUrl: (string?|undefined),
- *   contacts: !Array.<registry.json.RegistrarContact>
+ *   contacts: !Array.<registry.json.RegistrarContact>,
+ *   registryLockAllowed: boolean
  * }}
  */
 registry.json.Registrar;
@@ -144,7 +145,9 @@ registry.json.RegistrarAddress;
  *   visibleInDomainWhoisAsAbuse: boolean,
  *   phoneNumber: (string?|undefined),
  *   faxNumber: (string?|undefined),
- *   types: (string?|undefined)
+ *   types: (string?|undefined),
+ *   allowedToSetRegistryLockPassword: boolean,
+ *   registryLockAllowed: boolean
  * }}
  */
 registry.json.RegistrarContact;

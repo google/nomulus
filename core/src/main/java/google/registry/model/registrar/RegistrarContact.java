@@ -314,6 +314,7 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
         .put("visibleInWhoisAsTech", visibleInWhoisAsTech)
         .put("visibleInDomainWhoisAsAbuse", visibleInDomainWhoisAsAbuse)
         .put("allowedToSetRegistryLockPassword", allowedToSetRegistryLockPassword)
+        .put("registryLockAllowed", isRegistryLockAllowed())
         .put("gaeUserId", gaeUserId)
         .build();
   }
