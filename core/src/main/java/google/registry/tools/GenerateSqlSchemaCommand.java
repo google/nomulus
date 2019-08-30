@@ -49,7 +49,8 @@ public class GenerateSqlSchemaCommand implements Command {
 
   @Parameter(
       names = {"-o", "--out-file"},
-      description = "Name of the output file.")
+      description = "Name of the output file.",
+      required = true)
   String outFile;
 
   @Parameter(
@@ -86,16 +87,25 @@ public class GenerateSqlSchemaCommand implements Command {
       postgresContainer.start();
       databaseHost = postgresContainer.getContainerIpAddress();
       databasePort = postgresContainer.getMappedPort(POSTGRESQL_PORT);
-    } else {
-      // Make sure that both database host and port have values, assume localhost:5432.  Note that
-      // we can't specify the default in the definitions, we wouldn't be able to distinguish that
-      // from a user provided value which would be incompatible with --start-postgresql.
-      if (databaseHost == null) {
-        databaseHost = "localhost";
-      }
-      if (databasePort == null) {
-        databasePort = POSTGRESQL_PORT;
-      }
+    } else if (databaseHost == null) {
+      System.err.println(
+          "You must specify either --start-postgresql to start a PostgreSQL database in a\n"
+              + "docker instance, or specify --db-host (and, optionally, --db-port) to identify\n"
+              + "the location of a running instance.  To start a long-lived instance (suitable\n"
+              + "for running this command multiple times) run this:\n\n"
+              + "  docker run --rm --name some-postgres -e POSTGRES_PASSWORD=domain-registry \\\n"
+              + "    -d postgres:9.6.12\n\n"
+              + "Copy the container id output from the command, then run:\n\n"
+              + "  docker inspect <container-id> | grep IPAddress\n\n"
+              + "To obtain the value for --db-host.\n"
+              );
+      // TODO: need exit(1), see above.
+      return;
+    }
+
+    // use the default port if non has been defined.
+    if (databasePort == null) {
+      databasePort = POSTGRESQL_PORT;
     }
 
     try {
