@@ -568,9 +568,6 @@ task fragileTest(type: Test) {
 
   // Run every test class in a freshly started process.
   forkEvery 1
-
-  // Uncomment to see test outputs in stdout.
-  //testLogging.showStandardStreams = true
 }
 
 task outcastTest(type: Test) {

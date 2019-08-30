@@ -190,14 +190,18 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                 .setReason("Domain autorenewal by ExpandRecurringBillingEventsAction")
                 .setRequestedByRegistrar(false)
                 .setType(DOMAIN_AUTORENEW)
+                // Don't write a domain transaction record if the recurrence was ended prior to the
+                // billing time (i.e. a domain was deleted during the autorenew grace period).
                 .setDomainTransactionRecords(
-                    ImmutableSet.of(
-                        DomainTransactionRecord.create(
-                            tld.getTldStr(),
-                            // We report this when the autorenew grace period ends
-                            billingTime,
-                            TransactionReportField.netRenewsFieldFromYears(1),
-                            1)))
+                    recurring.getRecurrenceEndTime().isBefore(billingTime)
+                        ? ImmutableSet.of()
+                        : ImmutableSet.of(
+                            DomainTransactionRecord.create(
+                                tld.getTldStr(),
+                                // We report this when the autorenew grace period ends
+                                billingTime,
+                                TransactionReportField.netRenewsFieldFromYears(1),
+                                1)))
                 .build();
             historyEntriesBuilder.add(historyEntry);
 
