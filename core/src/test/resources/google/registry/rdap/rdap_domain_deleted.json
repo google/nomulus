@@ -18,20 +18,17 @@
     {
       "href": "https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_1%",
       "type": "application/rdap+json",
-      "rel": "self",
-      "value": "https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_1%"
+      "rel": "self"
     },
     {
       "href": "https://rdap.example.com/withSlash/domain/%DOMAIN_PUNYCODE_NAME_1%",
       "type": "application/rdap+json",
-      "rel": "related",
-      "value": "https://rdap.example.com/withSlash/domain/%DOMAIN_PUNYCODE_NAME_1%"
+      "rel": "related"
     },
     {
       "href": "https://rdap.example.com/withoutSlash/domain/%DOMAIN_PUNYCODE_NAME_1%",
       "type": "application/rdap+json",
-      "rel": "related",
-      "value": "https://rdap.example.com/withoutSlash/domain/%DOMAIN_PUNYCODE_NAME_1%"
+      "rel": "related"
     }
   ],
   "events": [
@@ -67,8 +64,7 @@
         {
           "href": "https://example.tld/rdap/nameserver/%NAMESERVER_NAME_1%",
           "type": "application/rdap+json",
-          "rel": "self",
-          "value": "https://example.tld/rdap/nameserver/%NAMESERVER_NAME_1%"
+          "rel": "self"
         }
       ],
       "remarks": [
@@ -87,8 +83,7 @@
         {
           "href": "https://example.tld/rdap/nameserver/%NAMESERVER_NAME_2%",
           "type": "application/rdap+json",
-          "rel": "self",
-          "value": "https://example.tld/rdap/nameserver/%NAMESERVER_NAME_2%"
+          "rel": "self"
         }
       ],
       "remarks": [
@@ -115,8 +110,7 @@
         {
           "href": "https://example.tld/rdap/entity/1",
           "type": "application/rdap+json",
-          "rel": "self",
-          "value": "https://example.tld/rdap/entity/1"
+          "rel": "self"
         }
       ],
       "vcardArray" : [
@@ -161,8 +155,7 @@
         {
           "href": "https://example.tld/rdap/entity/%CONTACT_HANDLE_1%",
           "type": "application/rdap+json",
-          "rel": "self",
-          "value": "https://example.tld/rdap/entity/%CONTACT_HANDLE_1%"
+          "rel": "self"
         }
       ],
       "vcardArray": [
@@ -199,8 +192,7 @@
         {
           "href": "https://example.tld/rdap/entity/%CONTACT_HANDLE_2%",
           "type": "application/rdap+json",
-          "rel": "self",
-          "value": "https://example.tld/rdap/entity/%CONTACT_HANDLE_2%"
+          "rel": "self"
         }
       ],
       "vcardArray": [
@@ -237,8 +229,7 @@
         {
           "href": "https://example.tld/rdap/entity/%CONTACT_HANDLE_3%",
           "type": "application/rdap+json",
-          "rel": "self",
-          "value": "https://example.tld/rdap/entity/%CONTACT_HANDLE_3%"
+          "rel": "self"
         }
       ],
       "vcardArray": [

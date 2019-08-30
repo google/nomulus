@@ -28,6 +28,7 @@ if (pluginsUrl) {
 rootProject.name = 'nomulus'
 
 include 'core'
+include 'db'
 include 'prober'
 include 'proxy'
 include 'third_party'

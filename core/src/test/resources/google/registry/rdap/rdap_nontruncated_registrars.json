@@ -7,7 +7,6 @@
       "links":
       [
         {
-          "value": "https://example.tld/rdap/entity/301",
           "rel": "self",
           "href": "https://example.tld/rdap/entity/301",
           "type": "application/rdap+json"
@@ -65,7 +64,6 @@
       "links":
       [
         {
-          "value": "https://example.tld/rdap/entity/302",
           "rel": "self",
           "href": "https://example.tld/rdap/entity/302",
           "type": "application/rdap+json"
@@ -123,7 +121,6 @@
       "links":
       [
         {
-          "value": "https://example.tld/rdap/entity/303",
           "rel": "self",
           "href": "https://example.tld/rdap/entity/303",
           "type": "application/rdap+json"
@@ -181,7 +178,6 @@
       "links":
       [
         {
-          "value": "https://example.tld/rdap/entity/304",
           "rel": "self",
           "href": "https://example.tld/rdap/entity/304",
           "type": "application/rdap+json"
@@ -259,9 +255,13 @@
       "links":
       [
         {
-          "value": "https://example.tld/rdap/help/tos",
-          "rel": "alternate",
+          "href": "https://example.tld/rdap/help/tos",
+          "rel": "self",
+          "type": "application/rdap+json"
+        },
+        {
           "href": "https://www.registry.tld/about/rdap/tos.html",
+          "rel": "alternate",
           "type": "text/html"
         }
       ]

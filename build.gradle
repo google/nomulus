@@ -333,3 +333,69 @@ def createGetBuildSrcDirectDepsTask(outputFileName) {
                 "-PdependencyExportFile=${outputFileName}"
   }
 }
+
+rootProject.ext {
+
+  // Executes an arbitrary shell command in bash and returns all output
+  // to stdout as a string. This method allows pipes in shell command.
+  execInBash = { shellCommand, bashWorkingDir ->
+    return new ByteArrayOutputStream().withStream { os ->
+      exec {
+        workingDir bashWorkingDir
+        commandLine 'bash', '-c', "${shellCommand}"
+        standardOutput os
+      }
+      return os
+    }.toString().trim()
+  }
+
+  invokeJavaDiffFormatScript = { action ->
+    def scriptDir = rootDir.path.endsWith('buildSrc')
+            ? "${rootDir}/../java-format"
+            : "${rootDir}/java-format"
+    def workingDir = rootDir.path.endsWith('buildSrc')
+            ? "${rootDir}/.."
+            : rootDir
+    def formatDiffScript = "${scriptDir}/google-java-format-git-diff.sh"
+
+    return ext.execInBash(
+        "${formatDiffScript} ${action}", "${workingDir}")
+  }
+}
+
+// Checks if modified lines in Java source files need reformatting.
+// Note that this task checks modified Java files in the entire repository.
+task javaIncrementalFormatCheck {
+  doLast {
+    def checkResult = invokeJavaDiffFormatScript("check")
+    if (checkResult == 'true') {
+      throw new IllegalStateException(
+          "Some Java files need to be reformatted. You may use the "
+              + "'javaIncrementalFormatDryRun' task to review\n "
+              + "the changes, or the 'javaIncrementalFormatApply' task "
+              + "to reformat.")
+    } else if (checkResult != 'false') {
+      throw new RuntimeException(
+          "Failed to invoke format check script:\n" + checkResult)
+    }
+    println("Incremental Java format check ok.")
+  }
+}
+
+// Shows how modified lines in Java source files will change after formatting.
+// Note that this task checks modified Java files in the entire repository.
+task javaIncrementalFormatDryRun {
+  doLast {
+    println("${invokeJavaDiffFormatScript("show")}")
+  }
+}
+
+// Checks if modified lines in Java source files need reformatting.
+// Note that this task processes modified Java files in the entire repository.
+task javaIncrementalFormatApply {
+  doLast {
+    invokeJavaDiffFormatScript("format")
+  }
+}
+
+tasks.build.dependsOn(tasks.javaIncrementalFormatCheck)

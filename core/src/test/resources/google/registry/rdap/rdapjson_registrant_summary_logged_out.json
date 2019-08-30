@@ -6,7 +6,6 @@
   "links" :
   [
     {
-      "value" : "https://example.tld/rdap/entity/2-ROID",
       "rel" : "self",
       "href" : "https://example.tld/rdap/entity/2-ROID",
       "type" : "application/rdap+json"
@@ -42,7 +41,6 @@
       "links" :
       [
         {
-          "value" : "https://github.com/google/nomulus/blob/master/docs/rdap.md#authentication",
           "rel" : "alternate",
           "href" : "https://github.com/google/nomulus/blob/master/docs/rdap.md#authentication",
           "type" : "text/html"

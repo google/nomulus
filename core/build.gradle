@@ -218,7 +218,6 @@ dependencies {
   compile deps['org.bouncycastle:bcpg-jdk15on']
   testCompile deps['org.bouncycastle:bcpkix-jdk15on']
   compile deps['org.bouncycastle:bcprov-jdk15on']
-  compile deps['org.hibernate:hibernate-core']
   compile deps['org.joda:joda-money']
   compile deps['org.json:json']
   testCompile deps['org.mortbay.jetty:jetty']
@@ -254,7 +253,7 @@ dependencies {
   testCompile deps['org.hamcrest:hamcrest-all']
   testCompile deps['org.hamcrest:hamcrest-core']
   testCompile deps['org.hamcrest:hamcrest-library']
-  compile deps['org.hibernate:hibernate-core']
+  compile deps['org.hibernate:hibernate-hikaricp']
   testCompile deps['junit:junit']
   testCompile deps['org.mockito:mockito-core']
   runtime deps['org.postgresql:postgresql']
@@ -562,6 +561,10 @@ task fragileTest(type: Test) {
   // Common exclude pattern. See README in parent directory for explanation.
   exclude "**/*TestCase.*", "**/*TestSuite.*"
   include fragileTestPatterns
+
+  if (rootProject.findProperty("skipDockerIncompatibleTests") == "true") {
+    exclude dockerIncompatibleTestPatterns
+  }
 
   // Run every test class in a freshly started process.
   forkEvery 1
