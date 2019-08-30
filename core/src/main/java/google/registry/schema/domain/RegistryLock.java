@@ -38,11 +38,14 @@ import org.joda.time.DateTime;
  *
  * <p>Registry locks must be requested through the registrar console by a lock-enabled contact, then
  * confirmed through email within a certain length of time. Until that confirmation is processed,
- * the lock will remain in PENDING status and will have no effect. The same applies for unlock
- * actions.
+ * the completion time will remain null and the lock will have no effect. The same applies for
+ * unlock actions.
  *
- * <p>Note that in the case of a retry of a write after an unexpected success, the unique constraint
- * on {@link #verificationCode} means that the second write will fail.
+ * <p>Note that there will be at most one row per domain with a null copmleted time -- this means
+ * that there is at most one pending action per domain. This is enforced at the logic level.
+ *
+ * <p>Note as well that in the case of a retry of a write after an unexpected success, the unique
+ * constraint on {@link #verificationCode} means that the second write will fail.
  */
 @Entity
 @Table(
@@ -59,12 +62,6 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   public enum LockAction {
     LOCK,
     UNLOCK
-  }
-
-  /** Describes whether the action is pending or has been verified. */
-  public enum LockStatus {
-    PENDING,
-    COMPLETED
   }
 
   @Id
@@ -91,21 +88,14 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   @Column(name = "lock_action", nullable = false)
   private LockAction lockAction;
 
-  /**
-   * When the lock is first requested, the status is PENDING. After the lock is verified, the status
-   * moves to COMPLETED and never changes again. Further locks or unlocks are new objects.
-   */
-  @Enumerated(EnumType.STRING)
-  @Column(name = "lock_status", nullable = false)
-  private LockStatus lockStatus;
-
   /** Creation timestamp is when the lock/unlock is first requested. */
   @Column(name = "creation_timestamp", nullable = false)
   private ZonedDateTime creationTimestamp;
 
   /**
    * Completion timestamp is when the user has verified the lock/unlock, when this object de facto
-   * becomes immutable.
+   * becomes immutable. If this field is null, it means that the lock has not been verified yet (and
+   * thus not been put into effect).
    */
   @Column(name = "completion_timestamp")
   private ZonedDateTime completionTimestamp;
@@ -160,10 +150,6 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
     return revisionId;
   }
 
-  public LockStatus getLockStatus() {
-    return lockStatus;
-  }
-
   @Override
   public Builder asBuilder() {
     return new Builder(clone(this));
@@ -184,7 +170,6 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
       checkArgumentNotNull(getInstance().registrarClientId, "Registrar client ID cannot be null");
       checkArgumentNotNull(getInstance().registrarContactId, "Registrar contact ID cannot be null");
       checkArgumentNotNull(getInstance().lockAction, "Lock action cannot be null");
-      checkArgumentNotNull(getInstance().lockStatus, "Lock status cannot be null");
       checkArgumentNotNull(getInstance().creationTimestamp, "Creation timestamp cannot be null");
       checkArgumentNotNull(getInstance().verificationCode, "Verification codecannot be null");
       return super.build();
@@ -232,11 +217,6 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
 
     public Builder isSuperuser(boolean isSuperuser) {
       getInstance().isSuperuser = isSuperuser;
-      return this;
-    }
-
-    public Builder setLockStatus(LockStatus lockStatus) {
-      getInstance().lockStatus = lockStatus;
       return this;
     }
   }

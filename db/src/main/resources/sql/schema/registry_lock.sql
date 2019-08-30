@@ -19,7 +19,6 @@ CREATE TABLE `RegistryLock` (
   registrar_client_id TEXT NOT NULL,
   registrar_contact_id TEXT NOT NULL,
   lock_action TEXT NOT NULL,
-  lock_status TEXT NOT NULL,
   creation_timestamp TIMESTAMPTZ NOT NULL,
   completion_timestamp TIMESTAMPTZ,
   verification_code TEXT UNIQUE NOT NULL,
