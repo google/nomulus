@@ -24,10 +24,14 @@
       "links" :
       [
         {
-          "value" : "https://example.tld/rdap/help/tos",
-          "rel" : "alternate",
-          "href" : "https://www.registry.tld/about/rdap/tos.html",
-          "type" : "text/html"
+          "href": "https://example.tld/rdap/help/tos",
+          "rel": "self",
+          "type": "application/rdap+json"
+        },
+        {
+          "href": "https://www.registry.tld/about/rdap/tos.html",
+          "rel": "alternate",
+          "type": "text/html"
         }
       ]
     }

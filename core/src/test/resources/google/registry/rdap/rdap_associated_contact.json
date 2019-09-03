@@ -9,7 +9,6 @@
   "status": ["active", "associated"],
   "links": [
     {
-      "value": "https://example.tld/rdap/entity/%NAME%",
       "rel": "self",
       "href": "https://example.tld/rdap/entity/%NAME%",
       "type": "application/rdap+json"

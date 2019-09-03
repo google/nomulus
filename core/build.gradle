@@ -218,7 +218,6 @@ dependencies {
   compile deps['org.bouncycastle:bcpg-jdk15on']
   testCompile deps['org.bouncycastle:bcpkix-jdk15on']
   compile deps['org.bouncycastle:bcprov-jdk15on']
-  compile deps['org.hibernate:hibernate-core']
   compile deps['org.joda:joda-money']
   compile deps['org.json:json']
   testCompile deps['org.mortbay.jetty:jetty']
@@ -227,7 +226,7 @@ dependencies {
   testCompile deps['org.seleniumhq.selenium:selenium-chrome-driver']
   testCompile deps['org.seleniumhq.selenium:selenium-java']
   testCompile deps['org.seleniumhq.selenium:selenium-remote-driver']
-  testCompile deps['org.testcontainers:postgresql']
+  compile deps['org.testcontainers:postgresql']
   testCompile deps['org.testcontainers:selenium']
   compile deps['xerces:xmlParserAPIs']
   compile deps['xpp3:xpp3']
@@ -254,7 +253,7 @@ dependencies {
   testCompile deps['org.hamcrest:hamcrest-all']
   testCompile deps['org.hamcrest:hamcrest-core']
   testCompile deps['org.hamcrest:hamcrest-library']
-  compile deps['org.hibernate:hibernate-core']
+  compile deps['org.hibernate:hibernate-hikaricp']
   testCompile deps['junit:junit']
   testCompile deps['org.mockito:mockito-core']
   runtime deps['org.postgresql:postgresql']
@@ -569,9 +568,6 @@ task fragileTest(type: Test) {
 
   // Run every test class in a freshly started process.
   forkEvery 1
-
-  // Uncomment to see test outputs in stdout.
-  //testLogging.showStandardStreams = true
 }
 
 task outcastTest(type: Test) {

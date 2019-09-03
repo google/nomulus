@@ -43,7 +43,6 @@
       "links": [
         {
           "type":"text\/html",
-          "value": "https:\/\/github.com\/google\/nomulus\/blob\/master\/docs\/rdap.md#authentication",
           "href": "https:\/\/github.com\/google\/nomulus\/blob\/master\/docs\/rdap.md#authentication",
           "rel": "alternate"
         }

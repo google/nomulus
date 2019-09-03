@@ -9,7 +9,6 @@
   "links" :
   [
     {
-      "value" : "https://example.tld/rdap/help/index",
       "rel" : "self",
       "type" : "application/rdap+json",
       "href" : "https://example.tld/rdap/help/index"

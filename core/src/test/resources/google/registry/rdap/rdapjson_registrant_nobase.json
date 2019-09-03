@@ -6,7 +6,6 @@
   "links" :
   [
     {
-      "value" : "entity/2-ROID",
       "rel" : "self",
       "href" : "entity/2-ROID",
       "type" : "application/rdap+json"

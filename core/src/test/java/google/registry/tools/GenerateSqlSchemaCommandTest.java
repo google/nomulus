@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.io.File;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -35,7 +36,7 @@ public class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSch
 
   @Rule public TemporaryFolder tmp = new TemporaryFolder();
 
-  @Rule public PostgreSQLContainer postgres =
+  @ClassRule public static PostgreSQLContainer postgres =
       new PostgreSQLContainer()
           .withDatabaseName("postgres")
           .withUsername("postgres")
@@ -59,6 +60,24 @@ public class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSch
     // We're just interested in verifying that there is a schema file generated, we don't do any
     // checks on the contents, this would make the test too brittle and serves no real purpose.
     // TODO: try running the schema against the test database.
+    assertThat(new File(tmp.getRoot(), "schema.sql").exists()).isTrue();
+  }
+
+  @Test
+  public void testIncompatibleFlags() throws Exception {
+    runCommand(
+        "--out-file=" + tmp.getRoot() + File.separatorChar + "schema.sql",
+        "--db-host=" + containerHostName,
+        "--db-port=" + containerPort,
+        "--start-postgresql");
+    assertInStderr(GenerateSqlSchemaCommand.DB_OPTIONS_CLASH);
+  }
+
+  @Test
+  public void testDockerPostgresql() throws Exception {
+    runCommand(
+        "--start-postgresql",
+        "--out-file=" + tmp.getRoot() + File.separatorChar + "schema.sql");
     assertThat(new File(tmp.getRoot(), "schema.sql").exists()).isTrue();
   }
 }

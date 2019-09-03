@@ -228,20 +228,25 @@ public class RdapJsonFormatter {
   /** Creates the TOS notice that is added to every reply. */
   Notice createTosNotice() {
     String linkValue = makeRdapServletRelativeUrl("help", RdapHelpAction.TOS_PATH);
-    Link.Builder linkBuilder = Link.builder()
-        .setValue(linkValue);
-    if (rdapTosStaticUrl == null) {
-      linkBuilder.setRel("self").setHref(linkValue).setType("application/rdap+json");
-    } else {
+    Link selfLink =
+        Link.builder().setRel("self").setHref(linkValue).setType("application/rdap+json").build();
+
+    Notice.Builder noticeBuilder =
+        Notice.builder()
+            .setTitle("RDAP Terms of Service")
+            .setDescription(rdapTos)
+            .addLink(selfLink);
+    if (rdapTosStaticUrl != null) {
       URI htmlBaseURI = URI.create(fullServletPath);
       URI htmlUri = htmlBaseURI.resolve(rdapTosStaticUrl);
-      linkBuilder.setRel("alternate").setHref(htmlUri.toString()).setType("text/html");
+      noticeBuilder.addLink(
+          Link.builder()
+              .setRel("alternate")
+              .setHref(htmlUri.toString())
+              .setType("text/html")
+              .build());
     }
-    return Notice.builder()
-        .setTitle("RDAP Terms of Service")
-        .setDescription(rdapTos)
-        .addLink(linkBuilder.build())
-        .build();
+    return noticeBuilder.build();
   }
 
   /**
@@ -314,7 +319,6 @@ public class RdapJsonFormatter {
           .add(
               Link.builder()
                   .setHref(href)
-                  .setValue(href)
                   .setRel("related")
                   .setType("application/rdap+json")
                   .build());
@@ -1078,7 +1082,6 @@ public class RdapJsonFormatter {
   private Link makeSelfLink(String type, String name) {
     String url = makeRdapServletRelativeUrl(type, name);
     return Link.builder()
-        .setValue(url)
         .setRel("self")
         .setHref(url)
         .setType("application/rdap+json")

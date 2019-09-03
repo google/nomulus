@@ -77,7 +77,10 @@ public class RdapTestHelper {
             "links",
                 ImmutableList.of(
                     ImmutableMap.of(
-                        "value", linkBase + "help/tos",
+                        "rel", "self",
+                        "href", linkBase + "help/tos",
+                        "type", "application/rdap+json"),
+                    ImmutableMap.of(
                         "rel", "alternate",
                         "href", "https://www.registry.tld/about/rdap/tos.html",
                         "type", "text/html")))).getAsJsonObject();
@@ -125,7 +128,6 @@ public class RdapTestHelper {
                 "links",
                 ImmutableList.of(
                     ImmutableMap.of(
-                        "value", "https://icann.org/epp",
                         "rel", "alternate",
                         "href", "https://icann.org/epp",
                         "type", "text/html")))));
@@ -141,7 +143,6 @@ public class RdapTestHelper {
                 "links",
                 ImmutableList.of(
                     ImmutableMap.of(
-                        "value", "https://www.icann.org/wicf",
                         "rel", "alternate",
                         "href", "https://www.icann.org/wicf",
                         "type", "text/html")))));

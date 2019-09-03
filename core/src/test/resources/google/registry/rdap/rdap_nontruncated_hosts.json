@@ -8,7 +8,6 @@
       "links" :
       [
         {
-          "value" : "https://example.tld/rdap/nameserver/nsx1.cat.lol",
           "rel" : "self",
           "type" : "application/rdap+json",
           "href" : "https://example.tld/rdap/nameserver/nsx1.cat.lol"
@@ -41,7 +40,6 @@
       "links" :
       [
         {
-          "value" : "https://example.tld/rdap/nameserver/nsx2.cat.lol",
           "rel" : "self",
           "type" : "application/rdap+json",
           "href" : "https://example.tld/rdap/nameserver/nsx2.cat.lol"
@@ -74,7 +72,6 @@
       "links" :
       [
         {
-          "value" : "https://example.tld/rdap/nameserver/nsx3.cat.lol",
           "rel" : "self",
           "type" : "application/rdap+json",
           "href" : "https://example.tld/rdap/nameserver/nsx3.cat.lol"
@@ -107,7 +104,6 @@
       "links" :
       [
         {
-          "value" : "https://example.tld/rdap/nameserver/nsx4.cat.lol",
           "rel" : "self",
           "type" : "application/rdap+json",
           "href" : "https://example.tld/rdap/nameserver/nsx4.cat.lol"
@@ -159,10 +155,14 @@
       "links" :
       [
         {
-          "value" : "https://example.tld/rdap/help/tos",
-          "rel" : "alternate",
-          "href" : "https://www.registry.tld/about/rdap/tos.html",
-          "type" : "text/html"
+          "href": "https://example.tld/rdap/help/tos",
+          "rel": "self",
+          "type": "application/rdap+json"
+        },
+        {
+          "href": "https://www.registry.tld/about/rdap/tos.html",
+          "rel": "alternate",
+          "type": "text/html"
         }
       ]
     },

@@ -6,7 +6,6 @@
   "links" :
   [
     {
-      "value" : "https://example.tld/rdap/entity/1",
       "rel" : "self",
       "href" : "https://example.tld/rdap/entity/1",
       "type" : "application/rdap+json"

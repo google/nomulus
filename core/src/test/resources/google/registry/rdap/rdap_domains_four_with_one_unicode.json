@@ -8,8 +8,7 @@
         {
           "href": "https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_1%",
           "type": "application/rdap+json",
-          "rel": "self",
-          "value": "https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_1%"
+          "rel": "self"
         }
       ],
       "remarks": [
@@ -28,8 +27,7 @@
         {
           "href": "https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_2%",
           "type": "application/rdap+json",
-          "rel": "self",
-          "value": "https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_2%"
+          "rel": "self"
         }
       ],
       "remarks": [
@@ -48,8 +46,7 @@
         {
           "href": "https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_3%",
           "type": "application/rdap+json",
-          "rel": "self",
-          "value": "https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_3%"
+          "rel": "self"
         }
       ],
       "remarks": [
@@ -69,8 +66,7 @@
         {
           "href": "https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_4%",
           "type": "application/rdap+json",
-          "rel": "self",
-          "value": "https://example.tld/rdap/domain/%DOMAIN_PUNYCODE_NAME_4%"
+          "rel": "self"
         }
       ],
       "remarks": [
@@ -107,10 +103,14 @@
       "links" :
       [
         {
-          "value" : "https://example.tld/rdap/help/tos",
-          "rel" : "alternate",
-          "href" : "https://www.registry.tld/about/rdap/tos.html",
-          "type" : "text/html"
+          "href": "https://example.tld/rdap/help/tos",
+          "rel": "self",
+          "type": "application/rdap+json"
+        },
+        {
+          "href": "https://www.registry.tld/about/rdap/tos.html",
+          "rel": "alternate",
+          "type": "text/html"
         }
       ]
     },
@@ -129,7 +129,6 @@
       "links" :
       [
         {
-          "value" :  "https://icann.org/epp",
           "rel" : "alternate",
           "href" : "https://icann.org/epp",
           "type" : "text/html"
@@ -142,7 +141,6 @@
       "links" :
       [
         {
-          "value" : "https://www.icann.org/wicf",
           "rel" : "alternate",
           "href" : "https://www.icann.org/wicf",
           "type" : "text/html"
