@@ -14,6 +14,7 @@
 
 package google.registry.schema.domain;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.DateTimeUtils.toJodaDateTime;
 import static google.registry.util.DateTimeUtils.toZonedDateTime;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -30,6 +31,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.Table;
+import org.hibernate.annotations.Check;
 import org.joda.time.DateTime;
 
 /**
@@ -56,10 +58,13 @@ import org.joda.time.DateTime;
             name = "idx_registry_lock_repo_id_revision_id",
             columnList = "repo_id, revision_id",
             unique = true))
+@Check(
+    constraints =
+        "registrar_poc_id IS NOT NULL OR is_superuser")
 public final class RegistryLock extends ImmutableObject implements Buildable {
 
   /** Describes the action taken by the user. */
-  public enum LockAction {
+  public enum Action {
     LOCK,
     UNLOCK
   }
@@ -75,18 +80,23 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   @Column(name = "domain_name", nullable = false)
   private String domainName;
 
-  @Column(name = "registrar_client_id", nullable = false)
-  private String registrarClientId;
+  /**
+   * The ID of the registrar that performed the action -- this may be the admin ID if this action
+   * was performed by a superuser.
+   */
+  @Column(name = "registrar_id", nullable = false)
+  private String registrarId;
 
-  @Column(name = "registrar_contact_id", nullable = false)
-  private String registrarContactId;
+  /** The POC that performed the action, or null if it was a superuser. */
+  @Column(name = "registrar_poc_id")
+  private String registrarPocId;
 
   /**
    * Lock action is immutable and describes whether the action performed was a lock or an unlock.
    */
   @Enumerated(EnumType.STRING)
-  @Column(name = "lock_action", nullable = false)
-  private LockAction lockAction;
+  @Column(name = "action", nullable = false)
+  private Action action;
 
   /** Creation timestamp is when the lock/unlock is first requested. */
   @Column(name = "creation_timestamp", nullable = false)
@@ -107,6 +117,10 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   @Column(name = "verification_code", nullable = false, unique = true)
   private String verificationCode;
 
+  /**
+   * True iff this action was taken by a superuser, in response to something like a URS request. In
+   * this case, the action was performed by a registry admin rather than a registrar.
+   */
   @Column(name = "is_superuser", nullable = false)
   private boolean isSuperuser;
 
@@ -118,16 +132,16 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
     return domainName;
   }
 
-  public String getRegistrarClientId() {
-    return registrarClientId;
+  public String getRegistrarId() {
+    return registrarId;
   }
 
-  public String getRegistrarContactId() {
-    return registrarContactId;
+  public String getRegistrarPocId() {
+    return registrarPocId;
   }
 
-  public LockAction getLockAction() {
-    return lockAction;
+  public Action getAction() {
+    return action;
   }
 
   public DateTime getCreationTimestamp() {
@@ -167,11 +181,13 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
     public RegistryLock build() {
       checkArgumentNotNull(getInstance().repoId, "Repo ID cannot be null");
       checkArgumentNotNull(getInstance().domainName, "Domain name cannot be null");
-      checkArgumentNotNull(getInstance().registrarClientId, "Registrar client ID cannot be null");
-      checkArgumentNotNull(getInstance().registrarContactId, "Registrar contact ID cannot be null");
-      checkArgumentNotNull(getInstance().lockAction, "Lock action cannot be null");
+      checkArgumentNotNull(getInstance().registrarId, "Registrar ID cannot be null");
+      checkArgumentNotNull(getInstance().action, "Action cannot be null");
       checkArgumentNotNull(getInstance().creationTimestamp, "Creation timestamp cannot be null");
       checkArgumentNotNull(getInstance().verificationCode, "Verification codecannot be null");
+      checkArgument(
+          getInstance().registrarPocId != null || getInstance().isSuperuser,
+          "Registrar POC ID must be provided if superuser is false");
       return super.build();
     }
 
@@ -185,18 +201,18 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
       return this;
     }
 
-    public Builder setRegistrarClientId(String registrarClientId) {
-      getInstance().registrarClientId = registrarClientId;
+    public Builder setRegistrarId(String registrarId) {
+      getInstance().registrarId = registrarId;
       return this;
     }
 
-    public Builder setRegistrarContactId(String registrarContactId) {
-      getInstance().registrarContactId = registrarContactId;
+    public Builder setRegistrarPocId(String registrarPocId) {
+      getInstance().registrarPocId = registrarPocId;
       return this;
     }
 
-    public Builder setLockAction(LockAction lockAction) {
-      getInstance().lockAction = lockAction;
+    public Builder setAction(Action action) {
+      getInstance().action = action;
       return this;
     }
 
