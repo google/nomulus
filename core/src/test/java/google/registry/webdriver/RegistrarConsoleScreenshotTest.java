@@ -176,10 +176,7 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   @Test
   public void settingsContactEdit_setRegistryLockPassword_notAllowedForContact() throws Throwable {
     server.runInAppEngineEnvironment(
-        () -> {
-          persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build());
-          return null;
-        });
+        () -> persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build()));
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
     Thread.sleep(1000);
