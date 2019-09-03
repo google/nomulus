@@ -12,6 +12,19 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+    create table ClaimsEntry (
+       revision_id int8 not null,
+        claim_key varchar(255) not null,
+        domain_label varchar(255) not null,
+        primary key (revision_id, domain_label)
+    );
+
+    create table ClaimsList (
+       revision_id  bigserial not null,
+        creation_timestamp timestamp not null,
+        primary key (revision_id)
+    );
+
     create table DelegationSignerData (
        keyTag int4 not null,
         algorithm int4 not null,
@@ -108,6 +121,20 @@
         primary key (id)
     );
 
+    create table PremiumEntry (
+       revision_id int8 not null,
+        price numeric(19, 2) not null,
+        domain_label varchar(255) not null,
+        primary key (revision_id, domain_label)
+    );
+
+    create table PremiumList (
+       revision_id  bigserial not null,
+        creation_timestamp timestamp not null,
+        currency bytea not null,
+        primary key (revision_id)
+    );
+
     alter table domain_DelegationSignerData 
        add constraint UK_q2uk7gpqskey3t2w11w2o7x9f unique (dsData_keyTag);
 
@@ -116,6 +143,11 @@
 
     alter table domain_GracePeriod 
        add constraint UK_74osb0s7br4x734ecpdk8caxx unique (gracePeriods_id);
+
+    alter table ClaimsEntry 
+       add constraint FKlugn0q07ayrtar87dqi3vs3c8 
+       foreign key (revision_id) 
+       references ClaimsList;
 
     alter table domain_DelegationSignerData 
        add constraint FK6p262lfef34yht2ok65rqfoiy 
@@ -161,3 +193,8 @@
        add constraint FK3p6gm6lbx46s41hl9wfme77sr 
        foreign key (DomainBase_repoId) 
        references domain;
+
+    alter table PremiumEntry 
+       add constraint FKqebdja3jkx9c9cnqnrw9g9ocu 
+       foreign key (revision_id) 
+       references PremiumList;

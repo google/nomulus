@@ -74,6 +74,7 @@ public class PremiumList {
   // Hibernate requires this default constructor.
   private PremiumList() {}
 
+  // TODO(mcilwain): Change creationTimestamp to Joda DateTime.
   /** Constructs a {@link PremiumList} object. */
   public static PremiumList create(
       ZonedDateTime creationTimestamp,

@@ -19,16 +19,16 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.annotations.VisibleForTesting;
-import google.registry.model.domain.DesignatedContact;
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.secdns.DelegationSignerData;
-import google.registry.schema.tld.PremiumList;
-import google.registry.schema.tmch.ClaimsList;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.transfer.BaseTransferObject;
 import google.registry.model.transfer.TransferData;
+import google.registry.schema.tld.PremiumList;
+import google.registry.schema.tmch.ClaimsList;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -55,7 +55,17 @@ public class GenerateSqlSchemaCommand implements Command {
   // TODO(mmuller): These should be read from persistence.xml so we don't need to maintain two
   //                separate lists of all SQL table classes.
   private static final ImmutableSet<Class> SQL_TABLE_CLASSES =
-      ImmutableSet.of(ClaimsList.class, DomainBase.class, PremiumList.class);
+      ImmutableSet.of(
+          BaseTransferObject.class,
+          ClaimsList.class,
+          DelegationSignerData.class,
+          DesignatedContact.class,
+          DomainBase.class,
+          GracePeriod.class,
+          Period.class,
+          PremiumList.class,
+          TransferData.class,
+          Trid.class);
 
   @VisibleForTesting
   public static final String DB_OPTIONS_CLASH =
