@@ -28,19 +28,19 @@ import org.hibernate.tool.schema.TargetType;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 /**
- * Generates a schema for JPA annotated classes using hibernate.
+ * Generates a schema for JPA annotated classes using Hibernate.
  *
  * <p>Note that this isn't complete yet, as all of the persistent classes have not yet been
  * converted. After converting a class, a call to "addAnnotatedClass()" for the new class must be
  * added to the code below.
  */
-@Parameters(separators = " =", commandDescription = "Generate postgresql schema.")
+@Parameters(separators = " =", commandDescription = "Generate PostgreSQL schema.")
 public class GenerateSqlSchemaCommand implements Command {
 
   @VisibleForTesting
   public static final String DB_OPTIONS_CLASH =
-      "Database host and port may not be spcified along with the option to start a "
-          + "postgresql container.";
+      "Database host and port may not be specified along with the option to start a "
+          + "PostgreSQL container.";
 
   @VisibleForTesting
   public static final int POSTGRESQL_PORT = 5432;
@@ -48,31 +48,31 @@ public class GenerateSqlSchemaCommand implements Command {
   private PostgreSQLContainer postgresContainer = null;
 
   @Parameter(
-      names = {"-o", "--out-file"},
+      names = {"-o", "--out_file"},
       description = "Name of the output file.",
       required = true)
   String outFile;
 
   @Parameter(
-      names = {"-s", "--start-postgresql"},
-      description = "If specified, start postgresql in a docker container.")
+      names = {"-s", "--start_postgresql"},
+      description = "If specified, start PostgreSQL in a Docker container.")
   boolean startPostgresql = false;
 
   @Parameter(
-      names = {"-a", "--db-host"},
+      names = {"-a", "--db_host"},
       description = "Database host name.")
   String databaseHost;
 
   @Parameter(
-      names = {"-p", "--db-port"},
-      description = "Database port number.  This defaults to the postgresql default port.")
+      names = {"-p", "--db_port"},
+      description = "Database port number.  This defaults to the PostgreSQL default port.")
   Integer databasePort;
 
   @Override
   public void run() {
-    // Start postgres if requested.
+    // Start PostgreSQL if requested.
     if (startPostgresql) {
-      // Complain if the user has also specified either --db-host or --db-port.
+      // Complain if the user has also specified either --db_host or --db_port.
       if (databaseHost != null || databasePort != null) {
         System.err.println(DB_OPTIONS_CLASH);
         // TODO: it would be nice to exit(1) here, but this breaks testability.
@@ -89,8 +89,8 @@ public class GenerateSqlSchemaCommand implements Command {
       databasePort = postgresContainer.getMappedPort(POSTGRESQL_PORT);
     } else if (databaseHost == null) {
       System.err.println(
-          "You must specify either --start-postgresql to start a PostgreSQL database in a\n"
-              + "docker instance, or specify --db-host (and, optionally, --db-port) to identify\n"
+          "You must specify either --start_postgresql to start a PostgreSQL database in a\n"
+              + "docker instance, or specify --db_host (and, optionally, --db_port) to identify\n"
               + "the location of a running instance.  To start a long-lived instance (suitable\n"
               + "for running this command multiple times) run this:\n\n"
               + "  docker run --rm --name some-postgres -e POSTGRES_PASSWORD=domain-registry \\\n"
@@ -99,7 +99,7 @@ public class GenerateSqlSchemaCommand implements Command {
               + "  docker inspect <container-id> | grep IPAddress\n\n"
               + "To obtain the value for --db-host.\n"
               );
-      // TODO: need exit(1), see above.
+      // TODO(mmuller): need exit(1), see above.
       return;
     }
 
@@ -109,7 +109,7 @@ public class GenerateSqlSchemaCommand implements Command {
     }
 
     try {
-      // Configure hibernate settings.
+      // Configure Hibernate settings.
       Map<String, String> settings = new HashMap<>();
       settings.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQL9Dialect");
       settings.put(

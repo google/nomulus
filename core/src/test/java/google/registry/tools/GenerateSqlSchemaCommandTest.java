@@ -28,6 +28,7 @@ import org.junit.runners.JUnit4;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 
+/** Unit tests for {@link google.registry.tools.GenerateSqlSchemaCommand}. */
 @RunWith(JUnit4.class)
 public class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSchemaCommand> {
 
@@ -53,9 +54,9 @@ public class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSch
   @Test
   public void testSchemaGeneration() throws Exception {
     runCommand(
-        "--out-file=" + tmp.getRoot() + File.separatorChar + "schema.sql",
-        "--db-host=" + containerHostName,
-        "--db-port=" + containerPort);
+        "--out_file=" + tmp.getRoot() + File.separatorChar + "schema.sql",
+        "--db_host=" + containerHostName,
+        "--db_port=" + containerPort);
 
     // We're just interested in verifying that there is a schema file generated, we don't do any
     // checks on the contents, this would make the test too brittle and serves no real purpose.
@@ -66,18 +67,18 @@ public class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSch
   @Test
   public void testIncompatibleFlags() throws Exception {
     runCommand(
-        "--out-file=" + tmp.getRoot() + File.separatorChar + "schema.sql",
-        "--db-host=" + containerHostName,
-        "--db-port=" + containerPort,
-        "--start-postgresql");
+        "--out_file=" + tmp.getRoot() + File.separatorChar + "schema.sql",
+        "--db_host=" + containerHostName,
+        "--db_port=" + containerPort,
+        "--start_postgresql");
     assertInStderr(GenerateSqlSchemaCommand.DB_OPTIONS_CLASH);
   }
 
   @Test
   public void testDockerPostgresql() throws Exception {
     runCommand(
-        "--start-postgresql",
-        "--out-file=" + tmp.getRoot() + File.separatorChar + "schema.sql");
+        "--start_postgresql",
+        "--out_file=" + tmp.getRoot() + File.separatorChar + "schema.sql");
     assertThat(new File(tmp.getRoot(), "schema.sql").exists()).isTrue();
   }
 }
