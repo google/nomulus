@@ -39,6 +39,7 @@ def outcastTestPatterns = [
     "google/registry/flows/EppLifecycleHostTest.*",
     "google/registry/flows/domain/DomainCreateFlowTest.*",
     "google/registry/flows/domain/DomainUpdateFlowTest.*",
+    "google/registry/persistence/EntityManagerFactoryProviderTest.*",
     "google/registry/tools/CreateDomainCommandTest.*",
     "google/registry/tools/server/CreatePremiumListActionTest.*",
 ]
