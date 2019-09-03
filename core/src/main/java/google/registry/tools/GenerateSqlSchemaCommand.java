@@ -17,7 +17,10 @@ package google.registry.tools;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.DomainBase;
+import google.registry.schema.tld.PremiumList;
+import google.registry.schema.tmch.ClaimsList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,6 +39,11 @@ import org.testcontainers.containers.PostgreSQLContainer;
  */
 @Parameters(separators = " =", commandDescription = "Generate PostgreSQL schema.")
 public class GenerateSqlSchemaCommand implements Command {
+
+  // TODO(mmuller): These should be read from persistence.xml so we don't need to maintain two
+  //                separate lists of all SQL table classes.
+  private static final ImmutableSet<Class> SQL_TABLE_CLASSES =
+      ImmutableSet.of(ClaimsList.class, DomainBase.class, PremiumList.class);
 
   @VisibleForTesting
   public static final String DB_OPTIONS_CLASH =
@@ -97,8 +105,7 @@ public class GenerateSqlSchemaCommand implements Command {
               + "    -d postgres:9.6.12\n\n"
               + "Copy the container id output from the command, then run:\n\n"
               + "  docker inspect <container-id> | grep IPAddress\n\n"
-              + "To obtain the value for --db-host.\n"
-              );
+              + "To obtain the value for --db-host.\n");
       // TODO(mmuller): need exit(1), see above.
       return;
     }
@@ -122,7 +129,7 @@ public class GenerateSqlSchemaCommand implements Command {
 
       MetadataSources metadata =
           new MetadataSources(new StandardServiceRegistryBuilder().applySettings(settings).build());
-      metadata.addAnnotatedClass(DomainBase.class);
+      SQL_TABLE_CLASSES.forEach(metadata::addAnnotatedClass);
       SchemaExport schemaExport = new SchemaExport();
       schemaExport.setHaltOnError(true);
       schemaExport.setFormat(true);

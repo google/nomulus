@@ -116,7 +116,9 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   @Test
   public void settingsContactItem_asAdmin() throws Throwable {
     server.setIsAdmin(true);
-    driver.get(server.getUrl("/registrar?clientId=NewRegistrar#contact-settings/janedoe@theregistrar.com"));
+    driver.get(
+        server.getUrl(
+            "/registrar?clientId=NewRegistrar#contact-settings/janedoe@theregistrar.com"));
     Thread.sleep(1000);
     driver.waitForElement(By.tagName("h1"));
     driver.diffPage("page");
