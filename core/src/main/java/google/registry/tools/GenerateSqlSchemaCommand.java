@@ -18,11 +18,13 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.annotations.VisibleForTesting;
 import google.registry.model.domain.DomainBase;
+import google.registry.persistence.NomulusNamingStrategy;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.Environment;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.schema.TargetType;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -119,6 +121,8 @@ public class GenerateSqlSchemaCommand implements Command {
       settings.put("hibernate.connection.password", "domain-registry");
       settings.put("hibernate.hbm2ddl.auto", "none");
       settings.put("show_sql", "true");
+      settings.put(
+          Environment.PHYSICAL_NAMING_STRATEGY, NomulusNamingStrategy.class.getCanonicalName());
 
       MetadataSources metadata =
           new MetadataSources(new StandardServiceRegistryBuilder().applySettings(settings).build());
