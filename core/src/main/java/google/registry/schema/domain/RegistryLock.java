@@ -74,6 +74,7 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   @Column(name = "revision_id", nullable = false)
   private Long revisionId;
 
+  /** EPP repo ID of the domain in question. */
   @Column(name = "repo_id", nullable = false)
   private String repoId;
 
