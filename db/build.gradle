@@ -1,0 +1,97 @@
+// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import com.google.common.collect.ImmutableList
+
+plugins {
+  id "org.flywaydb.flyway" version "6.0.1"
+}
+
+ext {
+  def dbServerProperty = 'dbServer'
+  def dbNameProperty = 'dbName'
+
+  def dbServer = rootProject.ext
+      .findOptionalProperty(dbServerProperty).orElse('localhost:5432')
+  def dbName = rootProject.ext
+      .findOptionalProperty(dbNameProperty).orElse('postgres')
+
+  getAccessInfoByHostPort = { hostAndPort ->
+    return ImmutableList.of(
+        "jdbc:postgresql://${hostAndPort}/${dbName}",
+        rootProject.ext.findOptionalProperty('dbUser').orElse('postgres'),
+        rootProject.ext.findOptionalProperty('dbPassword').orElse(''))
+  }
+
+  getSocketFactoryAccessInfo = {
+    def cred = getCloudSqlCredential('alpha', 'superuser').split(' ')
+    def sqlInstance = cred[0]
+    def dbUser = cred[1]
+    def dbPassword = cred[2]
+    return ImmutableList.of(
+        "jdbc:postgresql://google/${dbName}?cloudSqlInstance=${sqlInstance}&socketFactory=com.google.cloud.sql.postgres.SocketFactory",
+        dbUser,
+        dbPassword)
+  }
+
+  getJdbcAccessInfo = {
+    switch (dbServer.toString().toLowerCase()) {
+      case 'alpha':
+        return getSocketFactoryAccessInfo()
+      default:
+        return getAccessInfoByHostPort(dbServer)
+    }
+  }
+
+  // Retrieves Cloud SQL credential for a given role. Result is in the
+  // form of 'instancename username password'
+  // - env: alpha, crash, sandbox, or production
+  // - role:
+  //   * superuser
+  getCloudSqlCredential = { env, role ->
+    env = env == 'production' ? '' : "-${env}"
+    def command =
+        """gsutil cp \
+           gs://domain-registry${env}-cloudsql-credentials/${role}.enc - | \
+           gcloud kms decrypt --location global --keyring nomulus \
+           --key sql-credentials-on-gcs-key --plaintext-file=- \
+           --ciphertext-file=- \
+           --project=domain-registry${env}-keys"""
+
+    return execInBash(command, '/tmp')
+  }
+}
+
+flyway {
+  def accessInfo = project.ext.getJdbcAccessInfo()
+
+  url = accessInfo.get(0)
+  user = accessInfo.get(1)
+  password = accessInfo.get(2)
+  schemas = [ 'public' ]
+
+  locations = [ "classpath:sql/flyway" ]
+}
+
+dependencies {
+  runtimeOnly 'org.flywaydb:flyway-core:5.2.4'
+
+  runtimeOnly 'com.google.cloud.sql:postgres-socket-factory:1.0.12'
+  runtimeOnly 'org.postgresql:postgresql:42.2.5'
+}
+
+// Ensure that resources are rebuilt before running Flyway tasks
+tasks
+    .findAll { task -> task.group.equals('Flyway')}
+    .collect { task -> task.dependsOn('buildNeeded') }
