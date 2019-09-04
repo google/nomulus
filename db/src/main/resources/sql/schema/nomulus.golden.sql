@@ -15,4 +15,4 @@
     alter table "ClaimsEntry"
        add constraint FKlugn0q07ayrtar87dqi3vs3c8 
        foreign key (revision_id) 
-       references `ClaimsList`;
+       references "ClaimsList";
