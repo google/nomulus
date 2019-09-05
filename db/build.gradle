@@ -19,6 +19,6 @@ plugins {
 spotless {
   sql {
     target '**/*.sql'
-    dbeaver()
+    dbeaver().configFile('spotless_sql.properties')
   }
 }

@@ -12,22 +12,22 @@
  -- See the License for the specific language governing permissions and
  -- limitations under the License.
  CREATE
-    TABLE
-        ` ClaimsList `(
-            revision_id BIGSERIAL NOT NULL,
-            creation_timestamp TIMESTAMPTZ NOT NULL,
-            PRIMARY KEY(revision_id)
-        );
+  TABLE
+    ` ClaimsList `(
+      revision_id BIGSERIAL NOT NULL,
+      creation_timestamp TIMESTAMPTZ NOT NULL,
+      PRIMARY KEY(revision_id)
+    );
 
 CREATE
-    TABLE
-        ` ClaimsEntry `(
-            revision_id BIGSERIAL NOT NULL,
-            claim_key TEXT NOT NULL,
-            domain_label TEXT NOT NULL,
-            PRIMARY KEY(
-                revision_id,
-                domain_label
-            ),
-            FOREIGN KEY(revision_id) REFERENCES ` ClaimsList `(revision_id)
-        );
+  TABLE
+    ` ClaimsEntry `(
+      revision_id BIGSERIAL NOT NULL,
+      claim_key TEXT NOT NULL,
+      domain_label TEXT NOT NULL,
+      PRIMARY KEY(
+        revision_id,
+        domain_label
+      ),
+      FOREIGN KEY(revision_id) REFERENCES ` ClaimsList `(revision_id)
+    );
