@@ -65,7 +65,7 @@ public class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSch
     File sqlFile = new File(tmp.getRoot(), "schema.sql");
     assertThat(sqlFile.exists()).isTrue();
     String fileContent = Files.asCharSource(sqlFile, UTF_8).read();
-    assertThat(fileContent).contains("create table \"domain\" (");
+    assertThat(fileContent).contains("create table \"Domain\" (");
     assertThat(fileContent).contains("repo_id varchar(255) not null,");
   }
 
