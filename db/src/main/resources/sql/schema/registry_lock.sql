@@ -12,7 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-CREATE TABLE `RegistryLock` (
+CREATE TABLE "RegistryLock" (
   revision_id BIGSERIAL NOT NULL,
   repo_id TEXT NOT NULL,
   domain_name TEXT NOT NULL,
