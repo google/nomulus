@@ -1,0 +1,163 @@
+-- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+    create table DelegationSignerData (
+       keyTag int4 not null,
+        algorithm int4 not null,
+        digest bytea,
+        digestType int4 not null,
+        primary key (keyTag)
+    );
+
+    create table DesignatedContact (
+       contact bytea not null,
+        type int4,
+        primary key (contact)
+    );
+
+    create table domain (
+       repoId varchar(255) not null,
+        creationClientId varchar(255),
+        currentSponsorClientId varchar(255),
+        deletionTime bytea,
+        lastEppUpdateClientId varchar(255),
+        lastEppUpdateTime bytea,
+        revisions bytea,
+        auth_info_repo_id varchar(255),
+        auth_info_value varchar(255),
+        autorenewBillingEvent bytea,
+        autorenewPollMessage bytea,
+        deletePollMessage bytea,
+        fullyQualifiedDomainName varchar(255),
+        idnTableName varchar(255),
+        lastTransferTime bytea,
+        launch_notice_accepted_time bytea,
+        launch_notice_expiration_time bytea,
+        launch_notice_tcn_id varchar(255),
+        launch_notice_validator_id varchar(255),
+        registrationExpirationTime bytea,
+        smdId varchar(255),
+        tld varchar(255),
+        transfer_data_server_approve_autorenrew_event bytea,
+        transfer_data_server_approve_autorenrew_poll_message bytea,
+        transfer_data_server_approve_billing_event bytea,
+        unit int4,
+        value int4,
+        clientTransactionId varchar(255),
+        serverTransactionId varchar(255),
+        transfer_data_registration_expiration_time bytea,
+        gainingClientId varchar(255),
+        losingClientId varchar(255),
+        pendingTransferExpirationTime bytea,
+        transferRequestTime bytea,
+        transferStatus int4,
+        primary key (repoId)
+    );
+
+    create table domain_DelegationSignerData (
+       DomainBase_repoId varchar(255) not null,
+        dsData_keyTag int4 not null,
+        primary key (DomainBase_repoId, dsData_keyTag)
+    );
+
+    create table domain_DesignatedContact (
+       DomainBase_repoId varchar(255) not null,
+        allContacts_contact bytea not null,
+        primary key (DomainBase_repoId, allContacts_contact)
+    );
+
+    create table domain_GracePeriod (
+       DomainBase_repoId varchar(255) not null,
+        gracePeriods_id int8 not null,
+        primary key (DomainBase_repoId, gracePeriods_id)
+    );
+
+    create table DomainBase_nsHosts (
+       DomainBase_repoId varchar(255) not null,
+        nsHosts bytea
+    );
+
+    create table DomainBase_serverApproveEntities (
+       DomainBase_repoId varchar(255) not null,
+        transfer_data_server_approve_entities bytea
+    );
+
+    create table DomainBase_subordinateHosts (
+       DomainBase_repoId varchar(255) not null,
+        subordinateHosts varchar(255)
+    );
+
+    create table GracePeriod (
+       id  bigserial not null,
+        billingEventOneTime bytea,
+        billingEventRecurring bytea,
+        clientId varchar(255),
+        expirationTime bytea,
+        type int4,
+        primary key (id)
+    );
+
+    alter table domain_DelegationSignerData 
+       add constraint UK_q2uk7gpqskey3t2w11w2o7x9f unique (dsData_keyTag);
+
+    alter table domain_DesignatedContact 
+       add constraint UK_fyc0mfvebhatp6sq8dy4jdx4i unique (allContacts_contact);
+
+    alter table domain_GracePeriod 
+       add constraint UK_74osb0s7br4x734ecpdk8caxx unique (gracePeriods_id);
+
+    alter table domain_DelegationSignerData 
+       add constraint FK6p262lfef34yht2ok65rqfoiy 
+       foreign key (dsData_keyTag) 
+       references DelegationSignerData;
+
+    alter table domain_DelegationSignerData 
+       add constraint FK922bmc01akk5mvypcdhtk3qqv 
+       foreign key (DomainBase_repoId) 
+       references domain;
+
+    alter table domain_DesignatedContact 
+       add constraint FKdl5kay2hwlalnwcg12cpy12x9 
+       foreign key (allContacts_contact) 
+       references DesignatedContact;
+
+    alter table domain_DesignatedContact 
+       add constraint FKb4nx8xr0n24f521y1i1cvr4f2 
+       foreign key (DomainBase_repoId) 
+       references domain;
+
+    alter table domain_GracePeriod 
+       add constraint FKbw8o0nti4fevxu4xvu8unj726 
+       foreign key (gracePeriods_id) 
+       references GracePeriod;
+
+    alter table domain_GracePeriod 
+       add constraint FKle4ms7cufyw4vgn5pn01vwwm7 
+       foreign key (DomainBase_repoId) 
+       references domain;
+
+    alter table DomainBase_nsHosts 
+       add constraint FKblxt8vhg3yblt3grqxovoywwm 
+       foreign key (DomainBase_repoId) 
+       references domain;
+
+    alter table DomainBase_serverApproveEntities 
+       add constraint FKbc3iicw0n8s9cj1lca142i7rc 
+       foreign key (DomainBase_repoId) 
+       references domain;
+
+    alter table DomainBase_subordinateHosts 
+       add constraint FK3p6gm6lbx46s41hl9wfme77sr 
+       foreign key (DomainBase_repoId) 
+       references domain;

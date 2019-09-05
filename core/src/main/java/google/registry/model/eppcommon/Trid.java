@@ -31,6 +31,7 @@ import javax.xml.bind.annotation.XmlType;
  */
 @Embed
 @XmlType(propOrder = {"clientTransactionId", "serverTransactionId"})
+@javax.persistence.Embeddable
 public class Trid extends ImmutableObject {
 
   /** The server transaction id. */

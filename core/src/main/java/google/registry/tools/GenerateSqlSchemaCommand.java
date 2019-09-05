@@ -14,11 +14,22 @@
 
 package google.registry.tools;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.annotations.VisibleForTesting;
+import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.GracePeriod;
+import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.eppcommon.Trid;
+import google.registry.model.transfer.BaseTransferObject;
+import google.registry.model.transfer.TransferData;
 import google.registry.persistence.NomulusNamingStrategy;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +38,7 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Environment;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.schema.TargetType;
+import org.joda.time.Period;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 /**
@@ -126,12 +138,45 @@ public class GenerateSqlSchemaCommand implements Command {
 
       MetadataSources metadata =
           new MetadataSources(new StandardServiceRegistryBuilder().applySettings(settings).build());
+      metadata.addAnnotatedClass(BaseTransferObject.class);
+      metadata.addAnnotatedClass(DelegationSignerData.class);
+      metadata.addAnnotatedClass(DesignatedContact.class);
       metadata.addAnnotatedClass(DomainBase.class);
+      metadata.addAnnotatedClass(GracePeriod.class);
+      metadata.addAnnotatedClass(Period.class);
+      metadata.addAnnotatedClass(TransferData.class);
+      metadata.addAnnotatedClass(Trid.class);
       SchemaExport schemaExport = new SchemaExport();
       schemaExport.setHaltOnError(true);
       schemaExport.setFormat(true);
       schemaExport.setDelimiter(";");
       schemaExport.setOutputFile(outFile);
+
+      // Generate the copyright header (this file gets checked for copyright).  The schema exporter
+      // appends to the existing file, so this has the additional desired effect of clearing any
+      // existing data in the file.
+      String copyright =
+          "-- Copyright 2019 The Nomulus Authors. All Rights Reserved.\n"
+              + "--\n"
+              + "-- Licensed under the Apache License, Version 2.0 (the \"License\");\n"
+              + "-- you may not use this file except in compliance with the License.\n"
+              + "-- You may obtain a copy of the License at\n"
+              + "--\n"
+              + "--     http://www.apache.org/licenses/LICENSE-2.0\n"
+              + "--\n"
+              + "-- Unless required by applicable law or agreed to in writing, software\n"
+              + "-- distributed under the License is distributed on an \"AS IS\" BASIS,\n"
+              + "-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n"
+              + "-- See the License for the specific language governing permissions and\n"
+              + "-- limitations under the License.\n";
+      try {
+        Files.write(Paths.get(outFile), copyright.getBytes(UTF_8));
+      } catch (IOException e) {
+        System.err.println("Error writing sql file: " + e);
+        e.printStackTrace();
+        System.exit(1);
+      }
+
       schemaExport.createOnly(EnumSet.of(TargetType.SCRIPT), metadata.buildMetadata());
     } finally {
       if (postgresContainer != null) {

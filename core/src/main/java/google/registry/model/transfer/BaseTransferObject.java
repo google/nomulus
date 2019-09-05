@@ -16,12 +16,14 @@ package google.registry.model.transfer;
 
 import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
+import javax.persistence.MappedSuperclass;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 import org.joda.time.DateTime;
 
 /** Fields common to {@link TransferData} and {@link TransferResponse}. */
 @XmlTransient
+@MappedSuperclass
 public abstract class BaseTransferObject extends ImmutableObject {
   /**
    * The status of the current or last transfer. Can be null if never transferred. Note that we

@@ -69,7 +69,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
-import javax.persistence.Transient;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Embedded;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 
@@ -118,17 +122,22 @@ public class DomainBase extends EppResource
   String tld;
 
   /** References to hosts that are the nameservers for the domain. */
-  @Index @Transient Set<Key<HostResource>> nsHosts;
+  @Index @ElementCollection Set<Key<HostResource>> nsHosts;
 
   /**
    * The union of the contacts visible via {@link #getContacts} and {@link #getRegistrant}.
    *
    * <p>These are stored in one field so that we can query across all contacts at once.
    */
-  @Transient Set<DesignatedContact> allContacts;
+  @ElementCollection Set<DesignatedContact> allContacts;
 
   /** Authorization info (aka transfer secret) of the domain. */
-  @Transient DomainAuthInfo authInfo;
+  @Embedded
+  @AttributeOverrides({
+    @AttributeOverride(name = "pw.value", column = @Column(name = "auth_info_value")),
+    @AttributeOverride(name = "pw.repoId", column = @Column(name = "auth_info_repo_id")),
+  })
+  DomainAuthInfo authInfo;
 
   /**
    * Data used to construct DS records for this domain.
@@ -136,13 +145,27 @@ public class DomainBase extends EppResource
    * <p>This is {@literal @}XmlTransient because it needs to be returned under the "extension" tag
    * of an info response rather than inside the "infData" tag.
    */
-  @Transient Set<DelegationSignerData> dsData;
+  @ElementCollection Set<DelegationSignerData> dsData;
 
   /**
    * The claims notice supplied when this application or domain was created, if there was one. It's
    * {@literal @}XmlTransient because it's not returned in an info response.
    */
-  @IgnoreSave(IfNull.class) @Transient LaunchNotice launchNotice;
+  @IgnoreSave(IfNull.class)
+  @Embedded
+  @AttributeOverrides({
+    @AttributeOverride(name = "noticeId.tcnId", column = @Column(name = "launch_notice_tcn_id")),
+    @AttributeOverride(
+        name = "noticeId.validatorId",
+        column = @Column(name = "launch_notice_validator_id")),
+    @AttributeOverride(
+        name = "expirationTime",
+        column = @Column(name = "launch_notice_expiration_time")),
+    @AttributeOverride(
+        name = "acceptedTime",
+        column = @Column(name = "launch_notice_accepted_time")),
+  })
+  LaunchNotice launchNotice;
 
   /**
    * Name of first IDN table associated with TLD that matched the characters in this domain label.
@@ -153,7 +176,7 @@ public class DomainBase extends EppResource
   String idnTableName;
 
   /** Fully qualified host names of this domain's active subordinate hosts. */
-  @Transient Set<String> subordinateHosts;
+  @ElementCollection Set<String> subordinateHosts;
 
   /** When this domain's registration will expire. */
   DateTime registrationExpirationTime;
@@ -188,7 +211,7 @@ public class DomainBase extends EppResource
   Key<PollMessage.Autorenew> autorenewPollMessage;
 
   /** The unexpired grace periods for this domain (some of which may not be active yet). */
-  @Transient Set<GracePeriod> gracePeriods;
+  @ElementCollection Set<GracePeriod> gracePeriods;
 
   /**
    * The id of the signed mark that was used to create this domain in sunrise.
@@ -199,7 +222,31 @@ public class DomainBase extends EppResource
   String smdId;
 
   /** Data about any pending or past transfers on this domain. */
-  @Transient TransferData transferData;
+  @Embedded
+  @AttributeOverrides({
+    @AttributeOverride(
+        name = "transferRequestTrid",
+        column = @Column(name = "transfer_data_request_trid")),
+    @AttributeOverride(
+        name = "transferPeriod",
+        column = @Column(name = "transfer_data_transfer_period")),
+    @AttributeOverride(
+        name = "transferredRegistrationExpirationTime",
+        column = @Column(name = "transfer_data_registration_expiration_time")),
+    @AttributeOverride(
+        name = "serverApproveEntities",
+        column = @Column(name = "transfer_data_server_approve_entities")),
+    @AttributeOverride(
+        name = "serverApproveBillingEvent",
+        column = @Column(name = "transfer_data_server_approve_billing_event")),
+    @AttributeOverride(
+        name = "serverApproveAutorenewEvent",
+        column = @Column(name = "transfer_data_server_approve_autorenrew_event")),
+    @AttributeOverride(
+        name = "serverApproveAutorenewPollMessage",
+        column = @Column(name = "transfer_data_server_approve_autorenrew_poll_message")),
+  })
+  TransferData transferData;
 
   /**
    * The time that this resource was last transferred.

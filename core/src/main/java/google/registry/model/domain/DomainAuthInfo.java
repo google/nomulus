@@ -19,6 +19,7 @@ import google.registry.model.eppcommon.AuthInfo;
 
 /** A version of authInfo specifically for domains. */
 @Embed
+@javax.persistence.Embeddable
 public class DomainAuthInfo extends AuthInfo {
   public static DomainAuthInfo create(PasswordAuth pw) {
     DomainAuthInfo instance = new DomainAuthInfo();

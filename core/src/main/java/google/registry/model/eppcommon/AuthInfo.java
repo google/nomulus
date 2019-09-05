@@ -16,6 +16,9 @@ package google.registry.model.eppcommon;
 
 import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
+import javax.persistence.Embeddable;
+import javax.persistence.Embedded;
+import javax.persistence.MappedSuperclass;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
@@ -30,9 +33,11 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * <p>RFCs 5731 and 5732 define this almost identically up to the namespace.
  */
 @XmlTransient
+@Embeddable
+@MappedSuperclass
 public abstract class AuthInfo extends ImmutableObject {
 
-  protected PasswordAuth pw;
+  @Embedded protected PasswordAuth pw;
 
   public PasswordAuth getPw() {
     return pw;
@@ -41,6 +46,7 @@ public abstract class AuthInfo extends ImmutableObject {
   /** The "pwAuthInfoType" complex type. */
   @Embed
   @XmlType(namespace = "urn:ietf:params:xml:ns:eppcom-1.0")
+  @Embeddable
   public static class PasswordAuth extends ImmutableObject {
     @XmlValue
     @XmlJavaTypeAdapter(NormalizedStringAdapter.class)

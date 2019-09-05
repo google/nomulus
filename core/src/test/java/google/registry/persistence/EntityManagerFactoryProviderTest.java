@@ -42,7 +42,9 @@ public class EntityManagerFactoryProviderTest {
 
   @After
   public void destroy() {
-    emf.close();
+    if (emf != null) {
+      emf.close();
+    }
     emf = null;
   }
 
