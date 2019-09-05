@@ -90,7 +90,7 @@ gradle.projectsEvaluated {
   }
 }
 
-task exportDenpendencies {
+task exportDependencies {
   def outputFileProperty = 'dependencyExportFile'
   def output = project.hasProperty(outputFileProperty)
       ? new PrintStream(

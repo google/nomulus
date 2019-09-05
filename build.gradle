@@ -320,7 +320,7 @@ def createGetBuildSrcDirectDepsTask(outputFileName) {
           "getBuildSrcDeps_${java.util.UUID.randomUUID()}".toString(),
           Exec) {
     workingDir "${rootDir}/buildSrc"
-    commandLine '../gradlew', 'exportDenpendencies',
+    commandLine '../gradlew', 'exportDependencies',
                 "-PdependencyExportFile=${outputFileName}"
   }
 }
