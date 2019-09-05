@@ -74,6 +74,7 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   @Column(name = "repo_id", nullable = false)
   private String repoId;
 
+  // TODO (b/140568328): remove this when everything is in Cloud SQL and we can join on "domain"
   @Column(name = "domain_name", nullable = false)
   private String domainName;
 
