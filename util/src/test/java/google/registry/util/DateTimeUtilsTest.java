@@ -29,6 +29,7 @@ import static google.registry.util.DateTimeUtils.toZonedDateTime;
 
 import com.google.common.collect.ImmutableList;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -105,7 +106,7 @@ public class DateTimeUtilsTest {
     DateTime dateTime = DateTime.now(DateTimeZone.UTC);
     ZonedDateTime zonedDateTime = toZonedDateTime(dateTime);
     assertThat(zonedDateTime.toInstant().toEpochMilli()).isEqualTo(dateTime.getMillis());
-    assertThat(zonedDateTime.getZone().getId()).isEqualTo("UTC");
+    assertThat(zonedDateTime.getZone()).isEqualTo(ZoneOffset.UTC);
   }
 
   @Test
@@ -118,10 +119,10 @@ public class DateTimeUtilsTest {
 
   @Test
   public void testSuccess_toJodaDateTime() {
-    ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("UTC"));
+    ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneOffset.UTC);
     DateTime dateTime = toJodaDateTime(zonedDateTime);
     assertThat(dateTime.getMillis()).isEqualTo(zonedDateTime.toInstant().toEpochMilli());
-    assertThat(dateTime.getZone().getID()).isEqualTo("UTC");
+    assertThat(dateTime.getZone()).isEqualTo(DateTimeZone.UTC);
   }
 
   @Test

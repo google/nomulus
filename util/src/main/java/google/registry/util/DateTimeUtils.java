@@ -21,6 +21,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.TimeZone;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
@@ -95,7 +96,7 @@ public class DateTimeUtils {
    */
   public static ZonedDateTime toZonedDateTime(DateTime dateTime) {
     java.time.Instant instant = java.time.Instant.ofEpochMilli(dateTime.getMillis());
-    return ZonedDateTime.ofInstant(instant, ZoneId.of(dateTime.getZone().getID()));
+    return ZonedDateTime.ofInstant(instant, ZoneId.of(dateTime.getZone().getID()).normalized());
   }
 
   /**
@@ -105,6 +106,6 @@ public class DateTimeUtils {
   public static DateTime toJodaDateTime(ZonedDateTime zonedDateTime) {
     return new DateTime(
         zonedDateTime.toInstant().toEpochMilli(),
-        DateTimeZone.forID(zonedDateTime.getZone().getId()));
+        DateTimeZone.forTimeZone(TimeZone.getTimeZone(zonedDateTime.getZone())));
   }
 }
