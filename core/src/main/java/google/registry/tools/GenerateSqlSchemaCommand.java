@@ -20,9 +20,12 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.annotations.VisibleForTesting;
 import google.registry.model.domain.DesignatedContact;
+import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.schema.tld.PremiumList;
+import google.registry.schema.tmch.ClaimsList;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.transfer.BaseTransferObject;
 import google.registry.model.transfer.TransferData;
@@ -48,6 +51,11 @@ import org.testcontainers.containers.PostgreSQLContainer;
  */
 @Parameters(separators = " =", commandDescription = "Generate PostgreSQL schema.")
 public class GenerateSqlSchemaCommand implements Command {
+
+  // TODO(mmuller): These should be read from persistence.xml so we don't need to maintain two
+  //                separate lists of all SQL table classes.
+  private static final ImmutableSet<Class> SQL_TABLE_CLASSES =
+      ImmutableSet.of(ClaimsList.class, DomainBase.class, PremiumList.class);
 
   @VisibleForTesting
   public static final String DB_OPTIONS_CLASH =
@@ -109,8 +117,7 @@ public class GenerateSqlSchemaCommand implements Command {
               + "    -d postgres:9.6.12\n\n"
               + "Copy the container id output from the command, then run:\n\n"
               + "  docker inspect <container-id> | grep IPAddress\n\n"
-              + "To obtain the value for --db-host.\n"
-              );
+              + "To obtain the value for --db-host.\n");
       // TODO(mmuller): need exit(1), see above.
       return;
     }
@@ -134,14 +141,7 @@ public class GenerateSqlSchemaCommand implements Command {
 
       MetadataSources metadata =
           new MetadataSources(new StandardServiceRegistryBuilder().applySettings(settings).build());
-      metadata.addAnnotatedClass(BaseTransferObject.class);
-      metadata.addAnnotatedClass(DelegationSignerData.class);
-      metadata.addAnnotatedClass(DesignatedContact.class);
-      metadata.addAnnotatedClass(DomainBase.class);
-      metadata.addAnnotatedClass(GracePeriod.class);
-      metadata.addAnnotatedClass(Period.class);
-      metadata.addAnnotatedClass(TransferData.class);
-      metadata.addAnnotatedClass(Trid.class);
+      SQL_TABLE_CLASSES.forEach(metadata::addAnnotatedClass);
       SchemaExport schemaExport = new SchemaExport();
       schemaExport.setHaltOnError(true);
       schemaExport.setFormat(true);
