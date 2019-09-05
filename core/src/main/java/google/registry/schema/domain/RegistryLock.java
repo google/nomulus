@@ -31,7 +31,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.Table;
-import org.hibernate.annotations.Check;
 import org.joda.time.DateTime;
 
 /**
@@ -58,9 +57,6 @@ import org.joda.time.DateTime;
             name = "idx_registry_lock_repo_id_revision_id",
             columnList = "repo_id, revision_id",
             unique = true))
-@Check(
-    constraints =
-        "registrar_poc_id IS NOT NULL OR is_superuser")
 public final class RegistryLock extends ImmutableObject implements Buildable {
 
   /** Describes the action taken by the user. */
