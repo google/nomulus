@@ -51,6 +51,10 @@ module.exports = function(config) {
         served: false
       },
       {
+        pattern: 'node_modules/google-closure-library/closure/goog/**/*.js',
+        included: false
+      },
+      {
         pattern: 'core/build/resources/main/google/registry/ui/assets/images/*.png',
         included: false
       },
