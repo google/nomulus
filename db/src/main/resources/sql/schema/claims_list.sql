@@ -19,7 +19,7 @@ CREATE TABLE `ClaimsList` (
 );
 
 CREATE TABLE `ClaimsEntry` (
-  revision_id BIGSERIAL NOT NULL,
+  revision_id int8 NOT NULL,
   claim_key TEXT NOT NULL,
   domain_label TEXT NOT NULL,
   PRIMARY KEY (revision_id, domain_label),

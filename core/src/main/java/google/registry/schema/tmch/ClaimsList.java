@@ -56,10 +56,9 @@ public class ClaimsList {
       joinColumns =
           @JoinColumn(
               name = "revision_id",
-              referencedColumnName = "revision_id",
-              columnDefinition = "bigserial"))
+              referencedColumnName = "revision_id"))
   @MapKeyColumn(name = "domain_label", nullable = false)
-  @Column(name = "claim_key", nullable = false, columnDefinition = "timestamptz")
+  @Column(name = "claim_key", nullable = false)
   private Map<String, String> labelsToKeys;
 
   private ClaimsList(ZonedDateTime creationTimestamp, Map<String, String> labelsToKeys) {

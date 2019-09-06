@@ -1,8 +1,8 @@
 
     create table "ClaimsEntry" (
-       revision_id bigserial not null,
-        claim_key varchar(255) not null,
-        domain_label varchar(255) not null,
+       revision_id int8 not null,
+        claim_key text not null,
+        domain_label text not null,
         primary key (revision_id, domain_label)
     );
 
