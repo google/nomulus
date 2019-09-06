@@ -13,10 +13,12 @@
 // limitations under the License.
 
 task sqlFormatCheck(type:Exec) {
+	dependsOn rootProject.npmInstall
   commandLine './format_sql.sh', 'check', './src/main/resources/sql/**/*.sql'
 }
 
 task sqlFormatApply(type:Exec) {
+	dependsOn rootProject.npmInstall
   commandLine './format_sql.sh', 'apply', './src/main/resources/sql/**/*.sql'
 }
 
