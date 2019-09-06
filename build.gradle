@@ -82,6 +82,8 @@ apply from: 'dependencies.gradle'
 
 apply from: 'dependency_lic.gradle'
 
+apply from: 'utils.gradle'
+
 // Custom task to run checkLicense in buildSrc, which is not triggered
 // by root project tasks. A shell task is used because buildSrc tasks
 // cannot be referenced in the same way as tasks from a regular included
@@ -236,8 +238,9 @@ subprojects {
     }
   }
 
-  if (['util', 'proxy', 'core', 'prober'].contains(project.name)) return
+  if (['util', 'proxy', 'core', 'prober', 'db'].contains(project.name)) return
 
+  // TODO(weiminyu): investigate if the block below is still needed
   ext.relativePath = "google/registry/${project.name}"
 
   sourceSets.each {
@@ -326,20 +329,6 @@ def createGetBuildSrcDirectDepsTask(outputFileName) {
 }
 
 rootProject.ext {
-
-  // Executes an arbitrary shell command in bash and returns all output
-  // to stdout as a string. This method allows pipes in shell command.
-  execInBash = { shellCommand, bashWorkingDir ->
-    return new ByteArrayOutputStream().withStream { os ->
-      exec {
-        workingDir bashWorkingDir
-        commandLine 'bash', '-c', "${shellCommand}"
-        standardOutput os
-      }
-      return os
-    }.toString().trim()
-  }
-
   invokeJavaDiffFormatScript = { action ->
     def scriptDir = rootDir.path.endsWith('buildSrc')
             ? "${rootDir}/../java-format"

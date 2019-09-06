@@ -13,6 +13,9 @@
       "moduleLicense": "Apache-2.0"
     },
     {
+      "moduleLicense": "Apache License"
+    },
+    {
       "moduleLicense": "Apache License 2.0"
     },
     {
@@ -127,7 +130,16 @@
       "moduleLicense": "Eclipse Public License v1.0"
     },
     {
+      "moduleLicense": "Eclipse Public License - v 2.0"
+    },
+    {
+      "moduleLicense": "https://www.eclipse.org/legal/epl-2.0/, http://www.gnu.org/copyleft/gpl.html, http://www.gnu.org/licenses/lgpl.html"
+    },
+    {
       "moduleLicense": "Google App Engine Terms of Service"
+    },
+    {
+      "moduleLicense": "GNU General Public License Version 2"
     },
     {
       "moduleLicense": "GNU General Public License, version 2, with the Classpath Exception"
@@ -143,6 +155,9 @@
     },
     {
       "moduleLicense": "GNU Lesser Public License"
+    },
+    {
+      "moduleLicense": "GNU Lesser General Public License Version 2.1"
     },
     {
       "moduleLicense": "GNU Library General Public License v2.1 or later"

@@ -14,14 +14,14 @@
 
     create table ClaimsEntry (
        revision_id int8 not null,
-        claim_key varchar(255) not null,
-        domain_label varchar(255) not null,
+        claim_key text not null,
+        domain_label text not null,
         primary key (revision_id, domain_label)
     );
 
     create table ClaimsList (
        revision_id  bigserial not null,
-        creation_timestamp timestamp not null,
+        creation_timestamp timestamptz not null,
         primary key (revision_id)
     );
 
@@ -40,38 +40,38 @@
     );
 
     create table domain (
-       repoId varchar(255) not null,
-        creationClientId varchar(255),
-        currentSponsorClientId varchar(255),
+       repoId text not null,
+        creationClientId text,
+        currentSponsorClientId text,
         deletionTime bytea,
-        lastEppUpdateClientId varchar(255),
+        lastEppUpdateClientId text,
         lastEppUpdateTime bytea,
         revisions bytea,
-        auth_info_repo_id varchar(255),
-        auth_info_value varchar(255),
+        auth_info_repo_id text,
+        auth_info_value text,
         autorenewBillingEvent bytea,
         autorenewPollMessage bytea,
         deletePollMessage bytea,
-        fullyQualifiedDomainName varchar(255),
-        idnTableName varchar(255),
+        fullyQualifiedDomainName text,
+        idnTableName text,
         lastTransferTime bytea,
         launch_notice_accepted_time bytea,
         launch_notice_expiration_time bytea,
-        launch_notice_tcn_id varchar(255),
-        launch_notice_validator_id varchar(255),
+        launch_notice_tcn_id text,
+        launch_notice_validator_id text,
         registrationExpirationTime bytea,
-        smdId varchar(255),
-        tld varchar(255),
+        smdId text,
+        tld text,
         transfer_data_server_approve_autorenrew_event bytea,
         transfer_data_server_approve_autorenrew_poll_message bytea,
         transfer_data_server_approve_billing_event bytea,
         unit int4,
         value int4,
-        clientTransactionId varchar(255),
-        serverTransactionId varchar(255),
+        clientTransactionId text,
+        serverTransactionId text,
         transfer_data_registration_expiration_time bytea,
-        gainingClientId varchar(255),
-        losingClientId varchar(255),
+        gainingClientId text,
+        losingClientId text,
         pendingTransferExpirationTime bytea,
         transferRequestTime bytea,
         transferStatus int4,
@@ -79,43 +79,43 @@
     );
 
     create table domain_DelegationSignerData (
-       DomainBase_repoId varchar(255) not null,
+       DomainBase_repoId text not null,
         dsData_keyTag int4 not null,
         primary key (DomainBase_repoId, dsData_keyTag)
     );
 
     create table domain_DesignatedContact (
-       DomainBase_repoId varchar(255) not null,
+       DomainBase_repoId text not null,
         allContacts_contact bytea not null,
         primary key (DomainBase_repoId, allContacts_contact)
     );
 
     create table domain_GracePeriod (
-       DomainBase_repoId varchar(255) not null,
+       DomainBase_repoId text not null,
         gracePeriods_id int8 not null,
         primary key (DomainBase_repoId, gracePeriods_id)
     );
 
     create table DomainBase_nsHosts (
-       DomainBase_repoId varchar(255) not null,
+       DomainBase_repoId text not null,
         nsHosts bytea
     );
 
     create table DomainBase_serverApproveEntities (
-       DomainBase_repoId varchar(255) not null,
+       DomainBase_repoId text not null,
         transfer_data_server_approve_entities bytea
     );
 
     create table DomainBase_subordinateHosts (
-       DomainBase_repoId varchar(255) not null,
-        subordinateHosts varchar(255)
+       DomainBase_repoId text not null,
+        subordinateHosts text
     );
 
     create table GracePeriod (
        id  bigserial not null,
         billingEventOneTime bytea,
         billingEventRecurring bytea,
-        clientId varchar(255),
+        clientId text,
         expirationTime bytea,
         type int4,
         primary key (id)
@@ -124,77 +124,77 @@
     create table PremiumEntry (
        revision_id int8 not null,
         price numeric(19, 2) not null,
-        domain_label varchar(255) not null,
+        domain_label text not null,
         primary key (revision_id, domain_label)
     );
 
     create table PremiumList (
        revision_id  bigserial not null,
-        creation_timestamp timestamp not null,
+        creation_timestamp timestamptz not null,
         currency bytea not null,
         primary key (revision_id)
     );
 
-    alter table domain_DelegationSignerData 
+    alter table if exists domain_DelegationSignerData 
        add constraint UK_q2uk7gpqskey3t2w11w2o7x9f unique (dsData_keyTag);
 
-    alter table domain_DesignatedContact 
+    alter table if exists domain_DesignatedContact 
        add constraint UK_fyc0mfvebhatp6sq8dy4jdx4i unique (allContacts_contact);
 
-    alter table domain_GracePeriod 
+    alter table if exists domain_GracePeriod 
        add constraint UK_74osb0s7br4x734ecpdk8caxx unique (gracePeriods_id);
 
-    alter table ClaimsEntry 
+    alter table if exists ClaimsEntry 
        add constraint FKlugn0q07ayrtar87dqi3vs3c8 
        foreign key (revision_id) 
        references ClaimsList;
 
-    alter table domain_DelegationSignerData 
+    alter table if exists domain_DelegationSignerData 
        add constraint FK6p262lfef34yht2ok65rqfoiy 
        foreign key (dsData_keyTag) 
        references DelegationSignerData;
 
-    alter table domain_DelegationSignerData 
+    alter table if exists domain_DelegationSignerData 
        add constraint FK922bmc01akk5mvypcdhtk3qqv 
        foreign key (DomainBase_repoId) 
        references domain;
 
-    alter table domain_DesignatedContact 
+    alter table if exists domain_DesignatedContact 
        add constraint FKdl5kay2hwlalnwcg12cpy12x9 
        foreign key (allContacts_contact) 
        references DesignatedContact;
 
-    alter table domain_DesignatedContact 
+    alter table if exists domain_DesignatedContact 
        add constraint FKb4nx8xr0n24f521y1i1cvr4f2 
        foreign key (DomainBase_repoId) 
        references domain;
 
-    alter table domain_GracePeriod 
+    alter table if exists domain_GracePeriod 
        add constraint FKbw8o0nti4fevxu4xvu8unj726 
        foreign key (gracePeriods_id) 
        references GracePeriod;
 
-    alter table domain_GracePeriod 
+    alter table if exists domain_GracePeriod 
        add constraint FKle4ms7cufyw4vgn5pn01vwwm7 
        foreign key (DomainBase_repoId) 
        references domain;
 
-    alter table DomainBase_nsHosts 
+    alter table if exists DomainBase_nsHosts 
        add constraint FKblxt8vhg3yblt3grqxovoywwm 
        foreign key (DomainBase_repoId) 
        references domain;
 
-    alter table DomainBase_serverApproveEntities 
+    alter table if exists DomainBase_serverApproveEntities 
        add constraint FKbc3iicw0n8s9cj1lca142i7rc 
        foreign key (DomainBase_repoId) 
        references domain;
 
-    alter table DomainBase_subordinateHosts 
+    alter table if exists DomainBase_subordinateHosts 
        add constraint FK3p6gm6lbx46s41hl9wfme77sr 
        foreign key (DomainBase_repoId) 
        references domain;
 
-    alter table PremiumEntry 
+    alter table if exists PremiumEntry 
        add constraint FKqebdja3jkx9c9cnqnrw9g9ocu 
        foreign key (revision_id) 
        references PremiumList;
