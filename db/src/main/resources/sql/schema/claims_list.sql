@@ -11,13 +11,11 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
-
 CREATE TABLE `ClaimsList` (
   revision_id BIGSERIAL NOT NULL,
   creation_timestamp TIMESTAMPTZ NOT NULL,
   PRIMARY KEY (revision_id)
 );
-
 CREATE TABLE `ClaimsEntry` (
   revision_id BIGSERIAL NOT NULL,
   claim_key TEXT NOT NULL,

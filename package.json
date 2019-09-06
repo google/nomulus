@@ -17,7 +17,8 @@
   },
   "homepage": "https://github.com/google/nomulus#readme",
   "dependencies": {
-    "google-closure-library": "20190325.0.0"
+    "google-closure-library": "20190325.0.0",
+    "sql-formatter-cli": "^2.3.3"
   },
   "devDependencies": {
     "jasmine-core": "3.4.0",
