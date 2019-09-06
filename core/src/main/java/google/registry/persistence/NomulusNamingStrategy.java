@@ -71,6 +71,7 @@ public class NomulusNamingStrategy implements PhysicalNamingStrategy {
     return jdbcEnvironment
         .getIdentifierHelper()
         .toIdentifier(
-            CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, name.getText()), /* quoted= */ false);
+            CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, name.getText()),
+            /* quoted= */ false);
   }
 }
