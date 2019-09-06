@@ -34,7 +34,7 @@ for sql_file in $(find ${GLOB} -type f -name "*.sql"); do
   if [ "$1" = "apply" ]; then
     # Note: the formatter isn't necessarily idempotent -- the output of the first run might
     # be different from the output of running it again. Run it a few times so it stabilizes.
-    for i in {1..10}; do
+    for i in {1..3}; do
       mv "${sql_file}.formatted" "${sql_file}"
       create_formatted_file ${sql_file}
     done
