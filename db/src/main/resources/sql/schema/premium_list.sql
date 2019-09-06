@@ -11,15 +11,18 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
-CREATE TABLE `ClaimsList` (
+
+CREATE TABLE "PremiumList" (
   revision_id BIGSERIAL NOT NULL,
   creation_timestamp TIMESTAMPTZ NOT NULL,
+  currency TEXT NOT NULL,
   PRIMARY KEY (revision_id)
 );
-CREATE TABLE `ClaimsEntry` (
-  revision_id int8 NOT NULL,
-  claim_key TEXT NOT NULL,
+
+CREATE TABLE "PremiumEntry" (
+  revision_id BIGSERIAL NOT NULL,
+  price NUMERIC(12, 2) NOT NULL,
   domain_label TEXT NOT NULL,
-  PRIMARY KEY (revision_id, domain_label),
-  FOREIGN KEY (revision_id) REFERENCES `ClaimsList`(revision_id)
+  primary key (revision_id, domain_label),
+  FOREIGN KEY (revision_id) REFERENCES "PremiumList"(revision_id)
 );

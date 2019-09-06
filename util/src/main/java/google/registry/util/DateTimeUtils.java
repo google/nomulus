@@ -19,6 +19,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.TimeZone;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
@@ -85,5 +88,24 @@ public class DateTimeUtils {
   public static DateTime leapSafeSubtractYears(DateTime now, int years) {
     checkArgument(years >= 0);
     return years == 0 ? now : now.minusYears(1).minusYears(years - 1);
+  }
+
+  /**
+   * Converts a Joda {@link DateTime} object to an equivalent java.time {@link ZonedDateTime}
+   * object.
+   */
+  public static ZonedDateTime toZonedDateTime(DateTime dateTime) {
+    java.time.Instant instant = java.time.Instant.ofEpochMilli(dateTime.getMillis());
+    return ZonedDateTime.ofInstant(instant, ZoneId.of(dateTime.getZone().getID()).normalized());
+  }
+
+  /**
+   * Converts a java.time {@link ZonedDateTime} object to an equivalent Joda {@link DateTime}
+   * object.
+   */
+  public static DateTime toJodaDateTime(ZonedDateTime zonedDateTime) {
+    return new DateTime(
+        zonedDateTime.toInstant().toEpochMilli(),
+        DateTimeZone.forTimeZone(TimeZone.getTimeZone(zonedDateTime.getZone())));
   }
 }

@@ -19,6 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.GracePeriod;
@@ -26,14 +27,18 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.transfer.BaseTransferObject;
 import google.registry.model.transfer.TransferData;
+import google.registry.schema.tld.PremiumList;
+import google.registry.schema.tmch.ClaimsList;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Types;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.dialect.PostgreSQL95Dialect;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.schema.TargetType;
 import org.joda.time.Period;
@@ -48,6 +53,21 @@ import org.testcontainers.containers.PostgreSQLContainer;
  */
 @Parameters(separators = " =", commandDescription = "Generate PostgreSQL schema.")
 public class GenerateSqlSchemaCommand implements Command {
+
+  // TODO(mmuller): These should be read from persistence.xml so we don't need to maintain two
+  //                separate lists of all SQL table classes.
+  private static final ImmutableSet<Class> SQL_TABLE_CLASSES =
+      ImmutableSet.of(
+          BaseTransferObject.class,
+          ClaimsList.class,
+          DelegationSignerData.class,
+          DesignatedContact.class,
+          DomainBase.class,
+          GracePeriod.class,
+          Period.class,
+          PremiumList.class,
+          TransferData.class,
+          Trid.class);
 
   @VisibleForTesting
   public static final String DB_OPTIONS_CLASH =
@@ -109,8 +129,7 @@ public class GenerateSqlSchemaCommand implements Command {
               + "    -d postgres:9.6.12\n\n"
               + "Copy the container id output from the command, then run:\n\n"
               + "  docker inspect <container-id> | grep IPAddress\n\n"
-              + "To obtain the value for --db-host.\n"
-              );
+              + "To obtain the value for --db-host.\n");
       // TODO(mmuller): need exit(1), see above.
       return;
     }
@@ -123,7 +142,7 @@ public class GenerateSqlSchemaCommand implements Command {
     try {
       // Configure Hibernate settings.
       Map<String, String> settings = new HashMap<>();
-      settings.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQL9Dialect");
+      settings.put("hibernate.dialect", NomulusPostgreSQLDialect.class.getName());
       settings.put(
           "hibernate.connection.url",
           "jdbc:postgresql://" + databaseHost + ":" + databasePort + "/postgres?useSSL=false");
@@ -134,14 +153,7 @@ public class GenerateSqlSchemaCommand implements Command {
 
       MetadataSources metadata =
           new MetadataSources(new StandardServiceRegistryBuilder().applySettings(settings).build());
-      metadata.addAnnotatedClass(BaseTransferObject.class);
-      metadata.addAnnotatedClass(DelegationSignerData.class);
-      metadata.addAnnotatedClass(DesignatedContact.class);
-      metadata.addAnnotatedClass(DomainBase.class);
-      metadata.addAnnotatedClass(GracePeriod.class);
-      metadata.addAnnotatedClass(Period.class);
-      metadata.addAnnotatedClass(TransferData.class);
-      metadata.addAnnotatedClass(Trid.class);
+      SQL_TABLE_CLASSES.forEach(metadata::addAnnotatedClass);
       SchemaExport schemaExport = new SchemaExport();
       schemaExport.setHaltOnError(true);
       schemaExport.setFormat(true);
@@ -178,6 +190,15 @@ public class GenerateSqlSchemaCommand implements Command {
       if (postgresContainer != null) {
         postgresContainer.stop();
       }
+    }
+  }
+
+  /** Nomulus mapping rules for column types in Postgresql. */
+  public static class NomulusPostgreSQLDialect extends PostgreSQL95Dialect {
+    public NomulusPostgreSQLDialect() {
+      super();
+      registerColumnType(Types.VARCHAR, "text");
+      registerColumnType(Types.TIMESTAMP, "timestamptz");
     }
   }
 }

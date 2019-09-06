@@ -79,7 +79,8 @@ PRESUBMITS = {
         ("java", "js", "soy", "sql", "py", "sh", "gradle"), {
             ".git", "/build/", "/generated/", "node_modules/",
             "JUnitBackports.java", "registrar_bin.", "registrar_dbg.",
-            "google-java-format-diff.py"
+            "google-java-format-diff.py",
+            "nomulus.golden.sql"
         }, REQUIRED):
         "File did not include the license header.",
 

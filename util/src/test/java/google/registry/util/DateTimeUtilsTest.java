@@ -24,8 +24,11 @@ import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.latestOf;
 import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 import static google.registry.util.DateTimeUtils.leapSafeSubtractYears;
+import static google.registry.util.DateTimeUtils.toJodaDateTime;
+import static google.registry.util.DateTimeUtils.toZonedDateTime;
 
 import com.google.common.collect.ImmutableList;
+import java.time.ZonedDateTime;
 import org.joda.time.DateTime;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -93,5 +96,47 @@ public class DateTimeUtilsTest {
   @Test
   public void testFailure_latestOfEmpty() {
     assertThrows(IllegalArgumentException.class, () -> earliestOf(ImmutableList.of()));
+  }
+
+  @Test
+  public void testSuccess_toZonedDateTime_preservesTimeZone() {
+    DateTime dateTime = DateTime.parse("2019-09-06T10:59:36.283-07:00"); // PDT
+    ZonedDateTime zonedDateTime = toZonedDateTime(dateTime);
+    assertThat(zonedDateTime.toString()).isEqualTo("2019-09-06T10:59:36.283-07:00"); // still PDT
+  }
+
+  @Test
+  public void testSuccess_toZonedDateTime_fromStringZulu() {
+    DateTime dateTime = DateTime.parse("2015-10-13T11:22:33.168Z");
+    ZonedDateTime zonedDateTime = toZonedDateTime(dateTime);
+    assertThat(zonedDateTime.toString()).isEqualTo("2015-10-13T11:22:33.168Z");
+  }
+
+  @Test
+  public void testSuccess_toZonedDateTime_leapYear() {
+    DateTime dateTime = DateTime.parse("2016-02-29T11:22:33.168Z");
+    ZonedDateTime zonedDateTime = toZonedDateTime(dateTime);
+    assertThat(zonedDateTime.toString()).isEqualTo("2016-02-29T11:22:33.168Z");
+  }
+
+  @Test
+  public void testSuccess_toJodaDateTime_preservesTimeZone() {
+    ZonedDateTime zonedDateTime = ZonedDateTime.parse("2019-09-06T10:59:36.283-07:00"); // PDT
+    DateTime dateTime = toJodaDateTime(zonedDateTime);
+    assertThat(dateTime.toString()).isEqualTo("2019-09-06T10:59:36.283-07:00"); // still PDT
+  }
+
+  @Test
+  public void testSuccess_toJodaDateTime_fromStringZulu() {
+    ZonedDateTime zonedDateTime = ZonedDateTime.parse("2015-10-13T11:22:33.168Z");
+    DateTime dateTime = toJodaDateTime(zonedDateTime);
+    assertThat(dateTime.toString()).isEqualTo("2015-10-13T11:22:33.168Z");
+  }
+
+  @Test
+  public void testSuccess_toJodaDateTime_leapYear() {
+    ZonedDateTime zonedDateTime = ZonedDateTime.parse("2016-02-29T11:22:33.168Z");
+    DateTime dateTime = toJodaDateTime(zonedDateTime);
+    assertThat(dateTime.toString()).isEqualTo("2016-02-29T11:22:33.168Z");
   }
 }
