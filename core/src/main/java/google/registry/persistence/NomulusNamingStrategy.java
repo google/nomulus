@@ -54,7 +54,7 @@ public class NomulusNamingStrategy implements PhysicalNamingStrategy {
     if (name.isQuoted()) {
       return name;
     }
-    return jdbcEnvironment.getIdentifierHelper().toIdentifier(name.getText(), true);
+    return jdbcEnvironment.getIdentifierHelper().toIdentifier(name.getText(), /* quoted= */ true);
   }
 
   @Override
@@ -71,6 +71,6 @@ public class NomulusNamingStrategy implements PhysicalNamingStrategy {
     return jdbcEnvironment
         .getIdentifierHelper()
         .toIdentifier(
-            CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, name.getText()), false);
+            CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, name.getText()), /* quoted= */ false);
   }
 }
