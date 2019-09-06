@@ -438,6 +438,25 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       throw new ContactRequirementException(
           "An abuse contact visible in domain WHOIS query must be designated");
     }
+
+    // Any contact(s) with new passwords must be allowed to set them
+    for (RegistrarContact updatedContact : updatedContacts) {
+      if (updatedContact.isRegistryLockAllowed()
+          || updatedContact.isAllowedToSetRegistryLockPassword()) {
+        RegistrarContact existingContact =
+            existingContacts.stream()
+                .filter(
+                    contact -> contact.getEmailAddress().equals(updatedContact.getEmailAddress()))
+                .findFirst()
+                .orElseThrow(
+                    () ->
+                        new FormException(
+                            "Not allowed to set registry lock password directly on new contact"));
+        if (!existingContact.isAllowedToSetRegistryLockPassword()) {
+          throw new FormException("Registrar contact not allowed to set registry lock password");
+        }
+      }
+    }
   }
 
   /**

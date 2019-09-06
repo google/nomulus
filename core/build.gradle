@@ -43,21 +43,6 @@ def outcastTestPatterns = [
     "google/registry/tools/server/CreatePremiumListActionTest.*",
 ]
 
-// Tests that conflict with members of both the main test suite and the
-// outcast suite. They seem to be affected by global states outside of
-// Nomulus classes, e.g., threads and objects retained by frameworks.
-// TODO(weiminyu): identify cause and fix offending tests.
-def fragileTestPatterns = [
-    // Problem seems to lie with AppEngine TaskQueue for test.
-    "google/registry/cron/TldFanoutActionTest.*",
-    // Test Datastore inexplicably aborts transaction.
-    "google/registry/model/tmch/ClaimsListShardTest.*",
-    // Creates large object (64MBytes), occasionally throws OOM error.
-    "google/registry/model/server/KmsSecretRevisionTest.*",
-    "google/registry/tools/GenerateSqlSchemaCommandTest.*",
-    "google/registry/webdriver/*",
-]
-
 // Tests that fail when running Gradle in a docker container, e. g. when
 // building the release artifacts in Google Cloud Build.
 def dockerIncompatibleTestPatterns = [
@@ -70,8 +55,22 @@ def dockerIncompatibleTestPatterns = [
     // respected. However when running in Docker the user is root by default, so
     // every file is read/write-able. There is no way to exclude specific test
     // methods, so we exclude the whole test class.
-    "google/registry/tools/params/PathParameterTest.*"
+    "google/registry/tools/params/PathParameterTest.*",
+    "google/registry/persistence/EntityManagerFactoryProviderTest.*",
 ]
+
+// Tests that conflict with members of both the main test suite and the
+// outcast suite. They seem to be affected by global states outside of
+// Nomulus classes, e.g., threads and objects retained by frameworks.
+// TODO(weiminyu): identify cause and fix offending tests.
+def fragileTestPatterns = [
+    // Problem seems to lie with AppEngine TaskQueue for test.
+    "google/registry/cron/TldFanoutActionTest.*",
+    // Test Datastore inexplicably aborts transaction.
+    "google/registry/model/tmch/ClaimsListShardTest.*",
+    // Creates large object (64MBytes), occasionally throws OOM error.
+    "google/registry/model/server/KmsSecretRevisionTest.*",
+] + dockerIncompatibleTestPatterns
 
 sourceSets {
   main {

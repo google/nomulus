@@ -105,6 +105,7 @@
   {@param item: legacy_object_map<string, ?>}
   {@param actualTypesLookup: legacy_object_map<string, bool>}
   {@param readonly: bool}
+  {@param? registryLockAllowedForRegistrar: bool}
   <form name="item" class="{css('item')} {css('registrar')}">
     <h1>Contact Details</h1>
     {call .contactInfo data="all"}
@@ -112,6 +113,7 @@
       {param item: $item /}
       {param actualTypesLookup: $actualTypesLookup /}
       {param readonly: $readonly /}
+      {param registryLockAllowedForRegistrar: $registryLockAllowedForRegistrar /}
     {/call}
   </form>
 {/template}
@@ -123,6 +125,7 @@
   {@param item: legacy_object_map<string, ?>}
   {@param actualTypesLookup: legacy_object_map<string, bool>}
   {@param? readonly: bool}
+  {@param? registryLockAllowedForRegistrar: bool}
   {let $possibleTypesLookup: [
       ['admin', 'Primary', 'Primary contact for general issues.'],
       ['billing', 'Billing', 'Contact for financial communications & invoices.'],
@@ -165,6 +168,7 @@
           {param namePrefix: $namePrefix /}
           {param possibleTypesLookup: $possibleTypesLookup /}
           {param actualTypesLookup: $actualTypesLookup /}
+          {param registryLockAllowedForRegistrar: $registryLockAllowedForRegistrar /}
         {/call}
       {/if}
     </table>
@@ -222,6 +226,7 @@
   {@param namePrefix: string}
   {@param possibleTypesLookup: list<list<string>>}
   {@param actualTypesLookup: legacy_object_map<string, bool>}
+  {@param? registryLockAllowedForRegistrar: bool}
   <tr class="{css('kd-settings-pane-section')}">
     <td>
       <label class="{css('setting-label')}">Contact type</label>
@@ -236,29 +241,49 @@
         {param actualTypesLookup: $actualTypesLookup /}
       {/call}
   </tr>
-  <tr><td colspan="2"><hr></tr>
-    {call .whoisVisibleRadios_}
-      {param description: 'Show in Registrar WHOIS record as Admin contact' /}
-      {param fieldName: $namePrefix + 'visibleInWhoisAsAdmin' /}
-      {param visible: $item['visibleInWhoisAsAdmin'] == true /}
+  {if $registryLockAllowedForRegistrar}
+    {let $placeholder: $item['registryLockAllowed'] ?
+      // If registry lock is allowed, there's already a password
+      'Contact support to reset password' :
+        // Otherwise, if not allowed, support must enable it
+        not $item['allowedToSetRegistryLockPassword'] ?
+          'Contact support to enable registry lock' : '' /}
+    {call registry.soy.forms.inputFieldRow data="all"}
+      {param label: 'Registry lock password:' /}
+      {param name: 'registryLockPassword' /}
+      {param disabled: not $item['allowedToSetRegistryLockPassword'] /}
+      {param isPassword: true /}
+      {param placeholder: $placeholder /}
     {/call}
-    {call .whoisVisibleRadios_}
-      {param description: 'Show in Registrar WHOIS record as Technical contact' /}
-      {param fieldName: $namePrefix + 'visibleInWhoisAsTech' /}
-      {param visible: $item['visibleInWhoisAsTech'] == true /}
-    {/call}
-    {call .whoisVisibleRadios_}
-      {param description:
+  {/if}
+  {if isNonnull($item['allowedToSetRegistryLockPassword'])}
+    <input type="hidden" name="allowedToSetRegistryLockPassword"
+           value="{$item['allowedToSetRegistryLockPassword']}">
+  {/if}
+  <tr>
+    <td colspan="2">
+      <hr>
+  </tr>
+  {call .whoisVisibleRadios_}
+    {param description: 'Show in Registrar WHOIS record as Admin contact' /}
+    {param fieldName: $namePrefix + 'visibleInWhoisAsAdmin' /}
+    {param visible: $item['visibleInWhoisAsAdmin'] == true /}
+  {/call}
+  {call .whoisVisibleRadios_}
+    {param description: 'Show in Registrar WHOIS record as Technical contact' /}
+    {param fieldName: $namePrefix + 'visibleInWhoisAsTech' /}
+    {param visible: $item['visibleInWhoisAsTech'] == true /}
+  {/call}
+  {call .whoisVisibleRadios_}
+    {param description:
         'Show Phone and Email in Domain WHOIS Record as Registrar Abuse Contact' +
-            ' (Per CL&D Requirements)'
-      /}
-      {param note:
+        ' (Per CL&D Requirements)' /}
+    {param note:
         '*Can only apply to one contact. Selecting Yes for this contact will' +
-            ' force this setting for all other contacts to be No.'
-      /}
-      {param fieldName: $namePrefix + 'visibleInDomainWhoisAsAbuse' /}
-      {param visible: $item['visibleInDomainWhoisAsAbuse'] == true /}
-    {/call}
+        ' force this setting for all other contacts to be No.' /}
+    {param fieldName: $namePrefix + 'visibleInDomainWhoisAsAbuse' /}
+    {param visible: $item['visibleInDomainWhoisAsAbuse'] == true /}
+  {/call}
 {/template}
 
 

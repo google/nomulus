@@ -619,6 +619,7 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
         .putListOfStrings("allowedTlds", getAllowedTlds())
         .putListOfStrings("ipAddressWhitelist", ipAddressWhitelist)
         .putListOfJsonObjects("contacts", getContacts())
+        .put("registryLockAllowed", registryLockAllowed)
         .build();
   }
 

@@ -14,6 +14,7 @@
 
 package google.registry.persistence;
 
+import static com.google.common.base.Preconditions.checkState;
 import static google.registry.config.RegistryConfig.getHibernateConnectionIsolation;
 import static google.registry.config.RegistryConfig.getHibernateHikariConnectionTimeout;
 import static google.registry.config.RegistryConfig.getHibernateHikariIdleTimeout;
@@ -62,6 +63,11 @@ public class EntityManagerFactoryProvider {
     properties.put(Environment.URL, jdbcUrl);
     properties.put(Environment.USER, username);
     properties.put(Environment.PASS, password);
-    return Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME, properties.build());
+    EntityManagerFactory emf =
+        Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME, properties.build());
+    checkState(
+        emf != null,
+        "Persistence.createEntityManagerFactory() returns a null EntityManagerFactory");
+    return emf;
   }
 }

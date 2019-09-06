@@ -28,6 +28,7 @@ import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.ImmutableObject;
 import java.util.Optional;
+import javax.persistence.Embedded;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
@@ -37,6 +38,7 @@ import org.joda.time.DateTime;
 /** The claims notice id from the claims phase. */
 @Embed
 @XmlType(propOrder = {"noticeId", "expirationTime", "acceptedTime"})
+@javax.persistence.Embeddable
 public class LaunchNotice extends ImmutableObject {
 
   /** An empty instance to use in place of null. */
@@ -44,6 +46,7 @@ public class LaunchNotice extends ImmutableObject {
 
   /** An id with a validator-id attribute. */
   @Embed
+  @javax.persistence.Embeddable
   public static class NoticeIdType extends ImmutableObject {
 
     /**
@@ -69,6 +72,7 @@ public class LaunchNotice extends ImmutableObject {
   }
 
   @XmlElement(name = "noticeID")
+  @Embedded
   NoticeIdType noticeId;
 
   @XmlElement(name = "notAfter")

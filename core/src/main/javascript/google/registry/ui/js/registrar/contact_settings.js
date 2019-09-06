@@ -102,7 +102,8 @@ registry.registrar.ContactSettings.prototype.renderItem = function(rspObj) {
           item: targetContact,
           namePrefix: 'contacts[' + targetContactNdx + '].',
           actualTypesLookup: actualTypesLookup,
-          readonly: (rspObj.readonly || false)
+          readonly: (rspObj.readonly || false),
+          registryLockAllowedForRegistrar: rspObj.registryLockAllowed
         });
     this.setupAppbar();
   } else {

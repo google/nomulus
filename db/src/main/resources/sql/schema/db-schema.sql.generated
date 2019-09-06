@@ -1,0 +1,200 @@
+-- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+    create table ClaimsEntry (
+       revision_id int8 not null,
+        claim_key text not null,
+        domain_label text not null,
+        primary key (revision_id, domain_label)
+    );
+
+    create table ClaimsList (
+       revision_id  bigserial not null,
+        creation_timestamp timestamptz not null,
+        primary key (revision_id)
+    );
+
+    create table DelegationSignerData (
+       keyTag int4 not null,
+        algorithm int4 not null,
+        digest bytea,
+        digestType int4 not null,
+        primary key (keyTag)
+    );
+
+    create table DesignatedContact (
+       contact bytea not null,
+        type int4,
+        primary key (contact)
+    );
+
+    create table domain (
+       repoId text not null,
+        creationClientId text,
+        currentSponsorClientId text,
+        deletionTime bytea,
+        lastEppUpdateClientId text,
+        lastEppUpdateTime bytea,
+        revisions bytea,
+        auth_info_repo_id text,
+        auth_info_value text,
+        autorenewBillingEvent bytea,
+        autorenewPollMessage bytea,
+        deletePollMessage bytea,
+        fullyQualifiedDomainName text,
+        idnTableName text,
+        lastTransferTime bytea,
+        launch_notice_accepted_time bytea,
+        launch_notice_expiration_time bytea,
+        launch_notice_tcn_id text,
+        launch_notice_validator_id text,
+        registrationExpirationTime bytea,
+        smdId text,
+        tld text,
+        transfer_data_server_approve_autorenrew_event bytea,
+        transfer_data_server_approve_autorenrew_poll_message bytea,
+        transfer_data_server_approve_billing_event bytea,
+        unit int4,
+        value int4,
+        clientTransactionId text,
+        serverTransactionId text,
+        transfer_data_registration_expiration_time bytea,
+        gainingClientId text,
+        losingClientId text,
+        pendingTransferExpirationTime bytea,
+        transferRequestTime bytea,
+        transferStatus int4,
+        primary key (repoId)
+    );
+
+    create table domain_DelegationSignerData (
+       DomainBase_repoId text not null,
+        dsData_keyTag int4 not null,
+        primary key (DomainBase_repoId, dsData_keyTag)
+    );
+
+    create table domain_DesignatedContact (
+       DomainBase_repoId text not null,
+        allContacts_contact bytea not null,
+        primary key (DomainBase_repoId, allContacts_contact)
+    );
+
+    create table domain_GracePeriod (
+       DomainBase_repoId text not null,
+        gracePeriods_id int8 not null,
+        primary key (DomainBase_repoId, gracePeriods_id)
+    );
+
+    create table DomainBase_nsHosts (
+       DomainBase_repoId text not null,
+        nsHosts bytea
+    );
+
+    create table DomainBase_serverApproveEntities (
+       DomainBase_repoId text not null,
+        transfer_data_server_approve_entities bytea
+    );
+
+    create table DomainBase_subordinateHosts (
+       DomainBase_repoId text not null,
+        subordinateHosts text
+    );
+
+    create table GracePeriod (
+       id  bigserial not null,
+        billingEventOneTime bytea,
+        billingEventRecurring bytea,
+        clientId text,
+        expirationTime bytea,
+        type int4,
+        primary key (id)
+    );
+
+    create table PremiumEntry (
+       revision_id int8 not null,
+        price numeric(19, 2) not null,
+        domain_label text not null,
+        primary key (revision_id, domain_label)
+    );
+
+    create table PremiumList (
+       revision_id  bigserial not null,
+        creation_timestamp timestamptz not null,
+        currency bytea not null,
+        primary key (revision_id)
+    );
+
+    alter table if exists domain_DelegationSignerData 
+       add constraint UK_q2uk7gpqskey3t2w11w2o7x9f unique (dsData_keyTag);
+
+    alter table if exists domain_DesignatedContact 
+       add constraint UK_fyc0mfvebhatp6sq8dy4jdx4i unique (allContacts_contact);
+
+    alter table if exists domain_GracePeriod 
+       add constraint UK_74osb0s7br4x734ecpdk8caxx unique (gracePeriods_id);
+
+    alter table if exists ClaimsEntry 
+       add constraint FKlugn0q07ayrtar87dqi3vs3c8 
+       foreign key (revision_id) 
+       references ClaimsList;
+
+    alter table if exists domain_DelegationSignerData 
+       add constraint FK6p262lfef34yht2ok65rqfoiy 
+       foreign key (dsData_keyTag) 
+       references DelegationSignerData;
+
+    alter table if exists domain_DelegationSignerData 
+       add constraint FK922bmc01akk5mvypcdhtk3qqv 
+       foreign key (DomainBase_repoId) 
+       references domain;
+
+    alter table if exists domain_DesignatedContact 
+       add constraint FKdl5kay2hwlalnwcg12cpy12x9 
+       foreign key (allContacts_contact) 
+       references DesignatedContact;
+
+    alter table if exists domain_DesignatedContact 
+       add constraint FKb4nx8xr0n24f521y1i1cvr4f2 
+       foreign key (DomainBase_repoId) 
+       references domain;
+
+    alter table if exists domain_GracePeriod 
+       add constraint FKbw8o0nti4fevxu4xvu8unj726 
+       foreign key (gracePeriods_id) 
+       references GracePeriod;
+
+    alter table if exists domain_GracePeriod 
+       add constraint FKle4ms7cufyw4vgn5pn01vwwm7 
+       foreign key (DomainBase_repoId) 
+       references domain;
+
+    alter table if exists DomainBase_nsHosts 
+       add constraint FKblxt8vhg3yblt3grqxovoywwm 
+       foreign key (DomainBase_repoId) 
+       references domain;
+
+    alter table if exists DomainBase_serverApproveEntities 
+       add constraint FKbc3iicw0n8s9cj1lca142i7rc 
+       foreign key (DomainBase_repoId) 
+       references domain;
+
+    alter table if exists DomainBase_subordinateHosts 
+       add constraint FK3p6gm6lbx46s41hl9wfme77sr 
+       foreign key (DomainBase_repoId) 
+       references domain;
+
+    alter table if exists PremiumEntry 
+       add constraint FKqebdja3jkx9c9cnqnrw9g9ocu 
+       foreign key (revision_id) 
+       references PremiumList;

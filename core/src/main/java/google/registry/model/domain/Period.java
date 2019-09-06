@@ -22,6 +22,7 @@ import javax.xml.bind.annotation.XmlValue;
 
 /** The "periodType" from {@link "http://tools.ietf.org/html/rfc5731"}. */
 @Embed
+@javax.persistence.Embeddable
 public class Period extends ImmutableObject {
 
   @XmlAttribute

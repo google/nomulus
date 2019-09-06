@@ -202,8 +202,13 @@ public final class RegistrarFormFields {
           .build();
 
   public static final FormField<String, String> CONTACT_GAE_USER_ID_FIELD =
-      FormFields.NAME.asBuilderNamed("gaeUserId")
-          .build();
+      FormFields.NAME.asBuilderNamed("gaeUserId").build();
+
+  public static final FormField<Boolean, Boolean> CONTACT_ALLOWED_TO_SET_REGISTRY_LOCK_PASSWORD =
+      FormField.named("allowedToSetRegistryLockPassword", Boolean.class).build();
+
+  public static final FormField<String, String> CONTACT_REGISTRY_LOCK_PASSWORD_FIELD =
+      FormFields.NAME.asBuilderNamed("registryLockPassword").build();
 
   public static final FormField<String, Set<RegistrarContact.Type>> CONTACT_TYPES =
       FormField.named("types")
@@ -360,6 +365,12 @@ public final class RegistrarFormFields {
     CONTACT_FAX_NUMBER_FIELD.extractUntyped(args).ifPresent(builder::setFaxNumber);
     CONTACT_TYPES.extractUntyped(args).ifPresent(builder::setTypes);
     CONTACT_GAE_USER_ID_FIELD.extractUntyped(args).ifPresent(builder::setGaeUserId);
+    CONTACT_ALLOWED_TO_SET_REGISTRY_LOCK_PASSWORD
+        .extractUntyped(args)
+        .ifPresent(builder::setAllowedToSetRegistryLockPassword);
+    CONTACT_REGISTRY_LOCK_PASSWORD_FIELD
+        .extractUntyped(args)
+        .ifPresent(builder::setRegistryLockPassword);
     return builder;
   }
 }

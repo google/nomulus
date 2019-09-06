@@ -19,20 +19,30 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
+import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import javax.annotation.Nullable;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import org.joda.time.DateTime;
 
 /**
  * A domain grace period with an expiration time.
  *
- * <p>When a grace period expires, it is lazily removed from the {@link DomainBase} the next
- * time the resource is loaded from Datastore.
+ * <p>When a grace period expires, it is lazily removed from the {@link DomainBase} the next time
+ * the resource is loaded from Datastore.
  */
 @Embed
+@javax.persistence.Entity
 public class GracePeriod extends ImmutableObject {
+
+  @javax.persistence.Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Ignore
+  /** Unique id required for hibernate representation. */
+  long id;
 
   /** The type of grace period. */
   GracePeriodStatus type;
