@@ -592,6 +592,13 @@ task findGoldenImages(type: JavaExec) {
   args arguments
 }
 
+// To run the nomulus tool:
+// gradle registryTool --args="foo --bar"
+task registryTool(type: JavaExec) {
+  classpath = sourceSets.main.runtimeClasspath
+  main = 'google.registry.tools.RegistryTool'
+}
+
 task generateGoldenImages(type: Test) {
   // Common exclude pattern. See README in parent directory for explanation.
   exclude "**/*TestCase.*", "**/*TestSuite.*"
