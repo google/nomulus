@@ -112,7 +112,7 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
    * The user must provide the random verification code in order to complete the lock and move the
    * status from PENDING to COMPLETED.
    */
-  @Column(name = "verification_code", nullable = false, unique = true)
+  @Column(name = "verification_code", nullable = false)
   private String verificationCode;
 
   /**

@@ -21,7 +21,7 @@ CREATE TABLE "RegistryLock" (
   action TEXT NOT NULL,
   creation_timestamp TIMESTAMPTZ NOT NULL,
   completion_timestamp TIMESTAMPTZ,
-  verification_code TEXT UNIQUE NOT NULL,
+  verification_code TEXT NOT NULL,
   is_superuser BOOLEAN NOT NULL,
   PRIMARY KEY (revision_id)
 );
