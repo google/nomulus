@@ -28,7 +28,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-
 /** Unit tests for {@link google.registry.tools.GenerateSqlSchemaCommand}. */
 @RunWith(JUnit4.class)
 public class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSchemaCommand> {
@@ -82,8 +81,7 @@ public class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSch
   @Test
   public void testDockerPostgresql() throws Exception {
     runCommand(
-        "--start_postgresql",
-        "--out_file=" + tmp.getRoot() + File.separatorChar + "schema.sql");
+        "--start_postgresql", "--out_file=" + tmp.getRoot() + File.separatorChar + "schema.sql");
     assertThat(new File(tmp.getRoot(), "schema.sql").exists()).isTrue();
   }
 }
