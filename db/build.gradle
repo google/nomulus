@@ -27,23 +27,23 @@ ext {
 
   getAccessInfoByHostPort = { hostAndPort ->
     return [
-        'url': "jdbc:postgresql://${hostAndPort}/${dbName}",
-        'user': findProperty('dbUser'),
-        'password': findProperty('dbPassword')]
+        url: "jdbc:postgresql://${hostAndPort}/${dbName}",
+        user: findProperty('dbUser'),
+        password: findProperty('dbPassword')]
   }
 
   getSocketFactoryAccessInfo = {
     def cred = getCloudSqlCredential('alpha', 'superuser').split(' ')
     def sqlInstance = cred[0]
     return [
-        'url': """\
+        url: """\
                    jdbc:postgresql://google/${dbName}?cloudSqlInstance=
                    ${sqlInstance}&socketFactory=
                    com.google.cloud.sql.postgres.SocketFactory"""
                    .stripIndent()
                    .replaceAll(System.lineSeparator(), '') ,
-        'user': cred[1],
-        'password': cred[2]]
+        user: cred[1],
+        password: cred[2]]
   }
 
   getJdbcAccessInfo = {
