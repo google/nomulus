@@ -35,7 +35,7 @@ import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
  * <p>The use of quoted names may introduce portability problems with hand-crafted SQL queries,
  * e.g., between postgresql (which only accepts double-quotes) and MySQL(which only accepts
  * back-quotes). This gives us incentives for adopting SQL query builders such as JOOQ for reporting
- * etc..
+ * etc.
  */
 public class NomulusNamingStrategy implements PhysicalNamingStrategy {
 
