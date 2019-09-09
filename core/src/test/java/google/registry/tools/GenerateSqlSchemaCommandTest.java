@@ -11,12 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package google.registry.tools;
 
-// import static org.mockito.Mockito.mock;
-
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.io.Files;
 import java.io.File;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -57,10 +58,14 @@ public class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSch
         "--db_host=" + containerHostName,
         "--db_port=" + containerPort);
 
-    // We're just interested in verifying that there is a schema file generated, we don't do any
-    // checks on the contents, this would make the test too brittle and serves no real purpose.
+    // We don't verify the exact contents of the result SQL file because that would be too brittle,
+    // but we check to make sure that a couple parts of it are named as we expect them to be
     // TODO: try running the schema against the test database.
-    assertThat(new File(tmp.getRoot(), "schema.sql").exists()).isTrue();
+    File sqlFile = new File(tmp.getRoot(), "schema.sql");
+    assertThat(sqlFile.exists()).isTrue();
+    String fileContent = Files.asCharSource(sqlFile, UTF_8).read();
+    assertThat(fileContent).contains("create table \"Domain\" (");
+    assertThat(fileContent).contains("repo_id text not null,");
   }
 
   @Test

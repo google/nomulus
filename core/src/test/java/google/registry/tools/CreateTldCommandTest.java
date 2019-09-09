@@ -34,8 +34,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.math.BigDecimal;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -472,14 +470,11 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
 
   @Test
   public void testSuccess_setCommonAndReservedListFromOtherTld_withOverride() throws Exception {
-    ByteArrayOutputStream errContent = new ByteArrayOutputStream();
-    System.setErr(new PrintStream(errContent));
     runReservedListsTestOverride("common_abuse,tld_banned");
     String errMsg =
         "Error overridden: The reserved list(s) tld_banned "
             + "cannot be applied to the tld xn--q9jyb4c";
-    assertThat(errContent.toString()).contains(errMsg);
-    System.setOut(null);
+    assertThat(getStderrAsString()).contains(errMsg);
   }
 
   @Test

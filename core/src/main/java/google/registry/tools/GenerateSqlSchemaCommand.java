@@ -27,6 +27,7 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.transfer.BaseTransferObject;
 import google.registry.model.transfer.TransferData;
+import google.registry.persistence.NomulusNamingStrategy;
 import google.registry.schema.tld.PremiumList;
 import google.registry.schema.tmch.ClaimsList;
 import java.io.IOException;
@@ -38,6 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.Environment;
 import org.hibernate.dialect.PostgreSQL95Dialect;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.schema.TargetType;
@@ -150,6 +152,8 @@ public class GenerateSqlSchemaCommand implements Command {
       settings.put("hibernate.connection.password", "domain-registry");
       settings.put("hibernate.hbm2ddl.auto", "none");
       settings.put("show_sql", "true");
+      settings.put(
+          Environment.PHYSICAL_NAMING_STRATEGY, NomulusNamingStrategy.class.getCanonicalName());
 
       MetadataSources metadata =
           new MetadataSources(new StandardServiceRegistryBuilder().applySettings(settings).build());

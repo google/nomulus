@@ -47,6 +47,9 @@ public class EntityManagerFactoryProvider {
     // SessionFactory is created. Setting it to 'none' to turn off the feature.
     properties.put(Environment.HBM2DDL_AUTO, "none");
 
+    properties.put(
+        Environment.PHYSICAL_NAMING_STRATEGY, NomulusNamingStrategy.class.getCanonicalName());
+
     properties.put(Environment.ISOLATION, getHibernateConnectionIsolation());
     properties.put(Environment.SHOW_SQL, getHibernateLogSqlQueries());
     properties.put(HIKARI_CONNECTION_TIMEOUT, getHibernateHikariConnectionTimeout());
