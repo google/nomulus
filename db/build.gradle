@@ -20,12 +20,12 @@ plugins {
 
 task sqlFormatCheck(type:Exec) {
   dependsOn rootProject.npmInstall
-  commandLine './format_sql.sh', 'check', './src/main/resources/sql/**/*.sql'
+  commandLine './format_sql.sh', 'check'
 }
 
 task sqlFormatApply(type:Exec) {
   dependsOn rootProject.npmInstall
-  commandLine './format_sql.sh', 'apply', './src/main/resources/sql/**/*.sql'
+  commandLine './format_sql.sh', 'apply'
 }
 
 tasks.test.dependsOn(sqlFormatCheck)
@@ -109,4 +109,3 @@ dependencies {
 tasks
     .findAll { task -> task.group.equals('Flyway')}
     .collect { task -> task.dependsOn('buildNeeded') }
-

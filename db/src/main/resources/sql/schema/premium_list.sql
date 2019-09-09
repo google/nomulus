@@ -11,14 +11,12 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
-
 CREATE TABLE "PremiumList" (
   revision_id BIGSERIAL NOT NULL,
   creation_timestamp TIMESTAMPTZ NOT NULL,
   currency TEXT NOT NULL,
   PRIMARY KEY (revision_id)
 );
-
 CREATE TABLE "PremiumEntry" (
   revision_id BIGSERIAL NOT NULL,
   price NUMERIC(12, 2) NOT NULL,

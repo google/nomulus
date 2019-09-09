@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [ $# -ne 2 ];
+if [ $# -ne 1 ];
 then
-  echo "Usage: $0 check|apply <glob>"
+  echo "Usage: $0 check|apply"
   exit 1
 fi
 
@@ -26,10 +26,9 @@ create_formatted_file () {
 }
 
 VERB=$1
-GLOB=$2
 
 failed_files=""
-for sql_file in $(find ${GLOB} -type f -name "*.sql"); do
+for sql_file in $(find src/ -name "*.sql" ! -path "**/flyway/**" ! -name "nomulus.golden.sql" -type f); do
   create_formatted_file ${sql_file}
   if [ "$1" = "apply" ]; then
     # Note: the formatter isn't necessarily idempotent -- the output of the first run might
