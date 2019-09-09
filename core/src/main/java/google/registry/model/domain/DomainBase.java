@@ -90,7 +90,7 @@ import org.joda.time.Interval;
 @Entity
 @javax.persistence.Entity
 @javax.persistence.Table(name = "Domain")
-@ExternalMessagingName("Domain")
+@ExternalMessagingName("domain")
 public class DomainBase extends EppResource
     implements ForeignKeyedEppResource, ResourceWithTransferData {
 
