@@ -14,15 +14,15 @@
 
 CREATE TABLE "RegistryLock" (
   revision_id BIGSERIAL NOT NULL,
-  repo_id TEXT NOT NULL,
+  action TEXT NOT NULL,
+  completion_timestamp TIMESTAMPTZ,
+  creation_timestamp TIMESTAMPTZ NOT NULL,
   domain_name TEXT NOT NULL,
+  is_superuser BOOLEAN NOT NULL,
   registrar_id TEXT NOT NULL,
   registrar_poc_id TEXT,
-  action TEXT NOT NULL,
-  creation_timestamp TIMESTAMPTZ NOT NULL,
-  completion_timestamp TIMESTAMPTZ,
+  repo_id TEXT NOT NULL,
   verification_code TEXT NOT NULL,
-  is_superuser BOOLEAN NOT NULL,
   PRIMARY KEY (revision_id)
 );
 
