@@ -12,17 +12,21 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-CREATE TABLE "PremiumList" (
-  revision_id BIGSERIAL NOT NULL,
-  creation_timestamp TIMESTAMPTZ NOT NULL,
-  currency TEXT NOT NULL,
-  PRIMARY KEY (revision_id)
-);
+    create table "PremiumEntry" (
+       revision_id int8 not null,
+        price numeric(19, 2) not null,
+        domain_label text not null,
+        primary key (revision_id, domain_label)
+    );
 
-CREATE TABLE "PremiumEntry" (
-  revision_id BIGSERIAL NOT NULL,
-  price NUMERIC(12, 2) NOT NULL,
-  domain_label TEXT NOT NULL,
-  primary key (revision_id, domain_label),
-  FOREIGN KEY (revision_id) REFERENCES "PremiumList"(revision_id)
-);
+    create table "PremiumList" (
+       revision_id  bigserial not null,
+        creation_timestamp timestamptz not null,
+        currency bytea not null,
+        primary key (revision_id)
+    );
+
+    alter table if exists "PremiumEntry"
+       add constraint FKqebdja3jkx9c9cnqnrw9g9ocu
+       foreign key (revision_id)
+       references "PremiumList";

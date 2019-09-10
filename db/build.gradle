@@ -87,10 +87,20 @@ flyway {
 }
 
 dependencies {
-  runtimeOnly 'org.flywaydb:flyway-core:5.2.4'
+  def deps = rootProject.dependencyMap
 
-  runtimeOnly 'com.google.cloud.sql:postgres-socket-factory:1.0.12'
-  runtimeOnly 'org.postgresql:postgresql:42.2.5'
+  compile deps['org.flywaydb:flyway-core']
+
+  runtimeOnly deps['com.google.cloud.sql:postgres-socket-factory']
+  runtimeOnly deps['org.postgresql:postgresql']
+
+  testCompile deps['com.google.flogger:flogger']
+  testRuntime deps['com.google.flogger:flogger-system-backend']
+  testCompile deps['com.google.truth:truth']
+  testCompile deps['io.github.java-diff-utils:java-diff-utils']
+  testCompile deps['org.testcontainers:postgresql']
+  testCompile deps['junit:junit']
+  testCompile project(':third_party')
 }
 
 // Ensure that resources are rebuilt before running Flyway tasks
