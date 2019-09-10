@@ -25,3 +25,6 @@ CREATE TABLE "RegistryLock" (
   is_superuser BOOLEAN NOT NULL,
   PRIMARY KEY (revision_id)
 );
+
+ALTER TABLE IF EXISTS "RegistryLock"
+  ADD CONSTRAINT idx_registry_lock_repo_id_revision_id UNIQUE (repo_id, revision_id);
