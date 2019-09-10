@@ -28,6 +28,7 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.transfer.BaseTransferObject;
 import google.registry.model.transfer.TransferData;
 import google.registry.persistence.NomulusNamingStrategy;
+import google.registry.schema.domain.RegistryLock;
 import google.registry.schema.tld.PremiumList;
 import google.registry.schema.tmch.ClaimsList;
 import java.io.IOException;
@@ -68,6 +69,7 @@ public class GenerateSqlSchemaCommand implements Command {
           GracePeriod.class,
           Period.class,
           PremiumList.class,
+          RegistryLock.class,
           TransferData.class,
           Trid.class);
 
