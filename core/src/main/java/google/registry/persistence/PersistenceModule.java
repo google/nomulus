@@ -22,13 +22,25 @@ import static google.registry.config.RegistryConfig.getHibernateHikariMaximumPoo
 import static google.registry.config.RegistryConfig.getHibernateHikariMinimumIdle;
 import static google.registry.config.RegistryConfig.getHibernateLogSqlQueries;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import dagger.Module;
+import dagger.Provides;
+import google.registry.config.RegistryConfig.Config;
+import google.registry.keyring.kms.KmsKeyring;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.util.HashMap;
+import javax.inject.Qualifier;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import org.hibernate.cfg.Environment;
 
-/** Factory class to provide {@link EntityManagerFactory} instance. */
-public class EntityManagerFactoryProvider {
+/** Dagger module class for the persistence layer. */
+@Module
+public class PersistenceModule {
   // This name must be the same as the one defined in persistence.xml.
   public static final String PERSISTENCE_UNIT_NAME = "nomulus";
   public static final String HIKARI_CONNECTION_TIMEOUT = "hibernate.hikari.connectionTimeout";
@@ -36,7 +48,9 @@ public class EntityManagerFactoryProvider {
   public static final String HIKARI_MAXIMUM_POOL_SIZE = "hibernate.hikari.maximumPoolSize";
   public static final String HIKARI_IDLE_TIMEOUT = "hibernate.hikari.idleTimeout";
 
-  private static ImmutableMap<String, String> getDefaultProperties() {
+  @Provides
+  @DefaultDatabaseConfigs
+  public static ImmutableMap<String, String> providesDefaultDatabaseConfigs() {
     ImmutableMap.Builder<String, String> properties = ImmutableMap.builder();
 
     properties.put(Environment.DRIVER, "org.postgresql.Driver");
@@ -59,18 +73,53 @@ public class EntityManagerFactoryProvider {
     return properties.build();
   }
 
+  @Provides
+  @AppEngineEMF
+  public static EntityManagerFactory providesAppEngineEntityManagerFactory(
+      @Config("cloudSqlJdbcUrl") String jdbcUrl,
+      @Config("cloudSqlUsername") String username,
+      @Config("cloudSqlInstanceConnectionName") String instanceConnectionName,
+      KmsKeyring kmsKeyring,
+      @DefaultDatabaseConfigs ImmutableMap<String, String> defaultConfigs) {
+    String password = kmsKeyring.getCloudSqlPassword();
+
+    ImmutableMap.Builder<String, String> overrides = ImmutableMap.builder();
+    overrides.putAll(defaultConfigs);
+    // For Java users, the Cloud SQL JDBC Socket Factory can provide authenticated connections.
+    // See https://github.com/GoogleCloudPlatform/cloud-sql-jdbc-socket-factory for details.
+    overrides.put("socketFactory", "com.google.cloud.sql.postgres.SocketFactory");
+    overrides.put("cloudSqlInstance", instanceConnectionName);
+
+    EntityManagerFactory emf = create(jdbcUrl, username, password, overrides.build());
+    Runtime.getRuntime().addShutdownHook(new Thread(emf::close));
+    return emf;
+  }
+
   /** Constructs the {@link EntityManagerFactory} instance. */
-  public static EntityManagerFactory create(String jdbcUrl, String username, String password) {
-    ImmutableMap.Builder<String, String> properties = ImmutableMap.builder();
-    properties.putAll(getDefaultProperties());
+  @VisibleForTesting
+  public static EntityManagerFactory create(
+      String jdbcUrl, String username, String password, ImmutableMap<String, String> configs) {
+    HashMap<String, String> properties = Maps.newHashMap(configs);
     properties.put(Environment.URL, jdbcUrl);
     properties.put(Environment.USER, username);
     properties.put(Environment.PASS, password);
     EntityManagerFactory emf =
-        Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME, properties.build());
+        Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME, properties);
     checkState(
         emf != null,
         "Persistence.createEntityManagerFactory() returns a null EntityManagerFactory");
     return emf;
   }
+
+  /** Dagger qualifier for the {@link EntityManagerFactory} used for App Engine application. */
+  @Qualifier
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface AppEngineEMF {}
+
+  /** Dagger qualifier for the default database configurations. */
+  @Qualifier
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface DefaultDatabaseConfigs {}
 }

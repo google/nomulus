@@ -56,7 +56,7 @@ def dockerIncompatibleTestPatterns = [
     // every file is read/write-able. There is no way to exclude specific test
     // methods, so we exclude the whole test class.
     "google/registry/tools/params/PathParameterTest.*",
-    "google/registry/persistence/EntityManagerFactoryProviderTest.*",
+    "google/registry/persistence/PersistenceModuleTest.*",
 ]
 
 // Tests that conflict with members of both the main test suite and the
