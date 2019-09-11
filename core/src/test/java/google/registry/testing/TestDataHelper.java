@@ -114,6 +114,15 @@ public final class TestDataHelper {
     return String.format("src/test/resources/%s/%s", packagePath, filename);
   }
 
+  /**
+   * Constructs the relative classpath for the given {@code filename} under the {@code context}'s
+   * package.
+   */
+  public static String fileClassPath(Class<?> context, String filename) {
+    String packagePath = context.getPackage().getName().replace('.', '/');
+    return String.format("%s/%s", packagePath, filename);
+  }
+
   /** Returns a recursive iterable of all files in the given directory. */
   public static Iterable<Path> listFiles(Class<?> context, String directory) throws Exception {
     URI dir = Resources.getResource(context, directory).toURI();

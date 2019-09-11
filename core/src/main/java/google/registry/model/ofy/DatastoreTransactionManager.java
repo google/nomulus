@@ -17,70 +17,76 @@ package google.registry.model.ofy;
 
 import static google.registry.model.ofy.ObjectifyService.ofy;
 
+import com.google.common.annotations.VisibleForTesting;
 import google.registry.model.transaction.TransactionManager;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.joda.time.DateTime;
 
 /** Datastore implementation of {@link TransactionManager}. */
+@Singleton
 public class DatastoreTransactionManager implements TransactionManager {
 
-  private Ofy injectedOfy;
+  private Ofy ofy;
 
   /** Constructs an instance. */
-  public DatastoreTransactionManager(Ofy injectedOfy) {
-    this.injectedOfy = injectedOfy;
+  @Inject
+  public DatastoreTransactionManager() {
+    ofy = ofy();
   }
 
-  private Ofy getOfy() {
-    return injectedOfy == null ? ofy() : injectedOfy;
+  @VisibleForTesting
+  public DatastoreTransactionManager(Ofy injectedOfy) {
+    ofy = injectedOfy;
   }
 
   @Override
   public boolean inTransaction() {
-    return getOfy().inTransaction();
+    return ofy.inTransaction();
   }
 
   @Override
   public void assertInTransaction() {
-    getOfy().assertInTransaction();
+    ofy.assertInTransaction();
   }
 
   @Override
   public <T> T transact(Work<T> work) {
-    return getOfy().transact(work);
+    return ofy.transact(work);
   }
 
   @Override
   public void transact(Runnable work) {
-    getOfy().transact(work);
+    ofy.transact(work);
   }
 
   @Override
   public <T> T transactNew(Work<T> work) {
-    return getOfy().transactNew(work);
+    return ofy.transactNew(work);
   }
 
   @Override
   public void transactNew(Runnable work) {
-    getOfy().transactNew(work);
+    ofy.transactNew(work);
   }
 
   @Override
   public <R> R transactNewReadOnly(Work<R> work) {
-    return getOfy().transactNewReadOnly(work);
+    return ofy.transactNewReadOnly(work);
   }
 
   @Override
   public void transactNewReadOnly(Runnable work) {
-    getOfy().transactNewReadOnly(work);
+    ofy.transactNewReadOnly(work);
   }
 
   @Override
   public <R> R doTransactionless(Work<R> work) {
-    return getOfy().doTransactionless(work);
+    return ofy.doTransactionless(work);
   }
 
   @Override
   public DateTime getTransactionTime() {
-    return getOfy().getTransactionTime();
+    return ofy.getTransactionTime();
   }
 }

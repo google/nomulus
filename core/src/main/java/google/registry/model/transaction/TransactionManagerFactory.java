@@ -14,24 +14,33 @@
 
 package google.registry.model.transaction;
 
-import google.registry.model.ofy.DatastoreTransactionManager;
+import com.google.common.annotations.VisibleForTesting;
+import google.registry.persistence.DaggerPersistenceComponent;
+import google.registry.persistence.PersistenceComponent;
 
-/** Factory class to create {@link TransactionManager} instance. */
+/** Factory class to create {@link TransactionManager} and dao instance. */
+// TODO: Rename this to PersistenceFactory and move to persistence package.
 public class TransactionManagerFactory {
 
-  private static final TransactionManager TM = createTransactionManager();
+  @VisibleForTesting static PersistenceComponent component = DaggerPersistenceComponent.create();
 
   private TransactionManagerFactory() {}
 
-  private static TransactionManager createTransactionManager() {
-    // TODO: Conditionally returns the corresponding implementation once we have
-    //  CloudSqlTransactionManager
-    return new DatastoreTransactionManager(null);
-  }
-
   /** Returns {@link TransactionManager} instance. */
   public static TransactionManager tm() {
+    // TODO: Determine how to provision TransactionManager after the dual-write. During the
+    // dual-write transitional phase, we need the TransactionManager for both Datastore and Cloud
+    // SQL, and this method returns the one for Datastore.
+    return component.datastoreTransactionManager();
+  }
 
-    return TM;
+  /** Returns {@link JpaTransactionManager} instance. */
+  public static JpaTransactionManager jpatm() {
+    // TODO: Returns corresponding TransactionManager based on the runtime environment.
+    //  We have 3 kinds of runtime environment:
+    //    1. App Engine
+    //    2. Local JVM used by nomulus tool
+    //    3. Unit test
+    return component.jpaTransactionManager();
   }
 }
