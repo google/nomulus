@@ -16,14 +16,12 @@ package google.registry.hibernate;
 import static com.google.common.truth.Truth.assertThat;
 
 import google.registry.model.CreateAutoTimestamp;
-import google.registry.testing.FakeClock;
 import java.sql.Types;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.Table;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -32,6 +30,7 @@ import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.dialect.PostgreSQL95Dialect;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -44,7 +43,8 @@ public class CreateAutoTimestampTypeTest {
 
   public static final int POSTGRESQL_PORT = 5432;
 
-  @ClassRule public static PostgreSQLContainer postgres =
+  @ClassRule
+  public static PostgreSQLContainer postgres =
       new PostgreSQLContainer()
           .withDatabaseName("postgres")
           .withUsername("postgres")
@@ -77,8 +77,8 @@ public class CreateAutoTimestampTypeTest {
 
   @Test
   public void testTypeConversion() {
-    CreateAutoTimestamp ts = CreateAutoTimestamp.create(
-        new DateTime(2019, 9, 9, 11, 39));
+    CreateAutoTimestamp ts =
+        CreateAutoTimestamp.create(new DateTime(2019, 9, 9, 11, 39, DateTimeZone.UTC));
     TestEntity ent = new TestEntity("myinst", ts);
 
     Session ses = sessionFactory.openSession();
@@ -94,10 +94,7 @@ public class CreateAutoTimestampTypeTest {
     result = ses.createQuery("from TestEntity T where T.id = 'myinst'").list();
     assertThat(result).hasSize(1);
     assertThat(result.get(0).name).isEqualTo("myinst");
-    // TODO(mmuller): Fix ZonedDateTime conversion and then remove .getTimestamp().toInstant()
-    // below.
-    assertThat(result.get(0).cat.getTimestamp().toInstant())
-        .isEqualTo(ts.getTimestamp().toInstant());
+    assertThat(result.get(0).cat).isEqualTo(ts);
   }
 
   /** Nomulus mapping rules for column types in Postgresql. */
@@ -114,30 +111,26 @@ public class CreateAutoTimestampTypeTest {
     CreateAutoTimestamp ts = CreateAutoTimestamp.create(null);
     TestEntity ent = new TestEntity("autoinit", ts);
 
-    DateTime start = DateTime.now();
+    DateTime start = DateTime.now(DateTimeZone.UTC);
     Session ses = sessionFactory.openSession();
     Transaction txn = ses.beginTransaction();
     ses.save(ent);
     txn.commit();
-    DateTime end = DateTime.now();
+    DateTime end = DateTime.now(DateTimeZone.UTC);
 
     // We have to evict the object from the cache so we can read back the object with its datetime.
     ses.evict(ent);
 
     List<TestEntity> result = ses.createQuery("from TestEntity where name = 'autoinit'").list();
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).cat.getTimestamp())
-        .isAtLeast(start);
-    assertThat(result.get(0).cat.getTimestamp())
-        .isAtMost(end);
+    assertThat(result.get(0).cat.getTimestamp()).isAtLeast(start);
+    assertThat(result.get(0).cat.getTimestamp()).isAtMost(end);
   }
 
-  @Entity(name = "TestEntity")  // Override entity name to avoid the nested class reference.
-  @Table(name = "TestEntity")
+  @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
   public static class TestEntity {
 
-    @Id
-    String name;
+    @Id String name;
 
     @Type(type = "google.registry.hibernate.CreateAutoTimestampType")
     CreateAutoTimestamp cat;

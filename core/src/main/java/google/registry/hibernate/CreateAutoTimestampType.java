@@ -28,13 +28,14 @@ import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.usertype.UserType;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 /** Custom type for CreateAutoTimestamp. */
 public class CreateAutoTimestampType implements UserType {
 
   @Override
   public int[] sqlTypes() {
-    return new int[] { Types.TIMESTAMP_WITH_TIMEZONE };
+    return new int[] {Types.TIMESTAMP_WITH_TIMEZONE};
   }
 
   @Override
@@ -68,16 +69,15 @@ public class CreateAutoTimestampType implements UserType {
   @Override
   public void nullSafeSet(
       PreparedStatement st, Object value, int index, SharedSessionContractImplementor session)
-       throws HibernateException, SQLException {
+      throws HibernateException, SQLException {
     if (value == null) {
       st.setNull(index, Types.TIMESTAMP_WITH_TIMEZONE);
     } else {
       // TODO(mmuller): Use the transaction time as the fallback as soon as
       // DatabaseTransactionManager is implemented.
-      DateTime dateTime = firstNonNull(((CreateAutoTimestamp) value).getTimestamp(),
-                                       DateTime.now());
-      // TODO(mmuller): We're currently using OffsetDateTime to save a timestamp with timezone.
-      // This doesn't preserve the timezone information.  Fix this.
+      DateTime dateTime =
+          firstNonNull(
+              ((CreateAutoTimestamp) value).getTimestamp(), DateTime.now(DateTimeZone.UTC));
       ZonedDateTime ts = DateTimeUtils.toZonedDateTime(dateTime);
       st.setObject(index, ts.toOffsetDateTime(), Types.TIMESTAMP_WITH_TIMEZONE);
     }
