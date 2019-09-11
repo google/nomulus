@@ -88,13 +88,13 @@ public class SchemaTest {
         .hasSameContentAs(Resources.getResource("sql/schema/nomulus.golden.sql"));
   }
 
-  private static String[] getSchemaDumpCommand(String userName, String dbName) {
+  private static String[] getSchemaDumpCommand(String username, String dbName) {
     return new String[] {
       "pg_dump",
       "-h",
       "localhost",
       "-U",
-      userName,
+      username,
       "-f",
       Paths.get(CONTAINER_MOUNT_POINT, DUMP_OUTPUT_FILE).toString(),
       "--schema-only",

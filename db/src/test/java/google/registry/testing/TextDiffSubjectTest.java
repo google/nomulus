@@ -78,13 +78,13 @@ public class TextDiffSubjectTest {
   }
 
   @Test
-  public void displayed_unifiedDiff_equal() throws IOException {
+  public void displayed_unifiedDiff_noDiff() throws IOException {
     ImmutableList<String> actual = readAllLinesFromResource(ACTUAL_RESOURCE);
     assertThat(TextDiffSubject.generateUnifiedDiff(actual, actual)).isEqualTo("");
   }
 
   @Test
-  public void displayed_unifiedDiff_notEqual() throws IOException {
+  public void displayed_unifiedDiff_hasDiff() throws IOException {
     ImmutableList<String> actual = readAllLinesFromResource(ACTUAL_RESOURCE);
     ImmutableList<String> expected = readAllLinesFromResource(EXPECTED_RESOURCE);
     String diff = Joiner.on('\n').join(readAllLinesFromResource(UNIFIED_DIFF_RESOURCE));
@@ -92,7 +92,7 @@ public class TextDiffSubjectTest {
   }
 
   @Test
-  public void displayed_sideBySideDiff_equal() throws IOException {
+  public void displayed_sideBySideDiff_hasDiff() throws IOException {
     ImmutableList<String> actual = readAllLinesFromResource(ACTUAL_RESOURCE);
     ImmutableList<String> expected = readAllLinesFromResource(EXPECTED_RESOURCE);
     String diff = Joiner.on('\n').join(readAllLinesFromResource(SIDE_BY_SIDE_DIFF_RESOURCE));

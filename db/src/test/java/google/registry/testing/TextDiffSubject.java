@@ -49,10 +49,16 @@ import java.util.stream.Collectors;
  *   <li>{@link DiffFormat#SIDE_BY_SIDE_MARKDOWN} displays the two text blocks side by side, with
  *       markdown annotations to highlight the differences.
  * </ul>
+ *
+ * <p>Note that if one text block has one trailing newline at the end while another has none, this
+ * difference will not be shown in the generated diffs. This is the case where two texts may be
+ * reported as unequal but the diffs appear equal. Fixing this requires special treatment of the
+ * last line of text. The fix would not be useful in our environment, where all important files are
+ * covered by a style checker that ensures the presence of a trailing newline.
  */
 // TODO(weiminyu): move this class and test to a standalone 'testing' project. Note that the util
 // project is not good since it depends back to core.
-@SuppressWarnings("unchecked") // Unchecked Subject makes Truth 1.0 upgrade easier.
+@SuppressWarnings("unchecked") // On behalf of Raw type Subject; remove after Truth 1.0 upgrade.
 public class TextDiffSubject extends Subject {
 
   private final ImmutableList<String> actual;
@@ -153,9 +159,8 @@ public class TextDiffSubject extends Subject {
 
   private static int findMaxLineLength(Collection<String> lines) {
     return lines.stream()
+        .max(Comparator.comparingInt(String::length))
         .map(String::length)
-        .sorted(Comparator.reverseOrder())
-        .findFirst()
         .orElse(0);
   }
 
