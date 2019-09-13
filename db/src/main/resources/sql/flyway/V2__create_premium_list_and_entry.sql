@@ -27,6 +27,6 @@
     );
 
     alter table if exists "PremiumEntry"
-       add constraint FKqebdja3jkx9c9cnqnrw9g9ocu
+       add constraint FKo0gw90lpo1tuee56l0nb6y6g5
        foreign key (revision_id)
        references "PremiumList";

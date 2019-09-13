@@ -50,8 +50,13 @@ import org.joda.time.DateTime;
  */
 @Entity
 @Table(
-    // Unique constraint to get around Hibernate's failure to handle
-    // auto-increment field in composite primary key.
+    /**
+     * Unique constraint to get around Hibernate's failure to handle auto-increment field in
+     * composite primary key.
+     *
+     * <p>Note: because of this index, physical columns must be declared in the {@link Column}
+     * annotations for {@link RegistryLock#revisionId} and {@link RegistryLock#repoId} fields.
+     */
     indexes =
         @Index(
             name = "idx_registry_lock_repo_id_revision_id",
@@ -75,29 +80,28 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   private String repoId;
 
   // TODO (b/140568328): remove this when everything is in Cloud SQL and we can join on "domain"
-  @Column(name = "domain_name", nullable = false)
+  @Column(nullable = false)
   private String domainName;
 
   /**
    * The ID of the registrar that performed the action -- this may be the admin ID if this action
    * was performed by a superuser.
    */
-  @Column(name = "registrar_id", nullable = false)
+  @Column(nullable = false)
   private String registrarId;
 
   /** The POC that performed the action, or null if it was a superuser. */
-  @Column(name = "registrar_poc_id")
   private String registrarPocId;
 
   /**
    * Lock action is immutable and describes whether the action performed was a lock or an unlock.
    */
   @Enumerated(EnumType.STRING)
-  @Column(name = "action", nullable = false)
+  @Column(nullable = false)
   private Action action;
 
   /** Creation timestamp is when the lock/unlock is first requested. */
-  @Column(name = "creation_timestamp", nullable = false)
+  @Column(nullable = false)
   private ZonedDateTime creationTimestamp;
 
   /**
@@ -105,21 +109,20 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
    * becomes immutable. If this field is null, it means that the lock has not been verified yet (and
    * thus not been put into effect).
    */
-  @Column(name = "completion_timestamp")
   private ZonedDateTime completionTimestamp;
 
   /**
    * The user must provide the random verification code in order to complete the lock and move the
    * status from PENDING to COMPLETED.
    */
-  @Column(name = "verification_code", nullable = false)
+  @Column(nullable = false)
   private String verificationCode;
 
   /**
    * True iff this action was taken by a superuser, in response to something like a URS request. In
    * this case, the action was performed by a registry admin rather than a registrar.
    */
-  @Column(name = "is_superuser", nullable = false)
+  @Column(nullable = false)
   private boolean isSuperuser;
 
   public String getRepoId() {

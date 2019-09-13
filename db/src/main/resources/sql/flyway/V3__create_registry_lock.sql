@@ -12,20 +12,19 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-    create table "ClaimsEntry" (
-       revision_id int8 not null,
-        claim_key text not null,
-        domain_label text not null,
-        primary key (revision_id, domain_label)
-    );
-
-    create table "ClaimsList" (
+    create table "RegistryLock" (
        revision_id  bigserial not null,
+        action text not null,
+        completion_timestamp timestamptz,
         creation_timestamp timestamptz not null,
+        domain_name text not null,
+        is_superuser boolean not null,
+        registrar_id text not null,
+        registrar_poc_id text,
+        repo_id text not null,
+        verification_code text not null,
         primary key (revision_id)
     );
 
-    alter table if exists "ClaimsEntry"
-       add constraint FK6sc6at5hedffc0nhdcab6ivuq
-       foreign key (revision_id) 
-       references "ClaimsList";
+    alter table if exists "RegistryLock" 
+       add constraint idx_registry_lock_repo_id_revision_id unique (repo_id, revision_id);

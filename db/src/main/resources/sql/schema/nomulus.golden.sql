@@ -115,6 +115,43 @@ ALTER SEQUENCE public."PremiumList_revision_id_seq" OWNED BY public."PremiumList
 
 
 --
+-- Name: RegistryLock; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."RegistryLock" (
+    revision_id bigint NOT NULL,
+    action text NOT NULL,
+    completion_timestamp timestamp with time zone,
+    creation_timestamp timestamp with time zone NOT NULL,
+    domain_name text NOT NULL,
+    is_superuser boolean NOT NULL,
+    registrar_id text NOT NULL,
+    registrar_poc_id text,
+    repo_id text NOT NULL,
+    verification_code text NOT NULL
+);
+
+
+--
+-- Name: RegistryLock_revision_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."RegistryLock_revision_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: RegistryLock_revision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."RegistryLock_revision_id_seq" OWNED BY public."RegistryLock".revision_id;
+
+
+--
 -- Name: ClaimsList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -126,6 +163,13 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 --
 
 ALTER TABLE ONLY public."PremiumList" ALTER COLUMN revision_id SET DEFAULT nextval('public."PremiumList_revision_id_seq"'::regclass);
+
+
+--
+-- Name: RegistryLock revision_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RegistryLock" ALTER COLUMN revision_id SET DEFAULT nextval('public."RegistryLock_revision_id_seq"'::regclass);
 
 
 --
@@ -161,19 +205,35 @@ ALTER TABLE ONLY public."PremiumList"
 
 
 --
--- Name: ClaimsEntry fklugn0q07ayrtar87dqi3vs3c8; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: RegistryLock RegistryLock_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RegistryLock"
+    ADD CONSTRAINT "RegistryLock_pkey" PRIMARY KEY (revision_id);
+
+
+--
+-- Name: RegistryLock idx_registry_lock_repo_id_revision_id; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RegistryLock"
+    ADD CONSTRAINT idx_registry_lock_repo_id_revision_id UNIQUE (repo_id, revision_id);
+
+
+--
+-- Name: ClaimsEntry fk6sc6at5hedffc0nhdcab6ivuq; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."ClaimsEntry"
-    ADD CONSTRAINT fklugn0q07ayrtar87dqi3vs3c8 FOREIGN KEY (revision_id) REFERENCES public."ClaimsList"(revision_id);
+    ADD CONSTRAINT fk6sc6at5hedffc0nhdcab6ivuq FOREIGN KEY (revision_id) REFERENCES public."ClaimsList"(revision_id);
 
 
 --
--- Name: PremiumEntry fkqebdja3jkx9c9cnqnrw9g9ocu; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: PremiumEntry fko0gw90lpo1tuee56l0nb6y6g5; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."PremiumEntry"
-    ADD CONSTRAINT fkqebdja3jkx9c9cnqnrw9g9ocu FOREIGN KEY (revision_id) REFERENCES public."PremiumList"(revision_id);
+    ADD CONSTRAINT fko0gw90lpo1tuee56l0nb6y6g5 FOREIGN KEY (revision_id) REFERENCES public."PremiumList"(revision_id);
 
 
 --
