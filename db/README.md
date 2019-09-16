@@ -30,13 +30,14 @@ Relevant files (under db/src/main/resources/sql/schema/):
 *   nomulus.golden.sql is the schema dump (pg_dump for postgres) of the final
     schema pushed by Flyway. This is mostly for informational, although it may
     be used in tests.
-*   db-schema.sql.generated is the schema generated from ORM classes by a
-    Hibernate tool. This reflects the ORM-layer's view of the schema.
+*   db-schema.sql.generated is the schema generated from ORM classes by the
+    GenerateSqlSchema command in Nomulus tool. This reflects the ORM-layer's
+    view of the schema.
 
 The generated schema and the golden one may diverge during schema changes. For
 example, when adding a new column to a table, we would deploy the change before
 adding it to the relevant ORM class. Therefore, for a short time the golden file
-will contain the new column while the generated one do not.
+will contain the new column while the generated one does not.
 
 ### Non-production Schema Push
 
