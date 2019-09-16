@@ -18,7 +18,6 @@ import dagger.Component;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.keyring.kms.KmsModule;
-import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.model.transaction.JpaTransactionManager;
 import google.registry.util.UtilsModule;
 import javax.inject.Singleton;
@@ -36,6 +35,4 @@ import javax.persistence.EntityManagerFactory;
     })
 public interface PersistenceComponent {
   JpaTransactionManager jpaTransactionManager();
-
-  DatastoreTransactionManager datastoreTransactionManager();
 }

@@ -14,6 +14,7 @@
 
 package google.registry.model.transaction;
 
+import com.google.common.flogger.FluentLogger;
 import google.registry.persistence.PersistenceModule.AppEngineEmf;
 import google.registry.util.Clock;
 import javax.inject.Inject;
@@ -28,9 +29,13 @@ import org.joda.time.DateTime;
 @Singleton
 public class JpaTransactionManager implements TransactionManager {
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
   // EntityManagerFactory is thread safe.
   private final EntityManagerFactory emf;
   private final Clock clock;
+  // TODO(shicong): Investigate alternatives for managing transaction information. ThreadLocal adds
+  //  an unnecessary restriction that each request has to be processed by one thread synchronously.
   private final ThreadLocal<TransactionInfo> transactionInfo =
       ThreadLocal.withInitial(TransactionInfo::new);
 
@@ -63,21 +68,34 @@ public class JpaTransactionManager implements TransactionManager {
 
   @Override
   public <T> T transact(Work<T> work) {
-    TransactionInfo local = transactionInfo.get();
-    local.entityManager = emf.createEntityManager();
-    EntityTransaction txn = local.entityManager.getTransaction();
+    // TODO(shicong): Investigate removing transactNew functionality after migration as it may
+    //  be same as this one.
+    if (inTransaction()) {
+      return work.run();
+    }
+    TransactionInfo txnInfo = transactionInfo.get();
+    txnInfo.entityManager = emf.createEntityManager();
+    EntityTransaction txn = txnInfo.entityManager.getTransaction();
     try {
       txn.begin();
-      local.inTransaction = true;
-      local.transactionTime = clock.nowUtc();
+      txnInfo.inTransaction = true;
+      txnInfo.transactionTime = clock.nowUtc();
       T result = work.run();
       txn.commit();
       return result;
-    } catch (Throwable e) {
-      txn.rollback();
-      throw e;
+    } catch (Throwable transactionException) {
+      String rollbackMessage;
+      try {
+        txn.rollback();
+        rollbackMessage = "transaction rolled back";
+      } catch (Throwable rollbackException) {
+        logger.atSevere().withCause(rollbackException).log("Rollback failed, suppressing error");
+        rollbackMessage = "transaction rollback failed";
+      }
+      throw new PersistenceException(
+          "Error during transaction, " + rollbackMessage, transactionException);
     } finally {
-      local.clear();
+      txnInfo.clear();
     }
   }
 
@@ -116,26 +134,18 @@ public class JpaTransactionManager implements TransactionManager {
 
   @Override
   public <T> T doTransactionless(Work<T> work) {
-    if (inTransaction()) {
-      throw new PersistenceException("In a transaction while trying to run task transactionlessly");
-    }
-    TransactionInfo local = transactionInfo.get();
-    local.entityManager = emf.createEntityManager();
-    try {
-      return work.run();
-    } finally {
-      local.clear();
-    }
+    // TODO(shicong): Implements doTransactionless.
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public DateTime getTransactionTime() {
     assertInTransaction();
-    TransactionInfo local = transactionInfo.get();
-    if (local.transactionTime == null) {
+    TransactionInfo txnInfo = transactionInfo.get();
+    if (txnInfo.transactionTime == null) {
       throw new PersistenceException("In a transaction but transactionTime is null");
     }
-    return local.transactionTime;
+    return txnInfo.transactionTime;
   }
 
   private static class TransactionInfo {

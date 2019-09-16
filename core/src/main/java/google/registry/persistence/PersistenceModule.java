@@ -49,7 +49,7 @@ public class PersistenceModule {
   public static final String HIKARI_IDLE_TIMEOUT = "hibernate.hikari.idleTimeout";
 
   @Provides
-  @DefaultDatabaseConfigs
+  @DefaultHibernateConfigs
   public static ImmutableMap<String, String> providesDefaultDatabaseConfigs() {
     ImmutableMap.Builder<String, String> properties = ImmutableMap.builder();
 
@@ -80,17 +80,16 @@ public class PersistenceModule {
       @Config("cloudSqlUsername") String username,
       @Config("cloudSqlInstanceConnectionName") String instanceConnectionName,
       KmsKeyring kmsKeyring,
-      @DefaultDatabaseConfigs ImmutableMap<String, String> defaultConfigs) {
+      @DefaultHibernateConfigs ImmutableMap<String, String> defaultConfigs) {
     String password = kmsKeyring.getCloudSqlPassword();
 
-    ImmutableMap.Builder<String, String> overrides = ImmutableMap.builder();
-    overrides.putAll(defaultConfigs);
+    HashMap<String, String> overrides = Maps.newHashMap(defaultConfigs);
     // For Java users, the Cloud SQL JDBC Socket Factory can provide authenticated connections.
     // See https://github.com/GoogleCloudPlatform/cloud-sql-jdbc-socket-factory for details.
     overrides.put("socketFactory", "com.google.cloud.sql.postgres.SocketFactory");
     overrides.put("cloudSqlInstance", instanceConnectionName);
 
-    EntityManagerFactory emf = create(jdbcUrl, username, password, overrides.build());
+    EntityManagerFactory emf = create(jdbcUrl, username, password, ImmutableMap.copyOf(overrides));
     Runtime.getRuntime().addShutdownHook(new Thread(emf::close));
     return emf;
   }
@@ -117,9 +116,11 @@ public class PersistenceModule {
   @Retention(RetentionPolicy.RUNTIME)
   public @interface AppEngineEmf {}
 
-  /** Dagger qualifier for the default database configurations. */
+  /** Dagger qualifier for the default Hibernate configurations. */
+  // TODO(shicong): Change annotations in this class to none public or put them in a top level
+  //  package
   @Qualifier
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
-  public @interface DefaultDatabaseConfigs {}
+  public @interface DefaultHibernateConfigs {}
 }
