@@ -11,12 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package google.registry.hibernate;
+package google.registry.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import google.registry.model.CreateAutoTimestamp;
-import java.sql.Types;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +27,7 @@ import org.hibernate.Transaction;
 import org.hibernate.annotations.Type;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.dialect.PostgreSQL95Dialect;
+import org.hibernate.cfg.Environment;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
@@ -59,15 +58,14 @@ public class CreateAutoTimestampTypeTest {
     String dbHost = postgres.getContainerIpAddress();
     int dbPort = postgres.getMappedPort(POSTGRESQL_PORT);
 
+    // TODO(mmuller): add this to a rule
     Map<String, String> settings = new HashMap<>();
-    settings.put("hibernate.dialect", NomulusPostgreSQLDialect.class.getName());
+    settings.put(Environment.DIALECT, NomulusPostgreSQLDialect.class.getName());
     settings.put(
-        "hibernate.connection.url",
-        "jdbc:postgresql://" + dbHost + ":" + dbPort + "/postgres?useSSL=false");
-    settings.put("hibernate.connection.username", "postgres");
-    settings.put("hibernate.connection.password", "domain-registry");
-    settings.put("hibernate.hbm2ddl.auto", "update");
-    settings.put("show_sql", "true");
+        Environment.URL, "jdbc:postgresql://" + dbHost + ":" + dbPort + "/postgres?useSSL=false");
+    settings.put(Environment.USER, "postgres");
+    settings.put(Environment.PASS, "domain-registry");
+    settings.put(Environment.HBM2DDL_AUTO, "update");
 
     MetadataSources metadataSources =
         new MetadataSources(new StandardServiceRegistryBuilder().applySettings(settings).build());
@@ -97,15 +95,6 @@ public class CreateAutoTimestampTypeTest {
     assertThat(result.get(0).cat).isEqualTo(ts);
   }
 
-  /** Nomulus mapping rules for column types in Postgresql. */
-  public static class NomulusPostgreSQLDialect extends PostgreSQL95Dialect {
-    public NomulusPostgreSQLDialect() {
-      super();
-      registerColumnType(Types.VARCHAR, "text");
-      registerColumnType(Types.TIMESTAMP_WITH_TIMEZONE, "timestamptz");
-    }
-  }
-
   @Test
   public void testAutoInitialization() {
     CreateAutoTimestamp ts = CreateAutoTimestamp.create(null);
@@ -132,7 +121,7 @@ public class CreateAutoTimestampTypeTest {
 
     @Id String name;
 
-    @Type(type = "google.registry.hibernate.CreateAutoTimestampType")
+    @Type(type = "google.registry.persistence.CreateAutoTimestampType")
     CreateAutoTimestamp cat;
 
     public TestEntity() {}

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package google.registry.hibernate;
+package google.registry.persistence;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 
@@ -26,12 +26,11 @@ import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
-import org.hibernate.usertype.UserType;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 /** Custom type for CreateAutoTimestamp. */
-public class CreateAutoTimestampType implements UserType {
+public class CreateAutoTimestampType extends ImmutableUserType {
 
   @Override
   public int[] sqlTypes() {
@@ -41,16 +40,6 @@ public class CreateAutoTimestampType implements UserType {
   @Override
   public Class returnedClass() {
     return CreateAutoTimestamp.class;
-  }
-
-  @Override
-  public boolean equals(Object x, Object y) throws HibernateException {
-    return x.equals(y);
-  }
-
-  @Override
-  public int hashCode(Object x) throws HibernateException {
-    return x.hashCode();
   }
 
   @Override
@@ -84,17 +73,6 @@ public class CreateAutoTimestampType implements UserType {
   }
 
   @Override
-  public Object deepCopy(Object value) throws HibernateException {
-    // CreateAutoTimestamp is immutable.
-    return value;
-  }
-
-  @Override
-  public boolean isMutable() {
-    return false;
-  }
-
-  @Override
   public Serializable disassemble(Object value) throws HibernateException {
     return ((CreateAutoTimestamp) value).getTimestamp();
   }
@@ -102,10 +80,5 @@ public class CreateAutoTimestampType implements UserType {
   @Override
   public Object assemble(Serializable cached, Object owner) throws HibernateException {
     return CreateAutoTimestamp.create((DateTime) cached);
-  }
-
-  @Override
-  public Object replace(Object original, Object target, Object owner) throws HibernateException {
-    return original;
   }
 }
