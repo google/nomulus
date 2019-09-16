@@ -593,10 +593,34 @@ task findGoldenImages(type: JavaExec) {
 }
 
 // To run the nomulus tool:
-// gradle registryTool --args="foo --bar"
+// gradle registryTool --PtoolArgs="foo|--bar|ba\\|z"
 task registryTool(type: JavaExec) {
   classpath = sourceSets.main.runtimeClasspath
   main = 'google.registry.tools.RegistryTool'
+
+  doFirst {
+    def delimiter = '|'
+    def toolArgs = rootProject.findProperty("toolArgs")
+    if (toolArgs == null) {
+      throw new GradleException("Must supply Nomulus tool arguments in " +
+          "-PtoolArgs=\"token1|token2|...\" format")
+    }
+    toolArgs += delimiter
+    def argsList = []
+    def currArg = ''
+    for (def i = 0; i < toolArgs.length(); i++) {
+      def currChar = toolArgs[i]
+      if (currChar != delimiter) {
+        currArg += currChar
+      } else if (i != 0 && toolArgs[i - 1] == '\\') {
+        currArg = currArg.substring(0, currArg.length() - 1) + currChar
+      } else {
+        argsList.add(currArg)
+        currArg = ''
+      }
+    }
+    args = argsList
+  }
 }
 
 task generateGoldenImages(type: Test) {
