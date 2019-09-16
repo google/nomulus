@@ -15,9 +15,9 @@ Below are the steps to submit a schema change:
 *   Define the incremental DDL script that would update the existing schema to
     the new one.
 *   Add the script to the src/main/resource/flyway folder. Its name should
-    follow the V{id}__{description text}.sql, where {id} is a number that higher
-    than all existing scripts in that folder. Also note that it is a **double**
-    underscore in the naming pattern.
+    follow the V{id}__{description text}.sql, where {id} is a number that is
+    higher than all existing scripts in that folder. Also note that it is a
+    **double** underscore in the naming pattern.
 *   Run :db:tests from the Gradle root project. The SchemaTest will fail because
     the new schema does not match the gold file.
 *   Copy db/build/resources/test/testcontainer/mount/dump.txt to the golden file
