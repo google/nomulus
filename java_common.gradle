@@ -28,6 +28,20 @@ tasks.test.dependsOn tasks.checkstyleTest
 // TODO(weiminyu): investigate incremental coverage change calculation and alert.
 tasks.test.finalizedBy jacocoTestReport
 
+configurations.all {
+  // Guava as a transitive dependency is also referred to by version only,
+  // without suffix. In such cases, Gradle resolves it to ${version}-android,
+  // which lacks the collection classes. We use custom strategy to force the
+  // selection of '-jre' jar.
+  resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+    if (details.requested.group == 'com.google.guava'
+        && details.requested.name == 'guava'
+        && details.requested.version.endsWith('-android')) {
+      details.useVersion details.requested.version.replace('-android', '-jre')
+    }
+  }
+}
+
 dependencies {
     // compatibility with Java 8
     errorproneJavac("com.google.errorprone:javac:9+181-r4173-1")
