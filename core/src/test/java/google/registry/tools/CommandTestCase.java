@@ -84,7 +84,7 @@ public abstract class CommandTestCase<C extends Command> {
     RegistryToolEnvironment.UNITTEST.setup(systemPropertyRule);
     command = newCommandInstance();
 
-    // Capture standard output/error.  This is problematic because gradle tests run in parallel in
+    // Capture standard output/error. This is problematic because gradle tests run in parallel in
     // the same JVM.  So first lock out any other tests in this JVM that are trying to do this
     // trick.
     streamsLock.lock();
