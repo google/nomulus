@@ -178,10 +178,21 @@ subprojects {
         resolutionStrategy.activateDependencyLocking()
       }
     }
-    // Lock application dependencies except for the gradle-license-report
-    // plugin. See dependency_lic.gradle for more information.
-    configurations.findAll { it.name != 'dependencyLicenseReport' }.each {
-      it.resolutionStrategy.activateDependencyLocking()
+  }
+
+  afterEvaluate {
+    if (rootProject.enableDependencyLocking.toBoolean()) {
+      // Lock application dependencies except for the gradle-license-report
+      // plugin. See dependency_lic.gradle for the reason why.
+      //
+      // To selectively activate dependency locking without hardcoding them
+      // in the 'configurations' block, the following code must run after
+      // project evaluation, when all configurations have been created.
+      configurations.each {
+        if (it.name != 'dependencyLicenseReport') {
+          it.resolutionStrategy.activateDependencyLocking()
+        }
+      }
     }
   }
 
