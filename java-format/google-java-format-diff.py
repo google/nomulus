@@ -26,7 +26,7 @@ import difflib
 import re
 import string
 import subprocess
-import StringIO
+import io
 import sys
 from distutils.spawn import find_executable
 
@@ -99,7 +99,7 @@ def main():
   # Reformat files containing changes in place.
   for filename, lines in lines_by_file.iteritems():
     if args.i and args.verbose:
-      print 'Formatting', filename
+      print('Formatting' + filename)
     command = base_command[:]
     if args.i:
       command.append('-i')
@@ -118,7 +118,7 @@ def main():
     if not args.i:
       with open(filename) as f:
         code = f.readlines()
-      formatted_code = StringIO.StringIO(stdout).readlines()
+      formatted_code = io.StringIO(stdout).readlines()
       diff = difflib.unified_diff(code, formatted_code,
                                   filename, filename,
                                   '(before formatting)', '(after formatting)')
