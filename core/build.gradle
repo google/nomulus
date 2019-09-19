@@ -592,34 +592,39 @@ task findGoldenImages(type: JavaExec) {
   args arguments
 }
 
-// To run the nomulus tool:
-// gradle registryTool --PtoolArgs="foo|--bar|ba\\|z"
+// To run the nomulus tool with these command line tokens:
+// "--foo", "bar baz", "--qux=quz"
+//   gradle registryTool --args="--foo 'bar baz' --qux=quz"
+// or:
+//   gradle registryTool --PtoolArgs="--foo|bar baz|--qux=quz"
+// Note that the delimiting pipe can be backslash escaped if it is part of a
+// parameter.
 task registryTool(type: JavaExec) {
   classpath = sourceSets.main.runtimeClasspath
   main = 'google.registry.tools.RegistryTool'
 
+  // If "-PtoolArgs=..." is present in the command line, use it to set the args,
+  // otherwise use the default flag, which is "--args" to set the args.
   doFirst {
-    def delimiter = '|'
     def toolArgs = rootProject.findProperty("toolArgs")
-    if (toolArgs == null) {
-      throw new GradleException("Must supply Nomulus tool arguments in " +
-          "-PtoolArgs=\"token1|token2|...\" format")
-    }
-    toolArgs += delimiter
-    def argsList = []
-    def currArg = ''
-    for (def i = 0; i < toolArgs.length(); i++) {
-      def currChar = toolArgs[i]
-      if (currChar != delimiter) {
-        currArg += currChar
-      } else if (i != 0 && toolArgs[i - 1] == '\\') {
-        currArg = currArg.substring(0, currArg.length() - 1) + currChar
-      } else {
-        argsList.add(currArg)
-        currArg = ''
+    if (toolArgs != null) {
+      def delimiter = '|'
+      toolArgs += delimiter
+      def argsList = []
+      def currArg = ''
+      for (def i = 0; i < toolArgs.length(); i++) {
+        def currChar = toolArgs[i]
+        if (currChar != delimiter) {
+          currArg += currChar
+        } else if (i != 0 && toolArgs[i - 1] == '\\') {
+          currArg = currArg.substring(0, currArg.length() - 1) + currChar
+        } else {
+          argsList.add(currArg)
+          currArg = ''
+        }
       }
+      args = argsList
     }
-    args = argsList
   }
 }
 
