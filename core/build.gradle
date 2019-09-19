@@ -233,6 +233,7 @@ dependencies {
   // Known issue: nebula-lint misses inherited dependency.
   compile project(':third_party')
   compile project(':util')
+  testRuntime project(':db')
 
   // Include auto-value in compile until nebula-lint understands
   // annotationProcessor

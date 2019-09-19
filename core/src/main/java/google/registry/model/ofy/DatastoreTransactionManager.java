@@ -14,10 +14,10 @@
 
 package google.registry.model.ofy;
 
-
 import static google.registry.model.ofy.ObjectifyService.ofy;
 
 import google.registry.model.transaction.TransactionManager;
+import javax.persistence.EntityManager;
 import org.joda.time.DateTime;
 
 /** Datastore implementation of {@link TransactionManager}. */
@@ -82,5 +82,11 @@ public class DatastoreTransactionManager implements TransactionManager {
   @Override
   public DateTime getTransactionTime() {
     return getOfy().getTransactionTime();
+  }
+
+  @Override
+  public EntityManager getEntityManager() {
+    throw new UnsupportedOperationException(
+        "getEntityManager() is not supported by DatastoreTransactionManager");
   }
 }

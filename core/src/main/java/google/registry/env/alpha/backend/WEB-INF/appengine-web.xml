@@ -16,6 +16,8 @@
               value="WEB-INF/logging.properties"/>
     <property name="google.registry.environment"
               value="alpha"/>
+    <property name="google.registry.runtime"
+              value="appengine"/>
   </system-properties>
 
   <static-files>
