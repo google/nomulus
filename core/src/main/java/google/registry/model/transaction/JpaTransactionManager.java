@@ -45,6 +45,7 @@ public class JpaTransactionManager implements TransactionManager {
     this.clock = clock;
   }
 
+  @Override
   public EntityManager getEntityManager() {
     if (transactionInfo.get().entityManager == null) {
       throw new PersistenceException(

@@ -14,6 +14,7 @@
 
 package google.registry.model.transaction;
 
+import javax.persistence.EntityManager;
 import org.joda.time.DateTime;
 
 /**
@@ -26,6 +27,9 @@ public interface TransactionManager {
   interface Work<R> {
     R run();
   }
+
+  /** Returns the {@link EntityManager} for the current thread. */
+  EntityManager getEntityManager();
 
   /** Returns {@code true} if the caller is in a transaction.
    *

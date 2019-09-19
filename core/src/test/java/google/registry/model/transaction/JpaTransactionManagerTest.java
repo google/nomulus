@@ -15,88 +15,62 @@
 package google.registry.model.transaction;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.testing.TestDataHelper.fileClassPath;
-import static org.joda.time.DateTimeZone.UTC;
 
-import google.registry.persistence.PersistenceModule;
 import google.registry.testing.FakeClock;
-import google.registry.util.Clock;
 import java.math.BigInteger;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceException;
-import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
 
 /** Unit tests for {@link JpaTransactionManager}. */
 @RunWith(JUnit4.class)
 public class JpaTransactionManagerTest {
   @Rule
-  public JdbcDatabaseContainer database =
-      new PostgreSQLContainer().withInitScript(fileClassPath(getClass(), "test_schema.sql"));
-
-  private DateTime now = DateTime.now(UTC);
-  private Clock clock = new FakeClock(now);
-  private EntityManagerFactory emf;
-  private JpaTransactionManager txnManager;
-
-  @Before
-  public void init() {
-    emf =
-        PersistenceModule.create(
-            database.getJdbcUrl(),
-            database.getUsername(),
-            database.getPassword(),
-            PersistenceModule.providesDefaultDatabaseConfigs());
-    txnManager = new JpaTransactionManager(emf, clock);
-  }
-
-  @After
-  public void clear() {
-    if (emf != null) {
-      emf.close();
-    }
-  }
+  public final JpaTransactionManagerRule jpaTmRule =
+      new JpaTransactionManagerRule.Builder()
+          .withInitScript(fileClassPath(getClass(), "test_schema.sql"))
+          .build();
 
   @Test
   public void inTransaction_returnsCorrespondingResult() {
-    assertThat(txnManager.inTransaction()).isFalse();
-    txnManager.transact(() -> assertThat(txnManager.inTransaction()).isTrue());
-    assertThat(txnManager.inTransaction()).isFalse();
+    assertThat(jpaTm().inTransaction()).isFalse();
+    jpaTm().transact(() -> assertThat(jpaTm().inTransaction()).isTrue());
+    assertThat(jpaTm().inTransaction()).isFalse();
   }
 
   @Test
   public void assertInTransaction_throwsExceptionWhenNotInTransaction() {
-    assertThrows(PersistenceException.class, () -> txnManager.assertInTransaction());
-    txnManager.transact(() -> txnManager.assertInTransaction());
-    assertThrows(PersistenceException.class, () -> txnManager.assertInTransaction());
+    assertThrows(PersistenceException.class, () -> jpaTm().assertInTransaction());
+    jpaTm().transact(() -> jpaTm().assertInTransaction());
+    assertThrows(PersistenceException.class, () -> jpaTm().assertInTransaction());
   }
 
   @Test
   public void getTransactionTime_throwsExceptionWhenNotInTransaction() {
-    assertThrows(PersistenceException.class, () -> txnManager.getTransactionTime());
-    txnManager.transact(() -> assertThat(txnManager.getTransactionTime()).isEqualTo(now));
-    assertThrows(PersistenceException.class, () -> txnManager.getTransactionTime());
+    FakeClock txnClock = jpaTmRule.getTxnClock();
+    txnClock.advanceOneMilli();
+    assertThrows(PersistenceException.class, () -> jpaTm().getTransactionTime());
+    jpaTm().transact(() -> assertThat(jpaTm().getTransactionTime()).isEqualTo(txnClock.nowUtc()));
+    assertThrows(PersistenceException.class, () -> jpaTm().getTransactionTime());
   }
 
   @Test
   public void transact_succeeds() {
     assertPersonEmpty();
     assertCompanyEmpty();
-    txnManager.transact(
-        () -> {
-          insertPerson(10);
-          insertCompany("Foo");
-          insertCompany("Bar");
-        });
+    jpaTm()
+        .transact(
+            () -> {
+              insertPerson(10);
+              insertCompany("Foo");
+              insertCompany("Bar");
+            });
     assertPersonCount(1);
     assertPersonExist(10);
     assertCompanyCount(2);
@@ -111,12 +85,13 @@ public class JpaTransactionManagerTest {
     assertThrows(
         RuntimeException.class,
         () ->
-            txnManager.transact(
-                () -> {
-                  insertPerson(10);
-                  insertCompany("Foo");
-                  throw new RuntimeException();
-                }));
+            jpaTm()
+                .transact(
+                    () -> {
+                      insertPerson(10);
+                      insertCompany("Foo");
+                      throw new RuntimeException();
+                    }));
     assertPersonEmpty();
     assertCompanyEmpty();
   }
@@ -125,14 +100,16 @@ public class JpaTransactionManagerTest {
   public void transact_reusesExistingTransaction() {
     assertPersonEmpty();
     assertCompanyEmpty();
-    txnManager.transact(
-        () ->
-            txnManager.transact(
-                () -> {
-                  insertPerson(10);
-                  insertCompany("Foo");
-                  insertCompany("Bar");
-                }));
+    jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .transact(
+                        () -> {
+                          insertPerson(10);
+                          insertCompany("Foo");
+                          insertCompany("Bar");
+                        }));
     assertPersonCount(1);
     assertPersonExist(10);
     assertCompanyCount(2);
@@ -141,43 +118,46 @@ public class JpaTransactionManagerTest {
   }
 
   private void insertPerson(int age) {
-    txnManager
+    jpaTm()
         .getEntityManager()
         .createNativeQuery(String.format("INSERT INTO Person (age) VALUES (%d)", age))
         .executeUpdate();
   }
 
   private void insertCompany(String name) {
-    txnManager
+    jpaTm()
         .getEntityManager()
         .createNativeQuery(String.format("INSERT INTO Company (name) VALUES ('%s')", name))
         .executeUpdate();
   }
 
   private void assertPersonExist(int age) {
-    txnManager.transact(
-        () -> {
-          EntityManager em = txnManager.getEntityManager();
-          Integer maybeAge =
-              (Integer)
-                  em.createNativeQuery(String.format("SELECT age FROM Person WHERE age = %d", age))
-                      .getSingleResult();
-          assertThat(maybeAge).isEqualTo(age);
-        });
+    jpaTm()
+        .transact(
+            () -> {
+              EntityManager em = jpaTm().getEntityManager();
+              Integer maybeAge =
+                  (Integer)
+                      em.createNativeQuery(
+                              String.format("SELECT age FROM Person WHERE age = %d", age))
+                          .getSingleResult();
+              assertThat(maybeAge).isEqualTo(age);
+            });
   }
 
   private void assertCompanyExist(String name) {
-    txnManager.transact(
-        () -> {
-          String maybeName =
-              (String)
-                  txnManager
-                      .getEntityManager()
-                      .createNativeQuery(
-                          String.format("SELECT name FROM Company WHERE name = '%s'", name))
-                      .getSingleResult();
-          assertThat(maybeName).isEqualTo(name);
-        });
+    jpaTm()
+        .transact(
+            () -> {
+              String maybeName =
+                  (String)
+                      jpaTm()
+                          .getEntityManager()
+                          .createNativeQuery(
+                              String.format("SELECT name FROM Company WHERE name = '%s'", name))
+                          .getSingleResult();
+              assertThat(maybeName).isEqualTo(name);
+            });
   }
 
   private void assertPersonCount(int count) {
@@ -197,15 +177,16 @@ public class JpaTransactionManagerTest {
   }
 
   private int countTable(String tableName) {
-    return txnManager.transact(
-        () -> {
-          BigInteger colCount =
-              (BigInteger)
-                  txnManager
-                      .getEntityManager()
-                      .createNativeQuery(String.format("SELECT COUNT(*) FROM %s", tableName))
-                      .getSingleResult();
-          return colCount.intValue();
-        });
+    return jpaTm()
+        .transact(
+            () -> {
+              BigInteger colCount =
+                  (BigInteger)
+                      jpaTm()
+                          .getEntityManager()
+                          .createNativeQuery(String.format("SELECT COUNT(*) FROM %s", tableName))
+                          .getSingleResult();
+              return colCount.intValue();
+            });
   }
 }
