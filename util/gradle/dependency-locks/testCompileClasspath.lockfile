@@ -83,8 +83,8 @@ com.google.flogger:flogger-system-backend:0.1
 com.google.flogger:flogger:0.3.1
 com.google.flogger:google-extensions:0.3.1
 com.google.guava:failureaccess:1.0.1
-com.google.guava:guava-testlib:25.0-jre
-com.google.guava:guava:27.1-jre
+com.google.guava:guava-testlib:28.1-jre
+com.google.guava:guava:28.1-jre
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava
 com.google.gwt:gwt-user:2.8.2
 com.google.http-client:google-http-client-appengine:1.29.2
@@ -207,12 +207,13 @@ org.bouncycastle:bcpg-jdk15on:1.61
 org.bouncycastle:bcpkix-jdk15on:1.61
 org.bouncycastle:bcprov-jdk15on:1.61
 org.checkerframework:checker-compat-qual:2.5.5
-org.checkerframework:checker-qual:2.5.2
+org.checkerframework:checker-qual:2.8.1
 org.codehaus.jackson:jackson-core-asl:1.9.13
 org.codehaus.jackson:jackson-mapper-asl:1.9.13
-org.codehaus.mojo:animal-sniffer-annotations:1.17
+org.codehaus.mojo:animal-sniffer-annotations:1.18
 org.dom4j:dom4j:2.1.1
 org.easymock:easymock:3.0
+org.flywaydb:flyway-core:5.2.4
 org.glassfish.jaxb:jaxb-runtime:2.3.1
 org.glassfish.jaxb:txw2:2.3.1
 org.hamcrest:hamcrest-all:1.3
