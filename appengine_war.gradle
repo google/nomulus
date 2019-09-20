@@ -76,6 +76,20 @@ dependencies {
     compile project(':core')
 }
 
+// The tools.jar file gets pulled in from the java environment and for some
+// reason gets exploded "readonly", causing subsequent builds to fail when
+// they can't overwrite it.  The hack below makes the file writable after
+// we're done exploding it.
+//
+// Fun fact: We only use this jar for documentation generation and as such we
+// don't need it in our warfile, as it is not used by the application at
+// runtime.  But it's not clear how to exclude it, as we seem to be
+// constructing the jar from the entire WEB-INF directory and per-file
+// exclude rules don't seem to work on it.  Better solutions are welcome :-)
+explodeWar.doLast {
+    file("${it.explodedAppDirectory}/WEB-INF/lib/tools.jar").setWritable(true)
+}
+
 rootProject.deploy.dependsOn appengineDeployAll
 rootProject.stage.dependsOn appengineStage
 appengineDeployAll.dependsOn rootProject.verifyDeployment
