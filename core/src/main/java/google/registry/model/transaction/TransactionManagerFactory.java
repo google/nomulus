@@ -14,8 +14,9 @@
 
 package google.registry.model.transaction;
 
+import com.google.appengine.api.utils.SystemProperty;
+import com.google.appengine.api.utils.SystemProperty.Environment.Value;
 import com.google.common.annotations.VisibleForTesting;
-import google.registry.config.RegistryJavaRuntime;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.persistence.DaggerPersistenceComponent;
 
@@ -29,10 +30,10 @@ public class TransactionManagerFactory {
   private TransactionManagerFactory() {}
 
   private static TransactionManager createJpaTransactionManager() {
-    if (RegistryJavaRuntime.get() == RegistryJavaRuntime.UNITTEST) {
-      return DummyJpaTransactionManager.create();
-    } else {
+    if (SystemProperty.environment.equals(Value.Production)) {
       return DaggerPersistenceComponent.create().jpaTransactionManager();
+    } else {
+      return DummyJpaTransactionManager.create();
     }
   }
 
