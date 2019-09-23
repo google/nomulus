@@ -17,23 +17,23 @@ package google.registry.model.transaction;
 import java.lang.reflect.Proxy;
 
 /**
- * A dummy implementation for {@link TransactionManager} which throws exception when any of its
+ * A dummy implementation for {@link JpaTransactionManager} which throws exception when any of its
  * method is invoked.
  *
- * <p>This is used to initialize the {@link TransactionManagerFactory#jpaTm} when running unit test,
- * because obviously we cannot connect to the actual Cloud SQL backend in an unit test.
+ * <p>This is used to initialize the {@link TransactionManagerFactory#jpaTm} when running unit
+ * tests, because obviously we cannot connect to the actual Cloud SQL backend in a unit test.
  *
- * <p>If the unit test needs to access the Cloud SQL database, it must add JpaTransactionManagerRule
+ * <p>If a unit test needs to access the Cloud SQL database, it must add JpaTransactionManagerRule
  * as a JUnit rule in the test class.
  */
 public class DummyJpaTransactionManager {
 
-  /** Constructs a {@link DummyJpaTransactionManager} instance. */
-  public static TransactionManager create() {
-    return (TransactionManager)
+  /** Constructs a dummy {@link JpaTransactionManager} instance. */
+  public static JpaTransactionManager create() {
+    return (JpaTransactionManager)
         Proxy.newProxyInstance(
-            TransactionManager.class.getClassLoader(),
-            new Class[] {TransactionManager.class},
+            JpaTransactionManager.class.getClassLoader(),
+            new Class[] {JpaTransactionManager.class},
             (proxy, method, args) -> {
               throw new UnsupportedOperationException(
                   "JpaTransactionManager was not initialized as the runtime is detected as"

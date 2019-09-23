@@ -43,7 +43,7 @@ public class JpaTransactionManagerRuleTest {
                     () ->
                         jpaTm()
                             .getEntityManager()
-                            .createNativeQuery("SELECT * FROM nonexisttable")
+                            .createNativeQuery("SELECT * FROM NoneExistentTable")
                             .getResultList()));
     jpaTm()
         .transact(

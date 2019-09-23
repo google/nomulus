@@ -25,12 +25,12 @@ import google.registry.persistence.DaggerPersistenceComponent;
 public class TransactionManagerFactory {
 
   private static final TransactionManager TM = createTransactionManager();
-  @VisibleForTesting static TransactionManager jpaTm = createJpaTransactionManager();
+  @VisibleForTesting static JpaTransactionManager jpaTm = createJpaTransactionManager();
 
   private TransactionManagerFactory() {}
 
-  private static TransactionManager createJpaTransactionManager() {
-    if (SystemProperty.environment.equals(Value.Production)) {
+  private static JpaTransactionManager createJpaTransactionManager() {
+    if (SystemProperty.environment.value() == Value.Production) {
       return DaggerPersistenceComponent.create().jpaTransactionManager();
     } else {
       return DummyJpaTransactionManager.create();
@@ -50,7 +50,7 @@ public class TransactionManagerFactory {
   }
 
   /** Returns {@link JpaTransactionManager} instance. */
-  public static TransactionManager jpaTm() {
+  public static JpaTransactionManager jpaTm() {
     // TODO: Returns corresponding TransactionManager based on the runtime environment.
     //  We have 3 kinds of runtime environment:
     //    1. App Engine

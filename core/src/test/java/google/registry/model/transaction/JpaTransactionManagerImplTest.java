@@ -28,9 +28,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link JpaTransactionManager}. */
+/** Unit tests for {@link JpaTransactionManagerImpl}. */
 @RunWith(JUnit4.class)
-public class JpaTransactionManagerTest {
+public class JpaTransactionManagerImplTest {
   @Rule
   public final JpaTransactionManagerRule jpaTmRule =
       new JpaTransactionManagerRule.Builder()
