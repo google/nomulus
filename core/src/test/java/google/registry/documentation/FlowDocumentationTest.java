@@ -14,7 +14,7 @@
 
 package google.registry.documentation;
 
-import static com.google.common.truth.Truth.assert_;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.util.BuildPathUtils.getProjectRoot;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -53,7 +53,7 @@ public class FlowDocumentationTest {
     // Don't use Truth's isEqualTo() because the output is huge and unreadable for large files.
     DocumentationGenerator generator = new DocumentationGenerator();
     if (!generator.generateMarkdown().equals(goldenMarkdown)) {
-      assert_().fail(UPDATE_INSTRUCTIONS);
+      assertWithMessage(UPDATE_INSTRUCTIONS).fail();
     }
   }
 }

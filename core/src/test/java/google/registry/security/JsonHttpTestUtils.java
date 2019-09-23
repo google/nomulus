@@ -16,7 +16,7 @@ package google.registry.security;
 
 import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assert_;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.security.JsonHttp.JSON_SAFETY_PREFIX;
 
 import com.google.common.base.Supplier;
@@ -62,7 +62,7 @@ public final class JsonHttpTestUtils {
       Map<String, Object> json = (Map<String, Object>) JSONValue.parseWithException(jsonText);
       return json;
     } catch (ClassCastException | ParseException e) {
-      assert_().fail("Bad JSON: %s\n%s", e.getMessage(), jsonText);
+      assertWithMessage("Bad JSON: %s\n%s", e.getMessage(), jsonText).fail();
       throw new AssertionError();
     }
   }

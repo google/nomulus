@@ -14,7 +14,7 @@
 
 package google.registry.testing;
 
-import static com.google.common.truth.Truth.assert_;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.DatastoreHelper.persistSimpleResources;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -338,7 +338,7 @@ public final class AppEngineRule extends ExternalResource {
       Set<String> autoIndexes = getIndexXmlStrings(indexFileContent);
       Set<String> missingIndexes = Sets.difference(autoIndexes, MANUAL_INDEXES);
       if (!missingIndexes.isEmpty()) {
-        assert_().fail("Missing indexes:\n%s", Joiner.on('\n').join(missingIndexes));
+        assertWithMessage("Missing indexes:\n%s", Joiner.on('\n').join(missingIndexes)).fail();
       }
     } catch (IOException e) {
       throw new RuntimeException(e);

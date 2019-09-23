@@ -16,7 +16,7 @@ package google.registry.testing;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.truth.Truth.assert_;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.TestDataHelper.filePath;
 import static google.registry.testing.TestDataHelper.loadFile;
 
@@ -80,13 +80,12 @@ public class GoldenFileTestHelper {
       logger.atWarning().log(
           "Actual routing map was:\n%s\n\nExpected routing map was:\n%s\n",
           actualValue, expectedValue);
-      assert_()
-          .fail(
-              String.format(
-                  UPDATE_INSTRUCTIONS,
-                  nomulusCommand,
-                  filePath(context, filename),
-                  goldenFileDescription));
+      assertWithMessage(
+              UPDATE_INSTRUCTIONS,
+              nomulusCommand,
+              filePath(context, filename),
+              goldenFileDescription)
+          .fail();
     }
   }
 

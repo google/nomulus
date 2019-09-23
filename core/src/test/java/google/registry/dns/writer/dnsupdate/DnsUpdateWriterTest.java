@@ -16,7 +16,7 @@ package google.registry.dns.writer.dnsupdate;
 
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assert_;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.newHostResource;
@@ -450,9 +450,10 @@ public class DnsUpdateWriterTest {
         return fixIterator(Record.class, set.rrs());
       }
     }
-    assert_().fail(
-        "No record set found for resource '%s' type '%s'",
-        resourceName, Type.string(recordType));
+    assertWithMessage(
+            "No record set found for resource '%s' type '%s'",
+            resourceName, Type.string(recordType))
+        .fail();
     throw new AssertionError();
   }
 

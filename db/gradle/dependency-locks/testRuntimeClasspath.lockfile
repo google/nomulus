@@ -26,7 +26,7 @@ com.google.http-client:google-http-client-jackson2:1.23.0
 com.google.http-client:google-http-client:1.23.0
 com.google.j2objc:j2objc-annotations:1.1
 com.google.oauth-client:google-oauth-client:1.23.0
-com.google.truth:truth:0.45
+com.google.truth:truth:1.0
 com.googlecode.java-diff-utils:diffutils:1.3.0
 com.kohlschutter.junixsocket:junixsocket-common:2.0.4
 com.kohlschutter.junixsocket:junixsocket-native-common:2.0.4

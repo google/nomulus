@@ -15,7 +15,7 @@
 package google.registry.mapreduce.inputs;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assert_;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.mapreduce.inputs.EppResourceInputs.createEntityInput;
 import static google.registry.mapreduce.inputs.EppResourceInputs.createKeyInput;
 import static google.registry.model.index.EppResourceIndexBucket.getBucketKey;
@@ -123,7 +123,7 @@ public class EppResourceInputsTest {
       seen.add(reader.next());
       try {
         Key<DomainBase> key = reader.next();
-        assert_().fail("Unexpected element: " + key);
+        assertWithMessage("Unexpected element: %s", key).fail();
       } catch (NoSuchElementException expected) {
       }
     }
@@ -148,7 +148,7 @@ public class EppResourceInputsTest {
       seen.add(reader.next());
       try {
         DomainBase domain = reader.next();
-        assert_().fail("Unexpected element: " + domain);
+        assertWithMessage("Unexpected element: %s", domain).fail();
       } catch (NoSuchElementException expected) {
       }
     }

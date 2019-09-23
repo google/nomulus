@@ -16,7 +16,6 @@ package google.registry.model;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static com.google.common.truth.Truth.assert_;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static org.joda.time.DateTimeZone.UTC;
 
@@ -127,10 +126,10 @@ public abstract class EntityTestCase {
         // If the field's type was not indexable (because it's not a supported Datastore type) then
         // this error will be thrown. If we expected no indexing, that's fine. Otherwise, fail.
         if (indexed || !e.getMessage().endsWith(" is not a supported property type.")) {
-          assert_().fail(String.format("%s was %sindexed", fieldPath, indexed ? "not " : ""));
+          assertWithMessage("%s was %sindexed", fieldPath, indexed ? "not " : "").fail();
         }
       } catch (IllegalStateException e) {
-        assert_().fail(String.format("%s (indexed=%b): %s", fieldPath, indexed, e.getMessage()));
+        assertWithMessage("%s (indexed=%b): %s", fieldPath, indexed, e.getMessage()).fail();
       }
     }
   }

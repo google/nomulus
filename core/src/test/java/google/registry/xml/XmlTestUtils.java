@@ -15,7 +15,7 @@
 package google.registry.xml;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.truth.Truth.assert_;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.util.DiffUtils.prettyPrintXmlDeepDiff;
 import static org.joda.time.DateTimeZone.UTC;
 
@@ -49,17 +49,15 @@ public class XmlTestUtils {
   public static void assertXmlEqualsWithMessage(
       String expected, String actual, String message, String... ignoredPaths) throws Exception {
     if (!actual.startsWith("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>")) {
-      assert_().fail("XML declaration not found at beginning:\n%s", actual);
+      assertWithMessage("XML declaration not found at beginning:\n%s", actual).fail();
     }
     Map<String, Object> expectedMap = toComparableJson(expected, ignoredPaths);
     Map<String, Object> actualMap = toComparableJson(actual, ignoredPaths);
     if (!expectedMap.equals(actualMap)) {
-      assert_().fail(String.format(
-          "%s: Expected:\n%s\n\nActual:\n%s\n\nDiff:\n%s\n\n",
-          message,
-          expected,
-          actual,
-          prettyPrintXmlDeepDiff(expectedMap, actualMap, null)));
+      assertWithMessage(
+              "%s: Expected:\n%s\n\nActual:\n%s\n\nDiff:\n%s\n\n",
+              message, expected, actual, prettyPrintXmlDeepDiff(expectedMap, actualMap, null))
+          .fail();
     }
   }
 

@@ -14,7 +14,7 @@
 
 package google.registry.testing;
 
-import static com.google.common.truth.Truth.assert_;
+import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.google.common.collect.Iterables;
 import com.google.common.testing.TestLogHandler;
@@ -49,6 +49,6 @@ public final class TestLogHandlerUtils {
         return;
       }
     }
-    assert_().fail(String.format("Log message \"%s\" not found", message));
+    assertWithMessage("Log message \"%s\" not found", message).fail();
   }
 }

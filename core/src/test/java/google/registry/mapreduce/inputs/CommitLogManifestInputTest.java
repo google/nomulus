@@ -15,7 +15,7 @@
 package google.registry.mapreduce.inputs;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assert_;
+import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.google.appengine.tools.mapreduce.Input;
 import com.google.appengine.tools.mapreduce.InputReader;
@@ -65,7 +65,7 @@ public final class CommitLogManifestInputTest {
       seen.add(reader.next());
       try {
         Key<CommitLogManifest> key = reader.next();
-        assert_().fail("Unexpected element: " + key);
+        assertWithMessage("Unexpected element: %s", key).fail();
       } catch (NoSuchElementException expected) {
       }
     }
@@ -93,7 +93,7 @@ public final class CommitLogManifestInputTest {
           key = reader.next();
           seen.add(key);
         }
-        assert_().fail("Unexpected element: " + key);
+        assertWithMessage("Unexpected element: %s", key).fail();
       } catch (NoSuchElementException expected) {
       }
     }
@@ -121,7 +121,7 @@ public final class CommitLogManifestInputTest {
           key = reader.next();
           seen.add(key);
         }
-        assert_().fail("Unexpected element: " + key);
+        assertWithMessage("Unexpected element: %s", key).fail();
       } catch (NoSuchElementException expected) {
       }
     }

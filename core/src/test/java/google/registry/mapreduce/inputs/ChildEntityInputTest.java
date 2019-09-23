@@ -15,7 +15,7 @@
 package google.registry.mapreduce.inputs;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assert_;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.mapreduce.inputs.EppResourceInputs.createChildEntityInput;
 import static google.registry.model.index.EppResourceIndexBucket.getBucketKey;
 import static google.registry.testing.DatastoreHelper.createTld;
@@ -290,7 +290,7 @@ public class ChildEntityInputTest {
       seen.add(reader.next());
       try {
         ImmutableObject o = reader.next();
-        assert_().fail("Unexpected element: " + o);
+        assertWithMessage("Unexpected element: %s", o).fail();
       } catch (NoSuchElementException expected) {
       }
     }

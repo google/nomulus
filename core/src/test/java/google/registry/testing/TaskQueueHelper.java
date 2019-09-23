@@ -23,7 +23,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getFirst;
 import static com.google.common.collect.Multisets.containsOccurrences;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assert_;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.util.DiffUtils.prettyPrintEntityDeepDiff;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -236,13 +236,11 @@ public class TaskQueueHelper {
         taskInfos.remove(taskInfos.stream().filter(taskMatcher).findFirst().get());
       } catch (NoSuchElementException e) {
         final Map<String, Object> taskMatcherMap = taskMatcher.expected.toMap();
-        assert_()
-            .fail(
+        assertWithMessage(
                 "Task not found in queue %s:\n\n%s\n\nPotential candidate match diffs:\n\n%s",
                 queueName,
                 taskMatcher,
-                taskInfos
-                    .stream()
+                taskInfos.stream()
                     .map(
                         input ->
                             prettyPrintEntityDeepDiff(
@@ -250,7 +248,8 @@ public class TaskQueueHelper {
                                 Maps.filterKeys(
                                     new MatchableTaskInfo(input).toMap(),
                                     in(taskMatcherMap.keySet()))))
-                    .collect(joining("\n")));
+                    .collect(joining("\n")))
+            .fail();
       }
     }
   }

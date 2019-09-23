@@ -58,7 +58,6 @@ import java.util.stream.Collectors;
  */
 // TODO(weiminyu): move this class and test to a standalone 'testing' project. Note that the util
 // project is not good since it depends back to core.
-@SuppressWarnings("unchecked") // On behalf of Raw type Subject; remove after Truth 1.0 upgrade.
 public class TextDiffSubject extends Subject {
 
   private final ImmutableList<String> actual;
