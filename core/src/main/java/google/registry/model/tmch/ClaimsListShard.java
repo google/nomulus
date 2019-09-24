@@ -40,6 +40,7 @@ import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.annotations.VirtualEntity;
 import google.registry.model.common.CrossTldSingleton;
+import google.registry.schema.tmch.ClaimsList;
 import google.registry.util.CollectionUtils;
 import google.registry.util.Concurrent;
 import google.registry.util.Retrier;
@@ -223,6 +224,15 @@ public class ClaimsListShard extends ImmutableObject {
     instance.id = allocateId();
     instance.creationTime = checkNotNull(creationTime);
     instance.labelsToKeys = checkNotNull(labelsToKeys);
+    return instance;
+  }
+
+  /** Constructs a {@link ClaimsListShard} from the given {@link ClaimsList}.  */
+  public static ClaimsListShard create(ClaimsList claimsList) {
+    ClaimsListShard instance = new ClaimsListShard();
+    instance.id = allocateId();
+    instance.creationTime = checkNotNull(claimsList.getCreationTimestamp());
+    instance.labelsToKeys = checkNotNull(claimsList.getLabelsToKeys());
     return instance;
   }
 

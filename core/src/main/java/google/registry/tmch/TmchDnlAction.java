@@ -21,6 +21,7 @@ import google.registry.keyring.api.KeyModule.Key;
 import google.registry.model.tmch.ClaimsListShard;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
+import google.registry.schema.tmch.ClaimsList;
 import java.io.IOException;
 import java.security.SignatureException;
 import java.util.List;
@@ -54,10 +55,11 @@ public final class TmchDnlAction implements Runnable {
     } catch (SignatureException | IOException | PGPException e) {
       throw new RuntimeException(e);
     }
-    ClaimsListShard claims = ClaimsListParser.parse(lines);
-    claims.save();
+    ClaimsList claims = ClaimsListParser.parse(lines);
+    ClaimsListShard claimsListShard = ClaimsListShard.create(claims);
+    claimsListShard.save();
     logger.atInfo().log(
         "Inserted %,d claims into Datastore, created at %s",
-        claims.size(), claims.getCreationTime());
+        claimsListShard.size(), claimsListShard.getCreationTime());
   }
 }

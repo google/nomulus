@@ -15,6 +15,8 @@
 package google.registry.schema.tmch;
 
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.util.DateTimeUtils.toJodaDateTime;
+import static google.registry.util.DateTimeUtils.toZonedDateTime;
 
 import java.time.ZonedDateTime;
 import java.util.Map;
@@ -29,6 +31,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.Table;
+import org.joda.time.DateTime;
 
 /**
  * A list of TMCH claims labels and their associated claims keys.
@@ -68,8 +71,8 @@ public class ClaimsList {
 
   /** Constructs a {@link ClaimsList} object. */
   public static ClaimsList create(
-      ZonedDateTime creationTimestamp, Map<String, String> labelsToKeys) {
-    return new ClaimsList(creationTimestamp, labelsToKeys);
+      DateTime creationTimestamp, Map<String, String> labelsToKeys) {
+    return new ClaimsList(toZonedDateTime(creationTimestamp), labelsToKeys);
   }
 
   /** Returns the revision id of this claims list, or throws exception if it is null. */
@@ -80,8 +83,8 @@ public class ClaimsList {
   }
 
   /** Returns the creation time of this claims list. */
-  public ZonedDateTime getCreationTimestamp() {
-    return creationTimestamp;
+  public DateTime getCreationTimestamp() {
+    return toJodaDateTime(creationTimestamp);
   }
 
   /** Returns an {@link Map} mapping domain label to its lookup key. */
