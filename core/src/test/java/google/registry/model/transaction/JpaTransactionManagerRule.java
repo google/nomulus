@@ -18,6 +18,8 @@ import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.persistence.PersistenceModule;
 import google.registry.testing.FakeClock;
+import java.time.ZoneId;
+import java.util.TimeZone;
 import javax.persistence.EntityManagerFactory;
 import org.joda.time.DateTime;
 import org.junit.rules.ExternalResource;
@@ -44,6 +46,7 @@ public class JpaTransactionManagerRule extends ExternalResource {
   private JdbcDatabaseContainer database;
   private EntityManagerFactory emf;
   private JpaTransactionManager cachedTm;
+  private TimeZone defaultTimeZone;
 
   private JpaTransactionManagerRule(String initScript) {
     this.initScript = initScript;
@@ -60,6 +63,8 @@ public class JpaTransactionManagerRule extends ExternalResource {
 
   @Override
   public void before() {
+    defaultTimeZone = TimeZone.getDefault();
+    TimeZone.setDefault(TimeZone.getTimeZone(ZoneId.of("UTC")));
     emf =
         PersistenceModule.create(
             database.getJdbcUrl(),
@@ -73,6 +78,7 @@ public class JpaTransactionManagerRule extends ExternalResource {
 
   @Override
   public void after() {
+    TimeZone.setDefault(defaultTimeZone);
     TransactionManagerFactory.jpaTm = cachedTm;
     if (emf != null) {
       emf.close();

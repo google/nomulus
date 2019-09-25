@@ -96,7 +96,7 @@ public class DateTimeUtils {
    */
   public static ZonedDateTime toZonedDateTime(DateTime dateTime) {
     java.time.Instant instant = java.time.Instant.ofEpochMilli(dateTime.getMillis());
-    return ZonedDateTime.ofInstant(instant, ZoneId.of(dateTime.getZone().getID()).normalized());
+    return ZonedDateTime.ofInstant(instant, ZoneId.of(dateTime.getZone().getID()));
   }
 
   /**

@@ -19,6 +19,8 @@ import com.google.appengine.api.utils.SystemProperty.Environment.Value;
 import com.google.common.annotations.VisibleForTesting;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.persistence.DaggerPersistenceComponent;
+import java.time.ZoneId;
+import java.util.TimeZone;
 
 /** Factory class to create {@link TransactionManager} instance. */
 // TODO: Rename this to PersistenceFactory and move to persistence package.
@@ -30,6 +32,8 @@ public class TransactionManagerFactory {
   private TransactionManagerFactory() {}
 
   private static JpaTransactionManager createJpaTransactionManager() {
+    // Hibernate converts any date to this timezone when reading from the database.
+    TimeZone.setDefault(TimeZone.getTimeZone(ZoneId.of("UTC")));
     if (SystemProperty.environment.value() == Value.Production) {
       return DaggerPersistenceComponent.create().jpaTransactionManager();
     } else {
