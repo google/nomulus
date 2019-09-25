@@ -46,7 +46,7 @@ public class UpdatePremiumListAction extends CreateOrUpdatePremiumListAction {
   @Inject UpdatePremiumListAction() {}
 
   @Override
-  protected void savePremiumList() {
+  protected void saveToDatastore() {
     Optional<PremiumList> existingPremiumList = PremiumList.getUncached(name);
     checkArgument(
         existingPremiumList.isPresent(),
@@ -66,5 +66,12 @@ public class UpdatePremiumListAction extends CreateOrUpdatePremiumListAction {
             newPremiumList.getName(), inputDataPreProcessed.size());
     logger.atInfo().log(message);
     response.setPayload(ImmutableMap.of("status", "success", "message", message));
+  }
+
+  // TODO(mcilwain): Implement this in a subsequent PR.
+  @Override
+  protected void saveToCloudSql() {
+    throw new UnsupportedOperationException(
+        "Updating of premium lists in Cloud SQL is not supported yet");
   }
 }

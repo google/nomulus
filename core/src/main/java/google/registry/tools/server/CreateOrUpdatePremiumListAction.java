@@ -33,23 +33,38 @@ public abstract class CreateOrUpdatePremiumListAction implements Runnable {
 
   public static final String NAME_PARAM = "name";
   public static final String INPUT_PARAM = "inputData";
+  public static final String ALSO_CLOUD_SQL_PARAM = "alsoCloudSql";
 
   @Inject JsonResponse response;
   @Inject @Parameter("premiumListName") String name;
   @Inject @Parameter(INPUT_PARAM) String inputData;
+  @Inject @Parameter(ALSO_CLOUD_SQL_PARAM) boolean alsoCloudSql;
 
   @Override
   public void run() {
     try {
-      savePremiumList();
+      saveToDatastore();
     } catch (IllegalArgumentException e) {
       logger.atInfo().withCause(e).log(
           "Usage error in attempting to save premium list from nomulus tool command");
       response.setPayload(ImmutableMap.of("error", e.toString(), "status", "error"));
+      return;
     } catch (Exception e) {
       logger.atSevere().withCause(e).log(
-          "Unexpected error saving premium list from nomulus tool command");
+          "Unexpected error saving premium list to Datastore from nomulus tool command");
       response.setPayload(ImmutableMap.of("error", e.toString(), "status", "error"));
+      return;
+    }
+
+    if (alsoCloudSql) {
+      try {
+        saveToCloudSql();
+      } catch (Throwable e) {
+        logger.atSevere().withCause(e).log(
+            "Unexpected error saving premium list to Cloud SQL from nomulus tool command");
+        response.setPayload(ImmutableMap.of("error", e.toString(), "status", "error"));
+        return;
+      }
     }
   }
 
@@ -64,6 +79,9 @@ public abstract class CreateOrUpdatePremiumListAction implements Runnable {
                     : (inputData.substring(0, MAX_LOGGING_PREMIUM_LIST_LENGTH) + "<truncated>")));
   }
 
-  /** Creates a new premium list or updates an existing one. */
-  protected abstract void savePremiumList();
+  /** Saves the premium list to Datastore. */
+  protected abstract void saveToDatastore();
+
+  /** Saves the premium list to Cloud SQL. */
+  protected abstract void saveToCloudSql();
 }
