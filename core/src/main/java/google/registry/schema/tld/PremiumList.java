@@ -15,6 +15,8 @@
 package google.registry.schema.tld;
 
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.util.DateTimeUtils.toJodaDateTime;
+import static google.registry.util.DateTimeUtils.toZonedDateTime;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -26,10 +28,12 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.Table;
 import org.joda.money.CurrencyUnit;
+import org.joda.time.DateTime;
 
 /**
  * A list of premium prices for domain names.
@@ -40,12 +44,17 @@ import org.joda.money.CurrencyUnit;
  * This is fine though, because we only use the list with the highest revisionId.
  */
 @Entity
-@Table(name = "PremiumList")
+@Table(
+    name = "PremiumList",
+    indexes = {@Index(columnList = "name", name = "name_idx")})
 public class PremiumList {
+
+  @Column(name = "name", nullable = false)
+  private String name;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "revision_id")
+  @Column(name = "revision_id", nullable = false)
   private Long revisionId;
 
   @Column(name = "creation_timestamp", nullable = false)
@@ -63,9 +72,11 @@ public class PremiumList {
   private Map<String, BigDecimal> labelsToPrices;
 
   private PremiumList(
+      String name,
       ZonedDateTime creationTimestamp,
       CurrencyUnit currency,
       Map<String, BigDecimal> labelsToPrices) {
+    this.name = name;
     this.creationTimestamp = creationTimestamp;
     this.currency = currency;
     this.labelsToPrices = labelsToPrices;
@@ -74,13 +85,18 @@ public class PremiumList {
   // Hibernate requires this default constructor.
   private PremiumList() {}
 
-  // TODO(mcilwain): Change creationTimestamp to Joda DateTime.
   /** Constructs a {@link PremiumList} object. */
   public static PremiumList create(
-      ZonedDateTime creationTimestamp,
+      String name,
+      DateTime creationTimestamp,
       CurrencyUnit currency,
       Map<String, BigDecimal> labelsToPrices) {
-    return new PremiumList(creationTimestamp, currency, labelsToPrices);
+    return new PremiumList(name, toZonedDateTime(creationTimestamp), currency, labelsToPrices);
+  }
+
+  /** Returns the name of the premium list, which is usually also a TLD string. */
+  public String getName() {
+    return name;
   }
 
   /** Returns the ID of this revision, or throws if null. */
@@ -91,8 +107,8 @@ public class PremiumList {
   }
 
   /** Returns the creation time of this revision of the premium list. */
-  public ZonedDateTime getCreationTimestamp() {
-    return creationTimestamp;
+  public DateTime getCreationTimestamp() {
+    return toJodaDateTime(creationTimestamp);
   }
 
   /** Returns a {@link Map} of domain labels to prices. */

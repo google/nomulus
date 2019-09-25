@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.security.JsonHttp.JSON_SAFETY_PREFIX;
+import static google.registry.tools.server.CreateOrUpdatePremiumListAction.ALSO_CLOUD_SQL_PARAM;
 import static google.registry.tools.server.CreateOrUpdatePremiumListAction.INPUT_PARAM;
 import static google.registry.tools.server.CreateOrUpdatePremiumListAction.NAME_PARAM;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
@@ -57,6 +58,12 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand
       required = true)
   Path inputFile;
 
+  @Parameter(
+      names = {"--also_cloud_sql"},
+      description =
+          "Persist premium list to Cloud SQL in addition to Datastore; defaults to false.")
+  boolean alsoCloudSql;
+
   protected AppEngineConnection connection;
   protected int inputLineCount;
 
@@ -90,6 +97,7 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand
   public String execute() throws Exception {
     ImmutableMap.Builder<String, Object> params = new ImmutableMap.Builder<>();
     params.put(NAME_PARAM, name);
+    params.put(ALSO_CLOUD_SQL_PARAM, alsoCloudSql);
     String inputFileContents = new String(Files.readAllBytes(inputFile), UTF_8);
     String requestBody =
         Joiner.on('&').withKeyValueSeparator("=").join(
@@ -110,7 +118,7 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand
 
   // TODO(user): refactor this behavior into a better general-purpose
   // response validation that can be re-used across the new client/server commands.
-  String extractServerResponse(String response) {
+  private String extractServerResponse(String response) {
     Map<String, Object> responseMap = toMap(JSONValue.parse(stripJsonPrefix(response)));
 
     // TODO(user): consider using jart's FormField Framework.
@@ -127,7 +135,7 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand
   }
 
   // TODO(user): figure out better place to put this method to make it re-usable
-  static String stripJsonPrefix(String json) {
+  private static String stripJsonPrefix(String json) {
     Verify.verify(json.startsWith(JSON_SAFETY_PREFIX));
     return json.substring(JSON_SAFETY_PREFIX.length());
   }
