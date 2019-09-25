@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static google.registry.util.DateTimeUtils.toJodaDateTime;
 import static google.registry.util.DateTimeUtils.toZonedDateTime;
 
+import google.registry.model.ImmutableObject;
 import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Optional;
@@ -43,22 +44,22 @@ import org.joda.time.DateTime;
  * highest {@link #revisionId}.
  */
 @Entity
-@Table(name = "ClaimsList")
-public class ClaimsList {
+@Table
+public class ClaimsList extends ImmutableObject {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "revision_id")
+  @Column
   private Long revisionId;
 
-  @Column(name = "creation_timestamp", nullable = false)
+  @Column(nullable = false)
   private ZonedDateTime creationTimestamp;
 
   @ElementCollection
   @CollectionTable(
       name = "ClaimsEntry",
-      joinColumns = @JoinColumn(name = "revision_id", referencedColumnName = "revision_id"))
-  @MapKeyColumn(name = "domain_label", nullable = false)
-  @Column(name = "claim_key", nullable = false)
+      joinColumns = @JoinColumn(name = "revisionId", referencedColumnName = "revisionId"))
+  @MapKeyColumn(name = "domainLabel", nullable = false)
+  @Column(name = "claimKey", nullable = false)
   private Map<String, String> labelsToKeys;
 
   private ClaimsList(ZonedDateTime creationTimestamp, Map<String, String> labelsToKeys) {
@@ -70,8 +71,7 @@ public class ClaimsList {
   private ClaimsList() {}
 
   /** Constructs a {@link ClaimsList} object. */
-  public static ClaimsList create(
-      DateTime creationTimestamp, Map<String, String> labelsToKeys) {
+  public static ClaimsList create(DateTime creationTimestamp, Map<String, String> labelsToKeys) {
     return new ClaimsList(toZonedDateTime(creationTimestamp), labelsToKeys);
   }
 

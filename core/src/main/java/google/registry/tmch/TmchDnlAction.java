@@ -18,6 +18,7 @@ import static google.registry.request.Action.Method.POST;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.keyring.api.KeyModule.Key;
+import google.registry.model.tmch.ClaimsListDao;
 import google.registry.model.tmch.ClaimsListShard;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
@@ -56,10 +57,13 @@ public final class TmchDnlAction implements Runnable {
       throw new RuntimeException(e);
     }
     ClaimsList claims = ClaimsListParser.parse(lines);
-    ClaimsListShard claimsListShard = ClaimsListShard.create(claims);
+    ClaimsListShard claimsListShard =
+        ClaimsListShard.create(claims.getCreationTimestamp(), claims.getLabelsToKeys());
     claimsListShard.save();
     logger.atInfo().log(
         "Inserted %,d claims into Datastore, created at %s",
         claimsListShard.size(), claimsListShard.getCreationTime());
+
+    ClaimsListDao.trySave(claims);
   }
 }
