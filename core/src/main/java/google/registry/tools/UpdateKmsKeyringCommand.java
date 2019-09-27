@@ -68,6 +68,9 @@ final class UpdateKmsKeyringCommand implements CommandWithRemoteApi {
       case CLOUD_SQL_PASSWORD:
         kmsUpdater.setCloudSqlPassword(deserializeString(input));
         break;
+      case TOOLS_CLOUD_SQL_PASSWORD:
+        kmsUpdater.setToolsCloudSqlPassword(deserializeString(input));
+        break;
       case ICANN_REPORTING_PASSWORD:
         kmsUpdater.setIcannReportingPassword(deserializeString(input));
         break;
