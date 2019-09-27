@@ -20,6 +20,7 @@ import google.registry.util.DateTimeUtils;
 import java.sql.Timestamp;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import javax.annotation.Nullable;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 import org.joda.time.DateTime;
@@ -32,12 +33,14 @@ public class CreateAutoTimestampConverter
 
   @Override
   public Timestamp convertToDatabaseColumn(CreateAutoTimestamp entity) {
+    // TODO(mmuller): Use transaction time instead of "now".
     DateTime dateTime =
         firstNonNull(((CreateAutoTimestamp) entity).getTimestamp(), DateTime.now(DateTimeZone.UTC));
     return Timestamp.from(DateTimeUtils.toZonedDateTime(dateTime).toInstant());
   }
 
   @Override
+  @Nullable
   public CreateAutoTimestamp convertToEntityAttribute(Timestamp columnValue) {
     if (columnValue == null) {
       return null;

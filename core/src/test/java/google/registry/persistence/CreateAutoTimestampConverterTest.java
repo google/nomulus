@@ -16,6 +16,7 @@ package google.registry.persistence;
 import static com.google.common.truth.Truth.assertThat;
 
 import google.registry.model.CreateAutoTimestamp;
+import google.registry.model.ImmutableObject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,7 +118,7 @@ public class CreateAutoTimestampConverterTest {
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
-  public static class TestEntity {
+  public static class TestEntity extends ImmutableObject {
 
     @Id String name;
 
@@ -129,21 +130,6 @@ public class CreateAutoTimestampConverterTest {
     public TestEntity(String name, CreateAutoTimestamp cat) {
       this.name = name;
       this.cat = cat;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-      if (other instanceof TestEntity) {
-        TestEntity o = (TestEntity) other;
-        return name.equals(o.name) && cat.equals(o.cat);
-      } else {
-        return false;
-      }
-    }
-
-    @Override
-    public int hashCode() {
-      return name.hashCode() ^ cat.hashCode();
     }
   }
 }
