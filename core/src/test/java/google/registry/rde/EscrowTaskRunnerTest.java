@@ -35,6 +35,7 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,8 +55,10 @@ public class EscrowTaskRunnerTest {
   private final EscrowTask task = mock(EscrowTask.class);
   private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
 
+  private DateTimeZone previousDateTimeZone;
   private EscrowTaskRunner runner;
   private Registry registry;
+
 
   @Before
   public void before() {
@@ -64,7 +67,13 @@ public class EscrowTaskRunnerTest {
     runner = new EscrowTaskRunner();
     runner.clock = clock;
     runner.lockHandler = new FakeLockHandler(true);
+    previousDateTimeZone = DateTimeZone.getDefault();
     DateTimeZone.setDefault(DateTimeZone.forID("America/New_York"));  // Make sure UTC stuff works.
+  }
+
+  @After
+  public void after() {
+    DateTimeZone.setDefault(previousDateTimeZone);
   }
 
   @Test
