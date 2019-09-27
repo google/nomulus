@@ -15,11 +15,9 @@
 package google.registry.schema.tld;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.util.DateTimeUtils.toJodaDateTime;
-import static google.registry.util.DateTimeUtils.toZonedDateTime;
 
+import google.registry.model.CreateAutoTimestamp;
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
 import java.util.Map;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -58,7 +56,7 @@ public class PremiumList {
   private Long revisionId;
 
   @Column(name = "creation_timestamp", nullable = false)
-  private ZonedDateTime creationTimestamp;
+  private CreateAutoTimestamp creationTimestamp = CreateAutoTimestamp.create(null);
 
   @Column(name = "currency", nullable = false)
   private CurrencyUnit currency;
@@ -73,11 +71,10 @@ public class PremiumList {
 
   private PremiumList(
       String name,
-      ZonedDateTime creationTimestamp,
       CurrencyUnit currency,
       Map<String, BigDecimal> labelsToPrices) {
+    // TODO(mcilwain): Generate the Bloom filter and set it here.
     this.name = name;
-    this.creationTimestamp = creationTimestamp;
     this.currency = currency;
     this.labelsToPrices = labelsToPrices;
   }
@@ -88,10 +85,9 @@ public class PremiumList {
   /** Constructs a {@link PremiumList} object. */
   public static PremiumList create(
       String name,
-      DateTime creationTimestamp,
       CurrencyUnit currency,
       Map<String, BigDecimal> labelsToPrices) {
-    return new PremiumList(name, toZonedDateTime(creationTimestamp), currency, labelsToPrices);
+    return new PremiumList(name, currency, labelsToPrices);
   }
 
   /** Returns the name of the premium list, which is usually also a TLD string. */
@@ -108,7 +104,7 @@ public class PremiumList {
 
   /** Returns the creation time of this revision of the premium list. */
   public DateTime getCreationTimestamp() {
-    return toJodaDateTime(creationTimestamp);
+    return creationTimestamp.getTimestamp();
   }
 
   /** Returns a {@link Map} of domain labels to prices. */
