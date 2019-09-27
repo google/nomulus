@@ -61,6 +61,8 @@ public class PersistenceModule {
     // SessionFactory is created. Setting it to 'none' to turn off the feature.
     properties.put(Environment.HBM2DDL_AUTO, "none");
 
+    // Hibernate converts any date to this timezone when writing to the database.
+    properties.put(Environment.JDBC_TIME_ZONE, "UTC");
     properties.put(
         Environment.PHYSICAL_NAMING_STRATEGY, NomulusNamingStrategy.class.getCanonicalName());
 
