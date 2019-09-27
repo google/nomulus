@@ -34,9 +34,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import org.joda.money.CurrencyUnit;
 
-/**
- * Abstract base class for actions that update premium lists.
- */
+/** Abstract base class for actions that update premium lists. */
 public abstract class CreateOrUpdatePremiumListAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -48,9 +46,18 @@ public abstract class CreateOrUpdatePremiumListAction implements Runnable {
   public static final String ALSO_CLOUD_SQL_PARAM = "alsoCloudSql";
 
   @Inject JsonResponse response;
-  @Inject @Parameter("premiumListName") String name;
-  @Inject @Parameter(INPUT_PARAM) String inputData;
-  @Inject @Parameter(ALSO_CLOUD_SQL_PARAM) boolean alsoCloudSql;
+
+  @Inject
+  @Parameter("premiumListName")
+  String name;
+
+  @Inject
+  @Parameter(INPUT_PARAM)
+  String inputData;
+
+  @Inject
+  @Parameter(ALSO_CLOUD_SQL_PARAM)
+  boolean alsoCloudSql;
 
   @Override
   public void run() {
