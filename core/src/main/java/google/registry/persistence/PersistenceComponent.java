@@ -18,7 +18,9 @@ import dagger.Component;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.keyring.kms.KmsModule;
-import google.registry.model.transaction.JpaTransactionManagerImpl;
+import google.registry.model.transaction.JpaTransactionManager;
+import google.registry.persistence.PersistenceModule.AppEngineJpaTm;
+import google.registry.persistence.PersistenceModule.NomulusToolJpaTm;
 import google.registry.util.UtilsModule;
 import javax.inject.Singleton;
 import javax.persistence.EntityManagerFactory;
@@ -34,5 +36,10 @@ import javax.persistence.EntityManagerFactory;
       UtilsModule.class
     })
 public interface PersistenceComponent {
-  JpaTransactionManagerImpl jpaTransactionManager();
+
+  @AppEngineJpaTm
+  JpaTransactionManager appEngineJpaTransactionManager();
+
+  @NomulusToolJpaTm
+  JpaTransactionManager nomulusToolJpaTransactionManager();
 }

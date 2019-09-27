@@ -29,11 +29,14 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.kms.KmsKeyring;
+import google.registry.model.transaction.JpaTransactionManager;
+import google.registry.model.transaction.JpaTransactionManagerImpl;
+import google.registry.util.Clock;
 import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.HashMap;
+import java.util.Map;
 import javax.inject.Qualifier;
+import javax.inject.Singleton;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import org.hibernate.cfg.Environment;
@@ -75,24 +78,55 @@ public class PersistenceModule {
   }
 
   @Provides
-  @AppEngineEmf
-  public static EntityManagerFactory providesAppEngineEntityManagerFactory(
+  @Singleton
+  @AppEngineJpaTm
+  public static JpaTransactionManager providesAppEngineJpaTm(
       @Config("cloudSqlJdbcUrl") String jdbcUrl,
       @Config("cloudSqlUsername") String username,
       @Config("cloudSqlInstanceConnectionName") String instanceConnectionName,
       KmsKeyring kmsKeyring,
-      @DefaultHibernateConfigs ImmutableMap<String, String> defaultConfigs) {
-    String password = kmsKeyring.getCloudSqlPassword();
-
+      @DefaultHibernateConfigs ImmutableMap<String, String> defaultConfigs,
+      Clock clock) {
     HashMap<String, String> overrides = Maps.newHashMap(defaultConfigs);
+
     // For Java users, the Cloud SQL JDBC Socket Factory can provide authenticated connections.
     // See https://github.com/GoogleCloudPlatform/cloud-sql-jdbc-socket-factory for details.
     overrides.put("socketFactory", "com.google.cloud.sql.postgres.SocketFactory");
     overrides.put("cloudSqlInstance", instanceConnectionName);
 
-    EntityManagerFactory emf = create(jdbcUrl, username, password, ImmutableMap.copyOf(overrides));
-    Runtime.getRuntime().addShutdownHook(new Thread(emf::close));
-    return emf;
+    overrides.put(Environment.URL, jdbcUrl);
+    overrides.put(Environment.USER, username);
+    overrides.put(Environment.PASS, kmsKeyring.getCloudSqlPassword());
+
+    return new JpaTransactionManagerImpl(create(overrides), clock);
+  }
+
+  @Provides
+  @Singleton
+  @NomulusToolJpaTm
+  public static JpaTransactionManager providesNomulusToolJpaTm(
+      @Config("toolsCloudSqlJdbcUrl") String jdbcUrl,
+      @Config("toolsCloudSqlUsername") String username,
+      @Config("cloudSqlInstanceConnectionName") String instanceConnectionName,
+      KmsKeyring kmsKeyring,
+      @DefaultHibernateConfigs ImmutableMap<String, String> defaultConfigs,
+      Clock clock) {
+
+    // Cloud SQL JDBC Socket Factory library requires the jdbc url to include all connection
+    // information, otherwise the connection initialization will fail. See here for more details:
+    // https://github.com/GoogleCloudPlatform/cloud-sql-jdbc-socket-factory
+    String fullJdbcUrl =
+        new StringBuilder(jdbcUrl)
+            .append("?cloudSqlInstance=" + instanceConnectionName)
+            .append("&socketFactory=com.google.cloud.sql.postgres.SocketFactory")
+            .append("&user=" + username)
+            .append("&password=" + kmsKeyring.getCloudSqlPassword())
+            .toString();
+
+    HashMap<String, String> overrides = Maps.newHashMap(defaultConfigs);
+    overrides.put(Environment.URL, fullJdbcUrl);
+
+    return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
   /** Constructs the {@link EntityManagerFactory} instance. */
@@ -104,29 +138,36 @@ public class PersistenceModule {
     properties.put(Environment.USER, username);
     properties.put(Environment.PASS, password);
 
+    return create(ImmutableMap.copyOf(properties));
+  }
+
+  private static EntityManagerFactory create(Map<String, String> properties) {
     // If there are no annotated classes, we can create the EntityManagerFactory from the generic
     // method.  Otherwise we have to use a more tailored approach.  Note that this adds to the set
     // of annotated classes defined in the configuration, it does not override them.
     EntityManagerFactory emf =
-        Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME, properties);
-
+        Persistence.createEntityManagerFactory(
+            PERSISTENCE_UNIT_NAME, ImmutableMap.copyOf(properties));
     checkState(
         emf != null,
         "Persistence.createEntityManagerFactory() returns a null EntityManagerFactory");
     return emf;
   }
 
-  /** Dagger qualifier for the {@link EntityManagerFactory} used for App Engine application. */
+  /** Dagger qualifier for {@link JpaTransactionManager} used for App Engine application. */
   @Qualifier
   @Documented
-  @Retention(RetentionPolicy.RUNTIME)
-  public @interface AppEngineEmf {}
+  @interface AppEngineJpaTm {}
+
+  /** Dagger qualifier for {@link JpaTransactionManager} used for Nomulus tool. */
+  @Qualifier
+  @Documented
+  @interface NomulusToolJpaTm {}
 
   /** Dagger qualifier for the default Hibernate configurations. */
   // TODO(shicong): Change annotations in this class to none public or put them in a top level
   //  package
   @Qualifier
   @Documented
-  @Retention(RetentionPolicy.RUNTIME)
   public @interface DefaultHibernateConfigs {}
 }

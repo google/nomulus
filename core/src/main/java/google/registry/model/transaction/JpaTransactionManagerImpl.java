@@ -15,10 +15,7 @@
 package google.registry.model.transaction;
 
 import com.google.common.flogger.FluentLogger;
-import google.registry.persistence.PersistenceModule.AppEngineEmf;
 import google.registry.util.Clock;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
@@ -26,7 +23,6 @@ import javax.persistence.PersistenceException;
 import org.joda.time.DateTime;
 
 /** Implementation of {@link JpaTransactionManager} for JPA compatible database. */
-@Singleton
 public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -39,8 +35,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   private final ThreadLocal<TransactionInfo> transactionInfo =
       ThreadLocal.withInitial(TransactionInfo::new);
 
-  @Inject
-  JpaTransactionManagerImpl(@AppEngineEmf EntityManagerFactory emf, Clock clock) {
+  public JpaTransactionManagerImpl(EntityManagerFactory emf, Clock clock) {
     this.emf = emf;
     this.clock = clock;
   }

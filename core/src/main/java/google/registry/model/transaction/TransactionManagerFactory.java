@@ -49,6 +49,15 @@ public class TransactionManagerFactory {
     return new DatastoreTransactionManager(null);
   }
 
+  /**
+   * Sets jpaTm to the implementation for Nomulus tool. Note that this method should be only used by
+   * {@link google.registry.tools.RegistryCli} to initialize jpaTm.
+   */
+  public static void initForTool() {
+    // TODO(shicong): Uncomment the line below when we set up Cloud SQL instance in all environments
+    // jpaTm = DaggerPersistenceComponent.create().nomulusToolJpaTransactionManager();
+  }
+
   /** Returns {@link TransactionManager} instance. */
   public static TransactionManager tm() {
     return TM;
@@ -56,11 +65,6 @@ public class TransactionManagerFactory {
 
   /** Returns {@link JpaTransactionManager} instance. */
   public static JpaTransactionManager jpaTm() {
-    // TODO: Returns corresponding TransactionManager based on the runtime environment.
-    //  We have 3 kinds of runtime environment:
-    //    1. App Engine
-    //    2. Local JVM used by nomulus tool
-    //    3. Unit test
     return jpaTm;
   }
 }

@@ -31,6 +31,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import google.registry.config.RegistryConfig;
 import google.registry.model.ofy.ObjectifyService;
+import google.registry.model.transaction.TransactionManagerFactory;
 import google.registry.tools.AuthModule.LoginRequiredException;
 import google.registry.tools.params.ParameterFactory;
 import java.io.ByteArrayInputStream;
@@ -210,6 +211,8 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
     }
 
     // CommandWithRemoteApis need to have the remote api installed to work.
+    // CommandWithCloudSql extends CommandWithRemoteApi so the command will also get the remote
+    // api installed. This is because the DB password is stored in Datastore.
     if (command instanceof CommandWithRemoteApi) {
       if (installer == null) {
         installer = new RemoteApiInstaller();
@@ -231,6 +234,10 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
       // Make sure we start the command with a clean cache, so that any previous command won't
       // interfere with this one.
       ofy().clearSessionCache();
+    }
+
+    if (command instanceof CommandWithCloudSql) {
+      TransactionManagerFactory.initForTool();
     }
 
     command.run();
