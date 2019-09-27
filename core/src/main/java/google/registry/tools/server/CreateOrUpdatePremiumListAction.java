@@ -21,6 +21,7 @@ import static com.google.common.flogger.LazyArgs.lazy;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.flogger.FluentLogger;
@@ -101,7 +102,7 @@ public abstract class CreateOrUpdatePremiumListAction implements Runnable {
     checkArgument(
         currencies.size() == 1,
         "The Cloud SQL schema requires exactly one currency, but got: %s",
-        currencies);
+        ImmutableSortedSet.copyOf(currencies));
     CurrencyUnit currency = Iterables.getOnlyElement(currencies);
 
     Map<String, BigDecimal> priceAmounts =
