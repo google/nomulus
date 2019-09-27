@@ -69,10 +69,7 @@ public class PremiumList {
   @Column(name = "price", nullable = false)
   private Map<String, BigDecimal> labelsToPrices;
 
-  private PremiumList(
-      String name,
-      CurrencyUnit currency,
-      Map<String, BigDecimal> labelsToPrices) {
+  private PremiumList(String name, CurrencyUnit currency, Map<String, BigDecimal> labelsToPrices) {
     // TODO(mcilwain): Generate the Bloom filter and set it here.
     this.name = name;
     this.currency = currency;
@@ -84,9 +81,7 @@ public class PremiumList {
 
   /** Constructs a {@link PremiumList} object. */
   public static PremiumList create(
-      String name,
-      CurrencyUnit currency,
-      Map<String, BigDecimal> labelsToPrices) {
+      String name, CurrencyUnit currency, Map<String, BigDecimal> labelsToPrices) {
     return new PremiumList(name, currency, labelsToPrices);
   }
 
