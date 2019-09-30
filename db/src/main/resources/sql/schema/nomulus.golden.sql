@@ -221,6 +221,13 @@ ALTER TABLE ONLY public."RegistryLock"
 
 
 --
+-- Name: idx_registry_lock_verification_code; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_registry_lock_verification_code ON public."RegistryLock" USING btree (verification_code);
+
+
+--
 -- Name: ClaimsEntry fk6sc6at5hedffc0nhdcab6ivuq; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

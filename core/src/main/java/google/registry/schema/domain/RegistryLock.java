@@ -57,11 +57,13 @@ import org.joda.time.DateTime;
      * <p>Note: because of this index, physical columns must be declared in the {@link Column}
      * annotations for {@link RegistryLock#revisionId} and {@link RegistryLock#repoId} fields.
      */
-    indexes =
-        @Index(
-            name = "idx_registry_lock_repo_id_revision_id",
-            columnList = "repo_id, revision_id",
-            unique = true))
+    indexes = {
+      @Index(
+          name = "idx_registry_lock_repo_id_revision_id",
+          columnList = "repo_id, revision_id",
+          unique = true),
+      @Index(name = "idx_registry_lock_verification_code", columnList = "verificationCode")
+    })
 public final class RegistryLock extends ImmutableObject implements Buildable {
 
   /** Describes the action taken by the user. */

@@ -28,3 +28,6 @@
 
     alter table if exists "RegistryLock" 
        add constraint idx_registry_lock_repo_id_revision_id unique (repo_id, revision_id);
+
+    create index if not exists idx_registry_lock_verification_code ON "RegistryLock"
+       using btree (verification_code);
