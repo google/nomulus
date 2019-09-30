@@ -38,6 +38,10 @@ war {
     from("${coreResourcesDir}/google/registry/ui/html") {
         include "*.html"
     }
+
+    from("${coreResourcesDir}/META-INF/persistence.xml") {
+        include "*.html"
+    }
 }
 
 if (project.path == ":services:default") {
