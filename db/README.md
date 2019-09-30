@@ -23,7 +23,7 @@ Below are the steps to submit a schema change:
 *   Copy db/build/resources/test/testcontainer/mount/dump.txt to the golden file
     (db/src/main/resources/sql/schema/nomulus.golden.sql). Diff it against the
     old version and verify that all changes are expected.
-*   Retrun :db:tests. This time all tests should pass.
+*   Rerun the `:db:test` task. This time all tests should pass.
 
 Relevant files (under db/src/main/resources/sql/schema/):
 
