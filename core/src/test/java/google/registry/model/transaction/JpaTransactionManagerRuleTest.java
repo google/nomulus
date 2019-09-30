@@ -36,7 +36,7 @@ public class JpaTransactionManagerRuleTest {
   @Rule
   public final JpaTransactionManagerRule jpaTmRule =
       new JpaTransactionManagerRule.Builder()
-          .withAnnotatedClass(TestEntity.class)
+          .withEntityClass(TestEntity.class)
           .withProperty(Environment.HBM2DDL_AUTO, "update")
           .build();
 
@@ -66,7 +66,7 @@ public class JpaTransactionManagerRuleTest {
 
   @Test
   public void testExtraParameters() {
-    // This test verifies that 1) withAnnotatedClass() has registered TestEntity and 2) The table
+    // This test verifies that 1) withEntityClass() has registered TestEntity and 2) The table
     // has been created, implying withProperty(HBM2DDL_AUTO, "update") worked.
     TestEntity original = new TestEntity("key", "value");
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(original));

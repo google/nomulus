@@ -49,7 +49,7 @@ public class JpaTransactionManagerRule extends ExternalResource {
   private final String initScript;
 
   @SuppressWarnings("UnusedVariable")
-  private final ImmutableList<Class> annotatedClasses;
+  private final ImmutableList<Class> extraEntityClasses;
 
   private final ImmutableMap userProperties;
 
@@ -59,10 +59,10 @@ public class JpaTransactionManagerRule extends ExternalResource {
 
   private JpaTransactionManagerRule(
       String initScript,
-      ImmutableList<Class> annotatedClasses,
+      ImmutableList<Class> extraEntityClasses,
       ImmutableMap<String, String> userProperties) {
     this.initScript = initScript;
-    this.annotatedClasses = annotatedClasses;
+    this.extraEntityClasses = extraEntityClasses;
     this.userProperties = userProperties;
   }
 
@@ -91,7 +91,7 @@ public class JpaTransactionManagerRule extends ExternalResource {
             database.getUsername(),
             database.getPassword(),
             properties,
-            annotatedClasses);
+            extraEntityClasses);
     JpaTransactionManagerImpl txnManager = new JpaTransactionManagerImpl(emf, clock);
     cachedTm = TransactionManagerFactory.jpaTm;
     TransactionManagerFactory.jpaTm = txnManager;
@@ -114,7 +114,7 @@ public class JpaTransactionManagerRule extends ExternalResource {
   /** Builder for {@link JpaTransactionManagerRule}. */
   public static class Builder {
     private String initScript;
-    private List<Class> annotatedClasses = new ArrayList<Class>();
+    private List<Class> extraEntityClasses = new ArrayList<Class>();
     private Map<String, String> userProperties = new HashMap<String, String>();
 
     /**
@@ -127,8 +127,8 @@ public class JpaTransactionManagerRule extends ExternalResource {
     }
 
     /** Adds an annotated class to the known entities for the database. */
-    public Builder withAnnotatedClass(Class clazz) {
-      this.annotatedClasses.add(clazz);
+    public Builder withEntityClass(Class clazz) {
+      this.extraEntityClasses.add(clazz);
       return this;
     }
 
@@ -144,7 +144,9 @@ public class JpaTransactionManagerRule extends ExternalResource {
         initScript = SCHEMA_GOLDEN_SQL;
       }
       return new JpaTransactionManagerRule(
-          initScript, ImmutableList.copyOf(annotatedClasses), ImmutableMap.copyOf(userProperties));
+          initScript,
+          ImmutableList.copyOf(extraEntityClasses),
+          ImmutableMap.copyOf(userProperties));
     }
   }
 }

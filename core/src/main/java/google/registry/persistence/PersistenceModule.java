@@ -106,18 +106,19 @@ public class PersistenceModule {
       String username,
       String password,
       ImmutableMap<String, String> configs,
-      ImmutableList<Class> annotatedClasses) {
+      ImmutableList<Class> extraEntityClasses) {
     HashMap<String, String> properties = Maps.newHashMap(configs);
     properties.put(Environment.URL, jdbcUrl);
     properties.put(Environment.USER, username);
     properties.put(Environment.PASS, password);
 
     // If there are no annotated classes, we can create the EntityManagerFactory from the generic
-    // method.  Otherwise we have to use a more tailored approach.
+    // method.  Otherwise we have to use a more tailored approach.  Note that this adds to the set
+    // of annotated classes defined in the configuration, it does not override them.
     EntityManagerFactory emf =
-        annotatedClasses.isEmpty()
+        extraEntityClasses.isEmpty()
             ? Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME, properties)
-            : createSpecializedEntityManagerFactory(properties, annotatedClasses);
+            : createSpecializedEntityManagerFactory(properties, extraEntityClasses);
 
     checkState(
         emf != null,
@@ -125,13 +126,17 @@ public class PersistenceModule {
     return emf;
   }
 
+  /**
+   * Creates an EntityManagerFactory using the underlying hibernate service registry.
+   *
+   * <p>This approach allows us to register entity classes in addition to the entity classes defined
+   * in persistence.xml. This is mainly useful for tests.
+   */
   static EntityManagerFactory createSpecializedEntityManagerFactory(
-      HashMap<String, String> configs, ImmutableList<Class> annotatedClasses) {
+      HashMap<String, String> configs, ImmutableList<Class> extraEntityClasses) {
     MetadataSources metadataSources =
         new MetadataSources(new StandardServiceRegistryBuilder().applySettings(configs).build());
-    for (Class clazz : annotatedClasses) {
-      metadataSources.addAnnotatedClass(clazz);
-    }
+    extraEntityClasses.forEach(metadataSources::addAnnotatedClass);
     return metadataSources.buildMetadata().getSessionFactoryBuilder().build();
   }
 
