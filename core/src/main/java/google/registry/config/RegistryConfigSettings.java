@@ -213,5 +213,7 @@ public class RegistryConfigSettings {
   public static class RegistryTool {
     public String clientId;
     public String clientSecret;
+    public String jdbcUrl;
+    public String username;
   }
 }
