@@ -16,6 +16,7 @@ package google.registry.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.common.collect.ImmutableList;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import org.junit.After;
@@ -40,7 +41,8 @@ public class PersistenceModuleTest {
             database.getJdbcUrl(),
             database.getUsername(),
             database.getPassword(),
-            PersistenceModule.providesDefaultDatabaseConfigs());
+            PersistenceModule.providesDefaultDatabaseConfigs(),
+            ImmutableList.of());
   }
 
   @After

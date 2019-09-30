@@ -23,6 +23,7 @@ import static google.registry.config.RegistryConfig.getHibernateHikariMinimumIdl
 import static google.registry.config.RegistryConfig.getHibernateLogSqlQueries;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import dagger.Module;
@@ -36,6 +37,8 @@ import java.util.HashMap;
 import javax.inject.Qualifier;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Environment;
 
 /** Dagger module class for the persistence layer. */
@@ -70,6 +73,7 @@ public class PersistenceModule {
     properties.put(HIKARI_MINIMUM_IDLE, getHibernateHikariMinimumIdle());
     properties.put(HIKARI_MAXIMUM_POOL_SIZE, getHibernateHikariMaximumPoolSize());
     properties.put(HIKARI_IDLE_TIMEOUT, getHibernateHikariIdleTimeout());
+    properties.put(Environment.DIALECT, NomulusPostgreSQLDialect.class.getName());
     return properties.build();
   }
 
@@ -89,7 +93,8 @@ public class PersistenceModule {
     overrides.put("socketFactory", "com.google.cloud.sql.postgres.SocketFactory");
     overrides.put("cloudSqlInstance", instanceConnectionName);
 
-    EntityManagerFactory emf = create(jdbcUrl, username, password, ImmutableMap.copyOf(overrides));
+    EntityManagerFactory emf =
+        create(jdbcUrl, username, password, ImmutableMap.copyOf(overrides), ImmutableList.of());
     Runtime.getRuntime().addShutdownHook(new Thread(emf::close));
     return emf;
   }
@@ -97,17 +102,37 @@ public class PersistenceModule {
   /** Constructs the {@link EntityManagerFactory} instance. */
   @VisibleForTesting
   public static EntityManagerFactory create(
-      String jdbcUrl, String username, String password, ImmutableMap<String, String> configs) {
+      String jdbcUrl,
+      String username,
+      String password,
+      ImmutableMap<String, String> configs,
+      ImmutableList<Class> annotatedClasses) {
     HashMap<String, String> properties = Maps.newHashMap(configs);
     properties.put(Environment.URL, jdbcUrl);
     properties.put(Environment.USER, username);
     properties.put(Environment.PASS, password);
+
+    // If there are no annotated classes, we can create the EntityManagerFactory from the generic
+    // method.  Otherwise we have to use a more tailored approach.
     EntityManagerFactory emf =
-        Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME, properties);
+        annotatedClasses.isEmpty()
+            ? Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME, properties)
+            : createSpecializedEntityManagerFactory(properties, annotatedClasses);
+
     checkState(
         emf != null,
         "Persistence.createEntityManagerFactory() returns a null EntityManagerFactory");
     return emf;
+  }
+
+  static EntityManagerFactory createSpecializedEntityManagerFactory(
+      HashMap<String, String> configs, ImmutableList<Class> annotatedClasses) {
+    MetadataSources metadataSources =
+        new MetadataSources(new StandardServiceRegistryBuilder().applySettings(configs).build());
+    for (Class clazz : annotatedClasses) {
+      metadataSources.addAnnotatedClass(clazz);
+    }
+    return metadataSources.buildMetadata().getSessionFactoryBuilder().build();
   }
 
   /** Dagger qualifier for the {@link EntityManagerFactory} used for App Engine application. */
