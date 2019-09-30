@@ -116,6 +116,20 @@ public class PersistenceModule {
     return emf;
   }
 
+  /**
+   * Creates an EntityManagerFactory using the underlying hibernate service registry.
+   *
+   * <p>This approach allows us to register entity classes in addition to the entity classes defined
+   * in persistence.xml. This is mainly useful for tests.
+   */
+  static EntityManagerFactory createSpecializedEntityManagerFactory(
+      HashMap<String, String> configs, ImmutableList<Class> extraEntityClasses) {
+    MetadataSources metadataSources =
+        new MetadataSources(new StandardServiceRegistryBuilder().applySettings(configs).build());
+    extraEntityClasses.forEach(metadataSources::addAnnotatedClass);
+    return metadataSources.buildMetadata().getSessionFactoryBuilder().build();
+  }
+
   /** Dagger qualifier for the {@link EntityManagerFactory} used for App Engine application. */
   @Qualifier
   @Documented
