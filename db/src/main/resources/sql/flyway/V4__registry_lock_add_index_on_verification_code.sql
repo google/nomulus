@@ -12,19 +12,5 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-    create table "RegistryLock" (
-       revision_id  bigserial not null,
-        action text not null,
-        completion_timestamp timestamptz,
-        creation_timestamp timestamptz not null,
-        domain_name text not null,
-        is_superuser boolean not null,
-        registrar_id text not null,
-        registrar_poc_id text,
-        repo_id text not null,
-        verification_code text not null,
-        primary key (revision_id)
-    );
-
-    alter table if exists "RegistryLock" 
-       add constraint idx_registry_lock_repo_id_revision_id unique (repo_id, revision_id);
+    create index if not exists idx_registry_lock_verification_code ON "RegistryLock"
+       using btree (verification_code);
