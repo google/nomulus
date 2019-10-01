@@ -60,7 +60,7 @@ import org.joda.time.DateTime;
     indexes = {
       @Index(
           name = "idx_registry_lock_repo_id_revision_id",
-          columnList = "repo_id, revision_id",
+          columnList = "repoId, revisionId",
           unique = true),
       @Index(name = "idx_registry_lock_verification_code", columnList = "verificationCode")
     })
@@ -74,11 +74,11 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "revision_id", nullable = false)
+  @Column(nullable = false)
   private Long revisionId;
 
   /** EPP repo ID of the domain in question. */
-  @Column(name = "repo_id", nullable = false)
+  @Column(nullable = false)
   private String repoId;
 
   // TODO (b/140568328): remove this when everything is in Cloud SQL and we can join on "domain"
