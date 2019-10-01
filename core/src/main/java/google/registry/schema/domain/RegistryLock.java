@@ -21,7 +21,9 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
+import google.registry.util.DateTimeUtils;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -149,8 +151,9 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
     return toJodaDateTime(creationTimestamp);
   }
 
-  public DateTime getCompletionTimestamp() {
-    return completionTimestamp == null ? null : toJodaDateTime(completionTimestamp);
+  /** Returns the completion timestamp, or empty if this lock has not been completed yet. */
+  public Optional<DateTime> getCompletionTimestamp() {
+    return Optional.ofNullable(completionTimestamp).map(DateTimeUtils::toJodaDateTime);
   }
 
   public String getVerificationCode() {
