@@ -23,7 +23,16 @@ def projects = ['production': 'domain-registry',
 def environment = rootProject.findProperty("environment")
 
 if (environment == null) {
-    environment = 'production'
+    environment = 'crash'
+    System.err.println('deploying to crash')
+} else if (environment == 'production' || environment == 'sandbox') {
+    // Print a prominant warning in bright red.
+    System.err.println('\033[31;1m-----------------------------------------------------------------')
+    System.err.println('*** DANGER WILL ROBINSON!')
+    System.err.println('*** You may not deploy to production or sandbox from gradle.  Do a')
+    System.err.println('*** release from Spinnaker, see deployment playbook.')
+    System.err.println('-----------------------------------------------------------------')
+    throw new GradleException('Aborting. See prominent error above.')
 }
 
 def gcpProject = projects[environment]
