@@ -97,7 +97,6 @@ publishing {
       groupId 'google.registry'
       artifactId 'schema'
       version project.schema_version
-
       artifact schemaJar
     }
   }
