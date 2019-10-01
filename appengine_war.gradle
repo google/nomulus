@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-apply from: "${rootDir.path}/projects.gradle"
 apply plugin: 'war'
 
 def environment = rootProject.environment
@@ -68,6 +67,10 @@ appengine {
         if (!rootProject.prodOrSandboxEnv) {
             version = 'GCLOUD_CONFIG'
         }
+
+        // Don't set gcpProject directly, it gets overriden in ./build.gradle.
+        // Do -P environment={crash,alpha} instead.  For sandbox/production,
+        // use Spinnaker.
         projectId = gcpProject
     }
 }
@@ -92,4 +95,15 @@ explodeWar.doLast {
 
 rootProject.deploy.dependsOn appengineDeployAll
 rootProject.stage.dependsOn appengineStage
-appengineDeployAll.dependsOn rootProject.verifyDeployment
+
+// Impose verification for all of the deployment tasks.  We haven't found a
+// better way to do this other than to apply to each of them independently.
+// If a new task gets added, it will still fail if "environment"  is not defined
+// because gcpProject is null.  We just won't get as friendly an error message.
+appengineDeployAll.configure rootProject.verifyDeploymentConfig
+appengineDeploy.configure rootProject.verifyDeploymentConfig
+appengineDeployCron.configure rootProject.verifyDeploymentConfig
+appengineDeployDispatch.configure rootProject.verifyDeploymentConfig
+appengineDeployDos.configure rootProject.verifyDeploymentConfig
+appengineDeployIndex.configure rootProject.verifyDeploymentConfig
+appengineDeployQueue.configure rootProject.verifyDeploymentConfig
