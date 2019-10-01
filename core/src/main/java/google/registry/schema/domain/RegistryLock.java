@@ -54,8 +54,9 @@ import org.joda.time.DateTime;
      * Unique constraint to get around Hibernate's failure to handle auto-increment field in
      * composite primary key.
      *
-     * <p>Note: because of this index, physical columns must be declared in the {@link Column}
-     * annotations for {@link RegistryLock#revisionId} and {@link RegistryLock#repoId} fields.
+     * <p>Note: indexes use the camelCase version of the field names because the {@link
+     * google.registry.persistence.NomulusNamingStrategy} does not translate the field name into the
+     * snake_case column name until the write itself.
      */
     indexes = {
       @Index(

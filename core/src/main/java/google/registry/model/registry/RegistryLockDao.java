@@ -23,6 +23,11 @@ import javax.persistence.EntityManager;
 /** Data access object for {@link google.registry.schema.domain.RegistryLock}. */
 public final class RegistryLockDao {
 
+  /**
+   * Returns the most recent version of the {@link RegistryLock} referred to by the verification
+   * code (there may be two instances of the same code in the database--one after lock object
+   * creation and one after verification.
+   */
   public static RegistryLock getByVerificationCode(String verificationCode) {
     return jpaTm()
         .transact(
