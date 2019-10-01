@@ -150,7 +150,7 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   }
 
   public DateTime getCompletionTimestamp() {
-    return toJodaDateTime(completionTimestamp);
+    return completionTimestamp == null ? null : toJodaDateTime(completionTimestamp);
   }
 
   public String getVerificationCode() {
