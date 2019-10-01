@@ -69,7 +69,7 @@ appengine {
             version = 'GCLOUD_CONFIG'
         }
 
-        // Don't set this directly, it gets overrident in ./projects.gradle.
+        // Don't set this directly, it gets overriden in ./projects.gradle.
         // Do -P environment={crash,alpha} instead.  For sandbox/production,
         // use Spinnaker.
         projectId = gcpProject
