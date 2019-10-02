@@ -47,10 +47,7 @@ public class JpaTransactionManagerRule extends ExternalResource {
   private final DateTime now = DateTime.now(UTC);
   private final FakeClock clock = new FakeClock(now);
   private final String initScript;
-
-  @SuppressWarnings("UnusedVariable")
   private final ImmutableList<Class> extraEntityClasses;
-
   private final ImmutableMap userProperties;
 
   private JdbcDatabaseContainer database;
