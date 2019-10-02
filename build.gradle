@@ -119,6 +119,7 @@ task stage {
 
 def environments = ['production', 'sandbox', 'alpha', 'crash']
 
+// TODO(mmuller): Move this into internal specialization code.
 def projects = ['production': 'domain-registry',
                 'sandbox'   : 'domain-registry-sandbox',
                 'alpha'     : 'domain-registry-alpha',
@@ -133,15 +134,7 @@ if (environment == null) {
     // environment to "crash" because other code needs this property to
     // explode the war file.
     environment = 'crash'
-} else if (environment == 'production' || environment == 'sandbox') {
-    // Print a prominent warning in bright red.
-    System.err.println('\033[31;1m-----------------------------------------------------------------')
-    System.err.println('*** DANGER WILL ROBINSON!')
-    System.err.println('*** You may not deploy to production or sandbox from gradle.  Do a')
-    System.err.println('*** release from Spinnaker, see deployment playbook.')
-    System.err.println('-----------------------------------------------------------------')
-    throw new GradleException('Aborting. See prominent error above.')
-} else {
+} else if (environment != 'production' && environment != 'sandbox') {
     gcpProject = projects[environment]
     if (gcpProject == null) {
         throw new GradleException("-Penvironment must be one of ${environments}.")
@@ -154,8 +147,15 @@ rootProject.ext.prodOrSandboxEnv = environment in ['production', 'sandbox']
 
 // Function to verify that the deployment parameters have been set.
 def verifyDeploymentParams() {
-    // See projects.gradle.  If the user doesn't specify "environment gcp
-    if (gcpProject == null) {
+    if (prodOrSandboxEnv) {
+        // Do not deploy to prod or sandbox. Print a prominent error in bright red.
+        System.err.println('\033[31;1m-----------------------------------------------------------------')
+        System.err.println('*** DANGER WILL ROBINSON!')
+        System.err.println('*** You may not deploy to production or sandbox from gradle.  Do a')
+        System.err.println('*** release from Spinnaker, see deployment playbook.')
+        System.err.println('-----------------------------------------------------------------')
+        throw new GradleException('Aborting. See prominent error above.')
+    } else if (gcpProject == null) {
         def error = 'You must specify -P environment={crash,alpha}'
         System.err.println("\033[33;1m${error}\033[0m")
         throw GradleException("Aborting:  ${error}")
