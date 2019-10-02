@@ -18,6 +18,7 @@ import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import google.registry.persistence.PersistenceModule;
 import google.registry.testing.FakeClock;
 import java.util.ArrayList;
@@ -25,6 +26,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.persistence.EntityManagerFactory;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.Environment;
 import org.joda.time.DateTime;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.RuleChain;
@@ -83,7 +87,7 @@ public class JpaTransactionManagerRule extends ExternalResource {
     }
 
     emf =
-        PersistenceModule.create(
+        createEntityManagerFactory(
             database.getJdbcUrl(),
             database.getUsername(),
             database.getPassword(),
@@ -101,6 +105,24 @@ public class JpaTransactionManagerRule extends ExternalResource {
       emf.close();
     }
     cachedTm = null;
+  }
+
+  /** Constructs the {@link EntityManagerFactory} instance. */
+  private static EntityManagerFactory createEntityManagerFactory(
+      String jdbcUrl,
+      String username,
+      String password,
+      ImmutableMap<String, String> configs,
+      ImmutableList<Class> extraEntityClasses) {
+    HashMap<String, String> properties = Maps.newHashMap(configs);
+    properties.put(Environment.URL, jdbcUrl);
+    properties.put(Environment.USER, username);
+    properties.put(Environment.PASS, password);
+
+    MetadataSources metadataSources =
+        new MetadataSources(new StandardServiceRegistryBuilder().applySettings(properties).build());
+    extraEntityClasses.forEach(metadataSources::addAnnotatedClass);
+    return metadataSources.buildMetadata().getSessionFactoryBuilder().build();
   }
 
   /** Returns the {@link FakeClock} used by the underlying {@link JpaTransactionManagerImpl}. */
