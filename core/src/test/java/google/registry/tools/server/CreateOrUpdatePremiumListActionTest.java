@@ -61,8 +61,7 @@ public class CreateOrUpdatePremiumListActionTest {
     PremiumList premiumList = action.parseInputToPremiumList();
     assertThat(premiumList.getName()).isEqualTo("testlist");
     assertThat(premiumList.getLabelsToPrices())
-        .containsExactlyEntriesIn(
-            ImmutableMap.of("foo", twoDigits(99.50), "bar", twoDigits(30), "baz", twoDigits(10)));
+        .containsExactly("foo", twoDigits(99.50), "bar", twoDigits(30), "baz", twoDigits(10));
   }
 
   @Test
