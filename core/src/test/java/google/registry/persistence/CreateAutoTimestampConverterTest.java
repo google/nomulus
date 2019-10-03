@@ -14,9 +14,11 @@
 package google.registry.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
+import google.registry.model.transaction.JpaTransactionManagerRule;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +35,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -50,29 +53,14 @@ public class CreateAutoTimestampConverterTest {
           .withUsername("postgres")
           .withPassword("domain-registry");
 
-  private SessionFactory sessionFactory;
+  @Rule
+  public final JpaTransactionManagerRule jpaTmRule =
+      new JpaTransactionManagerRule.Builder()
+          .withEntityClass(TestEntity.class)
+          .withProperty(Environment.HBM2DDL_AUTO, "update")
+          .build();
 
   public CreateAutoTimestampConverterTest() {}
-
-  @Before
-  public void setUp() {
-    String dbHost = postgres.getContainerIpAddress();
-    int dbPort = postgres.getMappedPort(POSTGRESQL_PORT);
-
-    // TODO(mmuller): add this to a rule
-    Map<String, String> settings = new HashMap<>();
-    settings.put(Environment.DIALECT, NomulusPostgreSQLDialect.class.getName());
-    settings.put(
-        Environment.URL, "jdbc:postgresql://" + dbHost + ":" + dbPort + "/postgres?useSSL=false");
-    settings.put(Environment.USER, "postgres");
-    settings.put(Environment.PASS, "domain-registry");
-    settings.put(Environment.HBM2DDL_AUTO, "update");
-
-    MetadataSources metadataSources =
-        new MetadataSources(new StandardServiceRegistryBuilder().applySettings(settings).build());
-    metadataSources.addAnnotatedClass(TestEntity.class);
-    sessionFactory = metadataSources.buildMetadata().getSessionFactoryBuilder().build();
-  }
 
   @Test
   public void testTypeConversion() {
@@ -80,20 +68,10 @@ public class CreateAutoTimestampConverterTest {
         CreateAutoTimestamp.create(new DateTime(2019, 9, 9, 11, 39, DateTimeZone.UTC));
     TestEntity ent = new TestEntity("myinst", ts);
 
-    Session ses = sessionFactory.openSession();
-    Transaction txn = ses.beginTransaction();
-    ses.save(ent);
-    txn.commit();
-
-    List<TestEntity> result = ses.createQuery("from TestEntity T where T.id = 'myinst'").list();
-    assertThat(result).containsExactly(new TestEntity("myinst", ts));
-
-    // Verify that we can load this from a new session.
-    ses = sessionFactory.openSession();
-    result = ses.createQuery("from TestEntity T where T.id = 'myinst'").list();
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).name).isEqualTo("myinst");
-    assertThat(result.get(0).cat).isEqualTo(ts);
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent));
+    TestEntity result =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst"));
+    assertThat(result).isEqualTo(new TestEntity("myinst", ts));
   }
 
   @Test
@@ -101,20 +79,14 @@ public class CreateAutoTimestampConverterTest {
     CreateAutoTimestamp ts = CreateAutoTimestamp.create(null);
     TestEntity ent = new TestEntity("autoinit", ts);
 
-    DateTime start = DateTime.now(DateTimeZone.UTC);
-    Session ses = sessionFactory.openSession();
-    Transaction txn = ses.beginTransaction();
-    ses.save(ent);
-    txn.commit();
-    DateTime end = DateTime.now(DateTimeZone.UTC);
 
-    // We have to evict the object from the cache so we can read back the object with its datetime.
-    ses.evict(ent);
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent));
 
-    List<TestEntity> result = ses.createQuery("from TestEntity where name = 'autoinit'").list();
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).cat.getTimestamp()).isAtLeast(start);
-    assertThat(result.get(0).cat.getTimestamp()).isAtMost(end);
+    TestEntity result =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "autoinit"));
+    assertThat(
+        result.cat.getTimestamp()).isEqualTo(
+            jpaTmRule.getTxnClock().nowUtc());
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.

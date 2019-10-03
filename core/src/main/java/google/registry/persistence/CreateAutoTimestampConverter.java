@@ -14,6 +14,7 @@
 package google.registry.persistence;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
+import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.util.DateTimeUtils;
@@ -33,9 +34,8 @@ public class CreateAutoTimestampConverter
 
   @Override
   public Timestamp convertToDatabaseColumn(CreateAutoTimestamp entity) {
-    // TODO(mmuller): Use transaction time instead of "now".
     DateTime dateTime =
-        firstNonNull(((CreateAutoTimestamp) entity).getTimestamp(), DateTime.now(DateTimeZone.UTC));
+        firstNonNull(((CreateAutoTimestamp) entity).getTimestamp(), jpaTm().getTransactionTime());
     return Timestamp.from(DateTimeUtils.toZonedDateTime(dateTime).toInstant());
   }
 
