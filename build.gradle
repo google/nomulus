@@ -120,20 +120,18 @@ task stage {
 def environments = ['production', 'sandbox', 'alpha', 'crash']
 
 // TODO(mmuller): Move this into internal specialization code.
-def projects = ['production': 'domain-registry',
-                'sandbox'   : 'domain-registry-sandbox',
+def projects = ['production': 'domain-registry-xxx',
+                'sandbox'   : 'domain-registry-sandbox-xxx',
                 'alpha'     : 'domain-registry-alpha',
                 'crash'     : 'domain-registry-crash']
 
-def environment = rootProject.findProperty("environment")
-
 def gcpProject = null
 
-if (environment == null) {
+if (environment == '') {
     // Keep the project null, this will prevent deployment.  Set the
-    // environment to "crash" because other code needs this property to
+    // environment to "alpha" because other code needs this property to
     // explode the war file.
-    environment = 'crash'
+    environment = 'alpha'
 } else if (environment != 'production' && environment != 'sandbox') {
     gcpProject = projects[environment]
     if (gcpProject == null) {
