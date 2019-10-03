@@ -198,4 +198,3 @@ public class GenerateSqlSchemaCommand implements Command {
     }
   }
 }
-
