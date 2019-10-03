@@ -26,20 +26,21 @@ project.convention.plugins['war'].webAppDirName =
 
 apply plugin: 'com.google.cloud.tools.appengine'
 
+def coreResourcesDir = "${rootDir}/core/build/resources/main"
+
 // Get the web.xml file for the service.
 war {
     webInf {
         from "../../core/src/main/java/google/registry/env/common/${project.name}/WEB-INF"
+
+        from("${coreResourcesDir}/META-INF/persistence.xml") {
+            into "classes/META-INF"
+        }
     }
 }
 
-def coreResourcesDir = "${rootDir}/core/build/resources/main"
 war {
     from("${coreResourcesDir}/google/registry/ui/html") {
-        include "*.html"
-    }
-
-    from("${coreResourcesDir}/META-INF/persistence.xml") {
         include "*.html"
     }
 }
