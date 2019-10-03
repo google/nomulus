@@ -168,6 +168,10 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
     return revisionId;
   }
 
+  public void setCompletionTimestamp(DateTime dateTime) {
+    this.completionTimestamp = toZonedDateTime(dateTime);
+  }
+
   @Override
   public Builder asBuilder() {
     RegistryLock clone = clone(this);

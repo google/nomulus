@@ -15,6 +15,7 @@
 package google.registry.model.registry;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import google.registry.model.transaction.JpaTransactionManagerRule;
@@ -66,14 +67,22 @@ public final class RegistryLockDaoTest {
 
   @Test
   public void testSaveTwiceAndLoad_returnsLatest() {
-    RegistryLock lock = createLock();
-    RegistryLockDao.save(lock);
-    fakeClock.advanceOneMilli();
-    RegistryLock secondVersion =
-        lock.asBuilder().setCompletionTimestamp(fakeClock.nowUtc()).build();
-    RegistryLockDao.save(secondVersion);
-    RegistryLock fromDatabase = RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
-    assertThat(fromDatabase).isEqualTo(secondVersion);
+    jpaTm()
+        .transact(
+            () -> {
+              RegistryLock lock = createLock();
+              RegistryLockDao.save(lock);
+
+              fakeClock.advanceOneMilli();
+              RegistryLock secondLock =
+                  RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
+              secondLock.setCompletionTimestamp(fakeClock.nowUtc());
+              RegistryLockDao.save(secondLock);
+
+              RegistryLock fromDatabase =
+                  RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
+              assertThat(fromDatabase.getCompletionTimestamp()).isEqualTo(fakeClock.nowUtc());
+            });
   }
 
   @Test
