@@ -14,26 +14,17 @@
 package google.registry.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
-import google.registry.tools.GenerateSqlSchemaCommand.NomulusPostgreSQLDialect;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import google.registry.model.transaction.JpaTransactionManagerRule;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
-import org.hibernate.boot.MetadataSources;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Environment;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -51,53 +42,26 @@ public class UpdateAutoTimestampConverterTest {
           .withUsername("postgres")
           .withPassword("domain-registry");
 
-  private SessionFactory sessionFactory;
+  @Rule
+  public final JpaTransactionManagerRule jpaTmRule =
+      new JpaTransactionManagerRule.Builder()
+          .withEntityClass(TestEntity.class)
+          .withProperty(Environment.HBM2DDL_AUTO, "update")
+          .build();
 
   public UpdateAutoTimestampConverterTest() {}
-
-  @Before
-  public void setUp() {
-    String dbHost = postgres.getContainerIpAddress();
-    int dbPort = postgres.getMappedPort(POSTGRESQL_PORT);
-
-    Map<String, String> settings = new HashMap<>();
-
-    // TODO(sarahbot) fix when file from pr #282 is added
-    settings.put(Environment.DIALECT, NomulusPostgreSQLDialect.class.getName());
-    settings.put(
-        Environment.URL, "jdbc:postgresql://" + dbHost + ":" + dbPort + "/postgres?useSSL=false");
-    settings.put(Environment.USER, "postgres");
-    settings.put(Environment.PASS, "domain-registry");
-    settings.put(Environment.HBM2DDL_AUTO, "update");
-
-    MetadataSources metadataSources =
-        new MetadataSources(new StandardServiceRegistryBuilder().applySettings(settings).build());
-    metadataSources.addAnnotatedClass(TestEntity.class);
-    sessionFactory = metadataSources.buildMetadata().getSessionFactoryBuilder().build();
-  }
 
   @Test
   public void testTypeConversion() {
     TestEntity ent = new TestEntity("myinst");
 
-    DateTime start = DateTime.now(DateTimeZone.UTC);
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent));
 
-    Session ses = sessionFactory.openSession();
-    Transaction txn = ses.beginTransaction();
-    ses.save(ent);
-    txn.commit();
+    TestEntity result =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst"));
 
-    DateTime end = DateTime.now(DateTimeZone.UTC);
-
-    // Have to evict the object so we can read it back with its datetime.
-    ses.evict(ent);
-
-    List<TestEntity> result = ses.createQuery("from TestEntity T where T.id = 'myinst'").list();
-
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).name).isEqualTo("myinst");
-    assertThat(result.get(0).uat.getTimestamp()).isAtLeast(start);
-    assertThat(result.get(0).uat.getTimestamp()).isAtMost(end);
+    assertThat(result.name).isEqualTo("myinst");
+    assertThat(result.uat.getTimestamp()).isEqualTo(jpaTmRule.getTxnClock().nowUtc());
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.

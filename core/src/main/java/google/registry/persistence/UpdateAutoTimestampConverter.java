@@ -13,15 +13,17 @@
 // limitations under the License.
 package google.registry.persistence;
 
+import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.util.DateTimeUtils;
 import java.sql.Timestamp;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import javax.annotation.Nullable;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 
 /** JPA converter for storing/retrieving UpdateAutoTimestamp objects. */
 @Converter
@@ -30,11 +32,12 @@ public class UpdateAutoTimestampConverter
 
   @Override
   public Timestamp convertToDatabaseColumn(UpdateAutoTimestamp entity) {
-    DateTime dateTime = DateTime.now(DateTimeZone.UTC);
+    DateTime dateTime = jpaTm().getTransactionTime();
     return Timestamp.from(DateTimeUtils.toZonedDateTime(dateTime).toInstant());
   }
 
   @Override
+  @Nullable
   public UpdateAutoTimestamp convertToEntityAttribute(Timestamp columnValue) {
     if (columnValue == null) {
       return null;
