@@ -28,20 +28,19 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.transfer.BaseTransferObject;
 import google.registry.model.transfer.TransferData;
 import google.registry.persistence.NomulusNamingStrategy;
+import google.registry.persistence.NomulusPostgreSQLDialect;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.schema.tld.PremiumList;
 import google.registry.schema.tmch.ClaimsList;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.Types;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Environment;
-import org.hibernate.dialect.PostgreSQL95Dialect;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.schema.TargetType;
 import org.joda.time.Period;
@@ -196,15 +195,6 @@ public class GenerateSqlSchemaCommand implements Command {
       if (postgresContainer != null) {
         postgresContainer.stop();
       }
-    }
-  }
-
-  /** Nomulus mapping rules for column types in Postgresql. */
-  public static class NomulusPostgreSQLDialect extends PostgreSQL95Dialect {
-    public NomulusPostgreSQLDialect() {
-      super();
-      registerColumnType(Types.VARCHAR, "text");
-      registerColumnType(Types.TIMESTAMP, "timestamptz");
     }
   }
 }
