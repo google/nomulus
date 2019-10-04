@@ -19,21 +19,12 @@ import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.transaction.JpaTransactionManagerRule;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
-import org.hibernate.boot.MetadataSources;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Environment;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,8 +34,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 
 @RunWith(JUnit4.class)
 public class CreateAutoTimestampConverterTest {
-
-  public static final int POSTGRESQL_PORT = 5432;
 
   @ClassRule
   public static PostgreSQLContainer postgres =
@@ -79,14 +68,11 @@ public class CreateAutoTimestampConverterTest {
     CreateAutoTimestamp ts = CreateAutoTimestamp.create(null);
     TestEntity ent = new TestEntity("autoinit", ts);
 
-
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent));
 
     TestEntity result =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "autoinit"));
-    assertThat(
-        result.cat.getTimestamp()).isEqualTo(
-            jpaTmRule.getTxnClock().nowUtc());
+    assertThat(result.cat.getTimestamp()).isEqualTo(jpaTmRule.getTxnClock().nowUtc());
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.

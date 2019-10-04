@@ -25,7 +25,6 @@ import javax.annotation.Nullable;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 
 /** JPA converter to for storing/retrieving CreateAutoTimestamp objects. */
 @Converter
@@ -41,7 +40,7 @@ public class CreateAutoTimestampConverter
 
   @Override
   @Nullable
-  public CreateAutoTimestamp convertToEntityAttribute(Timestamp columnValue) {
+  public CreateAutoTimestamp convertToEntityAttribute(@Nullable Timestamp columnValue) {
     if (columnValue == null) {
       return null;
     }
