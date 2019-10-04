@@ -14,11 +14,8 @@
 
 package google.registry.model.transaction;
 
-import com.google.appengine.api.utils.SystemProperty;
-import com.google.appengine.api.utils.SystemProperty.Environment.Value;
 import com.google.common.annotations.VisibleForTesting;
 import google.registry.model.ofy.DatastoreTransactionManager;
-import google.registry.persistence.DaggerPersistenceComponent;
 
 /** Factory class to create {@link TransactionManager} instance. */
 // TODO: Rename this to PersistenceFactory and move to persistence package.
@@ -30,11 +27,13 @@ public class TransactionManagerFactory {
   private TransactionManagerFactory() {}
 
   private static JpaTransactionManager createJpaTransactionManager() {
-    if (SystemProperty.environment.value() == Value.Production) {
-      return DaggerPersistenceComponent.create().jpaTransactionManager();
-    } else {
-      return DummyJpaTransactionManager.create();
-    }
+    // TODO(shicong): There is currently no environment where we want to create a real JPA
+    // transaction manager here.  The unit tests that require one are all set up using
+    // JpaTransactionManagerRule which launches its own PostgreSQL instance.  When we actually have
+    // PostgreSQL tables in production, ensure that all of the test environments are set up
+    // correctly and restore the code that creates a JpaTransactionManager when
+    // RegistryEnvironment.get() != UNITTEST.
+    return DummyJpaTransactionManager.create();
   }
 
   private static TransactionManager createTransactionManager() {
