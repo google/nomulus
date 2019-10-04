@@ -16,6 +16,7 @@ package google.registry.schema.tld;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.JUnitBackports.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.transaction.JpaTransactionManagerRule;
@@ -58,6 +59,18 @@ public class PremiumListDaoTest {
             .getSingleResult();
     assertThat(persistedList.getLabelsToPrices()).containsExactlyEntriesIn(TEST_PRICES);
     assertThat(persistedList.getCreationTimestamp()).isGreaterThan(beforeTest);
+  }
+
+  @Test
+  public void saveNew_throwsWhenPremiumListAlreadyExists() {
+    PremiumListDao.saveNew(PremiumList.create("testlist", CurrencyUnit.USD, TEST_PRICES));
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                PremiumListDao.saveNew(
+                    PremiumList.create("testlist", CurrencyUnit.USD, TEST_PRICES)));
+    assertThat(thrown).hasMessageThat().contains("A premium list of this name already exists");
   }
 
   @Test

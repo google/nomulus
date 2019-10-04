@@ -44,21 +44,21 @@ import org.joda.time.DateTime;
 @Entity
 @Table(
     name = "PremiumList",
-    indexes = {@Index(columnList = "name", name = "name_idx")})
+    indexes = {@Index(columnList = "name", name = "premiumlist_name_idx")})
 public class PremiumList {
 
-  @Column(name = "name", nullable = false)
+  @Column(nullable = false)
   private String name;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "revision_id", nullable = false)
+  @Column(nullable = false)
   private Long revisionId;
 
-  @Column(name = "creation_timestamp", nullable = false)
+  @Column(nullable = false)
   private CreateAutoTimestamp creationTimestamp = CreateAutoTimestamp.create(null);
 
-  @Column(name = "currency", nullable = false)
+  @Column(nullable = false)
   private CurrencyUnit currency;
 
   @ElementCollection
