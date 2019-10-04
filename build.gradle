@@ -120,8 +120,8 @@ task stage {
 def environments = ['production', 'sandbox', 'alpha', 'crash']
 
 // TODO(mmuller): Move this into internal specialization code.
-def projects = ['production': 'domain-registry-xxx',
-                'sandbox'   : 'domain-registry-sandbox-xxx',
+def projects = ['production': 'domain-registry',
+                'sandbox'   : 'domain-registry-sandbox',
                 'alpha'     : 'domain-registry-alpha',
                 'crash'     : 'domain-registry-crash']
 
