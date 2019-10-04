@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import com.google.common.collect.ImmutableList
-
 plugins {
   id "org.flywaydb.flyway" version "6.0.1"
+  id 'maven-publish'
 }
 
 ext {
@@ -74,6 +73,35 @@ ext {
     return execInBash(command, '/tmp')
   }
 }
+
+task schemaJar(type: Jar) {
+  archiveBaseName = 'schema'
+  from(sourceSets.main.resources) {
+    include 'sql/flyway/**'
+    include 'sql/schema/nomulus.golden.sql'
+  }
+}
+
+artifacts {
+  archives schemaJar
+}
+
+publishing {
+  repositories {
+    maven {
+      url project.schema_jar_repo
+    }
+  }
+  publications {
+    schemaOrmPublication(MavenPublication) {
+      groupId 'google.registry'
+      artifactId 'schema'
+      version project.schema_version
+      artifact schemaJar
+    }
+  }
+}
+
 
 flyway {
   def accessInfo = project.ext.getJdbcAccessInfo()

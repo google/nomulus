@@ -12,10 +12,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
--- Script to create a user with read-write permission to all tables.
+-- Script to create a user with read-write permission to all tables (except for
+-- WRITE permissions to flyway_schema_history).
 
 CREATE USER :username ENCRYPTED PASSWORD :'password';
 GRANT CONNECT ON DATABASE postgres TO :username;
 GRANT USAGE ON SCHEMA public TO :username;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO :username;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO :username;
+REVOKE INSERT, UPDATE, DELETE ON TABLE public.flyway_schema_history FROM :username;

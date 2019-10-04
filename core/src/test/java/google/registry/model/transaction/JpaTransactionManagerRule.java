@@ -16,9 +16,19 @@ package google.registry.model.transaction;
 
 import static org.joda.time.DateTimeZone.UTC;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import google.registry.persistence.PersistenceModule;
 import google.registry.testing.FakeClock;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.persistence.EntityManagerFactory;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.Environment;
 import org.joda.time.DateTime;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.RuleChain;
@@ -41,12 +51,20 @@ public class JpaTransactionManagerRule extends ExternalResource {
   private final DateTime now = DateTime.now(UTC);
   private final FakeClock clock = new FakeClock(now);
   private final String initScript;
+  private final ImmutableList<Class> extraEntityClasses;
+  private final ImmutableMap userProperties;
+
   private JdbcDatabaseContainer database;
   private EntityManagerFactory emf;
   private JpaTransactionManager cachedTm;
 
-  private JpaTransactionManagerRule(String initScript) {
+  private JpaTransactionManagerRule(
+      String initScript,
+      ImmutableList<Class> extraEntityClasses,
+      ImmutableMap<String, String> userProperties) {
     this.initScript = initScript;
+    this.extraEntityClasses = extraEntityClasses;
+    this.userProperties = userProperties;
   }
 
   /** Wraps {@link JpaTransactionManagerRule} in a {@link PostgreSQLContainer}. */
@@ -60,12 +78,21 @@ public class JpaTransactionManagerRule extends ExternalResource {
 
   @Override
   public void before() {
+    ImmutableMap properties = PersistenceModule.providesDefaultDatabaseConfigs();
+    if (!userProperties.isEmpty()) {
+      // If there are user properties, create a new properties object with these added.
+      ImmutableMap.Builder builder = properties.builder();
+      builder.putAll(userProperties);
+      properties = builder.build();
+    }
+
     emf =
-        PersistenceModule.create(
+        createEntityManagerFactory(
             database.getJdbcUrl(),
             database.getUsername(),
             database.getPassword(),
-            PersistenceModule.providesDefaultDatabaseConfigs());
+            properties,
+            extraEntityClasses);
     JpaTransactionManagerImpl txnManager = new JpaTransactionManagerImpl(emf, clock);
     cachedTm = TransactionManagerFactory.jpaTm;
     TransactionManagerFactory.jpaTm = txnManager;
@@ -80,6 +107,24 @@ public class JpaTransactionManagerRule extends ExternalResource {
     cachedTm = null;
   }
 
+  /** Constructs the {@link EntityManagerFactory} instance. */
+  private static EntityManagerFactory createEntityManagerFactory(
+      String jdbcUrl,
+      String username,
+      String password,
+      ImmutableMap<String, String> configs,
+      ImmutableList<Class> extraEntityClasses) {
+    HashMap<String, String> properties = Maps.newHashMap(configs);
+    properties.put(Environment.URL, jdbcUrl);
+    properties.put(Environment.USER, username);
+    properties.put(Environment.PASS, password);
+
+    MetadataSources metadataSources =
+        new MetadataSources(new StandardServiceRegistryBuilder().applySettings(properties).build());
+    extraEntityClasses.forEach(metadataSources::addAnnotatedClass);
+    return metadataSources.buildMetadata().getSessionFactoryBuilder().build();
+  }
+
   /** Returns the {@link FakeClock} used by the underlying {@link JpaTransactionManagerImpl}. */
   public FakeClock getTxnClock() {
     return clock;
@@ -88,6 +133,8 @@ public class JpaTransactionManagerRule extends ExternalResource {
   /** Builder for {@link JpaTransactionManagerRule}. */
   public static class Builder {
     private String initScript;
+    private List<Class> extraEntityClasses = new ArrayList<Class>();
+    private Map<String, String> userProperties = new HashMap<String, String>();
 
     /**
      * Sets the SQL script to be used to initialize the database. If not set,
@@ -98,12 +145,27 @@ public class JpaTransactionManagerRule extends ExternalResource {
       return this;
     }
 
+    /** Adds an annotated class to the known entities for the database. */
+    public Builder withEntityClass(Class clazz) {
+      this.extraEntityClasses.add(clazz);
+      return this;
+    }
+
+    /** Adds the specified property to those used to initialize the transaction manager. */
+    public Builder withProperty(String name, String value) {
+      this.userProperties.put(name, value);
+      return this;
+    }
+
     /** Builds a {@link JpaTransactionManagerRule} instance. */
     public JpaTransactionManagerRule build() {
       if (initScript == null) {
         initScript = SCHEMA_GOLDEN_SQL;
       }
-      return new JpaTransactionManagerRule(initScript);
+      return new JpaTransactionManagerRule(
+          initScript,
+          ImmutableList.copyOf(extraEntityClasses),
+          ImmutableMap.copyOf(userProperties));
     }
   }
 }

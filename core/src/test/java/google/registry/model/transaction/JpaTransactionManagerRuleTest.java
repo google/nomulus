@@ -18,8 +18,12 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
+import google.registry.model.ImmutableObject;
 import java.util.List;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.PersistenceException;
+import org.hibernate.cfg.Environment;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,7 +35,10 @@ public class JpaTransactionManagerRuleTest {
 
   @Rule
   public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
+      new JpaTransactionManagerRule.Builder()
+          .withEntityClass(TestEntity.class)
+          .withProperty(Environment.HBM2DDL_AUTO, "update")
+          .build();
 
   @Test
   public void verifiesRuleWorks() {
@@ -55,5 +62,29 @@ public class JpaTransactionManagerRuleTest {
                       .getResultList();
               assertThat(results).isEmpty();
             });
+  }
+
+  @Test
+  public void testExtraParameters() {
+    // This test verifies that 1) withEntityClass() has registered TestEntity and 2) The table
+    // has been created, implying withProperty(HBM2DDL_AUTO, "update") worked.
+    TestEntity original = new TestEntity("key", "value");
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(original));
+    TestEntity retrieved =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "key"));
+    assertThat(retrieved).isEqualTo(original);
+  }
+
+  @Entity(name = "TestEntity") // Specify name to avoid nested class naming issues.
+  static class TestEntity extends ImmutableObject {
+    @Id String key;
+    String value;
+
+    TestEntity(String key, String value) {
+      this.key = key;
+      this.value = value;
+    }
+
+    TestEntity() {}
   }
 }

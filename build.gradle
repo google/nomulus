@@ -109,20 +109,63 @@ task deploy {
   description = 'Deploys all services to App Engine.'
 }
 
-task verifyDeployment {
-  group = 'deployment'
-  description = 'Ensure that one cannot deploy to production or sandbox.'
-  doFirst {
-    if (rootProject.prodOrSandboxEnv) {
-      throw new GradleException("Cannot deploy to production or sandbox.");
-    }
-  }
-}
-
 task stage {
   group = 'deployment'
   description = 'Generates application directories for all services.'
 }
+
+// App-engine environment configuration.  We set up all of the variables in
+// the root project.
+
+def environments = ['production', 'sandbox', 'alpha', 'crash']
+
+// TODO(mmuller): Move this into internal specialization code.
+def projects = ['production': 'domain-registry',
+                'sandbox'   : 'domain-registry-sandbox',
+                'alpha'     : 'domain-registry-alpha',
+                'crash'     : 'domain-registry-crash']
+
+def gcpProject = null
+
+if (environment == '') {
+    // Keep the project null, this will prevent deployment.  Set the
+    // environment to "alpha" because other code needs this property to
+    // explode the war file.
+    environment = 'alpha'
+} else if (environment != 'production' && environment != 'sandbox') {
+    gcpProject = projects[environment]
+    if (gcpProject == null) {
+        throw new GradleException("-Penvironment must be one of ${environments}.")
+    }
+}
+
+rootProject.ext.environment = environment
+rootProject.ext.gcpProject = gcpProject
+rootProject.ext.prodOrSandboxEnv = environment in ['production', 'sandbox']
+
+// Function to verify that the deployment parameters have been set.
+def verifyDeploymentParams() {
+    if (prodOrSandboxEnv) {
+        // Do not deploy to prod or sandbox. Print a prominent error in bright red.
+        System.err.println('\033[31;1m-----------------------------------------------------------------')
+        System.err.println('*** DANGER WILL ROBINSON!')
+        System.err.println('*** You may not deploy to production or sandbox from gradle.  Do a')
+        System.err.println('*** release from Spinnaker, see deployment playbook.')
+        System.err.println('-----------------------------------------------------------------')
+        throw new GradleException('Aborting. See prominent error above.')
+    } else if (gcpProject == null) {
+        def error = 'You must specify -P environment={alpha,crash}'
+        System.err.println("\033[33;1m${error}\033[0m")
+        throw GradleException("Aborting:  ${error}")
+    }
+}
+
+// Closure that we can just drop into all of our deployment tasks.
+rootProject.ext.verifyDeploymentConfig = {
+    doFirst { verifyDeploymentParams() }
+}
+
+// Subproject configuration.
 
 allprojects {
   // Skip no-op project

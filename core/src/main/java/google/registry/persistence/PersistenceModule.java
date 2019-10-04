@@ -70,6 +70,7 @@ public class PersistenceModule {
     properties.put(HIKARI_MINIMUM_IDLE, getHibernateHikariMinimumIdle());
     properties.put(HIKARI_MAXIMUM_POOL_SIZE, getHibernateHikariMaximumPoolSize());
     properties.put(HIKARI_IDLE_TIMEOUT, getHibernateHikariIdleTimeout());
+    properties.put(Environment.DIALECT, NomulusPostgreSQLDialect.class.getName());
     return properties.build();
   }
 
@@ -102,8 +103,13 @@ public class PersistenceModule {
     properties.put(Environment.URL, jdbcUrl);
     properties.put(Environment.USER, username);
     properties.put(Environment.PASS, password);
+
+    // If there are no annotated classes, we can create the EntityManagerFactory from the generic
+    // method.  Otherwise we have to use a more tailored approach.  Note that this adds to the set
+    // of annotated classes defined in the configuration, it does not override them.
     EntityManagerFactory emf =
         Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME, properties);
+
     checkState(
         emf != null,
         "Persistence.createEntityManagerFactory() returns a null EntityManagerFactory");

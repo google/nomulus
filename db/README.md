@@ -18,12 +18,12 @@ Below are the steps to submit a schema change:
     follow the V{id}__{description text}.sql, where {id} is a number that is
     higher than all existing scripts in that folder. Also note that it is a
     **double** underscore in the naming pattern.
-*   Run :db:tests from the Gradle root project. The SchemaTest will fail because
-    the new schema does not match the gold file.
+*   Run the `:db:test` task from the Gradle root project. The SchemaTest will 
+    fail because the new schema does not match the golden file.
 *   Copy db/build/resources/test/testcontainer/mount/dump.txt to the golden file
     (db/src/main/resources/sql/schema/nomulus.golden.sql). Diff it against the
     old version and verify that all changes are expected.
-*   Retrun :db:tests. This time all tests should pass.
+*   Rerun the `:db:test` task. This time all tests should pass.
 
 Relevant files (under db/src/main/resources/sql/schema/):
 
