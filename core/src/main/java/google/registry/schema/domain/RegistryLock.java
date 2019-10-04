@@ -15,16 +15,18 @@
 package google.registry.schema.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.util.DateTimeUtils.toJodaDateTime;
 import static google.registry.util.DateTimeUtils.toZonedDateTime;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.model.Buildable;
+import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
+import google.registry.persistence.CreateAutoTimestampConverter;
 import google.registry.util.DateTimeUtils;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -107,7 +109,8 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
 
   /** Creation timestamp is when the lock/unlock is first requested. */
   @Column(nullable = false)
-  private ZonedDateTime creationTimestamp;
+  @Convert(converter = CreateAutoTimestampConverter.class)
+  private CreateAutoTimestamp creationTimestamp = CreateAutoTimestamp.create(null);
 
   /**
    * Completion timestamp is when the user has verified the lock/unlock, when this object de facto
@@ -151,7 +154,7 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   }
 
   public DateTime getCreationTimestamp() {
-    return toJodaDateTime(creationTimestamp);
+    return creationTimestamp.getTimestamp();
   }
 
   /** Returns the completion timestamp, or empty if this lock has not been completed yet. */
@@ -197,7 +200,6 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
       checkArgumentNotNull(getInstance().domainName, "Domain name cannot be null");
       checkArgumentNotNull(getInstance().registrarId, "Registrar ID cannot be null");
       checkArgumentNotNull(getInstance().action, "Action cannot be null");
-      checkArgumentNotNull(getInstance().creationTimestamp, "Creation timestamp cannot be null");
       checkArgumentNotNull(getInstance().verificationCode, "Verification codecannot be null");
       checkArgument(
           getInstance().registrarPocId != null || getInstance().isSuperuser,
@@ -230,8 +232,8 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
       return this;
     }
 
-    public Builder setCreationTimestamp(DateTime creationTimestamp) {
-      getInstance().creationTimestamp = toZonedDateTime(creationTimestamp);
+    public Builder setCreationTimestamp(CreateAutoTimestamp creationTimestamp) {
+      getInstance().creationTimestamp = creationTimestamp;
       return this;
     }
 

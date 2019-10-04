@@ -22,7 +22,6 @@ import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.schema.domain.RegistryLock.Action;
 import google.registry.testing.AppEngineRule;
-import google.registry.testing.FakeClock;
 import java.util.UUID;
 import javax.persistence.PersistenceException;
 import org.junit.Rule;
@@ -36,18 +35,17 @@ public final class RegistryLockDaoTest {
 
   @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
 
-  private FakeClock fakeClock = new FakeClock();
-
   @Rule
   public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
+      new JpaTransactionManagerRule.Builder().withEntityClass(RegistryLock.class).build();
 
   @Test
   public void testSaveAndLoad_success() {
     RegistryLock lock = createLock();
     RegistryLockDao.save(lock);
     RegistryLock fromDatabase = RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
-    assertThat(lock).isEqualTo(fromDatabase);
+    assertThat(fromDatabase.getDomainName()).isEqualTo(lock.getDomainName());
+    assertThat(fromDatabase.getVerificationCode()).isEqualTo(lock.getVerificationCode());
   }
 
   @Test
@@ -69,13 +67,13 @@ public final class RegistryLockDaoTest {
   public void testSaveTwiceAndLoad_returnsLatest() {
     RegistryLock lock = createLock();
     jpaTm().transact(() -> RegistryLockDao.save(lock));
-    fakeClock.advanceOneMilli();
+    jpaTmRule.getTxnClock().advanceOneMilli();
     jpaTm()
         .transact(
             () -> {
               RegistryLock secondLock =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
-              secondLock.setCompletionTimestamp(fakeClock.nowUtc());
+              secondLock.setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc());
               RegistryLockDao.save(secondLock);
             });
     jpaTm()
@@ -83,7 +81,8 @@ public final class RegistryLockDaoTest {
             () -> {
               RegistryLock fromDatabase =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
-              assertThat(fromDatabase.getCompletionTimestamp()).isEqualTo(fakeClock.nowUtc());
+              assertThat(fromDatabase.getCompletionTimestamp().get())
+                  .isEqualTo(jpaTmRule.getTxnClock().nowUtc());
             });
   }
 
@@ -98,7 +97,6 @@ public final class RegistryLockDaoTest {
         .setDomainName("example.test")
         .setRegistrarId("TheRegistrar")
         .setAction(Action.LOCK)
-        .setCreationTimestamp(fakeClock.nowUtc())
         .setVerificationCode(UUID.randomUUID().toString())
         .isSuperuser(true)
         .build();
