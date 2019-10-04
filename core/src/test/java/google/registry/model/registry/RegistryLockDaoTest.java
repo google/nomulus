@@ -67,18 +67,20 @@ public final class RegistryLockDaoTest {
 
   @Test
   public void testSaveTwiceAndLoad_returnsLatest() {
+    RegistryLock lock = createLock();
+    jpaTm().transact(() -> RegistryLockDao.save(lock));
+    fakeClock.advanceOneMilli();
     jpaTm()
         .transact(
             () -> {
-              RegistryLock lock = createLock();
-              RegistryLockDao.save(lock);
-
-              fakeClock.advanceOneMilli();
               RegistryLock secondLock =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
               secondLock.setCompletionTimestamp(fakeClock.nowUtc());
               RegistryLockDao.save(secondLock);
-
+            });
+    jpaTm()
+        .transact(
+            () -> {
               RegistryLock fromDatabase =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
               assertThat(fromDatabase.getCompletionTimestamp()).isEqualTo(fakeClock.nowUtc());
