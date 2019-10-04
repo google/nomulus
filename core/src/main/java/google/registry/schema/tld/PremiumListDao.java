@@ -40,11 +40,14 @@ public class PremiumListDao {
    */
   public static boolean checkExists(String premiumListName) {
     return jpaTm()
-            .getEntityManager()
-            .createQuery("SELECT 1 FROM PremiumList WHERE name = :name", Long.class)
-            .setParameter("name", premiumListName)
-            .getSingleResult()
-        > 0;
+        .transact(
+            () ->
+                jpaTm()
+                        .getEntityManager()
+                        .createQuery("SELECT 1 FROM PremiumList WHERE name = :name", Long.class)
+                        .setParameter("name", premiumListName)
+                        .getSingleResult()
+                    > 0);
   }
 
   private PremiumListDao() {}
