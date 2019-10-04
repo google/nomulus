@@ -33,8 +33,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 @RunWith(JUnit4.class)
 public class UpdateAutoTimestampConverterTest {
 
-  public static final int POSTGRESQL_PORT = 5432;
-
   @ClassRule
   public static PostgreSQLContainer postgres =
       new PostgreSQLContainer()
@@ -53,7 +51,7 @@ public class UpdateAutoTimestampConverterTest {
 
   @Test
   public void testTypeConversion() {
-    TestEntity ent = new TestEntity("myinst");
+    TestEntity ent = new TestEntity("myinst", null);
 
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent));
 
@@ -62,6 +60,28 @@ public class UpdateAutoTimestampConverterTest {
 
     assertThat(result.name).isEqualTo("myinst");
     assertThat(result.uat.getTimestamp()).isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+  }
+
+  @Test
+  public void testTimeChangesOnSubsequentTransactions() {
+    TestEntity ent1 = new TestEntity("myinst1", null);
+
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent1));
+
+    TestEntity result1 =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst1"));
+
+    jpaTmRule.getTxnClock().advanceOneMilli();
+
+    TestEntity ent2 = new TestEntity("myinst2", result1.uat);
+
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent2));
+
+    TestEntity result2 =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst2"));
+
+    assertThat(result1.uat.getTimestamp()).isNotEqualTo(result2.uat.getTimestamp());
+    assertThat(result2.uat.getTimestamp()).isEqualTo(jpaTmRule.getTxnClock().nowUtc());
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
@@ -74,8 +94,9 @@ public class UpdateAutoTimestampConverterTest {
 
     public TestEntity() {}
 
-    public TestEntity(String name) {
+    public TestEntity(String name, UpdateAutoTimestamp uat) {
       this.name = name;
+      this.uat = uat;
     }
   }
 }

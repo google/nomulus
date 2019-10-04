@@ -23,7 +23,6 @@ import java.time.ZonedDateTime;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
-import org.joda.time.DateTime;
 
 /** JPA converter for storing/retrieving UpdateAutoTimestamp objects. */
 @Converter
@@ -32,13 +31,12 @@ public class UpdateAutoTimestampConverter
 
   @Override
   public Timestamp convertToDatabaseColumn(UpdateAutoTimestamp entity) {
-    DateTime dateTime = jpaTm().getTransactionTime();
-    return Timestamp.from(DateTimeUtils.toZonedDateTime(dateTime).toInstant());
+    return Timestamp.from(DateTimeUtils.toZonedDateTime(jpaTm().getTransactionTime()).toInstant());
   }
 
   @Override
   @Nullable
-  public UpdateAutoTimestamp convertToEntityAttribute(Timestamp columnValue) {
+  public UpdateAutoTimestamp convertToEntityAttribute(@Nullable Timestamp columnValue) {
     if (columnValue == null) {
       return null;
     }
