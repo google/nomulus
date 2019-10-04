@@ -24,7 +24,6 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.hibernate.cfg.Environment;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -53,8 +52,7 @@ public class CreateAutoTimestampConverterTest {
 
   @Test
   public void testTypeConversion() {
-    CreateAutoTimestamp ts =
-        CreateAutoTimestamp.create(new DateTime(2019, 9, 9, 11, 39, DateTimeZone.UTC));
+    CreateAutoTimestamp ts = CreateAutoTimestamp.create(DateTime.parse("2019-09-9T11:39:00Z"));
     TestEntity ent = new TestEntity("myinst", ts);
 
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent));
