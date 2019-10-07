@@ -12,18 +12,18 @@ changes not yet deployed are pushed.
 
 Below are the steps to submit a schema change:
 
-*   Define the incremental DDL script that would update the existing schema to
-    the new one.
-*   Add the script to the src/main/resource/flyway folder. Its name should
-    follow the V{id}__{description text}.sql, where {id} is a number that is
-    higher than all existing scripts in that folder. Also note that it is a
+1.  Write the incremental DDL script that makes your changes to the existing
+    schema. It should be stored in a new file in the
+    `db/src/main/resources/sql/flyway` folder using the naming pattern
+    `V{id}__{description text}.sql`, where `{id}` is the next highest number
+    following the existing scripts in that folder. Also note that it is a
     **double** underscore in the naming pattern.
-*   Run the `:db:test` task from the Gradle root project. The SchemaTest will 
+2.  Run the `:db:test` task from the Gradle root project. The SchemaTest will
     fail because the new schema does not match the golden file.
-*   Copy db/build/resources/test/testcontainer/mount/dump.txt to the golden file
+3.  Copy db/build/resources/test/testcontainer/mount/dump.txt to the golden file
     (db/src/main/resources/sql/schema/nomulus.golden.sql). Diff it against the
     old version and verify that all changes are expected.
-*   Rerun the `:db:test` task. This time all tests should pass.
+4.  Rerun the `:db:test` task. This time all tests should pass.
 
 Relevant files (under db/src/main/resources/sql/schema/):
 
