@@ -33,6 +33,12 @@ public class TransactionManagerFactory {
     // PostgreSQL tables in production, ensure that all of the test environments are set up
     // correctly and restore the code that creates a JpaTransactionManager when
     // RegistryEnvironment.get() != UNITTEST.
+    //
+    // We removed the original code because it didn't work in sandbox (due to the absence of the
+    // persistence.xml file, which has since been added), and then (after adding this) didn't work
+    // in crash because the postgresql password hadn't been set up.  Prior to restoring, we'll need
+    // to do setup in all environments, and we probably only want to do this once we're actually
+    // using Cloud SQL for one of the new tables.
     return DummyJpaTransactionManager.create();
   }
 
