@@ -52,7 +52,7 @@ public class PremiumList {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "revision_id", nullable = false)
+  @Column(nullable = false)
   private Long revisionId;
 
   @Column(nullable = false)
@@ -65,8 +65,8 @@ public class PremiumList {
   @ElementCollection
   @CollectionTable(
       name = "PremiumEntry",
-      joinColumns = @JoinColumn(name = "revision_id", referencedColumnName = "revision_id"))
-  @MapKeyColumn(name = "domain_label")
+      joinColumns = @JoinColumn(name = "revisionId", referencedColumnName = "revisionId"))
+  @MapKeyColumn(name = "domainLabel")
   @Column(name = "price", nullable = false)
   private Map<String, BigDecimal> labelsToPrices;
 
