@@ -17,10 +17,12 @@ package google.registry.schema.tld;
 import static com.google.common.base.Preconditions.checkState;
 
 import google.registry.model.CreateAutoTimestamp;
+import google.registry.persistence.CreateAutoTimestampConverter;
 import java.math.BigDecimal;
 import java.util.Map;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -42,9 +44,7 @@ import org.joda.time.DateTime;
  * This is fine though, because we only use the list with the highest revisionId.
  */
 @Entity
-@Table(
-    name = "PremiumList",
-    indexes = {@Index(columnList = "name", name = "premiumlist_name_idx")})
+@Table(indexes = {@Index(columnList = "name", name = "premiumlist_name_idx")})
 public class PremiumList {
 
   @Column(nullable = false)
@@ -52,10 +52,11 @@ public class PremiumList {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(nullable = false)
+  @Column(name = "revision_id", nullable = false)
   private Long revisionId;
 
   @Column(nullable = false)
+  @Convert(converter = CreateAutoTimestampConverter.class)
   private CreateAutoTimestamp creationTimestamp = CreateAutoTimestamp.create(null);
 
   @Column(nullable = false)
