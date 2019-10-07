@@ -16,29 +16,19 @@ package google.registry.tools.server;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.registry.label.PremiumListUtils.deletePremiumList;
-import static google.registry.model.registry.label.PremiumListUtils.getPremiumPrice;
-import static google.registry.testing.DatastoreHelper.createTlds;
-import static google.registry.testing.DatastoreHelper.loadPremiumListEntries;
 import static google.registry.testing.JUnitBackports.assertThrows;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.common.collect.ImmutableMap;
-import google.registry.model.registry.Registry;
 import google.registry.schema.tld.PremiumList;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeJsonResponse;
 import java.math.BigDecimal;
-import org.joda.money.Money;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/**
- * Unit tests for {@link CreateOrUpdatePremiumListAction}.
- */
+/** Unit tests for {@link CreateOrUpdatePremiumListAction}. */
 @RunWith(JUnit4.class)
 public class CreateOrUpdatePremiumListActionTest {
 
