@@ -46,7 +46,9 @@ public class PremiumListDao {
                         .getEntityManager()
                         .createQuery("SELECT 1 FROM PremiumList WHERE name = :name", Integer.class)
                         .setParameter("name", premiumListName)
-                        .getSingleResult()
+                        .setMaxResults(1)
+                        .getResultList()
+                        .size()
                     > 0);
   }
 

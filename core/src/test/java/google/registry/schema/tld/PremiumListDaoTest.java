@@ -21,9 +21,8 @@ import static google.registry.testing.JUnitBackports.assertThrows;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.transaction.JpaTransactionManagerRule;
 import java.math.BigDecimal;
+import javax.persistence.PersistenceException;
 import org.joda.money.CurrencyUnit;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,29 +47,37 @@ public class PremiumListDaoTest {
 
   @Test
   public void saveNew_worksSuccessfully() {
-    DateTime beforeTest = DateTime.now(DateTimeZone.UTC);
     PremiumList premiumList = PremiumList.create("testname", CurrencyUnit.USD, TEST_PRICES);
     PremiumListDao.saveNew(premiumList);
-    PremiumList persistedList =
-        jpaTm()
-            .getEntityManager()
-            .createQuery("SELECT pl FROM PremiumList pl WHERE pl.name = :name", PremiumList.class)
-            .setParameter("name", "testname")
-            .getSingleResult();
-    assertThat(persistedList.getLabelsToPrices()).containsExactlyEntriesIn(TEST_PRICES);
-    assertThat(persistedList.getCreationTimestamp()).isGreaterThan(beforeTest);
+    jpaTm()
+        .transact(
+            () -> {
+              PremiumList persistedList =
+                  jpaTm()
+                      .getEntityManager()
+                      .createQuery(
+                          "SELECT pl FROM PremiumList pl WHERE pl.name = :name", PremiumList.class)
+                      .setParameter("name", "testname")
+                      .getSingleResult();
+              assertThat(persistedList.getLabelsToPrices()).containsExactlyEntriesIn(TEST_PRICES);
+              assertThat(persistedList.getCreationTimestamp())
+                  .isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+            });
   }
 
   @Test
   public void saveNew_throwsWhenPremiumListAlreadyExists() {
     PremiumListDao.saveNew(PremiumList.create("testlist", CurrencyUnit.USD, TEST_PRICES));
-    IllegalArgumentException thrown =
+    PersistenceException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            PersistenceException.class,
             () ->
                 PremiumListDao.saveNew(
                     PremiumList.create("testlist", CurrencyUnit.USD, TEST_PRICES)));
-    assertThat(thrown).hasMessageThat().contains("A premium list of this name already exists");
+    assertThat(thrown)
+        .hasCauseThat()
+        .hasMessageThat()
+        .contains("A premium list of this name already exists");
   }
 
   @Test

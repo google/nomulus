@@ -33,8 +33,7 @@ public class CreateAutoTimestampConverter
 
   @Override
   public Timestamp convertToDatabaseColumn(CreateAutoTimestamp entity) {
-    DateTime dateTime =
-        firstNonNull(((CreateAutoTimestamp) entity).getTimestamp(), jpaTm().getTransactionTime());
+    DateTime dateTime = firstNonNull(entity.getTimestamp(), jpaTm().getTransactionTime());
     return Timestamp.from(DateTimeUtils.toZonedDateTime(dateTime).toInstant());
   }
 
