@@ -67,7 +67,13 @@ public class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
     verifySentParams(
         connection,
         servletPath,
-        ImmutableMap.of("name", "foo", "inputData", generateInputData(premiumTermsPath)));
+        ImmutableMap.of(
+            "name",
+            "foo",
+            "inputData",
+            generateInputData(premiumTermsPath),
+            "alsoCloudSql",
+            "false"));
   }
 
   @Test
@@ -78,7 +84,28 @@ public class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
         connection,
         servletPath,
         ImmutableMap.of(
-            "name", "example_premium_terms", "inputData", generateInputData(premiumTermsPath)));
+            "name",
+            "example_premium_terms",
+            "inputData",
+            generateInputData(premiumTermsPath),
+            "alsoCloudSql",
+            "false"));
+  }
+
+  @Test
+  public void testRun_alsoCloudSql() throws Exception {
+    runCommandForced("-i=" + premiumTermsPath, "-n=foo", "--also_cloud_sql");
+    assertInStdout("Successfully");
+    verifySentParams(
+        connection,
+        servletPath,
+        ImmutableMap.of(
+            "name",
+            "foo",
+            "inputData",
+            generateInputData(premiumTermsPath),
+            "alsoCloudSql",
+            "true"));
   }
 
   @Test

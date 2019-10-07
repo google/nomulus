@@ -74,7 +74,7 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand
 
   abstract String getCommandPath();
 
-  ImmutableMap<String, ?> getParameterMap() {
+  ImmutableMap<String, String> getParameterMap() {
     return ImmutableMap.of();
   }
 
@@ -95,15 +95,15 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand
 
   @Override
   public String execute() throws Exception {
-    ImmutableMap.Builder<String, Object> params = new ImmutableMap.Builder<>();
+    ImmutableMap.Builder<String, String> params = new ImmutableMap.Builder<>();
     params.put(NAME_PARAM, name);
-    params.put(ALSO_CLOUD_SQL_PARAM, alsoCloudSql);
+    params.put(ALSO_CLOUD_SQL_PARAM, Boolean.toString(alsoCloudSql));
     String inputFileContents = new String(Files.readAllBytes(inputFile), UTF_8);
     String requestBody =
         Joiner.on('&').withKeyValueSeparator("=").join(
             ImmutableMap.of(INPUT_PARAM, URLEncoder.encode(inputFileContents, UTF_8.toString())));
 
-    ImmutableMap<String, ?> extraParams = getParameterMap();
+    ImmutableMap<String, String> extraParams = getParameterMap();
     if (extraParams != null) {
       params.putAll(extraParams);
     }

@@ -36,12 +36,11 @@ public class CreatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
   }
 
   @Override
-  ImmutableMap<String, ?> getParameterMap() {
+  ImmutableMap<String, String> getParameterMap() {
     if (override) {
-      return ImmutableMap.of("override", override);
+      return ImmutableMap.of("override", "true");
     } else {
       return ImmutableMap.of();
     }
   }
-
 }

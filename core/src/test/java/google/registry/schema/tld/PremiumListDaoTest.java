@@ -35,7 +35,7 @@ public class PremiumListDaoTest {
 
   @Rule
   public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
+      new JpaTransactionManagerRule.Builder().withEntityClass(PremiumList.class).build();
 
   private static final ImmutableMap<String, BigDecimal> TEST_PRICES =
       ImmutableMap.of(

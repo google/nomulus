@@ -44,7 +44,7 @@ public class PremiumListDao {
             () ->
                 jpaTm()
                         .getEntityManager()
-                        .createQuery("SELECT 1 FROM PremiumList WHERE name = :name", Long.class)
+                        .createQuery("SELECT 1 FROM PremiumList WHERE name = :name", Integer.class)
                         .setParameter("name", premiumListName)
                         .getSingleResult()
                     > 0);
