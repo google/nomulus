@@ -15,9 +15,9 @@
 -- Script to create a user with read-write permission to all tables (except for
 -- WRITE permissions to flyway_schema_history).
 
-CREATE USER :username ENCRYPTED PASSWORD :'password';
-GRANT CONNECT ON DATABASE postgres TO :username;
-GRANT USAGE ON SCHEMA public TO :username;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO :username;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO :username;
-REVOKE INSERT, UPDATE, DELETE ON TABLE public.flyway_schema_history FROM :username;
+-- Uncomment line below if user needs to be created:
+-- CREATE USER :username ENCRYPTED PASSWORD :'password';
+-- Uncomment line above and comment out line below if user has been created
+-- from Cloud Dashboard:
+ALTER USER :username NOCREATEDB NOCREATEROLE;
+GRANT readwrite TO :username;

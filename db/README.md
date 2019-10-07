@@ -3,6 +3,23 @@
 This project contains Nomulus's Cloud SQL schema and schema-deployment
 utilities.
 
+### Database Roles and Privileges
+
+Nomulus uses the 'postgres' database in the 'public' schema. The following
+users/roles are defined:
+
+*   postgres: the initial user is used for admin and schema deployment.
+    *  In Cloud SQL, we do not control superusers. The initial 'postgres' user
+       is a regular user with create-role/create-db privileges. Therefore,
+       it is not possible to separate admin user and schema-deployment user.
+*   readwrite is a role with read-write privileges on all data tables and
+    sequences. However, it does not have write access to admin tables. Nor
+    can it create new tables.
+    *   The Registry server user is granted this role.
+*   readonly is a role with SELECT privileges on all tables.
+    *   Reporting job user and individual human readers may be granted
+        this role.
+
 ### Schema DDL Scripts
 
 Currently we use Flyway for schema deployment. Versioned incremental update

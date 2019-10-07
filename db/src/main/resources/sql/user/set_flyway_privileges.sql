@@ -12,11 +12,9 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
--- Script to create a user with read-write permission to schema 'public' and
--- all tables.
+-- Removes write privileges to Flyway admin table from roles.
+-- This script is run once under 'postgres' after initialize_roles.sql
+-- has been run AND the initial schema deployment by Flyway is done.
 
-CREATE USER :username ENCRYPTED PASSWORD :'password';
-GRANT CONNECT ON DATABASE postgres TO :username;
-GRANT ALL PRIVILEGES ON SCHEMA public TO :username;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO :username;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO :username;
+REVOKE INSERT, UPDATE, DELETE ON TABLE public.flyway_schema_history FROM readonly;
+REVOKE INSERT, UPDATE, DELETE ON TABLE public.flyway_schema_history FROM readwrite;

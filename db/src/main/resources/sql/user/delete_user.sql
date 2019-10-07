@@ -14,9 +14,7 @@
 --
 -- Script to delete a user from the database.
 
-REVOKE ALL PRIVILEGES ON DATABASE postgres FROM :username;
-REVOKE ALL PRIVILEGES ON SCHEMA public FROM :username;
-REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM :username;
-REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM :username;
-REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM :username;
+-- Ignore warnings like :username is not a member of role readonly/write.
+REVOKE readonly FROM :username;
+REVOKE readwrite FROM :username;
 DROP USER :username;
