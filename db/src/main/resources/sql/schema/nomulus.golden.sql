@@ -91,7 +91,8 @@ CREATE TABLE public."PremiumEntry" (
 CREATE TABLE public."PremiumList" (
     revision_id bigint NOT NULL,
     creation_timestamp timestamp with time zone NOT NULL,
-    currency bytea NOT NULL
+    currency bytea NOT NULL,
+    name text NOT NULL
 );
 
 
@@ -225,6 +226,13 @@ ALTER TABLE ONLY public."RegistryLock"
 --
 
 CREATE INDEX idx_registry_lock_verification_code ON public."RegistryLock" USING btree (verification_code);
+
+
+--
+-- Name: premiumlist_name_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX premiumlist_name_idx ON public."PremiumList" USING btree (name);
 
 
 --
