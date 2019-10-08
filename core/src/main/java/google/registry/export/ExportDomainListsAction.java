@@ -56,7 +56,7 @@ import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**
- * A mapreduce that exports the list of active domains on all real TLDs to Google Cloud Storage.
+ * A mapreduce that exports the list of active domains on all real TLDs to Google Drive and GCS.
  *
  * <p>Each TLD's active domain names are exported as a newline-delimited flat text file with the
  * name TLD.txt into the domain-lists bucket. Note that this overwrites the files in place.

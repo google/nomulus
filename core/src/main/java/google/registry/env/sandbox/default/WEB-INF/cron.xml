@@ -112,7 +112,7 @@
   <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/exportDomainLists&runInEmpty]]></url>
     <description>
-      This job exports lists of all active domain names to Google Cloud Storage.
+      This job exports lists of all active domain names to Google Drive and Google Cloud Storage.
     </description>
     <schedule>every 12 hours synchronized</schedule>
     <target>backend</target>
