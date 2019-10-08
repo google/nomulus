@@ -14,8 +14,12 @@
 
 package google.registry.schema.tld;
 
+import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.hash.Funnels.stringFunnel;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.hash.BloomFilter;
 import google.registry.model.CreateAutoTimestamp;
 import java.math.BigDecimal;
 import java.util.Map;
@@ -67,11 +71,16 @@ public class PremiumList {
   @Column(name = "price", nullable = false)
   private Map<String, BigDecimal> labelsToPrices;
 
+  @Column(nullable = false)
+  private BloomFilter<String> bloomFilter;
+
   private PremiumList(String name, CurrencyUnit currency, Map<String, BigDecimal> labelsToPrices) {
-    // TODO(mcilwain): Generate the Bloom filter and set it here.
     this.name = name;
     this.currency = currency;
     this.labelsToPrices = labelsToPrices;
+    // ASCII is used for the charset because all premium list domain labels are stored punycoded.
+    this.bloomFilter = BloomFilter.create(stringFunnel(US_ASCII), labelsToPrices.size());
+    labelsToPrices.keySet().forEach(this.bloomFilter::put);
   }
 
   // Hibernate requires this default constructor.
@@ -101,7 +110,18 @@ public class PremiumList {
   }
 
   /** Returns a {@link Map} of domain labels to prices. */
-  public Map<String, BigDecimal> getLabelsToPrices() {
-    return labelsToPrices;
+  public ImmutableMap<String, BigDecimal> getLabelsToPrices() {
+    return ImmutableMap.copyOf(labelsToPrices);
+  }
+
+  /**
+   * Returns a Bloom filter to determine whether a label might be premium, or is definitely not.
+   *
+   * <p>If the domain label might be premium, then the next step is to check for the existence of a
+   * corresponding row in the PremiumListEntry table. Otherwise, we know for sure it's not premium,
+   * and no DB load is required.
+   */
+  public BloomFilter<String> getBloomFilter() {
+    return bloomFilter;
   }
 }

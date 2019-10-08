@@ -130,6 +130,7 @@
 
     create table "PremiumList" (
        revision_id  bigserial not null,
+        bloom_filter bytea not null,
         creation_timestamp timestamptz not null,
         currency bytea not null,
         name text not null,
