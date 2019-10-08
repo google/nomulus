@@ -12,11 +12,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
--- Script to create a user with read-only permission to all tables.
+-- Script to create a user with read-only permission to all tables. The
+-- initialize_roles.sql script creates the readonly role used here.
 
--- Uncomment line below if user needs to be created:
--- CREATE USER :username ENCRYPTED PASSWORD :'password';
--- Uncomment line above and comment out line below if user has been created
+-- Comment out line below if user already exists:
+CREATE USER :username ENCRYPTED PASSWORD :'password';
+-- Comment out line above and uncomment line below if user has been created
 -- from Cloud Dashboard:
-ALTER USER :username NOCREATEDB NOCREATEROLE;
+-- ALTER USER :username NOCREATEDB NOCREATEROLE;
 GRANT readonly TO :username;
