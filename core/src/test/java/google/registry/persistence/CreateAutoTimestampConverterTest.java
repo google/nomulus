@@ -19,7 +19,6 @@ import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.transaction.JpaTransactionManagerRule;
-import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.hibernate.cfg.Environment;
@@ -78,7 +77,6 @@ public class CreateAutoTimestampConverterTest {
 
     @Id String name;
 
-    @Convert(converter = CreateAutoTimestampConverter.class)
     CreateAutoTimestamp cat;
 
     public TestEntity() {}

@@ -17,12 +17,10 @@ package google.registry.schema.tld;
 import static com.google.common.base.Preconditions.checkState;
 
 import google.registry.model.CreateAutoTimestamp;
-import google.registry.persistence.CreateAutoTimestampConverter;
 import java.math.BigDecimal;
 import java.util.Map;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
-import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -56,7 +54,6 @@ public class PremiumList {
   private Long revisionId;
 
   @Column(nullable = false)
-  @Convert(converter = CreateAutoTimestampConverter.class)
   private CreateAutoTimestamp creationTimestamp = CreateAutoTimestamp.create(null);
 
   @Column(nullable = false)

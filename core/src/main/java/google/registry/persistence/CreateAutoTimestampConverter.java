@@ -27,7 +27,7 @@ import javax.persistence.Converter;
 import org.joda.time.DateTime;
 
 /** JPA converter to for storing/retrieving CreateAutoTimestamp objects. */
-@Converter
+@Converter(autoApply = true)
 public class CreateAutoTimestampConverter
     implements AttributeConverter<CreateAutoTimestamp, Timestamp> {
 

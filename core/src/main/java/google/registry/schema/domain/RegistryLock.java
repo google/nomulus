@@ -21,12 +21,10 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
-import google.registry.persistence.CreateAutoTimestampConverter;
 import google.registry.util.DateTimeUtils;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import javax.persistence.Column;
-import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -109,7 +107,6 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
 
   /** Creation timestamp is when the lock/unlock is first requested. */
   @Column(nullable = false)
-  @Convert(converter = CreateAutoTimestampConverter.class)
   private CreateAutoTimestamp creationTimestamp = CreateAutoTimestamp.create(null);
 
   /**

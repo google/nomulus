@@ -25,7 +25,7 @@ import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
 /** JPA converter for storing/retrieving UpdateAutoTimestamp objects. */
-@Converter
+@Converter(autoApply = true)
 public class UpdateAutoTimestampConverter
     implements AttributeConverter<UpdateAutoTimestamp, Timestamp> {
 

@@ -19,7 +19,6 @@ import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.model.transaction.JpaTransactionManagerRule;
-import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.hibernate.cfg.Environment;
@@ -89,7 +88,6 @@ public class UpdateAutoTimestampConverterTest {
 
     @Id String name;
 
-    @Convert(converter = UpdateAutoTimestampConverter.class)
     UpdateAutoTimestamp uat;
 
     public TestEntity() {}

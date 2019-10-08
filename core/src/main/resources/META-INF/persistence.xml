@@ -32,6 +32,10 @@
     <class>google.registry.model.transfer.TransferData</class>
     <class>google.registry.model.eppcommon.Trid</class>
 
+    <!-- Customized type converters -->
+    <class>google.registry.persistence.CreateAutoTimestampConverter</class>
+    <class>google.registry.persistence.UpdateAutoTimestampConverter</class>
+
     <!-- TODO(weiminyu): check out application-layer validation. -->
     <validation-mode>NONE</validation-mode>
   </persistence-unit>
