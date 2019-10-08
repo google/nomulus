@@ -31,6 +31,7 @@ import google.registry.persistence.CreateAutoTimestampConverter;
 import google.registry.persistence.NomulusNamingStrategy;
 import google.registry.persistence.NomulusPostgreSQLDialect;
 import google.registry.persistence.UpdateAutoTimestampConverter;
+import google.registry.persistence.ZonedDateTimeConverter;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.schema.tld.PremiumList;
 import google.registry.schema.tmch.ClaimsList;
@@ -74,7 +75,8 @@ public class GenerateSqlSchemaCommand implements Command {
           RegistryLock.class,
           TransferData.class,
           Trid.class,
-          UpdateAutoTimestampConverter.class);
+          UpdateAutoTimestampConverter.class,
+          ZonedDateTimeConverter.class);
 
   @VisibleForTesting
   public static final String DB_OPTIONS_CLASH =

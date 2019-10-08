@@ -17,12 +17,14 @@ package google.registry.persistence;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
-import com.google.common.collect.ImmutableMap;
+import google.registry.model.ImmutableObject;
 import google.registry.model.transaction.JpaTransactionManagerRule;
-import google.registry.schema.tmch.ClaimsList;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import org.hibernate.cfg.Environment;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,7 +36,10 @@ public class ZonedDateTimeConverterTest {
 
   @Rule
   public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
+      new JpaTransactionManagerRule.Builder()
+          .withEntityClass(TestEntity.class, ZonedDateTimeConverter.class)
+          .withProperty(Environment.HBM2DDL_AUTO, "update")
+          .build();
 
   private final ZonedDateTimeConverter converter = new ZonedDateTimeConverter();
 
@@ -65,40 +70,52 @@ public class ZonedDateTimeConverterTest {
 
   @Test
   public void converter_generatesTimestampWithNormalizedZone() {
-    ClaimsList claimsList =
-        ClaimsList.create(
-            ZonedDateTime.parse("2019-09-01T01:01:01Z"), ImmutableMap.of("label1", "key1"));
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(claimsList));
-    long revisionId = claimsList.getRevisionId();
-    ClaimsList retrievedClaimsList =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(ClaimsList.class, revisionId));
-    assertThat(retrievedClaimsList.getCreationTimestamp().toString())
-        .isEqualTo("2019-09-01T01:01:01Z");
+    ZonedDateTime zdt = ZonedDateTime.parse("2019-09-01T01:01:01Z");
+    TestEntity entity = new TestEntity("normalized_utc_time", zdt);
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
+    TestEntity retrievedEntity =
+        jpaTm()
+            .transact(
+                () -> jpaTm().getEntityManager().find(TestEntity.class, "normalized_utc_time"));
+    assertThat(retrievedEntity.zdt.toString()).isEqualTo("2019-09-01T01:01:01Z");
   }
 
   @Test
   public void converter_convertsNonNormalizedZoneCorrectly() {
-    ClaimsList claimsList =
-        ClaimsList.create(
-            ZonedDateTime.parse("2019-09-01T01:01:01Z[UTC]"), ImmutableMap.of("label1", "key1"));
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(claimsList));
-    long revisionId = claimsList.getRevisionId();
-    ClaimsList retrievedClaimsList =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(ClaimsList.class, revisionId));
-    assertThat(retrievedClaimsList.getCreationTimestamp().toString())
-        .isEqualTo("2019-09-01T01:01:01Z");
+    ZonedDateTime zdt = ZonedDateTime.parse("2019-09-01T01:01:01Z[UTC]");
+    TestEntity entity = new TestEntity("non_normalized_utc_time", zdt);
+
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
+    TestEntity retrievedEntity =
+        jpaTm()
+            .transact(
+                () -> jpaTm().getEntityManager().find(TestEntity.class, "non_normalized_utc_time"));
+    assertThat(retrievedEntity.zdt.toString()).isEqualTo("2019-09-01T01:01:01Z");
   }
 
   @Test
   public void converter_convertsNonUtcZoneCorrectly() {
-    ClaimsList claimsList =
-        ClaimsList.create(
-            ZonedDateTime.parse("2019-09-01T01:01:01+05:00"), ImmutableMap.of("label1", "key1"));
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(claimsList));
-    long revisionId = claimsList.getRevisionId();
-    ClaimsList retrievedClaimsList =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(ClaimsList.class, revisionId));
-    assertThat(retrievedClaimsList.getCreationTimestamp().toString())
-        .isEqualTo("2019-08-31T20:01:01Z");
+    ZonedDateTime zdt = ZonedDateTime.parse("2019-09-01T01:01:01+05:00");
+    TestEntity entity = new TestEntity("new_york_time", zdt);
+
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
+    TestEntity retrievedEntity =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "new_york_time"));
+    assertThat(retrievedEntity.zdt.toString()).isEqualTo("2019-08-31T20:01:01Z");
+  }
+
+  @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
+  private static class TestEntity extends ImmutableObject {
+
+    @Id String name;
+
+    ZonedDateTime zdt;
+
+    public TestEntity() {}
+
+    public TestEntity(String name, ZonedDateTime zdt) {
+      this.name = name;
+      this.zdt = zdt;
+    }
   }
 }
