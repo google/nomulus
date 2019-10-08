@@ -19,6 +19,7 @@ import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.persistence.CreateAutoTimestampConverter;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.schema.domain.RegistryLock.Action;
 import google.registry.testing.AppEngineRule;
@@ -37,7 +38,9 @@ public final class RegistryLockDaoTest {
 
   @Rule
   public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().withEntityClass(RegistryLock.class).build();
+      new JpaTransactionManagerRule.Builder()
+          .withEntityClass(RegistryLock.class, CreateAutoTimestampConverter.class)
+          .build();
 
   @Test
   public void testSaveAndLoad_success() {

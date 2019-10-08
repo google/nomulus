@@ -20,6 +20,7 @@ import static google.registry.testing.JUnitBackports.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.persistence.CreateAutoTimestampConverter;
 import java.math.BigDecimal;
 import javax.persistence.PersistenceException;
 import org.joda.money.CurrencyUnit;
@@ -34,7 +35,9 @@ public class PremiumListDaoTest {
 
   @Rule
   public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().withEntityClass(PremiumList.class).build();
+      new JpaTransactionManagerRule.Builder()
+          .withEntityClass(PremiumList.class, CreateAutoTimestampConverter.class)
+          .build();
 
   private static final ImmutableMap<String, BigDecimal> TEST_PRICES =
       ImmutableMap.of(

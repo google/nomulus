@@ -42,7 +42,7 @@ public class UpdateAutoTimestampConverterTest {
   @Rule
   public final JpaTransactionManagerRule jpaTmRule =
       new JpaTransactionManagerRule.Builder()
-          .withEntityClass(TestEntity.class)
+          .withEntityClass(TestEntity.class, UpdateAutoTimestampConverter.class)
           .withProperty(Environment.HBM2DDL_AUTO, "update")
           .build();
 

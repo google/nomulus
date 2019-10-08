@@ -27,8 +27,10 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.transfer.BaseTransferObject;
 import google.registry.model.transfer.TransferData;
+import google.registry.persistence.CreateAutoTimestampConverter;
 import google.registry.persistence.NomulusNamingStrategy;
 import google.registry.persistence.NomulusPostgreSQLDialect;
+import google.registry.persistence.UpdateAutoTimestampConverter;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.schema.tld.PremiumList;
 import google.registry.schema.tmch.ClaimsList;
@@ -62,6 +64,7 @@ public class GenerateSqlSchemaCommand implements Command {
       ImmutableSet.of(
           BaseTransferObject.class,
           ClaimsList.class,
+          CreateAutoTimestampConverter.class,
           DelegationSignerData.class,
           DesignatedContact.class,
           DomainBase.class,
@@ -70,7 +73,8 @@ public class GenerateSqlSchemaCommand implements Command {
           PremiumList.class,
           RegistryLock.class,
           TransferData.class,
-          Trid.class);
+          Trid.class,
+          UpdateAutoTimestampConverter.class);
 
   @VisibleForTesting
   public static final String DB_OPTIONS_CLASH =

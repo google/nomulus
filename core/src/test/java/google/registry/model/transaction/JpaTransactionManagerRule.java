@@ -18,6 +18,7 @@ import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import google.registry.persistence.PersistenceModule;
 import google.registry.testing.FakeClock;
@@ -145,9 +146,9 @@ public class JpaTransactionManagerRule extends ExternalResource {
       return this;
     }
 
-    /** Adds an annotated class to the known entities for the database. */
-    public Builder withEntityClass(Class clazz) {
-      this.extraEntityClasses.add(clazz);
+    /** Adds annotated class(es) to the known entities for the database. */
+    public Builder withEntityClass(Class... classes) {
+      this.extraEntityClasses.addAll(ImmutableSet.copyOf(classes));
       return this;
     }
 
