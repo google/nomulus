@@ -12,17 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.gradle.api.internal.tasks.userinput.UserInputHandler
+
 plugins {
   id "org.flywaydb.flyway" version "6.0.1"
   id 'maven-publish'
 }
 
 ext {
+  Set restrictedDbEnv =
+      [ 'sandbox', 'production' ].asUnmodifiable()
+  Set allDbEnv =
+      [ 'alpha', 'crash' ].plus(restrictedDbEnv).asUnmodifiable()
+
   def dbServerProperty = 'dbServer'
   def dbNameProperty = 'dbName'
 
-  def dbServer = findProperty(dbServerProperty)
+  def dbServer = findProperty(dbServerProperty).toString().toLowerCase()
   def dbName = findProperty(dbNameProperty)
+
+  reconfirmRestrictedDbEnv = {
+    if (!restrictedDbEnv.contains(dbServer)) {
+      return
+    }
+    // For restricted environments, ask the user to type again to confirm.
+    // The following statement uses Gradle internal API to get around the
+    // missing console bug when Gradle Daemon is in use. Another option is
+    // to use the ant.input task. For details please refer to
+    // https://github.com/gradle/gradle/issues/1251.
+    def dbServerAgain = services.get(UserInputHandler.class).askQuestion(
+        """\
+           Are you sure? Operating on ${dbServer} from desktop is unsafe.
+           Please type '${dbServer}' again to proceed: """.stripIndent(),
+        '').trim()
+    if (dbServer != dbServerAgain) {
+      throw new RuntimeException(
+          "Failed to confirm for restricted database environment. Operation aborted.")
+    }
+  }
 
   getAccessInfoByHostPort = { hostAndPort ->
     return [
@@ -46,15 +73,10 @@ ext {
   }
 
   getJdbcAccessInfo = {
-    def dbServerString
-    switch (dbServerString = dbServer.toString().toLowerCase()) {
-      case 'alpha':
-      case 'crash':
-      case 'sandbox':
-      case 'production':
-        return getSocketFactoryAccessInfo(dbServerString)
-      default:
-        return getAccessInfoByHostPort(dbServer)
+    if (allDbEnv.contains(dbServer)) {
+      return getSocketFactoryAccessInfo(dbServer)
+    } else {
+      return getAccessInfoByHostPort(dbServer)
     }
   }
 
@@ -120,6 +142,13 @@ flyway {
 
   locations = [ "classpath:sql/flyway" ]
 }
+
+tasks.flywayMigrate.dependsOn(
+    tasks.create('confirmMigrateOnRestrictedDb') {
+      doLast {
+        project.ext.reconfirmRestrictedDbEnv()
+      }
+    })
 
 dependencies {
   def deps = rootProject.dependencyMap

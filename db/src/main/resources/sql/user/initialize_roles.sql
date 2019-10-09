@@ -16,7 +16,7 @@
 -- This script should run once under the **'postgres'** user before any other
 -- roles or users are created.
 
-# Prevent backdoor grants through the implicit 'public' role.
+-- Prevent backdoor grants through the implicit 'public' role.
 REVOKE ALL PRIVILEGES ON SCHEMA public from public;
 
 CREATE ROLE readonly;
