@@ -37,7 +37,7 @@ public class ZonedDateTimeConverterTest {
   @Rule
   public final JpaTransactionManagerRule jpaTmRule =
       new JpaTransactionManagerRule.Builder()
-          .withEntityClass(TestEntity.class, ZonedDateTimeConverter.class)
+          .withEntityClass(TestEntity.class)
           .withProperty(Environment.HBM2DDL_AUTO, "update")
           .build();
 

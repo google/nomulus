@@ -23,31 +23,20 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.hibernate.cfg.Environment;
 import org.joda.time.DateTime;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.testcontainers.containers.PostgreSQLContainer;
 
 @RunWith(JUnit4.class)
 public class CreateAutoTimestampConverterTest {
 
-  @ClassRule
-  public static PostgreSQLContainer postgres =
-      new PostgreSQLContainer()
-          .withDatabaseName("postgres")
-          .withUsername("postgres")
-          .withPassword("domain-registry");
-
   @Rule
   public final JpaTransactionManagerRule jpaTmRule =
       new JpaTransactionManagerRule.Builder()
-          .withEntityClass(TestEntity.class, CreateAutoTimestampConverter.class)
+          .withEntityClass(TestEntity.class)
           .withProperty(Environment.HBM2DDL_AUTO, "update")
           .build();
-
-  public CreateAutoTimestampConverterTest() {}
 
   @Test
   public void testTypeConversion() {

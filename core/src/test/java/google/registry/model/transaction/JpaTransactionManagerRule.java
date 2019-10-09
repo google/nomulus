@@ -27,9 +27,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.persistence.EntityManagerFactory;
-import org.hibernate.boot.MetadataSources;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Environment;
+import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
+import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
+import org.hibernate.jpa.boot.spi.Bootstrap;
 import org.joda.time.DateTime;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.RuleChain;
@@ -120,10 +121,18 @@ public class JpaTransactionManagerRule extends ExternalResource {
     properties.put(Environment.USER, username);
     properties.put(Environment.PASS, password);
 
-    MetadataSources metadataSources =
-        new MetadataSources(new StandardServiceRegistryBuilder().applySettings(properties).build());
-    extraEntityClasses.forEach(metadataSources::addAnnotatedClass);
-    return metadataSources.buildMetadata().getSessionFactoryBuilder().build();
+    ParsedPersistenceXmlDescriptor descriptor =
+        PersistenceXmlParser.locatePersistenceUnits(properties).stream()
+            .filter(unit -> PersistenceModule.PERSISTENCE_UNIT_NAME.equals(unit.getName()))
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        String.format(
+                            "Could not find persistence unit with name %s",
+                            PersistenceModule.PERSISTENCE_UNIT_NAME)));
+    extraEntityClasses.stream().map(Class::getName).forEach(descriptor::addClasses);
+    return Bootstrap.getEntityManagerFactoryBuilder(descriptor, properties).build();
   }
 
   /** Returns the {@link FakeClock} used by the underlying {@link JpaTransactionManagerImpl}. */
