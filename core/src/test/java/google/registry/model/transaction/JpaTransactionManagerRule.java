@@ -131,7 +131,9 @@ public class JpaTransactionManagerRule extends ExternalResource {
                         String.format(
                             "Could not find persistence unit with name %s",
                             PersistenceModule.PERSISTENCE_UNIT_NAME)));
+
     extraEntityClasses.stream().map(Class::getName).forEach(descriptor::addClasses);
+    Bootstrap.getEntityManagerFactoryBuilder(descriptor, properties).build();
     return Bootstrap.getEntityManagerFactoryBuilder(descriptor, properties).build();
   }
 

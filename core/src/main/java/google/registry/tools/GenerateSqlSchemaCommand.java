@@ -19,34 +19,23 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableSet;
-import google.registry.model.domain.DesignatedContact;
-import google.registry.model.domain.DomainBase;
-import google.registry.model.domain.GracePeriod;
-import google.registry.model.domain.secdns.DelegationSignerData;
-import google.registry.model.eppcommon.Trid;
-import google.registry.model.transfer.BaseTransferObject;
-import google.registry.model.transfer.TransferData;
-import google.registry.persistence.CreateAutoTimestampConverter;
 import google.registry.persistence.NomulusNamingStrategy;
 import google.registry.persistence.NomulusPostgreSQLDialect;
-import google.registry.persistence.UpdateAutoTimestampConverter;
-import google.registry.persistence.ZonedDateTimeConverter;
-import google.registry.schema.domain.RegistryLock;
-import google.registry.schema.tld.PremiumList;
-import google.registry.schema.tmch.ClaimsList;
+import google.registry.persistence.PersistenceModule;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Environment;
+import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
+import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.schema.TargetType;
-import org.joda.time.Period;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 /**
@@ -58,25 +47,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
  */
 @Parameters(separators = " =", commandDescription = "Generate PostgreSQL schema.")
 public class GenerateSqlSchemaCommand implements Command {
-
-  // TODO(mmuller): These should be read from persistence.xml so we don't need to maintain two
-  //                separate lists of all SQL table classes.
-  private static final ImmutableSet<Class> SQL_TABLE_CLASSES =
-      ImmutableSet.of(
-          BaseTransferObject.class,
-          ClaimsList.class,
-          CreateAutoTimestampConverter.class,
-          DelegationSignerData.class,
-          DesignatedContact.class,
-          DomainBase.class,
-          GracePeriod.class,
-          Period.class,
-          PremiumList.class,
-          RegistryLock.class,
-          TransferData.class,
-          Trid.class,
-          UpdateAutoTimestampConverter.class,
-          ZonedDateTimeConverter.class);
 
   @VisibleForTesting
   public static final String DB_OPTIONS_CLASH =
@@ -164,7 +134,9 @@ public class GenerateSqlSchemaCommand implements Command {
 
       MetadataSources metadata =
           new MetadataSources(new StandardServiceRegistryBuilder().applySettings(settings).build());
-      SQL_TABLE_CLASSES.forEach(metadata::addAnnotatedClass);
+
+      addAnnotatedClasses(metadata, settings);
+
       SchemaExport schemaExport = new SchemaExport();
       schemaExport.setHaltOnError(true);
       schemaExport.setFormat(true);
@@ -200,6 +172,29 @@ public class GenerateSqlSchemaCommand implements Command {
     } finally {
       if (postgresContainer != null) {
         postgresContainer.stop();
+      }
+    }
+  }
+
+  private void addAnnotatedClasses(MetadataSources metadata, Map<String, String> settings) {
+    ParsedPersistenceXmlDescriptor descriptor =
+        PersistenceXmlParser.locatePersistenceUnits(settings).stream()
+            .filter(unit -> PersistenceModule.PERSISTENCE_UNIT_NAME.equals(unit.getName()))
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        String.format(
+                            "Could not find persistence unit with name %s",
+                            PersistenceModule.PERSISTENCE_UNIT_NAME)));
+
+    List<String> classNames = descriptor.getManagedClassNames();
+    for (String className : classNames) {
+      try {
+        Class<?> clazz = Class.forName(className);
+        metadata.addAnnotatedClass(clazz);
+      } catch (ClassNotFoundException e) {
+        throw new IllegalArgumentException(e);
       }
     }
   }
