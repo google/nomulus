@@ -31,8 +31,8 @@ ext {
         password: findProperty('dbPassword')]
   }
 
-  getSocketFactoryAccessInfo = {
-    def cred = getCloudSqlCredential('alpha', 'superuser').split(' ')
+  getSocketFactoryAccessInfo = { env ->
+    def cred = getCloudSqlCredential(env, 'admin').split(' ')
     def sqlInstance = cred[0]
     return [
         url: """\
@@ -46,9 +46,13 @@ ext {
   }
 
   getJdbcAccessInfo = {
-    switch (dbServer.toString().toLowerCase()) {
+    def dbServerString
+    switch (dbServerString = dbServer.toString().toLowerCase()) {
       case 'alpha':
-        return getSocketFactoryAccessInfo()
+      case 'crash':
+      case 'sandbox':
+      case 'production':
+        return getSocketFactoryAccessInfo(dbServerString)
       default:
         return getAccessInfoByHostPort(dbServer)
     }
@@ -62,13 +66,16 @@ ext {
   // later).
   getCloudSqlCredential = { env, role ->
     env = env == 'production' ? '' : "-${env}"
+    def keyProject = env == '-crash'
+        ? 'domain-registry-crash-kms-keys'
+        : "domain-registry${env}-keys"
     def command =
         """gsutil cp \
-           gs://domain-registry${env}-cloudsql-credentials/${role}.enc - | \
+           gs://domain-registry${env}-cloudsql-credentials/${role}_credential.enc - | \
            gcloud kms decrypt --location global --keyring nomulus \
            --key sql-credentials-on-gcs-key --plaintext-file=- \
            --ciphertext-file=- \
-           --project=domain-registry${env}-keys"""
+           --project=${keyProject}"""
 
     return execInBash(command, '/tmp')
   }
