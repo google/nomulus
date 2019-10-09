@@ -64,11 +64,24 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> T transact(Work<T> work) {
-    // TODO(shicong): Investigate removing transactNew functionality after migration as it may
-    //  be same as this one.
     if (inTransaction()) {
       return work.run();
+    } else {
+      return transactNew(work);
     }
+  }
+
+  @Override
+  public void transact(Runnable work) {
+    transact(
+        () -> {
+          work.run();
+          return null;
+        });
+  }
+
+  @Override
+  public <T> T transactNew(Work<T> work) {
     TransactionInfo txnInfo = transactionInfo.get();
     txnInfo.entityManager = emf.createEntityManager();
     EntityTransaction txn = txnInfo.entityManager.getTransaction();
@@ -96,24 +109,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void transact(Runnable work) {
-    transact(
+  public void transactNew(Runnable work) {
+    transactNew(
         () -> {
           work.run();
           return null;
         });
-  }
-
-  @Override
-  public <T> T transactNew(Work<T> work) {
-    // TODO(shicong): Implements the functionality to start a new transaction.
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public void transactNew(Runnable work) {
-    // TODO(shicong): Implements the functionality to start a new transaction.
-    throw new UnsupportedOperationException();
   }
 
   @Override
