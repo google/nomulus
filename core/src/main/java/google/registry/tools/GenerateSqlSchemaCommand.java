@@ -194,7 +194,10 @@ public class GenerateSqlSchemaCommand implements Command {
         Class<?> clazz = Class.forName(className);
         metadata.addAnnotatedClass(clazz);
       } catch (ClassNotFoundException e) {
-        throw new IllegalArgumentException(e);
+        throw new IllegalArgumentException(
+            String.format(
+                "Could not load class with name %s present in persistence.xml", className),
+            e);
       }
     }
   }
