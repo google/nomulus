@@ -133,7 +133,6 @@ public class JpaTransactionManagerRule extends ExternalResource {
                             PersistenceModule.PERSISTENCE_UNIT_NAME)));
 
     extraEntityClasses.stream().map(Class::getName).forEach(descriptor::addClasses);
-    Bootstrap.getEntityManagerFactoryBuilder(descriptor, properties).build();
     return Bootstrap.getEntityManagerFactoryBuilder(descriptor, properties).build();
   }
 
