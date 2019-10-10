@@ -72,10 +72,10 @@ public final class RegistryLockDaoTest {
     jpaTm()
         .transact(
             () -> {
-              RegistryLock secondLock =
+              RegistryLock updatedLock =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
-              secondLock.setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc());
-              RegistryLockDao.save(secondLock);
+              updatedLock.setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc());
+              RegistryLockDao.save(updatedLock);
             });
     jpaTm()
         .transact(
@@ -88,23 +88,18 @@ public final class RegistryLockDaoTest {
   }
 
   @Test
-  public void testUpdate() {
-    RegistryLock lock = createLock();
-    jpaTm().transact(() -> RegistryLockDao.save(lock));
+  public void testUpdateLock_usingSamePrimaryKey() {
+    RegistryLock lock = RegistryLockDao.save(createLock());
     jpaTmRule.getTxnClock().advanceOneMilli();
+    RegistryLock updatedLock =
+        lock.asBuilder().setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc()).build();
+    jpaTm().transact(() -> RegistryLockDao.save(updatedLock));
     jpaTm()
         .transact(
             () -> {
-              RegistryLock secondLock =
-                  lock.asBuilder().setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc()).build();
-              RegistryLockDao.save(secondLock);
-            });
-    jpaTm()
-        .transact(
-            () -> {
-              RegistryLock secondLock =
+              RegistryLock fromDatabase =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
-              assertThat(secondLock.getCompletionTimestamp())
+              assertThat(fromDatabase.getCompletionTimestamp())
                   .isEqualTo(Optional.of(jpaTmRule.getTxnClock().nowUtc()));
             });
   }
