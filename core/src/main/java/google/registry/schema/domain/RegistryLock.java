@@ -177,10 +177,7 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
 
   @Override
   public Builder asBuilder() {
-    RegistryLock clone = clone(this);
-    // Revision ID should be different for every object
-    clone.revisionId = null;
-    return new Builder(clone);
+    return new Builder(clone(this));
   }
 
   /** Builder for {@link google.registry.schema.domain.RegistryLock}. */

@@ -22,6 +22,7 @@ import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.schema.domain.RegistryLock.Action;
 import google.registry.testing.AppEngineRule;
+import java.util.Optional;
 import java.util.UUID;
 import javax.persistence.PersistenceException;
 import org.junit.Rule;
@@ -83,6 +84,28 @@ public final class RegistryLockDaoTest {
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
               assertThat(fromDatabase.getCompletionTimestamp().get())
                   .isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+            });
+  }
+
+  @Test
+  public void testUpdate() {
+    RegistryLock lock = createLock();
+    jpaTm().transact(() -> RegistryLockDao.save(lock));
+    jpaTmRule.getTxnClock().advanceOneMilli();
+    jpaTm()
+        .transact(
+            () -> {
+              RegistryLock secondLock =
+                  lock.asBuilder().setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc()).build();
+              RegistryLockDao.save(secondLock);
+            });
+    jpaTm()
+        .transact(
+            () -> {
+              RegistryLock secondLock =
+                  RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
+              assertThat(secondLock.getCompletionTimestamp())
+                  .isEqualTo(Optional.of(jpaTmRule.getTxnClock().nowUtc()));
             });
   }
 
