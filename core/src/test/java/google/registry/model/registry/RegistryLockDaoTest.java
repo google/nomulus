@@ -14,6 +14,7 @@
 
 package google.registry.model.registry;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.JUnitBackports.assertThrows;
@@ -89,6 +90,21 @@ public final class RegistryLockDaoTest {
   @Test
   public void testFailure_saveNull() {
     assertThrows(NullPointerException.class, () -> RegistryLockDao.save(null));
+  }
+
+  @Test
+  public void testLoad_byRegistrarId() {
+    RegistryLock lock = createLock();
+    RegistryLock secondLock = createLock().asBuilder().setDomainName("otherexample.test").build();
+    RegistryLockDao.save(lock);
+    RegistryLockDao.save(secondLock);
+
+    assertThat(
+            RegistryLockDao.getByRegistrarId("TheRegistrar").stream()
+                .map(RegistryLock::getDomainName)
+                .collect(toImmutableSet()))
+        .containsExactly("example.test", "otherexample.test");
+    assertThat(RegistryLockDao.getByRegistrarId("nonexistent")).isEmpty();
   }
 
   private RegistryLock createLock() {

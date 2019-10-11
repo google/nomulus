@@ -223,6 +223,13 @@ ALTER TABLE ONLY public."RegistryLock"
 
 
 --
+-- Name: idx_registry_lock_registrar_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_registry_lock_registrar_id ON public."RegistryLock" USING btree (registrar_id);
+
+
+--
 -- Name: idx_registry_lock_verification_code; Type: INDEX; Schema: public; Owner: -
 --
 

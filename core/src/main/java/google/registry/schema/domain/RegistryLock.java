@@ -65,7 +65,8 @@ import org.joda.time.DateTime;
           name = "idx_registry_lock_repo_id_revision_id",
           columnList = "repoId, revisionId",
           unique = true),
-      @Index(name = "idx_registry_lock_verification_code", columnList = "verificationCode")
+      @Index(name = "idx_registry_lock_verification_code", columnList = "verificationCode"),
+      @Index(name = "idx_registry_lock_registrar_id", columnList = "registrarId")
     })
 public final class RegistryLock extends ImmutableObject implements Buildable {
 
