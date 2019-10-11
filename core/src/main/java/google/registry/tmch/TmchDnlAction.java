@@ -58,7 +58,7 @@ public final class TmchDnlAction implements Runnable {
     }
     ClaimsList claims = ClaimsListParser.parse(lines);
     ClaimsListShard claimsListShard =
-        ClaimsListShard.create(claims.getCreationTimestamp(), claims.getLabelsToKeys());
+        ClaimsListShard.create(claims.getTmdbGenerationTime(), claims.getLabelsToKeys());
     claimsListShard.save();
     logger.atInfo().log(
         "Inserted %,d claims into Datastore, created at %s",

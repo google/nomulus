@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static google.registry.util.DateTimeUtils.toJodaDateTime;
 import static google.registry.util.DateTimeUtils.toZonedDateTime;
 
+import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import java.time.ZonedDateTime;
 import java.util.Map;
@@ -52,7 +53,10 @@ public class ClaimsList extends ImmutableObject {
   private Long revisionId;
 
   @Column(nullable = false)
-  private ZonedDateTime creationTimestamp;
+  private CreateAutoTimestamp creationTimestamp = CreateAutoTimestamp.create(null);
+
+  @Column(nullable = false)
+  private ZonedDateTime tmdbGenerationTime;
 
   @ElementCollection
   @CollectionTable(
@@ -62,8 +66,8 @@ public class ClaimsList extends ImmutableObject {
   @Column(name = "claimKey", nullable = false)
   private Map<String, String> labelsToKeys;
 
-  private ClaimsList(ZonedDateTime creationTimestamp, Map<String, String> labelsToKeys) {
-    this.creationTimestamp = creationTimestamp;
+  private ClaimsList(ZonedDateTime tmdbGenerationTime, Map<String, String> labelsToKeys) {
+    this.tmdbGenerationTime = tmdbGenerationTime;
     this.labelsToKeys = labelsToKeys;
   }
 
@@ -82,9 +86,14 @@ public class ClaimsList extends ImmutableObject {
     return revisionId;
   }
 
+  /** Returns the TMDB generation time of this claims list. */
+  public DateTime getTmdbGenerationTime() {
+    return toJodaDateTime(tmdbGenerationTime);
+  }
+
   /** Returns the creation time of this claims list. */
   public DateTime getCreationTimestamp() {
-    return toJodaDateTime(creationTimestamp);
+    return creationTimestamp.getTimestamp();
   }
 
   /** Returns an {@link Map} mapping domain label to its lookup key. */

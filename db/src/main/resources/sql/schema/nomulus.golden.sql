@@ -50,7 +50,8 @@ CREATE TABLE public."ClaimsEntry" (
 
 CREATE TABLE public."ClaimsList" (
     revision_id bigint NOT NULL,
-    creation_timestamp timestamp with time zone NOT NULL
+    creation_timestamp timestamp with time zone NOT NULL,
+    tmdb_generation_time timestamp with time zone NOT NULL
 );
 
 

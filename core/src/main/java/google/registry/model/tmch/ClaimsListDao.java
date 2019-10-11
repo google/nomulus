@@ -41,7 +41,7 @@ public class ClaimsListDao {
       ClaimsListDao.save(claimsList);
       logger.atInfo().log(
           "Inserted %,d claims into Cloud SQL, created at %s",
-          claimsList.getLabelsToKeys().size(), claimsList.getCreationTimestamp());
+          claimsList.getLabelsToKeys().size(), claimsList.getTmdbGenerationTime());
     } catch (Throwable e) {
       logger.atSevere().withCause(e).log("Error inserting claims into Cloud SQL");
     }

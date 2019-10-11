@@ -63,7 +63,7 @@ final class UploadClaimsListCommand extends ConfirmingCommand implements Command
 
   @Override
   public String execute() {
-    ClaimsListShard.create(claimsList.getCreationTimestamp(), claimsList.getLabelsToKeys()).save();
+    ClaimsListShard.create(claimsList.getTmdbGenerationTime(), claimsList.getLabelsToKeys()).save();
     if (alsoCloudSql) {
       ClaimsListDao.trySave(claimsList);
     }

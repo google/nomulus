@@ -43,7 +43,10 @@ public class ClaimsListDaoTest {
     ClaimsList claimsList =
         ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     ClaimsListDao.trySave(claimsList);
-    assertThat(ClaimsListDao.getCurrent()).isEqualTo(claimsList);
+    ClaimsList insertedClaimsList = ClaimsListDao.getCurrent();
+    assertClaimsListEquals(claimsList, insertedClaimsList);
+    assertThat(insertedClaimsList.getCreationTimestamp())
+        .isEqualTo(jpaTmRule.getTxnClock().nowUtc());
   }
 
   @Test
@@ -52,7 +55,7 @@ public class ClaimsListDaoTest {
         ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     ClaimsListDao.trySave(claimsList);
     ClaimsList insertedClaimsList = ClaimsListDao.getCurrent();
-    assertThat(insertedClaimsList).isEqualTo(claimsList);
+    assertClaimsListEquals(claimsList, insertedClaimsList);
     // Save ClaimsList with existing revisionId should fail because revisionId is the primary key.
     ClaimsListDao.trySave(insertedClaimsList);
   }
@@ -62,7 +65,7 @@ public class ClaimsListDaoTest {
     ClaimsList claimsList = ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of());
     ClaimsListDao.trySave(claimsList);
     ClaimsList insertedClaimsList = ClaimsListDao.getCurrent();
-    assertThat(insertedClaimsList).isEqualTo(claimsList);
+    assertClaimsListEquals(claimsList, insertedClaimsList);
     assertThat(insertedClaimsList.getLabelsToKeys()).isEmpty();
   }
 
@@ -81,6 +84,12 @@ public class ClaimsListDaoTest {
         ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label3", "key3", "label4", "key4"));
     ClaimsListDao.trySave(oldClaimsList);
     ClaimsListDao.trySave(newClaimsList);
-    assertThat(ClaimsListDao.getCurrent()).isEqualTo(newClaimsList);
+    assertClaimsListEquals(newClaimsList, ClaimsListDao.getCurrent());
+  }
+
+  private void assertClaimsListEquals(ClaimsList left, ClaimsList right) {
+    assertThat(left.getRevisionId()).isEqualTo(right.getRevisionId());
+    assertThat(left.getTmdbGenerationTime()).isEqualTo(right.getTmdbGenerationTime());
+    assertThat(left.getLabelsToKeys()).isEqualTo(right.getLabelsToKeys());
   }
 }
