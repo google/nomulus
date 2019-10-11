@@ -558,10 +558,38 @@ artifacts {
   testRuntime testJar
 }
 
-task fragileTest(type: Test) {
+/**
+ * We have to break out the test suites because some of the tests conflict
+ * with one another, but unfortunately this breaks the "--tests" flag.  The
+ * --tests flag only applies to the task named on the command line (usually
+ * just "test"), not for all tasks of type "Test".
+ *
+ * As a better solution, FilteringTest sets testNameIncludePatterns (the
+ * internal property that --tests sets) from the value of the "testFilter"
+ * property, allowing us to filter across all the tests in core without
+ * explicitly specifying a test task or causing errors because there are no
+ * matching tests in the main task.
+ *
+ * To use it, define "testFilter" to be a comma-separated collection of class
+ * names (wildcards are allowed):
+ *
+ *   ./gradlew test -P testFilter=*.FooBar,google.registry.tools.ShellCommandTest
+ */
+class FilteringTest extends Test {
+
+  void setTests(List<String> tests) {
+    // Common exclude pattern. See README in parent directory for explanation.
+    exclude "**/*TestCase.*", "**/*TestSuite.*"
+    include tests
+    if (project.testFilter) {
+      testNameIncludePatterns = project.testFilter.split(',')
+    }
+  }
+}
+
+task fragileTest(type: FilteringTest) {
   // Common exclude pattern. See README in parent directory for explanation.
-  exclude "**/*TestCase.*", "**/*TestSuite.*"
-  include fragileTestPatterns
+  tests = fragileTestPatterns
 
   if (rootProject.findProperty("skipDockerIncompatibleTests") == "true") {
     exclude dockerIncompatibleTestPatterns
@@ -571,10 +599,8 @@ task fragileTest(type: Test) {
   forkEvery 1
 }
 
-task outcastTest(type: Test) {
-  // Common exclude pattern. See README in parent directory for explanation.
-  exclude "**/*TestCase.*", "**/*TestSuite.*"
-  include outcastTestPatterns
+task outcastTest(type: FilteringTest) {
+  tests = outcastTestPatterns
 
   // Sets the maximum number of test executors that may exist at the same time.
   maxParallelForks 5
@@ -630,10 +656,8 @@ task registryTool(type: JavaExec) {
   }
 }
 
-task generateGoldenImages(type: Test) {
-  // Common exclude pattern. See README in parent directory for explanation.
-  exclude "**/*TestCase.*", "**/*TestSuite.*"
-  include "**/webdriver/*"
+task generateGoldenImages(type: FilteringTest) {
+  tests = ["**/webdriver/*"]
 
   // Sets the maximum number of test executors that may exist at the same time.
   maxParallelForks 5
