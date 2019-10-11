@@ -15,17 +15,24 @@
 package google.registry.model.transaction;
 
 import static org.joda.time.DateTimeZone.UTC;
+import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.io.Resources;
 import google.registry.persistence.PersistenceModule;
 import google.registry.testing.FakeClock;
+import java.sql.Connection;
+import java.sql.Driver;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import javax.persistence.EntityManagerFactory;
 import org.hibernate.cfg.Environment;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
@@ -33,9 +40,6 @@ import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
 import org.hibernate.jpa.boot.spi.Bootstrap;
 import org.joda.time.DateTime;
 import org.junit.rules.ExternalResource;
-import org.junit.rules.RuleChain;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -49,37 +53,42 @@ import org.testcontainers.containers.PostgreSQLContainer;
  */
 public class JpaTransactionManagerRule extends ExternalResource {
   private static final String SCHEMA_GOLDEN_SQL = "sql/schema/nomulus.golden.sql";
+  private static final String DB_CLEANUP_SQL =
+      "google/registry/model/transaction/cleanup_database.sql";
+  private static final String MANAGEMENT_DB_NAME = "management";
+  private static final String POSTGRES_DB_NAME = "postgres";
 
   private final DateTime now = DateTime.now(UTC);
   private final FakeClock clock = new FakeClock(now);
-  private final String initScript;
+  private final String initScriptPath;
   private final ImmutableList<Class> extraEntityClasses;
   private final ImmutableMap userProperties;
 
-  private JdbcDatabaseContainer database;
+  private static final JdbcDatabaseContainer database = create();
   private EntityManagerFactory emf;
   private JpaTransactionManager cachedTm;
 
   private JpaTransactionManagerRule(
-      String initScript,
+      String initScriptPath,
       ImmutableList<Class> extraEntityClasses,
       ImmutableMap<String, String> userProperties) {
-    this.initScript = initScript;
+    this.initScriptPath = initScriptPath;
     this.extraEntityClasses = extraEntityClasses;
     this.userProperties = userProperties;
   }
 
-  /** Wraps {@link JpaTransactionManagerRule} in a {@link PostgreSQLContainer}. */
-  @Override
-  public Statement apply(Statement base, Description description) {
-    database = new PostgreSQLContainer().withInitScript(initScript);
-    return RuleChain.outerRule(database)
-        .around(JpaTransactionManagerRule.super::apply)
-        .apply(base, description);
+  private static JdbcDatabaseContainer create() {
+    PostgreSQLContainer container = new PostgreSQLContainer().withDatabaseName(MANAGEMENT_DB_NAME);
+    container.start();
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> container.close()));
+    return container;
   }
 
   @Override
-  public void before() {
+  public void before() throws Exception {
+    executeSql(MANAGEMENT_DB_NAME, DB_CLEANUP_SQL);
+    executeSql(POSTGRES_DB_NAME, initScriptPath);
+
     ImmutableMap properties = PersistenceModule.providesDefaultDatabaseConfigs();
     if (!userProperties.isEmpty()) {
       // If there are user properties, create a new properties object with these added.
@@ -90,7 +99,7 @@ public class JpaTransactionManagerRule extends ExternalResource {
 
     emf =
         createEntityManagerFactory(
-            database.getJdbcUrl(),
+            getJdbcUrlFor(POSTGRES_DB_NAME),
             database.getUsername(),
             database.getPassword(),
             properties,
@@ -107,6 +116,38 @@ public class JpaTransactionManagerRule extends ExternalResource {
       emf.close();
     }
     cachedTm = null;
+  }
+
+  private void executeSql(String dbName, String sqlScriptPath) {
+    try (Connection conn = createConnection(dbName)) {
+      String sqlScript = Resources.toString(Resources.getResource(sqlScriptPath), Charsets.UTF_8);
+      conn.createStatement().execute(sqlScript);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private String getJdbcUrlFor(String dbName) {
+    // Disable Postgres driver use of java.util.logging to reduce noise at startup time
+    return "jdbc:postgresql://"
+        + database.getContainerIpAddress()
+        + ":"
+        + database.getMappedPort(POSTGRESQL_PORT)
+        + "/"
+        + dbName
+        + "?loggerLevel=OFF";
+  }
+
+  private Connection createConnection(String dbName) {
+    final Properties info = new Properties();
+    info.put("user", database.getUsername());
+    info.put("password", database.getPassword());
+    final Driver jdbcDriverInstance = database.getJdbcDriverInstance();
+    try {
+      return jdbcDriverInstance.connect(getJdbcUrlFor(dbName), info);
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /** Constructs the {@link EntityManagerFactory} instance. */
