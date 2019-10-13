@@ -133,7 +133,8 @@ public class BackendMetricsHandlerTest {
 
     verify(metrics)
         .requestSent(RELAYED_PROTOCOL_NAME, CLIENT_CERT_HASH, request.content().readableBytes());
-    verify(metrics).responseReceived(RELAYED_PROTOCOL_NAME, CLIENT_CERT_HASH, response, 1);
+    verify(metrics)
+        .responseReceived(RELAYED_PROTOCOL_NAME, CLIENT_CERT_HASH, response, Duration.millis(1));
     verifyNoMoreInteractions(metrics);
   }
 
@@ -154,7 +155,8 @@ public class BackendMetricsHandlerTest {
 
     verify(metrics)
         .requestSent(RELAYED_PROTOCOL_NAME, CLIENT_CERT_HASH, request.content().readableBytes());
-    verify(metrics).responseReceived(RELAYED_PROTOCOL_NAME, CLIENT_CERT_HASH, response, 1);
+    verify(metrics)
+        .responseReceived(RELAYED_PROTOCOL_NAME, CLIENT_CERT_HASH, response, Duration.millis(1));
     verifyNoMoreInteractions(metrics);
   }
 
@@ -178,46 +180,46 @@ public class BackendMetricsHandlerTest {
     // First request, time = 0
     assertThat(channel.writeOutbound(request1)).isTrue();
     assertHttpRequestEquivalent(request1, channel.readOutbound());
-    DateTime sentTime1 = fakeClock.nowUtc();
+    DateTime requestTime1 = fakeClock.nowUtc();
 
     fakeClock.advanceBy(Duration.millis(5));
 
     // Second request, time = 5
     assertThat(channel.writeOutbound(request2)).isTrue();
     assertHttpRequestEquivalent(request2, channel.readOutbound());
-    DateTime sentTime2 = fakeClock.nowUtc();
+    DateTime requestTime2 = fakeClock.nowUtc();
 
     fakeClock.advanceBy(Duration.millis(7));
 
     // First response, time = 12, latency = 12 - 0 = 12
     assertThat(channel.writeInbound(response1)).isTrue();
     assertHttpResponseEquivalent(response1, channel.readInbound());
-    DateTime receivedTime1 = fakeClock.nowUtc();
+    DateTime responseTime1 = fakeClock.nowUtc();
 
     fakeClock.advanceBy(Duration.millis(11));
 
     // Third request, time = 23
     assertThat(channel.writeOutbound(request3)).isTrue();
     assertHttpRequestEquivalent(request3, channel.readOutbound());
-    DateTime sentTime3 = fakeClock.nowUtc();
+    DateTime requestTime3 = fakeClock.nowUtc();
 
     fakeClock.advanceBy(Duration.millis(2));
 
     // Second response, time = 25, latency = 25 - 5 = 20
     assertThat(channel.writeInbound(response2)).isTrue();
     assertHttpResponseEquivalent(response2, channel.readInbound());
-    DateTime receivedTime2 = fakeClock.nowUtc();
+    DateTime responseTime2 = fakeClock.nowUtc();
 
     fakeClock.advanceBy(Duration.millis(4));
 
     // Third response, time = 29, latency = 29 - 23 = 6
     assertThat(channel.writeInbound(response3)).isTrue();
     assertHttpResponseEquivalent(response3, channel.readInbound());
-    DateTime receivedTime3 = fakeClock.nowUtc();
+    DateTime responseTime3 = fakeClock.nowUtc();
 
-    long latency1 = new Duration(sentTime1, receivedTime1).getMillis();
-    long latency2 = new Duration(sentTime2, receivedTime2).getMillis();
-    long latency3 = new Duration(sentTime3, receivedTime3).getMillis();
+    Duration latency1 = new Duration(requestTime1, responseTime1);
+    Duration latency2 = new Duration(requestTime2, responseTime2);
+    Duration latency3 = new Duration(requestTime3, responseTime3);
 
     verify(metrics)
         .requestSent(RELAYED_PROTOCOL_NAME, CLIENT_CERT_HASH, request1.content().readableBytes());

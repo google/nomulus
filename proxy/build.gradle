@@ -18,7 +18,8 @@ task buildProxyImage(dependsOn: deployJar, type: Exec) {
   commandLine 'docker', 'build', '-t', 'proxy', '.'
 }
 
-task deployProxy(dependsOn: [buildProxyImage, ':verifyDeployment']) {
+task deployProxy(dependsOn: buildProxyImage) {
+  configure verifyDeploymentConfig
   doLast {
     exec {
       commandLine 'docker', 'tag', 'proxy', "gcr.io/${rootProject.gcpProject}/proxy"

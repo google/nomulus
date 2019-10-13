@@ -32,6 +32,7 @@ import google.registry.proxy.ProxyConfig.Environment;
 import google.registry.proxy.WebWhoisProtocolsModule.HttpWhoisProtocol;
 import google.registry.proxy.WhoisProtocolModule.WhoisProtocol;
 import google.registry.proxy.handler.BackendMetricsHandler;
+import google.registry.proxy.handler.FrontendMetricsHandler;
 import google.registry.proxy.handler.ProxyProtocolHandler;
 import google.registry.proxy.handler.QuotaHandler.EppQuotaHandler;
 import google.registry.proxy.handler.QuotaHandler.WhoisQuotaHandler;
@@ -74,7 +75,7 @@ import org.junit.Before;
  */
 public abstract class ProtocolModuleTest {
 
-  protected static final ProxyConfig PROXY_CONFIG = getProxyConfig(LOCAL);
+  protected static final ProxyConfig PROXY_CONFIG = getProxyConfig(Environment.LOCAL);
 
   protected TestComponent testComponent;
 
@@ -106,6 +107,7 @@ public abstract class ProtocolModuleTest {
           LoggingHandler.class,
           // Metrics instrumentation is tested separately.
           BackendMetricsHandler.class,
+          FrontendMetricsHandler.class,
           // Quota management is tested separately.
           WhoisQuotaHandler.class,
           EppQuotaHandler.class,

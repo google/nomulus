@@ -21,6 +21,7 @@ import dagger.multibindings.IntoSet;
 import google.registry.proxy.HttpsRelayProtocolModule.HttpsRelayProtocol;
 import google.registry.proxy.Protocol.BackendProtocol;
 import google.registry.proxy.Protocol.FrontendProtocol;
+import google.registry.proxy.handler.FrontendMetricsHandler;
 import google.registry.proxy.handler.ProxyProtocolHandler;
 import google.registry.proxy.handler.QuotaHandler.WhoisQuotaHandler;
 import google.registry.proxy.handler.RelayHandler.FullHttpRequestRelayHandler;
@@ -74,6 +75,7 @@ public class WhoisProtocolModule {
       @WhoisProtocol Provider<ReadTimeoutHandler> readTimeoutHandlerProvider,
       Provider<LineBasedFrameDecoder> lineBasedFrameDecoderProvider,
       Provider<WhoisServiceHandler> whoisServiceHandlerProvider,
+      Provider<FrontendMetricsHandler> frontendMetricsHandlerProvider,
       Provider<WhoisQuotaHandler> whoisQuotaHandlerProvider,
       Provider<FullHttpRequestRelayHandler> relayHandlerProvider) {
     return ImmutableList.of(
@@ -81,6 +83,7 @@ public class WhoisProtocolModule {
         readTimeoutHandlerProvider,
         lineBasedFrameDecoderProvider,
         whoisServiceHandlerProvider,
+        frontendMetricsHandlerProvider,
         whoisQuotaHandlerProvider,
         relayHandlerProvider);
   }

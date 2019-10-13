@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableSet;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import org.joda.time.Duration;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,7 +41,7 @@ public class BackendMetricsTest {
 
   @Before
   public void setUp() {
-    metrics.resetMetric();
+    metrics.resetMetrics();
   }
 
   @Test
@@ -89,7 +90,7 @@ public class BackendMetricsTest {
   public void testSuccess_oneResponse() {
     String content = "some response";
     FullHttpResponse response = makeHttpResponse(content, HttpResponseStatus.OK);
-    metrics.responseReceived(protocol, certHash, response, 5);
+    metrics.responseReceived(protocol, certHash, response, Duration.millis(5));
 
     assertThat(BackendMetrics.requestsCounter).hasNoOtherValues();
     assertThat(BackendMetrics.requestBytes).hasNoOtherValues();
@@ -115,9 +116,9 @@ public class BackendMetricsTest {
     FullHttpResponse response1 = makeHttpResponse(content1, HttpResponseStatus.OK);
     FullHttpResponse response2 = makeHttpResponse(content2, HttpResponseStatus.OK);
     FullHttpResponse response3 = makeHttpResponse(content3, HttpResponseStatus.BAD_REQUEST);
-    metrics.responseReceived(protocol, certHash, response1, 5);
-    metrics.responseReceived(protocol, certHash, response2, 8);
-    metrics.responseReceived(protocol, certHash, response3, 2);
+    metrics.responseReceived(protocol, certHash, response1, Duration.millis(5));
+    metrics.responseReceived(protocol, certHash, response2, Duration.millis(8));
+    metrics.responseReceived(protocol, certHash, response3, Duration.millis(2));
 
     assertThat(BackendMetrics.requestsCounter).hasNoOtherValues();
     assertThat(BackendMetrics.requestBytes).hasNoOtherValues();
@@ -147,7 +148,7 @@ public class BackendMetricsTest {
     FullHttpRequest request = makeHttpPostRequest(requestContent, host, "/");
     FullHttpResponse response = makeHttpResponse(responseContent, HttpResponseStatus.OK);
     metrics.requestSent(protocol, certHash, request.content().readableBytes());
-    metrics.responseReceived(protocol, certHash, response, 10);
+    metrics.responseReceived(protocol, certHash, response, Duration.millis(10));
 
     assertThat(BackendMetrics.requestsCounter)
         .hasValueForLabels(1, protocol, certHash)

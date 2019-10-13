@@ -14,12 +14,10 @@
 
 package google.registry.proxy.metric;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
+import com.google.monitoring.metrics.EventMetric;
 import com.google.monitoring.metrics.IncrementableMetric;
-import com.google.monitoring.metrics.LabelDescriptor;
 import com.google.monitoring.metrics.Metric;
 import com.google.monitoring.metrics.MetricRegistryImpl;
 import google.registry.util.NonFinalForTesting;
@@ -32,27 +30,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import org.joda.time.Duration;
 
 /** Frontend metrics instrumentation. */
 @Singleton
-public class FrontendMetrics {
-
-  /**
-   * Labels to register front metrics with.
-   *
-   * <p>The client certificate hash value is only used for EPP metrics. For WHOIS metrics, it will
-   * always be {@code "none"}. In order to get the actual registrar name, one can use the {@code
-   * nomulus} tool:
-   *
-   * <pre>
-   * nomulus -e production list_registrars -f clientCertificateHash | grep $HASH
-   * </pre>
-   */
-  private static final ImmutableSet<LabelDescriptor> LABELS =
-      ImmutableSet.of(
-          LabelDescriptor.create("protocol", "Name of the protocol."),
-          LabelDescriptor.create(
-              "client_cert_hash", "SHA256 hash of the client certificate, if available."));
+public class FrontendMetrics extends AbstractMetrics {
 
   private static final ConcurrentMap<ImmutableList<String>, ChannelGroup> activeConnections =
       new ConcurrentHashMap<>();
@@ -65,9 +47,7 @@ public class FrontendMetrics {
               "Active Connections",
               LABELS,
               () ->
-                  activeConnections
-                      .entrySet()
-                      .stream()
+                  activeConnections.entrySet().stream()
                       .collect(
                           ImmutableMap.toImmutableMap(
                               Map.Entry::getKey, entry -> (long) entry.getValue().size())),
@@ -89,19 +69,23 @@ public class FrontendMetrics {
               "Quota Rejections",
               LABELS);
 
+  static final EventMetric latencyMs =
+      MetricRegistryImpl.getDefault()
+          .newEventMetric(
+              "/proxy/frontend/latency_ms",
+              "Round-trip time between a request received and its corresponding response sent.",
+              "Latency Milliseconds",
+              LABELS,
+              DEFAULT_LATENCY_FITTER);
+
   @Inject
   public FrontendMetrics() {}
 
-  /**
-   * Resets all frontend metrics.
-   *
-   * <p>This should only be used in tests to reset states. Production code should not call this
-   * method.
-   */
-  @VisibleForTesting
+  @Override
   void resetMetrics() {
     totalConnectionsCounter.reset();
     activeConnections.clear();
+    latencyMs.reset();
   }
 
   @NonFinalForTesting
@@ -121,5 +105,10 @@ public class FrontendMetrics {
   @NonFinalForTesting
   public void registerQuotaRejection(String protocol, String certHash) {
     quotaRejectionsCounter.increment(protocol, certHash);
+  }
+
+  @NonFinalForTesting
+  public void responseSent(String protocol, String certHash, Duration latency) {
+    latencyMs.record(latency.getMillis(), protocol, certHash);
   }
 }

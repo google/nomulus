@@ -24,6 +24,7 @@ import google.registry.proxy.HttpsRelayProtocolModule.HttpsRelayProtocol;
 import google.registry.proxy.Protocol.BackendProtocol;
 import google.registry.proxy.Protocol.FrontendProtocol;
 import google.registry.proxy.handler.EppServiceHandler;
+import google.registry.proxy.handler.FrontendMetricsHandler;
 import google.registry.proxy.handler.ProxyProtocolHandler;
 import google.registry.proxy.handler.QuotaHandler.EppQuotaHandler;
 import google.registry.proxy.handler.RelayHandler.FullHttpRequestRelayHandler;
@@ -85,6 +86,7 @@ public class EppProtocolModule {
       Provider<LengthFieldBasedFrameDecoder> lengthFieldBasedFrameDecoderProvider,
       Provider<LengthFieldPrepender> lengthFieldPrependerProvider,
       Provider<EppServiceHandler> eppServiceHandlerProvider,
+      Provider<FrontendMetricsHandler> frontendMetricsHandlerProvider,
       Provider<EppQuotaHandler> eppQuotaHandlerProvider,
       Provider<FullHttpRequestRelayHandler> relayHandlerProvider) {
     return ImmutableList.of(
@@ -94,6 +96,7 @@ public class EppProtocolModule {
         lengthFieldBasedFrameDecoderProvider,
         lengthFieldPrependerProvider,
         eppServiceHandlerProvider,
+        frontendMetricsHandlerProvider,
         eppQuotaHandlerProvider,
         relayHandlerProvider);
   }

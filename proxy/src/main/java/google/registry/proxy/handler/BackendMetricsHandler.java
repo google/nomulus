@@ -36,14 +36,16 @@ import java.util.Optional;
 import java.util.Queue;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
 /**
- * Handler that records metrics a backend channel.
+ * Handler that records metrics for a backend channel.
  *
- * <p>This handler is added right before {@link FullHttpResponseRelayHandler} in the backend
- * protocol handler provider method. {@link FullHttpRequest} outbound messages encounter this first
- * before being handed over to HTTP related handler. {@link FullHttpResponse} inbound messages are
- * first constructed (from plain bytes) by preceding handlers and then logged in this handler.
+ * <p>This handler is added before the {@link FullHttpResponseRelayHandler} in the backend protocol
+ * handler provider method. {@link FullHttpRequest} outbound messages encounter this first before
+ * being handed over to HTTP related handler. {@link FullHttpResponse} inbound messages are first
+ * constructed (from plain bytes) by preceding handlers and then related metrics are instrumented in
+ * this handler.
  */
 public class BackendMetricsHandler extends ChannelDuplexHandler {
 
@@ -95,7 +97,7 @@ public class BackendMetricsHandler extends ChannelDuplexHandler {
         relayedProtocolName,
         clientCertHash,
         (FullHttpResponse) msg,
-        clock.nowUtc().getMillis() - requestSentTimeQueue.remove().getMillis());
+        new Duration(requestSentTimeQueue.remove().getMillis(), clock.nowUtc().getMillis()));
     super.channelRead(ctx, msg);
   }
 
@@ -118,8 +120,6 @@ public class BackendMetricsHandler extends ChannelDuplexHandler {
     // called and the readable bytes would be zero by then.
     int bytes = request.content().readableBytes();
 
-    // Record sent time before write finishes allows us to take network latency into account.
-    DateTime sentTime = clock.nowUtc();
     ChannelFuture unusedFuture =
         ctx.write(msg, promise)
             .addListener(
@@ -127,7 +127,7 @@ public class BackendMetricsHandler extends ChannelDuplexHandler {
                   if (future.isSuccess()) {
                     // Only instrument request metrics when the request is actually sent to GAE.
                     metrics.requestSent(relayedProtocolName, clientCertHash, bytes);
-                    requestSentTimeQueue.add(sentTime);
+                    requestSentTimeQueue.add(clock.nowUtc());
                   }
                 });
   }

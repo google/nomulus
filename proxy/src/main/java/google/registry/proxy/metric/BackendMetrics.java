@@ -15,10 +15,7 @@
 package google.registry.proxy.metric;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.monitoring.metrics.CustomFitter;
 import com.google.monitoring.metrics.EventMetric;
-import com.google.monitoring.metrics.ExponentialFitter;
-import com.google.monitoring.metrics.FibonacciFitter;
 import com.google.monitoring.metrics.IncrementableMetric;
 import com.google.monitoring.metrics.LabelDescriptor;
 import com.google.monitoring.metrics.MetricRegistryImpl;
@@ -26,26 +23,11 @@ import google.registry.util.NonFinalForTesting;
 import io.netty.handler.codec.http.FullHttpResponse;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import org.joda.time.Duration;
 
 /** Backend metrics instrumentation. */
 @Singleton
-public class BackendMetrics {
-
-  // Maximum request size is defined in the config file, this is not realistic and we'd be out of
-  // memory when the size approach 1 GB.
-  private static final CustomFitter DEFAULT_SIZE_FITTER = FibonacciFitter.create(1073741824);
-
-  // Maximum 1 hour latency, this is not specified by the spec, but given we have a one hour idle
-  // timeout, it seems reasonable that maximum latency is set to 1 hour as well. If we are
-  // approaching anywhere near 1 hour latency, we'd be way out of SLO anyway.
-  private static final ExponentialFitter DEFAULT_LATENCY_FITTER =
-      ExponentialFitter.create(22, 2, 1.0);
-
-  private static final ImmutableSet<LabelDescriptor> LABELS =
-      ImmutableSet.of(
-          LabelDescriptor.create("protocol", "Name of the protocol."),
-          LabelDescriptor.create(
-              "client_cert_hash", "SHA256 hash of the client certificate, if available."));
+public class BackendMetrics extends AbstractMetrics {
 
   static final IncrementableMetric requestsCounter =
       MetricRegistryImpl.getDefault()
@@ -96,13 +78,8 @@ public class BackendMetrics {
   @Inject
   BackendMetrics() {}
 
-  /**
-   * Resets all backend metrics.
-   *
-   * <p>This should only used in tests to clear out states. No production code should call this
-   * function.
-   */
-  void resetMetric() {
+  @Override
+  void resetMetrics() {
     requestBytes.reset();
     requestsCounter.reset();
     responseBytes.reset();
@@ -118,8 +95,8 @@ public class BackendMetrics {
 
   @NonFinalForTesting
   public void responseReceived(
-      String protocol, String certHash, FullHttpResponse response, long latency) {
-    latencyMs.record(latency, protocol, certHash);
+      String protocol, String certHash, FullHttpResponse response, Duration latency) {
+    latencyMs.record(latency.getMillis(), protocol, certHash);
     responseBytes.record(response.content().readableBytes(), protocol, certHash);
     responsesCounter.increment(protocol, certHash, response.status().toString());
   }
