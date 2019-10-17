@@ -94,6 +94,7 @@ ext {
     def command =
         """gsutil cp \
            gs://domain-registry${env}-cloudsql-credentials/${role}_credential.enc - | \
+           base64 -d | \
            gcloud kms decrypt --location global --keyring nomulus \
            --key sql-credentials-on-gcs-key --plaintext-file=- \
            --ciphertext-file=- \
@@ -118,11 +119,11 @@ artifacts {
 publishing {
   repositories {
     maven {
-      url project.schema_jar_repo
+      url project.schema_publish_repo
     }
   }
   publications {
-    schemaOrmPublication(MavenPublication) {
+    sqlSchemaPublication(MavenPublication) {
       groupId 'google.registry'
       artifactId 'schema'
       version project.schema_version
