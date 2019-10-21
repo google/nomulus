@@ -16,6 +16,8 @@ package google.registry.model.transaction;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.util.Clock;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
@@ -32,8 +34,8 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   private final Clock clock;
   // TODO(shicong): Investigate alternatives for managing transaction information. ThreadLocal adds
   //  an unnecessary restriction that each request has to be processed by one thread synchronously.
-  private final ThreadLocal<TransactionInfo> transactionInfo =
-      ThreadLocal.withInitial(TransactionInfo::new);
+  private final ThreadLocal<Deque<TransactionInfo>> transactionInfo =
+      ThreadLocal.withInitial(ArrayDeque::new);
 
   public JpaTransactionManagerImpl(EntityManagerFactory emf, Clock clock) {
     this.emf = emf;
@@ -42,17 +44,19 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public EntityManager getEntityManager() {
-    if (transactionInfo.get().entityManager == null) {
+    Deque<TransactionInfo> txnInfoStack = transactionInfo.get();
+    if (txnInfoStack.isEmpty()) {
       throw new PersistenceException(
           "No EntityManager has been initialized. getEntityManager() must be invoked in the scope"
               + " of a transaction");
     }
-    return transactionInfo.get().entityManager;
+    return txnInfoStack.peek().entityManager;
   }
 
   @Override
   public boolean inTransaction() {
-    return transactionInfo.get().inTransaction;
+    Deque<TransactionInfo> txnInfoStack = transactionInfo.get();
+    return !txnInfoStack.isEmpty() && txnInfoStack.peek().inTransaction;
   }
 
   @Override
@@ -82,29 +86,37 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> T transactNew(Work<T> work) {
-    TransactionInfo txnInfo = transactionInfo.get();
-    txnInfo.entityManager = emf.createEntityManager();
-    EntityTransaction txn = txnInfo.entityManager.getTransaction();
+    Deque<TransactionInfo> txnInfoStack = transactionInfo.get();
+    TransactionInfo newTxnInfo = new TransactionInfo();
+    txnInfoStack.push(newTxnInfo);
+    EntityTransaction txn = null;
     try {
+      newTxnInfo.entityManager = emf.createEntityManager();
+      txn = newTxnInfo.entityManager.getTransaction();
       txn.begin();
-      txnInfo.inTransaction = true;
-      txnInfo.transactionTime = clock.nowUtc();
+      newTxnInfo.inTransaction = true;
+      newTxnInfo.transactionTime = clock.nowUtc();
       T result = work.run();
       txn.commit();
       return result;
     } catch (Throwable transactionException) {
       String rollbackMessage;
-      try {
-        txn.rollback();
-        rollbackMessage = "transaction rolled back";
-      } catch (Throwable rollbackException) {
-        logger.atSevere().withCause(rollbackException).log("Rollback failed, suppressing error");
-        rollbackMessage = "transaction rollback failed";
+      if (txn == null) {
+        rollbackMessage = "transaction not started";
+      } else {
+        try {
+          txn.rollback();
+          rollbackMessage = "transaction rolled back";
+        } catch (Throwable rollbackException) {
+          logger.atSevere().withCause(rollbackException).log("Rollback failed, suppressing error");
+          rollbackMessage = "transaction rollback failed";
+        }
       }
       throw new PersistenceException(
           "Error during transaction, " + rollbackMessage, transactionException);
     } finally {
-      txnInfo.clear();
+      txnInfoStack.pop();
+      newTxnInfo.clear();
     }
   }
 
@@ -138,7 +150,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public DateTime getTransactionTime() {
     assertInTransaction();
-    TransactionInfo txnInfo = transactionInfo.get();
+    TransactionInfo txnInfo = transactionInfo.get().peekLast();
     if (txnInfo.transactionTime == null) {
       throw new PersistenceException("In a transaction but transactionTime is null");
     }

@@ -102,19 +102,118 @@ public class JpaTransactionManagerImplTest {
     assertCompanyEmpty();
     jpaTm()
         .transact(
-            () ->
-                jpaTm()
-                    .transact(
-                        () -> {
-                          insertPerson(10);
-                          insertCompany("Foo");
-                          insertCompany("Bar");
-                        }));
+            () -> {
+              insertPerson(10);
+              insertCompany("Foo");
+              jpaTm()
+                  .transact(
+                      () -> {
+                        // The inner transact() can see the new entry because
+                        // it actually reuses the same transaction created by
+                        // the outer transact().
+                        assertPersonCount(1);
+                        assertPersonExist(10);
+                        insertCompany("Bar");
+                      });
+            });
     assertPersonCount(1);
     assertPersonExist(10);
     assertCompanyCount(2);
     assertCompanyExist("Foo");
     assertCompanyExist("Bar");
+  }
+
+  @Test
+  public void transactNew_bothInnerAndOuterTransactionsSucceed() {
+    assertPersonEmpty();
+    assertCompanyEmpty();
+    jpaTm()
+        .transactNew(
+            () -> {
+              insertPerson(10);
+              insertCompany("Foo");
+              jpaTm()
+                  .transactNew(
+                      () -> {
+                        insertPerson(5);
+                        insertCompany("Bar");
+                      });
+            });
+    assertPersonCount(2);
+    assertPersonExist(5);
+    assertPersonExist(10);
+    assertCompanyCount(2);
+    assertCompanyExist("Foo");
+    assertCompanyExist("Bar");
+  }
+
+  @Test
+  public void transactNew_alwaysStartsNewTransaction() {
+    jpaTm()
+        .transactNew(
+            () -> {
+              insertCompany("transactNew");
+              jpaTm()
+                  .transactNew(
+                      () -> {
+                        // The inner transactNew() cannot see the new entry because
+                        // the actual transaction created by the outer transactNew()
+                        // has not been committed yet. This proves that transactNew()
+                        // always starts a new transaction instead of reusing the existing
+                        // one.
+                        assertCompanyEmpty();
+                      });
+            });
+    assertCompanyExist("transactNew");
+    assertCompanyCount(1);
+  }
+
+  @Test
+  public void transactNew_OuterTransactionSucceedsWhileInnerTransactionFails() {
+    jpaTm()
+        .transactNew(
+            () -> {
+              insertPerson(10);
+              assertThrows(
+                  PersistenceException.class,
+                  () ->
+                      jpaTm()
+                          .transactNew(
+                              () -> {
+                                insertPerson(5);
+                                insertCompany("Bar");
+                                throw new RuntimeException();
+                              }));
+              insertCompany("Foo");
+            });
+    assertPersonCount(1);
+    assertPersonExist(10);
+    assertCompanyCount(1);
+    assertCompanyExist("Foo");
+  }
+
+  @Test
+  public void transactNew_InnerTransactionSucceedsWhileOuterTransactionFails() {
+    assertThrows(
+        PersistenceException.class,
+        () ->
+            jpaTm()
+                .transactNew(
+                    () -> {
+                      insertPerson(5);
+                      insertCompany("Bar");
+                      jpaTm()
+                          .transactNew(
+                              () -> {
+                                insertPerson(10);
+                                insertCompany("Foo");
+                              });
+                      throw new RuntimeException();
+                    }));
+    assertPersonCount(1);
+    assertPersonExist(10);
+    assertCompanyCount(1);
+    assertCompanyExist("Foo");
   }
 
   private void insertPerson(int age) {
