@@ -124,6 +124,7 @@ ext {
       'org.mockito:mockito-core:2.25.0',
       'org.mortbay.jetty:jetty:6.1.26',
       'org.postgresql:postgresql:42.2.6',
+      'org.reflections:reflections:0.9.11',
       'org.seleniumhq.selenium:selenium-api:3.141.59',
       'org.seleniumhq.selenium:selenium-chrome-driver:3.141.59',
       'org.seleniumhq.selenium:selenium-java:3.141.59',

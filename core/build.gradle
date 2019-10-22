@@ -72,6 +72,22 @@ def fragileTestPatterns = [
     "google/registry/model/server/KmsSecretRevisionTest.*",
 ] + dockerIncompatibleTestPatterns
 
+// Tests that depend on Cloud SQL schema, and need to run against schema
+// versions that are not at HEAD. For ease of enforcement, test classes
+// should be enumerated individually, i.e., do not use wildcards at package
+// or class name level.
+def sqlIntegrationTestPatterns = [
+    "google/registry/model/registry/RegistryLockDaoTest.*",
+    "google/registry/model/tmch/ClaimsListDaoTest.*",
+    "google/registry/model/transaction/JpaTransactionManagerImplTest.*",
+    "google/registry/model/transaction/JpaTransactionManagerRuleTest.*",
+    "google/registry/persistence/BloomFilterConverterTest.*",
+    "google/registry/persistence/CreateAutoTimestampConverterTest.*",
+    "google/registry/persistence/UpdateAutoTimestampConverterTest.*",
+    "google/registry/persistence/ZonedDateTimeConverterTest.*",
+    "google/registry/schema/tld/PremiumListDaoTest.*",
+]
+
 sourceSets {
   main {
     java {
@@ -220,6 +236,7 @@ dependencies {
   compile deps['org.bouncycastle:bcprov-jdk15on']
   compile deps['org.joda:joda-money']
   compile deps['org.json:json']
+  testCompile deps['org.reflections:reflections']
   testCompile deps['org.mortbay.jetty:jetty']
   runtimeOnly deps['org.postgresql:postgresql']
   testCompile deps['org.seleniumhq.selenium:selenium-api']
@@ -606,6 +623,11 @@ task outcastTest(type: FilteringTest) {
   maxParallelForks 5
 }
 
+// Dedicated test suite for schema-dependent tests.
+task sqlIntegrationTest(type: FilteringTest) {
+  tests = sqlIntegrationTestPatterns
+}
+
 task findGoldenImages(type: JavaExec) {
   classpath = sourceSets.test.runtimeClasspath
   main = 'google.registry.webdriver.GoldenImageFinder'
@@ -708,6 +730,11 @@ test {
 
   systemProperty 'test.projectRoot', rootProject.projectRootDir
   systemProperty 'test.resourcesDir', resourcesDir
+
+  systemProperty 'test.sqlIntergrationTests',
+      sqlIntegrationTestPatterns.collect {
+        it.replaceAll('.\\*', '').replaceAll('/', '.')
+      }.join(',')
 
   doFirst {
     new File(screenshotsDir).deleteDir()

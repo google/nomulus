@@ -240,6 +240,7 @@ org.ow2.asm:asm-tree:6.0
 org.ow2.asm:asm-util:6.0
 org.ow2.asm:asm:6.0
 org.postgresql:postgresql:42.2.6
+org.reflections:reflections:0.9.11
 org.rnorth.duct-tape:duct-tape:1.0.8
 org.rnorth.visible-assertions:visible-assertions:2.1.2
 org.rnorth:tcp-unix-socket-proxy:1.0.2
