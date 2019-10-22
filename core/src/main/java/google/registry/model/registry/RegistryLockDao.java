@@ -49,16 +49,16 @@ public final class RegistryLockDao {
   public static ImmutableList<RegistryLock> getByRegistrarId(String registrarId) {
     return jpaTm()
         .transact(
-            () -> {
-              EntityManager em = jpaTm().getEntityManager();
-              return ImmutableList.copyOf(
-                  em.createQuery(
-                          "SELECT lock FROM RegistryLock lock WHERE"
-                              + " lock.registrarId = :registrarId",
-                          RegistryLock.class)
-                      .setParameter("registrarId", registrarId)
-                      .getResultList());
-            });
+            () ->
+                ImmutableList.copyOf(
+                    jpaTm()
+                        .getEntityManager()
+                        .createQuery(
+                            "SELECT lock FROM RegistryLock lock WHERE"
+                                + " lock.registrarId = :registrarId",
+                            RegistryLock.class)
+                        .setParameter("registrarId", registrarId)
+                        .getResultList()));
   }
 
   public static RegistryLock save(RegistryLock registryLock) {

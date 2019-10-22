@@ -22,6 +22,7 @@
     create table "ClaimsList" (
        revision_id  bigserial not null,
         creation_timestamp timestamptz not null,
+        tmdb_generation_time timestamptz not null,
         primary key (revision_id)
     );
 
@@ -160,6 +161,8 @@
     alter table if exists "Domain_GracePeriod" 
        add constraint UK_4ps2u4y8i5r91wu2n1x2xea28 unique (grace_periods_id);
 create index premiumlist_name_idx on "PremiumList" (name);
+create index idx_registry_lock_verification_code on "RegistryLock" (verification_code);
+create index idx_registry_lock_registrar_id on "RegistryLock" (registrar_id);
 
     alter table if exists "RegistryLock" 
        add constraint idx_registry_lock_repo_id_revision_id unique (repo_id, revision_id);
