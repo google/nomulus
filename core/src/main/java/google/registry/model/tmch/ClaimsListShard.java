@@ -217,8 +217,7 @@ public class ClaimsListShard extends ImmutableObject {
             });
   }
 
-  public static ClaimsListShard create(
-      DateTime creationTime, ImmutableMap<String, String> labelsToKeys) {
+  public static ClaimsListShard create(DateTime creationTime, Map<String, String> labelsToKeys) {
     ClaimsListShard instance = new ClaimsListShard();
     instance.id = allocateId();
     instance.creationTime = checkNotNull(creationTime);

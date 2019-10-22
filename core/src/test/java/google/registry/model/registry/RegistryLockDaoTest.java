@@ -23,6 +23,7 @@ import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.schema.domain.RegistryLock.Action;
 import google.registry.testing.AppEngineRule;
+import java.util.Optional;
 import java.util.UUID;
 import javax.persistence.PersistenceException;
 import org.junit.Rule;
@@ -72,10 +73,10 @@ public final class RegistryLockDaoTest {
     jpaTm()
         .transact(
             () -> {
-              RegistryLock secondLock =
+              RegistryLock updatedLock =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
-              secondLock.setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc());
-              RegistryLockDao.save(secondLock);
+              updatedLock.setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc());
+              RegistryLockDao.save(updatedLock);
             });
     jpaTm()
         .transact(
@@ -84,6 +85,23 @@ public final class RegistryLockDaoTest {
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
               assertThat(fromDatabase.getCompletionTimestamp().get())
                   .isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+            });
+  }
+
+  @Test
+  public void testUpdateLock_usingSamePrimaryKey() {
+    RegistryLock lock = RegistryLockDao.save(createLock());
+    jpaTmRule.getTxnClock().advanceOneMilli();
+    RegistryLock updatedLock =
+        lock.asBuilder().setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc()).build();
+    jpaTm().transact(() -> RegistryLockDao.save(updatedLock));
+    jpaTm()
+        .transact(
+            () -> {
+              RegistryLock fromDatabase =
+                  RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
+              assertThat(fromDatabase.getCompletionTimestamp())
+                  .isEqualTo(Optional.of(jpaTmRule.getTxnClock().nowUtc()));
             });
   }
 

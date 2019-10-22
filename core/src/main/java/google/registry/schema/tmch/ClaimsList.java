@@ -15,7 +15,11 @@
 package google.registry.schema.tmch;
 
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.util.DateTimeUtils.toJodaDateTime;
+import static google.registry.util.DateTimeUtils.toZonedDateTime;
 
+import google.registry.model.CreateAutoTimestamp;
+import google.registry.model.ImmutableObject;
 import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +33,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.Table;
+import org.joda.time.DateTime;
 
 /**
  * A list of TMCH claims labels and their associated claims keys.
@@ -40,26 +45,29 @@ import javax.persistence.Table;
  * highest {@link #revisionId}.
  */
 @Entity
-@Table(name = "ClaimsList")
-public class ClaimsList {
+@Table
+public class ClaimsList extends ImmutableObject {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "revision_id")
+  @Column
   private Long revisionId;
 
-  @Column(name = "creation_timestamp", nullable = false)
-  private ZonedDateTime creationTimestamp;
+  @Column(nullable = false)
+  private CreateAutoTimestamp creationTimestamp = CreateAutoTimestamp.create(null);
+
+  @Column(nullable = false)
+  private ZonedDateTime tmdbGenerationTime;
 
   @ElementCollection
   @CollectionTable(
       name = "ClaimsEntry",
-      joinColumns = @JoinColumn(name = "revision_id", referencedColumnName = "revision_id"))
-  @MapKeyColumn(name = "domain_label", nullable = false)
-  @Column(name = "claim_key", nullable = false)
+      joinColumns = @JoinColumn(name = "revisionId", referencedColumnName = "revisionId"))
+  @MapKeyColumn(name = "domainLabel", nullable = false)
+  @Column(name = "claimKey", nullable = false)
   private Map<String, String> labelsToKeys;
 
-  private ClaimsList(ZonedDateTime creationTimestamp, Map<String, String> labelsToKeys) {
-    this.creationTimestamp = creationTimestamp;
+  private ClaimsList(ZonedDateTime tmdbGenerationTime, Map<String, String> labelsToKeys) {
+    this.tmdbGenerationTime = tmdbGenerationTime;
     this.labelsToKeys = labelsToKeys;
   }
 
@@ -67,9 +75,8 @@ public class ClaimsList {
   private ClaimsList() {}
 
   /** Constructs a {@link ClaimsList} object. */
-  public static ClaimsList create(
-      ZonedDateTime creationTimestamp, Map<String, String> labelsToKeys) {
-    return new ClaimsList(creationTimestamp, labelsToKeys);
+  public static ClaimsList create(DateTime creationTimestamp, Map<String, String> labelsToKeys) {
+    return new ClaimsList(toZonedDateTime(creationTimestamp), labelsToKeys);
   }
 
   /** Returns the revision id of this claims list, or throws exception if it is null. */
@@ -79,9 +86,14 @@ public class ClaimsList {
     return revisionId;
   }
 
+  /** Returns the TMDB generation time of this claims list. */
+  public DateTime getTmdbGenerationTime() {
+    return toJodaDateTime(tmdbGenerationTime);
+  }
+
   /** Returns the creation time of this claims list. */
-  public ZonedDateTime getCreationTimestamp() {
-    return creationTimestamp;
+  public DateTime getCreationTimestamp() {
+    return creationTimestamp.getTimestamp();
   }
 
   /** Returns an {@link Map} mapping domain label to its lookup key. */

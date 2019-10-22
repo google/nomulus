@@ -21,7 +21,9 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
+import google.registry.model.tmch.ClaimsListDao;
 import google.registry.model.tmch.ClaimsListShard;
+import google.registry.schema.tmch.ClaimsList;
 import google.registry.tmch.ClaimsListParser;
 import java.io.File;
 import java.io.IOException;
@@ -35,9 +37,14 @@ final class UploadClaimsListCommand extends ConfirmingCommand implements Command
   @Parameter(description = "Claims list filename")
   private List<String> mainParameters = new ArrayList<>();
 
+  @Parameter(
+      names = {"--also_cloud_sql"},
+      description = "Persist claims list to Cloud SQL in addition to Datastore; defaults to false.")
+  boolean alsoCloudSql;
+
   private String claimsListFilename;
 
-  private ClaimsListShard claimsList;
+  private ClaimsList claimsList;
 
   @Override
   protected void init() throws IOException {
@@ -56,7 +63,10 @@ final class UploadClaimsListCommand extends ConfirmingCommand implements Command
 
   @Override
   public String execute() {
-    claimsList.save();
+    ClaimsListShard.create(claimsList.getTmdbGenerationTime(), claimsList.getLabelsToKeys()).save();
+    if (alsoCloudSql) {
+      ClaimsListDao.trySave(claimsList);
+    }
     return String.format("Successfully uploaded claims list %s", claimsListFilename);
   }
 }
