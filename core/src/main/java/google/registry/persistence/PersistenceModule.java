@@ -122,7 +122,7 @@ public class PersistenceModule {
             .append("?cloudSqlInstance=" + instanceConnectionName)
             .append("&socketFactory=com.google.cloud.sql.postgres.SocketFactory")
             .append("&user=" + username)
-            .append("&password=" + kmsKeyring.getCloudSqlPassword())
+            .append("&password=" + kmsKeyring.getToolsCloudSqlPassword())
             .toString();
 
     HashMap<String, String> overrides = Maps.newHashMap(defaultConfigs);
