@@ -14,8 +14,15 @@
 
 package google.registry.model.transaction;
 
+import static google.registry.config.RegistryEnvironment.ALPHA;
+import static google.registry.config.RegistryEnvironment.CRASH;
+
+import com.google.appengine.api.utils.SystemProperty;
+import com.google.appengine.api.utils.SystemProperty.Environment.Value;
 import com.google.common.annotations.VisibleForTesting;
+import google.registry.config.RegistryEnvironment;
 import google.registry.model.ofy.DatastoreTransactionManager;
+import google.registry.persistence.DaggerPersistenceComponent;
 
 /** Factory class to create {@link TransactionManager} instance. */
 // TODO: Rename this to PersistenceFactory and move to persistence package.
@@ -27,19 +34,11 @@ public class TransactionManagerFactory {
   private TransactionManagerFactory() {}
 
   private static JpaTransactionManager createJpaTransactionManager() {
-    // TODO(shicong): There is currently no environment where we want to create a real JPA
-    // transaction manager here.  The unit tests that require one are all set up using
-    // JpaTransactionManagerRule which launches its own PostgreSQL instance.  When we actually have
-    // PostgreSQL tables in production, ensure that all of the test environments are set up
-    // correctly and restore the code that creates a JpaTransactionManager when
-    // RegistryEnvironment.get() != UNITTEST.
-    //
-    // We removed the original code because it didn't work in sandbox (due to the absence of the
-    // persistence.xml file, which has since been added), and then (after adding this) didn't work
-    // in crash because the postgresql password hadn't been set up.  Prior to restoring, we'll need
-    // to do setup in all environments, and we probably only want to do this once we're actually
-    // using Cloud SQL for one of the new tables.
-    return DummyJpaTransactionManager.create();
+    if (shouldEnableJpaTm() && SystemProperty.environment.value() == Value.Production) {
+      return DaggerPersistenceComponent.create().appEngineJpaTransactionManager();
+    } else {
+      return DummyJpaTransactionManager.create();
+    }
   }
 
   private static TransactionManager createTransactionManager() {
@@ -54,8 +53,14 @@ public class TransactionManagerFactory {
    * {@link google.registry.tools.RegistryCli} to initialize jpaTm.
    */
   public static void initForTool() {
-    // TODO(shicong): Uncomment the line below when we set up Cloud SQL instance in all environments
-    // jpaTm = DaggerPersistenceComponent.create().nomulusToolJpaTransactionManager();
+    if (shouldEnableJpaTm()) {
+      jpaTm = DaggerPersistenceComponent.create().nomulusToolJpaTransactionManager();
+    }
+  }
+
+  // TODO(shicong): Enable JpaTm for all environments and remove this function
+  private static boolean shouldEnableJpaTm() {
+    return RegistryEnvironment.get() == ALPHA || RegistryEnvironment.get() == CRASH;
   }
 
   /** Returns {@link TransactionManager} instance. */
