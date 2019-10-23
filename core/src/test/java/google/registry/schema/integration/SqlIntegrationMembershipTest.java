@@ -35,6 +35,7 @@ import org.reflections.Reflections;
  * <p>A test is deemed dependent on the SQL schema iff it has a field with type {@link
  * JpaTransactionManagerRule}.
  */
+// TODO(weiminyu): consider generating a TestSuite class instead.
 @RunWith(JUnit4.class)
 public class SqlIntegrationMembershipTest {
 
