@@ -35,6 +35,7 @@ import org.junit.Test;
 import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 /** WebDriver tests for Registrar Console UI. */
 @RunWith(RepeatableRunner.class)
@@ -76,6 +77,12 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
   /** Checks that an element is invisible. */
   void assertEltInvisible(String eltId) throws Throwable {
     assertThat(driver.waitForElement(By.id(eltId)).isDisplayed()).isFalse();
+  }
+
+  /** Checks that searching with the given By produces at least one element with the given text. */
+  void assertEltTextPresent(By by, String toFind) {
+    assertThat(driver.findElements(by).stream().map(WebElement::getText).anyMatch(toFind::equals))
+        .isTrue();
   }
 
   @Test
@@ -190,9 +197,11 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
     ImmutableList<RegistrarContact> contacts =
         server.runInAppEngineEnvironment(
             () -> loadRegistrar("TheRegistrar").getContacts().asList());
-    assertEltText("contacts[0].name", contacts.get(0).getName());
-    assertEltText("contacts[0].emailAddress", contacts.get(0).getEmailAddress());
-    assertEltText("contacts[0].phoneNumber", contacts.get(0).getPhoneNumber());
+    for (RegistrarContact contact : contacts) {
+      assertEltTextPresent(By.id("contacts[0].name"), contact.getName());
+      assertEltTextPresent(By.id("contacts[0].emailAddress"), contact.getEmailAddress());
+      assertEltTextPresent(By.id("contacts[0].phoneNumber"), contact.getPhoneNumber());
+    }
   }
 
   @Test
