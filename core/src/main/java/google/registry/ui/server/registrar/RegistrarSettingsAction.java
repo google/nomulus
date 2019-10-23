@@ -240,11 +240,18 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
             });
   }
 
-  private Map<String, Object> expandRegistrarWithContacts(Iterable<RegistrarContact> contacts,
-                                                          Registrar registrar) {
+  private Map<String, Object> expandRegistrarWithContacts(
+      Iterable<RegistrarContact> contacts, Registrar registrar) {
     ImmutableSet<Map<String, Object>> expandedContacts =
         Streams.stream(contacts)
             .map(RegistrarContact::toDiffableFieldMap)
+            // Note: per the javadoc, toDiffableFieldMap includes sensitive data but we don't want
+            // to display it here
+            .peek(
+                map -> {
+                  map.remove("registryLockPasswordHash");
+                  map.remove("registryLockPasswordSalt");
+                })
             .collect(toImmutableSet());
     // Use LinkedHashMap here to preserve ordering; null values mean we can't use ImmutableMap.
     LinkedHashMap<String, Object> result = new LinkedHashMap<>(registrar.toDiffableFieldMap());
