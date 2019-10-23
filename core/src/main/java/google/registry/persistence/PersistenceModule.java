@@ -90,15 +90,10 @@ public class PersistenceModule {
       @DefaultHibernateConfigs ImmutableMap<String, String> defaultConfigs,
       Clock clock) {
     HashMap<String, String> overrides = Maps.newHashMap(defaultConfigs);
-
-    // For Java users, the Cloud SQL JDBC Socket Factory can provide authenticated connections.
-    // See https://github.com/GoogleCloudPlatform/cloud-sql-jdbc-socket-factory for details.
-    overrides.put("socketFactory", "com.google.cloud.sql.postgres.SocketFactory");
-    overrides.put("cloudSqlInstance", instanceConnectionName);
-
-    overrides.put(Environment.URL, jdbcUrl);
-    overrides.put(Environment.USER, username);
-    overrides.put(Environment.PASS, kmsKeyring.getCloudSqlPassword());
+    overrides.put(
+        Environment.URL,
+        getFullJdbcUrl(
+            jdbcUrl, instanceConnectionName, username, kmsKeyring.getCloudSqlPassword()));
 
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
@@ -107,28 +102,34 @@ public class PersistenceModule {
   @Singleton
   @NomulusToolJpaTm
   public static JpaTransactionManager providesNomulusToolJpaTm(
-      @Config("toolsCloudSqlJdbcUrl") String jdbcUrl,
+      @Config("cloudSqlJdbcUrl") String jdbcUrl,
       @Config("toolsCloudSqlUsername") String username,
       @Config("cloudSqlInstanceConnectionName") String instanceConnectionName,
       KmsKeyring kmsKeyring,
       @DefaultHibernateConfigs ImmutableMap<String, String> defaultConfigs,
       Clock clock) {
-
-    // Cloud SQL JDBC Socket Factory library requires the jdbc url to include all connection
-    // information, otherwise the connection initialization will fail. See here for more details:
-    // https://github.com/GoogleCloudPlatform/cloud-sql-jdbc-socket-factory
-    String fullJdbcUrl =
-        new StringBuilder(jdbcUrl)
-            .append("?cloudSqlInstance=" + instanceConnectionName)
-            .append("&socketFactory=com.google.cloud.sql.postgres.SocketFactory")
-            .append("&user=" + username)
-            .append("&password=" + kmsKeyring.getToolsCloudSqlPassword())
-            .toString();
-
     HashMap<String, String> overrides = Maps.newHashMap(defaultConfigs);
-    overrides.put(Environment.URL, fullJdbcUrl);
+    overrides.put(
+        Environment.URL,
+        getFullJdbcUrl(
+            jdbcUrl, instanceConnectionName, username, kmsKeyring.getToolsCloudSqlPassword()));
 
     return new JpaTransactionManagerImpl(create(overrides), clock);
+  }
+
+  /**
+   * Cloud SQL JDBC Socket Factory library requires the jdbc url to include all connection
+   * information, otherwise the connection initialization will fail. See here for more details:
+   * https://github.com/GoogleCloudPlatform/cloud-sql-jdbc-socket-factory
+   */
+  private static String getFullJdbcUrl(
+      String jdbcUrl, String instanceConnectionName, String username, String password) {
+    return new StringBuilder(jdbcUrl)
+        .append("?cloudSqlInstance=" + instanceConnectionName)
+        .append("&socketFactory=com.google.cloud.sql.postgres.SocketFactory")
+        .append("&user=" + username)
+        .append("&password=" + password)
+        .toString();
   }
 
   /** Constructs the {@link EntityManagerFactory} instance. */
