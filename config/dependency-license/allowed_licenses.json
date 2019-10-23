@@ -215,12 +215,6 @@
     },
     {
       "moduleLicense": "The W3C Software License"
-    },
-    {
-      "moduleLicense": "WTFPL"
-    },
-    {
-      "moduleLicense": "http://www.wtfpl.net/, http://www.opensource.org/licenses/bsd-license.html"
     }
   ]
 }
