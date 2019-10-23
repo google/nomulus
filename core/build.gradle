@@ -72,22 +72,6 @@ def fragileTestPatterns = [
     "google/registry/model/server/KmsSecretRevisionTest.*",
 ] + dockerIncompatibleTestPatterns
 
-// Tests that depend on Cloud SQL schema, and need to run against schema
-// versions that are not at HEAD. For ease of enforcement, test classes
-// should be enumerated individually, i.e., do not use wildcards at package
-// or class name level.
-def sqlIntegrationTestPatterns = [
-    "google/registry/model/registry/RegistryLockDaoTest.*",
-    "google/registry/model/tmch/ClaimsListDaoTest.*",
-    "google/registry/model/transaction/JpaTransactionManagerImplTest.*",
-    "google/registry/model/transaction/JpaTransactionManagerRuleTest.*",
-    "google/registry/persistence/BloomFilterConverterTest.*",
-    "google/registry/persistence/CreateAutoTimestampConverterTest.*",
-    "google/registry/persistence/UpdateAutoTimestampConverterTest.*",
-    "google/registry/persistence/ZonedDateTimeConverterTest.*",
-    "google/registry/schema/tld/PremiumListDaoTest.*",
-]
-
 sourceSets {
   main {
     java {
@@ -624,8 +608,8 @@ task outcastTest(type: FilteringTest) {
 }
 
 // Dedicated test suite for schema-dependent tests.
-task sqlIntegrationTest(type: FilteringTest) {
-  tests = sqlIntegrationTestPatterns
+task sqlIntegrationTest(type: Test) {
+  include 'google/registry/schema/integration/SqlIntegrationTestSuite.*'
 }
 
 task findGoldenImages(type: JavaExec) {
@@ -730,11 +714,6 @@ test {
 
   systemProperty 'test.projectRoot', rootProject.projectRootDir
   systemProperty 'test.resourcesDir', resourcesDir
-
-  systemProperty 'test.sqlIntergrationTests',
-      sqlIntegrationTestPatterns.collect {
-        it.replaceAll('.\\*', '').replaceAll('/', '.')
-      }.join(',')
 
   doFirst {
     new File(screenshotsDir).deleteDir()

@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.junit.runners.Suite.SuiteClasses;
 import org.reflections.Reflections;
 
 /**
@@ -49,16 +50,17 @@ public class SqlIntegrationMembershipTest {
                 .map(Class::getName)
                 .collect(ImmutableSet.toImmutableSet());
     ImmutableSet<String> declaredTests =
-        ImmutableSet.copyOf(System.getProperty("test.sqlIntergrationTests", "").split(","));
-
+        Stream.of(SqlIntegrationTestSuite.class.getAnnotation(SuiteClasses.class).value())
+            .map(Class::getName)
+            .collect(ImmutableSet.toImmutableSet());
     SetView<String> undeclaredTests = Sets.difference(sqlDependentTests, declaredTests);
     assertWithMessage(
             "Undeclared sql-dependent tests found. "
-                + "Make sure they are included in sqlIntegrationTestPatterns in build script.")
+                + "Please add them to SqlIntegrationTestSuite.java.")
         .that(undeclaredTests)
         .isEmpty();
     SetView<String> unnecessaryDeclarations = Sets.difference(declaredTests, sqlDependentTests);
-    assertWithMessage("Found tests that should not be included in sqlIntegrationTestPatterns.")
+    assertWithMessage("Found tests that should not be included in SqlIntegrationTestSuite.java.")
         .that(unnecessaryDeclarations)
         .isEmpty();
   }
