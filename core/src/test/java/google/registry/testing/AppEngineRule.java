@@ -193,6 +193,7 @@ public final class AppEngineRule extends ExternalResource {
         .setPassword("foo-BAR2")
         .setPhoneNumber("+1.3334445555")
         .setPhonePasscode("12345")
+        .setRegistryLockAllowed(false)
         .build();
   }
 
@@ -206,6 +207,7 @@ public final class AppEngineRule extends ExternalResource {
         .setPassword("password2")
         .setPhoneNumber("+1.2223334444")
         .setPhonePasscode("22222")
+        .setRegistryLockAllowed(true)
         .build();
   }
 
@@ -238,6 +240,19 @@ public final class AppEngineRule extends ExternalResource {
         .setPhoneNumber("+1.1234567890")
         .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
         .setGaeUserId(THE_REGISTRAR_GAE_USER_ID)
+        .build();
+  }
+
+  public static RegistrarContact makeRegistrarContact3() {
+    return new RegistrarContact.Builder()
+        .setParent(makeRegistrar2())
+        .setName("Marla Singer")
+        .setEmailAddress("Marla.Singer@crr.com")
+        .setPhoneNumber("+1.2128675309")
+        .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
+        .setGaeUserId(THE_REGISTRAR_GAE_USER_ID)
+        .setAllowedToSetRegistryLockPassword(true)
+        .setRegistryLockPassword("hi")
         .build();
   }
 
@@ -412,6 +427,10 @@ public final class AppEngineRule extends ExternalResource {
   public static void loadInitialData() {
     persistSimpleResources(
         ImmutableList.of(
-            makeRegistrar1(), makeRegistrarContact1(), makeRegistrar2(), makeRegistrarContact2()));
+            makeRegistrar1(),
+            makeRegistrarContact1(),
+            makeRegistrar2(),
+            makeRegistrarContact2(),
+            makeRegistrarContact3()));
   }
 }
