@@ -377,13 +377,9 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   /** Reads the contacts from the supplied args. */
   public static ImmutableSet<RegistrarContact> readContacts(
       Registrar registrar, ImmutableSet<RegistrarContact> existingContacts, Map<String, ?> args) {
-
-    ImmutableSet.Builder<RegistrarContact> contacts = new ImmutableSet.Builder<>();
-    ImmutableList<RegistrarContact.Builder> builders =
-        RegistrarFormFields.getRegistrarContactBuilders(existingContacts, args);
-    builders.forEach(c -> contacts.add(c.setParent(registrar).build()));
-
-    return contacts.build();
+    return RegistrarFormFields.getRegistrarContactBuilders(existingContacts, args).stream()
+        .map(builder -> builder.setParent(registrar).build())
+        .collect(toImmutableSet());
   }
 
   /**
