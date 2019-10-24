@@ -341,14 +341,14 @@ public final class RegistrarFormFields {
     }
   }
 
-  public static Optional<ImmutableList<RegistrarContact.Builder>> getRegistrarContactBuilders(
+  public static ImmutableList<RegistrarContact.Builder> getRegistrarContactBuilders(
       ImmutableSet<RegistrarContact> existingContacts, @Nullable Map<String, ?> args) {
     if (args == null) {
-      return Optional.empty();
+      return ImmutableList.of();
     }
     Optional<List<Map<String, ?>>> contactsAsMaps = CONTACTS_AS_MAPS.extractUntyped(args);
     if (!contactsAsMaps.isPresent()) {
-      return Optional.empty();
+      return ImmutableList.of();
     }
     ImmutableList.Builder<RegistrarContact.Builder> result = new ImmutableList.Builder<>();
     for (Map<String, ?> contactAsMap : contactsAsMaps.get()) {
@@ -367,7 +367,7 @@ public final class RegistrarFormFields {
       applyRegistrarContactArgs(contactBuilder, contactAsMap);
       result.add(contactBuilder);
     }
-    return Optional.of(result.build());
+    return result.build();
   }
 
   private static void applyRegistrarContactArgs(

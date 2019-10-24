@@ -379,10 +379,9 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       Registrar registrar, ImmutableSet<RegistrarContact> existingContacts, Map<String, ?> args) {
 
     ImmutableSet.Builder<RegistrarContact> contacts = new ImmutableSet.Builder<>();
-    Optional<ImmutableList<RegistrarContact.Builder>> builders =
+    ImmutableList<RegistrarContact.Builder> builders =
         RegistrarFormFields.getRegistrarContactBuilders(existingContacts, args);
-    builders.ifPresent(
-        buildersList -> buildersList.forEach(c -> contacts.add(c.setParent(registrar).build())));
+    builders.forEach(c -> contacts.add(c.setParent(registrar).build()));
 
     return contacts.build();
   }
