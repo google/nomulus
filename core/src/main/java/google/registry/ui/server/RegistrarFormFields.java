@@ -372,24 +372,20 @@ public final class RegistrarFormFields {
 
   private static void applyRegistrarContactArgs(
       RegistrarContact.Builder builder, Map<String, ?> args) {
-    CONTACT_NAME_FIELD.extractUntyped(args).ifPresent(builder::setName);
-    CONTACT_EMAIL_ADDRESS_FIELD.extractUntyped(args).ifPresent(builder::setEmailAddress);
-    CONTACT_VISIBLE_IN_WHOIS_AS_ADMIN_FIELD
-        .extractUntyped(args)
-        .ifPresent(builder::setVisibleInWhoisAsAdmin);
-    CONTACT_VISIBLE_IN_WHOIS_AS_TECH_FIELD
-        .extractUntyped(args)
-        .ifPresent(builder::setVisibleInWhoisAsTech);
-    PHONE_AND_EMAIL_VISIBLE_IN_DOMAIN_WHOIS_AS_ABUSE_FIELD
-        .extractUntyped(args)
-        .ifPresent(builder::setVisibleInDomainWhoisAsAbuse);
-    CONTACT_PHONE_NUMBER_FIELD.extractUntyped(args).ifPresent(builder::setPhoneNumber);
-    CONTACT_FAX_NUMBER_FIELD.extractUntyped(args).ifPresent(builder::setFaxNumber);
-    CONTACT_TYPES.extractUntyped(args).ifPresent(builder::setTypes);
-    CONTACT_GAE_USER_ID_FIELD.extractUntyped(args).ifPresent(builder::setGaeUserId);
-    CONTACT_ALLOWED_TO_SET_REGISTRY_LOCK_PASSWORD
-        .extractUntyped(args)
-        .ifPresent(builder::setAllowedToSetRegistryLockPassword);
+    builder.setName(CONTACT_NAME_FIELD.extractUntyped(args).orElse(null));
+    builder.setEmailAddress(CONTACT_EMAIL_ADDRESS_FIELD.extractUntyped(args).orElse(null));
+    builder.setVisibleInWhoisAsAdmin(
+        CONTACT_VISIBLE_IN_WHOIS_AS_ADMIN_FIELD.extractUntyped(args).orElse(false));
+    builder.setVisibleInWhoisAsTech(
+        CONTACT_VISIBLE_IN_WHOIS_AS_TECH_FIELD.extractUntyped(args).orElse(false));
+    builder.setVisibleInDomainWhoisAsAbuse(
+        PHONE_AND_EMAIL_VISIBLE_IN_DOMAIN_WHOIS_AS_ABUSE_FIELD.extractUntyped(args).orElse(false));
+    builder.setPhoneNumber(CONTACT_PHONE_NUMBER_FIELD.extractUntyped(args).orElse(null));
+    builder.setFaxNumber(CONTACT_FAX_NUMBER_FIELD.extractUntyped(args).orElse(null));
+    builder.setTypes(CONTACT_TYPES.extractUntyped(args).orElse(ImmutableSet.of()));
+    builder.setGaeUserId(CONTACT_GAE_USER_ID_FIELD.extractUntyped(args).orElse(null));
+    builder.setAllowedToSetRegistryLockPassword(
+        CONTACT_ALLOWED_TO_SET_REGISTRY_LOCK_PASSWORD.extractUntyped(args).orElse(false));
 
     // Registry lock password does not need to be set every time
     CONTACT_REGISTRY_LOCK_PASSWORD_FIELD
