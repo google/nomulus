@@ -25,6 +25,11 @@ steps:
 # Build the tool binary and image.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args: ['release/build_nomulus_for_env.sh', 'tool', 'output']
+# Save TAG_NAME in a file for upload. This makes it easier to tell
+# the tag of the current 'live' release.
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  entrypoint: /bin/bash
+  args: [ '-c', 'echo ${TAG_NAME} > output/tag_name']
 # Tag the tool image and push it to the registry.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
@@ -66,6 +71,7 @@ artifacts:
     location: 'gs://${PROJECT_ID}-deploy/${TAG_NAME}'
     paths:
     - 'output/*.tar'
+    - 'output/tag_name'
     - 'output/nomulus.jar'
     - 'release/cloudbuild-tag.yaml'
     - 'release/cloudbuild-sync.yaml'
