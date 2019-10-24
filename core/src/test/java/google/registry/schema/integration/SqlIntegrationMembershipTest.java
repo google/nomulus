@@ -20,13 +20,14 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import google.registry.model.transaction.JpaTransactionManagerRule;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import java.lang.reflect.Field;
 import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.junit.runners.Suite.SuiteClasses;
-import org.reflections.Reflections;
 
 /**
  * Verifies that all tests that depends on the Cloud SQL schema are included in the project's
@@ -42,13 +43,21 @@ public class SqlIntegrationMembershipTest {
 
   @Test
   public void sqlIntegrationMembershipComplete() {
-    ImmutableSet<String> sqlDependentTests =
-        new Reflections("google.registry")
-            .getTypesAnnotatedWith(RunWith.class, true).stream()
-                .filter(clazz -> clazz.getSimpleName().endsWith("Test"))
-                .filter(SqlIntegrationMembershipTest::isSqlDependent)
-                .map(Class::getName)
-                .collect(ImmutableSet.toImmutableSet());
+    ImmutableSet<String> sqlDependentTests;
+    try (ScanResult scanResult =
+        new ClassGraph()
+            .enableAnnotationInfo()
+            .enableFieldInfo()
+            .whitelistPackages("google.registry")
+            .scan()) {
+      sqlDependentTests =
+          scanResult.getClassesWithAnnotation(RunWith.class.getName()).stream()
+              .filter(clazz -> clazz.getSimpleName().endsWith("Test"))
+              .map(clazz -> clazz.loadClass())
+              .filter(SqlIntegrationMembershipTest::isSqlDependent)
+              .map(Class::getName)
+              .collect(ImmutableSet.toImmutableSet());
+    }
     ImmutableSet<String> declaredTests =
         Stream.of(SqlIntegrationTestSuite.class.getAnnotation(SuiteClasses.class).value())
             .map(Class::getName)
