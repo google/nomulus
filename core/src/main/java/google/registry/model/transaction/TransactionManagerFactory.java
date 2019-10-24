@@ -34,7 +34,7 @@ public class TransactionManagerFactory {
   private TransactionManagerFactory() {}
 
   private static JpaTransactionManager createJpaTransactionManager() {
-    if (shouldEnableJpaTm() && SystemProperty.environment.value() == Value.Production) {
+    if (shouldEnableJpaTm() && isInAppEngine()) {
       return DaggerPersistenceComponent.create().appEngineJpaTransactionManager();
     } else {
       return DummyJpaTransactionManager.create();
@@ -61,6 +61,19 @@ public class TransactionManagerFactory {
   // TODO(shicong): Enable JpaTm for all environments and remove this function
   private static boolean shouldEnableJpaTm() {
     return RegistryEnvironment.get() == ALPHA || RegistryEnvironment.get() == CRASH;
+  }
+
+  /**
+   * This function uses App Engine API to determine if the current runtime environment is App
+   * Engine.
+   *
+   * @see <a
+   *     href="https://cloud.google.com/appengine/docs/standard/java/javadoc/com/google/appengine/api/utils/SystemProperty">App
+   *     Engine API public doc</a>
+   */
+  private static boolean isInAppEngine() {
+    // SystemProperty.environment.value() returns null if the current runtime is local JVM
+    return SystemProperty.environment.value() == Value.Production;
   }
 
   /** Returns {@link TransactionManager} instance. */
