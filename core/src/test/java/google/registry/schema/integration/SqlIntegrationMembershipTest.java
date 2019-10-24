@@ -47,7 +47,6 @@ public class SqlIntegrationMembershipTest {
     try (ScanResult scanResult =
         new ClassGraph()
             .enableAnnotationInfo()
-            .enableFieldInfo()
             .whitelistPackages("google.registry")
             .scan()) {
       sqlDependentTests =
