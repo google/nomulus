@@ -14,7 +14,6 @@
 
 package google.registry.ui.server;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Range.atLeast;
 import static com.google.common.collect.Range.atMost;
 import static com.google.common.collect.Range.closed;
@@ -347,49 +346,50 @@ public final class RegistrarFormFields {
     if (args == null) {
       return Optional.empty();
     }
-    return CONTACTS_AS_MAPS
-        .extractUntyped(args)
-        .map(
-            l ->
-                l.stream()
-                    .map(
-                        contactAsMap -> {
-                          String emailAddress =
-                              CONTACT_EMAIL_ADDRESS_FIELD
-                                  .extractUntyped(contactAsMap)
-                                  .orElseThrow(
-                                      () ->
-                                          new IllegalArgumentException(
-                                              "Contacts from UI must have email addresses"));
-                          // Start with a new builder if the contact didn't previously exist
-                          RegistrarContact.Builder contactBuilder =
-                              existingContacts.stream()
-                                  .filter(rc -> rc.getEmailAddress().equals(emailAddress))
-                                  .findFirst()
-                                  .map(RegistrarContact::asBuilder)
-                                  .orElse(new RegistrarContact.Builder());
-                          applyRegistrarContactArgs(contactBuilder, contactAsMap);
-                          return contactBuilder;
-                        })
-                    .collect(toImmutableList()));
+    Optional<List<Map<String, ?>>> contactsAsMaps = CONTACTS_AS_MAPS.extractUntyped(args);
+    if (!contactsAsMaps.isPresent()) {
+      return Optional.empty();
+    }
+    ImmutableList.Builder<RegistrarContact.Builder> result = new ImmutableList.Builder<>();
+    for (Map<String, ?> contactAsMap : contactsAsMaps.get()) {
+      String emailAddress =
+          CONTACT_EMAIL_ADDRESS_FIELD
+              .extractUntyped(contactAsMap)
+              .orElseThrow(
+                  () -> new IllegalArgumentException("Contacts from UI must have email addresses"));
+      // Start with a new builder if the contact didn't previously exist
+      RegistrarContact.Builder contactBuilder =
+          existingContacts.stream()
+              .filter(rc -> rc.getEmailAddress().equals(emailAddress))
+              .findFirst()
+              .map(RegistrarContact::asBuilder)
+              .orElse(new RegistrarContact.Builder());
+      applyRegistrarContactArgs(contactBuilder, contactAsMap);
+      result.add(contactBuilder);
+    }
+    return Optional.of(result.build());
   }
 
   private static void applyRegistrarContactArgs(
       RegistrarContact.Builder builder, Map<String, ?> args) {
-    builder.setName(CONTACT_NAME_FIELD.extractUntyped(args).orElse(null));
-    builder.setEmailAddress(CONTACT_EMAIL_ADDRESS_FIELD.extractUntyped(args).orElse(null));
-    builder.setVisibleInWhoisAsAdmin(
-        CONTACT_VISIBLE_IN_WHOIS_AS_ADMIN_FIELD.extractUntyped(args).orElse(false));
-    builder.setVisibleInWhoisAsTech(
-        CONTACT_VISIBLE_IN_WHOIS_AS_TECH_FIELD.extractUntyped(args).orElse(false));
-    builder.setVisibleInDomainWhoisAsAbuse(
-        PHONE_AND_EMAIL_VISIBLE_IN_DOMAIN_WHOIS_AS_ABUSE_FIELD.extractUntyped(args).orElse(false));
-    builder.setPhoneNumber(CONTACT_PHONE_NUMBER_FIELD.extractUntyped(args).orElse(null));
-    builder.setFaxNumber(CONTACT_FAX_NUMBER_FIELD.extractUntyped(args).orElse(null));
-    builder.setTypes(CONTACT_TYPES.extractUntyped(args).orElse(ImmutableSet.of()));
-    builder.setGaeUserId(CONTACT_GAE_USER_ID_FIELD.extractUntyped(args).orElse(null));
-    builder.setAllowedToSetRegistryLockPassword(
-        CONTACT_ALLOWED_TO_SET_REGISTRY_LOCK_PASSWORD.extractUntyped(args).orElse(false));
+    CONTACT_NAME_FIELD.extractUntyped(args).ifPresent(builder::setName);
+    CONTACT_EMAIL_ADDRESS_FIELD.extractUntyped(args).ifPresent(builder::setEmailAddress);
+    CONTACT_VISIBLE_IN_WHOIS_AS_ADMIN_FIELD
+        .extractUntyped(args)
+        .ifPresent(builder::setVisibleInWhoisAsAdmin);
+    CONTACT_VISIBLE_IN_WHOIS_AS_TECH_FIELD
+        .extractUntyped(args)
+        .ifPresent(builder::setVisibleInWhoisAsTech);
+    PHONE_AND_EMAIL_VISIBLE_IN_DOMAIN_WHOIS_AS_ABUSE_FIELD
+        .extractUntyped(args)
+        .ifPresent(builder::setVisibleInDomainWhoisAsAbuse);
+    CONTACT_PHONE_NUMBER_FIELD.extractUntyped(args).ifPresent(builder::setPhoneNumber);
+    CONTACT_FAX_NUMBER_FIELD.extractUntyped(args).ifPresent(builder::setFaxNumber);
+    CONTACT_TYPES.extractUntyped(args).ifPresent(builder::setTypes);
+    CONTACT_GAE_USER_ID_FIELD.extractUntyped(args).ifPresent(builder::setGaeUserId);
+    CONTACT_ALLOWED_TO_SET_REGISTRY_LOCK_PASSWORD
+        .extractUntyped(args)
+        .ifPresent(builder::setAllowedToSetRegistryLockPassword);
 
     // Registry lock password does not need to be set every time
     CONTACT_REGISTRY_LOCK_PASSWORD_FIELD
