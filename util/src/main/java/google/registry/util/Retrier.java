@@ -70,32 +70,8 @@ public class Retrier implements Serializable {
    *
    * @return <V> the value returned by the {@link Callable}.
    */
-  private <V> V callWithRetry(
-      Callable<V> callable,
-      FailureReporter failureReporter,
-      Predicate<Throwable> isRetryable) {
-    int failures = 0;
-    while (true) {
-      try {
-        return callable.call();
-      } catch (Throwable e) {
-        if (++failures == attempts || !isRetryable.test(e)) {
-          throwIfUnchecked(e);
-          throw new RuntimeException(e);
-        }
-        failureReporter.beforeRetry(e, failures, attempts);
-        try {
-          // Wait 100ms on the first attempt, doubling on each subsequent attempt.
-          sleeper.sleep(Duration.millis(pow(2, failures) * 100));
-        } catch (InterruptedException e2) {
-          // Since we're not rethrowing InterruptedException, set the interrupt state on the thread
-          // so the next blocking operation will know to abort the thread.
-          Thread.currentThread().interrupt();
-          throwIfUnchecked(e);
-          throw new RuntimeException(e);
-        }
-      }
-    }
+  public <V> V callWithRetry(Callable<V> callable, Predicate<Throwable> isRetryable) {
+    return callWithRetry(callable, LOGGING_FAILURE_REPORTER, isRetryable);
   }
 
   /**
@@ -167,6 +143,34 @@ public class Retrier implements Serializable {
       Class<? extends Throwable> retryableError,
       Class<? extends Throwable>... moreRetryableErrors) {
     callWithRetry(callable.asCallable(), failureReporter, retryableError, moreRetryableErrors);
+  }
+
+  private <V> V callWithRetry(
+      Callable<V> callable,
+      FailureReporter failureReporter,
+      Predicate<Throwable> isRetryable) {
+    int failures = 0;
+    while (true) {
+      try {
+        return callable.call();
+      } catch (Throwable e) {
+        if (++failures == attempts || !isRetryable.test(e)) {
+          throwIfUnchecked(e);
+          throw new RuntimeException(e);
+        }
+        failureReporter.beforeRetry(e, failures, attempts);
+        try {
+          // Wait 100ms on the first attempt, doubling on each subsequent attempt.
+          sleeper.sleep(Duration.millis(pow(2, failures) * 100));
+        } catch (InterruptedException e2) {
+          // Since we're not rethrowing InterruptedException, set the interrupt state on the thread
+          // so the next blocking operation will know to abort the thread.
+          Thread.currentThread().interrupt();
+          throwIfUnchecked(e);
+          throw new RuntimeException(e);
+        }
+      }
+    }
   }
 
   private static final FailureReporter LOGGING_FAILURE_REPORTER =

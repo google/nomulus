@@ -39,6 +39,7 @@ import google.registry.util.Retrier;
 import google.registry.util.SendEmailService;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.mail.internet.InternetAddress;
@@ -102,7 +103,7 @@ public final class IcannReportingUploadAction implements Runnable {
                   final byte[] payload = readBytesFromGcs(gcsFilename);
                   return icannReporter.send(payload, reportFilename);
                 },
-                IOException.class);
+                IcannReportingUploadAction::isUploadFailureRetryable);
       } catch (RuntimeException e) {
         logger.atWarning().withCause(e).log("Upload to %s failed.", gcsFilename);
       }
@@ -113,6 +114,21 @@ public final class IcannReportingUploadAction implements Runnable {
     response.setContentType(PLAIN_TEXT_UTF_8);
     response.setPayload(
         String.format("OK, attempted uploading %d reports", manifestedFiles.size()));
+  }
+
+  /** Don't retry when reports are already uploaded or can't be uploaded. */
+  private static final String ICANN_UPLOAD_PERMANENT_ERROR_MESSAGE =
+      "A report for that month already exists, the cut-off date already passed.";
+
+  /** Don't retry when the IP address isn't whitelisted, as retries go through the same IP. */
+  private static final Pattern ICANN_UPLOAD_WHITELIST_ERROR =
+      Pattern.compile("Your IP address .+ is not allowed to connect");
+
+  /** Predicate to retry uploads on IOException, so long as they aren't non-retryable errors. */
+  private static boolean isUploadFailureRetryable(Throwable e) {
+    return (e instanceof IOException)
+        && !e.getMessage().contains(ICANN_UPLOAD_PERMANENT_ERROR_MESSAGE)
+        && !ICANN_UPLOAD_WHITELIST_ERROR.matcher(e.getMessage()).matches();
   }
 
   private void emailUploadResults(ImmutableMap<String, Boolean> reportSummary) {

@@ -154,6 +154,45 @@ public class IcannReportingUploadActionTest {
                 new InternetAddress("recipient@example.com"),
                 new InternetAddress("sender@example.com")));
   }
+
+  @Test
+  public void testFailure_quicklySkipsOverNonRetryableUploadException() throws Exception {
+    runTest_nonRetryableException(
+        new IOException(
+            "<msg>A report for that month already exists, the cut-off date already"
+                + " passed.</msg>"));
+  }
+
+  @Test
+  public void testFailure_quicklySkipsOverIpWhitelistException() throws Exception {
+    runTest_nonRetryableException(
+        new IOException("Your IP address 25.147.130.158 is not allowed to connect"));
+  }
+
+  private void runTest_nonRetryableException(Exception nonRetryableException) throws Exception {
+    IcannReportingUploadAction action = createAction();
+    when(mockReporter.send(PAYLOAD_FAIL, "a-activity-201706.csv"))
+        .thenThrow(nonRetryableException)
+        .thenThrow(
+            new AssertionError(
+                "This should never be thrown because the previous exception isn't retryable"));
+    action.run();
+    verify(mockReporter, times(1)).send(PAYLOAD_FAIL, "a-activity-201706.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "test-transactions-201706.csv");
+    verifyNoMoreInteractions(mockReporter);
+    assertThat(((FakeResponse) action.response).getPayload())
+        .isEqualTo("OK, attempted uploading 2 reports");
+    verify(emailService)
+        .sendEmail(
+            EmailMessage.create(
+                "ICANN Monthly report upload summary: 1/2 succeeded",
+                "Report Filename - Upload status:\n"
+                    + "test-transactions-201706.csv - SUCCESS\n"
+                    + "a-activity-201706.csv - FAILURE",
+                new InternetAddress("recipient@example.com"),
+                new InternetAddress("sender@example.com")));
+  }
+
   @Test
   public void testFail_FileNotFound() throws Exception {
     IcannReportingUploadAction action = createAction();

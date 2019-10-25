@@ -38,7 +38,7 @@ public class RetrierTest {
     }
   }
 
-  /** Test object that always throws an exception with the current count. */
+  /** Test object that throws CountingExceptions up to a given limit, then succeeds. */
   static class CountingThrower implements Callable<Integer> {
 
     int count = 0;
@@ -124,5 +124,22 @@ public class RetrierTest {
     assertThat(retrier.callWithRetry(new CountingThrower(0), reporter, CountingException.class))
         .isEqualTo(0);
     assertThat(reporter.numBeforeRetry).isEqualTo(0);
+  }
+
+  @Test
+  public void testRetryPredicate_succeedsWhenRetries() {
+    // Throws a retryable "1" exception is retryable, and then it succeeds on "1".
+    assertThat(retrier.callWithRetry(new CountingThrower(1), e -> e.getMessage().equals("1")))
+        .isEqualTo(1);
+  }
+
+  @Test
+  public void testRetryPredicate_failsWhenDoesntRetry() {
+    // Throws a retryable "1" exception, then a non-retryable "2" exception, resulting in failure.
+    CountingException ex =
+        assertThrows(
+            CountingException.class,
+            () -> retrier.callWithRetry(new CountingThrower(2), e -> e.getMessage().equals("1")));
+    assertThat(ex).hasMessageThat().isEqualTo("2");
   }
 }
