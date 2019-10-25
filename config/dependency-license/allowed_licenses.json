@@ -4,6 +4,9 @@
       "moduleLicense": "Apache Software License, Version 1.1"
     },
     {
+      "moduleLicense": "Apache Software License, version 1.1"
+    },
+    {
       "moduleLicense": "Apache 2"
     },
     {
@@ -205,10 +208,12 @@
       "moduleLicense": "Mozilla Public License Version 2.0"
     },
     {
-      "moduleLicense": "Public Domain"
+      "moduleLicense": "Public Domain",
+      "moduleName": "aopalliance:aopalliance"
     },
     {
-      "moduleLicense": "PUBLIC DOMAIN"
+      "moduleLicense": "Public Domain",
+      "moduleName": "org.tukaani:xz"
     },
     {
       "moduleLicense": "The W3C Software License"
