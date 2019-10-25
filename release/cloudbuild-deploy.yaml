@@ -1,13 +1,13 @@
 # To run the build locally, install cloud-build-local first.
 # Then run:
-# cloud-build-local --config=cloudbuild-deploy-beam.yaml --dryrun=false \
+# cloud-build-local --config=cloudbuild-deploy.yaml --dryrun=false \
 # --substitutions=TAG_NAME=[TAG],_ENV=[ENV] ..
 #
 # This will deploy Beam pipelines to GCS for the PROJECT_ID defined in gcloud
 # tool.
 #
 # To manually trigger a build on GCB, run:
-# gcloud builds submit --config=cloudbuild-deploy-beam.yaml \
+# gcloud builds submit --config=cloudbuild-deploy.yaml \
 # --substitutions=TAG_NAME=[TAG],_ENV=[ENV] ..
 #
 # To trigger a build automatically, follow the instructions below and add a trigger:
@@ -55,6 +55,11 @@ steps:
   - -c
   - |
     set -e
+    # Save the deployed tag for the current environment on GCS.
+    # Because of b/137891685 which causes the for-loop below to fail,
+    # we use gsutil to upload instead of using an 'artifacts' section.
+    echo ${TAG_NAME} | \
+      gsutil cp - gs://${PROJECT_ID}-deploy/deployed_tags/nomulus.${_ENV}.tag
     gcloud auth activate-service-account --key-file=tool-credential.json
     if [ ${_ENV} == production ]; then
       project_id="domain-registry"

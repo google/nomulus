@@ -25,8 +25,8 @@ steps:
 # Build the tool binary and image.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args: ['release/build_nomulus_for_env.sh', 'tool', 'output']
-# Save TAG_NAME in a file for upload. This makes it easier to tell
-# the tag of the current 'live' release.
+# Save TAG_NAME in ./output/tag_name, to be uploaded later. This file is purely
+# informational. It makes it easier to tell the tag of the current 'live' release.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
   args: [ '-c', 'echo ${TAG_NAME} > output/tag_name']
