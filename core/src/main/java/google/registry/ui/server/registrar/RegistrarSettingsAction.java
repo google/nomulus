@@ -60,7 +60,6 @@ import google.registry.util.CollectionUtils;
 import google.registry.util.DiffUtils;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -175,8 +174,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   }
 
   private RegistrarResult update(final Map<String, ?> args, String clientId) {
-    return tm()
-        .transact(
+    return tm().transact(
             () -> {
               // We load the registrar here rather than outside of the transaction - to make
               // sure we have the latest version. This one is loaded inside the transaction, so it's
@@ -215,7 +213,8 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
               updatedRegistrar = checkAndUpdateAdminControlledFields(updatedRegistrar, args);
 
               // read the contacts from the request.
-              ImmutableSet<RegistrarContact> updatedContacts = readContacts(registrar, args);
+              ImmutableSet<RegistrarContact> updatedContacts =
+                  readContacts(registrar, contacts, args);
 
               // Save the updated contacts
               if (!updatedContacts.equals(contacts)) {
@@ -384,16 +383,10 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
 
   /** Reads the contacts from the supplied args. */
   public static ImmutableSet<RegistrarContact> readContacts(
-      Registrar registrar, Map<String, ?> args) {
-
-    ImmutableSet.Builder<RegistrarContact> contacts = new ImmutableSet.Builder<>();
-    Optional<List<RegistrarContact.Builder>> builders =
-        RegistrarFormFields.CONTACTS_FIELD.extractUntyped(args);
-    if (builders.isPresent()) {
-      builders.get().forEach(c -> contacts.add(c.setParent(registrar).build()));
-    }
-
-    return contacts.build();
+      Registrar registrar, ImmutableSet<RegistrarContact> existingContacts, Map<String, ?> args) {
+    return RegistrarFormFields.getRegistrarContactBuilders(existingContacts, args).stream()
+        .map(builder -> builder.setParent(registrar).build())
+        .collect(toImmutableSet());
   }
 
   /**
@@ -459,8 +452,17 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
                     () ->
                         new FormException(
                             "Not allowed to set registry lock password directly on new contact"));
-        if (!existingContact.isAllowedToSetRegistryLockPassword()) {
-          throw new FormException("Registrar contact not allowed to set registry lock password");
+        if (updatedContact.isRegistryLockAllowed()) {
+          // the password must have been set before or the user was allowed to set it now
+          if (!existingContact.isAllowedToSetRegistryLockPassword()
+              && !existingContact.isRegistryLockAllowed()) {
+            throw new FormException("Registrar contact not allowed to set registry lock password");
+          }
+        }
+        if (updatedContact.isAllowedToSetRegistryLockPassword()) {
+          if (!existingContact.isAllowedToSetRegistryLockPassword()) {
+            throw new FormException("Cannot set isAllowedToSetRegistryLockPassword through UI");
+          }
         }
       }
     }
