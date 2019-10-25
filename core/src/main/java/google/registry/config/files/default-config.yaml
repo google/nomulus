@@ -422,6 +422,4 @@ registryTool:
   clientId: YOUR_CLIENT_ID
   # OAuth client secret used by the tool.
   clientSecret: YOUR_CLIENT_SECRET
-  # Nomulus tool uses a different jdbc url and user to connect to Cloud SQL
-  jdbcUrl: jdbc:postgresql://localhost/tool
   username: toolusername
