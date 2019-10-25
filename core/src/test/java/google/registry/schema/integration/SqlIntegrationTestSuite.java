@@ -23,6 +23,7 @@ import google.registry.persistence.CreateAutoTimestampConverterTest;
 import google.registry.persistence.UpdateAutoTimestampConverterTest;
 import google.registry.persistence.ZonedDateTimeConverterTest;
 import google.registry.schema.tld.PremiumListDaoTest;
+import google.registry.ui.server.registrar.RegistryLockVerifyActionTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -46,6 +47,7 @@ import org.junit.runners.Suite.SuiteClasses;
   JpaTransactionManagerRuleTest.class,
   PremiumListDaoTest.class,
   RegistryLockDaoTest.class,
+  RegistryLockVerifyActionTest.class,
   UpdateAutoTimestampConverterTest.class,
   ZonedDateTimeConverterTest.class
 })

@@ -82,7 +82,8 @@ public final class RegistryTestServer {
           route("/registrar-create", FrontendServlet.class),
           route("/registrar-ote-setup", FrontendServlet.class),
           route("/registrar-ote-status", FrontendServlet.class),
-          route("/registrar-settings", FrontendServlet.class));
+          route("/registrar-settings", FrontendServlet.class),
+          route("/registry-lock-verify", FrontendServlet.class));
 
   private static final ImmutableList<Class<? extends Filter>> FILTERS = ImmutableList.of(
       ObjectifyFilter.class,

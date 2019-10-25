@@ -649,7 +649,7 @@ public class DatastoreHelper {
         ofy().load().type(BillingEvent.Cancellation.class));
   }
 
-  private static Iterable<BillingEvent> getBillingEvents(EppResource resource) {
+  public static Iterable<BillingEvent> getBillingEvents(EppResource resource) {
     return Iterables.concat(
         ofy().load().type(BillingEvent.OneTime.class).ancestor(resource),
         ofy().load().type(BillingEvent.Recurring.class).ancestor(resource),

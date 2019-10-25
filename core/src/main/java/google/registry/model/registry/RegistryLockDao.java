@@ -19,6 +19,7 @@ import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.schema.domain.RegistryLock;
+import java.util.Optional;
 import javax.persistence.EntityManager;
 
 /** Data access object for {@link google.registry.schema.domain.RegistryLock}. */
@@ -29,7 +30,7 @@ public final class RegistryLockDao {
    * code (there may be two instances of the same code in the database--one after lock object
    * creation and one after verification.
    */
-  public static RegistryLock getByVerificationCode(String verificationCode) {
+  public static Optional<RegistryLock> getByVerificationCode(String verificationCode) {
     return jpaTm()
         .transact(
             () -> {
@@ -41,8 +42,8 @@ public final class RegistryLockDao {
                           Long.class)
                       .setParameter("verificationCode", verificationCode)
                       .getSingleResult();
-              checkNotNull(revisionId, "No registry lock with this code");
-              return em.find(RegistryLock.class, revisionId);
+              return Optional.ofNullable(revisionId)
+                  .map(revision -> em.find(RegistryLock.class, revision));
             });
   }
 
