@@ -22,7 +22,7 @@ import com.google.monitoring.metrics.FibonacciFitter;
 import com.google.monitoring.metrics.LabelDescriptor;
 
 /** Base class for metrics. */
-public abstract class AbstractMetrics {
+public abstract class BaseMetrics {
 
   /**
    * Labels to register metrics with.
@@ -42,7 +42,7 @@ public abstract class AbstractMetrics {
               "client_cert_hash", "SHA256 hash of the client certificate, if available."));
 
   // Maximum request size is defined in the config file, this is not realistic and we'd be out of
-  // memory when the size approach 1 GB.
+  // memory when the size approaches 1 GB.
   protected static final CustomFitter DEFAULT_SIZE_FITTER = FibonacciFitter.create(1073741824);
 
   // Maximum 1 hour latency, this is not specified by the spec, but given we have a one hour idle

@@ -34,7 +34,7 @@ import org.joda.time.Duration;
 
 /** Frontend metrics instrumentation. */
 @Singleton
-public class FrontendMetrics extends AbstractMetrics {
+public class FrontendMetrics extends BaseMetrics {
 
   private static final ConcurrentMap<ImmutableList<String>, ChannelGroup> activeConnections =
       new ConcurrentHashMap<>();
@@ -73,7 +73,7 @@ public class FrontendMetrics extends AbstractMetrics {
       MetricRegistryImpl.getDefault()
           .newEventMetric(
               "/proxy/frontend/latency_ms",
-              "Round-trip time between a request received and its corresponding response sent.",
+              "Round-trip time between a request received and its corresponding response is sent.",
               "Latency Milliseconds",
               LABELS,
               DEFAULT_LATENCY_FITTER);

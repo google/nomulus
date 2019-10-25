@@ -27,7 +27,7 @@ import org.joda.time.Duration;
 
 /** Backend metrics instrumentation. */
 @Singleton
-public class BackendMetrics extends AbstractMetrics {
+public class BackendMetrics extends BaseMetrics {
 
   static final IncrementableMetric requestsCounter =
       MetricRegistryImpl.getDefault()
