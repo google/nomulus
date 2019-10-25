@@ -608,8 +608,12 @@ task outcastTest(type: FilteringTest) {
 }
 
 // Dedicated test suite for schema-dependent tests.
-task sqlIntegrationTest(type: FilteringTest) {
-  tests = ['google/registry/schema/integration/SqlIntegrationTestSuite.*']
+task sqlIntegrationTest(type: Test) {
+  include 'google/registry/schema/integration/SqlIntegrationTestSuite.*'
+  // Copied from FilteringTest. Not inheriting b/c it excludes TestSuites.
+  if (project.testFilter) {
+    testNameIncludePatterns = project.testFilter.split(',')
+  }
 }
 
 task findGoldenImages(type: JavaExec) {
