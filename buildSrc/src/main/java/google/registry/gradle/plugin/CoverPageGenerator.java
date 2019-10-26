@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.template.soy.SoyFileSet;
 import com.google.template.soy.tofu.SoyTofu;
 import google.registry.gradle.plugin.ProjectData.TaskData;
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.function.Supplier;
@@ -148,10 +149,14 @@ final class CoverPageGenerator {
 
   /** returns a soy-friendly version of the given task data. */
   static ImmutableMap<String, Object> taskDataToSoy(TaskData task) {
+    // Note that all instances of File.separator are replaced with forward slashes so that we can
+    // generate a valid href on Windows.
     return new ImmutableMap.Builder<String, Object>()
         .put("uniqueName", task.uniqueName())
         .put("description", task.description())
-        .put("log", task.log().isPresent() ? getLogPath(task).toString() : "")
+        .put(
+            "log",
+            task.log().isPresent() ? getLogPath(task).toString().replace(File.separator, "/") : "")
         .put(
             "reports",
             task.reports().entrySet().stream()
@@ -161,7 +166,11 @@ final class CoverPageGenerator {
                         entry ->
                             entry.getValue().files().isEmpty()
                                 ? ""
-                                : entry.getValue().entryPoint().toString())))
+                                : entry
+                                    .getValue()
+                                    .entryPoint()
+                                    .toString()
+                                    .replace(File.separator, "/"))))
         .build();
   }
 
@@ -188,8 +197,10 @@ final class CoverPageGenerator {
   }
 
   private static Path getLogPath(TaskData task) {
-    // TODO(guyben):escape uniqueName to guarantee legal file name.
-    return Paths.get("logs", task.uniqueName() + ".log");
+    // We replace columns with dashes so that the resulting filename is always valid, even in
+    // Windows. As a dash is not a valid character in Java identifies, a task name cannot include
+    // it, so the uniqueness of the name is perserved.
+    return Paths.get("logs", task.uniqueName().replace(":", "-") + ".log");
   }
 
   private static Supplier<byte[]> resourceLoader(Path path) {
