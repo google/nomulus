@@ -93,7 +93,7 @@ class ExistingRegistryLocksRetriever {
     checkArgumentNotNull(registrar);
     ImmutableList<RegistryLock> locks =
         RegistryLockDao.getByRegistrarId(registrar.getClientId()).stream()
-            .filter(lock -> lock.getCompletionTimestamp().isPresent())
+            .filter(RegistryLock::isVerified)
             .collect(toImmutableList());
     return locks.stream().map(this::lockToMap).collect(toImmutableList());
   }
