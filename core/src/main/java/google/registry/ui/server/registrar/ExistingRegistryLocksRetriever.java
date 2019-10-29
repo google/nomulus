@@ -57,12 +57,12 @@ class ExistingRegistryLocksRetriever {
 
   ImmutableMap<String, Object> getLockedDomainsMap(String clientId)
       throws RegistrarAccessDeniedException {
+    // Note: admins always have access to the locks page
     checkArgument(authResult.userAuthInfo().isPresent(), "User auth info must be present");
-    Registrar registrar = getRegistrarAndVerifyLockAccess(clientId);
     UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();
     boolean isAdmin = userAuthInfo.isUserAdmin();
+    Registrar registrar = getRegistrarAndVerifyLockAccess(clientId, isAdmin);
     User user = userAuthInfo.user();
-    // Note: admins also have access to the locks page
     boolean isRegistryLockAllowed =
         isAdmin
             || registrar.getContacts().stream()
@@ -81,11 +81,12 @@ class ExistingRegistryLocksRetriever {
         getLockedDomains(registrar));
   }
 
-  private Registrar getRegistrarAndVerifyLockAccess(String clientId)
+  private Registrar getRegistrarAndVerifyLockAccess(String clientId, boolean isAdmin)
       throws RegistrarAccessDeniedException {
     Registrar registrar = registrarAccessor.getRegistrar(clientId);
     checkArgument(
-        registrar.isRegistryLockAllowed(), "Registry lock not allowed for this registrar");
+        isAdmin || registrar.isRegistryLockAllowed(),
+        "Registry lock not allowed for this registrar");
     return registrar;
   }
 

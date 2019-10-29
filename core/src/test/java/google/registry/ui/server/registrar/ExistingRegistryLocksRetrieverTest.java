@@ -16,6 +16,7 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
+import static google.registry.testing.AppEngineRule.makeRegistrar2;
 import static google.registry.testing.AppEngineRule.makeRegistrarContact3;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.JUnitBackports.assertThrows;
@@ -163,6 +164,8 @@ public final class ExistingRegistryLocksRetrieverTest {
 
   @Test
   public void testSuccess_lockAllowedForAdmin() throws Exception {
+    // Locks are allowed for admins even when they're not enabled for the registrar
+    persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(false).build());
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, true));
     retriever = new ExistingRegistryLocksRetriever(accessor, authResult);
     ImmutableMap<String, Object> result = retriever.getLockedDomainsMap("TheRegistrar");
