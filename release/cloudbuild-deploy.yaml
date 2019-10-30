@@ -46,6 +46,17 @@ steps:
   - --credential
   - tool-credential.json
   - deploy_invoicing_pipeline
+# Save the deployed tag for the current environment on GCS. Because of b/137891685
+# which causes the for-loop in the next step to fail, this may not be the last step.
+# TODO(weiminyu): do this in last step, and use 'artifacts' section to upload the tag.
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    echo ${TAG_NAME} | \
+      gsutil cp - gs://${PROJECT_ID}-deploy/deployed_tags/nomulus.${_ENV}.tag
 # Deploy the GAE config files.
 # First authorize the gcloud tool to use the credential json file, then
 # download and unzip the tarball that contains the relevant config files
@@ -55,11 +66,6 @@ steps:
   - -c
   - |
     set -e
-    # Save the deployed tag for the current environment on GCS.
-    # Because of b/137891685 which causes the for-loop below to fail,
-    # we use gsutil to upload instead of using an 'artifacts' section.
-    echo ${TAG_NAME} | \
-      gsutil cp - gs://${PROJECT_ID}-deploy/deployed_tags/nomulus.${_ENV}.tag
     gcloud auth activate-service-account --key-file=tool-credential.json
     if [ ${_ENV} == production ]; then
       project_id="domain-registry"
