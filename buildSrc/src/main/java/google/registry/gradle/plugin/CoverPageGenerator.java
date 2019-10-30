@@ -197,7 +197,7 @@ final class CoverPageGenerator {
   }
 
   private static Path getLogPath(TaskData task) {
-    // We replace columns with dashes so that the resulting filename is always valid, even in
+    // We replace colons with dashes so that the resulting filename is always valid, even in
     // Windows. As a dash is not a valid character in Java identifies, a task name cannot include
     // it, so the uniqueness of the name is perserved.
     return Paths.get("logs", task.uniqueName().replace(":", "-") + ".log");

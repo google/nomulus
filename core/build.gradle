@@ -534,8 +534,8 @@ task compileProdJS(type: JavaExec) {
 
 compileJava.dependsOn jaxbToJava
 compileJava.dependsOn soyToJava
-// The Closure JS compiler does not support Windows. It is fine to disable it if all we want to do is
-// to complile the Java code on Windows.
+// The Closure JS compiler does not support Windows. It is fine to disable it if all we want to do
+// is to complile the Java code on Windows.
 if (!System.properties['os.name'].toLowerCase().contains('windows')) {
   compileJava.dependsOn compileProdJS
   assemble.dependsOn compileProdJS
