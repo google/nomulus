@@ -41,9 +41,8 @@ public class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Do
   @Before
   public void setup() {
     setEppInput("domain_info.xml");
-    sessionMetadata.setClientId("NewRegistrar");
     createTld("tld");
-    persistResource(AppEngineRule.makeRegistrar1().asBuilder().setClientId("ClientZ").build());
+    persistResource(AppEngineRule.makeRegistrar1().asBuilder().build());
   }
 
   @Test
