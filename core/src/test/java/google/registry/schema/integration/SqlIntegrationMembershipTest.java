@@ -45,10 +45,7 @@ public class SqlIntegrationMembershipTest {
   public void sqlIntegrationMembershipComplete() {
     ImmutableSet<String> sqlDependentTests;
     try (ScanResult scanResult =
-        new ClassGraph()
-            .enableAnnotationInfo()
-            .whitelistPackages("google.registry")
-            .scan()) {
+        new ClassGraph().enableAnnotationInfo().whitelistPackages("google.registry").scan()) {
       sqlDependentTests =
           scanResult.getClassesWithAnnotation(RunWith.class.getName()).stream()
               .filter(clazz -> clazz.getSimpleName().endsWith("Test"))

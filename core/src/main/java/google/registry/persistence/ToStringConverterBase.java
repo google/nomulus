@@ -17,11 +17,11 @@ import javax.annotation.Nullable;
 import javax.persistence.AttributeConverter;
 
 /** Abstract JPA converter for objects that are stored by their toString() value. */
-public abstract class ToStringConverterBase<T> implements AttributeConverter<T, String> {
+abstract class ToStringConverterBase<T> implements AttributeConverter<T, String> {
 
   @Override
   @Nullable
-  public String convertToDatabaseColumn(T entity) {
+  public String convertToDatabaseColumn(@Nullable T entity) {
     return (entity == null) ? null : entity.toString();
   }
 
