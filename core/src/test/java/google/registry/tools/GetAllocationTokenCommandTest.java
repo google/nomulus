@@ -17,6 +17,7 @@ package google.registry.tools;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.testing.DatastoreHelper.createHistoryEntryForEppResource;
 import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.DatastoreHelper.persistSimpleResources;
@@ -35,6 +36,7 @@ public class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocation
 
   @Test
   public void testSuccess_oneToken() throws Exception {
+    createTlds("bar");
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()
@@ -48,6 +50,7 @@ public class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocation
 
   @Test
   public void testSuccess_multipleTokens() throws Exception {
+    createTlds("baz");
     ImmutableList<AllocationToken> tokens =
         persistSimpleResources(
             ImmutableList.of(
@@ -90,6 +93,7 @@ public class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocation
 
   @Test
   public void testSuccess_oneTokenDoesNotExist() throws Exception {
+    createTlds("bar");
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder()

@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -134,6 +135,7 @@ public class GenerateAllocationTokensCommandTest
 
   @Test
   public void testSuccess_domainNames() throws Exception {
+    createTld("tld");
     File domainNamesFile = tmpDir.newFile("domain_names.txt");
     Files.asCharSink(domainNamesFile, UTF_8).write("foo1.tld\nboo2.tld\nbaz9.tld\n");
     runCommand("--domain_names_file", domainNamesFile.getPath());

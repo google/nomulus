@@ -23,6 +23,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.VAL
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -36,10 +37,16 @@ import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.reporting.HistoryEntry;
 import org.joda.time.DateTime;
+import org.junit.Before;
 import org.junit.Test;
 
 /** Unit tests for {@link AllocationToken}. */
 public class AllocationTokenTest extends EntityTestCase {
+
+  @Before
+  public void setup() {
+    createTld("foo");
+  }
 
   @Test
   public void testPersistence() {
@@ -66,7 +73,7 @@ public class AllocationTokenTest extends EntityTestCase {
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setRedemptionHistoryEntry(Key.create(HistoryEntry.class, 1L))
-                .setDomainName("foo.example")
+                .setDomainName("example.foo")
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setTokenType(SINGLE_USE)
                 .build());
@@ -81,7 +88,7 @@ public class AllocationTokenTest extends EntityTestCase {
                 .setToken("abc123")
                 .setTokenType(SINGLE_USE)
                 .setRedemptionHistoryEntry(Key.create(HistoryEntry.class, 1L))
-                .setDomainName("blahdomain.fake")
+                .setDomainName("blahdomain.foo")
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .build()),
         "token",
@@ -130,12 +137,48 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
+  public void testBuild_DomainNameWithLessThanTwoParts() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                new AllocationToken.Builder()
+                    .setDomainName("example")
+                    .setTokenType(SINGLE_USE)
+                    .setToken("barfoo")
+                    .build());
+    assertThat(thrown)
+        .hasCauseThat()
+        .hasMessageThat()
+        .isEqualTo("Domain name must have exactly one part above the TLD");
+    assertThat(thrown).hasMessageThat().isEqualTo("Invalid domain name: example");
+  }
+
+  @Test
+  public void testBuild_invalidTLD() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                new AllocationToken.Builder()
+                    .setDomainName("example.nosuchtld")
+                    .setTokenType(SINGLE_USE)
+                    .setToken("barfoo")
+                    .build());
+    assertThat(thrown)
+        .hasCauseThat()
+        .hasMessageThat()
+        .isEqualTo("Domain name is under tld nosuchtld which doesn't exist");
+    assertThat(thrown).hasMessageThat().isEqualTo("Invalid domain name: example.nosuchtld");
+  }
+
+  @Test
   public void testBuild_domainNameOnlyOnSingleUse() {
     AllocationToken.Builder builder =
         new AllocationToken.Builder()
             .setToken("foobar")
             .setTokenType(TokenType.UNLIMITED_USE)
-            .setDomainName("foo.example");
+            .setDomainName("example.foo");
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
         .hasMessageThat()
