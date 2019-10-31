@@ -17,7 +17,6 @@ package google.registry.ui.server.registrar;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
-import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.appengine.api.users.User;
 import com.google.common.collect.ImmutableList;
@@ -55,7 +54,7 @@ class ExistingRegistryLocksRetriever {
     this.authResult = authResult;
   }
 
-  ImmutableMap<String, Object> getLockedDomainsMap(String clientId)
+  ImmutableMap<String, ?> getLockedDomainsMap(String clientId)
       throws RegistrarAccessDeniedException {
     // Note: admins always have access to the locks page
     checkArgument(authResult.userAuthInfo().isPresent(), "User auth info must be present");
@@ -91,7 +90,6 @@ class ExistingRegistryLocksRetriever {
   }
 
   private ImmutableList<ImmutableMap<String, ?>> getLockedDomains(Registrar registrar) {
-    checkArgumentNotNull(registrar);
     ImmutableList<RegistryLock> locks =
         RegistryLockDao.getByRegistrarId(registrar.getClientId()).stream()
             .filter(RegistryLock::isVerified)
@@ -99,7 +97,7 @@ class ExistingRegistryLocksRetriever {
     return locks.stream().map(this::lockToMap).collect(toImmutableList());
   }
 
-  private ImmutableMap<String, String> lockToMap(RegistryLock lock) {
+  private ImmutableMap<String, ?> lockToMap(RegistryLock lock) {
     return ImmutableMap.of(
         FULLY_QUALIFIED_DOMAIN_NAME_PARAM,
         lock.getDomainName(),

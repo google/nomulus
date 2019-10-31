@@ -108,7 +108,7 @@ public final class ExistingRegistryLocksRetrieverTest {
     RegistryLockDao.save(adminLock);
     RegistryLockDao.save(incompleteLock);
 
-    ImmutableMap<String, Object> result = retriever.getLockedDomainsMap("TheRegistrar");
+    ImmutableMap<String, ?> result = retriever.getLockedDomainsMap("TheRegistrar");
     assertThat(result)
         .containsExactly(
             "lockEnabledForContact",
@@ -131,7 +131,7 @@ public final class ExistingRegistryLocksRetrieverTest {
 
   @Test
   public void testSuccess_lockAllowedWhenEnabled() throws Exception {
-    ImmutableMap<String, Object> result = retriever.getLockedDomainsMap("TheRegistrar");
+    ImmutableMap<String, ?> result = retriever.getLockedDomainsMap("TheRegistrar");
     assertThat(result)
         .containsExactly(
             "lockEnabledForContact",
@@ -149,7 +149,7 @@ public final class ExistingRegistryLocksRetrieverTest {
     // If lock is not enabled for a user, this should be read-only
     persistResource(
         makeRegistrarContact3().asBuilder().setAllowedToSetRegistryLockPassword(true).build());
-    ImmutableMap<String, Object> result = retriever.getLockedDomainsMap("TheRegistrar");
+    ImmutableMap<String, ?> result = retriever.getLockedDomainsMap("TheRegistrar");
     assertThat(result)
         .containsExactly(
             "lockEnabledForContact",
@@ -168,7 +168,7 @@ public final class ExistingRegistryLocksRetrieverTest {
     persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(false).build());
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, true));
     retriever = new ExistingRegistryLocksRetriever(accessor, authResult);
-    ImmutableMap<String, Object> result = retriever.getLockedDomainsMap("TheRegistrar");
+    ImmutableMap<String, ?> result = retriever.getLockedDomainsMap("TheRegistrar");
     assertThat(result)
         .containsExactly(
             "lockEnabledForContact",

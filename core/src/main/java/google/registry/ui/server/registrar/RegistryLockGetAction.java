@@ -84,7 +84,7 @@ public final class RegistryLockGetAction implements Runnable {
     response.setHeader("X-Ui-Compatible", "IE=edge"); // Ask IE not to be silly.
 
     try {
-      ImmutableMap<String, Object> resultMap =
+      ImmutableMap<String, ?> resultMap =
           existingRegistryLocksRetriever.getLockedDomainsMap(paramClientId.get());
       ImmutableMap<String, ?> payload =
           JsonResponseHelper.create(SUCCESS, "Successful locks retrieval", resultMap);
