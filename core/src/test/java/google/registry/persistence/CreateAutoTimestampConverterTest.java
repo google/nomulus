@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+/** Unit tests for {@link CreateAutoTimestampConverter}. */
 @RunWith(JUnit4.class)
 public class CreateAutoTimestampConverterTest {
 
@@ -70,7 +71,7 @@ public class CreateAutoTimestampConverterTest {
 
     public TestEntity() {}
 
-    public TestEntity(String name, CreateAutoTimestamp cat) {
+    TestEntity(String name, CreateAutoTimestamp cat) {
       this.name = name;
       this.cat = cat;
     }

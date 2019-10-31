@@ -113,7 +113,7 @@ public class ZonedDateTimeConverterTest {
 
     public TestEntity() {}
 
-    public TestEntity(String name, ZonedDateTime zdt) {
+    TestEntity(String name, ZonedDateTime zdt) {
       this.name = name;
       this.zdt = zdt;
     }

@@ -24,8 +24,4 @@ abstract class ToStringConverterBase<T> implements AttributeConverter<T, String>
   public String convertToDatabaseColumn(@Nullable T entity) {
     return (entity == null) ? null : entity.toString();
   }
-
-  @Override
-  @Nullable
-  public abstract T convertToEntityAttribute(@Nullable String columnValue);
 }
