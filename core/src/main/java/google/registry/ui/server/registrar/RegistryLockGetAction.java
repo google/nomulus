@@ -15,16 +15,23 @@
 package google.registry.ui.server.registrar;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.net.HttpHeaders.X_FRAME_OPTIONS;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
 import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
+import com.google.appengine.api.users.User;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import com.google.gson.Gson;
+import google.registry.model.registrar.Registrar;
+import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registry.RegistryLockDao;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.Parameter;
@@ -32,10 +39,14 @@ import google.registry.request.RequestMethod;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthResult;
+import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
+import google.registry.request.auth.UserAuthInfo;
+import google.registry.schema.domain.RegistryLock;
 import google.registry.security.JsonResponseHelper;
 import java.util.Optional;
 import javax.inject.Inject;
+import org.joda.time.DateTime;
 
 /**
  * Servlet that allows for getting locks for a particular registrar.
@@ -51,26 +62,33 @@ public final class RegistryLockGetAction implements Runnable {
 
   public static final String PATH = "/registry-lock-get";
 
+  private static final String LOCK_ENABLED_FOR_CONTACT_PARAM = "lockEnabledForContact";
+  private static final String EMAIL_PARAM = "email";
+  private static final String LOCKS_PARAM = "locks";
+  private static final String FULLY_QUALIFIED_DOMAIN_NAME_PARAM = "fullyQualifiedDomainName";
+  private static final String LOCKED_TIME_PARAM = "lockedTime";
+  private static final String LOCKED_BY_PARAM = "lockedBy";
+
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Gson GSON = new Gson();
 
   @VisibleForTesting Method method;
   private final Response response;
+  private final AuthenticatedRegistrarAccessor registrarAccessor;
   @VisibleForTesting AuthResult authResult;
-  private final ExistingRegistryLocksRetriever existingRegistryLocksRetriever;
   @VisibleForTesting Optional<String> paramClientId;
 
   @Inject
   RegistryLockGetAction(
       @RequestMethod Method method,
       Response response,
+      AuthenticatedRegistrarAccessor registrarAccessor,
       AuthResult authResult,
-      ExistingRegistryLocksRetriever existingRegistryLocksRetriever,
       @Parameter(PARAM_CLIENT_ID) Optional<String> paramClientId) {
     this.method = method;
     this.response = response;
+    this.registrarAccessor = registrarAccessor;
     this.authResult = authResult;
-    this.existingRegistryLocksRetriever = existingRegistryLocksRetriever;
     this.paramClientId = paramClientId;
   }
 
@@ -84,15 +102,70 @@ public final class RegistryLockGetAction implements Runnable {
     response.setHeader("X-Ui-Compatible", "IE=edge"); // Ask IE not to be silly.
 
     try {
-      ImmutableMap<String, ?> resultMap =
-          existingRegistryLocksRetriever.getLockedDomainsMap(paramClientId.get());
+      ImmutableMap<String, ?> resultMap = getLockedDomainsMap(paramClientId.get());
       ImmutableMap<String, ?> payload =
           JsonResponseHelper.create(SUCCESS, "Successful locks retrieval", resultMap);
       response.setPayload(GSON.toJson(payload));
     } catch (RegistrarAccessDeniedException e) {
       logger.atWarning().withCause(e).log(
-          "User %s doesn't have access to registrar console.", authResult.userIdForLogging());
+          "User %s doesn't have access to this registrar", authResult.userIdForLogging());
       response.setStatus(SC_FORBIDDEN);
+    } catch (Exception e) {
+      logger.atWarning().withCause(e).log("Unexpected error when retrieving locks for a registrar");
+      response.setStatus(SC_INTERNAL_SERVER_ERROR);
     }
+  }
+
+  private ImmutableMap<String, ?> getLockedDomainsMap(String clientId)
+      throws RegistrarAccessDeniedException {
+    // Note: admins always have access to the locks page
+    checkArgument(authResult.userAuthInfo().isPresent(), "User auth info must be present");
+    UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();
+    boolean isAdmin = userAuthInfo.isUserAdmin();
+    Registrar registrar = getRegistrarAndVerifyLockAccess(clientId, isAdmin);
+    User user = userAuthInfo.user();
+    boolean isRegistryLockAllowed =
+        isAdmin
+            || registrar.getContacts().stream()
+                .filter(contact -> contact.getEmailAddress().equals(user.getEmail()))
+                .findFirst()
+                .map(RegistrarContact::isRegistryLockAllowed)
+                .orElse(false);
+    return ImmutableMap.of(
+        LOCK_ENABLED_FOR_CONTACT_PARAM,
+        isRegistryLockAllowed,
+        EMAIL_PARAM,
+        user.getEmail(),
+        PARAM_CLIENT_ID,
+        registrar.getClientId(),
+        LOCKS_PARAM,
+        getLockedDomains(registrar));
+  }
+
+  private Registrar getRegistrarAndVerifyLockAccess(String clientId, boolean isAdmin)
+      throws RegistrarAccessDeniedException {
+    Registrar registrar = registrarAccessor.getRegistrar(clientId);
+    checkArgument(
+        isAdmin || registrar.isRegistryLockAllowed(),
+        "Registry lock not allowed for this registrar");
+    return registrar;
+  }
+
+  private ImmutableList<ImmutableMap<String, ?>> getLockedDomains(Registrar registrar) {
+    ImmutableList<RegistryLock> locks =
+        RegistryLockDao.getByRegistrarId(registrar.getClientId()).stream()
+            .filter(RegistryLock::isVerified)
+            .collect(toImmutableList());
+    return locks.stream().map(this::lockToMap).collect(toImmutableList());
+  }
+
+  private ImmutableMap<String, ?> lockToMap(RegistryLock lock) {
+    return ImmutableMap.of(
+        FULLY_QUALIFIED_DOMAIN_NAME_PARAM,
+        lock.getDomainName(),
+        LOCKED_TIME_PARAM,
+        lock.getCompletionTimestamp().map(DateTime::toString).orElse(""),
+        LOCKED_BY_PARAM,
+        lock.isSuperuser() ? "admin" : lock.getRegistrarPocId());
   }
 }
