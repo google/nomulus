@@ -21,7 +21,6 @@ import static google.registry.testing.JUnitBackports.assertThrows;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.transaction.JpaTransactionManagerRule;
 import java.math.BigDecimal;
-import javax.persistence.PersistenceException;
 import org.joda.money.CurrencyUnit;
 import org.junit.Rule;
 import org.junit.Test;
@@ -68,16 +67,13 @@ public class PremiumListDaoTest {
   @Test
   public void saveNew_throwsWhenPremiumListAlreadyExists() {
     PremiumListDao.saveNew(PremiumList.create("testlist", CurrencyUnit.USD, TEST_PRICES));
-    PersistenceException thrown =
+    IllegalArgumentException thrown =
         assertThrows(
-            PersistenceException.class,
+            IllegalArgumentException.class,
             () ->
                 PremiumListDao.saveNew(
                     PremiumList.create("testlist", CurrencyUnit.USD, TEST_PRICES)));
-    assertThat(thrown)
-        .hasCauseThat()
-        .hasMessageThat()
-        .contains("A premium list of this name already exists");
+    assertThat(thrown).hasMessageThat().contains("A premium list of this name already exists");
   }
 
   @Test

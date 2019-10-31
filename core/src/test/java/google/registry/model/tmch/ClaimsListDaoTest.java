@@ -22,7 +22,6 @@ import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.schema.tmch.ClaimsList;
 import google.registry.testing.FakeClock;
 import javax.persistence.NoResultException;
-import javax.persistence.PersistenceException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -71,9 +70,7 @@ public class ClaimsListDaoTest {
 
   @Test
   public void getCurrent_throwsNoResultExceptionIfTableIsEmpty() {
-    PersistenceException thrown =
-        assertThrows(PersistenceException.class, () -> ClaimsListDao.getCurrent());
-    assertThat(thrown).hasCauseThat().isInstanceOf(NoResultException.class);
+    assertThrows(NoResultException.class, ClaimsListDao::getCurrent);
   }
 
   @Test

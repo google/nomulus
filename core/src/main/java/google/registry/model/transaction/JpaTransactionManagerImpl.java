@@ -79,17 +79,14 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       T result = work.run();
       txn.commit();
       return result;
-    } catch (Throwable transactionException) {
-      String rollbackMessage;
+    } catch (RuntimeException e) {
       try {
         txn.rollback();
-        rollbackMessage = "transaction rolled back";
+        logger.atWarning().log("Error during transaction; transaction rolled back");
       } catch (Throwable rollbackException) {
-        logger.atSevere().withCause(rollbackException).log("Rollback failed, suppressing error");
-        rollbackMessage = "transaction rollback failed";
+        logger.atSevere().withCause(rollbackException).log("Rollback failed; suppressing error");
       }
-      throw new PersistenceException(
-          "Error during transaction, " + rollbackMessage, transactionException);
+      throw e;
     } finally {
       txnInfo.clear();
     }

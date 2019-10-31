@@ -41,6 +41,7 @@ public final class RegistryLockDao {
                           Long.class)
                       .setParameter("verificationCode", verificationCode)
                       .getSingleResult();
+              // TODO(gbrodman): Don't throw NPE here. Maybe NoResultException fits better?
               checkNotNull(revisionId, "No registry lock with this code");
               return em.find(RegistryLock.class, revisionId);
             });

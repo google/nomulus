@@ -25,7 +25,6 @@ import google.registry.schema.domain.RegistryLock.Action;
 import google.registry.testing.AppEngineRule;
 import java.util.Optional;
 import java.util.UUID;
-import javax.persistence.PersistenceException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,15 +53,11 @@ public final class RegistryLockDaoTest {
   public void testSaveAndLoad_failure_differentCode() {
     RegistryLock lock = createLock();
     RegistryLockDao.save(lock);
-    PersistenceException exception =
+    NullPointerException thrown =
         assertThrows(
-            PersistenceException.class,
+            NullPointerException.class,
             () -> RegistryLockDao.getByVerificationCode(UUID.randomUUID().toString()));
-    assertThat(exception)
-        .hasCauseThat()
-        .hasMessageThat()
-        .isEqualTo("No registry lock with this code");
-    assertThat(exception).hasCauseThat().isInstanceOf(NullPointerException.class);
+    assertThat(thrown).hasMessageThat().isEqualTo("No registry lock with this code");
   }
 
   @Test

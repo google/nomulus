@@ -75,11 +75,7 @@ public class CurrencyUnitConverterTest {
                 jpaTm()
                     .transact(
                         () -> jpaTm().getEntityManager().find(TestEntity.class, "id").currency));
-    assertThat(thrown)
-        .hasCauseThat()
-        .hasCauseThat()
-        .hasMessageThat()
-        .isEqualTo("Unknown currency 'XXXX'");
+    assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("Unknown currency 'XXXX'");
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
