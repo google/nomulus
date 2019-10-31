@@ -22,7 +22,6 @@ import google.registry.model.transaction.JpaTransactionManagerRule;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.PersistenceException;
-import org.hibernate.cfg.Environment;
 import org.joda.money.CurrencyUnit;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,7 +36,6 @@ public class CurrencyUnitConverterTest {
   public final JpaTransactionManagerRule jpaTmRule =
       new JpaTransactionManagerRule.Builder()
           .withEntityClass(TestEntity.class)
-          .withProperty(Environment.HBM2DDL_AUTO, "update")
           .build();
 
   @Test
@@ -50,7 +48,8 @@ public class CurrencyUnitConverterTest {
                     () ->
                         jpaTm()
                             .getEntityManager()
-                            .createNativeQuery("SELECT currency FROM TestEntity WHERE name = 'id'")
+                            .createNativeQuery(
+                                "SELECT currency FROM \"TestEntity\" WHERE name = 'id'")
                             .getResultList()))
         .containsExactly("EUR");
     TestEntity persisted =
@@ -66,7 +65,7 @@ public class CurrencyUnitConverterTest {
                 jpaTm()
                     .getEntityManager()
                     .createNativeQuery(
-                        "INSERT INTO TestEntity (name, currency) VALUES('id', 'XXXX')")
+                        "INSERT INTO \"TestEntity\" (name, currency) VALUES('id', 'XXXX')")
                     .executeUpdate());
     PersistenceException thrown =
         assertThrows(

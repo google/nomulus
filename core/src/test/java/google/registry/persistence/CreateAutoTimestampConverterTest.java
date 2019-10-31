@@ -21,7 +21,6 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.transaction.JpaTransactionManagerRule;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import org.hibernate.cfg.Environment;
 import org.joda.time.DateTime;
 import org.junit.Rule;
 import org.junit.Test;
@@ -36,7 +35,6 @@ public class CreateAutoTimestampConverterTest {
   public final JpaTransactionManagerRule jpaTmRule =
       new JpaTransactionManagerRule.Builder()
           .withEntityClass(TestEntity.class)
-          .withProperty(Environment.HBM2DDL_AUTO, "update")
           .build();
 
   @Test
