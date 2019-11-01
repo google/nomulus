@@ -12,7 +12,7 @@
   <embeddable class="org.joda.money.BigMoney">
     <attributes>
       <basic name="amount"/>
-      <basic name="currenty"/>
+      <basic name="currency"/>
     </attributes>
   </embeddable>
 </entity-mappings>

@@ -72,7 +72,7 @@ final class CreateDomainCommand extends CreateOrUpdateDomainCommand
             !force || forcePremiums,
             "Forced creates on premium domain(s) require --force_premiums");
         Money createCost = prices.getCreateCost();
-        currency = createCost.getCurrencyUnit().getCurrencyCode();
+        currency = createCost.getCurrencyUnit().getCode();
         cost = createCost.multipliedBy(period).getAmount().toString();
         System.out.printf(
             "NOTE: %s is premium at %s per year; sending total cost for %d year(s) of %s %s.\n",
