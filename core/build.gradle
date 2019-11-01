@@ -523,7 +523,7 @@ task compileProdJS(type: JavaExec) {
 
   // manually include all the required js files
   closureArgs << "--js=${nodeModulesDir}/google-closure-library/**.js"
-  closureArgs << "--js=${rootDir}/soyutils_usegoog.js"
+  closureArgs << "--js=${jsDir}/soyutils_usegoog.js"
   closureArgs << "--js=${cssSourceDir}/registrar_bin.css.js"
   closureArgs << "--js=${jsSourceDir}/**.js"
   // TODO(shicong) Verify the compiled JS file works in Alpha
@@ -555,7 +555,7 @@ task karmaTest(type: Exec) {
   dependsOn ':npmInstall'
   workingDir rootProject.projectDir
   executable 'node_modules/karma/bin/karma'
-  args('start')
+  args('start', "${jsDir}/karma.conf.js")
 }
 
 test.dependsOn karmaTest
