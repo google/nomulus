@@ -523,7 +523,7 @@ task compileProdJS(type: JavaExec) {
 
   // manually include all the required js files
   closureArgs << "--js=${nodeModulesDir}/google-closure-library/**.js"
-  closureArgs << "--js=${nodeModulesDir}/soyutils_usegoog.js"
+  closureArgs << "--js=${rootDir}/soyutils_usegoog.js"
   closureArgs << "--js=${cssSourceDir}/registrar_bin.css.js"
   closureArgs << "--js=${jsSourceDir}/**.js"
   // TODO(shicong) Verify the compiled JS file works in Alpha
