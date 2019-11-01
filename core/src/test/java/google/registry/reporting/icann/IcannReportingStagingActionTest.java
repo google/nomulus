@@ -15,6 +15,7 @@
 package google.registry.reporting.icann;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
@@ -28,6 +29,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.bigquery.BigqueryJobFailureException;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
 import google.registry.request.HttpException.BadRequestException;
+import google.registry.request.RequestParameters;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
@@ -74,6 +76,7 @@ public class IcannReportingStagingActionTest {
     action.sender = new InternetAddress("sender@example.com");
     action.recipient = new InternetAddress("recipient@example.com");
     action.emailService = mock(SendEmailService.class);
+    createTlds("tld", "foo");
 
     when(stager.stageReports(yearMonth, subdir, ReportType.ACTIVITY))
         .thenReturn(ImmutableList.of("a", "b"));
@@ -86,8 +89,15 @@ public class IcannReportingStagingActionTest {
         new TaskMatcher()
             .url("/_dr/task/icannReportingUpload")
             .method("POST")
-            .param("subdir", subdir);
-    assertTasksEnqueued("retryable-cron-tasks", matcher);
+            .param("subdir", subdir)
+            .param(RequestParameters.PARAM_TLD, "tld");
+    TaskMatcher matcher2 =
+        new TaskMatcher()
+            .url("/_dr/task/icannReportingUpload")
+            .method("POST")
+            .param("subdir", subdir)
+            .param(RequestParameters.PARAM_TLD, "foo");
+    assertTasksEnqueued("retryable-cron-tasks", matcher, matcher2);
   }
 
   @Test
