@@ -84,6 +84,27 @@ public final class RegistryLockDao {
                     .findFirst());
   }
 
+  /**
+   * Returns the most recent verified lock object for a given repo ID (i.e. a domain) or empty if no
+   * lock has ever been finalized. This is different from {@link #getMostRecentByRepoId(String)} in
+   * that it only returns verified locks.
+   */
+  public static Optional<RegistryLock> getMostRecentVerifiedLockByRepoId(String repoId) {
+    return jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .getEntityManager()
+                    .createQuery(
+                        "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId AND"
+                            + " lock.completionTimestamp IS NOT NULL ORDER BY lock.revisionId DESC",
+                        RegistryLock.class)
+                    .setParameter("repoId", repoId)
+                    .setMaxResults(1)
+                    .getResultStream()
+                    .findFirst());
+  }
+
   public static RegistryLock save(RegistryLock registryLock) {
     checkNotNull(registryLock, "Null registry lock cannot be saved");
     return jpaTm().transact(() -> jpaTm().getEntityManager().merge(registryLock));

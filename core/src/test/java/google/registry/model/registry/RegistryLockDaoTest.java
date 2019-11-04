@@ -136,6 +136,21 @@ public final class RegistryLockDaoTest {
   }
 
   @Test
+  public void testLoad_verified_byRepoId() {
+    RegistryLock completedLock =
+        createLock().asBuilder().setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc()).build();
+    RegistryLockDao.save(completedLock);
+
+    jpaTmRule.getTxnClock().advanceOneMilli();
+    RegistryLock inProgressLock = createLock();
+    RegistryLockDao.save(inProgressLock);
+
+    Optional<RegistryLock> mostRecent = RegistryLockDao.getMostRecentVerifiedLockByRepoId("repoId");
+    assertThat(mostRecent.isPresent()).isTrue();
+    assertThat(mostRecent.get().isVerified()).isTrue();
+  }
+
+  @Test
   public void testLoad_byRepoId_empty() {
     assertThat(RegistryLockDao.getMostRecentByRepoId("nonexistent").isPresent()).isFalse();
   }
