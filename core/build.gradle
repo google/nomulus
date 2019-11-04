@@ -591,7 +591,7 @@ class FilteringTest extends Test {
   }
 
   /**
-   * Set to false if you also want to include TestCase classes.
+   * Set to false if you also want to include TestCase and TestSuite classes.
    *
    * <p>Must be defined before "test", if at all.
    */
