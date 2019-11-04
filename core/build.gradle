@@ -555,7 +555,7 @@ task karmaTest(type: Exec) {
   dependsOn ':npmInstall'
   workingDir rootProject.projectDir
   executable 'node_modules/karma/bin/karma'
-  args('start', "${jsDir}/karma.conf.js")
+  args('start', "${project.projectDir}/karma.conf.js")
 }
 
 test.dependsOn karmaTest
