@@ -1,4 +1,3 @@
-// See build.xml and make_pkginfo.sh which preprocess this into actual files.
 @XmlSchema(
     elementFormDefault = XmlNsForm.QUALIFIED,
     namespace = "@NAMESPACE@",

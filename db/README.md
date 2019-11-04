@@ -29,18 +29,28 @@ changes not yet deployed are pushed.
 
 Below are the steps to submit a schema change:
 
-1.  Write the incremental DDL script that makes your changes to the existing
-    schema. It should be stored in a new file in the
+1.  Make your changes to entity classes, remembering to add new ones to
+    `core/src/main/resources/META-INF/persistence.xml` so they'll be picked up.
+2.  Run the `nomulus generate_sql_schema` command to generate a new version of
+    `db-schema.sql.generated`. The full command line to do this is:
+    
+    `./gradlew registryTool --args="-e localhost generate_sql_schema --start_postgresql -o /path/to/nomulus/db/src/main/resources/sql/schema/db-schema.sql.generated"`
+3.  Write an incremental DDL script that changes the existing schema to your
+    new one. The generated SQL file from the previous step should help. New 
+    create table statements can be used as is, whereas alter table statements
+    should be written to change any existing tables.
+    
+    This script should be stored in a new file in the
     `db/src/main/resources/sql/flyway` folder using the naming pattern
     `V{id}__{description text}.sql`, where `{id}` is the next highest number
-    following the existing scripts in that folder. Also note that it is a
-    **double** underscore in the naming pattern.
-2.  Run the `:db:test` task from the Gradle root project. The SchemaTest will
+    following the existing scripts in that folder. Note the double underscore in
+    the naming pattern.
+4.  Run the `:db:test` task from the Gradle root project. The SchemaTest will
     fail because the new schema does not match the golden file.
-3.  Copy db/build/resources/test/testcontainer/mount/dump.txt to the golden file
-    (db/src/main/resources/sql/schema/nomulus.golden.sql). Diff it against the
+5.  Copy `db/build/resources/test/testcontainer/mount/dump.txt` to the golden file
+    `db/src/main/resources/sql/schema/nomulus.golden.sql`. Diff it against the
     old version and verify that all changes are expected.
-4.  Rerun the `:db:test` task. This time all tests should pass.
+6.  Re-run the `:db:test` task. This time all tests should pass.
 
 Relevant files (under db/src/main/resources/sql/schema/):
 

@@ -76,9 +76,9 @@ sourceSets {
   main {
     java {
       srcDirs += generatedDir
-      // Javadoc API is deprecated and removed in Java 12.
+      // Javadoc API is deprecated in Java 11 and removed in Java 12.
       // TODO(jianglai): re-enable after migrating to the new Javadoc API
-      if ((JavaVersion.current().majorVersion as Integer) > 11) {
+      if ((JavaVersion.current().majorVersion as Integer) >= 11) {
         exclude 'google/registry/documentation/**'
       }
     }
@@ -88,9 +88,9 @@ sourceSets {
   }
   test {
     java {
-      // Javadoc API is deprecated and removed in Java 12.
+      // Javadoc API is deprecated in Java 11 and removed in Java 12.
       // TODO(jianglai): re-enable after migrating to the new Javadoc API
-      if ((JavaVersion.current().majorVersion as Integer) > 11) {
+      if ((JavaVersion.current().majorVersion as Integer) >= 11) {
         exclude 'google/registry/documentation/**'
       }
     }
@@ -290,12 +290,12 @@ dependencies {
 task jaxbToJava {
   def xsdFilesDir = "${javaDir}/google/registry/xml/xsd"
   def bindingsFile = "${javaDir}/google/registry/xjc/bindings.xjb"
-  def pkgInfoGenerator = "${javaDir}/google/registry/xjc/make_pkginfo.sh"
   def pkgInfoTemplate = "${javaDir}/google/registry/xjc/package-info.java.in"
+  def pkgInfoMap = "${javaDir}/google/registry/xjc/package-info.map"
   def outputDir = "${generatedDir}/google/registry/xjc"
 
   inputs.dir xsdFilesDir
-  inputs.files bindingsFile, pkgInfoTemplate, pkgInfoGenerator
+  inputs.files bindingsFile, pkgInfoTemplate, pkgInfoMap
   outputs.dir outputDir
 
   doLast {
@@ -333,11 +333,17 @@ task jaxbToJava {
       // below.
       arg(line: '-npa -quiet -extension')
     }
-    exec {
-      workingDir "${generatedDir}"
-
-      executable pkgInfoGenerator
-      args pkgInfoTemplate, outputDir
+    new File(pkgInfoMap).eachLine { line ->
+      def (packageName, namespace) = line.split()
+      ant.copy(
+          tofile: "${outputDir}/${packageName}/package-info.java",
+          overwrite: true,
+          file: "${pkgInfoTemplate}") {
+        filterSet() {
+          filter(token: 'PACKAGE', value: packageName)
+          filter(token: 'NAMESPACE', value: namespace)
+        }
+      }
     }
   }
 }
@@ -413,8 +419,10 @@ task soyToJS {
           "--allowExternalCalls", "false",
           "--srcs", "${soyFiles.join(',')}",
           "--shouldProvideRequireSoyNamespaces", "true",
-          "--compileTimeGlobalsFile", "${resourcesSourceDir}/google/registry/ui/globals.txt",
-          "--deps", "${deps.join(',')}"
+          "--compileTimeGlobalsFile", "${resourcesSourceDir}/google/registry/ui/globals.txt"
+      if (deps != "") {
+        args "--deps", "${deps.join(',')}"
+      }
     }
   }
 
@@ -515,7 +523,7 @@ task compileProdJS(type: JavaExec) {
 
   // manually include all the required js files
   closureArgs << "--js=${nodeModulesDir}/google-closure-library/**.js"
-  closureArgs << "--js=${nodeModulesDir}/soyutils_usegoog.js"
+  closureArgs << "--js=${jsDir}/soyutils_usegoog.js"
   closureArgs << "--js=${cssSourceDir}/registrar_bin.css.js"
   closureArgs << "--js=${jsSourceDir}/**.js"
   // TODO(shicong) Verify the compiled JS file works in Alpha
@@ -526,7 +534,12 @@ task compileProdJS(type: JavaExec) {
 
 compileJava.dependsOn jaxbToJava
 compileJava.dependsOn soyToJava
-compileJava.dependsOn compileProdJS
+// The Closure JS compiler does not support Windows. It is fine to disable it if all we want to do
+// is to complile the Java code on Windows.
+if (!System.properties['os.name'].toLowerCase().contains('windows')) {
+  compileJava.dependsOn compileProdJS
+  assemble.dependsOn compileProdJS
+}
 
 // stylesheetsToJavascript must happen after processResources, which wipes the
 // resources folder before copying data into it.
@@ -537,13 +550,12 @@ compileProdJS.dependsOn rootProject.npmInstall
 compileProdJS.dependsOn processResources
 compileProdJS.dependsOn processTestResources
 compileProdJS.dependsOn soyToJS
-assemble.dependsOn compileProdJS
 
 task karmaTest(type: Exec) {
   dependsOn ':npmInstall'
   workingDir rootProject.projectDir
   executable 'node_modules/karma/bin/karma'
-  args('start')
+  args('start', "${project.projectDir}/karma.conf.js")
 }
 
 test.dependsOn karmaTest

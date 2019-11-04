@@ -158,12 +158,9 @@ public class FrontendMetricsHandlerTest {
     Duration latency2 = new Duration(requestTime2, responseTime2);
     Duration latency3 = new Duration(requestTime3, responseTime3);
 
-    verify(metrics)
-        .responseSent(PROTOCOL_NAME, CLIENT_CERT_HASH, latency1);
-    verify(metrics)
-        .responseSent(PROTOCOL_NAME, CLIENT_CERT_HASH, latency2);
-    verify(metrics)
-        .responseSent(PROTOCOL_NAME, CLIENT_CERT_HASH, latency3);
+    verify(metrics).responseSent(PROTOCOL_NAME, CLIENT_CERT_HASH, latency1);
+    verify(metrics).responseSent(PROTOCOL_NAME, CLIENT_CERT_HASH, latency2);
+    verify(metrics).responseSent(PROTOCOL_NAME, CLIENT_CERT_HASH, latency3);
     verifyNoMoreInteractions(metrics);
   }
 }

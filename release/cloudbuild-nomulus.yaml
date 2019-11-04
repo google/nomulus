@@ -65,7 +65,22 @@ steps:
 # Build and package the deployment files for production.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args: ['release/build_nomulus_for_env.sh', 'production', 'output']
-# The tarballs to upload to GCS.
+# Tentatively build and publish Cloud SQL schema jar here, before schema release
+# process is finalized.
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    ./gradlew \
+      :db:publish \
+      -PmavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven \
+      -PpluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins \
+      -Pschema_publish_repo=gcs://domain-registry-maven-repository/nomulus \
+      -Pschema_version=${TAG_NAME}
+    cp db/build/libs/schema.jar output/
+# The tarballs and jars to upload to GCS.
 artifacts:
   objects:
     location: 'gs://${PROJECT_ID}-deploy/${TAG_NAME}'
@@ -73,6 +88,7 @@ artifacts:
     - 'output/*.tar'
     - 'output/tag_name'
     - 'output/nomulus.jar'
+    - 'output/schema.jar'
     - 'release/cloudbuild-tag.yaml'
     - 'release/cloudbuild-sync.yaml'
     - 'release/cloudbuild-deploy-*.yaml'

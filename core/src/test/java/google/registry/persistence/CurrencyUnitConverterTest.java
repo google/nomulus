@@ -13,26 +13,25 @@
 // limitations under the License.
 package google.registry.persistence;
 
-import static com.google.common.base.Charsets.US_ASCII;
-import static com.google.common.hash.Funnels.stringFunnel;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.JUnitBackports.assertThrows;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.hash.BloomFilter;
 import google.registry.model.ImmutableObject;
 import google.registry.model.transaction.JpaTransactionManagerRule;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.PersistenceException;
 import org.hibernate.cfg.Environment;
+import org.joda.money.CurrencyUnit;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link BloomFilterConverter}. */
+/** Unit tests for {@link CurrencyUnitConverter}. */
 @RunWith(JUnit4.class)
-public class BloomFilterConverterTest {
+public class CurrencyUnitConverterTest {
 
   @Rule
   public final JpaTransactionManagerRule jpaTmRule =
@@ -42,14 +41,41 @@ public class BloomFilterConverterTest {
           .build();
 
   @Test
-  public void roundTripConversion_returnsSameBloomFilter() {
-    BloomFilter<String> bloomFilter = BloomFilter.create(stringFunnel(US_ASCII), 3);
-    ImmutableSet.of("foo", "bar", "baz").forEach(bloomFilter::put);
-    TestEntity entity = new TestEntity(bloomFilter);
+  public void roundTripConversion() {
+    TestEntity entity = new TestEntity(CurrencyUnit.EUR);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
+    assertThat(
+            jpaTm()
+                .transact(
+                    () ->
+                        jpaTm()
+                            .getEntityManager()
+                            .createNativeQuery("SELECT currency FROM TestEntity WHERE name = 'id'")
+                            .getResultList()))
+        .containsExactly("EUR");
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(persisted.bloomFilter).isEqualTo(bloomFilter);
+    assertThat(persisted.currency).isEqualTo(CurrencyUnit.EUR);
+  }
+
+  @Test
+  public void invalidCurrency() {
+    jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .getEntityManager()
+                    .createNativeQuery(
+                        "INSERT INTO TestEntity (name, currency) VALUES('id', 'XXXX')")
+                    .executeUpdate());
+    PersistenceException thrown =
+        assertThrows(
+            PersistenceException.class,
+            () ->
+                jpaTm()
+                    .transact(
+                        () -> jpaTm().getEntityManager().find(TestEntity.class, "id").currency));
+    assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("Unknown currency 'XXXX'");
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
@@ -57,12 +83,12 @@ public class BloomFilterConverterTest {
 
     @Id String name = "id";
 
-    BloomFilter<String> bloomFilter;
+    CurrencyUnit currency;
 
     public TestEntity() {}
 
-    TestEntity(BloomFilter<String> bloomFilter) {
-      this.bloomFilter = bloomFilter;
+    TestEntity(CurrencyUnit currency) {
+      this.currency = currency;
     }
   }
 }

@@ -29,6 +29,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.nio.file.Files;
@@ -44,6 +45,8 @@ import org.junit.runners.JUnit4;
 /** Tests for {@link GcsPluginUtilsTest} */
 @RunWith(JUnit4.class)
 public final class GcsPluginUtilsTest {
+
+  private static final Joiner filenameJoiner = Joiner.on(File.separator);
 
   @Rule public final TemporaryFolder folder = new TemporaryFolder();
 
@@ -155,8 +158,10 @@ public final class GcsPluginUtilsTest {
     FilesWithEntryPoint files =
         readFilesWithEntryPoint(destination, Optional.of(ignoredHint), root);
 
-    assertThat(files.entryPoint().toString()).isEqualTo("some/path/file.txt");
-    assertThat(readAllFiles(files)).containsExactly("some/path/file.txt", "some data");
+    assertThat(files.entryPoint().toString())
+        .isEqualTo(filenameJoiner.join("some", "path", "file.txt"));
+    assertThat(readAllFiles(files))
+        .containsExactly(filenameJoiner.join("some", "path", "file.txt"), "some data");
   }
 
   @Test
@@ -171,7 +176,7 @@ public final class GcsPluginUtilsTest {
     FilesWithEntryPoint files =
         readFilesWithEntryPoint(destination, Optional.of(ignoredHint), root);
 
-    assertThat(files.entryPoint().toString()).isEqualTo("non/existing.txt");
+    assertThat(files.entryPoint().toString()).isEqualTo(filenameJoiner.join("non", "existing.txt"));
     assertThat(files.files()).isEmpty();
   }
 
@@ -187,7 +192,7 @@ public final class GcsPluginUtilsTest {
     FilesWithEntryPoint files =
         readFilesWithEntryPoint(destination, Optional.of(ignoredHint), root);
 
-    assertThat(files.entryPoint().toString()).isEqualTo("some/path");
+    assertThat(files.entryPoint().toString()).isEqualTo(filenameJoiner.join("some", "path"));
     assertThat(files.files()).isEmpty();
   }
 
@@ -205,8 +210,10 @@ public final class GcsPluginUtilsTest {
     FilesWithEntryPoint files =
         readFilesWithEntryPoint(destination, Optional.of(ignoredHint), root);
 
-    assertThat(files.entryPoint().toString()).isEqualTo("some/path/a/file.txt");
-    assertThat(readAllFiles(files)).containsExactly("some/path/a/file.txt", "some data");
+    assertThat(files.entryPoint().toString())
+        .isEqualTo(filenameJoiner.join("some", "path", "a", "file.txt"));
+    assertThat(readAllFiles(files))
+        .containsExactly(filenameJoiner.join("some", "path", "a", "file.txt"), "some data");
   }
 
   /**
@@ -232,8 +239,10 @@ public final class GcsPluginUtilsTest {
 
     FilesWithEntryPoint files = readFilesWithEntryPoint(destination, Optional.empty(), root);
 
-    assertThat(files.entryPoint().toString()).isEqualTo("some/path/path.zip");
-    assertThat(readAllFiles(files).keySet()).containsExactly("some/path/path.zip");
+    assertThat(files.entryPoint().toString())
+        .isEqualTo(filenameJoiner.join("some", "path", "path.zip"));
+    assertThat(readAllFiles(files).keySet())
+        .containsExactly(filenameJoiner.join("some", "path", "path.zip"));
   }
 
   /**
@@ -261,8 +270,10 @@ public final class GcsPluginUtilsTest {
     FilesWithEntryPoint files =
         readFilesWithEntryPoint(destination, Optional.of(badEntryPoint), root);
 
-    assertThat(files.entryPoint().toString()).isEqualTo("some/path/path.zip");
-    assertThat(readAllFiles(files).keySet()).containsExactly("some/path/path.zip");
+    assertThat(files.entryPoint().toString())
+        .isEqualTo(filenameJoiner.join("some", "path", "path.zip"));
+    assertThat(readAllFiles(files).keySet())
+        .containsExactly(filenameJoiner.join("some", "path", "path.zip"));
   }
 
   @Test
@@ -285,12 +296,13 @@ public final class GcsPluginUtilsTest {
     FilesWithEntryPoint files =
         readFilesWithEntryPoint(destination, Optional.of(goodEntryPoint), root);
 
-    assertThat(files.entryPoint().toString()).isEqualTo("some/path/index.html");
+    assertThat(files.entryPoint().toString())
+        .isEqualTo(filenameJoiner.join("some", "path", "index.html"));
     assertThat(readAllFiles(files))
         .containsExactly(
-            "some/path/index.html", "some data",
-            "some/path/a/index.html", "wrong index",
-            "some/path/c/style.css", "css file",
-            "some/path/my_image.png", "images");
+            filenameJoiner.join("some", "path", "index.html"), "some data",
+            filenameJoiner.join("some", "path", "a", "index.html"), "wrong index",
+            filenameJoiner.join("some", "path", "c", "style.css"), "css file",
+            filenameJoiner.join("some", "path", "my_image.png"), "images");
   }
 }

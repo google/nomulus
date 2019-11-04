@@ -92,9 +92,9 @@ CREATE TABLE public."PremiumEntry" (
 CREATE TABLE public."PremiumList" (
     revision_id bigint NOT NULL,
     creation_timestamp timestamp with time zone NOT NULL,
-    currency bytea NOT NULL,
     name text NOT NULL,
-    bloom_filter bytea NOT NULL
+    bloom_filter bytea NOT NULL,
+    currency text DEFAULT 'USD'::text NOT NULL
 );
 
 

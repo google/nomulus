@@ -35,7 +35,7 @@ public abstract class BaseMetrics {
    * nomulus -e production list_registrars -f clientCertificateHash | grep $HASH
    * </pre>
    */
-   protected static final ImmutableSet<LabelDescriptor> LABELS =
+  protected static final ImmutableSet<LabelDescriptor> LABELS =
       ImmutableSet.of(
           LabelDescriptor.create("protocol", "Name of the protocol."),
           LabelDescriptor.create(

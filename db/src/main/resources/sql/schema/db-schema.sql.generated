@@ -133,7 +133,7 @@
        revision_id  bigserial not null,
         bloom_filter bytea not null,
         creation_timestamp timestamptz not null,
-        currency bytea not null,
+        currency text not null,
         name text not null,
         primary key (revision_id)
     );

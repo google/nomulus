@@ -64,7 +64,8 @@ final class GcsPluginUtils {
 
   static void uploadFileToGcs(
       Storage storage, String bucket, Path path, Supplier<byte[]> dataSupplier) {
-    String filename = path.toString();
+    // Replace Windows file separators with forward slashes.
+    String filename = path.toString().replace(File.separator, "/");
     storage.create(
         BlobInfo.newBuilder(bucket, filename).setContentType(getContentType(filename)).build(),
         dataSupplier.get());

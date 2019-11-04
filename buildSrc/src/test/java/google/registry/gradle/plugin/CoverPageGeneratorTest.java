@@ -20,9 +20,11 @@ import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.gradle.plugin.GcsPluginUtils.toByteArraySupplier;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.gradle.plugin.ProjectData.TaskData;
+import java.io.File;
 import java.nio.file.Paths;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -62,6 +64,8 @@ public final class CoverPageGeneratorTest {
           .setDescription("an up-to-date task")
           .setState(TaskData.State.UP_TO_DATE)
           .build();
+
+  private static final Joiner filenameJoiner = Joiner.on(File.separator);
 
   private ImmutableMap<String, String> getGeneratedFiles(ProjectData project) {
     CoverPageGenerator coverPageGenerator = new CoverPageGenerator(project);
@@ -172,8 +176,8 @@ public final class CoverPageGeneratorTest {
   @Test
   public void testGetFilesToUpload_containsCssFile() {
     ImmutableMap<String, String> files = getGeneratedFiles(EMPTY_PROJECT);
-    assertThat(files).containsKey("css/style.css");
-    assertThat(files.get("css/style.css")).contains("body {");
+    assertThat(files).containsKey(filenameJoiner.join("css", "style.css"));
+    assertThat(files.get(filenameJoiner.join("css", "style.css"))).contains("body {");
     assertThat(files.get("index.html"))
         .contains("<link rel=\"stylesheet\" type=\"text/css\" href=\"css/style.css\">");
   }
@@ -191,8 +195,8 @@ public final class CoverPageGeneratorTest {
                         .setLog(toByteArraySupplier("my log data"))
                         .build())
                 .build());
-    assertThat(files).containsEntry("logs/my:name.log", "my log data");
-    assertThat(files.get("index.html")).contains("<a href=\"logs/my:name.log\">[log]</a>");
+    assertThat(files).containsEntry(filenameJoiner.join("logs", "my-name.log"), "my log data");
+    assertThat(files.get("index.html")).contains("<a href=\"logs/my-name.log\">[log]</a>");
   }
 
   @Test
@@ -203,7 +207,7 @@ public final class CoverPageGeneratorTest {
                 .toBuilder()
                 .addTask(EMPTY_TASK_SUCCESS.toBuilder().setUniqueName("my:name").build())
                 .build());
-    assertThat(files).doesNotContainKey("logs/my:name.log");
+    assertThat(files).doesNotContainKey("logs/my-name.log");
     assertThat(files.get("index.html")).contains("<span class=\"report_link_broken\">[log]</span>");
   }
 
@@ -225,7 +229,7 @@ public final class CoverPageGeneratorTest {
                                 Paths.get("path", "report.txt")))
                         .build())
                 .build());
-    assertThat(files).containsEntry("path/report.txt", "report content");
+    assertThat(files).containsEntry(filenameJoiner.join("path", "report.txt"), "report content");
     assertThat(files.get("index.html")).contains("<a href=\"path/report.txt\">[someReport]</a>");
   }
 
@@ -244,7 +248,7 @@ public final class CoverPageGeneratorTest {
                                 ImmutableMap.of(), Paths.get("path", "report.txt")))
                         .build())
                 .build());
-    assertThat(files).doesNotContainKey("path/report.txt");
+    assertThat(files).doesNotContainKey(filenameJoiner.join("path", "report.txt"));
     assertThat(files.get("index.html"))
         .contains("<span class=\"report_link_broken\">[someReport]</span>");
   }
@@ -275,12 +279,15 @@ public final class CoverPageGeneratorTest {
                                 ImmutableMap.of(), Paths.get("path-empty", "report.txt")))
                         .build())
                 .build());
-    assertThat(files).containsEntry("path-filled/report.txt", "report content");
-    assertThat(files).containsEntry("path-filled/other/file.txt", "some other content");
-    assertThat(files).containsEntry("logs/my:name.log", "log data");
+    assertThat(files)
+        .containsEntry(filenameJoiner.join("path-filled", "report.txt"), "report content");
+    assertThat(files)
+        .containsEntry(
+            filenameJoiner.join("path-filled", "other", "file.txt"), "some other content");
+    assertThat(files).containsEntry(filenameJoiner.join("logs", "my-name.log"), "log data");
     assertThat(files.get("index.html"))
         .contains("<a href=\"path-filled/report.txt\">[filledReport]</a>");
-    assertThat(files.get("index.html")).contains("<a href=\"logs/my:name.log\">[log]</a>");
+    assertThat(files.get("index.html")).contains("<a href=\"logs/my-name.log\">[log]</a>");
     assertThat(files.get("index.html"))
         .contains("<span class=\"report_link_broken\">[emptyReport]</span>");
   }

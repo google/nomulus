@@ -35,6 +35,8 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Mapify;
+import google.registry.flows.EppException;
+import google.registry.flows.domain.DomainFlowUtils;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
@@ -201,6 +203,13 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
           getInstance().redemptionHistoryEntry == null
               || TokenType.SINGLE_USE.equals(getInstance().tokenType),
           "Redemption history entry can only be specified for SINGLE_USE tokens");
+      if (getInstance().domainName != null) {
+        try {
+          DomainFlowUtils.validateDomainName(getInstance().domainName);
+        } catch (EppException e) {
+          throw new IllegalArgumentException("Invalid domain name: " + getInstance().domainName, e);
+        }
+      }
       return super.build();
     }
 

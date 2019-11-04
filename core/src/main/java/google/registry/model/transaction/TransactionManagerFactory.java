@@ -16,6 +16,7 @@ package google.registry.model.transaction;
 
 import static google.registry.config.RegistryEnvironment.ALPHA;
 import static google.registry.config.RegistryEnvironment.CRASH;
+import static google.registry.config.RegistryEnvironment.SANDBOX;
 
 import com.google.appengine.api.utils.SystemProperty;
 import com.google.appengine.api.utils.SystemProperty.Environment.Value;
@@ -60,7 +61,9 @@ public class TransactionManagerFactory {
 
   // TODO(shicong): Enable JpaTm for all environments and remove this function
   private static boolean shouldEnableJpaTm() {
-    return RegistryEnvironment.get() == ALPHA || RegistryEnvironment.get() == CRASH;
+    return RegistryEnvironment.get() == ALPHA
+        || RegistryEnvironment.get() == CRASH
+        || RegistryEnvironment.get() == SANDBOX;
   }
 
   /**
