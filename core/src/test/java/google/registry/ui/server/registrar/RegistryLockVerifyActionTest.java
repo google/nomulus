@@ -45,8 +45,10 @@ import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.schema.domain.RegistryLock.Action;
+import google.registry.security.XsrfTokenManager;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.DatastoreHelper;
+import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectRule;
 import google.registry.testing.UserInfo;
@@ -90,18 +92,16 @@ public final class RegistryLockVerifyActionTest {
     HostResource host = persistActiveHost("ns1.example.net");
     domain = persistResource(newDomainBase("example.tld", host));
     when(request.getRequestURI()).thenReturn("https://registry.example/registry-lock-verification");
+    action = new RegistryLockVerifyAction(jpaTmRule.getTxnClock(), lockId);
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
-    action =
-        new RegistryLockVerifyAction(
-            request,
-            response,
-            userService,
-            authResult,
-            jpaTmRule.getTxnClock(),
-            ImmutableMap.of(),
-            "logoFilename",
-            "productName",
-            lockId);
+    action.req = request;
+    action.response = response;
+    action.authResult = authResult;
+    action.userService = userService;
+    action.logoFilename = "logo.png";
+    action.productName = "Nomulus";
+    action.analyticsConfig = ImmutableMap.of("googleAnalyticsId", "sampleId");
+    action.xsrfTokenManager = new XsrfTokenManager(new FakeClock(), action.userService);
   }
 
   @Test
@@ -133,18 +133,7 @@ public final class RegistryLockVerifyActionTest {
 
   @Test
   public void testSuccess_adminLock_createsOnlyHistoryEntry() {
-    authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, true));
-    action =
-        new RegistryLockVerifyAction(
-            request,
-            response,
-            userService,
-            authResult,
-            jpaTmRule.getTxnClock(),
-            ImmutableMap.of(),
-            "logoFilename",
-            "productName",
-            lockId);
+    action.authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, true));
     RegistryLockDao.save(createLock().asBuilder().isSuperuser(true).build());
 
     action.run();

@@ -14,28 +14,20 @@
 
 package google.registry.ui.server.registrar;
 
-import static com.google.common.net.HttpHeaders.LOCATION;
-import static com.google.common.net.HttpHeaders.X_FRAME_OPTIONS;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
-import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
+import static google.registry.ui.server.SoyTemplateUtils.CSS_RENAMING_MAP_SUPPLIER;
 
-import com.google.appengine.api.users.User;
-import com.google.appengine.api.users.UserService;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.google.common.io.Resources;
-import com.google.template.soy.shared.SoyCssRenamingMap;
 import com.google.template.soy.tofu.SoyTofu;
 import com.googlecode.objectify.Key;
-import google.registry.config.RegistryConfig.Config;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
@@ -45,24 +37,21 @@ import google.registry.model.registry.RegistryLockDao;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
-import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.request.auth.AuthResult;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.ui.server.SoyTemplateUtils;
 import google.registry.ui.soy.registrar.RegistryLockVerificationSoyInfo;
 import google.registry.util.Clock;
 import google.registry.util.DateTimeUtils;
-import java.util.Map;
+import java.util.HashMap;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
 
-/** Servlet that allows for verification of registry lock / unlock requests */
+/** Action that allows for verification of registry lock / unlock requests */
 @Action(
     service = Action.Service.DEFAULT,
     path = RegistryLockVerifyAction.PATH,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
-public final class RegistryLockVerifyAction implements Runnable {
+public final class RegistryLockVerifyAction extends ConsoleAction {
 
   public static final String PATH = "/registry-lock-verify";
 
@@ -72,100 +61,48 @@ public final class RegistryLockVerifyAction implements Runnable {
           google.registry.ui.soy.AnalyticsSoyInfo.getInstance(),
           google.registry.ui.soy.registrar.RegistryLockVerificationSoyInfo.getInstance());
 
-  @VisibleForTesting
-  public static final Supplier<SoyCssRenamingMap> CSS_RENAMING_MAP_SUPPLIER =
-      SoyTemplateUtils.createCssRenamingMapSupplier(
-          Resources.getResource("google/registry/ui/css/registrar_bin.css.js"),
-          Resources.getResource("google/registry/ui/css/registrar_dbg.css.js"));
-
-  private final HttpServletRequest req;
-  private final Response response;
-  private final UserService userService;
-  @VisibleForTesting AuthResult authResult;
   private final Clock clock;
-  private final Map<String, Object> analyticsConfig;
-  private final String logoFilename;
-  private final String productName;
   @VisibleForTesting String lockVerificationCode;
 
   @Inject
   public RegistryLockVerifyAction(
-      HttpServletRequest req,
-      Response response,
-      UserService userService,
-      AuthResult authResult,
-      Clock clock,
-      @Config("analyticsConfig") Map<String, Object> analyticsConfig,
-      @Config("logoFilename") String logoFilename,
-      @Config("productName") String productName,
-      @Parameter("lockVerificationCode") String lockVerificationCode) {
-    this.req = req;
-    this.response = response;
-    this.userService = userService;
-    this.authResult = authResult;
+      Clock clock, @Parameter("lockVerificationCode") String lockVerificationCode) {
     this.clock = clock;
-    this.analyticsConfig = analyticsConfig;
-    this.logoFilename = logoFilename;
-    this.productName = productName;
     this.lockVerificationCode = lockVerificationCode;
   }
 
   @Override
-  public void run() {
-    response.setHeader(X_FRAME_OPTIONS, "SAMEORIGIN"); // Disallow iframing.
-    response.setHeader("X-Ui-Compatible", "IE=edge"); // Ask IE not to be silly.
-
-    if (!authResult.userAuthInfo().isPresent()) {
-      response.setStatus(SC_MOVED_TEMPORARILY);
-      String location;
-      try {
-        location = userService.createLoginURL(req.getRequestURI());
-      } catch (IllegalArgumentException e) {
-        // UserServiceImpl.createLoginURL() throws IllegalArgumentException if underlying API call
-        // returns an error code of NOT_ALLOWED. createLoginURL() assumes that the error is caused
-        // by an invalid URL. But in fact, the error can also occur if UserService doesn't have any
-        // user information, which happens when the request has been authenticated as internal. In
-        // this case, we want to avoid dying before we can send the redirect, so just redirect to
-        // the root path.
-        location = "/";
-      }
-      response.setHeader(LOCATION, location);
-      return;
-    }
-    User user = authResult.userAuthInfo().get().user();
-
-    ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
-    builder.put("logoFilename", logoFilename);
-    builder.put("productName", productName);
-    builder.put("username", user.getNickname());
-    builder.put("logoutUrl", userService.createLogoutURL(PATH));
-    builder.put("analyticsConfig", analyticsConfig);
-
+  public void runAfterLogin(HashMap<String, Object> data) {
     try {
-      verifyAndApplyLock(builder);
-      builder.put("success", true);
+      verifyAndApplyLock(data);
+      data.put("success", true);
     } catch (Throwable t) {
-      builder.put("success", false);
-      builder.put("errorMessage", Throwables.getRootCause(t).getMessage());
+      data.put("success", false);
+      data.put("errorMessage", Throwables.getRootCause(t).getMessage());
     }
     response.setPayload(
         TOFU_SUPPLIER
             .get()
             .newRenderer(RegistryLockVerificationSoyInfo.VERIFICATION_PAGE)
             .setCssRenamingMap(CSS_RENAMING_MAP_SUPPLIER.get())
-            .setData(builder.build())
+            .setData(data)
             .render());
   }
 
-  private void verifyAndApplyLock(ImmutableMap.Builder<String, Object> builder) {
+  @Override
+  public String getPath() {
+    return PATH;
+  }
+
+  private void verifyAndApplyLock(HashMap<String, Object> data) {
     jpaTm()
         .transact(
             () -> {
               RegistryLock lock =
                   RegistryLockDao.getByVerificationCode(lockVerificationCode)
                       .orElseThrow(() -> new IllegalArgumentException("Unknown verification code"));
-              builder.put("isLock", lock.getAction().equals(RegistryLock.Action.LOCK));
-              builder.put("fullyQualifiedDomainName", lock.getDomainName());
+              data.put("isLock", lock.getAction().equals(RegistryLock.Action.LOCK));
+              data.put("fullyQualifiedDomainName", lock.getDomainName());
               verifyLock(lock);
               RegistryLockDao.save(lock.asBuilder().setCompletionTimestamp(clock.nowUtc()).build());
               tm().transact(() -> applyLockStatuses(lock));

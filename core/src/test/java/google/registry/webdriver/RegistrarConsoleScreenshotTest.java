@@ -36,6 +36,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
 
 /** Registrar Console Screenshot Differ tests. */
+// TODO (b/143905481): Set this up with SQL as well
 @RunWith(RepeatableRunner.class)
 public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
