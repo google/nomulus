@@ -18,27 +18,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static com.google.common.net.HttpHeaders.LOCATION;
-import static com.google.common.net.HttpHeaders.X_FRAME_OPTIONS;
 import static google.registry.model.common.GaeUserIdConverter.convertEmailAddressToGaeUserId;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.ui.server.SoyTemplateUtils.CSS_RENAMING_MAP_SUPPLIER;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
-import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
 
-import com.google.appengine.api.users.User;
-import com.google.appengine.api.users.UserService;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
-import com.google.common.io.Resources;
-import com.google.common.net.MediaType;
-import com.google.template.soy.shared.SoyCssRenamingMap;
 import com.google.template.soy.tofu.SoyTofu;
-import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
@@ -47,22 +38,17 @@ import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.Parameter;
 import google.registry.request.RequestMethod;
-import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
-import google.registry.security.XsrfTokenManager;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.ui.server.SoyTemplateUtils;
 import google.registry.ui.soy.registrar.RegistrarCreateConsoleSoyInfo;
 import google.registry.util.StringGenerator;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.servlet.http.HttpServletRequest;
 import org.joda.money.CurrencyUnit;
 
 /**
@@ -79,7 +65,7 @@ import org.joda.money.CurrencyUnit;
     path = ConsoleRegistrarCreatorAction.PATH,
     method = {Method.POST, Method.GET},
     auth = Auth.AUTH_PUBLIC)
-public final class ConsoleRegistrarCreatorAction implements Runnable {
+public final class ConsoleRegistrarCreatorAction extends HtmlAction {
 
   private static final int PASSWORD_LENGTH = 16;
   private static final int PASSCODE_LENGTH = 5;
@@ -95,23 +81,9 @@ public final class ConsoleRegistrarCreatorAction implements Runnable {
           google.registry.ui.soy.AnalyticsSoyInfo.getInstance(),
           google.registry.ui.soy.registrar.RegistrarCreateConsoleSoyInfo.getInstance());
 
-  @VisibleForTesting  // webdriver and screenshot tests need this
-  public static final Supplier<SoyCssRenamingMap> CSS_RENAMING_MAP_SUPPLIER =
-      SoyTemplateUtils.createCssRenamingMapSupplier(
-          Resources.getResource("google/registry/ui/css/registrar_bin.css.js"),
-          Resources.getResource("google/registry/ui/css/registrar_dbg.css.js"));
-
-  @Inject HttpServletRequest req;
   @Inject @RequestMethod Method method;
-  @Inject Response response;
   @Inject AuthenticatedRegistrarAccessor registrarAccessor;
-  @Inject UserService userService;
-  @Inject XsrfTokenManager xsrfTokenManager;
-  @Inject AuthResult authResult;
   @Inject SendEmailUtils sendEmailUtils;
-  @Inject @Config("logoFilename") String logoFilename;
-  @Inject @Config("productName") String productName;
-  @Inject @Config("analyticsConfig") Map<String, Object> analyticsConfig;
   @Inject @Named("base58StringGenerator") StringGenerator passwordGenerator;
   @Inject @Named("digitOnlyStringGenerator") StringGenerator passcodeGenerator;
   @Inject @Parameter("clientId") Optional<String> clientId;
@@ -137,41 +109,10 @@ public final class ConsoleRegistrarCreatorAction implements Runnable {
   @Inject ConsoleRegistrarCreatorAction() {}
 
   @Override
-  public void run() {
-    response.setHeader(X_FRAME_OPTIONS, "SAMEORIGIN");  // Disallow iframing.
-    response.setHeader("X-Ui-Compatible", "IE=edge");  // Ask IE not to be silly.
-
+  public void runAfterLogin(HashMap<String, Object> data) {
     logger.atInfo().log(
         "User %s is accessing the Registrar creation page. Method= %s",
         registrarAccessor.userIdForLogging(), method);
-    if (!authResult.userAuthInfo().isPresent()) {
-      response.setStatus(SC_MOVED_TEMPORARILY);
-      String location;
-      try {
-        location = userService.createLoginURL(req.getRequestURI());
-      } catch (IllegalArgumentException e) {
-        // UserServiceImpl.createLoginURL() throws IllegalArgumentException if underlying API call
-        // returns an error code of NOT_ALLOWED. createLoginURL() assumes that the error is caused
-        // by an invalid URL. But in fact, the error can also occur if UserService doesn't have any
-        // user information, which happens when the request has been authenticated as internal. In
-        // this case, we want to avoid dying before we can send the redirect, so just redirect to
-        // the root path.
-        location = "/";
-      }
-      response.setHeader(LOCATION, location);
-      return;
-    }
-    User user = authResult.userAuthInfo().get().user();
-
-    // Using HashMap to allow null values
-    HashMap<String, Object> data = new HashMap<>();
-    data.put("logoFilename", logoFilename);
-    data.put("productName", productName);
-    data.put("username", user.getNickname());
-    data.put("logoutUrl", userService.createLogoutURL(PATH));
-    data.put("xsrfToken", xsrfTokenManager.generateToken(user.getEmail()));
-    data.put("analyticsConfig", analyticsConfig);
-    response.setContentType(MediaType.HTML_UTF_8);
 
     if (!registrarAccessor.isAdmin()) {
       response.setStatus(SC_FORBIDDEN);
@@ -194,6 +135,11 @@ public final class ConsoleRegistrarCreatorAction implements Runnable {
       default:
         return;
     }
+  }
+
+  @Override
+  public String getPath() {
+    return PATH;
   }
 
   private void checkPresent(Optional<?> value, String name) {
@@ -321,11 +267,11 @@ public final class ConsoleRegistrarCreatorAction implements Runnable {
       data.put("errorMessage", e.getMessage());
       response.setPayload(
           TOFU_SUPPLIER
-          .get()
-          .newRenderer(RegistrarCreateConsoleSoyInfo.FORM_PAGE)
-          .setCssRenamingMap(CSS_RENAMING_MAP_SUPPLIER.get())
-          .setData(data)
-          .render());
+              .get()
+              .newRenderer(RegistrarCreateConsoleSoyInfo.FORM_PAGE)
+              .setCssRenamingMap(CSS_RENAMING_MAP_SUPPLIER.get())
+              .setData(data)
+              .render());
     }
   }
 
@@ -357,8 +303,8 @@ public final class ConsoleRegistrarCreatorAction implements Runnable {
     String environment = Ascii.toLowerCase(String.valueOf(RegistryEnvironment.get()));
     String body =
         String.format(
-                "The following registrar was created in %s by %s:\n",
-                environment, registrarAccessor.userIdForLogging())
+            "The following registrar was created in %s by %s:\n",
+            environment, registrarAccessor.userIdForLogging())
             + toEmailLine(clientId, "clientId")
             + toEmailLine(name, "name")
             + toEmailLine(billingAccount, "billingAccount")

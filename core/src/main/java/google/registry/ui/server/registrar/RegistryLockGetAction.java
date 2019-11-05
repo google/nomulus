@@ -16,7 +16,6 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.net.HttpHeaders.X_FRAME_OPTIONS;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
 import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
@@ -58,7 +57,7 @@ import org.joda.time.DateTime;
     service = Action.Service.DEFAULT,
     path = RegistryLockGetAction.PATH,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
-public final class RegistryLockGetAction implements Runnable {
+public final class RegistryLockGetAction implements Runnable, JsonGetAction {
 
   public static final String PATH = "/registry-lock-get";
 
@@ -98,8 +97,6 @@ public final class RegistryLockGetAction implements Runnable {
     checkArgument(authResult.userAuthInfo().isPresent(), "User auth info must be present");
     checkArgument(paramClientId.isPresent(), "clientId must be present");
     response.setContentType(MediaType.JSON_UTF_8);
-    response.setHeader(X_FRAME_OPTIONS, "SAMEORIGIN"); // Disallow iframing.
-    response.setHeader("X-Ui-Compatible", "IE=edge"); // Ask IE not to be silly.
 
     try {
       ImmutableMap<String, ?> resultMap = getLockedDomainsMap(paramClientId.get());
