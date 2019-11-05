@@ -19,7 +19,7 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.GcsTestingUtils.writeGcsFile;
-import static google.registry.testing.JUnitBackports.assertThrows;
+import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
+import com.google.common.testing.TestLogHandler;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
@@ -42,6 +43,8 @@ import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
 import google.registry.util.SendEmailService;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -59,12 +62,15 @@ public class IcannReportingUploadActionTest {
   private static final byte[] PAYLOAD_SUCCESS = "test,csv\n13,37".getBytes(UTF_8);
   private static final byte[] PAYLOAD_FAIL = "ahah,csv\n12,34".getBytes(UTF_8);
   private static final byte[] MANIFEST_PAYLOAD =
-      "tld-test-transactions-201706.csv\ntld-a-activity-201706.csv\nfoo-test-transactions-201706.csv\n"
+      "tld-transactions-200606.csv\ntld-activity-200606.csv\nfoo-transactions-200606.csv\nfoo-activity-200606.csv\n"
           .getBytes(UTF_8);
   private final IcannHttpReporter mockReporter = mock(IcannHttpReporter.class);
   private final SendEmailService emailService = mock(SendEmailService.class);
   private final FakeResponse response = new FakeResponse();
   private final GcsService gcsService = GcsServiceFactory.createGcsService();
+  private final TestLogHandler logHandler = new TestLogHandler();
+  private final Logger loggerToIntercept =
+      Logger.getLogger(IcannReportingUploadAction.class.getCanonicalName());
   private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
 
   private IcannReportingUploadAction createAction() throws Exception {
@@ -72,13 +78,12 @@ public class IcannReportingUploadActionTest {
     action.icannReporter = mockReporter;
     action.gcsUtils = new GcsUtils(gcsService, 1024);
     action.retrier = new Retrier(new FakeSleeper(new FakeClock()), 3);
-    action.subdir = "icann/monthly/2017-06";
+    action.subdir = "icann/monthly/2006-06";
     action.reportingBucket = "basin";
     action.emailService = emailService;
     action.sender = new InternetAddress("sender@example.com");
     action.recipient = new InternetAddress("recipient@example.com");
     action.response = response;
-    action.tld = "tld";
     action.clock = clock;
     return action;
   }
@@ -88,48 +93,65 @@ public class IcannReportingUploadActionTest {
     createTlds("tld", "foo");
     writeGcsFile(
         gcsService,
-        new GcsFilename("basin/icann/monthly/2017-06", "tld-test-transactions-201706.csv"),
+        new GcsFilename("basin/icann/monthly/2006-06", "tld-transactions-200606.csv"),
         PAYLOAD_SUCCESS);
     writeGcsFile(
         gcsService,
-        new GcsFilename("basin/icann/monthly/2017-06", "tld-a-activity-201706.csv"),
+        new GcsFilename("basin/icann/monthly/2006-06", "tld-activity-200606.csv"),
         PAYLOAD_FAIL);
     writeGcsFile(
         gcsService,
-        new GcsFilename("basin/icann/monthly/2017-06", "foo-test-transactions-201706.csv"),
+        new GcsFilename("basin/icann/monthly/2006-06", "foo-transactions-200606.csv"),
         PAYLOAD_SUCCESS);
     writeGcsFile(
         gcsService,
-        new GcsFilename("basin/icann/monthly/2017-06", "MANIFEST.txt"),
+        new GcsFilename("basin/icann/monthly/2006-06", "foo-activity-200606.csv"),
+        PAYLOAD_SUCCESS);
+    writeGcsFile(
+        gcsService,
+        new GcsFilename("basin/icann/monthly/2006-06", "MANIFEST.txt"),
         MANIFEST_PAYLOAD);
-    when(mockReporter.send(PAYLOAD_SUCCESS, "tld-test-transactions-201706.csv")).thenReturn(true);
-    when(mockReporter.send(PAYLOAD_SUCCESS, "foo-test-transactions-201706.csv")).thenReturn(true);
-    when(mockReporter.send(PAYLOAD_FAIL, "tld-a-activity-201706.csv")).thenReturn(false);
+    when(mockReporter.send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv")).thenReturn(true);
+    when(mockReporter.send(PAYLOAD_SUCCESS, "foo-transactions-200606.csv")).thenReturn(true);
+    when(mockReporter.send(PAYLOAD_FAIL, "tld-activity-200606.csv")).thenReturn(false);
+    when(mockReporter.send(PAYLOAD_SUCCESS, "foo-activity-200606.csv")).thenReturn(true);
     when(mockReporter.send(MANIFEST_PAYLOAD, "MANIFEST.txt")).thenReturn(true);
     clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));
     persistResource(
         Cursor.create(
-            CursorType.ICANN_UPLOAD, DateTime.parse("2006-06-06TZ"), Registry.get("tld")));
+            CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-06-06TZ"), Registry.get("tld")));
+    persistResource(
+        Cursor.create(
+            CursorType.ICANN_UPLOAD_TX, DateTime.parse("2006-06-06TZ"), Registry.get("tld")));
     persistResource(
         Cursor.createGlobal(CursorType.ICANN_UPLOAD_MANIFEST, DateTime.parse("2006-07-06TZ")));
+    persistResource(
+        Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-06-06TZ"), Registry.get("foo")));
+    persistResource(
+        Cursor.create(
+            CursorType.ICANN_UPLOAD_TX, DateTime.parse("2006-06-06TZ"), Registry.get("foo")));
   }
 
   @Test
   public void testSuccess() throws Exception {
     IcannReportingUploadAction action = createAction();
     action.run();
-    verify(mockReporter).send(PAYLOAD_SUCCESS, "tld-test-transactions-201706.csv");
-    verify(mockReporter).send(PAYLOAD_FAIL, "tld-a-activity-201706.csv");
+    verify(mockReporter).send(PAYLOAD_FAIL, "tld-activity-200606.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "foo-activity-200606.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "foo-transactions-200606.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv");
+
     verifyNoMoreInteractions(mockReporter);
-    assertThat(((FakeResponse) action.response).getPayload())
-        .isEqualTo("OK, attempted uploading 2 reports");
     verify(emailService)
         .sendEmail(
             EmailMessage.create(
-                "ICANN Monthly report upload summary: 1/2 succeeded",
+                "ICANN Monthly report upload summary: 3/4 succeeded",
                 "Report Filename - Upload status:\n"
-                    + "tld-test-transactions-201706.csv - SUCCESS\n"
-                    + "tld-a-activity-201706.csv - FAILURE",
+                    + "foo-activity-200606.csv - SUCCESS\n"
+                    + "tld-activity-200606.csv - FAILURE\n"
+                    + "foo-transactions-200606.csv - SUCCESS\n"
+                    + "tld-transactions-200606.csv - SUCCESS",
                 new InternetAddress("recipient@example.com"),
                 new InternetAddress("sender@example.com")));
   }
@@ -138,15 +160,34 @@ public class IcannReportingUploadActionTest {
   public void testSuccess_AdvancesCursor() throws Exception {
     writeGcsFile(
         gcsService,
-        new GcsFilename("basin/icann/monthly/2017-06", "tld-a-activity-201706.csv"),
+        new GcsFilename("basin/icann/monthly/2006-06", "tld-activity-200606.csv"),
         PAYLOAD_SUCCESS);
-    when(mockReporter.send(PAYLOAD_SUCCESS, "tld-a-activity-201706.csv")).thenReturn(true);
+    when(mockReporter.send(PAYLOAD_SUCCESS, "tld-activity-200606.csv")).thenReturn(true);
     IcannReportingUploadAction action = createAction();
     action.run();
     ofy().clearSessionCache();
     Cursor cursor =
-        ofy().load().key(Cursor.createKey(CursorType.ICANN_UPLOAD, Registry.get("tld"))).now();
+        ofy()
+            .load()
+            .key(Cursor.createKey(CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("tld")))
+            .now();
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-07-01TZ"));
+  }
+
+  @Test
+  public void testSuccess_NoUploadsNeeded() throws Exception {
+    clock.setTo(DateTime.parse("2006-5-01T00:30:00Z"));
+    IcannReportingUploadAction action = createAction();
+    action.run();
+    ofy().clearSessionCache();
+    verifyNoMoreInteractions(mockReporter);
+    verify(emailService)
+        .sendEmail(
+            EmailMessage.create(
+                "ICANN Monthly report upload summary: 0/0 succeeded",
+                "Report Filename - Upload status:\n",
+                new InternetAddress("recipient@example.com"),
+                new InternetAddress("sender@example.com")));
   }
 
   @Test
@@ -159,8 +200,10 @@ public class IcannReportingUploadActionTest {
     Cursor cursor =
         ofy().load().key(Cursor.createGlobalKey(CursorType.ICANN_UPLOAD_MANIFEST)).now();
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-07-01TZ"));
-    verify(mockReporter).send(PAYLOAD_SUCCESS, "tld-test-transactions-201706.csv");
-    verify(mockReporter).send(PAYLOAD_FAIL, "tld-a-activity-201706.csv");
+    verify(mockReporter).send(PAYLOAD_FAIL, "tld-activity-200606.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "foo-activity-200606.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "foo-transactions-200606.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv");
     verify(mockReporter).send(MANIFEST_PAYLOAD, "MANIFEST.txt");
     verifyNoMoreInteractions(mockReporter);
   }
@@ -168,53 +211,24 @@ public class IcannReportingUploadActionTest {
   @Test
   public void testSuccess_WithRetry() throws Exception {
     IcannReportingUploadAction action = createAction();
-    when(mockReporter.send(PAYLOAD_SUCCESS, "tld-test-transactions-201706.csv"))
+    when(mockReporter.send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv"))
         .thenThrow(new IOException("Expected exception."))
         .thenReturn(true);
     action.run();
-    verify(mockReporter, times(2)).send(PAYLOAD_SUCCESS, "tld-test-transactions-201706.csv");
-    verify(mockReporter).send(PAYLOAD_FAIL, "tld-a-activity-201706.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "foo-activity-200606.csv");
+    verify(mockReporter).send(PAYLOAD_FAIL, "tld-activity-200606.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "foo-transactions-200606.csv");
+    verify(mockReporter, times(2)).send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv");
     verifyNoMoreInteractions(mockReporter);
-    assertThat(((FakeResponse) action.response).getPayload())
-        .isEqualTo("OK, attempted uploading 2 reports");
     verify(emailService)
         .sendEmail(
             EmailMessage.create(
-                "ICANN Monthly report upload summary: 1/2 succeeded",
+                "ICANN Monthly report upload summary: 3/4 succeeded",
                 "Report Filename - Upload status:\n"
-                    + "tld-test-transactions-201706.csv - SUCCESS\n"
-                    + "tld-a-activity-201706.csv - FAILURE",
-                new InternetAddress("recipient@example.com"),
-                new InternetAddress("sender@example.com")));
-  }
-
-  @Test
-  public void testOnlyUpdateReportsForCorrectTld() throws Exception {
-    IcannReportingUploadAction action = createAction();
-    action.tld = "foo";
-    action.run();
-    verify(mockReporter).send(PAYLOAD_SUCCESS, "foo-test-transactions-201706.csv");
-    verifyNoMoreInteractions(mockReporter);
-  }
-
-  @Test
-  public void testFailure_firstUnrecoverable_stillAttemptsUploadingBoth() throws Exception {
-    IcannReportingUploadAction action = createAction();
-    when(mockReporter.send(PAYLOAD_SUCCESS, "tld-test-transactions-201706.csv"))
-        .thenThrow(new IOException("Expected exception"));
-    action.run();
-    verify(mockReporter, times(3)).send(PAYLOAD_SUCCESS, "tld-test-transactions-201706.csv");
-    verify(mockReporter).send(PAYLOAD_FAIL, "tld-a-activity-201706.csv");
-    verifyNoMoreInteractions(mockReporter);
-    assertThat(((FakeResponse) action.response).getPayload())
-        .isEqualTo("OK, attempted uploading 2 reports");
-    verify(emailService)
-        .sendEmail(
-            EmailMessage.create(
-                "ICANN Monthly report upload summary: 0/2 succeeded",
-                "Report Filename - Upload status:\n"
-                    + "tld-test-transactions-201706.csv - FAILURE\n"
-                    + "tld-a-activity-201706.csv - FAILURE",
+                    + "foo-activity-200606.csv - SUCCESS\n"
+                    + "tld-activity-200606.csv - FAILURE\n"
+                    + "foo-transactions-200606.csv - SUCCESS\n"
+                    + "tld-transactions-200606.csv - SUCCESS",
                 new InternetAddress("recipient@example.com"),
                 new InternetAddress("sender@example.com")));
   }
@@ -239,7 +253,10 @@ public class IcannReportingUploadActionTest {
         new IOException("Your IP address 25.147.130.158 is not allowed to connect"));
     ofy().clearSessionCache();
     Cursor cursor =
-        ofy().load().key(Cursor.createKey(CursorType.ICANN_UPLOAD, Registry.get("tld"))).now();
+        ofy()
+            .load()
+            .key(Cursor.createKey(CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("tld")))
+            .now();
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-06-06TZ"));
   }
 
@@ -247,50 +264,72 @@ public class IcannReportingUploadActionTest {
   public void testNotRunIfCursorDateIsAfterToday() throws Exception {
     persistResource(
         Cursor.create(
-            CursorType.ICANN_UPLOAD, DateTime.parse("2008-06-06TZ"), Registry.get("tld")));
+            CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2008-06-06TZ"), Registry.get("foo")));
     IcannReportingUploadAction action = createAction();
-    when(mockReporter.send(PAYLOAD_SUCCESS, "tld-test-transactions-201706.csv"))
-        .thenThrow(new IOException("Expected exception"));
     action.run();
     ofy().clearSessionCache();
     Cursor cursor =
-        ofy().load().key(Cursor.createKey(CursorType.ICANN_UPLOAD, Registry.get("tld"))).now();
+        ofy()
+            .load()
+            .key(Cursor.createKey(CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("foo")))
+            .now();
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2008-06-06TZ"));
-    verifyNoMoreInteractions(mockReporter);
   }
 
   private void runTest_nonRetryableException(Exception nonRetryableException) throws Exception {
     IcannReportingUploadAction action = createAction();
-    when(mockReporter.send(PAYLOAD_FAIL, "tld-a-activity-201706.csv"))
+    when(mockReporter.send(PAYLOAD_FAIL, "tld-activity-200606.csv"))
         .thenThrow(nonRetryableException)
         .thenThrow(
             new AssertionError(
                 "This should never be thrown because the previous exception isn't retryable"));
     action.run();
-    verify(mockReporter, times(1)).send(PAYLOAD_FAIL, "tld-a-activity-201706.csv");
-    verify(mockReporter).send(PAYLOAD_SUCCESS, "tld-test-transactions-201706.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "foo-activity-200606.csv");
+    verify(mockReporter, times(1)).send(PAYLOAD_FAIL, "tld-activity-200606.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "foo-transactions-200606.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv");
     verifyNoMoreInteractions(mockReporter);
-    assertThat(((FakeResponse) action.response).getPayload())
-        .isEqualTo("OK, attempted uploading 2 reports");
     verify(emailService)
         .sendEmail(
             EmailMessage.create(
-                "ICANN Monthly report upload summary: 1/2 succeeded",
+                "ICANN Monthly report upload summary: 3/4 succeeded",
                 "Report Filename - Upload status:\n"
-                    + "tld-test-transactions-201706.csv - SUCCESS\n"
-                    + "tld-a-activity-201706.csv - FAILURE",
+                    + "foo-activity-200606.csv - SUCCESS\n"
+                    + "tld-activity-200606.csv - FAILURE\n"
+                    + "foo-transactions-200606.csv - SUCCESS\n"
+                    + "tld-transactions-200606.csv - SUCCESS",
                 new InternetAddress("recipient@example.com"),
                 new InternetAddress("sender@example.com")));
   }
 
   @Test
   public void testFail_FileNotFound() throws Exception {
+    loggerToIntercept.addHandler(logHandler);
     IcannReportingUploadAction action = createAction();
     action.subdir = "somewhere/else";
-    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, action::run);
-    assertThat(thrown)
-        .hasMessageThat()
-        .isEqualTo("Object MANIFEST.txt in bucket basin/somewhere/else not found");
+    action.run();
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(Level.SEVERE, "foo-activity-200606.csv was not found.");
+    loggerToIntercept.removeHandler(logHandler);
+  }
+
+  @Test
+  public void testWarning_FileNotStagedYet() throws Exception {
+    persistResource(
+        Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-07-01TZ"), Registry.get("foo")));
+    loggerToIntercept.addHandler(logHandler);
+    clock.setTo(DateTime.parse("2006-07-01T00:30:00Z"));
+    IcannReportingUploadAction action = createAction();
+    action.subdir = "icann/monthly/2006-07";
+    action.run();
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.INFO,
+            "foo-activity-200607.csv was not found. This report may not have been staged yet.");
+    loggerToIntercept.removeHandler(logHandler);
   }
 }
 

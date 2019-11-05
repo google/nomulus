@@ -31,11 +31,9 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.bigquery.BigqueryJobFailureException;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.model.registry.Registries;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
-import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.EmailMessage;
@@ -121,16 +119,12 @@ public final class IcannReportingStagingAction implements Runnable {
             response.setPayload("Completed staging action.");
 
             logger.atInfo().log("Enqueueing report upload :");
-            ImmutableSet<String> tlds = Registries.getTlds();
-            for (String tld : tlds) {
-              TaskOptions uploadTask =
-                  TaskOptions.Builder.withUrl(IcannReportingUploadAction.PATH)
-                      .method(Method.POST)
-                      .countdownMillis(Duration.standardMinutes(2).getMillis())
-                      .param(PARAM_SUBDIR, subdir)
-                      .param(RequestParameters.PARAM_TLD, tld);
-              QueueFactory.getQueue(CRON_QUEUE).add(uploadTask);
-            }
+            TaskOptions uploadTask =
+                TaskOptions.Builder.withUrl(IcannReportingUploadAction.PATH)
+                    .method(Method.POST)
+                    .countdownMillis(Duration.standardMinutes(2).getMillis())
+                    .param(PARAM_SUBDIR, subdir);
+            QueueFactory.getQueue(CRON_QUEUE).add(uploadTask);
             return null;
           },
           BigqueryJobFailureException.class);
