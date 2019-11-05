@@ -43,10 +43,6 @@ module.exports = function(config) {
         included: false
       },
       {
-        pattern: 'node_modules/soyutils_usegoog.js',
-        included: false
-      },
-      {
         pattern: 'node_modules/google-closure-library/closure/goog/deps.js',
         included: false,
         served: false
@@ -70,7 +66,6 @@ module.exports = function(config) {
       'node_modules/google-closure-library/closure/**/*.js': ['closure'],
       'core/src/*/javascript/**/*.js': ['closure'],
       'core/build/generated/source/custom/main/**/*.soy.js': ['closure'],
-      'node_modules/soyutils_usegoog.js': ['closure']
     },
     proxies: {
       "/assets/": "/base/core/build/resources/main/google/registry/ui/assets/"
