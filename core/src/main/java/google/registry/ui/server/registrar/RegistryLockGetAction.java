@@ -139,7 +139,7 @@ public final class RegistryLockGetAction implements Runnable {
         PARAM_CLIENT_ID,
         registrar.getClientId(),
         LOCKS_PARAM,
-        getLockedDomains(registrar));
+        getLockedDomains(clientId));
   }
 
   private Registrar getRegistrarAndVerifyLockAccess(String clientId, boolean isAdmin)
@@ -151,9 +151,9 @@ public final class RegistryLockGetAction implements Runnable {
     return registrar;
   }
 
-  private ImmutableList<ImmutableMap<String, ?>> getLockedDomains(Registrar registrar) {
+  private ImmutableList<ImmutableMap<String, ?>> getLockedDomains(String clientId) {
     ImmutableList<RegistryLock> locks =
-        RegistryLockDao.getByRegistrarId(registrar.getClientId()).stream()
+        RegistryLockDao.getByRegistrarId(clientId).stream()
             .filter(RegistryLock::isVerified)
             .collect(toImmutableList());
     return locks.stream().map(this::lockToMap).collect(toImmutableList());
