@@ -83,6 +83,7 @@ public final class RegistryTestServer {
           route("/registrar-ote-setup", FrontendServlet.class),
           route("/registrar-ote-status", FrontendServlet.class),
           route("/registrar-settings", FrontendServlet.class),
+          route("/registry-lock-get", FrontendServlet.class),
           route("/registry-lock-verify", FrontendServlet.class));
 
   private static final ImmutableList<Class<? extends Filter>> FILTERS = ImmutableList.of(

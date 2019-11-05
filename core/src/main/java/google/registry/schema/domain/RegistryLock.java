@@ -176,6 +176,10 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
     this.completionTimestamp = toZonedDateTime(dateTime);
   }
 
+  public boolean isVerified() {
+    return completionTimestamp != null;
+  }
+
   @Override
   public Builder asBuilder() {
     return new Builder(clone(this));

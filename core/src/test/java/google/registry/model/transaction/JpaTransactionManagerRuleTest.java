@@ -23,7 +23,6 @@ import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.PersistenceException;
-import org.hibernate.cfg.Environment;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,7 +36,6 @@ public class JpaTransactionManagerRuleTest {
   public final JpaTransactionManagerRule jpaTmRule =
       new JpaTransactionManagerRule.Builder()
           .withEntityClass(TestEntity.class)
-          .withProperty(Environment.HBM2DDL_AUTO, "update")
           .build();
 
   @Test

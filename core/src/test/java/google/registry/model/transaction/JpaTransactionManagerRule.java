@@ -23,11 +23,18 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
+import google.registry.persistence.HibernateSchemaExporter;
 import google.registry.persistence.PersistenceModule;
 import google.registry.testing.FakeClock;
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,8 +59,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
  * PostgreSQLContainer} to achieve test purpose.
  */
 public class JpaTransactionManagerRule extends ExternalResource {
-  private static final String SCHEMA_GOLDEN_SQL = "sql/schema/nomulus.golden.sql";
-  private static final String DB_CLEANUP_SQL =
+  private static final String GOLDEN_SCHEMA_SQL_PATH = "sql/schema/nomulus.golden.sql";
+  private static final String DB_CLEANUP_SQL_PATH =
       "google/registry/model/transaction/cleanup_database.sql";
   private static final String MANAGEMENT_DB_NAME = "management";
   private static final String POSTGRES_DB_NAME = "postgres";
@@ -65,6 +72,9 @@ public class JpaTransactionManagerRule extends ExternalResource {
   private final ImmutableMap userProperties;
 
   private static final JdbcDatabaseContainer database = create();
+  private static final HibernateSchemaExporter exporter =
+      HibernateSchemaExporter.create(
+          database.getJdbcUrl(), database.getUsername(), database.getPassword());
   private EntityManagerFactory emf;
   private JpaTransactionManager cachedTm;
 
@@ -86,8 +96,16 @@ public class JpaTransactionManagerRule extends ExternalResource {
 
   @Override
   public void before() throws Exception {
-    executeSql(MANAGEMENT_DB_NAME, DB_CLEANUP_SQL);
-    executeSql(POSTGRES_DB_NAME, initScriptPath);
+    executeSql(MANAGEMENT_DB_NAME, readSqlInClassPath(DB_CLEANUP_SQL_PATH));
+    executeSql(POSTGRES_DB_NAME, readSqlInClassPath(initScriptPath));
+    if (!extraEntityClasses.isEmpty()) {
+      File tempSqlFile = File.createTempFile("tempSqlFile", ".sql");
+      tempSqlFile.deleteOnExit();
+      exporter.export(extraEntityClasses, tempSqlFile);
+      executeSql(
+          POSTGRES_DB_NAME,
+          new String(Files.readAllBytes(tempSqlFile.toPath()), StandardCharsets.UTF_8));
+    }
 
     ImmutableMap properties = PersistenceModule.providesDefaultDatabaseConfigs();
     if (!userProperties.isEmpty()) {
@@ -118,10 +136,18 @@ public class JpaTransactionManagerRule extends ExternalResource {
     cachedTm = null;
   }
 
-  private void executeSql(String dbName, String sqlScriptPath) {
-    try (Connection conn = createConnection(dbName)) {
-      String sqlScript = Resources.toString(Resources.getResource(sqlScriptPath), Charsets.UTF_8);
-      conn.createStatement().execute(sqlScript);
+  private static String readSqlInClassPath(String sqlScriptPath) {
+    try {
+      return Resources.toString(Resources.getResource(sqlScriptPath), Charsets.UTF_8);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  private void executeSql(String dbName, String sqlScript) {
+    try (Connection conn = createConnection(dbName);
+        Statement statement = conn.createStatement()) {
+      statement.execute(sqlScript);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -212,7 +238,7 @@ public class JpaTransactionManagerRule extends ExternalResource {
     /** Builds a {@link JpaTransactionManagerRule} instance. */
     public JpaTransactionManagerRule build() {
       if (initScript == null) {
-        initScript = SCHEMA_GOLDEN_SQL;
+        initScript = GOLDEN_SCHEMA_SQL_PATH;
       }
       return new JpaTransactionManagerRule(
           initScript,
