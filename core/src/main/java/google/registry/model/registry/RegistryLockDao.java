@@ -66,17 +66,17 @@ public final class RegistryLockDao {
   public static Optional<RegistryLock> getMostRecentByRepoId(String repoId) {
     return jpaTm()
         .transact(
-            () -> {
-              EntityManager em = jpaTm().getEntityManager();
-              Long revisionId =
-                  em.createQuery(
-                          "SELECT MAX(revisionId) FROM RegistryLock WHERE repoId = :repoId",
-                          Long.class)
-                      .setParameter("repoId", repoId)
-                      .getSingleResult();
-              return Optional.ofNullable(revisionId)
-                  .map(revision -> em.find(RegistryLock.class, revision));
-            });
+            () ->
+                jpaTm()
+                    .getEntityManager()
+                    .createQuery(
+                        "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId"
+                            + " ORDER BY lock.revisionId DESC",
+                        RegistryLock.class)
+                    .setParameter("repoId", repoId)
+                    .setMaxResults(1) // HQL does not support 'LIMIT'
+                    .getResultStream()
+                    .findFirst());
   }
 
   public static RegistryLock save(RegistryLock registryLock) {
