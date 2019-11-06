@@ -137,7 +137,7 @@ public final class RegistryLockDaoTest {
 
   @Test
   public void testLoad_byRepoId_empty() {
-    RegistryLockDao.getMostRecentByRepoId("nonexistent");
+    assertThat(RegistryLockDao.getMostRecentByRepoId("nonexistent").isPresent()).isFalse();
   }
 
   private RegistryLock createLock() {
