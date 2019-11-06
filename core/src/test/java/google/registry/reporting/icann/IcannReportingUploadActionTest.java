@@ -131,6 +131,7 @@ public class IcannReportingUploadActionTest {
     persistResource(
         Cursor.create(
             CursorType.ICANN_UPLOAD_TX, DateTime.parse("2006-06-06TZ"), Registry.get("foo")));
+    loggerToIntercept.addHandler(logHandler);
   }
 
   @Test
@@ -157,7 +158,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testSuccess_AdvancesCursor() throws Exception {
+  public void testSuccess_advancesCursor() throws Exception {
     writeGcsFile(
         gcsService,
         new GcsFilename("basin/icann/monthly/2006-06", "tld-activity-200606.csv"),
@@ -175,7 +176,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testSuccess_NoUploadsNeeded() throws Exception {
+  public void testSuccess_noUploadsNeeded() throws Exception {
     clock.setTo(DateTime.parse("2006-5-01T00:30:00Z"));
     IcannReportingUploadAction action = createAction();
     action.run();
@@ -191,7 +192,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testSuccess_UploadManifest() throws Exception {
+  public void testSuccess_uploadManifest() throws Exception {
     persistResource(
         Cursor.createGlobal(CursorType.ICANN_UPLOAD_MANIFEST, DateTime.parse("2006-06-06TZ")));
     IcannReportingUploadAction action = createAction();
@@ -209,7 +210,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testSuccess_WithRetry() throws Exception {
+  public void testSuccess_withRetry() throws Exception {
     IcannReportingUploadAction action = createAction();
     when(mockReporter.send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv"))
         .thenThrow(new IOException("Expected exception."))
@@ -248,7 +249,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testFailure_CursorIsNotAdvancedForward() throws Exception {
+  public void testFailure_cursorIsNotAdvancedForward() throws Exception {
     runTest_nonRetryableException(
         new IOException("Your IP address 25.147.130.158 is not allowed to connect"));
     ofy().clearSessionCache();
@@ -262,9 +263,7 @@ public class IcannReportingUploadActionTest {
 
   @Test
   public void testNotRunIfCursorDateIsAfterToday() throws Exception {
-    persistResource(
-        Cursor.create(
-            CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2008-06-06TZ"), Registry.get("foo")));
+    clock.setTo(DateTime.parse("2006-05-01T00:30:00Z"));
     IcannReportingUploadAction action = createAction();
     action.run();
     ofy().clearSessionCache();
@@ -273,7 +272,8 @@ public class IcannReportingUploadActionTest {
             .load()
             .key(Cursor.createKey(CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("foo")))
             .now();
-    assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2008-06-06TZ"));
+    assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-06-06TZ"));
+    verifyNoMoreInteractions(mockReporter);
   }
 
   private void runTest_nonRetryableException(Exception nonRetryableException) throws Exception {
@@ -303,23 +303,20 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testFail_FileNotFound() throws Exception {
-    loggerToIntercept.addHandler(logHandler);
+  public void testFail_fileNotFound() throws Exception {
     IcannReportingUploadAction action = createAction();
     action.subdir = "somewhere/else";
     action.run();
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(Level.SEVERE, "foo-activity-200606.csv was not found.");
-    loggerToIntercept.removeHandler(logHandler);
   }
 
   @Test
-  public void testWarning_FileNotStagedYet() throws Exception {
+  public void testWarning_fileNotStagedYet() throws Exception {
     persistResource(
         Cursor.create(
             CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-07-01TZ"), Registry.get("foo")));
-    loggerToIntercept.addHandler(logHandler);
     clock.setTo(DateTime.parse("2006-07-01T00:30:00Z"));
     IcannReportingUploadAction action = createAction();
     action.subdir = "icann/monthly/2006-07";
@@ -329,7 +326,6 @@ public class IcannReportingUploadActionTest {
         .hasLogAtLevelWithMessage(
             Level.INFO,
             "foo-activity-200607.csv was not found. This report may not have been staged yet.");
-    loggerToIntercept.removeHandler(logHandler);
   }
 }
 

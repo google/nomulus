@@ -101,37 +101,35 @@ public final class IcannReportingUploadAction implements Runnable {
     Map<String, Cursor> activityCursors = loadCursors(CursorType.ICANN_UPLOAD_ACTIVITY);
 
     // If cursor date is before today or today, upload the corresponding activity report
-    for (String tldStr : activityCursors.keySet()) {
-      Cursor cursor = activityCursors.get(tldStr);
-      DateTime cursorTime = (cursor == null ? clock.nowUtc() : cursor.getCursorTime());
-      if (cursorTime.isBefore(clock.nowUtc())) {
-        reportSummaryBuilder =
+    activityCursors.forEach(
+        (tldStr, cursor) -> {
+          DateTime cursorTime = cursor.getCursorTime();
+          if (cursorTime.isBefore(clock.nowUtc())) {
             uploadReport(
                 cursorTime,
                 CursorType.ICANN_UPLOAD_ACTIVITY,
                 "-activity-",
                 tldStr,
                 reportSummaryBuilder);
-      }
-    }
+          }
+        });
 
     // Load all transaction cursors
     Map<String, Cursor> transactionCursors = loadCursors(CursorType.ICANN_UPLOAD_TX);
 
     // If cursor date is before today or today, upload the corresponding transaction report
-    for (String tldStr : transactionCursors.keySet()) {
-      Cursor cursor = transactionCursors.get(tldStr);
-      DateTime cursorTime = (cursor == null ? clock.nowUtc() : cursor.getCursorTime());
-      if (cursorTime.isBefore(clock.nowUtc())) {
-        reportSummaryBuilder =
+    transactionCursors.forEach(
+        (tldStr, cursor) -> {
+          DateTime cursorTime = cursor.getCursorTime();
+          if (cursorTime.isBefore(clock.nowUtc())) {
             uploadReport(
                 cursorTime,
                 CursorType.ICANN_UPLOAD_TX,
                 "-transactions-",
                 tldStr,
                 reportSummaryBuilder);
-      }
-    }
+          }
+        });
 
     // Check Manifest cursor and upload if necessary
     Cursor manifestCursor =
@@ -147,7 +145,7 @@ public final class IcannReportingUploadAction implements Runnable {
   }
 
   /** Uploads the report and rolls forward the cursor for that report. */
-  private ImmutableMap.Builder<String, Boolean> uploadReport(
+  private void uploadReport(
       DateTime cursorTime,
       CursorType cursorType,
       String fileType,
@@ -176,7 +174,7 @@ public final class IcannReportingUploadAction implements Runnable {
         logger.atSevere().withCause(e).log(filename + " was not found.");
       }
       reportSummaryBuilder.put(filename, false);
-      return reportSummaryBuilder;
+      return;
     }
 
     // Upload the report
@@ -206,26 +204,23 @@ public final class IcannReportingUploadAction implements Runnable {
                               cursorTime.withTimeAtStartOfDay().plusMonths(1).withDayOfMonth(1),
                               Registry.get(tldStr))));
     }
-    return reportSummaryBuilder;
   }
 
   /** Returns a map of each tld to to the cursor for that tld of the given CursorType. */
   private Map<String, Cursor> loadCursors(CursorType cursorType) {
-    Map<String, Cursor> registries =
-        Registries.getTlds().stream()
-            .map(Registry::get)
-            .collect(toImmutableMap(r -> r.getTldStr(), r -> getCursor(cursorType, r)));
-    return registries;
+    return Registries.getTlds().stream()
+        .map(Registry::get)
+        .collect(toImmutableMap(r -> r.getTldStr(), r -> getCursor(cursorType, r)));
   }
 
   /**
    * Returns the cursor for the given CursorType and Registry. Returns a new cursor if cursor does
    * not exist.
    */
-  private Cursor getCursor(CursorType cursorType, Registry r) {
-    Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, r)).now();
+  private Cursor getCursor(CursorType cursorType, Registry registry) {
+    Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, registry)).now();
     if (cursor == null) {
-      cursor = Cursor.create(cursorType, clock.nowUtc().withTimeAtStartOfDay(), r);
+      cursor = Cursor.create(cursorType, clock.nowUtc().withTimeAtStartOfDay(), registry);
     }
     return cursor;
   }
