@@ -20,8 +20,11 @@ import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
 
 import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.request.Action;
+import google.registry.request.RequestMethod;
 import google.registry.request.Response;
 import google.registry.request.auth.AuthResult;
 import google.registry.security.XsrfTokenManager;
@@ -36,11 +39,14 @@ import javax.servlet.http.HttpServletRequest;
  */
 public abstract class HtmlAction implements Runnable {
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
   @Inject HttpServletRequest req;
   @Inject Response response;
   @Inject UserService userService;
   @Inject XsrfTokenManager xsrfTokenManager;
   @Inject AuthResult authResult;
+  @Inject @RequestMethod Action.Method method;
 
   @Inject
   @Config("logoFilename")
@@ -88,6 +94,10 @@ public abstract class HtmlAction implements Runnable {
     data.put("logoutUrl", userService.createLogoutURL(getPath()));
     data.put("analyticsConfig", analyticsConfig);
     data.put("xsrfToken", xsrfTokenManager.generateToken(user.getEmail()));
+
+    logger.atInfo().log(
+        "User %s is accessing %s. Method= %s",
+        authResult.userIdForLogging(), getClass().getName(), method);
     runAfterLogin(data);
   }
 

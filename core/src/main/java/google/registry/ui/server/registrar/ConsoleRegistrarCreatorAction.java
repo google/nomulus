@@ -37,7 +37,6 @@ import google.registry.model.registrar.RegistrarContact;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.Parameter;
-import google.registry.request.RequestMethod;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.ui.server.SendEmailUtils;
@@ -81,7 +80,6 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
           google.registry.ui.soy.AnalyticsSoyInfo.getInstance(),
           google.registry.ui.soy.registrar.RegistrarCreateConsoleSoyInfo.getInstance());
 
-  @Inject @RequestMethod Method method;
   @Inject AuthenticatedRegistrarAccessor registrarAccessor;
   @Inject SendEmailUtils sendEmailUtils;
   @Inject @Named("base58StringGenerator") StringGenerator passwordGenerator;
@@ -110,10 +108,6 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
 
   @Override
   public void runAfterLogin(HashMap<String, Object> data) {
-    logger.atInfo().log(
-        "User %s is accessing the Registrar creation page. Method= %s",
-        registrarAccessor.userIdForLogging(), method);
-
     if (!registrarAccessor.isAdmin()) {
       response.setStatus(SC_FORBIDDEN);
       response.setPayload(
@@ -172,7 +166,6 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
 
   private void runPost(HashMap<String, Object> data) {
     try {
-
       checkPresent(clientId, "clientId");
       checkPresent(name, "name");
       checkPresent(billingAccount, "billingAccount");

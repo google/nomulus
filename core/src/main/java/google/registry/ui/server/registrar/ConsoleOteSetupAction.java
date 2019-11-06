@@ -29,7 +29,6 @@ import google.registry.model.OteAccountBuilder;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.Parameter;
-import google.registry.request.RequestMethod;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.ui.server.SendEmailUtils;
@@ -67,7 +66,6 @@ public final class ConsoleOteSetupAction extends HtmlAction {
           google.registry.ui.soy.AnalyticsSoyInfo.getInstance(),
           google.registry.ui.soy.registrar.OteSetupConsoleSoyInfo.getInstance());
 
-  @Inject @RequestMethod Method method;
   @Inject AuthenticatedRegistrarAccessor registrarAccessor;
   @Inject SendEmailUtils sendEmailUtils;
 
@@ -92,9 +90,6 @@ public final class ConsoleOteSetupAction extends HtmlAction {
 
   @Override
   public void runAfterLogin(HashMap<String, Object> data) {
-    logger.atInfo().log(
-        "User %s is accessing the OT&E setup page. Method= %s",
-        registrarAccessor.userIdForLogging(), method);
     checkState(
         !RegistryEnvironment.get().equals(PRODUCTION), "Can't create OT&E in prod");
 
