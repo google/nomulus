@@ -1297,12 +1297,6 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("toolsCloudSqlJdbcUrl")
-    public static String providesToolsCloudSqlJdbcUrl(RegistryConfigSettings config) {
-      return config.registryTool.jdbcUrl;
-    }
-
-    @Provides
     @Config("toolsCloudSqlUsername")
     public static String providesToolsCloudSqlUsername(RegistryConfigSettings config) {
       return config.registryTool.username;

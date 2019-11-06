@@ -24,7 +24,6 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import org.hibernate.cfg.Environment;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,7 +37,6 @@ public class ZonedDateTimeConverterTest {
   public final JpaTransactionManagerRule jpaTmRule =
       new JpaTransactionManagerRule.Builder()
           .withEntityClass(TestEntity.class)
-          .withProperty(Environment.HBM2DDL_AUTO, "update")
           .build();
 
   private final ZonedDateTimeConverter converter = new ZonedDateTimeConverter();

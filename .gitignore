@@ -98,7 +98,6 @@ nomulus.iws
 .gradle/
 **/build
 node_modules/**
-!node_modules/soyutils_usegoog.js
 /repos/
 
 # Compiled JS/CSS code

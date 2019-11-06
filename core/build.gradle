@@ -523,7 +523,7 @@ task compileProdJS(type: JavaExec) {
 
   // manually include all the required js files
   closureArgs << "--js=${nodeModulesDir}/google-closure-library/**.js"
-  closureArgs << "--js=${nodeModulesDir}/soyutils_usegoog.js"
+  closureArgs << "--js=${jsDir}/soyutils_usegoog.js"
   closureArgs << "--js=${cssSourceDir}/registrar_bin.css.js"
   closureArgs << "--js=${jsSourceDir}/**.js"
   // TODO(shicong) Verify the compiled JS file works in Alpha
@@ -555,7 +555,7 @@ task karmaTest(type: Exec) {
   dependsOn ':npmInstall'
   workingDir rootProject.projectDir
   executable 'node_modules/karma/bin/karma'
-  args('start')
+  args('start', "${project.projectDir}/karma.conf.js")
 }
 
 test.dependsOn karmaTest
@@ -590,13 +590,42 @@ artifacts {
  */
 class FilteringTest extends Test {
 
-  void setTests(List<String> tests) {
-    // Common exclude pattern. See README in parent directory for explanation.
-    exclude "**/*TestCase.*", "**/*TestSuite.*"
-    include tests
+  private void applyTestFilter() {
     if (project.testFilter) {
       testNameIncludePatterns = project.testFilter.split(',')
+
+      // By default, gradle test tasks will produce a failure if no tests
+      // match the include/exclude/filter rules.  Since test filtering allows us
+      // to select a set of tests from a particular task, we don't want this
+      // behavior.
+      filter.failOnNoMatchingTests = false
     }
+  }
+
+  /**
+   * Set to false if you also want to include TestCase and TestSuite classes.
+   *
+   * <p>Must be defined before "test", if at all.
+   */
+  boolean excludeTestCases = true
+
+  void setTests(List<String> tests) {
+    // Common exclude pattern. See README in parent directory for explanation.
+    if (excludeTestCases) {
+      exclude "**/*TestCase.*", "**/*TestSuite.*"
+    }
+    include tests
+    applyTestFilter()
+  }
+
+  /**
+   * Include all of the tests (except Test{Case,TestSuite}).  This actually
+   * doesn't explicitly "include" anything, in which cast the Test class tries
+   * to include everything that is not explicitly excluded.
+   */
+  void includeAllTests() {
+    exclude "**/*TestCase.*", "**/*TestSuite.*"
+    applyTestFilter()
   }
 }
 
@@ -620,12 +649,9 @@ task outcastTest(type: FilteringTest) {
 }
 
 // Dedicated test suite for schema-dependent tests.
-task sqlIntegrationTest(type: Test) {
-  include 'google/registry/schema/integration/SqlIntegrationTestSuite.*'
-  // Copied from FilteringTest. Not inheriting b/c it excludes TestSuites.
-  if (project.testFilter) {
-    testNameIncludePatterns = project.testFilter.split(',')
-  }
+task sqlIntegrationTest(type: FilteringTest) {
+  excludeTestCases = false
+  tests = ['google/registry/schema/integration/SqlIntegrationTestSuite.*']
 }
 
 task findGoldenImages(type: JavaExec) {
@@ -710,9 +736,8 @@ task flowDocsTool(type: JavaExec) {
   args arguments
 }
 
-test {
-  // Common exclude pattern. See README in parent directory for explanation.
-  exclude "**/*TestCase.*", "**/*TestSuite.*"
+task standardTest(type: FilteringTest) {
+  includeAllTests()
   exclude fragileTestPatterns
   exclude outcastTestPatterns
 
@@ -734,7 +759,13 @@ test {
   doFirst {
     new File(screenshotsDir).deleteDir()
   }
-}.dependsOn(fragileTest, outcastTest)
+}
+
+test {
+  // Don't run any tests from this task, all testing gets done in the
+  // FilteringTest tasks.
+  exclude "**"
+}.dependsOn(fragileTest, outcastTest, standardTest)
 
 createUberJar('nomulus', 'nomulus', 'google.registry.tools.RegistryTool')
 project.nomulus.dependsOn project(':third_party').jar

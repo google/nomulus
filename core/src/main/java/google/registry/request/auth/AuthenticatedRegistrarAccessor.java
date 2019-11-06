@@ -347,7 +347,7 @@ public class AuthenticatedRegistrarAccessor {
 
   /** Exception thrown when the current user doesn't have access to the requested Registrar. */
   public static class RegistrarAccessDeniedException extends Exception {
-    RegistrarAccessDeniedException(String message) {
+    public RegistrarAccessDeniedException(String message) {
       super(message);
     }
   }

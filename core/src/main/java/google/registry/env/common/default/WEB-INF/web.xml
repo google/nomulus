@@ -55,6 +55,12 @@
     <url-pattern>/registrar-settings</url-pattern>
   </servlet-mapping>
 
+  <!-- Registry lock get/post/verify. -->
+  <servlet-mapping>
+    <servlet-name>frontend-servlet</servlet-name>
+    <url-pattern>/registry-lock-get</url-pattern>
+  </servlet-mapping>
+
   <!-- Security config -->
   <security-constraint>
     <web-resource-collection>
