@@ -36,6 +36,8 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * Handles some of the nitty-gritty of responding to requests that should return HTML, including
  * login, redirects, analytics, and some headers.
+ *
+ * If the user is not logged in, this will redirect to the login URL.
  */
 public abstract class HtmlAction implements Runnable {
 
