@@ -48,7 +48,7 @@ steps:
   - deploy_invoicing_pipeline
 # Save the deployed tag for the current environment on GCS. Because of b/137891685
 # which causes the for-loop in the next step to fail, this may not be the last step.
-# TODO(weiminyu): do this in last step, and use 'artifacts' section to upload the tag.
+# TODO(weiminyu): do this in last step.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
   args:

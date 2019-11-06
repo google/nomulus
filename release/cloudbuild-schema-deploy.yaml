@@ -1,0 +1,83 @@
+# To run the build locally, install cloud-build-local first.
+# Then run:
+# cloud-build-local --config=cloudbuild-schema-deploy.yaml --dryrun=false \
+# --substitutions=TAG_NAME=[TAG],_ENV=[ENV] ..
+#
+# This will deploy Cloud SQL schema release with tag value ${TAG_NAME} to
+# the environment specified by ${_ENV}.
+#
+# To manually trigger a build on GCB, run:
+# gcloud builds submit --config=cloudbuild-schema-deploy.yaml \
+# --substitutions=TAG_NAME=[TAG],_ENV=[ENV] ..
+#
+# To trigger a build automatically, follow the instructions below and add a trigger:
+# https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
+steps:
+# Download and decrypt the nomulus tool credential, which has the privilege to
+# start Cloud SQL proxy to all environments.
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  volumes:
+  - name: 'secrets'
+    path: '/secrets'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    gsutil cp gs://${PROJECT_ID}-deploy/secrets/tool-credential.json.enc - \
+      | base64 -d \
+      | gcloud kms decrypt \
+        --ciphertext-file=- \
+        --plaintext-file=/secrets/cloud_sql_credential.json \
+        --location=global --keyring=nomulus-tool-keyring --key=nomulus-tool-key
+# Download the schema jar to be deployed.
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  volumes:
+  - name: 'flyway'
+    path: '/flyway/jars'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    gsutil cp gs://domain-registry-dev-deploy/${TAG_NAME}/schema.jar \
+      /flyway/jars
+# Download and decrypt the admin_credential file, which has the cloud instance
+# name and database login name and password.
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  volumes:
+  - name: 'secrets'
+    path: '/secrets'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    gsutil cp gs://${PROJECT_ID}-deploy/cloudsql-credentials/${_ENV}/admin_credential.enc - \
+      | base64 -d \
+      | gcloud kms decrypt --location global --keyring=nomulus-tool-keyring \
+        --key=nomulus-tool-key --ciphertext-file=- \
+        --plaintext-file=/secrets/admin_credential.dec
+# Deploy SQL schema
+- name: 'gcr.io/${PROJECT_ID}/schema_deployer:latest'
+  volumes:
+  - name: 'secrets'
+    path: '/secrets'
+  - name: 'flyway'
+    path: '/flyway/jars'
+  args: ['migrate']
+# Save the deployed tag for the current environment on GCS to a well-known.
+# location. Do not use the 'artifacts' section for this since it will
+# upload an extra metadata file every time and pollute the folder.
+# TODO(weiminyu): modify this step so that TAG_NAME may be 'live'.
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    echo ${TAG_NAME} | \
+      gsutil cp - gs://${PROJECT_ID}-deploy/deployed_tags/sql.${_ENV}.tag\
+timeout: 3600s
+options:
+  machineType: 'N1_HIGHCPU_8'
