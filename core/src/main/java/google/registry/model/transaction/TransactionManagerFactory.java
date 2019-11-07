@@ -14,14 +14,10 @@
 
 package google.registry.model.transaction;
 
-import static google.registry.config.RegistryEnvironment.ALPHA;
-import static google.registry.config.RegistryEnvironment.CRASH;
-import static google.registry.config.RegistryEnvironment.SANDBOX;
 
 import com.google.appengine.api.utils.SystemProperty;
 import com.google.appengine.api.utils.SystemProperty.Environment.Value;
 import com.google.common.annotations.VisibleForTesting;
-import google.registry.config.RegistryEnvironment;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.persistence.DaggerPersistenceComponent;
 
@@ -35,7 +31,7 @@ public class TransactionManagerFactory {
   private TransactionManagerFactory() {}
 
   private static JpaTransactionManager createJpaTransactionManager() {
-    if (shouldEnableJpaTm() && isInAppEngine()) {
+    if (isInAppEngine()) {
       return DaggerPersistenceComponent.create().appEngineJpaTransactionManager();
     } else {
       return DummyJpaTransactionManager.create();
@@ -54,16 +50,7 @@ public class TransactionManagerFactory {
    * {@link google.registry.tools.RegistryCli} to initialize jpaTm.
    */
   public static void initForTool() {
-    if (shouldEnableJpaTm()) {
-      jpaTm = DaggerPersistenceComponent.create().nomulusToolJpaTransactionManager();
-    }
-  }
-
-  // TODO(shicong): Enable JpaTm for all environments and remove this function
-  private static boolean shouldEnableJpaTm() {
-    return RegistryEnvironment.get() == ALPHA
-        || RegistryEnvironment.get() == CRASH
-        || RegistryEnvironment.get() == SANDBOX;
+    jpaTm = DaggerPersistenceComponent.create().nomulusToolJpaTransactionManager();
   }
 
   /**
