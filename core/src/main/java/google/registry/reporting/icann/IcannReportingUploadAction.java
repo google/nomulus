@@ -47,6 +47,7 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
@@ -226,7 +227,7 @@ public final class IcannReportingUploadAction implements Runnable {
   }
 
   /** Uploads the MANIFEST.txt file and sets the cursor to the first of the next month. */
-  private boolean uploadManifest(Cursor manifestCursor) {
+  private boolean uploadManifest(@Nullable Cursor manifestCursor) {
     String reportBucketname = String.format("%s/%s", reportingBucket, subdir);
     logger.atInfo().log("Reading MANIFEST file");
     final GcsFilename filename = new GcsFilename(reportBucketname, MANIFEST_FILE_NAME);
