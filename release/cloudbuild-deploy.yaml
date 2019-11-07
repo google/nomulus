@@ -56,7 +56,7 @@ steps:
   - |
     set -e
     echo ${TAG_NAME} | \
-      gsutil cp - gs://${PROJECT_ID}-deploy/deployed_tags/nomulus.${_ENV}.tag
+      gsutil cp - gs://${PROJECT_ID}-deployed-tags/nomulus.${_ENV}.tag
 # Deploy the GAE config files.
 # First authorize the gcloud tool to use the credential json file, then
 # download and unzip the tarball that contains the relevant config files

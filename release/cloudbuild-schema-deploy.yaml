@@ -77,7 +77,7 @@ steps:
   - |
     set -e
     echo ${TAG_NAME} | \
-      gsutil cp - gs://${PROJECT_ID}-deploy/deployed_tags/sql.${_ENV}.tag\
+      gsutil cp - gs://${PROJECT_ID}-deployed-tags/sql.${_ENV}.tag\
 timeout: 3600s
 options:
   machineType: 'N1_HIGHCPU_8'
