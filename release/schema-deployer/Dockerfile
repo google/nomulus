@@ -25,12 +25,16 @@
 # as a GCP application we prefer to start with a GCP-approved base image.
 FROM marketplace.gcr.io/google/ubuntu1804
 ENV DEBIAN_FRONTEND=noninteractive LANG=en_US.UTF-8
+# Install openjdk-8
 RUN apt-get update -y \
     && apt-get install locales -y \
     && locale-gen en_US.UTF-8 \
     && apt-get install apt-utils -y \
     && apt-get upgrade -y \
     && apt-get install openjdk-8-jdk-headless -y
+
+# Get netstat, used for checking Cloud SQL proxy readiness.
+RUN apt-get install net-tools
 
 COPY deploy_sql_schema.sh /usr/local/bin/
 ADD https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 \

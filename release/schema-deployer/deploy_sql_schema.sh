@@ -33,7 +33,7 @@ if [ "$#" -le 1 ]; then
   db_user=$(cut -d' ' -f2 /secrets/admin_credential.dec)
   db_password=$(cut -d' ' -f3 /secrets/admin_credential.dec)
   flyway_action=${1:-validate}
-elif  [ "$#" -ge 3 ]; then
+elif [ "$#" -ge 3 ]; then
   cloud_sql_instance=$1
   db_user=$2
   db_password=$3
@@ -69,7 +69,7 @@ cloud_sql_proxy -instances=${cloud_sql_instance}=tcp:5432 \
   --credential_file=/secrets/cloud_sql_credential.json &
 SQL_PROXY_PID=$!
 # Wait for cloud_sql_proxy to start.
-sleep 2
+while ! netstat -an | grep 5432; do sleep 1; done
 
 set +e
 /flyway/flyway -community -user=${db_user} -password=${db_password} \

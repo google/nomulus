@@ -12,6 +12,11 @@
 #
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
+#
+# Note that the release process hardens the tags and variables in this file:
+# - The 'latest' tag on docker images will be replaced by their image digests.
+# - The ${TAG_NAME} pattern will be replaced by the acutal release tag.
+# Please refer to ./cloudbuild-release.yaml for more details.
 steps:
 # Download and decrypt the nomulus tool credential, which has the privilege to
 # start Cloud SQL proxy to all environments.
