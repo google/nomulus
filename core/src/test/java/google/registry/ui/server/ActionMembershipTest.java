@@ -51,7 +51,8 @@ public final class ActionMembershipTest {
               });
     }
     assertWithMessage(
-            "All UI actions must implement / extend HtmlAction or JsonActionRunner.JsonAction. Failing classes:")
+            "All UI actions must implement / extend HtmlAction, JsonGetAction, "
+                + "or JsonActionRunner.JsonAction. Failing classes:")
         .that(failingClasses.build())
         .isEmpty();
   }
