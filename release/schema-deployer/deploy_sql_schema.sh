@@ -14,8 +14,7 @@
 # limitations under the License.
 
 # Mounted volumes and required files in them:
-# - /secrets
-#   * cloud_sql_credential.json: Cloud SQL proxy credential
+# - /secrets: cloud_sql_credential.json: Cloud SQL proxy credential
 # - /flyway/jars: the schema jar to be deployed.
 #
 # Database login info may be passed in two ways:
@@ -53,11 +52,10 @@ echo "$(date): Starting ${flyway_action} action on ${cloud_sql_instance}."
 
 # Set up connection to the Cloud SQL instance.
 # For now we use Cloud SQL Proxy to set up a SSL tunnel to the Cloud SQL
-# instance. This only a temporary solution since it has two drawbacks:
+# instance. This has two drawbacks:
 # - It starts a background process, which is an anti-pattern in Docker.
 # - The main job needs to wait for a while for the proxy to come up.
-# The long-term plan is to move our Cloud SQL instances to private network,
-# and use private IP addresses for JDBC connection.
+# We will research for a better long-term solution.
 #
 # Other options considered:
 # - Connect using Socket Factory in this script.
