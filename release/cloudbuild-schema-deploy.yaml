@@ -20,6 +20,8 @@
 steps:
 # Download and decrypt the nomulus tool credential, which has the privilege to
 # start Cloud SQL proxy to all environments.
+# Also download and decrypt the admin_credential file, which has the cloud
+# instance name and database login name and password.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   volumes:
   - name: 'secrets'
@@ -35,6 +37,13 @@ steps:
         --ciphertext-file=- \
         --plaintext-file=/secrets/cloud_sql_credential.json \
         --location=global --keyring=nomulus-tool-keyring --key=nomulus-tool-key
+    gsutil cp gs://${PROJECT_ID}-deploy/cloudsql-credentials/${_ENV}/admin_credential.enc - \
+      | base64 -d \
+      | gcloud kms decrypt \
+        --ciphertext-file=- \
+        --plaintext-file=/secrets/admin_credential.dec \
+        --location global --keyring=nomulus-tool-keyring \
+        --key=nomulus-tool-key
 # Download the schema jar to be deployed.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   volumes:
@@ -47,22 +56,6 @@ steps:
     set -e
     gsutil cp gs://domain-registry-dev-deploy/${TAG_NAME}/schema.jar \
       /flyway/jars
-# Download and decrypt the admin_credential file, which has the cloud instance
-# name and database login name and password.
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-  volumes:
-  - name: 'secrets'
-    path: '/secrets'
-  entrypoint: /bin/bash
-  args:
-  - -c
-  - |
-    set -e
-    gsutil cp gs://${PROJECT_ID}-deploy/cloudsql-credentials/${_ENV}/admin_credential.enc - \
-      | base64 -d \
-      | gcloud kms decrypt --location global --keyring=nomulus-tool-keyring \
-        --key=nomulus-tool-key --ciphertext-file=- \
-        --plaintext-file=/secrets/admin_credential.dec
 # Deploy SQL schema
 - name: 'gcr.io/${PROJECT_ID}/schema_deployer:latest'
   volumes:
