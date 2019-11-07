@@ -57,7 +57,7 @@ import org.joda.time.DateTime;
     service = Action.Service.DEFAULT,
     path = RegistryLockGetAction.PATH,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
-public final class RegistryLockGetAction implements Runnable, JsonGetAction {
+public final class RegistryLockGetAction implements JsonGetAction {
 
   public static final String PATH = "/registry-lock-get";
 

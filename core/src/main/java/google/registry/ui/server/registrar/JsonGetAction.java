@@ -18,4 +18,4 @@ package google.registry.ui.server.registrar;
  * Marker interface for {@link google.registry.request.Action}s that serve GET requests and return
  * JSON, rather than HTML.
  */
-public interface JsonGetAction {}
+public interface JsonGetAction extends Runnable {}
