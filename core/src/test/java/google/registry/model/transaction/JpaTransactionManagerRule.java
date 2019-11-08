@@ -26,6 +26,7 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
 import google.registry.persistence.HibernateSchemaExporter;
 import google.registry.persistence.PersistenceModule;
+import google.registry.persistence.PersistenceXmlUtility;
 import google.registry.testing.FakeClock;
 import java.io.File;
 import java.io.IOException;
@@ -45,7 +46,6 @@ import java.util.Properties;
 import javax.persistence.EntityManagerFactory;
 import org.hibernate.cfg.Environment;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
-import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
 import org.hibernate.jpa.boot.spi.Bootstrap;
 import org.joda.time.DateTime;
 import org.junit.rules.ExternalResource;
@@ -214,15 +214,7 @@ public class JpaTransactionManagerRule extends ExternalResource {
     properties.put(Environment.PASS, password);
 
     ParsedPersistenceXmlDescriptor descriptor =
-        PersistenceXmlParser.locatePersistenceUnits(properties).stream()
-            .filter(unit -> PersistenceModule.PERSISTENCE_UNIT_NAME.equals(unit.getName()))
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        String.format(
-                            "Could not find persistence unit with name %s",
-                            PersistenceModule.PERSISTENCE_UNIT_NAME)));
+        PersistenceXmlUtility.getParsedPersistenceXmlDescriptor();
 
     extraEntityClasses.stream().map(Class::getName).forEach(descriptor::addClasses);
     return Bootstrap.getEntityManagerFactoryBuilder(descriptor, properties).build();

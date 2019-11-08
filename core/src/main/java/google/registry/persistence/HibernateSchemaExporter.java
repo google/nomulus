@@ -21,15 +21,12 @@ import com.google.common.collect.Maps;
 import java.io.File;
 import java.util.EnumSet;
 import java.util.Map;
-import java.util.Properties;
 import java.util.stream.Stream;
 import javax.persistence.AttributeConverter;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Environment;
-import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
-import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.schema.TargetType;
 
@@ -82,25 +79,7 @@ public class HibernateSchemaExporter {
   }
 
   private ImmutableList<Class> findAllConverters() {
-    ParsedPersistenceXmlDescriptor descriptor =
-        PersistenceXmlParser.locatePersistenceUnits(new Properties()).stream()
-            .filter(unit -> PersistenceModule.PERSISTENCE_UNIT_NAME.equals(unit.getName()))
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        String.format(
-                            "Could not find persistence unit with name %s",
-                            PersistenceModule.PERSISTENCE_UNIT_NAME)));
-    return descriptor.getManagedClassNames().stream()
-        .map(
-            className -> {
-              try {
-                return Class.forName(className);
-              } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-              }
-            })
+    return PersistenceXmlUtility.getManagedClasses().stream()
         .filter(AttributeConverter.class::isAssignableFrom)
         .collect(toImmutableList());
   }

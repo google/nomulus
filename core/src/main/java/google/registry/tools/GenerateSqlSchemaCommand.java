@@ -19,23 +19,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.annotations.VisibleForTesting;
-import google.registry.persistence.NomulusNamingStrategy;
-import google.registry.persistence.NomulusPostgreSQLDialect;
-import google.registry.persistence.PersistenceModule;
+import google.registry.persistence.HibernateSchemaExporter;
+import google.registry.persistence.PersistenceXmlUtility;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.hibernate.boot.MetadataSources;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.cfg.Environment;
-import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
-import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
-import org.hibernate.tool.hbm2ddl.SchemaExport;
-import org.hibernate.tool.schema.TargetType;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 /**
@@ -47,6 +35,9 @@ import org.testcontainers.containers.PostgreSQLContainer;
  */
 @Parameters(separators = " =", commandDescription = "Generate PostgreSQL schema.")
 public class GenerateSqlSchemaCommand implements Command {
+  private static final String DB_NAME = "postgres";
+  private static final String DB_USERNAME = "postgres";
+  private static final String DB_PASSWORD = "domain-registry";
 
   @VisibleForTesting
   public static final String DB_OPTIONS_CLASH =
@@ -91,10 +82,11 @@ public class GenerateSqlSchemaCommand implements Command {
       }
 
       // Start the container and store the address information.
-      postgresContainer = new PostgreSQLContainer()
-          .withDatabaseName("postgres")
-          .withUsername("postgres")
-          .withPassword("domain-registry");
+      postgresContainer =
+          new PostgreSQLContainer()
+              .withDatabaseName(DB_NAME)
+              .withUsername(DB_USERNAME)
+              .withPassword(DB_PASSWORD);
       postgresContainer.start();
       databaseHost = postgresContainer.getContainerIpAddress();
       databasePort = postgresContainer.getMappedPort(POSTGRESQL_PORT);
@@ -119,29 +111,7 @@ public class GenerateSqlSchemaCommand implements Command {
     }
 
     try {
-      // Configure Hibernate settings.
-      Map<String, String> settings = new HashMap<>();
-      settings.put("hibernate.dialect", NomulusPostgreSQLDialect.class.getName());
-      settings.put(
-          "hibernate.connection.url",
-          "jdbc:postgresql://" + databaseHost + ":" + databasePort + "/postgres?useSSL=false");
-      settings.put("hibernate.connection.username", "postgres");
-      settings.put("hibernate.connection.password", "domain-registry");
-      settings.put("hibernate.hbm2ddl.auto", "none");
-      settings.put("show_sql", "true");
-      settings.put(
-          Environment.PHYSICAL_NAMING_STRATEGY, NomulusNamingStrategy.class.getCanonicalName());
-
-      MetadataSources metadata =
-          new MetadataSources(new StandardServiceRegistryBuilder().applySettings(settings).build());
-
-      addAnnotatedClasses(metadata, settings);
-
-      SchemaExport schemaExport = new SchemaExport();
-      schemaExport.setHaltOnError(true);
-      schemaExport.setFormat(true);
-      schemaExport.setDelimiter(";");
-      schemaExport.setOutputFile(outFile);
+      File outputFile = new File(outFile);
 
       // Generate the copyright header (this file gets checked for copyright).  The schema exporter
       // appends to the existing file, so this has the additional desired effect of clearing any
@@ -161,43 +131,29 @@ public class GenerateSqlSchemaCommand implements Command {
               + "-- See the License for the specific language governing permissions and\n"
               + "-- limitations under the License.\n";
       try {
-        Files.write(Paths.get(outFile), copyright.getBytes(UTF_8));
+        Files.write(outputFile.toPath(), copyright.getBytes(UTF_8));
       } catch (IOException e) {
         System.err.println("Error writing sql file: " + e);
         e.printStackTrace();
         System.exit(1);
       }
 
-      schemaExport.createOnly(EnumSet.of(TargetType.SCRIPT), metadata.buildMetadata());
+      HibernateSchemaExporter exporter =
+          HibernateSchemaExporter.create(
+              "jdbc:postgresql://"
+                  + databaseHost
+                  + ":"
+                  + databasePort
+                  + "/"
+                  + DB_NAME
+                  + "?useSSL=false",
+              DB_USERNAME,
+              DB_PASSWORD);
+      exporter.export(PersistenceXmlUtility.getManagedClasses(), outputFile);
+
     } finally {
       if (postgresContainer != null) {
         postgresContainer.stop();
-      }
-    }
-  }
-
-  private void addAnnotatedClasses(MetadataSources metadata, Map<String, String> settings) {
-    ParsedPersistenceXmlDescriptor descriptor =
-        PersistenceXmlParser.locatePersistenceUnits(settings).stream()
-            .filter(unit -> PersistenceModule.PERSISTENCE_UNIT_NAME.equals(unit.getName()))
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        String.format(
-                            "Could not find persistence unit with name %s",
-                            PersistenceModule.PERSISTENCE_UNIT_NAME)));
-
-    List<String> classNames = descriptor.getManagedClassNames();
-    for (String className : classNames) {
-      try {
-        Class<?> clazz = Class.forName(className);
-        metadata.addAnnotatedClass(clazz);
-      } catch (ClassNotFoundException e) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Could not load class with name %s present in persistence.xml", className),
-            e);
       }
     }
   }
