@@ -156,7 +156,6 @@ public final class RegistryTestServerMain {
           }
         };
 
-    System.out.printf("%sLoading AppEngineRule...%s\n", BLUE, RESET);
     Statement withAppEngine =
         AppEngineRule.builder()
             .withDatastore()
@@ -170,7 +169,7 @@ public final class RegistryTestServerMain {
             .build()
             .apply(runner, Description.EMPTY);
 
-    System.out.printf("%sLoading SQL fixtures...%s\n", BLUE, RESET);
+    System.out.printf("%sLoading SQL fixtures and AppEngineRule...%s\n", BLUE, RESET);
     new JpaTransactionManagerRule.Builder()
         .build()
         .apply(withAppEngine, Description.EMPTY)
