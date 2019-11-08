@@ -19,6 +19,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HostAndPort;
+import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.UserInfo;
 import google.registry.tools.params.HostAndPortParameter;
@@ -134,36 +135,45 @@ public final class RegistryTestServerMain {
         LIGHT_PURPLE, ORANGE, PINK, RESET);
 
     final RegistryTestServer server = new RegistryTestServer(address);
-    Statement runner = new Statement() {
-      @Override
-      public void evaluate() throws InterruptedException {
-        System.out.printf("%sLoading Datastore fixtures...%s\n", BLUE, RESET);
-        for (Fixture fixture : fixtures) {
-          fixture.load();
-        }
-        System.out.printf("%sStarting Jetty6 HTTP Server...%s\n", BLUE, RESET);
-        server.start();
-        System.out.printf("%sListening on: %s%s\n", PURPLE, server.getUrl("/"), RESET);
-        try {
-          while (true) {
-            server.process();
+    Statement runner =
+        new Statement() {
+          @Override
+          public void evaluate() throws InterruptedException {
+            System.out.printf("%sLoading Datastore fixtures...%s\n", BLUE, RESET);
+            for (Fixture fixture : fixtures) {
+              fixture.load();
+            }
+            System.out.printf("%sStarting Jetty6 HTTP Server...%s\n", BLUE, RESET);
+            server.start();
+            System.out.printf("%sListening on: %s%s\n", PURPLE, server.getUrl("/"), RESET);
+            try {
+              while (true) {
+                server.process();
+              }
+            } finally {
+              server.stop();
+            }
           }
-        } finally {
-          server.stop();
-        }
-      }};
+        };
 
     System.out.printf("%sLoading AppEngineRule...%s\n", BLUE, RESET);
-    AppEngineRule.builder()
-        .withDatastore()
-        .withUrlFetch()
-        .withTaskQueue()
-        .withLocalModules()
-        .withUserService(loginIsAdmin
-            ? UserInfo.createAdmin(loginEmail, loginUserId)
-            : UserInfo.create(loginEmail, loginUserId))
+    Statement withAppEngine =
+        AppEngineRule.builder()
+            .withDatastore()
+            .withUrlFetch()
+            .withTaskQueue()
+            .withLocalModules()
+            .withUserService(
+                loginIsAdmin
+                    ? UserInfo.createAdmin(loginEmail, loginUserId)
+                    : UserInfo.create(loginEmail, loginUserId))
+            .build()
+            .apply(runner, Description.EMPTY);
+
+    System.out.printf("%sLoading SQL fixtures...%s\n", BLUE, RESET);
+    new JpaTransactionManagerRule.Builder()
         .build()
-        .apply(runner, Description.EMPTY)
+        .apply(withAppEngine, Description.EMPTY)
         .evaluate();
   }
 
