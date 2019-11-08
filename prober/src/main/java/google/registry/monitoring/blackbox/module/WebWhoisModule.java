@@ -27,7 +27,6 @@ import google.registry.monitoring.blackbox.handler.WebWhoisMessageHandler;
 import google.registry.monitoring.blackbox.message.HttpRequestMessage;
 import google.registry.monitoring.blackbox.metric.MetricsCollector;
 import google.registry.monitoring.blackbox.token.WebWhoisToken;
-import google.registry.util.CircularList;
 import google.registry.util.Clock;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -191,8 +190,8 @@ public class WebWhoisModule {
   @Singleton
   @Provides
   @WebWhoisProtocol
-  CircularList<String> provideTopLevelDomains() {
-    return new CircularList.Builder<String>().add("how", "soy", "xn--q9jyb4c").build();
+  ImmutableList<String> provideTopLevelDomains() {
+    return ImmutableList.of("how", "soy", "xn--q9jyb4c");
   }
 
   @Provides

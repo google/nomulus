@@ -14,11 +14,15 @@
 
 package google.registry.monitoring.blackbox.token;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.PeekingIterator;
 import google.registry.monitoring.blackbox.exception.UndeterminedStateException;
 import google.registry.monitoring.blackbox.message.OutboundMessageType;
 import google.registry.monitoring.blackbox.module.WebWhoisModule.WebWhoisProtocol;
-import google.registry.util.CircularList;
 import javax.inject.Inject;
 
 /**
@@ -33,19 +37,21 @@ public class WebWhoisToken extends Token {
   /** For each top level domain (tld), we probe "prefix.tld". */
   private static final String PREFIX = "whois.nic.";
 
-  /** {@link ImmutableList} of all top level domains to be probed. */
-  private CircularList<String> topLevelDomainsList;
+  /** {@link PeekingIterator} over a cycle of all top level domains to be probed. */
+  private final PeekingIterator<String> topLevelDomainsList;
 
   @Inject
-  public WebWhoisToken(@WebWhoisProtocol CircularList<String> topLevelDomainsList) {
+  public WebWhoisToken(@WebWhoisProtocol ImmutableList<String> topLevelDomainsList) {
+    checkArgument(!topLevelDomainsList.isEmpty(), "topLevelDomainsList must not be empty.");
 
-    this.topLevelDomainsList = topLevelDomainsList;
+    this.topLevelDomainsList =
+        Iterators.peekingIterator(Iterables.cycle(topLevelDomainsList).iterator());
   }
 
   /** Moves on to next top level domain in {@code topLevelDomainsList}. */
   @Override
   public WebWhoisToken next() {
-    topLevelDomainsList = topLevelDomainsList.next();
+    topLevelDomainsList.next();
     return this;
   }
 
@@ -62,6 +68,6 @@ public class WebWhoisToken extends Token {
    */
   @Override
   public String host() {
-    return PREFIX + topLevelDomainsList.get();
+    return PREFIX + topLevelDomainsList.peek();
   }
 }

@@ -16,9 +16,9 @@ package google.registry.monitoring.blackbox.token;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.exception.UndeterminedStateException;
 import google.registry.monitoring.blackbox.message.HttpRequestMessage;
-import google.registry.util.CircularList;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -32,8 +32,8 @@ public class WebWhoisTokenTest {
   private static final String FIRST_TLD = "first_test";
   private static final String SECOND_TLD = "second_test";
   private static final String THIRD_TLD = "third_test";
-  private final CircularList<String> testDomains =
-      new CircularList.Builder<String>().add(FIRST_TLD, SECOND_TLD, THIRD_TLD).build();
+  private final ImmutableList<String> testDomains =
+      ImmutableList.of(FIRST_TLD, SECOND_TLD, THIRD_TLD);
 
   public Token webToken = new WebWhoisToken(testDomains);
 
@@ -48,10 +48,12 @@ public class WebWhoisTokenTest {
     assertThat(secondMessage.headers().get("host")).isEqualTo(PREFIX + FIRST_TLD);
   }
 
-  /**
-   * As Circular Linked List has not been implemented yet, we cannot yet wrap around, so we don't
-   * test that in testing {@code next}.
-   */
+  @Test
+  public void testHostOfToken() {
+    assertThat(webToken.host()).isEqualTo(PREFIX + FIRST_TLD);
+    assertThat(webToken.host()).isEqualTo(PREFIX + FIRST_TLD);
+  }
+
   @Test
   public void testNextToken() {
     assertThat(webToken.host()).isEqualTo(PREFIX + FIRST_TLD);
