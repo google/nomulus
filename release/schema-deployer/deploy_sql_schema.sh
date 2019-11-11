@@ -65,11 +65,19 @@ echo "$(date): Starting ${flyway_action} action on ${cloud_sql_instance}."
 #   * Drawback: Seems an overkill
 cloud_sql_proxy -instances=${cloud_sql_instance}=tcp:5432 \
   --credential_file=/secrets/cloud_sql_credential.json &
-SQL_PROXY_PID=$!
-# Wait for cloud_sql_proxy to start.
-while ! netstat -an | grep 5432; do sleep 1; done
 
 set +e
+# Wait for cloud_sql_proxy to start:
+# first sleep 1 second for the process to launch, then loop until port is ready
+# or the proxy process dies.
+sleep 1
+while ! netstat -an | grep ':5432 ' && pgrep cloud_sql_proxy; do sleep 1; done
+
+if ! pgrep cloud_sql_proxy; then
+  echo "Cloud SQL Proxy failed to set up connection."
+  exit 1
+fi
+
 /flyway/flyway -community -user=${db_user} -password=${db_password} \
   -url=jdbc:postgresql://localhost:5432/postgres \
   -locations=classpath:sql/flyway \
@@ -84,5 +92,5 @@ if [ ${flyway_action} == "migrate" ]; then
     info
 fi
 # Stop Cloud SQL Proxy
-kill -1 ${SQL_PROXY_PID}
+pkill cloud_sql_proxy
 exit ${migration_result}
