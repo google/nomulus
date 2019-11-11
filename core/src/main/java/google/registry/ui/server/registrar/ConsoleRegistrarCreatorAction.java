@@ -37,7 +37,6 @@ import google.registry.model.registrar.RegistrarContact;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.Parameter;
-import google.registry.request.RequestMethod;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.ui.server.SendEmailUtils;
@@ -65,7 +64,7 @@ import org.joda.money.CurrencyUnit;
     path = ConsoleRegistrarCreatorAction.PATH,
     method = {Method.POST, Method.GET},
     auth = Auth.AUTH_PUBLIC)
-public final class ConsoleRegistrarCreatorAction extends ConsoleAction {
+public final class ConsoleRegistrarCreatorAction extends HtmlAction {
 
   private static final int PASSWORD_LENGTH = 16;
   private static final int PASSCODE_LENGTH = 5;
@@ -81,7 +80,6 @@ public final class ConsoleRegistrarCreatorAction extends ConsoleAction {
           google.registry.ui.soy.AnalyticsSoyInfo.getInstance(),
           google.registry.ui.soy.registrar.RegistrarCreateConsoleSoyInfo.getInstance());
 
-  @Inject @RequestMethod Method method;
   @Inject AuthenticatedRegistrarAccessor registrarAccessor;
   @Inject SendEmailUtils sendEmailUtils;
   @Inject @Named("base58StringGenerator") StringGenerator passwordGenerator;
@@ -110,10 +108,6 @@ public final class ConsoleRegistrarCreatorAction extends ConsoleAction {
 
   @Override
   public void runAfterLogin(HashMap<String, Object> data) {
-    logger.atInfo().log(
-        "User %s is accessing the Registrar creation page. Method= %s",
-        registrarAccessor.userIdForLogging(), method);
-
     if (!registrarAccessor.isAdmin()) {
       response.setStatus(SC_FORBIDDEN);
       response.setPayload(
@@ -172,7 +166,6 @@ public final class ConsoleRegistrarCreatorAction extends ConsoleAction {
 
   private void runPost(HashMap<String, Object> data) {
     try {
-
       checkPresent(clientId, "clientId");
       checkPresent(name, "name");
       checkPresent(billingAccount, "billingAccount");
@@ -267,11 +260,11 @@ public final class ConsoleRegistrarCreatorAction extends ConsoleAction {
       data.put("errorMessage", e.getMessage());
       response.setPayload(
           TOFU_SUPPLIER
-          .get()
-          .newRenderer(RegistrarCreateConsoleSoyInfo.FORM_PAGE)
-          .setCssRenamingMap(CSS_RENAMING_MAP_SUPPLIER.get())
-          .setData(data)
-          .render());
+              .get()
+              .newRenderer(RegistrarCreateConsoleSoyInfo.FORM_PAGE)
+              .setCssRenamingMap(CSS_RENAMING_MAP_SUPPLIER.get())
+              .setData(data)
+              .render());
     }
   }
 
@@ -303,8 +296,8 @@ public final class ConsoleRegistrarCreatorAction extends ConsoleAction {
     String environment = Ascii.toLowerCase(String.valueOf(RegistryEnvironment.get()));
     String body =
         String.format(
-                "The following registrar was created in %s by %s:\n",
-                environment, registrarAccessor.userIdForLogging())
+            "The following registrar was created in %s by %s:\n",
+            environment, registrarAccessor.userIdForLogging())
             + toEmailLine(clientId, "clientId")
             + toEmailLine(name, "name")
             + toEmailLine(billingAccount, "billingAccount")

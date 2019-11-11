@@ -28,6 +28,7 @@ import com.google.appengine.api.users.UserServiceFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.net.MediaType;
+import google.registry.request.Action.Method;
 import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
@@ -77,6 +78,7 @@ public class ConsoleUiActionTest {
     action.registrarConsoleMetrics = new RegistrarConsoleMetrics();
     action.userService = UserServiceFactory.getUserService();
     action.xsrfTokenManager = new XsrfTokenManager(new FakeClock(), action.userService);
+    action.method = Method.GET;
     action.paramClientId = Optional.empty();
     action.authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
     action.analyticsConfig = ImmutableMap.of("googleAnalyticsId", "sampleId");

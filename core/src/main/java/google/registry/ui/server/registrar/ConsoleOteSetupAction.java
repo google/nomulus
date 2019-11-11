@@ -29,7 +29,6 @@ import google.registry.model.OteAccountBuilder;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.Parameter;
-import google.registry.request.RequestMethod;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.ui.server.SendEmailUtils;
@@ -55,7 +54,7 @@ import javax.inject.Named;
     path = ConsoleOteSetupAction.PATH,
     method = {Method.POST, Method.GET},
     auth = Auth.AUTH_PUBLIC)
-public final class ConsoleOteSetupAction extends ConsoleAction {
+public final class ConsoleOteSetupAction extends HtmlAction {
 
   public static final String PATH = "/registrar-ote-setup";
   private static final int PASSWORD_LENGTH = 16;
@@ -67,7 +66,6 @@ public final class ConsoleOteSetupAction extends ConsoleAction {
           google.registry.ui.soy.AnalyticsSoyInfo.getInstance(),
           google.registry.ui.soy.registrar.OteSetupConsoleSoyInfo.getInstance());
 
-  @Inject @RequestMethod Method method;
   @Inject AuthenticatedRegistrarAccessor registrarAccessor;
   @Inject SendEmailUtils sendEmailUtils;
 
@@ -92,9 +90,6 @@ public final class ConsoleOteSetupAction extends ConsoleAction {
 
   @Override
   public void runAfterLogin(HashMap<String, Object> data) {
-    logger.atInfo().log(
-        "User %s is accessing the OT&E setup page. Method= %s",
-        registrarAccessor.userIdForLogging(), method);
     checkState(
         !RegistryEnvironment.get().equals(PRODUCTION), "Can't create OT&E in prod");
 

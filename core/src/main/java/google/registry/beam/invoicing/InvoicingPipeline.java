@@ -85,7 +85,7 @@ public class InvoicingPipeline implements Serializable {
   }
 
   /** Custom options for running the invoicing pipeline. */
-  interface InvoicingPipelineOptions extends DataflowPipelineOptions {
+  public interface InvoicingPipelineOptions extends DataflowPipelineOptions {
     /** Returns the yearMonth we're generating invoices for, in yyyy-MM format. */
     @Description("The yearMonth we generate invoices for, in yyyy-MM format.")
     ValueProvider<String> getYearMonth();
