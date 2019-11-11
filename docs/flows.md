@@ -302,6 +302,7 @@ An EPP flow that creates a new domain resource.
     *   The current registry phase allows registrations only with signed marks.
     *   The current registry phase does not allow for general registrations.
     *   Signed marks are only allowed during sunrise.
+    *   An allocation token was provided that is invalid for premium domains.
 *   2003
     *   The provided mark does not match the desired domain label.
     *   Fees must be explicitly acknowledged when creating domains during the

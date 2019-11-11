@@ -14,12 +14,12 @@
 
 package google.registry.flows.domain;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.pricing.PricingEngineProxy.getDomainFeeClass;
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
+import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.FlowScope;
 import google.registry.flows.custom.DomainPricingCustomLogic;
 import google.registry.flows.custom.DomainPricingCustomLogic.CreatePriceParameters;
@@ -182,13 +182,14 @@ public final class DomainPricingLogic {
   }
 
   private Money getDomainCreateCostWithDiscount(
-      String domainName, DateTime date, int years, Optional<AllocationToken> allocationToken) {
+      String domainName, DateTime date, int years, Optional<AllocationToken> allocationToken)
+      throws EppException {
     DomainPrices domainPrices = PricingEngineProxy.getPricesForDomainName(domainName, date);
-    checkArgument(
-        !allocationToken.isPresent()
-            || allocationToken.get().getDiscountFraction() == 0.0
-            || !domainPrices.isPremium(),
-        "A nonzero discount code cannot be applied to premium domains");
+    if (allocationToken.isPresent()
+        && allocationToken.get().getDiscountFraction() != 0.0
+        && domainPrices.isPremium()) {
+      throw new AllocationTokenInvalidForPremiumNameException();
+    }
     Money oneYearCreateCost = domainPrices.getCreateCost();
     Money totalDomainCreateCost = oneYearCreateCost.multipliedBy(years);
     // If a discount is applicable, apply it only to the first year
@@ -199,5 +200,13 @@ public final class DomainPricingLogic {
       totalDomainCreateCost = totalDomainCreateCost.minus(discount);
     }
     return totalDomainCreateCost;
+  }
+
+  /** An allocation token was provided that is invalid for premium domains. */
+  public static class AllocationTokenInvalidForPremiumNameException
+      extends CommandUseErrorException {
+    public AllocationTokenInvalidForPremiumNameException() {
+      super("A nonzero discount code cannot be applied to premium domains");
+    }
   }
 }

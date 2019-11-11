@@ -14,6 +14,7 @@
 
 package google.registry.model.transaction;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
@@ -33,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.Driver;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -114,7 +116,7 @@ public class JpaTransactionManagerRule extends ExternalResource {
       builder.putAll(userProperties);
       properties = builder.build();
     }
-
+    assertNormalActiveConnection();
     emf =
         createEntityManagerFactory(
             getJdbcUrlFor(POSTGRES_DB_NAME),
@@ -132,8 +134,31 @@ public class JpaTransactionManagerRule extends ExternalResource {
     TransactionManagerFactory.jpaTm = cachedTm;
     if (emf != null) {
       emf.close();
+      emf = null;
     }
     cachedTm = null;
+    assertNormalActiveConnection();
+  }
+
+  /**
+   * This function throws exception if it detects connection leak by checking the metadata table
+   * pg_stat_activity.
+   */
+  private void assertNormalActiveConnection() {
+    try (Connection conn = createConnection(POSTGRES_DB_NAME);
+        Statement statement = conn.createStatement()) {
+      ResultSet rs =
+          statement.executeQuery(
+              "SELECT COUNT(1) FROM pg_stat_activity WHERE usename = '"
+                  + database.getUsername()
+                  + "'");
+      rs.next();
+      long activeConns = rs.getLong(1);
+      // There should be only 1 active connection which is executing this query
+      assertThat(activeConns).isEqualTo(1L);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private static String readSqlInClassPath(String sqlScriptPath) {

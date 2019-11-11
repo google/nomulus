@@ -19,6 +19,7 @@ import static com.google.common.io.Resources.asCharSource;
 import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
@@ -41,6 +42,12 @@ import java.util.Map;
 
 /** Helper methods for rendering Soy templates from Java code. */
 public final class SoyTemplateUtils {
+
+  @VisibleForTesting
+  public static final Supplier<SoyCssRenamingMap> CSS_RENAMING_MAP_SUPPLIER =
+      SoyTemplateUtils.createCssRenamingMapSupplier(
+          Resources.getResource("google/registry/ui/css/registrar_bin.css.js"),
+          Resources.getResource("google/registry/ui/css/registrar_dbg.css.js"));
 
   /** Returns a memoized supplier containing compiled tofu. */
   public static Supplier<SoyTofu> createTofuSupplier(final SoyFileInfo... soyInfos) {

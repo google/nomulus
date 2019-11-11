@@ -187,6 +187,7 @@ import org.joda.time.Duration;
  * @error {@link DomainFlowUtils.UnexpectedClaimsNoticeException}
  * @error {@link DomainFlowUtils.UnsupportedFeeAttributeException}
  * @error {@link DomainFlowUtils.UnsupportedMarkTypeException}
+ * @error {@link DomainPricingLogic.AllocationTokenInvalidForPremiumNameException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_CREATE)
 public class DomainCreateFlow implements TransactionalFlow {

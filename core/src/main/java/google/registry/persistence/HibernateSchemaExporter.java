@@ -25,6 +25,7 @@ import java.util.Properties;
 import java.util.stream.Stream;
 import javax.persistence.AttributeConverter;
 import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Environment;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
@@ -62,20 +63,22 @@ public class HibernateSchemaExporter {
     settings.put(
         Environment.PHYSICAL_NAMING_STRATEGY, NomulusNamingStrategy.class.getCanonicalName());
 
-    MetadataSources metadata =
-        new MetadataSources(new StandardServiceRegistryBuilder().applySettings(settings).build());
+    try (StandardServiceRegistry registry =
+        new StandardServiceRegistryBuilder().applySettings(settings).build()) {
+      MetadataSources metadata = new MetadataSources(registry);
 
-    // Note that we need to also add all converters to the Hibernate context because
-    // the entity class may use the customized type.
-    Stream.concat(entityClasses.stream(), findAllConverters().stream())
-        .forEach(metadata::addAnnotatedClass);
+      // Note that we need to also add all converters to the Hibernate context because
+      // the entity class may use the customized type.
+      Stream.concat(entityClasses.stream(), findAllConverters().stream())
+          .forEach(metadata::addAnnotatedClass);
 
-    SchemaExport export = new SchemaExport();
-    export.setHaltOnError(true);
-    export.setFormat(true);
-    export.setDelimiter(";");
-    export.setOutputFile(outputFile.getAbsolutePath());
-    export.createOnly(EnumSet.of(TargetType.SCRIPT), metadata.buildMetadata());
+      SchemaExport export = new SchemaExport();
+      export.setHaltOnError(true);
+      export.setFormat(true);
+      export.setDelimiter(";");
+      export.setOutputFile(outputFile.getAbsolutePath());
+      export.createOnly(EnumSet.of(TargetType.SCRIPT), metadata.buildMetadata());
+    }
   }
 
   private ImmutableList<Class> findAllConverters() {
