@@ -51,7 +51,7 @@ import javax.inject.Inject;
     service = Action.Service.DEFAULT,
     path = RegistryLockVerifyAction.PATH,
     auth = Auth.AUTH_PUBLIC_LOGGED_IN)
-public final class RegistryLockVerifyAction extends ConsoleAction {
+public final class RegistryLockVerifyAction extends HtmlAction {
 
   public static final String PATH = "/registry-lock-verify";
 
