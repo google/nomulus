@@ -79,7 +79,16 @@ public class Cursor extends ImmutableObject {
      * stored is the last time that registrar changes were successfully synced to the sheet. If
      * there were no changes since the last time the action run, the cursor is not updated.
      */
-    SYNC_REGISTRAR_SHEET(EntityGroupRoot.class);
+    SYNC_REGISTRAR_SHEET(EntityGroupRoot.class),
+
+    /** Cursor for tracking monthly uploads of ICANN transaction reports. */
+    ICANN_UPLOAD_TX(Registry.class),
+
+    /** Cursor for tracking monthly uploads of ICANN activity reports. */
+    ICANN_UPLOAD_ACTIVITY(Registry.class),
+
+    /** Cursor for tracking monthly upload of MANIFEST.txt to ICANN. */
+    ICANN_UPLOAD_MANIFEST(EntityGroupRoot.class);
 
     /** See the definition of scope on {@link #getScopeClass}. */
     private final Class<? extends ImmutableObject> scope;

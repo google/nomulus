@@ -129,6 +129,7 @@ import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.flows.domain.DomainFlowUtils.UnexpectedClaimsNoticeException;
 import google.registry.flows.domain.DomainFlowUtils.UnsupportedFeeAttributeException;
 import google.registry.flows.domain.DomainFlowUtils.UnsupportedMarkTypeException;
+import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
@@ -1227,9 +1228,9 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
             .build());
     clock.advanceOneMilli();
     setEppInput("domain_create_premium_allocationtoken.xml");
-    assertThat(assertThrows(IllegalArgumentException.class, this::runFlow))
-        .hasMessageThat()
-        .isEqualTo("A nonzero discount code cannot be applied to premium domains");
+    assertAboutEppExceptions()
+        .that(assertThrows(AllocationTokenInvalidForPremiumNameException.class, this::runFlow))
+        .marshalsToXml();
   }
 
   @Test

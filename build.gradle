@@ -288,20 +288,6 @@ subprojects {
       }
     }
   }
-
-  if (['util', 'proxy', 'core', 'prober', 'db'].contains(project.name)) return
-
-  // TODO(weiminyu): investigate if the block below is still needed
-  ext.relativePath = "google/registry/${project.name}"
-
-  sourceSets.each {
-    it.java {
-      include "${project.relativePath}/"
-    }
-    it.resources {
-      include "${project.relativePath}/"
-    }
-  }
 }
 
 // If "-P verboseTestOutput=true" is passed in, configure all subprojects to dump all of their
