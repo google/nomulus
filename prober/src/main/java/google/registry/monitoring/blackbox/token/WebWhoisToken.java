@@ -38,20 +38,20 @@ public class WebWhoisToken extends Token {
   private static final String PREFIX = "whois.nic.";
 
   /** {@link PeekingIterator} over a cycle of all top level domains to be probed. */
-  private final PeekingIterator<String> topLevelDomainsList;
+  private final PeekingIterator<String> tldCycleIterator;
 
   @Inject
   public WebWhoisToken(@WebWhoisProtocol ImmutableList<String> topLevelDomainsList) {
     checkArgument(!topLevelDomainsList.isEmpty(), "topLevelDomainsList must not be empty.");
 
-    this.topLevelDomainsList =
+    this.tldCycleIterator =
         Iterators.peekingIterator(Iterables.cycle(topLevelDomainsList).iterator());
   }
 
-  /** Moves on to next top level domain in {@code topLevelDomainsList}. */
+  /** Moves on to next top level domain in {@code tldCycleIterator}. */
   @Override
   public WebWhoisToken next() {
-    topLevelDomainsList.next();
+    tldCycleIterator.next();
     return this;
   }
 
@@ -68,6 +68,6 @@ public class WebWhoisToken extends Token {
    */
   @Override
   public String host() {
-    return PREFIX + topLevelDomainsList.peek();
+    return PREFIX + tldCycleIterator.peek();
   }
 }
