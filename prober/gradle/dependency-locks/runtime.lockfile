@@ -50,3 +50,5 @@ org.bouncycastle:bcprov-jdk15on:1.61
 org.checkerframework:checker-qual:2.8.1
 org.codehaus.mojo:animal-sniffer-annotations:1.18
 org.yaml:snakeyaml:1.17
+xerces:xmlParserAPIs:2.6.2
+xpp3:xpp3:1.1.4c

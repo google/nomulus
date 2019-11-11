@@ -160,7 +160,6 @@ dependencies {
   compile deps['com.google.apis:google-api-services-groupssettings']
   compile deps['com.google.apis:google-api-services-monitoring']
   compile deps['com.google.apis:google-api-services-sheets']
-  testCompileOnly deps['com.google.appengine:appengine-api-1.0-sdk']
   testCompile deps['com.google.appengine:appengine-api-stubs']
   compile deps['com.google.appengine.tools:appengine-gcs-client']
   compile deps['com.google.appengine.tools:appengine-mapreduce']
@@ -193,9 +192,11 @@ dependencies {
   testCompile deps['com.thoughtworks.qdox:qdox']
   compile deps['dnsjava:dnsjava']
   testCompile deps['io.github.classgraph:classgraph']
+  testCompile deps['javax.annotation:javax.annotation-api']
   testCompile deps['javax.annotation:jsr250-api']
   compile deps['javax.inject:javax.inject']
   compile deps['javax.mail:mail']
+  compile deps['javax.persistence:javax.persistence-api']
   compile deps['javax.servlet:servlet-api']
   compile deps['javax.xml.bind:jaxb-api']
   compile deps['jline:jline']
@@ -206,6 +207,7 @@ dependencies {
   compile deps['org.apache.beam:beam-sdks-java-core']
   compile deps['org.apache.beam:beam-sdks-java-extensions-google-cloud-platform-core']
   compile deps['org.apache.beam:beam-sdks-java-io-google-cloud-platform']
+  testCompile deps['org.apache.commons:commons-lang3']
   testCompile deps['org.apache.commons:commons-text']
   testCompile deps['org.apache.ftpserver:ftplet-api']
   testCompile deps['org.apache.ftpserver:ftpserver-core']
@@ -219,6 +221,7 @@ dependencies {
   testCompile deps['org.bouncycastle:bcpkix-jdk15on']
   compile deps['org.bouncycastle:bcprov-jdk15on']
   runtime deps['org.glassfish.jaxb:jaxb-runtime']
+  compile deps['org.hibernate:hibernate-core']
   compile deps['org.joda:joda-money']
   compile deps['org.json:json']
   testCompile deps['org.mortbay.jetty:jetty']
@@ -227,10 +230,15 @@ dependencies {
   testCompile deps['org.seleniumhq.selenium:selenium-chrome-driver']
   testCompile deps['org.seleniumhq.selenium:selenium-java']
   testCompile deps['org.seleniumhq.selenium:selenium-remote-driver']
+  testCompile deps['org.testcontainers:jdbc']
   compile deps['org.testcontainers:postgresql']
   testCompile deps['org.testcontainers:selenium']
+  testCompile deps['org.testcontainers:testcontainers']
   compile deps['xerces:xmlParserAPIs']
   compile deps['xpp3:xpp3']
+  // This dependency must come after javax.mail:mail as it would otherwise
+  // shadow classes in package javax.mail with its own implementation.
+  compile deps['com.google.appengine:appengine-api-1.0-sdk']
 
   // Known issue: nebula-lint misses inherited dependency.
   compile project(':third_party')

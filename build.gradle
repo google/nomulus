@@ -34,7 +34,7 @@ buildscript {
 plugins {
   // Java static analysis plugins. Keep versions consistent with
   // ./buildSrc/build.gradle
-  id 'nebula.lint' version '10.4.2'
+  id 'nebula.lint' version '16.0.2'
   // TODO(weiminyu): consider remove net.ltgt.apt. Gradle 5.2+
   //  has similar functionalities.
   id 'net.ltgt.apt' version '0.19' apply false
@@ -46,7 +46,7 @@ plugins {
   id "com.moowork.node" version "1.2.0"
 
   id 'idea'
-  id 'com.diffplug.gradle.spotless' version '3.18.0'
+  id 'com.diffplug.gradle.spotless' version '3.25.0'
 
   id 'jacoco'
 }

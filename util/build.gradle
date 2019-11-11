@@ -24,6 +24,7 @@ dependencies {
   compile deps['com.google.dagger:dagger']
   compile deps['com.google.flogger:flogger']
   compile deps['com.google.guava:guava']
+  compile deps['com.google.http-client:google-http-client']
   compile deps['com.google.re2j:re2j']
   compile deps['com.ibm.icu:icu4j']
   compile deps['javax.inject:javax.inject']

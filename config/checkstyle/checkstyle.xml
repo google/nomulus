@@ -73,6 +73,19 @@ by Joshua Bloch in his book Effective Java -->
     <property name="message" value="MockitoJUnitRunner is deprecated. Use @RunWith(JUnit4.class) and MockitoRule instead."/>
   </module>
 
+  <module name="LineLength">
+    <!-- Checks if a line is too long. -->
+    <property name="max" value="${com.puppycrawl.tools.checkstyle.checks.sizes.LineLength.max}" default="100"/>
+    <property name="severity" value="error"/>
+
+    <!-- Ignore lines that have any series of 80 or more non-whitespace characters.
+    These lines likely cannot be broken.
+    -->
+    <property name="ignorePattern"
+        value="${com.puppycrawl.tools.checkstyle.checks.sizes.LineLength.ignorePattern}"
+        default=".*[^ ]{80,}.*"/>
+  </module>
+
   <!-- All Java AST specific tests live under TreeWalker module. -->
   <module name="TreeWalker">
 
@@ -183,19 +196,6 @@ by Joshua Bloch in his book Effective Java -->
     <!--
     LENGTH and CODING CHECKS
     -->
-
-    <module name="LineLength">
-      <!-- Checks if a line is too long. -->
-      <property name="max" value="${com.puppycrawl.tools.checkstyle.checks.sizes.LineLength.max}" default="100"/>
-      <property name="severity" value="error"/>
-
-      <!-- Ignore lines that have any series of 80 or more non-whitespace characters.
-      These lines likely cannot be broken.
-      -->
-      <property name="ignorePattern"
-          value="${com.puppycrawl.tools.checkstyle.checks.sizes.LineLength.ignorePattern}"
-          default=".*[^ ]{80,}.*"/>
-    </module>
 
     <module name="OperatorWrap">
       <property name="option" value="nl"/>
