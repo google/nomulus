@@ -105,7 +105,7 @@ public class Spec11Pipeline implements Serializable {
   }
 
   /** Custom options for running the spec11 pipeline. */
-  interface Spec11PipelineOptions extends DataflowPipelineOptions {
+  public interface Spec11PipelineOptions extends DataflowPipelineOptions {
     /** Returns the local date we're generating the report for, in yyyy-MM-dd format. */
     @Description("The local date we generate the report for, in yyyy-MM-dd format.")
     ValueProvider<String> getDate();
