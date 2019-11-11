@@ -48,6 +48,7 @@ public final class RegistryLockDao {
             });
   }
 
+  /** Returns all lock objects that this registrar has created. */
   public static ImmutableList<RegistryLock> getByRegistrarId(String registrarId) {
     return jpaTm()
         .transact(
@@ -63,6 +64,10 @@ public final class RegistryLockDao {
                         .getResultList()));
   }
 
+  /**
+   * Returns the most recent lock object for a given repo ID (i.e. a domain) or empty if this domain
+   * hasn't been locked before.
+   */
   public static Optional<RegistryLock> getMostRecentByRepoId(String repoId) {
     return jpaTm()
         .transact(
@@ -74,7 +79,7 @@ public final class RegistryLockDao {
                             + " ORDER BY lock.revisionId DESC",
                         RegistryLock.class)
                     .setParameter("repoId", repoId)
-                    .setMaxResults(1) // HQL does not support 'LIMIT'
+                    .setMaxResults(1)
                     .getResultStream()
                     .findFirst());
   }
