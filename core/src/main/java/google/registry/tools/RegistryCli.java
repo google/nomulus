@@ -31,7 +31,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import google.registry.config.RegistryConfig;
 import google.registry.model.ofy.ObjectifyService;
-import google.registry.model.transaction.TransactionManagerFactory;
 import google.registry.tools.AuthModule.LoginRequiredException;
 import google.registry.tools.params.ParameterFactory;
 import java.io.ByteArrayInputStream;
@@ -237,7 +236,7 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
     }
 
     if (command instanceof CommandWithCloudSql) {
-      TransactionManagerFactory.initForTool();
+      RegistryToolEnvironment.get().enableJpaTm();
     }
 
     command.run();

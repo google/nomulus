@@ -25,7 +25,7 @@ import google.registry.config.RegistryEnvironment;
 import google.registry.config.SystemPropertySetter;
 
 /** Enum of production environments, used for the {@code --environment} flag. */
-enum RegistryToolEnvironment {
+public enum RegistryToolEnvironment {
   PRODUCTION(RegistryEnvironment.PRODUCTION),
   ALPHA(RegistryEnvironment.ALPHA),
   CRASH(RegistryEnvironment.CRASH),
@@ -39,6 +39,7 @@ enum RegistryToolEnvironment {
 
   private static final ImmutableList<String> FLAGS = ImmutableList.of("-e", "--environment");
   private static RegistryToolEnvironment instance;
+  private static boolean isJpaTmEnabled = false;
   private final RegistryEnvironment actualEnvironment;
   private final ImmutableMap<String, String> extraProperties;
 
@@ -72,7 +73,7 @@ enum RegistryToolEnvironment {
    *
    * <p>This should be called after {@link #parseFromArgs(String[])}.
    */
-  static RegistryToolEnvironment get() {
+  public static RegistryToolEnvironment get() {
     checkState(instance != null, "No RegistryToolEnvironment has been set up");
     return instance;
   }
@@ -96,6 +97,26 @@ enum RegistryToolEnvironment {
     for (ImmutableMap.Entry<String, String> entry : extraProperties.entrySet()) {
       systemPropertySetter.setProperty(entry.getKey(), entry.getValue());
     }
+  }
+
+  /** Returns true if the RegistryToolEnvironment is set up. */
+  public static boolean isInRegistryTool() {
+    return instance != null;
+  }
+
+  /**
+   * Sets the flag to indicate that the running command needs JpaTransactionManager to be enabled.
+   */
+  public static void enableJpaTm() {
+    isJpaTmEnabled = true;
+  }
+
+  /**
+   * Returns true if the JpaTransactionManager is enabled. Note that JpaTm is actually enabled in
+   * {@link google.registry.model.transaction.TransactionManagerFactory} by reading this flag.
+   */
+  public static boolean isJpaTmEnabled() {
+    return isJpaTmEnabled;
   }
 
   /** Extracts value from command-line arguments associated with any {@code flags}. */
