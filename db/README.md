@@ -9,16 +9,16 @@ Nomulus uses the 'postgres' database in the 'public' schema. The following
 users/roles are defined:
 
 *   postgres: the initial user is used for admin and schema deployment.
-    *  In Cloud SQL, we do not control superusers. The initial 'postgres' user
-       is a regular user with create-role/create-db privileges. Therefore,
-       it is not possible to separate admin user and schema-deployment user.
+    *   In Cloud SQL, we do not control superusers. The initial 'postgres' user
+        is a regular user with create-role/create-db privileges. Therefore, it
+        is not possible to separate admin user and schema-deployment user.
 *   readwrite is a role with read-write privileges on all data tables and
-    sequences. However, it does not have write access to admin tables. Nor
-    can it create new tables.
+    sequences. However, it does not have write access to admin tables. Nor can
+    it create new tables.
     *   The Registry server user is granted this role.
 *   readonly is a role with SELECT privileges on all tables.
-    *   Reporting job user and individual human readers may be granted
-        this role.
+    *   Reporting job user and individual human readers may be granted this
+        role.
 
 ### Schema DDL Scripts
 
@@ -33,23 +33,29 @@ Below are the steps to submit a schema change:
     `core/src/main/resources/META-INF/persistence.xml` so they'll be picked up.
 2.  Run the `nomulus generate_sql_schema` command to generate a new version of
     `db-schema.sql.generated`. The full command line to do this is:
-    
-    `./gradlew registryTool --args="-e localhost generate_sql_schema --start_postgresql -o /path/to/nomulus/db/src/main/resources/sql/schema/db-schema.sql.generated"`
-3.  Write an incremental DDL script that changes the existing schema to your
-    new one. The generated SQL file from the previous step should help. New 
-    create table statements can be used as is, whereas alter table statements
-    should be written to change any existing tables.
-    
+
+    `./gradlew registryTool --args="-e localhost generate_sql_schema
+    --start_postgresql -o
+    /path/to/nomulus/db/src/main/resources/sql/schema/db-schema.sql.generated"`
+
+3.  Write an incremental DDL script that changes the existing schema to your new
+    one. The generated SQL file from the previous step should help. New create
+    table statements can be used as is, whereas alter table statements should be
+    written to change any existing tables.
+
     This script should be stored in a new file in the
     `db/src/main/resources/sql/flyway` folder using the naming pattern
     `V{id}__{description text}.sql`, where `{id}` is the next highest number
     following the existing scripts in that folder. Note the double underscore in
     the naming pattern.
+
 4.  Run the `:db:test` task from the Gradle root project. The SchemaTest will
     fail because the new schema does not match the golden file.
-5.  Copy `db/build/resources/test/testcontainer/mount/dump.txt` to the golden file
-    `db/src/main/resources/sql/schema/nomulus.golden.sql`. Diff it against the
-    old version and verify that all changes are expected.
+
+5.  Copy `db/build/resources/test/testcontainer/mount/dump.txt` to the golden
+    file `db/src/main/resources/sql/schema/nomulus.golden.sql`. Diff it against
+    the old version and verify that all changes are expected.
+
 6.  Re-run the `:db:test` task. This time all tests should pass.
 
 Relevant files (under db/src/main/resources/sql/schema/):
@@ -66,23 +72,63 @@ example, when adding a new column to a table, we would deploy the change before
 adding it to the relevant ORM class. Therefore, for a short time the golden file
 will contain the new column while the generated one does not.
 
-### Non-production Schema Push
+### Schema Push
 
-To manage schema in a non-production environment, use the 'flywayMigration'
-task. You will need Cloud SDK and login once.
+Currently Cloud SQL schema is released with the Nomulus server, and shares the
+server release's tag (e.g., nomulus-20191101-RC00). Automatic schema push
+process (to apply new changes in a released schema to the databases) has not
+been set up yet, and new schema may be pushed manually on demand.
+
+Presubmit and continuous-integration tests are being implemented to ensure
+server/schema compatibility. Before the tests are activated, please look for
+breaking changes before deploying a schema.
+
+Released schema may be deployed using Cloud Build. Use the root project
+directory as working directory, run the following shell snippets:
+
+```shell
+# Tags exist as folder names under gs://domain-registry-dev-deploy.
+SCHEMA_TAG=
+# Recognized environments are alpha, crash, sandbox and production
+SQL_ENV=
+# Deploy on cloud build. The --project is optional if domain-registry-dev
+# is already your default project.
+gcloud builds submit --config=release/cloudbuild-schema-deploy.yaml \
+    --substitutions=TAG_NAME=${SCHEMA_TAG},_ENV=${SQL_ENV} \
+    --project domain-registry-dev
+# Verify by checking Flyway Schema History:
+./gradlew :db:flywayInfo -PdbServer=${SQL_ENV}
+```
+
+#### Glass Breaking
+
+If you need to deploy a schema off-cycle, try making a release first, then
+deploy that release schema to Cloud SQL.
+
+TODO(weiminyu): elaborate on different ways to push schema without a full
+release.
+
+#### Notes On Flyway
+
+Please note: to run Flyway commands, you need Cloud SDK and need to log in once.
 
 ```shell
 # One time login
 gcloud auth login
-
-# Deploy the current schema to alpha
-gradlew :db:flywayMigrate -PdbServer=alpha
-
-# Delete the entire schema in alpha
-gradlew :db:flywayClean -PdbServer=alpha
 ```
 
-The flywayMigrate task is idempotent. Repeated runs will not introduce problems.
+The Flyway-based Cloud Build schema push process is safe in common scenarios:
+
+*   Repeatedly deploying the latest schema is safe. All duplicate runs become
+    NOP.
+
+*   Accidentally deploying a past schema is safe. Flyway will not undo
+    incremental changes not reflected in the deployed schema.
+
+*   Concurrent deployment runs are safe. Flyway locks its own metadata table,
+    serializing deployment runs without affecting normal accesses.
+
+#### Schema Push to Local Database
 
 The Flyway tasks may also be used to deploy to local instances, e.g, your own
 test instance. E.g.,
@@ -95,7 +141,3 @@ gradlew :db:flywayMigrate -PdbServer=192.168.9.2 -PdbPassword=domain-registry
 gradlew :db:flywayMigrate -PdbServer=192.168.9.2:5432 -PdbUser=postgres \
     -PdbPassword=domain-registry
 ```
-
-### Production Schema Deployment
-
-Schema deployment to production and sandbox is under development.

@@ -31,24 +31,8 @@ ext {
   def dbServer = findProperty(dbServerProperty).toString().toLowerCase()
   def dbName = findProperty(dbNameProperty)
 
-  reconfirmRestrictedDbEnv = {
-    if (!restrictedDbEnv.contains(dbServer)) {
-      return
-    }
-    // For restricted environments, ask the user to type again to confirm.
-    // The following statement uses Gradle internal API to get around the
-    // missing console bug when Gradle Daemon is in use. Another option is
-    // to use the ant.input task. For details please refer to
-    // https://github.com/gradle/gradle/issues/1251.
-    def dbServerAgain = services.get(UserInputHandler.class).askQuestion(
-        """\
-           Are you sure? Operating on ${dbServer} from desktop is unsafe.
-           Please type '${dbServer}' again to proceed: """.stripIndent(),
-        '').trim()
-    if (dbServer != dbServerAgain) {
-      throw new RuntimeException(
-          "Failed to confirm for restricted database environment. Operation aborted.")
-    }
+  isCloudSql = {
+    return allDbEnv.contains(dbServer)
   }
 
   getAccessInfoByHostPort = { hostAndPort ->
@@ -87,18 +71,14 @@ ext {
   // production. The role parameter may be superuser. (More roles will be added
   // later).
   getCloudSqlCredential = { env, role ->
-    env = env == 'production' ? '' : "-${env}"
-    def keyProject = env == '-crash'
-        ? 'domain-registry-crash-kms-keys'
-        : "domain-registry${env}-keys"
     def command =
         """gsutil cp \
-           gs://domain-registry${env}-cloudsql-credentials/${role}_credential.enc - | \
+           gs://domain-registry-dev-deploy/cloudsql-credentials/${env}/${role}_credential.enc - | \
            base64 -d | \
-           gcloud kms decrypt --location global --keyring nomulus \
-           --key sql-credentials-on-gcs-key --plaintext-file=- \
+           gcloud kms decrypt --location global --keyring nomulus-tool-keyring \
+           --key nomulus-tool-key --plaintext-file=- \
            --ciphertext-file=- \
-           --project=${keyProject}"""
+           --project=domain-registry-dev"""
 
     return execInBash(command, '/tmp')
   }
@@ -132,7 +112,6 @@ publishing {
   }
 }
 
-
 flyway {
   def accessInfo = project.ext.getJdbcAccessInfo()
 
@@ -143,13 +122,6 @@ flyway {
 
   locations = [ "classpath:sql/flyway" ]
 }
-
-tasks.flywayMigrate.dependsOn(
-    tasks.create('confirmMigrateOnRestrictedDb') {
-      doLast {
-        project.ext.reconfirmRestrictedDbEnv()
-      }
-    })
 
 dependencies {
   def deps = rootProject.dependencyMap
@@ -170,7 +142,23 @@ dependencies {
   testCompile project(':third_party')
 }
 
-// Ensure that resources are rebuilt before running Flyway tasks
-tasks
-    .findAll { task -> task.group.equals('Flyway')}
-    .collect { task -> task.dependsOn('buildNeeded') }
+flywayValidate.dependsOn('buildNeeded')
+
+if (ext.isCloudSql()) {
+  // Disable dangerous Flyway tasks. Only allow info and validate.
+  tasks.findAll { task -> task.group.equals('Flyway')}.each {
+    if (it.name == 'flywayMigrate') {
+      it.doFirst {
+        throw new UnsupportedOperationException(
+            """ \
+              FlywayMigrate is disabled. See README.md for schema deployment
+              instructions.""".stripIndent())
+      }
+    } else if (it.name != 'flywayInfo' && it.name != 'flywayValidate') {
+      it.doFirst {
+        throw new UnsupportedOperationException(
+            "${it.name} from commandline is not allowed.")
+      }
+    }
+  }
+}
