@@ -155,33 +155,37 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
                       // Write appropriate outboundMessage to pipeline
                       ChannelFuture unusedFutureWriteAndFlush =
                           channel().writeAndFlush(outboundMessage());
-                      channelFuture.addListeners(
-                          future -> {
-                            if (future.isSuccess()) {
-                              ChannelFuture unusedFuture = finished.setSuccess();
-                            } else {
-                              ChannelFuture unusedFuture = finished.setFailure(future.cause());
-                            }
-                          },
-                          // If we don't have a persistent connection, close the connection to this
-                          // channel
-                          future -> {
-                            if (!protocol().persistentConnection()) {
+                      channelFuture
+                          .addListener(
+                              future -> {
+                                if (future.isSuccess()) {
+                                  ChannelFuture unusedFuture = finished.setSuccess();
+                                } else {
+                                  ChannelFuture unusedFuture = finished.setFailure(future.cause());
+                                }
+                              })
+                          .addListener(
+                              // If we don't have a persistent connection, close the connection to
+                              // this
+                              // channel
+                              future -> {
+                                if (!protocol().persistentConnection()) {
 
-                              ChannelFuture closedFuture = channel().close();
-                              closedFuture.addListener(
-                                  f -> {
-                                    if (f.isSuccess()) {
-                                      logger.atInfo().log(
-                                          "Closed stale channel. Moving on to next ProbingStep");
-                                    } else {
-                                      logger.atWarning().log(
-                                          "Issue closing stale channel. Most likely already "
-                                              + "closed.");
-                                    }
-                                  });
-                            }
-                          });
+                                  ChannelFuture closedFuture = channel().close();
+                                  closedFuture.addListener(
+                                      f -> {
+                                        if (f.isSuccess()) {
+                                          logger.atInfo().log(
+                                              "Closed stale channel. Moving on to next"
+                                                  + " ProbingStep");
+                                        } else {
+                                          logger.atWarning().log(
+                                              "Issue closing stale channel. Most likely already "
+                                                  + "closed.");
+                                        }
+                                      });
+                                }
+                              });
                     },
                     delay().getStandardSeconds(),
                     TimeUnit.SECONDS);

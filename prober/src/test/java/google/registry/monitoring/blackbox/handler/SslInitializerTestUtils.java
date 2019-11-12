@@ -29,9 +29,18 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import javax.net.ssl.SSLSession;
-import javax.security.auth.x500.X500Principal;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 
 /** Utility class that provides methods used by {@link SslClientInitializerTest} */
 public class SslInitializerTestUtils {
@@ -53,16 +62,26 @@ public class SslInitializerTestUtils {
    */
   public static X509Certificate signKeyPair(
       SelfSignedCertificate ssc, KeyPair keyPair, String hostname) throws Exception {
-    X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
-    X500Principal dnName = new X500Principal("CN=" + hostname);
-    certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
-    certGen.setSubjectDN(dnName);
-    certGen.setIssuerDN(ssc.cert().getSubjectX500Principal());
-    certGen.setNotBefore(Date.from(Instant.now().minus(Duration.ofDays(1))));
-    certGen.setNotAfter(Date.from(Instant.now().plus(Duration.ofDays(1))));
-    certGen.setPublicKey(keyPair.getPublic());
-    certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
-    return certGen.generate(ssc.key(), "BC");
+    X500Name subjectDnName = new X500Name("CN=" + hostname);
+    BigInteger serialNumber = (BigInteger.valueOf(System.currentTimeMillis()));
+    X500Name issuerDnName = new X500Name(ssc.cert().getIssuerDN().getName());
+    Date from = Date.from(Instant.now().minus(Duration.ofDays(1)));
+    Date to = Date.from(Instant.now().plus(Duration.ofDays(1)));
+    SubjectPublicKeyInfo subPubKeyInfo =
+        SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
+    AlgorithmIdentifier sigAlgId =
+        new DefaultSignatureAlgorithmIdentifierFinder().find("SHA256WithRSAEncryption");
+    AlgorithmIdentifier digAlgId = new DefaultDigestAlgorithmIdentifierFinder().find(sigAlgId);
+
+    ContentSigner sigGen =
+        new BcRSAContentSignerBuilder(sigAlgId, digAlgId)
+            .build(PrivateKeyFactory.createKey(ssc.key().getEncoded()));
+    X509v3CertificateBuilder v3CertGen =
+        new X509v3CertificateBuilder(
+            issuerDnName, serialNumber, from, to, subjectDnName, subPubKeyInfo);
+
+    X509CertificateHolder certificateHolder = v3CertGen.build(sigGen);
+    return new JcaX509CertificateConverter().setProvider("BC").getCertificate(certificateHolder);
   }
 
   /**

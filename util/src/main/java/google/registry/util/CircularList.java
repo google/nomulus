@@ -93,14 +93,6 @@ public class CircularList<T> {
     }
 
     /** Simply calls {@code addElement}, for each element in {@code elements}. */
-    public AbstractBuilder<T, C> add(T... values) {
-      for (T element : values) {
-        add(element);
-      }
-      return this;
-    }
-
-    /** Simply calls {@code addElement}, for each element in {@code elements}. */
     public AbstractBuilder<T, C> add(Iterable<T> values) {
       values.forEach(this::add);
       return this;
