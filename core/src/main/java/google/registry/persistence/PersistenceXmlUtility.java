@@ -48,7 +48,10 @@ public class PersistenceXmlUtility {
               try {
                 return Class.forName(className);
               } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
+                throw new IllegalArgumentException(
+                    String.format(
+                        "Could not load class with name %s present in persistence.xml", className),
+                    e);
               }
             })
         .collect(toImmutableList());
