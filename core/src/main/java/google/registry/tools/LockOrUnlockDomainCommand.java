@@ -24,12 +24,19 @@ import com.beust.jcommander.Parameter;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.CreateAutoTimestamp;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.registry.RegistryLockDao;
+import google.registry.schema.domain.RegistryLock;
 import java.util.List;
+import java.util.UUID;
 import javax.inject.Inject;
+import org.joda.time.DateTime;
 
 /** Shared base class for commands to registry lock or unlock a domain via EPP. */
-public abstract class LockOrUnlockDomainCommand extends MutatingEppToolCommand {
+public abstract class LockOrUnlockDomainCommand extends MutatingEppToolCommand
+    implements CommandWithCloudSql {
 
   protected static final ImmutableSet<StatusValue> REGISTRY_LOCK_STATUSES =
       ImmutableSet.of(
@@ -66,5 +73,20 @@ public abstract class LockOrUnlockDomainCommand extends MutatingEppToolCommand {
     initMutatingEppToolCommand();
     System.out.println(
         "== ENSURE THAT YOU HAVE AUTHENTICATED THE REGISTRAR BEFORE RUNNING THIS COMMAND ==");
+  }
+
+  protected void saveLockObject(DomainBase domain, DateTime now, RegistryLock.Action lockAction) {
+    RegistryLockDao.save(
+        new RegistryLock.Builder()
+            .setRepoId(domain.getRepoId())
+            .setDomainName(domain.getFullyQualifiedDomainName())
+            .setCreationTimestamp(CreateAutoTimestamp.create(now))
+            .setCompletionTimestamp(now)
+            .setAction(lockAction)
+            .setRegistrarPocId("admin")
+            .setRegistrarId(clientId)
+            .isSuperuser(true)
+            .setVerificationCode(UUID.randomUUID().toString())
+            .build());
   }
 }

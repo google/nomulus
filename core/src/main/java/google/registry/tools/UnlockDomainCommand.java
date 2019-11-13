@@ -27,6 +27,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.template.soy.data.SoyMapData;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.schema.domain.RegistryLock.Action;
 import google.registry.tools.soy.DomainUpdateSoyInfo;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -77,6 +78,7 @@ public class UnlockDomainCommand extends LockOrUnlockDomainCommand {
               "addDsRecords", ImmutableList.of(),
               "removeDsRecords", ImmutableList.of(),
               "removeAllDsRecords", false));
+      saveLockObject(domainBase.get(), now, Action.UNLOCK);
     }
   }
 }

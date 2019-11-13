@@ -14,6 +14,7 @@
 
 package google.registry.tools;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.eppcommon.StatusValue.SERVER_TRANSFER_PROHIBITED;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
@@ -25,14 +26,24 @@ import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STAT
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar.Type;
+import google.registry.model.registry.RegistryLockDao;
+import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.schema.domain.RegistryLock;
+import google.registry.schema.domain.RegistryLock.Action;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 /** Unit tests for {@link LockDomainCommand}. */
 public class LockDomainCommandTest extends EppToolCommandTestCase<LockDomainCommand> {
+
+  @Rule
+  public final JpaTransactionManagerRule jpaTmRule =
+      new JpaTransactionManagerRule.Builder().build();
 
   @Before
   public void before() {
@@ -46,6 +57,23 @@ public class LockDomainCommandTest extends EppToolCommandTestCase<LockDomainComm
     persistActiveDomain("example.tld");
     runCommandForced("--client=NewRegistrar", "example.tld");
     eppVerifier.verifySent("domain_lock.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+  }
+
+  @Test
+  public void testSuccess_writesLockObject() throws Exception {
+    DomainBase domainBase = persistActiveDomain("example.tld");
+    runCommandForced("--client=NewRegistrar", "example.tld");
+    eppVerifier.verifySent("domain_lock.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+
+    RegistryLock lock =
+        RegistryLockDao.getMostRecentByRepoId(domainBase.getRepoId())
+            .orElseThrow(() -> new IllegalStateException("There should be a lock object saved"));
+
+    assertThat(lock.isVerified()).isTrue();
+    assertThat(lock.getAction()).isEqualTo(Action.LOCK);
+    assertThat(lock.getDomainName()).isEqualTo("example.tld");
+    assertThat(lock.isSuperuser()).isTrue();
+    assertThat(lock.getRegistrarId()).isEqualTo("NewRegistrar");
   }
 
   @Test
@@ -74,6 +102,11 @@ public class LockDomainCommandTest extends EppToolCommandTestCase<LockDomainComm
     for (String domain : domains) {
       eppVerifier.verifySent("domain_lock.xml", ImmutableMap.of("DOMAIN", domain));
     }
+    assertThat(
+            RegistryLockDao.getByRegistrarId("NewRegistrar").stream()
+                .map(RegistryLock::getDomainName)
+                .collect(toImmutableList()))
+        .isEqualTo(domains);
   }
 
   @Test
@@ -88,11 +121,9 @@ public class LockDomainCommandTest extends EppToolCommandTestCase<LockDomainComm
   @Test
   public void testSuccess_alreadyLockedDomain_performsNoAction() throws Exception {
     persistResource(
-        newDomainBase("example.tld")
-            .asBuilder()
-            .addStatusValues(REGISTRY_LOCK_STATUSES)
-            .build());
+        newDomainBase("example.tld").asBuilder().addStatusValues(REGISTRY_LOCK_STATUSES).build());
     runCommandForced("--client=NewRegistrar", "example.tld");
+    assertThat(RegistryLockDao.getByRegistrarId("NewRegistrar")).isEmpty();
   }
 
   @Test
