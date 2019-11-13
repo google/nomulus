@@ -16,6 +16,7 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
+import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.security.JsonResponseHelper.Status.ERROR;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
 import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
@@ -54,8 +55,8 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
 /**
- * UI action that allows for updating registrar locks for a particular registrar. Locks /
- * unlocks must be verified separately before they are written permanently.
+ * UI action that allows for creating registry locks. Locks / unlocks must be verified separately
+ * before they are written permanently.
  *
  * <p>Note: at the moment we have no mechanism for JSON GET/POSTs in the same class or at the same
  * URL, which is why this is distinct from the {@link RegistryLockGetAction}.
@@ -109,14 +110,17 @@ public final class RegistryLockPostAction implements Runnable, JsonActionRunner.
   @Override
   public Map<String, ?> handleJsonRequest(Map<String, ?> input) {
     try {
-      checkArgument(input != null, "Malformed JSON");
+      checkArgument(input != null, "Null JSON");
       String clientId = (String) input.get(PARAM_CLIENT_ID);
       checkArgument(
           !Strings.isNullOrEmpty(clientId), "Missing key for client: %s", PARAM_CLIENT_ID);
 
       verifyRegistryLockPassword(clientId, (String) input.get(PARAM_PASSWORD));
-      RegistryLock registryLock = createLock(clientId, input);
-      RegistryLockDao.save(registryLock);
+      RegistryLock registryLock = jpaTm().transact(() -> {
+        RegistryLock lock = createLock(clientId, input);
+        RegistryLockDao.save(lock);
+        return lock;
+      });
       sendVerificationEmail(registryLock);
       String action = registryLock.getAction().equals(RegistryLock.Action.LOCK) ? "lock" : "unlock";
       return JsonResponseHelper.create(SUCCESS, String.format("Successful %s", action));

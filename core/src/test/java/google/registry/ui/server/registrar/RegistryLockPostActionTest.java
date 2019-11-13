@@ -17,6 +17,7 @@ package google.registry.ui.server.registrar;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static org.mockito.Mockito.verify;
@@ -104,26 +105,14 @@ public final class RegistryLockPostActionTest {
 
   @Test
   public void testSuccess_lock() throws Exception {
-    Map<String, ?> response =
-        action.handleJsonRequest(
-            ImmutableMap.of(
-                "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
-                "isLock", true,
-                "password", "hi"));
+    Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertSuccess(response, "lock", "Marla.Singer@crr.com");
   }
 
   @Test
   public void testSuccess_unlock() throws Exception {
     RegistryLockDao.save(createLock().asBuilder().setCompletionTimestamp(clock.nowUtc()).build());
-    Map<String, ?> response =
-        action.handleJsonRequest(
-            ImmutableMap.of(
-                "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
-                "isLock", false,
-                "password", "hi"));
+    Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertSuccess(response, "unlock", "Marla.Singer@crr.com");
   }
 
@@ -133,25 +122,13 @@ public final class RegistryLockPostActionTest {
         createLock().asBuilder().isSuperuser(true).setCompletionTimestamp(clock.nowUtc()).build());
     action.authResult =
         AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, true));
-    Map<String, ?> response =
-        action.handleJsonRequest(
-            ImmutableMap.of(
-                "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
-                "isLock", false,
-                "password", "hi"));
+    Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertSuccess(response, "unlock", "johndoe@theregistrar.com");
   }
 
   @Test
   public void testFailure_unlock_noLock() {
-    Map<String, ?> response =
-        action.handleJsonRequest(
-            ImmutableMap.of(
-                "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
-                "isLock", false,
-                "password", "hi"));
+    Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertFailureWithMessage(response, "Cannot unlock a domain without a previously-verified lock");
   }
 
@@ -163,13 +140,7 @@ public final class RegistryLockPostActionTest {
             .setAction(Action.UNLOCK)
             .setCompletionTimestamp(clock.nowUtc())
             .build());
-    Map<String, ?> response =
-        action.handleJsonRequest(
-            ImmutableMap.of(
-                "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
-                "isLock", false,
-                "password", "hi"));
+    Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertFailureWithMessage(response, "Cannot unlock a domain multiple times");
   }
 
@@ -177,13 +148,7 @@ public final class RegistryLockPostActionTest {
   public void testFailure_unlock_nonAdminUnlockingAdmin() {
     RegistryLockDao.save(
         createLock().asBuilder().isSuperuser(true).setCompletionTimestamp(clock.nowUtc()).build());
-    Map<String, ?> response =
-        action.handleJsonRequest(
-            ImmutableMap.of(
-                "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
-                "isLock", false,
-                "password", "hi"));
+    Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertFailureWithMessage(response, "Non-admin user cannot unlock an admin-locked domain");
   }
 
@@ -192,20 +157,14 @@ public final class RegistryLockPostActionTest {
     // Admin user should be able to lock/unlock regardless
     action.authResult =
         AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, true));
-    Map<String, ?> response =
-        action.handleJsonRequest(
-            ImmutableMap.of(
-                "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
-                "isLock", true,
-                "password", "hi"));
+    Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertSuccess(response, "lock", "johndoe@theregistrar.com");
   }
 
   @Test
   public void testFailure_noInput() {
     Map<String, ?> response = action.handleJsonRequest(null);
-    assertFailureWithMessage(response, "Malformed JSON");
+    assertFailureWithMessage(response, "Null JSON");
   }
 
   @Test
@@ -232,24 +191,17 @@ public final class RegistryLockPostActionTest {
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of(
-                "clientId",
-                "TheRegistrar",
-                "fullyQualifiedDomainName",
-                "example.tld",
-                "password",
-                "hi"));
+                "clientId", "TheRegistrar",
+                "fullyQualifiedDomainName", "example.tld",
+                "password", "hi"));
     assertFailureWithMessage(response, "Missing key for isLock: isLock");
   }
 
   @Test
   public void testFailure_notAllowedOnRegistrar() {
-    Map<String, ?> response =
-        action.handleJsonRequest(
-            ImmutableMap.of(
-                "clientId", "NewRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
-                "isLock", true,
-                "password", "password"));
+    persistResource(
+        loadRegistrar("TheRegistrar").asBuilder().setRegistryLockAllowed(false).build());
+    Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertFailureWithMessage(response, "Registry lock not allowed for this registrar");
   }
 
@@ -269,13 +221,7 @@ public final class RegistryLockPostActionTest {
     action.authResult =
         AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, false));
     // A wrong password should give the same error as not-enabled-for-this-contact
-    Map<String, ?> response =
-        action.handleJsonRequest(
-            ImmutableMap.of(
-                "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
-                "isLock", true,
-                "password", "hi"));
+    Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertFailureWithMessage(response, "Incorrect registry lock password for contact");
   }
 
@@ -308,13 +254,7 @@ public final class RegistryLockPostActionTest {
     RegistryLockDao.save(
         createLock().asBuilder().setCompletionTimestamp(clock.nowUtc().minusMinutes(1)).build());
 
-    Map<String, ?> response =
-        action.handleJsonRequest(
-            ImmutableMap.of(
-                "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
-                "isLock", true,
-                "password", "hi"));
+    Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertSuccess(response, "lock", "Marla.Singer@crr.com");
   }
 
@@ -326,13 +266,7 @@ public final class RegistryLockPostActionTest {
             .setCreationTimestamp(CreateAutoTimestamp.create(clock.nowUtc().minusHours(2)))
             .build());
 
-    Map<String, ?> response =
-        action.handleJsonRequest(
-            ImmutableMap.of(
-                "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
-                "isLock", true,
-                "password", "hi"));
+    Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertSuccess(response, "lock", "Marla.Singer@crr.com");
   }
 
@@ -340,14 +274,24 @@ public final class RegistryLockPostActionTest {
   public void testFailure_alreadyPendingLock() {
     RegistryLockDao.save(createLock());
 
-    Map<String, ?> response =
-        action.handleJsonRequest(
-            ImmutableMap.of(
-                "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
-                "isLock", true,
-                "password", "hi"));
+    Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertFailureWithMessage(response, "A pending action already exists for example.tld");
+  }
+
+  private ImmutableMap<String, Object> lockRequest() {
+    return fullRequest(true);
+  }
+
+  private ImmutableMap<String, Object> unlockRequest() {
+    return fullRequest(false);
+  }
+
+  private ImmutableMap<String, Object> fullRequest(boolean lock) {
+    return ImmutableMap.of(
+        "isLock", lock,
+        "clientId", "TheRegistrar",
+        "fullyQualifiedDomainName", "example.tld",
+        "password", "hi");
   }
 
   private RegistryLock createLock() {
