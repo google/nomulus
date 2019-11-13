@@ -17,6 +17,7 @@ package google.registry.reporting.icann;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
+import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.reporting.icann.IcannReportingModule.MANIFEST_FILE_NAME;
@@ -28,6 +29,7 @@ import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
+import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.common.Cursor;
@@ -35,22 +37,32 @@ import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registries;
 import google.registry.model.registry.Registry;
 import google.registry.request.Action;
+import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
+import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
 import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
 import google.registry.util.SendEmailService;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
 /**
  * Action that uploads the monthly activity/transactions reports from GCS to ICANN via an HTTP PUT.
@@ -90,89 +102,77 @@ public final class IcannReportingUploadAction implements Runnable {
   @Inject @Config("alertRecipientEmailAddress") InternetAddress recipient;
   @Inject SendEmailService emailService;
   @Inject Clock clock;
+  @Inject LockHandler lockHandler;
 
   @Inject
   IcannReportingUploadAction() {}
 
   @Override
   public void run() {
-    ImmutableMap.Builder<String, Boolean> reportSummaryBuilder = new ImmutableMap.Builder<>();
+    Callable<Void> lockrunner =
+        () -> {
+          ImmutableMap.Builder<String, Boolean> reportSummaryBuilder = new ImmutableMap.Builder<>();
 
-    // Load all activity cursors
-    Map<String, Cursor> activityCursors = loadCursors(CursorType.ICANN_UPLOAD_ACTIVITY);
+          // Load all activity cursors
+          HashMap<Cursor, List<Object>> Cursors = loadCursors();
 
-    // If cursor date is before today or today, upload the corresponding activity report
-    activityCursors.forEach(
-        (tldStr, cursor) -> {
-          DateTime cursorTime = cursor.getCursorTime();
-          if (cursorTime.isBefore(clock.nowUtc())) {
-            uploadReport(
-                cursorTime,
-                CursorType.ICANN_UPLOAD_ACTIVITY,
-                "-activity-",
-                tldStr,
-                reportSummaryBuilder);
-          }
-        });
+          // If cursor date is before today or today, upload the corresponding activity report
+          Cursors.entrySet().stream()
+              .filter(entry -> getCursorTimeOrStartOfTime(entry.getKey()).isBefore(clock.nowUtc()))
+              .forEach(
+                  (entry) -> {
+                    DateTime cursorTime = getCursorTimeOrStartOfTime(entry.getKey());
+                    uploadReport(
+                        cursorTime,
+                        (CursorType) entry.getValue().get(0),
+                        (entry.getValue().size() == 2 ? entry.getValue().get(1).toString() : null),
+                        reportSummaryBuilder);
+                  });
+          // Send email of which reports were uploaded
+          emailUploadResults(reportSummaryBuilder.build());
+          response.setStatus(SC_OK);
+          response.setContentType(PLAIN_TEXT_UTF_8);
+          return null;
+        };
 
-    // Load all transaction cursors
-    Map<String, Cursor> transactionCursors = loadCursors(CursorType.ICANN_UPLOAD_TX);
-
-    // If cursor date is before today or today, upload the corresponding transaction report
-    transactionCursors.forEach(
-        (tldStr, cursor) -> {
-          DateTime cursorTime = cursor.getCursorTime();
-          if (cursorTime.isBefore(clock.nowUtc())) {
-            uploadReport(
-                cursorTime,
-                CursorType.ICANN_UPLOAD_TX,
-                "-transactions-",
-                tldStr,
-                reportSummaryBuilder);
-          }
-        });
-
-    // Check Manifest cursor and upload if necessary
-    Cursor manifestCursor =
-        ofy().load().key(Cursor.createGlobalKey(CursorType.ICANN_UPLOAD_MANIFEST)).now();
-    if (manifestCursor == null || manifestCursor.getCursorTime().isBefore(clock.nowUtc())) {
-      reportSummaryBuilder.put(MANIFEST_FILE_NAME, uploadManifest(manifestCursor));
+    String lockname = "IcannReportingUploadAction";
+    if (!lockHandler.executeWithLocks(lockrunner, null, Duration.standardHours(2), lockname)) {
+      throw new ServiceUnavailableException("Lock for IcannReportingUploadAction already in use.");
     }
-
-    // Send email of which reports were uploaded
-    emailUploadResults(reportSummaryBuilder.build());
-    response.setStatus(SC_OK);
-    response.setContentType(PLAIN_TEXT_UTF_8);
   }
 
   /** Uploads the report and rolls forward the cursor for that report. */
   private void uploadReport(
       DateTime cursorTime,
       CursorType cursorType,
-      String fileType,
       String tldStr,
       ImmutableMap.Builder<String, Boolean> reportSummaryBuilder) {
-
-    // Construct the report name to upload
     String reportBucketname = String.format("%s/%s", reportingBucket, subdir);
-    String filename =
-        tldStr
-            + fileType
-            + cursorTime.year().get()
-            + String.format("%02d", cursorTime.monthOfYear().get())
-            + ".csv";
-    logger.atInfo().log("Reading ICANN report %s from bucket %s", filename, reportBucketname);
+    String filename = getFileName(cursorType, cursorTime, tldStr);
     final GcsFilename gcsFilename = new GcsFilename(reportBucketname, filename);
-
+    logger.atInfo().log("Reading ICANN report %s from bucket %s", filename, reportBucketname);
     // Check that the report exists
     try {
       verifyFileExists(gcsFilename);
     } catch (IllegalArgumentException e) {
       if (clock.nowUtc().dayOfMonth().get() == 1) {
         logger.atInfo().withCause(e).log(
-            filename + " was not found. This report may not have been staged yet.");
+            "Could not upload "
+                + cursorType
+                + " report for "
+                + tldStr
+                + " because file "
+                + filename
+                + " did not exist. This report may not have been staged yet.");
       } else {
-        logger.atSevere().withCause(e).log(filename + " was not found.");
+        logger.atSevere().withCause(e).log(
+            "Could not upload "
+                + cursorType
+                + " report for "
+                + tldStr
+                + " because file "
+                + filename
+                + " did not exist.");
       }
       reportSummaryBuilder.put(filename, false);
       return;
@@ -195,68 +195,76 @@ public final class IcannReportingUploadAction implements Runnable {
 
     // Set cursor to first day of next month if the upload succeeded
     if (success) {
-      tm().transact(
-              () ->
-                  ofy()
-                      .save()
-                      .entity(
-                          Cursor.create(
-                              cursorType,
-                              cursorTime.withTimeAtStartOfDay().plusMonths(1).withDayOfMonth(1),
-                              Registry.get(tldStr))));
+      Cursor newCursor;
+      if (cursorType.equals(CursorType.ICANN_UPLOAD_MANIFEST)) {
+        newCursor =
+            Cursor.createGlobal(
+                cursorType, cursorTime.withTimeAtStartOfDay().withDayOfMonth(1).plusMonths(1));
+      } else {
+        newCursor =
+            Cursor.create(
+                cursorType,
+                cursorTime.withTimeAtStartOfDay().withDayOfMonth(1).plusMonths(1),
+                Registry.get(tldStr));
+      }
+      tm().transact(() -> ofy().save().entity(newCursor));
     }
   }
 
-  /** Returns a map of each tld to to the cursor for that tld of the given CursorType. */
-  private Map<String, Cursor> loadCursors(CursorType cursorType) {
-    return Registries.getTlds().stream()
-        .map(Registry::get)
-        .collect(toImmutableMap(r -> r.getTldStr(), r -> getCursor(cursorType, r)));
+  private String getFileName(CursorType cursorType, DateTime cursorTime, String tld) {
+    if (cursorType.equals(CursorType.ICANN_UPLOAD_MANIFEST)) {
+      return MANIFEST_FILE_NAME;
+    }
+    String filename =
+        tld
+            + (cursorType.equals(CursorType.ICANN_UPLOAD_ACTIVITY)
+                ? "-activity-"
+                : "-transactions-")
+            + cursorTime.year().get()
+            + String.format("%02d", cursorTime.monthOfYear().get())
+            + ".csv";
+    return filename;
   }
 
-  /**
-   * Returns the cursor for the given CursorType and Registry. Returns a new cursor if cursor does
-   * not exist.
-   */
-  private Cursor getCursor(CursorType cursorType, Registry registry) {
-    Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, registry)).now();
-    if (cursor == null) {
-      cursor = Cursor.create(cursorType, clock.nowUtc().withTimeAtStartOfDay(), registry);
-    }
-    return cursor;
-  }
-
-  /** Uploads the MANIFEST.txt file and sets the cursor to the first of the next month. */
-  private boolean uploadManifest(@Nullable Cursor manifestCursor) {
-    String reportBucketname = String.format("%s/%s", reportingBucket, subdir);
-    logger.atInfo().log("Reading MANIFEST file");
-    final GcsFilename filename = new GcsFilename(reportBucketname, MANIFEST_FILE_NAME);
-    verifyFileExists(filename);
-    boolean success = false;
-    try {
-      success =
-          retrier.callWithRetry(
-              () -> {
-                final byte[] payload = readBytesFromGcs(filename);
-                return icannReporter.send(payload, MANIFEST_FILE_NAME);
-              },
-              IcannReportingUploadAction::isUploadFailureRetryable);
-    } catch (RuntimeException e) {
-      logger.atWarning().withCause(e).log("Upload to %s failed.", filename);
-    }
-    if (success) {
-      DateTime cursorTime =
-          (manifestCursor == null ? clock.nowUtc() : manifestCursor.getCursorTime());
-      tm().transact(
-              () ->
-                  ofy()
-                      .save()
-                      .entity(
-                          Cursor.createGlobal(
-                              CursorType.ICANN_UPLOAD_MANIFEST,
-                              cursorTime.withTimeAtStartOfDay().plusMonths(1).withDayOfMonth(1))));
-    }
-    return success;
+  /** Returns a map of each cursor to the CursorType and tld. */
+  private HashMap<Cursor, List<Object>> loadCursors() {
+    Map<Key<Cursor>, String> activityKeyMap =
+        Registries.getTlds().stream()
+            .map(Registry::get)
+            .collect(
+                toImmutableMap(
+                    r -> Cursor.createKey(CursorType.ICANN_UPLOAD_ACTIVITY, r),
+                    r -> r.getTldStr()));
+    Map<Key<Cursor>, String> transactionKeyMap =
+        Registries.getTlds().stream()
+            .map(Registry::get)
+            .collect(
+                toImmutableMap(
+                    r -> Cursor.createKey(CursorType.ICANN_UPLOAD_TX, r), r -> r.getTldStr()));
+    Set<Key<Cursor>> keys = new HashSet<>();
+    keys.addAll(activityKeyMap.keySet());
+    keys.addAll(transactionKeyMap.keySet());
+    keys.add(Cursor.createGlobalKey(CursorType.ICANN_UPLOAD_MANIFEST));
+    Map<Key<Cursor>, Cursor> cursorMap = ofy().load().keys(keys);
+    HashMap<Cursor, List<Object>> cursors = new LinkedHashMap<>();
+    activityKeyMap.forEach(
+        (key, tld) -> {
+          List<Object> list = new ArrayList<>();
+          list.add(CursorType.ICANN_UPLOAD_ACTIVITY);
+          list.add(tld);
+          cursors.put(cursorMap.get(key), list);
+        });
+    transactionKeyMap.forEach(
+        (key, tld) -> {
+          List<Object> list = new ArrayList<>();
+          list.add(CursorType.ICANN_UPLOAD_TX);
+          list.add(tld);
+          cursors.put(cursorMap.get(key), list);
+        });
+    cursors.put(
+        cursorMap.get(Cursor.createGlobalKey(CursorType.ICANN_UPLOAD_MANIFEST)),
+        Collections.singletonList(CursorType.ICANN_UPLOAD_MANIFEST));
+    return cursors;
   }
 
   /** Don't retry when reports are already uploaded or can't be uploaded. */

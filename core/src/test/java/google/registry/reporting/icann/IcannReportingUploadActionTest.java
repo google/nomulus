@@ -19,6 +19,7 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.GcsTestingUtils.writeGcsFile;
+import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.Mockito.mock;
@@ -35,8 +36,10 @@ import google.registry.gcs.GcsUtils;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registry;
+import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
+import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
 import google.registry.util.EmailMessage;
@@ -85,6 +88,7 @@ public class IcannReportingUploadActionTest {
     action.recipient = new InternetAddress("recipient@example.com");
     action.response = response;
     action.clock = clock;
+    action.lockHandler = new FakeLockHandler(true);
     return action;
   }
 
@@ -138,8 +142,8 @@ public class IcannReportingUploadActionTest {
   public void testSuccess() throws Exception {
     IcannReportingUploadAction action = createAction();
     action.run();
-    verify(mockReporter).send(PAYLOAD_FAIL, "tld-activity-200606.csv");
     verify(mockReporter).send(PAYLOAD_SUCCESS, "foo-activity-200606.csv");
+    verify(mockReporter).send(PAYLOAD_FAIL, "tld-activity-200606.csv");
     verify(mockReporter).send(PAYLOAD_SUCCESS, "foo-transactions-200606.csv");
     verify(mockReporter).send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv");
 
@@ -309,7 +313,10 @@ public class IcannReportingUploadActionTest {
     action.run();
     assertAboutLogs()
         .that(logHandler)
-        .hasLogAtLevelWithMessage(Level.SEVERE, "foo-activity-200606.csv was not found.");
+        .hasLogAtLevelWithMessage(
+            Level.SEVERE,
+            "Could not upload ICANN_UPLOAD_ACTIVITY report for foo because file"
+                + " foo-activity-200606.csv did not exist.");
   }
 
   @Test
@@ -325,7 +332,20 @@ public class IcannReportingUploadActionTest {
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.INFO,
-            "foo-activity-200607.csv was not found. This report may not have been staged yet.");
+            "Could not upload ICANN_UPLOAD_ACTIVITY report for foo because file"
+                + " foo-activity-200607.csv did not exist. This report may not have been staged"
+                + " yet.");
+  }
+
+  @Test
+  public void testFailure_lockIsntAvailable() throws Exception {
+    IcannReportingUploadAction action = createAction();
+    action.lockHandler = new FakeLockHandler(false);
+    ServiceUnavailableException thrown =
+        assertThrows(ServiceUnavailableException.class, () -> action.run());
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Lock for IcannReportingUploadAction already in use.");
   }
 }
 
