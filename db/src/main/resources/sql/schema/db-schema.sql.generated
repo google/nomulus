@@ -26,6 +26,14 @@
         primary key (revision_id)
     );
 
+    create table "Cursor" (
+       tld text not null,
+        type text not null,
+        cursor_time timestamptz not null,
+        last_update_time timestamptz not null,
+        primary key (tld, type)
+    );
+
     create table "DelegationSignerData" (
        key_tag int4 not null,
         algorithm int4 not null,
