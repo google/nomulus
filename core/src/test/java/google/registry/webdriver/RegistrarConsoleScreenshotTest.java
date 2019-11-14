@@ -21,11 +21,13 @@ import static google.registry.testing.AppEngineRule.makeRegistrarContact2;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
+import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.ObjectifyFilter;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.OfyFilter;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registry.RegistryLockDao;
@@ -33,6 +35,7 @@ import google.registry.module.frontend.FrontendServlet;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.server.RegistryTestServer;
 import google.registry.testing.CertificateSamples;
+import java.util.UUID;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,6 +54,7 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
               route("/registrar", FrontendServlet.class),
               route("/registrar-ote-status", FrontendServlet.class),
               route("/registrar-settings", FrontendServlet.class),
+              route("/registry-lock-get", FrontendServlet.class),
               route("/registry-lock-verify", FrontendServlet.class))
           .setFilters(ObjectifyFilter.class, OfyFilter.class)
           .setFixtures(BASIC)
@@ -406,5 +410,98 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.get(server.getUrl("/registry-lock-verify?isLock=true&lockVerificationCode=asdfasdf"));
     driver.waitForElement(By.id("reg-content"));
     driver.diffPage("page");
+  }
+
+  @Test
+  public void registryLock_empty() throws Throwable {
+    driver.get(server.getUrl("/registrar?clientId=TheRegistrar#registry-lock"));
+    driver.waitForElement(By.tagName("h2"));
+    driver.diffPage("page");
+  }
+
+  @Test
+  public void registryLock_notAllowed() throws Throwable {
+    server.runInAppEngineEnvironment(
+        () -> {
+          persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(false).build());
+          return null;
+        });
+    driver.get(server.getUrl("/registrar?clientId=TheRegistrar#registry-lock"));
+    driver.waitForElement(By.tagName("h2"));
+    driver.diffPage("page");
+  }
+
+  @Test
+  public void registryLock_nonEmpty() throws Throwable {
+    server.runInAppEngineEnvironment(
+        () -> {
+          saveRegistryLock();
+          return null;
+        });
+    driver.get(server.getUrl("/registrar#registry-lock"));
+    driver.waitForElement(By.tagName("h2"));
+    driver.diffPage("page");
+  }
+
+  @Test
+  public void registryLock_nonEmpty_admin() throws Throwable {
+    server.runInAppEngineEnvironment(
+        () -> {
+          createTld("tld");
+          DomainBase domain = persistActiveDomain("example.tld");
+          RegistryLockDao.save(createRegistryLock(domain).asBuilder().isSuperuser(true).build());
+          return null;
+        });
+    driver.get(server.getUrl("/registrar#registry-lock"));
+    driver.waitForElement(By.tagName("h2"));
+    driver.diffPage("page");
+  }
+
+  @Test
+  public void registryLock_unlockModal() throws Throwable {
+    server.runInAppEngineEnvironment(
+        () -> {
+          saveRegistryLock();
+          return null;
+        });
+    driver.get(server.getUrl("/registrar#registry-lock"));
+    driver.waitForElement(By.tagName("h2"));
+    driver.findElement(By.id("button-unlock-example.tld")).click();
+    driver.waitForElement(By.className("modal-content"));
+    driver.diffPage("page");
+  }
+
+  @Test
+  public void registryLock_lockModal() throws Throwable {
+    server.runInAppEngineEnvironment(
+        () -> {
+          createTld("tld");
+          persistActiveDomain("example.tld");
+          return null;
+        });
+    driver.get(server.getUrl("/registrar#registry-lock"));
+    driver.waitForElement(By.tagName("h2"));
+    driver.findElement(By.id("lock-domain-input")).sendKeys("example.tld");
+    driver.findElement(By.id("lock-domain-submit")).click();
+    driver.waitForElement(By.className("modal-content"));
+    driver.diffPage("page");
+  }
+
+  private void saveRegistryLock() {
+    createTld("tld");
+    DomainBase domainBase = persistActiveDomain("example.tld");
+    RegistryLockDao.save(createRegistryLock(domainBase));
+  }
+
+  private RegistryLock createRegistryLock(DomainBase domainBase) {
+    return new RegistryLock.Builder()
+        .setVerificationCode(UUID.randomUUID().toString())
+        .isSuperuser(false)
+        .setRegistrarId("TheRegistrar")
+        .setRegistrarPocId("Marla.Singer@crr.com")
+        .setLockCompletionTimestamp(START_OF_TIME)
+        .setDomainName("example.tld")
+        .setRepoId(domainBase.getRepoId())
+        .build();
   }
 }

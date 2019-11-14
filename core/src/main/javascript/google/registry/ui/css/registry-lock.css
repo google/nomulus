@@ -1,0 +1,47 @@
+/** Registry Lock */
+
+ .new-registry-lock #lock-domain-input {
+   width: 50%
+ }
+
+ .new-registry-lock #lock-domain-submit {
+   margin-left: 5px;
+ }
+
+ .registry-locks-table {
+   width: 1000px;
+ }
+
+ .registry-locks-table td {
+   padding: 0.5em 0;
+   vertical-align: middle;
+ }
+
+ .lock-confirm-modal {
+   position: fixed;
+   top: 0;
+   right: 0;
+   bottom: 0;
+   left: 0;
+   background: rgba(0,0,0,0.8);
+   z-index: 99999;
+ }
+
+ .lock-confirm-modal > div {
+   width: 400px;
+   position: relative;
+   margin: 10% auto;
+   padding: 5px 20px 13px 20px;
+   border-radius: 10px;
+   background: #fff;
+ }
+
+ .lock-confirm-modal .buttons-div {
+   margin-top: 10px;
+   display: flex;
+   justify-content: flex-end;
+ }
+
+ .lock-confirm-modal button {
+   margin-left: 10px
+ }
