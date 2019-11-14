@@ -25,6 +25,7 @@ goog.require('registry.registrar.AdminSettings');
 goog.require('registry.registrar.ContactSettings');
 goog.require('registry.registrar.ContactUs');
 goog.require('registry.registrar.Dashboard');
+goog.require('registry.registrar.RegistryLock');
 goog.require('registry.registrar.Resources');
 goog.require('registry.registrar.SecuritySettings');
 goog.require('registry.registrar.WhoisSettings');
@@ -82,6 +83,10 @@ registry.registrar.Console = function(params) {
   this.pageMap['whois-settings'] = registry.registrar.WhoisSettings;
   this.pageMap['contact-us'] = registry.registrar.ContactUs;
   this.pageMap['resources'] = registry.registrar.Resources;
+  // Registry lock is enabled or not per registrar, but since we don't have the registrar object
+  // accessible here yet, show the link no matter what (the page will show an error message if
+  // registry lock isn't enabled for this registrar)
+  this.pageMap['registry-lock'] = registry.registrar.RegistryLock;
   // For admin use. The relevant tab is only shown in Console.soy for admins,
   // but we also need to remove it here, otherwise it'd still be accessible if
   // the user manually puts '#admin-settings' in the URL.
