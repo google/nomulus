@@ -64,7 +64,7 @@ public class Cursor {
 
   /**
    * Returns the tld the cursor is referring to. If the cursor is a global cursor, the tld will be
-   * null.
+   * "Global".
    */
   public String getTld() {
     return tld;
