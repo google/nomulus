@@ -73,12 +73,12 @@ ext {
   getCloudSqlCredential = { env, role ->
     def command =
         """gsutil cp \
-           gs://domain-registry-dev-deploy/cloudsql-credentials/${env}/${role}_credential.enc - | \
+           gs://${rootProject.ext.devProject}-deploy/cloudsql-credentials/${env}/${role}_credential.enc - | \
            base64 -d | \
            gcloud kms decrypt --location global --keyring nomulus-tool-keyring \
            --key nomulus-tool-key --plaintext-file=- \
            --ciphertext-file=- \
-           --project=domain-registry-dev"""
+           --project=${rootProject.ext.devProject}"""
 
     return execInBash(command, '/tmp')
   }
