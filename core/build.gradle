@@ -243,6 +243,8 @@ dependencies {
   // Known issue: nebula-lint misses inherited dependency.
   compile project(':third_party')
   compile project(':util')
+  // Import NomulusPostreSql from ':db' for compile but exclude dependencies.
+  compile project(path: ':db', configuration: 'compileApi')
   testRuntime project(':db')
 
   // Include auto-value in compile until nebula-lint understands

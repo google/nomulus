@@ -92,8 +92,23 @@ task schemaJar(type: Jar) {
   }
 }
 
+// Expose NomulusPostgreSql class to ':core' for compile, without leaking
+// unnecessary dependencies to the release artifacts through ':core'.
+// Jar is put in the 'compileApi' configuration.
+task compileApiJar(type: Jar) {
+  archiveBaseName = 'compile'
+  from(sourceSets.main.output) {
+    include 'google/registry/persistence/NomulusPostgreSql**'
+  }
+}
+
+configurations {
+  compileApi
+}
+
 artifacts {
   archives schemaJar
+  compileApi compileApiJar
 }
 
 publishing {

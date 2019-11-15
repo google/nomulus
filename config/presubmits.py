@@ -99,6 +99,12 @@ PRESUBMITS = {
         "System.(out|err).println is only allowed in tools/ packages. Please "
         "use a logger instead.",
 
+    # PostgreSQLContainer instantiation must specify docker tag
+    PresubmitCheck(
+        r"[\s\S]*new\s+PostgreSQLContainer(<[\s\S]*>)?\(\s*\)[\s\S]*",
+        "java", {}):
+      "PostgreSQLContainer instantiation must specify docker tag.",
+
     # Various Soy linting checks
     PresubmitCheck(
         r".* (/\*)?\* {?@param ",

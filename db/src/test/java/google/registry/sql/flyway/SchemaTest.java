@@ -19,6 +19,7 @@ import static google.registry.testing.TextDiffSubject.assertThat;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.Resources;
+import google.registry.persistence.NomulusPostgreSql;
 import java.io.File;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -54,7 +55,7 @@ public class SchemaTest {
    */
   @Rule
   public PostgreSQLContainer sqlContainer =
-      new PostgreSQLContainer<>("postgres:9.6.12")
+      new PostgreSQLContainer<>(NomulusPostgreSql.getDockerTag())
           .withClasspathResourceMapping(
               MOUNTED_RESOURCE_PATH, CONTAINER_MOUNT_POINT, BindMode.READ_WRITE);
 

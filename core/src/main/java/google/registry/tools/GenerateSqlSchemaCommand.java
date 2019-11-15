@@ -20,6 +20,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.annotations.VisibleForTesting;
 import google.registry.persistence.HibernateSchemaExporter;
+import google.registry.persistence.NomulusPostgreSql;
 import google.registry.persistence.PersistenceXmlUtility;
 import java.io.File;
 import java.io.IOException;
@@ -83,7 +84,7 @@ public class GenerateSqlSchemaCommand implements Command {
 
       // Start the container and store the address information.
       postgresContainer =
-          new PostgreSQLContainer()
+          new PostgreSQLContainer(NomulusPostgreSql.getDockerTag())
               .withDatabaseName(DB_NAME)
               .withUsername(DB_USERNAME)
               .withPassword(DB_PASSWORD);

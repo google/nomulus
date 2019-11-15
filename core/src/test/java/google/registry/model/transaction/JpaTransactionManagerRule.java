@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
 import google.registry.persistence.HibernateSchemaExporter;
+import google.registry.persistence.NomulusPostgreSql;
 import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceXmlUtility;
 import google.registry.testing.FakeClock;
@@ -90,7 +91,9 @@ public class JpaTransactionManagerRule extends ExternalResource {
   }
 
   private static JdbcDatabaseContainer create() {
-    PostgreSQLContainer container = new PostgreSQLContainer().withDatabaseName(MANAGEMENT_DB_NAME);
+    PostgreSQLContainer container =
+        new PostgreSQLContainer(NomulusPostgreSql.getDockerTag())
+            .withDatabaseName(MANAGEMENT_DB_NAME);
     container.start();
     Runtime.getRuntime().addShutdownHook(new Thread(() -> container.close()));
     return container;

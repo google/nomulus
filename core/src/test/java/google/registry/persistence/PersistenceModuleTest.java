@@ -29,7 +29,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 /** Unit tests for {@link PersistenceModule}. */
 @RunWith(JUnit4.class)
 public class PersistenceModuleTest {
-  @Rule public PostgreSQLContainer database = new PostgreSQLContainer();
+  @Rule
+  public PostgreSQLContainer database = new PostgreSQLContainer(NomulusPostgreSql.getDockerTag());
 
   private EntityManagerFactory emf;
 

@@ -36,7 +36,10 @@ import org.testcontainers.containers.PostgreSQLContainer;
 /** Unit tests for {@link HibernateSchemaExporter}. */
 @RunWith(JUnit4.class)
 public class HibernateSchemaExporterTest {
-  @ClassRule public static final PostgreSQLContainer database = new PostgreSQLContainer();
+  @ClassRule
+  public static final PostgreSQLContainer database =
+      new PostgreSQLContainer(NomulusPostgreSql.getDockerTag());
+
   private static HibernateSchemaExporter exporter;
 
   @Rule public final TemporaryFolder tempFolder = new TemporaryFolder();

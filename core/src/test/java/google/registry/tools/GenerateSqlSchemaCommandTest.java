@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.io.Files;
+import google.registry.persistence.NomulusPostgreSql;
 import java.io.File;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -37,8 +38,9 @@ public class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSch
 
   @Rule public TemporaryFolder tmp = new TemporaryFolder();
 
-  @ClassRule public static PostgreSQLContainer postgres =
-      new PostgreSQLContainer()
+  @ClassRule
+  public static PostgreSQLContainer postgres =
+      new PostgreSQLContainer(NomulusPostgreSql.getDockerTag())
           .withDatabaseName("postgres")
           .withUsername("postgres")
           .withPassword("domain-registry");
