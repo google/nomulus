@@ -39,9 +39,13 @@ public class Cursor {
   @Column(nullable = false)
   private UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
 
+  /**
+   * Since hibernate does not allow null values in a primary key, for now I am just using "Global"
+   * for the tld value on a global cursor.
+   */
   private Cursor(String type, String tld, ZonedDateTime cursorTime) {
     this.type = type;
-    this.tld = tld;
+    this.tld = (tld == null ? "Global" : tld);
     this.cursorTime = cursorTime;
   }
 
