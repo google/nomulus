@@ -194,7 +194,7 @@ public final class RegistryLockPostActionTest {
                 "clientId", "TheRegistrar",
                 "fullyQualifiedDomainName", "example.tld",
                 "password", "hi"));
-    assertFailureWithMessage(response, "Missing key for isLock: isLock");
+    assertFailureWithMessage(response, "Missing key for isLock");
   }
 
   @Test

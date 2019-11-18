@@ -27,6 +27,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MoreCollectors;
 import com.google.common.flogger.FluentLogger;
+import com.google.gson.Gson;
 import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.domain.DomainBase;
@@ -70,14 +71,13 @@ public final class RegistryLockPostAction implements Runnable, JsonActionRunner.
 
   public static final String PATH = "/registry-lock-post";
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final Gson GSON = new Gson();
+
   private static final URL URL_BASE = RegistryConfig.getDefaultServer();
   private static final String VERIFICATION_EMAIL_TEMPLATE =
       "Please click the link below to perform the %s on domain %s. Note: this code will expire "
           + "in one hour.\n\n%s";
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private static final String PARAM_FQDN = "fullyQualifiedDomainName";
-  private static final String PARAM_IS_LOCK = "isLock";
-  private static final String PARAM_PASSWORD = "password";
 
   private final JsonActionRunner jsonActionRunner;
   @VisibleForTesting AuthResult authResult;
@@ -111,16 +111,22 @@ public final class RegistryLockPostAction implements Runnable, JsonActionRunner.
   public Map<String, ?> handleJsonRequest(Map<String, ?> input) {
     try {
       checkArgument(input != null, "Null JSON");
-      String clientId = (String) input.get(PARAM_CLIENT_ID);
+      RegistryLockPostInput postInput =
+          GSON.fromJson(GSON.toJsonTree(input), RegistryLockPostInput.class);
       checkArgument(
-          !Strings.isNullOrEmpty(clientId), "Missing key for client: %s", PARAM_CLIENT_ID);
+          !Strings.isNullOrEmpty(postInput.clientId),
+          "Missing key for client: %s",
+          PARAM_CLIENT_ID);
 
-      verifyRegistryLockPassword(clientId, (String) input.get(PARAM_PASSWORD));
-      RegistryLock registryLock = jpaTm().transact(() -> {
-        RegistryLock lock = createLock(clientId, input);
-        RegistryLockDao.save(lock);
-        return lock;
-      });
+      verifyRegistryLockPassword(postInput);
+      RegistryLock registryLock =
+          jpaTm()
+              .transact(
+                  () -> {
+                    RegistryLock lock = createLock(postInput);
+                    RegistryLockDao.save(lock);
+                    return lock;
+                  });
       sendVerificationEmail(registryLock);
       String action = registryLock.getAction().equals(RegistryLock.Action.LOCK) ? "lock" : "unlock";
       return JsonResponseHelper.create(SUCCESS, String.format("Successful %s", action));
@@ -131,14 +137,17 @@ public final class RegistryLockPostAction implements Runnable, JsonActionRunner.
     }
   }
 
-  private RegistryLock createLock(String clientId, Map<String, ?> input) {
-    String domainName = (String) input.get(PARAM_FQDN);
-    checkArgument(!Strings.isNullOrEmpty(domainName), "Missing key for fqdn: %s", PARAM_FQDN);
+  private RegistryLock createLock(RegistryLockPostInput postInput) {
+    checkArgument(
+        !Strings.isNullOrEmpty(postInput.fullyQualifiedDomainName),
+        "Missing key for fullyQualifiedDomainName");
 
     DomainBase domainBase =
-        loadByForeignKeyCached(DomainBase.class, domainName, clock.nowUtc())
+        loadByForeignKeyCached(DomainBase.class, postInput.fullyQualifiedDomainName, clock.nowUtc())
             .orElseThrow(
-                () -> new IllegalArgumentException(String.format("Unknown domain %s", domainName)));
+                () ->
+                    new IllegalArgumentException(
+                        String.format("Unknown domain %s", postInput.fullyQualifiedDomainName)));
 
     // Multiple pending actions are not allowed
     Optional<RegistryLock> previousLock =
@@ -148,14 +157,14 @@ public final class RegistryLockPostAction implements Runnable, JsonActionRunner.
             checkArgument(
                 lock.isVerified()
                     || isBeforeOrAt(lock.getCreationTimestamp(), clock.nowUtc().minusHours(1)),
-                String.format("A pending action already exists for %s", domainName)));
+                String.format(
+                    "A pending action already exists for %s", postInput.fullyQualifiedDomainName)));
 
-    checkArgument(input.containsKey(PARAM_IS_LOCK), "Missing key for isLock: %s", PARAM_IS_LOCK);
-    boolean lock = (Boolean) input.get(PARAM_IS_LOCK);
+    checkArgument(postInput.isLock != null, "Missing key for isLock");
     boolean isAdmin = authResult.userAuthInfo().get().isUserAdmin();
 
     // Unlock actions have restrictions (unless the user is admin)
-    if (!lock && !isAdmin) {
+    if (!postInput.isLock && !isAdmin) {
       RegistryLock previouslyVerifiedLock =
           RegistryLockDao.getMostRecentVerifiedLockByRepoId(domainBase.getRepoId())
               .orElseThrow(
@@ -172,16 +181,15 @@ public final class RegistryLockPostAction implements Runnable, JsonActionRunner.
     return new RegistryLock.Builder()
         .isSuperuser(isAdmin)
         .setVerificationCode(UUID.randomUUID().toString())
-        .setAction(lock ? RegistryLock.Action.LOCK : RegistryLock.Action.UNLOCK)
-        .setDomainName(domainName)
-        .setRegistrarId(clientId)
+        .setAction(postInput.isLock ? RegistryLock.Action.LOCK : RegistryLock.Action.UNLOCK)
+        .setDomainName(postInput.fullyQualifiedDomainName)
+        .setRegistrarId(postInput.clientId)
         .setRepoId(domainBase.getRepoId())
         .setRegistrarPocId(authResult.userAuthInfo().get().user().getEmail())
         .build();
   }
 
-  private void sendVerificationEmail(RegistryLock lock)
-      throws AddressException {
+  private void sendVerificationEmail(RegistryLock lock) throws AddressException {
     String url =
         URL_BASE.toString()
             + "/registry-lock-verify" // RegistryLockVerifyAction.PATH
@@ -201,25 +209,32 @@ public final class RegistryLockPostAction implements Runnable, JsonActionRunner.
             .build());
   }
 
-  private void verifyRegistryLockPassword(String clientId, String password)
+  private void verifyRegistryLockPassword(RegistryLockPostInput postInput)
       throws RegistrarAccessDeniedException {
     // Verify that the user can access the registrar and that the user is either an admin or has
     // registry lock enabled and provided a correct password
     checkArgument(authResult.userAuthInfo().isPresent(), "Auth result not present");
-    Registrar registrar = registrarAccessor.getRegistrar(clientId);
+    Registrar registrar = registrarAccessor.getRegistrar(postInput.clientId);
     checkArgument(
         registrar.isRegistryLockAllowed(), "Registry lock not allowed for this registrar");
     UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();
     if (!userAuthInfo.isUserAdmin()) {
-      checkArgument(
-          !Strings.isNullOrEmpty(password), "Missing key for password: %s", PARAM_PASSWORD);
+      checkArgument(!Strings.isNullOrEmpty(postInput.password), "Missing key for password");
       RegistrarContact registrarContact =
           registrar.getContacts().stream()
               .filter(contact -> contact.getEmailAddress().equals(userAuthInfo.user().getEmail()))
               .collect(MoreCollectors.onlyElement());
       checkArgument(
-          registrarContact.verifyRegistryLockPassword(password),
+          registrarContact.verifyRegistryLockPassword(postInput.password),
           "Incorrect registry lock password for contact");
     }
+  }
+
+  /** Value class that represents the expected input body from the UI request. */
+  private static class RegistryLockPostInput {
+    private String clientId;
+    private String fullyQualifiedDomainName;
+    private Boolean isLock;
+    private String password;
   }
 }
