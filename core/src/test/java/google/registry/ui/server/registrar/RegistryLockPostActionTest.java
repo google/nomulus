@@ -183,7 +183,7 @@ public final class RegistryLockPostActionTest {
   public void testFailure_noDomainName() {
     Map<String, ?> response =
         action.handleJsonRequest(ImmutableMap.of("clientId", "TheRegistrar", "password", "hi"));
-    assertFailureWithMessage(response, "Missing key for fqdn: fullyQualifiedDomainName");
+    assertFailureWithMessage(response, "Missing key for fullyQualifiedDomainName");
   }
 
   @Test
@@ -213,7 +213,7 @@ public final class RegistryLockPostActionTest {
                 "clientId", "TheRegistrar",
                 "fullyQualifiedDomainName", "example.tld",
                 "isLock", true));
-    assertFailureWithMessage(response, "Missing key for password: password");
+    assertFailureWithMessage(response, "Missing key for password");
   }
 
   @Test

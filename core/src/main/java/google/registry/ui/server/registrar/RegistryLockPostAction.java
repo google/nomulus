@@ -166,7 +166,13 @@ public final class RegistryLockPostAction implements Runnable, JsonActionRunner.
     // Unlock actions have restrictions (unless the user is admin)
     if (!postInput.isLock && !isAdmin) {
       RegistryLock previouslyVerifiedLock =
-          RegistryLockDao.getMostRecentVerifiedLockByRepoId(domainBase.getRepoId())
+          previousLock
+              .flatMap(
+                  lock ->
+                      lock.isVerified()
+                          ? Optional.of(lock)
+                          : RegistryLockDao.getMostRecentVerifiedLockByRepoId(
+                              domainBase.getRepoId()))
               .orElseThrow(
                   () ->
                       new IllegalArgumentException(
