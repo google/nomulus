@@ -75,6 +75,9 @@ public class JpaTransactionManagerRule extends ExternalResource {
   private final ImmutableMap userProperties;
 
   private static final JdbcDatabaseContainer database = create();
+  private static final long ACTIVE_CONNECTIONS_BASELINE =
+      getActiveConnectionCountByUser(database.getUsername());
+  ;
   private static final HibernateSchemaExporter exporter =
       HibernateSchemaExporter.create(
           database.getJdbcUrl(), database.getUsername(), database.getPassword());
@@ -143,25 +146,26 @@ public class JpaTransactionManagerRule extends ExternalResource {
     assertNormalActiveConnection();
   }
 
+  private static long getActiveConnectionCountByUser(String userName) {
+    try (Connection conn = createConnection(POSTGRES_DB_NAME);
+        Statement statement = conn.createStatement()) {
+      ResultSet rs =
+          statement.executeQuery(
+              "SELECT COUNT(1) FROM pg_stat_activity WHERE usename = '" + userName + "'");
+      rs.next();
+      return rs.getLong(1);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   /**
    * This function throws exception if it detects connection leak by checking the metadata table
    * pg_stat_activity.
    */
   private void assertNormalActiveConnection() {
-    try (Connection conn = createConnection(POSTGRES_DB_NAME);
-        Statement statement = conn.createStatement()) {
-      ResultSet rs =
-          statement.executeQuery(
-              "SELECT COUNT(1) FROM pg_stat_activity WHERE usename = '"
-                  + database.getUsername()
-                  + "'");
-      rs.next();
-      long activeConns = rs.getLong(1);
-      // There should be only 1 active connection which is executing this query
-      assertThat(activeConns).isEqualTo(1L);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+    assertThat(getActiveConnectionCountByUser(database.getUsername()))
+        .isEqualTo(ACTIVE_CONNECTIONS_BASELINE);
   }
 
   private static String readSqlInClassPath(String sqlScriptPath) {
@@ -181,7 +185,7 @@ public class JpaTransactionManagerRule extends ExternalResource {
     }
   }
 
-  private String getJdbcUrlFor(String dbName) {
+  private static String getJdbcUrlFor(String dbName) {
     // Disable Postgres driver use of java.util.logging to reduce noise at startup time
     return "jdbc:postgresql://"
         + database.getContainerIpAddress()
@@ -192,7 +196,7 @@ public class JpaTransactionManagerRule extends ExternalResource {
         + "?loggerLevel=OFF";
   }
 
-  private Connection createConnection(String dbName) {
+  private static Connection createConnection(String dbName) {
     final Properties info = new Properties();
     info.put("user", database.getUsername());
     info.put("password", database.getPassword());

@@ -18,8 +18,7 @@ public class NomulusPostgreSql {
 
   /** The current PostgreSql version in Cloud SQL. */
   // TODO(weiminyu): setup periodic checks to detect version changes in Cloud SQL.
-  // TODO(weiminyu): Upgrade to 11.5, which apparently breaks JpaTransactionManagerRule.
-  private static final String TARGET_VERSION = "9.6.12";
+  private static final String TARGET_VERSION = "11.5";
 
   /** Returns the docker image tag of the targeted Postgresql server version. */
   public static String getDockerTag() {
