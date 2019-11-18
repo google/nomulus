@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.proxy.handler;
+package google.registry.networking.handler;
 
 import com.google.common.flogger.FluentLogger;
 import io.netty.channel.Channel;
@@ -35,9 +35,9 @@ import java.util.function.Supplier;
  * Adds a server side SSL handler to the channel pipeline.
  *
  * <p>This <b>should</b> be the first handler provided for any handler provider list, if it is
- * provided. Unless you wish to first process the PROXY header with {@link ProxyProtocolHandler},
- * which should come before this handler. The type parameter {@code C} is needed so that unit tests
- * can construct this handler that works with {@link EmbeddedChannel};
+ * provided. Unless you wish to first process the PROXY header with another handler, which should
+ * come before this handler. The type parameter {@code C} is needed so that unit tests can construct
+ * this handler that works with {@link EmbeddedChannel};
  *
  * <p>The ssl handler added requires client authentication, but it uses an {@link
  * InsecureTrustManagerFactory}, which accepts any ssl certificate presented by the client, as long

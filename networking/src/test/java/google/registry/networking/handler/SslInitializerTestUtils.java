@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.proxy.handler;
+package google.registry.networking.handler;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -31,17 +31,20 @@ import java.util.Date;
 import javax.net.ssl.SSLSession;
 import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 /**
  * Utility class that provides methods used by {@link SslClientInitializerTest} and {@link
  * SslServerInitializerTest}.
  */
 @SuppressWarnings("deprecation")
-public class SslInitializerTestUtils {
+public final class SslInitializerTestUtils {
 
   static {
     Security.addProvider(new BouncyCastleProvider());
   }
+
+  private SslInitializerTestUtils() {}
 
   public static KeyPair getKeyPair() throws Exception {
     KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", "BC");
@@ -56,8 +59,7 @@ public class SslInitializerTestUtils {
    */
   public static X509Certificate signKeyPair(
       SelfSignedCertificate ssc, KeyPair keyPair, String hostname) throws Exception {
-    org.bouncycastle.x509.X509V3CertificateGenerator certGen =
-        new org.bouncycastle.x509.X509V3CertificateGenerator();
+    X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
     X500Principal dnName = new X500Principal("CN=" + hostname);
     certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
     certGen.setSubjectDN(dnName);
@@ -76,10 +78,7 @@ public class SslInitializerTestUtils {
    * @param certs The certificate that the server should provide.
    * @return The SSL session in current channel, can be used for further validation.
    */
-  static SSLSession setUpSslChannel(
-      Channel channel,
-      X509Certificate... certs)
-      throws Exception {
+  static SSLSession setUpSslChannel(Channel channel, X509Certificate... certs) throws Exception {
     SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
     // Wait till the handshake is complete.
     sslHandler.handshakeFuture().get();

@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoSet;
+import google.registry.networking.handler.SslServerInitializer;
 import google.registry.proxy.HttpsRelayProtocolModule.HttpsRelayProtocol;
 import google.registry.proxy.Protocol.BackendProtocol;
 import google.registry.proxy.Protocol.FrontendProtocol;
@@ -28,7 +29,6 @@ import google.registry.proxy.handler.FrontendMetricsHandler;
 import google.registry.proxy.handler.ProxyProtocolHandler;
 import google.registry.proxy.handler.QuotaHandler.EppQuotaHandler;
 import google.registry.proxy.handler.RelayHandler.FullHttpRequestRelayHandler;
-import google.registry.proxy.handler.SslServerInitializer;
 import google.registry.proxy.metric.FrontendMetrics;
 import google.registry.proxy.quota.QuotaConfig;
 import google.registry.proxy.quota.QuotaManager;
@@ -150,11 +150,7 @@ public class EppProtocolModule {
       FrontendMetrics metrics,
       ProxyConfig config) {
     return new EppServiceHandler(
-        config.epp.relayHost,
-        config.epp.relayPath,
-        accessTokenSupplier,
-        helloBytes,
-        metrics);
+        config.epp.relayHost, config.epp.relayPath, accessTokenSupplier, helloBytes, metrics);
   }
 
   @Singleton

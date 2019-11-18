@@ -15,8 +15,8 @@
 package google.registry.proxy;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.proxy.handler.SslInitializerTestUtils.getKeyPair;
-import static google.registry.proxy.handler.SslInitializerTestUtils.signKeyPair;
+import static google.registry.networking.handler.SslInitializerTestUtils.getKeyPair;
+import static google.registry.networking.handler.SslInitializerTestUtils.signKeyPair;
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -60,7 +60,7 @@ public class CertificateModuleTest {
   }
 
   /** Create a component with bindings to the given bytes[] as the contents from a PEM file. */
-  private TestComponent createComponent(byte[] pemBytes) {
+  private static TestComponent createComponent(byte[] pemBytes) {
     return DaggerCertificateModuleTest_TestComponent.builder()
         .pemBytesModule(new PemBytesModule(pemBytes))
         .build();

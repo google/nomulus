@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.proxy.handler;
+package google.registry.networking.handler;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.proxy.Protocol.PROTOCOL_KEY;
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Throwables;
 import com.google.common.truth.ThrowableSubject;
-import google.registry.proxy.Protocol.BackendProtocol;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
@@ -88,10 +86,7 @@ final class NettyRule extends ExternalResource {
   }
 
   /** Sets up a client channel connecting to the give local address. */
-  void setUpClient(
-      LocalAddress localAddress,
-      BackendProtocol protocol,
-      ChannelHandler handler) {
+  void setUpClient(LocalAddress localAddress, ChannelHandler handler) {
     checkState(echoHandler != null, "Must call setUpServer before setUpClient");
     checkState(dumpHandler == null, "Can't call setUpClient twice");
     dumpHandler = new DumpHandler();
@@ -109,8 +104,7 @@ final class NettyRule extends ExternalResource {
         new Bootstrap()
             .group(eventLoopGroup)
             .channel(LocalChannel.class)
-            .handler(clientInitializer)
-            .attr(PROTOCOL_KEY, protocol);
+            .handler(clientInitializer);
     channel = b.connect(localAddress).syncUninterruptibly().channel();
   }
 

@@ -12,17 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.proxy.handler;
+package google.registry.networking.handler;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.proxy.handler.SslInitializerTestUtils.getKeyPair;
-import static google.registry.proxy.handler.SslInitializerTestUtils.setUpSslChannel;
-import static google.registry.proxy.handler.SslInitializerTestUtils.signKeyPair;
+import static google.registry.networking.handler.SslInitializerTestUtils.getKeyPair;
+import static google.registry.networking.handler.SslInitializerTestUtils.setUpSslChannel;
+import static google.registry.networking.handler.SslInitializerTestUtils.signKeyPair;
 
 import com.google.common.base.Suppliers;
-import com.google.common.collect.ImmutableList;
-import google.registry.proxy.Protocol;
-import google.registry.proxy.Protocol.BackendProtocol;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -70,17 +67,7 @@ public class SslServerInitializerTest {
   /** Fake port to test if the SSL engine gets the correct peer port. */
   private static final int SSL_PORT = 12345;
 
-  /** Fake protocol saved in channel attribute. */
-  private static final BackendProtocol PROTOCOL =
-      Protocol.backendBuilder()
-          .name("ssl")
-          .host(SSL_HOST)
-          .port(SSL_PORT)
-          .handlerProviders(ImmutableList.of())
-          .build();
-
-  @Rule
-  public NettyRule nettyRule = new NettyRule();
+  @Rule public NettyRule nettyRule = new NettyRule();
 
   @Parameter(0)
   public SslProvider sslProvider;
@@ -107,26 +94,25 @@ public class SslServerInitializerTest {
   }
 
   private ChannelHandler getClientHandler(
-      X509Certificate trustedCertificate,
-      PrivateKey privateKey,
-      X509Certificate certificate) {
+      X509Certificate trustedCertificate, PrivateKey privateKey, X509Certificate certificate) {
     return new ChannelInitializer<LocalChannel>() {
       @Override
       protected void initChannel(LocalChannel ch) throws Exception {
-      SslContextBuilder sslContextBuilder =
-          SslContextBuilder.forClient().trustManager(trustedCertificate).sslProvider(sslProvider);
-      if (privateKey != null && certificate != null) {
-        sslContextBuilder.keyManager(privateKey, certificate);
-      }
-      SslHandler sslHandler = sslContextBuilder.build().newHandler(ch.alloc(), SSL_HOST, SSL_PORT);
+        SslContextBuilder sslContextBuilder =
+            SslContextBuilder.forClient().trustManager(trustedCertificate).sslProvider(sslProvider);
+        if (privateKey != null && certificate != null) {
+          sslContextBuilder.keyManager(privateKey, certificate);
+        }
+        SslHandler sslHandler =
+            sslContextBuilder.build().newHandler(ch.alloc(), SSL_HOST, SSL_PORT);
 
-      // Enable hostname verification.
-      SSLEngine sslEngine = sslHandler.engine();
-      SSLParameters sslParameters = sslEngine.getSSLParameters();
-      sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
-      sslEngine.setSSLParameters(sslParameters);
+        // Enable hostname verification.
+        SSLEngine sslEngine = sslHandler.engine();
+        SSLParameters sslParameters = sslEngine.getSSLParameters();
+        sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+        sslEngine.setSSLParameters(sslParameters);
 
-      ch.pipeline().addLast(sslHandler);
+        ch.pipeline().addLast(sslHandler);
       }
     };
   }
@@ -158,9 +144,7 @@ public class SslServerInitializerTest {
     nettyRule.setUpServer(localAddress, getServerHandler(serverSsc.key(), serverSsc.cert()));
     SelfSignedCertificate clientSsc = new SelfSignedCertificate();
     nettyRule.setUpClient(
-        localAddress,
-        PROTOCOL,
-        getClientHandler(serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
+        localAddress, getClientHandler(serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
 
     SSLSession sslSession = setUpSslChannel(nettyRule.getChannel(), serverSsc.cert());
     nettyRule.assertThatMessagesWork();
@@ -177,11 +161,8 @@ public class SslServerInitializerTest {
     SelfSignedCertificate serverSsc = new SelfSignedCertificate(SSL_HOST);
     LocalAddress localAddress = new LocalAddress("DOES_NOT_REQUIRE_CLIENT_CERT_" + sslProvider);
 
-    nettyRule.setUpServer(
-        localAddress,
-        getServerHandler(false, serverSsc.key(), serverSsc.cert()));
-    nettyRule.setUpClient(
-        localAddress, PROTOCOL, getClientHandler(serverSsc.cert(), null, null));
+    nettyRule.setUpServer(localAddress, getServerHandler(false, serverSsc.key(), serverSsc.cert()));
+    nettyRule.setUpClient(localAddress, getClientHandler(serverSsc.cert(), null, null));
 
     SSLSession sslSession = setUpSslChannel(nettyRule.getChannel(), serverSsc.cert());
     nettyRule.assertThatMessagesWork();
@@ -211,10 +192,9 @@ public class SslServerInitializerTest {
     SelfSignedCertificate clientSsc = new SelfSignedCertificate();
     nettyRule.setUpClient(
         localAddress,
-        PROTOCOL,
-            getClientHandler(
-                // Client trusts the CA cert
-                caSsc.cert(), clientSsc.key(), clientSsc.cert()));
+        getClientHandler(
+            // Client trusts the CA cert
+            caSsc.cert(), clientSsc.key(), clientSsc.cert()));
 
     SSLSession sslSession = setUpSslChannel(nettyRule.getChannel(), serverCert, caSsc.cert());
     nettyRule.assertThatMessagesWork();
@@ -234,7 +214,6 @@ public class SslServerInitializerTest {
     nettyRule.setUpServer(localAddress, getServerHandler(serverSsc.key(), serverSsc.cert()));
     nettyRule.setUpClient(
         localAddress,
-        PROTOCOL,
         getClientHandler(
             serverSsc.cert(),
             // No client cert/private key used.
@@ -256,9 +235,7 @@ public class SslServerInitializerTest {
     nettyRule.setUpServer(localAddress, getServerHandler(serverSsc.key(), serverSsc.cert()));
     SelfSignedCertificate clientSsc = new SelfSignedCertificate();
     nettyRule.setUpClient(
-        localAddress,
-        PROTOCOL,
-        getClientHandler(serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
+        localAddress, getClientHandler(serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
 
     // When the client rejects the server cert due to wrong hostname, both the server and the client
     // throw exceptions.

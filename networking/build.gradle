@@ -1,0 +1,46 @@
+// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+dependencies {
+  def deps = rootProject.dependencyMap
+
+  compile deps['com.google.flogger:flogger']
+  compile deps['com.google.guava:guava']
+  compile deps['io.netty:netty-buffer']
+  compile deps['io.netty:netty-codec']
+  compile deps['io.netty:netty-codec-http']
+  compile deps['io.netty:netty-common']
+  compile deps['io.netty:netty-handler']
+  compile deps['io.netty:netty-transport']
+  compile deps['javax.inject:javax.inject']
+
+  runtime deps['com.google.flogger:flogger-system-backend']
+  runtime deps['io.netty:netty-tcnative-boringssl-static']
+
+  testCompile deps['com.google.truth:truth']
+  testCompile deps['junit:junit']
+  testCompile deps['org.bouncycastle:bcpkix-jdk15on']
+  testCompile deps['org.bouncycastle:bcprov-jdk15on']
+  testCompile project(':third_party')
+}
+
+// Make testing artifacts available to be depended up on by other projects.
+task testJar(type: Jar) {
+  classifier = 'test'
+  from sourceSets.test.output
+}
+
+artifacts {
+  testRuntime testJar
+}

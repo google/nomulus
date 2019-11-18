@@ -17,15 +17,16 @@ package google.registry.proxy;
 import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.networking.handler.SslClientInitializer;
 import google.registry.proxy.Protocol.BackendProtocol;
 import google.registry.proxy.handler.BackendMetricsHandler;
 import google.registry.proxy.handler.RelayHandler.FullHttpResponseRelayHandler;
-import google.registry.proxy.handler.SslClientInitializer;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.SslProvider;
 import java.security.cert.X509Certificate;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
@@ -60,8 +61,19 @@ public class HttpsRelayProtocolModule {
 
   @Provides
   @HttpsRelayProtocol
+  static SslClientInitializer<NioSocketChannel> provideSslClientInitializer(
+      SslProvider sslProvider) {
+    return new SslClientInitializer<>(
+        sslProvider,
+        channel -> ((BackendProtocol) channel.attr(Protocol.PROTOCOL_KEY).get()).host(),
+        channel -> channel.attr(Protocol.PROTOCOL_KEY).get().port());
+  }
+
+  @Provides
+  @HttpsRelayProtocol
   static ImmutableList<Provider<? extends ChannelHandler>> provideHandlerProviders(
-      Provider<SslClientInitializer<NioSocketChannel>> sslClientInitializerProvider,
+      @HttpsRelayProtocol
+          Provider<SslClientInitializer<NioSocketChannel>> sslClientInitializerProvider,
       Provider<HttpClientCodec> httpClientCodecProvider,
       Provider<HttpObjectAggregator> httpObjectAggregatorProvider,
       Provider<BackendMetricsHandler> backendMetricsHandlerProvider,

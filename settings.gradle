@@ -29,6 +29,7 @@ rootProject.name = 'nomulus'
 
 include 'core'
 include 'db'
+include 'networking'
 include 'prober'
 include 'proxy'
 include 'third_party'

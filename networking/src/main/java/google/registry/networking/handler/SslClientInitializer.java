@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.proxy.handler;
+package google.registry.networking.handler;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.proxy.Protocol.PROTOCOL_KEY;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.flogger.FluentLogger;
-import google.registry.proxy.Protocol.BackendProtocol;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelInitializer;
@@ -28,7 +26,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
 import java.security.cert.X509Certificate;
-import javax.inject.Inject;
+import java.util.function.Function;
 import javax.inject.Singleton;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
@@ -46,32 +44,42 @@ public class SslClientInitializer<C extends Channel> extends ChannelInitializer<
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  private final Function<Channel, String> hostProvider;
+  private final Function<Channel, Integer> portProvider;
   private final SslProvider sslProvider;
   private final X509Certificate[] trustedCertificates;
 
-  @Inject
-  public SslClientInitializer(SslProvider sslProvider) {
+  public SslClientInitializer(
+      SslProvider sslProvider,
+      Function<Channel, String> hostProvider,
+      Function<Channel, Integer> portProvider) {
     // null uses the system default trust store.
-    this(sslProvider, null);
+    this(sslProvider, hostProvider, portProvider, null);
   }
 
   @VisibleForTesting
-  SslClientInitializer(SslProvider sslProvider, X509Certificate[] trustCertificates) {
+  SslClientInitializer(
+      SslProvider sslProvider,
+      Function<Channel, String> hostProvider,
+      Function<Channel, Integer> portProvider,
+      X509Certificate[] trustCertificates) {
     logger.atInfo().log("Client SSL Provider: %s", sslProvider);
     this.sslProvider = sslProvider;
+    this.hostProvider = hostProvider;
+    this.portProvider = portProvider;
     this.trustedCertificates = trustCertificates;
   }
 
   @Override
   protected void initChannel(C channel) throws Exception {
-    BackendProtocol protocol = (BackendProtocol) channel.attr(PROTOCOL_KEY).get();
-    checkNotNull(protocol, "Protocol is not set for channel: %s", channel);
+    checkNotNull(hostProvider.apply(channel), "Cannot obtain SSL host for channel: %s", channel);
+    checkNotNull(portProvider.apply(channel), "Cannot obtain SSL port for channel: %s", channel);
     SslHandler sslHandler =
         SslContextBuilder.forClient()
             .sslProvider(sslProvider)
             .trustManager(trustedCertificates)
             .build()
-            .newHandler(channel.alloc(), protocol.host(), protocol.port());
+            .newHandler(channel.alloc(), hostProvider.apply(channel), portProvider.apply(channel));
 
     // Enable hostname verification.
     SSLEngine sslEngine = sslHandler.engine();
