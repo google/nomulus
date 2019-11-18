@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.common.net.InternetDomainName;
+import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry.TldType;
 import java.util.Optional;
 
@@ -78,6 +79,15 @@ public final class Registries {
 
   public static ImmutableSet<String> getTldsOfType(TldType type) {
     return ImmutableSet.copyOf(filterValues(cache.get(), equalTo(type)).keySet());
+  }
+
+  /** Returns the Registry entities themselves of the given type loaded fresh from Datastore. */
+  public static ImmutableSet<Registry> getTldEntitiesOfType(TldType type) {
+    ImmutableSet<Key<Registry>> keys =
+        filterValues(cache.get(), equalTo(type)).keySet().stream()
+            .map(tld -> Key.create(getCrossTldKey(), Registry.class, tld))
+            .collect(toImmutableSet());
+    return ImmutableSet.copyOf(tm().doTransactionless(() -> ofy().load().keys(keys).values()));
   }
 
   /** Pass-through check that the specified TLD exists, otherwise throw an IAE. */

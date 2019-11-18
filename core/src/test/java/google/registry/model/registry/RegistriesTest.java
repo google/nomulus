@@ -17,9 +17,12 @@ package google.registry.model.registry;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.DatastoreHelper.createTlds;
+import static google.registry.testing.DatastoreHelper.newRegistry;
+import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import com.google.common.net.InternetDomainName;
+import google.registry.model.registry.Registry.TldType;
 import google.registry.testing.AppEngineRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -32,6 +35,7 @@ public class RegistriesTest {
 
   @Rule
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+
   private void initTestTlds() {
     createTlds("foo", "a.b.c"); // Test a multipart tld.
   }
@@ -40,6 +44,16 @@ public class RegistriesTest {
   public void testGetTlds() {
     initTestTlds();
     assertThat(Registries.getTlds()).containsExactly("foo", "a.b.c");
+  }
+
+  @Test
+  public void test_getTldEntities() {
+    initTestTlds();
+    persistResource(newRegistry("testtld", "TESTTLD").asBuilder().setTldType(TldType.TEST).build());
+    assertThat(Registries.getTldEntitiesOfType(TldType.REAL))
+        .containsExactly(Registry.get("foo"), Registry.get("a.b.c"));
+    assertThat(Registries.getTldEntitiesOfType(TldType.TEST))
+        .containsExactly(Registry.get("testtld"));
   }
 
   @Test
