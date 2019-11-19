@@ -178,12 +178,14 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
     this.completionTimestamp = toZonedDateTime(dateTime);
   }
 
+  /** Returns true iff the lock has been verified and performed. */
   public boolean isVerified() {
     return completionTimestamp != null;
   }
 
+  /** Returns true iff the lock was requested >= 1 hour ago and has not been verified. */
   public boolean isExpired(Clock clock) {
-    return isBeforeOrAt(getCreationTimestamp(), clock.nowUtc().minusHours(1));
+    return !isVerified() && isBeforeOrAt(getCreationTimestamp(), clock.nowUtc().minusHours(1));
   }
 
   @Override
