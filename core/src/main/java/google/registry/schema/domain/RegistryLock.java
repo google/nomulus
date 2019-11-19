@@ -15,12 +15,14 @@
 package google.registry.schema.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.toZonedDateTime;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
+import google.registry.util.Clock;
 import google.registry.util.DateTimeUtils;
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -178,6 +180,10 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
 
   public boolean isVerified() {
     return completionTimestamp != null;
+  }
+
+  public boolean isExpired(Clock clock) {
+    return isBeforeOrAt(getCreationTimestamp(), clock.nowUtc().minusHours(1));
   }
 
   @Override

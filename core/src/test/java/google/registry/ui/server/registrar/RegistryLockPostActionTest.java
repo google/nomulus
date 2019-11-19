@@ -20,6 +20,7 @@ import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -80,6 +81,7 @@ public final class RegistryLockPostActionTest {
 
   private AuthResult authResult;
   private InternetAddress outgoingAddress;
+  private DomainBase domain;
   private RegistryLockPostAction action;
 
   @Mock SendEmailService emailService;
@@ -88,7 +90,7 @@ public final class RegistryLockPostActionTest {
   @Before
   public void setup() throws Exception {
     createTld("tld");
-    persistResource(newDomainBase("example.tld"));
+    domain = persistResource(newDomainBase("example.tld"));
 
     authResult =
         AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithLockPermission, false));
@@ -112,6 +114,7 @@ public final class RegistryLockPostActionTest {
   @Test
   public void testSuccess_unlock() throws Exception {
     RegistryLockDao.save(createLock().asBuilder().setCompletionTimestamp(clock.nowUtc()).build());
+    persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertSuccess(response, "unlock", "Marla.Singer@crr.com");
   }
@@ -120,6 +123,7 @@ public final class RegistryLockPostActionTest {
   public void testSuccess_unlock_adminUnlockingAdmin() throws Exception {
     RegistryLockDao.save(
         createLock().asBuilder().isSuperuser(true).setCompletionTimestamp(clock.nowUtc()).build());
+    persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     action.authResult =
         AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, true));
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
@@ -128,12 +132,14 @@ public final class RegistryLockPostActionTest {
 
   @Test
   public void testFailure_unlock_noLock() {
+    persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertFailureWithMessage(response, "Cannot unlock a domain without a previously-verified lock");
   }
 
   @Test
   public void testFailure_unlock_alreadyUnlocked() {
+    persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     RegistryLockDao.save(
         createLock()
             .asBuilder()
@@ -148,6 +154,7 @@ public final class RegistryLockPostActionTest {
   public void testFailure_unlock_nonAdminUnlockingAdmin() {
     RegistryLockDao.save(
         createLock().asBuilder().isSuperuser(true).setCompletionTimestamp(clock.nowUtc()).build());
+    persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertFailureWithMessage(response, "Non-admin user cannot unlock an admin-locked domain");
   }
@@ -276,6 +283,19 @@ public final class RegistryLockPostActionTest {
 
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertFailureWithMessage(response, "A pending action already exists for example.tld");
+  }
+
+  @Test
+  public void testFailure_alreadyLocked() {
+    persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
+    Map<String, ?> response = action.handleJsonRequest(lockRequest());
+    assertFailureWithMessage(response, "Cannot lock a locked domain");
+  }
+
+  @Test
+  public void testFailure_alreadyUnlocked() {
+    Map<String, ?> response = action.handleJsonRequest(unlockRequest());
+    assertFailureWithMessage(response, "Cannot unlock an unlocked domain");
   }
 
   private ImmutableMap<String, Object> lockRequest() {

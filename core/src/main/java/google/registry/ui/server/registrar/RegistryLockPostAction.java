@@ -19,13 +19,14 @@ import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.security.JsonResponseHelper.Status.ERROR;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
+import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
-import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MoreCollectors;
+import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
 import google.registry.config.RegistryConfig;
@@ -149,18 +150,28 @@ public final class RegistryLockPostAction implements Runnable, JsonActionRunner.
                     new IllegalArgumentException(
                         String.format("Unknown domain %s", postInput.fullyQualifiedDomainName)));
 
+    checkArgument(postInput.isLock != null, "Missing key for isLock");
+    // We shouldn't lock if already locked, or unlock if already unlocked
+    if (postInput.isLock) {
+      checkArgument(
+          !domainBase.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES),
+          "Cannot lock a locked domain");
+    } else {
+      checkArgument(
+          !Sets.intersection(domainBase.getStatusValues(), REGISTRY_LOCK_STATUSES).isEmpty(),
+          "Cannot unlock an unlocked domain");
+    }
+
     // Multiple pending actions are not allowed
     Optional<RegistryLock> previousLock =
         RegistryLockDao.getMostRecentByRepoId(domainBase.getRepoId());
     previousLock.ifPresent(
         lock ->
             checkArgument(
-                lock.isVerified()
-                    || isBeforeOrAt(lock.getCreationTimestamp(), clock.nowUtc().minusHours(1)),
+                lock.isVerified() || lock.isExpired(clock),
                 String.format(
                     "A pending action already exists for %s", postInput.fullyQualifiedDomainName)));
 
-    checkArgument(postInput.isLock != null, "Missing key for isLock");
     boolean isAdmin = authResult.userAuthInfo().get().isUserAdmin();
 
     // Unlock actions have restrictions (unless the user is admin)
@@ -184,6 +195,7 @@ public final class RegistryLockPostAction implements Runnable, JsonActionRunner.
           !previouslyVerifiedLock.isSuperuser(),
           "Non-admin user cannot unlock an admin-locked domain");
     }
+
     return new RegistryLock.Builder()
         .isSuperuser(isAdmin)
         .setVerificationCode(UUID.randomUUID().toString())

@@ -31,7 +31,7 @@ import javax.inject.Inject;
 /** Shared base class for commands to registry lock or unlock a domain via EPP. */
 public abstract class LockOrUnlockDomainCommand extends MutatingEppToolCommand {
 
-  protected static final ImmutableSet<StatusValue> REGISTRY_LOCK_STATUSES =
+  public static final ImmutableSet<StatusValue> REGISTRY_LOCK_STATUSES =
       ImmutableSet.of(
           SERVER_DELETE_PROHIBITED, SERVER_TRANSFER_PROHIBITED, SERVER_UPDATE_PROHIBITED);
 
