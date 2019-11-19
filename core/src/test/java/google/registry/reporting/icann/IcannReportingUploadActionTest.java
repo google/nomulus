@@ -347,5 +347,44 @@ public class IcannReportingUploadActionTest {
         .hasMessageThat()
         .contains("Lock for IcannReportingUploadAction already in use.");
   }
+
+  @Test
+  public void testSuccess_nullPointers() throws Exception {
+    createTlds("new");
+    writeGcsFile(
+        gcsService,
+        new GcsFilename("basin/icann/monthly/2006-06", "new-transactions-200606.csv"),
+        PAYLOAD_SUCCESS);
+    writeGcsFile(
+        gcsService,
+        new GcsFilename("basin/icann/monthly/2006-06", "new-activity-200606.csv"),
+        PAYLOAD_SUCCESS);
+    when(mockReporter.send(PAYLOAD_SUCCESS, "new-transactions-200606.csv")).thenReturn(true);
+    when(mockReporter.send(PAYLOAD_SUCCESS, "new-activity-200606.csv")).thenReturn(true);
+
+    IcannReportingUploadAction action = createAction();
+    action.run();
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "foo-activity-200606.csv");
+    verify(mockReporter).send(PAYLOAD_FAIL, "tld-activity-200606.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "new-activity-200606.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "foo-transactions-200606.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "new-transactions-200606.csv");
+    verifyNoMoreInteractions(mockReporter);
+
+    verify(emailService)
+        .sendEmail(
+            EmailMessage.create(
+                "ICANN Monthly report upload summary: 5/6 succeeded",
+                "Report Filename - Upload status:\n"
+                    + "foo-activity-200606.csv - SUCCESS\n"
+                    + "new-activity-200606.csv - SUCCESS\n"
+                    + "tld-activity-200606.csv - FAILURE\n"
+                    + "foo-transactions-200606.csv - SUCCESS\n"
+                    + "new-transactions-200606.csv - SUCCESS\n"
+                    + "tld-transactions-200606.csv - SUCCESS",
+                new InternetAddress("recipient@example.com"),
+                new InternetAddress("sender@example.com")));
+  }
 }
 
