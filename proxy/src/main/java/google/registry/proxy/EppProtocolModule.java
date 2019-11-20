@@ -53,7 +53,9 @@ import javax.inject.Singleton;
 
 /** A module that provides the {@link FrontendProtocol} used for epp protocol. */
 @Module
-public class EppProtocolModule {
+public final class EppProtocolModule {
+
+  private EppProtocolModule() {}
 
   /** Dagger qualifier to provide epp protocol related handlers and other bindings. */
   @Qualifier
@@ -159,7 +161,7 @@ public class EppProtocolModule {
   static SslServerInitializer<NioSocketChannel> provideSslServerInitializer(
       SslProvider sslProvider,
       Supplier<PrivateKey> privateKeySupplier,
-      Supplier<X509Certificate[]> certificatesSupplier) {
+      Supplier<ImmutableList<X509Certificate>> certificatesSupplier) {
     return new SslServerInitializer<>(true, sslProvider, privateKeySupplier, certificatesSupplier);
   }
 

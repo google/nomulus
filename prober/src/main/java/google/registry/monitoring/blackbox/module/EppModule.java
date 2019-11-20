@@ -14,6 +14,8 @@
 
 package google.registry.monitoring.blackbox.module;
 
+import static google.registry.monitoring.blackbox.connection.ProbingAction.REMOTE_ADDRESS_KEY;
+import static google.registry.monitoring.blackbox.connection.Protocol.PROTOCOL_KEY;
 import static google.registry.monitoring.blackbox.message.EppRequestMessage.CLIENT_ID_KEY;
 import static google.registry.monitoring.blackbox.message.EppRequestMessage.CLIENT_PASSWORD_KEY;
 import static google.registry.monitoring.blackbox.message.EppRequestMessage.CLIENT_TRID_KEY;
@@ -30,13 +32,13 @@ import google.registry.monitoring.blackbox.ProbingStep;
 import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.handler.EppActionHandler;
 import google.registry.monitoring.blackbox.handler.EppMessageHandler;
-import google.registry.monitoring.blackbox.handler.SslClientInitializer;
 import google.registry.monitoring.blackbox.message.EppMessage;
 import google.registry.monitoring.blackbox.message.EppRequestMessage;
 import google.registry.monitoring.blackbox.message.EppResponseMessage;
 import google.registry.monitoring.blackbox.metric.MetricsCollector;
 import google.registry.monitoring.blackbox.module.CertificateModule.LocalSecrets;
 import google.registry.monitoring.blackbox.token.EppToken;
+import google.registry.networking.handler.SslClientInitializer;
 import google.registry.util.Clock;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelHandler;
@@ -556,9 +558,15 @@ public class EppModule {
   static SslClientInitializer<NioSocketChannel> provideSslClientInitializer(
       SslProvider sslProvider,
       @LocalSecrets Supplier<PrivateKey> privateKeySupplier,
-      @LocalSecrets Supplier<X509Certificate[]> certificatesSupplier) {
+      @LocalSecrets Supplier<ImmutableList<X509Certificate>> certificatesSupplier) {
 
-    return new SslClientInitializer<>(sslProvider, privateKeySupplier, certificatesSupplier);
+    return SslClientInitializer
+        .createSslClientInitializerWithSystemTrustStoreAndClientAuthentication(
+            sslProvider,
+            channel -> channel.attr(REMOTE_ADDRESS_KEY).get(),
+            channel -> channel.attr(PROTOCOL_KEY).get().port(),
+            privateKeySupplier,
+            certificatesSupplier);
   }
 
   @Provides

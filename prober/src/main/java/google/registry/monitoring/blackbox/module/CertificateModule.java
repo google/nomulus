@@ -18,6 +18,7 @@ import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static google.registry.util.ResourceUtils.readResourceBytes;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 
+import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
 import java.io.IOException;
@@ -90,7 +91,8 @@ public class CertificateModule {
 
   @Provides
   @LocalSecrets
-  static X509Certificate[] provideCertificates(@LocalSecrets Provider<String> passwordProvider) {
+  static ImmutableList<X509Certificate> provideCertificates(
+      @LocalSecrets Provider<String> passwordProvider) {
     try {
       InputStream inStream = readResource("secrets/prober-client-tls-sandbox.p12");
 
@@ -98,7 +100,7 @@ public class CertificateModule {
       ks.load(inStream, passwordProvider.get().toCharArray());
 
       String alias = ks.aliases().nextElement();
-      return new X509Certificate[] {(X509Certificate) ks.getCertificate(alias)};
+      return ImmutableList.of((X509Certificate) ks.getCertificate(alias));
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -116,8 +118,8 @@ public class CertificateModule {
   @Singleton
   @Provides
   @LocalSecrets
-  static Supplier<X509Certificate[]> provideCertificatesSupplier(
-      @LocalSecrets Provider<X509Certificate[]> certificatesProvider,
+  static Supplier<ImmutableList<X509Certificate>> provideCertificatesSupplier(
+      @LocalSecrets Provider<ImmutableList<X509Certificate>> certificatesProvider,
       @LocalSecrets Duration duration) {
     return memoizeWithExpiration(
         certificatesProvider::get, duration.getStandardSeconds(), TimeUnit.SECONDS);

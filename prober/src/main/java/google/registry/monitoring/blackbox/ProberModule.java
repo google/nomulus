@@ -21,6 +21,7 @@ import google.registry.monitoring.blackbox.connection.ProbingAction;
 import google.registry.monitoring.blackbox.module.CertificateModule;
 import google.registry.monitoring.blackbox.module.EppModule;
 import google.registry.monitoring.blackbox.module.WebWhoisModule;
+import google.registry.networking.handler.SslClientInitializer;
 import google.registry.util.Clock;
 import google.registry.util.SystemClock;
 import io.netty.bootstrap.Bootstrap;
@@ -45,10 +46,7 @@ public class ProberModule {
   /** Default {@link Duration} chosen to be time between each {@link ProbingAction} call. */
   private static final Duration DEFAULT_PROBER_INTERVAL = Duration.standardSeconds(4);
 
-  /**
-   * {@link Provides} the {@link SslProvider} used by instances of {@link
-   * google.registry.monitoring.blackbox.handler.SslClientInitializer}
-   */
+  /** {@link Provides} the {@link SslProvider} used by instances of {@link SslClientInitializer} */
   @Provides
   @Singleton
   static SslProvider provideSslProvider() {

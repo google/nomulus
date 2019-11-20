@@ -14,6 +14,10 @@
 
 package google.registry.monitoring.blackbox.module;
 
+import static google.registry.monitoring.blackbox.connection.ProbingAction.REMOTE_ADDRESS_KEY;
+import static google.registry.monitoring.blackbox.connection.Protocol.PROTOCOL_KEY;
+import static google.registry.networking.handler.SslClientInitializer.createSslClientInitializerWithSystemTrustStore;
+
 import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
@@ -21,12 +25,12 @@ import dagger.multibindings.IntoSet;
 import google.registry.monitoring.blackbox.ProbingSequence;
 import google.registry.monitoring.blackbox.ProbingStep;
 import google.registry.monitoring.blackbox.connection.Protocol;
-import google.registry.monitoring.blackbox.handler.SslClientInitializer;
 import google.registry.monitoring.blackbox.handler.WebWhoisActionHandler;
 import google.registry.monitoring.blackbox.handler.WebWhoisMessageHandler;
 import google.registry.monitoring.blackbox.message.HttpRequestMessage;
 import google.registry.monitoring.blackbox.metric.MetricsCollector;
 import google.registry.monitoring.blackbox.token.WebWhoisToken;
+import google.registry.networking.handler.SslClientInitializer;
 import google.registry.util.Clock;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -156,7 +160,10 @@ public class WebWhoisModule {
   @HttpsWhoisProtocol
   static SslClientInitializer<NioSocketChannel> provideSslClientInitializer(
       SslProvider sslProvider) {
-    return new SslClientInitializer<>(sslProvider);
+    return createSslClientInitializerWithSystemTrustStore(
+        sslProvider,
+        channel -> channel.attr(REMOTE_ADDRESS_KEY).get(),
+        channel -> channel.attr(PROTOCOL_KEY).get().port());
   }
 
   /** {@link Provides} the {@link Bootstrap} used by the WebWhois sequence. */

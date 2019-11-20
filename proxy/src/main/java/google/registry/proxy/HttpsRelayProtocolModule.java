@@ -14,6 +14,8 @@
 
 package google.registry.proxy;
 
+import static google.registry.networking.handler.SslClientInitializer.createSslClientInitializerWithSystemTrustStore;
+
 import com.google.common.collect.ImmutableList;
 import dagger.Module;
 import dagger.Provides;
@@ -63,7 +65,7 @@ public class HttpsRelayProtocolModule {
   @HttpsRelayProtocol
   static SslClientInitializer<NioSocketChannel> provideSslClientInitializer(
       SslProvider sslProvider) {
-    return new SslClientInitializer<>(
+    return createSslClientInitializerWithSystemTrustStore(
         sslProvider,
         channel -> ((BackendProtocol) channel.attr(Protocol.PROTOCOL_KEY).get()).host(),
         channel -> channel.attr(Protocol.PROTOCOL_KEY).get().port());

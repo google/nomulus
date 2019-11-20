@@ -62,7 +62,9 @@ import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
  * @see <a href="https://cloud.google.com/kms/">Cloud Key Management Service</a>
  */
 @Module
-public class CertificateModule {
+public final class CertificateModule {
+
+  private CertificateModule() {}
 
   /** Dagger qualifier to provide bindings related to the certificates that the server provides. */
   @Qualifier
@@ -94,8 +96,7 @@ public class CertificateModule {
    */
   private static <T, E> ImmutableList<E> filterAndConvert(
       ImmutableList<Object> objects, Class<T> clazz, Function<T, E> converter) {
-    return objects
-        .stream()
+    return objects.stream()
         .filter(clazz::isInstance)
         .map(clazz::cast)
         .map(converter)
@@ -112,19 +113,20 @@ public class CertificateModule {
 
   @Singleton
   @Provides
-  static Supplier<X509Certificate[]> provideCertificatesSupplier(
-      @ServerCertificates Provider<X509Certificate[]> certificatesProvider, ProxyConfig config) {
+  static Supplier<ImmutableList<X509Certificate>> provideCertificatesSupplier(
+      @ServerCertificates Provider<ImmutableList<X509Certificate>> certificatesProvider,
+      ProxyConfig config) {
     return memoizeWithExpiration(
         certificatesProvider::get, config.serverCertificateCacheSeconds, SECONDS);
   }
 
   @Provides
   @ServerCertificates
-  static X509Certificate[] provideCertificates(
+  static ImmutableList<X509Certificate> provideCertificates(
       Environment env,
-      @Local Lazy<X509Certificate[]> localCertificates,
-      @Prod Lazy<X509Certificate[]> prodCertificates) {
-    return (env == Environment.LOCAL) ? localCertificates.get() : prodCertificates.get();
+      @Local Lazy<ImmutableList<X509Certificate>> localCertificates,
+      @Prod Lazy<ImmutableList<X509Certificate>> prodCertificates) {
+    return env == Environment.LOCAL ? localCertificates.get() : prodCertificates.get();
   }
 
   @Provides
@@ -133,7 +135,7 @@ public class CertificateModule {
       Environment env,
       @Local Lazy<PrivateKey> localPrivateKey,
       @Prod Lazy<PrivateKey> prodPrivateKey) {
-    return (env == Environment.LOCAL) ? localPrivateKey.get() : prodPrivateKey.get();
+    return env == Environment.LOCAL ? localPrivateKey.get() : prodPrivateKey.get();
   }
 
   @Singleton
@@ -156,8 +158,8 @@ public class CertificateModule {
   @Singleton
   @Provides
   @Local
-  static X509Certificate[] provideLocalCertificates(SelfSignedCertificate ssc) {
-    return new X509Certificate[] {ssc.cert()};
+  static ImmutableList<X509Certificate> provideLocalCertificates(SelfSignedCertificate ssc) {
+    return ImmutableList.of(ssc.cert());
   }
 
   @Provides
@@ -210,7 +212,7 @@ public class CertificateModule {
   // This binding should not be used directly. Use the supplier binding instead.
   @Provides
   @Prod
-  static X509Certificate[] provideProdCertificates(
+  static ImmutableList<X509Certificate> provideProdCertificates(
       @Named("pemObjects") ImmutableList<Object> pemObject) {
     JcaX509CertificateConverter converter = new JcaX509CertificateConverter().setProvider("BC");
     Function<X509CertificateHolder, X509Certificate> certificateConverter =
@@ -224,7 +226,7 @@ public class CertificateModule {
         };
     ImmutableList<X509Certificate> certificates =
         filterAndConvert(pemObject, X509CertificateHolder.class, certificateConverter);
-    checkState(certificates.size() != 0, "No certificates found in the pem file");
+    checkState(!certificates.isEmpty(), "No certificates found in the pem file");
     X509Certificate lastCert = null;
     for (X509Certificate cert : certificates) {
       if (lastCert != null) {
@@ -236,8 +238,6 @@ public class CertificateModule {
       }
       lastCert = cert;
     }
-    X509Certificate[] certificateArray = new X509Certificate[certificates.size()];
-    certificates.toArray(certificateArray);
-    return certificateArray;
+    return certificates;
   }
 }

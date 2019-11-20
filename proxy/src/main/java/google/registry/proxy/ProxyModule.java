@@ -217,8 +217,7 @@ public class ProxyModule {
   @Singleton
   @Provides
   @Named("accessToken")
-  static Supplier<String> provideAccessTokenSupplier(
-      GoogleCredentialsBundle credentialsBundle, ProxyConfig config) {
+  static Supplier<String> provideAccessTokenSupplier(GoogleCredentialsBundle credentialsBundle) {
     return () -> {
       GoogleCredentials credentials = credentialsBundle.getGoogleCredentials();
       try {
@@ -329,14 +328,14 @@ public class ProxyModule {
   @Singleton
   @Component(
       modules = {
-          ProxyModule.class,
-          CertificateModule.class,
-          HttpsRelayProtocolModule.class,
-          WhoisProtocolModule.class,
-          WebWhoisProtocolsModule.class,
-          EppProtocolModule.class,
-          HealthCheckProtocolModule.class,
-          MetricsModule.class
+        ProxyModule.class,
+        CertificateModule.class,
+        HttpsRelayProtocolModule.class,
+        WhoisProtocolModule.class,
+        WebWhoisProtocolsModule.class,
+        EppProtocolModule.class,
+        HealthCheckProtocolModule.class,
+        MetricsModule.class
       })
   interface ProxyComponent {
 

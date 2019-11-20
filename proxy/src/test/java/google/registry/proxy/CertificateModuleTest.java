@@ -20,6 +20,7 @@ import static google.registry.networking.handler.SslInitializerTestUtils.signKey
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.collect.ImmutableList;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
@@ -79,7 +80,7 @@ public class CertificateModuleTest {
     byte[] pemBytes = getPemBytes(cert, ssc.cert(), key);
     component = createComponent(pemBytes);
     assertThat(component.privateKey()).isEqualTo(key);
-    assertThat(component.certificates()).asList().containsExactly(cert, ssc.cert()).inOrder();
+    assertThat(component.certificates()).containsExactly(cert, ssc.cert()).inOrder();
   }
 
   @Test
@@ -87,7 +88,7 @@ public class CertificateModuleTest {
     byte[] pemBytes = getPemBytes(cert, key, ssc.cert());
     component = createComponent(pemBytes);
     assertThat(component.privateKey()).isEqualTo(key);
-    assertThat(component.certificates()).asList().containsExactly(cert, ssc.cert()).inOrder();
+    assertThat(component.certificates()).containsExactly(cert, ssc.cert()).inOrder();
   }
 
   @Test
@@ -131,13 +132,13 @@ public class CertificateModuleTest {
     private final byte[] pemBytes;
 
     PemBytesModule(byte[] pemBytes) {
-      this.pemBytes = pemBytes;
+      this.pemBytes = pemBytes.clone();
     }
 
     @Provides
     @Named("pemBytes")
     byte[] providePemBytes() {
-      return pemBytes;
+      return pemBytes.clone();
     }
   }
 
@@ -156,6 +157,6 @@ public class CertificateModuleTest {
     PrivateKey privateKey();
 
     @Prod
-    X509Certificate[] certificates();
+    ImmutableList<X509Certificate> certificates();
   }
 }
