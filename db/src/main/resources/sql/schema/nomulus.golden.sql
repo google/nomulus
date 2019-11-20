@@ -142,6 +142,49 @@ ALTER SEQUENCE public."RegistryLock_revision_id_seq" OWNED BY public."RegistryLo
 
 
 --
+-- Name: ReservedEntry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."ReservedEntry" (
+    revision_id bigint NOT NULL,
+    comment text,
+    reservation_type integer NOT NULL,
+    domain_label text NOT NULL
+);
+
+
+--
+-- Name: ReservedList; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."ReservedList" (
+    revision_id bigint NOT NULL,
+    creation_timestamp timestamp with time zone NOT NULL,
+    name text NOT NULL,
+    should_publish boolean NOT NULL
+);
+
+
+--
+-- Name: ReservedList_revision_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."ReservedList_revision_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ReservedList_revision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."ReservedList_revision_id_seq" OWNED BY public."ReservedList".revision_id;
+
+
+--
 -- Name: ClaimsList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -160,6 +203,13 @@ ALTER TABLE ONLY public."PremiumList" ALTER COLUMN revision_id SET DEFAULT nextv
 --
 
 ALTER TABLE ONLY public."RegistryLock" ALTER COLUMN revision_id SET DEFAULT nextval('public."RegistryLock_revision_id_seq"'::regclass);
+
+
+--
+-- Name: ReservedList revision_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ReservedList" ALTER COLUMN revision_id SET DEFAULT nextval('public."ReservedList_revision_id_seq"'::regclass);
 
 
 --
@@ -203,6 +253,22 @@ ALTER TABLE ONLY public."RegistryLock"
 
 
 --
+-- Name: ReservedEntry ReservedEntry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ReservedEntry"
+    ADD CONSTRAINT "ReservedEntry_pkey" PRIMARY KEY (revision_id, domain_label);
+
+
+--
+-- Name: ReservedList ReservedList_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ReservedList"
+    ADD CONSTRAINT "ReservedList_pkey" PRIMARY KEY (revision_id);
+
+
+--
 -- Name: RegistryLock idx_registry_lock_repo_id_revision_id; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -232,11 +298,26 @@ CREATE INDEX premiumlist_name_idx ON public."PremiumList" USING btree (name);
 
 
 --
+-- Name: reservedlist_name_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX reservedlist_name_idx ON public."ReservedList" USING btree (name);
+
+
+--
 -- Name: ClaimsEntry fk6sc6at5hedffc0nhdcab6ivuq; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."ClaimsEntry"
     ADD CONSTRAINT fk6sc6at5hedffc0nhdcab6ivuq FOREIGN KEY (revision_id) REFERENCES public."ClaimsList"(revision_id);
+
+
+--
+-- Name: ReservedEntry fkgq03rk0bt1hb915dnyvd3vnfc; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ReservedEntry"
+    ADD CONSTRAINT fkgq03rk0bt1hb915dnyvd3vnfc FOREIGN KEY (revision_id) REFERENCES public."ReservedList"(revision_id);
 
 
 --

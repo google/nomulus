@@ -24,6 +24,7 @@
     <class>google.registry.schema.tmch.ClaimsList</class>
     <class>google.registry.model.transfer.BaseTransferObject</class>
     <class>google.registry.schema.tld.PremiumList</class>
+    <class>google.registry.schema.tld.ReservedList</class>
     <class>google.registry.model.domain.secdns.DelegationSignerData</class>
     <class>google.registry.model.domain.DesignatedContact</class>
     <class>google.registry.model.domain.DomainBase</class>
