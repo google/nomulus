@@ -17,7 +17,9 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.base.Charsets;
 import com.google.common.io.Files;
+import com.google.common.io.Resources;
 import google.registry.persistence.NomulusPostgreSql;
 import java.io.File;
 import org.junit.Before;
@@ -85,5 +87,15 @@ public class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSch
     runCommand(
         "--start_postgresql", "--out_file=" + tmp.getRoot() + File.separatorChar + "schema.sql");
     assertThat(new File(tmp.getRoot(), "schema.sql").exists()).isTrue();
+  }
+
+  @Test
+  public void validateGeneratedSchemaIsSameAsSchemaInFile() throws Exception {
+    runCommand(
+        "--start_postgresql", "--out_file=" + tmp.getRoot() + File.separatorChar + "schema.sql");
+    assertThat(Files.readLines(new File(tmp.getRoot(), "schema.sql"), Charsets.UTF_8))
+        .isEqualTo(
+            Resources.readLines(
+                Resources.getResource("sql/schema/db-schema.sql.generated"), Charsets.UTF_8));
   }
 }
