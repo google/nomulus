@@ -78,7 +78,7 @@ public class UnlockDomainCommand extends LockOrUnlockDomainCommand {
               "addDsRecords", ImmutableList.of(),
               "removeDsRecords", ImmutableList.of(),
               "removeAllDsRecords", false));
-      saveLockObject(domainBase.get(), now, Action.UNLOCK);
+      stageRegistryLockObject(domainBase.get(), now, Action.UNLOCK);
     }
   }
 }

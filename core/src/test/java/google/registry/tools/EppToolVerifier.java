@@ -162,6 +162,11 @@ public class EppToolVerifier {
         .isEmpty();
   }
 
+  /** Returns the (mock) Connection that is being monitored by this verifier. */
+  AppEngineConnection getConnection() {
+    return connection;
+  }
+
   private void setArgumentsIfNeeded() throws Exception {
     if (capturedParams != null) {
       return;
@@ -193,10 +198,5 @@ public class EppToolVerifier {
     assertXmlEquals(expectedXmlContent, prettyPrint(bytesToXml(capturedParams.get(paramIndex))));
     paramIndex++;
     return this;
-  }
-
-  /** Returns the (mock) Connection that is being monitored by this verifier. */
-  private AppEngineConnection getConnection() {
-    return connection;
   }
 }

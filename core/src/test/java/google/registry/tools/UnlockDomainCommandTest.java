@@ -24,6 +24,8 @@ import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.JUnitBackports.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -34,6 +36,10 @@ import google.registry.model.registry.RegistryLockDao;
 import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.schema.domain.RegistryLock.Action;
+import google.registry.testing.FakeClock;
+import google.registry.testing.FakeSleeper;
+import google.registry.tools.server.ToolsTestData;
+import google.registry.util.Retrier;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
@@ -52,6 +58,7 @@ public class UnlockDomainCommandTest extends EppToolCommandTestCase<UnlockDomain
     eppVerifier.expectSuperuser();
     persistNewRegistrar("adminreg", "Admin Registrar", Type.REAL, 693L);
     command.registryAdminClientId = "adminreg";
+    command.retrier = new Retrier(new FakeSleeper(new FakeClock()), 3);
   }
 
   private static DomainBase persistLockedDomain(String domainName) {
@@ -72,7 +79,10 @@ public class UnlockDomainCommandTest extends EppToolCommandTestCase<UnlockDomain
   }
 
   @Test
-  public void testSuccess_writesLockObject() throws Exception {
+  public void testSuccess_writesUnlockObject() throws Exception {
+    when(eppVerifier.getConnection().sendPostRequest(any(), any(), any(), any()))
+        .thenReturn(ToolsTestData.loadFile("epp_success_example.xml"));
+
     DomainBase domainBase = persistLockedDomain("example.tld");
     runCommandForced("--client=NewRegistrar", "example.tld");
     eppVerifier.verifySent("domain_unlock.xml", ImmutableMap.of("DOMAIN", "example.tld"));
@@ -101,6 +111,9 @@ public class UnlockDomainCommandTest extends EppToolCommandTestCase<UnlockDomain
 
   @Test
   public void testSuccess_manyDomains() throws Exception {
+    when(eppVerifier.getConnection().sendPostRequest(any(), any(), any(), any()))
+        .thenReturn(ToolsTestData.loadFile("epp_success_example.xml"));
+
     // Create 26 domains -- one more than the number of entity groups allowed in a transaction (in
     // case that was going to be the failure point).
     List<String> domains = new ArrayList<>();
@@ -153,5 +166,16 @@ public class UnlockDomainCommandTest extends EppToolCommandTestCase<UnlockDomain
             IllegalArgumentException.class,
             () -> runCommandForced("--client=NewRegistrar", "dupe.tld", "dupe.tld"));
     assertThat(e).hasMessageThat().isEqualTo("Duplicate domain arguments found: 'dupe.tld'");
+  }
+
+  @Test
+  public void testFailure_doesNotWriteUnlockObject_onEppFailure() throws Exception {
+    // If the EPP fails due to some unexpected reason, don't write an unlock object
+    when(eppVerifier.getConnection().sendPostRequest(any(), any(), any(), any()))
+        .thenReturn(ToolsTestData.loadFile("epp_failure_example.xml"));
+    persistLockedDomain("example.tld");
+    runCommandForced("--client=NewRegistrar", "example.tld");
+    eppVerifier.verifySent("domain_unlock.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    assertThat(RegistryLockDao.getByRegistrarId("NewRegistrar")).isEmpty();
   }
 }

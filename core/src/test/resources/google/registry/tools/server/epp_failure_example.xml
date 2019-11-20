@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <response>
+    <result code="2400">
+      <msg>Command failed</msg>
+    </result>
+    <trID>
+      <clTRID>RegistryTool</clTRID>
+      <svTRID>jxdx2JCZRNiGmBfwuJJ9sQ==-2</svTRID>
+    </trID>
+  </response>
+</epp>

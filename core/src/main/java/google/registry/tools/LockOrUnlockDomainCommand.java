@@ -23,12 +23,16 @@ import static google.registry.util.CollectionUtils.findDuplicates;
 import com.beust.jcommander.Parameter;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.eppoutput.Result.Code;
 import google.registry.model.registry.RegistryLockDao;
 import google.registry.schema.domain.RegistryLock;
+import google.registry.util.Retrier;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import javax.inject.Inject;
@@ -37,6 +41,8 @@ import org.joda.time.DateTime;
 /** Shared base class for commands to registry lock or unlock a domain via EPP. */
 public abstract class LockOrUnlockDomainCommand extends MutatingEppToolCommand
     implements CommandWithCloudSql {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   protected static final ImmutableSet<StatusValue> REGISTRY_LOCK_STATUSES =
       ImmutableSet.of(
@@ -54,6 +60,11 @@ public abstract class LockOrUnlockDomainCommand extends MutatingEppToolCommand
   @Inject
   @Config("registryAdminClientId")
   String registryAdminClientId;
+
+  @Inject
+  Retrier retrier;
+
+  private final List<RegistryLock> locksToSave = new ArrayList<>();
 
   protected ImmutableSet<String> getDomains() {
     return ImmutableSet.copyOf(mainParameters);
@@ -75,8 +86,9 @@ public abstract class LockOrUnlockDomainCommand extends MutatingEppToolCommand
         "== ENSURE THAT YOU HAVE AUTHENTICATED THE REGISTRAR BEFORE RUNNING THIS COMMAND ==");
   }
 
-  protected void saveLockObject(DomainBase domain, DateTime now, RegistryLock.Action lockAction) {
-    RegistryLockDao.save(
+  protected void stageRegistryLockObject(
+      DomainBase domain, DateTime now, RegistryLock.Action lockAction) {
+    locksToSave.add(
         new RegistryLock.Builder()
             .setRepoId(domain.getRepoId())
             .setDomainName(domain.getFullyQualifiedDomainName())
@@ -88,5 +100,23 @@ public abstract class LockOrUnlockDomainCommand extends MutatingEppToolCommand
             .isSuperuser(true)
             .setVerificationCode(UUID.randomUUID().toString())
             .build());
+  }
+
+  @Override
+  public String execute() throws Exception {
+    String result = super.execute();
+    if (result.contains(Code.SUCCESS.msg)) {
+      try {
+        locksToSave.forEach(
+            lock ->
+                retrier.callWithRetry(() -> RegistryLockDao.save(lock), RuntimeException.class));
+      } catch (Throwable t) {
+        String message =
+            String.format("Error when saving registry lock object: %s", t.getMessage());
+        logger.atSevere().withCause(t).log(message);
+        result += message + "\n";
+      }
+    }
+    return result;
   }
 }
