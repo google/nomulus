@@ -24,6 +24,7 @@ dependencies {
   compile deps['io.netty:netty-handler']
   compile deps['io.netty:netty-transport']
   compile deps['javax.inject:javax.inject']
+  compile project(':util')
 
   runtime deps['com.google.flogger:flogger-system-backend']
   runtime deps['io.netty:netty-tcnative-boringssl-static']

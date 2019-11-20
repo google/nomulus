@@ -162,7 +162,8 @@ public final class EppProtocolModule {
       SslProvider sslProvider,
       Supplier<PrivateKey> privateKeySupplier,
       Supplier<ImmutableList<X509Certificate>> certificatesSupplier) {
-    return new SslServerInitializer<>(true, sslProvider, privateKeySupplier, certificatesSupplier);
+    return new SslServerInitializer<>(
+        true, false, sslProvider, privateKeySupplier, certificatesSupplier);
   }
 
   @Provides

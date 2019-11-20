@@ -15,8 +15,11 @@
 package google.registry.networking.handler;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.JUnitBackports.assertThrows;
 
+import com.google.common.base.Throwables;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import java.math.BigInteger;
@@ -28,6 +31,7 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.concurrent.ExecutionException;
 import javax.net.ssl.SSLSession;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -61,17 +65,17 @@ public final class SslInitializerTestUtils {
   }
 
   /**
-   * Signs the given key pair with the given self signed certificate.
+   * Signs the given key pair with the given self signed certificate to generate a certificate with
+   * the given validity range.
    *
    * @return signed public key (of the key pair) certificate
    */
   public static X509Certificate signKeyPair(
-      SelfSignedCertificate ssc, KeyPair keyPair, String hostname) throws Exception {
+      SelfSignedCertificate ssc, KeyPair keyPair, String hostname, Date from, Date to)
+      throws Exception {
     X500Name subjectDnName = new X500Name("CN=" + hostname);
     BigInteger serialNumber = BigInteger.valueOf(System.currentTimeMillis());
     X500Name issuerDnName = new X500Name(ssc.cert().getIssuerDN().getName());
-    Date from = Date.from(Instant.now().minus(Duration.ofDays(1)));
-    Date to = Date.from(Instant.now().plus(Duration.ofDays(1)));
     SubjectPublicKeyInfo subPubKeyInfo =
         SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
     AlgorithmIdentifier sigAlgId =
@@ -87,6 +91,22 @@ public final class SslInitializerTestUtils {
 
     X509CertificateHolder certificateHolder = v3CertGen.build(sigGen);
     return new JcaX509CertificateConverter().setProvider("BC").getCertificate(certificateHolder);
+  }
+
+  /**
+   * Signs the given key pair with the given self signed certificate to generate a certificate that
+   * is valid from yesterday to tomorrow.
+   *
+   * @return signed public key (of the key pair) certificate
+   */
+  public static X509Certificate signKeyPair(
+      SelfSignedCertificate ssc, KeyPair keyPair, String hostname) throws Exception {
+    return signKeyPair(
+        ssc,
+        keyPair,
+        hostname,
+        Date.from(Instant.now().minus(Duration.ofDays(1))),
+        Date.from(Instant.now().plus(Duration.ofDays(1))));
   }
 
   /**
@@ -109,5 +129,26 @@ public final class SslInitializerTestUtils {
         .containsExactlyElementsIn(certs);
     // Returns the SSL session for further assertion.
     return sslHandler.engine().getSession();
+  }
+
+  /** Verifies tha the SSL channel cannot be established due to a given exception. */
+  static void verifySslExcpetion(
+      Channel channel, CheckedConsumer<Channel> operation, Class<? extends Exception> cause)
+      throws Exception {
+    // Extract SSL exception from the handshake future.
+    Exception exception = assertThrows(ExecutionException.class, () -> operation.accept(channel));
+
+    // Verify that the exception is caused by the expected cause.
+    assertThat(Throwables.getRootCause(exception)).isInstanceOf(cause);
+
+    // Ensure that the channel is closed. If this step times out, the channel is not properly
+    // closed.
+    ChannelFuture unusedFuture = channel.closeFuture().syncUninterruptibly();
+  }
+
+  /** A consumer that can throw checked exceptions. */
+  @FunctionalInterface
+  interface CheckedConsumer<T> {
+    void accept(T t) throws Exception;
   }
 }

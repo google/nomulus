@@ -14,9 +14,13 @@
 
 package google.registry.networking.handler;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.util.X509Utils.getCertificateHash;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -29,6 +33,8 @@ import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import java.security.PrivateKey;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.util.function.Supplier;
 
@@ -58,6 +64,8 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private final boolean requireClientCert;
+  // TODO(jianglai): Always validate client certs (if required).
+  private final boolean validateClientCert;
   private final SslProvider sslProvider;
   // We use suppliers for the key/cert pair because they are fetched and cached from GCS, and can
   // change when the artifacts on GCS changes.
@@ -66,11 +74,16 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
 
   public SslServerInitializer(
       boolean requireClientCert,
+      boolean validateClientCert,
       SslProvider sslProvider,
       Supplier<PrivateKey> privateKeySupplier,
       Supplier<ImmutableList<X509Certificate>> certificatesSupplier) {
     logger.atInfo().log("Server SSL Provider: %s", sslProvider);
+    checkArgument(
+        requireClientCert || !validateClientCert,
+        "Cannot validate client certificate if client certificate is not required.");
     this.requireClientCert = requireClientCert;
+    this.validateClientCert = validateClientCert;
     this.sslProvider = sslProvider;
     this.privateKeySupplier = privateKeySupplier;
     this.certificatesSupplier = certificatesSupplier;
@@ -95,10 +108,23 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
               .addListener(
                   future -> {
                     if (future.isSuccess()) {
-                      Promise<X509Certificate> unusedPromise =
-                          clientCertificatePromise.setSuccess(
-                              (X509Certificate)
-                                  sslHandler.engine().getSession().getPeerCertificates()[0]);
+                      X509Certificate clientCertificate =
+                          (X509Certificate)
+                              sslHandler.engine().getSession().getPeerCertificates()[0];
+                      try {
+                        clientCertificate.checkValidity();
+                        Promise<X509Certificate> unusedPromise =
+                            clientCertificatePromise.setSuccess(clientCertificate);
+                      } catch (CertificateNotYetValidException | CertificateExpiredException e) {
+                        logger.atWarning().withCause(e).log(
+                            "Client certificate is not valid.\nHash: %s",
+                            getCertificateHash(clientCertificate));
+                        if (validateClientCert) {
+                          Promise<X509Certificate> unusedPromise =
+                              clientCertificatePromise.setFailure(e);
+                          ChannelFuture unusedFuture2 = channel.close();
+                        }
+                      }
                     } else {
                       Promise<X509Certificate> unusedPromise =
                           clientCertificatePromise.setFailure(future.cause());
