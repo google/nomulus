@@ -97,10 +97,16 @@ public class PremiumList {
     return name;
   }
 
+  /** Returns the {@link CurrencyUnit} used for this list. */
+  public CurrencyUnit getCurrency() {
+    return currency;
+  }
+
   /** Returns the ID of this revision, or throws if null. */
   public Long getRevisionId() {
     checkState(
-        revisionId != null, "revisionId is null because it is not persisted in the database");
+        revisionId != null,
+        "revisionId is null because this object has not yet been persisted to the DB");
     return revisionId;
   }
 
