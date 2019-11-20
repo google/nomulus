@@ -27,6 +27,7 @@ if (pluginsUrl) {
 
 rootProject.name = 'nomulus'
 
+include 'common'
 include 'core'
 include 'db'
 include 'networking'

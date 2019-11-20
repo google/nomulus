@@ -241,6 +241,8 @@ dependencies {
   compile deps['com.google.appengine:appengine-api-1.0-sdk']
 
   // Known issue: nebula-lint misses inherited dependency.
+  compile project(':common')
+  testCompile project(path: ':common', configuration: 'testing')
   compile project(':third_party')
   compile project(':util')
   // Import NomulusPostreSql from ':db' for compile but exclude dependencies.

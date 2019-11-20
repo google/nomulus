@@ -64,6 +64,7 @@ dependencies {
   compile deps['joda-time:joda-time']
   compile deps['org.bouncycastle:bcpkix-jdk15on']
   compile deps['org.bouncycastle:bcprov-jdk15on']
+  compile project(':common')
   compile project(':networking')
   compile project(':util')
 
@@ -77,7 +78,7 @@ dependencies {
   testCompile deps['junit:junit']
   testCompile deps['org.mockito:mockito-core']
   testCompile project(':third_party')
-  testCompile project(path: ':core', configuration: 'testRuntime')
+  testCompile project(path: ':common', configuration: 'testing')
   testCompile project(path: ':networking', configuration: 'testRuntime')
 
   // Include auto-value in compile until nebula-lint understands
