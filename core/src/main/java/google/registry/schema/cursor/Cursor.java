@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2019 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,10 @@
 
 package google.registry.schema.cursor;
 
+import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
+import google.registry.schema.cursor.Cursor.CursorId;
+import java.io.Serializable;
 import java.time.ZonedDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -22,16 +25,19 @@ import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.Table;
 
-/** Shared entity for date cursors. This uses a compound primary key as defined in CursorId.java. */
+/**
+ * Shared entity for date cursors. This uses a compound primary key as defined in {@link CursorId}.
+ */
 @Entity
 @Table
 @IdClass(CursorId.class)
 public class Cursor {
+
   @Column(nullable = false)
   @Id
   private String type;
 
-  @Column @Id private String tld;
+  @Column @Id private String scope;
 
   @Column(nullable = false)
   private ZonedDateTime cursorTime;
@@ -39,13 +45,15 @@ public class Cursor {
   @Column(nullable = false)
   private UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
 
+  public static final String GLOBAL = "GLOBAL";
+
   /**
    * Since hibernate does not allow null values in a primary key, for now I am just using "Global"
    * for the tld value on a global cursor.
    */
-  private Cursor(String type, String tld, ZonedDateTime cursorTime) {
+  private Cursor(String type, String scope, ZonedDateTime cursorTime) {
     this.type = type;
-    this.tld = (tld == null ? "Global" : tld);
+    this.scope = (scope == null ? GLOBAL : scope);
     this.cursorTime = cursorTime;
   }
 
@@ -53,8 +61,8 @@ public class Cursor {
   private Cursor() {}
 
   /** Constructs a {@link Cursor} object. */
-  public static Cursor create(String type, String tld, ZonedDateTime cursorTime) {
-    return new Cursor(type, tld, cursorTime);
+  public static Cursor create(String type, String scope, ZonedDateTime cursorTime) {
+    return new Cursor(type, scope, cursorTime);
   }
 
   /** Returns the type of the cursor. */
@@ -63,11 +71,11 @@ public class Cursor {
   }
 
   /**
-   * Returns the tld the cursor is referring to. If the cursor is a global cursor, the tld will be
-   * "Global".
+   * Returns the scope of the cursor. The scope will typically be the tld the cursor is referring
+   * to. If the cursor is a global cursor, the scope will be "GLOBAL".
    */
-  public String getTld() {
-    return tld;
+  public String getScope() {
+    return scope;
   }
 
   /** Returns the time the cursor is set to. */
@@ -78,5 +86,19 @@ public class Cursor {
   /** Returns the last time the cursor was updated. */
   public UpdateAutoTimestamp getLastUpdateTime() {
     return lastUpdateTime;
+  }
+
+  static class CursorId extends ImmutableObject implements Serializable {
+
+    public String type;
+
+    public String scope;
+
+    private CursorId() {}
+
+    public CursorId(String type, String scope) {
+      this.type = type;
+      this.scope = scope;
+    }
   }
 }

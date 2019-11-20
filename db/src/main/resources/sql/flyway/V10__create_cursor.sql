@@ -13,9 +13,9 @@
 -- limitations under the License.
 
   create table "Cursor" (
-       tld text not null,
+       scope text not null,
         type text not null,
         cursor_time timestamptz not null,
         last_update_time timestamptz not null,
-        primary key (tld, type)
+        primary key (scope, type)
     );

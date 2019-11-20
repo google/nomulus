@@ -16,6 +16,7 @@ package google.registry.schema.cursor;
 
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
+import google.registry.schema.cursor.Cursor.CursorId;
 import java.util.List;
 
 /** Data access object class for {@link Cursor}. */
@@ -29,13 +30,14 @@ public class CursorDao {
             });
   }
 
-  public static Cursor load(String type, String tld) {
+  public static Cursor load(String type, String scope) {
     return jpaTm()
         .transact(
             () ->
                 jpaTm()
                     .getEntityManager()
-                    .find(Cursor.class, new CursorId(type, (tld == null ? "Global" : tld))));
+                    .find(
+                        Cursor.class, new CursorId(type, (scope == null ? Cursor.GLOBAL : scope))));
   }
 
   public static List<Cursor> loadAll() {

@@ -66,7 +66,7 @@ ALTER SEQUENCE public."ClaimsList_revision_id_seq" OWNED BY public."ClaimsList".
 --
 
 CREATE TABLE public."Cursor" (
-    tld text NOT NULL,
+    scope text NOT NULL,
     type text NOT NULL,
     cursor_time timestamp with time zone NOT NULL,
     last_update_time timestamp with time zone NOT NULL
@@ -245,7 +245,7 @@ ALTER TABLE ONLY public."ClaimsList"
 --
 
 ALTER TABLE ONLY public."Cursor"
-    ADD CONSTRAINT "Cursor_pkey" PRIMARY KEY (tld, type);
+    ADD CONSTRAINT "Cursor_pkey" PRIMARY KEY (scope, type);
 
 
 --
