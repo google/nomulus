@@ -210,6 +210,26 @@ public final class RegistryLockVerifyActionTest {
     assertNoDomainChanges();
   }
 
+  @Test
+  public void testFailure_doesNotChangeLockObject() {
+    // A failure when performing Datastore actions means that no actions should be taken in the
+    // Cloud SQL RegistryLock object
+    RegistryLock lock = createLock();
+    RegistryLockDao.save(lock);
+    // reload the lock to pick up creation time
+    lock = RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
+    jpaTmRule.getTxnClock().advanceOneMilli();
+    domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
+    action.run();
+    // we would have failed during the Datastore segment of the action
+    assertThat(response.getPayload()).contains("Failed: Domain already locked");
+
+    // verify that the changes to the SQL object were rolled back
+    RegistryLock afterAction =
+        RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
+    assertThat(afterAction).isEqualTo(lock);
+  }
+
   private RegistryLock createLock() {
     return new RegistryLock.Builder()
         .setDomainName("example.tld")

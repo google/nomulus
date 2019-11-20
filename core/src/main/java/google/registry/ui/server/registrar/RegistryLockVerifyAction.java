@@ -26,12 +26,12 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.common.flogger.FluentLogger;
 import com.google.template.soy.tofu.SoyTofu;
 import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
-import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.RegistryLockDao;
 import google.registry.model.reporting.HistoryEntry;
@@ -42,7 +42,6 @@ import google.registry.schema.domain.RegistryLock;
 import google.registry.ui.server.SoyTemplateUtils;
 import google.registry.ui.soy.registrar.RegistryLockVerificationSoyInfo;
 import google.registry.util.Clock;
-import google.registry.util.DateTimeUtils;
 import java.util.HashMap;
 import javax.inject.Inject;
 
@@ -54,6 +53,8 @@ import javax.inject.Inject;
 public final class RegistryLockVerifyAction extends HtmlAction {
 
   public static final String PATH = "/registry-lock-verify";
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final Supplier<SoyTofu> TOFU_SUPPLIER =
       SoyTemplateUtils.createTofuSupplier(
@@ -77,8 +78,11 @@ public final class RegistryLockVerifyAction extends HtmlAction {
       verifyAndApplyLock(data);
       data.put("success", true);
     } catch (Throwable t) {
+      Throwable rootCause = Throwables.getRootCause(t);
+      logger.atWarning().withCause(rootCause).log(
+          "Error when verifying verification code: %s", rootCause.getMessage());
       data.put("success", false);
-      data.put("errorMessage", Throwables.getRootCause(t).getMessage());
+      data.put("errorMessage", rootCause.getMessage());
     }
     response.setPayload(
         TOFU_SUPPLIER
@@ -113,7 +117,7 @@ public final class RegistryLockVerifyAction extends HtmlAction {
     if (lock.getCompletionTimestamp().isPresent()) {
       throw new IllegalStateException("This lock / unlock has already been verified");
     }
-    if (!DateTimeUtils.isAtOrAfter(lock.getCreationTimestamp().plusHours(1), clock.nowUtc())) {
+    if (lock.isExpired(clock)) {
       throw new IllegalStateException("The pending lock has expired; please try again");
     }
     if (lock.isSuperuser() && !authResult.userAuthInfo().get().isUserAdmin()) {
@@ -128,14 +132,11 @@ public final class RegistryLockVerifyAction extends HtmlAction {
                 () ->
                     new IllegalArgumentException(
                         String.format("Domain %s does not exist", lock.getDomainName())));
-    verifyDomainState(domain, lock);
+    verifyCurrentDomainLockStatuses(domain, lock);
     DomainBase.Builder domainBuilder = domain.asBuilder();
     if (lock.getAction().equals(RegistryLock.Action.LOCK)) {
       domainBuilder.setStatusValues(
-          ImmutableSet.<StatusValue>builder()
-              .addAll(domain.getStatusValues())
-              .addAll(REGISTRY_LOCK_STATUSES)
-              .build());
+          ImmutableSet.copyOf(Sets.union(domain.getStatusValues(), REGISTRY_LOCK_STATUSES)));
     } else {
       domainBuilder.setStatusValues(
           ImmutableSet.copyOf(Sets.difference(domain.getStatusValues(), REGISTRY_LOCK_STATUSES)));
@@ -171,7 +172,7 @@ public final class RegistryLockVerifyAction extends HtmlAction {
     }
   }
 
-  private void verifyDomainState(DomainBase domain, RegistryLock lock) {
+  private void verifyCurrentDomainLockStatuses(DomainBase domain, RegistryLock lock) {
     if (lock.getAction().equals(RegistryLock.Action.LOCK)
         && domain.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES)) {
       // lock is valid as long as any of the statuses are not there
