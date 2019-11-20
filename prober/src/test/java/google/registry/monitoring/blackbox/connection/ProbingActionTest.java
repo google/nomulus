@@ -22,19 +22,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.handler.ActionHandler;
 import google.registry.monitoring.blackbox.handler.ConversionHandler;
-import google.registry.monitoring.blackbox.handler.NettyRule;
 import google.registry.monitoring.blackbox.handler.TestActionHandler;
 import google.registry.monitoring.blackbox.message.TestMessage;
+import google.registry.networking.handler.NettyRule;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
 import org.joda.time.Duration;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -57,10 +55,7 @@ public class ProbingActionTest {
   private static final String ADDRESS_NAME = "TEST_ADDRESS";
   private static final int TEST_PORT = 0;
 
-  private static final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
-
-  /** Used for testing how well probing step can create connection to blackbox server */
-  @Rule public NettyRule nettyRule = new NettyRule(eventLoopGroup);
+  @Rule public NettyRule nettyRule = new NettyRule();
 
   /**
    * We use custom Test {@link ActionHandler} and {@link ConversionHandler} so test depends only on
@@ -127,7 +122,8 @@ public class ProbingActionTest {
     // setup
 
     LocalAddress address = new LocalAddress(ADDRESS_NAME);
-    Bootstrap bootstrap = new Bootstrap().group(eventLoopGroup).channel(LocalChannel.class);
+    Bootstrap bootstrap =
+        new Bootstrap().group(nettyRule.getEventLoopGroup()).channel(LocalChannel.class);
 
     // Sets up a Protocol corresponding to when a new connection is created.
     Protocol protocol =

@@ -48,7 +48,7 @@ import org.junit.rules.ExternalResource;
  *
  * <p>Used in {@link SslClientInitializerTest} and {@link SslServerInitializerTest}.
  */
-final class NettyRule extends ExternalResource {
+public final class NettyRule extends ExternalResource {
 
   // All I/O operations are done inside the single thread within this event loop group, which is
   // different from the main test thread. Therefore synchronizations are required to make sure that
@@ -63,8 +63,12 @@ final class NettyRule extends ExternalResource {
 
   private Channel channel;
 
+  public EventLoopGroup getEventLoopGroup() {
+    return eventLoopGroup;
+  }
+
   /** Sets up a server channel bound to the given local address. */
-  void setUpServer(LocalAddress localAddress, ChannelHandler handler) {
+  public void setUpServer(LocalAddress localAddress, ChannelHandler... handlers) {
     checkState(echoHandler == null, "Can't call setUpServer twice");
     echoHandler = new EchoHandler();
     ChannelInitializer<LocalChannel> serverInitializer =
@@ -72,7 +76,7 @@ final class NettyRule extends ExternalResource {
           @Override
           protected void initChannel(LocalChannel ch) {
             // Add the given handler
-            ch.pipeline().addLast(handler);
+            ch.pipeline().addLast(handlers);
             // Add the "echoHandler" last to log the incoming message and send it back
             ch.pipeline().addLast(echoHandler);
           }
@@ -145,6 +149,11 @@ final class NettyRule extends ExternalResource {
     return assertThat(
         Throwables.getRootCause(
             assertThrows(ExecutionException.class, () -> dumpHandler.getResponseFuture().get())));
+  }
+
+  // TODO(jianglai): find a way to remove this helper method.
+  public void assertReceivedMessage(String message) throws Exception {
+    assertThat(echoHandler.getRequestFuture().get()).isEqualTo(message);
   }
 
   /**

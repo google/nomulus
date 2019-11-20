@@ -20,6 +20,7 @@ import static google.registry.networking.handler.SslInitializerTestUtils.setUpSs
 import static google.registry.networking.handler.SslInitializerTestUtils.signKeyPair;
 
 import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableList;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -86,7 +87,7 @@ public class SslServerInitializerTest {
         requireClientCert,
         sslProvider,
         Suppliers.ofInstance(privateKey),
-        Suppliers.ofInstance(certificates));
+        Suppliers.ofInstance(ImmutableList.copyOf(certificates)));
   }
 
   private ChannelHandler getServerHandler(PrivateKey privateKey, X509Certificate... certificates) {
@@ -125,7 +126,7 @@ public class SslServerInitializerTest {
             true,
             sslProvider,
             Suppliers.ofInstance(ssc.key()),
-            Suppliers.ofInstance(new X509Certificate[] {ssc.cert()}));
+            Suppliers.ofInstance(ImmutableList.of(ssc.cert())));
     EmbeddedChannel channel = new EmbeddedChannel();
     ChannelPipeline pipeline = channel.pipeline();
     pipeline.addLast(sslServerInitializer);

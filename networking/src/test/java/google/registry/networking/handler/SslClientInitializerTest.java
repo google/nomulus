@@ -19,18 +19,21 @@ import static google.registry.networking.handler.SslInitializerTestUtils.getKeyP
 import static google.registry.networking.handler.SslInitializerTestUtils.setUpSslChannel;
 import static google.registry.networking.handler.SslInitializerTestUtils.signKeyPair;
 
+import com.google.common.collect.ImmutableList;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
+import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -39,6 +42,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.function.Function;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -86,9 +90,14 @@ public class SslClientInitializerTest {
   /** Saves the SNI hostname received by the server, if sent by the client. */
   private String sniHostReceived;
 
-  private ChannelHandler getServerHandler(PrivateKey privateKey, X509Certificate certificate)
+  private ChannelHandler getServerHandler(
+      boolean requireClientCert, PrivateKey privateKey, X509Certificate certificate)
       throws Exception {
-    SslContext sslContext = SslContextBuilder.forServer(privateKey, certificate).build();
+    SslContext sslContext =
+        SslContextBuilder.forServer(privateKey, certificate)
+            .trustManager(InsecureTrustManagerFactory.INSTANCE)
+            .clientAuth(requireClientCert ? ClientAuth.REQUIRE : ClientAuth.NONE)
+            .build();
     return new SniHandler(
         hostname -> {
           sniHostReceived = hostname;
@@ -99,7 +108,8 @@ public class SslClientInitializerTest {
   @Test
   public void testSuccess_swappedInitializerWithSslHandler() throws Exception {
     SslClientInitializer<EmbeddedChannel> sslClientInitializer =
-        new SslClientInitializer<>(sslProvider, hostProvider, portProvider);
+        new SslClientInitializer<>(
+            sslProvider, hostProvider, portProvider, ImmutableList.of(), null, null);
     EmbeddedChannel channel = new EmbeddedChannel();
     ChannelPipeline pipeline = channel.pipeline();
     pipeline.addLast(sslClientInitializer);
@@ -114,7 +124,8 @@ public class SslClientInitializerTest {
   @Test
   public void testSuccess_nullHost() {
     SslClientInitializer<EmbeddedChannel> sslClientInitializer =
-        new SslClientInitializer<>(sslProvider, channel -> null, portProvider);
+        new SslClientInitializer<>(
+            sslProvider, channel -> null, portProvider, ImmutableList.of(), null, null);
     EmbeddedChannel channel = new EmbeddedChannel();
     ChannelPipeline pipeline = channel.pipeline();
     pipeline.addLast(sslClientInitializer);
@@ -125,7 +136,8 @@ public class SslClientInitializerTest {
   @Test
   public void testSuccess_nullPort() {
     SslClientInitializer<EmbeddedChannel> sslClientInitializer =
-        new SslClientInitializer<>(sslProvider, hostProvider, channel -> null);
+        new SslClientInitializer<>(
+            sslProvider, hostProvider, channel -> null, ImmutableList.of(), null, null);
     EmbeddedChannel channel = new EmbeddedChannel();
     ChannelPipeline pipeline = channel.pipeline();
     pipeline.addLast(sslClientInitializer);
@@ -138,9 +150,10 @@ public class SslClientInitializerTest {
     SelfSignedCertificate ssc = new SelfSignedCertificate(SSL_HOST);
     LocalAddress localAddress =
         new LocalAddress("DEFAULT_TRUST_MANAGER_REJECT_SELF_SIGNED_CERT_" + sslProvider);
-    nettyRule.setUpServer(localAddress, getServerHandler(ssc.key(), ssc.cert()));
+    nettyRule.setUpServer(localAddress, getServerHandler(false, ssc.key(), ssc.cert()));
     SslClientInitializer<LocalChannel> sslClientInitializer =
-        new SslClientInitializer<>(sslProvider, hostProvider, portProvider);
+        new SslClientInitializer<>(
+            sslProvider, hostProvider, portProvider, ImmutableList.of(), null, null);
     nettyRule.setUpClient(localAddress, sslClientInitializer);
     // The connection is now terminated, both the client side and the server side should get
     // exceptions.
@@ -163,12 +176,12 @@ public class SslClientInitializerTest {
 
     // Set up the server to use the signed cert and private key to perform handshake;
     PrivateKey privateKey = keyPair.getPrivate();
-    nettyRule.setUpServer(localAddress, getServerHandler(privateKey, cert));
+    nettyRule.setUpServer(localAddress, getServerHandler(false, privateKey, cert));
 
     // Set up the client to trust the self signed cert used to sign the cert that server provides.
     SslClientInitializer<LocalChannel> sslClientInitializer =
         new SslClientInitializer<>(
-            sslProvider, hostProvider, portProvider, new X509Certificate[] {ssc.cert()});
+            sslProvider, hostProvider, portProvider, ImmutableList.of(ssc.cert()), null, null);
     nettyRule.setUpClient(localAddress, sslClientInitializer);
 
     setUpSslChannel(nettyRule.getChannel(), cert);
@@ -176,6 +189,43 @@ public class SslClientInitializerTest {
 
     // Verify that the SNI extension is sent during handshake.
     assertThat(sniHostReceived).isEqualTo(SSL_HOST);
+  }
+
+  @Test
+  public void testSuccess_customTrustManager_acceptSelfSignedCert_clientCertRequired()
+      throws Exception {
+    LocalAddress localAddress =
+        new LocalAddress(
+            "CUSTOM_TRUST_MANAGER_ACCEPT_SELF_SIGNED_CERT_CLIENT_CERT_REQUIRED_" + sslProvider);
+
+    SelfSignedCertificate serverSsc = new SelfSignedCertificate(SSL_HOST);
+    SelfSignedCertificate clientSsc = new SelfSignedCertificate();
+
+    // Set up the server to require client certificate.
+    nettyRule.setUpServer(localAddress, getServerHandler(true, serverSsc.key(), serverSsc.cert()));
+
+    // Set up the client to trust the server certificate and use the client certificate.
+    SslClientInitializer<LocalChannel> sslClientInitializer =
+        new SslClientInitializer<>(
+            sslProvider,
+            hostProvider,
+            portProvider,
+            ImmutableList.of(serverSsc.cert()),
+            () -> clientSsc.key(),
+            () -> ImmutableList.of(clientSsc.cert()));
+    nettyRule.setUpClient(localAddress, sslClientInitializer);
+
+    SSLSession sslSession = setUpSslChannel(nettyRule.getChannel(), serverSsc.cert());
+    nettyRule.assertThatMessagesWork();
+
+    // Verify that the SNI extension is sent during handshake.
+    assertThat(sniHostReceived).isEqualTo(SSL_HOST);
+
+    // Verify that the SSL session gets the client cert. Note that this SslSession is for the client
+    // channel, therefore its local certificates are the remote certificates of the SslSession for
+    // the server channel, and vice versa.
+    assertThat(sslSession.getLocalCertificates()).asList().containsExactly(clientSsc.cert());
+    assertThat(sslSession.getPeerCertificates()).asList().containsExactly(serverSsc.cert());
   }
 
   @Test
@@ -192,12 +242,12 @@ public class SslClientInitializerTest {
 
     // Set up the server to use the signed cert and private key to perform handshake;
     PrivateKey privateKey = keyPair.getPrivate();
-    nettyRule.setUpServer(localAddress, getServerHandler(privateKey, cert));
+    nettyRule.setUpServer(localAddress, getServerHandler(false, privateKey, cert));
 
     // Set up the client to trust the self signed cert used to sign the cert that server provides.
     SslClientInitializer<LocalChannel> sslClientInitializer =
         new SslClientInitializer<>(
-            sslProvider, hostProvider, portProvider, new X509Certificate[] {ssc.cert()});
+            sslProvider, hostProvider, portProvider, ImmutableList.of(ssc.cert()), null, null);
     nettyRule.setUpClient(localAddress, sslClientInitializer);
 
     // When the client rejects the server cert due to wrong hostname, both the client and server

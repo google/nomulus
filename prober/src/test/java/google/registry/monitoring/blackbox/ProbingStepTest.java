@@ -26,11 +26,11 @@ import google.registry.monitoring.blackbox.connection.Protocol;
 import google.registry.monitoring.blackbox.exception.UndeterminedStateException;
 import google.registry.monitoring.blackbox.handler.ActionHandler;
 import google.registry.monitoring.blackbox.handler.ConversionHandler;
-import google.registry.monitoring.blackbox.handler.NettyRule;
 import google.registry.monitoring.blackbox.handler.TestActionHandler;
 import google.registry.monitoring.blackbox.message.OutboundMessageType;
 import google.registry.monitoring.blackbox.message.TestMessage;
 import google.registry.monitoring.blackbox.token.Token;
+import google.registry.networking.handler.NettyRule;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
@@ -62,7 +62,7 @@ public class ProbingStepTest {
   private final Bootstrap bootstrap =
       new Bootstrap().group(eventLoopGroup).channel(LocalChannel.class);
   /** Used for testing how well probing step can create connection to blackbox server */
-  @Rule public NettyRule nettyRule = new NettyRule(eventLoopGroup);
+  @Rule public NettyRule nettyRule = new NettyRule();
 
   /**
    * The two main handlers we need in any test pipeline used that connects to {@link NettyRule's

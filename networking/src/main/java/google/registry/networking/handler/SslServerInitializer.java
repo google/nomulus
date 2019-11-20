@@ -14,6 +14,7 @@
 
 package google.registry.networking.handler;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -39,7 +40,7 @@ import java.util.function.Supplier;
  * come before this handler. The type parameter {@code C} is needed so that unit tests can construct
  * this handler that works with {@link EmbeddedChannel};
  *
- * <p>The ssl handler added requires client authentication, but it uses an {@link
+ * <p>The ssl handler added can require client authentication, but it uses an {@link
  * InsecureTrustManagerFactory}, which accepts any ssl certificate presented by the client, as long
  * as the client uses the corresponding private key to establish SSL handshake. The client
  * certificate hash will be passed along to GAE as an HTTP header for verification (not handled by
@@ -58,14 +59,16 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private final boolean requireClientCert;
   private final SslProvider sslProvider;
+  // We use suppliers for the key/cert pair because they are fetched and cached from GCS, and can
+  // change when the artifacts on GCS changes.
   private final Supplier<PrivateKey> privateKeySupplier;
-  private final Supplier<X509Certificate[]> certificatesSupplier;
+  private final Supplier<ImmutableList<X509Certificate>> certificatesSupplier;
 
   public SslServerInitializer(
       boolean requireClientCert,
       SslProvider sslProvider,
       Supplier<PrivateKey> privateKeySupplier,
-      Supplier<X509Certificate[]> certificatesSupplier) {
+      Supplier<ImmutableList<X509Certificate>> certificatesSupplier) {
     logger.atInfo().log("Server SSL Provider: %s", sslProvider);
     this.requireClientCert = requireClientCert;
     this.sslProvider = sslProvider;
@@ -76,7 +79,9 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
   @Override
   protected void initChannel(C channel) throws Exception {
     SslHandler sslHandler =
-        SslContextBuilder.forServer(privateKeySupplier.get(), certificatesSupplier.get())
+        SslContextBuilder.forServer(
+                privateKeySupplier.get(),
+                certificatesSupplier.get().toArray(new X509Certificate[0]))
             .sslProvider(sslProvider)
             .trustManager(InsecureTrustManagerFactory.INSTANCE)
             .clientAuth(requireClientCert ? ClientAuth.REQUIRE : ClientAuth.NONE)

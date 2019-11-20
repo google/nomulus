@@ -40,6 +40,7 @@ dependencies {
     compile deps['xpp3:xpp3']
     compile project(':common')
     compile project(':util')
+    compile project(':networking')
 
     runtime deps['com.google.flogger:flogger-system-backend']
     runtime deps['com.google.auto.value:auto-value']
@@ -51,6 +52,7 @@ dependencies {
     testCompile deps['org.mockito:mockito-core']
     testCompile project(':third_party')
     testCompile project(path: ':common', configuration: 'testing')
+    testCompile project(path: ':networking', configuration: 'testRuntime')
 
     // Include auto-value in compile until nebula-lint understands
     // annotationProcessor

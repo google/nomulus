@@ -35,7 +35,9 @@ import javax.inject.Singleton;
 
 /** A module that provides the {@link FrontendProtocol}s to redirect HTTP(S) web WHOIS requests. */
 @Module
-public class WebWhoisProtocolsModule {
+public final class WebWhoisProtocolsModule {
+
+  private WebWhoisProtocolsModule() {}
 
   /** Dagger qualifier to provide HTTP whois protocol related handlers and other bindings. */
   @Qualifier
@@ -54,7 +56,7 @@ public class WebWhoisProtocolsModule {
   static FrontendProtocol provideHttpWhoisProtocol(
       @HttpWhoisProtocol int httpWhoisPort,
       @HttpWhoisProtocol ImmutableList<Provider<? extends ChannelHandler>> handlerProviders) {
-    return google.registry.proxy.Protocol.frontendBuilder()
+    return Protocol.frontendBuilder()
         .name(HTTP_PROTOCOL_NAME)
         .port(httpWhoisPort)
         .hasBackend(false)
@@ -68,7 +70,7 @@ public class WebWhoisProtocolsModule {
   static FrontendProtocol provideHttpsWhoisProtocol(
       @HttpsWhoisProtocol int httpsWhoisPort,
       @HttpsWhoisProtocol ImmutableList<Provider<? extends ChannelHandler>> handlerProviders) {
-    return google.registry.proxy.Protocol.frontendBuilder()
+    return Protocol.frontendBuilder()
         .name(HTTPS_PROTOCOL_NAME)
         .port(httpsWhoisPort)
         .hasBackend(false)
@@ -110,15 +112,13 @@ public class WebWhoisProtocolsModule {
 
   @Provides
   @HttpWhoisProtocol
-  static WebWhoisRedirectHandler provideHttpRedirectHandler(
-      google.registry.proxy.ProxyConfig config) {
+  static WebWhoisRedirectHandler provideHttpRedirectHandler(ProxyConfig config) {
     return new WebWhoisRedirectHandler(false, config.webWhois.redirectHost);
   }
 
   @Provides
   @HttpsWhoisProtocol
-  static WebWhoisRedirectHandler provideHttpsRedirectHandler(
-      google.registry.proxy.ProxyConfig config) {
+  static WebWhoisRedirectHandler provideHttpsRedirectHandler(ProxyConfig config) {
     return new WebWhoisRedirectHandler(true, config.webWhois.redirectHost);
   }
 
@@ -133,7 +133,7 @@ public class WebWhoisProtocolsModule {
   static SslServerInitializer<NioSocketChannel> provideSslServerInitializer(
       SslProvider sslProvider,
       Supplier<PrivateKey> privateKeySupplier,
-      Supplier<X509Certificate[]> certificatesSupplier) {
+      Supplier<ImmutableList<X509Certificate>> certificatesSupplier) {
     return new SslServerInitializer<>(false, sslProvider, privateKeySupplier, certificatesSupplier);
   }
 }
