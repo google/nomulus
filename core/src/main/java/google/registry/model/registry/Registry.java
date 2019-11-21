@@ -18,6 +18,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Predicates.equalTo;
 import static com.google.common.base.Predicates.not;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.google.common.collect.Maps.toMap;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
@@ -30,9 +33,11 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.joda.money.CurrencyUnit.USD;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Joiner;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
@@ -58,8 +63,10 @@ import google.registry.model.domain.fee.Fee;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.util.Idn;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
@@ -201,6 +208,25 @@ public class Registry extends ImmutableObject implements Buildable {
     return registry;
   }
 
+  /** Returns the registry entities for the given TLD strings, throwing if any don't exist. */
+  static ImmutableSet<Registry> getAll(Set<String> tlds) {
+    try {
+      ImmutableMap<String, Optional<Registry>> registries = CACHE.getAll(tlds);
+      ImmutableSet<String> missingRegistries =
+          registries.entrySet().stream()
+              .filter(e -> !e.getValue().isPresent())
+              .map(Map.Entry::getKey)
+              .collect(toImmutableSet());
+      if (missingRegistries.isEmpty()) {
+        return registries.values().stream().map(Optional::get).collect(toImmutableSet());
+      } else {
+        throw new RegistryNotFoundException(missingRegistries);
+      }
+    } catch (ExecutionException e) {
+      throw new RuntimeException("Unexpected error retrieving TLDs " + tlds, e);
+    }
+  }
+
   /**
    * Invalidates the cache entry.
    *
@@ -220,15 +246,30 @@ public class Registry extends ImmutableObject implements Buildable {
               new CacheLoader<String, Optional<Registry>>() {
                 @Override
                 public Optional<Registry> load(final String tld) {
-                  // Enter a transactionless context briefly; we don't want to enroll every TLD in a
-                  // transaction that might be wrapping this call.
+                  // Enter a transaction-less context briefly; we don't want to enroll every TLD in
+                  // a transaction that might be wrapping this call.
                   return Optional.ofNullable(
-                      tm()
-                          .doTransactionless(
-                              () -> ofy()
-                                  .load()
-                                  .key(Key.create(getCrossTldKey(), Registry.class, tld))
-                                  .now()));
+                      tm().doTransactionless(
+                              () ->
+                                  ofy()
+                                      .load()
+                                      .key(Key.create(getCrossTldKey(), Registry.class, tld))
+                                      .now()));
+                }
+
+                @Override
+                public Map<String, Optional<Registry>> loadAll(Iterable<? extends String> tlds) {
+                  ImmutableMap<String, Key<Registry>> keysMap =
+                      toMap(
+                          ImmutableSet.copyOf(tlds),
+                          tld -> Key.create(getCrossTldKey(), Registry.class, tld));
+                  Map<Key<Registry>, Registry> entities =
+                      tm().doTransactionless(() -> ofy().load().keys(keysMap.values()));
+                  return keysMap.entrySet().stream()
+                      .collect(
+                          toImmutableMap(
+                              Map.Entry::getKey,
+                              e -> Optional.ofNullable(entities.getOrDefault(e.getValue(), null))));
                 }
               });
 
@@ -883,10 +924,14 @@ public class Registry extends ImmutableObject implements Buildable {
     }
   }
 
-  /** Exception to throw when no Registry is found for a given tld. */
+  /** Exception to throw when no Registry entity is found for given TLD string(s). */
   public static class RegistryNotFoundException extends RuntimeException {
+    RegistryNotFoundException(ImmutableSet<String> tlds) {
+      super("No registry object(s) found for " + Joiner.on(", ").join(tlds));
+    }
+
     RegistryNotFoundException(String tld) {
-      super("No registry object found for " + tld);
+      this(ImmutableSet.of(tld));
     }
   }
 }

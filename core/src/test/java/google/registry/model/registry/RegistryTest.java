@@ -51,6 +51,7 @@ import org.junit.Test;
 
 /** Unit tests for {@link Registry}. */
 public class RegistryTest extends EntityTestCase {
+
   Registry registry;
 
   @Before
@@ -144,6 +145,19 @@ public class RegistryTest extends EntityTestCase {
     Registry registry = newRegistry("foo", "FOO");
     assertThat(registry.getReservedLists()).isNotNull();
     assertThat(registry.getReservedLists()).isEmpty();
+  }
+
+  @Test
+  public void testGetAll() {
+    createTld("foo");
+    assertThat(Registry.getAll(ImmutableSet.of("foo", "tld")))
+        .containsExactlyElementsIn(
+            ofy()
+                .load()
+                .keys(
+                    Key.create(getCrossTldKey(), Registry.class, "foo"),
+                    Key.create(getCrossTldKey(), Registry.class, "tld"))
+                .values());
   }
 
   @Test

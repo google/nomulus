@@ -19,6 +19,7 @@ import static com.google.common.base.Predicates.equalTo;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.base.Strings.emptyToNull;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.filterValues;
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
@@ -31,10 +32,12 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Streams;
 import com.google.common.net.InternetDomainName;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry.TldType;
+import java.util.Map;
 import java.util.Optional;
 
 /** Utilities for finding and listing {@link Registry} entities. */
@@ -54,16 +57,21 @@ public final class Registries {
   private static Supplier<ImmutableMap<String, TldType>> createFreshCache() {
     return memoizeWithShortExpiration(
         () ->
-            tm()
-                .doTransactionless(
+            tm().doTransactionless(
                     () -> {
-                      ImmutableMap.Builder<String, TldType> builder =
-                          new ImmutableMap.Builder<>();
-                      for (Registry registry :
-                          ofy().load().type(Registry.class).ancestor(getCrossTldKey())) {
-                        builder.put(registry.getTldStr(), registry.getTldType());
-                      }
-                      return builder.build();
+                      ImmutableSet<String> tlds =
+                          ofy()
+                              .load()
+                              .type(Registry.class)
+                              .ancestor(getCrossTldKey())
+                              .keys()
+                              .list()
+                              .stream()
+                              .map(Key::getName)
+                              .collect(toImmutableSet());
+                      return Registry.getAll(tlds).stream()
+                          .map(e -> Maps.immutableEntry(e.getTldStr(), e.getTldType()))
+                          .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
                     }));
   }
 
@@ -83,11 +91,7 @@ public final class Registries {
 
   /** Returns the Registry entities themselves of the given type loaded fresh from Datastore. */
   public static ImmutableSet<Registry> getTldEntitiesOfType(TldType type) {
-    ImmutableSet<Key<Registry>> keys =
-        filterValues(cache.get(), equalTo(type)).keySet().stream()
-            .map(tld -> Key.create(getCrossTldKey(), Registry.class, tld))
-            .collect(toImmutableSet());
-    return ImmutableSet.copyOf(tm().doTransactionless(() -> ofy().load().keys(keys).values()));
+    return Registry.getAll(filterValues(cache.get(), equalTo(type)).keySet());
   }
 
   /** Pass-through check that the specified TLD exists, otherwise throw an IAE. */

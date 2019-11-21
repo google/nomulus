@@ -48,10 +48,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class ExportReservedTermsActionTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
 
   private final DriveConnection driveConnection = mock(DriveConnection.class);
   private final Response response = mock(Response.class);
@@ -133,6 +130,6 @@ public class ExportReservedTermsActionTest {
     assertThat(thrown)
         .hasCauseThat()
         .hasMessageThat()
-        .isEqualTo("No registry object found for fakeTld");
+        .isEqualTo("No registry object(s) found for fakeTld");
   }
 }
