@@ -316,7 +316,7 @@ public class IcannReportingUploadActionTest {
         .hasLogAtLevelWithMessage(
             Level.SEVERE,
             "Could not upload ICANN_UPLOAD_ACTIVITY report for foo because file"
-                + " foo-activity-200606.csv did not exist.");
+                + " foo-activity-200606.csv did not exist");
   }
 
   @Test
@@ -345,7 +345,7 @@ public class IcannReportingUploadActionTest {
         assertThrows(ServiceUnavailableException.class, () -> action.run());
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Lock for IcannReportingUploadAction already in use.");
+        .contains("Lock for IcannReportingUploadAction already in use");
   }
 
   @Test
@@ -385,6 +385,16 @@ public class IcannReportingUploadActionTest {
                     + "tld-transactions-200606.csv - SUCCESS",
                 new InternetAddress("recipient@example.com"),
                 new InternetAddress("sender@example.com")));
+
+    Cursor newActivityCursor =
+        ofy()
+            .load()
+            .key(Cursor.createKey(CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("new")))
+            .now();
+    assertThat(newActivityCursor.getCursorTime()).isEqualTo(DateTime.parse("2006-07-01TZ"));
+    Cursor newTransactionCursor =
+        ofy().load().key(Cursor.createKey(CursorType.ICANN_UPLOAD_TX, Registry.get("new"))).now();
+    assertThat(newTransactionCursor.getCursorTime()).isEqualTo(DateTime.parse("2006-07-01TZ"));
   }
 }
 

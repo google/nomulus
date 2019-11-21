@@ -25,10 +25,10 @@ import static google.registry.reporting.icann.IcannReportingModule.PARAM_SUBDIR;
 import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
-import avro.shaded.com.google.common.collect.ImmutableSet;
 import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
 import com.googlecode.objectify.Key;
@@ -110,13 +110,13 @@ public final class IcannReportingUploadAction implements Runnable {
         () -> {
           ImmutableMap.Builder<String, Boolean> reportSummaryBuilder = new ImmutableMap.Builder<>();
 
-          ImmutableMap<Cursor, CursorInfo> Cursors = loadCursors();
+          ImmutableMap<Cursor, CursorInfo> cursors = loadCursors();
 
-          // If cursor date is before today or today, upload the corresponding activity report
-          Cursors.entrySet().stream()
+          // If cursor time is before now, upload the corresponding report
+          cursors.entrySet().stream()
               .filter(entry -> getCursorTimeOrStartOfTime(entry.getKey()).isBefore(clock.nowUtc()))
               .forEach(
-                  (entry) -> {
+                  entry -> {
                     DateTime cursorTime = getCursorTimeOrStartOfTime(entry.getKey());
                     uploadReport(
                         cursorTime,
@@ -133,7 +133,7 @@ public final class IcannReportingUploadAction implements Runnable {
 
     String lockname = "IcannReportingUploadAction";
     if (!lockHandler.executeWithLocks(lockRunner, null, Duration.standardHours(2), lockname)) {
-      throw new ServiceUnavailableException("Lock for IcannReportingUploadAction already in use.");
+      throw new ServiceUnavailableException("Lock for IcannReportingUploadAction already in use");
     }
   }
 
@@ -175,7 +175,7 @@ public final class IcannReportingUploadAction implements Runnable {
               },
               IcannReportingUploadAction::isUploadFailureRetryable);
     } catch (RuntimeException e) {
-      logger.atWarning().withCause(e).log("Upload to %s failed.", gcsFilename);
+      logger.atWarning().withCause(e).log("Upload to %s failed", gcsFilename);
     }
     reportSummaryBuilder.put(filename, success);
 
@@ -211,44 +211,25 @@ public final class IcannReportingUploadAction implements Runnable {
 
   /** Returns a map of each cursor to the CursorType and tld. */
   private ImmutableMap<Cursor, CursorInfo> loadCursors() {
-    Map<Key<Cursor>, String> activityKeyMap =
-        Registries.getTldEntitiesOfType(TldType.REAL).stream()
-            .collect(
-                toImmutableMap(
-                    r -> Cursor.createKey(CursorType.ICANN_UPLOAD_ACTIVITY, r),
-                    r -> r.getTldStr()));
-    Map<Key<Cursor>, String> transactionKeyMap =
-        Registries.getTlds().stream()
-            .map(Registry::get)
-            .collect(
-                toImmutableMap(
-                    r -> Cursor.createKey(CursorType.ICANN_UPLOAD_TX, r), r -> r.getTldStr()));
+
+    ImmutableSet<Registry> registries = Registries.getTldEntitiesOfType(TldType.REAL);
+
+    Map<Key<Cursor>, Registry> activityKeyMap =
+        loadKeyMap(registries, CursorType.ICANN_UPLOAD_ACTIVITY);
+    Map<Key<Cursor>, Registry> transactionKeyMap =
+        loadKeyMap(registries, CursorType.ICANN_UPLOAD_TX);
+
     ImmutableSet.Builder<Key<Cursor>> keys = new ImmutableSet.Builder<>();
     keys.addAll(activityKeyMap.keySet());
     keys.addAll(transactionKeyMap.keySet());
     keys.add(Cursor.createGlobalKey(CursorType.ICANN_UPLOAD_MANIFEST));
+
     Map<Key<Cursor>, Cursor> cursorMap = ofy().load().keys(keys.build());
     ImmutableMap.Builder<Cursor, CursorInfo> cursors = new ImmutableMap.Builder<>();
-    activityKeyMap.forEach(
-        (key, tld) -> {
-          Cursor cursor =
-              cursorMap.getOrDefault(
-                  key,
-                  Cursor.create(
-                      CursorType.ICANN_UPLOAD_ACTIVITY,
-                      clock.nowUtc().minusDays(1),
-                      Registry.get(tld)));
-          cursors.put(cursor, CursorInfo.create(CursorType.ICANN_UPLOAD_ACTIVITY, tld));
-        });
-    transactionKeyMap.forEach(
-        (key, tld) -> {
-          Cursor cursor =
-              cursorMap.getOrDefault(
-                  key,
-                  Cursor.create(
-                      CursorType.ICANN_UPLOAD_TX, clock.nowUtc().minusDays(1), Registry.get(tld)));
-          cursors.put(cursor, CursorInfo.create(CursorType.ICANN_UPLOAD_TX, tld));
-        });
+    defaultNullCursorsToYesterdayAndAddToMap(
+        activityKeyMap, CursorType.ICANN_UPLOAD_ACTIVITY, cursorMap, cursors);
+    defaultNullCursorsToYesterdayAndAddToMap(
+        transactionKeyMap, CursorType.ICANN_UPLOAD_TX, cursorMap, cursors);
     Cursor manifestCursor =
         cursorMap.getOrDefault(
             Cursor.createGlobalKey(CursorType.ICANN_UPLOAD_MANIFEST),
@@ -257,9 +238,35 @@ public final class IcannReportingUploadAction implements Runnable {
     return cursors.build();
   }
 
+  private Map<Key<Cursor>, Registry> loadKeyMap(
+      ImmutableSet<Registry> registries, CursorType type) {
+    return registries.stream().collect(toImmutableMap(r -> Cursor.createKey(type, r), r -> r));
+  }
+
+  /**
+   * Populate the cursors map with the Cursor and CursorInfo for each key in the keyMap. If the key
+   * from the keyMap does not have an existing cursor, create a new cursor with a default cursorTime
+   * of yesterday.
+   */
+  private void defaultNullCursorsToYesterdayAndAddToMap(
+      Map<Key<Cursor>, Registry> keyMap,
+      CursorType type,
+      Map<Key<Cursor>, Cursor> cursorMap,
+      ImmutableMap.Builder<Cursor, CursorInfo> cursors) {
+    keyMap.forEach(
+        (key, registry) -> {
+          // Cursor time is defaulted to yesterday to ensure that only reports for this month are
+          // attempted to be uploaded by this process.
+          Cursor cursor =
+              cursorMap.getOrDefault(
+                  key, Cursor.create(type, clock.nowUtc().minusDays(1), registry));
+          cursors.put(cursor, CursorInfo.create(type, registry.getTldStr()));
+        });
+  }
+
   /** Don't retry when reports are already uploaded or can't be uploaded. */
   private static final String ICANN_UPLOAD_PERMANENT_ERROR_MESSAGE =
-      "A report for that month already exists, the cut-off date already passed.";
+      "A report for that month already exists, the cut-off date already passed";
 
   /** Don't retry when the IP address isn't whitelisted, as retries go through the same IP. */
   private static final Pattern ICANN_UPLOAD_WHITELIST_ERROR =
