@@ -31,8 +31,8 @@ reconstruct a premium list .txt file from the premium list that is loaded into
 Datastore (though in principle it would be easy to do by writing a tool to do
 so), so don't lose those .txt files.
 
-An example premium list can be found at
-`java/google/registry/model/registry/config/files/premium/example.txt`.
+The nomulus repository contains an
+[example premium list file](https://github.com/google/nomulus/blob/master/core/src/main/java/google/registry/config/files/premium/example.txt).
 
 ## Creating a premium list
 
@@ -52,6 +52,9 @@ that the convention of naming premium lists after the TLD they are intended to
 be used for is enforced unless the override parameter `-o` is passed, which
 allows premium lists to be created with any name.
 
+You're not done yet! After creating the premium list you must the apply it to
+one or more TLDs (see below) for it to actually be used.
+
 ## Updating a premium list
 
 If the premium list already exists and you want to update it with new prices
@@ -65,6 +68,10 @@ You are about to save the premium list exampletld with 2 items:
 Perform this command? (y/N): y
 Successfully saved premium list exampletld
 ```
+
+If this premium list is already applied to a TLD, then changes will take up to
+60 minutes to take effect (depending on how you've configured the relevant
+caching interval; 60 minutes is the default).
 
 ## Applying a premium list to a TLD
 
@@ -92,9 +99,9 @@ all other information about a TLD). It is used as follows:
 
 ```shell
 $ nomulus -e {ENVIRONMENT} get_tld exampletld
-[ ... snip ... ]
+[ ... snip output ... ]
 premiumList=Key<?>(EntityGroupRoot("cross-tld")/PremiumList("exampletld"))
-[ ... snip ... ]
+[ ... snip output ... ]
 ```
 
 ## Listing all available premium lists
@@ -107,3 +114,22 @@ $ nomulus -e {ENVIRONMENT} list_premium_lists
 exampletld
 someotherlist
 ```
+
+## Verifying premium list updates
+
+To verify that the changes have actually been applied, you can run a domain
+check on a modified entry using the `nomulus check_domain` command and verify
+that the domain now has the correct price.
+
+```shell
+$ nomulus -e production check_domain {domain_name}
+[ ... snip output ... ]
+```
+
+ **Note that the list can be cached for up to 60 minutes, so the old value may
+still be returned for a little while**. If it is urgent that the new pricing
+changes be applied, and it's OK to potentially interrupt client connections,
+then you can use the App Engine web console to kill instances of the `default`
+service, as the cache is per-instance. Once you've killed all the existing
+instances (don't kill them all at once!), all of the newly spun up instances
+will now be using the new values you've configured.

@@ -65,14 +65,19 @@ acmecorp,RESERVED_FOR_ANCHOR_TENANT
 internaldomain,NAMESERVER_RESTRICTED,ns1.internal.tld:ns1.internal.tld
 ```
 
+# Reserved list file name format
+
 There are two types of reserved lists: Those that are intended to apply to a
-specifc TLD, and are thus prefixed with the name of the TLD followed by an
+specific TLD, and are thus prefixed with the name of the TLD followed by an
 underscore, and those that can be applied to any TLD, and are prefixed with
 `common_`. For example, a list of reserved labels on the TLD `exampletld` might
 be named `exampletld_blocked-names.txt`, whereas a similar list intended to
 apply to multiple TLDs might be named `common_blocked-names.txt`. Note that
 these naming conventions are enforced by the tooling used to create and apply
-reserved lists (see subsequent sections).
+reserved lists (see subsequent sections). The two naming patterns are thus:
+
+*   `common_list-name.txt`
+*   `tldname_list-name.txt`
 
 ## Creating a reserved list
 
@@ -82,17 +87,20 @@ purposes of this example, we are creating a common reserved list named
 "common_bad-words".
 
 ```shell
-$ nomulus -e {ENVIRONMENT} create_reserved_list -n common_bad-words \
-    -i common_bad-words.txt
+$ nomulus -e {ENVIRONMENT} create_reserved_list -i common_bad-words.txt
 [ ... snip long confirmation prompt ... ]
 Perform this command? (y/N): y
 Updated 1 entities.
 ```
 
-`-n` is the name of the reserved list to create, and `-i` is the input file
-containing the list. Note that if `-n` is omitted, the list name is inferred
-from the input of the filename minus its file extension. It is recommended to
-store all lists such that the filename and list name are identical.
+Note that `-i` is the input file containing the list. You can optionally specify
+the name of the reserved list using `-n`, but when it's omitted as above the
+list name is inferred from the name of the filename (minus the file extension).
+For ease of tracking track of things, it is recommended to store all lists such
+that the filename and list name are identical.
+
+You're not done yet! After creating the reserved list you must the apply it to
+one or more TLDs (see below) for it to actually be used.
 
 ## Updating a reserved list
 
@@ -101,15 +109,14 @@ file containing the reserved list entries, then pass it as input to the
 `update_reserved_list` command as follows:
 
 ```shell
-$ nomulus -e {ENVIRONMENT} update_reserved_list -n common_bad-words \
-    -i common_bad-words.txt
+$ nomulus -e {ENVIRONMENT} update_reserved_list -i common_bad-words.txt
 [ ... snip diff of changes to list entries ... ]
 Perform this command? (y/N): y
 Updated 1 entities.
 ```
 
 Note that, like the create command, the name of the list is inferred from the
-filename if the `-n` parameter is omitted.
+filename unless you specify the `-n` parameter (not generally recommended).
 
 ## Applying a reserved list to a TLD
 
@@ -149,9 +156,9 @@ purposes here. It is used as follows:
 
 ```shell
 $ nomulus -e {ENVIRONMENT} get_tld exampletld
-[ ... snip ... ]
+[ ... snip output ... ]
 reservedLists=[Key<?>(EntityGroupRoot("cross-tld")/ReservedList("common_bad-words"))]
-[ ... snip ... ]
+[ ... snip output ... ]
 ```
 
 ## Listing all available reserved lists
@@ -165,3 +172,22 @@ $ nomulus -e {ENVIRONMENT} list_reserved_lists
 common_bad-words
 exampletld_some-other-list
 ```
+
+## Verifying reserved list updates
+
+To verify that the changes have actually been applied, you can run a domain
+check on a modified entry using the `nomulus check_domain` command and verify
+that the domain now has the correct reservation status.
+
+```shell
+$ nomulus -e production check_domain {domain_name}
+[ ... snip output ... ]
+```
+
+ **Note that the list can be cached for up to 60 minutes, so changes may not
+take place immediately**. If it is urgent that the new changes be applied, and
+it's OK to potentially interrupt client connections, then you can use the App
+Engine web console to kill instances of the `default` service, as the cache is
+per-instance. Once you've killed all the existing instances (don't kill them all
+at once!), all of the newly spun up instances will now be using the new values
+you've configured.
