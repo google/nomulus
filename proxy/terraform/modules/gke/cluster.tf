@@ -4,7 +4,7 @@ locals {
 
 resource "google_container_cluster" "proxy_cluster" {
   name = "proxy-cluster-${var.proxy_cluster_region}"
-  zone = "${local.proxy_cluster_zone}"
+  zone = local.proxy_cluster_zone
 
   timeouts {
     update = "30m"
@@ -19,7 +19,7 @@ resource "google_container_cluster" "proxy_cluster" {
         "proxy-cluster",
       ]
 
-      service_account = "${var.proxy_service_account_email}"
+      service_account = var.proxy_service_account_email
 
       oauth_scopes = [
         "https://www.googleapis.com/auth/cloud-platform",

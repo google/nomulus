@@ -15,17 +15,17 @@ module "proxy" {
 }
 
 output "proxy_service_account" {
-  value = "${module.proxy.proxy_service_account}"
+  value = module.proxy.proxy_service_account
 }
 
 output "proxy_name_servers" {
-  value = "${module.proxy.proxy_name_servers}"
+  value = module.proxy.proxy_name_servers
 }
 
 output "proxy_instance_groups" {
-  value = "${module.proxy.proxy_instance_groups}"
+  value = module.proxy.proxy_instance_groups
 }
 
 output "proxy_ip_addresses" {
-  value = "${module.proxy.proxy_ip_addresses}"
+  value = module.proxy.proxy_ip_addresses
 }

@@ -1,10 +1,10 @@
 resource "google_kms_key_ring" "proxy_key_ring" {
-  name     = "${var.proxy_key_ring}"
+  name     = var.proxy_key_ring
   location = "global"
 }
 
 resource "google_kms_crypto_key" "proxy_key" {
-  name     = "${var.proxy_key}"
+  name     = var.proxy_key
   key_ring = google_kms_key_ring.proxy_key_ring.self_link
 
   lifecycle {
