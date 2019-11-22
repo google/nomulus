@@ -94,8 +94,8 @@ task initCoverageMinimums {
   ].asImmutable()
 
   rootProject.ext.getMinCoverage = { key ->
-    if (rootProject.ext.coverageMinimums.containsKey(key)) {
-      return rootProject.ext.coverageMinimums.get(key)
+    if (rootProject.coverageMinimums.containsKey(key)) {
+      return rootProject.coverageMinimums.get(key)
     }
     return 0.0
   }
@@ -117,7 +117,7 @@ jacocoTestCoverageVerification {
       //   or MISSEDRATIO
       // - The 'minimum' threshold, given as a fraction or a percentage (including '%')
       limit {
-        minimum = rootProject.ext.getMinCoverage(project.getName())
+        minimum = rootProject.getMinCoverage(project.getName())
       }
     }
   }
