@@ -60,6 +60,7 @@ public class PremiumListDao {
                         BigDecimal.class)
                     .setParameter("revisionId", revisionIdAndLabel.revisionId())
                     .setParameter("label", revisionIdAndLabel.label())
+                    .setMaxResults(1)
                     .getResultStream()
                     .findFirst());
   }
