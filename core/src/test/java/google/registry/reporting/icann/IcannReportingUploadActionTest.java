@@ -349,7 +349,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testSuccess_nullPointers() throws Exception {
+  public void testSuccess_nullCursors() throws Exception {
     createTlds("new");
     writeGcsFile(
         gcsService,

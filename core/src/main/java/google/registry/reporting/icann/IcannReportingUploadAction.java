@@ -226,9 +226,9 @@ public final class IcannReportingUploadAction implements Runnable {
 
     Map<Key<Cursor>, Cursor> cursorMap = ofy().load().keys(keys.build());
     ImmutableMap.Builder<Cursor, CursorInfo> cursors = new ImmutableMap.Builder<>();
-    defaultNullCursorsToYesterdayAndAddToMap(
+    defaultNullCursorsToNextMonthAndAddToMap(
         activityKeyMap, CursorType.ICANN_UPLOAD_ACTIVITY, cursorMap, cursors);
-    defaultNullCursorsToYesterdayAndAddToMap(
+    defaultNullCursorsToNextMonthAndAddToMap(
         transactionKeyMap, CursorType.ICANN_UPLOAD_TX, cursorMap, cursors);
     Cursor manifestCursor =
         cursorMap.getOrDefault(
@@ -246,17 +246,17 @@ public final class IcannReportingUploadAction implements Runnable {
   /**
    * Populate the cursors map with the Cursor and CursorInfo for each key in the keyMap. If the key
    * from the keyMap does not have an existing cursor, create a new cursor with a default cursorTime
-   * of yesterday.
+   * of the first of next month.
    */
-  private void defaultNullCursorsToYesterdayAndAddToMap(
+  private void defaultNullCursorsToNextMonthAndAddToMap(
       Map<Key<Cursor>, Registry> keyMap,
       CursorType type,
       Map<Key<Cursor>, Cursor> cursorMap,
       ImmutableMap.Builder<Cursor, CursorInfo> cursors) {
     keyMap.forEach(
         (key, registry) -> {
-          // Cursor time is defaulted to yesterday to ensure that only reports for this month are
-          // attempted to be uploaded by this process.
+          // Cursor time is defaulted to the first of next month since a new tld will not yet have a
+          // report staged for upload.
           Cursor cursor =
               cursorMap.getOrDefault(
                   key, Cursor.create(type, clock.nowUtc().minusDays(1), registry));
