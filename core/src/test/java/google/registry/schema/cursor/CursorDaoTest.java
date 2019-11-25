@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.testing.FakeClock;
-import google.registry.util.DateTimeUtils;
 import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,8 +36,7 @@ public class CursorDaoTest {
 
   @Test
   public void save_worksSuccessfullyOnNewCursor() {
-    Cursor cursor =
-        Cursor.create("testType", "tld", DateTimeUtils.toZonedDateTime(fakeClock.nowUtc()));
+    Cursor cursor = Cursor.create("testType", "tld", fakeClock.nowUtc());
     CursorDao.save(cursor);
     Cursor returnedCursor = CursorDao.load("testType", "tld");
     assertThat(returnedCursor.getCursorTime()).isEqualTo(cursor.getCursorTime());
@@ -46,12 +44,9 @@ public class CursorDaoTest {
 
   @Test
   public void save_worksSuccessfullyOnExistingCursor() {
-    Cursor cursor =
-        Cursor.create("testType", "tld", DateTimeUtils.toZonedDateTime(fakeClock.nowUtc()));
+    Cursor cursor = Cursor.create("testType", "tld", fakeClock.nowUtc());
     CursorDao.save(cursor);
-    Cursor cursor2 =
-        Cursor.create(
-            "testType", "tld", DateTimeUtils.toZonedDateTime(fakeClock.nowUtc().plusDays(3)));
+    Cursor cursor2 = Cursor.create("testType", "tld", fakeClock.nowUtc().plusDays(3));
     CursorDao.save(cursor2);
     Cursor returnedCursor = CursorDao.load("testType", "tld");
     assertThat(returnedCursor.getCursorTime()).isEqualTo(cursor2.getCursorTime());
@@ -59,36 +54,28 @@ public class CursorDaoTest {
 
   @Test
   public void save_worksSuccessfullyOnNewGlobalCursor() {
-    Cursor cursor =
-        Cursor.create("testTypeGlobal", null, DateTimeUtils.toZonedDateTime(fakeClock.nowUtc()));
+    Cursor cursor = Cursor.create("testTypeGlobal", null, fakeClock.nowUtc());
     CursorDao.save(cursor);
-    Cursor returnedCursor = CursorDao.load("testTypeGlobal", null);
+    Cursor returnedCursor = CursorDao.load("testTypeGlobal");
     assertThat(returnedCursor.getCursorTime()).isEqualTo(cursor.getCursorTime());
   }
 
   @Test
   public void save_worksSuccessfullyOnExistingGlobalCursor() {
-    Cursor cursor =
-        Cursor.create("testTypeGlobal", null, DateTimeUtils.toZonedDateTime(fakeClock.nowUtc()));
+    Cursor cursor = Cursor.create("testTypeGlobal", null, fakeClock.nowUtc());
     CursorDao.save(cursor);
-    Cursor cursor2 =
-        Cursor.create(
-            "testTypeGlobal", null, DateTimeUtils.toZonedDateTime(fakeClock.nowUtc().plusDays(3)));
+    Cursor cursor2 = Cursor.create("testTypeGlobal", null, fakeClock.nowUtc().plusDays(3));
     CursorDao.save(cursor2);
-    Cursor returnedCursor = CursorDao.load("testTypeGlobal", null);
+    Cursor returnedCursor = CursorDao.load("testTypeGlobal");
     assertThat(returnedCursor.getCursorTime()).isEqualTo(cursor2.getCursorTime());
   }
 
   @Test
   public void load_worksSuccessfully() {
-    Cursor cursor =
-        Cursor.create("testTypeGlobal", null, DateTimeUtils.toZonedDateTime(fakeClock.nowUtc()));
-    Cursor cursor2 =
-        Cursor.create("testType", "tld", DateTimeUtils.toZonedDateTime(fakeClock.nowUtc()));
-    Cursor cursor3 =
-        Cursor.create("testType", "foo", DateTimeUtils.toZonedDateTime(fakeClock.nowUtc()));
-    Cursor cursor4 =
-        Cursor.create("testType2", "foo", DateTimeUtils.toZonedDateTime(fakeClock.nowUtc()));
+    Cursor cursor = Cursor.create("testTypeGlobal", null, fakeClock.nowUtc());
+    Cursor cursor2 = Cursor.create("testType", "tld", fakeClock.nowUtc());
+    Cursor cursor3 = Cursor.create("testType", "foo", fakeClock.nowUtc());
+    Cursor cursor4 = Cursor.create("testType2", "foo", fakeClock.nowUtc());
     CursorDao.save(cursor);
     CursorDao.save(cursor2);
     CursorDao.save(cursor3);
@@ -97,20 +84,16 @@ public class CursorDaoTest {
     assertThat(returnedCursor.getCursorTime()).isEqualTo(cursor2.getCursorTime());
     returnedCursor = CursorDao.load("testType2", "foo");
     assertThat(returnedCursor.getCursorTime()).isEqualTo(cursor4.getCursorTime());
-    returnedCursor = CursorDao.load("testTypeGlobal", null);
+    returnedCursor = CursorDao.load("testTypeGlobal");
     assertThat(returnedCursor.getCursorTime()).isEqualTo(cursor.getCursorTime());
   }
 
   @Test
   public void loadAll_worksSuccessfully() {
-    Cursor cursor =
-        Cursor.create("testTypeGlobal", null, DateTimeUtils.toZonedDateTime(fakeClock.nowUtc()));
-    Cursor cursor2 =
-        Cursor.create("testType", "tld", DateTimeUtils.toZonedDateTime(fakeClock.nowUtc()));
-    Cursor cursor3 =
-        Cursor.create("testType", "foo", DateTimeUtils.toZonedDateTime(fakeClock.nowUtc()));
-    Cursor cursor4 =
-        Cursor.create("testType2", "foo", DateTimeUtils.toZonedDateTime(fakeClock.nowUtc()));
+    Cursor cursor = Cursor.create("testTypeGlobal", null, fakeClock.nowUtc());
+    Cursor cursor2 = Cursor.create("testType", "tld", fakeClock.nowUtc());
+    Cursor cursor3 = Cursor.create("testType", "foo", fakeClock.nowUtc());
+    Cursor cursor4 = Cursor.create("testType2", "foo", fakeClock.nowUtc());
     CursorDao.save(cursor);
     CursorDao.save(cursor2);
     CursorDao.save(cursor3);
@@ -127,14 +110,10 @@ public class CursorDaoTest {
 
   @Test
   public void loadByType_worksSuccessfully() {
-    Cursor cursor =
-        Cursor.create("testTypeGlobal", null, DateTimeUtils.toZonedDateTime(fakeClock.nowUtc()));
-    Cursor cursor2 =
-        Cursor.create("testType", "tld", DateTimeUtils.toZonedDateTime(fakeClock.nowUtc()));
-    Cursor cursor3 =
-        Cursor.create("testType", "foo", DateTimeUtils.toZonedDateTime(fakeClock.nowUtc()));
-    Cursor cursor4 =
-        Cursor.create("testType2", "foo", DateTimeUtils.toZonedDateTime(fakeClock.nowUtc()));
+    Cursor cursor = Cursor.create("testTypeGlobal", null, fakeClock.nowUtc());
+    Cursor cursor2 = Cursor.create("testType", "tld", fakeClock.nowUtc());
+    Cursor cursor3 = Cursor.create("testType", "foo", fakeClock.nowUtc());
+    Cursor cursor4 = Cursor.create("testType2", "foo", fakeClock.nowUtc());
     CursorDao.save(cursor);
     CursorDao.save(cursor2);
     CursorDao.save(cursor3);

@@ -32,12 +32,12 @@ public class CursorDao {
 
   public static Cursor load(String type, String scope) {
     return jpaTm()
-        .transact(
-            () ->
-                jpaTm()
-                    .getEntityManager()
-                    .find(
-                        Cursor.class, new CursorId(type, (scope == null ? Cursor.GLOBAL : scope))));
+        .transact(() -> jpaTm().getEntityManager().find(Cursor.class, new CursorId(type, scope)));
+  }
+
+  /** If no scope is given, use {@link Cursor.GLOBAL} as the scope. */
+  public static Cursor load(String type) {
+    return load(type, Cursor.GLOBAL);
   }
 
   public static List<Cursor> loadAll() {

@@ -17,6 +17,7 @@ package google.registry.schema.cursor;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.schema.cursor.Cursor.CursorId;
+import google.registry.util.DateTimeUtils;
 import java.io.Serializable;
 import java.time.ZonedDateTime;
 import javax.persistence.Column;
@@ -24,6 +25,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.Table;
+import org.joda.time.DateTime;
 
 /**
  * Shared entity for date cursors. This uses a compound primary key as defined in {@link CursorId}.
@@ -45,23 +47,27 @@ public class Cursor {
   @Column(nullable = false)
   private UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
 
+  /**
+   * Used for the scope of a global cursor. A global cursor is a cursor that is not specific to one
+   * tld.
+   */
   public static final String GLOBAL = "GLOBAL";
 
   /**
-   * Since hibernate does not allow null values in a primary key, for now I am just using "Global"
-   * for the tld value on a global cursor.
+   * Since hibernate does not allow null values in a primary key, use {@link GLOBAL} for a null
+   * scope.
    */
-  private Cursor(String type, String scope, ZonedDateTime cursorTime) {
+  private Cursor(String type, String scope, DateTime cursorTime) {
     this.type = type;
     this.scope = (scope == null ? GLOBAL : scope);
-    this.cursorTime = cursorTime;
+    this.cursorTime = DateTimeUtils.toZonedDateTime(cursorTime);
   }
 
   // Hibernate requires a default constructor.
   private Cursor() {}
 
   /** Constructs a {@link Cursor} object. */
-  public static Cursor create(String type, String scope, ZonedDateTime cursorTime) {
+  public static Cursor create(String type, String scope, DateTime cursorTime) {
     return new Cursor(type, scope, cursorTime);
   }
 
@@ -72,20 +78,20 @@ public class Cursor {
 
   /**
    * Returns the scope of the cursor. The scope will typically be the tld the cursor is referring
-   * to. If the cursor is a global cursor, the scope will be "GLOBAL".
+   * to. If the cursor is a global cursor, the scope will be {@link GLOBAL}.
    */
   public String getScope() {
     return scope;
   }
 
   /** Returns the time the cursor is set to. */
-  public ZonedDateTime getCursorTime() {
-    return cursorTime;
+  public DateTime getCursorTime() {
+    return DateTimeUtils.toJodaDateTime(cursorTime);
   }
 
   /** Returns the last time the cursor was updated. */
-  public UpdateAutoTimestamp getLastUpdateTime() {
-    return lastUpdateTime;
+  public DateTime getLastUpdateTime() {
+    return lastUpdateTime.getTimestamp();
   }
 
   static class CursorId extends ImmutableObject implements Serializable {
