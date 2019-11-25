@@ -280,6 +280,15 @@
   </cron>
 
   <cron>
+    <url><![CDATA[/_dr/task/icannReportingUpload]]></url>
+    <description>
+      Checks each ICANN cursor and uploads the corresponding ICANN report if the cursorTime is before now.
+    </description>
+    <schedule>every day 15:00</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/generateInvoices&runInEmpty]]></url>
     <description>
       Starts the beam/invoicing/InvoicingPipeline Dataflow template, which creates the overall invoice and
