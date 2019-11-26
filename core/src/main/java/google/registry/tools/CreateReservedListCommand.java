@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.registry.Registries.assertTldExists;
+import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
@@ -26,6 +27,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import google.registry.model.registry.label.ReservedList;
+import google.registry.model.registry.label.ReservedListDao;
 import java.nio.file.Files;
 import java.util.List;
 import org.joda.time.DateTime;
@@ -44,6 +46,8 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
       description = "Override restrictions on reserved list naming")
   boolean override;
 
+  private google.registry.schema.tld.ReservedList cloudSqlReservedList;
+
   @Override
   protected void init() throws Exception {
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(input) : name;
@@ -54,15 +58,54 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
       validateListName(name);
     }
     DateTime now = DateTime.now(UTC);
+    List<String> allLines = Files.readAllLines(input, UTF_8);
+    boolean shouldPublish = this.shouldPublish == null || this.shouldPublish;
     ReservedList reservedList =
         new ReservedList.Builder()
             .setName(name)
-            .setReservedListMapFromLines(Files.readAllLines(input, UTF_8))
-            .setShouldPublish(shouldPublish == null || shouldPublish)
+            .setReservedListMapFromLines(allLines)
+            .setShouldPublish(shouldPublish)
             .setCreationTime(now)
             .setLastUpdateTime(now)
             .build();
     stageEntityChange(null, reservedList);
+    if (alsoCloudSql) {
+      cloudSqlReservedList =
+          google.registry.schema.tld.ReservedList.create(
+              name, shouldPublish, parseToReservationsByLabels(allLines));
+    }
+  }
+
+  @Override
+  protected String execute() throws Exception {
+    logger.atInfo().log(super.execute());
+    String cloudSqlMessage = "Persisting reserved list to Cloud SQL is not enabled";
+    if (alsoCloudSql) {
+      cloudSqlMessage =
+          String.format(
+              "Saved reserved list %s with %d entries",
+              name, cloudSqlReservedList.getLabelsToReservations().size());
+      try {
+        logger.atInfo().log("Saving reserved list to Cloud SQL for TLD %s", name);
+        jpaTm()
+            .transact(
+                () -> {
+                  if (!override) {
+                    checkArgument(
+                        !ReservedListDao.checkExists(cloudSqlReservedList.getName()),
+                        "A reserved list of this name already exists: %s.",
+                        cloudSqlReservedList.getName());
+                  }
+                  ReservedListDao.save(cloudSqlReservedList);
+                });
+        logger.atInfo().log(cloudSqlMessage);
+      } catch (Throwable e) {
+        cloudSqlMessage =
+            "Unexpected error saving reserved list to Cloud SQL from nomulus tool command";
+        logger.atSevere().withCause(e).log(cloudSqlMessage);
+      }
+    }
+    return cloudSqlMessage;
   }
 
   private static void validateListName(String name) {

@@ -14,9 +14,22 @@
 
 package google.registry.tools;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.model.registry.label.BaseDomainLabelList.splitOnComment;
+
 import com.beust.jcommander.Parameter;
+import com.google.common.base.Splitter;
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multiset;
+import com.google.common.flogger.FluentLogger;
+import google.registry.model.registry.label.ReservationType;
+import google.registry.schema.tld.ReservedList.ReservedEntry;
 import google.registry.tools.params.PathParameter;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 import javax.annotation.Nullable;
 
 /**
@@ -24,6 +37,8 @@ import javax.annotation.Nullable;
  * lists.
  */
 public abstract class CreateOrUpdateReservedListCommand extends MutatingCommand {
+
+  static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Nullable
   @Parameter(
@@ -45,4 +60,46 @@ public abstract class CreateOrUpdateReservedListCommand extends MutatingCommand 
           "Whether the list is published to the concatenated list on Drive (defaults to true).",
       arity = 1)
   Boolean shouldPublish;
+
+  @Parameter(
+      names = {"--also_cloud_sql"},
+      description =
+          "Persist reserved list to Cloud SQL in addition to Datastore; defaults to false.")
+  boolean alsoCloudSql;
+
+  /** Turns the list CSV data into a map of labels to {@link ReservedEntry}. */
+  static ImmutableMap<String, ReservedEntry> parseToReservationsByLabels(Iterable<String> lines) {
+    Map<String, ReservedEntry> labelsToEntries = Maps.newHashMap();
+    Multiset<String> duplicateLabels = HashMultiset.create();
+    for (String originalLine : lines) {
+      List<String> lineAndComment = splitOnComment(originalLine);
+      if (lineAndComment.isEmpty()) {
+        continue;
+      }
+      String line = lineAndComment.get(0);
+      String comment = lineAndComment.get(1);
+      List<String> parts = Splitter.on(',').trimResults().splitToList(line);
+      checkArgument(
+          parts.size() == 2 || parts.size() == 3,
+          "Could not parse line in reserved list: %s",
+          originalLine);
+      String label = parts.get(0);
+      ReservationType reservationType = ReservationType.valueOf(parts.get(1));
+      ReservedEntry reservedEntry = ReservedEntry.create(reservationType, comment);
+      // Check if the label was already processed for this list (which is an error), and if so,
+      // accumulate it so that a list of all duplicates can be thrown.
+      if (labelsToEntries.containsKey(label)) {
+        duplicateLabels.add(label, duplicateLabels.contains(label) ? 1 : 2);
+      } else {
+        labelsToEntries.put(label, reservedEntry);
+      }
+    }
+    if (!duplicateLabels.isEmpty()) {
+      throw new IllegalStateException(
+          String.format(
+              "Reserved list cannot contain duplicate labels. Dupes (with counts) were: %s",
+              duplicateLabels));
+    }
+    return ImmutableMap.copyOf(labelsToEntries);
+  }
 }

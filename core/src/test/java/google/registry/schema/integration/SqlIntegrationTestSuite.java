@@ -15,6 +15,7 @@
 package google.registry.schema.integration;
 
 import google.registry.model.registry.RegistryLockDaoTest;
+import google.registry.model.registry.label.ReservedListDaoTest;
 import google.registry.model.transaction.JpaTransactionManagerImplTest;
 import google.registry.model.transaction.JpaTransactionManagerRuleTest;
 import google.registry.persistence.BloomFilterConverterTest;
@@ -27,6 +28,7 @@ import google.registry.persistence.ZonedDateTimeConverterTest;
 import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
 import google.registry.schema.tmch.ClaimsListDaoTest;
+import google.registry.tools.CreateReservedListCommandTest;
 import google.registry.ui.server.registrar.RegistryLockGetActionTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -47,6 +49,7 @@ import org.junit.runners.Suite.SuiteClasses;
   BloomFilterConverterTest.class,
   ClaimsListDaoTest.class,
   CreateAutoTimestampConverterTest.class,
+  CreateReservedListCommandTest.class,
   CurrencyUnitConverterTest.class,
   CursorDaoTest.class,
   DateTimeConverterTest.class,
@@ -56,6 +59,7 @@ import org.junit.runners.Suite.SuiteClasses;
   PremiumListDaoTest.class,
   RegistryLockDaoTest.class,
   RegistryLockGetActionTest.class,
+  ReservedListDaoTest.class,
   UpdateAutoTimestampConverterTest.class,
   ZonedDateTimeConverterTest.class
 })
