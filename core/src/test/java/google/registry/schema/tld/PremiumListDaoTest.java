@@ -29,7 +29,9 @@ import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry;
 import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.testing.AppEngineRule;
 import java.math.BigDecimal;
+import java.util.Optional;
 import org.joda.money.Money;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,6 +45,8 @@ public class PremiumListDaoTest {
   @Rule
   public final JpaTransactionManagerRule jpaTmRule =
       new JpaTransactionManagerRule.Builder().build();
+
+  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
 
   private static final ImmutableMap<String, BigDecimal> TEST_PRICES =
       ImmutableMap.of(
@@ -97,9 +101,12 @@ public class PremiumListDaoTest {
 
   @Test
   public void getLatestRevision_worksSuccessfully() {
-    PremiumList premiumList = PremiumList.create("list1", JPY, TEST_PRICES);
-    PremiumListDao.saveNew(premiumList);
-    assertThat(PremiumListDao.getLatestRevision("list1")).hasValue(premiumList);
+    PremiumListDao.saveNew(PremiumList.create("list1", JPY, TEST_PRICES));
+    Optional<PremiumList> persistedList = PremiumListDao.getLatestRevision("list1");
+    assertThat(persistedList).isPresent();
+    assertThat(persistedList.get().getName()).isEqualTo("list1");
+    assertThat(persistedList.get().getCurrency()).isEqualTo(JPY);
+    assertThat(persistedList.get().getLabelsToPrices()).isNull();
   }
 
   @Test

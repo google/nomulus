@@ -45,7 +45,7 @@ public class PremiumListDao {
                 () ->
                     new IllegalStateException(
                         String.format("Could not load premium list '%s'", premiumListName)));
-    return getPremiumPrice(label, premiumList);
+    return getPremiumPriceFromList(label, premiumList);
   }
 
   /** Persist a new premium list to Cloud SQL. */
@@ -61,7 +61,12 @@ public class PremiumListDao {
             });
   }
 
-  /** Returns the most recent revision of the PremiumList with the specified name, if it exists. */
+  /**
+   * Returns the most recent revision of the PremiumList with the specified name, if it exists.
+   *
+   * <p>Note that this does not load <code>PremiumList.labelsToPrices</code>! If you need to check
+   * prices, use {@link #getPremiumPrice}.
+   */
   static Optional<PremiumList> getLatestRevision(String premiumListName) {
     return jpaTm()
         .transact(
@@ -124,7 +129,7 @@ public class PremiumListDao {
                     > 0);
   }
 
-  private static Optional<Money> getPremiumPrice(String label, PremiumList premiumList) {
+  private static Optional<Money> getPremiumPriceFromList(String label, PremiumList premiumList) {
     // Consult the bloom filter and immediately return if the label definitely isn't premium.
     if (!premiumList.getBloomFilter().mightContain(label)) {
       return Optional.empty();

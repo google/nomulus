@@ -23,6 +23,7 @@ import com.google.common.hash.BloomFilter;
 import google.registry.model.CreateAutoTimestamp;
 import java.math.BigDecimal;
 import java.util.Map;
+import javax.annotation.Nullable;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -115,9 +116,16 @@ public class PremiumList {
     return creationTimestamp.getTimestamp();
   }
 
-  /** Returns a {@link Map} of domain labels to prices. */
+  /**
+   * Returns a {@link Map} of domain labels to prices.
+   *
+   * <p>Note that this will return null if this PremiumList was loaded from the DB, as we don't by
+   * default load the many rows from the linked <code>PremiumEntry</code> table. If you need to
+   * check prices, use {@link PremiumListDao#getPremiumPrice}.
+   */
+  @Nullable
   public ImmutableMap<String, BigDecimal> getLabelsToPrices() {
-    return ImmutableMap.copyOf(labelsToPrices);
+    return labelsToPrices == null ? null : ImmutableMap.copyOf(labelsToPrices);
   }
 
   /**
