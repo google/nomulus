@@ -8,10 +8,10 @@
         <domain:name>fakesite.example</domain:name>
         <domain:trStatus>pending</domain:trStatus>
         <domain:reID>TheRegistrar</domain:reID>
-        <domain:reDate>2002-05-30T00:00:00Z</domain:reDate>
+        <domain:reDate>%REDATE%</domain:reDate>
         <domain:acID>NewRegistrar</domain:acID>
-        <domain:acDate>2002-06-04T00:00:00Z</domain:acDate>
-        <domain:exDate>2003-06-01T00:04:00Z</domain:exDate>
+        <domain:acDate>%ACDATE%</domain:acDate>
+        <domain:exDate>%EXDATE%</domain:exDate>
       </domain:trnData>
     </resData>
     <trID>

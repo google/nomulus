@@ -16,6 +16,7 @@ package google.registry.flows.domain;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.ResourceFlowUtils.computeExDateForApprovalTime;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyHasPendingTransfer;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
@@ -26,7 +27,6 @@ import static google.registry.flows.domain.DomainFlowUtils.updateAutorenewRecurr
 import static google.registry.flows.domain.DomainTransferUtils.createGainingTransferPollMessage;
 import static google.registry.flows.domain.DomainTransferUtils.createTransferResponse;
 import static google.registry.model.ResourceTransferUtils.approvePendingTransfer;
-import static google.registry.model.domain.DomainBase.extendRegistrationWithCap;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_SUCCESSFUL;
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
@@ -136,9 +136,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     // increase the registration time, since the transfer subsumes the autorenew's extra year.
     GracePeriod autorenewGrace =
         getOnlyElement(existingDomain.getGracePeriodsOfType(GracePeriodStatus.AUTO_RENEW), null);
-    int extraYears = transferData.getTransferPeriod().getValue();
     if (autorenewGrace != null) {
-      extraYears = 0;
       // During a normal transfer, if the domain is in the auto-renew grace period, the auto-renew
       // billing event is cancelled and the gaining registrar is charged for the one year renewal.
       // But, if the superuser extension is used to request a transfer without an additional year
@@ -152,8 +150,8 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     // Close the old autorenew event and poll message at the transfer time (aka now). This may end
     // up deleting the poll message.
     updateAutorenewRecurrenceEndTime(existingDomain, now);
-    DateTime newExpirationTime = extendRegistrationWithCap(
-        now, existingDomain.getRegistrationExpirationTime(), extraYears);
+    DateTime newExpirationTime =
+        computeExDateForApprovalTime(existingDomain, now, transferData.getTransferPeriod());
     // Create a new autorenew event starting at the expiration time.
     BillingEvent.Recurring autorenewEvent = new BillingEvent.Recurring.Builder()
         .setReason(Reason.RENEW)

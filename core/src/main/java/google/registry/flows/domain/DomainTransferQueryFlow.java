@@ -18,13 +18,13 @@ import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.domain.DomainTransferUtils.createTransferResponse;
-import static google.registry.model.domain.DomainBase.extendRegistrationWithCap;
 
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
 import google.registry.flows.FlowModule.ClientId;
 import google.registry.flows.FlowModule.TargetId;
+import google.registry.flows.ResourceFlowUtils;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.NoTransferHistoryToQueryException;
 import google.registry.flows.exceptions.NotAuthorizedToViewTransferException;
@@ -86,10 +86,12 @@ public final class DomainTransferQueryFlow implements Flow {
       throw new NotAuthorizedToViewTransferException();
     }
     DateTime newExpirationTime = null;
-    if (transferData.getTransferStatus().isApproved()
-        || transferData.getTransferStatus().equals(TransferStatus.PENDING)) {
-      // TODO(b/25084229): fix exDate computation logic.
-      newExpirationTime = extendRegistrationWithCap(now, domain.getRegistrationExpirationTime(), 1);
+    if (transferData.getTransferStatus().isApproved()) {
+      newExpirationTime = transferData.getTransferredRegistrationExpirationTime();
+    } else if (transferData.getTransferStatus().equals(TransferStatus.PENDING)) {
+      newExpirationTime =
+          ResourceFlowUtils.computeExDateForApprovalTime(
+              domain, now, domain.getTransferData().getTransferPeriod());
     }
     return responseBuilder
         .setResData(createTransferResponse(targetId, transferData, newExpirationTime))

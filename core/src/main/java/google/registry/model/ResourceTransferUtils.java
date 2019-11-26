@@ -17,7 +17,6 @@ package google.registry.model;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.domain.DomainBase.extendRegistrationWithCap;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 
 import com.google.common.collect.ImmutableList;
@@ -53,24 +52,22 @@ public final class ResourceTransferUtils {
       TransferStatus.PENDING, TransferStatus.CLIENT_APPROVED, TransferStatus.SERVER_APPROVED);
 
   /**
-   * Create a transfer response using the id and type of this resource and the specified
-   * {@link TransferData}.
+   * Create a transfer response using the id and type of this resource and the specified {@link
+   * TransferData}.
    */
   public static TransferResponse createTransferResponse(
-      EppResource eppResource, TransferData transferData, DateTime now) {
+      EppResource eppResource, TransferData transferData) {
     assertIsContactOrDomain(eppResource);
     TransferResponse.Builder<? extends TransferResponse, ?> builder;
     if (eppResource instanceof ContactResource) {
       builder = new ContactTransferResponse.Builder().setContactId(eppResource.getForeignKey());
     } else {
-      DomainBase domain = (DomainBase) eppResource;
       builder =
           new DomainTransferResponse.Builder()
               .setFullyQualifiedDomainName(eppResource.getForeignKey())
-              // TODO(b/25084229): fix exDate computation logic.
               .setExtendedRegistrationExpirationTime(
                   ADD_EXDATE_STATUSES.contains(transferData.getTransferStatus())
-                      ? extendRegistrationWithCap(now, domain.getRegistrationExpirationTime(), 1)
+                      ? transferData.getTransferredRegistrationExpirationTime()
                       : null);
     }
     builder.setGainingClientId(transferData.getGainingClientId())
@@ -118,16 +115,20 @@ public final class ResourceTransferUtils {
     if (resource.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
       TransferData oldTransferData = resource.getTransferData();
       ofy().delete().keys(oldTransferData.getServerApproveEntities());
-      ofy().save().entity(new PollMessage.OneTime.Builder()
-          .setClientId(oldTransferData.getGainingClientId())
-          .setEventTime(now)
-          .setMsg(TransferStatus.SERVER_CANCELLED.getMessage())
-          .setResponseData(ImmutableList.of(
-              createTransferResponse(newResource, newResource.getTransferData(), now),
-              createPendingTransferNotificationResponse(
-                  resource, oldTransferData.getTransferRequestTrid(), false, now)))
-          .setParent(historyEntry)
-          .build());
+      ofy()
+          .save()
+          .entity(
+              new PollMessage.OneTime.Builder()
+                  .setClientId(oldTransferData.getGainingClientId())
+                  .setEventTime(now)
+                  .setMsg(TransferStatus.SERVER_CANCELLED.getMessage())
+                  .setResponseData(
+                      ImmutableList.of(
+                          createTransferResponse(newResource, newResource.getTransferData()),
+                          createPendingTransferNotificationResponse(
+                              resource, oldTransferData.getTransferRequestTrid(), false, now)))
+                  .setParent(historyEntry)
+                  .build());
     }
   }
 

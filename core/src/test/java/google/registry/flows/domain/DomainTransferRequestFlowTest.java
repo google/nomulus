@@ -1093,11 +1093,8 @@ public class DomainTransferRequestFlowTest
                         domain.getAutorenewBillingEvent()))
                 .build());
     clock.advanceOneMilli();
-    // Since the autorenew grace period will have ended by the automatic transfer time, subsuming
-    // will not occur in the server-approve case, so the transfer will add 1 year to the current
-    // expiration time as usual, and no Cancellation will be issued.  Note however that if the
-    // transfer were to be manually approved before the autorenew grace period ends, then the
-    // DomainTransferApproveFlow will still issue a Cancellation.
+    // The response from DomainTransferRequestFlow returns exDate based on if the transfer were to
+    // occur now.
     doSuccessfulTest(
         "domain_transfer_request.xml",
         "domain_transfer_request_response_autorenew_grace_at_request_only.xml",

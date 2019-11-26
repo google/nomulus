@@ -409,7 +409,7 @@ public class DatastoreHelper {
         .setClientId(clientId)
         .setEventTime(expirationTime)
         .setMsg("Transfer server approved.")
-        .setResponseData(ImmutableList.of(createTransferResponse(resource, transferData, now)))
+        .setResponseData(ImmutableList.of(createTransferResponse(resource, transferData)))
         .setParent(historyEntry)
         .build();
   }
