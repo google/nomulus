@@ -31,6 +31,38 @@ import org.joda.money.Money;
 /** Data access object class for {@link PremiumList}. */
 public class PremiumListDao {
 
+  /**
+   * Returns the premium price for the specified label and registry, or absent if the label is not
+   * premium.
+   */
+  public static Optional<Money> getPremiumPrice(String label, Registry registry) {
+    // If the registry has no configured premium list, then no labels are premium.
+    if (registry.getPremiumList() == null) {
+      return Optional.empty();
+    }
+    String premiumListName = registry.getPremiumList().getName();
+    PremiumList premiumList =
+        getLatestRevisionCached(premiumListName)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        String.format("Could not load premium list '%s'", premiumListName)));
+    return getPremiumPrice(label, premiumList);
+  }
+
+  /** Persist a new premium list to Cloud SQL. */
+  public static void saveNew(PremiumList premiumList) {
+    jpaTm()
+        .transact(
+            () -> {
+              checkArgument(
+                  !checkExists(premiumList.getName()),
+                  "A premium list of this name already exists: %s.",
+                  premiumList.getName());
+              jpaTm().getEntityManager().persist(premiumList);
+            });
+  }
+
   /** Returns the most recent revision of the PremiumList with the specified name, if it exists. */
   static Optional<PremiumList> getLatestRevision(String premiumListName) {
     return jpaTm()
@@ -66,7 +98,7 @@ public class PremiumListDao {
   }
 
   /** Returns the most recent revision of the PremiumList with the specified name, from cache. */
-  public static Optional<PremiumList> getLatestRevisionCached(String premiumListName) {
+  static Optional<PremiumList> getLatestRevisionCached(String premiumListName) {
     try {
       return cachePremiumLists.get(premiumListName);
     } catch (ExecutionException e) {
@@ -75,25 +107,12 @@ public class PremiumListDao {
     }
   }
 
-  /** Persist a new premium list to Cloud SQL. */
-  public static void saveNew(PremiumList premiumList) {
-    jpaTm()
-        .transact(
-            () -> {
-              checkArgument(
-                  !checkExists(premiumList.getName()),
-                  "A premium list of this name already exists: %s.",
-                  premiumList.getName());
-              jpaTm().getEntityManager().persist(premiumList);
-            });
-  }
-
   /**
    * Returns whether the premium list of the given name exists.
    *
    * <p>This means that at least one premium list revision must exist for the given name.
    */
-  public static boolean checkExists(String premiumListName) {
+  static boolean checkExists(String premiumListName) {
     return jpaTm()
         .transact(
             () ->
@@ -105,25 +124,6 @@ public class PremiumListDao {
                         .getResultList()
                         .size()
                     > 0);
-  }
-
-  /**
-   * Returns the premium price for the specified label and registry, or absent if the label is not
-   * premium.
-   */
-  public static Optional<Money> getPremiumPrice(String label, Registry registry) {
-    // If the registry has no configured premium list, then no labels are premium.
-    if (registry.getPremiumList() == null) {
-      return Optional.empty();
-    }
-    String premiumListName = registry.getPremiumList().getName();
-    PremiumList premiumList =
-        getLatestRevisionCached(premiumListName)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        String.format("Could not load premium list '%s'", premiumListName)));
-    return getPremiumPrice(label, premiumList);
   }
 
   private static Optional<Money> getPremiumPrice(String label, PremiumList premiumList) {

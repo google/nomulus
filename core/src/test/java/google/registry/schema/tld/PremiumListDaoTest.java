@@ -15,13 +15,22 @@
 package google.registry.schema.tld;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatastoreHelper.newRegistry;
+import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.JUnitBackports.assertThrows;
+import static org.joda.money.CurrencyUnit.JPY;
+import static org.joda.money.CurrencyUnit.USD;
 
 import com.google.common.collect.ImmutableMap;
+import com.googlecode.objectify.Key;
+import google.registry.model.registry.Registry;
 import google.registry.model.transaction.JpaTransactionManagerRule;
 import java.math.BigDecimal;
-import org.joda.money.CurrencyUnit;
+import org.joda.money.Money;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,7 +55,7 @@ public class PremiumListDaoTest {
 
   @Test
   public void saveNew_worksSuccessfully() {
-    PremiumList premiumList = PremiumList.create("testname", CurrencyUnit.USD, TEST_PRICES);
+    PremiumList premiumList = PremiumList.create("testname", USD, TEST_PRICES);
     PremiumListDao.saveNew(premiumList);
     jpaTm()
         .transact(
@@ -66,20 +75,65 @@ public class PremiumListDaoTest {
 
   @Test
   public void saveNew_throwsWhenPremiumListAlreadyExists() {
-    PremiumListDao.saveNew(PremiumList.create("testlist", CurrencyUnit.USD, TEST_PRICES));
+    PremiumListDao.saveNew(PremiumList.create("testlist", USD, TEST_PRICES));
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () ->
-                PremiumListDao.saveNew(
-                    PremiumList.create("testlist", CurrencyUnit.USD, TEST_PRICES)));
+            () -> PremiumListDao.saveNew(PremiumList.create("testlist", USD, TEST_PRICES)));
     assertThat(thrown).hasMessageThat().contains("A premium list of this name already exists");
   }
 
   @Test
   public void checkExists_worksSuccessfully() {
     assertThat(PremiumListDao.checkExists("testlist")).isFalse();
-    PremiumListDao.saveNew(PremiumList.create("testlist", CurrencyUnit.USD, TEST_PRICES));
+    PremiumListDao.saveNew(PremiumList.create("testlist", USD, TEST_PRICES));
     assertThat(PremiumListDao.checkExists("testlist")).isTrue();
+  }
+
+  @Test
+  public void getLatestRevision_returnsEmptyForNonexistentList() {
+    assertThat(PremiumListDao.getLatestRevision("nonexistentlist")).isEmpty();
+  }
+
+  @Test
+  public void getLatestRevision_worksSuccessfully() {
+    PremiumList premiumList = PremiumList.create("list1", JPY, TEST_PRICES);
+    PremiumListDao.saveNew(premiumList);
+    assertThat(PremiumListDao.getLatestRevision("list1")).hasValue(premiumList);
+  }
+
+  @Test
+  public void getPremiumPrice_returnsNoneWhenNoPremiumListConfigured() {
+    persistResource(newRegistry("foobar", "FOOBAR").asBuilder().setPremiumList(null).build());
+    assertThat(PremiumListDao.getPremiumPrice("rich", Registry.get("foobar"))).isEmpty();
+  }
+
+  @Test
+  public void getPremiumPrice_worksSuccessfully() {
+    persistResource(
+        newRegistry("foobar", "FOOBAR")
+            .asBuilder()
+            .setPremiumListKey(
+                Key.create(
+                    getCrossTldKey(),
+                    google.registry.model.registry.label.PremiumList.class,
+                    "premlist"))
+            .build());
+    PremiumListDao.saveNew(PremiumList.create("premlist", USD, TEST_PRICES));
+    assertThat(PremiumListDao.getPremiumPrice("silver", Registry.get("foobar")))
+        .hasValue(Money.of(USD, 10.23));
+    assertThat(PremiumListDao.getPremiumPrice("gold", Registry.get("foobar")))
+        .hasValue(Money.of(USD, 1305.47));
+    assertThat(PremiumListDao.getPremiumPrice("zirconium", Registry.get("foobar"))).isEmpty();
+  }
+
+  @Test
+  public void testGetPremiumPrice_throwsWhenPremiumListCantBeLoaded() {
+    createTld("tld");
+    IllegalStateException thrown =
+        assertThrows(
+            IllegalStateException.class,
+            () -> PremiumListDao.getPremiumPrice("foobar", Registry.get("tld")));
+    assertThat(thrown).hasMessageThat().isEqualTo("Could not load premium list 'tld'");
   }
 }
