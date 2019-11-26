@@ -56,6 +56,12 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class EppLifecycleDomainTest extends EppTestCase {
 
+  private static final ImmutableMap<String, String> DEFAULT_TRANSFER_RESPONSE_PARMS =
+      ImmutableMap.of(
+          "REDATE", "2002-05-30T00:00:00Z",
+          "ACDATE", "2002-06-04T00:00:00Z",
+          "EXDATE", "2003-06-01T00:04:00Z");
+
   @Rule
   public final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastore().withTaskQueue().build();
@@ -552,7 +558,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
     assertThatLoginSucceeds("TheRegistrar", "password2");
     assertThatCommand("domain_transfer_request.xml")
         .atTime("2002-05-30T00:00:00Z")
-        .hasResponse("domain_transfer_response.xml");
+        .hasResponse("domain_transfer_response.xml", DEFAULT_TRANSFER_RESPONSE_PARMS);
     assertThatLogoutSucceeds();
 
     // Log back in as the first registrar and verify things.
@@ -590,7 +596,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
     assertThatLoginSucceeds("TheRegistrar", "password2");
     assertThatCommand("domain_transfer_request.xml")
         .atTime("2002-05-30T00:00:00Z")
-        .hasResponse("domain_transfer_response.xml");
+        .hasResponse("domain_transfer_response.xml", DEFAULT_TRANSFER_RESPONSE_PARMS);
     assertThatLogoutSucceeds();
 
     // Log back in as the first registrar and verify domain is pending transfer.
@@ -640,7 +646,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
     assertThatLoginSucceeds("TheRegistrar", "password2");
     assertThatCommand("domain_transfer_request.xml")
         .atTime("2002-05-30T00:00:00Z")
-        .hasResponse("domain_transfer_response.xml");
+        .hasResponse("domain_transfer_response.xml", DEFAULT_TRANSFER_RESPONSE_PARMS);
     assertThatLogoutSucceeds();
 
     // Log back in as the first registrar and delete then restore the domain while the transfer
@@ -1026,5 +1032,54 @@ public class EppLifecycleDomainTest extends EppTestCase {
                 "EXDATE", "2015-09-09T09:10:09Z"));
 
     assertThatLogoutSucceeds();
+  }
+
+  @Test
+  public void testDomainTransfer_duringAutorenewGrace() throws Exception {
+    // Creation date of fakesite: 2000-06-01T00:04:00.0Z
+    // Expiration date: 2002-06-01T00:04:00.0Z
+    assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
+    createFakesite();
+    assertThatLogoutSucceeds();
+
+    assertThatLoginSucceeds("TheRegistrar", "password2");
+    assertThatCommand("domain_transfer_request.xml")
+        .atTime("2002-06-05T00:02:00.0Z")
+        .hasResponse(
+            "domain_transfer_response.xml",
+            ImmutableMap.of(
+                "REDATE", "2002-06-05T00:02:00Z",
+                "ACDATE", "2002-06-10T00:02:00Z",
+                "EXDATE", "2003-06-01T00:04:00Z"));
+  }
+
+  @Test
+  public void testDomainTransfer_queryForServerApproved() throws Exception {
+    // Creation date of fakesite: 2000-06-01T00:04:00.0Z
+    // Expiration date: 2002-06-01T00:04:00.0Z
+    assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
+    createFakesite();
+    assertThatLogoutSucceeds();
+
+    assertThatLoginSucceeds("TheRegistrar", "password2");
+    assertThatCommand("domain_transfer_request.xml")
+        .atTime("2001-01-01T00:00:00.0Z")
+        .hasResponse(
+            "domain_transfer_response.xml",
+            ImmutableMap.of(
+                "REDATE", "2001-01-01T00:00:00Z",
+                "ACDATE", "2001-01-06T00:00:00Z",
+                "EXDATE", "2003-06-01T00:04:00Z"));
+    assertThatLogoutSucceeds();
+
+    assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
+    // Verify that reID is set correctly.
+    assertThatCommand("domain_transfer_query_fakesite.xml")
+        .atTime("2001-01-03T00:00:00Z")
+        .hasResponse("domain_transfer_query_response_fakesite.xml");
+
+    assertThatCommand("domain_transfer_query_fakesite.xml")
+        .atTime("2001-01-08T00:00:00Z")
+        .hasResponse("domain_transfer_query_response_completed_fakesite.xml");
   }
 }

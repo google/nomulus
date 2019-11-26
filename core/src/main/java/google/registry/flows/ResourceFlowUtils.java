@@ -42,6 +42,8 @@ import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.Period;
+import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.index.ForeignKeyIndex;
@@ -245,6 +247,25 @@ public final class ResourceFlowUtils {
         throw new StatusNotClientSettableException(statusValue.getXmlName());
       }
     }
+  }
+
+  /**
+   * Computes the exDate for the domain at the given transfer approval time with an adjusted amount
+   * of transfer period years if the domain is in the auto renew grace period at the time of
+   * approval.
+   */
+  public static DateTime computeExDateForApprovalTime(
+      DomainBase domain, DateTime approvalTime, Period period) {
+    boolean inAutoRenew = domain.getGracePeriodStatuses().contains(GracePeriodStatus.AUTO_RENEW);
+    // inAutoRenew is set to false if the period is zero because a zero-period transfer should not
+    // subsume an autorenew.
+    if (period.getValue() == 0) {
+      inAutoRenew = false;
+    }
+    return DomainBase.extendRegistrationWithCap(
+        approvalTime,
+        domain.getRegistrationExpirationTime(),
+        period.getValue() - (inAutoRenew ? 1 : 0));
   }
 
   /** Resource with this id does not exist. */
