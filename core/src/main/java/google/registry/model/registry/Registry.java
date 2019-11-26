@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Predicates.equalTo;
 import static com.google.common.base.Predicates.not;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.toMap;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
@@ -41,6 +40,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.net.InternetDomainName;
@@ -265,11 +265,8 @@ public class Registry extends ImmutableObject implements Buildable {
                           tld -> Key.create(getCrossTldKey(), Registry.class, tld));
                   Map<Key<Registry>, Registry> entities =
                       tm().doTransactionless(() -> ofy().load().keys(keysMap.values()));
-                  return keysMap.entrySet().stream()
-                      .collect(
-                          toImmutableMap(
-                              Map.Entry::getKey,
-                              e -> Optional.ofNullable(entities.getOrDefault(e.getValue(), null))));
+                  return Maps.transformEntries(
+                      keysMap, (k, v) -> Optional.ofNullable(entities.getOrDefault(v, null)));
                 }
               });
 
