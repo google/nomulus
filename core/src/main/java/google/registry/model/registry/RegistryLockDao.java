@@ -30,7 +30,7 @@ public final class RegistryLockDao {
    * code (there may be two instances of the same code in the database--one after lock object
    * creation and one after verification.
    */
-  public static RegistryLock getByVerificationCode(String verificationCode) {
+  public static Optional<RegistryLock> getByVerificationCode(String verificationCode) {
     return jpaTm()
         .transact(
             () -> {
@@ -42,9 +42,8 @@ public final class RegistryLockDao {
                           Long.class)
                       .setParameter("verificationCode", verificationCode)
                       .getSingleResult();
-              // TODO(gbrodman): Don't throw NPE here. Maybe NoResultException fits better?
-              checkNotNull(revisionId, "No registry lock with this code");
-              return em.find(RegistryLock.class, revisionId);
+              return Optional.ofNullable(revisionId)
+                  .map(revision -> em.find(RegistryLock.class, revision));
             });
   }
 
@@ -77,6 +76,27 @@ public final class RegistryLockDao {
                     .createQuery(
                         "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId"
                             + " ORDER BY lock.revisionId DESC",
+                        RegistryLock.class)
+                    .setParameter("repoId", repoId)
+                    .setMaxResults(1)
+                    .getResultStream()
+                    .findFirst());
+  }
+
+  /**
+   * Returns the most recent verified lock object for a given repo ID (i.e. a domain) or empty if no
+   * lock has ever been finalized. This is different from {@link #getMostRecentByRepoId(String)} in
+   * that it only returns verified locks.
+   */
+  public static Optional<RegistryLock> getMostRecentVerifiedLockByRepoId(String repoId) {
+    return jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .getEntityManager()
+                    .createQuery(
+                        "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId AND"
+                            + " lock.completionTimestamp IS NOT NULL ORDER BY lock.revisionId DESC",
                         RegistryLock.class)
                     .setParameter("repoId", repoId)
                     .setMaxResults(1)

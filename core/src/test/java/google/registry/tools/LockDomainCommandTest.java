@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.eppcommon.StatusValue.SERVER_TRANSFER_PROHIBITED;
+import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
@@ -24,55 +25,74 @@ import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar.Type;
+import google.registry.model.registry.RegistryLockDao;
+import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.testing.FakeClock;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 /** Unit tests for {@link LockDomainCommand}. */
-public class LockDomainCommandTest extends EppToolCommandTestCase<LockDomainCommand> {
+public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
+
+  @Rule
+  public final JpaTransactionManagerRule jpaTmRule =
+      new JpaTransactionManagerRule.Builder().build();
 
   @Before
   public void before() {
-    eppVerifier.expectSuperuser();
     persistNewRegistrar("adminreg", "Admin Registrar", Type.REAL, 693L);
+    createTld("tld");
     command.registryAdminClientId = "adminreg";
+    command.clock = new FakeClock();
   }
 
   @Test
-  public void testSuccess_sendsCorrectEppXml() throws Exception {
-    persistActiveDomain("example.tld");
+  public void testSuccess_locksDomain() throws Exception {
+    DomainBase domain = persistActiveDomain("example.tld");
     runCommandForced("--client=NewRegistrar", "example.tld");
-    eppVerifier.verifySent("domain_lock.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    assertThat(reloadResource(domain).getStatusValues())
+        .containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
   }
 
   @Test
   public void testSuccess_partiallyUpdatesStatuses() throws Exception {
-    persistResource(
-        newDomainBase("example.tld")
-            .asBuilder()
-            .addStatusValue(SERVER_TRANSFER_PROHIBITED)
-            .build());
+    DomainBase domain =
+        persistResource(
+            newDomainBase("example.tld")
+                .asBuilder()
+                .addStatusValue(SERVER_TRANSFER_PROHIBITED)
+                .build());
     runCommandForced("--client=NewRegistrar", "example.tld");
-    eppVerifier.verifySent("domain_lock_partial_statuses.xml");
+    assertThat(reloadResource(domain).getStatusValues())
+        .containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
   }
 
   @Test
   public void testSuccess_manyDomains() throws Exception {
     // Create 26 domains -- one more than the number of entity groups allowed in a transaction (in
     // case that was going to be the failure point).
-    List<String> domains = new ArrayList<>();
+    List<DomainBase> domains = new ArrayList<>();
     for (int n = 0; n < 26; n++) {
       String domain = String.format("domain%d.tld", n);
-      persistActiveDomain(domain);
-      domains.add(domain);
+      domains.add(persistActiveDomain(domain));
     }
     runCommandForced(
-        ImmutableList.<String>builder().add("--client=NewRegistrar").addAll(domains).build());
-    for (String domain : domains) {
-      eppVerifier.verifySent("domain_lock.xml", ImmutableMap.of("DOMAIN", domain));
+        ImmutableList.<String>builder()
+            .add("--client=NewRegistrar")
+            .addAll(
+                domains.stream()
+                    .map(DomainBase::getFullyQualifiedDomainName)
+                    .collect(Collectors.toList()))
+            .build());
+    for (DomainBase domain : domains) {
+      assertThat(reloadResource(domain).getStatusValues())
+          .containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
     }
   }
 
@@ -87,21 +107,22 @@ public class LockDomainCommandTest extends EppToolCommandTestCase<LockDomainComm
 
   @Test
   public void testSuccess_alreadyLockedDomain_performsNoAction() throws Exception {
-    persistResource(
-        newDomainBase("example.tld")
-            .asBuilder()
-            .addStatusValues(REGISTRY_LOCK_STATUSES)
-            .build());
+    DomainBase domain =
+        persistResource(
+            newDomainBase("example.tld")
+                .asBuilder()
+                .addStatusValues(REGISTRY_LOCK_STATUSES)
+                .build());
     runCommandForced("--client=NewRegistrar", "example.tld");
+    assertThat(reloadResource(domain)).isEqualTo(domain);
   }
 
   @Test
   public void testSuccess_defaultsToAdminRegistrar_ifUnspecified() throws Exception {
-    persistActiveDomain("example.tld");
+    DomainBase domain = persistActiveDomain("example.tld");
     runCommandForced("example.tld");
-    eppVerifier
-        .expectClientId("adminreg")
-        .verifySent("domain_lock.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    assertThat(RegistryLockDao.getMostRecentByRepoId(domain.getRepoId()).get().getRegistrarId())
+        .isEqualTo("adminreg");
   }
 
   @Test

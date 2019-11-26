@@ -44,20 +44,10 @@ public final class RegistryLockDaoTest {
   public void testSaveAndLoad_success() {
     RegistryLock lock = createLock();
     RegistryLockDao.save(lock);
-    RegistryLock fromDatabase = RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
+    RegistryLock fromDatabase =
+        RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
     assertThat(fromDatabase.getDomainName()).isEqualTo(lock.getDomainName());
     assertThat(fromDatabase.getVerificationCode()).isEqualTo(lock.getVerificationCode());
-  }
-
-  @Test
-  public void testSaveAndLoad_failure_differentCode() {
-    RegistryLock lock = createLock();
-    RegistryLockDao.save(lock);
-    NullPointerException thrown =
-        assertThrows(
-            NullPointerException.class,
-            () -> RegistryLockDao.getByVerificationCode(UUID.randomUUID().toString()));
-    assertThat(thrown).hasMessageThat().isEqualTo("No registry lock with this code");
   }
 
   @Test
@@ -69,7 +59,7 @@ public final class RegistryLockDaoTest {
         .transact(
             () -> {
               RegistryLock updatedLock =
-                  RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
+                  RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
               updatedLock.setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc());
               RegistryLockDao.save(updatedLock);
             });
@@ -77,7 +67,7 @@ public final class RegistryLockDaoTest {
         .transact(
             () -> {
               RegistryLock fromDatabase =
-                  RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
+                  RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
               assertThat(fromDatabase.getCompletionTimestamp().get())
                   .isEqualTo(jpaTmRule.getTxnClock().nowUtc());
             });
@@ -94,7 +84,7 @@ public final class RegistryLockDaoTest {
         .transact(
             () -> {
               RegistryLock fromDatabase =
-                  RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
+                  RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
               assertThat(fromDatabase.getCompletionTimestamp())
                   .isEqualTo(Optional.of(jpaTmRule.getTxnClock().nowUtc()));
             });
@@ -103,6 +93,11 @@ public final class RegistryLockDaoTest {
   @Test
   public void testFailure_saveNull() {
     assertThrows(NullPointerException.class, () -> RegistryLockDao.save(null));
+  }
+
+  @Test
+  public void getLock_unknownCode() {
+    assertThat(RegistryLockDao.getByVerificationCode("hi").isPresent()).isFalse();
   }
 
   @Test
