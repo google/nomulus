@@ -16,8 +16,6 @@ package google.registry.schema.tld;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.schema.tld.PremiumListCache.cachePremiumEntries;
-import static google.registry.schema.tld.PremiumListCache.cachePremiumLists;
 
 import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -100,7 +98,7 @@ public class PremiumListDao {
   /** Returns the most recent revision of the PremiumList with the specified name, from cache. */
   static Optional<PremiumList> getLatestRevisionCached(String premiumListName) {
     try {
-      return cachePremiumLists.get(premiumListName);
+      return PremiumListCache.cachePremiumLists.get(premiumListName);
     } catch (ExecutionException e) {
       throw new UncheckedExecutionException(
           "Could not retrieve premium list named " + premiumListName, e);
@@ -134,7 +132,7 @@ public class PremiumListDao {
     RevisionIdAndLabel revisionIdAndLabel =
         RevisionIdAndLabel.create(premiumList.getRevisionId(), label);
     try {
-      Optional<BigDecimal> price = cachePremiumEntries.get(revisionIdAndLabel);
+      Optional<BigDecimal> price = PremiumListCache.cachePremiumEntries.get(revisionIdAndLabel);
       return price.map(p -> Money.of(premiumList.getCurrency(), p));
     } catch (InvalidCacheLoadException | ExecutionException e) {
       throw new RuntimeException(
