@@ -117,11 +117,6 @@ make sense. A master enumeration lists all the valid triplets. They are:
     because we don't require a user for internal requests, but the user policy
     is `ADMIN`, meaning that if there *is* a user, it needs to be an admin.
 
-* `AUTH_INTERNAL_ONLY`: Only internal requests are allowed. This is appropriate
-    for actions which are only executed by cron jobs, and therefore have no
-    authenticated user. The method is `INTERNAL`, the minimum level is `APP`,
-    and the user policy is `IGNORED`.
-
 *  `AUTH_PUBLIC_OR_INTERNAL`: Allows anyone access, as long as they use OAuth to
     authenticate. Also allows access from App Engine task-queue. Note that OAuth
     client ID still needs to be whitelisted in the config file for OAuth-based

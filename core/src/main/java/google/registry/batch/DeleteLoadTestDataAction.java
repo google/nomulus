@@ -55,7 +55,7 @@ import javax.inject.Inject;
     service = Action.Service.BACKEND,
     path = "/_dr/task/deleteLoadTestData",
     method = POST,
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public class DeleteLoadTestDataAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

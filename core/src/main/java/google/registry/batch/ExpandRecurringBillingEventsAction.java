@@ -75,7 +75,7 @@ import org.joda.time.DateTime;
 @Action(
     service = Action.Service.BACKEND,
     path = "/_dr/task/expandRecurringBillingEvents",
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public class ExpandRecurringBillingEventsAction implements Runnable {
 
   public static final String PARAM_CURSOR_TIME = "cursorTime";

@@ -37,17 +37,17 @@ public class GoldenFileTestHelper {
   String goldenFileDescription = null;
 
   private static final String UPDATE_COMMAND =
-      "nomulus -e localhost %1$s > %2$s";
+      "../gradlew nomulus && java -jar build/libs/nomulus.jar -e localhost %s > %s";
 
   private static final String UPDATE_INSTRUCTIONS =
       Joiner.on('\n')
           .join(
               "",
               "-------------------------------------------------------------------------------",
-              "Your changes affect the %3$s. To update the checked-in version, run:",
+              "Your changes affect the %s. To update the checked-in version, run the following"
+                  + " command in the core project:",
               UPDATE_COMMAND,
               "");
-
 
   public static GoldenFileTestHelper assertThat(String actualValue) {
     return new GoldenFileTestHelper().setActualValue(actualValue);
@@ -82,9 +82,9 @@ public class GoldenFileTestHelper {
           actualValue, expectedValue);
       assertWithMessage(
               UPDATE_INSTRUCTIONS,
+              goldenFileDescription,
               nomulusCommand,
-              filePath(context, filename),
-              goldenFileDescription)
+              filePath(context, filename))
           .fail();
     }
   }

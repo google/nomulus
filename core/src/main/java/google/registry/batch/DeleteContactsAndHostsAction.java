@@ -111,7 +111,7 @@ import org.joda.time.Duration;
 @Action(
     service = Action.Service.BACKEND,
     path = "/_dr/task/deleteContactsAndHosts",
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public class DeleteContactsAndHostsAction implements Runnable {
 
   static final String KIND_CONTACT = getKind(ContactResource.class);

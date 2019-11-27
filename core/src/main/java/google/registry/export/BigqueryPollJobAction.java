@@ -51,7 +51,7 @@ import org.joda.time.Duration;
     path = BigqueryPollJobAction.PATH,
     method = {Action.Method.GET, Action.Method.POST},
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public class BigqueryPollJobAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

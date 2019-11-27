@@ -44,7 +44,7 @@ import javax.inject.Inject;
     service = Action.Service.TOOLS,
     path = "/_dr/task/killAllEppResources",
     method = POST,
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public class KillAllEppResourcesAction implements Runnable {
 
   @Inject MapreduceRunner mrRunner;

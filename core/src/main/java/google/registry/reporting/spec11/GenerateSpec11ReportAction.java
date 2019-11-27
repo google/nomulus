@@ -49,7 +49,7 @@ import org.joda.time.LocalDate;
     service = Action.Service.BACKEND,
     path = GenerateSpec11ReportAction.PATH,
     method = POST,
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public class GenerateSpec11ReportAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

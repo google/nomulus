@@ -48,7 +48,7 @@ import javax.inject.Inject;
     service = Action.Service.TOOLS,
     path = "/_dr/task/killAllCommitLogs",
     method = POST,
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public class KillAllCommitLogsAction implements Runnable {
 
   @Inject MapreduceRunner mrRunner;

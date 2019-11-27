@@ -53,7 +53,7 @@ public class RequestAuthenticatorTest {
       AuthLevel.NONE,
       UserPolicy.IGNORED);
 
-  private static final AuthSettings AUTH_INTERNAL_ONLY = AuthSettings.create(
+  private static final AuthSettings AUTH_INTERNAL_OR_ADMIN = AuthSettings.create(
       ImmutableList.of(AuthMethod.INTERNAL),
       AuthLevel.APP,
       UserPolicy.IGNORED);
@@ -157,7 +157,7 @@ public class RequestAuthenticatorTest {
 
   @Test
   public void testInternalAuth_notInvokedInternally() {
-    Optional<AuthResult> authResult = runTest(mockUserService, AUTH_INTERNAL_ONLY);
+    Optional<AuthResult> authResult = runTest(mockUserService, AUTH_INTERNAL_OR_ADMIN);
 
     verifyZeroInteractions(mockUserService);
     assertThat(authResult).isEmpty();
@@ -167,7 +167,7 @@ public class RequestAuthenticatorTest {
   public void testInternalAuth_success() {
     when(req.getHeader("X-AppEngine-QueueName")).thenReturn("__cron");
 
-    Optional<AuthResult> authResult = runTest(mockUserService, AUTH_INTERNAL_ONLY);
+    Optional<AuthResult> authResult = runTest(mockUserService, AUTH_INTERNAL_OR_ADMIN);
 
     verifyZeroInteractions(mockUserService);
     assertThat(authResult).isPresent();
