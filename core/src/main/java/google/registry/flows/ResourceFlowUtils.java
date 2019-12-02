@@ -259,6 +259,9 @@ public final class ResourceFlowUtils {
     boolean inAutoRenew = domain.getGracePeriodStatuses().contains(GracePeriodStatus.AUTO_RENEW);
     // inAutoRenew is set to false if the period is zero because a zero-period transfer should not
     // subsume an autorenew.
+    // https://www.icann.org/resources/unthemed-pages/appendix-07-2010-01-06-en section 3.1.2
+    // specifies that when a transfer occurs without a change to the expiration date, the losing
+    // registrar's account should still be charged for the autorenew.
     if (period.getValue() == 0) {
       inAutoRenew = false;
     }
