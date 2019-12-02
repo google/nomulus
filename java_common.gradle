@@ -28,6 +28,42 @@ tasks.test.dependsOn tasks.checkstyleTest
 // TODO(weiminyu): investigate incremental coverage change calculation and alert.
 tasks.test.finalizedBy jacocoTestReport
 
+// Exclude test-only dependencies from release artifacts.
+// TLDR: Project dependency should be on runtimeClasspath. A custom
+// configuration 'deploy_jar' is used as a proxy to expose runtimeClasspath
+// to other projects. It is also convenient to exclude test-only jars from
+// runtimeClasspath.
+//
+// Here is the context:
+// - Some dependencies have test-only jars on their 'compile' classpaths.
+// - As a result, they appear in our  'compile', 'runtimeClasspath' and
+//   'default' configurations, among others, and end up in our release war
+//   files.
+// - Since these jars are needed for our own tests, we can only exclude them
+//   from runtimeClasspath. Excluding them from 'compile' or 'runtime' would
+//   also exclude them from testCompileClasspath and testRuntimeClasspath,
+//   resulting in test failures.
+// - If configuration is not specified, project dependency uses the 'default'
+//   configuration, which always has the same content as 'runtime'.
+// - When release is involved, 'runtimeClasspath' is actually the right
+//   configuration to use. The 'runtime' configuration does not include
+//   'runtimeOnly' dependencies, while 'runtimeClasspath' does.
+// - 'runtimeClasspath' cannot be referenced directly by another project.
+//   We use a custom configuration 'deploy_jar' as a proxy.
+// TODO(weiminyu): Fix all project dependencies to use deploy_jar
+configurations {
+  deploy_jar.extendsFrom runtimeClasspath
+
+  runtimeClasspath {
+    // JUnit is from org.apache.beam:beam-runners-google-cloud-dataflow-java,
+    // testcontainer (which we use in the nomulus tool), and json-simple.
+    exclude group: 'junit'
+    // Mockito is from org.apache.beam:beam-runners-google-cloud-dataflow-java
+    // See https://issues.apache.org/jira/browse/BEAM-8862
+    exclude group: 'org.mockito', module: 'mockito-core'
+  }
+}
+
 dependencies {
     // compatibility with Java 8
     errorproneJavac("com.google.errorprone:javac:9+181-r4173-1")

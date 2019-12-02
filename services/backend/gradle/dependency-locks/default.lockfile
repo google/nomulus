@@ -176,7 +176,6 @@ javax.validation:validation-api:1.0.0.GA
 javax.xml.bind:jaxb-api:2.3.1
 jline:jline:1.0
 joda-time:joda-time:2.10.3
-junit:junit:4.12
 net.bytebuddy:byte-buddy:1.9.11
 net.java.dev.jna:jna-platform:5.3.1
 net.java.dev.jna:jna:5.3.1
@@ -206,7 +205,6 @@ org.dom4j:dom4j:2.1.1
 org.easymock:easymock:3.0
 org.glassfish.jaxb:jaxb-runtime:2.3.1
 org.glassfish.jaxb:txw2:2.3.1
-org.hamcrest:hamcrest-core:1.3
 org.hibernate.common:hibernate-commons-annotations:5.1.0.Final
 org.hibernate:hibernate-core:5.4.4.Final
 org.hibernate:hibernate-hikaricp:5.4.4.Final
@@ -218,7 +216,6 @@ org.jetbrains:annotations:17.0.0
 org.joda:joda-money:1.0.1
 org.json:json:20160810
 org.jvnet.staxex:stax-ex:1.8
-org.mockito:mockito-core:1.9.5
 org.mortbay.jetty:jetty-util:6.1.26
 org.mortbay.jetty:jetty:6.1.26
 org.objenesis:objenesis:1.2
