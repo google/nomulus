@@ -118,8 +118,7 @@ public class ResaveEntityActionTest extends ShardableTestCase {
                 DateTime.parse("2017-01-02T10:11:00Z")),
             DateTime.parse("2016-02-06T10:00:00Z"),
             DateTime.parse("2016-02-11T10:00:00Z"),
-            DateTime.parse("2017-01-02T10:11:00Z"),
-            DateTime.parse("2016-02-06T10:00:00Z"));
+            DateTime.parse("2017-01-02T10:11:00Z"));
     clock.advanceOneMilli();
     assertThat(domain.getCurrentSponsorClientId()).isEqualTo("TheRegistrar");
     runAction(Key.create(domain), DateTime.parse("2016-02-06T10:00:01Z"), ImmutableSortedSet.of());

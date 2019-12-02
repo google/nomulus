@@ -389,9 +389,8 @@ public class DomainBase extends EppResource
           domainAtTransferTime
               .asBuilder()
               // Extend the registration by the correct number of years from the expiration time
-              // that
-              // was current on the domain right before the transfer, capped at 10 years from the
-              // moment of the transfer.
+              // that was current on the domain right before the transfer, capped at 10 years from
+              // the moment of the transfer.
               .setRegistrationExpirationTime(
                   ResourceFlowUtils.computeExDateForApprovalTime(
                       domainAtTransferTime,

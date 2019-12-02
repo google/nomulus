@@ -94,8 +94,7 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         domain,
         TRANSFER_REQUEST_TIME,
         TRANSFER_EXPIRATION_TIME,
-        EXTENDED_REGISTRATION_EXPIRATION_TIME,
-        TRANSFER_REQUEST_TIME);
+        EXTENDED_REGISTRATION_EXPIRATION_TIME);
   }
 
   /** Adds a domain with no pending transfer on it. */

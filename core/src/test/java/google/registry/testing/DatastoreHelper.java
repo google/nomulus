@@ -399,7 +399,6 @@ public class DatastoreHelper {
       String clientId,
       DateTime requestTime,
       DateTime expirationTime,
-      DateTime now,
       @Nullable DateTime extendedRegistrationExpirationTime) {
     TransferData transferData =
         createTransferDataBuilder(requestTime, expirationTime)
@@ -458,7 +457,6 @@ public class DatastoreHelper {
                             "NewRegistrar",
                             requestTime,
                             expirationTime,
-                            now,
                             null))),
                     Key.create(persistResource(
                         createPollMessageForImplicitTransfer(
@@ -467,7 +465,6 @@ public class DatastoreHelper {
                             "TheRegistrar",
                             requestTime,
                             expirationTime,
-                            now,
                             null)))))
                 .setTransferRequestTrid(Trid.create("transferClient-trid", "transferServer-trid"))
                 .build())
@@ -538,8 +535,7 @@ public class DatastoreHelper {
       DomainBase domain,
       DateTime requestTime,
       DateTime expirationTime,
-      DateTime extendedRegistrationExpirationTime,
-      DateTime now) {
+      DateTime extendedRegistrationExpirationTime) {
     HistoryEntry historyEntryDomainTransfer = persistResource(
         new HistoryEntry.Builder()
             .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
@@ -608,7 +604,6 @@ public class DatastoreHelper {
                         "NewRegistrar",
                         requestTime,
                         expirationTime,
-                        now,
                         extendedRegistrationExpirationTime))),
                 Key.create(persistResource(
                     createPollMessageForImplicitTransfer(
@@ -617,7 +612,6 @@ public class DatastoreHelper {
                         "TheRegistrar",
                         requestTime,
                         expirationTime,
-                        now,
                         extendedRegistrationExpirationTime)))))
             .setTransferRequestTrid(Trid.create("transferClient-trid", "transferServer-trid"))
             .build())
