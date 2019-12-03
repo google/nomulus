@@ -67,6 +67,32 @@ public abstract class CreateOrUpdateReservedListCommand extends MutatingCommand 
           "Persist reserved list to Cloud SQL in addition to Datastore; defaults to false.")
   boolean alsoCloudSql;
 
+  google.registry.schema.tld.ReservedList cloudSqlReservedList;
+
+  abstract void saveToCloudSql();
+
+  @Override
+  protected String execute() throws Exception {
+    logger.atInfo().log(super.execute());
+    String cloudSqlMessage = "Persisting reserved list to Cloud SQL is not enabled";
+    if (alsoCloudSql) {
+      cloudSqlMessage =
+          String.format(
+              "Saved reserved list %s with %d entries",
+              name, cloudSqlReservedList.getLabelsToReservations().size());
+      try {
+        logger.atInfo().log("Saving reserved list to Cloud SQL for TLD %s", name);
+        saveToCloudSql();
+        logger.atInfo().log(cloudSqlMessage);
+      } catch (Throwable e) {
+        cloudSqlMessage =
+            "Unexpected error saving reserved list to Cloud SQL from nomulus tool command";
+        logger.atSevere().withCause(e).log(cloudSqlMessage);
+      }
+    }
+    return cloudSqlMessage;
+  }
+
   /** Turns the list CSV data into a map of labels to {@link ReservedEntry}. */
   static ImmutableMap<String, ReservedEntry> parseToReservationsByLabels(Iterable<String> lines) {
     Map<String, ReservedEntry> labelsToEntries = Maps.newHashMap();

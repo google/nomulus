@@ -14,15 +14,26 @@
 
 package google.registry.tools;
 
+import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
+import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.io.Files;
+import com.google.common.truth.Truth8;
+import google.registry.model.registry.label.ReservedList;
+import google.registry.model.registry.label.ReservedListDao;
+import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.schema.tld.ReservedList.ReservedEntry;
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
+import javax.persistence.EntityManager;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -32,6 +43,10 @@ import org.junit.Test;
  */
 public abstract class CreateOrUpdateReservedListCommandTestCase
     <T extends CreateOrUpdateReservedListCommand> extends CommandTestCase<T> {
+
+  @Rule
+  public final JpaTransactionManagerRule jpaTmRule =
+      new JpaTransactionManagerRule.Builder().build();
 
   String reservedTermsPath;
   String invalidReservedTermsPath;
@@ -63,5 +78,53 @@ public abstract class CreateOrUpdateReservedListCommandTestCase
     assertThrows(
         IllegalArgumentException.class,
         () -> runCommandForced("--name=xn--q9jyb4c-blork", "--input=" + invalidReservedTermsPath));
+  }
+
+  google.registry.schema.tld.ReservedList createCloudSqlReservedList(
+      String name, boolean shouldPublish, Map<String, ReservedEntry> labelsToEntries) {
+    return google.registry.schema.tld.ReservedList.create(name, shouldPublish, labelsToEntries);
+  }
+
+  google.registry.schema.tld.ReservedList getCloudSqlReservedListBy(String name) {
+    return jpaTm()
+        .transact(
+            () -> {
+              EntityManager em = jpaTm().getEntityManager();
+              long revisionId =
+                  em.createQuery(
+                          "SELECT MAX(rl.revisionId) FROM ReservedList rl WHERE name = :name",
+                          Long.class)
+                      .setParameter("name", name)
+                      .getSingleResult();
+              return em.createQuery(
+                      "FROM ReservedList rl LEFT JOIN FETCH rl.labelsToReservations WHERE"
+                          + " rl.revisionId = :revisionId",
+                      google.registry.schema.tld.ReservedList.class)
+                  .setParameter("revisionId", revisionId)
+                  .getSingleResult();
+            });
+  }
+
+  void verifyXnq9jyb4cInCloudSql() {
+    assertThat(ReservedListDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();
+    google.registry.schema.tld.ReservedList persistedList =
+        getCloudSqlReservedListBy("xn--q9jyb4c_common-reserved");
+    assertThat(persistedList.getName()).isEqualTo("xn--q9jyb4c_common-reserved");
+    assertThat(persistedList.getShouldPublish()).isTrue();
+    assertThat(persistedList.getCreationTimestamp()).isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+    assertThat(persistedList.getLabelsToReservations())
+        .containsExactly(
+            "baddies",
+            ReservedEntry.create(FULLY_BLOCKED, ""),
+            "ford",
+            ReservedEntry.create(FULLY_BLOCKED, "random comment"));
+  }
+
+  void verifyXnq9jyb4cInDatastore() {
+    Truth8.assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
+    ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
+    assertThat(reservedList.getReservedListEntries()).hasSize(2);
+    Truth8.assertThat(reservedList.getReservationInList("baddies")).hasValue(FULLY_BLOCKED);
+    Truth8.assertThat(reservedList.getReservationInList("ford")).hasValue(FULLY_BLOCKED);
   }
 }
