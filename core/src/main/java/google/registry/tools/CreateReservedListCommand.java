@@ -46,8 +46,6 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
       description = "Override restrictions on reserved list naming")
   boolean override;
 
-  private google.registry.schema.tld.ReservedList cloudSqlReservedList;
-
   @Override
   protected void init() throws Exception {
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(input) : name;
@@ -77,35 +75,18 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
   }
 
   @Override
-  protected String execute() throws Exception {
-    logger.atInfo().log(super.execute());
-    String cloudSqlMessage = "Persisting reserved list to Cloud SQL is not enabled";
-    if (alsoCloudSql) {
-      cloudSqlMessage =
-          String.format(
-              "Saved reserved list %s with %d entries",
-              name, cloudSqlReservedList.getLabelsToReservations().size());
-      try {
-        logger.atInfo().log("Saving reserved list to Cloud SQL for TLD %s", name);
-        jpaTm()
-            .transact(
-                () -> {
-                  if (!override) {
-                    checkArgument(
-                        !ReservedListDao.checkExists(cloudSqlReservedList.getName()),
-                        "A reserved list of this name already exists: %s.",
-                        cloudSqlReservedList.getName());
-                  }
-                  ReservedListDao.save(cloudSqlReservedList);
-                });
-        logger.atInfo().log(cloudSqlMessage);
-      } catch (Throwable e) {
-        cloudSqlMessage =
-            "Unexpected error saving reserved list to Cloud SQL from nomulus tool command";
-        logger.atSevere().withCause(e).log(cloudSqlMessage);
-      }
-    }
-    return cloudSqlMessage;
+  void saveToCloudSql() {
+    jpaTm()
+        .transact(
+            () -> {
+              if (!override) {
+                checkArgument(
+                    !ReservedListDao.checkExists(cloudSqlReservedList.getName()),
+                    "A reserved list of this name already exists: %s.",
+                    cloudSqlReservedList.getName());
+              }
+              ReservedListDao.save(cloudSqlReservedList);
+            });
   }
 
   private static void validateListName(String name) {
