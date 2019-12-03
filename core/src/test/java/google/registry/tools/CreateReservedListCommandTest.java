@@ -17,7 +17,6 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
-import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.persistReservedList;
 import static google.registry.testing.DatastoreHelper.persistResource;
@@ -29,22 +28,14 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.registry.label.ReservedListDao;
-import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.schema.tld.ReservedList.ReservedEntry;
-import java.util.Map;
-import javax.persistence.EntityManager;
 import org.joda.time.DateTime;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 
 /** Unit tests for {@link CreateReservedListCommand}. */
 public class CreateReservedListCommandTest extends
     CreateOrUpdateReservedListCommandTestCase<CreateReservedListCommand> {
-
-  @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
 
   @Before
   public void initTest() {
@@ -223,54 +214,6 @@ public class CreateReservedListCommandTest extends
     runCommandForced(
         "--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath, "--also_cloud_sql");
     verifyXnq9jyb4cInDatastore();
-  }
-
-  private google.registry.schema.tld.ReservedList createCloudSqlReservedList(
-      String name, boolean shouldPublish, Map<String, ReservedEntry> labelsToEntries) {
-    return google.registry.schema.tld.ReservedList.create(name, shouldPublish, labelsToEntries);
-  }
-
-  private google.registry.schema.tld.ReservedList getCloudSqlReservedListBy(String name) {
-    return jpaTm()
-        .transact(
-            () -> {
-              EntityManager em = jpaTm().getEntityManager();
-              long revisionId =
-                  em.createQuery(
-                          "SELECT MAX(rl.revisionId) FROM ReservedList rl WHERE name = :name",
-                          Long.class)
-                      .setParameter("name", name)
-                      .getSingleResult();
-              return em.createQuery(
-                      "FROM ReservedList rl LEFT JOIN FETCH rl.labelsToReservations WHERE"
-                          + " rl.revisionId = :revisionId",
-                      google.registry.schema.tld.ReservedList.class)
-                  .setParameter("revisionId", revisionId)
-                  .getSingleResult();
-            });
-  }
-
-  private void verifyXnq9jyb4cInCloudSql() {
-    assertThat(ReservedListDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();
-    google.registry.schema.tld.ReservedList persistedList =
-        getCloudSqlReservedListBy("xn--q9jyb4c_common-reserved");
-    assertThat(persistedList.getName()).isEqualTo("xn--q9jyb4c_common-reserved");
-    assertThat(persistedList.getShouldPublish()).isTrue();
-    assertThat(persistedList.getCreationTimestamp()).isEqualTo(jpaTmRule.getTxnClock().nowUtc());
-    assertThat(persistedList.getLabelsToReservations())
-        .containsExactly(
-            "baddies",
-            ReservedEntry.create(FULLY_BLOCKED, ""),
-            "ford",
-            ReservedEntry.create(FULLY_BLOCKED, "random comment"));
-  }
-
-  private void verifyXnq9jyb4cInDatastore() throws Exception {
-    assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
-    ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
-    assertThat(reservedList.getReservedListEntries()).hasSize(2);
-    assertThat(reservedList.getReservationInList("baddies")).hasValue(FULLY_BLOCKED);
-    assertThat(reservedList.getReservationInList("ford")).hasValue(FULLY_BLOCKED);
   }
 
   private void runNameTestExpectedFailure(String name, String expectedErrorMsg) {
