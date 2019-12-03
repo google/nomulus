@@ -17,6 +17,7 @@ package google.registry.schema.cursor;
 import static com.google.common.truth.Truth.assertThat;
 
 import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.schema.cursor.Cursor.CursorType;
 import google.registry.testing.FakeClock;
 import java.util.List;
 import org.junit.Rule;
@@ -36,64 +37,65 @@ public class CursorDaoTest {
 
   @Test
   public void save_worksSuccessfullyOnNewCursor() {
-    Cursor cursor = Cursor.create("testType", "tld", fakeClock.nowUtc());
+    Cursor cursor = Cursor.create(CursorType.BRDA, "tld", fakeClock.nowUtc());
     CursorDao.save(cursor);
-    Cursor returnedCursor = CursorDao.load("testType", "tld");
+    Cursor returnedCursor = CursorDao.load(CursorType.BRDA, "tld");
     assertThat(returnedCursor.getCursorTime()).isEqualTo(cursor.getCursorTime());
   }
 
   @Test
   public void save_worksSuccessfullyOnExistingCursor() {
-    Cursor cursor = Cursor.create("testType", "tld", fakeClock.nowUtc());
+    Cursor cursor = Cursor.create(CursorType.RDE_REPORT, "tld", fakeClock.nowUtc());
     CursorDao.save(cursor);
-    Cursor cursor2 = Cursor.create("testType", "tld", fakeClock.nowUtc().plusDays(3));
+    Cursor cursor2 = Cursor.create(CursorType.RDE_REPORT, "tld", fakeClock.nowUtc().plusDays(3));
     CursorDao.save(cursor2);
-    Cursor returnedCursor = CursorDao.load("testType", "tld");
+    Cursor returnedCursor = CursorDao.load(CursorType.RDE_REPORT, "tld");
     assertThat(returnedCursor.getCursorTime()).isEqualTo(cursor2.getCursorTime());
   }
 
   @Test
   public void save_worksSuccessfullyOnNewGlobalCursor() {
-    Cursor cursor = Cursor.create("testTypeGlobal", null, fakeClock.nowUtc());
+    Cursor cursor = Cursor.createGlobal(CursorType.RECURRING_BILLING, fakeClock.nowUtc());
     CursorDao.save(cursor);
-    Cursor returnedCursor = CursorDao.load("testTypeGlobal");
+    Cursor returnedCursor = CursorDao.load(CursorType.RECURRING_BILLING);
     assertThat(returnedCursor.getCursorTime()).isEqualTo(cursor.getCursorTime());
   }
 
   @Test
   public void save_worksSuccessfullyOnExistingGlobalCursor() {
-    Cursor cursor = Cursor.create("testTypeGlobal", null, fakeClock.nowUtc());
+    Cursor cursor = Cursor.createGlobal(CursorType.RECURRING_BILLING, fakeClock.nowUtc());
     CursorDao.save(cursor);
-    Cursor cursor2 = Cursor.create("testTypeGlobal", null, fakeClock.nowUtc().plusDays(3));
+    Cursor cursor2 =
+        Cursor.createGlobal(CursorType.RECURRING_BILLING, fakeClock.nowUtc().plusDays(3));
     CursorDao.save(cursor2);
-    Cursor returnedCursor = CursorDao.load("testTypeGlobal");
+    Cursor returnedCursor = CursorDao.load(CursorType.RECURRING_BILLING);
     assertThat(returnedCursor.getCursorTime()).isEqualTo(cursor2.getCursorTime());
   }
 
   @Test
   public void load_worksSuccessfully() {
-    Cursor cursor = Cursor.create("testTypeGlobal", null, fakeClock.nowUtc());
-    Cursor cursor2 = Cursor.create("testType", "tld", fakeClock.nowUtc());
-    Cursor cursor3 = Cursor.create("testType", "foo", fakeClock.nowUtc());
-    Cursor cursor4 = Cursor.create("testType2", "foo", fakeClock.nowUtc());
+    Cursor cursor = Cursor.createGlobal(CursorType.RECURRING_BILLING, fakeClock.nowUtc());
+    Cursor cursor2 = Cursor.create(CursorType.RDE_REPORT, "tld", fakeClock.nowUtc());
+    Cursor cursor3 = Cursor.create(CursorType.RDE_REPORT, "foo", fakeClock.nowUtc());
+    Cursor cursor4 = Cursor.create(CursorType.BRDA, "foo", fakeClock.nowUtc());
     CursorDao.save(cursor);
     CursorDao.save(cursor2);
     CursorDao.save(cursor3);
     CursorDao.save(cursor4);
-    Cursor returnedCursor = CursorDao.load("testType", "tld");
+    Cursor returnedCursor = CursorDao.load(CursorType.RDE_REPORT, "tld");
     assertThat(returnedCursor.getCursorTime()).isEqualTo(cursor2.getCursorTime());
-    returnedCursor = CursorDao.load("testType2", "foo");
+    returnedCursor = CursorDao.load(CursorType.BRDA, "foo");
     assertThat(returnedCursor.getCursorTime()).isEqualTo(cursor4.getCursorTime());
-    returnedCursor = CursorDao.load("testTypeGlobal");
+    returnedCursor = CursorDao.load(CursorType.RECURRING_BILLING);
     assertThat(returnedCursor.getCursorTime()).isEqualTo(cursor.getCursorTime());
   }
 
   @Test
   public void loadAll_worksSuccessfully() {
-    Cursor cursor = Cursor.create("testTypeGlobal", null, fakeClock.nowUtc());
-    Cursor cursor2 = Cursor.create("testType", "tld", fakeClock.nowUtc());
-    Cursor cursor3 = Cursor.create("testType", "foo", fakeClock.nowUtc());
-    Cursor cursor4 = Cursor.create("testType2", "foo", fakeClock.nowUtc());
+    Cursor cursor = Cursor.createGlobal(CursorType.RECURRING_BILLING, fakeClock.nowUtc());
+    Cursor cursor2 = Cursor.create(CursorType.RDE_REPORT, "tld", fakeClock.nowUtc());
+    Cursor cursor3 = Cursor.create(CursorType.RDE_REPORT, "foo", fakeClock.nowUtc());
+    Cursor cursor4 = Cursor.create(CursorType.BRDA, "foo", fakeClock.nowUtc());
     CursorDao.save(cursor);
     CursorDao.save(cursor2);
     CursorDao.save(cursor3);
@@ -110,21 +112,21 @@ public class CursorDaoTest {
 
   @Test
   public void loadByType_worksSuccessfully() {
-    Cursor cursor = Cursor.create("testTypeGlobal", null, fakeClock.nowUtc());
-    Cursor cursor2 = Cursor.create("testType", "tld", fakeClock.nowUtc());
-    Cursor cursor3 = Cursor.create("testType", "foo", fakeClock.nowUtc());
-    Cursor cursor4 = Cursor.create("testType2", "foo", fakeClock.nowUtc());
+    Cursor cursor = Cursor.createGlobal(CursorType.RECURRING_BILLING, fakeClock.nowUtc());
+    Cursor cursor2 = Cursor.create(CursorType.RDE_REPORT, "tld", fakeClock.nowUtc());
+    Cursor cursor3 = Cursor.create(CursorType.RDE_REPORT, "foo", fakeClock.nowUtc());
+    Cursor cursor4 = Cursor.create(CursorType.BRDA, "foo", fakeClock.nowUtc());
     CursorDao.save(cursor);
     CursorDao.save(cursor2);
     CursorDao.save(cursor3);
     CursorDao.save(cursor4);
-    List<Cursor> returnedCursors = CursorDao.loadByType("testType");
+    List<Cursor> returnedCursors = CursorDao.loadByType(CursorType.RDE_REPORT);
     assertThat(returnedCursors.size()).isEqualTo(2);
   }
 
   @Test
   public void loadByType_worksSuccessfullyNoneOfType() {
-    List<Cursor> returnedCursors = CursorDao.loadByType("foo");
+    List<Cursor> returnedCursors = CursorDao.loadByType(CursorType.RDE_REPORT);
     assertThat(returnedCursors.size()).isEqualTo(0);
   }
 }
