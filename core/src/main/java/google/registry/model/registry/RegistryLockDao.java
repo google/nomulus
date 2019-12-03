@@ -64,8 +64,8 @@ public final class RegistryLockDao {
   }
 
   /**
-   * Returns the most recent lock object for a given repo ID (i.e. a domain) or empty if this domain
-   * hasn't been locked before.
+   * Returns the most recent lock object for a given domain specified by repo ID, or empty if this
+   * domain hasn't been locked before.
    */
   public static Optional<RegistryLock> getMostRecentByRepoId(String repoId) {
     return jpaTm()
@@ -84,9 +84,9 @@ public final class RegistryLockDao {
   }
 
   /**
-   * Returns the most recent verified lock object for a given repo ID (i.e. a domain) or empty if no
-   * lock has ever been finalized. This is different from {@link #getMostRecentByRepoId(String)} in
-   * that it only returns verified locks.
+   * Returns the most recent verified lock object for a given domain specified by repo ID, or empty
+   * if no lock has ever been finalized for this domain. This is different from {@link
+   * #getMostRecentByRepoId(String)} in that it only returns verified locks.
    */
   public static Optional<RegistryLock> getMostRecentVerifiedLockByRepoId(String repoId) {
     return jpaTm()
