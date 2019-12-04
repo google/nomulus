@@ -123,7 +123,7 @@ public final class DomainLockUtils {
   private static void saveEntities(DomainBase domain, RegistryLock lock, Clock clock) {
     String reason =
         String.format(
-            "%s of domain during a RegistryLock operation",
+            "%s of a domain during a RegistryLock operation",
             lock.getAction().equals(RegistryLock.Action.LOCK) ? "Lock" : "Unlock");
     HistoryEntry historyEntry =
         new HistoryEntry.Builder()

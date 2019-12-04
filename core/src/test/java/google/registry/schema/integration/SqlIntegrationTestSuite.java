@@ -26,6 +26,7 @@ import google.registry.persistence.JodaMoneyConverterTest;
 import google.registry.persistence.UpdateAutoTimestampConverterTest;
 import google.registry.persistence.ZonedDateTimeConverterTest;
 import google.registry.schema.tld.PremiumListDaoTest;
+import google.registry.tools.DomainLockUtilsTest;
 import google.registry.tools.LockDomainCommandTest;
 import google.registry.tools.UnlockDomainCommandTest;
 import google.registry.ui.server.registrar.RegistryLockGetActionTest;
@@ -50,6 +51,7 @@ import org.junit.runners.Suite.SuiteClasses;
   CreateAutoTimestampConverterTest.class,
   CurrencyUnitConverterTest.class,
   DateTimeConverterTest.class,
+  DomainLockUtilsTest.class,
   JodaMoneyConverterTest.class,
   JpaTransactionManagerImplTest.class,
   JpaTransactionManagerRuleTest.class,
