@@ -185,24 +185,6 @@ public class CreateReservedListCommandTest extends
   }
 
   @Test
-  public void testSaveToCloudSql_overrideWorksCorrectly() throws Exception {
-    ReservedListDao.save(
-        createCloudSqlReservedList(
-            "xn--q9jyb4c_common-reserved",
-            true,
-            ImmutableMap.of("testdomain", ReservedEntry.create(FULLY_BLOCKED, ""))));
-    assertThat(ReservedListDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();
-
-    runCommandForced(
-        "--override",
-        "--name=xn--q9jyb4c_common-reserved",
-        "--input=" + reservedTermsPath,
-        "--also_cloud_sql");
-    verifyXnq9jyb4cInDatastore();
-    verifyXnq9jyb4cInCloudSql();
-  }
-
-  @Test
   public void testSaveToCloudSql_noExceptionThrownWhenSaveFail() throws Exception {
     // Note that, during the dual-write phase, we want to make sure that no exception will be
     // thrown if saving reserved list to Cloud SQL fails.

@@ -79,12 +79,10 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
     jpaTm()
         .transact(
             () -> {
-              if (!override) {
-                checkArgument(
-                    !ReservedListDao.checkExists(cloudSqlReservedList.getName()),
-                    "A reserved list of this name already exists: %s.",
-                    cloudSqlReservedList.getName());
-              }
+              checkArgument(
+                  !ReservedListDao.checkExists(cloudSqlReservedList.getName()),
+                  "A reserved list of this name already exists: %s.",
+                  cloudSqlReservedList.getName());
               ReservedListDao.save(cloudSqlReservedList);
             });
   }
