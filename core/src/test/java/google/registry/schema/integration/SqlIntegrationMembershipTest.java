@@ -71,8 +71,13 @@ public class SqlIntegrationMembershipTest {
   }
 
   private static boolean isSqlDependent(Class<?> testClass) {
-    return Stream.of(testClass.getDeclaredFields())
-        .map(Field::getType)
-        .anyMatch(JpaTransactionManagerRule.class::equals);
+    for (Class<?> clazz = testClass; clazz != null; clazz = clazz.getSuperclass()) {
+      if (Stream.of(clazz.getDeclaredFields())
+          .map(Field::getType)
+          .anyMatch(JpaTransactionManagerRule.class::equals)) {
+        return true;
+      }
+    }
+    return false;
   }
 }
