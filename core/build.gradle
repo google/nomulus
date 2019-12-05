@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import java.lang.reflect.Constructor
+
 plugins {
   id 'java-library'
 }
@@ -660,6 +662,33 @@ task outcastTest(type: FilteringTest) {
   maxParallelForks 5
 }
 
+// Whitebox test verifying that RegistryTool can be instantiated. Note the
+// use of runtimeClasspath. This test emulates the logic in RegistryCli#run.
+// A to-do is added there to refactor.
+// TODO(weiminyu): Need a similar test for Registry server.
+task registryToolIntegrationTest {
+  dependsOn compileJava
+  doLast {
+    def classLoader =
+        new URLClassLoader(sourceSets.main.runtimeClasspath.collect {
+            it.toURI().toURL()
+        } as URL[])
+    def commandClasses =
+        (classLoader.loadClass('google.registry.tools.RegistryTool')
+            .getDeclaredField('COMMAND_MAP').get(null) as Map).values()
+
+    commandClasses.each {
+      try {
+        Constructor<?> c = ((Class<?>) it).getDeclaredConstructor()
+        c.setAccessible(true)
+        c.newInstance()
+      } catch (Throwable e) {
+        throw new RuntimeException("Failed to instantiate ${it}:\n ${e}")
+      }
+    }
+  }
+}
+
 // Dedicated test suite for schema-dependent tests.
 task sqlIntegrationTest(type: FilteringTest) {
   systemProperties project.getProperties().subMap('sql_schema_resource_root')
@@ -779,7 +808,7 @@ test {
   // Don't run any tests from this task, all testing gets done in the
   // FilteringTest tasks.
   exclude "**"
-}.dependsOn(fragileTest, outcastTest, standardTest)
+}.dependsOn(fragileTest, outcastTest, standardTest, registryToolIntegrationTest)
 
 createUberJar('nomulus', 'nomulus', 'google.registry.tools.RegistryTool')
 project.nomulus.dependsOn project(':third_party').jar

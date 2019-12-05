@@ -54,7 +54,9 @@ tasks.test.finalizedBy jacocoTestReport
 configurations {
   deploy_jar.extendsFrom runtimeClasspath
 
-  runtimeClasspath {
+  all.findAll {
+    it.name in ['runtimeClasspath', 'compileClasspath']
+  }.each {
     // JUnit is from org.apache.beam:beam-runners-google-cloud-dataflow-java,
     // testcontainer (which we use in the nomulus tool), and json-simple.
     // We should really be excluding this, however GenerateSqlCommand in
@@ -62,7 +64,7 @@ configurations {
     //exclude group: 'junit'
     // Mockito is from org.apache.beam:beam-runners-google-cloud-dataflow-java
     // See https://issues.apache.org/jira/browse/BEAM-8862
-    exclude group: 'org.mockito', module: 'mockito-core'
+    it.exclude group: 'org.mockito', module: 'mockito-core'
   }
 }
 
