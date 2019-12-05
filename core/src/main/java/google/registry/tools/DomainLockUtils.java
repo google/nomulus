@@ -27,6 +27,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.googlecode.objectify.Key;
+import google.registry.model.EppResource;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
@@ -38,8 +39,18 @@ import google.registry.schema.domain.RegistryLock.Action;
 import google.registry.util.Clock;
 import java.util.Optional;
 
+/**
+ * Utility class for validating and applying {@link RegistryLock}s with the current state of the
+ * world. The methods verify that domains and the lock objects themselves are in the correct state.
+ */
 public final class DomainLockUtils {
 
+  private DomainLockUtils() {}
+
+  /**
+   * Validates the creation of a new lock object, performing various checks. A lock must not be a
+   * no-op (e.g. locking a locked domain) for this to succeed.
+   */
   public static void validateNewLock(RegistryLock newLock, Clock clock) {
     checkArgument(
         !Strings.isNullOrEmpty(newLock.getDomainName()), "Lock cannot have an empty domain name");
@@ -58,22 +69,12 @@ public final class DomainLockUtils {
         lock ->
             checkArgument(
                 lock.isVerified() || lock.isExpired(clock),
-                String.format("A pending action already exists for %s", lock.getDomainName())));
+                "A pending action already exists for %s",
+                lock.getDomainName()));
 
     // Unlock actions have restrictions (unless the user is admin)
     if (!newLock.getAction().equals(Action.LOCK) && !newLock.isSuperuser()) {
-      RegistryLock previouslyVerifiedLock =
-          previousLock
-              .flatMap(
-                  lock ->
-                      lock.isVerified()
-                          ? Optional.of(lock)
-                          : RegistryLockDao.getMostRecentVerifiedLockByRepoId(
-                              domainBase.getRepoId()))
-              .orElseThrow(
-                  () ->
-                      new IllegalArgumentException(
-                          "Cannot unlock a domain without a previously-verified lock"));
+      RegistryLock previouslyVerifiedLock = getPreviouslyVerifiedLock(previousLock);
       checkArgument(
           previouslyVerifiedLock.getAction().equals(RegistryLock.Action.LOCK),
           "Cannot unlock a domain multiple times");
@@ -84,6 +85,11 @@ public final class DomainLockUtils {
     verifyCurrentDomainLockStatuses(domainBase, newLock);
   }
 
+  /**
+   * Verifies and finalizes a lock object. This adds/removes the lock statuses on the relevant
+   * {@link EppResource}s if they are in the correct state. Note that if the Datastore fails for
+   * some reason, we will not modify the lock object.
+   */
   public static RegistryLock verifyAndApplyLock(RegistryLock lock, boolean isAdmin, Clock clock) {
     return jpaTm()
         .transact(
@@ -93,6 +99,21 @@ public final class DomainLockUtils {
               tm().transact(() -> applyLockStatuses(lock, clock));
               return lock;
             });
+  }
+
+  private static RegistryLock getPreviouslyVerifiedLock(Optional<RegistryLock> previousLock) {
+    if (!previousLock.isPresent()) {
+      throw new IllegalArgumentException(
+          "Cannot unlock a domain without a previously-verified lock");
+    }
+    if (previousLock.get().isVerified()) {
+      return previousLock.get();
+    }
+    return RegistryLockDao.getMostRecentVerifiedLockByRepoId(previousLock.get().getRepoId())
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Cannot unlock a domain without a previously-verified lock"));
   }
 
   private static void verifyLockObject(RegistryLock lock, Clock clock, boolean isAdmin) {

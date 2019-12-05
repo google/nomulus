@@ -94,9 +94,13 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
         failures++;
       }
     }
-    return String.format(
-        "Successfully locked/unlocked %d domains with %d failures",
-        lockObjects.size() - failures, failures);
+    if (failures == 0) {
+      return String.format("Successfully locked/unlocked %d domains", lockObjects.size());
+    } else {
+      return String.format(
+          "Successfully locked/unlocked %d domains with %d failures",
+          lockObjects.size() - failures, failures);
+    }
   }
 
   protected abstract ImmutableSet<RegistryLock> createLockObjects();
