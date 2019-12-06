@@ -74,7 +74,7 @@ public abstract class CreateOrUpdateReservedListCommand extends MutatingCommand 
   @Override
   protected String execute() throws Exception {
     logger.atInfo().log(super.execute());
-    String cloudSqlMessage = "Persisting reserved list to Cloud SQL is not enabled";
+    String cloudSqlMessage;
     if (alsoCloudSql) {
       cloudSqlMessage =
           String.format(
@@ -89,6 +89,8 @@ public abstract class CreateOrUpdateReservedListCommand extends MutatingCommand 
             "Unexpected error saving reserved list to Cloud SQL from nomulus tool command";
         logger.atSevere().withCause(e).log(cloudSqlMessage);
       }
+    } else {
+      cloudSqlMessage = "Persisting reserved list to Cloud SQL is not enabled";
     }
     return cloudSqlMessage;
   }
