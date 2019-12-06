@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
+import com.google.common.collect.ImmutableSet;
 import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.schema.domain.RegistryLock.Action;
@@ -47,6 +48,7 @@ public final class RegistryLockDaoTest {
     RegistryLock fromDatabase = RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
     assertThat(fromDatabase.getDomainName()).isEqualTo(lock.getDomainName());
     assertThat(fromDatabase.getVerificationCode()).isEqualTo(lock.getVerificationCode());
+    assertThat(fromDatabase.getDependentRoids()).isEqualTo(lock.getDependentRoids());
   }
 
   @Test
@@ -148,6 +150,7 @@ public final class RegistryLockDaoTest {
         .setAction(Action.LOCK)
         .setVerificationCode(UUID.randomUUID().toString())
         .isSuperuser(true)
+        .setDependentRoids(ImmutableSet.of("hostRoid", "contactRoid"))
         .build();
   }
 }

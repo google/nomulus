@@ -123,6 +123,16 @@ CREATE TABLE public."RegistryLock" (
 
 
 --
+-- Name: RegistryLock_dependentRoids; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."RegistryLock_dependentRoids" (
+    revision_id bigint NOT NULL,
+    dependent_roid text NOT NULL
+);
+
+
+--
 -- Name: RegistryLock_revision_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -242,6 +252,14 @@ ALTER TABLE ONLY public."PremiumEntry"
 
 ALTER TABLE ONLY public."PremiumList"
     ADD CONSTRAINT "PremiumList_pkey" PRIMARY KEY (revision_id);
+
+
+--
+-- Name: RegistryLock_dependentRoids RegistryLock_dependentRoids_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RegistryLock_dependentRoids"
+    ADD CONSTRAINT "RegistryLock_dependentRoids_pkey" PRIMARY KEY (revision_id, dependent_roid);
 
 
 --

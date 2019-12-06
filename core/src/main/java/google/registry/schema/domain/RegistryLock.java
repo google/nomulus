@@ -18,20 +18,26 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.DateTimeUtils.toZonedDateTime;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
+import com.google.common.collect.ImmutableSet;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.util.DateTimeUtils;
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.Set;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Index;
+import javax.persistence.JoinColumn;
 import javax.persistence.Table;
 import org.joda.time.DateTime;
 
@@ -131,6 +137,13 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   @Column(nullable = false)
   private boolean isSuperuser;
 
+  @ElementCollection(fetch = FetchType.EAGER)
+  @CollectionTable(
+      name = "RegistryLock_dependentRoids",
+      joinColumns = @JoinColumn(name = "revisionId", referencedColumnName = "revisionId"))
+  @Column(name = "dependentRoid", nullable = false)
+  private Set<String> dependentRoids;
+
   public String getRepoId() {
     return repoId;
   }
@@ -170,6 +183,10 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
 
   public Long getRevisionId() {
     return revisionId;
+  }
+
+  public ImmutableSet<String> getDependentRoids() {
+    return ImmutableSet.copyOf(dependentRoids);
   }
 
   public void setCompletionTimestamp(DateTime dateTime) {
@@ -248,6 +265,11 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
 
     public Builder isSuperuser(boolean isSuperuser) {
       getInstance().isSuperuser = isSuperuser;
+      return this;
+    }
+
+    public Builder setDependentRoids(Set<String> dependentRoids) {
+      getInstance().dependentRoids = ImmutableSet.copyOf(dependentRoids);
       return this;
     }
   }
