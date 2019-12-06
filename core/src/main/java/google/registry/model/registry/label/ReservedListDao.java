@@ -20,6 +20,7 @@ import google.registry.schema.tld.ReservedList;
 
 /** Data access object class for {@link ReservedList} */
 public class ReservedListDao {
+
   /** Persist a new reserved list to Cloud SQL. */
   public static void save(ReservedList reservedList) {
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(reservedList));
