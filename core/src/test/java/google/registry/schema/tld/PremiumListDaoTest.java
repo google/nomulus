@@ -31,6 +31,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.testing.AppEngineRule;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.junit.Rule;
@@ -78,13 +79,50 @@ public class PremiumListDaoTest {
   }
 
   @Test
+  public void update_worksSuccessfully() {
+    PremiumListDao.saveNew(
+        PremiumList.create(
+            "testname", USD, ImmutableMap.of("firstversion", BigDecimal.valueOf(123.45))));
+    PremiumListDao.update(PremiumList.create("testname", USD, TEST_PRICES));
+    jpaTm()
+        .transact(
+            () -> {
+              List<PremiumList> persistedLists =
+                  jpaTm()
+                      .getEntityManager()
+                      .createQuery(
+                          "SELECT pl FROM PremiumList pl WHERE pl.name = :name ORDER BY"
+                              + " pl.revisionId",
+                          PremiumList.class)
+                      .setParameter("name", "testname")
+                      .getResultList();
+              assertThat(persistedLists).hasSize(2);
+              assertThat(persistedLists.get(1).getLabelsToPrices())
+                  .containsExactlyEntriesIn(TEST_PRICES);
+              assertThat(persistedLists.get(1).getCreationTimestamp())
+                  .isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+            });
+  }
+
+  @Test
   public void saveNew_throwsWhenPremiumListAlreadyExists() {
     PremiumListDao.saveNew(PremiumList.create("testlist", USD, TEST_PRICES));
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
             () -> PremiumListDao.saveNew(PremiumList.create("testlist", USD, TEST_PRICES)));
-    assertThat(thrown).hasMessageThat().contains("A premium list of this name already exists");
+    assertThat(thrown).hasMessageThat().isEqualTo("Premium list 'testlist' already exists");
+  }
+
+  @Test
+  public void update_throwsWhenPremiumListDoesntExist() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> PremiumListDao.update(PremiumList.create("testlist", USD, TEST_PRICES)));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Can't update non-existent premium list 'testlist'");
   }
 
   @Test
@@ -102,8 +140,8 @@ public class PremiumListDaoTest {
   @Test
   public void getLatestRevision_worksSuccessfully() {
     PremiumListDao.saveNew(
-        PremiumList.create("list1", JPY, ImmutableMap.of("wrong", BigDecimal.valueOf(1000, 50))));
-    PremiumListDao.saveNew(PremiumList.create("list2", JPY, TEST_PRICES));
+        PremiumList.create("list1", JPY, ImmutableMap.of("wrong", BigDecimal.valueOf(1000.50))));
+    PremiumListDao.update(PremiumList.create("list1", JPY, TEST_PRICES));
     jpaTm()
         .transact(
             () -> {

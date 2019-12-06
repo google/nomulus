@@ -55,7 +55,20 @@ public class PremiumListDao {
             () -> {
               checkArgument(
                   !checkExists(premiumList.getName()),
-                  "A premium list of this name already exists: %s.",
+                  "Premium list '%s' already exists",
+                  premiumList.getName());
+              jpaTm().getEntityManager().persist(premiumList);
+            });
+  }
+
+  /** Persist a new revision of an existing premium list to Cloud SQL. */
+  public static void update(PremiumList premiumList) {
+    jpaTm()
+        .transact(
+            () -> {
+              checkArgument(
+                  checkExists(premiumList.getName()),
+                  "Can't update non-existent premium list '%s'",
                   premiumList.getName());
               jpaTm().getEntityManager().persist(premiumList);
             });
