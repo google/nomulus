@@ -67,8 +67,8 @@ ALTER SEQUENCE public."ClaimsList_revision_id_seq" OWNED BY public."ClaimsList".
 
 CREATE TABLE public."PremiumEntry" (
     revision_id bigint NOT NULL,
-    price numeric(19,2) NOT NULL,
-    domain_label text NOT NULL
+    domain_label text NOT NULL,
+    price numeric(19,2) NOT NULL
 );
 
 
@@ -331,4 +331,3 @@ ALTER TABLE ONLY public."PremiumEntry"
 --
 -- PostgreSQL database dump complete
 --
-

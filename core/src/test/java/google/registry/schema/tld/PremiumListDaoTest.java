@@ -101,12 +101,19 @@ public class PremiumListDaoTest {
 
   @Test
   public void getLatestRevision_worksSuccessfully() {
-    PremiumListDao.saveNew(PremiumList.create("list1", JPY, TEST_PRICES));
-    Optional<PremiumList> persistedList = PremiumListDao.getLatestRevision("list1");
-    assertThat(persistedList).isPresent();
-    assertThat(persistedList.get().getName()).isEqualTo("list1");
-    assertThat(persistedList.get().getCurrency()).isEqualTo(JPY);
-    assertThat(persistedList.get().getLabelsToPrices()).isNull();
+    PremiumListDao.saveNew(
+        PremiumList.create("list1", JPY, ImmutableMap.of("wrong", BigDecimal.valueOf(1000, 50))));
+    PremiumListDao.saveNew(PremiumList.create("list2", JPY, TEST_PRICES));
+    jpaTm()
+        .transact(
+            () -> {
+              Optional<PremiumList> persistedList = PremiumListDao.getLatestRevision("list1");
+              assertThat(persistedList).isPresent();
+              assertThat(persistedList.get().getName()).isEqualTo("list1");
+              assertThat(persistedList.get().getCurrency()).isEqualTo(JPY);
+              assertThat(persistedList.get().getLabelsToPrices())
+                  .containsExactlyEntriesIn(TEST_PRICES);
+            });
   }
 
   @Test

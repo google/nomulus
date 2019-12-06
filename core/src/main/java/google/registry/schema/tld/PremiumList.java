@@ -35,6 +35,7 @@ import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.Table;
+import org.hibernate.LazyInitializationException;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 
@@ -119,9 +120,10 @@ public class PremiumList {
   /**
    * Returns a {@link Map} of domain labels to prices.
    *
-   * <p>Note that this will return null if this PremiumList was loaded from the DB, as we don't by
-   * default load the many rows from the linked <code>PremiumEntry</code> table. If you need to
-   * check prices, use {@link PremiumListDao#getPremiumPrice}.
+   * <p>Note that this is lazily loaded and thus will throw a {@link LazyInitializationException} if
+   * used outside the transaction in which the given entity was loaded. You generally should not be
+   * using this anyway as it's inefficient to load all of the PremiumEntry rows if you don't need
+   * them. To check prices, use {@link PremiumListDao#getPremiumPrice} instead.
    */
   @Nullable
   public ImmutableMap<String, BigDecimal> getLabelsToPrices() {
