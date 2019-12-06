@@ -18,6 +18,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.networking.handler.SslInitializerTestUtils.getKeyPair;
 import static google.registry.networking.handler.SslInitializerTestUtils.setUpSslChannel;
 import static google.registry.networking.handler.SslInitializerTestUtils.signKeyPair;
+import static google.registry.networking.handler.SslInitializerTestUtils.verifySslExcpetion;
+import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_PROMISE_KEY;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
@@ -35,7 +37,12 @@ import io.netty.handler.ssl.util.SelfSignedCertificate;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
@@ -82,16 +89,16 @@ public class SslServerInitializerTest {
   }
 
   private ChannelHandler getServerHandler(
-      boolean requireClientCert, PrivateKey privateKey, X509Certificate... certificates) {
+      boolean requireClientCert,
+      boolean validateClientCert,
+      PrivateKey privateKey,
+      X509Certificate... certificates) {
     return new SslServerInitializer<LocalChannel>(
         requireClientCert,
+        validateClientCert,
         sslProvider,
         Suppliers.ofInstance(privateKey),
         Suppliers.ofInstance(ImmutableList.copyOf(certificates)));
-  }
-
-  private ChannelHandler getServerHandler(PrivateKey privateKey, X509Certificate... certificates) {
-    return getServerHandler(true, privateKey, certificates);
   }
 
   private ChannelHandler getClientHandler(
@@ -124,6 +131,7 @@ public class SslServerInitializerTest {
     SslServerInitializer<EmbeddedChannel> sslServerInitializer =
         new SslServerInitializer<>(
             true,
+            false,
             sslProvider,
             Suppliers.ofInstance(ssc.key()),
             Suppliers.ofInstance(ImmutableList.of(ssc.cert())));
@@ -142,12 +150,13 @@ public class SslServerInitializerTest {
     SelfSignedCertificate serverSsc = new SelfSignedCertificate(SSL_HOST);
     LocalAddress localAddress = new LocalAddress("TRUST_ANY_CLIENT_CERT_" + sslProvider);
 
-    nettyRule.setUpServer(localAddress, getServerHandler(serverSsc.key(), serverSsc.cert()));
+    nettyRule.setUpServer(
+        localAddress, getServerHandler(true, false, serverSsc.key(), serverSsc.cert()));
     SelfSignedCertificate clientSsc = new SelfSignedCertificate();
     nettyRule.setUpClient(
         localAddress, getClientHandler(serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
 
-    SSLSession sslSession = setUpSslChannel(nettyRule.getChannel(), serverSsc.cert());
+    SSLSession sslSession = setUpSslChannel(nettyRule.getClientChannel(), serverSsc.cert());
     nettyRule.assertThatMessagesWork();
 
     // Verify that the SSL session gets the client cert. Note that this SslSession is for the client
@@ -158,14 +167,57 @@ public class SslServerInitializerTest {
   }
 
   @Test
+  public void testFailure_clientCertExpired() throws Exception {
+    SelfSignedCertificate serverSsc = new SelfSignedCertificate(SSL_HOST);
+    LocalAddress localAddress = new LocalAddress("CLIENT_CERT_EXPIRED_" + sslProvider);
+
+    nettyRule.setUpServer(
+        localAddress, getServerHandler(true, true, serverSsc.key(), serverSsc.cert()));
+    SelfSignedCertificate clientSsc =
+        new SelfSignedCertificate(
+            "CLIENT",
+            Date.from(Instant.now().minus(Duration.ofDays(2))),
+            Date.from(Instant.now().minus(Duration.ofDays(1))));
+    nettyRule.setUpClient(
+        localAddress, getClientHandler(serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
+
+    verifySslExcpetion(
+        nettyRule.getServerChannel(),
+        channel -> channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get(),
+        CertificateExpiredException.class);
+  }
+
+  @Test
+  public void testFailure_clientCertNotYetValid() throws Exception {
+    SelfSignedCertificate serverSsc = new SelfSignedCertificate(SSL_HOST);
+    LocalAddress localAddress = new LocalAddress("CLIENT_CERT_EXPIRED_" + sslProvider);
+
+    nettyRule.setUpServer(
+        localAddress, getServerHandler(true, true, serverSsc.key(), serverSsc.cert()));
+    SelfSignedCertificate clientSsc =
+        new SelfSignedCertificate(
+            "CLIENT",
+            Date.from(Instant.now().plus(Duration.ofDays(1))),
+            Date.from(Instant.now().plus(Duration.ofDays(2))));
+    nettyRule.setUpClient(
+        localAddress, getClientHandler(serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
+
+    verifySslExcpetion(
+        nettyRule.getServerChannel(),
+        channel -> channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get(),
+        CertificateNotYetValidException.class);
+  }
+
+  @Test
   public void testSuccess_doesNotRequireClientCert() throws Exception {
     SelfSignedCertificate serverSsc = new SelfSignedCertificate(SSL_HOST);
     LocalAddress localAddress = new LocalAddress("DOES_NOT_REQUIRE_CLIENT_CERT_" + sslProvider);
 
-    nettyRule.setUpServer(localAddress, getServerHandler(false, serverSsc.key(), serverSsc.cert()));
+    nettyRule.setUpServer(
+        localAddress, getServerHandler(false, false, serverSsc.key(), serverSsc.cert()));
     nettyRule.setUpClient(localAddress, getClientHandler(serverSsc.cert(), null, null));
 
-    SSLSession sslSession = setUpSslChannel(nettyRule.getChannel(), serverSsc.cert());
+    SSLSession sslSession = setUpSslChannel(nettyRule.getClientChannel(), serverSsc.cert());
     nettyRule.assertThatMessagesWork();
 
     // Verify that the SSL session does not contain any client cert. Note that this SslSession is
@@ -186,6 +238,8 @@ public class SslServerInitializerTest {
     nettyRule.setUpServer(
         localAddress,
         getServerHandler(
+            true,
+            false,
             keyPair.getPrivate(),
             // Serving both the server cert, and the CA cert
             serverCert,
@@ -197,7 +251,7 @@ public class SslServerInitializerTest {
             // Client trusts the CA cert
             caSsc.cert(), clientSsc.key(), clientSsc.cert()));
 
-    SSLSession sslSession = setUpSslChannel(nettyRule.getChannel(), serverCert, caSsc.cert());
+    SSLSession sslSession = setUpSslChannel(nettyRule.getClientChannel(), serverCert, caSsc.cert());
     nettyRule.assertThatMessagesWork();
 
     assertThat(sslSession.getLocalCertificates()).asList().containsExactly(clientSsc.cert());
@@ -212,7 +266,8 @@ public class SslServerInitializerTest {
     SelfSignedCertificate serverSsc = new SelfSignedCertificate(SSL_HOST);
     LocalAddress localAddress = new LocalAddress("REQUIRE_CLIENT_CERT_" + sslProvider);
 
-    nettyRule.setUpServer(localAddress, getServerHandler(serverSsc.key(), serverSsc.cert()));
+    nettyRule.setUpServer(
+        localAddress, getServerHandler(true, false, serverSsc.key(), serverSsc.cert()));
     nettyRule.setUpClient(
         localAddress,
         getClientHandler(
@@ -225,7 +280,7 @@ public class SslServerInitializerTest {
     // should throw exceptions.
     nettyRule.assertThatServerRootCause().isInstanceOf(SSLHandshakeException.class);
     nettyRule.assertThatClientRootCause().isInstanceOf(SSLException.class);
-    assertThat(nettyRule.getChannel().isActive()).isFalse();
+    assertThat(nettyRule.getClientChannel().isActive()).isFalse();
   }
 
   @Test
@@ -233,7 +288,8 @@ public class SslServerInitializerTest {
     SelfSignedCertificate serverSsc = new SelfSignedCertificate("wrong.com");
     LocalAddress localAddress = new LocalAddress("WRONG_HOSTNAME_" + sslProvider);
 
-    nettyRule.setUpServer(localAddress, getServerHandler(serverSsc.key(), serverSsc.cert()));
+    nettyRule.setUpServer(
+        localAddress, getServerHandler(true, false, serverSsc.key(), serverSsc.cert()));
     SelfSignedCertificate clientSsc = new SelfSignedCertificate();
     nettyRule.setUpClient(
         localAddress, getClientHandler(serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
@@ -243,6 +299,6 @@ public class SslServerInitializerTest {
     nettyRule.assertThatClientRootCause().isInstanceOf(CertificateException.class);
     nettyRule.assertThatClientRootCause().hasMessageThat().contains(SSL_HOST);
     nettyRule.assertThatServerRootCause().isInstanceOf(SSLException.class);
-    assertThat(nettyRule.getChannel().isActive()).isFalse();
+    assertThat(nettyRule.getClientChannel().isActive()).isFalse();
   }
 }

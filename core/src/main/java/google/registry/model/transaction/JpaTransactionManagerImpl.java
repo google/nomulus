@@ -16,6 +16,7 @@ package google.registry.model.transaction;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.util.Clock;
+import java.util.function.Supplier;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
@@ -63,11 +64,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public <T> T transact(Work<T> work) {
+  public <T> T transact(Supplier<T> work) {
     // TODO(shicong): Investigate removing transactNew functionality after migration as it may
     //  be same as this one.
     if (inTransaction()) {
-      return work.run();
+      return work.get();
     }
     TransactionInfo txnInfo = transactionInfo.get();
     txnInfo.entityManager = emf.createEntityManager();
@@ -76,7 +77,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       txn.begin();
       txnInfo.inTransaction = true;
       txnInfo.transactionTime = clock.nowUtc();
-      T result = work.run();
+      T result = work.get();
       txn.commit();
       return result;
     } catch (RuntimeException e) {
@@ -102,7 +103,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public <T> T transactNew(Work<T> work) {
+  public <T> T transactNew(Supplier<T> work) {
     // TODO(shicong): Implements the functionality to start a new transaction.
     throw new UnsupportedOperationException();
   }
@@ -114,7 +115,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public <T> T transactNewReadOnly(Work<T> work) {
+  public <T> T transactNewReadOnly(Supplier<T> work) {
     // TODO(shicong): Implements read only transaction.
     throw new UnsupportedOperationException();
   }
@@ -126,7 +127,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public <T> T doTransactionless(Work<T> work) {
+  public <T> T doTransactionless(Supplier<T> work) {
     // TODO(shicong): Implements doTransactionless.
     throw new UnsupportedOperationException();
   }

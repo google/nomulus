@@ -45,12 +45,12 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.transaction.TransactionManager.Work;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
 import google.registry.util.SystemClock;
 import java.util.ConcurrentModificationException;
+import java.util.function.Supplier;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Rule;
@@ -239,72 +239,88 @@ public class OfyTest {
 
   @Test
   public void testTransact_transientFailureException_retries() {
-    assertThat(tm().transact(new Work<Integer>() {
+    assertThat(
+            tm().transact(
+                    new Supplier<Integer>() {
 
-      int count = 0;
+                      int count = 0;
 
-      @Override
-      public Integer run() {
-        count++;
-        if (count == 3) {
-          return count;
-        }
-        throw new TransientFailureException("");
-      }})).isEqualTo(3);
+                      @Override
+                      public Integer get() {
+                        count++;
+                        if (count == 3) {
+                          return count;
+                        }
+                        throw new TransientFailureException("");
+                      }
+                    }))
+        .isEqualTo(3);
   }
 
   @Test
   public void testTransact_datastoreTimeoutException_noManifest_retries() {
-    assertThat(tm().transact(new Work<Integer>() {
+    assertThat(
+            tm().transact(
+                    new Supplier<Integer>() {
 
-      int count = 0;
+                      int count = 0;
 
-      @Override
-      public Integer run() {
-        // We don't write anything in this transaction, so there is no commit log manifest.
-        // Therefore it's always safe to retry since nothing got written.
-        count++;
-        if (count == 3) {
-          return count;
-        }
-        throw new DatastoreTimeoutException("");
-      }})).isEqualTo(3);
+                      @Override
+                      public Integer get() {
+                        // We don't write anything in this transaction, so there is no commit log
+                        // manifest.
+                        // Therefore it's always safe to retry since nothing got written.
+                        count++;
+                        if (count == 3) {
+                          return count;
+                        }
+                        throw new DatastoreTimeoutException("");
+                      }
+                    }))
+        .isEqualTo(3);
   }
 
   @Test
   public void testTransact_datastoreTimeoutException_manifestNotWrittenToDatastore_retries() {
-    assertThat(tm().transact(new Work<Integer>() {
+    assertThat(
+            tm().transact(
+                    new Supplier<Integer>() {
 
-      int count = 0;
+                      int count = 0;
 
-      @Override
-      public Integer run() {
-        // There will be something in the manifest now, but it won't be committed if we throw.
-        ofy().save().entity(someObject);
-        count++;
-        if (count == 3) {
-          return count;
-        }
-        throw new DatastoreTimeoutException("");
-      }})).isEqualTo(3);
+                      @Override
+                      public Integer get() {
+                        // There will be something in the manifest now, but it won't be committed if
+                        // we throw.
+                        ofy().save().entity(someObject);
+                        count++;
+                        if (count == 3) {
+                          return count;
+                        }
+                        throw new DatastoreTimeoutException("");
+                      }
+                    }))
+        .isEqualTo(3);
   }
 
   @Test
   public void testTransact_datastoreTimeoutException_manifestWrittenToDatastore_returnsSuccess() {
     // A work unit that throws if it is ever retried.
-    Work work = new Work<Void>() {
-      boolean firstCallToVrun = true;
+    Supplier work =
+        new Supplier<Void>() {
+          boolean firstCallToVrun = true;
 
-      @Override
-      public Void run() {
-        if (firstCallToVrun) {
-          firstCallToVrun = false;
-          ofy().save().entity(someObject);
-          return null;
-        }
-        fail("Shouldn't have retried.");
-        return null;
-      }};
+          @Override
+          public Void get() {
+            if (firstCallToVrun) {
+              firstCallToVrun = false;
+              ofy().save().entity(someObject);
+              return null;
+            }
+            fail("Shouldn't have retried.");
+            return null;
+          }
+        };
     // A commit logged work that throws on the first attempt to get its result.
     CommitLoggedWork<Void> commitLoggedWork = new CommitLoggedWork<Void>(work, new SystemClock()) {
       boolean firstCallToGetResult = true;
@@ -323,18 +339,22 @@ public class OfyTest {
   }
 
   void doReadOnlyRetryTest(final RuntimeException e) {
-    assertThat(tm().transactNewReadOnly(new Work<Integer>() {
+    assertThat(
+            tm().transactNewReadOnly(
+                    new Supplier<Integer>() {
 
-      int count = 0;
+                      int count = 0;
 
-      @Override
-      public Integer run() {
-        count++;
-        if (count == 3) {
-          return count;
-        }
-        throw e;
-      }})).isEqualTo(3);
+                      @Override
+                      public Integer get() {
+                        count++;
+                        if (count == 3) {
+                          return count;
+                        }
+                        throw new TransientFailureException("");
+                      }
+                    }))
+        .isEqualTo(3);
   }
 
   @Test

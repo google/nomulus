@@ -65,7 +65,7 @@ import org.joda.time.Duration;
 @Action(
     service = Action.Service.BACKEND,
     path = "/_dr/task/deleteOldCommitLogs",
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public final class DeleteOldCommitLogsAction implements Runnable {
 
   private static final int NUM_MAP_SHARDS = 20;

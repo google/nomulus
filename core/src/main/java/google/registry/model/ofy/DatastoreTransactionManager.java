@@ -17,6 +17,7 @@ package google.registry.model.ofy;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 
 import google.registry.model.transaction.TransactionManager;
+import java.util.function.Supplier;
 import org.joda.time.DateTime;
 
 /** Datastore implementation of {@link TransactionManager}. */
@@ -44,7 +45,7 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
-  public <T> T transact(Work<T> work) {
+  public <T> T transact(Supplier<T> work) {
     return getOfy().transact(work);
   }
 
@@ -54,7 +55,7 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
-  public <T> T transactNew(Work<T> work) {
+  public <T> T transactNew(Supplier<T> work) {
     return getOfy().transactNew(work);
   }
 
@@ -64,7 +65,7 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
-  public <R> R transactNewReadOnly(Work<R> work) {
+  public <R> R transactNewReadOnly(Supplier<R> work) {
     return getOfy().transactNewReadOnly(work);
   }
 
@@ -74,7 +75,7 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
-  public <R> R doTransactionless(Work<R> work) {
+  public <R> R doTransactionless(Supplier<R> work) {
     return getOfy().doTransactionless(work);
   }
 

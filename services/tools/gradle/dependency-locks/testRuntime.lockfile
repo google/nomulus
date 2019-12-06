@@ -218,7 +218,6 @@ org.jetbrains:annotations:17.0.0
 org.joda:joda-money:1.0.1
 org.json:json:20160810
 org.jvnet.staxex:stax-ex:1.8
-org.mockito:mockito-core:1.9.5
 org.mortbay.jetty:jetty-util:6.1.26
 org.mortbay.jetty:jetty:6.1.26
 org.objenesis:objenesis:1.2

@@ -13,8 +13,8 @@ PATH                              CLASS                         METHODS  OK AUTH
 /_dr/epptool                      EppToolAction                 POST     n  INTERNAL,API APP ADMIN
 /_dr/loadtest                     LoadTestAction                POST     y  INTERNAL,API APP ADMIN
 /_dr/task/generateZoneFiles       GenerateZoneFilesAction       POST     n  INTERNAL,API APP ADMIN
-/_dr/task/killAllCommitLogs       KillAllCommitLogsAction       POST     n  INTERNAL     APP IGNORED
-/_dr/task/killAllEppResources     KillAllEppResourcesAction     POST     n  INTERNAL     APP IGNORED
+/_dr/task/killAllCommitLogs       KillAllCommitLogsAction       POST     n  INTERNAL,API APP ADMIN
+/_dr/task/killAllEppResources     KillAllEppResourcesAction     POST     n  INTERNAL,API APP ADMIN
 /_dr/task/refreshDnsForAllDomains RefreshDnsForAllDomainsAction GET      n  INTERNAL,API APP ADMIN
 /_dr/task/resaveAllHistoryEntries ResaveAllHistoryEntriesAction GET      n  INTERNAL,API APP ADMIN
 /_dr/task/restoreCommitLogs       RestoreCommitLogsAction       POST     y  INTERNAL,API APP ADMIN

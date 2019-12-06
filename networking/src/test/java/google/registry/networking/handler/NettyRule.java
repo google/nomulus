@@ -61,7 +61,9 @@ public final class NettyRule extends ExternalResource {
   // Handler attached to client's channel to record the response received.
   private DumpHandler dumpHandler;
 
-  private Channel channel;
+  private Channel clientChannel;
+
+  private Channel serverChannel;
 
   public EventLoopGroup getEventLoopGroup() {
     return eventLoopGroup;
@@ -79,6 +81,7 @@ public final class NettyRule extends ExternalResource {
             ch.pipeline().addLast(handlers);
             // Add the "echoHandler" last to log the incoming message and send it back
             ch.pipeline().addLast(echoHandler);
+            serverChannel = ch;
           }
         };
     ServerBootstrap sb =
@@ -109,11 +112,11 @@ public final class NettyRule extends ExternalResource {
             .group(eventLoopGroup)
             .channel(LocalChannel.class)
             .handler(clientInitializer);
-    channel = b.connect(localAddress).syncUninterruptibly().channel();
+    clientChannel = b.connect(localAddress).syncUninterruptibly().channel();
   }
 
   void checkReady() {
-    checkState(channel != null, "Must call setUpClient to finish NettyRule setup");
+    checkState(clientChannel != null, "Must call setUpClient to finish NettyRule setup");
   }
 
   /**
@@ -125,16 +128,21 @@ public final class NettyRule extends ExternalResource {
    */
   void assertThatMessagesWork() throws Exception {
     checkReady();
-    assertThat(channel.isActive()).isTrue();
+    assertThat(clientChannel.isActive()).isTrue();
 
-    writeToChannelAndFlush(channel, "Hello, world!");
+    writeToChannelAndFlush(clientChannel, "Hello, world!");
     assertThat(echoHandler.getRequestFuture().get()).isEqualTo("Hello, world!");
     assertThat(dumpHandler.getResponseFuture().get()).isEqualTo("Hello, world!");
   }
 
-  Channel getChannel() {
+  Channel getClientChannel() {
     checkReady();
-    return channel;
+    return clientChannel;
+  }
+
+  Channel getServerChannel() {
+    checkReady();
+    return serverChannel;
   }
 
   ThrowableSubject assertThatServerRootCause() {

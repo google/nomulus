@@ -134,6 +134,7 @@ public final class WebWhoisProtocolsModule {
       SslProvider sslProvider,
       Supplier<PrivateKey> privateKeySupplier,
       Supplier<ImmutableList<X509Certificate>> certificatesSupplier) {
-    return new SslServerInitializer<>(false, sslProvider, privateKeySupplier, certificatesSupplier);
+    return new SslServerInitializer<>(
+        false, false, sslProvider, privateKeySupplier, certificatesSupplier);
   }
 }

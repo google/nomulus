@@ -195,7 +195,7 @@ import org.joda.time.Duration;
     service = Action.Service.BACKEND,
     path = RdeStagingAction.PATH,
     method = {GET, POST},
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public final class RdeStagingAction implements Runnable {
 
   public static final String PATH = "/_dr/task/rdeStaging";

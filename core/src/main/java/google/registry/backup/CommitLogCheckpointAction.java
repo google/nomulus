@@ -47,7 +47,7 @@ import org.joda.time.DateTime;
     path = "/_dr/cron/commitLogCheckpoint",
     method = Action.Method.GET,
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public final class CommitLogCheckpointAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

@@ -80,7 +80,7 @@ import org.joda.time.Duration;
     service = Action.Service.BACKEND,
     path = "/_dr/cron/readDnsQueue",
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public final class ReadDnsQueueAction implements Runnable {
 
   private static final String PARAM_JITTER_SECONDS = "jitterSeconds";

@@ -38,7 +38,6 @@ import com.googlecode.objectify.cmd.Saver;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.VirtualEntity;
 import google.registry.model.ofy.ReadOnlyWork.KillTransactionException;
-import google.registry.model.transaction.TransactionManager.Work;
 import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
 import google.registry.util.Sleeper;
@@ -46,6 +45,7 @@ import google.registry.util.SystemClock;
 import google.registry.util.SystemSleeper;
 import java.lang.annotation.Annotation;
 import java.util.Objects;
+import java.util.function.Supplier;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -194,9 +194,9 @@ public class Ofy {
   }
 
   /** Execute a transaction. */
-  <R> R transact(Work<R> work) {
+  <R> R transact(Supplier<R> work) {
     // If we are already in a transaction, don't wrap in a CommitLoggedWork.
-    return inTransaction() ? work.run() : transactNew(work);
+    return inTransaction() ? work.get() : transactNew(work);
   }
 
   /**
@@ -214,7 +214,7 @@ public class Ofy {
   }
 
   /** Pause the current transaction (if any) and complete this one before returning to it. */
-  <R> R transactNew(Work<R> work) {
+  <R> R transactNew(Supplier<R> work) {
     // Wrap the Work in a CommitLoggedWork so that we can give transactions a frozen view of time
     // and maintain commit logs for them.
     return transactCommitLoggedWork(new CommitLoggedWork<>(work, getClock()));
@@ -298,7 +298,7 @@ public class Ofy {
   }
 
   /** A read-only transaction is useful to get strongly consistent reads at a shared timestamp. */
-  <R> R transactNewReadOnly(Work<R> work) {
+  <R> R transactNewReadOnly(Supplier<R> work) {
     ReadOnlyWork<R> readOnlyWork = new ReadOnlyWork<>(work, getClock());
     try {
       ofy().transactNew(() -> {
@@ -324,11 +324,11 @@ public class Ofy {
   }
 
   /** Execute some work in a transactionless context. */
-  <R> R doTransactionless(Work<R> work) {
+  <R> R doTransactionless(Supplier<R> work) {
     try {
       com.googlecode.objectify.ObjectifyService.push(
           com.googlecode.objectify.ObjectifyService.ofy().transactionless());
-      return work.run();
+      return work.get();
     } finally {
       com.googlecode.objectify.ObjectifyService.pop();
     }
@@ -342,11 +342,11 @@ public class Ofy {
    * Note that unlike a transaction's fresh session cache, the contents of this cache will be
    * discarded once the work completes, rather than being propagated into the enclosing session.
    */
-  public <R> R doWithFreshSessionCache(Work<R> work) {
+  public <R> R doWithFreshSessionCache(Supplier<R> work) {
     try {
       com.googlecode.objectify.ObjectifyService.push(
           com.googlecode.objectify.ObjectifyService.factory().begin());
-      return work.run();
+      return work.get();
     } finally {
       com.googlecode.objectify.ObjectifyService.pop();
     }

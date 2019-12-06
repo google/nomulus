@@ -63,7 +63,7 @@ import org.joda.time.DateTime;
     path = ExportCommitLogDiffAction.PATH,
     method = Action.Method.POST,
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public final class ExportCommitLogDiffAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.networking.handler.SslInitializerTestUtils.getKeyPair;
 import static google.registry.networking.handler.SslInitializerTestUtils.setUpSslChannel;
 import static google.registry.networking.handler.SslInitializerTestUtils.signKeyPair;
+import static google.registry.networking.handler.SslInitializerTestUtils.verifySslExcpetion;
 
 import com.google.common.collect.ImmutableList;
 import io.netty.channel.Channel;
@@ -39,7 +40,12 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
 import java.util.function.Function;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
@@ -159,7 +165,7 @@ public class SslClientInitializerTest {
     // exceptions.
     nettyRule.assertThatClientRootCause().isInstanceOf(CertPathBuilderException.class);
     nettyRule.assertThatServerRootCause().isInstanceOf(SSLException.class);
-    assertThat(nettyRule.getChannel().isActive()).isFalse();
+    assertThat(nettyRule.getClientChannel().isActive()).isFalse();
   }
 
   @Test
@@ -184,11 +190,79 @@ public class SslClientInitializerTest {
             sslProvider, hostProvider, portProvider, ImmutableList.of(ssc.cert()), null, null);
     nettyRule.setUpClient(localAddress, sslClientInitializer);
 
-    setUpSslChannel(nettyRule.getChannel(), cert);
+    setUpSslChannel(nettyRule.getClientChannel(), cert);
     nettyRule.assertThatMessagesWork();
 
     // Verify that the SNI extension is sent during handshake.
     assertThat(sniHostReceived).isEqualTo(SSL_HOST);
+  }
+
+  @Test
+  public void testFailure_customTrustManager_serverCertExpired() throws Exception {
+    LocalAddress localAddress =
+        new LocalAddress("CUSTOM_TRUST_MANAGER_SERVE_CERT_EXPIRED_" + sslProvider);
+
+    // Generate a new key pair.
+    KeyPair keyPair = getKeyPair();
+
+    // Generate a self signed certificate, and use it to sign the key pair.
+    SelfSignedCertificate ssc = new SelfSignedCertificate();
+    X509Certificate cert =
+        signKeyPair(
+            ssc,
+            keyPair,
+            SSL_HOST,
+            Date.from(Instant.now().minus(Duration.ofDays(2))),
+            Date.from(Instant.now().minus(Duration.ofDays(1))));
+
+    // Set up the server to use the signed cert and private key to perform handshake;
+    PrivateKey privateKey = keyPair.getPrivate();
+    nettyRule.setUpServer(localAddress, getServerHandler(false, privateKey, cert));
+
+    // Set up the client to trust the self signed cert used to sign the cert that server provides.
+    SslClientInitializer<LocalChannel> sslClientInitializer =
+        new SslClientInitializer<>(
+            sslProvider, hostProvider, portProvider, ImmutableList.of(ssc.cert()), null, null);
+    nettyRule.setUpClient(localAddress, sslClientInitializer);
+
+    verifySslExcpetion(
+        nettyRule.getClientChannel(),
+        channel -> channel.pipeline().get(SslHandler.class).handshakeFuture().get(),
+        CertificateExpiredException.class);
+  }
+
+  @Test
+  public void testFailure_customTrustManager_serverCertNotYetValid() throws Exception {
+    LocalAddress localAddress =
+        new LocalAddress("CUSTOM_TRUST_MANAGER_SERVE_CERT_NOT_YET_VALID_" + sslProvider);
+
+    // Generate a new key pair.
+    KeyPair keyPair = getKeyPair();
+
+    // Generate a self signed certificate, and use it to sign the key pair.
+    SelfSignedCertificate ssc = new SelfSignedCertificate();
+    X509Certificate cert =
+        signKeyPair(
+            ssc,
+            keyPair,
+            SSL_HOST,
+            Date.from(Instant.now().plus(Duration.ofDays(1))),
+            Date.from(Instant.now().plus(Duration.ofDays(2))));
+
+    // Set up the server to use the signed cert and private key to perform handshake;
+    PrivateKey privateKey = keyPair.getPrivate();
+    nettyRule.setUpServer(localAddress, getServerHandler(false, privateKey, cert));
+
+    // Set up the client to trust the self signed cert used to sign the cert that server provides.
+    SslClientInitializer<LocalChannel> sslClientInitializer =
+        new SslClientInitializer<>(
+            sslProvider, hostProvider, portProvider, ImmutableList.of(ssc.cert()), null, null);
+    nettyRule.setUpClient(localAddress, sslClientInitializer);
+
+    verifySslExcpetion(
+        nettyRule.getClientChannel(),
+        channel -> channel.pipeline().get(SslHandler.class).handshakeFuture().get(),
+        CertificateNotYetValidException.class);
   }
 
   @Test
@@ -215,7 +289,7 @@ public class SslClientInitializerTest {
             () -> ImmutableList.of(clientSsc.cert()));
     nettyRule.setUpClient(localAddress, sslClientInitializer);
 
-    SSLSession sslSession = setUpSslChannel(nettyRule.getChannel(), serverSsc.cert());
+    SSLSession sslSession = setUpSslChannel(nettyRule.getClientChannel(), serverSsc.cert());
     nettyRule.assertThatMessagesWork();
 
     // Verify that the SNI extension is sent during handshake.
@@ -255,6 +329,6 @@ public class SslClientInitializerTest {
     nettyRule.assertThatClientRootCause().isInstanceOf(CertificateException.class);
     nettyRule.assertThatClientRootCause().hasMessageThat().contains(SSL_HOST);
     nettyRule.assertThatServerRootCause().isInstanceOf(SSLException.class);
-    assertThat(nettyRule.getChannel().isActive()).isFalse();
+    assertThat(nettyRule.getClientChannel().isActive()).isFalse();
   }
 }
