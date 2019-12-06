@@ -85,6 +85,7 @@ public class JpaTransactionManagerRule extends ExternalResource {
   private static final String POSTGRES_DB_NAME = "postgres";
 
   // Name of the optional property that specifies the root path of the golden schema.
+  // TODO(weiminyu): revert this. The :integration project offers a better solution.
   @VisibleForTesting
   static final String GOLDEN_SCHEMA_RESOURCE_ROOT_PROP = "sql_schema_resource_root";
 
