@@ -65,8 +65,9 @@ steps:
 # Build and package the deployment files for production.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args: ['release/build_nomulus_for_env.sh', 'production', 'output']
-# Tentatively build Cloud SQL schema jar here, before schema release process
-# is finalized.
+# Tentatively build and publish Cloud SQL schema jar here, before schema release
+# process is finalized. Also publish nomulus:core jars that are needed for
+# server/schema compatibility tests.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
   args:
@@ -74,9 +75,20 @@ steps:
   - |
     set -e
     ./gradlew \
-      :db:schemaJar \
+      :db:publish \
       -PmavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven \
-      -PpluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins
+      -PpluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins \
+      -Ppublish_repo=gcs://${PROJECT_ID}-deployed-tags/maven \
+      -Pschema_version=${TAG_NAME}
+    ./gradlew \
+      :core:publish \
+      -PmavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven \
+      -PpluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins \
+      -Ppublish_repo=gcs://${PROJECT_ID}-deployed-tags/maven \
+      -Pnomulus_version=${TAG_NAME}
+    # Upload schema jar for use by schema deployment.
+    # TODO(weiminyu): consider using the jar in maven repo during deployment and
+    # stop the  upload here.
     cp db/build/libs/schema.jar output/
 # The tarballs and jars to upload to GCS.
 artifacts:

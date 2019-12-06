@@ -221,9 +221,18 @@ subprojects {
   }
 
   afterEvaluate {
-    if (rootProject.enableDependencyLocking.toBoolean()) {
-      // Lock application dependencies except for the gradle-license-report
-      // plugin. See dependency_lic.gradle for the reason why.
+    if (rootProject.enableDependencyLocking.toBoolean()
+        && project.name != 'integration') {
+      // The ':integration' project runs server/schema integration tests using
+      // dynamically specified jars with no transitive dependency. Therefore
+      // dependency-locking does not make sense. Furthermore, during
+      // evaluation it resolves the 'testRuntime' configuration, making it
+      // immutable. Locking activation would trigger an invalid operation
+      // exception.
+      //
+      // For all other projects, due to problem with the gradle-license-report
+      // plugin, the dependencyLicenseReport configuration must opt out of
+      // dependency-locking. See dependency_lic.gradle for the reason why.
       //
       // To selectively activate dependency locking without hardcoding them
       // in the 'configurations' block, the following code must run after
