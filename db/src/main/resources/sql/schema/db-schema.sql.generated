@@ -124,8 +124,8 @@
 
     create table "PremiumEntry" (
        revision_id int8 not null,
-        price numeric(19, 2) not null,
         domain_label text not null,
+        price numeric(19, 2) not null,
         primary key (revision_id, domain_label)
     );
 

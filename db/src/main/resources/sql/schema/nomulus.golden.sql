@@ -67,8 +67,8 @@ ALTER SEQUENCE public."ClaimsList_revision_id_seq" OWNED BY public."ClaimsList".
 
 CREATE TABLE public."PremiumEntry" (
     revision_id bigint NOT NULL,
-    price numeric(19,2) NOT NULL,
-    domain_label text NOT NULL
+    domain_label text NOT NULL,
+    price numeric(19,2) DEFAULT 0 NOT NULL
 );
 
 
@@ -81,7 +81,7 @@ CREATE TABLE public."PremiumList" (
     creation_timestamp timestamp with time zone NOT NULL,
     name text NOT NULL,
     bloom_filter bytea NOT NULL,
-    currency text DEFAULT 'USD'::text NOT NULL
+    currency text NOT NULL
 );
 
 
@@ -331,3 +331,4 @@ ALTER TABLE ONLY public."PremiumEntry"
 --
 -- PostgreSQL database dump complete
 --
+
