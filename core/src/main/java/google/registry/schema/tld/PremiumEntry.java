@@ -32,10 +32,10 @@ public class PremiumEntry implements Serializable {
   @Column(nullable = false)
   Long revisionId;
 
+  @Column(nullable = false)
+  BigDecimal price;
+
   @Id
   @Column(nullable = false)
   String domainLabel;
-
-  @Column(nullable = false)
-  BigDecimal price;
 }
