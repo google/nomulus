@@ -73,7 +73,10 @@ public abstract class CreateOrUpdateReservedListCommand extends MutatingCommand 
 
   @Override
   protected String execute() throws Exception {
-    logger.atInfo().log(super.execute());
+    // Save the list to Datastore and output its response.
+    String output = super.execute();
+    logger.atInfo().log(output);
+
     String cloudSqlMessage;
     if (alsoCloudSql) {
       cloudSqlMessage =
