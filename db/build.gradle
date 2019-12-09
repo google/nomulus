@@ -73,12 +73,12 @@ ext {
   getCloudSqlCredential = { env, role ->
     def command =
         """gsutil cp \
-           gs://${rootProject.devProject}-deploy/cloudsql-credentials/${env}/${role}_credential.enc - | \
+           gs://${devProject}-deploy/cloudsql-credentials/${env}/${role}_credential.enc - | \
            base64 -d | \
            gcloud kms decrypt --location global --keyring nomulus-tool-keyring \
            --key nomulus-tool-key --plaintext-file=- \
            --ciphertext-file=- \
-           --project=${rootProject.devProject}"""
+           --project=${devProject}"""
 
     return execInBash(command, '/tmp')
   }
@@ -157,6 +157,7 @@ dependencies {
   testCompile project(':third_party')
 }
 
+flywayInfo.dependsOn('buildNeeded')
 flywayValidate.dependsOn('buildNeeded')
 
 if (ext.isCloudSql()) {

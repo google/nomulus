@@ -20,7 +20,3 @@ rootProject.ext.projects = ['production': 'your-production-project',
                             'sandbox'   : 'your-sandbox-project',
                             'alpha'     : 'your-alpha-project',
                             'crash'     : 'your-crash-project']
-
-// The project to host your development/deployment infrastructure. It hosts
-// things like release artifacts, CI/CD system, etc.
-rootProject.ext.devProject = 'your-dev-project'

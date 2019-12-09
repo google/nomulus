@@ -91,13 +91,16 @@ directory as working directory, run the following shell snippets:
 SCHEMA_TAG=
 # Recognized environments are alpha, crash, sandbox and production
 SQL_ENV=
+# The dev project that hosts release/deployment infrastructure
+DEV_PROJECT=
 # Deploy on cloud build. The --project is optional if domain-registry-dev
 # is already your default project.
 gcloud builds submit --config=release/cloudbuild-schema-deploy.yaml \
     --substitutions=TAG_NAME=${SCHEMA_TAG},_ENV=${SQL_ENV} \
     --project domain-registry-dev
 # Verify by checking Flyway Schema History:
-./gradlew :db:flywayInfo -PdbServer=${SQL_ENV}
+./gradlew :db:flywayInfo -PdbServer=${SQL_ENV} \
+    -PdevProject=${DEV_PROJECT}
 ```
 
 #### Glass Breaking
@@ -135,6 +138,7 @@ test instance. E.g.,
 
 ```shell
 # Deploy to a local instance at standard port as the super user.
+# There is no need to define devProject
 gradlew :db:flywayMigrate -PdbServer=192.168.9.2 -PdbPassword=domain-registry
 
 # Full specification of all parameters
