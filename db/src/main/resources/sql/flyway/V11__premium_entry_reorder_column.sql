@@ -12,14 +12,5 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
--- Drop and re-add the price column so that it's correctly at the end of the
--- table as expected by JPA's automatic alphabetical ordering of the
--- PremiumEntry fields. Since we don't have real production data we care about
--- here just yet, it's OK to lose this data.
-alter table "PremiumEntry" drop column if exists price;
-
--- TODO(mcilwain): Remove this default
-alter table "PremiumEntry" add column price numeric(19, 2) not null default 0;
-
 -- Remove default set in V9 that we no longer need.
 alter table "PremiumList" alter column currency drop default;

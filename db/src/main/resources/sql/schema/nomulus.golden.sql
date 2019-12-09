@@ -67,8 +67,8 @@ ALTER SEQUENCE public."ClaimsList_revision_id_seq" OWNED BY public."ClaimsList".
 
 CREATE TABLE public."PremiumEntry" (
     revision_id bigint NOT NULL,
-    domain_label text NOT NULL,
-    price numeric(19,2) DEFAULT 0 NOT NULL
+    price numeric(19,2) NOT NULL,
+    domain_label text NOT NULL
 );
 
 
