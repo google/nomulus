@@ -17,3 +17,10 @@ CREATE TABLE "RegistryLock_dependentRoids" (
     dependent_roid text NOT NULL,
     PRIMARY KEY (revision_id, dependent_roid)
 );
+
+ALTER TABLE IF EXISTS "RegistryLock_dependentRoids"
+    ADD CONSTRAINT FKpx6ekkox5r1f72wd5axt1716d
+    FOREIGN KEY (revision_id)
+    REFERENCES "RegistryLock";
+
+CREATE INDEX IDX7ktpb3kxgwbq0jnwfg9rca9js on "RegistryLock_dependentRoids" (dependent_roid);

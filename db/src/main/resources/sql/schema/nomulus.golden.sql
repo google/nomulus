@@ -295,6 +295,13 @@ ALTER TABLE ONLY public."RegistryLock"
 
 
 --
+-- Name: idx7ktpb3kxgwbq0jnwfg9rca9js; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx7ktpb3kxgwbq0jnwfg9rca9js ON public."RegistryLock_dependentRoids" USING btree (dependent_roid);
+
+
+--
 -- Name: idx_registry_lock_registrar_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -344,6 +351,14 @@ ALTER TABLE ONLY public."ReservedEntry"
 
 ALTER TABLE ONLY public."PremiumEntry"
     ADD CONSTRAINT fko0gw90lpo1tuee56l0nb6y6g5 FOREIGN KEY (revision_id) REFERENCES public."PremiumList"(revision_id);
+
+
+--
+-- Name: RegistryLock_dependentRoids fkpx6ekkox5r1f72wd5axt1716d; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RegistryLock_dependentRoids"
+    ADD CONSTRAINT fkpx6ekkox5r1f72wd5axt1716d FOREIGN KEY (revision_id) REFERENCES public."RegistryLock"(revision_id);
 
 
 --

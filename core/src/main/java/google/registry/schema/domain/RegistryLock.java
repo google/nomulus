@@ -140,7 +140,8 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   @ElementCollection(fetch = FetchType.EAGER)
   @CollectionTable(
       name = "RegistryLock_dependentRoids",
-      joinColumns = @JoinColumn(name = "revisionId", referencedColumnName = "revisionId"))
+      joinColumns = @JoinColumn(name = "revisionId", referencedColumnName = "revisionId"),
+      indexes = @Index(columnList = "dependentRoid"))
   @Column(name = "dependentRoid", nullable = false)
   private Set<String> dependentRoids;
 

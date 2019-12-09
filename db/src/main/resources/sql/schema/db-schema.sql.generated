@@ -152,6 +152,12 @@
         primary key (revision_id)
     );
 
+    create table "RegistryLock_dependentRoids" (
+       revision_id int8 not null,
+        dependent_roid text not null,
+        primary key (revision_id, dependent_roid)
+    );
+
     create table "ReservedEntry" (
        revision_id int8 not null,
         comment text,
@@ -182,6 +188,7 @@ create index idx_registry_lock_registrar_id on "RegistryLock" (registrar_id);
 
     alter table if exists "RegistryLock" 
        add constraint idx_registry_lock_repo_id_revision_id unique (repo_id, revision_id);
+create index IDX7ktpb3kxgwbq0jnwfg9rca9js on "RegistryLock_dependentRoids" (dependent_roid);
 create index reservedlist_name_idx on "ReservedList" (name);
 
     alter table if exists "ClaimsEntry" 
@@ -238,6 +245,11 @@ create index reservedlist_name_idx on "ReservedList" (name);
        add constraint FKo0gw90lpo1tuee56l0nb6y6g5 
        foreign key (revision_id) 
        references "PremiumList";
+
+    alter table if exists "RegistryLock_dependentRoids" 
+       add constraint FKpx6ekkox5r1f72wd5axt1716d 
+       foreign key (revision_id) 
+       references "RegistryLock";
 
     alter table if exists "ReservedEntry" 
        add constraint FKgq03rk0bt1hb915dnyvd3vnfc 
