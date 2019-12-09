@@ -17,8 +17,8 @@ package google.registry.schema.cursor;
 import static com.google.appengine.api.search.checkers.Preconditions.checkNotNull;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
+import google.registry.model.common.Cursor.CursorType;
 import google.registry.schema.cursor.Cursor.CursorId;
-import google.registry.schema.cursor.Cursor.CursorType;
 import java.util.List;
 
 /** Data access object class for {@link Cursor}. */
@@ -33,13 +33,15 @@ public class CursorDao {
   }
 
   public static Cursor load(CursorType type, String scope) {
-    checkNotNull(scope, "The scope of the cursor to load cannot be null.");
+    checkNotNull(scope, "The scope of the cursor to load cannot be null");
+    checkNotNull(type, "The type of the cursor to load must be specified");
     return jpaTm()
         .transact(() -> jpaTm().getEntityManager().find(Cursor.class, new CursorId(type, scope)));
   }
 
   /** If no scope is given, use {@link Cursor.GLOBAL} as the scope. */
   public static Cursor load(CursorType type) {
+    checkNotNull(type, "The type of the cursor to load must be specified");
     return load(type, Cursor.GLOBAL);
   }
 
@@ -54,6 +56,7 @@ public class CursorDao {
   }
 
   public static List<Cursor> loadByType(CursorType type) {
+    checkNotNull(type, "The type of the cursors to load must be specified");
     return jpaTm()
         .transact(
             () ->

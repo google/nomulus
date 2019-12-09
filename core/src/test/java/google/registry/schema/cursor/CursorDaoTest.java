@@ -16,8 +16,8 @@ package google.registry.schema.cursor;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.transaction.JpaTransactionManagerRule;
-import google.registry.schema.cursor.Cursor.CursorType;
 import google.registry.testing.FakeClock;
 import java.util.List;
 import org.junit.Rule;

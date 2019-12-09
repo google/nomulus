@@ -14,8 +14,11 @@
 
 package google.registry.schema.cursor;
 
+import static com.google.appengine.api.search.checkers.Preconditions.checkNotNull;
+
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
+import google.registry.model.common.Cursor.CursorType;
 import google.registry.schema.cursor.Cursor.CursorId;
 import google.registry.util.DateTimeUtils;
 import java.io.Serializable;
@@ -36,19 +39,6 @@ import org.joda.time.DateTime;
 @Table
 @IdClass(CursorId.class)
 public class Cursor {
-
-  public enum CursorType {
-    BRDA,
-    RDE_REPORT,
-    RDE_STAGING,
-    RDE_UPLOAD,
-    RDE_UPLOAD_SFTP,
-    RECURRING_BILLING,
-    SYNC_REGISTRAR_SHEET,
-    ICANN_UPLOAD_TX,
-    ICANN_UPLOAD_ACTIVITY,
-    ICANN_UPLOAD_MANIFEST
-  }
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
@@ -75,12 +65,11 @@ public class Cursor {
   // Hibernate requires a default constructor.
   private Cursor() {}
 
-  /**
-   * Constructs a {@link Cursor} object. Since hibernate does not allow null values in a primary
-   * key, use {@link GLOBAL} for a null scope.
-   */
+  /** Constructs a {@link Cursor} object. */
   public static Cursor create(CursorType type, String scope, DateTime cursorTime) {
-    return new Cursor(type, (scope == null ? GLOBAL : scope), cursorTime);
+    checkNotNull(
+        scope, "Scope cannot be null. To create a global cursor, use the createGlobal method");
+    return new Cursor(type, scope, cursorTime);
   }
 
   /** Constructs a {@link Cursor} object with a {@link GLOBAL} scope. */
