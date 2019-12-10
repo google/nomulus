@@ -110,8 +110,8 @@ configurations {
 }
 
 artifacts {
-  schema schemaJar
   compileApi compileApiJar
+  schema schemaJar
 }
 
 publishing {

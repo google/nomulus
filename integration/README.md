@@ -21,7 +21,7 @@ environment. These tags will be made available to test runners.
 
 ## Usage
 
-The ':integration:sqlIntegrationTest' task is the test runners. It uses the
+The ':integration:sqlIntegrationTest' task is the test runner. It uses the
 following properties:
 
 *   nomulus_version: a Registry server release tag, or 'local' if the code in
@@ -31,15 +31,18 @@ following properties:
 *   publish_repo: the Maven repository where release jars may be found. This is
     required if neither of the above is 'local'.
 
-For example, the following code snippet checks if the current PR or local clone
-has schema changes, and if yes, tests the production server's version with the
-new schema.
+Given a program 'fetch_version_tag' that retrieves the currently deployed
+version tag of SQL schema or server binary in a particular environment (which as
+mentioned earlier are saved by the deployment process), the following code
+snippet checks if the current PR or local clone has schema changes, and if yes,
+tests the production server's version with the new schema.
 
 ```shell
 current_prod_schema=$(fetch_version_tag schema production)
 current_prod_server=$(fetch_version_tag server production)
-has_schema_change=$(has_schema_change_since_tag current_prod_schema)
-has_schema_change & ./gradlew :integration:sqlIntegrationTest \
+schema_changes=$(git diff ${current_prod_schema} --name-only \
+  ./db/src/main/resources/sql/flyway/ | wc -l)
+[[ schema_changes -gt  0 ]] && ./gradlew :integration:sqlIntegrationTest \
   -Ppublish_repo=${REPO} -Pschema_version=local \
   -Pnomulus_version=current_prod_server
 ```
@@ -77,10 +80,11 @@ the shell snippet shown earlier can be implemented as:
 ```shell
 current_prod_schema=$(fetch_version_tag schema production)
 current_prod_server=$(fetch_version_tag server production)
-has_schema_change=$(has_schema_change_since_tag current_prod_schema)
+schema_changes=$(git diff ${current_prod_schema} --name-only \
+  ./db/src/main/resources/sql/flyway/ | wc -l)
 
-if has_schema_change; then
-  current_branch=$(find_current_branch)
+if [[ schema_changes -gt  0 ]]; then
+  current_branch=$(git rev-parse --abbrev-ref HEAD)
   schema_folder=$(mktemp -d)
   ./gradlew :db:schemaJar && cp ./db/build/libs/schema.jar ${schema_folder}
   git checkout ${current_prod_server}
@@ -92,8 +96,11 @@ fi
 
 The drawbacks of this approach include:
 
-*   Sswitching branches back and forth is error-prone and risky, especially when
+*   Switching branches back and forth is error-prone and risky, especially when
     we run this as a gating test during release.
+*   Switching branches makes implicit assumptions on how the test platform would
+    check out the repository (e.g., whether we may be on a headless branch when
+    we switch).
 *   The generated jar is not saved, making it harder to troubleshoot.
 *   To use this locally during development, the Git tree must not have
     uncommitted changes.
