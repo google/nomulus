@@ -49,6 +49,48 @@ public class CreateOrUpdateReservedListCommandTest {
   }
 
   @Test
+  public void parseToReservationsByLabels_throwsExceptionForInvalidLabel() {
+    Throwable thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                parseToReservationsByLabels(
+                    ImmutableList.of("reserveddomain,FULLY_BLOCKED", "UPPER,FULLY_BLOCKED")));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Label 'UPPER' must be in puny-coded, lower-case form");
+  }
+
+  @Test
+  public void parseToReservationsByLabels_throwsExceptionForNonPunyCodedLabel() {
+    Throwable thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                parseToReservationsByLabels(
+                    ImmutableList.of("reserveddomain,FULLY_BLOCKED", "みんな,FULLY_BLOCKED")));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Label 'みんな' must be in puny-coded, lower-case form");
+  }
+
+  @Test
+  public void parseToReservationsByLabels_throwsExceptionForInvalidReservationType() {
+    Throwable thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                parseToReservationsByLabels(
+                    ImmutableList.of(
+                        "reserveddomain,FULLY_BLOCKED", "invalidtype,INVALID_RESERVATION_TYPE")));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "No enum constant"
+                + " google.registry.model.registry.label.ReservationType.INVALID_RESERVATION_TYPE");
+  }
+
+  @Test
   public void parseToReservationsByLabels_throwsExceptionForInvalidLines() {
     Throwable thrown =
         assertThrows(

@@ -15,6 +15,8 @@
 package google.registry.schema.tld;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
+import static google.registry.testing.JUnitBackports.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.registry.label.ReservationType;
@@ -49,5 +51,35 @@ public class ReservedListTest {
             "music",
             ReservedEntry.create(
                 ReservationType.RESERVED_FOR_ANCHOR_TENANT, "reserved for anchor tenant"));
+  }
+
+  @Test
+  public void create_throwsExceptionWhenLabelIsNotLowercase() {
+    Exception e =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                ReservedList.create(
+                    "UPPER.tld",
+                    true,
+                    ImmutableMap.of("UPPER", ReservedEntry.create(FULLY_BLOCKED, ""))));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("Label(s) [UPPER] must be in puny-coded, lower-case form");
+  }
+
+  @Test
+  public void create_labelMustBePunyCoded() {
+    Exception e =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                ReservedList.create(
+                    "lower.みんな",
+                    true,
+                    ImmutableMap.of("みんな", ReservedEntry.create(FULLY_BLOCKED, ""))));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("Label(s) [みんな] must be in puny-coded, lower-case form");
   }
 }

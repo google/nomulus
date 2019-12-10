@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.registry.label.BaseDomainLabelList.splitOnComment;
+import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.base.Splitter;
@@ -115,6 +116,10 @@ public abstract class CreateOrUpdateReservedListCommand extends MutatingCommand 
           "Could not parse line in reserved list: %s",
           originalLine);
       String label = parts.get(0);
+      checkArgument(
+          label.equals(canonicalizeDomainName(label)),
+          "Label '%s' must be in puny-coded, lower-case form",
+          label);
       ReservationType reservationType = ReservationType.valueOf(parts.get(1));
       ReservedEntry reservedEntry = ReservedEntry.create(reservationType, comment);
       // Check if the label was already processed for this list (which is an error), and if so,
