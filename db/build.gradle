@@ -71,6 +71,8 @@ ext {
   // production. The role parameter may be superuser. (More roles will be added
   // later).
   getCloudSqlCredential = { env, role ->
+    def devProject = project.hasProperty('devProject')
+        ? project.getProperty('devProject') : rootProject.devProject
     def command =
         """gsutil cp \
            gs://${devProject}-deploy/cloudsql-credentials/${env}/${role}_credential.enc - | \
