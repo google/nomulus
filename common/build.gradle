@@ -19,11 +19,20 @@ sourceSets {
       runtimeClasspath += main.output
     }
   }
+  test {
+    java {
+      compileClasspath += testing.output
+      runtimeClasspath += testing.output
+    }
+  }
 }
 
 configurations {
   testingCompile.extendsFrom compile
   testingRuntime.extendsFrom runtime
+
+  testCompile.extendsFrom testingCompile
+  testRuntime.extendsFrom testingRuntime
 
   // All testing util classes. Other projects may declare dependency as:
   // testCompile project(path: 'common', configuration: 'testing')
@@ -49,4 +58,9 @@ dependencies {
 
   testingCompile deps['com.google.flogger:flogger']
   testingRuntime deps['com.google.flogger:flogger-system-backend']
+  testingCompile deps['com.google.truth:truth']
+  testingCompile deps['io.github.java-diff-utils:java-diff-utils']
+
+  testCompile deps['junit:junit']
+  testCompile project(':third_party')
 }

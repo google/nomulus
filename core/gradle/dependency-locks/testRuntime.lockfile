@@ -141,6 +141,7 @@ commons-logging:commons-logging:1.2
 dnsjava:dnsjava:2.1.7
 io.dropwizard.metrics:metrics-core:3.1.2
 io.github.classgraph:classgraph:4.8.52
+io.github.java-diff-utils:java-diff-utils:4.0
 io.grpc:grpc-all:1.17.1
 io.grpc:grpc-alts:1.17.1
 io.grpc:grpc-auth:1.17.1
@@ -226,6 +227,7 @@ org.codehaus.jackson:jackson-mapper-asl:1.9.13
 org.codehaus.mojo:animal-sniffer-annotations:1.18
 org.dom4j:dom4j:2.1.1
 org.easymock:easymock:3.0
+org.eclipse.jgit:org.eclipse.jgit:4.4.1.201607150455-r
 org.flywaydb:flyway-core:5.2.4
 org.glassfish.jaxb:jaxb-runtime:2.3.1
 org.glassfish.jaxb:txw2:2.3.1

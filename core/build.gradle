@@ -194,6 +194,7 @@ dependencies {
   testCompile deps['com.thoughtworks.qdox:qdox']
   compile deps['dnsjava:dnsjava']
   testCompile deps['io.github.classgraph:classgraph']
+  testRuntime deps['io.github.java-diff-utils:java-diff-utils']
   testCompile deps['javax.annotation:javax.annotation-api']
   testCompile deps['javax.annotation:jsr250-api']
   compile deps['javax.inject:javax.inject']

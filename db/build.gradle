@@ -152,10 +152,11 @@ dependencies {
   testRuntime deps['com.google.flogger:flogger-system-backend']
   testCompile deps['com.google.guava:guava']
   testCompile deps['com.google.truth:truth']
-  testCompile deps['io.github.java-diff-utils:java-diff-utils']
+  testRuntime deps['io.github.java-diff-utils:java-diff-utils']
   testCompile deps['junit:junit']
   testCompile deps['org.testcontainers:postgresql']
   testCompile deps['org.testcontainers:testcontainers']
+  testCompile project(path: ':common', configuration: 'testing')
   testCompile project(':third_party')
 }
 
