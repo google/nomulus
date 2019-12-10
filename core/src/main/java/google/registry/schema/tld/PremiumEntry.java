@@ -38,4 +38,6 @@ public class PremiumEntry implements Serializable {
   @Id
   @Column(nullable = false)
   String domainLabel;
+
+  private PremiumEntry() {}
 }
