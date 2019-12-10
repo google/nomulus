@@ -31,7 +31,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-/** Unit tests for {@link google.registry.tools.GenerateSqlSchemaCommand}. */
+/** Unit tests for {@link GenerateSqlSchemaCommand}. */
 @RunWith(JUnit4.class)
 public class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSchemaCommand> {
 

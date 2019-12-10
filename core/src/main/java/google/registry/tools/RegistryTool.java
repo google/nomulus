@@ -60,7 +60,6 @@ public final class RegistryTool {
           .put("generate_dns_report", GenerateDnsReportCommand.class)
           .put("generate_escrow_deposit", GenerateEscrowDepositCommand.class)
           .put("generate_lordn", GenerateLordnCommand.class)
-          .put("generate_sql_schema", GenerateSqlSchemaCommand.class)
           .put("generate_zone_files", GenerateZoneFilesCommand.class)
           .put("get_allocation_token", GetAllocationTokenCommand.class)
           .put("get_claims_list", GetClaimsListCommand.class)
