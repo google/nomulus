@@ -26,8 +26,6 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -70,12 +68,6 @@ import org.joda.time.DateTime;
     })
 public final class RegistryLock extends ImmutableObject implements Buildable {
 
-  /** Describes the action taken by the user. */
-  public enum Action {
-    LOCK,
-    UNLOCK
-  }
-
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(nullable = false)
@@ -99,28 +91,27 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   /** The POC that performed the action, or null if it was a superuser. */
   private String registrarPocId;
 
-  /**
-   * Lock action is immutable and describes whether the action performed was a lock or an unlock.
-   */
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
-  private Action action;
-
-  /** Creation timestamp is when the lock/unlock is first requested. */
+  /** Creation timestamp is when the lock is first requested. */
   @Column(nullable = false)
   private CreateAutoTimestamp creationTimestamp = CreateAutoTimestamp.create(null);
 
+  /** Unlock creation timestamp is when the unlock is first requested. */
+  private CreateAutoTimestamp unlockCreationTimestamp = CreateAutoTimestamp.create(null);
+
   /**
-   * Completion timestamp is when the user has verified the lock/unlock, when this object de facto
-   * becomes immutable. If this field is null, it means that the lock has not been verified yet (and
-   * thus not been put into effect).
+   * Completion timestamp is when the user has verified the lock. If this field is null, it means
+   * that the lock has not been verified yet (and thus not been put into effect).
    */
   private ZonedDateTime completionTimestamp;
 
   /**
-   * The user must provide the random verification code in order to complete the lock and move the
-   * status from PENDING to COMPLETED.
+   * Unlock completion timestamp is when the user has verified the unlock of this lock. If this
+   * field is null, it means the unlock action has not been verified yet (and has not been put into
+   * effect).
    */
+  private ZonedDateTime unlockCompletionTimestamp;
+
+  /** The user must provide the random verification code in order to complete the lock. */
   @Column(nullable = false)
   private String verificationCode;
 
@@ -147,17 +138,24 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
     return registrarPocId;
   }
 
-  public Action getAction() {
-    return action;
-  }
-
   public DateTime getCreationTimestamp() {
     return creationTimestamp.getTimestamp();
+  }
+
+  public DateTime getUnlockCreationTimestamp() {
+    return unlockCreationTimestamp.getTimestamp();
   }
 
   /** Returns the completion timestamp, or empty if this lock has not been completed yet. */
   public Optional<DateTime> getCompletionTimestamp() {
     return Optional.ofNullable(completionTimestamp).map(DateTimeUtils::toJodaDateTime);
+  }
+
+  /**
+   * Returns the unlock completion timestamp, or empty if this unlock has not been completed yet.
+   */
+  public Optional<DateTime> getUnlockCompletionTimestamp() {
+    return Optional.ofNullable(unlockCompletionTimestamp).map(DateTimeUtils::toJodaDateTime);
   }
 
   public String getVerificationCode() {
@@ -176,8 +174,12 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
     this.completionTimestamp = toZonedDateTime(dateTime);
   }
 
-  public boolean isVerified() {
+  public boolean isLockVerified() {
     return completionTimestamp != null;
+  }
+
+  public boolean isUnlockVerified() {
+    return unlockCompletionTimestamp != null;
   }
 
   @Override
@@ -198,7 +200,6 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
       checkArgumentNotNull(getInstance().repoId, "Repo ID cannot be null");
       checkArgumentNotNull(getInstance().domainName, "Domain name cannot be null");
       checkArgumentNotNull(getInstance().registrarId, "Registrar ID cannot be null");
-      checkArgumentNotNull(getInstance().action, "Action cannot be null");
       checkArgumentNotNull(getInstance().verificationCode, "Verification codecannot be null");
       checkArgument(
           getInstance().registrarPocId != null || getInstance().isSuperuser,
@@ -226,18 +227,23 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
       return this;
     }
 
-    public Builder setAction(Action action) {
-      getInstance().action = action;
-      return this;
-    }
-
     public Builder setCreationTimestamp(CreateAutoTimestamp creationTimestamp) {
       getInstance().creationTimestamp = creationTimestamp;
       return this;
     }
 
-    public Builder setCompletionTimestamp(DateTime lockTimestamp) {
-      getInstance().completionTimestamp = toZonedDateTime(lockTimestamp);
+    public Builder setUnlockCreationTimestamp(CreateAutoTimestamp unlockCreationTimestamp) {
+      getInstance().unlockCreationTimestamp = unlockCreationTimestamp;
+      return this;
+    }
+
+    public Builder setCompletionTimestamp(DateTime completionTimestamp) {
+      getInstance().completionTimestamp = toZonedDateTime(completionTimestamp);
+      return this;
+    }
+
+    public Builder setUnlockCompletionTimestamp(DateTime unlockCompletionTimestamp) {
+      getInstance().unlockCompletionTimestamp = toZonedDateTime(unlockCompletionTimestamp);
       return this;
     }
 

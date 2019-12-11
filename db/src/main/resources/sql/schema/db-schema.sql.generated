@@ -148,7 +148,6 @@
 
     create table "RegistryLock" (
        revision_id  bigserial not null,
-        action text not null,
         completion_timestamp timestamptz,
         creation_timestamp timestamptz not null,
         domain_name text not null,
@@ -156,6 +155,8 @@
         registrar_id text not null,
         registrar_poc_id text,
         repo_id text not null,
+        unlock_completion_timestamp timestamptz,
+        unlock_creation_timestamp timestamptz,
         verification_code text not null,
         primary key (revision_id)
     );

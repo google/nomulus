@@ -37,7 +37,6 @@ import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.schema.domain.RegistryLock;
-import google.registry.schema.domain.RegistryLock.Action;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeResponse;
 import java.util.Map;
@@ -94,7 +93,6 @@ public final class RegistryLockGetActionTest {
             .setRepoId("repoId")
             .setDomainName("example.test")
             .setRegistrarId("TheRegistrar")
-            .setAction(Action.LOCK)
             .setVerificationCode(UUID.randomUUID().toString())
             .setRegistrarPocId("johndoe@theregistrar.com")
             .setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
@@ -105,7 +103,6 @@ public final class RegistryLockGetActionTest {
             .setRepoId("repoId")
             .setDomainName("adminexample.test")
             .setRegistrarId("TheRegistrar")
-            .setAction(Action.LOCK)
             .setVerificationCode(UUID.randomUUID().toString())
             .isSuperuser(true)
             .setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
@@ -115,7 +112,6 @@ public final class RegistryLockGetActionTest {
             .setRepoId("repoId")
             .setDomainName("incomplete.test")
             .setRegistrarId("TheRegistrar")
-            .setAction(Action.LOCK)
             .setVerificationCode(UUID.randomUUID().toString())
             .setRegistrarPocId("johndoe@theregistrar.com")
             .build();
