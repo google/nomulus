@@ -14,6 +14,10 @@
 
 package google.registry.schema.integration;
 
+import google.registry.backup.CommitLogCheckpointStrategyTest;
+import google.registry.batch.ExpandRecurringBillingEventsActionTest;
+import google.registry.export.sheet.SyncRegistrarsSheetTest;
+import google.registry.model.common.CursorTest;
 import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.model.tmch.ClaimsListDaoTest;
 import google.registry.model.transaction.JpaTransactionManagerImplTest;
@@ -25,6 +29,11 @@ import google.registry.persistence.DateTimeConverterTest;
 import google.registry.persistence.JodaMoneyConverterTest;
 import google.registry.persistence.UpdateAutoTimestampConverterTest;
 import google.registry.persistence.ZonedDateTimeConverterTest;
+import google.registry.rde.EscrowTaskRunnerTest;
+import google.registry.rde.PendingDepositCheckerTest;
+import google.registry.rde.RdeStagingActionTest;
+import google.registry.rde.RdeUploadActionTest;
+import google.registry.reporting.icann.IcannReportingUploadActionTest;
 import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
 import google.registry.ui.server.registrar.RegistryLockGetActionTest;
@@ -46,16 +55,25 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
   BloomFilterConverterTest.class,
   ClaimsListDaoTest.class,
+  CommitLogCheckpointStrategyTest.class,
   CreateAutoTimestampConverterTest.class,
   CurrencyUnitConverterTest.class,
   CursorDaoTest.class,
+  CursorTest.class,
   DateTimeConverterTest.class,
+  EscrowTaskRunnerTest.class,
+  ExpandRecurringBillingEventsActionTest.class,
+  IcannReportingUploadActionTest.class,
   JodaMoneyConverterTest.class,
   JpaTransactionManagerImplTest.class,
   JpaTransactionManagerRuleTest.class,
+  PendingDepositCheckerTest.class,
   PremiumListDaoTest.class,
+  RdeStagingActionTest.class,
+  RdeUploadActionTest.class,
   RegistryLockDaoTest.class,
   RegistryLockGetActionTest.class,
+  SyncRegistrarsSheetTest.class,
   UpdateAutoTimestampConverterTest.class,
   ZonedDateTimeConverterTest.class
 })

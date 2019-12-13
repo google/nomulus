@@ -30,7 +30,9 @@ import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
+import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.model.transaction.TransactionManager;
+import google.registry.schema.cursor.CursorDao;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
@@ -53,6 +55,10 @@ public class CommitLogCheckpointStrategyTest {
 
   @Rule
   public final InjectRule inject = new InjectRule();
+
+  @Rule
+  public final JpaTransactionManagerRule jpaTmRule =
+      new JpaTransactionManagerRule.Builder().build();
 
   final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
   final Ofy ofy = new Ofy(clock);
@@ -293,11 +299,10 @@ public class CommitLogCheckpointStrategyTest {
   private void writeCommitLogToBucket(final int bucketId) {
     fakeBucketIdSupplier.value = bucketId;
     tm.transact(
-        () -> {
-          Cursor cursor =
-              Cursor.create(RDE_REPORT, tm.getTransactionTime(), Registry.get("tld" + bucketId));
-          ofy().save().entity(cursor);
-        });
+        () ->
+            CursorDao.saveCursor(
+                Cursor.create(RDE_REPORT, tm.getTransactionTime(), Registry.get("tld" + bucketId)),
+                "tld" + bucketId));
     fakeBucketIdSupplier.value = null;
   }
 

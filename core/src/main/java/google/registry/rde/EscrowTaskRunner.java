@@ -15,7 +15,6 @@
 package google.registry.rde;
 
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.Cursor;
@@ -24,6 +23,7 @@ import google.registry.model.registry.Registry;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.lock.LockHandler;
+import google.registry.schema.cursor.CursorDao;
 import google.registry.util.Clock;
 import java.util.concurrent.Callable;
 import javax.inject.Inject;
@@ -99,7 +99,7 @@ class EscrowTaskRunner {
           task.runWithLock(nextRequiredRun);
           DateTime nextRun = nextRequiredRun.plus(interval);
           logger.atInfo().log("Rolling cursor forward to %s.", nextRun);
-          tm().transact(() -> ofy().save().entity(Cursor.create(cursorType, nextRun, registry)));
+          CursorDao.saveCursor(Cursor.create(cursorType, nextRun, registry), registry.getTldStr());
           return null;
         };
     String lockName = String.format("EscrowTaskRunner %s", task.getClass().getSimpleName());

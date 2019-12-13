@@ -19,7 +19,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.Cursor.CursorType.BRDA;
 import static google.registry.model.common.Cursor.CursorType.RDE_STAGING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.rde.RdeFixtures.makeContactResource;
 import static google.registry.rde.RdeFixtures.makeDomainBase;
 import static google.registry.rde.RdeFixtures.makeHostResource;
@@ -53,8 +52,10 @@ import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.host.HostResource;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
+import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.RequestParameters;
+import google.registry.schema.cursor.CursorDao;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.FakeLockHandler;
@@ -108,6 +109,10 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
 
   @Rule
   public final InjectRule inject = new InjectRule();
+
+  @Rule
+  public final JpaTransactionManagerRule jpaTmRule =
+      new JpaTransactionManagerRule.Builder().build();
 
   private final FakeClock clock = new FakeClock();
   private final FakeResponse response = new FakeResponse();
@@ -848,7 +853,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   private void setCursor(
       final Registry registry, final CursorType cursorType, final DateTime value) {
     clock.advanceOneMilli();
-    tm().transact(() -> ofy().save().entity(Cursor.create(cursorType, value, registry)).now());
+    CursorDao.saveCursor(Cursor.create(cursorType, value, registry), registry.getTldStr());
   }
 
   public static <T> T unmarshal(Class<T> clazz, byte[] xml) throws XmlException {
