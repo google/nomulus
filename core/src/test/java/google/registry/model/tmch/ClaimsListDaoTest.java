@@ -15,13 +15,11 @@
 package google.registry.model.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.JUnitBackports.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.schema.tmch.ClaimsList;
 import google.registry.testing.FakeClock;
-import javax.persistence.NoResultException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,7 +40,7 @@ public class ClaimsListDaoTest {
     ClaimsList claimsList =
         ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     ClaimsListDao.trySave(claimsList);
-    ClaimsList insertedClaimsList = ClaimsListDao.getCurrent();
+    ClaimsList insertedClaimsList = ClaimsListDao.getLatestRevision().get();
     assertClaimsListEquals(claimsList, insertedClaimsList);
     assertThat(insertedClaimsList.getCreationTimestamp())
         .isEqualTo(jpaTmRule.getTxnClock().nowUtc());
@@ -53,7 +51,7 @@ public class ClaimsListDaoTest {
     ClaimsList claimsList =
         ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     ClaimsListDao.trySave(claimsList);
-    ClaimsList insertedClaimsList = ClaimsListDao.getCurrent();
+    ClaimsList insertedClaimsList = ClaimsListDao.getLatestRevision().get();
     assertClaimsListEquals(claimsList, insertedClaimsList);
     // Save ClaimsList with existing revisionId should fail because revisionId is the primary key.
     ClaimsListDao.trySave(insertedClaimsList);
@@ -63,14 +61,14 @@ public class ClaimsListDaoTest {
   public void trySave_claimsListWithNoEntries() {
     ClaimsList claimsList = ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of());
     ClaimsListDao.trySave(claimsList);
-    ClaimsList insertedClaimsList = ClaimsListDao.getCurrent();
+    ClaimsList insertedClaimsList = ClaimsListDao.getLatestRevision().get();
     assertClaimsListEquals(claimsList, insertedClaimsList);
     assertThat(insertedClaimsList.getLabelsToKeys()).isEmpty();
   }
 
   @Test
-  public void getCurrent_throwsNoResultExceptionIfTableIsEmpty() {
-    assertThrows(NoResultException.class, ClaimsListDao::getCurrent);
+  public void getCurrent_returnsEmptyListIfTableIsEmpty() {
+    assertThat(ClaimsListDao.getLatestRevision().isPresent()).isFalse();
   }
 
   @Test
@@ -81,7 +79,7 @@ public class ClaimsListDaoTest {
         ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label3", "key3", "label4", "key4"));
     ClaimsListDao.trySave(oldClaimsList);
     ClaimsListDao.trySave(newClaimsList);
-    assertClaimsListEquals(newClaimsList, ClaimsListDao.getCurrent());
+    assertClaimsListEquals(newClaimsList, ClaimsListDao.getLatestRevision().get());
   }
 
   private void assertClaimsListEquals(ClaimsList left, ClaimsList right) {

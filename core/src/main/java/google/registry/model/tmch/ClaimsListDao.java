@@ -18,6 +18,7 @@ import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.schema.tmch.ClaimsList;
+import java.util.Optional;
 import javax.persistence.EntityManager;
 
 /** Data access object for {@link ClaimsList}. */
@@ -47,11 +48,8 @@ public class ClaimsListDao {
     }
   }
 
-  /**
-   * Returns the current revision of the {@link ClaimsList} in Cloud SQL. Throws exception if there
-   * is no claims in the table.
-   */
-  public static ClaimsList getCurrent() {
+  /** Returns the most recent revision of the {@link ClaimsList} in Cloud SQL, if it exists. */
+  static Optional<ClaimsList> getLatestRevision() {
     return jpaTm()
         .transact(
             () -> {
@@ -64,8 +62,14 @@ public class ClaimsListDao {
                           + " :revisionId",
                       ClaimsList.class)
                   .setParameter("revisionId", revisionId)
-                  .getSingleResult();
+                  .getResultStream()
+                  .findFirst();
             });
+  }
+
+  /** Returns the most recent revision of the {@link ClaimsList}, from cache. */
+  public static Optional<ClaimsList> getLatestRevisionCached() {
+    return ClaimsListCache.cacheClaimsList.get();
   }
 
   private ClaimsListDao() {}
