@@ -14,8 +14,17 @@
 
 package google.registry.schema.integration;
 
+import google.registry.backup.CommitLogCheckpointStrategyTest;
+import google.registry.batch.ExpandRecurringBillingEventsActionTest;
+import google.registry.export.sheet.SyncRegistrarsSheetTest;
+import google.registry.model.common.CursorTest;
 import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.rde.EscrowTaskRunnerTest;
+import google.registry.rde.PendingDepositCheckerTest;
+import google.registry.rde.RdeStagingActionTest;
+import google.registry.rde.RdeUploadActionTest;
+import google.registry.reporting.icann.IcannReportingUploadActionTest;
 import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
 import google.registry.schema.tld.PremiumListUtilsTest;
@@ -43,14 +52,14 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
   ClaimsListDaoTest.class,
   CreateReservedListCommandTest.class,
-  CursorDaoTest.class,
-  CreatePremiumListActionTest.class,
-  PremiumListDaoTest.class,
+    CursorDaoTest.class,
+    CreatePremiumListActionTest.class,
+    PremiumListDaoTest.class,
   PremiumListUtilsTest.class,
   RegistryLockDaoTest.class,
   RegistryLockGetActionTest.class,
   ReservedListDaoTest.class,
-  UpdatePremiumListActionTest.class,
+    UpdatePremiumListActionTest.class,
   UpdateReservedListCommandTest.class
 })
 public class SqlIntegrationTestSuite {}

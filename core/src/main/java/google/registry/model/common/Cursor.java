@@ -192,6 +192,11 @@ public class Cursor extends ImmutableObject {
     return cursor != null ? cursor.getCursorTime() : START_OF_TIME;
   }
 
+  public static CursorType getType(Cursor cursor) {
+    String[] id = cursor.id.split("_", 2);
+    return CursorType.valueOf(id[1]);
+  }
+
   public DateTime getCursorTime() {
     return cursorTime;
   }

@@ -36,6 +36,7 @@ import google.registry.gcs.GcsUtils;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registry;
+import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
@@ -61,6 +62,10 @@ import org.junit.runners.JUnit4;
 public class IcannReportingUploadActionTest {
 
   @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+
+  @Rule
+  public final JpaTransactionManagerRule jpaTmRule =
+      new JpaTransactionManagerRule.Builder().build();
 
   private static final byte[] PAYLOAD_SUCCESS = "test,csv\n13,37".getBytes(UTF_8);
   private static final byte[] PAYLOAD_FAIL = "ahah,csv\n12,34".getBytes(UTF_8);

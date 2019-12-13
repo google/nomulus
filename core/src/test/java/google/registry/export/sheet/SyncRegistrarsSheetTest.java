@@ -38,6 +38,7 @@ import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
@@ -61,6 +62,10 @@ public class SyncRegistrarsSheetTest {
   @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
   @Rule public final InjectRule inject = new InjectRule();
+
+  @Rule
+  public final JpaTransactionManagerRule jpaTmRule =
+      new JpaTransactionManagerRule.Builder().build();
 
   @Captor private ArgumentCaptor<ImmutableList<ImmutableMap<String, String>>> rowsCaptor;
   @Mock private SheetSynchronizer sheetSynchronizer;
