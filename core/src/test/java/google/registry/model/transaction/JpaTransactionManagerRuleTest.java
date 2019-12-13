@@ -80,6 +80,7 @@ public class JpaTransactionManagerRuleTest {
 
   @Test
   public void testInitScriptUrl_noOverride() {
+    systemPropertyRule.setProperty(GOLDEN_SCHEMA_RESOURCE_ROOT_PROP, null);
     assertThat(jpaTmRule.getInitScriptUrlOverride()).isEmpty();
   }
 
