@@ -27,6 +27,10 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.MapDifference.ValueDifference;
+import com.google.common.collect.Maps;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EmbedMap;
@@ -40,6 +44,8 @@ import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.annotations.VirtualEntity;
 import google.registry.model.common.CrossTldSingleton;
+import google.registry.schema.tmch.ClaimsList;
+import google.registry.schema.tmch.ClaimsListDao;
 import google.registry.util.CollectionUtils;
 import google.registry.util.Concurrent;
 import google.registry.util.Retrier;
@@ -70,6 +76,8 @@ import org.joda.time.DateTime;
 @Entity
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
 public class ClaimsListShard extends ImmutableObject {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /** The number of claims list entries to store per shard. */
   private static final int SHARD_SIZE = 10000;
@@ -112,8 +120,7 @@ public class ClaimsListShard extends ImmutableObject {
                 Concurrent.transform(
                     shardKeys,
                     key ->
-                        tm()
-                            .transactNewReadOnly(
+                        tm().transactNewReadOnly(
                                 () -> {
                                   ClaimsListShard claimsListShard = ofy().load().key(key).now();
                                   checkState(
@@ -142,7 +149,38 @@ public class ClaimsListShard extends ImmutableObject {
             }
           }
         }
-        return create(creationTime, ImmutableMap.copyOf(combinedLabelsToKeys));
+
+        // Also load the list from Cloud SQL, compare the two lists, and log if different.
+        ClaimsListShard datastoreList =
+            create(creationTime, ImmutableMap.copyOf(combinedLabelsToKeys));
+        try {
+          Optional<ClaimsList> maybeCloudSqlList = ClaimsListDao.getLatestRevision();
+          if (maybeCloudSqlList.isPresent()) {
+            ClaimsList cloudSqlList = maybeCloudSqlList.get();
+            MapDifference<String, String> diff =
+                Maps.difference(datastoreList.labelsToKeys, cloudSqlList.getLabelsToKeys());
+            if (!diff.areEqual()) {
+              StringBuilder diffMessage = new StringBuilder("Unequal reserved lists detected:\n");
+              diff.entriesDiffering().entrySet().stream()
+                  .forEach(
+                      entry -> {
+                        String label = entry.getKey();
+                        ValueDifference<String> valueDiff = entry.getValue();
+                        diffMessage.append(
+                            String.format(
+                                "Domain label %s has key %s in Datastore and key %s in Cloud"
+                                    + " SQL.\n",
+                                label, valueDiff.leftValue(), valueDiff.rightValue()));
+                      });
+              logger.atWarning().log(diffMessage.toString());
+            }
+          } else {
+            logger.atWarning().log("Claims list in Cloud SQL is empty.");
+          }
+        } catch (Throwable t) {
+          logger.atSevere().withCause(t).log("Error comparing reserved lists.");
+        }
+        return datastoreList;
       };
 
   /**
