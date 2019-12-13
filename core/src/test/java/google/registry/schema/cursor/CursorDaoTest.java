@@ -15,12 +15,20 @@
 package google.registry.schema.cursor;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.LogsSubject.assertAboutLogs;
 
+import com.google.common.testing.TestLogHandler;
 import google.registry.model.common.Cursor.CursorType;
+import google.registry.model.registry.Registry;
 import google.registry.model.transaction.JpaTestRules;
 import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,9 +40,14 @@ public class CursorDaoTest {
 
   private FakeClock fakeClock = new FakeClock();
 
+  private final TestLogHandler logHandler = new TestLogHandler();
+  private final Logger loggerToIntercept = Logger.getLogger(CursorDao.class.getCanonicalName());
+
   @Rule
   public final JpaIntegrationTestRule jpaRule =
       new JpaTestRules.Builder().buildIntegrationTestRule();
+
+  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
 
   @Test
   public void save_worksSuccessfullyOnNewCursor() {
@@ -129,5 +142,64 @@ public class CursorDaoTest {
   public void loadByType_worksSuccessfullyNoneOfType() {
     List<Cursor> returnedCursors = CursorDao.loadByType(CursorType.RDE_REPORT);
     assertThat(returnedCursors.size()).isEqualTo(0);
+  }
+
+  @Test
+  public void saveCursor_worksSuccessfully() {
+    createTld("tld");
+    google.registry.model.common.Cursor cursor =
+        google.registry.model.common.Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc(), Registry.get("tld"));
+    CursorDao.saveCursor(cursor, "tld");
+    Cursor createdCursor = CursorDao.load(CursorType.ICANN_UPLOAD_ACTIVITY, "tld");
+    google.registry.model.common.Cursor dataStoreCursor =
+        ofy()
+            .load()
+            .key(
+                google.registry.model.common.Cursor.createKey(
+                    CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("tld")))
+            .now();
+    assertThat(createdCursor.getCursorTime()).isEqualTo(cursor.getCursorTime());
+    assertThat(cursor).isEqualTo(dataStoreCursor);
+  }
+
+  @Test
+  public void saveCursor_worksSuccessfullyOnGlobalCursor() {
+    google.registry.model.common.Cursor cursor =
+        google.registry.model.common.Cursor.createGlobal(
+            CursorType.RECURRING_BILLING, fakeClock.nowUtc());
+    CursorDao.saveCursor(cursor, Cursor.GLOBAL);
+    Cursor createdCursor = CursorDao.load(CursorType.RECURRING_BILLING);
+    google.registry.model.common.Cursor dataStoreCursor =
+        ofy()
+            .load()
+            .key(google.registry.model.common.Cursor.createGlobalKey(CursorType.RECURRING_BILLING))
+            .now();
+    assertThat(createdCursor.getCursorTime()).isEqualTo(cursor.getCursorTime());
+    assertThat(cursor).isEqualTo(dataStoreCursor);
+  }
+
+  @Test
+  public void saveCursor_logsInfoWhenSaveToCloudSqlFails() {
+    loggerToIntercept.addHandler(logHandler);
+    createTld("tld");
+    google.registry.model.common.Cursor cursor =
+        google.registry.model.common.Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc(), Registry.get("tld"));
+    CursorDao.saveCursor(cursor, null);
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.INFO,
+            "Issue saving cursor to CloudSql: Scope cannot be null. To create a global cursor, use"
+                + " the createGlobal method");
+    google.registry.model.common.Cursor dataStoreCursor =
+        ofy()
+            .load()
+            .key(
+                google.registry.model.common.Cursor.createKey(
+                    CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("tld")))
+            .now();
+    assertThat(cursor).isEqualTo(dataStoreCursor);
   }
 }

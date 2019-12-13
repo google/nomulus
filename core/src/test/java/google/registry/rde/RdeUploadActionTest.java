@@ -60,6 +60,7 @@ import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.registry.Registry;
+import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.rde.JSchSshSession.JSchSshSessionFactory;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.RequestParameters;
@@ -132,6 +133,10 @@ public class RdeUploadActionTest {
       .withDatastore()
       .withTaskQueue()
       .build();
+
+  @Rule
+  public final JpaTransactionManagerRule jpaTmRule =
+      new JpaTransactionManagerRule.Builder().build();
 
   private final FakeResponse response = new FakeResponse();
   private final EscrowTaskRunner runner = mock(EscrowTaskRunner.class);

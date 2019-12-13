@@ -15,14 +15,19 @@
 package google.registry.schema.cursor;
 
 import static com.google.appengine.api.search.checkers.Preconditions.checkNotNull;
+import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
+import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.schema.cursor.Cursor.CursorId;
 import java.util.List;
 
 /** Data access object class for {@link Cursor}. */
 public class CursorDao {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   public static void save(Cursor cursor) {
     jpaTm()
@@ -34,7 +39,7 @@ public class CursorDao {
 
   public static Cursor load(CursorType type, String scope) {
     checkNotNull(scope, "The scope of the cursor to load cannot be null");
-    checkNotNull(type, "The type of the cursor to load must be specified");
+    checkNotNull(type, "The type of the cursor to load cannot be null");
     return jpaTm()
         .transact(() -> jpaTm().getEntityManager().find(Cursor.class, new CursorId(type, scope)));
   }
@@ -66,5 +71,22 @@ public class CursorDao {
                         "SELECT cursor FROM Cursor cursor WHERE cursor.type = :type", Cursor.class)
                     .setParameter("type", type)
                     .getResultList());
+  }
+
+  /**
+   * This writes the given cursor to datastore. If the save to datastore succeeds, then a new
+   * Schema/Cursor object is created and attempted to save to Cloud SQL. If the save to Cloud SQL
+   * fails, the exception is logged, but does not cause the method to fail.
+   */
+  public static void saveCursor(google.registry.model.common.Cursor cursor, String scope) {
+    tm().transact(() -> ofy().save().entity(cursor));
+    CursorType type = google.registry.model.common.Cursor.getType(cursor);
+    try {
+      Cursor cloudSqlCursor = Cursor.create(type, scope, cursor.getCursorTime());
+      save(cloudSqlCursor);
+    } catch (Exception e) {
+      logger.atInfo().log("Issue saving cursor to CloudSql: " + e.getMessage());
+      e.printStackTrace();
+    }
   }
 }

@@ -14,7 +14,6 @@
 
 package google.registry.tools;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.beust.jcommander.Parameter;
@@ -22,6 +21,7 @@ import com.beust.jcommander.Parameters;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registry;
+import google.registry.schema.cursor.CursorDao;
 import google.registry.tools.params.DateTimeParameter;
 import java.util.List;
 import org.joda.time.DateTime;
@@ -49,15 +49,14 @@ final class UpdateCursorsCommand extends MutatingCommand {
   @Override
   protected void init() {
     if (isNullOrEmpty(tlds)) {
-      Cursor cursor = ofy().load().key(Cursor.createGlobalKey(cursorType)).now();
-      stageEntityChange(cursor, Cursor.createGlobal(cursorType, newTimestamp));
+      CursorDao.saveCursor(
+          Cursor.createGlobal(cursorType, newTimestamp),
+          google.registry.schema.cursor.Cursor.GLOBAL);
     } else {
       for (String tld : tlds) {
         Registry registry = Registry.get(tld);
-        Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, registry)).now();
-        stageEntityChange(
-            cursor,
-            Cursor.create(cursorType, newTimestamp, registry));
+        CursorDao.saveCursor(
+            Cursor.create(cursorType, newTimestamp, registry), registry.getTldStr());
       }
     }
   }

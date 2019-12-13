@@ -52,7 +52,7 @@ import org.junit.runners.Suite.SuiteClasses;
   RegistryLockDaoTest.class,
   RegistryLockGetActionTest.class,
   ReservedListDaoTest.class,
-  UpdatePremiumListActionTest.class,
+    UpdatePremiumListActionTest.class,
   UpdateReservedListCommandTest.class
 })
 public class SqlIntegrationTestSuite {}

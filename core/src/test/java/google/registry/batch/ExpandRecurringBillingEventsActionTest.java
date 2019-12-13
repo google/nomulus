@@ -19,7 +19,6 @@ import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.model.domain.Period.Unit.YEARS;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_AUTORENEW;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.assertBillingEvents;
 import static google.registry.testing.DatastoreHelper.assertBillingEventsForResource;
 import static google.registry.testing.DatastoreHelper.createTld;
@@ -50,6 +49,8 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.schema.cursor.CursorDao;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectRule;
@@ -71,6 +72,10 @@ public class ExpandRecurringBillingEventsActionTest
     extends MapreduceTestCase<ExpandRecurringBillingEventsAction> {
   @Rule
   public final InjectRule inject = new InjectRule();
+
+  @Rule
+  public final JpaTransactionManagerRule jpaTmRule =
+      new JpaTransactionManagerRule.Builder().build();
 
   private final DateTime beginningOfTest = DateTime.parse("2000-10-02T00:00:00Z");
   private final FakeClock clock = new FakeClock(beginningOfTest);
@@ -103,7 +108,9 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   private void saveCursor(final DateTime cursorTime) {
-    tm().transact(() -> ofy().save().entity(Cursor.createGlobal(RECURRING_BILLING, cursorTime)));
+    CursorDao.saveCursor(
+        Cursor.createGlobal(RECURRING_BILLING, cursorTime),
+        google.registry.schema.cursor.Cursor.GLOBAL);
   }
 
   private void runMapreduce() throws Exception {

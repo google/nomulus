@@ -44,6 +44,7 @@ import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
+import google.registry.schema.cursor.CursorDao;
 import google.registry.util.Clock;
 import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
@@ -186,7 +187,8 @@ public final class IcannReportingUploadAction implements Runnable {
               cursorType,
               cursorTime.withTimeAtStartOfDay().withDayOfMonth(1).plusMonths(1),
               Registry.get(tldStr));
-      tm().transact(() -> ofy().save().entity(newCursor));
+      CursorDao.saveCursor(
+          newCursor, (tldStr == null ? google.registry.schema.cursor.Cursor.GLOBAL : tldStr));
     }
   }
 
