@@ -15,13 +15,10 @@
 package google.registry.model.transaction;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.transaction.JpaTransactionManagerRule.GOLDEN_SCHEMA_RESOURCE_ROOT_PROP;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import google.registry.model.ImmutableObject;
-import google.registry.testing.SystemPropertyRule;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -40,8 +37,6 @@ public class JpaTransactionManagerRuleTest {
       new JpaTransactionManagerRule.Builder()
           .withEntityClass(TestEntity.class)
           .build();
-
-  @Rule public final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
 
   @Test
   public void verifiesRuleWorks() {
@@ -76,58 +71,6 @@ public class JpaTransactionManagerRuleTest {
     TestEntity retrieved =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "key"));
     assertThat(retrieved).isEqualTo(original);
-  }
-
-  @Test
-  public void testInitScriptUrl_noOverride() {
-    systemPropertyRule.setProperty(GOLDEN_SCHEMA_RESOURCE_ROOT_PROP, null);
-    assertThat(jpaTmRule.getInitScriptUrlOverride()).isEmpty();
-  }
-
-  @Test
-  public void testInitScriptUrl_localDir_noProtocol() {
-    systemPropertyRule.setProperty(GOLDEN_SCHEMA_RESOURCE_ROOT_PROP, "/path/to/resources");
-    assertThat(jpaTmRule.getInitScriptUrlOverride())
-        .hasValue("file:///path/to/resources/sql/schema/nomulus.golden.sql");
-  }
-
-  @Test
-  public void testInitScriptUrl_localDir_hasProtocol() {
-    systemPropertyRule.setProperty(GOLDEN_SCHEMA_RESOURCE_ROOT_PROP, "file:///path/to/resources");
-    assertThat(jpaTmRule.getInitScriptUrlOverride())
-        .hasValue("file:///path/to/resources/sql/schema/nomulus.golden.sql");
-  }
-
-  @Test
-  public void testInitScriptUrl_localJar_noProtocol() {
-    systemPropertyRule.setProperty(
-        GOLDEN_SCHEMA_RESOURCE_ROOT_PROP, "/path/to/resources/schema.jar");
-    assertThat(jpaTmRule.getInitScriptUrlOverride())
-        .hasValue("jar:file:///path/to/resources/schema.jar!/sql/schema/nomulus.golden.sql");
-  }
-
-  @Test
-  public void testInitScriptUrl_localJar_hasPartialProtocol() {
-    systemPropertyRule.setProperty(
-        GOLDEN_SCHEMA_RESOURCE_ROOT_PROP, "file:///path/to/resources/schema.jar");
-    assertThat(jpaTmRule.getInitScriptUrlOverride())
-        .hasValue("jar:file:///path/to/resources/schema.jar!/sql/schema/nomulus.golden.sql");
-  }
-
-  @Test
-  public void testInitScriptUrl_localJar_hasFullProtocol() {
-    systemPropertyRule.setProperty(
-        GOLDEN_SCHEMA_RESOURCE_ROOT_PROP, "jar:file:///path/to/resources/schema.jar");
-    assertThat(jpaTmRule.getInitScriptUrlOverride())
-        .hasValue("jar:file:///path/to/resources/schema.jar!/sql/schema/nomulus.golden.sql");
-  }
-
-  @Test
-  public void testInitScriptUrl_remoteJar() {
-    systemPropertyRule.setProperty(
-        GOLDEN_SCHEMA_RESOURCE_ROOT_PROP, "http://host/path/to/resources/schema.jar");
-    assertThat(jpaTmRule.getInitScriptUrlOverride())
-        .hasValue("jar:http://host/path/to/resources/schema.jar!/sql/schema/nomulus.golden.sql");
   }
 
   @Entity(name = "TestEntity") // Specify name to avoid nested class naming issues.

@@ -716,8 +716,6 @@ task registryToolIntegrationTest {
 
 // Dedicated test suite for schema-dependent tests.
 task sqlIntegrationTest(type: FilteringTest) {
-  systemProperties project.getProperties().subMap('sql_schema_resource_root')
-
   excludeTestCases = false
   tests = ['google/registry/schema/integration/SqlIntegrationTestSuite.*']
 }
