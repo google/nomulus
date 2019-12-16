@@ -14,5 +14,9 @@
 
 ALTER TABLE "RegistryLock" DROP COLUMN action;
 
-ALTER TABLE "RegistryLock" ADD COLUMN unlock_creation_timestamp timestamptz;
+ALTER TABLE "RegistryLock" ADD COLUMN unlock_request_timestamp timestamptz;
 ALTER TABLE "RegistryLock" ADD COLUMN unlock_completion_timestamp timestamptz;
+ALTER TABLE "RegistryLock" ADD COLUMN last_update_timestamp timestamptz;
+
+ALTER TABLE "RegistryLock" RENAME creation_timestamp TO lock_request_timestamp;
+ALTER TABLE "RegistryLock" RENAME completion_timestamp TO lock_completion_timestamp;

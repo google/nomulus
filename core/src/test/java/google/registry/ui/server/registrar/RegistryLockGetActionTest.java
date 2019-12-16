@@ -95,7 +95,7 @@ public final class RegistryLockGetActionTest {
             .setRegistrarId("TheRegistrar")
             .setVerificationCode(UUID.randomUUID().toString())
             .setRegistrarPocId("johndoe@theregistrar.com")
-            .setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
+            .setLockCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
             .build();
     jpaTmRule.getTxnClock().advanceOneMilli();
     RegistryLock adminLock =
@@ -105,7 +105,7 @@ public final class RegistryLockGetActionTest {
             .setRegistrarId("TheRegistrar")
             .setVerificationCode(UUID.randomUUID().toString())
             .isSuperuser(true)
-            .setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
+            .setLockCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
             .build();
     RegistryLock incompleteLock =
         new RegistryLock.Builder()
@@ -116,9 +116,22 @@ public final class RegistryLockGetActionTest {
             .setRegistrarPocId("johndoe@theregistrar.com")
             .build();
 
+    RegistryLock unlockedLock =
+        new RegistryLock.Builder()
+            .setRepoId("repoId")
+            .setDomainName("unlocked.test")
+            .setRegistrarId("TheRegistrar")
+            .setRegistrarPocId("johndoe@theregistrar.com")
+            .setVerificationCode(UUID.randomUUID().toString())
+            .setLockCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
+            .setUnlockRequestTimestamp(jpaTmRule.getTxnClock().nowUtc())
+            .setUnlockCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
+            .build();
+
     RegistryLockDao.save(regularLock);
     RegistryLockDao.save(adminLock);
     RegistryLockDao.save(incompleteLock);
+    RegistryLockDao.save(unlockedLock);
 
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
@@ -129,9 +142,12 @@ public final class RegistryLockGetActionTest {
             "results",
                 ImmutableList.of(
                     ImmutableMap.of(
-                        "lockEnabledForContact", true,
-                        "email", "Marla.Singer@crr.com",
-                        "clientId", "TheRegistrar",
+                        "lockEnabledForContact",
+                        true,
+                        "email",
+                        "Marla.Singer@crr.com",
+                        "clientId",
+                        "TheRegistrar",
                         "locks",
                         ImmutableList.of(
                             ImmutableMap.of(

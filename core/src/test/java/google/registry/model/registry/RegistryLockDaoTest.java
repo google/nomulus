@@ -46,6 +46,7 @@ public final class RegistryLockDaoTest {
     RegistryLock fromDatabase = RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
     assertThat(fromDatabase.getDomainName()).isEqualTo(lock.getDomainName());
     assertThat(fromDatabase.getVerificationCode()).isEqualTo(lock.getVerificationCode());
+    assertThat(fromDatabase.getLastUpdateTimestamp()).isEqualTo(jpaTmRule.getTxnClock().nowUtc());
   }
 
   @Test
@@ -69,17 +70,41 @@ public final class RegistryLockDaoTest {
             () -> {
               RegistryLock updatedLock =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
-              updatedLock.setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc());
-              RegistryLockDao.save(updatedLock);
+              RegistryLockDao.save(
+                  updatedLock
+                      .asBuilder()
+                      .setLockCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
+                      .build());
             });
     jpaTm()
         .transact(
             () -> {
               RegistryLock fromDatabase =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
-              assertThat(fromDatabase.getCompletionTimestamp().get())
+              assertThat(fromDatabase.getLockCompletionTimestamp().get())
+                  .isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+              assertThat(fromDatabase.getLastUpdateTimestamp())
                   .isEqualTo(jpaTmRule.getTxnClock().nowUtc());
             });
+  }
+
+  @Test
+  public void testSave_load_withUnlock() {
+    RegistryLock lock =
+        RegistryLockDao.save(
+            createLock()
+                .asBuilder()
+                .setLockCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
+                .setUnlockRequestTimestamp(jpaTmRule.getTxnClock().nowUtc())
+                .setUnlockCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
+                .build());
+    RegistryLockDao.save(lock);
+    RegistryLock fromDatabase = RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
+    assertThat(fromDatabase.getUnlockRequestTimestamp())
+        .isEqualTo(Optional.of(jpaTmRule.getTxnClock().nowUtc()));
+    assertThat(fromDatabase.getUnlockCompletionTimestamp())
+        .isEqualTo(Optional.of(jpaTmRule.getTxnClock().nowUtc()));
+    assertThat(fromDatabase.isLocked()).isFalse();
   }
 
   @Test
@@ -87,14 +112,14 @@ public final class RegistryLockDaoTest {
     RegistryLock lock = RegistryLockDao.save(createLock());
     jpaTmRule.getTxnClock().advanceOneMilli();
     RegistryLock updatedLock =
-        lock.asBuilder().setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc()).build();
+        lock.asBuilder().setLockCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc()).build();
     jpaTm().transact(() -> RegistryLockDao.save(updatedLock));
     jpaTm()
         .transact(
             () -> {
               RegistryLock fromDatabase =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode());
-              assertThat(fromDatabase.getCompletionTimestamp())
+              assertThat(fromDatabase.getLockCompletionTimestamp())
                   .isEqualTo(Optional.of(jpaTmRule.getTxnClock().nowUtc()));
             });
   }
@@ -122,7 +147,10 @@ public final class RegistryLockDaoTest {
   @Test
   public void testLoad_byRepoId() {
     RegistryLock completedLock =
-        createLock().asBuilder().setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc()).build();
+        createLock()
+            .asBuilder()
+            .setLockCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
+            .build();
     RegistryLockDao.save(completedLock);
 
     jpaTmRule.getTxnClock().advanceOneMilli();
@@ -131,7 +159,7 @@ public final class RegistryLockDaoTest {
 
     Optional<RegistryLock> mostRecent = RegistryLockDao.getMostRecentByRepoId("repoId");
     assertThat(mostRecent.isPresent()).isTrue();
-    assertThat(mostRecent.get().isLockVerified()).isFalse();
+    assertThat(mostRecent.get().isLocked()).isFalse();
   }
 
   @Test
