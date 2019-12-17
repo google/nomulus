@@ -14,7 +14,9 @@
 
 package google.registry.schema.tmch;
 
-import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
+import static com.google.common.base.Suppliers.memoizeWithExpiration;
+import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.common.base.Supplier;
 import google.registry.util.NonFinalForTesting;
@@ -22,13 +24,11 @@ import java.util.Optional;
 
 /** Caching utils for {@link ClaimsList}s. */
 public class ClaimsListCache {
-  /**
-   * In-memory cache for premium lists.
-   *
-   * <p>This is cached for a shorter duration because we need to periodically reload from the DB to
-   * check if a new revision has been published, and if so, then use that.
-   */
+  /** In-memory cache for claims list. */
   @NonFinalForTesting
   static Supplier<Optional<ClaimsList>> cacheClaimsList =
-      memoizeWithShortExpiration(ClaimsListDao::getLatestRevision);
+      memoizeWithExpiration(
+          ClaimsListDao::getLatestRevision,
+          getDomainLabelListCacheDuration().getMillis(),
+          MILLISECONDS);
 }
