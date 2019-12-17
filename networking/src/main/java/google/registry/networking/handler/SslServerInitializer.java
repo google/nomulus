@@ -113,8 +113,6 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
                               sslHandler.engine().getSession().getPeerCertificates()[0];
                       try {
                         clientCertificate.checkValidity();
-                        Promise<X509Certificate> unusedPromise =
-                            clientCertificatePromise.setSuccess(clientCertificate);
                       } catch (CertificateNotYetValidException | CertificateExpiredException e) {
                         logger.atWarning().withCause(e).log(
                             "Client certificate is not valid.\nHash: %s",
@@ -123,8 +121,11 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
                           Promise<X509Certificate> unusedPromise =
                               clientCertificatePromise.setFailure(e);
                           ChannelFuture unusedFuture2 = channel.close();
+                          return;
                         }
                       }
+                      Promise<X509Certificate> unusedPromise =
+                          clientCertificatePromise.setSuccess(clientCertificate);
                     } else {
                       Promise<X509Certificate> unusedPromise =
                           clientCertificatePromise.setFailure(future.cause());
