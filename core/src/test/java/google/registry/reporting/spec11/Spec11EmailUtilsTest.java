@@ -118,6 +118,8 @@ public class Spec11EmailUtilsTest {
             emailService,
             new InternetAddress("my-receiver@test.com"),
             new InternetAddress("abuse@test.com"),
+            ImmutableList.of(
+                new InternetAddress("abuse@test.com"), new InternetAddress("bcc@test.com")),
             FAKE_RESOURCES,
             "Super Cool Registry");
 
@@ -142,7 +144,7 @@ public class Spec11EmailUtilsTest {
         capturedContents.get(0),
         "abuse@test.com",
         "the.registrar@example.com",
-        Optional.of("abuse@test.com"),
+        ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>a.com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
@@ -150,7 +152,7 @@ public class Spec11EmailUtilsTest {
         capturedContents.get(1),
         "abuse@test.com",
         "new.registrar@example.com",
-        Optional.of("abuse@test.com"),
+        ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         String.format(
             MONTHLY_EMAIL_FORMAT,
@@ -160,7 +162,7 @@ public class Spec11EmailUtilsTest {
         capturedContents.get(2),
         "abuse@test.com",
         "my-receiver@test.com",
-        Optional.empty(),
+        ImmutableList.of(),
         "Spec11 Pipeline Success 2018-07-15",
         "Spec11 reporting completed successfully.",
         Optional.empty());
@@ -180,7 +182,7 @@ public class Spec11EmailUtilsTest {
         capturedMessages.get(0),
         "abuse@test.com",
         "the.registrar@example.com",
-        Optional.of("abuse@test.com"),
+        ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Daily Threat Detector [2018-07-15]",
         String.format(DAILY_EMAIL_FORMAT, "<tr><td>a.com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
@@ -188,7 +190,7 @@ public class Spec11EmailUtilsTest {
         capturedMessages.get(1),
         "abuse@test.com",
         "new.registrar@example.com",
-        Optional.of("abuse@test.com"),
+        ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Daily Threat Detector [2018-07-15]",
         String.format(
             DAILY_EMAIL_FORMAT,
@@ -198,7 +200,7 @@ public class Spec11EmailUtilsTest {
         capturedMessages.get(2),
         "abuse@test.com",
         "my-receiver@test.com",
-        Optional.empty(),
+        ImmutableList.of(),
         "Spec11 Pipeline Success 2018-07-15",
         "Spec11 reporting completed successfully.",
         Optional.empty());
@@ -225,7 +227,7 @@ public class Spec11EmailUtilsTest {
         capturedContents.get(0),
         "abuse@test.com",
         "new.registrar@example.com",
-        Optional.of("abuse@test.com"),
+        ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>c.com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
@@ -233,7 +235,7 @@ public class Spec11EmailUtilsTest {
         capturedContents.get(1),
         "abuse@test.com",
         "my-receiver@test.com",
-        Optional.empty(),
+        ImmutableList.of(),
         "Spec11 Pipeline Success 2018-07-15",
         "Spec11 reporting completed successfully.",
         Optional.empty());
@@ -270,7 +272,7 @@ public class Spec11EmailUtilsTest {
         capturedMessages.get(0),
         "abuse@test.com",
         "the.registrar@example.com",
-        Optional.of("abuse@test.com"),
+        ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>a.com</td><td>MALWARE</td></tr>"),
         Optional.of(MediaType.HTML_UTF_8));
@@ -278,7 +280,7 @@ public class Spec11EmailUtilsTest {
         capturedMessages.get(1),
         "abuse@test.com",
         "new.registrar@example.com",
-        Optional.of("abuse@test.com"),
+        ImmutableList.of("abuse@test.com", "bcc@test.com"),
         "Super Cool Registry Monthly Threat Detector [2018-07-15]",
         String.format(
             MONTHLY_EMAIL_FORMAT,
@@ -288,7 +290,7 @@ public class Spec11EmailUtilsTest {
         capturedMessages.get(2),
         "abuse@test.com",
         "my-receiver@test.com",
-        Optional.empty(),
+        ImmutableList.of(),
         "Spec11 Emailing Failure 2018-07-15",
         "Emailing Spec11 reports failed due to expected",
         Optional.empty());
@@ -302,7 +304,7 @@ public class Spec11EmailUtilsTest {
         contentCaptor.getValue(),
         "abuse@test.com",
         "my-receiver@test.com",
-        Optional.empty(),
+        ImmutableList.of(),
         "Spec11 Pipeline Alert: 2018-07",
         "Alert!",
         Optional.empty());
@@ -351,7 +353,7 @@ public class Spec11EmailUtilsTest {
       EmailMessage message,
       String from,
       String recipient,
-      Optional<String> replyTo,
+      ImmutableList<String> bccs,
       String subject,
       String body,
       Optional<MediaType> contentType)
@@ -363,8 +365,8 @@ public class Spec11EmailUtilsTest {
             .setSubject(subject)
             .setBody(body);
 
-    if (replyTo.isPresent()) {
-      expectedContentBuilder.setBcc(new InternetAddress(replyTo.get()));
+    for (String bcc : bccs) {
+      expectedContentBuilder.addBcc(new InternetAddress(bcc));
     }
     contentType.ifPresent(expectedContentBuilder::setContentType);
     assertThat(message).isEqualTo(expectedContentBuilder.build());

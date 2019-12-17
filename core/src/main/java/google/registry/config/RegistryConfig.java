@@ -918,6 +918,20 @@ public final class RegistryConfig {
     }
 
     /**
+     * Returns the email addresses to which we will BCC Spec11 emails.
+     *
+     * @see google.registry.reporting.spec11.Spec11EmailUtils
+     */
+    @Provides
+    @Config("spec11BccEmailAddresses")
+    public static ImmutableList<InternetAddress> provideSpec11BccEmailAddresses(
+        RegistryConfigSettings config) {
+      return config.misc.spec11BccEmailAddresses.stream()
+          .map(RegistryConfig::parseEmailAddress)
+          .collect(toImmutableList());
+    }
+
+    /**
      * Returns the name of the registry, for use in spec 11 emails.
      *
      * @see google.registry.reporting.spec11.Spec11EmailUtils
