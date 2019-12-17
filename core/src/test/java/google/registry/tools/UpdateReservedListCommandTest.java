@@ -24,8 +24,8 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.registry.label.ReservedList;
-import google.registry.model.registry.label.ReservedListDao;
 import google.registry.schema.tld.ReservedList.ReservedEntry;
+import google.registry.schema.tld.ReservedListDao;
 import org.junit.Test;
 
 /** Unit tests for {@link UpdateReservedListCommand}. */

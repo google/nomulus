@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.registry.label;
+package google.registry.schema.tld;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.collect.ImmutableMap;
+import google.registry.model.registry.label.ReservationType;
 import google.registry.model.transaction.JpaTransactionManagerRule;
-import google.registry.schema.tld.ReservedList;
 import google.registry.schema.tld.ReservedList.ReservedEntry;
 import org.junit.Rule;
 import org.junit.Test;

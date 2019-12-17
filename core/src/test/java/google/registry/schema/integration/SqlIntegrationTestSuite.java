@@ -15,7 +15,6 @@
 package google.registry.schema.integration;
 
 import google.registry.model.registry.RegistryLockDaoTest;
-import google.registry.model.registry.label.ReservedListDaoTest;
 import google.registry.model.transaction.JpaTransactionManagerImplTest;
 import google.registry.model.transaction.JpaTransactionManagerRuleTest;
 import google.registry.persistence.BloomFilterConverterTest;
@@ -28,6 +27,7 @@ import google.registry.persistence.ZonedDateTimeConverterTest;
 import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
 import google.registry.schema.tmch.ClaimsListDaoTest;
+import google.registry.schema.tld.ReservedListDaoTest;
 import google.registry.tools.CreateReservedListCommandTest;
 import google.registry.tools.UpdateReservedListCommandTest;
 import google.registry.ui.server.registrar.RegistryLockGetActionTest;

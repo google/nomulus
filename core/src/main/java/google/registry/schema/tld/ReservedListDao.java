@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.registry.label;
+package google.registry.schema.tld;
 
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
-
-import google.registry.schema.tld.ReservedList;
 
 /** Data access object class for {@link ReservedList} */
 public class ReservedListDao {
