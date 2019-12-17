@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.tmch;
+package google.registry.schema.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.transaction.JpaTransactionManagerRule;
-import google.registry.schema.tmch.ClaimsList;
 import google.registry.testing.FakeClock;
 import javax.persistence.NoResultException;
 import org.junit.Rule;
