@@ -99,10 +99,10 @@ public final class CertificateSupplierModule {
   }
 
   @Qualifier
-  @interface Pem {}
+  @interface PemFile {}
 
   @Qualifier
-  private @interface P12 {}
+  private @interface P12File {}
 
   @Qualifier
   private @interface SelfSigned {}
@@ -127,8 +127,8 @@ public final class CertificateSupplierModule {
   @Provides
   static Supplier<PrivateKey> providePrivateKeySupplier(
       Mode mode,
-      @Pem Lazy<Supplier<PrivateKey>> pemPrivateKeySupplier,
-      @P12 Lazy<Supplier<PrivateKey>> p12PrivateKeySupplier,
+      @PemFile Lazy<Supplier<PrivateKey>> pemPrivateKeySupplier,
+      @P12File Lazy<Supplier<PrivateKey>> p12PrivateKeySupplier,
       @SelfSigned Lazy<Supplier<PrivateKey>> selfSignedPrivateKeySupplier) {
     switch (mode) {
       case PEM_FILE:
@@ -146,8 +146,8 @@ public final class CertificateSupplierModule {
   @Provides
   static Supplier<ImmutableList<X509Certificate>> provideCertificatesSupplier(
       Mode mode,
-      @Pem Lazy<Supplier<ImmutableList<X509Certificate>>> pemCertificatesSupplier,
-      @P12 Lazy<Supplier<ImmutableList<X509Certificate>>> p12CertificatesSupplier,
+      @PemFile Lazy<Supplier<ImmutableList<X509Certificate>>> pemCertificatesSupplier,
+      @P12File Lazy<Supplier<ImmutableList<X509Certificate>>> p12CertificatesSupplier,
       @SelfSigned Lazy<Supplier<ImmutableList<X509Certificate>>> selfSignedCertificatesSupplier) {
     switch (mode) {
       case PEM_FILE:
@@ -187,7 +187,7 @@ public final class CertificateSupplierModule {
   }
 
   @Provides
-  @Pem
+  @PemFile
   static ImmutableList<Object> providePemObjects(@Named("pemBytes") byte[] pemBytes) {
     PEMParser pemParser =
         new PEMParser(new InputStreamReader(new ByteArrayInputStream(pemBytes), UTF_8));
@@ -212,8 +212,8 @@ public final class CertificateSupplierModule {
 
   // This binding should not be used directly. Use the supplier binding instead.
   @Provides
-  @Pem
-  static PrivateKey providePemPrivateKey(@Pem ImmutableList<Object> pemObjects) {
+  @PemFile
+  static PrivateKey providePemPrivateKey(@PemFile ImmutableList<Object> pemObjects) {
     JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
     Function<PEMKeyPair, PrivateKey> privateKeyConverter =
         pemKeyPair -> {
@@ -235,9 +235,9 @@ public final class CertificateSupplierModule {
 
   // This binding should not be used directly. Use the supplier binding instead.
   @Provides
-  @Pem
+  @PemFile
   static ImmutableList<X509Certificate> providePemCertificates(
-      @Pem ImmutableList<Object> pemObject) {
+      @PemFile ImmutableList<Object> pemObject) {
     JcaX509CertificateConverter converter = new JcaX509CertificateConverter().setProvider("BC");
     Function<X509CertificateHolder, X509Certificate> certificateConverter =
         certificateHolder -> {
@@ -267,18 +267,18 @@ public final class CertificateSupplierModule {
 
   @Singleton
   @Provides
-  @Pem
+  @PemFile
   static Supplier<PrivateKey> providePemPrivateKeySupplier(
-      @Pem Provider<PrivateKey> privateKeyProvider,
+      @PemFile Provider<PrivateKey> privateKeyProvider,
       @Named("remoteCertCachingDuration") Duration cachingDuration) {
     return memoizeWithExpiration(privateKeyProvider::get, cachingDuration.getSeconds(), SECONDS);
   }
 
   @Singleton
   @Provides
-  @Pem
+  @PemFile
   static Supplier<ImmutableList<X509Certificate>> providePemCertificatesSupplier(
-      @Pem Provider<ImmutableList<X509Certificate>> certificatesProvider,
+      @PemFile Provider<ImmutableList<X509Certificate>> certificatesProvider,
       @Named("remoteCertCachingDuration") Duration cachingDuration) {
     return memoizeWithExpiration(certificatesProvider::get, cachingDuration.getSeconds(), SECONDS);
   }
@@ -286,7 +286,7 @@ public final class CertificateSupplierModule {
   // TODO(jianglai): Implement P12 supplier or convert the file to PEM format.
   @Singleton
   @Provides
-  @P12
+  @P12File
   static Supplier<PrivateKey> provideP12PrivateKeySupplier() {
     return Suppliers.ofInstance(null);
   }
@@ -294,7 +294,7 @@ public final class CertificateSupplierModule {
   // TODO(jianglai): Implement P12 supplier or convert the file to PEM format.
   @Singleton
   @Provides
-  @P12
+  @P12File
   static Supplier<ImmutableList<X509Certificate>> provideP12CertificatesSupplier() {
     return Suppliers.ofInstance(null);
   }
