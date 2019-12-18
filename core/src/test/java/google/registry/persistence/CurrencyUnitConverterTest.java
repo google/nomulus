@@ -18,7 +18,8 @@ import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import google.registry.model.ImmutableObject;
-import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaUnitTestRule;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.PersistenceException;
@@ -33,10 +34,8 @@ import org.junit.runners.JUnit4;
 public class CurrencyUnitConverterTest {
 
   @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder()
-          .withEntityClass(TestEntity.class)
-          .build();
+  public final JpaUnitTestRule jpaTmRule =
+      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
   public void roundTripConversion() {

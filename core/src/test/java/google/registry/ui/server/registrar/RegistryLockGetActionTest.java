@@ -30,7 +30,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.gson.Gson;
 import google.registry.model.registry.RegistryLockDao;
-import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaNomulusIntegrationTestRule;
 import google.registry.request.Action.Method;
 import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
@@ -61,8 +62,8 @@ public final class RegistryLockGetActionTest {
   @Rule public final AppEngineRule appEngineRule = AppEngineRule.builder().withDatastore().build();
 
   @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
+  public final JpaNomulusIntegrationTestRule jpaTmRule =
+      new JpaTestRules.Builder().buildIntegrationTestRule();
 
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 

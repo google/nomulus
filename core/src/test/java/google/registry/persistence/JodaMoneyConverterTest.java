@@ -18,7 +18,8 @@ import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
-import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaUnitTestRule;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
@@ -63,11 +64,11 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class JodaMoneyConverterTest {
   @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder()
+  public final JpaUnitTestRule jpaTmRule =
+      new JpaTestRules.Builder()
           .withEntityClass(TestEntity.class, ComplexTestEntity.class)
           .withProperty(Environment.HBM2DDL_AUTO, "update")
-          .build();
+          .buildUnitTestRule();
 
   @Test
   public void roundTripConversion() {

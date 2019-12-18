@@ -28,7 +28,8 @@ import static org.joda.money.CurrencyUnit.USD;
 import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry;
-import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaNomulusIntegrationTestRule;
 import google.registry.testing.AppEngineRule;
 import java.math.BigDecimal;
 import java.util.List;
@@ -44,8 +45,8 @@ import org.junit.runners.JUnit4;
 public class PremiumListDaoTest {
 
   @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
+  public final JpaNomulusIntegrationTestRule jpaTmRule =
+      new JpaTestRules.Builder().buildIntegrationTestRule();
 
   @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
 

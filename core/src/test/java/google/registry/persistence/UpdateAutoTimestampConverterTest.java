@@ -18,7 +18,8 @@ import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
-import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaUnitTestRule;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.junit.Rule;
@@ -31,10 +32,8 @@ import org.junit.runners.JUnit4;
 public class UpdateAutoTimestampConverterTest {
 
   @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder()
-          .withEntityClass(TestEntity.class)
-          .build();
+  public final JpaUnitTestRule jpaTmRule =
+      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
   public void testTypeConversion() {

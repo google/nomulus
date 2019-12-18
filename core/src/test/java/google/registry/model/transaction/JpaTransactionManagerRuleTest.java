@@ -19,6 +19,8 @@ import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import google.registry.model.ImmutableObject;
+import google.registry.model.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.schema.tmch.ClaimsList;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -28,15 +30,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** JUnit test for {@link JpaTransactionManagerRule} */
+/** JUnit test for {@link JpaTransactionManagerRule}, with {@link JpaUnitTestRule} as proxy. */
 @RunWith(JUnit4.class)
 public class JpaTransactionManagerRuleTest {
 
   @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder()
-          .withEntityClass(TestEntity.class)
-          .build();
+  public final JpaUnitTestRule jpaTmRule =
+      new JpaTestRules.Builder()
+          .withEntityClass(ClaimsList.class, TestEntity.class)
+          .buildUnitTestRule();
 
   @Test
   public void verifiesRuleWorks() {

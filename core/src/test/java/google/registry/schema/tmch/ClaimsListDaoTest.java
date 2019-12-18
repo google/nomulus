@@ -18,7 +18,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaNomulusIntegrationTestRule;
 import google.registry.testing.FakeClock;
 import javax.persistence.NoResultException;
 import org.junit.Rule;
@@ -33,8 +34,8 @@ public class ClaimsListDaoTest {
   private FakeClock fakeClock = new FakeClock();
 
   @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
+  public final JpaNomulusIntegrationTestRule jpaTmRule =
+      new JpaTestRules.Builder().buildIntegrationTestRule();
 
   @Test
   public void trySave_insertsClaimsListSuccessfully() {

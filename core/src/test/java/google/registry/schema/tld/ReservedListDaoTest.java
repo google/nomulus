@@ -19,7 +19,8 @@ import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.registry.label.ReservationType;
-import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaNomulusIntegrationTestRule;
 import google.registry.schema.tld.ReservedList.ReservedEntry;
 import org.junit.Rule;
 import org.junit.Test;
@@ -30,8 +31,8 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class ReservedListDaoTest {
   @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
+  public final JpaNomulusIntegrationTestRule jpaTmRule =
+      new JpaTestRules.Builder().buildIntegrationTestRule();
 
   private static final ImmutableMap<String, ReservedEntry> TEST_RESERVATIONS =
       ImmutableMap.of(

@@ -15,15 +15,6 @@
 package google.registry.schema.integration;
 
 import google.registry.model.registry.RegistryLockDaoTest;
-import google.registry.model.transaction.JpaTransactionManagerImplTest;
-import google.registry.model.transaction.JpaTransactionManagerRuleTest;
-import google.registry.persistence.BloomFilterConverterTest;
-import google.registry.persistence.CreateAutoTimestampConverterTest;
-import google.registry.persistence.CurrencyUnitConverterTest;
-import google.registry.persistence.DateTimeConverterTest;
-import google.registry.persistence.JodaMoneyConverterTest;
-import google.registry.persistence.UpdateAutoTimestampConverterTest;
-import google.registry.persistence.ZonedDateTimeConverterTest;
 import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
 import google.registry.schema.tld.ReservedListDaoTest;
@@ -40,29 +31,20 @@ import org.junit.runners.Suite.SuiteClasses;
  * compatibility check.
  *
  * <p>Schema dependency is approximated by the use of {@link
- * google.registry.model.transaction.JpaTransactionManagerRule}.
+ * google.registry.model.transaction.JpaTestRules.JpaNomulusIntegrationTestRule}.
  *
  * @see SqlIntegrationMembershipTest
  */
 // TODO(weiminyu): refactor JpaTransactionManagerRule to eliminate false positives.
 @RunWith(Suite.class)
 @SuiteClasses({
-  BloomFilterConverterTest.class,
   ClaimsListDaoTest.class,
-  CreateAutoTimestampConverterTest.class,
   CreateReservedListCommandTest.class,
-  CurrencyUnitConverterTest.class,
   CursorDaoTest.class,
-  DateTimeConverterTest.class,
-  JodaMoneyConverterTest.class,
-  JpaTransactionManagerImplTest.class,
-  JpaTransactionManagerRuleTest.class,
   PremiumListDaoTest.class,
   RegistryLockDaoTest.class,
   RegistryLockGetActionTest.class,
   ReservedListDaoTest.class,
-  UpdateAutoTimestampConverterTest.class,
-  UpdateReservedListCommandTest.class,
-  ZonedDateTimeConverterTest.class
+  UpdateReservedListCommandTest.class
 })
 public class SqlIntegrationTestSuite {}
