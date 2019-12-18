@@ -56,7 +56,7 @@ public class CertificateSupplierModuleTest {
   private static TestComponent createComponentForPem(Object... objects) throws Exception {
     return DaggerCertificateSupplierModuleTest_TestComponent.builder()
         .certificateModule(CertificateModule.createCertificateModuleForPem(objects))
-        .useMode(Mode.PEM)
+        .useMode(Mode.PEM_FILE)
         .build();
   }
 

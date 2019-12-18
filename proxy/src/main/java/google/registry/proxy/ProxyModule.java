@@ -333,7 +333,7 @@ public class ProxyModule {
     if (env == Environment.LOCAL) {
       return Mode.SELF_SIGNED;
     } else {
-      return Mode.P12;
+      return Mode.P12_FILE;
     }
   }
 

@@ -88,9 +88,9 @@ public final class CertificateSupplierModule {
      *
      * @see <a href="https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail">Privacy-Enhanced Email</a>
      */
-    PEM,
+    PEM_FILE,
 
-    P12,
+    P12_FILE,
 
     /**
      * A single certificate/private key pair is generated in place and self signed. Used in tests.
@@ -131,9 +131,9 @@ public final class CertificateSupplierModule {
       @P12 Lazy<Supplier<PrivateKey>> p12PrivateKeySupplier,
       @SelfSigned Lazy<Supplier<PrivateKey>> selfSignedPrivateKeySupplier) {
     switch (mode) {
-      case PEM:
+      case PEM_FILE:
         return pemPrivateKeySupplier.get();
-      case P12:
+      case P12_FILE:
         return p12PrivateKeySupplier.get();
       case SELF_SIGNED:
         return selfSignedPrivateKeySupplier.get();
@@ -150,9 +150,9 @@ public final class CertificateSupplierModule {
       @P12 Lazy<Supplier<ImmutableList<X509Certificate>>> p12CertificatesSupplier,
       @SelfSigned Lazy<Supplier<ImmutableList<X509Certificate>>> selfSignedCertificatesSupplier) {
     switch (mode) {
-      case PEM:
+      case PEM_FILE:
         return pemCertificatesSupplier.get();
-      case P12:
+      case P12_FILE:
         return p12CertificatesSupplier.get();
       case SELF_SIGNED:
         return selfSignedCertificatesSupplier.get();
