@@ -85,7 +85,7 @@ public abstract class CreateOrUpdateReservedListCommandTestCase
     return google.registry.schema.tld.ReservedList.create(name, shouldPublish, labelsToEntries);
   }
 
-  google.registry.schema.tld.ReservedList getCloudSqlReservedListBy(String name) {
+  google.registry.schema.tld.ReservedList getCloudSqlReservedList(String name) {
     return jpaTm()
         .transact(
             () -> {
@@ -108,7 +108,7 @@ public abstract class CreateOrUpdateReservedListCommandTestCase
   void verifyXnq9jyb4cInCloudSql() {
     assertThat(ReservedListDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();
     google.registry.schema.tld.ReservedList persistedList =
-        getCloudSqlReservedListBy("xn--q9jyb4c_common-reserved");
+        getCloudSqlReservedList("xn--q9jyb4c_common-reserved");
     assertThat(persistedList.getName()).isEqualTo("xn--q9jyb4c_common-reserved");
     assertThat(persistedList.getShouldPublish()).isTrue();
     assertThat(persistedList.getCreationTimestamp()).isEqualTo(jpaTmRule.getTxnClock().nowUtc());
