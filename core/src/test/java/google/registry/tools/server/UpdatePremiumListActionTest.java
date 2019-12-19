@@ -26,7 +26,8 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.schema.tld.PremiumListDao;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.DatastoreHelper;
@@ -48,8 +49,8 @@ public class UpdatePremiumListActionTest {
   @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
 
   @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
+  public final JpaIntegrationTestRule jpaRule =
+      new JpaTestRules.Builder().buildIntegrationTestRule();
 
   UpdatePremiumListAction action;
   FakeJsonResponse response;
@@ -101,7 +102,7 @@ public class UpdatePremiumListActionTest {
         .transact(
             () -> {
               google.registry.schema.tld.PremiumList persistedList =
-                  PremiumListDao.getCurrentRevision("foo").get();
+                  PremiumListDao.getLatestRevision("foo").get();
               assertThat(persistedList.getLabelsToPrices())
                   .containsEntry("rich", new BigDecimal("75.00"));
               assertThat(persistedList.getLabelsToPrices())

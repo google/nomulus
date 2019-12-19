@@ -26,6 +26,14 @@
         primary key (revision_id)
     );
 
+    create table "Cursor" (
+       scope text not null,
+        type text not null,
+        cursor_time timestamptz not null,
+        last_update_time timestamptz not null,
+        primary key (scope, type)
+    );
+
     create table "DelegationSignerData" (
        key_tag int4 not null,
         algorithm int4 not null,
@@ -124,8 +132,8 @@
 
     create table "PremiumEntry" (
        revision_id int8 not null,
-        price numeric(19, 2) not null,
         domain_label text not null,
+        price numeric(19, 2) not null,
         primary key (revision_id, domain_label)
     );
 

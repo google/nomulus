@@ -18,7 +18,8 @@ import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
-import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaUnitTestRule;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.DateTime;
@@ -32,10 +33,8 @@ import org.junit.runners.JUnit4;
 public class CreateAutoTimestampConverterTest {
 
   @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder()
-          .withEntityClass(TestEntity.class)
-          .build();
+  public final JpaUnitTestRule jpaRule =
+      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
   public void testTypeConversion() {
@@ -57,7 +56,7 @@ public class CreateAutoTimestampConverterTest {
 
     TestEntity result =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "autoinit"));
-    assertThat(result.cat.getTimestamp()).isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+    assertThat(result.cat.getTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.

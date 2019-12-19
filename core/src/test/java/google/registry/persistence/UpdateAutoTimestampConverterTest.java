@@ -18,7 +18,8 @@ import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
-import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaUnitTestRule;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.junit.Rule;
@@ -31,10 +32,8 @@ import org.junit.runners.JUnit4;
 public class UpdateAutoTimestampConverterTest {
 
   @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder()
-          .withEntityClass(TestEntity.class)
-          .build();
+  public final JpaUnitTestRule jpaRule =
+      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
   public void testTypeConversion() {
@@ -46,7 +45,7 @@ public class UpdateAutoTimestampConverterTest {
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst"));
 
     assertThat(result.name).isEqualTo("myinst");
-    assertThat(result.uat.getTimestamp()).isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+    assertThat(result.uat.getTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
   }
 
   @Test
@@ -58,7 +57,7 @@ public class UpdateAutoTimestampConverterTest {
     TestEntity result1 =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst1"));
 
-    jpaTmRule.getTxnClock().advanceOneMilli();
+    jpaRule.getTxnClock().advanceOneMilli();
 
     TestEntity ent2 = new TestEntity("myinst2", result1.uat);
 
@@ -68,7 +67,7 @@ public class UpdateAutoTimestampConverterTest {
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst2"));
 
     assertThat(result1.uat.getTimestamp()).isNotEqualTo(result2.uat.getTimestamp());
-    assertThat(result2.uat.getTimestamp()).isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+    assertThat(result2.uat.getTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.

@@ -62,6 +62,18 @@ ALTER SEQUENCE public."ClaimsList_revision_id_seq" OWNED BY public."ClaimsList".
 
 
 --
+-- Name: Cursor; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Cursor" (
+    scope text NOT NULL,
+    type text NOT NULL,
+    cursor_time timestamp with time zone NOT NULL,
+    last_update_time timestamp with time zone NOT NULL
+);
+
+
+--
 -- Name: PremiumEntry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -81,7 +93,7 @@ CREATE TABLE public."PremiumList" (
     creation_timestamp timestamp with time zone NOT NULL,
     name text NOT NULL,
     bloom_filter bytea NOT NULL,
-    currency text DEFAULT 'USD'::text NOT NULL
+    currency text NOT NULL
 );
 
 
@@ -226,6 +238,14 @@ ALTER TABLE ONLY public."ClaimsEntry"
 
 ALTER TABLE ONLY public."ClaimsList"
     ADD CONSTRAINT "ClaimsList_pkey" PRIMARY KEY (revision_id);
+
+
+--
+-- Name: Cursor Cursor_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Cursor"
+    ADD CONSTRAINT "Cursor_pkey" PRIMARY KEY (scope, type);
 
 
 --

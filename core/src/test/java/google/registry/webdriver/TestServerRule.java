@@ -23,7 +23,8 @@ import static google.registry.util.NetworkUtils.pickUnusedPort;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
-import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.server.Fixture;
 import google.registry.server.Route;
@@ -54,7 +55,7 @@ public final class TestServerRule extends ExternalResource {
 
   private final ImmutableList<Fixture> fixtures;
   private final AppEngineRule appEngineRule;
-  private final JpaTransactionManagerRule jpaTransactionManagerRule;
+  private final JpaIntegrationTestRule jpaTransactionManagerRule;
   private final BlockingQueue<FutureTask<?>> jobs = new LinkedBlockingDeque<>();
   private final ImmutableMap<String, Path> runfiles;
   private final ImmutableList<Route> routes;
@@ -82,7 +83,7 @@ public final class TestServerRule extends ExternalResource {
         .withTaskQueue()
         .withUserService(UserInfo.createAdmin(email, THE_REGISTRAR_GAE_USER_ID))
         .build();
-    this.jpaTransactionManagerRule = new JpaTransactionManagerRule.Builder().build();
+    this.jpaTransactionManagerRule = new JpaTestRules.Builder().buildIntegrationTestRule();
   }
 
   @Override

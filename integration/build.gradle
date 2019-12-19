@@ -1,0 +1,99 @@
+// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// This source-less project is used to run cross-release server/SQL integration
+// tests. See the README.md file in this folder for more information.
+
+import static com.google.common.base.Preconditions.checkArgument
+import static com.google.common.base.Strings.isNullOrEmpty
+
+if (schema_version == '' || nomulus_version == '') {
+  return
+}
+
+def USE_LOCAL = 'local'
+
+if (schema_version != USE_LOCAL || nomulus_version != USE_LOCAL) {
+  checkArgument(
+      !isNullOrEmpty(publish_repo),
+      'The publish_repo is required when remote jars are needed.')
+
+  repositories {
+    maven {
+      url project.publish_repo
+    }
+  }
+}
+
+def testUberJarName = ''
+
+dependencies {
+  gradleLint.ignore('unused-dependency') {
+    if (schema_version == USE_LOCAL) {
+      testRuntime project(path: ':db', configuration: 'schema')
+    } else {
+      testRuntime "google.registry:schema:${schema_version}"
+    }
+    if (nomulus_version == USE_LOCAL) {
+      testRuntime project(path: ':core', configuration: 'nomulus_test')
+      testUberJarName = 'nomulus-tests-alldeps.jar'
+    } else {
+      testRuntime "google.registry:nomulus_test:${nomulus_version}:public"
+      testRuntime "google.registry:nomulus_test:${nomulus_version}:alldeps"
+      testUberJarName = "nomulus_test-${nomulus_version}-alldeps.jar"
+    }
+  }
+}
+
+configurations.testRuntime.transitive = false
+
+def unpackedTestDir = "${projectDir}/build/unpackedTests/${nomulus_version}"
+
+// Extracts SqlIntegrationTestSuite.class to a temp folder. Gradle's test
+// runner only looks for runnable tests on a regular file system. However,
+// it can load member classes of test suites from jars.
+task extractSqlIntegrationTestSuite (type: Copy) {
+  doFirst {
+    file(unpackedTestDir).mkdirs()
+  }
+  outputs.dir unpackedTestDir
+  from zipTree(
+      configurations.testRuntime
+          .filter { it.name == testUberJarName}
+          .singleFile).matching {
+    include 'google/registry/**/SqlIntegrationTestSuite.class'
+  }
+  into unpackedTestDir
+  includeEmptyDirs = false
+}
+
+// TODO(weiminyu): inherit from FilteringTest (defined in :core).
+task sqlIntegrationTest(type: Test) {
+  testClassesDirs = files(unpackedTestDir)
+  classpath = configurations.testRuntime
+  include 'google/registry/schema/integration/SqlIntegrationTestSuite.*'
+
+  dependsOn extractSqlIntegrationTestSuite
+
+  finalizedBy tasks.create('removeUnpackedTests') {
+    doLast {
+      delete file(unpackedTestDir)
+    }
+  }
+
+  // Disable incremental build/test since Gradle cannot detect changes
+  // in dependencies on its own. Will not fix since this test is typically
+  // run once (in presubmit or ci tests).
+  outputs.upToDateWhen { false }
+}

@@ -389,6 +389,11 @@ misc:
   # to be a deliverable email address to handle replies from registrars as well.
   spec11OutgoingEmailAddress: abuse@example.com
 
+  # Addresses to which we will BCC all Spec11 email reports, in case one
+  # wishes to examine the output.
+  spec11BccEmailAddresses:
+    - abuse@example.com
+
   # How long to delay processing of asynchronous deletions. This should always
   # be longer than eppResourceCachingSeconds, to prevent deleted contacts or
   # hosts from being used on domains.

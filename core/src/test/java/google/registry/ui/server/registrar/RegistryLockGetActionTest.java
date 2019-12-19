@@ -30,7 +30,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.gson.Gson;
 import google.registry.model.registry.RegistryLockDao;
-import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.request.Action.Method;
 import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
@@ -61,8 +62,8 @@ public final class RegistryLockGetActionTest {
   @Rule public final AppEngineRule appEngineRule = AppEngineRule.builder().withDatastore().build();
 
   @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
+  public final JpaIntegrationTestRule jpaRule =
+      new JpaTestRules.Builder().buildIntegrationTestRule();
 
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 
@@ -75,7 +76,7 @@ public final class RegistryLockGetActionTest {
 
   @Before
   public void setup() {
-    jpaTmRule.getTxnClock().setTo(DateTime.parse("2000-06-08T22:00:00.0Z"));
+    jpaRule.getTxnClock().setTo(DateTime.parse("2000-06-08T22:00:00.0Z"));
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
     accessor =
         AuthenticatedRegistrarAccessor.createForTesting(
@@ -97,9 +98,9 @@ public final class RegistryLockGetActionTest {
             .setAction(Action.LOCK)
             .setVerificationCode(UUID.randomUUID().toString())
             .setRegistrarPocId("johndoe@theregistrar.com")
-            .setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
+            .setCompletionTimestamp(jpaRule.getTxnClock().nowUtc())
             .build();
-    jpaTmRule.getTxnClock().advanceOneMilli();
+    jpaRule.getTxnClock().advanceOneMilli();
     RegistryLock adminLock =
         new RegistryLock.Builder()
             .setRepoId("repoId")
@@ -108,7 +109,7 @@ public final class RegistryLockGetActionTest {
             .setAction(Action.LOCK)
             .setVerificationCode(UUID.randomUUID().toString())
             .isSuperuser(true)
-            .setCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
+            .setCompletionTimestamp(jpaRule.getTxnClock().nowUtc())
             .build();
     RegistryLock incompleteLock =
         new RegistryLock.Builder()

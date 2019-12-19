@@ -791,6 +791,12 @@ public class Registry extends ImmutableObject implements Buildable {
       return this;
     }
 
+    @VisibleForTesting
+    public Builder setPremiumListKey(@Nullable Key<PremiumList> premiumList) {
+      getInstance().premiumList = premiumList;
+      return this;
+    }
+
     public Builder setRestoreBillingCost(Money amount) {
       checkArgument(amount.isPositiveOrZero(), "restoreBillingCost cannot be negative");
       getInstance().restoreBillingCost = amount;

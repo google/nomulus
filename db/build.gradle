@@ -71,14 +71,16 @@ ext {
   // production. The role parameter may be superuser. (More roles will be added
   // later).
   getCloudSqlCredential = { env, role ->
+    def devProject = project.hasProperty('devProject')
+        ? project.getProperty('devProject') : rootProject.devProject
     def command =
         """gsutil cp \
-           gs://${rootProject.devProject}-deploy/cloudsql-credentials/${env}/${role}_credential.enc - | \
+           gs://${devProject}-deploy/cloudsql-credentials/${env}/${role}_credential.enc - | \
            base64 -d | \
            gcloud kms decrypt --location global --keyring nomulus-tool-keyring \
            --key nomulus-tool-key --plaintext-file=- \
            --ciphertext-file=- \
-           --project=${rootProject.devProject}"""
+           --project=${devProject}"""
 
     return execInBash(command, '/tmp')
   }
@@ -104,17 +106,18 @@ task compileApiJar(type: Jar) {
 
 configurations {
   compileApi
+  schema
 }
 
 artifacts {
-  archives schemaJar
   compileApi compileApiJar
+  schema schemaJar
 }
 
 publishing {
   repositories {
     maven {
-      url project.schema_publish_repo
+      url project.publish_repo
     }
   }
   publications {
@@ -150,13 +153,15 @@ dependencies {
   testRuntime deps['com.google.flogger:flogger-system-backend']
   testCompile deps['com.google.guava:guava']
   testCompile deps['com.google.truth:truth']
-  testCompile deps['io.github.java-diff-utils:java-diff-utils']
+  testRuntime deps['io.github.java-diff-utils:java-diff-utils']
   testCompile deps['junit:junit']
   testCompile deps['org.testcontainers:postgresql']
   testCompile deps['org.testcontainers:testcontainers']
+  testCompile project(path: ':common', configuration: 'testing')
   testCompile project(':third_party')
 }
 
+flywayInfo.dependsOn('buildNeeded')
 flywayValidate.dependsOn('buildNeeded')
 
 if (ext.isCloudSql()) {

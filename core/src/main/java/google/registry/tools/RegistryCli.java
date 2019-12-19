@@ -104,6 +104,8 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
     // Create all command instances. It would be preferrable to do this in the constructor, but
     // JCommander mutates the command instances and doesn't reset them so we have to do it for every
     // run.
+    // TODO(weiminyu): extract this into a standalone static method to simplify
+    //   :core:registryToolIntegrationTest
     try {
       for (Map.Entry<String, ? extends Class<? extends Command>> entry : commands.entrySet()) {
         Command command = entry.getValue().getDeclaredConstructor().newInstance();
