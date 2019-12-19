@@ -120,12 +120,10 @@ public class PremiumListDaoTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () ->
-                PremiumListDao.update(
-                    PremiumList.create("testname", CurrencyUnit.USD, TEST_PRICES)));
+            () -> PremiumListDao.update(PremiumList.create("testlist", USD, TEST_PRICES)));
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("Can't update premium list 'testname' because it doesn't exist");
+        .isEqualTo("Can't update non-existent premium list 'testlist'");
   }
 
   @Test
