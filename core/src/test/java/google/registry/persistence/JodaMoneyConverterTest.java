@@ -35,7 +35,6 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.PostLoad;
-import org.hibernate.cfg.Environment;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.junit.Rule;
@@ -67,7 +66,6 @@ public class JodaMoneyConverterTest {
   public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder()
           .withEntityClass(TestEntity.class, ComplexTestEntity.class)
-          .withProperty(Environment.HBM2DDL_AUTO, "update")
           .buildUnitTestRule();
 
   @Test
@@ -82,7 +80,7 @@ public class JodaMoneyConverterTest {
                     jpaTm()
                         .getEntityManager()
                         .createNativeQuery(
-                            "SELECT amount, currency FROM TestEntity WHERE name = 'id'")
+                            "SELECT amount, currency FROM \"TestEntity\" WHERE name = 'id'")
                         .getResultList());
     assertThat(result.size()).isEqualTo(1);
     assertThat(Arrays.asList((Object[]) result.get(0)))
@@ -113,7 +111,7 @@ public class JodaMoneyConverterTest {
                         .getEntityManager()
                         .createNativeQuery(
                             "SELECT my_amount, my_currency, your_amount, your_currency FROM"
-                                + " ComplexTestEntity WHERE name = 'id'")
+                                + " \"ComplexTestEntity\" WHERE name = 'id'")
                         .getResultList());
     assertThat(result.size()).isEqualTo(1);
     assertThat(Arrays.asList((Object[]) result.get(0)))
@@ -127,7 +125,7 @@ public class JodaMoneyConverterTest {
                     jpaTm()
                         .getEntityManager()
                         .createNativeQuery(
-                            "SELECT map_amount, map_currency FROM MoneyMap"
+                            "SELECT map_amount, map_currency FROM \"MoneyMap\""
                                 + " WHERE entity_name = 'id' AND map_key = 'dos'")
                         .getResultList());
     ComplexTestEntity persisted =
@@ -148,7 +146,9 @@ public class JodaMoneyConverterTest {
     assertThat(persisted.moneyMap).containsExactlyEntriesIn(moneyMap);
   }
 
-  @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
+  // Override entity name to exclude outer-class name in table name. Not necessary if class is not
+  // inner class. The double quotes are added to conform to our schema generation convention.
+  @Entity(name = "\"TestEntity\"")
   public static class TestEntity extends ImmutableObject {
 
     @Id String name = "id";
@@ -162,7 +162,8 @@ public class JodaMoneyConverterTest {
     }
   }
 
-  @Entity(name = "ComplexTestEntity") // Override entity name to avoid the nested class reference.
+  // See comments on the annotation for TestEntity above for reason.
+  @Entity(name = "\"ComplexTestEntity\"")
   // This entity is used to test column override for embedded fields and collections.
   public static class ComplexTestEntity extends ImmutableObject {
 
