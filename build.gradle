@@ -179,6 +179,16 @@ allprojects {
       mavenCentral()
     }
   }
+
+  if (rootProject.enableCrossReferencing.toBoolean()) {
+    gradle.projectsEvaluated {
+      tasks.withType(JavaCompile) {
+        options.fork = true
+        options.forkOptions.executable =
+            "${project.rootDir}/kythe/extractors/javac-wrapper.sh"
+      }
+    }
+  }
 }
 
 task runPresubmits(type: Exec) {

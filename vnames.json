@@ -1,0 +1,25 @@
+[
+  {
+    "pattern": "(build/[^/]+)/(.*)",
+    "vname": {
+      "corpus": "github.com/google/nomulus",
+      "path": "@2@",
+      "root": "@1@"
+    }
+  },
+  {
+    "pattern": ".*/.gradle/caches/(.*)",
+    "vname": {
+      "corpus": "github.com/google/nomulus",
+      "path": "@1@",
+      "root": ".gradle/caches"
+    }
+  },
+  {
+    "pattern": "(.*)",
+    "vname": {
+      "corpus": "github.com/google/nomulus",
+      "path": "@1@"
+    }
+  }
+]

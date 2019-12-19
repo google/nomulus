@@ -1,0 +1,61 @@
+# To run the build locally, install cloud-build-local first.
+# See: https://cloud.google.com/cloud-build/docs/build-debug-locally
+# In the root of a nomulus source tree, run:
+# cloud-build-local --config=cloudbuild-kythe.yaml --dryrun=false \
+#   --substitutions _KYTHE_VERSION=[kythe_version],COMMIT_HASH=[hash] .
+# This will download kythe version ${kythe_version} (must be higher than
+# v0.0.39 and build a ${hash}.kzip file for Kythe to enable cross referencing.
+#
+# To manually trigger a build on GCB, run:
+# gcloud builds submit --config cloudbuild-kythe.yaml --substitutions \
+#   _KYTHE_VERSION[kythe_version] .
+#
+# To trigger a build automatically, follow the instructions below and add a trigger:
+# https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
+steps:
+# Download Kythe
+- name: 'openjdk:11'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    wget -q \
+      https://github.com/kythe/kythe/releases/download/${_KYTHE_VERSION}/kythe-${_KYTHE_VERSION}.tar.gz
+    tar xvf kythe-${_KYTHE_VERSION}.tar.gz
+    rm kythe-${_KYTHE_VERSION}.tar.gz
+    mv kythe-${_KYTHE_VERSION} kythe
+# Build Nomulus with the Kythe wrapper
+- name: 'openjdk:11'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    export REAL_JAVAC=$(which javac)
+    export JAVAC_EXTRACTOR_JAR="$${PWD}/kythe/extractors/javac_extractor.jar"
+    export KYTHE_VNAMES="$${PWD}/vnames.json"
+    export KYTHE_ROOT_DIRECTORY="$${PWD}"
+    export KYTHE_OUTPUT_DIRECTORY="$${PWD}/kythe_output"
+    mkdir -p $${KYTHE_OUTPUT_DIRECTORY}
+    mkdir -p $${KYTHE_OUTPUT_DIRECTORY}/merged
+    ./gradlew clean testClasses -x compileProdJS \
+      -Dno_werror=true -PenableCrossReferencing=true
+# Merge kzip files
+- name: 'openjdk:11'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    export KYTHE_OUTPUT_DIRECTORY="$${PWD}/kythe_output"
+    ./kythe/tools/kzip merge \
+      --output $${KYTHE_OUTPUT_DIRECTORY}/merged/${COMMIT_SHA}.kzip \
+      $${KYTHE_OUTPUT_DIRECTORY}/*.kzip
+
+artifacts:
+  objects:
+    location: 'gs://${PROJECT_ID}-codesearch'
+    paths:
+    - 'kythe_output/merged/${COMMIT_SHA}.kzip'
+
+timeout: 3600s
+options:
+  machineType: 'N1_HIGHCPU_8'
