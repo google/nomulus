@@ -35,7 +35,7 @@ import org.junit.runners.JUnit4;
 public class DateTimeConverterTest {
 
   @Rule
-  public final JpaUnitTestRule jpaTmRule =
+  public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   private final DateTimeConverter converter = new DateTimeConverter();

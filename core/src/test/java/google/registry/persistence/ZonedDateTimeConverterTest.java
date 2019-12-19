@@ -35,7 +35,7 @@ import org.junit.runners.JUnit4;
 public class ZonedDateTimeConverterTest {
 
   @Rule
-  public final JpaUnitTestRule jpaTmRule =
+  public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   private final ZonedDateTimeConverter converter = new ZonedDateTimeConverter();

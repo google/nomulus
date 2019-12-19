@@ -35,10 +35,14 @@ public class JpaTestRules {
   /**
    * Junit rule for integration tests with JPA framework, when the underlying database is populated
    * with the Nomulus Cloud SQL schema.
+   *
+   * <p>Test classes that instantiate this class should be included in {@link
+   * google.registry.schema.integration.SqlIntegrationTestSuite}. This enforced by {@link
+   * google.registry.schema.integration.SqlIntegrationMembershipTest}.
    */
-  public static class JpaNomulusIntegrationTestRule extends JpaTransactionManagerRule {
+  public static class JpaIntegrationTestRule extends JpaTransactionManagerRule {
 
-    private JpaNomulusIntegrationTestRule(
+    private JpaIntegrationTestRule(
         ImmutableList<Class> extraEntityClasses, ImmutableMap<String, String> userProperties) {
       super(Optional.of(GOLDEN_SCHEMA_SQL_PATH), extraEntityClasses, userProperties);
     }
@@ -87,10 +91,10 @@ public class JpaTestRules {
       return this;
     }
 
-    /** Builds a {@link JpaNomulusIntegrationTestRule} instance. */
-    public JpaNomulusIntegrationTestRule buildIntegrationTestRule() {
+    /** Builds a {@link JpaIntegrationTestRule} instance. */
+    public JpaIntegrationTestRule buildIntegrationTestRule() {
       checkState(initScript == null, "JpaNomulusIntegrationTestRule does not accept initScript");
-      return new JpaNomulusIntegrationTestRule(
+      return new JpaIntegrationTestRule(
           ImmutableList.copyOf(extraEntityClasses), ImmutableMap.copyOf(userProperties));
     }
 

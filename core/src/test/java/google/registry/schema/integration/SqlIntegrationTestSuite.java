@@ -15,6 +15,7 @@
 package google.registry.schema.integration;
 
 import google.registry.model.registry.RegistryLockDaoTest;
+import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
 import google.registry.schema.tld.ReservedListDaoTest;
@@ -30,8 +31,7 @@ import org.junit.runners.Suite.SuiteClasses;
  * Groups all tests that may depends on Cloud SQL schema. They will be run for server-schema
  * compatibility check.
  *
- * <p>Schema dependency is approximated by the use of {@link
- * google.registry.model.transaction.JpaTestRules.JpaNomulusIntegrationTestRule}.
+ * <p>Schema dependency is approximated by the use of {@link JpaIntegrationTestRule}.
  *
  * @see SqlIntegrationMembershipTest
  */

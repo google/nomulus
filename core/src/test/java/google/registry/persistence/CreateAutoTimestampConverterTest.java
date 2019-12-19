@@ -33,7 +33,7 @@ import org.junit.runners.JUnit4;
 public class CreateAutoTimestampConverterTest {
 
   @Rule
-  public final JpaUnitTestRule jpaTmRule =
+  public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
@@ -56,7 +56,7 @@ public class CreateAutoTimestampConverterTest {
 
     TestEntity result =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "autoinit"));
-    assertThat(result.cat.getTimestamp()).isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+    assertThat(result.cat.getTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.

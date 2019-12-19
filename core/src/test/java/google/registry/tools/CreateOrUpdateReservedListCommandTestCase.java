@@ -26,7 +26,7 @@ import com.google.common.io.Files;
 import com.google.common.truth.Truth8;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.transaction.JpaTestRules;
-import google.registry.model.transaction.JpaTestRules.JpaNomulusIntegrationTestRule;
+import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.schema.tld.ReservedList.ReservedEntry;
 import google.registry.schema.tld.ReservedListDao;
 import java.io.File;
@@ -46,7 +46,7 @@ public abstract class CreateOrUpdateReservedListCommandTestCase
     <T extends CreateOrUpdateReservedListCommand> extends CommandTestCase<T> {
 
   @Rule
-  public final JpaNomulusIntegrationTestRule jpaTmRule =
+  public final JpaIntegrationTestRule jpaRule =
       new JpaTestRules.Builder().buildIntegrationTestRule();
 
   String reservedTermsPath;
@@ -112,7 +112,7 @@ public abstract class CreateOrUpdateReservedListCommandTestCase
         getCloudSqlReservedList("xn--q9jyb4c_common-reserved");
     assertThat(persistedList.getName()).isEqualTo("xn--q9jyb4c_common-reserved");
     assertThat(persistedList.getShouldPublish()).isTrue();
-    assertThat(persistedList.getCreationTimestamp()).isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+    assertThat(persistedList.getCreationTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
     assertThat(persistedList.getLabelsToReservations())
         .containsExactly(
             "baddies",

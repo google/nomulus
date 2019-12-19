@@ -32,7 +32,7 @@ import org.junit.runners.JUnit4;
 public class UpdateAutoTimestampConverterTest {
 
   @Rule
-  public final JpaUnitTestRule jpaTmRule =
+  public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
@@ -45,7 +45,7 @@ public class UpdateAutoTimestampConverterTest {
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst"));
 
     assertThat(result.name).isEqualTo("myinst");
-    assertThat(result.uat.getTimestamp()).isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+    assertThat(result.uat.getTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
   }
 
   @Test
@@ -57,7 +57,7 @@ public class UpdateAutoTimestampConverterTest {
     TestEntity result1 =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst1"));
 
-    jpaTmRule.getTxnClock().advanceOneMilli();
+    jpaRule.getTxnClock().advanceOneMilli();
 
     TestEntity ent2 = new TestEntity("myinst2", result1.uat);
 
@@ -67,7 +67,7 @@ public class UpdateAutoTimestampConverterTest {
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst2"));
 
     assertThat(result1.uat.getTimestamp()).isNotEqualTo(result2.uat.getTimestamp());
-    assertThat(result2.uat.getTimestamp()).isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+    assertThat(result2.uat.getTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.

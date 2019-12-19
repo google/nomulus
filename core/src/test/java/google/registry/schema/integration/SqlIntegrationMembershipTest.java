@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
-import google.registry.model.transaction.JpaTestRules.JpaNomulusIntegrationTestRule;
+import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
 import java.lang.reflect.Field;
@@ -35,7 +35,7 @@ import org.junit.runners.Suite.SuiteClasses;
  * system property as a comma-separated string.
  *
  * <p>A test is deemed dependent on the SQL schema iff it has a field with type {@link
- * JpaNomulusIntegrationTestRule}.
+ * JpaIntegrationTestRule}.
  */
 // TODO(weiminyu): consider generating a TestSuite class instead.
 @RunWith(JUnit4.class)
@@ -74,7 +74,7 @@ public class SqlIntegrationMembershipTest {
     for (Class<?> clazz = testClass; clazz != null; clazz = clazz.getSuperclass()) {
       if (Stream.of(clazz.getDeclaredFields())
           .map(Field::getType)
-          .anyMatch(JpaNomulusIntegrationTestRule.class::equals)) {
+          .anyMatch(JpaIntegrationTestRule.class::equals)) {
         return true;
       }
     }

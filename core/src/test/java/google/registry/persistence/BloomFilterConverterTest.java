@@ -35,7 +35,7 @@ import org.junit.runners.JUnit4;
 public class BloomFilterConverterTest {
 
   @Rule
-  public final JpaUnitTestRule jpaTmRule =
+  public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test

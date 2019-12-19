@@ -35,7 +35,7 @@ import org.junit.runners.JUnit4;
 public class JpaTransactionManagerRuleTest {
 
   @Rule
-  public final JpaUnitTestRule jpaTmRule =
+  public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder()
           .withEntityClass(ClaimsList.class, TestEntity.class)
           .buildUnitTestRule();

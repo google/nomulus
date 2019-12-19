@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.transaction.JpaTestRules;
-import google.registry.model.transaction.JpaTestRules.JpaNomulusIntegrationTestRule;
+import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.testing.FakeClock;
 import java.util.List;
 import org.junit.Rule;
@@ -33,7 +33,7 @@ public class CursorDaoTest {
   private FakeClock fakeClock = new FakeClock();
 
   @Rule
-  public final JpaNomulusIntegrationTestRule jpaTmRule =
+  public final JpaIntegrationTestRule jpaRule =
       new JpaTestRules.Builder().buildIntegrationTestRule();
 
   @Test

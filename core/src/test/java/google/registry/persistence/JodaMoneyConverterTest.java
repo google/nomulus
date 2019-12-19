@@ -64,7 +64,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class JodaMoneyConverterTest {
   @Rule
-  public final JpaUnitTestRule jpaTmRule =
+  public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder()
           .withEntityClass(TestEntity.class, ComplexTestEntity.class)
           .withProperty(Environment.HBM2DDL_AUTO, "update")

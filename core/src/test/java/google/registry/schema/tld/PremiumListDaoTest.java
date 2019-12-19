@@ -29,7 +29,7 @@ import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry;
 import google.registry.model.transaction.JpaTestRules;
-import google.registry.model.transaction.JpaTestRules.JpaNomulusIntegrationTestRule;
+import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.testing.AppEngineRule;
 import java.math.BigDecimal;
 import java.util.List;
@@ -45,7 +45,7 @@ import org.junit.runners.JUnit4;
 public class PremiumListDaoTest {
 
   @Rule
-  public final JpaNomulusIntegrationTestRule jpaTmRule =
+  public final JpaIntegrationTestRule jpaRule =
       new JpaTestRules.Builder().buildIntegrationTestRule();
 
   @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
@@ -75,7 +75,7 @@ public class PremiumListDaoTest {
                       .getSingleResult();
               assertThat(persistedList.getLabelsToPrices()).containsExactlyEntriesIn(TEST_PRICES);
               assertThat(persistedList.getCreationTimestamp())
-                  .isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+                  .isEqualTo(jpaRule.getTxnClock().nowUtc());
             });
   }
 
@@ -101,7 +101,7 @@ public class PremiumListDaoTest {
               assertThat(persistedLists.get(1).getLabelsToPrices())
                   .containsExactlyEntriesIn(TEST_PRICES);
               assertThat(persistedLists.get(1).getCreationTimestamp())
-                  .isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+                  .isEqualTo(jpaRule.getTxnClock().nowUtc());
             });
   }
 
