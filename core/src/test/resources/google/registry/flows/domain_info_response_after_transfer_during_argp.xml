@@ -1,0 +1,40 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <resData>
+      <domain:infData
+          xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>fakesite.example</domain:name>
+        <domain:roid>IGNORED</domain:roid>
+        <domain:status s="ok"/>
+        <domain:registrant>jd1234</domain:registrant>
+        <domain:contact type="admin">sh8013</domain:contact>
+        <domain:contact type="tech">sh8013</domain:contact>
+        <domain:ns>
+          <domain:hostObj>ns1.example.external</domain:hostObj>
+          <domain:hostObj>ns2.example.external</domain:hostObj>
+        </domain:ns>
+        <domain:clID>TheRegistrar</domain:clID>
+        <domain:crID>NewRegistrar</domain:crID>
+        <domain:crDate>2000-06-01T00:04:00.0Z</domain:crDate>
+        <domain:upID>TheRegistrar</domain:upID>
+        <domain:upDate>2002-06-10T00:02:00.000Z</domain:upDate>
+        <domain:exDate>2003-06-01T00:04:00.0Z</domain:exDate>
+        <domain:trDate>2002-06-10T00:02:00.000Z</domain:trDate>
+        <domain:authInfo>
+          <domain:pw>2fooBAR</domain:pw>
+        </domain:authInfo>
+      </domain:infData>
+    </resData>
+    <extension>
+      <rgp:infData xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0">
+        <rgp:rgpStatus s="transferPeriod"/>
+      </rgp:infData>
+    </extension>      <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>

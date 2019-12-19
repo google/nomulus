@@ -200,7 +200,7 @@ final class RdeFixtures {
                     .setTransferRequestTime(DateTime.parse("1991-01-01T00:00:00Z"))
                     .setTransferStatus(TransferStatus.PENDING)
                     .setTransferredRegistrationExpirationTime(
-                        DateTime.parse("2001-01-01T00:00:00.000Z"))
+                        DateTime.parse("1995-01-01T00:00:00.000Z"))
                     .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
                     .build())
             .build();

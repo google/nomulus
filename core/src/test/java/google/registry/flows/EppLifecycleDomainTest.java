@@ -1040,14 +1040,81 @@ public class EppLifecycleDomainTest extends EppTestCase {
     // Expiration date: 2002-06-01T00:04:00.0Z
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createFakesite();
-    assertThatLogoutSucceeds();
 
+    // Domain info before transfer is requested and before autorenew grace period begins
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "fakesite.example"))
+        .atTime("2001-06-01T00:00:00Z")
+        .hasResponse("domain_info_response_before_transfer_and_argp.xml");
+    assertThatCommand("domain_transfer_query_fakesite.xml")
+        .atTime("2001-06-01T00:00:00Z")
+        .hasResponse("domain_transfer_query_response_wildcard_not_requested.xml");
+
+    // Domain info before transfer is requested, but after autorenew grace period begins
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "fakesite.example"))
+        .atTime("2002-06-02T00:00:00Z")
+        .hasResponse("domain_info_response_before_transfer_during_argp.xml");
+    assertThatCommand("domain_transfer_query_fakesite.xml")
+        .atTime("2002-06-02T00:00:00Z")
+        .hasResponse("domain_transfer_query_response_wildcard_not_requested.xml");
+
+    assertThatLogoutSucceeds();
     assertThatLoginSucceeds("TheRegistrar", "password2");
+
+    // Request the transfer
     assertThatCommand("domain_transfer_request.xml")
         .atTime("2002-06-05T00:02:00.0Z")
         .hasResponse(
             "domain_transfer_response.xml",
             ImmutableMap.of(
+                "REDATE", "2002-06-05T00:02:00Z",
+                "ACDATE", "2002-06-10T00:02:00Z",
+                "EXDATE", "2003-06-01T00:04:00Z"));
+
+    assertThatLogoutSucceeds();
+    assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
+
+    // Domain info right after the transfer is requested
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "fakesite.example"))
+        .atTime("2002-06-07T00:00:00Z")
+        .hasResponse("domain_info_response_during_transfer_during_argp.xml");
+    assertThatCommand("domain_transfer_query_fakesite.xml")
+        .atTime("2002-06-07T00:00:00Z")
+        .hasResponse(
+            "domain_transfer_query_response_wildcard.xml",
+            ImmutableMap.of(
+                "STATUS", "pending",
+                "REDATE", "2002-06-05T00:02:00Z",
+                "ACDATE", "2002-06-10T00:02:00Z",
+                "EXDATE", "2003-06-01T00:04:00Z"));
+
+    assertThatLogoutSucceeds();
+    assertThatLoginSucceeds("TheRegistrar", "password2");
+
+    // Domain info after transfer is implicitly approved, but autorenew grace period is still
+    // pending
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "fakesite.example"))
+        .atTime("2002-06-11T00:00:00Z")
+        .hasResponse("domain_info_response_after_transfer_during_argp.xml");
+    assertThatCommand("domain_transfer_query_fakesite.xml")
+        .atTime("2002-06-11T00:00:00Z")
+        .hasResponse(
+            "domain_transfer_query_response_wildcard.xml",
+            ImmutableMap.of(
+                "STATUS", "serverApproved",
+                "REDATE", "2002-06-05T00:02:00Z",
+                "ACDATE", "2002-06-10T00:02:00Z",
+                "EXDATE", "2003-06-01T00:04:00Z"));
+
+    // Domain info after the end of autorenew grace period
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "fakesite.example"))
+        .atTime("2002-09-11T00:00:00Z")
+        .hasResponse("domain_info_response_after_transfer_after_argp.xml");
+    assertThatCommand("domain_transfer_query_fakesite.xml")
+        .atTime("2002-09-11T00:00:00Z")
+        .hasResponse(
+            "domain_transfer_query_response_wildcard.xml",
+            ImmutableMap.of(
+                "STATUS", "serverApproved",
                 "REDATE", "2002-06-05T00:02:00Z",
                 "ACDATE", "2002-06-10T00:02:00Z",
                 "EXDATE", "2003-06-01T00:04:00Z"));

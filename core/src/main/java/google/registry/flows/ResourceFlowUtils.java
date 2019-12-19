@@ -253,6 +253,8 @@ public final class ResourceFlowUtils {
    * Computes the exDate for the domain at the given transfer approval time with an adjusted amount
    * of transfer period years if the domain is in the auto renew grace period at the time of
    * approval.
+   *
+   * @param domain is the domain already projected at approvalTime
    */
   public static DateTime computeExDateForApprovalTime(
       DomainBase domain, DateTime approvalTime, Period period) {

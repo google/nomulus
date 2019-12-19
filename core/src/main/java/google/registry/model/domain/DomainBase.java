@@ -378,6 +378,16 @@ public class DomainBase extends EppResource
       // exclusive of their ending), and we can just proceed with the transfer.
       DomainBase domainAtTransferTime =
           cloneProjectedAtTime(transferExpirationTime.minusMillis(1));
+
+      DateTime expirationDate = transferData.getTransferredRegistrationExpirationTime();
+      if (expirationDate == null) {
+        // Extend the registration by the correct number of years from the expiration time
+        // that was current on the domain right before the transfer, capped at 10 years from
+        // the moment of the transfer.
+        expirationDate =
+            ResourceFlowUtils.computeExDateForApprovalTime(
+                domainAtTransferTime, transferExpirationTime, transferData.getTransferPeriod());
+      }
       // If we are within an autorenew grace period, the transfer will subsume the autorenew. There
       // will already be a cancellation written in advance by the transfer request flow, so we don't
       // need to worry about billing, but we do need to cancel out the expiration time increase.
@@ -388,14 +398,7 @@ public class DomainBase extends EppResource
       Builder builder =
           domainAtTransferTime
               .asBuilder()
-              // Extend the registration by the correct number of years from the expiration time
-              // that was current on the domain right before the transfer, capped at 10 years from
-              // the moment of the transfer.
-              .setRegistrationExpirationTime(
-                  ResourceFlowUtils.computeExDateForApprovalTime(
-                      domainAtTransferTime,
-                      transferExpirationTime,
-                      transferData.getTransferPeriod()))
+              .setRegistrationExpirationTime(expirationDate)
               // Set the speculatively-written new autorenew events as the domain's autorenew
               // events.
               .setAutorenewBillingEvent(transferData.getServerApproveAutorenewEvent())

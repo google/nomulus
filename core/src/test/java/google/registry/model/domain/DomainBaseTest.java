@@ -143,7 +143,6 @@ public class DomainBaseTest extends EntityTestCase {
                             .setTransferRequestTime(clock.nowUtc().plusDays(1))
                             .setTransferStatus(TransferStatus.SERVER_APPROVED)
                             .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
-                            .setTransferredRegistrationExpirationTime(clock.nowUtc().plusYears(2))
                             .build())
                     .setDeletePollMessage(onetimePollKey)
                     .setAutorenewBillingEvent(recurringBillKey)

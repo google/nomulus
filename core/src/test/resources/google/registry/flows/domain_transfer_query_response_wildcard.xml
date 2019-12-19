@@ -1,0 +1,22 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <resData>
+      <domain:trnData xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>fakesite.example</domain:name>
+        <domain:trStatus>%STATUS%</domain:trStatus>
+        <domain:reID>TheRegistrar</domain:reID>
+        <domain:reDate>%REDATE%</domain:reDate>
+        <domain:acID>NewRegistrar</domain:acID>
+        <domain:acDate>%ACDATE%</domain:acDate>
+        <domain:exDate>%EXDATE%</domain:exDate>
+      </domain:trnData>
+    </resData>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>
