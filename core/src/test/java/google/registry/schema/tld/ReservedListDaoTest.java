@@ -67,4 +67,44 @@ public class ReservedListDaoTest {
     ReservedListDao.save(ReservedList.create("testlist", false, TEST_RESERVATIONS));
     assertThat(ReservedListDao.checkExists("testlist")).isTrue();
   }
+
+  @Test
+  public void getLatestRevision_worksSuccessfully() {
+    assertThat(ReservedListDao.getLatestRevision("testlist").isPresent()).isFalse();
+    ReservedListDao.save(ReservedList.create("testlist", false, TEST_RESERVATIONS));
+    ReservedList persistedList = ReservedListDao.getLatestRevision("testlist").get();
+    assertThat(persistedList.getRevisionId()).isNotNull();
+    assertThat(persistedList.getCreationTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
+    assertThat(persistedList.getName()).isEqualTo("testlist");
+    assertThat(persistedList.getShouldPublish()).isFalse();
+    assertThat(persistedList.getLabelsToReservations()).containsExactlyEntriesIn(TEST_RESERVATIONS);
+  }
+
+  @Test
+  public void getLatestRevision_returnsLatestRevision() {
+    ReservedListDao.save(
+        ReservedList.create(
+            "testlist",
+            false,
+            ImmutableMap.of(
+                "old", ReservedEntry.create(ReservationType.RESERVED_FOR_SPECIFIC_USE, null))));
+    ReservedListDao.save(ReservedList.create("testlist", false, TEST_RESERVATIONS));
+    ReservedList persistedList = ReservedListDao.getLatestRevision("testlist").get();
+    assertThat(persistedList.getRevisionId()).isNotNull();
+    assertThat(persistedList.getCreationTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
+    assertThat(persistedList.getName()).isEqualTo("testlist");
+    assertThat(persistedList.getShouldPublish()).isFalse();
+    assertThat(persistedList.getLabelsToReservations()).containsExactlyEntriesIn(TEST_RESERVATIONS);
+  }
+
+  @Test
+  public void getLatestRevisionCached_worksSuccessfully() {
+    ReservedListDao.save(ReservedList.create("testlist", false, TEST_RESERVATIONS));
+    ReservedList persistedList = ReservedListDao.getLatestRevisionCached("testlist").get();
+    assertThat(persistedList.getRevisionId()).isNotNull();
+    assertThat(persistedList.getCreationTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
+    assertThat(persistedList.getName()).isEqualTo("testlist");
+    assertThat(persistedList.getShouldPublish()).isFalse();
+    assertThat(persistedList.getLabelsToReservations()).containsExactlyEntriesIn(TEST_RESERVATIONS);
+  }
 }
