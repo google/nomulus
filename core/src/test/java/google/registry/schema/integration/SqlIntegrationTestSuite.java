@@ -26,6 +26,8 @@ import google.registry.persistence.JodaMoneyConverterTest;
 import google.registry.persistence.UpdateAutoTimestampConverterTest;
 import google.registry.persistence.ZonedDateTimeConverterTest;
 import google.registry.schema.tld.PremiumListDaoTest;
+import google.registry.tools.server.CreatePremiumListActionTest;
+import google.registry.tools.server.UpdatePremiumListActionTest;
 import google.registry.ui.server.registrar.RegistryLockGetActionTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -46,6 +48,7 @@ import org.junit.runners.Suite.SuiteClasses;
   BloomFilterConverterTest.class,
   ClaimsListDaoTest.class,
   CreateAutoTimestampConverterTest.class,
+  CreatePremiumListActionTest.class,
   CurrencyUnitConverterTest.class,
   DateTimeConverterTest.class,
   JodaMoneyConverterTest.class,
@@ -55,6 +58,7 @@ import org.junit.runners.Suite.SuiteClasses;
   RegistryLockDaoTest.class,
   RegistryLockGetActionTest.class,
   UpdateAutoTimestampConverterTest.class,
+  UpdatePremiumListActionTest.class,
   ZonedDateTimeConverterTest.class
 })
 public class SqlIntegrationTestSuite {}

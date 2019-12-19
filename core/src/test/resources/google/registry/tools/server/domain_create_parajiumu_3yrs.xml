@@ -4,7 +4,7 @@
     <create>
       <domain:create
         xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
-        <domain:name>parajiumu.tld</domain:name>
+        <domain:name>parajiumu.baar</domain:name>
         <domain:period unit="y">3</domain:period>
         <domain:registrant>crr-admin</domain:registrant>
         <domain:contact type="admin">crr-admin</domain:contact>

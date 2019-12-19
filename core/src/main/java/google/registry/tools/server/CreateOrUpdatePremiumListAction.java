@@ -44,7 +44,6 @@ public abstract class CreateOrUpdatePremiumListAction implements Runnable {
 
   public static final String NAME_PARAM = "name";
   public static final String INPUT_PARAM = "inputData";
-  public static final String ALSO_CLOUD_SQL_PARAM = "alsoCloudSql";
 
   @Inject JsonResponse response;
 
@@ -55,10 +54,6 @@ public abstract class CreateOrUpdatePremiumListAction implements Runnable {
   @Inject
   @Parameter(INPUT_PARAM)
   String inputData;
-
-  @Inject
-  @Parameter(ALSO_CLOUD_SQL_PARAM)
-  boolean alsoCloudSql;
 
   @Override
   public void run() {
@@ -76,19 +71,16 @@ public abstract class CreateOrUpdatePremiumListAction implements Runnable {
       return;
     }
 
-    if (alsoCloudSql) {
-      try {
-        saveToCloudSql();
-      } catch (Throwable e) {
-        logger.atSevere().withCause(e).log(
-            "Unexpected error saving premium list to Cloud SQL from nomulus tool command");
-        response.setPayload(ImmutableMap.of("error", e.toString(), "status", "error"));
-        return;
-      }
+    try {
+      saveToCloudSql();
+    } catch (Throwable e) {
+      logger.atSevere().withCause(e).log(
+          "Unexpected error saving premium list to Cloud SQL from nomulus tool command");
+      response.setPayload(ImmutableMap.of("error", e.toString(), "status", "error"));
     }
   }
 
-  google.registry.schema.tld.PremiumList parseInputToPremiumList() {
+  static google.registry.schema.tld.PremiumList parseToPremiumList(String name, String inputData) {
     List<String> inputDataPreProcessed =
         Splitter.on('\n').omitEmptyStrings().splitToList(inputData);
 

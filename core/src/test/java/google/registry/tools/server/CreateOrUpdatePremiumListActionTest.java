@@ -15,8 +15,8 @@
 package google.registry.tools.server;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.JUnitBackports.assertThrows;
+import static google.registry.tools.server.CreateOrUpdatePremiumListAction.parseToPremiumList;
 
 import google.registry.schema.tld.PremiumList;
 import google.registry.testing.AppEngineRule;
@@ -48,7 +48,7 @@ public class CreateOrUpdatePremiumListActionTest {
   @Test
   public void parseInputToPremiumList_works() {
     action.inputData = "foo,USD 99.50\n" + "bar,USD 30\n" + "baz,USD 10\n";
-    PremiumList premiumList = action.parseInputToPremiumList();
+    PremiumList premiumList = parseToPremiumList(action.name, action.inputData);
     assertThat(premiumList.getName()).isEqualTo("testlist");
     assertThat(premiumList.getLabelsToPrices())
         .containsExactly("foo", twoDigits(99.50), "bar", twoDigits(30), "baz", twoDigits(10));
@@ -58,7 +58,9 @@ public class CreateOrUpdatePremiumListActionTest {
   public void parseInputToPremiumList_throwsOnInconsistentCurrencies() {
     action.inputData = "foo,USD 99.50\n" + "bar,USD 30\n" + "baz,JPY 990\n";
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> action.parseInputToPremiumList());
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> parseToPremiumList(action.name, action.inputData));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("The Cloud SQL schema requires exactly one currency, but got: [JPY, USD]");

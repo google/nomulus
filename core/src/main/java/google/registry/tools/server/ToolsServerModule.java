@@ -61,12 +61,6 @@ public class ToolsServerModule {
   }
 
   @Provides
-  @Parameter("alsoCloudSql")
-  static boolean provideAlsoCloudSql(HttpServletRequest req) {
-    return extractBooleanParameter(req, CreatePremiumListAction.ALSO_CLOUD_SQL_PARAM);
-  }
-
-  @Provides
   @Parameter("premiumListName")
   static String provideName(HttpServletRequest req) {
     return extractRequiredParameter(req, CreatePremiumListAction.NAME_PARAM);

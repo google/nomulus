@@ -15,12 +15,14 @@
 package google.registry.schema.tld;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.transaction.JpaTransactionManagerRule;
 import java.math.BigDecimal;
+import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.junit.Rule;
 import org.junit.Test;
@@ -51,13 +53,10 @@ public class PremiumListDaoTest {
     jpaTm()
         .transact(
             () -> {
-              PremiumList persistedList =
-                  jpaTm()
-                      .getEntityManager()
-                      .createQuery(
-                          "SELECT pl FROM PremiumList pl WHERE pl.name = :name", PremiumList.class)
-                      .setParameter("name", "testname")
-                      .getSingleResult();
+              Optional<PremiumList> persistedListOpt =
+                  PremiumListDao.getCurrentRevision("testname");
+              assertThat(persistedListOpt).isPresent();
+              PremiumList persistedList = persistedListOpt.get();
               assertThat(persistedList.getLabelsToPrices()).containsExactlyEntriesIn(TEST_PRICES);
               assertThat(persistedList.getCreationTimestamp())
                   .isEqualTo(jpaTmRule.getTxnClock().nowUtc());
@@ -74,6 +73,47 @@ public class PremiumListDaoTest {
                 PremiumListDao.saveNew(
                     PremiumList.create("testlist", CurrencyUnit.USD, TEST_PRICES)));
     assertThat(thrown).hasMessageThat().contains("A premium list of this name already exists");
+  }
+
+  @Test
+  public void update_worksSuccessfully() {
+    PremiumListDao.saveNew(PremiumList.create("testname", CurrencyUnit.USD, TEST_PRICES));
+    Optional<PremiumList> persistedList = PremiumListDao.getCurrentRevision("testname");
+    assertThat(persistedList).isPresent();
+    long firstRevisionId = persistedList.get().getRevisionId();
+    PremiumListDao.update(
+        PremiumList.create(
+            "testname",
+            CurrencyUnit.USD,
+            ImmutableMap.of(
+                "update", BigDecimal.valueOf(55343.12), "new", BigDecimal.valueOf(0.01))));
+    jpaTm()
+        .transact(
+            () -> {
+              Optional<PremiumList> updatedListOpt = PremiumListDao.getCurrentRevision("testname");
+              assertThat(updatedListOpt).isPresent();
+              PremiumList updatedList = updatedListOpt.get();
+              assertThat(updatedList.getLabelsToPrices())
+                  .containsExactlyEntriesIn(
+                      ImmutableMap.of(
+                          "update", BigDecimal.valueOf(55343.12), "new", BigDecimal.valueOf(0.01)));
+              assertThat(updatedList.getCreationTimestamp())
+                  .isEqualTo(jpaTmRule.getTxnClock().nowUtc());
+              assertThat(updatedList.getRevisionId()).isGreaterThan(firstRevisionId);
+            });
+  }
+
+  @Test
+  public void update_throwsWhenListDoesntExist() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                PremiumListDao.update(
+                    PremiumList.create("testname", CurrencyUnit.USD, TEST_PRICES)));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Can't update premium list 'testname' because it doesn't exist");
   }
 
   @Test

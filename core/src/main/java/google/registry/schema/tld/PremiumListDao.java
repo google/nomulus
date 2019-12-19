@@ -17,6 +17,10 @@ package google.registry.schema.tld;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
+import com.google.common.collect.Iterables;
+import java.util.List;
+import java.util.Optional;
+
 /** Data access object class for {@link PremiumList}. */
 public class PremiumListDao {
 
@@ -30,6 +34,47 @@ public class PremiumListDao {
                   "A premium list of this name already exists: %s.",
                   premiumList.getName());
               jpaTm().getEntityManager().persist(premiumList);
+            });
+  }
+
+  /** Updates an existing premium list to Cloud SQL (i.e. writes a new revision). */
+  public static void update(PremiumList premiumList) {
+    jpaTm()
+        .transact(
+            () -> {
+              checkArgument(
+                  checkExists(premiumList.getName()),
+                  "Can't update premium list '%s' because it doesn't exist",
+                  premiumList.getName());
+              // This calls persist() not merge() because it's a new revision, i.e. a new primary
+              // key. It shares the same name as previously existing lists and has a higher revision
+              // id.
+              jpaTm().getEntityManager().persist(premiumList);
+            });
+  }
+
+  /**
+   * Returns the most recent revision of the premium list with the given name, if one exists.
+   *
+   * <p>This does NOT populate the price list from the <code>PremiumEntry</code> table.
+   */
+  public static Optional<PremiumList> getCurrentRevision(String name) {
+    return jpaTm()
+        .transact(
+            () -> {
+              List<PremiumList> persistedLists =
+                  jpaTm()
+                      .getEntityManager()
+                      .createQuery(
+                          "SELECT pl FROM PremiumList pl WHERE pl.name = :name"
+                              + " ORDER BY revisionId DESC",
+                          PremiumList.class)
+                      .setParameter("name", name)
+                      .setMaxResults(1)
+                      .getResultList();
+              return persistedLists.isEmpty()
+                  ? Optional.empty()
+                  : Optional.of(Iterables.getOnlyElement(persistedLists));
             });
   }
 

@@ -24,6 +24,7 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
+import google.registry.schema.tld.PremiumListDao;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -68,10 +69,17 @@ public class UpdatePremiumListAction extends CreateOrUpdatePremiumListAction {
     response.setPayload(ImmutableMap.of("status", "success", "message", message));
   }
 
-  // TODO(mcilwain): Implement this in a subsequent PR.
   @Override
   protected void saveToCloudSql() {
-    throw new UnsupportedOperationException(
-        "Updating of premium lists in Cloud SQL is not supported yet");
+    logger.atInfo().log("Updating premium list '%s' in Cloud SQL.", name);
+    // TODO(mcilwain): Add logInputData() call here once DB migration is complete.
+    google.registry.schema.tld.PremiumList premiumList = parseToPremiumList(name, inputData);
+    PremiumListDao.update(premiumList);
+    String message =
+        String.format(
+            "Updated premium list '%s' with %d entries.",
+            premiumList.getName(), premiumList.getLabelsToPrices().size());
+    logger.atInfo().log(message);
+    // TODO(mcilwain): Call response.setPayload() here once DB migration is complete.
   }
 }

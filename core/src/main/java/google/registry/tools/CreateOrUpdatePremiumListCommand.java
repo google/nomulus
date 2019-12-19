@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.security.JsonHttp.JSON_SAFETY_PREFIX;
-import static google.registry.tools.server.CreateOrUpdatePremiumListAction.ALSO_CLOUD_SQL_PARAM;
 import static google.registry.tools.server.CreateOrUpdatePremiumListAction.INPUT_PARAM;
 import static google.registry.tools.server.CreateOrUpdatePremiumListAction.NAME_PARAM;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
@@ -58,12 +57,6 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand
       required = true)
   Path inputFile;
 
-  @Parameter(
-      names = {"--also_cloud_sql"},
-      description =
-          "Persist premium list to Cloud SQL in addition to Datastore; defaults to false.")
-  boolean alsoCloudSql;
-
   protected AppEngineConnection connection;
   protected int inputLineCount;
 
@@ -97,7 +90,6 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand
   public String execute() throws Exception {
     ImmutableMap.Builder<String, String> params = new ImmutableMap.Builder<>();
     params.put(NAME_PARAM, name);
-    params.put(ALSO_CLOUD_SQL_PARAM, Boolean.toString(alsoCloudSql));
     String inputFileContents = new String(Files.readAllBytes(inputFile), UTF_8);
     String requestBody =
         Joiner.on('&').withKeyValueSeparator("=").join(
