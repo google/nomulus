@@ -21,6 +21,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
 import static google.registry.model.EppResourceUtils.isLinked;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.rdap.RdapIcannStandardInformation.CONTACT_REDACTED_VALUE;
 import static google.registry.util.CollectionUtils.union;
 
@@ -341,8 +342,8 @@ public class RdapJsonFormatter {
 
     // Kick off the database loads of the nameservers that we will need, so it can load
     // asynchronously while we load and process the contacts.
-    Map<Key<HostResource>, HostResource> loadedHosts =
-        ofy().load().keys(domainBase.getNameservers());
+    ImmutableSet<HostResource> loadedHosts =
+        ImmutableSet.copyOf(tm().load(domainBase.getNameservers()));
     // Load the registrant and other contacts and add them to the data.
     Map<Key<ContactResource>, ContactResource> loadedContacts =
         ofy().load().keys(domainBase.getReferencedContacts());
@@ -378,8 +379,7 @@ public class RdapJsonFormatter {
     }
     // Add the nameservers to the data; the load was kicked off above for efficiency.
     // RDAP Response Profile 2.9: we MUST have the nameservers
-    for (HostResource hostResource :
-        HOST_RESOURCE_ORDERING.immutableSortedCopy(loadedHosts.values())) {
+    for (HostResource hostResource : HOST_RESOURCE_ORDERING.immutableSortedCopy(loadedHosts)) {
       builder.nameserversBuilder().add(createRdapNameserver(hostResource, OutputDataType.INTERNAL));
     }
 

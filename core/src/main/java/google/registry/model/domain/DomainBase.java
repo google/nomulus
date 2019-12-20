@@ -42,6 +42,7 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.condition.IfNull;
@@ -63,6 +64,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.registry.Registry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import google.registry.util.CollectionUtils;
 import java.util.HashSet;
 import java.util.Objects;
@@ -130,8 +132,20 @@ public class DomainBase extends EppResource
   @Index
   String tld;
 
-  /** References to hosts that are the nameservers for the domain. */
+  /**
+   * References to hosts that are the nameservers for the domain.
+   *
+   * <p>This is a legacy field: we have to preserve the name of it because it is still persisted in
+   * the datastore, but this information is now tracked by nsHostVKeys. Whenever a domain is
+   * mutated, the contents of this field are migrated to nsHostVKeys and nsHosts is set to null.
+   */
   @Index @ElementCollection @Transient Set<Key<HostResource>> nsHosts;
+
+  //  @ManyToMany(targetEntity = HostResource.class)
+  //  @JoinTable(name = "DomainBase_HostResource")
+  //  @Index
+  //  @ElementCollection
+  @Transient @Ignore Set<VKey<HostResource>> nsHostVKeys;
 
   /**
    * The union of the contacts visible via {@link #getContacts} and {@link #getRegistrant}.
@@ -299,8 +313,14 @@ public class DomainBase extends EppResource
     return idnTableName;
   }
 
-  public ImmutableSet<Key<HostResource>> getNameservers() {
-    return nullToEmptyImmutableCopy(nsHosts);
+  public ImmutableSet<VKey<HostResource>> getNameservers() {
+    if (nsHostVKeys != null) {
+      return nullToEmptyImmutableCopy(nsHostVKeys);
+    }
+
+    return nullToEmptyImmutableCopy(nsHosts).stream()
+        .map(hostKey -> VKey.create(HostResource.class, hostKey))
+        .collect(toImmutableSet());
   }
 
   public final String getCurrentSponsorClientId() {
@@ -482,7 +502,7 @@ public class DomainBase extends EppResource
   public ImmutableSortedSet<String> loadNameserverFullyQualifiedHostNames() {
     return ofy()
         .load()
-        .keys(getNameservers())
+        .keys(getNameservers().stream().map(VKey::getOfyKey).collect(toImmutableSet()))
         .values()
         .stream()
         .map(HostResource::getFullyQualifiedHostName)
@@ -542,6 +562,15 @@ public class DomainBase extends EppResource
 
     Builder(DomainBase instance) {
       super(instance);
+
+      // Convert nsHosts to nsHostVKeys.
+      if (instance.nsHosts != null) {
+        instance.nsHostVKeys =
+            instance.nsHosts.stream()
+                .map(key -> VKey.create(HostResource.class, key))
+                .collect(toImmutableSet());
+        instance.nsHosts = null;
+      }
     }
 
     @Override
@@ -557,7 +586,7 @@ public class DomainBase extends EppResource
       } else {  // There are nameservers, so make sure INACTIVE isn't there.
         removeStatusValue(StatusValue.INACTIVE);
       }
-      
+
       checkArgumentNotNull(
           emptyToNull(instance.fullyQualifiedDomainName), "Missing fullyQualifiedDomainName");
       checkArgument(instance.allContacts.stream().anyMatch(IS_REGISTRANT), "Missing registrant");
@@ -591,30 +620,32 @@ public class DomainBase extends EppResource
       return thisCastToDerived();
     }
 
-    public Builder setNameservers(Key<HostResource> nameserver) {
-      getInstance().nsHosts = ImmutableSet.of(nameserver);
+    public Builder setNameservers(VKey<HostResource> nameserver) {
+      getInstance().nsHosts = null;
+      getInstance().nsHostVKeys = ImmutableSet.of(nameserver);
       return thisCastToDerived();
     }
 
-    public Builder setNameservers(ImmutableSet<Key<HostResource>> nameservers) {
-      getInstance().nsHosts = forceEmptyToNull(nameservers);
+    public Builder setNameservers(ImmutableSet<VKey<HostResource>> nameservers) {
+      getInstance().nsHosts = null;
+      getInstance().nsHostVKeys = forceEmptyToNull(nameservers);
       return thisCastToDerived();
     }
 
-    public Builder addNameserver(Key<HostResource> nameserver) {
+    public Builder addNameserver(VKey<HostResource> nameserver) {
       return addNameservers(ImmutableSet.of(nameserver));
     }
 
-    public Builder addNameservers(ImmutableSet<Key<HostResource>> nameservers) {
+    public Builder addNameservers(ImmutableSet<VKey<HostResource>> nameservers) {
       return setNameservers(
           ImmutableSet.copyOf(union(getInstance().getNameservers(), nameservers)));
     }
 
-    public Builder removeNameserver(Key<HostResource> nameserver) {
+    public Builder removeNameserver(VKey<HostResource> nameserver) {
       return removeNameservers(ImmutableSet.of(nameserver));
     }
 
-    public Builder removeNameservers(ImmutableSet<Key<HostResource>> nameservers) {
+    public Builder removeNameservers(ImmutableSet<VKey<HostResource>> nameservers) {
       return setNameservers(
           ImmutableSet.copyOf(difference(getInstance().getNameservers(), nameservers)));
     }

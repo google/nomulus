@@ -14,9 +14,13 @@
 
 package google.registry.persistence.transaction;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+
 import com.google.common.flogger.FluentLogger;
+import google.registry.persistence.VKey;
 import google.registry.util.Clock;
 import java.util.function.Supplier;
+import java.util.stream.StreamSupport;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
@@ -140,6 +144,22 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       throw new PersistenceException("In a transaction but transactionTime is null");
     }
     return txnInfo.transactionTime;
+  }
+
+  @Override
+  public <T> T load(VKey<T> key) {
+    return transact(() -> getEntityManager().find(key.getKind(), key.getSqlKey()));
+  }
+
+  @Override
+  public <T> Iterable<T> load(Iterable<VKey<T>> keys) {
+    return transact(
+        () -> {
+          EntityManager em = getEntityManager();
+          return StreamSupport.stream(keys.spliterator(), false)
+              .map(key -> em.find(key.getKind(), key.getSqlKey()))
+              .collect(toImmutableSet());
+        });
   }
 
   private static class TransactionInfo {

@@ -14,6 +14,7 @@
 
 package google.registry.persistence.transaction;
 
+import google.registry.persistence.VKey;
 import java.util.function.Supplier;
 import org.joda.time.DateTime;
 
@@ -78,4 +79,10 @@ public interface TransactionManager {
 
   /** Returns the time associated with the start of this particular transaction attempt. */
   DateTime getTransactionTime();
+
+  /** Load the given object from the database. */
+  <T> T load(VKey<T> key);
+
+  /** Load all of the keys from the database. */
+  <T> Iterable<T> load(Iterable<VKey<T>> keys);
 }

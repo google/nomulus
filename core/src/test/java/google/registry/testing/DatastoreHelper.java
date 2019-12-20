@@ -138,7 +138,7 @@ public class DatastoreHelper {
   public static DomainBase newDomainBase(String domainName, HostResource host) {
     return newDomainBase(domainName)
         .asBuilder()
-        .setNameservers(ImmutableSet.of(Key.create(host)))
+        .setNameservers(ImmutableSet.of(host.createKey()))
         .build();
   }
 

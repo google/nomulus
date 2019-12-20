@@ -123,28 +123,34 @@ public enum Fixture {
             .build());
 
       persistResource(
-          newDomainBase("love.xn--q9jyb4c", justine).asBuilder()
-              .setContacts(ImmutableSet.of(
-                  DesignatedContact.create(ADMIN, Key.create(robert)),
-                  DesignatedContact.create(BILLING, Key.create(google)),
-                  DesignatedContact.create(TECH, Key.create(justine))))
-              .setNameservers(ImmutableSet.of(
-                  Key.create(persistActiveHost("ns1.love.xn--q9jyb4c")),
-                  Key.create(persistActiveHost("ns2.love.xn--q9jyb4c"))))
+          newDomainBase("love.xn--q9jyb4c", justine)
+              .asBuilder()
+              .setContacts(
+                  ImmutableSet.of(
+                      DesignatedContact.create(ADMIN, Key.create(robert)),
+                      DesignatedContact.create(BILLING, Key.create(google)),
+                      DesignatedContact.create(TECH, Key.create(justine))))
+              .setNameservers(
+                  ImmutableSet.of(
+                      persistActiveHost("ns1.love.xn--q9jyb4c").createKey(),
+                      persistActiveHost("ns2.love.xn--q9jyb4c").createKey()))
               .build());
 
       persistResource(
-          newDomainBase("moogle.example", justine).asBuilder()
-              .setContacts(ImmutableSet.of(
-                  DesignatedContact.create(ADMIN, Key.create(robert)),
-                  DesignatedContact.create(BILLING, Key.create(google)),
-                  DesignatedContact.create(TECH, Key.create(justine))))
-              .setNameservers(ImmutableSet.of(
-                  Key.create(persistActiveHost("ns1.linode.com")),
-                  Key.create(persistActiveHost("ns2.linode.com")),
-                  Key.create(persistActiveHost("ns3.linode.com")),
-                  Key.create(persistActiveHost("ns4.linode.com")),
-                  Key.create(persistActiveHost("ns5.linode.com"))))
+          newDomainBase("moogle.example", justine)
+              .asBuilder()
+              .setContacts(
+                  ImmutableSet.of(
+                      DesignatedContact.create(ADMIN, Key.create(robert)),
+                      DesignatedContact.create(BILLING, Key.create(google)),
+                      DesignatedContact.create(TECH, Key.create(justine))))
+              .setNameservers(
+                  ImmutableSet.of(
+                      persistActiveHost("ns1.linode.com").createKey(),
+                      persistActiveHost("ns2.linode.com").createKey(),
+                      persistActiveHost("ns3.linode.com").createKey(),
+                      persistActiveHost("ns4.linode.com").createKey(),
+                      persistActiveHost("ns5.linode.com").createKey()))
               .build());
 
       persistResource(

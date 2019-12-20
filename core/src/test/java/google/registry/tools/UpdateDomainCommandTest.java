@@ -31,6 +31,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
+import google.registry.persistence.VKey;
 import org.junit.Test;
 
 /** Unit tests for {@link UpdateDomainCommand}. */
@@ -116,12 +117,12 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
     persistResource(
         newDomainBase("example.abc")
             .asBuilder()
-            .setNameservers(ImmutableSet.of(Key.create(host1)))
+            .setNameservers(ImmutableSet.of(host1.createKey()))
             .build());
     persistResource(
         newDomainBase("example.tld")
             .asBuilder()
-            .setNameservers(ImmutableSet.of(Key.create(host2)))
+            .setNameservers(ImmutableSet.of(host2.createKey()))
             .build());
     runCommandForced(
         "--client=NewRegistrar", nsParam, "example.abc", "example.tld");
@@ -171,8 +172,8 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   public void testSuccess_setNameservers() throws Exception {
     HostResource host1 = persistActiveHost("ns1.zdns.google");
     HostResource host2 = persistActiveHost("ns2.zdns.google");
-    ImmutableSet<Key<HostResource>> nameservers =
-        ImmutableSet.of(Key.create(host1), Key.create(host2));
+    ImmutableSet<VKey<HostResource>> nameservers =
+        ImmutableSet.of(host1.createKey(), host2.createKey());
     persistResource(
         newDomainBase("example.tld").asBuilder().setNameservers(nameservers).build());
     runCommandForced(
@@ -213,7 +214,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   @Test
   public void testSuccess_setStatuses() throws Exception {
     HostResource host = persistActiveHost("ns1.zdns.google");
-    ImmutableSet<Key<HostResource>> nameservers = ImmutableSet.of(Key.create(host));
+    ImmutableSet<VKey<HostResource>> nameservers = ImmutableSet.of(host.createKey());
     persistResource(
         newDomainBase("example.tld")
             .asBuilder()
@@ -257,7 +258,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   @Test
   public void testFailure_cantUpdateRegistryLockedDomainEvenAsSuperuser() {
     HostResource host = persistActiveHost("ns1.zdns.google");
-    ImmutableSet<Key<HostResource>> nameservers = ImmutableSet.of(Key.create(host));
+    ImmutableSet<VKey<HostResource>> nameservers = ImmutableSet.of(host.createKey());
     persistResource(
         newDomainBase("example.tld")
             .asBuilder()

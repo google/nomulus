@@ -54,6 +54,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -70,14 +71,14 @@ public class DomainBaseTest extends EntityTestCase {
   public void setUp() {
     createTld("com");
     Key<DomainBase> domainKey = Key.create(null, DomainBase.class, "4-COM");
-    Key<HostResource> hostKey =
-        Key.create(
-            persistResource(
+    VKey<HostResource> hostKey =
+        persistResource(
                 new HostResource.Builder()
                     .setFullyQualifiedHostName("ns1.example.com")
                     .setSuperordinateDomain(domainKey)
                     .setRepoId("1-COM")
-                    .build()));
+                    .build())
+            .createKey();
     Key<ContactResource> contact1Key =
         Key.create(
             persistResource(
@@ -216,7 +217,7 @@ public class DomainBaseTest extends EntityTestCase {
     assertThat(
             newDomainBase("example.com")
                 .asBuilder()
-                .setNameservers(ImmutableSet.of(Key.create(newHostResource("foo.example.tld"))))
+                .setNameservers(ImmutableSet.of(newHostResource("foo.example.tld").createKey()))
                 .build()
                 .nsHosts)
         .isNotNull();
@@ -263,8 +264,8 @@ public class DomainBaseTest extends EntityTestCase {
 
   @Test
   public void testImplicitStatusValues() {
-    ImmutableSet<Key<HostResource>> nameservers =
-        ImmutableSet.of(Key.create(newHostResource("foo.example.tld")));
+    ImmutableSet<VKey<HostResource>> nameservers =
+        ImmutableSet.of(newHostResource("foo.example.tld").createKey());
     StatusValue[] statuses = {StatusValue.OK};
     // OK is implicit if there's no other statuses but there are nameservers.
     assertAboutDomains()

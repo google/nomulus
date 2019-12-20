@@ -88,6 +88,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import org.joda.money.Money;
 import org.junit.Before;
 import org.junit.Test;
@@ -138,7 +139,7 @@ public class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow,
                         DesignatedContact.create(Type.ADMIN, Key.create(mak21Contact)),
                         DesignatedContact.create(Type.BILLING, Key.create(mak21Contact))))
                 .setRegistrant(Key.create(mak21Contact))
-                .setNameservers(ImmutableSet.of(Key.create(host)))
+                .setNameservers(ImmutableSet.of(host.createKey()))
                 .build());
     historyEntryDomainCreate =
         persistResource(
@@ -161,7 +162,7 @@ public class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow,
                     ImmutableSet.of(
                         DesignatedContact.create(Type.TECH, Key.create(sh8013Contact)),
                         DesignatedContact.create(Type.ADMIN, Key.create(unusedContact))))
-                .setNameservers(ImmutableSet.of(Key.create(host)))
+                .setNameservers(ImmutableSet.of(host.createKey()))
                 .build());
     historyEntryDomainCreate =
         persistResource(
@@ -255,14 +256,14 @@ public class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow,
   }
 
   private void modifyDomainToHave13Nameservers() throws Exception {
-    ImmutableSet.Builder<Key<HostResource>> nameservers = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<VKey<HostResource>> nameservers = new ImmutableSet.Builder<>();
     for (int i = 1; i < 15; i++) {
       if (i != 2) { // Skip 2 since that's the one that the tests will add.
         nameservers.add(
-            Key.create(
-                loadByForeignKey(
-                        HostResource.class, String.format("ns%d.example.foo", i), clock.nowUtc())
-                    .get()));
+            loadByForeignKey(
+                    HostResource.class, String.format("ns%d.example.foo", i), clock.nowUtc())
+                .get()
+                .createKey());
       }
     }
     persistResource(
@@ -285,11 +286,11 @@ public class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow,
     persistDomain();
     setEppInput("domain_update_max_everything.xml");
     // Create 26 hosts and 8 contacts. Start the domain with half of them.
-    ImmutableSet.Builder<Key<HostResource>> nameservers = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<VKey<HostResource>> nameservers = new ImmutableSet.Builder<>();
     for (int i = 0; i < 26; i++) {
       HostResource host = persistActiveHost(String.format("max_test_%d.example.tld", i));
       if (i < 13) {
-        nameservers.add(Key.create(host));
+        nameservers.add(host.createKey());
       }
     }
     ImmutableList.Builder<DesignatedContact> contactsBuilder = new ImmutableList.Builder<>();
@@ -376,9 +377,9 @@ public class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow,
             .addSubordinateHost("ns2.example.tld")
             .setNameservers(
                 ImmutableSet.of(
-                    Key.create(
-                        loadByForeignKey(HostResource.class, "ns1.example.tld", clock.nowUtc())
-                            .get())))
+                    loadByForeignKey(HostResource.class, "ns1.example.tld", clock.nowUtc())
+                        .get()
+                        .createKey()))
             .build());
     clock.advanceOneMilli();
     assertTransactionalFlow(true);
@@ -1058,9 +1059,9 @@ public class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow,
             .asBuilder()
             .setNameservers(
                 ImmutableSet.of(
-                    Key.create(
-                        loadByForeignKey(HostResource.class, "ns1.example.foo", clock.nowUtc())
-                            .get())))
+                    loadByForeignKey(HostResource.class, "ns1.example.foo", clock.nowUtc())
+                        .get()
+                        .createKey()))
             .build());
     EppException thrown = assertThrows(AddRemoveSameValueException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -1275,8 +1276,9 @@ public class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow,
         reloadResourceByForeignKey()
             .asBuilder()
             .addNameserver(
-                Key.create(
-                    loadByForeignKey(HostResource.class, "ns2.example.foo", clock.nowUtc()).get()))
+                loadByForeignKey(HostResource.class, "ns2.example.foo", clock.nowUtc())
+                    .get()
+                    .createKey())
             .build());
     persistResource(
         Registry.get("tld")

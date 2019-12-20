@@ -14,10 +14,13 @@
 
 package google.registry.model.ofy;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 
+import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.TransactionManager;
 import java.util.function.Supplier;
+import java.util.stream.StreamSupport;
 import org.joda.time.DateTime;
 
 /** Datastore implementation of {@link TransactionManager}. */
@@ -82,5 +85,21 @@ public class DatastoreTransactionManager implements TransactionManager {
   @Override
   public DateTime getTransactionTime() {
     return getOfy().getTransactionTime();
+  }
+
+  @Override
+  public <T> T load(VKey<T> key) {
+    return ofy().load().key(key.getOfyKey()).now();
+  }
+
+  @Override
+  public <T> Iterable<T> load(Iterable<VKey<T>> keys) {
+    return ofy()
+        .load()
+        .keys(
+            StreamSupport.stream(keys.spliterator(), false)
+                .map(key -> key.getOfyKey())
+                .collect(toImmutableSet()))
+        .values();
   }
 }

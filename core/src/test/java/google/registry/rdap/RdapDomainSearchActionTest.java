@@ -45,6 +45,7 @@ import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapMetrics.WildcardType;
@@ -409,7 +410,7 @@ public class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDom
 
   private void createManyDomainsAndHosts(
       int numActiveDomains, int numTotalDomainsPerActiveDomain, int numHosts) {
-    ImmutableSet.Builder<Key<HostResource>> hostKeysBuilder = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<VKey<HostResource>> hostKeysBuilder = new ImmutableSet.Builder<>();
     ImmutableSet.Builder<String> subordinateHostnamesBuilder = new ImmutableSet.Builder<>();
     String mainDomainName = String.format("domain%d.lol", numTotalDomainsPerActiveDomain);
     for (int i = numHosts; i >= 1; i--) {
@@ -417,9 +418,9 @@ public class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDom
       subordinateHostnamesBuilder.add(hostName);
       HostResource host = makeAndPersistHostResource(
           hostName, String.format("5.5.%d.%d", 5 + i / 250, i % 250), clock.nowUtc().minusYears(1));
-      hostKeysBuilder.add(Key.create(host));
+      hostKeysBuilder.add(host.createKey());
     }
-    ImmutableSet<Key<HostResource>> hostKeys = hostKeysBuilder.build();
+    ImmutableSet<VKey<HostResource>> hostKeys = hostKeysBuilder.build();
     // Create all the domains at once, then persist them in parallel, for increased efficiency.
     ImmutableList.Builder<DomainBase> domainsBuilder = new ImmutableList.Builder<>();
     for (int i = numActiveDomains * numTotalDomainsPerActiveDomain; i >= 1; i--) {

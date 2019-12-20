@@ -19,7 +19,7 @@ import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.model.EppResourceUtils.checkResourcesExist;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static org.joda.time.DateTimeZone.UTC;
 
@@ -149,7 +149,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
 
   private ImmutableSortedSet<String> getExistingNameservers(DomainBase domain) {
     ImmutableSortedSet.Builder<String> nameservers = ImmutableSortedSet.naturalOrder();
-    for (HostResource host : ofy().load().keys(domain.getNameservers()).values()) {
+    for (HostResource host : tm().load(domain.getNameservers())) {
       nameservers.add(host.getForeignKey());
     }
     return nameservers.build();
