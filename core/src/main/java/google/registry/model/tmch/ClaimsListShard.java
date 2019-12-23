@@ -150,46 +150,50 @@ public class ClaimsListShard extends ImmutableObject {
           }
         }
 
-        // Also load the list from Cloud SQL, compare the two lists, and log if different.
         ClaimsListShard datastoreList =
             create(creationTime, ImmutableMap.copyOf(combinedLabelsToKeys));
+        // Also load the list from Cloud SQL, compare the two lists, and log if different.
         try {
-          Optional<ClaimsList> maybeCloudSqlList = ClaimsListDao.getLatestRevision();
-          if (maybeCloudSqlList.isPresent()) {
-            ClaimsList cloudSqlList = maybeCloudSqlList.get();
-            MapDifference<String, String> diff =
-                Maps.difference(datastoreList.labelsToKeys, cloudSqlList.getLabelsToKeys());
-            if (!diff.areEqual()) {
-              if (diff.entriesDiffering().size() > 10) {
-                logger.atWarning().log(
-                    String.format(
-                        "Unequal claims lists detected, Cloud SQL list with revision id %d has %d"
-                            + " different records than the current Datastore list.",
-                        cloudSqlList.getRevisionId(), diff.entriesDiffering().size()));
-              } else {
-                StringBuilder diffMessage = new StringBuilder("Unequal claims lists detected:\n");
-                diff.entriesDiffering().entrySet().stream()
-                    .forEach(
-                        entry -> {
-                          String label = entry.getKey();
-                          ValueDifference<String> valueDiff = entry.getValue();
-                          diffMessage.append(
-                              String.format(
-                                  "Domain label %s has key %s in Datastore and key %s in Cloud"
-                                      + " SQL.\n",
-                                  label, valueDiff.leftValue(), valueDiff.rightValue()));
-                        });
-                logger.atWarning().log(diffMessage.toString());
-              }
-            }
-          } else {
-            logger.atWarning().log("Claims list in Cloud SQL is empty.");
-          }
+          loadAndCompareCloudSqlList(datastoreList);
         } catch (Throwable t) {
           logger.atSevere().withCause(t).log("Error comparing reserved lists.");
         }
         return datastoreList;
       };
+
+  private static final void loadAndCompareCloudSqlList(ClaimsListShard datastoreList) {
+    Optional<ClaimsList> maybeCloudSqlList = ClaimsListDao.getLatestRevision();
+    if (maybeCloudSqlList.isPresent()) {
+      ClaimsList cloudSqlList = maybeCloudSqlList.get();
+      MapDifference<String, String> diff =
+          Maps.difference(datastoreList.labelsToKeys, cloudSqlList.getLabelsToKeys());
+      if (!diff.areEqual()) {
+        if (diff.entriesDiffering().size() > 10) {
+          logger.atWarning().log(
+              String.format(
+                  "Unequal claims lists detected, Cloud SQL list with revision id %d has %d"
+                      + " different records than the current Datastore list.",
+                  cloudSqlList.getRevisionId(), diff.entriesDiffering().size()));
+        } else {
+          StringBuilder diffMessage = new StringBuilder("Unequal claims lists detected:\n");
+          diff.entriesDiffering().entrySet().stream()
+              .forEach(
+                  entry -> {
+                    String label = entry.getKey();
+                    ValueDifference<String> valueDiff = entry.getValue();
+                    diffMessage.append(
+                        String.format(
+                            "Domain label %s has key %s in Datastore and key %s in Cloud"
+                                + " SQL.\n",
+                            label, valueDiff.leftValue(), valueDiff.rightValue()));
+                  });
+          logger.atWarning().log(diffMessage.toString());
+        }
+      }
+    } else {
+      logger.atWarning().log("Claims list in Cloud SQL is empty.");
+    }
+  }
 
   /**
    * A cached supplier that fetches the claims list shards from Datastore and recombines them into a
