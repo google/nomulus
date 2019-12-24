@@ -130,18 +130,36 @@ public final class RegistryLockDaoTest {
   }
 
   @Test
-  public void testLoad_byRegistrarId() {
-    RegistryLock lock = createLock();
-    RegistryLock secondLock = createLock().asBuilder().setDomainName("otherexample.test").build();
+  public void testLoad_lockedDomains_byRegistrarId() {
+    RegistryLock lock =
+        createLock()
+            .asBuilder()
+            .setLockCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
+            .build();
+    RegistryLock secondLock =
+        createLock()
+            .asBuilder()
+            .setDomainName("otherexample.test")
+            .setLockCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
+            .build();
+    RegistryLock unlockedLock =
+        createLock()
+            .asBuilder()
+            .setDomainName("unlocked.test")
+            .setLockCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
+            .setUnlockRequestTimestamp(jpaTmRule.getTxnClock().nowUtc())
+            .setUnlockCompletionTimestamp(jpaTmRule.getTxnClock().nowUtc())
+            .build();
     RegistryLockDao.save(lock);
     RegistryLockDao.save(secondLock);
+    RegistryLockDao.save(unlockedLock);
 
     assertThat(
-            RegistryLockDao.getByRegistrarId("TheRegistrar").stream()
+            RegistryLockDao.getLockedDomainsByRegistrarId("TheRegistrar").stream()
                 .map(RegistryLock::getDomainName)
                 .collect(toImmutableSet()))
         .containsExactly("example.test", "otherexample.test");
-    assertThat(RegistryLockDao.getByRegistrarId("nonexistent")).isEmpty();
+    assertThat(RegistryLockDao.getLockedDomainsByRegistrarId("nonexistent")).isEmpty();
   }
 
   @Test

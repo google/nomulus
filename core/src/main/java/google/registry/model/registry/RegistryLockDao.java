@@ -49,7 +49,7 @@ public final class RegistryLockDao {
   }
 
   /** Returns all lock objects that this registrar has created. */
-  public static ImmutableList<RegistryLock> getByRegistrarId(String registrarId) {
+  public static ImmutableList<RegistryLock> getLockedDomainsByRegistrarId(String registrarId) {
     return jpaTm()
         .transact(
             () ->
@@ -58,7 +58,9 @@ public final class RegistryLockDao {
                         .getEntityManager()
                         .createQuery(
                             "SELECT lock FROM RegistryLock lock WHERE"
-                                + " lock.registrarId = :registrarId",
+                                + " lock.registrarId = :registrarId "
+                                + "AND lock.lockCompletionTimestamp IS NOT NULL "
+                                + "AND lock.unlockCompletionTimestamp IS NULL",
                             RegistryLock.class)
                         .setParameter("registrarId", registrarId)
                         .getResultList()));
