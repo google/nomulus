@@ -49,7 +49,7 @@ public class ReservedListDao {
 
   /**
    * Returns the most recent revision of the {@link ReservedList} with the specified name, if it
-   * exists. TODO(shicong):
+   * exists. TODO(shicong): Change this method to package level access after dual-read phase.
    */
   public static Optional<ReservedList> getLatestRevision(String reservedListName) {
     return jpaTm()

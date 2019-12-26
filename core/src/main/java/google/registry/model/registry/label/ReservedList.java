@@ -240,59 +240,58 @@ public final class ReservedList
                           .now();
                   // Also load the list from Cloud SQL, compare the two lists, and log if different.
                   try {
-                    Optional<google.registry.schema.tld.ReservedList> maybeCloudSqlList =
-                        ReservedListDao.getLatestRevision(listName);
-                    if (maybeCloudSqlList.isPresent()) {
-                      Map<String, ReservedEntry> datastoreLabelsToReservations =
-                          datastoreList.reservedListMap.entrySet().parallelStream()
-                              .collect(
-                                  toImmutableMap(
-                                      entry -> entry.getKey(),
-                                      entry ->
-                                          ReservedEntry.create(
-                                              entry.getValue().reservationType,
-                                              entry.getValue().comment)));
-
-                      google.registry.schema.tld.ReservedList cloudSqlList =
-                          maybeCloudSqlList.get();
-                      MapDifference<String, ReservedEntry> diff =
-                          Maps.difference(
-                              datastoreLabelsToReservations,
-                              cloudSqlList.getLabelsToReservations());
-                      if (!diff.areEqual()) {
-                        if (diff.entriesDiffering().size() > 10) {
-                          logger.atWarning().log(
-                              String.format(
-                                  "Unequal reserved lists detected, Cloud SQL list with revision"
-                                      + " id %d has %d different records than the current"
-                                      + " Datastore list.",
-                                  cloudSqlList.getRevisionId(), diff.entriesDiffering().size()));
-                        } else {
-                          StringBuilder diffMessage =
-                              new StringBuilder("Unequal reserved lists detected:\n");
-                          diff.entriesDiffering().entrySet().stream()
-                              .forEach(
-                                  entry -> {
-                                    String label = entry.getKey();
-                                    ValueDifference<ReservedEntry> valueDiff = entry.getValue();
-                                    diffMessage.append(
-                                        String.format(
-                                            "Domain label %s has entry %s in Datastore and entry"
-                                                + " %s in Cloud SQL.\n",
-                                            label, valueDiff.leftValue(), valueDiff.rightValue()));
-                                  });
-                          logger.atWarning().log(diffMessage.toString());
-                        }
-                      }
-                    } else {
-                      logger.atWarning().log("Reserved list in Cloud SQL is empty.");
-                    }
+                    loadAndCompareCloudSqlList(datastoreList);
                   } catch (Throwable t) {
                     logger.atSevere().withCause(t).log("Error comparing reserved lists.");
                   }
                   return datastoreList;
                 }
               });
+
+  private static final void loadAndCompareCloudSqlList(ReservedList datastoreList) {
+    Optional<google.registry.schema.tld.ReservedList> maybeCloudSqlList =
+        ReservedListDao.getLatestRevision(datastoreList.getName());
+    if (maybeCloudSqlList.isPresent()) {
+      Map<String, ReservedEntry> datastoreLabelsToReservations =
+          datastoreList.reservedListMap.entrySet().parallelStream()
+              .collect(
+                  toImmutableMap(
+                      entry -> entry.getKey(),
+                      entry ->
+                          ReservedEntry.create(
+                              entry.getValue().reservationType, entry.getValue().comment)));
+
+      google.registry.schema.tld.ReservedList cloudSqlList = maybeCloudSqlList.get();
+      MapDifference<String, ReservedEntry> diff =
+          Maps.difference(datastoreLabelsToReservations, cloudSqlList.getLabelsToReservations());
+      if (!diff.areEqual()) {
+        if (diff.entriesDiffering().size() > 10) {
+          logger.atWarning().log(
+              String.format(
+                  "Unequal reserved lists detected, Cloud SQL list with revision"
+                      + " id %d has %d different records than the current"
+                      + " Datastore list.",
+                  cloudSqlList.getRevisionId(), diff.entriesDiffering().size()));
+        } else {
+          StringBuilder diffMessage = new StringBuilder("Unequal reserved lists detected:\n");
+          diff.entriesDiffering().entrySet().stream()
+              .forEach(
+                  entry -> {
+                    String label = entry.getKey();
+                    ValueDifference<ReservedEntry> valueDiff = entry.getValue();
+                    diffMessage.append(
+                        String.format(
+                            "Domain label %s has entry %s in Datastore and entry"
+                                + " %s in Cloud SQL.\n",
+                            label, valueDiff.leftValue(), valueDiff.rightValue()));
+                  });
+          logger.atWarning().log(diffMessage.toString());
+        }
+      }
+    } else {
+      logger.atWarning().log("Reserved list in Cloud SQL is empty.");
+    }
+  }
 
   /**
    * Gets the {@link ReservationType} of a label in a single ReservedList, or returns an absent

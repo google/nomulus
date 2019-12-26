@@ -23,7 +23,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import google.registry.util.NonFinalForTesting;
 import java.util.Optional;
-import org.jetbrains.annotations.NotNull;
 import org.joda.time.Duration;
 
 /** Caching utils for {@link ReservedList} */
@@ -47,7 +46,7 @@ public class ReservedListCache {
         .build(
             new CacheLoader<String, Optional<ReservedList>>() {
               @Override
-              public Optional<ReservedList> load(@NotNull String reservedListName) {
+              public Optional<ReservedList> load(String reservedListName) {
                 return ReservedListDao.getLatestRevision(reservedListName);
               }
             });
