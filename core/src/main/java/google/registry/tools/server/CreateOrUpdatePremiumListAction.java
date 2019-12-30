@@ -14,26 +14,13 @@
 
 package google.registry.tools.server;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.flogger.LazyArgs.lazy;
 
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import com.google.common.flogger.FluentLogger;
-import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.request.JsonResponse;
 import google.registry.request.Parameter;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
 import javax.inject.Inject;
-import org.joda.money.CurrencyUnit;
 
 /** Abstract base class for actions that update premium lists. */
 public abstract class CreateOrUpdatePremiumListAction implements Runnable {
@@ -78,28 +65,6 @@ public abstract class CreateOrUpdatePremiumListAction implements Runnable {
           "Unexpected error saving premium list to Cloud SQL from nomulus tool command");
       response.setPayload(ImmutableMap.of("error", e.toString(), "status", "error"));
     }
-  }
-
-  static google.registry.schema.tld.PremiumList parseToPremiumList(String name, String inputData) {
-    List<String> inputDataPreProcessed =
-        Splitter.on('\n').omitEmptyStrings().splitToList(inputData);
-
-    ImmutableMap<String, PremiumListEntry> prices =
-        new PremiumList.Builder().setName(name).build().parse(inputDataPreProcessed);
-    ImmutableSet<CurrencyUnit> currencies =
-        prices.values().stream()
-            .map(e -> e.getValue().getCurrencyUnit())
-            .distinct()
-            .collect(toImmutableSet());
-    checkArgument(
-        currencies.size() == 1,
-        "The Cloud SQL schema requires exactly one currency, but got: %s",
-        ImmutableSortedSet.copyOf(currencies));
-    CurrencyUnit currency = Iterables.getOnlyElement(currencies);
-
-    Map<String, BigDecimal> priceAmounts =
-        Maps.transformValues(prices, ple -> ple.getValue().getAmount());
-    return google.registry.schema.tld.PremiumList.create(name, currency, priceAmounts);
   }
 
   /** Logs the premium list data at INFO, truncated if too long. */

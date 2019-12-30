@@ -18,9 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.registry.label.PremiumListUtils.getPremiumPrice;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.schema.tld.PremiumListUtils.parseToPremiumList;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.loadPremiumListEntries;
-import static google.registry.tools.server.CreateOrUpdatePremiumListAction.parseToPremiumList;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 

@@ -19,6 +19,7 @@ import static google.registry.model.registry.Registries.assertTldExists;
 import static google.registry.model.registry.label.PremiumListUtils.doesPremiumListExist;
 import static google.registry.model.registry.label.PremiumListUtils.savePremiumListAndEntries;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.schema.tld.PremiumListUtils.parseToPremiumList;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
