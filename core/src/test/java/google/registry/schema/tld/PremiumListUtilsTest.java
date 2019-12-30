@@ -20,6 +20,7 @@ import static google.registry.testing.JUnitBackports.assertThrows;
 
 import google.registry.model.transaction.JpaTestRules;
 import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.testing.AppEngineRule;
 import java.math.BigDecimal;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,6 +30,8 @@ import org.junit.runners.JUnit4;
 /** Unit tests for {@link PremiumListUtils}. */
 @RunWith(JUnit4.class)
 public class PremiumListUtilsTest {
+
+  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
 
   @Rule
   public final JpaIntegrationTestRule jpaRule =

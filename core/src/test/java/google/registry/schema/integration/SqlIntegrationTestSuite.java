@@ -18,6 +18,7 @@ import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
+import google.registry.schema.tld.PremiumListUtilsTest;
 import google.registry.schema.tld.ReservedListDaoTest;
 import google.registry.schema.tmch.ClaimsListDaoTest;
 import google.registry.tools.CreateReservedListCommandTest;
@@ -45,6 +46,7 @@ import org.junit.runners.Suite.SuiteClasses;
   CursorDaoTest.class,
   CreatePremiumListActionTest.class,
   PremiumListDaoTest.class,
+  PremiumListUtilsTest.class,
   RegistryLockDaoTest.class,
   RegistryLockGetActionTest.class,
   ReservedListDaoTest.class,

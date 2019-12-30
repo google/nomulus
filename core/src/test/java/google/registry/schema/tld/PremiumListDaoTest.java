@@ -86,7 +86,12 @@ public class PremiumListDaoTest {
             "testname",
             CurrencyUnit.USD,
             ImmutableMap.of(
-                "update", BigDecimal.valueOf(55343.12), "new", BigDecimal.valueOf(0.01))));
+                "update",
+                BigDecimal.valueOf(55343.12),
+                "new",
+                BigDecimal.valueOf(0.01),
+                "silver",
+                BigDecimal.valueOf(30.03))));
     jpaTm()
         .transact(
             () -> {
@@ -96,7 +101,12 @@ public class PremiumListDaoTest {
               assertThat(updatedList.getLabelsToPrices())
                   .containsExactlyEntriesIn(
                       ImmutableMap.of(
-                          "update", BigDecimal.valueOf(55343.12), "new", BigDecimal.valueOf(0.01)));
+                          "update",
+                          BigDecimal.valueOf(55343.12),
+                          "new",
+                          BigDecimal.valueOf(0.01),
+                          "silver",
+                          BigDecimal.valueOf(30.03)));
               assertThat(updatedList.getCreationTimestamp())
                   .isEqualTo(jpaRule.getTxnClock().nowUtc());
               assertThat(updatedList.getRevisionId()).isGreaterThan(firstRevisionId);

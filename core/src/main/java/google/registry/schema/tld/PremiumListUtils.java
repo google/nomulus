@@ -32,8 +32,7 @@ import org.joda.money.CurrencyUnit;
 /** Static utility methods for {@link PremiumList}. */
 public class PremiumListUtils {
 
-  public static google.registry.schema.tld.PremiumList parseToPremiumList(
-      String name, String inputData) {
+  public static PremiumList parseToPremiumList(String name, String inputData) {
     List<String> inputDataPreProcessed =
         Splitter.on('\n').omitEmptyStrings().splitToList(inputData);
 
