@@ -21,6 +21,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
@@ -44,8 +45,7 @@ import org.mockito.junit.MockitoRule;
 @RunWith(JUnit4.class)
 public class SendEmailServiceTest {
 
-  @Rule
-  public final MockitoRule mocks = MockitoJUnit.rule();
+  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 
   private final Retrier retrier = new Retrier(new FakeSleeper(new FakeClock()), 2);
   private final TransportEmailSender wrapper = mock(TransportEmailSender.class);
@@ -74,12 +74,19 @@ public class SendEmailServiceTest {
 
   @Test
   public void testSuccess_bcc() throws Exception {
-    EmailMessage content = createBuilder().setBcc(new InternetAddress("bcc@example.com")).build();
+    EmailMessage content =
+        createBuilder()
+            .setBccs(
+                ImmutableList.of(
+                    new InternetAddress("bcc@example.com"),
+                    new InternetAddress("bcc2@example.com")))
+            .build();
     sendEmailService.sendEmail(content);
     Message message = getMessage();
     assertThat(message.getRecipients(RecipientType.BCC))
         .asList()
-        .containsExactly(new InternetAddress("bcc@example.com"));
+        .containsExactly(
+            new InternetAddress("bcc@example.com"), new InternetAddress("bcc2@example.com"));
   }
 
   @Test
@@ -87,8 +94,7 @@ public class SendEmailServiceTest {
     EmailMessage content = createBuilder().setContentType(MediaType.HTML_UTF_8).build();
     sendEmailService.sendEmail(content);
     Message message = getMessage();
-    assertThat(getInternalContent(message).getContentType())
-        .isEqualTo("text/html; charset=utf-8");
+    assertThat(getInternalContent(message).getContentType()).isEqualTo("text/html; charset=utf-8");
   }
 
   @Test

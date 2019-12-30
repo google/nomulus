@@ -58,10 +58,8 @@ configurations {
     it.name in ['runtimeClasspath', 'compileClasspath']
   }.each {
     // JUnit is from org.apache.beam:beam-runners-google-cloud-dataflow-java,
-    // testcontainer (which we use in the nomulus tool), and json-simple.
-    // We should really be excluding this, however GenerateSqlCommand in
-    // nomulus-tool currently uses testcontainers which, in turn, needs junit.
-    //exclude group: 'junit'
+    // and json-simple.
+    it.exclude group: 'junit'
     // Mockito is from org.apache.beam:beam-runners-google-cloud-dataflow-java
     // See https://issues.apache.org/jira/browse/BEAM-8862
     it.exclude group: 'org.mockito', module: 'mockito-core'

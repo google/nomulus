@@ -21,7 +21,8 @@ import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.hash.BloomFilter;
 import google.registry.model.ImmutableObject;
-import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaUnitTestRule;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.junit.Rule;
@@ -34,10 +35,8 @@ import org.junit.runners.JUnit4;
 public class BloomFilterConverterTest {
 
   @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder()
-          .withEntityClass(TestEntity.class)
-          .build();
+  public final JpaUnitTestRule jpaRule =
+      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
   public void roundTripConversion_returnsSameBloomFilter() {

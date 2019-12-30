@@ -138,6 +138,7 @@ ext {
       'org.testcontainers:selenium:1.12.1',
       'org.testcontainers:testcontainers:1.12.1',
       'org.yaml:snakeyaml:1.17',
+      'pl.pragmatists:JUnitParams:1.1.1',
       'xerces:xmlParserAPIs:2.6.2',
       'xpp3:xpp3:1.1.4c'
     ]

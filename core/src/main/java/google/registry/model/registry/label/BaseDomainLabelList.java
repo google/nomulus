@@ -121,7 +121,7 @@ public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends Dom
    * (sans comment) and the comment (in that order). If the line was blank or empty, then this
    * method returns an empty list.
    */
-  protected static List<String> splitOnComment(String line) {
+  public static List<String> splitOnComment(String line) {
     String comment = "";
     int index = line.indexOf('#');
     if (index != -1) {

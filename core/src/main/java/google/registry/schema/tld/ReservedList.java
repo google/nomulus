@@ -14,13 +14,20 @@
 
 package google.registry.schema.tld;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableList.sortedCopyOf;
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.registry.label.ReservationType;
 import java.util.Map;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -114,6 +121,22 @@ public class ReservedList extends ImmutableObject {
   /** Constructs a {@link ReservedList} object. */
   public static ReservedList create(
       String name, Boolean shouldPublish, Map<String, ReservedEntry> labelsToReservations) {
+    ImmutableList<String> invalidLabels =
+        labelsToReservations.entrySet().parallelStream()
+            .flatMap(
+                entry -> {
+                  String label = entry.getKey();
+                  if (label.equals(canonicalizeDomainName(label))) {
+                    return Stream.empty();
+                  } else {
+                    return Stream.of(label);
+                  }
+                })
+            .collect(toImmutableList());
+    checkArgument(
+        invalidLabels.isEmpty(),
+        "Label(s) [%s] must be in puny-coded, lower-case form",
+        Joiner.on(",").join(sortedCopyOf(invalidLabels)));
     return new ReservedList(name, shouldPublish, labelsToReservations);
   }
 

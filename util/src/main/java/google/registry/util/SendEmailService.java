@@ -78,8 +78,8 @@ public class SendEmailService {
             attachmentPart.setFileName(attachment.filename());
             multipart.addBodyPart(attachmentPart);
           }
-          if (emailMessage.bcc().isPresent()) {
-            msg.addRecipient(RecipientType.BCC, emailMessage.bcc().get());
+          for (InternetAddress bcc : emailMessage.bccs()) {
+            msg.addRecipient(RecipientType.BCC, bcc);
           }
           msg.setContent(multipart);
           msg.saveChanges();

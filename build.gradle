@@ -190,24 +190,33 @@ subprojects {
   // Skip no-op project
   if (project.name == 'services') return
 
-  ext.createUberJar = { taskName, binaryName, mainClass ->
+  ext.createUberJar = {
+      taskName,
+      binaryName,
+      mainClass,
+      List<Configuration> configs = [project.configurations.runtimeClasspath],
+      List<SourceSetOutput> srcOutput = [project.sourceSets.main.output],
+      List<String> excludes = [] ->
     project.tasks.create(
-      taskName, com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+        taskName, com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
       mergeServiceFiles()
       baseName = binaryName
-      manifest {
-        attributes 'Main-Class': mainClass
+      if (mainClass != '') {
+        manifest {
+          attributes 'Main-Class': mainClass
+        }
       }
       zip64 = true
       classifier = ''
       archiveVersion = ''
-      configurations = [project.configurations.runtimeClasspath]
-      from project.sourceSets.main.output
+      configurations = configs
+      from srcOutput
       // Excludes signature files that accompany some dependency jars, like
       // bonuncycastle. If they are present, only classes from those signed jars are
       // made available to the class loader.
       // see https://discuss.gradle.org/t/signing-a-custom-gradle-plugin-thats-downloaded-by-the-build-system-from-github/1365
       exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
+      exclude excludes
     }
   }
 
@@ -221,9 +230,18 @@ subprojects {
   }
 
   afterEvaluate {
-    if (rootProject.enableDependencyLocking.toBoolean()) {
-      // Lock application dependencies except for the gradle-license-report
-      // plugin. See dependency_lic.gradle for the reason why.
+    if (rootProject.enableDependencyLocking.toBoolean()
+        && project.name != 'integration') {
+      // The ':integration' project runs server/schema integration tests using
+      // dynamically specified jars with no transitive dependency. Therefore
+      // dependency-locking does not make sense. Furthermore, during
+      // evaluation it resolves the 'testRuntime' configuration, making it
+      // immutable. Locking activation would trigger an invalid operation
+      // exception.
+      //
+      // For all other projects, due to problem with the gradle-license-report
+      // plugin, the dependencyLicenseReport configuration must opt out of
+      // dependency-locking. See dependency_lic.gradle for the reason why.
       //
       // To selectively activate dependency locking without hardcoding them
       // in the 'configurations' block, the following code must run after

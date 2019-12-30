@@ -21,24 +21,29 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.beust.jcommander.Parameters;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Sets.SetView;
 import com.google.common.reflect.ClassPath;
 import com.google.common.reflect.ClassPath.ClassInfo;
 import com.google.common.truth.Expect;
 import google.registry.testing.SystemPropertyRule;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
+import java.util.List;
 import java.util.Map;
+import junitparams.JUnitParamsRunner;
+import junitparams.naming.TestCaseName;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link RegistryTool}. */
-@RunWith(JUnit4.class)
-public class RegistryToolTest {
+/** Unit tests for {@link RegistryTool} and {@link DevTool}. */
+@RunWith(JUnitParamsRunner.class)
+public class ToolsTest {
 
   @Rule
   public final Expect expect = Expect.create();
@@ -51,27 +56,38 @@ public class RegistryToolTest {
   }
 
   @Test
-  public void test_commandMap_namesAreInAlphabeticalOrder() {
-    assertThat(RegistryTool.COMMAND_MAP.keySet()).isInStrictOrder();
-  }
-
-  @Test
   public void test_commandMap_includesAllCommands() throws Exception {
-    ImmutableSet<?> commandMapClasses = ImmutableSet.copyOf(RegistryTool.COMMAND_MAP.values());
+    ImmutableSet<?> registryToolCommands = ImmutableSet.copyOf(RegistryTool.COMMAND_MAP.values());
+    ImmutableSet<?> devToolCommands = ImmutableSet.copyOf(DevTool.COMMAND_MAP.values());
+    assertWithMessage("RegistryTool and DevTool have overlapping commands")
+        .that(Sets.intersection(registryToolCommands, devToolCommands))
+        .isEmpty();
+    SetView<?> allCommandsInTools = Sets.union(registryToolCommands, devToolCommands);
     ImmutableSet<?> classLoaderClasses = getAllCommandClasses();
     // Not using plain old containsExactlyElementsIn() since it produces a huge unreadable blob.
-    assertWithMessage("command classes in RegistryTool.COMMAND_MAP but not found by class loader")
-        .that(Sets.difference(commandMapClasses, classLoaderClasses))
+    assertWithMessage("command classes in COMMAND_MAP but not found by class loader")
+        .that(Sets.difference(allCommandsInTools, classLoaderClasses))
         .isEmpty();
-    assertWithMessage("command classes found by class loader but not in RegistryTool.COMMAND_MAP")
-        .that(Sets.difference(classLoaderClasses, commandMapClasses))
+    assertWithMessage("command classes found by class loader but not in COMMAND_MAP")
+        .that(Sets.difference(classLoaderClasses, allCommandsInTools))
         .isEmpty();
   }
 
   @Test
-  public void test_commandMap_namesAreDerivedFromClassNames() {
+  @junitparams.Parameters(method = "getToolCommandMap")
+  @TestCaseName("{method}_{0}")
+  public void test_commandMap_namesAreInAlphabeticalOrder(
+      String toolName, ImmutableMap<String, Class<? extends Command>> commandMap) {
+    assertThat(commandMap.keySet()).isInStrictOrder();
+  }
+
+  @Test
+  @junitparams.Parameters(method = "getToolCommandMap")
+  @TestCaseName("{method}_{0}")
+  public void test_commandMap_namesAreDerivedFromClassNames(
+      String toolName, ImmutableMap<String, Class<? extends Command>> commandMap) {
     for (Map.Entry<String, ? extends Class<? extends Command>> commandEntry :
-        RegistryTool.COMMAND_MAP.entrySet()) {
+        commandMap.entrySet()) {
       String className = commandEntry.getValue().getSimpleName();
       expect.that(commandEntry.getKey())
           // JCommander names should match the class name, up to "Command" and case formatting.
@@ -80,13 +96,23 @@ public class RegistryToolTest {
   }
 
   @Test
-  public void test_commandMap_allCommandsHaveDescriptions() {
+  @junitparams.Parameters(method = "getToolCommandMap")
+  @TestCaseName("{method}_{0}")
+  public void test_commandMap_allCommandsHaveDescriptions(
+      String toolName, ImmutableMap<String, Class<? extends Command>> commandMap) {
     for (Map.Entry<String, ? extends Class<? extends Command>> commandEntry :
-        RegistryTool.COMMAND_MAP.entrySet()) {
+        commandMap.entrySet()) {
       Parameters parameters = commandEntry.getValue().getAnnotation(Parameters.class);
       assertThat(parameters).isNotNull();
       assertThat(parameters.commandDescription()).isNotEmpty();
     }
+  }
+
+  @SuppressWarnings("unused")
+  private List<List<Object>> getToolCommandMap() {
+    return ImmutableList.of(
+        ImmutableList.of("RegistryTool", RegistryTool.COMMAND_MAP),
+        ImmutableList.of("DevTool", DevTool.COMMAND_MAP));
   }
 
   /**

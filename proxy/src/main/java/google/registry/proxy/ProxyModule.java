@@ -29,6 +29,8 @@ import com.google.monitoring.metrics.MetricReporter;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.networking.module.CertificateSupplierModule;
+import google.registry.networking.module.CertificateSupplierModule.Mode;
 import google.registry.proxy.EppProtocolModule.EppProtocol;
 import google.registry.proxy.HealthCheckProtocolModule.HealthCheckProtocol;
 import google.registry.proxy.Protocol.FrontendProtocol;
@@ -46,6 +48,7 @@ import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslProvider;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
@@ -324,12 +327,29 @@ public class ProxyModule {
     return getProxyConfig(env);
   }
 
+  @Singleton
+  @Provides
+  static Mode provideMode(Environment env) {
+    if (env == Environment.LOCAL) {
+      return Mode.SELF_SIGNED;
+    } else {
+      return Mode.P12_FILE;
+    }
+  }
+
+  @Singleton
+  @Provides
+  @Named("remoteCertCachingDuration")
+  static Duration provideCertCachingDuration(ProxyConfig config) {
+    return Duration.ofSeconds(config.serverCertificateCacheSeconds);
+  }
+
   /** Root level component that exposes the port-to-protocol map. */
   @Singleton
   @Component(
       modules = {
         ProxyModule.class,
-        CertificateModule.class,
+        CertificateSupplierModule.class,
         HttpsRelayProtocolModule.class,
         WhoisProtocolModule.class,
         WebWhoisProtocolsModule.class,

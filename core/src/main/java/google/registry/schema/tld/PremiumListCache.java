@@ -28,7 +28,6 @@ import com.google.common.cache.LoadingCache;
 import google.registry.util.NonFinalForTesting;
 import java.math.BigDecimal;
 import java.util.Optional;
-import org.jetbrains.annotations.NotNull;
 import org.joda.time.Duration;
 
 /** Caching utils for {@link PremiumList}s. */
@@ -52,7 +51,7 @@ class PremiumListCache {
         .build(
             new CacheLoader<String, Optional<PremiumList>>() {
               @Override
-              public Optional<PremiumList> load(@NotNull String premiumListName) {
+              public Optional<PremiumList> load(String premiumListName) {
                 return PremiumListDao.getLatestRevision(premiumListName);
               }
             });
