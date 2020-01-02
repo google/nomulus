@@ -20,7 +20,6 @@ import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
-import static google.registry.reporting.icann.IcannReportingModule.MANIFEST_FILE_NAME;
 import static google.registry.reporting.icann.IcannReportingModule.PARAM_SUBDIR;
 import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
@@ -65,8 +64,9 @@ import org.joda.time.Duration;
  * Action that uploads the monthly activity/transactions reports from GCS to ICANN via an HTTP PUT.
  *
  * <p>This should be run after {@link IcannReportingStagingAction}, which writes out the month's
- * reports and a MANIFEST.txt file. This action reads the filenames from the MANIFEST.txt, and
- * attempts to upload every file in the manifest to ICANN's endpoint.
+ * reports and a MANIFEST.txt file. This action checks each ICANN_UPLOAD_TX and
+ * ICANN_UPLOAD_ACTIVITY cursor and uploads the corresponding report if the cursor time is before
+ * now.
  *
  * <p>Parameters:
  *
@@ -181,32 +181,22 @@ public final class IcannReportingUploadAction implements Runnable {
 
     // Set cursor to first day of next month if the upload succeeded
     if (success) {
-      Cursor newCursor;
-      if (cursorType.equals(CursorType.ICANN_UPLOAD_MANIFEST)) {
-        newCursor =
-            Cursor.createGlobal(
-                cursorType, cursorTime.withTimeAtStartOfDay().withDayOfMonth(1).plusMonths(1));
-      } else {
-        newCursor =
-            Cursor.create(
-                cursorType,
-                cursorTime.withTimeAtStartOfDay().withDayOfMonth(1).plusMonths(1),
-                Registry.get(tldStr));
-      }
+      Cursor newCursor =
+          Cursor.create(
+              cursorType,
+              cursorTime.withTimeAtStartOfDay().withDayOfMonth(1).plusMonths(1),
+              Registry.get(tldStr));
       tm().transact(() -> ofy().save().entity(newCursor));
     }
   }
 
   private String getFileName(CursorType cursorType, DateTime cursorTime, String tld) {
-    if (cursorType.equals(CursorType.ICANN_UPLOAD_MANIFEST)) {
-      return MANIFEST_FILE_NAME;
-    }
     return String.format(
         "%s%s%d%02d.csv",
         tld,
         (cursorType.equals(CursorType.ICANN_UPLOAD_ACTIVITY) ? "-activity-" : "-transactions-"),
         cursorTime.year().get(),
-        cursorTime.monthOfYear().get());
+        cursorTime.withDayOfMonth(1).minusMonths(1).monthOfYear().get());
   }
 
   /** Returns a map of each cursor to the CursorType and tld. */
@@ -222,7 +212,6 @@ public final class IcannReportingUploadAction implements Runnable {
     ImmutableSet.Builder<Key<Cursor>> keys = new ImmutableSet.Builder<>();
     keys.addAll(activityKeyMap.keySet());
     keys.addAll(transactionKeyMap.keySet());
-    keys.add(Cursor.createGlobalKey(CursorType.ICANN_UPLOAD_MANIFEST));
 
     Map<Key<Cursor>, Cursor> cursorMap = ofy().load().keys(keys.build());
     ImmutableMap.Builder<Cursor, CursorInfo> cursors = new ImmutableMap.Builder<>();
@@ -230,11 +219,6 @@ public final class IcannReportingUploadAction implements Runnable {
         activityKeyMap, CursorType.ICANN_UPLOAD_ACTIVITY, cursorMap, cursors);
     defaultNullCursorsToNextMonthAndAddToMap(
         transactionKeyMap, CursorType.ICANN_UPLOAD_TX, cursorMap, cursors);
-    Cursor manifestCursor =
-        cursorMap.getOrDefault(
-            Cursor.createGlobalKey(CursorType.ICANN_UPLOAD_MANIFEST),
-            Cursor.createGlobal(CursorType.ICANN_UPLOAD_MANIFEST, clock.nowUtc().minusDays(1)));
-    cursors.put(manifestCursor, CursorInfo.create(CursorType.ICANN_UPLOAD_MANIFEST, null));
     return cursors.build();
   }
 
@@ -259,7 +243,14 @@ public final class IcannReportingUploadAction implements Runnable {
           // report staged for upload.
           Cursor cursor =
               cursorMap.getOrDefault(
-                  key, Cursor.create(type, clock.nowUtc().minusDays(1), registry));
+                  key,
+                  Cursor.create(
+                      type,
+                      clock.nowUtc().withDayOfMonth(1).withTimeAtStartOfDay().plusMonths(1),
+                      registry));
+          if (!cursorMap.containsValue(cursor)) {
+            tm().transact(() -> ofy().save().entity(cursor));
+          }
           cursors.put(cursor, CursorInfo.create(type, registry.getTldStr()));
         });
   }
