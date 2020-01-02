@@ -14,9 +14,13 @@
 
 package google.registry.schema.tmch;
 
+import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
+import static google.registry.model.CacheUtils.tryMemoizeWithExpiration;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
+import com.google.common.base.Supplier;
 import com.google.common.flogger.FluentLogger;
+import google.registry.util.NonFinalForTesting;
 import java.util.Optional;
 import javax.persistence.EntityManager;
 
@@ -24,6 +28,11 @@ import javax.persistence.EntityManager;
 public class ClaimsListDao {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  /** In-memory cache for claims list. */
+  @NonFinalForTesting
+  private static Supplier<Optional<ClaimsList>> cacheClaimsList =
+      tryMemoizeWithExpiration(getDomainLabelListCacheDuration(), ClaimsListDao::getLatestRevision);
 
   private static void save(ClaimsList claimsList) {
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(claimsList));
@@ -73,7 +82,7 @@ public class ClaimsListDao {
 
   /** Returns the most recent revision of the {@link ClaimsList}, from cache. */
   public static Optional<ClaimsList> getLatestRevisionCached() {
-    return ClaimsListCache.cacheClaimsList.get();
+    return cacheClaimsList.get();
   }
 
   private ClaimsListDao() {}
