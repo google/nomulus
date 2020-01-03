@@ -85,7 +85,12 @@ public class Cursor extends ImmutableObject {
     ICANN_UPLOAD_TX(Registry.class),
 
     /** Cursor for tracking monthly uploads of ICANN activity reports. */
-    ICANN_UPLOAD_ACTIVITY(Registry.class);
+    ICANN_UPLOAD_ACTIVITY(Registry.class),
+
+    // TODO(sarahbot) Delete this cursor once all data in the database that refers to it is removed.
+    /** Cursor for tracking monthly uploads of MANIFEST.txt to ICANN. No longer used. */
+    @Deprecated
+    ICANN_UPLOAD_MANIFEST(EntityGroupRoot.class);
 
     /** See the definition of scope on {@link #getScopeClass}. */
     private final Class<? extends ImmutableObject> scope;
