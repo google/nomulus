@@ -126,6 +126,7 @@ public final class RegistryLockDaoTest {
     assertThat(RegistryLockDao.getByVerificationCode("hi").isPresent()).isFalse();
   }
 
+  @Test
   public void testLoad_lockedDomains_byRegistrarId() {
     RegistryLock lock =
         createLock().asBuilder().setLockCompletionTimestamp(jpaRule.getTxnClock().nowUtc()).build();

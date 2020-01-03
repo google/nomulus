@@ -31,7 +31,8 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.model.registry.RegistryLockDao;
-import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.testing.FakeClock;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,8 +45,8 @@ import org.junit.Test;
 public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand> {
 
   @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
+  public final JpaIntegrationTestRule jpaRule =
+      new JpaTestRules.Builder().buildIntegrationTestRule();
 
   @Before
   public void before() {
@@ -74,11 +75,13 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
 
   @Test
   public void testSuccess_partiallyUpdatesStatuses() throws Exception {
-    DomainBase domain = persistResource(
-        newDomainBase("example.tld")
-            .asBuilder()
-            .addStatusValues(ImmutableSet.of(SERVER_DELETE_PROHIBITED, SERVER_UPDATE_PROHIBITED))
-            .build());
+    DomainBase domain =
+        persistResource(
+            newDomainBase("example.tld")
+                .asBuilder()
+                .addStatusValues(
+                    ImmutableSet.of(SERVER_DELETE_PROHIBITED, SERVER_UPDATE_PROHIBITED))
+                .build());
     runCommandForced("--client=NewRegistrar", "example.tld");
     assertThat(reloadResource(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
   }

@@ -98,7 +98,8 @@ public final class RegistryLockDao {
                     .getEntityManager()
                     .createQuery(
                         "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId AND"
-                            + " lock.completionTimestamp IS NOT NULL ORDER BY lock.revisionId DESC",
+                            + " lock.lockCompletionTimestamp IS NOT NULL ORDER BY lock.revisionId"
+                            + " DESC",
                         RegistryLock.class)
                     .setParameter("repoId", repoId)
                     .setMaxResults(1)

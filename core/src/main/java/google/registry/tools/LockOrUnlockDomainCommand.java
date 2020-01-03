@@ -26,16 +26,11 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.model.CreateAutoTimestamp;
-import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.schema.domain.RegistryLock;
-import google.registry.schema.domain.RegistryLock.Action;
 import google.registry.util.Clock;
 import java.util.List;
-import java.util.UUID;
 import javax.inject.Inject;
-import org.joda.time.DateTime;
 
 /** Shared base class for commands to registry lock or unlock a domain via EPP. */
 public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
@@ -62,7 +57,7 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
 
   @Inject Clock clock;
 
-  protected ImmutableSet<RegistryLock> lockObjects = ImmutableSet.of();
+  protected ImmutableSet<String> relevantDomains = ImmutableSet.of();
 
   protected ImmutableSet<String> getDomains() {
     return ImmutableSet.copyOf(mainParameters);
@@ -78,42 +73,34 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
     checkArgument(duplicates.isEmpty(), "Duplicate domain arguments found: '%s'", duplicates);
     System.out.println(
         "== ENSURE THAT YOU HAVE AUTHENTICATED THE REGISTRAR BEFORE RUNNING THIS COMMAND ==");
-    lockObjects = createLockObjects();
+    relevantDomains = getRelevantDomains();
   }
 
   @Override
   protected String execute() {
     int failures = 0;
-    for (RegistryLock lock : lockObjects) {
+    for (String domain : relevantDomains) {
       try {
-        DomainLockUtils.verifyAndApplyLock(lock, true, clock);
+        RegistryLock lock = createLock(domain);
+        finalizeLockOrUnlockRequest(lock);
       } catch (Throwable t) {
         Throwable rootCause = Throwables.getRootCause(t);
-        logger.atSevere().withCause(rootCause).log(
-            "Error when (un)locking domain %s", lock.getDomainName());
+        logger.atSevere().withCause(rootCause).log("Error when (un)locking domain %s", domain);
         failures++;
       }
     }
     if (failures == 0) {
-      return String.format("Successfully locked/unlocked %d domains", lockObjects.size());
+      return String.format("Successfully locked/unlocked %d domains", relevantDomains.size());
     } else {
       return String.format(
           "Successfully locked/unlocked %d domains with %d failures",
-          lockObjects.size() - failures, failures);
+          relevantDomains.size() - failures, failures);
     }
   }
 
-  protected abstract ImmutableSet<RegistryLock> createLockObjects();
+  protected abstract ImmutableSet<String> getRelevantDomains();
 
-  protected RegistryLock createLock(DomainBase domainBase, boolean isLock, DateTime now) {
-    return new RegistryLock.Builder()
-        .isSuperuser(true) // command-line tool is always admin
-        .setVerificationCode(UUID.randomUUID().toString())
-        .setAction(isLock ? Action.LOCK : Action.UNLOCK)
-        .setDomainName(domainBase.getFullyQualifiedDomainName())
-        .setRegistrarId(clientId)
-        .setRepoId(domainBase.getRepoId())
-        .setCreationTimestamp(CreateAutoTimestamp.create(now))
-        .build();
-  }
+  protected abstract RegistryLock createLock(String domain);
+
+  protected abstract void finalizeLockOrUnlockRequest(RegistryLock lock);
 }

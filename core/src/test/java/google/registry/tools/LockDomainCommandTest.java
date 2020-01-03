@@ -28,7 +28,8 @@ import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.model.registry.RegistryLockDao;
-import google.registry.model.transaction.JpaTransactionManagerRule;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.testing.FakeClock;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,8 +42,8 @@ import org.junit.Test;
 public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
 
   @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
+  public final JpaIntegrationTestRule jpaRule =
+      new JpaTestRules.Builder().buildIntegrationTestRule();
 
   @Before
   public void before() {

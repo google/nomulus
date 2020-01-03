@@ -954,7 +954,7 @@ public class DatastoreHelper {
    * Returns all of the history entries that are parented off the given EppResource with the given
    * type.
    */
-  public static List<HistoryEntry> getHistoryEntriesOfType(
+  public static ImmutableList<HistoryEntry> getHistoryEntriesOfType(
       EppResource resource, final HistoryEntry.Type type) {
     return getHistoryEntries(resource)
         .stream()

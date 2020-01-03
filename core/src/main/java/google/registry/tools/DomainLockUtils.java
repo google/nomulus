@@ -15,19 +15,15 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.googlecode.objectify.Key;
-import google.registry.model.EppResource;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
@@ -35,9 +31,10 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.RegistryLockDao;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.schema.domain.RegistryLock;
-import google.registry.schema.domain.RegistryLock.Action;
 import google.registry.util.Clock;
 import java.util.Optional;
+import java.util.UUID;
+import javax.annotation.Nullable;
 
 /**
  * Utility class for validating and applying {@link RegistryLock}s with the current state of the
@@ -47,105 +44,200 @@ public final class DomainLockUtils {
 
   private DomainLockUtils() {}
 
-  /**
-   * Validates the creation of a new lock object, performing various checks. A lock must not be a
-   * no-op (e.g. locking a locked domain) for this to succeed.
-   */
-  public static void validateNewLock(RegistryLock newLock, Clock clock) {
-    checkArgument(
-        !Strings.isNullOrEmpty(newLock.getDomainName()), "Lock cannot have an empty domain name");
-
-    DomainBase domainBase =
-        loadByForeignKeyCached(DomainBase.class, newLock.getDomainName(), clock.nowUtc())
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        String.format("Unknown domain %s", newLock.getDomainName())));
+  public static RegistryLock createRegistryLockRequest(
+      String domainName,
+      String registrarId,
+      @Nullable String registrarPocId,
+      boolean isAdmin,
+      Clock clock) {
+    DomainBase domainBase = getDomain(domainName, clock);
+    verifyDomainNotLocked(domainBase);
 
     // Multiple pending actions are not allowed
-    Optional<RegistryLock> previousLock =
-        RegistryLockDao.getMostRecentByRepoId(domainBase.getRepoId());
-    previousLock.ifPresent(
-        lock ->
-            checkArgument(
-                lock.isVerified() || lock.isExpired(clock),
-                "A pending action already exists for %s",
-                lock.getDomainName()));
+    RegistryLockDao.getMostRecentByRepoId(domainBase.getRepoId())
+        .ifPresent(
+            previousLock ->
+                checkArgument(
+                    previousLock.isLockRequestExpired(clock) || previousLock.isUnlocked(),
+                    "A pending or completed lock action already exists for %s",
+                    previousLock.getDomainName()));
 
-    // Unlock actions have restrictions (unless the user is admin)
-    if (!newLock.getAction().equals(Action.LOCK) && !newLock.isSuperuser()) {
-      RegistryLock previouslyVerifiedLock = getPreviouslyVerifiedLock(previousLock);
-      checkArgument(
-          previouslyVerifiedLock.getAction().equals(RegistryLock.Action.LOCK),
-          "Cannot unlock a domain multiple times");
-      checkArgument(
-          !previouslyVerifiedLock.isSuperuser(),
-          "Non-admin user cannot unlock an admin-locked domain");
-    }
-    verifyCurrentDomainLockStatuses(domainBase, newLock);
+    RegistryLock lock =
+        new RegistryLock.Builder()
+            .setVerificationCode(UUID.randomUUID().toString())
+            .setDomainName(domainName)
+            .setRepoId(domainBase.getRepoId())
+            .setRegistrarId(registrarId)
+            .setRegistrarPocId(registrarPocId)
+            .isSuperuser(isAdmin)
+            .build();
+    RegistryLockDao.save(lock);
+    return lock;
   }
 
-  /**
-   * Verifies and finalizes a lock object. This adds/removes the lock statuses on the relevant
-   * {@link EppResource}s if they are in the correct state. Note that if the Datastore fails for
-   * some reason, we will not modify the lock object.
-   */
-  public static RegistryLock verifyAndApplyLock(RegistryLock lock, boolean isAdmin, Clock clock) {
+  public static RegistryLock createRegistryUnlockRequest(
+      String domainName, String registrarId, boolean isAdmin, Clock clock) {
+    DomainBase domainBase = getDomain(domainName, clock);
+    Optional<RegistryLock> lockOptional =
+        RegistryLockDao.getMostRecentVerifiedLockByRepoId(domainBase.getRepoId());
+
+    RegistryLock.Builder newLockBuilder;
+    if (isAdmin) {
+      newLockBuilder =
+          lockOptional
+              .map(RegistryLock::asBuilder)
+              .orElse(
+                  new RegistryLock.Builder()
+                      .setRepoId(domainBase.getRepoId())
+                      .setDomainName(domainName)
+                      .setLockCompletionTimestamp(clock.nowUtc())
+                      .setRegistrarId(registrarId));
+    } else {
+      verifyDomainLocked(domainBase);
+      RegistryLock lock =
+          lockOptional.orElseThrow(
+              () ->
+                  new IllegalArgumentException(
+                      String.format("No lock object for domain %s", domainName)));
+      checkArgument(
+          lock.isLocked(), "Lock object for domain %s is not currently locked", domainName);
+      checkArgument(
+          !lock.getUnlockRequestTimestamp().isPresent() || lock.isUnlockRequestExpired(clock),
+          "A pending unlock action already exists for %s",
+          domainName);
+      checkArgument(
+          lock.getRegistrarId().equals(registrarId),
+          "Lock object does not have registrar ID %s",
+          registrarId);
+      checkArgument(
+          !lock.isSuperuser() || isAdmin,
+          "Non-admin user cannot unlock admin-locked domain %s",
+          domainName);
+      newLockBuilder = lock.asBuilder();
+    }
+    RegistryLock newLock =
+        newLockBuilder
+            .setVerificationCode(UUID.randomUUID().toString())
+            .isSuperuser(isAdmin)
+            .setUnlockRequestTimestamp(clock.nowUtc())
+            .build();
+    RegistryLockDao.save(newLock);
+    return newLock;
+  }
+
+  public static RegistryLock verifyAndApplyLock(
+      String verificationCode, boolean isAdmin, Clock clock) {
     return jpaTm()
         .transact(
             () -> {
-              verifyLockObject(lock, clock, isAdmin);
-              RegistryLockDao.save(lock.asBuilder().setCompletionTimestamp(clock.nowUtc()).build());
-              tm().transact(() -> applyLockStatuses(lock, clock));
-              return lock;
+              RegistryLock lock = getByVerificationCode(verificationCode);
+
+              checkArgument(
+                  !lock.getLockCompletionTimestamp().isPresent(),
+                  "Domain %s is already locked",
+                  lock.getDomainName());
+
+              checkArgument(
+                  !lock.isLockRequestExpired(clock),
+                  "The pending lock has expired; please try again");
+
+              checkArgument(
+                  !lock.isSuperuser() || isAdmin, "Non-admin user cannot complete admin lock");
+
+              RegistryLock newLock =
+                  RegistryLockDao.save(
+                      lock.asBuilder().setLockCompletionTimestamp(clock.nowUtc()).build());
+              tm().transact(() -> applyLockStatuses(newLock, clock));
+              return newLock;
             });
   }
 
-  private static RegistryLock getPreviouslyVerifiedLock(Optional<RegistryLock> previousLock) {
-    if (!previousLock.isPresent()) {
-      throw new IllegalArgumentException(
-          "Cannot unlock a domain without a previously-verified lock");
-    }
-    if (previousLock.get().isVerified()) {
-      return previousLock.get();
-    }
-    return RegistryLockDao.getMostRecentVerifiedLockByRepoId(previousLock.get().getRepoId())
+  public static RegistryLock verifyAndApplyUnlock(
+      String verificationCode, boolean isAdmin, Clock clock) {
+    return jpaTm()
+        .transact(
+            () -> {
+              RegistryLock lock = getByVerificationCode(verificationCode);
+              if (!isAdmin) {
+                checkArgument(
+                    !lock.getUnlockCompletionTimestamp().isPresent(),
+                    "Domain %s is already unlocked",
+                    lock.getDomainName());
+
+                checkArgument(
+                    !lock.isUnlockRequestExpired(clock),
+                    "The pending unlock has expired; please try again");
+
+                checkArgument(!lock.isSuperuser(), "Non-admin user cannot complete admin unlock");
+              }
+
+              RegistryLock newLock =
+                  RegistryLockDao.save(
+                      lock.asBuilder().setUnlockCompletionTimestamp(clock.nowUtc()).build());
+              tm().transact(() -> removeLockStatuses(newLock, isAdmin, clock));
+              return newLock;
+            });
+  }
+
+  private static void verifyDomainNotLocked(DomainBase domainBase) {
+    checkArgument(
+        !domainBase.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES),
+        "Domain %s is already locked",
+        domainBase.getFullyQualifiedDomainName());
+  }
+
+  private static void verifyDomainLocked(DomainBase domainBase) {
+    checkArgument(
+        !Sets.intersection(domainBase.getStatusValues(), REGISTRY_LOCK_STATUSES).isEmpty(),
+        "Domain %s is already unlocked",
+        domainBase.getFullyQualifiedDomainName());
+  }
+
+  private static DomainBase getDomain(String domainName, Clock clock) {
+    return loadByForeignKeyCached(DomainBase.class, domainName, clock.nowUtc())
+        .orElseThrow(
+            () -> new IllegalArgumentException(String.format("Unknown domain %s", domainName)));
+  }
+
+  private static RegistryLock getByVerificationCode(String verificationCode) {
+    return RegistryLockDao.getByVerificationCode(verificationCode)
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Cannot unlock a domain without a previously-verified lock"));
-  }
-
-  private static void verifyLockObject(RegistryLock lock, Clock clock, boolean isAdmin) {
-    checkState(!lock.isVerified(), "This lock / unlock has already been verified");
-    checkState(!lock.isExpired(clock), "The pending lock has expired; please try again");
-    checkState(!lock.isSuperuser() || isAdmin, "Non-admin user cannot verify admin lock");
+                    String.format("Invalid verification code %s", verificationCode)));
   }
 
   private static void applyLockStatuses(RegistryLock lock, Clock clock) {
-    DomainBase domain =
-        loadByForeignKey(DomainBase.class, lock.getDomainName(), clock.nowUtc())
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        String.format("Domain %s does not exist", lock.getDomainName())));
-    verifyCurrentDomainLockStatuses(domain, lock);
-    DomainBase.Builder domainBuilder = domain.asBuilder();
-    if (lock.getAction().equals(RegistryLock.Action.LOCK)) {
-      domainBuilder.setStatusValues(
-          ImmutableSet.copyOf(Sets.union(domain.getStatusValues(), REGISTRY_LOCK_STATUSES)));
-    } else {
-      domainBuilder.setStatusValues(
-          ImmutableSet.copyOf(Sets.difference(domain.getStatusValues(), REGISTRY_LOCK_STATUSES)));
+    DomainBase domain = getDomain(lock.getDomainName(), clock);
+    verifyDomainNotLocked(domain);
+
+    DomainBase newDomain =
+        domain
+            .asBuilder()
+            .setStatusValues(
+                ImmutableSet.copyOf(Sets.union(domain.getStatusValues(), REGISTRY_LOCK_STATUSES)))
+            .build();
+    saveEntities(newDomain, lock, clock);
+  }
+
+  private static void removeLockStatuses(RegistryLock lock, boolean isAdmin, Clock clock) {
+    DomainBase domain = getDomain(lock.getDomainName(), clock);
+    if (!isAdmin) {
+      verifyDomainLocked(domain);
     }
-    saveEntities(domainBuilder.build(), lock, clock);
+
+    DomainBase newDomain =
+        domain
+            .asBuilder()
+            .setStatusValues(
+                ImmutableSet.copyOf(
+                    Sets.difference(domain.getStatusValues(), REGISTRY_LOCK_STATUSES)))
+            .build();
+    saveEntities(newDomain, lock, clock);
   }
 
   private static void saveEntities(DomainBase domain, RegistryLock lock, Clock clock) {
-    String reason =
-        String.format(
-            "%s of a domain during a RegistryLock operation",
-            lock.getAction().equals(RegistryLock.Action.LOCK) ? "Lock" : "Unlock");
+    String reason = "Lock or unlock of a domain through a RegistryLock operation";
     HistoryEntry historyEntry =
         new HistoryEntry.Builder()
             .setClientId(domain.getCurrentSponsorClientId())
@@ -169,18 +261,6 @@ public final class DomainLockUtils {
               .setParent(historyEntry)
               .build();
       ofy().save().entity(oneTime);
-    }
-  }
-
-  private static void verifyCurrentDomainLockStatuses(DomainBase domain, RegistryLock lock) {
-    if (lock.getAction().equals(RegistryLock.Action.LOCK)
-        && domain.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES)) {
-      // lock is valid as long as any of the statuses are not there
-      throw new IllegalStateException("Domain already locked");
-    } else if (lock.getAction().equals(RegistryLock.Action.UNLOCK)
-        && Sets.intersection(domain.getStatusValues(), REGISTRY_LOCK_STATUSES).isEmpty()) {
-      // unlock is valid as long as any of the statuses are there
-      throw new IllegalStateException("Domain already unlocked");
     }
   }
 }

@@ -36,10 +36,10 @@ public class UnlockDomainCommand extends LockOrUnlockDomainCommand {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Override
-  protected ImmutableSet<RegistryLock> createLockObjects() {
+  protected ImmutableSet<String> getRelevantDomains() {
     // Project all domains as of the same time so that argument order doesn't affect behavior.
     DateTime now = clock.nowUtc();
-    ImmutableSet.Builder<RegistryLock> locks = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<String> relevantDomains = new ImmutableSet.Builder<>();
     for (String domain : getDomains()) {
       DomainBase domainBase =
           loadByForeignKey(DomainBase.class, domain, now)
@@ -53,10 +53,18 @@ public class UnlockDomainCommand extends LockOrUnlockDomainCommand {
         logger.atInfo().log("Domain '%s' is already unlocked and needs no updates.", domain);
         continue;
       }
-      RegistryLock registryLock = createLock(domainBase, false, now);
-      DomainLockUtils.validateNewLock(registryLock, clock);
-      locks.add(registryLock);
+      relevantDomains.add(domain);
     }
-    return locks.build();
+    return relevantDomains.build();
+  }
+
+  @Override
+  protected RegistryLock createLock(String domain) {
+    return DomainLockUtils.createRegistryUnlockRequest(domain, clientId, true, clock);
+  }
+
+  @Override
+  protected void finalizeLockOrUnlockRequest(RegistryLock lock) {
+    DomainLockUtils.verifyAndApplyUnlock(lock.getVerificationCode(), true, clock);
   }
 }
