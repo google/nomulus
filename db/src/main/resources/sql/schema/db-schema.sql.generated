@@ -26,6 +26,14 @@
         primary key (revision_id)
     );
 
+    create table "Cursor" (
+       scope text not null,
+        type text not null,
+        cursor_time timestamptz not null,
+        last_update_time timestamptz not null,
+        primary key (scope, type)
+    );
+
     create table "DelegationSignerData" (
        key_tag int4 not null,
         algorithm int4 not null,
@@ -124,8 +132,8 @@
 
     create table "PremiumEntry" (
        revision_id int8 not null,
-        price numeric(19, 2) not null,
         domain_label text not null,
+        price numeric(19, 2) not null,
         primary key (revision_id, domain_label)
     );
 
@@ -140,15 +148,33 @@
 
     create table "RegistryLock" (
        revision_id  bigserial not null,
-        action text not null,
-        completion_timestamp timestamptz,
-        creation_timestamp timestamptz not null,
         domain_name text not null,
         is_superuser boolean not null,
+        last_update_timestamp timestamptz,
+        lock_completion_timestamp timestamptz,
+        lock_request_timestamp timestamptz not null,
         registrar_id text not null,
         registrar_poc_id text,
         repo_id text not null,
+        unlock_completion_timestamp timestamptz,
+        unlock_request_timestamp timestamptz,
         verification_code text not null,
+        primary key (revision_id)
+    );
+
+    create table "ReservedEntry" (
+       revision_id int8 not null,
+        comment text,
+        reservation_type int4 not null,
+        domain_label text not null,
+        primary key (revision_id, domain_label)
+    );
+
+    create table "ReservedList" (
+       revision_id  bigserial not null,
+        creation_timestamp timestamptz not null,
+        name text not null,
+        should_publish boolean not null,
         primary key (revision_id)
     );
 
@@ -166,6 +192,7 @@ create index idx_registry_lock_registrar_id on "RegistryLock" (registrar_id);
 
     alter table if exists "RegistryLock" 
        add constraint idx_registry_lock_repo_id_revision_id unique (repo_id, revision_id);
+create index reservedlist_name_idx on "ReservedList" (name);
 
     alter table if exists "ClaimsEntry" 
        add constraint FK6sc6at5hedffc0nhdcab6ivuq 
@@ -221,3 +248,8 @@ create index idx_registry_lock_registrar_id on "RegistryLock" (registrar_id);
        add constraint FKo0gw90lpo1tuee56l0nb6y6g5 
        foreign key (revision_id) 
        references "PremiumList";
+
+    alter table if exists "ReservedEntry" 
+       add constraint FKgq03rk0bt1hb915dnyvd3vnfc 
+       foreign key (revision_id) 
+       references "ReservedList";

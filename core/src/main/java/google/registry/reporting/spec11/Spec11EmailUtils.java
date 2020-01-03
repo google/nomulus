@@ -58,6 +58,7 @@ public class Spec11EmailUtils {
 
   private final SendEmailService emailService;
   private final InternetAddress outgoingEmailAddress;
+  private final ImmutableList<InternetAddress> spec11BccEmailAddresses;
   private final InternetAddress alertRecipientAddress;
   private final ImmutableList<String> spec11WebResources;
   private final String registryName;
@@ -67,10 +68,12 @@ public class Spec11EmailUtils {
       SendEmailService emailService,
       @Config("alertRecipientEmailAddress") InternetAddress alertRecipientAddress,
       @Config("spec11OutgoingEmailAddress") InternetAddress spec11OutgoingEmailAddress,
+      @Config("spec11BccEmailAddresses") ImmutableList<InternetAddress> spec11BccEmailAddresses,
       @Config("spec11WebResources") ImmutableList<String> spec11WebResources,
       @Config("registryName") String registryName) {
     this.emailService = emailService;
     this.outgoingEmailAddress = spec11OutgoingEmailAddress;
+    this.spec11BccEmailAddresses = spec11BccEmailAddresses;
     this.alertRecipientAddress = alertRecipientAddress;
     this.spec11WebResources = spec11WebResources;
     this.registryName = registryName;
@@ -125,11 +128,18 @@ public class Spec11EmailUtils {
 
   private RegistrarThreatMatches filterOutNonPublishedMatches(
       RegistrarThreatMatches registrarThreatMatches) {
-    ImmutableList<ThreatMatch> filteredMatches = registrarThreatMatches.threatMatches().stream()
-        .filter(threatMatch ->
-            ofy().load().type(DomainBase.class).filter("fullyQualifiedDomainName",
-                threatMatch.fullyQualifiedDomainName()).first().now().shouldPublishToDns()
-        ).collect(toImmutableList());
+    ImmutableList<ThreatMatch> filteredMatches =
+        registrarThreatMatches.threatMatches().stream()
+            .filter(
+                threatMatch ->
+                    ofy()
+                        .load()
+                        .type(DomainBase.class)
+                        .filter("fullyQualifiedDomainName", threatMatch.fullyQualifiedDomainName())
+                        .first()
+                        .now()
+                        .shouldPublishToDns())
+            .collect(toImmutableList());
     return RegistrarThreatMatches.create(registrarThreatMatches.clientId(), filteredMatches);
   }
 
@@ -146,7 +156,7 @@ public class Spec11EmailUtils {
             .setContentType(MediaType.HTML_UTF_8)
             .setFrom(outgoingEmailAddress)
             .addRecipient(getEmailAddressForRegistrar(registrarThreatMatches.clientId()))
-            .setBcc(outgoingEmailAddress)
+            .setBccs(spec11BccEmailAddresses)
             .build());
   }
 

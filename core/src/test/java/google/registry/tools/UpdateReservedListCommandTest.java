@@ -22,14 +22,17 @@ import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import google.registry.model.registry.label.ReservedList;
+import google.registry.schema.tld.ReservedList.ReservedEntry;
+import google.registry.schema.tld.ReservedListDao;
 import org.junit.Test;
 
 /** Unit tests for {@link UpdateReservedListCommand}. */
 public class UpdateReservedListCommandTest extends
     CreateOrUpdateReservedListCommandTestCase<UpdateReservedListCommand> {
 
-  private void populateInitialReservedList(boolean shouldPublish) {
+  private void populateInitialReservedListInDatastore(boolean shouldPublish) {
     persistResource(
         new ReservedList.Builder()
             .setName("xn--q9jyb4c_common-reserved")
@@ -38,6 +41,14 @@ public class UpdateReservedListCommandTest extends
             .setLastUpdateTime(START_OF_TIME)
             .setShouldPublish(shouldPublish)
             .build());
+  }
+
+  private void populateInitialReservedListInCloudSql(boolean shouldPublish) {
+    ReservedListDao.save(
+        createCloudSqlReservedList(
+            "xn--q9jyb4c_common-reserved",
+            shouldPublish,
+            ImmutableMap.of("helicopter", ReservedEntry.create(FULLY_BLOCKED, ""))));
   }
 
   @Test
@@ -52,7 +63,7 @@ public class UpdateReservedListCommandTest extends
 
   @Test
   public void testSuccess_lastUpdateTime_updatedCorrectly() throws Exception {
-    populateInitialReservedList(true);
+    populateInitialReservedListInDatastore(true);
     ReservedList original = ReservedList.get("xn--q9jyb4c_common-reserved").get();
     runCommandForced("--input=" + reservedTermsPath);
     ReservedList updated = ReservedList.get("xn--q9jyb4c_common-reserved").get();
@@ -71,7 +82,7 @@ public class UpdateReservedListCommandTest extends
 
   @Test
   public void testSuccess_shouldPublish_doesntOverrideFalseIfNotSpecified() throws Exception {
-    populateInitialReservedList(false);
+    populateInitialReservedListInDatastore(false);
     runCommandForced("--input=" + reservedTermsPath);
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
     ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
@@ -79,7 +90,7 @@ public class UpdateReservedListCommandTest extends
   }
 
   private void runSuccessfulUpdateTest(String... args) throws Exception {
-    populateInitialReservedList(true);
+    populateInitialReservedListInDatastore(true);
     runCommandForced(args);
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
     ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
@@ -99,5 +110,26 @@ public class UpdateReservedListCommandTest extends
             () ->
                 runCommand("--force", "--name=xn--q9jyb4c_poobah", "--input=" + reservedTermsPath));
     assertThat(thrown).hasMessageThat().contains(errorMessage);
+  }
+
+  @Test
+  public void testSaveToCloudSql_succeeds() throws Exception {
+    populateInitialReservedListInDatastore(true);
+    populateInitialReservedListInCloudSql(true);
+    runCommandForced(
+        "--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath, "--also_cloud_sql");
+    verifyXnq9jyb4cInDatastore();
+    verifyXnq9jyb4cInCloudSql();
+  }
+
+  @Test
+  public void testSaveToCloudSql_noExceptionThrownWhenSaveFail() throws Exception {
+    // Note that, during the dual-write phase, we want to make sure that no exception will be
+    // thrown if saving reserved list to Cloud SQL fails.
+    populateInitialReservedListInDatastore(true);
+    runCommandForced(
+        "--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath, "--also_cloud_sql");
+    verifyXnq9jyb4cInDatastore();
+    assertThat(ReservedListDao.checkExists("xn--q9jyb4c_common-reserved")).isFalse();
   }
 }

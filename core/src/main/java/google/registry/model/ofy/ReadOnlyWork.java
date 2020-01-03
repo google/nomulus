@@ -14,13 +14,13 @@
 
 package google.registry.model.ofy;
 
-import google.registry.model.transaction.TransactionManager.Work;
 import google.registry.util.Clock;
+import java.util.function.Supplier;
 
-/** Wrapper for {@link Work} that disallows mutations and fails the transaction at the end. */
+/** Wrapper for {@link Supplier} that disallows mutations and fails the transaction at the end. */
 class ReadOnlyWork<R> extends CommitLoggedWork<R> {
 
-  ReadOnlyWork(Work<R> work, Clock clock) {
+  ReadOnlyWork(Supplier<R> work, Clock clock) {
     super(work, clock);
   }
 

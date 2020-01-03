@@ -73,15 +73,7 @@ public enum Auth {
   AUTH_INTERNAL_OR_ADMIN(
       ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API),
       AuthLevel.APP,
-      UserPolicy.ADMIN),
-
-  /**
-   * Allows only internal (App Engine task-queue) access.
-   */
-  AUTH_INTERNAL_ONLY(
-      ImmutableList.of(AuthMethod.INTERNAL),
-      AuthLevel.APP,
-      UserPolicy.IGNORED);
+      UserPolicy.ADMIN);
 
   private final AuthSettings authSettings;
 

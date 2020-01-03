@@ -109,7 +109,9 @@ public class FlowRunner {
     }
   }
 
-  /** Exception for explicitly propagating an EppException out of the transactional {@code Work}. */
+  /**
+   * Exception for explicitly propagating an EppException out of the transactional {@code Supplier}.
+   */
   private static class EppRuntimeException extends RuntimeException {
     EppRuntimeException(EppException cause) {
       super(cause);

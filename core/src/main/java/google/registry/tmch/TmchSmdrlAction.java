@@ -34,7 +34,7 @@ import org.bouncycastle.openpgp.PGPException;
     path = "/_dr/task/tmchSmdrl",
     method = POST,
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public final class TmchSmdrlAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

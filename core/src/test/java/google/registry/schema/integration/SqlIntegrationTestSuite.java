@@ -15,20 +15,16 @@
 package google.registry.schema.integration;
 
 import google.registry.model.registry.RegistryLockDaoTest;
-import google.registry.model.tmch.ClaimsListDaoTest;
-import google.registry.model.transaction.JpaTransactionManagerImplTest;
-import google.registry.model.transaction.JpaTransactionManagerRuleTest;
-import google.registry.persistence.BloomFilterConverterTest;
-import google.registry.persistence.CreateAutoTimestampConverterTest;
-import google.registry.persistence.CurrencyUnitConverterTest;
-import google.registry.persistence.DateTimeConverterTest;
-import google.registry.persistence.JodaMoneyConverterTest;
-import google.registry.persistence.UpdateAutoTimestampConverterTest;
-import google.registry.persistence.ZonedDateTimeConverterTest;
+import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
+import google.registry.schema.tld.ReservedListDaoTest;
+import google.registry.schema.tmch.ClaimsListDaoTest;
+import google.registry.tools.CreateReservedListCommandTest;
 import google.registry.tools.DomainLockUtilsTest;
 import google.registry.tools.LockDomainCommandTest;
 import google.registry.tools.UnlockDomainCommandTest;
+import google.registry.tools.UpdateReservedListCommandTest;
 import google.registry.ui.server.registrar.RegistryLockGetActionTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -38,29 +34,23 @@ import org.junit.runners.Suite.SuiteClasses;
  * Groups all tests that may depends on Cloud SQL schema. They will be run for server-schema
  * compatibility check.
  *
- * <p>Schema dependency is approximated by the use of {@link
- * google.registry.model.transaction.JpaTransactionManagerRule}.
+ * <p>Schema dependency is approximated by the use of {@link JpaIntegrationTestRule}.
  *
  * @see SqlIntegrationMembershipTest
  */
 // TODO(weiminyu): refactor JpaTransactionManagerRule to eliminate false positives.
 @RunWith(Suite.class)
 @SuiteClasses({
-  BloomFilterConverterTest.class,
   ClaimsListDaoTest.class,
-  CreateAutoTimestampConverterTest.class,
-  CurrencyUnitConverterTest.class,
-  DateTimeConverterTest.class,
+  CreateReservedListCommandTest.class,
+  CursorDaoTest.class,
   DomainLockUtilsTest.class,
-  JodaMoneyConverterTest.class,
-  JpaTransactionManagerImplTest.class,
-  JpaTransactionManagerRuleTest.class,
   LockDomainCommandTest.class,
   PremiumListDaoTest.class,
   RegistryLockDaoTest.class,
   RegistryLockGetActionTest.class,
   UnlockDomainCommandTest.class,
-  UpdateAutoTimestampConverterTest.class,
-  ZonedDateTimeConverterTest.class
+  ReservedListDaoTest.class,
+  UpdateReservedListCommandTest.class
 })
 public class SqlIntegrationTestSuite {}

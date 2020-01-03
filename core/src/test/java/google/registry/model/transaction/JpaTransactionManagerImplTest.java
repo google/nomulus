@@ -19,6 +19,7 @@ import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.testing.TestDataHelper.fileClassPath;
 
+import google.registry.model.transaction.JpaTestRules.JpaUnitTestRule;
 import google.registry.testing.FakeClock;
 import java.math.BigInteger;
 import javax.persistence.EntityManager;
@@ -32,10 +33,10 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class JpaTransactionManagerImplTest {
   @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder()
+  public final JpaUnitTestRule jpaRule =
+      new JpaTestRules.Builder()
           .withInitScript(fileClassPath(getClass(), "test_schema.sql"))
-          .build();
+          .buildUnitTestRule();
 
   @Test
   public void inTransaction_returnsCorrespondingResult() {
@@ -53,7 +54,7 @@ public class JpaTransactionManagerImplTest {
 
   @Test
   public void getTransactionTime_throwsExceptionWhenNotInTransaction() {
-    FakeClock txnClock = jpaTmRule.getTxnClock();
+    FakeClock txnClock = jpaRule.getTxnClock();
     txnClock.advanceOneMilli();
     assertThrows(PersistenceException.class, () -> jpaTm().getTransactionTime());
     jpaTm().transact(() -> assertThat(jpaTm().getTransactionTime()).isEqualTo(txnClock.nowUtc()));

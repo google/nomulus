@@ -14,18 +14,13 @@
 
 package google.registry.model.transaction;
 
+import java.util.function.Supplier;
 import org.joda.time.DateTime;
 
 /**
  * This interface defines the methods to execute database operations with or without a transaction.
  */
 public interface TransactionManager {
-
-  /** This functional interface defines a method to execute a work and return the result. */
-  @FunctionalInterface
-  interface Work<R> {
-    R run();
-  }
 
   /** Returns {@code true} if the caller is in a transaction.
    *
@@ -42,18 +37,19 @@ public interface TransactionManager {
   void assertInTransaction();
 
   /** Executes the work in a transaction and returns the result. */
-  <T> T transact(Work<T> work);
+  <T> T transact(Supplier<T> work);
 
   /** Executes the work in a transaction. */
   void transact(Runnable work);
 
-  /** Pauses the current transaction (if any), executes the work in a new transaction
-   *  and returns the result.
+  /**
+   * Pauses the current transaction (if any), executes the work in a new transaction and returns the
+   * result.
    *
-   *  <p>Note that this function is kept for backward compatibility. We will review the use case
-   *  later when adding the cloud sql implementation.
+   * <p>Note that this function is kept for backward compatibility. We will review the use case
+   * later when adding the cloud sql implementation.
    */
-  <T> T transactNew(Work<T> work);
+  <T> T transactNew(Supplier<T> work);
 
   /** Pauses the current transaction (if any) and executes the work in a new transaction.
    *
@@ -62,12 +58,13 @@ public interface TransactionManager {
    */
   void transactNew(Runnable work);
 
-  /** Executes the work in a read-only transaction and returns the result.
+  /**
+   * Executes the work in a read-only transaction and returns the result.
    *
-   *  <p>Note that this function is kept for backward compatibility. We will review the use case
-   *  later when adding the cloud sql implementation.
+   * <p>Note that this function is kept for backward compatibility. We will review the use case
+   * later when adding the cloud sql implementation.
    */
-  <R> R transactNewReadOnly(Work<R> work);
+  <R> R transactNewReadOnly(Supplier<R> work);
 
   /** Executes the work in a read-only transaction.
    *
@@ -77,7 +74,7 @@ public interface TransactionManager {
   void transactNewReadOnly(Runnable work);
 
   /** Executes the work in a transactionless context. */
-  <R> R doTransactionless(Work<R> work);
+  <R> R doTransactionless(Supplier<R> work);
 
   /** Returns the time associated with the start of this particular transaction attempt. */
   DateTime getTransactionTime();

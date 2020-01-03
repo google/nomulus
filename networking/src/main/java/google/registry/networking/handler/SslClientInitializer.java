@@ -106,7 +106,7 @@ public class SslClientInitializer<C extends Channel> extends ChannelInitializer<
         SslContextBuilder.forClient()
             .sslProvider(sslProvider)
             .trustManager(
-                trustedCertificates.isEmpty()
+                trustedCertificates == null || trustedCertificates.isEmpty()
                     ? null
                     : trustedCertificates.toArray(new X509Certificate[0]));
 

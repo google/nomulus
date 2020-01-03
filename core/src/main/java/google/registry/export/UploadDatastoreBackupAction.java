@@ -52,7 +52,7 @@ import javax.inject.Inject;
     service = Action.Service.BACKEND,
     path = UploadDatastoreBackupAction.PATH,
     method = POST,
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public class UploadDatastoreBackupAction implements Runnable {
 
   /** Parameter names for passing parameters into the servlet. */

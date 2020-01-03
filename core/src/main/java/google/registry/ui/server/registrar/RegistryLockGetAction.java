@@ -149,11 +149,9 @@ public final class RegistryLockGetAction implements JsonGetAction {
   }
 
   private ImmutableList<ImmutableMap<String, ?>> getLockedDomains(String clientId) {
-    ImmutableList<RegistryLock> locks =
-        RegistryLockDao.getByRegistrarId(clientId).stream()
-            .filter(RegistryLock::isVerified)
-            .collect(toImmutableList());
-    return locks.stream().map(this::lockToMap).collect(toImmutableList());
+    return RegistryLockDao.getLockedDomainsByRegistrarId(clientId).stream()
+        .map(this::lockToMap)
+        .collect(toImmutableList());
   }
 
   private ImmutableMap<String, ?> lockToMap(RegistryLock lock) {
@@ -161,7 +159,7 @@ public final class RegistryLockGetAction implements JsonGetAction {
         FULLY_QUALIFIED_DOMAIN_NAME_PARAM,
         lock.getDomainName(),
         LOCKED_TIME_PARAM,
-        lock.getCompletionTimestamp().map(DateTime::toString).orElse(""),
+        lock.getLockCompletionTimestamp().map(DateTime::toString).orElse(""),
         LOCKED_BY_PARAM,
         lock.isSuperuser() ? "admin" : lock.getRegistrarPocId());
   }

@@ -41,6 +41,16 @@ where:
 
 SCRIPT_DIR="$(realpath $(dirname $0))"
 
+function showNoncompliantFiles() {
+  local forkPoint="$1"
+  local message="$2"
+
+  git diff -U0 ${forkPoint} | \
+      ${SCRIPT_DIR}/google-java-format-diff.py -p1 | \
+      awk -v "message=$message" \
+          '/\+\+\+ ([^ ]*)/ { print message $2 }' 1>&2
+}
+
 function callGoogleJavaFormatDiff() {
   local forkPoint
   forkPoint=$(git merge-base --fork-point origin/master)
@@ -48,10 +58,12 @@ function callGoogleJavaFormatDiff() {
   local callResult
   case "$1" in
     "check")
+      showNoncompliantFiles "$forkPoint" "\033[1mNeeds formatting: "
       callResult=$(git diff -U0 ${forkPoint} | \
           ${SCRIPT_DIR}/google-java-format-diff.py -p1 | wc -l)
       ;;
     "format")
+      showNoncompliantFiles "$forkPoint" "\033[1mReformatting: "
       callResult=$(git diff -U0 ${forkPoint} | \
           ${SCRIPT_DIR}/google-java-format-diff.py -p1 -i)
       ;;
@@ -60,6 +72,7 @@ function callGoogleJavaFormatDiff() {
           ${SCRIPT_DIR}/google-java-format-diff.py -p1)
       ;;
   esac
+  echo -e "\033[0m" 1>&2
   echo "${callResult}"
   exit 0
 }

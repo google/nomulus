@@ -81,7 +81,7 @@ appengine {
 }
 
 dependencies {
-    compile project(':core')
+    compile project(path: ':core', configuration: 'deploy_jar')
 }
 
 // The tools.jar file gets pulled in from the java environment and for some

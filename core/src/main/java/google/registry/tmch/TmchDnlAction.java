@@ -18,11 +18,11 @@ import static google.registry.request.Action.Method.POST;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.keyring.api.KeyModule.Key;
-import google.registry.model.tmch.ClaimsListDao;
 import google.registry.model.tmch.ClaimsListShard;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import google.registry.schema.tmch.ClaimsList;
+import google.registry.schema.tmch.ClaimsListDao;
 import java.io.IOException;
 import java.security.SignatureException;
 import java.util.List;
@@ -36,7 +36,7 @@ import org.bouncycastle.openpgp.PGPException;
     path = "/_dr/task/tmchDnl",
     method = POST,
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public final class TmchDnlAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

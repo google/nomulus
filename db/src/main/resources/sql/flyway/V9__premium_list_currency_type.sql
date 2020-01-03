@@ -15,5 +15,5 @@
 -- Note: We're OK with dropping this data since it's not live in production yet.
 alter table "PremiumList" drop column if exists currency;
 
--- TODO(mcilwain): Add a subsequent schema change to remove this default.
+-- Note: This default was removed in V11.
 alter table "PremiumList" add column currency text not null default 'USD';

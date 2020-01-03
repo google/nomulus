@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.testing;
+package google.registry.testing.truth;
 
 import static com.google.common.io.Resources.getResource;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.JUnitBackports.assertThrows;
-import static google.registry.testing.TextDiffSubject.assertThat;
+import static google.registry.testing.truth.TextDiffSubject.assertThat;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
-import google.registry.testing.TextDiffSubject.DiffFormat;
+import google.registry.testing.truth.TextDiffSubject.DiffFormat;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.junit.Test;
@@ -33,15 +33,15 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class TextDiffSubjectTest {
 
+  private static final String RESOURCE_FOLDER = "google/registry/testing/truth/";
   // Resources for input data.
-  private static final String ACTUAL_RESOURCE = "google/registry/testing/text-diff-actual.txt";
-  private static final String EXPECTED_RESOURCE = "google/registry/testing/text-diff-expected.txt";
+  private static final String ACTUAL_RESOURCE = RESOURCE_FOLDER + "text-diff-actual.txt";
+  private static final String EXPECTED_RESOURCE = RESOURCE_FOLDER + "text-diff-expected.txt";
 
   // Resources for expected diff texts.
-  private static final String UNIFIED_DIFF_RESOURCE =
-      "google/registry/testing/text-unified-diff.txt";
+  private static final String UNIFIED_DIFF_RESOURCE = RESOURCE_FOLDER + "text-unified-diff.txt";
   private static final String SIDE_BY_SIDE_DIFF_RESOURCE =
-      "google/registry/testing/text-sidebyside-diff.txt";
+      RESOURCE_FOLDER + "text-sidebyside-diff.txt";
 
   @Test
   public void unifiedDiff_equal() throws IOException {

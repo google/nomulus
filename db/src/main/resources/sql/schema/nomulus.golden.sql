@@ -62,6 +62,18 @@ ALTER SEQUENCE public."ClaimsList_revision_id_seq" OWNED BY public."ClaimsList".
 
 
 --
+-- Name: Cursor; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Cursor" (
+    scope text NOT NULL,
+    type text NOT NULL,
+    cursor_time timestamp with time zone NOT NULL,
+    last_update_time timestamp with time zone NOT NULL
+);
+
+
+--
 -- Name: PremiumEntry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -81,7 +93,7 @@ CREATE TABLE public."PremiumList" (
     creation_timestamp timestamp with time zone NOT NULL,
     name text NOT NULL,
     bloom_filter bytea NOT NULL,
-    currency text DEFAULT 'USD'::text NOT NULL
+    currency text NOT NULL
 );
 
 
@@ -110,15 +122,17 @@ ALTER SEQUENCE public."PremiumList_revision_id_seq" OWNED BY public."PremiumList
 
 CREATE TABLE public."RegistryLock" (
     revision_id bigint NOT NULL,
-    action text NOT NULL,
-    completion_timestamp timestamp with time zone,
-    creation_timestamp timestamp with time zone NOT NULL,
+    lock_completion_timestamp timestamp with time zone,
+    lock_request_timestamp timestamp with time zone NOT NULL,
     domain_name text NOT NULL,
     is_superuser boolean NOT NULL,
     registrar_id text NOT NULL,
     registrar_poc_id text,
     repo_id text NOT NULL,
-    verification_code text NOT NULL
+    verification_code text NOT NULL,
+    unlock_request_timestamp timestamp with time zone,
+    unlock_completion_timestamp timestamp with time zone,
+    last_update_timestamp timestamp with time zone
 );
 
 
@@ -139,6 +153,49 @@ CREATE SEQUENCE public."RegistryLock_revision_id_seq"
 --
 
 ALTER SEQUENCE public."RegistryLock_revision_id_seq" OWNED BY public."RegistryLock".revision_id;
+
+
+--
+-- Name: ReservedEntry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."ReservedEntry" (
+    revision_id bigint NOT NULL,
+    comment text,
+    reservation_type integer NOT NULL,
+    domain_label text NOT NULL
+);
+
+
+--
+-- Name: ReservedList; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."ReservedList" (
+    revision_id bigint NOT NULL,
+    creation_timestamp timestamp with time zone NOT NULL,
+    name text NOT NULL,
+    should_publish boolean NOT NULL
+);
+
+
+--
+-- Name: ReservedList_revision_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."ReservedList_revision_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ReservedList_revision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."ReservedList_revision_id_seq" OWNED BY public."ReservedList".revision_id;
 
 
 --
@@ -163,6 +220,13 @@ ALTER TABLE ONLY public."RegistryLock" ALTER COLUMN revision_id SET DEFAULT next
 
 
 --
+-- Name: ReservedList revision_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ReservedList" ALTER COLUMN revision_id SET DEFAULT nextval('public."ReservedList_revision_id_seq"'::regclass);
+
+
+--
 -- Name: ClaimsEntry ClaimsEntry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -176,6 +240,14 @@ ALTER TABLE ONLY public."ClaimsEntry"
 
 ALTER TABLE ONLY public."ClaimsList"
     ADD CONSTRAINT "ClaimsList_pkey" PRIMARY KEY (revision_id);
+
+
+--
+-- Name: Cursor Cursor_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Cursor"
+    ADD CONSTRAINT "Cursor_pkey" PRIMARY KEY (scope, type);
 
 
 --
@@ -200,6 +272,22 @@ ALTER TABLE ONLY public."PremiumList"
 
 ALTER TABLE ONLY public."RegistryLock"
     ADD CONSTRAINT "RegistryLock_pkey" PRIMARY KEY (revision_id);
+
+
+--
+-- Name: ReservedEntry ReservedEntry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ReservedEntry"
+    ADD CONSTRAINT "ReservedEntry_pkey" PRIMARY KEY (revision_id, domain_label);
+
+
+--
+-- Name: ReservedList ReservedList_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ReservedList"
+    ADD CONSTRAINT "ReservedList_pkey" PRIMARY KEY (revision_id);
 
 
 --
@@ -232,11 +320,26 @@ CREATE INDEX premiumlist_name_idx ON public."PremiumList" USING btree (name);
 
 
 --
+-- Name: reservedlist_name_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX reservedlist_name_idx ON public."ReservedList" USING btree (name);
+
+
+--
 -- Name: ClaimsEntry fk6sc6at5hedffc0nhdcab6ivuq; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."ClaimsEntry"
     ADD CONSTRAINT fk6sc6at5hedffc0nhdcab6ivuq FOREIGN KEY (revision_id) REFERENCES public."ClaimsList"(revision_id);
+
+
+--
+-- Name: ReservedEntry fkgq03rk0bt1hb915dnyvd3vnfc; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ReservedEntry"
+    ADD CONSTRAINT fkgq03rk0bt1hb915dnyvd3vnfc FOREIGN KEY (revision_id) REFERENCES public."ReservedList"(revision_id);
 
 
 --

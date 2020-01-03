@@ -30,28 +30,28 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.ImmutableObject;
-import google.registry.model.transaction.TransactionManager.Work;
 import google.registry.util.Clock;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.joda.time.DateTime;
 
-/** Wrapper for {@link Work} that associates a time with each attempt. */
+/** Wrapper for {@link Supplier} that associates a time with each attempt. */
 class CommitLoggedWork<R> implements Runnable {
 
-  private final Work<R> work;
+  private final Supplier<R> work;
   private final Clock clock;
 
   /**
    * Temporary place to store the result of a non-void work.
    *
    * <p>We don't want to return the result directly because we are going to try to recover from a
-   * {@link com.google.appengine.api.datastore.DatastoreTimeoutException} deep inside Objectify
-   * when it tries to commit the transaction. When an exception is thrown the return value would be
-   * lost, but sometimes we will be able to determine that we actually succeeded despite the
-   * timeout, and we'll want to get the result.
+   * {@link com.google.appengine.api.datastore.DatastoreTimeoutException} deep inside Objectify when
+   * it tries to commit the transaction. When an exception is thrown the return value would be lost,
+   * but sometimes we will be able to determine that we actually succeeded despite the timeout, and
+   * we'll want to get the result.
    */
   private R result;
 
@@ -76,7 +76,7 @@ class CommitLoggedWork<R> implements Runnable {
   /** Lifecycle marker to track whether {@link #run} has been called. */
   private boolean runCalled;
 
-  CommitLoggedWork(Work<R> work, Clock clock) {
+  CommitLoggedWork(Supplier<R> work, Clock clock) {
     this.work = work;
     this.clock = clock;
   }
@@ -111,7 +111,7 @@ class CommitLoggedWork<R> implements Runnable {
     // Set the time to be used for "now" within the transaction.
     try {
       Ofy.TRANSACTION_INFO.set(createNewTransactionInfo());
-      result = work.run();
+      result = work.get();
       saveCommitLog(Ofy.TRANSACTION_INFO.get());
     } finally {
       Ofy.TRANSACTION_INFO.set(previous);

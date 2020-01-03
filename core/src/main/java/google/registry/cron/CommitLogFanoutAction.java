@@ -33,7 +33,7 @@ import javax.inject.Inject;
     service = Action.Service.BACKEND,
     path = "/_dr/cron/commitLogFanout",
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public final class CommitLogFanoutAction implements Runnable {
 
   public static final String BUCKET_PARAM = "bucket";

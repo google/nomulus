@@ -24,8 +24,11 @@ import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.tools.CreateReservedListCommand.INVALID_FORMAT_ERROR_MESSAGE;
 import static org.joda.time.DateTimeZone.UTC;
 
+import com.google.common.collect.ImmutableMap;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
+import google.registry.schema.tld.ReservedList.ReservedEntry;
+import google.registry.schema.tld.ReservedListDao;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -171,6 +174,28 @@ public class CreateReservedListCommandTest extends
   @Test
   public void testNamingRules_withWeirdCharacters_failsWithoutOverride() {
     runNameTestExpectedFailure("soy_$oy", INVALID_FORMAT_ERROR_MESSAGE);
+  }
+
+  @Test
+  public void testSaveToCloudSql_succeeds() throws Exception {
+    runCommandForced(
+        "--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath, "--also_cloud_sql");
+    verifyXnq9jyb4cInDatastore();
+    verifyXnq9jyb4cInCloudSql();
+  }
+
+  @Test
+  public void testSaveToCloudSql_noExceptionThrownWhenSaveFail() throws Exception {
+    // Note that, during the dual-write phase, we want to make sure that no exception will be
+    // thrown if saving reserved list to Cloud SQL fails.
+    ReservedListDao.save(
+        createCloudSqlReservedList(
+            "xn--q9jyb4c_common-reserved",
+            true,
+            ImmutableMap.of("testdomain", ReservedEntry.create(FULLY_BLOCKED, ""))));
+    runCommandForced(
+        "--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath, "--also_cloud_sql");
+    verifyXnq9jyb4cInDatastore();
   }
 
   private void runNameTestExpectedFailure(String name, String expectedErrorMsg) {

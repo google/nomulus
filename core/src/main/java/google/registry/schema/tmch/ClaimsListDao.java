@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.tmch;
+package google.registry.schema.tmch;
 
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.flogger.FluentLogger;
-import google.registry.schema.tmch.ClaimsList;
 import javax.persistence.EntityManager;
 
 /** Data access object for {@link ClaimsList}. */

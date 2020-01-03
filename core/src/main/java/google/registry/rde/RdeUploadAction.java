@@ -84,7 +84,7 @@ import org.joda.time.Duration;
     service = Action.Service.BACKEND,
     path = RdeUploadAction.PATH,
     method = POST,
-    auth = Auth.AUTH_INTERNAL_ONLY)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public final class RdeUploadAction implements Runnable, EscrowTask {
 
   static final String PATH = "/_dr/task/rdeUpload";

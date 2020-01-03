@@ -27,6 +27,8 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.networking.handler.SslClientInitializer;
 import google.registry.networking.handler.SslServerInitializer;
+import google.registry.networking.module.CertificateSupplierModule;
+import google.registry.networking.module.CertificateSupplierModule.Mode;
 import google.registry.proxy.EppProtocolModule.EppProtocol;
 import google.registry.proxy.HealthCheckProtocolModule.HealthCheckProtocol;
 import google.registry.proxy.HttpsRelayProtocolModule.HttpsRelayProtocol;
@@ -50,6 +52,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -141,8 +144,7 @@ public abstract class ProtocolModuleTest {
   /** Excludes handler providers that are not of interested for testing. */
   private ImmutableList<Provider<? extends ChannelHandler>> excludeHandlerProvidersForTesting(
       ImmutableList<Provider<? extends ChannelHandler>> handlerProviders) {
-    return handlerProviders
-        .stream()
+    return handlerProviders.stream()
         .filter(handlerProvider -> !excludedHandlers.contains(handlerProvider.get().getClass()))
         .collect(toImmutableList());
   }
@@ -186,7 +188,7 @@ public abstract class ProtocolModuleTest {
   @Component(
       modules = {
         TestModule.class,
-        CertificateModule.class,
+        CertificateSupplierModule.class,
         WhoisProtocolModule.class,
         WebWhoisProtocolsModule.class,
         EppProtocolModule.class,
@@ -279,6 +281,20 @@ public abstract class ProtocolModuleTest {
     @Provides
     static Environment provideEnvironment() {
       return Environment.LOCAL;
+    }
+
+    @Singleton
+    @Provides
+    static Mode provideMode() {
+      return Mode.SELF_SIGNED;
+    }
+
+    @Singleton
+    @Provides
+    @Named("remoteCertCachingDuration")
+    static Duration provideCertCachingDuration() {
+      // Not used.
+      return Duration.ofHours(1);
     }
 
     // This method is only here to satisfy Dagger binding, but is never used. In test environment,
