@@ -160,6 +160,56 @@ ALTER SEQUENCE public."PremiumList_revision_id_seq" OWNED BY public."PremiumList
 
 
 --
+-- Name: Registrar; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Registrar" (
+    client_identifier text NOT NULL,
+    allowed_tlds text NOT NULL,
+    billing_account_map text,
+    billing_identifier bigint,
+    block_premium_names boolean NOT NULL,
+    client_certificate text NOT NULL,
+    client_certificate_hash text NOT NULL,
+    contacts_require_syncing boolean NOT NULL,
+    creation_time timestamp with time zone NOT NULL,
+    drive_folder_id text NOT NULL,
+    email_address text NOT NULL,
+    failover_client_certificate text NOT NULL,
+    failover_client_certificate_hash text NOT NULL,
+    fax_number text NOT NULL,
+    iana_identifier bigint,
+    icann_referral_email text NOT NULL,
+    inter_city text,
+    inter_country_code text,
+    inter_state text,
+    inter_street text,
+    inter_zip text,
+    ip_address_whitelist text NOT NULL,
+    last_certificate_update_time timestamp with time zone NOT NULL,
+    last_update_time timestamp with time zone NOT NULL,
+    local_city text,
+    local_country_code text,
+    local_state text,
+    local_street text,
+    local_zip text,
+    parent bytea,
+    password_hash text NOT NULL,
+    phone_number text NOT NULL,
+    phone_passcode text NOT NULL,
+    po_number text,
+    rdap_base_urls text NOT NULL,
+    registrar_name text NOT NULL,
+    registry_lock_allowed boolean NOT NULL,
+    salt text NOT NULL,
+    state integer NOT NULL,
+    type integer NOT NULL,
+    url text NOT NULL,
+    whois_server text NOT NULL
+);
+
+
+--
 -- Name: RegistryLock; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -318,6 +368,14 @@ ALTER TABLE ONLY public."PremiumList"
 
 
 --
+-- Name: Registrar Registrar_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Registrar"
+    ADD CONSTRAINT "Registrar_pkey" PRIMARY KEY (client_identifier);
+
+
+--
 -- Name: RegistryLock RegistryLock_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -403,6 +461,20 @@ CREATE INDEX idxrwl38wwkli1j7gkvtywi9jokq ON public."Domain" USING btree (tld);
 --
 
 CREATE INDEX premiumlist_name_idx ON public."PremiumList" USING btree (name);
+
+
+--
+-- Name: registrar_iana_identifier_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX registrar_iana_identifier_idx ON public."Registrar" USING btree (iana_identifier);
+
+
+--
+-- Name: registrar_name_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX registrar_name_idx ON public."Registrar" USING btree (registrar_name);
 
 
 --
