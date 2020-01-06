@@ -32,7 +32,15 @@ public class CacheUtils {
    * lists downloaded from the TMCH get updated in Datastore and the caches need to be refreshed.)
    */
   public static <T> Supplier<T> memoizeWithShortExpiration(Supplier<T> original) {
-    Duration expiration = getSingletonCacheRefreshDuration();
+    return tryMemoizeWithExpiration(getSingletonCacheRefreshDuration(), original);
+  }
+
+  /**
+   * Memoize a supplier with the given expiration. If the expiration is zero(likely happens in a
+   * unit test), it returns the original supplier.
+   */
+  public static <T> Supplier<T> tryMemoizeWithExpiration(
+      Duration expiration, Supplier<T> original) {
     return expiration.isEqual(ZERO)
         ? original
         : memoizeWithExpiration(original, expiration.getMillis(), MILLISECONDS);

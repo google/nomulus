@@ -32,6 +32,9 @@ import org.hibernate.tool.schema.TargetType;
 
 /** Utility class to export DDL script for given {@link javax.persistence.Entity} classes. */
 public class HibernateSchemaExporter {
+  // Hibernate proprietary mappings.
+  private static final String HIBERNATE_MAPPING_RESOURCES = "META-INF/orm.xml";
+
   private final String jdbcUrl;
   private final String username;
   private final String password;
@@ -63,6 +66,7 @@ public class HibernateSchemaExporter {
     try (StandardServiceRegistry registry =
         new StandardServiceRegistryBuilder().applySettings(settings).build()) {
       MetadataSources metadata = new MetadataSources(registry);
+      metadata.addResource(HIBERNATE_MAPPING_RESOURCES);
 
       // Note that we need to also add all converters to the Hibernate context because
       // the entity class may use the customized type.

@@ -19,6 +19,7 @@ import static google.registry.model.registry.Registries.assertTldExists;
 import static google.registry.model.registry.label.PremiumListUtils.doesPremiumListExist;
 import static google.registry.model.registry.label.PremiumListUtils.savePremiumListAndEntries;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.schema.tld.PremiumListUtils.parseToPremiumList;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
@@ -81,7 +82,7 @@ public class CreatePremiumListAction extends CreateOrUpdatePremiumListAction {
     logger.atInfo().log("Saving premium list to Cloud SQL for TLD %s", name);
     // TODO(mcilwain): Call logInputData() here once Datastore persistence is removed.
 
-    google.registry.schema.tld.PremiumList premiumList = parseInputToPremiumList();
+    google.registry.schema.tld.PremiumList premiumList = parseToPremiumList(name, inputData);
     PremiumListDao.saveNew(premiumList);
 
     String message =

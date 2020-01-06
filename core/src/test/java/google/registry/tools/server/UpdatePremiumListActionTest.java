@@ -17,14 +17,22 @@ package google.registry.tools.server;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.registry.label.PremiumListUtils.getPremiumPrice;
+import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.schema.tld.PremiumListUtils.parseToPremiumList;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.loadPremiumListEntries;
+import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.schema.tld.PremiumListDao;
 import google.registry.testing.AppEngineRule;
+import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeJsonResponse;
+import java.math.BigDecimal;
 import org.joda.money.Money;
 import org.junit.Before;
 import org.junit.Rule;
@@ -38,10 +46,11 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class UpdatePremiumListActionTest {
 
+  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final JpaIntegrationTestRule jpaRule =
+      new JpaTestRules.Builder().buildIntegrationTestRule();
 
   UpdatePremiumListAction action;
   FakeJsonResponse response;
@@ -75,6 +84,9 @@ public class UpdatePremiumListActionTest {
 
   @Test
   public void test_success() {
+    PremiumListDao.saveNew(
+        parseToPremiumList(
+            "foo", readResourceUtf8(DatastoreHelper.class, "default_premium_list_testdata.csv")));
     action.name = "foo";
     action.inputData = "rich,USD 75\nricher,USD 5000\npoor, USD 0.99";
     action.run();
@@ -85,5 +97,19 @@ public class UpdatePremiumListActionTest {
     assertThat(getPremiumPrice("richer", registry)).hasValue(Money.parse("USD 5000"));
     assertThat(getPremiumPrice("poor", registry)).hasValue(Money.parse("USD 0.99"));
     assertThat(getPremiumPrice("diamond", registry)).isEmpty();
+
+    jpaTm()
+        .transact(
+            () -> {
+              google.registry.schema.tld.PremiumList persistedList =
+                  PremiumListDao.getLatestRevision("foo").get();
+              assertThat(persistedList.getLabelsToPrices())
+                  .containsEntry("rich", new BigDecimal("75.00"));
+              assertThat(persistedList.getLabelsToPrices())
+                  .containsEntry("richer", new BigDecimal("5000.00"));
+              assertThat(persistedList.getLabelsToPrices())
+                  .containsEntry("poor", BigDecimal.valueOf(0.99));
+              assertThat(persistedList.getLabelsToPrices()).doesNotContainKey("diamond");
+            });
   }
 }

@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2019 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,43 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.tools.server;
+package google.registry.schema.tld;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.schema.tld.PremiumListUtils.parseToPremiumList;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
-import google.registry.schema.tld.PremiumList;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.testing.AppEngineRule;
-import google.registry.testing.FakeJsonResponse;
 import java.math.BigDecimal;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link CreateOrUpdatePremiumListAction}. */
+/** Unit tests for {@link PremiumListUtils}. */
 @RunWith(JUnit4.class)
-public class CreateOrUpdatePremiumListActionTest {
+public class PremiumListUtilsTest {
 
   @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
 
-  private CreatePremiumListAction action;
-  private FakeJsonResponse response;
-
-  @Before
-  public void init() {
-    action = new CreatePremiumListAction();
-    response = new FakeJsonResponse();
-    action.response = response;
-    action.name = "testlist";
-  }
+  @Rule
+  public final JpaIntegrationTestRule jpaRule =
+      new JpaTestRules.Builder().buildIntegrationTestRule();
 
   @Test
   public void parseInputToPremiumList_works() {
-    action.inputData = "foo,USD 99.50\n" + "bar,USD 30\n" + "baz,USD 10\n";
-    PremiumList premiumList = action.parseInputToPremiumList();
+    PremiumList premiumList =
+        parseToPremiumList("testlist", "foo,USD 99.50\n" + "bar,USD 30\n" + "baz,USD 10\n");
     assertThat(premiumList.getName()).isEqualTo("testlist");
     assertThat(premiumList.getLabelsToPrices())
         .containsExactly("foo", twoDigits(99.50), "bar", twoDigits(30), "baz", twoDigits(10));
@@ -56,9 +48,12 @@ public class CreateOrUpdatePremiumListActionTest {
 
   @Test
   public void parseInputToPremiumList_throwsOnInconsistentCurrencies() {
-    action.inputData = "foo,USD 99.50\n" + "bar,USD 30\n" + "baz,JPY 990\n";
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> action.parseInputToPremiumList());
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                parseToPremiumList(
+                    "testlist", "foo,USD 99.50\n" + "bar,USD 30\n" + "baz,JPY 990\n"));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("The Cloud SQL schema requires exactly one currency, but got: [JPY, USD]");

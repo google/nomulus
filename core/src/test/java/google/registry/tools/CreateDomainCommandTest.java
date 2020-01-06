@@ -16,9 +16,13 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatastoreHelper.persistPremiumList;
+import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.JUnitBackports.assertThrows;
 
 import com.beust.jcommander.ParameterException;
+import google.registry.model.registry.Registry;
+import google.registry.model.registry.label.PremiumList;
 import google.registry.testing.DeterministicStringGenerator;
 import org.junit.Before;
 import org.junit.Test;
@@ -91,7 +95,14 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testSuccess_premiumDomain() throws Exception {
+  public void testSuccess_premiumJpyDomain() throws Exception {
+    createTld("baar");
+    persistPremiumList("baar", "parajiumu,JPY 96083");
+    persistResource(
+        Registry.get("baar")
+            .asBuilder()
+            .setPremiumList(PremiumList.getUncached("baar").get())
+            .build());
     runCommandForced(
         "--client=NewRegistrar",
         "--registrant=crr-admin",
@@ -99,10 +110,10 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
         "--techs=crr-tech",
         "--period=3",
         "--force_premiums",
-        "parajiumu.tld");
+        "parajiumu.baar");
     eppVerifier.verifySent("domain_create_parajiumu_3yrs.xml");
     assertInStdout(
-        "parajiumu.tld is premium at JPY 96083 per year; "
+        "parajiumu.baar is premium at JPY 96083 per year; "
             + "sending total cost for 3 year(s) of JPY 288249.");
   }
 

@@ -29,7 +29,9 @@ public abstract class EmailMessage {
   public abstract String body();
   public abstract ImmutableList<InternetAddress> recipients();
   public abstract InternetAddress from();
+
   public abstract ImmutableList<InternetAddress> bccs();
+
   public abstract Optional<MediaType> contentType();
   public abstract Optional<Attachment> attachment();
 
@@ -55,11 +57,14 @@ public abstract class EmailMessage {
     public abstract Builder setBody(String body);
     public abstract Builder setRecipients(Collection<InternetAddress> recipients);
     public abstract Builder setFrom(InternetAddress from);
+
     public abstract Builder setBccs(Collection<InternetAddress> bccs);
+
     public abstract Builder setContentType(MediaType contentType);
     public abstract Builder setAttachment(Attachment attachment);
 
     abstract ImmutableList.Builder<InternetAddress> recipientsBuilder();
+
     abstract ImmutableList.Builder<InternetAddress> bccsBuilder();
 
     public Builder addRecipient(InternetAddress value) {

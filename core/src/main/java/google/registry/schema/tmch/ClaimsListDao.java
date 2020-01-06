@@ -14,15 +14,25 @@
 
 package google.registry.schema.tmch;
 
+import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
+import static google.registry.model.CacheUtils.tryMemoizeWithExpiration;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
+import com.google.common.base.Supplier;
 import com.google.common.flogger.FluentLogger;
+import google.registry.util.NonFinalForTesting;
+import java.util.Optional;
 import javax.persistence.EntityManager;
 
 /** Data access object for {@link ClaimsList}. */
 public class ClaimsListDao {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  /** In-memory cache for claims list. */
+  @NonFinalForTesting
+  private static Supplier<Optional<ClaimsList>> cacheClaimsList =
+      tryMemoizeWithExpiration(getDomainLabelListCacheDuration(), ClaimsListDao::getLatestRevision);
 
   private static void save(ClaimsList claimsList) {
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(claimsList));
@@ -47,10 +57,12 @@ public class ClaimsListDao {
   }
 
   /**
-   * Returns the current revision of the {@link ClaimsList} in Cloud SQL. Throws exception if there
-   * is no claims in the table.
+   * Returns the most recent revision of the {@link ClaimsList} in Cloud SQL, if it exists.
+   * TODO(shicong): Change this method to package level access after dual-read phase.
+   * ClaimsListShard uses this method to retrieve claims list in Cloud SQL for the comparison, and
+   * ClaimsListShard is not in this package.
    */
-  public static ClaimsList getCurrent() {
+  public static Optional<ClaimsList> getLatestRevision() {
     return jpaTm()
         .transact(
             () -> {
@@ -63,8 +75,14 @@ public class ClaimsListDao {
                           + " :revisionId",
                       ClaimsList.class)
                   .setParameter("revisionId", revisionId)
-                  .getSingleResult();
+                  .getResultStream()
+                  .findFirst();
             });
+  }
+
+  /** Returns the most recent revision of the {@link ClaimsList}, from cache. */
+  public static Optional<ClaimsList> getLatestRevisionCached() {
+    return cacheClaimsList.get();
   }
 
   private ClaimsListDao() {}

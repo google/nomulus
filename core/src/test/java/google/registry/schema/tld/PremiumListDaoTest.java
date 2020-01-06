@@ -32,8 +32,8 @@ import google.registry.model.transaction.JpaTestRules;
 import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.testing.AppEngineRule;
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Optional;
+import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.junit.Rule;
 import org.junit.Test;
@@ -66,13 +66,9 @@ public class PremiumListDaoTest {
     jpaTm()
         .transact(
             () -> {
-              PremiumList persistedList =
-                  jpaTm()
-                      .getEntityManager()
-                      .createQuery(
-                          "SELECT pl FROM PremiumList pl WHERE pl.name = :name", PremiumList.class)
-                      .setParameter("name", "testname")
-                      .getSingleResult();
+              Optional<PremiumList> persistedListOpt = PremiumListDao.getLatestRevision("testname");
+              assertThat(persistedListOpt).isPresent();
+              PremiumList persistedList = persistedListOpt.get();
               assertThat(persistedList.getLabelsToPrices()).containsExactlyEntriesIn(TEST_PRICES);
               assertThat(persistedList.getCreationTimestamp())
                   .isEqualTo(jpaRule.getTxnClock().nowUtc());
@@ -81,26 +77,40 @@ public class PremiumListDaoTest {
 
   @Test
   public void update_worksSuccessfully() {
-    PremiumListDao.saveNew(
+    PremiumListDao.saveNew(PremiumList.create("testname", CurrencyUnit.USD, TEST_PRICES));
+    Optional<PremiumList> persistedList = PremiumListDao.getLatestRevision("testname");
+    assertThat(persistedList).isPresent();
+    long firstRevisionId = persistedList.get().getRevisionId();
+    PremiumListDao.update(
         PremiumList.create(
-            "testname", USD, ImmutableMap.of("firstversion", BigDecimal.valueOf(123.45))));
-    PremiumListDao.update(PremiumList.create("testname", USD, TEST_PRICES));
+            "testname",
+            CurrencyUnit.USD,
+            ImmutableMap.of(
+                "update",
+                BigDecimal.valueOf(55343.12),
+                "new",
+                BigDecimal.valueOf(0.01),
+                "silver",
+                BigDecimal.valueOf(30.03))));
     jpaTm()
         .transact(
             () -> {
-              List<PremiumList> persistedLists =
-                  jpaTm()
-                      .getEntityManager()
-                      .createQuery(
-                          "SELECT pl FROM PremiumList pl WHERE pl.name = :name ORDER BY"
-                              + " pl.revisionId",
-                          PremiumList.class)
-                      .setParameter("name", "testname")
-                      .getResultList();
-              assertThat(persistedLists).hasSize(2);
-              assertThat(persistedLists.get(1).getLabelsToPrices())
-                  .containsExactlyEntriesIn(TEST_PRICES);
-              assertThat(persistedLists.get(1).getCreationTimestamp())
+              Optional<PremiumList> updatedListOpt = PremiumListDao.getLatestRevision("testname");
+              assertThat(updatedListOpt).isPresent();
+              PremiumList updatedList = updatedListOpt.get();
+              assertThat(updatedList.getLabelsToPrices())
+                  .containsExactlyEntriesIn(
+                      ImmutableMap.of(
+                          "update",
+                          BigDecimal.valueOf(55343.12),
+                          "new",
+                          BigDecimal.valueOf(0.01),
+                          "silver",
+                          BigDecimal.valueOf(30.03)));
+              assertThat(updatedList.getCreationTimestamp())
+                  .isEqualTo(jpaRule.getTxnClock().nowUtc());
+              assertThat(updatedList.getRevisionId()).isGreaterThan(firstRevisionId);
+              assertThat(updatedList.getCreationTimestamp())
                   .isEqualTo(jpaRule.getTxnClock().nowUtc());
             });
   }
@@ -116,7 +126,7 @@ public class PremiumListDaoTest {
   }
 
   @Test
-  public void update_throwsWhenPremiumListDoesntExist() {
+  public void update_throwsWhenListDoesntExist() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

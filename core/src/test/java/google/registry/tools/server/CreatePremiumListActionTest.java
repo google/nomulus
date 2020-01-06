@@ -24,6 +24,8 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
+import google.registry.model.transaction.JpaTestRules;
+import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeJsonResponse;
 import org.joda.money.Money;
@@ -38,6 +40,10 @@ import org.junit.runners.JUnit4;
  */
 @RunWith(JUnit4.class)
 public class CreatePremiumListActionTest {
+
+  @Rule
+  public final JpaIntegrationTestRule jpaRule =
+      new JpaTestRules.Builder().buildIntegrationTestRule();
 
   @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
   CreatePremiumListAction action;

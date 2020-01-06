@@ -80,7 +80,7 @@ public class PremiumListDao {
    * <p>Note that this does not load <code>PremiumList.labelsToPrices</code>! If you need to check
    * prices, use {@link #getPremiumPrice}.
    */
-  static Optional<PremiumList> getLatestRevision(String premiumListName) {
+  public static Optional<PremiumList> getLatestRevision(String premiumListName) {
     return jpaTm()
         .transact(
             () ->

@@ -57,13 +57,7 @@ public class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     verifySentParams(
         connection,
         servletPath,
-        ImmutableMap.of(
-            "name",
-            "foo",
-            "inputData",
-            generateInputData(premiumTermsPath),
-            "alsoCloudSql",
-            "false"));
+        ImmutableMap.of("name", "foo", "inputData", generateInputData(premiumTermsPath)));
   }
 
   @Test
@@ -74,11 +68,6 @@ public class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
         connection,
         servletPath,
         ImmutableMap.of(
-            "name",
-            "example_premium_terms",
-            "inputData",
-            generateInputData(premiumTermsPath),
-            "alsoCloudSql",
-            "false"));
+            "name", "example_premium_terms", "inputData", generateInputData(premiumTermsPath)));
   }
 }

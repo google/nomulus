@@ -119,6 +119,9 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
       // If there are user properties, create a new properties object with these added.
       ImmutableMap.Builder builder = properties.builder();
       builder.putAll(userProperties);
+      // Forbid Hibernate push to stay consistent with flyway-based schema management.
+      builder.put(Environment.HBM2DDL_AUTO, "none");
+      builder.put(Environment.SHOW_SQL, "true");
       properties = builder.build();
     }
     assertNormalActiveConnection();
