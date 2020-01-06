@@ -123,13 +123,14 @@ public class UpdateReservedListCommandTest extends
   }
 
   @Test
-  public void testSaveToCloudSql_noExceptionThrownWhenSaveFail() throws Exception {
-    // Note that, during the dual-write phase, we want to make sure that no exception will be
-    // thrown if saving reserved list to Cloud SQL fails.
+  public void testSaveToCloudSql_succeedsEvenPreviousListNotExist() throws Exception {
+    // Note that, during the dual-write phase, we just always save the revered list to
+    // Cloud SQL (if --also_cloud_sql is set) without checking if there is a list with
+    // same name. This is to backfill the existing list in Datastore when we update it.
     populateInitialReservedListInDatastore(true);
     runCommandForced(
         "--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath, "--also_cloud_sql");
     verifyXnq9jyb4cInDatastore();
-    assertThat(ReservedListDao.checkExists("xn--q9jyb4c_common-reserved")).isFalse();
+    assertThat(ReservedListDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();
   }
 }

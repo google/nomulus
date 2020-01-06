@@ -62,10 +62,16 @@ final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand 
     jpaTm()
         .transact(
             () -> {
-              checkArgument(
-                  ReservedListDao.checkExists(cloudSqlReservedList.getName()),
-                  "A reserved list of this name doesn't exist: %s.",
-                  cloudSqlReservedList.getName());
+              // This check is currently disabled because, during the Cloud SQL migration, we need
+              // to be able to update reserved lists in Datastore while simultaneously creating
+              // their first revision in Cloud SQL (i.e. if they haven't been migrated over yet).
+              // TODO(shicong): Re-instate this once all reserved lists are migrated to Cloud SQL,
+              //                 and add a unit test to verity that an exception will be thrown if
+              //                 the reserved list doesn't exist.
+              // checkArgument(
+              //     ReservedListDao.checkExists(cloudSqlReservedList.getName()),
+              //     "A reserved list of this name doesn't exist: %s.",
+              //     cloudSqlReservedList.getName());
               ReservedListDao.save(cloudSqlReservedList);
             });
   }
