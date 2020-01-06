@@ -58,7 +58,7 @@ public final class DomainLockUtils {
         .ifPresent(
             previousLock ->
                 checkArgument(
-                    previousLock.isLockRequestExpired(clock) || previousLock.isUnlocked(),
+                    previousLock.isLockRequestExpired(clock) || !previousLock.isLocked(),
                     "A pending or completed lock action already exists for %s",
                     previousLock.getDomainName()));
 

@@ -184,10 +184,6 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
     return lockCompletionTimestamp != null && unlockCompletionTimestamp == null;
   }
 
-  public boolean isUnlocked() {
-    return unlockCompletionTimestamp != null;
-  }
-
   /** Returns true iff the lock was requested >= 1 hour ago and has not been verified. */
   public boolean isLockRequestExpired(Clock clock) {
     return !getLockCompletionTimestamp().isPresent()

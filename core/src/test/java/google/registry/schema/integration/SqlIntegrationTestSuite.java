@@ -54,8 +54,8 @@ import org.junit.runners.Suite.SuiteClasses;
   PremiumListUtilsTest.class,
   RegistryLockDaoTest.class,
   RegistryLockGetActionTest.class,
-  UnlockDomainCommandTest.class,
   ReservedListDaoTest.class,
+  UnlockDomainCommandTest.class,
   UpdatePremiumListActionTest.class,
   UpdateReservedListCommandTest.class
 })
