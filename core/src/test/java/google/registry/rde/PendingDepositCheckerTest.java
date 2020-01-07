@@ -30,7 +30,6 @@ import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
-import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.schema.cursor.CursorDao;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
@@ -53,10 +52,6 @@ public class PendingDepositCheckerTest {
   public final AppEngineRule appEngine = AppEngineRule.builder()
       .withDatastore()
       .build();
-
-  @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
 
   private final FakeClock clock = new FakeClock();
   private final PendingDepositChecker checker = new PendingDepositChecker();

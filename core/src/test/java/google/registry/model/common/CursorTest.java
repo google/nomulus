@@ -27,18 +27,12 @@ import static org.junit.Assert.assertThrows;
 import google.registry.model.EntityTestCase;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registry.Registry;
-import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.schema.cursor.CursorDao;
 import org.joda.time.DateTime;
-import org.junit.Rule;
 import org.junit.Test;
 
 /** Unit tests for {@link Cursor}. */
 public class CursorTest extends EntityTestCase {
-
-  @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
 
   @Test
   public void testSuccess_persistScopedCursor() {

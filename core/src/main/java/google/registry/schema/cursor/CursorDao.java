@@ -19,6 +19,8 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.schema.cursor.Cursor.CursorId;
@@ -34,6 +36,16 @@ public class CursorDao {
         .transact(
             () -> {
               jpaTm().getEntityManager().merge(cursor);
+            });
+  }
+
+  public static void saveAll(ImmutableSet<Cursor> cursors) {
+    jpaTm()
+        .transact(
+            () -> {
+              for (Cursor cursor : cursors) {
+                jpaTm().getEntityManager().merge(cursor);
+              }
             });
   }
 
@@ -74,7 +86,7 @@ public class CursorDao {
   }
 
   /**
-   * This writes the given cursor to datastore. If the save to datastore succeeds, then a new
+   * This writes the given cursor to Datastore. If the save to Datastore succeeds, then a new
    * Schema/Cursor object is created and attempted to save to Cloud SQL. If the save to Cloud SQL
    * fails, the exception is logged, but does not cause the method to fail.
    */
@@ -85,8 +97,39 @@ public class CursorDao {
       Cursor cloudSqlCursor = Cursor.create(type, scope, cursor.getCursorTime());
       save(cloudSqlCursor);
     } catch (Exception e) {
-      logger.atInfo().log("Issue saving cursor to CloudSql: " + e.getMessage());
-      e.printStackTrace();
+      logger.atSevere().withCause(e).log("Error saving cursor to Cloud SQL");
+    }
+  }
+
+  /**
+   * This takes in multiple cursors and saves them to Datastore. If those saves succeed, it attempts
+   * to save the cursors to Cloud SQL. If the save to Cloud SQL fails, the exception is logged, but
+   * does not cause the method to fail.
+   */
+  public static void saveCursors(
+      ImmutableMap<google.registry.model.common.Cursor, String> cursors) {
+    // Save the cursors to Datastore
+    tm().transact(
+            () -> {
+              for (google.registry.model.common.Cursor cursor : cursors.keySet()) {
+                ofy().save().entity(cursor);
+              }
+            });
+    // Try to save the cursors to Cloud SQL
+    try {
+      ImmutableSet.Builder<Cursor> cloudSqlCursors = new ImmutableSet.Builder<>();
+      cursors
+          .keySet()
+          .forEach(
+              cursor ->
+                  cloudSqlCursors.add(
+                      Cursor.create(
+                          google.registry.model.common.Cursor.getType(cursor),
+                          cursors.get(cursor),
+                          cursor.getCursorTime())));
+      saveAll(cloudSqlCursors.build());
+    } catch (Exception e) {
+      logger.atSevere().withCause(e).log("Error saving cursor to Cloud SQL");
     }
   }
 }

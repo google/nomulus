@@ -49,7 +49,6 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.schema.cursor.CursorDao;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
@@ -72,10 +71,6 @@ public class ExpandRecurringBillingEventsActionTest
     extends MapreduceTestCase<ExpandRecurringBillingEventsAction> {
   @Rule
   public final InjectRule inject = new InjectRule();
-
-  @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
 
   private final DateTime beginningOfTest = DateTime.parse("2000-10-02T00:00:00Z");
   private final FakeClock clock = new FakeClock(beginningOfTest);

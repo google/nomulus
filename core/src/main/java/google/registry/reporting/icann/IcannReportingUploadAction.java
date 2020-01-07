@@ -52,6 +52,7 @@ import google.registry.util.SendEmailService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -188,7 +189,8 @@ public final class IcannReportingUploadAction implements Runnable {
               cursorTime.withTimeAtStartOfDay().withDayOfMonth(1).plusMonths(1),
               Registry.get(tldStr));
       CursorDao.saveCursor(
-          newCursor, (tldStr == null ? google.registry.schema.cursor.Cursor.GLOBAL : tldStr));
+          newCursor,
+          Optional.ofNullable(tldStr).orElse(google.registry.schema.cursor.Cursor.GLOBAL));
     }
   }
 
