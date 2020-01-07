@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.eppcommon.StatusValue.SERVER_DELETE_PROHIBITED;
-import static google.registry.model.eppcommon.StatusValue.SERVER_TRANSFER_PROHIBITED;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
@@ -33,6 +32,7 @@ import google.registry.model.registrar.Registrar.Type;
 import google.registry.model.registry.RegistryLockDao;
 import google.registry.model.transaction.JpaTestRules;
 import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.FakeClock;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,30 +56,30 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
     command.clock = new FakeClock();
   }
 
-  private DomainBase persistLockedDomain(String domainName) {
-    return persistResource(
-        newDomainBase(domainName)
-            .asBuilder()
-            .addStatusValues(
-                ImmutableSet.of(
-                    SERVER_DELETE_PROHIBITED, SERVER_TRANSFER_PROHIBITED, SERVER_UPDATE_PROHIBITED))
-            .build());
+  private DomainBase persistLockedDomain(String domainName, String registrarId) {
+    DomainBase domain = persistResource(newDomainBase(domainName));
+    RegistryLock lock =
+        DomainLockUtils.createRegistryLockRequest(
+            domainName, registrarId, null, true, command.clock);
+    DomainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, command.clock);
+    return reloadResource(domain);
   }
 
   @Test
   public void testSuccess_unlocksDomain() throws Exception {
-    DomainBase domain = persistLockedDomain("example.tld");
+    DomainBase domain = persistLockedDomain("example.tld", "NewRegistrar");
     runCommandForced("--client=NewRegistrar", "example.tld");
     assertThat(reloadResource(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
   }
 
   @Test
   public void testSuccess_partiallyUpdatesStatuses() throws Exception {
-    DomainBase domain =
+    DomainBase domain = persistLockedDomain("example.tld", "NewRegistrar");
+    domain =
         persistResource(
-            newDomainBase("example.tld")
+            domain
                 .asBuilder()
-                .addStatusValues(
+                .setStatusValues(
                     ImmutableSet.of(SERVER_DELETE_PROHIBITED, SERVER_UPDATE_PROHIBITED))
                 .build());
     runCommandForced("--client=NewRegistrar", "example.tld");
@@ -93,7 +93,7 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
     List<DomainBase> domains = new ArrayList<>();
     for (int n = 0; n < 26; n++) {
       String domain = String.format("domain%d.tld", n);
-      domains.add(persistLockedDomain(domain));
+      domains.add(persistLockedDomain(domain, "NewRegistrar"));
     }
     runCommandForced(
         ImmutableList.<String>builder()
@@ -126,7 +126,7 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
 
   @Test
   public void testSuccess_defaultsToAdminRegistrar_ifUnspecified() throws Exception {
-    DomainBase domain = persistLockedDomain("example.tld");
+    DomainBase domain = persistLockedDomain("example.tld", "NewRegistrar");
     runCommandForced("example.tld");
     assertThat(RegistryLockDao.getMostRecentByRepoId(domain.getRepoId()).get().getRegistrarId())
         .isEqualTo("adminreg");

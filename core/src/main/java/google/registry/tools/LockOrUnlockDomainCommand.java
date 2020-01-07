@@ -85,15 +85,15 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
         finalizeLockOrUnlockRequest(lock);
       } catch (Throwable t) {
         Throwable rootCause = Throwables.getRootCause(t);
-        logger.atSevere().withCause(rootCause).log("Error when (un)locking domain %s", domain);
+        logger.atSevere().withCause(rootCause).log("Error when (un)locking domain %s.", domain);
         failures++;
       }
     }
     if (failures == 0) {
-      return String.format("Successfully locked/unlocked %d domains", relevantDomains.size());
+      return String.format("Successfully locked/unlocked %d domains.", relevantDomains.size());
     } else {
       return String.format(
-          "Successfully locked/unlocked %d domains with %d failures",
+          "Successfully locked/unlocked %d domains with %d failures.",
           relevantDomains.size() - failures, failures);
     }
   }
