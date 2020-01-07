@@ -52,7 +52,6 @@ import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.host.HostResource;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
-import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.RequestParameters;
 import google.registry.schema.cursor.CursorDao;
@@ -109,10 +108,6 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
 
   @Rule
   public final InjectRule inject = new InjectRule();
-
-  @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
 
   private final FakeClock clock = new FakeClock();
   private final FakeResponse response = new FakeResponse();

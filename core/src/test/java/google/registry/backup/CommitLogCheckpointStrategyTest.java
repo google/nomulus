@@ -17,7 +17,6 @@ package google.registry.backup;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.Cursor.CursorType.RDE_REPORT;
 import static google.registry.model.ofy.CommitLogBucket.getBucketKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -30,7 +29,6 @@ import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
-import google.registry.model.transaction.JpaTransactionManagerRule;
 import google.registry.model.transaction.TransactionManager;
 import google.registry.schema.cursor.CursorDao;
 import google.registry.testing.AppEngineRule;
@@ -56,9 +54,6 @@ public class CommitLogCheckpointStrategyTest {
   @Rule
   public final InjectRule inject = new InjectRule();
 
-  @Rule
-  public final JpaTransactionManagerRule jpaTmRule =
-      new JpaTransactionManagerRule.Builder().build();
 
   final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
   final Ofy ofy = new Ofy(clock);

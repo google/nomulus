@@ -20,6 +20,7 @@ import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
+import com.google.common.base.Splitter;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -27,6 +28,7 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.model.registry.Registry;
+import java.util.List;
 import org.joda.time.DateTime;
 
 /**
@@ -193,8 +195,8 @@ public class Cursor extends ImmutableObject {
   }
 
   public static CursorType getType(Cursor cursor) {
-    String[] id = cursor.id.split("_", 2);
-    return CursorType.valueOf(id[1]);
+    List<String> id = Splitter.on('_').splitToList(cursor.id);
+    return CursorType.valueOf(String.join("_", id.subList(1, id.size())));
   }
 
   public DateTime getCursorTime() {

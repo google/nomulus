@@ -17,8 +17,11 @@ package google.registry.schema.cursor;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.testing.TestLogHandler;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registry;
@@ -87,15 +90,29 @@ public class CursorDaoTest {
   }
 
   @Test
+  public void saveAll_worksSuccessfully() {
+    Cursor cursor = Cursor.createGlobal(CursorType.RECURRING_BILLING, fakeClock.nowUtc());
+    Cursor cursor2 = Cursor.create(CursorType.RDE_REPORT, "tld", fakeClock.nowUtc());
+    ImmutableSet<Cursor> cursors = ImmutableSet.<Cursor>builder().add(cursor, cursor2).build();
+    CursorDao.saveAll(cursors);
+    assertThat(CursorDao.loadAll()).hasSize(2);
+    assertThat(CursorDao.load(CursorType.RECURRING_BILLING).getCursorTime())
+        .isEqualTo(cursor.getCursorTime());
+  }
+
+  @Test
+  public void saveAll_worksSuccessfullyEmptySet() {
+    CursorDao.saveAll(ImmutableSet.of());
+    assertThat(CursorDao.loadAll()).isEmpty();
+  }
+
+  @Test
   public void load_worksSuccessfully() {
     Cursor cursor = Cursor.createGlobal(CursorType.RECURRING_BILLING, fakeClock.nowUtc());
     Cursor cursor2 = Cursor.create(CursorType.RDE_REPORT, "tld", fakeClock.nowUtc());
     Cursor cursor3 = Cursor.create(CursorType.RDE_REPORT, "foo", fakeClock.nowUtc());
     Cursor cursor4 = Cursor.create(CursorType.BRDA, "foo", fakeClock.nowUtc());
-    CursorDao.save(cursor);
-    CursorDao.save(cursor2);
-    CursorDao.save(cursor3);
-    CursorDao.save(cursor4);
+    CursorDao.saveAll(ImmutableSet.of(cursor, cursor2, cursor3, cursor4));
     Cursor returnedCursor = CursorDao.load(CursorType.RDE_REPORT, "tld");
     assertThat(returnedCursor.getCursorTime()).isEqualTo(cursor2.getCursorTime());
     returnedCursor = CursorDao.load(CursorType.BRDA, "foo");
@@ -110,10 +127,7 @@ public class CursorDaoTest {
     Cursor cursor2 = Cursor.create(CursorType.RDE_REPORT, "tld", fakeClock.nowUtc());
     Cursor cursor3 = Cursor.create(CursorType.RDE_REPORT, "foo", fakeClock.nowUtc());
     Cursor cursor4 = Cursor.create(CursorType.BRDA, "foo", fakeClock.nowUtc());
-    CursorDao.save(cursor);
-    CursorDao.save(cursor2);
-    CursorDao.save(cursor3);
-    CursorDao.save(cursor4);
+    CursorDao.saveAll(ImmutableSet.of(cursor, cursor2, cursor3, cursor4));
     List<Cursor> returnedCursors = CursorDao.loadAll();
     assertThat(returnedCursors.size()).isEqualTo(4);
   }
@@ -130,10 +144,7 @@ public class CursorDaoTest {
     Cursor cursor2 = Cursor.create(CursorType.RDE_REPORT, "tld", fakeClock.nowUtc());
     Cursor cursor3 = Cursor.create(CursorType.RDE_REPORT, "foo", fakeClock.nowUtc());
     Cursor cursor4 = Cursor.create(CursorType.BRDA, "foo", fakeClock.nowUtc());
-    CursorDao.save(cursor);
-    CursorDao.save(cursor2);
-    CursorDao.save(cursor3);
-    CursorDao.save(cursor4);
+    CursorDao.saveAll(ImmutableSet.of(cursor, cursor2, cursor3, cursor4));
     List<Cursor> returnedCursors = CursorDao.loadByType(CursorType.RDE_REPORT);
     assertThat(returnedCursors.size()).isEqualTo(2);
   }
@@ -180,7 +191,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void saveCursor_logsInfoWhenSaveToCloudSqlFails() {
+  public void saveCursor_logsErrorWhenSaveToCloudSqlFails() {
     loggerToIntercept.addHandler(logHandler);
     createTld("tld");
     google.registry.model.common.Cursor cursor =
@@ -189,10 +200,7 @@ public class CursorDaoTest {
     CursorDao.saveCursor(cursor, null);
     assertAboutLogs()
         .that(logHandler)
-        .hasLogAtLevelWithMessage(
-            Level.INFO,
-            "Issue saving cursor to CloudSql: Scope cannot be null. To create a global cursor, use"
-                + " the createGlobal method");
+        .hasLogAtLevelWithMessage(Level.SEVERE, "Error saving cursor to Cloud SQL");
     google.registry.model.common.Cursor dataStoreCursor =
         ofy()
             .load()
@@ -201,5 +209,54 @@ public class CursorDaoTest {
                     CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("tld")))
             .now();
     assertThat(cursor).isEqualTo(dataStoreCursor);
+  }
+
+  @Test
+  public void saveCursors_worksSuccessfully() {
+    createTlds("tld", "foo");
+    google.registry.model.common.Cursor cursor1 =
+        google.registry.model.common.Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc(), Registry.get("tld"));
+    google.registry.model.common.Cursor cursor2 =
+        google.registry.model.common.Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc(), Registry.get("foo"));
+    google.registry.model.common.Cursor cursor3 =
+        google.registry.model.common.Cursor.createGlobal(
+            CursorType.RECURRING_BILLING, fakeClock.nowUtc());
+    ImmutableMap<google.registry.model.common.Cursor, String> cursors =
+        ImmutableMap.<google.registry.model.common.Cursor, String>builder()
+            .put(cursor1, "tld")
+            .put(cursor2, "foo")
+            .put(cursor3, Cursor.GLOBAL)
+            .build();
+    CursorDao.saveCursors(cursors);
+    Cursor createdCursor1 = CursorDao.load(CursorType.ICANN_UPLOAD_ACTIVITY, "tld");
+    google.registry.model.common.Cursor dataStoreCursor1 =
+        ofy()
+            .load()
+            .key(
+                google.registry.model.common.Cursor.createKey(
+                    CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("tld")))
+            .now();
+    assertThat(createdCursor1.getCursorTime()).isEqualTo(cursor1.getCursorTime());
+    assertThat(cursor1).isEqualTo(dataStoreCursor1);
+    Cursor createdCursor2 = CursorDao.load(CursorType.ICANN_UPLOAD_ACTIVITY, "foo");
+    google.registry.model.common.Cursor dataStoreCursor2 =
+        ofy()
+            .load()
+            .key(
+                google.registry.model.common.Cursor.createKey(
+                    CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("foo")))
+            .now();
+    assertThat(createdCursor2.getCursorTime()).isEqualTo(cursor2.getCursorTime());
+    assertThat(cursor2).isEqualTo(dataStoreCursor2);
+    Cursor createdCursor3 = CursorDao.load(CursorType.RECURRING_BILLING);
+    google.registry.model.common.Cursor dataStoreCursor3 =
+        ofy()
+            .load()
+            .key(google.registry.model.common.Cursor.createGlobalKey(CursorType.RECURRING_BILLING))
+            .now();
+    assertThat(createdCursor3.getCursorTime()).isEqualTo(cursor3.getCursorTime());
+    assertThat(cursor3).isEqualTo(dataStoreCursor3);
   }
 }

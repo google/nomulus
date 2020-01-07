@@ -19,11 +19,7 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-<<<<<<< HEAD
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
-=======
-import static google.registry.reporting.icann.IcannReportingModule.MANIFEST_FILE_NAME;
->>>>>>> 3795b16ca... Add dual write for Cursors
 import static google.registry.reporting.icann.IcannReportingModule.PARAM_SUBDIR;
 import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
@@ -56,6 +52,7 @@ import google.registry.util.SendEmailService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -186,29 +183,14 @@ public final class IcannReportingUploadAction implements Runnable {
 
     // Set cursor to first day of next month if the upload succeeded
     if (success) {
-<<<<<<< HEAD
       Cursor newCursor =
           Cursor.create(
               cursorType,
               cursorTime.withTimeAtStartOfDay().withDayOfMonth(1).plusMonths(1),
               Registry.get(tldStr));
-      tm().transact(() -> ofy().save().entity(newCursor));
-=======
-      Cursor newCursor;
-      if (cursorType.equals(CursorType.ICANN_UPLOAD_MANIFEST)) {
-        newCursor =
-            Cursor.createGlobal(
-                cursorType, cursorTime.withTimeAtStartOfDay().withDayOfMonth(1).plusMonths(1));
-      } else {
-        newCursor =
-            Cursor.create(
-                cursorType,
-                cursorTime.withTimeAtStartOfDay().withDayOfMonth(1).plusMonths(1),
-                Registry.get(tldStr));
-      }
       CursorDao.saveCursor(
-          newCursor, (tldStr == null ? google.registry.schema.cursor.Cursor.GLOBAL : tldStr));
->>>>>>> 3795b16ca... Add dual write for Cursors
+          newCursor,
+          Optional.ofNullable(tldStr).orElse(google.registry.schema.cursor.Cursor.GLOBAL));
     }
   }
 

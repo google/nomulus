@@ -173,9 +173,9 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
         "Updating RDE cursor '%s' for TLD '%s' following successful upload.", RDE_UPLOAD_SFTP, tld);
     tm().transact(
             () -> {
-              DateTime transactionTime = tm().getTransactionTime();
               CursorDao.saveCursor(
-                  Cursor.create(RDE_UPLOAD_SFTP, transactionTime, Registry.get(tld)), tld);
+                  Cursor.create(RDE_UPLOAD_SFTP, tm().getTransactionTime(), Registry.get(tld)),
+                  tld);
             });
     response.setContentType(PLAIN_TEXT_UTF_8);
     response.setPayload(String.format("OK %s %s\n", tld, watermark));

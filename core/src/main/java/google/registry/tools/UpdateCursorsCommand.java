@@ -18,6 +18,7 @@ import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.google.common.collect.ImmutableMap;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registry;
@@ -28,7 +29,7 @@ import org.joda.time.DateTime;
 
 /** Modifies {@link Cursor} timestamps used by locking rolling cursor tasks, like in RDE. */
 @Parameters(separators = " =", commandDescription = "Modifies cursor timestamps used by LRC tasks")
-final class UpdateCursorsCommand extends MutatingCommand {
+final class UpdateCursorsCommand extends ConfirmingCommand {
 
   @Parameter(description = "TLDs on which to operate. Omit for global cursors.")
   private List<String> tlds;
@@ -46,18 +47,46 @@ final class UpdateCursorsCommand extends MutatingCommand {
       required = true)
   private DateTime newTimestamp;
 
+  ImmutableMap<Cursor, String> cursorsToUpdate;
+
   @Override
   protected void init() {
+    ImmutableMap.Builder<Cursor, String> cursorsToUpdateBuilder = ImmutableMap.builder();
     if (isNullOrEmpty(tlds)) {
-      CursorDao.saveCursor(
+      cursorsToUpdateBuilder.put(
           Cursor.createGlobal(cursorType, newTimestamp),
           google.registry.schema.cursor.Cursor.GLOBAL);
     } else {
       for (String tld : tlds) {
         Registry registry = Registry.get(tld);
-        CursorDao.saveCursor(
+        cursorsToUpdateBuilder.put(
             Cursor.create(cursorType, newTimestamp, registry), registry.getTldStr());
       }
     }
+    cursorsToUpdate = cursorsToUpdateBuilder.build();
+  }
+
+  @Override
+  protected String execute() throws Exception {
+    CursorDao.saveCursors(cursorsToUpdate);
+    return String.format("Updated %d entities.\n", cursorsToUpdate.size());
+  }
+
+  /** Returns the changes that have been staged thus far. */
+  @Override
+  protected String prompt() {
+    StringBuilder changes = new StringBuilder();
+    if (cursorsToUpdate.isEmpty()) {
+      return "No cursor changes to apply.";
+    }
+    cursorsToUpdate.entrySet().stream()
+        .forEach(entry -> changes.append(getChangeString(entry.getKey(), entry.getValue())));
+    return changes.toString();
+  }
+
+  private String getChangeString(Cursor cursor, String scope) {
+    return String.format(
+        "Change cursorTime of %s for Scope:%s to %s\n",
+        Cursor.getType(cursor), scope, cursor.getCursorTime());
   }
 }
