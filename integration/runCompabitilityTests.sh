@@ -34,18 +34,23 @@ If sut is sql, the schema in local branch must not break the currently
 deployed servers. This is verified by running the sqlIntegrationTestSuite
 in appropriate releases against the SQL schema in the local branch.
 
-where:
+This script needs to fetch Github tags of deployed systems. On platforms
+that performs shallow clone, such as Travis-ci, caller may need to invoke
+'git fetch --tags'.
+
+Arguments:
     --help  show this help text
-    --dev_project  the GCP project with deployment infrastructure. It should
-                   take the devProject property defined in the Gradle root
-                   project.
+    --dev_project
+            the GCP project with deployment infrastructure. It should
+            take the devProject property defined in the Gradle root
+            project.
     --sut  the system under test, either sql or nomulus.
     --env  the environment that should be tested, either sandbox or production.
            If unspecified, both environments will be tested."
 
 SCRIPT_DIR="$(realpath $(dirname $0))"
 
-# Fetch the version tag of the currently deployed version of Nomulus server
+# Fetch the tag of the currently deployed release of Nomulus server
 # or SQL schema.
 function fetchVersion() {
   local deployed_system=${1}
@@ -59,8 +64,6 @@ function getChangeCountSinceVersion() {
   local deployed_system=${1}
   local version=${2}
   local changes
-
-  git fetch --tags
 
   if [[  ${deployed_system} == "sql " ]]; then
     changes=$(git diff --name-only ${version} \
@@ -104,7 +107,7 @@ function runTest() {
   echo "Running test with -Pnomulus_version=${nomulus_version}" \
       "-Pschema_version=${schema_version}"
 
-  (cd ${SCRIPT_DIR}/../..; \
+  (cd ${SCRIPT_DIR}/..; \
       ./gradlew :integration:sqlIntegrationTest \
           -PdevProject=${dev_project} \
           -Pnomulus_version=${nomulus_version} \
@@ -135,9 +138,9 @@ if [[ -z "${DEV_PROJECT}" ]]; then
    exit 1
 fi
 
-if [[ "${SUT}" == "nomulus" ]]; then
+if [[ "${SUT}" = "nomulus" ]]; then
   DEPLOYED_SYSTEM="sql"
-elif [[ "${SUT}" == "sql" ]]; then
+elif [[ "${SUT}" = "sql" ]]; then
   DEPLOYED_SYSTEM="nomulus"
 else
   echo "${USAGE}"
