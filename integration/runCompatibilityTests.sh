@@ -21,7 +21,7 @@
 USAGE="
 $(basename "$0") [--help]
 or
-$(basename "$0") --dev_project=... --sut=... --env
+$(basename "$0") OPTIONS
 Run compatibility test between Nomulus server and Cloud SQL schema.
 
 The --sut option specifies a system under test, which may be either nomulus
@@ -38,15 +38,15 @@ This script needs to fetch Github tags of deployed systems. On platforms
 that performs shallow clone, such as Travis-ci, caller may need to invoke
 'git fetch --tags'.
 
-Arguments:
-    --help  show this help text
-    --dev_project
+Options:
+    -h, --help  show this help text
+    -p, --project
             the GCP project with deployment infrastructure. It should
             take the devProject property defined in the Gradle root
             project.
-    --sut  the system under test, either sql or nomulus.
-    --env  the environment that should be tested, either sandbox or production.
-           If unspecified, both environments will be tested."
+    -s, --sut  the system under test, either sql or nomulus.
+    -e, --env  the environment that should be tested, either sandbox or
+               production. If unspecified, both environments will be tested."
 
 SCRIPT_DIR="$(realpath $(dirname $0))"
 
@@ -56,8 +56,8 @@ function fetchVersion() {
   local deployed_system=${1}
   local env=${2}
   local dev_project=${3}
-  echo $(gsutil cp \
-      gs://${dev_project}-deployed-tags/${deployed_system}.${env}.tag -)
+  echo $(gsutil cat\
+      gs://${dev_project}-deployed-tags/${deployed_system}.${env}.tag)
 }
 
 function getChangeCountSinceVersion() {
@@ -69,13 +69,10 @@ function getChangeCountSinceVersion() {
     changes=$(git diff --name-only ${version} \
         db/src/main/resources/sql/flyway | wc -l)
   else
-    # TODO(weiminyu): add tests to enforce that jpa managed classes are
-    # restricted to the three src folders listed below.
     changes=$(git diff --name-only ${version} \
         core/src/main/resources/META-INF \
-        core/src/main/java/google/registry/model \
-        core/src/main/java/google/registry/schema \
-        core/src/main/java/google/registry/persistence | wc -l)
+        core/src/main/java/google/registry/persistence \
+        db/src/main/resources/sql/schema/db-schema.sql.generated | wc -l)
   fi
   echo ${changes}
 }
@@ -117,19 +114,15 @@ function runTest() {
 
 set -e
 
-for i in "$@"; do
-  case $i in
-    --dev_project=*)
-      DEV_PROJECT="${i#*=}"
-      ;;
-    --sut=*)
-      SUT="${i#*=}"
-      ;;
-    --env=*)
-      ENV="${i#*=}"
-      ;;
-    *)
-      ;;
+eval set -- $(getopt -o p:s:e:h -l project:,sut:,env:,help -- "$@")
+while true; do
+  case "$1" in
+    -p | --project) DEV_PROJECT="$2"; shift 2 ;;
+    -s | --sut) SUT="$2"; shift 2 ;;
+    -e | --env) ENV="$2"; shift 2 ;;
+    -h | --help) echo "${USAGE}"; shift ;;
+    --) shift; break ;;
+    *) echo "${USAGE}"; exit 1 ;;
   esac
 done
 
