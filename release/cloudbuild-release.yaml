@@ -129,6 +129,10 @@ steps:
     sed -i s/schema_deployer:latest/schema_deployer@$schema_deployer_digest/g \
       release/cloudbuild-schema-deploy.yaml
     sed -i s/'$${TAG_NAME}'/${TAG_NAME}/g release/cloudbuild-schema-deploy.yaml
+    for environment in alpha crash sandbox production; do
+      sed s/'$${_ENV}'/${environment}/g release/cloudbuild-schema-deploy.yaml \
+        > release/cloudbuild-schema-deploy-${environment}.yaml
+    done
 # Upload the gradle binary to GCS if it does not exist and point URL in gradle wrapper to it.
 - name: 'gcr.io/cloud-builders/gsutil'
   entrypoint: /bin/bash
