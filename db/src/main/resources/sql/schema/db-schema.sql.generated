@@ -142,6 +142,22 @@
         primary key (client_id)
     );
 
+    create table "RegistrarPoc" (
+       email_address text not null,
+        allowed_to_set_registry_lock_password boolean not null,
+        fax_number text,
+        gae_user_id text,
+        name text,
+        phone_number text,
+        registry_lock_password_hash text,
+        registry_lock_password_salt text,
+        types text[],
+        visible_in_domain_whois_as_abuse boolean not null,
+        visible_in_whois_as_admin boolean not null,
+        visible_in_whois_as_tech boolean not null,
+        primary key (email_address)
+    );
+
     create table "RegistryLock" (
        revision_id  bigserial not null,
         domain_name text not null,
@@ -181,6 +197,7 @@ create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
 create index premiumlist_name_idx on "PremiumList" (name);
 create index registrar_name_idx on "Registrar" (registrar_name);
 create index registrar_iana_identifier_idx on "Registrar" (iana_identifier);
+create index registrarpoc_gae_user_id_idx on "RegistrarPoc" (gae_user_id);
 create index idx_registry_lock_verification_code on "RegistryLock" (verification_code);
 create index idx_registry_lock_registrar_id on "RegistryLock" (registrar_id);
 

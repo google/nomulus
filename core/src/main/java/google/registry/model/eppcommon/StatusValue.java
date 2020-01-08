@@ -167,10 +167,5 @@ public enum StatusValue implements EppEnum {
   }
 
   /** Hibernate type for sets of {@link StatusValue}. */
-  public static class StatusValueSetType extends EnumSetUserType<StatusValue> {
-    @Override
-    protected StatusValue convertToElem(String value) {
-      return StatusValue.valueOf(value);
-    }
-  }
+  public static class StatusValueSetType extends EnumSetUserType<StatusValue> {}
 }

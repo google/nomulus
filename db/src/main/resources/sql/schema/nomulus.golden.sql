@@ -213,6 +213,26 @@ CREATE TABLE public."Registrar" (
 
 
 --
+-- Name: RegistrarPoc; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."RegistrarPoc" (
+    email_address text NOT NULL,
+    allowed_to_set_registry_lock_password boolean NOT NULL,
+    fax_number text,
+    gae_user_id text,
+    name text,
+    phone_number text,
+    registry_lock_password_hash text,
+    registry_lock_password_salt text,
+    types text[],
+    visible_in_domain_whois_as_abuse boolean NOT NULL,
+    visible_in_whois_as_admin boolean NOT NULL,
+    visible_in_whois_as_tech boolean NOT NULL
+);
+
+
+--
 -- Name: RegistryLock; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -371,6 +391,14 @@ ALTER TABLE ONLY public."PremiumList"
 
 
 --
+-- Name: RegistrarPoc RegistrarPoc_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RegistrarPoc"
+    ADD CONSTRAINT "RegistrarPoc_pkey" PRIMARY KEY (email_address);
+
+
+--
 -- Name: Registrar Registrar_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -478,6 +506,13 @@ CREATE INDEX registrar_iana_identifier_idx ON public."Registrar" USING btree (ia
 --
 
 CREATE INDEX registrar_name_idx ON public."Registrar" USING btree (registrar_name);
+
+
+--
+-- Name: registrarpoc_gae_user_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX registrarpoc_gae_user_id_idx ON public."RegistrarPoc" USING btree (gae_user_id);
 
 
 --
