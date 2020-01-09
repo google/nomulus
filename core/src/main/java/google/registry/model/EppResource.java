@@ -87,7 +87,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   // Map the method to XML, not the field, because if we map the field (with an adaptor class) it
   // will never be omitted from the xml even if the timestamp inside creationTime is null and we
   // return null from the adaptor. (Instead it gets written as an empty tag.)
-  @Index @Transient CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  @Index CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /**
    * The time when this resource was or will be deleted.
@@ -104,7 +104,6 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
    */
   @Index
   DateTime deletionTime;
-
 
   /**
    * The time that this resource was last updated.
@@ -136,15 +135,15 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     return creationTime.getTimestamp();
   }
 
-  public final String getCreationClientId() {
+  public String getCreationClientId() {
     return creationClientId;
   }
 
-  public final DateTime getLastEppUpdateTime() {
+  public DateTime getLastEppUpdateTime() {
     return lastEppUpdateTime;
   }
 
-  public final String getLastEppUpdateClientId() {
+  public String getLastEppUpdateClientId() {
     return lastEppUpdateClientId;
   }
 
@@ -162,7 +161,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     return nullToEmptyImmutableCopy(status);
   }
 
-  public final DateTime getDeletionTime() {
+  public DateTime getDeletionTime() {
     return deletionTime;
   }
 

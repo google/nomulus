@@ -21,7 +21,7 @@ import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Index;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactResource;
-import javax.persistence.Id;
+import javax.persistence.Embeddable;
 import javax.xml.bind.annotation.XmlEnumValue;
 
 /**
@@ -40,7 +40,7 @@ import javax.xml.bind.annotation.XmlEnumValue;
  *     - Contact and Client Identifiers</a>
  */
 @Embed
-@javax.persistence.Entity
+@Embeddable
 public class DesignatedContact extends ImmutableObject {
 
   /**
@@ -67,7 +67,7 @@ public class DesignatedContact extends ImmutableObject {
 
   Type type;
 
-  @Index @Id Key<ContactResource> contact;
+  @Index Key<ContactResource> contact;
 
   public Type getType() {
     return type;
