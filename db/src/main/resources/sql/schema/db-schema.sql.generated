@@ -42,15 +42,10 @@
         primary key (key_tag)
     );
 
-    create table "DesignatedContact" (
-       contact bytea not null,
-        type int4,
-        primary key (contact)
-    );
-
     create table "Domain" (
        repo_id text not null,
         creation_client_id text,
+        creation_time timestamptz,
         current_sponsor_client_id text,
         deletion_time timestamptz,
         last_epp_update_client_id text,
@@ -93,16 +88,16 @@
         primary key (domain_base_repo_id, ds_data_key_tag)
     );
 
-    create table "Domain_DesignatedContact" (
-       domain_base_repo_id text not null,
-        all_contacts_contact bytea not null,
-        primary key (domain_base_repo_id, all_contacts_contact)
-    );
-
     create table "Domain_GracePeriod" (
        domain_base_repo_id text not null,
         grace_periods_id int8 not null,
         primary key (domain_base_repo_id, grace_periods_id)
+    );
+
+    create table "DomainBase_allContacts" (
+       domain text not null,
+        contact bytea,
+        type int4
     );
 
     create table "DomainBase_nsHosts" (
@@ -181,9 +176,6 @@
     alter table if exists "Domain_DelegationSignerData" 
        add constraint UK_2yp55erx1i51pa7gnb8bu7tjn unique (ds_data_key_tag);
 
-    alter table if exists "Domain_DesignatedContact" 
-       add constraint UK_4ys6wdxcmndimlr6af3tsl0ow unique (all_contacts_contact);
-
     alter table if exists "Domain_GracePeriod" 
        add constraint UK_4ps2u4y8i5r91wu2n1x2xea28 unique (grace_periods_id);
 create index premiumlist_name_idx on "PremiumList" (name);
@@ -209,16 +201,6 @@ create index reservedlist_name_idx on "ReservedList" (name);
        foreign key (domain_base_repo_id) 
        references "Domain";
 
-    alter table if exists "Domain_DesignatedContact" 
-       add constraint FKqnnsrj0vi9eqhoth305cd4bi7 
-       foreign key (all_contacts_contact) 
-       references "DesignatedContact";
-
-    alter table if exists "Domain_DesignatedContact" 
-       add constraint FK169lte99hlt3otom9di13ubfn 
-       foreign key (domain_base_repo_id) 
-       references "Domain";
-
     alter table if exists "Domain_GracePeriod" 
        add constraint FKny62h7k1nd3910rp56gdo5pfi 
        foreign key (grace_periods_id) 
@@ -227,6 +209,11 @@ create index reservedlist_name_idx on "ReservedList" (name);
     alter table if exists "Domain_GracePeriod" 
        add constraint FKkpor7amcdp7gwe0hp3obng6do 
        foreign key (domain_base_repo_id) 
+       references "Domain";
+
+    alter table if exists "DomainBase_allContacts" 
+       add constraint FKbh7x0hikqyo6jr50pj02tt6bu 
+       foreign key (domain) 
        references "Domain";
 
     alter table if exists "DomainBase_nsHosts" 

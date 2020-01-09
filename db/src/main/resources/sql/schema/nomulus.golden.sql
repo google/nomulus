@@ -88,6 +88,156 @@ CREATE TABLE public."Cursor" (
 
 
 --
+-- Name: DelegationSignerData; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DelegationSignerData" (
+    key_tag integer NOT NULL,
+    algorithm integer NOT NULL,
+    digest bytea,
+    digest_type integer NOT NULL
+);
+
+
+--
+-- Name: Domain; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Domain" (
+    repo_id text NOT NULL,
+    creation_client_id text,
+    creation_time timestamp with time zone,
+    current_sponsor_client_id text,
+    deletion_time timestamp with time zone,
+    last_epp_update_client_id text,
+    last_epp_update_time timestamp with time zone,
+    revisions bytea,
+    auth_info_repo_id text,
+    auth_info_value text,
+    autorenew_billing_event bytea,
+    autorenew_poll_message bytea,
+    delete_poll_message bytea,
+    fully_qualified_domain_name text,
+    idn_table_name text,
+    last_transfer_time timestamp with time zone,
+    launch_notice_accepted_time timestamp with time zone,
+    launch_notice_expiration_time timestamp with time zone,
+    launch_notice_tcn_id text,
+    launch_notice_validator_id text,
+    registration_expiration_time timestamp with time zone,
+    smd_id text,
+    tld text,
+    transfer_data_server_approve_autorenrew_event bytea,
+    transfer_data_server_approve_autorenrew_poll_message bytea,
+    transfer_data_server_approve_billing_event bytea,
+    unit integer,
+    value integer,
+    client_transaction_id text,
+    server_transaction_id text,
+    transfer_data_registration_expiration_time timestamp with time zone,
+    gaining_client_id text,
+    losing_client_id text,
+    pending_transfer_expiration_time timestamp with time zone,
+    transfer_request_time timestamp with time zone,
+    transfer_status integer
+);
+
+
+--
+-- Name: DomainBase_allContacts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DomainBase_allContacts" (
+    domain text NOT NULL,
+    contact bytea NOT NULL,
+    type integer
+);
+
+
+--
+-- Name: DomainBase_nsHosts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DomainBase_nsHosts" (
+    domain_base_repo_id text NOT NULL,
+    ns_hosts bytea
+);
+
+
+--
+-- Name: DomainBase_serverApproveEntities; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DomainBase_serverApproveEntities" (
+    domain_base_repo_id text NOT NULL,
+    transfer_data_server_approve_entities bytea
+);
+
+
+--
+-- Name: DomainBase_subordinateHosts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DomainBase_subordinateHosts" (
+    domain_base_repo_id text NOT NULL,
+    subordinate_hosts text
+);
+
+
+--
+-- Name: Domain_DelegationSignerData; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Domain_DelegationSignerData" (
+    domain_base_repo_id text NOT NULL,
+    ds_data_key_tag integer NOT NULL
+);
+
+
+--
+-- Name: Domain_GracePeriod; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Domain_GracePeriod" (
+    domain_base_repo_id text NOT NULL,
+    grace_periods_id bigint NOT NULL
+);
+
+
+--
+-- Name: GracePeriod; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."GracePeriod" (
+    id bigint NOT NULL,
+    billing_event_one_time bytea,
+    billing_event_recurring bytea,
+    client_id text,
+    expiration_time timestamp with time zone,
+    type integer
+);
+
+
+--
+-- Name: GracePeriod_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."GracePeriod_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: GracePeriod_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."GracePeriod_id_seq" OWNED BY public."GracePeriod".id;
+
+
+--
 -- Name: PremiumEntry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -220,6 +370,13 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 
 
 --
+-- Name: GracePeriod id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."GracePeriod" ALTER COLUMN id SET DEFAULT nextval('public."GracePeriod_id_seq"'::regclass);
+
+
+--
 -- Name: PremiumList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -262,6 +419,46 @@ ALTER TABLE ONLY public."ClaimsList"
 
 ALTER TABLE ONLY public."Cursor"
     ADD CONSTRAINT "Cursor_pkey" PRIMARY KEY (scope, type);
+
+
+--
+-- Name: DelegationSignerData DelegationSignerData_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DelegationSignerData"
+    ADD CONSTRAINT "DelegationSignerData_pkey" PRIMARY KEY (key_tag);
+
+
+--
+-- Name: Domain_DelegationSignerData Domain_DelegationSignerData_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain_DelegationSignerData"
+    ADD CONSTRAINT "Domain_DelegationSignerData_pkey" PRIMARY KEY (domain_base_repo_id, ds_data_key_tag);
+
+
+--
+-- Name: Domain_GracePeriod Domain_GracePeriod_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain_GracePeriod"
+    ADD CONSTRAINT "Domain_GracePeriod_pkey" PRIMARY KEY (domain_base_repo_id, grace_periods_id);
+
+
+--
+-- Name: Domain Domain_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT "Domain_pkey" PRIMARY KEY (repo_id);
+
+
+--
+-- Name: GracePeriod GracePeriod_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."GracePeriod"
+    ADD CONSTRAINT "GracePeriod_pkey" PRIMARY KEY (id);
 
 
 --
@@ -313,6 +510,14 @@ ALTER TABLE ONLY public."RegistryLock"
 
 
 --
+-- Name: Domain_GracePeriod uk_4ps2u4y8i5r91wu2n1x2xea28; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain_GracePeriod"
+    ADD CONSTRAINT uk_4ps2u4y8i5r91wu2n1x2xea28 UNIQUE (grace_periods_id);
+
+
+--
 -- Name: idx_registry_lock_registrar_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -341,11 +546,35 @@ CREATE INDEX reservedlist_name_idx ON public."ReservedList" USING btree (name);
 
 
 --
+-- Name: Domain_DelegationSignerData fk2nvqbovvy5wasa8arhyhy8mge; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain_DelegationSignerData"
+    ADD CONSTRAINT fk2nvqbovvy5wasa8arhyhy8mge FOREIGN KEY (domain_base_repo_id) REFERENCES public."Domain"(repo_id);
+
+
+--
 -- Name: ClaimsEntry fk6sc6at5hedffc0nhdcab6ivuq; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."ClaimsEntry"
     ADD CONSTRAINT fk6sc6at5hedffc0nhdcab6ivuq FOREIGN KEY (revision_id) REFERENCES public."ClaimsList"(revision_id);
+
+
+--
+-- Name: DomainBase_serverApproveEntities fk7vuyqcsmcfvpv5648femoxien; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainBase_serverApproveEntities"
+    ADD CONSTRAINT fk7vuyqcsmcfvpv5648femoxien FOREIGN KEY (domain_base_repo_id) REFERENCES public."Domain"(repo_id);
+
+
+--
+-- Name: DomainBase_allContacts fkbh7x0hikqyo6jr50pj02tt6bu; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainBase_allContacts"
+    ADD CONSTRAINT fkbh7x0hikqyo6jr50pj02tt6bu FOREIGN KEY (domain) REFERENCES public."Domain"(repo_id);
 
 
 --
@@ -357,11 +586,51 @@ ALTER TABLE ONLY public."ReservedEntry"
 
 
 --
+-- Name: Domain_DelegationSignerData fkho8wxowo3f4e688ehdl4wpni5; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain_DelegationSignerData"
+    ADD CONSTRAINT fkho8wxowo3f4e688ehdl4wpni5 FOREIGN KEY (ds_data_key_tag) REFERENCES public."DelegationSignerData"(key_tag);
+
+
+--
+-- Name: Domain_GracePeriod fkkpor7amcdp7gwe0hp3obng6do; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain_GracePeriod"
+    ADD CONSTRAINT fkkpor7amcdp7gwe0hp3obng6do FOREIGN KEY (domain_base_repo_id) REFERENCES public."Domain"(repo_id);
+
+
+--
+-- Name: DomainBase_subordinateHosts fkkva2lb57ri8qf39hthcej538k; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainBase_subordinateHosts"
+    ADD CONSTRAINT fkkva2lb57ri8qf39hthcej538k FOREIGN KEY (domain_base_repo_id) REFERENCES public."Domain"(repo_id);
+
+
+--
+-- Name: Domain_GracePeriod fkny62h7k1nd3910rp56gdo5pfi; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain_GracePeriod"
+    ADD CONSTRAINT fkny62h7k1nd3910rp56gdo5pfi FOREIGN KEY (grace_periods_id) REFERENCES public."GracePeriod"(id);
+
+
+--
 -- Name: PremiumEntry fko0gw90lpo1tuee56l0nb6y6g5; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."PremiumEntry"
     ADD CONSTRAINT fko0gw90lpo1tuee56l0nb6y6g5 FOREIGN KEY (revision_id) REFERENCES public."PremiumList"(revision_id);
+
+
+--
+-- Name: DomainBase_nsHosts fkow28763fcl1ilx8unxrfjtbja; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainBase_nsHosts"
+    ADD CONSTRAINT fkow28763fcl1ilx8unxrfjtbja FOREIGN KEY (domain_base_repo_id) REFERENCES public."Domain"(repo_id);
 
 
 --

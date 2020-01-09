@@ -72,9 +72,11 @@ import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
+import javax.persistence.JoinColumn;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 
@@ -130,7 +132,9 @@ public class DomainBase extends EppResource
    *
    * <p>These are stored in one field so that we can query across all contacts at once.
    */
-  @ElementCollection Set<DesignatedContact> allContacts;
+  @ElementCollection
+  @CollectionTable(name = "DomainBase_allContacts", joinColumns = @JoinColumn(name = "domain"))
+  Set<DesignatedContact> allContacts;
 
   /** Authorization info (aka transfer secret) of the domain. */
   @Embedded
@@ -285,7 +289,7 @@ public class DomainBase extends EppResource
   }
 
   @Override
-  public final TransferData getTransferData() {
+  public TransferData getTransferData() {
     return Optional.ofNullable(transferData).orElse(TransferData.EMPTY);
   }
 
