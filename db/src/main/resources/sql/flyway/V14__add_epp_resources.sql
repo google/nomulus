@@ -66,7 +66,7 @@
         primary key (domain_base_repo_id, ds_data_key_tag)
     );
 
-    create table "DomainBase_allContacts" (
+    create table "Domain_allContacts" (
        domain text not null,
         contact bytea not null,
         type int4
@@ -126,7 +126,7 @@
        foreign key (domain_base_repo_id)
        references "Domain";
 
-    alter table if exists "DomainBase_allContacts"
+    alter table if exists "Domain_allContacts"
        add constraint FKbh7x0hikqyo6jr50pj02tt6bu
        foreign key (domain)
        references "Domain";
