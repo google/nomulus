@@ -159,17 +159,6 @@ public final class DomainLockUtilsTest {
   }
 
   @Test
-  public void testSuccess_adminOverridesChecks() {
-    // Admins should be able to unlock domains even if it can't find a previous lock object
-    // Note: we still remove the lock statuses in this case
-    persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
-    RegistryLock unlock =
-        DomainLockUtils.createRegistryUnlockRequest(DOMAIN_NAME, "TheRegistrar", true, clock);
-    DomainLockUtils.verifyAndApplyUnlock(unlock.getVerificationCode(), true, clock);
-    assertThat(reloadDomain().getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
-  }
-
-  @Test
   public void testFailure_createUnlock_alreadyPendingUnlock() {
     RegistryLock lock =
         DomainLockUtils.createRegistryLockRequest(

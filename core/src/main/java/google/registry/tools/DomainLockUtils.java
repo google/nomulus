@@ -60,7 +60,8 @@ public final class DomainLockUtils {
         .ifPresent(
             previousLock ->
                 checkArgument(
-                    previousLock.isLockRequestExpired(clock) || !previousLock.isLocked(),
+                    previousLock.isLockRequestExpired(clock)
+                        || previousLock.getUnlockCompletionTimestamp().isPresent(),
                     "A pending or completed lock action already exists for %s",
                     previousLock.getDomainName()));
 
@@ -73,8 +74,7 @@ public final class DomainLockUtils {
             .setRegistrarPocId(registrarPocId)
             .isSuperuser(isAdmin)
             .build();
-    RegistryLockDao.save(lock);
-    return lock;
+    return RegistryLockDao.save(lock);
   }
 
   public static RegistryLock createRegistryUnlockRequest(
@@ -108,8 +108,7 @@ public final class DomainLockUtils {
             .setUnlockRequestTimestamp(clock.nowUtc())
             .setRegistrarId(registrarId)
             .build();
-    RegistryLockDao.save(newLock);
-    return newLock;
+    return RegistryLockDao.save(newLock);
   }
 
   public static RegistryLock verifyAndApplyLock(
