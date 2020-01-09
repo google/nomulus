@@ -1,4 +1,4 @@
-// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+// Copyright 2020 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,19 +11,25 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package google.registry.persistence;
 
 import java.sql.Types;
-import org.hibernate.dialect.PostgreSQL95Dialect;
+import java.util.Collection;
 
-/** Nomulus mapping rules for column types in Postgresql. */
-public class NomulusPostgreSQLDialect extends PostgreSQL95Dialect {
-  public NomulusPostgreSQLDialect() {
-    super();
-    registerColumnType(Types.VARCHAR, "text");
-    registerColumnType(Types.TIMESTAMP_WITH_TIMEZONE, "timestamptz");
-    registerColumnType(Types.TIMESTAMP, "timestamptz");
-    registerColumnType(
-        StringCollectionUserType.COL_TYPE_CODE, StringCollectionUserType.COL_DDL_TYPE_NAME);
+/** Abstract Hibernate user type for storing/retrieving String collections. */
+public abstract class StringCollectionUserType<T extends Collection<String>>
+    extends GenericCollectionUserType<T> {
+  public static final int COL_TYPE_CODE = Types.ARRAY;
+  public static final String COL_DDL_TYPE_NAME = "text[]";
+
+  @Override
+  public int[] sqlTypes() {
+    return new int[] {COL_TYPE_CODE};
+  }
+
+  @Override
+  String getColumnTypeName() {
+    return "text";
   }
 }
