@@ -94,7 +94,7 @@
         primary key (domain_base_repo_id, grace_periods_id)
     );
 
-    create table "DomainBase_allContacts" (
+    create table "Domain_allContacts" (
        domain text not null,
         contact bytea,
         type int4
@@ -211,7 +211,7 @@ create index reservedlist_name_idx on "ReservedList" (name);
        foreign key (domain_base_repo_id) 
        references "Domain";
 
-    alter table if exists "DomainBase_allContacts" 
+    alter table if exists "Domain_allContacts" 
        add constraint FKbh7x0hikqyo6jr50pj02tt6bu 
        foreign key (domain) 
        references "Domain";

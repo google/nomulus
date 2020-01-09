@@ -133,7 +133,7 @@ public class DomainBase extends EppResource
    * <p>These are stored in one field so that we can query across all contacts at once.
    */
   @ElementCollection
-  @CollectionTable(name = "DomainBase_allContacts", joinColumns = @JoinColumn(name = "domain"))
+  @CollectionTable(name = "Domain_allContacts", joinColumns = @JoinColumn(name = "domain"))
   Set<DesignatedContact> allContacts;
 
   /** Authorization info (aka transfer secret) of the domain. */

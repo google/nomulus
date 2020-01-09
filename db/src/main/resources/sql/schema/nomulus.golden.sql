@@ -144,17 +144,6 @@ CREATE TABLE public."Domain" (
 
 
 --
--- Name: DomainBase_allContacts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."DomainBase_allContacts" (
-    domain text NOT NULL,
-    contact bytea NOT NULL,
-    type integer
-);
-
-
---
 -- Name: DomainBase_nsHosts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -201,6 +190,17 @@ CREATE TABLE public."Domain_DelegationSignerData" (
 CREATE TABLE public."Domain_GracePeriod" (
     domain_base_repo_id text NOT NULL,
     grace_periods_id bigint NOT NULL
+);
+
+
+--
+-- Name: Domain_allContacts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Domain_allContacts" (
+    domain text NOT NULL,
+    contact bytea NOT NULL,
+    type integer
 );
 
 
@@ -570,10 +570,10 @@ ALTER TABLE ONLY public."DomainBase_serverApproveEntities"
 
 
 --
--- Name: DomainBase_allContacts fkbh7x0hikqyo6jr50pj02tt6bu; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: Domain_allContacts fkbh7x0hikqyo6jr50pj02tt6bu; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public."DomainBase_allContacts"
+ALTER TABLE ONLY public."Domain_allContacts"
     ADD CONSTRAINT fkbh7x0hikqyo6jr50pj02tt6bu FOREIGN KEY (domain) REFERENCES public."Domain"(repo_id);
 
 

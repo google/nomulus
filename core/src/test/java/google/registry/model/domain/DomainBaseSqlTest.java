@@ -16,7 +16,6 @@ package google.registry.model.domain;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableSet;
@@ -57,33 +56,10 @@ public class DomainBaseSqlTest extends EntityTestCase {
 
   @Before
   public void setUp() {
-    Key<DomainBase> domainKey = Key.create(null, DomainBase.class, "4-COM");
-    Key<HistoryEntry> historyEntryKey =
-        Key.create(persistResource(new HistoryEntry.Builder().setParent(domainKey).build()));
-    Key<ContactResource> contactKey =
-        Key.create(
-            persistResource(
-                new ContactResource.Builder()
-                    .setContactId("contact_id1")
-                    .setRepoId("2-COM")
-                    .build()));
-    Key<ContactResource> contact2Key =
-        Key.create(
-            persistResource(
-                new ContactResource.Builder()
-                    .setContactId("contact_id2")
-                    .setRepoId("2-COM")
-                    .build()));
-
-    Key<HostResource> hostKey =
-        Key.create(
-            persistResource(
-                new HostResource.Builder()
-                    .setFullyQualifiedHostName("ns1.example.com")
-                    .setSuperordinateDomain(domainKey)
-                    .setRepoId("1-COM")
-                    .build()));
-
+    Key<HistoryEntry> historyEntryKey = Key.create(HistoryEntry.class, "history");
+    Key<ContactResource> contactKey = Key.create(ContactResource.class, "contact_id1");
+    Key<ContactResource> contact2Key = Key.create(ContactResource.class, "contact_id2");
+    Key<HostResource> hostKey = Key.create(HostResource.class, "host1");
     Key<BillingEvent.OneTime> oneTimeBillKey =
         Key.create(historyEntryKey, BillingEvent.OneTime.class, 1);
     Key<BillingEvent.Recurring> recurringBillKey =
