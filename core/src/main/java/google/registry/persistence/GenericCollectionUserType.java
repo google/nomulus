@@ -58,7 +58,7 @@ public abstract class GenericCollectionUserType<T extends Collection> implements
   public Object nullSafeGet(
       ResultSet rs, String[] names, SharedSessionContractImplementor session, Object owner)
       throws HibernateException, SQLException {
-    if (rs != null && names != null && names.length > 0 && rs.getArray(names[0]) != null) {
+    if (rs.getArray(names[0]) != null) {
       T result = supplier.get();
       for (Object element : (Object[]) rs.getArray(names[0]).getArray()) {
         result.add(element);
