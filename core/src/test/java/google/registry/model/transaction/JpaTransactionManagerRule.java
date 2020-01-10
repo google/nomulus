@@ -66,6 +66,9 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
       "google/registry/model/transaction/cleanup_database.sql";
   private static final String MANAGEMENT_DB_NAME = "management";
   private static final String POSTGRES_DB_NAME = "postgres";
+  // The type of JDBC connections started by the tests. This string value
+  // is documented in PSQL's official user guide.
+  private static final String CONNECTION_BACKEND_TYPE = "client backend";
 
   private final DateTime now = DateTime.now(UTC);
   private final FakeClock clock = new FakeClock(now);
@@ -74,9 +77,6 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
   private final ImmutableMap userProperties;
 
   private static final JdbcDatabaseContainer database = create();
-  private static final long ACTIVE_CONNECTIONS_BASELINE =
-      getActiveConnectionCountByUser(database.getUsername());
-  ;
   private static final HibernateSchemaExporter exporter =
       HibernateSchemaExporter.create(
           database.getJdbcUrl(), database.getUsername(), database.getPassword());
@@ -123,7 +123,7 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
       builder.put(Environment.SHOW_SQL, "true");
       properties = builder.build();
     }
-    assertNormalActiveConnection();
+    assertNoActiveTestConnections();
     emf =
         createEntityManagerFactory(
             getJdbcUrlFor(POSTGRES_DB_NAME),
@@ -144,29 +144,32 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
       emf = null;
     }
     cachedTm = null;
-    assertNormalActiveConnection();
-  }
-
-  private static long getActiveConnectionCountByUser(String userName) {
-    try (Connection conn = createConnection(POSTGRES_DB_NAME);
-        Statement statement = conn.createStatement()) {
-      ResultSet rs =
-          statement.executeQuery(
-              "SELECT COUNT(1) FROM pg_stat_activity WHERE usename = '" + userName + "'");
-      rs.next();
-      return rs.getLong(1);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+    assertNoActiveTestConnections();
   }
 
   /**
-   * This function throws exception if it detects connection leak by checking the metadata table
-   * pg_stat_activity.
+   * Asserts that all JDBC connections started by the test classes to the 'postgres' database have
+   * been closed.
    */
-  private void assertNormalActiveConnection() {
-    assertThat(getActiveConnectionCountByUser(database.getUsername()))
-        .isEqualTo(ACTIVE_CONNECTIONS_BASELINE);
+  private void assertNoActiveTestConnections() {
+    // Use the 'management' db to connect so that this connection needs not to be accounted for.
+    try (Connection conn = createConnection(MANAGEMENT_DB_NAME);
+        Statement statement = conn.createStatement()) {
+      // Note: Since we use the admin user (returned by container's getUserName() method)
+      // in tests, we need to filter connections by database name and/or backend type to filter out
+      // connections for management tasks.
+      ResultSet rs =
+          statement.executeQuery(
+              String.format(
+                  "SELECT COUNT(1) FROM pg_stat_activity WHERE usename = '%1s'"
+                      + " and datname = '%2s' "
+                      + " and backend_type = '%3s'",
+                  database.getUsername(), POSTGRES_DB_NAME, CONNECTION_BACKEND_TYPE));
+      rs.next();
+      assertThat(rs.getLong(1)).isEqualTo(0);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private static String readSqlInClassPath(String sqlScriptPath) {
