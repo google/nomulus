@@ -146,17 +146,22 @@ if [[ ! -z "${ENV}" ]] && [[ "${ENV}" != "sandbox" ]] \
   exit 1
 fi
 
+echo "Testing ${SUT} against deployed ${DEPLOYED_SYSTEM} versions:"
 if [[ -z "${ENV}" ]]; then
   SANDBOX_VERSION=$(fetchVersion ${DEPLOYED_SYSTEM} sandbox ${DEV_PROJECT})
   PROD_VERSION=$(fetchVersion ${DEPLOYED_SYSTEM} production ${DEV_PROJECT})
   if [[ ${SANDBOX_VERSION} = ${PROD_VERSION} ]]; then
     VERSIONS=(${PROD_VERSION})
+    echo "- sandbox and production at ${PROD_VERSION}"
   else
     VERSIONS=(${PROD_VERSION} ${SANDBOX_VERSION})
+    echo "- sandbox at ${SANDBOX_VERSION}"
+    echo "- production at ${PROD_VERSION}"
   fi
 else
   TARGET_VERSION=$(fetchVersion ${DEPLOYED_SYSTEM} ${ENV} ${DEV_PROJECT})
   VERSIONS=(${TARGET_VERSION})
+    echo "- ${ENV} at ${TARGET_VERSION}"
 fi
 
 for v in ${VERSIONS[@]}; do
