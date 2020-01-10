@@ -19,9 +19,9 @@ import java.sql.Array;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Collection;
 import java.util.Objects;
-import java.util.function.Supplier;
 import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.usertype.UserType;
@@ -29,19 +29,37 @@ import org.hibernate.usertype.UserType;
 /** Generic Hibernate user type to store/retrieve Java collection as an array in Cloud SQL. */
 public abstract class GenericCollectionUserType<T extends Collection> implements UserType {
 
-  private Supplier<T> supplier;
+  abstract T getNewCollection();
 
-  protected GenericCollectionUserType() {
-    supplier = getCollectionSupplier();
+  abstract ArrayColumnType getColumnType();
+
+  enum ArrayColumnType {
+    STRING(Types.ARRAY, "text");
+
+    final int typeCode;
+    final String typeName;
+
+    ArrayColumnType(int typeCode, String typeName) {
+      this.typeCode = typeCode;
+      this.typeName = typeName;
+    }
+
+    int getTypeCode() {
+      return typeCode;
+    }
+
+    String getTypeName() {
+      return typeName;
+    }
+
+    String getTypeDdlName() {
+      return typeName + "[]";
+    }
   }
 
-  abstract Supplier<T> getCollectionSupplier();
-
-  abstract String getColumnTypeName();
-
   @Override
-  public Class returnedClass() {
-    return supplier.get().getClass();
+  public int[] sqlTypes() {
+    return new int[] {getColumnType().getTypeCode()};
   }
 
   @Override
@@ -59,7 +77,7 @@ public abstract class GenericCollectionUserType<T extends Collection> implements
       ResultSet rs, String[] names, SharedSessionContractImplementor session, Object owner)
       throws HibernateException, SQLException {
     if (rs.getArray(names[0]) != null) {
-      T result = supplier.get();
+      T result = getNewCollection();
       for (Object element : (Object[]) rs.getArray(names[0]).getArray()) {
         result.add(element);
       }
@@ -77,10 +95,11 @@ public abstract class GenericCollectionUserType<T extends Collection> implements
       return;
     }
     T list = (T) value;
-    Array arr = st.getConnection().createArrayOf(getColumnTypeName(), list.toArray());
+    Array arr = st.getConnection().createArrayOf(getColumnType().getTypeName(), list.toArray());
     st.setArray(index, arr);
   }
 
+  // TODO(b/147489651): Investigate how to properly implement the below methods.
   @Override
   public Object deepCopy(Object value) throws HibernateException {
     return value;

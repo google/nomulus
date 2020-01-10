@@ -16,13 +16,22 @@ package google.registry.persistence;
 
 import com.google.common.collect.Lists;
 import java.util.List;
-import java.util.function.Supplier;
 
 /** Abstract Hibernate user type for storing/retrieving {@link List<String>}. */
-public class StringListUserType extends StringCollectionUserType<List<String>> {
+public class StringListUserType extends GenericCollectionUserType<List<String>> {
 
   @Override
-  protected Supplier<List<String>> getCollectionSupplier() {
-    return Lists::newArrayList;
+  List<String> getNewCollection() {
+    return Lists.newArrayList();
+  }
+
+  @Override
+  ArrayColumnType getColumnType() {
+    return ArrayColumnType.STRING;
+  }
+
+  @Override
+  public Class returnedClass() {
+    return List.class;
   }
 }

@@ -14,15 +14,24 @@
 
 package google.registry.persistence;
 
-import com.google.api.client.util.Sets;
+import com.google.common.collect.Sets;
 import java.util.Set;
-import java.util.function.Supplier;
 
 /** Abstract Hibernate user type for storing/retrieving {@link Set<String>}. */
-public class StringSetUserType extends StringCollectionUserType<Set<String>> {
+public class StringSetUserType extends GenericCollectionUserType<Set<String>> {
 
   @Override
-  protected Supplier<Set<String>> getCollectionSupplier() {
-    return Sets::newHashSet;
+  Set<String> getNewCollection() {
+    return Sets.newHashSet();
+  }
+
+  @Override
+  ArrayColumnType getColumnType() {
+    return ArrayColumnType.STRING;
+  }
+
+  @Override
+  public Class returnedClass() {
+    return Set.class;
   }
 }
