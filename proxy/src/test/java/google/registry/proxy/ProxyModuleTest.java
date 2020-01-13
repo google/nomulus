@@ -17,7 +17,7 @@ package google.registry.proxy;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.proxy.ProxyConfig.Environment.LOCAL;
 import static google.registry.proxy.ProxyConfig.getProxyConfig;
-import static google.registry.testing.JUnitBackports.assertThrows;
+import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import google.registry.proxy.ProxyConfig.Environment;
@@ -121,13 +121,8 @@ public class ProxyModuleTest {
 
   @Test
   public void testFailure_parseArgs_wrongEnvironment() {
-    ParameterException e =
-        assertThrows(
-            ParameterException.class,
-            () -> {
-              String[] args = {"--env", "beta"};
-              proxyModule.parse(args);
-            });
+    String[] args = {"--env", "beta"};
+    ParameterException e = assertThrows(ParameterException.class, () -> proxyModule.parse(args));
     assertThat(e).hasMessageThat().contains("Invalid value for --env parameter");
   }
 }

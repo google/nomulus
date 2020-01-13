@@ -17,10 +17,10 @@ package google.registry.tmch;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.config.RegistryConfig.ConfigModule.TmchCaMode.PILOT;
 import static google.registry.config.RegistryConfig.ConfigModule.TmchCaMode.PRODUCTION;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.tmch.TmchTestData.loadFile;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static google.registry.util.X509Utils.loadCertificate;
+import static org.junit.Assert.assertThrows;
 
 import google.registry.model.tmch.TmchCrl;
 import google.registry.testing.AppEngineRule;

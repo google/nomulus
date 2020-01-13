@@ -49,7 +49,7 @@ javax.annotation:jsr250-api:1.0
 javax.inject:javax.inject:1
 javax.validation:validation-api:1.0.0.GA
 joda-time:joda-time:2.9.2
-junit:junit:4.12
+junit:junit:4.13
 net.bytebuddy:byte-buddy-agent:1.9.7
 net.bytebuddy:byte-buddy:1.9.7
 org.apache.commons:commons-lang3:3.8.1

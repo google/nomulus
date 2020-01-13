@@ -16,7 +16,7 @@ package google.registry.flows.session;
 
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static google.registry.testing.JUnitBackports.assertThrows;
+import static org.junit.Assert.assertThrows;
 
 import google.registry.flows.EppException;
 import google.registry.flows.FlowTestCase;

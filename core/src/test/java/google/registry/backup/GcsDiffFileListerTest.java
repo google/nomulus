@@ -19,9 +19,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static google.registry.backup.BackupUtils.GcsMetadataKeys.LOWER_BOUND_CHECKPOINT;
 import static google.registry.backup.ExportCommitLogDiffAction.DIFF_FILE_PREFIX;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static java.lang.reflect.Proxy.newProxyInstance;
 import static org.joda.time.DateTimeZone.UTC;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 import com.google.appengine.tools.cloudstorage.GcsFileMetadata;

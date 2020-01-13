@@ -15,8 +15,8 @@
 package google.registry.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.tmch.TmchTestData.loadSmd;
+import static org.junit.Assert.assertThrows;
 
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
 import google.registry.testing.AppEngineRule;

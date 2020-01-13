@@ -15,10 +15,10 @@
 package google.registry.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.joda.time.Duration.millis;
 import static org.joda.time.Duration.standardDays;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharSource;

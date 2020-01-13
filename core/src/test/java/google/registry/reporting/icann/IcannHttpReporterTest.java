@@ -18,8 +18,8 @@ import static com.google.common.net.MediaType.CSV_UTF_8;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertThrows;
 
 import com.google.api.client.http.LowLevelHttpRequest;
 import com.google.api.client.http.LowLevelHttpResponse;
@@ -124,13 +124,11 @@ public class IcannHttpReporterTest {
 
   @Test
   public void testFail_invalidFilename_nonSixDigitYearMonth() {
+    IcannHttpReporter reporter = createReporter();
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-              IcannHttpReporter reporter = createReporter();
-              reporter.send(FAKE_PAYLOAD, "test-transactions-20176.csv");
-            });
+            () -> reporter.send(FAKE_PAYLOAD, "test-transactions-20176.csv"));
     assertThat(thrown)
         .hasMessageThat()
         .contains(
@@ -140,13 +138,11 @@ public class IcannHttpReporterTest {
 
   @Test
   public void testFail_invalidFilename_notActivityOrTransactions() {
+    IcannHttpReporter reporter = createReporter();
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-              IcannHttpReporter reporter = createReporter();
-              reporter.send(FAKE_PAYLOAD, "test-invalid-201706.csv");
-            });
+            () -> reporter.send(FAKE_PAYLOAD, "test-invalid-201706.csv"));
     assertThat(thrown)
         .hasMessageThat()
         .contains(
@@ -155,13 +151,11 @@ public class IcannHttpReporterTest {
 
   @Test
   public void testFail_invalidFilename_invalidTldName() {
+    IcannHttpReporter reporter = createReporter();
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-              IcannHttpReporter reporter = createReporter();
-              reporter.send(FAKE_PAYLOAD, "n!-n-activity-201706.csv");
-            });
+            () -> reporter.send(FAKE_PAYLOAD, "n!-n-activity-201706.csv"));
     assertThat(thrown)
         .hasMessageThat()
         .contains(
@@ -171,13 +165,11 @@ public class IcannHttpReporterTest {
 
   @Test
   public void testFail_invalidFilename_tldDoesntExist() {
+    IcannHttpReporter reporter = createReporter();
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-              IcannHttpReporter reporter = createReporter();
-              reporter.send(FAKE_PAYLOAD, "hello-activity-201706.csv");
-            });
+            () -> reporter.send(FAKE_PAYLOAD, "hello-activity-201706.csv"));
     assertThat(thrown).hasMessageThat().contains("TLD hello does not exist");
   }
 }

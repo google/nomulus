@@ -43,7 +43,6 @@ dependencies {
   testCompile deps['org.mockito:mockito-core']
   testCompile files("${rootDir}/third_party/objectify/v4_1/objectify-4.1.3.jar")
   testCompile project(path: ':common', configuration: 'testing')
-  testCompile project(':third_party')
   testRuntime deps['com.google.flogger:flogger-system-backend']
   annotationProcessor deps['com.google.auto.value:auto-value']
   annotationProcessor deps['com.google.dagger:dagger-compiler']

@@ -15,9 +15,9 @@
 package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 import static google.registry.util.DomainNameUtils.getSecondLevelDomain;
+import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

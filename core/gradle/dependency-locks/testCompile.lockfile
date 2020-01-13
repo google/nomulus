@@ -174,7 +174,7 @@ javax.validation:validation-api:1.0.0.GA
 javax.xml.bind:jaxb-api:2.3.1
 jline:jline:1.0
 joda-time:joda-time:2.10.3
-junit:junit:4.12
+junit:junit:4.13
 net.bytebuddy:byte-buddy-agent:1.9.7
 net.bytebuddy:byte-buddy:1.9.11
 net.java.dev.jna:jna-platform:5.3.1

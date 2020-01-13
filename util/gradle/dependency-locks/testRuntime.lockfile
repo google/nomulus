@@ -37,7 +37,7 @@ javax.inject:javax.inject:1
 javax.mail:mail:1.4
 javax.xml.bind:jaxb-api:2.3.0
 joda-time:joda-time:2.9.2
-junit:junit:4.12
+junit:junit:4.13
 net.bytebuddy:byte-buddy-agent:1.9.7
 net.bytebuddy:byte-buddy:1.9.7
 org.apache.httpcomponents:httpclient:4.5.8

@@ -97,7 +97,7 @@ ext {
       'javax.xml.bind:jaxb-api:2.3.0',
       'jline:jline:1.0',
       'joda-time:joda-time:2.9.2',
-      'junit:junit:4.12',
+      'junit:junit:4.13',
       'org.apache.avro:avro:1.8.2',
       'org.apache.beam:beam-runners-direct-java:2.16.0',
       'org.apache.beam:beam-runners-google-cloud-dataflow-java:2.16.0',

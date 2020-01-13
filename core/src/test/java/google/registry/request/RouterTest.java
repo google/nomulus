@@ -17,7 +17,7 @@ package google.registry.request;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.request.auth.Auth.AUTH_INTERNAL_OR_ADMIN;
-import static google.registry.testing.JUnitBackports.assertThrows;
+import static org.junit.Assert.assertThrows;
 
 import java.util.Optional;
 import java.util.concurrent.Callable;

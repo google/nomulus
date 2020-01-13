@@ -19,9 +19,9 @@ import static google.registry.networking.handler.SslServerInitializer.CLIENT_CER
 import static google.registry.proxy.TestUtils.assertHttpRequestEquivalent;
 import static google.registry.proxy.TestUtils.makeEppHttpResponse;
 import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.util.X509Utils.getCertificateHash;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;

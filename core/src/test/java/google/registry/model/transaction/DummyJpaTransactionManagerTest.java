@@ -15,7 +15,7 @@
 package google.registry.model.transaction;
 
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.testing.JUnitBackports.assertThrows;
+import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -19,9 +19,9 @@ import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.O
 import static google.registry.testing.AppEngineRule.makeRegistrar2;
 import static google.registry.testing.AppEngineRule.makeRegistrarContact3;
 import static google.registry.testing.DatastoreHelper.persistResource;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static org.junit.Assert.assertThrows;
 
 import com.google.api.client.http.HttpStatusCodes;
 import com.google.appengine.api.users.User;

@@ -36,7 +36,6 @@ dependencies {
   testCompile deps['junit:junit']
   testCompile deps['org.bouncycastle:bcpkix-jdk15on']
   testCompile deps['org.bouncycastle:bcprov-jdk15on']
-  testCompile project(':third_party')
 
   annotationProcessor deps['com.google.dagger:dagger-compiler']
   testAnnotationProcessor deps['com.google.dagger:dagger-compiler']

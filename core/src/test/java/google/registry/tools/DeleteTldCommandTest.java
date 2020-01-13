@@ -19,8 +19,8 @@ import static google.registry.testing.DatastoreHelper.allowRegistrarAccess;
 import static google.registry.testing.DatastoreHelper.newRegistry;
 import static google.registry.testing.DatastoreHelper.persistDeletedDomain;
 import static google.registry.testing.DatastoreHelper.persistResource;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableSortedMap;

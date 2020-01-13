@@ -15,7 +15,7 @@
 package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.JUnitBackports.assertThrows;
+import static org.junit.Assert.assertThrows;
 
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
@@ -94,6 +94,7 @@ public class RetrierTest {
   }
 
   @Test
+  @SuppressWarnings("AssertThrowsMultipleStatements")
   public void testRetryFailed_withReporter() {
     CountingException thrown =
         assertThrows(

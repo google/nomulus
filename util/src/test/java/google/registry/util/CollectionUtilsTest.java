@@ -15,9 +15,9 @@
 package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.partitionMap;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;

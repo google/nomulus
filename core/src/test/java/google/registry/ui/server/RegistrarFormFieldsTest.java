@@ -15,9 +15,9 @@
 package google.registry.ui.server;
 
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThrows;
 
 import google.registry.testing.CertificateSamples;
 import google.registry.ui.forms.FormFieldException;

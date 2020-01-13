@@ -50,7 +50,6 @@ dependencies {
     testCompile deps['com.google.truth:truth']
     testCompile deps['junit:junit']
     testCompile deps['org.mockito:mockito-core']
-    testCompile project(':third_party')
     testCompile project(path: ':common', configuration: 'testing')
     testCompile project(path: ':networking', configuration: 'testRuntime')
 

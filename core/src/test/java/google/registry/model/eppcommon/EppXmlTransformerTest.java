@@ -16,8 +16,8 @@ package google.registry.model.eppcommon;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.eppcommon.EppXmlTransformer.unmarshal;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.testing.TestDataHelper.loadBytes;
+import static org.junit.Assert.assertThrows;
 
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput;

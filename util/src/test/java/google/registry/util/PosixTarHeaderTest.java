@@ -17,8 +17,8 @@ package google.registry.util;
 import static com.google.common.io.BaseEncoding.base64;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.testing.EqualsTester;
 import java.io.ByteArrayInputStream;
@@ -47,8 +47,7 @@ public class PosixTarHeaderTest {
     byte[] gnuTarGeneratedData =
         base64()
             .decode(
-                ""
-                    + "aGVsbG8ueG1sAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                "aGVsbG8ueG1sAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
                     + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAwMDA2NDAAMDU0MTI2"
                     + "NgAwMDExNjEwADAwMDAwMDAwMDE0ADEyMjAyMzEwMzI0ADAxMjQ2MQAgMAAAAAAAAAAAAAAAAAAA"
                     + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"

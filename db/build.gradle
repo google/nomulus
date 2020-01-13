@@ -158,7 +158,6 @@ dependencies {
   testCompile deps['org.testcontainers:postgresql']
   testCompile deps['org.testcontainers:testcontainers']
   testCompile project(path: ':common', configuration: 'testing')
-  testCompile project(':third_party')
 }
 
 flywayInfo.dependsOn('buildNeeded')

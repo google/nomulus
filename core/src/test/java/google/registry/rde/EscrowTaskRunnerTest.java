@@ -18,9 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistResource;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static org.joda.time.Duration.standardDays;
 import static org.joda.time.Duration.standardSeconds;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -120,14 +120,13 @@ public class EscrowTaskRunnerTest {
     clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));
     persistResource(
         Cursor.create(CursorType.RDE_STAGING, DateTime.parse("2006-06-06TZ"), registry));
+    runner.lockHandler = new FakeLockHandler(false);
     ServiceUnavailableException thrown =
         assertThrows(
             ServiceUnavailableException.class,
-            () -> {
-              runner.lockHandler = new FakeLockHandler(false);
-              runner.lockRunAndRollForward(
-                  task, registry, standardSeconds(30), CursorType.RDE_STAGING, standardDays(1));
-            });
+            () ->
+                runner.lockRunAndRollForward(
+                    task, registry, standardSeconds(30), CursorType.RDE_STAGING, standardDays(1)));
     assertThat(thrown).hasMessageThat().contains("Lock in use: " + lockName + " for TLD: lol");
   }
 }

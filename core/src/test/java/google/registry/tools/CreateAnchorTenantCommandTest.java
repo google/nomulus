@@ -17,7 +17,7 @@ package google.registry.tools;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistPremiumList;
 import static google.registry.testing.DatastoreHelper.persistResource;
-import static google.registry.testing.JUnitBackports.assertThrows;
+import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import google.registry.model.registry.Registry;
@@ -52,7 +52,9 @@ public class CreateAnchorTenantCommandTest
   public void testSuccess_multipleWordReason() throws Exception {
     runCommandForced("--client=NewRegistrar", "--superuser",
         "--reason=\"anchor tenant test\"", "--contact=jd1234", "--domain_name=example.tld");
-    eppVerifier.expectSuperuser().verifySent("domain_create_anchor_tenant_multiple_word_reason.xml");
+    eppVerifier
+        .expectSuperuser()
+        .verifySent("domain_create_anchor_tenant_multiple_word_reason.xml");
   }
 
   @Test

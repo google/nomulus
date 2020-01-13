@@ -15,7 +15,7 @@
 package google.registry.networking.handler;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.JUnitBackports.assertThrows;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Throwables;
 import io.netty.channel.Channel;

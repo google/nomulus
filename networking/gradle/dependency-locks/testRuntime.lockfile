@@ -43,7 +43,7 @@ javax.inject:javax.inject:1
 javax.mail:mail:1.4
 javax.xml.bind:jaxb-api:2.3.0
 joda-time:joda-time:2.9.2
-junit:junit:4.12
+junit:junit:4.13
 org.apache.httpcomponents:httpclient:4.5.8
 org.apache.httpcomponents:httpcore:4.4.11
 org.bouncycastle:bcpkix-jdk15on:1.61

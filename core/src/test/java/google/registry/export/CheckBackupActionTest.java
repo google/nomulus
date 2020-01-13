@@ -17,9 +17,9 @@ package google.registry.export;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.export.CheckBackupAction.CHECK_BACKUP_KINDS_TO_LOAD_PARAM;
 import static google.registry.export.CheckBackupAction.CHECK_BACKUP_NAME_PARAM;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 

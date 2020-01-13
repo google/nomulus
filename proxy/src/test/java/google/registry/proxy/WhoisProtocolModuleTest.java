@@ -17,9 +17,9 @@ package google.registry.proxy;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.proxy.TestUtils.makeWhoisHttpRequest;
 import static google.registry.proxy.TestUtils.makeWhoisHttpResponse;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.stream.Collectors.joining;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Throwables;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;

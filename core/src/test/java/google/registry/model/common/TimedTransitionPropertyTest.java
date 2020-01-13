@@ -16,10 +16,10 @@ package google.registry.model.common;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.TimedTransitionProperty.forMapify;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSortedMap;

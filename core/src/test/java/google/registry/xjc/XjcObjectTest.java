@@ -16,12 +16,12 @@ package google.registry.xjc;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.testing.TestDataHelper.loadBytes;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.xjc.XjcXmlTransformer.unmarshal;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertThrows;
 
 import com.google.re2j.Pattern;
 import google.registry.xjc.rde.XjcRdeDeposit;

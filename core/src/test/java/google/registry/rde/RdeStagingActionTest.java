@@ -27,7 +27,6 @@ import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.DatastoreHelper.persistResourceWithCommitLog;
 import static google.registry.testing.GcsTestingUtils.readGcsFile;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.testing.TaskQueueHelper.assertAtLeastOneTaskIsEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
@@ -35,6 +34,7 @@ import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.tldconfig.idn.IdnTableEnum.EXTENDED_LATIN;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertThrows;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.appengine.tools.cloudstorage.GcsService;

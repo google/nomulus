@@ -19,9 +19,9 @@ import static google.registry.bigquery.BigqueryUtils.fromBigqueryTimestampString
 import static google.registry.bigquery.BigqueryUtils.toBigqueryTimestamp;
 import static google.registry.bigquery.BigqueryUtils.toBigqueryTimestampString;
 import static google.registry.bigquery.BigqueryUtils.toJobReferenceString;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.junit.Assert.assertThrows;
 
 import com.google.api.services.bigquery.model.JobReference;
 import java.util.concurrent.TimeUnit;

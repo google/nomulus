@@ -15,11 +15,11 @@
 package google.registry.tools.params;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeThat;
 import static org.junit.Assume.assumeTrue;
 

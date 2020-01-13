@@ -15,7 +15,7 @@
 package google.registry.tools.params;
 
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.testing.JUnitBackports.assertThrows;
+import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

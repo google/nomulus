@@ -25,8 +25,8 @@ import static google.registry.export.UploadDatastoreBackupAction.UPLOAD_BACKUP_I
 import static google.registry.export.UploadDatastoreBackupAction.UPLOAD_BACKUP_KINDS_PARAM;
 import static google.registry.export.UploadDatastoreBackupAction.enqueueUploadBackupTask;
 import static google.registry.export.UploadDatastoreBackupAction.getBackupInfoFileForKind;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;

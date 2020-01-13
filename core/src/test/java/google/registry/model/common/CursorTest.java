@@ -22,8 +22,8 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.junit.Assert.assertThrows;
 
 import google.registry.model.EntityTestCase;
 import google.registry.model.domain.DomainBase;
