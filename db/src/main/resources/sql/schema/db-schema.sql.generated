@@ -82,6 +82,12 @@
         primary key (repo_id)
     );
 
+    create table "Domain_allContacts" (
+       domain text not null,
+        contact bytea,
+        type int4
+    );
+
     create table "Domain_DelegationSignerData" (
        domain_base_repo_id text not null,
         ds_data_key_tag int4 not null,
@@ -92,12 +98,6 @@
        domain_base_repo_id text not null,
         grace_periods_id int8 not null,
         primary key (domain_base_repo_id, grace_periods_id)
-    );
-
-    create table "Domain_allContacts" (
-       domain text not null,
-        contact bytea,
-        type int4
     );
 
     create table "DomainBase_nsHosts" (
@@ -191,6 +191,11 @@ create index reservedlist_name_idx on "ReservedList" (name);
        foreign key (revision_id) 
        references "ClaimsList";
 
+    alter table if exists "Domain_allContacts" 
+       add constraint FK18qrnc2nrjlcb124qna6pwfh9 
+       foreign key (domain) 
+       references "Domain";
+
     alter table if exists "Domain_DelegationSignerData" 
        add constraint FKho8wxowo3f4e688ehdl4wpni5 
        foreign key (ds_data_key_tag) 
@@ -209,11 +214,6 @@ create index reservedlist_name_idx on "ReservedList" (name);
     alter table if exists "Domain_GracePeriod" 
        add constraint FKkpor7amcdp7gwe0hp3obng6do 
        foreign key (domain_base_repo_id) 
-       references "Domain";
-
-    alter table if exists "Domain_allContacts" 
-       add constraint FKbh7x0hikqyo6jr50pj02tt6bu 
-       foreign key (domain) 
        references "Domain";
 
     alter table if exists "DomainBase_nsHosts" 
