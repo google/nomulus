@@ -73,7 +73,6 @@ import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.registrar.Registrar.BillingAccountEntry.CurrencyMapper;
 import google.registry.model.registry.Registry;
-import google.registry.persistence.StringSetToJsonConverter;
 import google.registry.util.CidrAddressBlock;
 import java.security.cert.CertificateParsingException;
 import java.util.Comparator;
@@ -89,9 +88,9 @@ import javax.mail.internet.InternetAddress;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
-import javax.persistence.Convert;
 import javax.persistence.Embedded;
 import javax.persistence.Table;
+import org.hibernate.annotations.Type;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 
@@ -233,7 +232,7 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
    */
   @Id
   @javax.persistence.Id
-  @Column(nullable = false)
+  @Column(name = "client_id", nullable = false)
   String clientIdentifier;
 
   /**
@@ -256,38 +255,31 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
   Type type;
 
   /** The state of this registrar. */
-  @Column(nullable = false)
   State state;
 
   /** The set of TLDs which this registrar is allowed to access. */
-  @Column(nullable = false)
-  @Convert(converter = StringSetToJsonConverter.class)
+  @org.hibernate.annotations.Type(type = "google.registry.persistence.StringSetUserType")
   Set<String> allowedTlds;
 
   /** Host name of WHOIS server. */
-  @Column(nullable = false)
   String whoisServer;
 
   /** Base URLs for the registrar's RDAP servers. */
-  @Column(nullable = false)
-  @Convert(converter = StringSetToJsonConverter.class)
+  @org.hibernate.annotations.Type(type = "google.registry.persistence.StringSetUserType")
   Set<String> rdapBaseUrls;
 
   /**
    * Whether registration of premium names should be blocked over EPP. If this is set to true, then
    * the only way to register premium names is with the superuser flag.
    */
-  @Column(nullable = false)
   boolean blockPremiumNames;
 
   // Authentication.
 
   /** X.509 PEM client certificate(s) used to authenticate registrar to EPP service. */
-  @Column(nullable = false)
   String clientCertificate;
 
   /** Base64 encoded SHA256 hash of {@link #clientCertificate}. */
-  @Column(nullable = false)
   String clientCertificateHash;
 
   /**
@@ -295,23 +287,18 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
    *
    * <p>This allows registrars to migrate certificates without downtime.
    */
-  @Column(nullable = false)
   String failoverClientCertificate;
 
   /** Base64 encoded SHA256 hash of {@link #failoverClientCertificate}. */
-  @Column(nullable = false)
   String failoverClientCertificateHash;
 
   /** A whitelist of netmasks (in CIDR notation) which the client is allowed to connect from. */
-  @Column(nullable = false)
   List<CidrAddressBlock> ipAddressWhitelist;
 
   /** A hashed password for EPP access. The hash is a base64 encoded SHA256 string. */
-  @Column(nullable = false)
   String passwordHash;
 
   /** Randomly generated hash salt. */
-  @Column(nullable = false)
   String salt;
 
   // The following fields may appear redundant to the above, but are
@@ -339,24 +326,21 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
-    @AttributeOverride(name = "street", column = @Column(name = "inter_street")),
-    @AttributeOverride(name = "city", column = @Column(name = "inter_city")),
-    @AttributeOverride(name = "state", column = @Column(name = "inter_state")),
-    @AttributeOverride(name = "zip", column = @Column(name = "inter_zip")),
-    @AttributeOverride(name = "countryCode", column = @Column(name = "inter_country_code"))
+    @AttributeOverride(name = "street", column = @Column(name = "i18n_street")),
+    @AttributeOverride(name = "city", column = @Column(name = "i18n_city")),
+    @AttributeOverride(name = "state", column = @Column(name = "i18n_state")),
+    @AttributeOverride(name = "zip", column = @Column(name = "i18n_zip")),
+    @AttributeOverride(name = "countryCode", column = @Column(name = "i18n_country_code"))
   })
   RegistrarAddress internationalizedAddress;
 
   /** Voice number. */
-  @Column(nullable = false)
   String phoneNumber;
 
   /** Fax number. */
-  @Column(nullable = false)
   String faxNumber;
 
   /** Email address. */
-  @Column(nullable = false)
   String emailAddress;
 
   // External IDs.
@@ -373,19 +357,14 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
    * @see <a href="http://www.iana.org/assignments/registrar-ids/registrar-ids.txt">Registrar
    *     IDs</a>
    */
-  @Index
-  @Nullable
-  @Column(nullable = true)
-  Long ianaIdentifier;
+  @Index @Nullable Long ianaIdentifier;
 
   /** Identifier of registrar used in external billing system (e.g. Oracle). */
   @Nullable
-  @Column(nullable = true)
   Long billingIdentifier;
 
   /** Purchase Order number used for invoices in external billing system, if applicable. */
   @Nullable
-  @Column(nullable = true)
   String poNumber;
 
   /**
@@ -398,7 +377,7 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
    */
   @Nullable
   @Mapify(CurrencyMapper.class)
-  @Column(nullable = true)
+  @org.hibernate.annotations.Type(type = "google.registry.persistence.CurrencyToBillingMapUserType")
   Map<CurrencyUnit, BillingAccountEntry> billingAccountMap;
 
   /** A billing account entry for this registrar, consisting of a currency and an account Id. */
@@ -435,7 +414,6 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
   }
 
   /** URL of registrar's website. */
-  @Column(nullable = false)
   String url;
 
   /**
@@ -444,40 +422,32 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
    * <p>This value is specified in the initial registrar contact. It can't be edited in the web GUI
    * and it must be specified when the registrar account is created.
    */
-  @Column(nullable = false)
   String icannReferralEmail;
 
   /** Id of the folder in drive used to publish information for this registrar. */
-  @Column(nullable = false)
   String driveFolderId;
 
   // Metadata.
 
   /** The time when this registrar was created. */
-  @Column(nullable = false)
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** An automatically managed last-saved timestamp. */
-  @Column(nullable = false)
   UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
 
   /** The time that the certificate was last updated. */
-  @Column(nullable = false)
   DateTime lastCertificateUpdateTime;
 
   /** Telephone support passcode (5-digit numeric) */
-  @Column(nullable = false)
   String phonePasscode;
 
   /**
    * A dirty bit for whether RegistrarContact changes have been made that haven't been synced to
    * Google Groups yet. When creating a new instance, contacts require syncing by default.
    */
-  @Column(nullable = false)
   boolean contactsRequireSyncing = true;
 
   /** Whether or not registry lock is allowed for this registrar. */
-  @Column(nullable = false)
   boolean registryLockAllowed = false;
 
   public String getClientId() {

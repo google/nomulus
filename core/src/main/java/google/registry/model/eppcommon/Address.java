@@ -23,11 +23,8 @@ import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
-import google.registry.persistence.StringListToJsonConverter;
 import java.util.List;
 import java.util.Map;
-import javax.persistence.Column;
-import javax.persistence.Convert;
 import javax.persistence.Embeddable;
 import javax.persistence.MappedSuperclass;
 import javax.xml.bind.annotation.XmlElement;
@@ -35,6 +32,7 @@ import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import javax.xml.bind.annotation.adapters.NormalizedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import org.hibernate.annotations.Type;
 
 /**
  * Container for generic street address.
@@ -53,27 +51,22 @@ public class Address extends ImmutableObject implements Jsonifiable {
 
   /** The schema validation will enforce that this has 3 lines at most. */
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
-  @Column(nullable = false)
-  @Convert(converter = StringListToJsonConverter.class)
+  @Type(type = "google.registry.persistence.StringListUserType")
   List<String> street;
 
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
-  @Column(nullable = false)
   String city;
 
   @XmlElement(name = "sp")
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
-  @Column(nullable = false)
   String state;
 
   @XmlElement(name = "pc")
   @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
-  @Column(nullable = false)
   String zip;
 
   @XmlElement(name = "cc")
   @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
-  @Column(nullable = false)
   String countryCode;
 
   public ImmutableList<String> getStreet() {

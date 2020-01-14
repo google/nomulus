@@ -45,13 +45,29 @@ public class MapUserType extends MutableUserType {
   public Object nullSafeGet(
       ResultSet rs, String[] names, SharedSessionContractImplementor session, Object owner)
       throws HibernateException, SQLException {
-    return rs.getObject(names[0]);
+    return toEntityTypeMap((Map<String, String>) rs.getObject(names[0]));
   }
 
   @Override
   public void nullSafeSet(
       PreparedStatement st, Object value, int index, SharedSessionContractImplementor session)
       throws HibernateException, SQLException {
-    st.setObject(index, value);
+    st.setObject(index, toDbSupportedMap(value));
+  }
+
+  /**
+   * Subclass can override this method to convert the {@link Map<String, String>} to a {@link Map}
+   * of specific type defined in the entity class.
+   */
+  public Object toEntityTypeMap(Map<String, String> map) {
+    return map;
+  }
+
+  /**
+   * Subclass can override this method to convert the {@link Map} of specific type to a {@link
+   * Map<String, String>} that can be stored in the hstore type column.
+   */
+  public Map<String, String> toDbSupportedMap(Object map) {
+    return (Map<String, String>) map;
   }
 }
