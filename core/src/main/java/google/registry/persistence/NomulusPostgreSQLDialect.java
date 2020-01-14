@@ -24,6 +24,7 @@ public class NomulusPostgreSQLDialect extends PostgreSQL95Dialect {
     registerColumnType(Types.VARCHAR, "text");
     registerColumnType(Types.TIMESTAMP_WITH_TIMEZONE, "timestamptz");
     registerColumnType(Types.TIMESTAMP, "timestamptz");
+    registerColumnType(Types.OTHER, "hstore");
     for (ArrayColumnType arrayType : ArrayColumnType.values()) {
       registerColumnType(arrayType.getTypeCode(), arrayType.getTypeDdlName());
     }

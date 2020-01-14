@@ -14,20 +14,17 @@
 
 package google.registry.persistence;
 
-import java.io.Serializable;
 import java.sql.Array;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Collection;
-import java.util.Objects;
 import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
-import org.hibernate.usertype.UserType;
 
 /** Generic Hibernate user type to store/retrieve Java collection as an array in Cloud SQL. */
-public abstract class GenericCollectionUserType<T extends Collection> implements UserType {
+public abstract class GenericCollectionUserType<T extends Collection> extends MutableUserType {
 
   abstract T getNewCollection();
 
@@ -63,16 +60,6 @@ public abstract class GenericCollectionUserType<T extends Collection> implements
   }
 
   @Override
-  public boolean equals(Object x, Object y) throws HibernateException {
-    return Objects.equals(x, y);
-  }
-
-  @Override
-  public int hashCode(Object x) throws HibernateException {
-    return x == null ? 0 : x.hashCode();
-  }
-
-  @Override
   public Object nullSafeGet(
       ResultSet rs, String[] names, SharedSessionContractImplementor session, Object owner)
       throws HibernateException, SQLException {
@@ -97,31 +84,5 @@ public abstract class GenericCollectionUserType<T extends Collection> implements
     T list = (T) value;
     Array arr = st.getConnection().createArrayOf(getColumnType().getTypeName(), list.toArray());
     st.setArray(index, arr);
-  }
-
-  // TODO(b/147489651): Investigate how to properly implement the below methods.
-  @Override
-  public Object deepCopy(Object value) throws HibernateException {
-    return value;
-  }
-
-  @Override
-  public boolean isMutable() {
-    return false;
-  }
-
-  @Override
-  public Serializable disassemble(Object value) throws HibernateException {
-    return (Serializable) value;
-  }
-
-  @Override
-  public Object assemble(Serializable cached, Object owner) throws HibernateException {
-    return cached;
-  }
-
-  @Override
-  public Object replace(Object original, Object target, Object owner) throws HibernateException {
-    return original;
   }
 }
