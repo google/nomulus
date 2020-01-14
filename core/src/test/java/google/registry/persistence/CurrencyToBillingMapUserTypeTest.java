@@ -17,34 +17,41 @@ package google.registry.persistence;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
 
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
+import google.registry.model.registrar.Registrar.BillingAccountEntry;
 import google.registry.model.transaction.JpaTestRules;
 import google.registry.model.transaction.JpaTestRules.JpaUnitTestRule;
-import java.util.Set;
-import javax.persistence.Convert;
+import java.util.Map;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import org.hibernate.annotations.Type;
+import org.joda.money.CurrencyUnit;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link StringSetToJsonConverter}. */
+/** Unit tests for {@link CurrencyToBillingMapUserType}. */
 @RunWith(JUnit4.class)
-public class StringSetToJsonConverterTest {
+public class CurrencyToBillingMapUserTypeTest {
   @Rule
   public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
-  public void roundTripConversion_returnsSameStringSet() {
-    Set<String> strings = ImmutableSet.of("app", "dev", "how");
-    TestEntity testEntity = new TestEntity(strings);
+  public void roundTripConversion_returnsSameCurrencyToBillingMap() {
+    ImmutableMap<CurrencyUnit, BillingAccountEntry> currencyToBilling =
+        ImmutableMap.of(
+            CurrencyUnit.of("USD"),
+            new BillingAccountEntry(CurrencyUnit.of("USD"), "accountId1"),
+            CurrencyUnit.of("CNY"),
+            new BillingAccountEntry(CurrencyUnit.of("CNY"), "accountId2"));
+    TestEntity testEntity = new TestEntity(currencyToBilling);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(persisted.strings).containsExactly("app", "dev", "how");
+    assertThat(persisted.currencyToBilling).containsExactlyEntriesIn(currencyToBilling);
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
@@ -52,13 +59,13 @@ public class StringSetToJsonConverterTest {
 
     @Id String name = "id";
 
-    @Convert(converter = StringSetToJsonConverter.class)
-    Set<String> strings;
+    @Type(type = "google.registry.persistence.CurrencyToBillingMapUserType")
+    Map<CurrencyUnit, BillingAccountEntry> currencyToBilling;
 
     private TestEntity() {}
 
-    private TestEntity(Set<String> strings) {
-      this.strings = strings;
+    private TestEntity(Map<CurrencyUnit, BillingAccountEntry> currencyToBilling) {
+      this.currencyToBilling = currencyToBilling;
     }
   }
 }

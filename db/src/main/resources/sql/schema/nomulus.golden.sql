@@ -164,48 +164,48 @@ ALTER SEQUENCE public."PremiumList_revision_id_seq" OWNED BY public."PremiumList
 --
 
 CREATE TABLE public."Registrar" (
-    client_identifier text NOT NULL,
-    allowed_tlds text NOT NULL,
-    billing_account_map text,
+    client_id text NOT NULL,
+    allowed_tlds text[],
+    billing_account_map public.hstore,
     billing_identifier bigint,
     block_premium_names boolean NOT NULL,
-    client_certificate text NOT NULL,
-    client_certificate_hash text NOT NULL,
+    client_certificate text,
+    client_certificate_hash text,
     contacts_require_syncing boolean NOT NULL,
-    creation_time timestamp with time zone NOT NULL,
-    drive_folder_id text NOT NULL,
-    email_address text NOT NULL,
-    failover_client_certificate text NOT NULL,
-    failover_client_certificate_hash text NOT NULL,
-    fax_number text NOT NULL,
+    creation_time timestamp with time zone,
+    drive_folder_id text,
+    email_address text,
+    failover_client_certificate text,
+    failover_client_certificate_hash text,
+    fax_number text,
     iana_identifier bigint,
-    icann_referral_email text NOT NULL,
-    inter_city text,
-    inter_country_code text,
-    inter_state text,
-    inter_street text,
-    inter_zip text,
-    ip_address_whitelist text NOT NULL,
-    last_certificate_update_time timestamp with time zone NOT NULL,
-    last_update_time timestamp with time zone NOT NULL,
+    icann_referral_email text,
+    i18n_city text,
+    i18n_country_code text,
+    i18n_state text,
+    i18n_street text[],
+    i18n_zip text,
+    ip_address_whitelist text,
+    last_certificate_update_time timestamp with time zone,
+    last_update_time timestamp with time zone,
     local_city text,
     local_country_code text,
     local_state text,
-    local_street text,
+    local_street text[],
     local_zip text,
     parent bytea,
-    password_hash text NOT NULL,
-    phone_number text NOT NULL,
-    phone_passcode text NOT NULL,
+    password_hash text,
+    phone_number text,
+    phone_passcode text,
     po_number text,
-    rdap_base_urls text NOT NULL,
+    rdap_base_urls text[],
     registrar_name text NOT NULL,
     registry_lock_allowed boolean NOT NULL,
-    salt text NOT NULL,
-    state integer NOT NULL,
+    salt text,
+    state integer,
     type integer NOT NULL,
-    url text NOT NULL,
-    whois_server text NOT NULL
+    url text,
+    whois_server text
 );
 
 
@@ -372,7 +372,7 @@ ALTER TABLE ONLY public."PremiumList"
 --
 
 ALTER TABLE ONLY public."Registrar"
-    ADD CONSTRAINT "Registrar_pkey" PRIMARY KEY (client_identifier);
+    ADD CONSTRAINT "Registrar_pkey" PRIMARY KEY (client_id);
 
 
 --
