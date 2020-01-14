@@ -51,7 +51,7 @@ final class UpdateCursorsCommand extends ConfirmingCommand {
 
   @Override
   protected void init() {
-    ImmutableMap.Builder<Cursor, String> cursorsToUpdateBuilder = ImmutableMap.builder();
+    ImmutableMap.Builder<Cursor, String> cursorsToUpdateBuilder = new ImmutableMap.Builder<>();
     if (isNullOrEmpty(tlds)) {
       cursorsToUpdateBuilder.put(
           Cursor.createGlobal(cursorType, newTimestamp),
@@ -69,7 +69,7 @@ final class UpdateCursorsCommand extends ConfirmingCommand {
   @Override
   protected String execute() throws Exception {
     CursorDao.saveCursors(cursorsToUpdate);
-    return String.format("Updated %d entities.\n", cursorsToUpdate.size());
+    return String.format("Updated %d cursors.\n", cursorsToUpdate.size());
   }
 
   /** Returns the changes that have been staged thus far. */
@@ -87,6 +87,6 @@ final class UpdateCursorsCommand extends ConfirmingCommand {
   private String getChangeString(Cursor cursor, String scope) {
     return String.format(
         "Change cursorTime of %s for Scope:%s to %s\n",
-        Cursor.getType(cursor), scope, cursor.getCursorTime());
+        cursor.getType(), scope, cursor.getCursorTime());
   }
 }

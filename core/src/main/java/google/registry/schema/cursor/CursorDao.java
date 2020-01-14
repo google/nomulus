@@ -92,12 +92,12 @@ public class CursorDao {
    */
   public static void saveCursor(google.registry.model.common.Cursor cursor, String scope) {
     tm().transact(() -> ofy().save().entity(cursor));
-    CursorType type = google.registry.model.common.Cursor.getType(cursor);
+    CursorType type = cursor.getType();
     try {
       Cursor cloudSqlCursor = Cursor.create(type, scope, cursor.getCursorTime());
       save(cloudSqlCursor);
     } catch (Exception e) {
-      logger.atSevere().withCause(e).log("Error saving cursor to Cloud SQL");
+      logger.atSevere().withCause(e).log("Error saving cursor to Cloud SQL.");
     }
   }
 
@@ -124,12 +124,10 @@ public class CursorDao {
               cursor ->
                   cloudSqlCursors.add(
                       Cursor.create(
-                          google.registry.model.common.Cursor.getType(cursor),
-                          cursors.get(cursor),
-                          cursor.getCursorTime())));
+                          cursor.getType(), cursors.get(cursor), cursor.getCursorTime())));
       saveAll(cloudSqlCursors.build());
     } catch (Exception e) {
-      logger.atSevere().withCause(e).log("Error saving cursor to Cloud SQL");
+      logger.atSevere().withCause(e).log("Error saving cursor to Cloud SQL.");
     }
   }
 }

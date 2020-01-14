@@ -129,6 +129,11 @@ public class Cursor extends ImmutableObject {
     return lastUpdateTime.getTimestamp();
   }
 
+  public CursorType getType() {
+    List<String> id = Splitter.on('_').splitToList(this.id);
+    return CursorType.valueOf(String.join("_", id.subList(1, id.size())));
+  }
+
   /**
    * Checks that the type of the scoped object (or null) matches the required type for the specified
    * cursor (or null, if the cursor is a global cursor).
@@ -192,11 +197,6 @@ public class Cursor extends ImmutableObject {
    */
   public static DateTime getCursorTimeOrStartOfTime(Cursor cursor) {
     return cursor != null ? cursor.getCursorTime() : START_OF_TIME;
-  }
-
-  public static CursorType getType(Cursor cursor) {
-    List<String> id = Splitter.on('_').splitToList(cursor.id);
-    return CursorType.valueOf(String.join("_", id.subList(1, id.size())));
   }
 
   public DateTime getCursorTime() {

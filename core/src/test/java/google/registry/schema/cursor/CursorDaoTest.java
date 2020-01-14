@@ -200,7 +200,7 @@ public class CursorDaoTest {
     CursorDao.saveCursor(cursor, null);
     assertAboutLogs()
         .that(logHandler)
-        .hasLogAtLevelWithMessage(Level.SEVERE, "Error saving cursor to Cloud SQL");
+        .hasLogAtLevelWithMessage(Level.SEVERE, "Error saving cursor to Cloud SQL.");
     google.registry.model.common.Cursor dataStoreCursor =
         ofy()
             .load()
