@@ -174,33 +174,12 @@ CREATE TABLE public."DomainBase_subordinateHosts" (
 
 
 --
--- Name: Domain_DelegationSignerData; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."Domain_DelegationSignerData" (
-    domain_base_repo_id text NOT NULL,
-    ds_data_key_tag integer NOT NULL
-);
-
-
---
 -- Name: Domain_GracePeriod; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public."Domain_GracePeriod" (
     domain_base_repo_id text NOT NULL,
     grace_periods_id bigint NOT NULL
-);
-
-
---
--- Name: Domain_allContacts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."Domain_allContacts" (
-    domain text NOT NULL,
-    contact bytea NOT NULL,
-    type integer
 );
 
 
@@ -430,14 +409,6 @@ ALTER TABLE ONLY public."DelegationSignerData"
 
 
 --
--- Name: Domain_DelegationSignerData Domain_DelegationSignerData_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Domain_DelegationSignerData"
-    ADD CONSTRAINT "Domain_DelegationSignerData_pkey" PRIMARY KEY (domain_base_repo_id, ds_data_key_tag);
-
-
---
 -- Name: Domain_GracePeriod Domain_GracePeriod_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -546,14 +517,6 @@ CREATE INDEX reservedlist_name_idx ON public."ReservedList" USING btree (name);
 
 
 --
--- Name: Domain_DelegationSignerData fk2nvqbovvy5wasa8arhyhy8mge; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Domain_DelegationSignerData"
-    ADD CONSTRAINT fk2nvqbovvy5wasa8arhyhy8mge FOREIGN KEY (domain_base_repo_id) REFERENCES public."Domain"(repo_id);
-
-
---
 -- Name: ClaimsEntry fk6sc6at5hedffc0nhdcab6ivuq; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -570,27 +533,11 @@ ALTER TABLE ONLY public."DomainBase_serverApproveEntities"
 
 
 --
--- Name: Domain_allContacts fkbh7x0hikqyo6jr50pj02tt6bu; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Domain_allContacts"
-    ADD CONSTRAINT fkbh7x0hikqyo6jr50pj02tt6bu FOREIGN KEY (domain) REFERENCES public."Domain"(repo_id);
-
-
---
 -- Name: ReservedEntry fkgq03rk0bt1hb915dnyvd3vnfc; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."ReservedEntry"
     ADD CONSTRAINT fkgq03rk0bt1hb915dnyvd3vnfc FOREIGN KEY (revision_id) REFERENCES public."ReservedList"(revision_id);
-
-
---
--- Name: Domain_DelegationSignerData fkho8wxowo3f4e688ehdl4wpni5; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Domain_DelegationSignerData"
-    ADD CONSTRAINT fkho8wxowo3f4e688ehdl4wpni5 FOREIGN KEY (ds_data_key_tag) REFERENCES public."DelegationSignerData"(key_tag);
 
 
 --

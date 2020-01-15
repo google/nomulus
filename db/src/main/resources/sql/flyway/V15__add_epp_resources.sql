@@ -60,18 +60,6 @@
         primary key (repo_id)
     );
 
-    create table "Domain_DelegationSignerData" (
-       domain_base_repo_id text not null,
-        ds_data_key_tag int4 not null,
-        primary key (domain_base_repo_id, ds_data_key_tag)
-    );
-
-    create table "Domain_allContacts" (
-       domain text not null,
-        contact bytea not null,
-        type int4
-    );
-
     create table "Domain_GracePeriod" (
        domain_base_repo_id text not null,
         grace_periods_id int8 not null,
@@ -106,16 +94,6 @@
     alter table if exists "Domain_GracePeriod"
        add constraint UK_4ps2u4y8i5r91wu2n1x2xea28 unique (grace_periods_id);
 
-    alter table if exists "Domain_DelegationSignerData"
-       add constraint FKho8wxowo3f4e688ehdl4wpni5
-       foreign key (ds_data_key_tag)
-       references "DelegationSignerData";
-
-    alter table if exists "Domain_DelegationSignerData"
-       add constraint FK2nvqbovvy5wasa8arhyhy8mge
-       foreign key (domain_base_repo_id)
-       references "Domain";
-
     alter table if exists "Domain_GracePeriod"
        add constraint FKny62h7k1nd3910rp56gdo5pfi
        foreign key (grace_periods_id)
@@ -124,11 +102,6 @@
     alter table if exists "Domain_GracePeriod"
        add constraint FKkpor7amcdp7gwe0hp3obng6do
        foreign key (domain_base_repo_id)
-       references "Domain";
-
-    alter table if exists "Domain_allContacts"
-       add constraint FKbh7x0hikqyo6jr50pj02tt6bu
-       foreign key (domain)
        references "Domain";
 
     alter table if exists "DomainBase_nsHosts"

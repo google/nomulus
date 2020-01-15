@@ -53,12 +53,14 @@ public class DomainBaseSqlTest extends EntityTestCase {
       new JpaTestRules.Builder().buildIntegrationTestRule();
 
   DomainBase domain;
+  Key<ContactResource> contactKey;
+  Key<ContactResource> contact2Key;
 
   @Before
   public void setUp() {
     Key<HistoryEntry> historyEntryKey = Key.create(HistoryEntry.class, "history");
-    Key<ContactResource> contactKey = Key.create(ContactResource.class, "contact_id1");
-    Key<ContactResource> contact2Key = Key.create(ContactResource.class, "contact_id2");
+    contactKey = Key.create(ContactResource.class, "contact_id1");
+    contact2Key = Key.create(ContactResource.class, "contact_id2");
     Key<HostResource> hostKey = Key.create(HostResource.class, "host1");
     Key<BillingEvent.OneTime> oneTimeBillKey =
         Key.create(historyEntryKey, BillingEvent.OneTime.class, 1);
@@ -145,8 +147,18 @@ public class DomainBaseSqlTest extends EntityTestCase {
               EntityManager em = jpaTm().getEntityManager();
               DomainBase result = em.find(DomainBase.class, "4-COM");
 
-              // Fix status, since we can't persist it yet.
-              result = result.asBuilder().setStatusValues(ImmutableSet.of(StatusValue.OK)).build();
+              // Fix status, contacts and DS data, since we can't persist them yet.
+              result =
+                  result
+                      .asBuilder()
+                      .setStatusValues(ImmutableSet.of(StatusValue.OK))
+                      .setRegistrant(contactKey)
+                      .setContacts(
+                          ImmutableSet.of(DesignatedContact.create(Type.ADMIN, contact2Key)))
+                      .setDsData(
+                          ImmutableSet.of(
+                              DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
+                      .build();
 
               // Fix the original creation timestamp (this gets initialized on first write)
               DomainBase org = domain.asBuilder().setCreationTime(result.getCreationTime()).build();
