@@ -29,7 +29,7 @@ import org.joda.time.DateTime;
 
 /** Modifies {@link Cursor} timestamps used by locking rolling cursor tasks, like in RDE. */
 @Parameters(separators = " =", commandDescription = "Modifies cursor timestamps used by LRC tasks")
-final class UpdateCursorsCommand extends ConfirmingCommand {
+final class UpdateCursorsCommand extends ConfirmingCommand implements CommandWithCloudSql {
 
   @Parameter(description = "TLDs on which to operate. Omit for global cursors.")
   private List<String> tlds;
