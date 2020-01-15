@@ -42,7 +42,6 @@ create table "Registrar" (
         local_state text,
         local_street text[],
         local_zip text,
-        parent bytea,
         password_hash text,
         phone_number text,
         phone_passcode text,

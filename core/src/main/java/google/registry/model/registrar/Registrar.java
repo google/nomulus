@@ -90,6 +90,7 @@ import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import org.hibernate.annotations.Type;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
@@ -222,8 +223,7 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
                   .doTransactionless(
                       () -> Maps.uniqueIndex(loadAll(), Registrar::getClientId)));
 
-  @Parent
-  Key<EntityGroupRoot> parent = getCrossTldKey();
+  @Parent @Transient Key<EntityGroupRoot> parent = getCrossTldKey();
 
   /**
    * Unique registrar client id. Must conform to "clIDType" as defined in RFC5730.

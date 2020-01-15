@@ -15,8 +15,8 @@
 package google.registry.persistence;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import google.registry.util.CidrAddressBlock;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -40,6 +40,8 @@ public class CidrAddressBlockListConverter
     if (dbData == null) {
       return null;
     }
-    return Arrays.stream(dbData.split(",")).map(CidrAddressBlock::new).collect(Collectors.toList());
+    return Splitter.on(",").splitToList(dbData).stream()
+        .map(CidrAddressBlock::new)
+        .collect(Collectors.toList());
   }
 }
