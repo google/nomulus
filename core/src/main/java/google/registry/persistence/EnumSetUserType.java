@@ -18,7 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/** Abstract Hibernate user type for storing/retrieving {@link List<String>}. */
+/** Abstract Hibernate user type for storing/retrieving {@link Set<Enum<E>>}. */
 public class EnumSetUserType<E extends Enum<E>> extends GenericCollectionUserType<Set<Enum<E>>> {
 
   @Override
