@@ -15,7 +15,6 @@
 package google.registry.persistence;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /** Abstract Hibernate user type for storing/retrieving {@link Set<Enum<E>>}. */
