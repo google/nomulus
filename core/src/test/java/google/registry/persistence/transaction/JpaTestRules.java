@@ -30,6 +30,7 @@ import java.util.Optional;
  * JpaTransactionManager} instances.
  */
 public class JpaTestRules {
+
   private static final String GOLDEN_SCHEMA_SQL_PATH = "sql/schema/nomulus.golden.sql";
 
   /**

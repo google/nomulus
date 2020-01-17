@@ -32,6 +32,7 @@ import org.junit.runners.JUnit4;
 /** Unit tests for {@link JpaTransactionManagerImpl}. */
 @RunWith(JUnit4.class)
 public class JpaTransactionManagerImplTest {
+
   @Rule
   public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder()

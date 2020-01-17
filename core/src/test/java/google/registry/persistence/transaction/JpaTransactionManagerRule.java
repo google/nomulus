@@ -63,7 +63,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
  */
 abstract class JpaTransactionManagerRule extends ExternalResource {
   private static final String DB_CLEANUP_SQL_PATH =
-      "google/registry/model/transaction/cleanup_database.sql";
+      "google/registry/persistence/transaction/cleanup_database.sql";
   private static final String MANAGEMENT_DB_NAME = "management";
   private static final String POSTGRES_DB_NAME = "postgres";
   // The type of JDBC connections started by the tests. This string value
