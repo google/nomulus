@@ -79,15 +79,14 @@ public class DomainBaseSqlTest extends EntityTestCase {
             .setLastEppUpdateTime(clock.nowUtc())
             .setLastEppUpdateClientId("AnotherRegistrar")
             .setLastTransferTime(clock.nowUtc())
-            // TODO(mmuller): reinstate this as soon as we can persist Set<StatusValue>
-            // .setStatusValues(
-            //    ImmutableSet.of(
-            //        StatusValue.CLIENT_DELETE_PROHIBITED,
-            //        StatusValue.SERVER_DELETE_PROHIBITED,
-            //        StatusValue.SERVER_TRANSFER_PROHIBITED,
-            //        StatusValue.SERVER_UPDATE_PROHIBITED,
-            //        StatusValue.SERVER_RENEW_PROHIBITED,
-            //        StatusValue.SERVER_HOLD))
+            .setStatusValues(
+                ImmutableSet.of(
+                    StatusValue.CLIENT_DELETE_PROHIBITED,
+                    StatusValue.SERVER_DELETE_PROHIBITED,
+                    StatusValue.SERVER_TRANSFER_PROHIBITED,
+                    StatusValue.SERVER_UPDATE_PROHIBITED,
+                    StatusValue.SERVER_RENEW_PROHIBITED,
+                    StatusValue.SERVER_HOLD))
             .setRegistrant(contactKey)
             .setContacts(ImmutableSet.of(DesignatedContact.create(Type.ADMIN, contact2Key)))
             .setNameservers(ImmutableSet.of(hostKey))
@@ -147,11 +146,10 @@ public class DomainBaseSqlTest extends EntityTestCase {
               EntityManager em = jpaTm().getEntityManager();
               DomainBase result = em.find(DomainBase.class, "4-COM");
 
-              // Fix status, contacts and DS data, since we can't persist them yet.
+              // Fix contacts and DS data, since we can't persist them yet.
               result =
                   result
                       .asBuilder()
-                      .setStatusValues(ImmutableSet.of(StatusValue.OK))
                       .setRegistrant(contactKey)
                       .setContacts(
                           ImmutableSet.of(DesignatedContact.create(Type.ADMIN, contact2Key)))

@@ -51,7 +51,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import javax.persistence.MappedSuperclass;
-import javax.persistence.Transient;
+import org.hibernate.annotations.Type;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
@@ -115,7 +115,8 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   DateTime lastEppUpdateTime;
 
   /** Status values associated with this resource. */
-  @Transient Set<StatusValue> status;
+  @Type(type = "google.registry.model.eppcommon.StatusValue$StatusValueSetType")
+  Set<StatusValue> status;
 
   /**
    * Sorted map of {@link DateTime} keys (modified time) to {@link CommitLogManifest} entries.

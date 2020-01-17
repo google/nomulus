@@ -112,6 +112,7 @@ CREATE TABLE public."Domain" (
     last_epp_update_client_id text,
     last_epp_update_time timestamp with time zone,
     revisions bytea,
+    status text[],
     auth_info_repo_id text,
     auth_info_value text,
     autorenew_billing_event bytea,

@@ -25,6 +25,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.translators.EnumToAttributeAdapter.EppEnum;
 import google.registry.model.translators.StatusValueAdapter;
+import google.registry.persistence.EnumSetUserType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
@@ -163,5 +164,13 @@ public enum StatusValue implements EppEnum {
 
   public static StatusValue fromXmlName(String xmlName) {
     return StatusValue.valueOf(LOWER_CAMEL.to(UPPER_UNDERSCORE, nullToEmpty(xmlName)));
+  }
+
+  /** Hibernate type for sets of {@link StatusValue}. */
+  public static class StatusValueSetType extends EnumSetUserType<StatusValue> {
+    @Override
+    protected Object convertToElem(Object value) {
+      return StatusValue.valueOf((String) value);
+    }
   }
 }
