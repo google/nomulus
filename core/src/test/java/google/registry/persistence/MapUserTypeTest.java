@@ -21,7 +21,7 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
 import google.registry.model.transaction.JpaTestRules;
-import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.model.transaction.JpaTestRules.JpaUnitTestRule;
 import java.util.Map;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -36,11 +36,14 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class MapUserTypeTest {
 
-  // Note that JpaIntegrationTestRule is used here as the hstore extension is installed
-  // when nomulus.golden.sql is executed as the init script.
+  // Reusing production script sql/flyway/V14__load_extension_for_hstore.sql, which loads the
+  // hstore extension but nothing else.
   @Rule
-  public final JpaIntegrationTestRule jpaRule =
-      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildIntegrationTestRule();
+  public final JpaUnitTestRule jpaRule =
+      new JpaTestRules.Builder()
+          .withInitScript("sql/flyway/V14__load_extension_for_hstore.sql")
+          .withEntityClass(TestEntity.class)
+          .buildUnitTestRule();
 
   @Test
   public void roundTripConversion_returnsSameMap() {
