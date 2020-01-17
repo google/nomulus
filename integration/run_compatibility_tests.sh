@@ -50,32 +50,7 @@ Options:
 
 SCRIPT_DIR="$(realpath $(dirname $0))"
 
-# Fetch the tag of the currently deployed release of Nomulus server
-# or SQL schema.
-function fetchVersion() {
-  local deployed_system=${1}
-  local env=${2}
-  local dev_project=${3}
-  echo $(gsutil cat\
-      gs://${dev_project}-deployed-tags/${deployed_system}.${env}.tag)
-}
-
-function getChangeCountSinceVersion() {
-  local deployed_system=${1}
-  local version=${2}
-  local changes
-
-  if [[  ${deployed_system} == "sql " ]]; then
-    changes=$(git diff --name-only ${version} \
-        db/src/main/resources/sql/flyway | wc -l)
-  else
-    changes=$(git diff --name-only ${version} \
-        core/src/main/resources/META-INF \
-        core/src/main/java/google/registry/persistence \
-        db/src/main/resources/sql/schema/db-schema.sql.generated | wc -l)
-  fi
-  echo ${changes}
-}
+. "${SCRIPT_DIR}/testutils_bashrc"
 
 function runTest() {
   local deployed_system=${1}
@@ -109,7 +84,7 @@ function runTest() {
           -PdevProject=${dev_project} \
           -Pnomulus_version=${nomulus_version} \
           -Pschema_version=${schema_version} \
-          -Ppublish_repo=gcs://${dev_project}-deployed-tags/maven)
+          -Ppublish_repo=https://storage.googleapis.com/${dev_project}-deployed-tags/maven)
 }
 
 set -e
@@ -164,6 +139,6 @@ else
     echo "- ${ENV} at ${TARGET_VERSION}"
 fi
 
-for v in ${VERSIONS[@]}; do
+for v in "${VERSIONS[@]}"; do
   runTest ${DEPLOYED_SYSTEM} ${v} ${DEV_PROJECT}
 done
