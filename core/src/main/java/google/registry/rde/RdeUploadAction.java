@@ -22,7 +22,7 @@ import static google.registry.model.common.Cursor.CursorType.RDE_UPLOAD_SFTP;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.rde.RdeMode.FULL;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static java.util.Arrays.asList;

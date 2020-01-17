@@ -27,7 +27,7 @@ import static google.registry.model.registry.label.DomainLabelMetrics.PremiumLis
 import static google.registry.model.registry.label.PremiumList.cachePremiumListEntries;
 import static google.registry.model.registry.label.PremiumList.cachePremiumListRevisions;
 import static google.registry.model.registry.label.PremiumList.cachePremiumLists;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.auto.value.AutoValue;

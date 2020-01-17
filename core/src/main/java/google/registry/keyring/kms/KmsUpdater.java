@@ -35,7 +35,7 @@ import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.RDE_SSH_CLIE
 import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.SAFE_BROWSING_API_KEY;
 import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.TOOLS_CLOUD_SQL_PASSWORD_STRING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableMap;

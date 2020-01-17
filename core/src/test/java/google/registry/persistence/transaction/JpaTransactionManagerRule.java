@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.transaction;
+package google.registry.persistence.transaction;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
@@ -23,11 +23,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
-import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.persistence.HibernateSchemaExporter;
 import google.registry.persistence.NomulusPostgreSql;
 import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceXmlUtility;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.testing.FakeClock;
 import java.io.File;
 import java.io.IOException;

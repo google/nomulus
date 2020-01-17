@@ -27,7 +27,7 @@ import static google.registry.flows.domain.DomainTransferUtils.createTransferRes
 import static google.registry.model.ResourceTransferUtils.denyPendingTransfer;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_SUCCESSFUL;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.collect.ImmutableSet;

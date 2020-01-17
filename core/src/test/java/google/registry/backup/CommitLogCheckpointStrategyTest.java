@@ -30,7 +30,7 @@ import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
-import google.registry.model.transaction.TransactionManager;
+import google.registry.persistence.transaction.TransactionManager;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;

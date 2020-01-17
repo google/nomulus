@@ -20,7 +20,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.model.common.Cursor.CursorType.RDE_STAGING;
 import static google.registry.model.common.Cursor.CursorType.RDE_UPLOAD_SFTP;
 import static google.registry.model.rde.RdeMode.FULL;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.DatastoreHelper.persistSimpleResource;

@@ -16,7 +16,7 @@ package google.registry.schema.tmch;
 
 import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
 import static google.registry.model.CacheUtils.tryMemoizeWithExpiration;
-import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.base.Supplier;
 import com.google.common.flogger.FluentLogger;

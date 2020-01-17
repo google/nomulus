@@ -15,7 +15,7 @@
 package google.registry.schema.cursor;
 
 import static com.google.appengine.api.search.checkers.Preconditions.checkNotNull;
-import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.schema.cursor.Cursor.CursorId;

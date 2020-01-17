@@ -14,7 +14,7 @@
 
 package google.registry.schema.tld;
 
-import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Optional;

@@ -28,7 +28,7 @@ import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomain
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainOwnership;
 import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.google.common.collect.ImmutableSet;

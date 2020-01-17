@@ -14,7 +14,7 @@
 package google.registry.persistence;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
-import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.util.DateTimeUtils;

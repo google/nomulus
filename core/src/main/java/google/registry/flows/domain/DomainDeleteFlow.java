@@ -34,7 +34,7 @@ import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PE
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.ADD_FIELDS;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.RENEW_FIELDS;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.union;

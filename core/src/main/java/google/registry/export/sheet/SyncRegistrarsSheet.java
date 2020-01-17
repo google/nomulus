@@ -25,7 +25,7 @@ import static google.registry.model.registrar.RegistrarContact.Type.LEGAL;
 import static google.registry.model.registrar.RegistrarContact.Type.MARKETING;
 import static google.registry.model.registrar.RegistrarContact.Type.TECH;
 import static google.registry.model.registrar.RegistrarContact.Type.WHOIS;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.base.Joiner;

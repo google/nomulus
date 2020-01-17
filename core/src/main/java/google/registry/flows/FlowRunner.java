@@ -14,7 +14,7 @@
 
 package google.registry.flows;
 
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.xml.XmlTransformer.prettyPrint;
 
 import com.google.common.base.Strings;

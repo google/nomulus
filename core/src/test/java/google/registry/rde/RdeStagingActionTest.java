@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.Cursor.CursorType.BRDA;
 import static google.registry.model.common.Cursor.CursorType.RDE_STAGING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.rde.RdeFixtures.makeContactResource;
 import static google.registry.rde.RdeFixtures.makeDomainBase;
 import static google.registry.rde.RdeFixtures.makeHostResource;

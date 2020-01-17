@@ -19,7 +19,7 @@ import static google.registry.model.common.Cursor.CursorType.BRDA;
 import static google.registry.model.common.Cursor.CursorType.RDE_UPLOAD;
 import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;

@@ -15,7 +15,7 @@
 package google.registry.rde;
 
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.Cursor;

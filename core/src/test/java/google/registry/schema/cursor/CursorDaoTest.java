@@ -17,8 +17,8 @@ package google.registry.schema.cursor;
 import static com.google.common.truth.Truth.assertThat;
 
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.transaction.JpaTestRules;
-import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.testing.FakeClock;
 import java.util.List;
 import org.junit.Rule;
