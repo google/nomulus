@@ -95,7 +95,7 @@ while true; do
     -p | --project) DEV_PROJECT="$2"; shift 2 ;;
     -s | --sut) SUT="$2"; shift 2 ;;
     -e | --env) ENV="$2"; shift 2 ;;
-    -h | --help) echo "${USAGE}"; shift; exit 0 ;;
+    -h | --help) echo "${USAGE}"; exit 0 ;;
     --) shift; break ;;
     *) echo "${USAGE}"; exit 1 ;;
   esac
