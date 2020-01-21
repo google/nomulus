@@ -47,7 +47,7 @@ eval set -- $(getopt -o p:s:e:h -l project:,sut:,env:,help -- "$@")
 while true; do
   case "$1" in
     -p | --project) DEV_PROJECT="$2"; shift 2 ;;
-    -h | --help) echo "${USAGE}"; shift ;;
+    -h | --help) echo "${USAGE}"; shift; exit 0 ;;
     --) shift; break ;;
     *) echo "${USAGE}"; exit 1 ;;
   esac
