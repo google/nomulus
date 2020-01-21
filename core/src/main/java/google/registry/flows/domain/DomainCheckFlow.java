@@ -26,6 +26,7 @@ import static google.registry.flows.domain.DomainFlowUtils.validateDomainNameWit
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPredelegation;
 import static google.registry.model.EppResourceUtils.checkResourcesExist;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
+import static google.registry.model.registry.label.ReservationType.RESERVED_FOR_ANCHOR_TENANT;
 import static google.registry.model.registry.label.ReservationType.getTypeOfHighestSeverity;
 
 import com.google.common.collect.ImmutableList;
@@ -168,17 +169,18 @@ public final class DomainCheckFlow implements Flow {
         tokenDomainCheckResults
             .map(AllocationTokenDomainCheckResults::domainCheckResults)
             .orElse(ImmutableMap.of());
+    Optional<AllocationToken> allocationToken =
+        tokenDomainCheckResults.flatMap(AllocationTokenDomainCheckResults::token);
     for (String targetId : targetIds) {
       Optional<String> message =
           getMessageForCheck(
               domainNames.get(targetId),
               existingIds,
               domainCheckResults,
-              tldStates);
+              tldStates,
+              allocationToken);
       checks.add(DomainCheck.create(!message.isPresent(), targetId, message.orElse(null)));
     }
-    Optional<AllocationToken> allocationToken =
-        tokenDomainCheckResults.flatMap(AllocationTokenDomainCheckResults::token);
     BeforeResponseReturnData responseData =
         flowCustomLogic.beforeResponse(
             BeforeResponseParameters.newBuilder()
@@ -196,7 +198,8 @@ public final class DomainCheckFlow implements Flow {
       InternetDomainName domainName,
       Set<String> existingIds,
       ImmutableMap<InternetDomainName, String> tokenCheckResults,
-      Map<String, TldState> tldStates) {
+      Map<String, TldState> tldStates,
+      Optional<AllocationToken> allocationToken) {
     if (existingIds.contains(domainName.toString())) {
       return Optional.of("In use");
     }
@@ -204,7 +207,11 @@ public final class DomainCheckFlow implements Flow {
     if (isReserved(domainName, START_DATE_SUNRISE.equals(tldState))) {
       ImmutableSet<ReservationType> reservationTypes = getReservationTypes(domainName);
       if (!reservationTypes.isEmpty()) {
-        return Optional.of(getTypeOfHighestSeverity(reservationTypes).getMessageForCheck());
+        ReservationType highestSeverityType = getTypeOfHighestSeverity(reservationTypes);
+        if (highestSeverityType.ordinal() > RESERVED_FOR_ANCHOR_TENANT.ordinal()
+            || !allocationTokenValidForDomain(allocationToken, domainName.toString())) {
+          return Optional.of(highestSeverityType.getMessageForCheck());
+        }
       }
     }
     return Optional.ofNullable(emptyToNull(tokenCheckResults.get(domainName)));
@@ -261,6 +268,13 @@ public final class DomainCheckFlow implements Flow {
     }
     // If this version of the fee extension is nameless, use the full list of domains.
     return availabilityCheckDomains;
+  }
+
+  private static boolean allocationTokenValidForDomain(
+      Optional<AllocationToken> tokenOptional, String domainName) {
+    return tokenOptional
+        .map(token -> token.getDomainName().map(domainName::equals).orElse(false))
+        .orElse(false);
   }
 
   /** By server policy, fee check names must be listed in the availability check. */

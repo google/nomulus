@@ -77,8 +77,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 /** Unit tests for {@link DomainCheckFlow}. */
-public class DomainCheckFlowTest
-    extends ResourceCheckFlowTestCase<DomainCheckFlow, DomainBase> {
+public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, DomainBase> {
 
   public DomainCheckFlowTest() {
     setEppInput("domain_check_one_tld.xml");
@@ -140,7 +139,8 @@ public class DomainCheckFlowTest
     doCheckTest(
         create(false, "example1.tld", "In use"),
         create(false, "example2.tld", "The allocation token is invalid"),
-        create(false, "reserved.tld", "Reserved"));
+        create(false, "reserved.tld", "Reserved"),
+        create(false, "allowedinsunrise.tld", "Reserved"));
   }
 
   @Test
@@ -152,7 +152,8 @@ public class DomainCheckFlowTest
     doCheckTest(
         create(false, "example1.tld", "In use"),
         create(true, "example2.tld", null),
-        create(false, "reserved.tld", "Reserved"));
+        create(false, "reserved.tld", "Reserved"),
+        create(false, "allowedinsunrise.tld", "Reserved"));
   }
 
   @Test
@@ -168,7 +169,8 @@ public class DomainCheckFlowTest
     doCheckTest(
         create(false, "example1.tld", "In use"),
         create(false, "example2.tld", "Alloc token was already redeemed"),
-        create(false, "reserved.tld", "Reserved"));
+        create(false, "reserved.tld", "Reserved"),
+        create(false, "allowedinsunrise.tld", "Reserved"));
   }
 
   @Test
@@ -177,14 +179,32 @@ public class DomainCheckFlowTest
     persistActiveDomain("example1.tld");
     persistResource(
         new AllocationToken.Builder()
-            .setDomainName("reserved.tld")
+            .setDomainName("allowedinsunrise.tld")
             .setToken("abc123")
             .setTokenType(SINGLE_USE)
             .build());
     doCheckTest(
         create(false, "example1.tld", "In use"),
         create(true, "example2.tld", null),
-        create(true, "reserved.tld", null));
+        create(false, "reserved.tld", "Reserved"),
+        create(true, "allowedinsunrise.tld", null));
+  }
+
+  @Test
+  public void testSuccess_oneExists_allocationTokenForWrongDomain() throws Exception {
+    setEppInput("domain_check_allocationtoken.xml");
+    persistActiveDomain("example1.tld");
+    persistResource(
+        new AllocationToken.Builder()
+            .setDomainName("someotherdomain.tld")
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .build());
+    doCheckTest(
+        create(false, "example1.tld", "In use"),
+        create(true, "example2.tld", null),
+        create(false, "reserved.tld", "Reserved"),
+        create(false, "allowedinsunrise.tld", "Reserved"));
   }
 
   @Test

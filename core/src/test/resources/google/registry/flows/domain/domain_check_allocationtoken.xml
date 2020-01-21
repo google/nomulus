@@ -6,6 +6,7 @@
         <domain:name>example1.tld</domain:name>
         <domain:name>example2.tld</domain:name>
         <domain:name>reserved.tld</domain:name>
+        <domain:name>allowedinsunrise.tld</domain:name>
       </domain:check>
     </check>
     <extension>
