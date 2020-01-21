@@ -258,6 +258,7 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
   State state;
 
   /** The set of TLDs which this registrar is allowed to access. */
+  // TODO(b/147908600): Investigate how to automatically apply user type
   @org.hibernate.annotations.Type(type = "google.registry.persistence.StringSetUserType")
   Set<String> allowedTlds;
 
@@ -299,6 +300,7 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
   String passwordHash;
 
   /** Randomly generated hash salt. */
+  @Column(name = "password_salt")
   String salt;
 
   // The following fields may appear redundant to the above, but are
@@ -311,7 +313,9 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
-    @AttributeOverride(name = "street", column = @Column(name = "local_street")),
+    @AttributeOverride(name = "street", column = @Column(name = "local_street_line1")),
+    @AttributeOverride(name = "street", column = @Column(name = "local_street_line2")),
+    @AttributeOverride(name = "street", column = @Column(name = "local_street_line3")),
     @AttributeOverride(name = "city", column = @Column(name = "local_city")),
     @AttributeOverride(name = "state", column = @Column(name = "local_state")),
     @AttributeOverride(name = "zip", column = @Column(name = "local_zip")),
@@ -326,7 +330,9 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
-    @AttributeOverride(name = "street", column = @Column(name = "i18n_street")),
+    @AttributeOverride(name = "street", column = @Column(name = "i18n_street_line1")),
+    @AttributeOverride(name = "street", column = @Column(name = "i18n_street_line2")),
+    @AttributeOverride(name = "street", column = @Column(name = "i18n_street_line3")),
     @AttributeOverride(name = "city", column = @Column(name = "i18n_city")),
     @AttributeOverride(name = "state", column = @Column(name = "i18n_state")),
     @AttributeOverride(name = "zip", column = @Column(name = "i18n_zip")),

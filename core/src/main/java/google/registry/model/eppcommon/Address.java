@@ -25,6 +25,7 @@ import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import java.util.List;
 import java.util.Map;
+import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.MappedSuperclass;
 import javax.xml.bind.annotation.XmlElement;
@@ -32,6 +33,7 @@ import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import javax.xml.bind.annotation.adapters.NormalizedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import org.hibernate.annotations.Columns;
 import org.hibernate.annotations.Type;
 
 /**
@@ -51,7 +53,8 @@ public class Address extends ImmutableObject implements Jsonifiable {
 
   /** The schema validation will enforce that this has 3 lines at most. */
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
-  @Type(type = "google.registry.persistence.StringListUserType")
+  @Type(type = "google.registry.persistence.StreetUserType")
+  @Columns(columns = {@Column(name = "line1"), @Column(name = "line2"), @Column(name = "line3")})
   List<String> street;
 
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
