@@ -88,18 +88,6 @@ CREATE TABLE public."Cursor" (
 
 
 --
--- Name: DelegationSignerData; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."DelegationSignerData" (
-    key_tag integer NOT NULL,
-    algorithm integer NOT NULL,
-    digest bytea,
-    digest_type integer NOT NULL
-);
-
-
---
 -- Name: Domain; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -172,49 +160,6 @@ CREATE TABLE public."DomainBase_subordinateHosts" (
     domain_base_repo_id text NOT NULL,
     subordinate_hosts text
 );
-
-
---
--- Name: Domain_GracePeriod; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."Domain_GracePeriod" (
-    domain_base_repo_id text NOT NULL,
-    grace_periods_id bigint NOT NULL
-);
-
-
---
--- Name: GracePeriod; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."GracePeriod" (
-    id bigint NOT NULL,
-    billing_event_one_time bytea,
-    billing_event_recurring bytea,
-    client_id text,
-    expiration_time timestamp with time zone,
-    type integer
-);
-
-
---
--- Name: GracePeriod_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public."GracePeriod_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: GracePeriod_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public."GracePeriod_id_seq" OWNED BY public."GracePeriod".id;
 
 
 --
@@ -350,13 +295,6 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 
 
 --
--- Name: GracePeriod id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."GracePeriod" ALTER COLUMN id SET DEFAULT nextval('public."GracePeriod_id_seq"'::regclass);
-
-
---
 -- Name: PremiumList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -402,35 +340,11 @@ ALTER TABLE ONLY public."Cursor"
 
 
 --
--- Name: DelegationSignerData DelegationSignerData_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."DelegationSignerData"
-    ADD CONSTRAINT "DelegationSignerData_pkey" PRIMARY KEY (key_tag);
-
-
---
--- Name: Domain_GracePeriod Domain_GracePeriod_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Domain_GracePeriod"
-    ADD CONSTRAINT "Domain_GracePeriod_pkey" PRIMARY KEY (domain_base_repo_id, grace_periods_id);
-
-
---
 -- Name: Domain Domain_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."Domain"
     ADD CONSTRAINT "Domain_pkey" PRIMARY KEY (repo_id);
-
-
---
--- Name: GracePeriod GracePeriod_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."GracePeriod"
-    ADD CONSTRAINT "GracePeriod_pkey" PRIMARY KEY (id);
 
 
 --
@@ -479,14 +393,6 @@ ALTER TABLE ONLY public."ReservedList"
 
 ALTER TABLE ONLY public."RegistryLock"
     ADD CONSTRAINT idx_registry_lock_repo_id_revision_id UNIQUE (repo_id, revision_id);
-
-
---
--- Name: Domain_GracePeriod uk_4ps2u4y8i5r91wu2n1x2xea28; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Domain_GracePeriod"
-    ADD CONSTRAINT uk_4ps2u4y8i5r91wu2n1x2xea28 UNIQUE (grace_periods_id);
 
 
 --
@@ -542,27 +448,11 @@ ALTER TABLE ONLY public."ReservedEntry"
 
 
 --
--- Name: Domain_GracePeriod fkkpor7amcdp7gwe0hp3obng6do; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Domain_GracePeriod"
-    ADD CONSTRAINT fkkpor7amcdp7gwe0hp3obng6do FOREIGN KEY (domain_base_repo_id) REFERENCES public."Domain"(repo_id);
-
-
---
 -- Name: DomainBase_subordinateHosts fkkva2lb57ri8qf39hthcej538k; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."DomainBase_subordinateHosts"
     ADD CONSTRAINT fkkva2lb57ri8qf39hthcej538k FOREIGN KEY (domain_base_repo_id) REFERENCES public."Domain"(repo_id);
-
-
---
--- Name: Domain_GracePeriod fkny62h7k1nd3910rp56gdo5pfi; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Domain_GracePeriod"
-    ADD CONSTRAINT fkny62h7k1nd3910rp56gdo5pfi FOREIGN KEY (grace_periods_id) REFERENCES public."GracePeriod"(id);
 
 
 --

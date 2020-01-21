@@ -1,4 +1,4 @@
--- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -11,14 +11,6 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
-
-    create table "DelegationSignerData" (
-       key_tag int4 not null,
-        algorithm int4 not null,
-        digest bytea,
-        digest_type int4 not null,
-        primary key (key_tag)
-    );
 
     create table "Domain" (
        repo_id text not null,
@@ -61,12 +53,6 @@
         primary key (repo_id)
     );
 
-    create table "Domain_GracePeriod" (
-       domain_base_repo_id text not null,
-        grace_periods_id int8 not null,
-        primary key (domain_base_repo_id, grace_periods_id)
-    );
-
     create table "DomainBase_nsHosts" (
        domain_base_repo_id text not null,
         ns_hosts bytea
@@ -81,29 +67,6 @@
        domain_base_repo_id text not null,
         subordinate_hosts text
     );
-
-    create table "GracePeriod" (
-       id  bigserial not null,
-        billing_event_one_time bytea,
-        billing_event_recurring bytea,
-        client_id text,
-        expiration_time timestamptz,
-        type int4,
-        primary key (id)
-    );
-
-    alter table if exists "Domain_GracePeriod"
-       add constraint UK_4ps2u4y8i5r91wu2n1x2xea28 unique (grace_periods_id);
-
-    alter table if exists "Domain_GracePeriod"
-       add constraint FKny62h7k1nd3910rp56gdo5pfi
-       foreign key (grace_periods_id)
-       references "GracePeriod";
-
-    alter table if exists "Domain_GracePeriod"
-       add constraint FKkpor7amcdp7gwe0hp3obng6do
-       foreign key (domain_base_repo_id)
-       references "Domain";
 
     alter table if exists "DomainBase_nsHosts"
        add constraint FKow28763fcl1ilx8unxrfjtbja

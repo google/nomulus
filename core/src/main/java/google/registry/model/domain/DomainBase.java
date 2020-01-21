@@ -213,7 +213,7 @@ public class DomainBase extends EppResource
   Key<PollMessage.Autorenew> autorenewPollMessage;
 
   /** The unexpired grace periods for this domain (some of which may not be active yet). */
-  @ElementCollection Set<GracePeriod> gracePeriods;
+  @Transient @ElementCollection Set<GracePeriod> gracePeriods;
 
   /**
    * The id of the signed mark that was used to create this domain in sunrise.

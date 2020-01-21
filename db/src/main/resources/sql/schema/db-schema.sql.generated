@@ -83,12 +83,6 @@
         primary key (repo_id)
     );
 
-    create table "Domain_GracePeriod" (
-       domain_base_repo_id text not null,
-        grace_periods_id int8 not null,
-        primary key (domain_base_repo_id, grace_periods_id)
-    );
-
     create table "DomainBase_nsHosts" (
        domain_base_repo_id text not null,
         ns_hosts bytea
@@ -161,9 +155,6 @@
         should_publish boolean not null,
         primary key (revision_id)
     );
-
-    alter table if exists "Domain_GracePeriod" 
-       add constraint UK_4ps2u4y8i5r91wu2n1x2xea28 unique (grace_periods_id);
 create index premiumlist_name_idx on "PremiumList" (name);
 create index idx_registry_lock_verification_code on "RegistryLock" (verification_code);
 create index idx_registry_lock_registrar_id on "RegistryLock" (registrar_id);
@@ -176,16 +167,6 @@ create index reservedlist_name_idx on "ReservedList" (name);
        add constraint FK6sc6at5hedffc0nhdcab6ivuq 
        foreign key (revision_id) 
        references "ClaimsList";
-
-    alter table if exists "Domain_GracePeriod" 
-       add constraint FKny62h7k1nd3910rp56gdo5pfi 
-       foreign key (grace_periods_id) 
-       references "GracePeriod";
-
-    alter table if exists "Domain_GracePeriod" 
-       add constraint FKkpor7amcdp7gwe0hp3obng6do 
-       foreign key (domain_base_repo_id) 
-       references "Domain";
 
     alter table if exists "DomainBase_nsHosts" 
        add constraint FKow28763fcl1ilx8unxrfjtbja 

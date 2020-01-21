@@ -127,16 +127,9 @@ public class DomainBaseSqlTest extends EntityTestCase {
     jpaTm()
         .transact(
             () -> {
-
-              // Persist the domain and all of its contents.
+              // Persist the domain.
               EntityManager em = jpaTm().getEntityManager();
               em.persist(domain);
-              for (DelegationSignerData ds : domain.getDsData()) {
-                em.persist(ds);
-              }
-              for (GracePeriod gp : domain.getGracePeriods()) {
-                em.persist(gp);
-              }
             });
 
     jpaTm()
@@ -146,7 +139,7 @@ public class DomainBaseSqlTest extends EntityTestCase {
               EntityManager em = jpaTm().getEntityManager();
               DomainBase result = em.find(DomainBase.class, "4-COM");
 
-              // Fix contacts and DS data, since we can't persist them yet.
+              // Fix contacts, grace period and DS data, since we can't persist them yet.
               result =
                   result
                       .asBuilder()
@@ -156,6 +149,9 @@ public class DomainBaseSqlTest extends EntityTestCase {
                       .setDsData(
                           ImmutableSet.of(
                               DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
+                      .addGracePeriod(
+                          GracePeriod.create(
+                              GracePeriodStatus.ADD, clock.nowUtc().plusDays(1), "registrar", null))
                       .build();
 
               // Fix the original creation timestamp (this gets initialized on first write)
