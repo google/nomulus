@@ -172,6 +172,22 @@ public class DomainCheckFlowTest
   }
 
   @Test
+  public void testSuccess_oneExists_allocationTokenForReservedDomain() throws Exception {
+    setEppInput("domain_check_allocationtoken.xml");
+    persistActiveDomain("example1.tld");
+    persistResource(
+        new AllocationToken.Builder()
+            .setDomainName("reserved.tld")
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .build());
+    doCheckTest(
+        create(false, "example1.tld", "In use"),
+        create(true, "example2.tld", null),
+        create(true, "reserved.tld", null));
+  }
+
+  @Test
   public void testSuccess_nothingExists_reservationsOverrideInvalidAllocationTokens()
       throws Exception {
     setEppInput("domain_check_reserved_allocationtoken.xml");
