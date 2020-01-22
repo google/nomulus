@@ -30,6 +30,7 @@ import static google.registry.model.registry.Registries.findTldForName;
 import static google.registry.model.registry.Registries.getTlds;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.registry.Registry.TldState.PREDELEGATION;
+import static google.registry.model.registry.Registry.TldState.QUIET_PERIOD;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
 import static google.registry.model.registry.label.ReservationType.RESERVED_FOR_ANCHOR_TENANT;
@@ -140,9 +141,9 @@ import org.joda.time.Duration;
 public class DomainFlowUtils {
 
   /** Map from launch phases to the allowed tld states. */
-  private static final ImmutableMap<LaunchPhase, TldState> LAUNCH_PHASE_TO_TLD_STATES =
-      new ImmutableMap.Builder<LaunchPhase, TldState>()
-          .put(LaunchPhase.CLAIMS, GENERAL_AVAILABILITY)
+  private static final ImmutableMultimap<LaunchPhase, TldState> LAUNCH_PHASE_TO_TLD_STATES =
+      new ImmutableMultimap.Builder<LaunchPhase, TldState>()
+          .putAll(LaunchPhase.CLAIMS, GENERAL_AVAILABILITY, QUIET_PERIOD)
           .put(LaunchPhase.SUNRISE, START_DATE_SUNRISE)
           .put(LaunchPhase.OPEN, GENERAL_AVAILABILITY)
           .build();
@@ -443,8 +444,9 @@ public class DomainFlowUtils {
   static void verifyLaunchPhaseMatchesRegistryPhase(
       Registry registry, LaunchExtension launchExtension, DateTime now) throws EppException {
     if (!LAUNCH_PHASE_TO_TLD_STATES.containsKey(launchExtension.getPhase())
-        || LAUNCH_PHASE_TO_TLD_STATES.get(launchExtension.getPhase())
-            != registry.getTldState(now)) {
+        || !LAUNCH_PHASE_TO_TLD_STATES
+            .get(launchExtension.getPhase())
+            .contains(registry.getTldState(now))) {
       // No launch operations are allowed during the quiet period or predelegation.
       throw new LaunchPhaseMismatchException();
     }

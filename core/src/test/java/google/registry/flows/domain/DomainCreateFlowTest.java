@@ -832,6 +832,36 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
   }
 
   @Test
+  public void testSuccess_claimsNoticeInQuietPeriod() throws Exception {
+    allocationToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setDomainName("example-one.tld")
+                .setToken("abcDEF23456")
+                .setTokenType(SINGLE_USE)
+                .build());
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setTldStateTransitions(
+                ImmutableSortedMap.of(
+                    START_OF_TIME,
+                    PREDELEGATION,
+                    DateTime.parse("1999-01-01T00:00:00Z"),
+                    QUIET_PERIOD))
+            .setReservedLists(persistReservedList("res1", "example-one,RESERVED_FOR_SPECIFIC_USE"))
+            .build());
+    clock.setTo(DateTime.parse("2009-08-16T09:00:00.0Z"));
+    setEppInput("domain_create_allocationtoken_claims.xml");
+    persistContactsAndHosts();
+    runFlowAssertResponse(loadFile("domain_create_response_claims.xml"));
+    assertSuccessfulCreate("tld", ImmutableSet.of(RESERVED), allocationToken);
+    assertDnsTasksEnqueued("example-one.tld");
+    assertClaimsLordn();
+    assertAllocationTokenWasRedeemed("abcDEF23456");
+  }
+
+  @Test
   public void testSuccess_noClaimsNotice_forClaimsListName_afterClaimsPeriodEnd() throws Exception {
     persistClaimsList(ImmutableMap.of("example", CLAIMS_KEY));
     persistContactsAndHosts();
@@ -1047,7 +1077,7 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
             .setReservedLists(
                 persistReservedList("anchor-with-claims", "example-one,RESERVED_FOR_ANCHOR_TENANT"))
             .build());
-    setEppInput("domain_create_anchor_tenant_claims.xml");
+    setEppInput("domain_create_allocationtoken_claims.xml");
     clock.setTo(DateTime.parse("2009-08-16T09:00:00.0Z"));
     persistContactsAndHosts();
     runFlowAssertResponse(loadFile("domain_create_response_claims.xml"));
