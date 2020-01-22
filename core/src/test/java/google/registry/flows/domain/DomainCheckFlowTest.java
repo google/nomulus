@@ -209,6 +209,28 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
   }
 
   @Test
+  public void testSuccess_notOutOfDateToken_forSpecificDomain() throws Exception {
+    setEppInput("domain_check_allocationtoken.xml");
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("specificuse.tld")
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
+                    .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
+                    .build())
+            .build());
+    doCheckTest(
+        create(true, "example1.tld", null),
+        create(true, "example2.tld", null),
+        create(false, "reserved.tld", "Reserved"),
+        create(true, "specificuse.tld", null));
+  }
+
+  @Test
   public void testSuccess_outOfDateToken_forSpecificDomain() throws Exception {
     setEppInput("domain_check_allocationtoken.xml");
     persistResource(
