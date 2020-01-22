@@ -52,6 +52,7 @@ import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
+import google.registry.schema.cursor.CursorDao;
 import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.TaskQueueUtils;
@@ -170,12 +171,11 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
         () -> upload(xmlFilename, xmlLength, watermark, name), JSchException.class);
     logger.atInfo().log(
         "Updating RDE cursor '%s' for TLD '%s' following successful upload.", RDE_UPLOAD_SFTP, tld);
-    tm()
-        .transact(
+    tm().transact(
             () -> {
-              Cursor updatedSftpCursor =
-                  Cursor.create(RDE_UPLOAD_SFTP, tm().getTransactionTime(), Registry.get(tld));
-              ofy().save().entity(updatedSftpCursor);
+              CursorDao.saveCursor(
+                  Cursor.create(RDE_UPLOAD_SFTP, tm().getTransactionTime(), Registry.get(tld)),
+                  tld);
             });
     response.setContentType(PLAIN_TEXT_UTF_8);
     response.setPayload(String.format("OK %s %s\n", tld, watermark));

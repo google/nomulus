@@ -59,7 +59,6 @@ public class EscrowTaskRunnerTest {
   private EscrowTaskRunner runner;
   private Registry registry;
 
-
   @Before
   public void before() {
     createTld("lol");

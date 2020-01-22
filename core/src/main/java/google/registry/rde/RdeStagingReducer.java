@@ -40,6 +40,7 @@ import google.registry.model.rde.RdeRevision;
 import google.registry.model.registry.Registry;
 import google.registry.request.RequestParameters;
 import google.registry.request.lock.LockHandler;
+import google.registry.schema.cursor.CursorDao;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.TaskQueueUtils;
 import google.registry.xjc.rdeheader.XjcRdeHeader;
@@ -198,13 +199,12 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
       }
     }
 
-    // Now that we're done, kick off RdeUploadAction and roll forward the cursor transactionally.
+    // Now that we're done, kick off RdeUploadAction and roll the cursor forward.
     if (key.manual()) {
       logger.atInfo().log("Manual operation; not advancing cursor or enqueuing upload task");
       return;
     }
-    tm()
-        .transact(
+    tm().transact(
             () -> {
               Registry registry = Registry.get(tld);
               DateTime position =
@@ -221,7 +221,8 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
                   "Partial ordering of RDE deposits broken: %s %s",
                   position,
                   key);
-              ofy().save().entity(Cursor.create(key.cursor(), newPosition, registry)).now();
+              CursorDao.saveCursor(
+                  Cursor.create(key.cursor(), newPosition, registry), registry.getTldStr());
               logger.atInfo().log(
                   "Rolled forward %s on %s cursor to %s", key.cursor(), tld, newPosition);
               RdeRevision.saveRevision(tld, watermark, mode, revision);

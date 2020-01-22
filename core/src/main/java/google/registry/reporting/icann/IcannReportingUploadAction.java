@@ -44,6 +44,7 @@ import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
+import google.registry.schema.cursor.CursorDao;
 import google.registry.util.Clock;
 import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
@@ -51,6 +52,7 @@ import google.registry.util.SendEmailService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -186,7 +188,9 @@ public final class IcannReportingUploadAction implements Runnable {
               cursorType,
               cursorTime.withTimeAtStartOfDay().withDayOfMonth(1).plusMonths(1),
               Registry.get(tldStr));
-      tm().transact(() -> ofy().save().entity(newCursor));
+      CursorDao.saveCursor(
+          newCursor,
+          Optional.ofNullable(tldStr).orElse(google.registry.schema.cursor.Cursor.GLOBAL));
     }
   }
 

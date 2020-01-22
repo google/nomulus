@@ -58,6 +58,7 @@ import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
+import google.registry.schema.cursor.CursorDao;
 import google.registry.util.Clock;
 import java.util.Optional;
 import java.util.Set;
@@ -313,8 +314,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
       logger.atInfo().log(
           "Recurring event expansion %s complete for billing event range [%s, %s).",
           isDryRun ? "(dry run) " : "", cursorTime, executionTime);
-      tm()
-          .transact(
+      tm().transact(
               () -> {
                 Cursor cursor = ofy().load().key(Cursor.createGlobalKey(RECURRING_BILLING)).now();
                 DateTime currentCursorTime =
@@ -326,7 +326,9 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                   return;
                 }
                 if (!isDryRun) {
-                  ofy().save().entity(Cursor.createGlobal(RECURRING_BILLING, executionTime));
+                  CursorDao.saveCursor(
+                      Cursor.createGlobal(RECURRING_BILLING, executionTime),
+                      google.registry.schema.cursor.Cursor.GLOBAL);
                 }
               });
     }

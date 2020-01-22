@@ -19,7 +19,6 @@ import static google.registry.model.common.Cursor.CursorType.BRDA;
 import static google.registry.model.common.Cursor.CursorType.RDE_UPLOAD;
 import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -28,6 +27,7 @@ import static org.junit.Assert.assertThrows;
 import google.registry.model.EntityTestCase;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registry.Registry;
+import google.registry.schema.cursor.CursorDao;
 import org.joda.time.DateTime;
 import org.junit.Test;
 
@@ -39,7 +39,7 @@ public class CursorTest extends EntityTestCase {
     createTld("tld");
     clock.advanceOneMilli();
     final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
-    tm().transact(() -> ofy().save().entity(Cursor.create(RDE_UPLOAD, time, Registry.get("tld"))));
+    CursorDao.saveCursor(Cursor.create(RDE_UPLOAD, time, Registry.get("tld")), "tld");
     assertThat(ofy().load().key(Cursor.createKey(BRDA, Registry.get("tld"))).now()).isNull();
     assertThat(
             ofy()
@@ -53,7 +53,8 @@ public class CursorTest extends EntityTestCase {
   @Test
   public void testSuccess_persistGlobalCursor() {
     final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
-    tm().transact(() -> ofy().save().entity(Cursor.createGlobal(RECURRING_BILLING, time)));
+    CursorDao.saveCursor(
+        Cursor.createGlobal(RECURRING_BILLING, time), google.registry.schema.cursor.Cursor.GLOBAL);
     assertThat(ofy().load().key(Cursor.createGlobalKey(RECURRING_BILLING)).now().getCursorTime())
         .isEqualTo(time);
   }
@@ -61,7 +62,8 @@ public class CursorTest extends EntityTestCase {
   @Test
   public void testIndexing() throws Exception {
     final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
-    tm().transact(() -> ofy().save().entity(Cursor.createGlobal(RECURRING_BILLING, time)));
+    CursorDao.saveCursor(
+        Cursor.createGlobal(RECURRING_BILLING, time), google.registry.schema.cursor.Cursor.GLOBAL);
     Cursor cursor = ofy().load().key(Cursor.createGlobalKey(RECURRING_BILLING)).now();
     verifyIndexing(cursor);
   }
@@ -75,8 +77,7 @@ public class CursorTest extends EntityTestCase {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () ->
-                tm().transact(() -> ofy().save().entity(Cursor.create(RDE_UPLOAD, time, domain))));
+            () -> CursorDao.saveCursor(Cursor.create(RDE_UPLOAD, time, domain), domain.getTld()));
     assertThat(thrown)
         .hasMessageThat()
         .contains("Class required for cursor does not match scope class");

@@ -17,7 +17,6 @@ package google.registry.backup;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.Cursor.CursorType.RDE_REPORT;
 import static google.registry.model.ofy.CommitLogBucket.getBucketKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -31,6 +30,7 @@ import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
 import google.registry.persistence.transaction.TransactionManager;
+import google.registry.schema.cursor.CursorDao;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
@@ -53,6 +53,7 @@ public class CommitLogCheckpointStrategyTest {
 
   @Rule
   public final InjectRule inject = new InjectRule();
+
 
   final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
   final Ofy ofy = new Ofy(clock);
@@ -293,11 +294,10 @@ public class CommitLogCheckpointStrategyTest {
   private void writeCommitLogToBucket(final int bucketId) {
     fakeBucketIdSupplier.value = bucketId;
     tm.transact(
-        () -> {
-          Cursor cursor =
-              Cursor.create(RDE_REPORT, tm.getTransactionTime(), Registry.get("tld" + bucketId));
-          ofy().save().entity(cursor);
-        });
+        () ->
+            CursorDao.saveCursor(
+                Cursor.create(RDE_REPORT, tm.getTransactionTime(), Registry.get("tld" + bucketId)),
+                "tld" + bucketId));
     fakeBucketIdSupplier.value = null;
   }
 
