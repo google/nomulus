@@ -141,7 +141,7 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
         create(false, "example1.tld", "In use"),
         create(false, "example2.tld", "The allocation token is invalid"),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Reserved"));
+        create(false, "specificuse.tld", "Allocation token required"));
   }
 
   @Test
@@ -154,7 +154,7 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
         create(false, "example1.tld", "In use"),
         create(true, "example2.tld", null),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Reserved"));
+        create(false, "specificuse.tld", "Allocation token required"));
   }
 
   @Test
@@ -171,7 +171,7 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
         create(false, "example1.tld", "In use"),
         create(false, "example2.tld", "Alloc token was already redeemed"),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Reserved"));
+        create(false, "specificuse.tld", "Allocation token required"));
   }
 
   @Test
@@ -205,7 +205,7 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
         create(false, "example1.tld", "In use"),
         create(true, "example2.tld", null),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Reserved"));
+        create(false, "specificuse.tld", "Allocation token required"));
   }
 
   @Test
@@ -260,7 +260,7 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
     doCheckTest(
         create(false, "collision.tld", "Cannot be delegated"),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "anchor.tld", "Reserved"),
+        create(false, "anchor.tld", "Allocation token required"),
         create(false, "allowedinsunrise.tld", "Reserved"),
         create(false, "premiumcollision.tld", "Cannot be delegated"));
   }
@@ -395,7 +395,7 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
   @Test
   public void testSuccess_anchorTenantReserved() throws Exception {
     setEppInput("domain_check_anchor.xml");
-    doCheckTest(create(false, "anchor.tld", "Reserved"));
+    doCheckTest(create(false, "anchor.tld", "Allocation token required"));
   }
 
   @Test

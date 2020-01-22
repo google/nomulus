@@ -72,7 +72,10 @@ public class CheckApiActionTest {
             .asBuilder()
             .setReservedLists(
                 persistReservedList(
-                    "example-reserved", "foo,FULLY_BLOCKED", "gold,RESERVED_FOR_SPECIFIC_USE"))
+                    "example-reserved",
+                    "foo,FULLY_BLOCKED",
+                    "gold,RESERVED_FOR_SPECIFIC_USE",
+                    "platinum,FULLY_BLOCKED"))
             .build());
   }
 
@@ -258,12 +261,24 @@ public class CheckApiActionTest {
 
   @Test
   public void testSuccess_reserved_premium() {
-    assertThat(getCheckResponse("gold.example"))
+    assertThat(getCheckResponse("platinum.example"))
         .containsExactly(
             "tier", "premium",
             "status", "success",
             "available", false,
             "reason", "Reserved");
+
+    verifySuccessMetric(PREMIUM, RESERVED);
+  }
+
+  @Test
+  public void testSuccess_reservedForSpecificUse_premium() {
+    assertThat(getCheckResponse("gold.example"))
+        .containsExactly(
+            "tier", "premium",
+            "status", "success",
+            "available", false,
+            "reason", "Allocation token required");
 
     verifySuccessMetric(PREMIUM, RESERVED);
   }
