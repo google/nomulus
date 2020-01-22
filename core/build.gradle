@@ -786,6 +786,17 @@ createToolTask(
     'google.registry.tools.DevTool',
     sourceSets.nonprod)
 
+project.tasks.create('generateSqlSchema', JavaExec) {
+  classpath = sourceSets.nonprod.runtimeClasspath
+  main = 'google.registry.tools.DevTool'
+  args = [
+      '-e', 'alpha',
+      'generate_sql_schema', '--start_postgresql', '-o',
+      "${rootProject.projectRootDir}/db/src/main/resources/sql/schema/" +
+      "db-schema.sql.generated"
+  ]
+}
+
 task generateGoldenImages(type: FilteringTest) {
   tests = ["**/webdriver/*"]
 
