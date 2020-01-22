@@ -92,11 +92,12 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
             .build());
     return persistReservedList(
         "tld-reserved",
-        "reserved,FULLY_BLOCKED",
-        "anchor,RESERVED_FOR_ANCHOR_TENANT",
         "allowedinsunrise,ALLOWED_IN_SUNRISE",
+        "anchor,RESERVED_FOR_ANCHOR_TENANT",
         "collision,NAME_COLLISION",
-        "premiumcollision,NAME_COLLISION");
+        "premiumcollision,NAME_COLLISION",
+        "reserved,FULLY_BLOCKED",
+        "specificuse,RESERVED_FOR_SPECIFIC_USE");
   }
 
   @Before
@@ -140,7 +141,7 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
         create(false, "example1.tld", "In use"),
         create(false, "example2.tld", "The allocation token is invalid"),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "allowedinsunrise.tld", "Reserved"));
+        create(false, "specificuse.tld", "Reserved"));
   }
 
   @Test
@@ -153,7 +154,7 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
         create(false, "example1.tld", "In use"),
         create(true, "example2.tld", null),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "allowedinsunrise.tld", "Reserved"));
+        create(false, "specificuse.tld", "Reserved"));
   }
 
   @Test
@@ -170,7 +171,7 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
         create(false, "example1.tld", "In use"),
         create(false, "example2.tld", "Alloc token was already redeemed"),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "allowedinsunrise.tld", "Reserved"));
+        create(false, "specificuse.tld", "Reserved"));
   }
 
   @Test
@@ -179,7 +180,7 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
     persistActiveDomain("example1.tld");
     persistResource(
         new AllocationToken.Builder()
-            .setDomainName("allowedinsunrise.tld")
+            .setDomainName("specificuse.tld")
             .setToken("abc123")
             .setTokenType(SINGLE_USE)
             .build());
@@ -187,7 +188,7 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
         create(false, "example1.tld", "In use"),
         create(true, "example2.tld", null),
         create(false, "reserved.tld", "Reserved"),
-        create(true, "allowedinsunrise.tld", null));
+        create(true, "specificuse.tld", null));
   }
 
   @Test
@@ -204,7 +205,29 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
         create(false, "example1.tld", "In use"),
         create(true, "example2.tld", null),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "allowedinsunrise.tld", "Reserved"));
+        create(false, "specificuse.tld", "Reserved"));
+  }
+
+  @Test
+  public void testSuccess_outOfDateToken_forSpecificDomain() throws Exception {
+    setEppInput("domain_check_allocationtoken.xml");
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("specificuse.tld")
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().minusDays(2), TokenStatus.VALID)
+                    .put(clock.nowUtc().minusDays(1), TokenStatus.ENDED)
+                    .build())
+            .build());
+    doCheckTest(
+        create(false, "example1.tld", "Alloc token not in promo period"),
+        create(false, "example2.tld", "Alloc token not in promo period"),
+        create(false, "reserved.tld", "Reserved"),
+        create(false, "specificuse.tld", "Alloc token not in promo period"));
   }
 
   @Test
@@ -351,6 +374,18 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
   public void testSuccess_anchorTenantReserved() throws Exception {
     setEppInput("domain_check_anchor.xml");
     doCheckTest(create(false, "anchor.tld", "Reserved"));
+  }
+
+  @Test
+  public void testSuccess_anchorTenantWithToken() throws Exception {
+    setEppInput("domain_check_anchor_allocationtoken.xml");
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("anchor.tld")
+            .build());
+    doCheckTest(create(true, "anchor.tld", null));
   }
 
   @Test

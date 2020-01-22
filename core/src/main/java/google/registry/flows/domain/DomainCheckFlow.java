@@ -20,13 +20,14 @@ import static google.registry.flows.ResourceFlowUtils.verifyTargetIdCount;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
 import static google.registry.flows.domain.DomainFlowUtils.getReservationTypes;
 import static google.registry.flows.domain.DomainFlowUtils.handleFeeRequest;
+import static google.registry.flows.domain.DomainFlowUtils.isAnchorTenant;
 import static google.registry.flows.domain.DomainFlowUtils.isReserved;
+import static google.registry.flows.domain.DomainFlowUtils.isValidReservedCreate;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainName;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainNameWithIdnTables;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPredelegation;
 import static google.registry.model.EppResourceUtils.checkResourcesExist;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
-import static google.registry.model.registry.label.ReservationType.RESERVED_FOR_ANCHOR_TENANT;
 import static google.registry.model.registry.label.ReservationType.getTypeOfHighestSeverity;
 
 import com.google.common.collect.ImmutableList;
@@ -205,11 +206,11 @@ public final class DomainCheckFlow implements Flow {
     }
     TldState tldState = tldStates.get(domainName.parent().toString());
     if (isReserved(domainName, START_DATE_SUNRISE.equals(tldState))) {
-      ImmutableSet<ReservationType> reservationTypes = getReservationTypes(domainName);
-      if (!reservationTypes.isEmpty()) {
-        ReservationType highestSeverityType = getTypeOfHighestSeverity(reservationTypes);
-        if (highestSeverityType.ordinal() > RESERVED_FOR_ANCHOR_TENANT.ordinal()
-            || !allocationTokenValidForDomain(allocationToken, domainName.toString())) {
+      if (!isValidReservedCreate(domainName, allocationToken)
+          && !isAnchorTenant(domainName, allocationToken, Optional.empty())) {
+        ImmutableSet<ReservationType> reservationTypes = getReservationTypes(domainName);
+        if (!reservationTypes.isEmpty()) {
+          ReservationType highestSeverityType = getTypeOfHighestSeverity(reservationTypes);
           return Optional.of(highestSeverityType.getMessageForCheck());
         }
       }
@@ -268,13 +269,6 @@ public final class DomainCheckFlow implements Flow {
     }
     // If this version of the fee extension is nameless, use the full list of domains.
     return availabilityCheckDomains;
-  }
-
-  private static boolean allocationTokenValidForDomain(
-      Optional<AllocationToken> tokenOptional, String domainName) {
-    return tokenOptional
-        .map(token -> token.getDomainName().map(domainName::equals).orElse(false))
-        .orElse(false);
   }
 
   /** By server policy, fee check names must be listed in the availability check. */
