@@ -87,6 +87,8 @@ public final class DomainLockUtils {
     RegistryLock.Builder newLockBuilder;
     if (isAdmin) {
       // Admins should always be able to unlock domains in case we get in a bad state
+      // TODO(b/147411297): Remove the admin checks / failsafes once we have migrated existing
+      // locked domains to have lock objects
       newLockBuilder =
           lockOptional
               .map(RegistryLock::asBuilder)
