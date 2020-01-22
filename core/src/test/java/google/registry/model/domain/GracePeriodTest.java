@@ -15,8 +15,8 @@
 package google.registry.model.domain;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static org.joda.time.DateTimeZone.UTC;
+import static org.junit.Assert.assertThrows;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;

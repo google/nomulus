@@ -19,8 +19,8 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.model.rde.RdeRevision.getNextRevision;
 import static google.registry.model.rde.RdeRevision.saveRevision;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.JUnitBackports.assertThrows;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.VerifyException;
 import google.registry.testing.AppEngineRule;

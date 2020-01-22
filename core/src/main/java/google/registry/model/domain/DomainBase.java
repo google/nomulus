@@ -45,6 +45,7 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.condition.IfNull;
+import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
@@ -377,28 +378,31 @@ public class DomainBase extends EppResource
       // exclusive of their ending), and we can just proceed with the transfer.
       DomainBase domainAtTransferTime =
           cloneProjectedAtTime(transferExpirationTime.minusMillis(1));
+
+      DateTime expirationDate = transferData.getTransferredRegistrationExpirationTime();
+      if (expirationDate == null) {
+        // Extend the registration by the correct number of years from the expiration time
+        // that was current on the domain right before the transfer, capped at 10 years from
+        // the moment of the transfer.
+        expirationDate =
+            ResourceFlowUtils.computeExDateForApprovalTime(
+                domainAtTransferTime, transferExpirationTime, transferData.getTransferPeriod());
+      }
       // If we are within an autorenew grace period, the transfer will subsume the autorenew. There
       // will already be a cancellation written in advance by the transfer request flow, so we don't
       // need to worry about billing, but we do need to cancel out the expiration time increase.
       // The transfer period saved in the transfer data will be one year, unless the superuser
       // extension set the transfer period to zero.
-      int extraYears = transferData.getTransferPeriod().getValue();
-      if (domainAtTransferTime.getGracePeriodStatuses().contains(GracePeriodStatus.AUTO_RENEW)) {
-        extraYears = 0;
-      }
       // Set the expiration, autorenew events, and grace period for the transfer. (Transfer ends
       // all other graces).
-      Builder builder = domainAtTransferTime.asBuilder()
-          // Extend the registration by the correct number of years from the expiration time that
-          // was current on the domain right before the transfer, capped at 10 years from the
-          // moment of the transfer.
-          .setRegistrationExpirationTime(extendRegistrationWithCap(
-              transferExpirationTime,
-              domainAtTransferTime.getRegistrationExpirationTime(),
-              extraYears))
-          // Set the speculatively-written new autorenew events as the domain's autorenew events.
-          .setAutorenewBillingEvent(transferData.getServerApproveAutorenewEvent())
-          .setAutorenewPollMessage(transferData.getServerApproveAutorenewPollMessage());
+      Builder builder =
+          domainAtTransferTime
+              .asBuilder()
+              .setRegistrationExpirationTime(expirationDate)
+              // Set the speculatively-written new autorenew events as the domain's autorenew
+              // events.
+              .setAutorenewBillingEvent(transferData.getServerApproveAutorenewEvent())
+              .setAutorenewPollMessage(transferData.getServerApproveAutorenewPollMessage());
       if (transferData.getTransferPeriod().getValue() == 1) {
         // Set the grace period using a key to the prescheduled transfer billing event.  Not using
         // GracePeriod.forBillingEvent() here in order to avoid the actual Datastore fetch.

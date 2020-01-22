@@ -30,8 +30,8 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -101,7 +101,6 @@ public class DomainTransferCancelFlowTest
             "NewRegistrar",
             TRANSFER_REQUEST_TIME,
             TRANSFER_EXPIRATION_TIME,
-            TRANSFER_REQUEST_TIME,
             EXTENDED_REGISTRATION_EXPIRATION_TIME));
     assertPollMessages(
         "TheRegistrar",
@@ -111,7 +110,6 @@ public class DomainTransferCancelFlowTest
             "TheRegistrar",
             TRANSFER_REQUEST_TIME,
             TRANSFER_EXPIRATION_TIME,
-            TRANSFER_REQUEST_TIME,
             EXTENDED_REGISTRATION_EXPIRATION_TIME));
     clock.advanceOneMilli();
 

@@ -19,7 +19,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HostAndPort;
-import google.registry.model.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.UserInfo;
 import google.registry.tools.params.HostAndPortParameter;

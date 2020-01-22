@@ -19,7 +19,7 @@ import static com.google.common.collect.Maps.filterValues;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.TypeUtils.instantiate;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 

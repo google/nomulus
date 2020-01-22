@@ -34,7 +34,7 @@ Below are the steps to submit a schema change:
 2.  Run the `nomulus generate_sql_schema` command to generate a new version of
     `db-schema.sql.generated`. The full command line to do this is:
 
-    `./gradlew registryTool --args="-e localhost generate_sql_schema
+    `./gradlew devTool --args="-e localhost generate_sql_schema
     --start_postgresql -o
     /path/to/nomulus/db/src/main/resources/sql/schema/db-schema.sql.generated"`
 

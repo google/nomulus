@@ -15,7 +15,7 @@
 package google.registry.model.registry;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.schema.domain.RegistryLock;

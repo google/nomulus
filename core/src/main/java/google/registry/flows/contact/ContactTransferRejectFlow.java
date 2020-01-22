@@ -23,7 +23,7 @@ import static google.registry.flows.contact.ContactFlowUtils.createGainingTransf
 import static google.registry.flows.contact.ContactFlowUtils.createTransferResponse;
 import static google.registry.model.ResourceTransferUtils.denyPendingTransfer;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;

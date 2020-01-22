@@ -17,8 +17,8 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.registry.label.ReservationType.ALLOWED_IN_SUNRISE;
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.tools.CreateOrUpdateReservedListCommand.parseToReservationsByLabels;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.registry.label.ReservationType;

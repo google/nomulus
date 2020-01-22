@@ -20,6 +20,7 @@ import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
+import com.google.common.base.Splitter;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -27,6 +28,7 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.model.registry.Registry;
+import java.util.List;
 import org.joda.time.DateTime;
 
 /**
@@ -87,7 +89,9 @@ public class Cursor extends ImmutableObject {
     /** Cursor for tracking monthly uploads of ICANN activity reports. */
     ICANN_UPLOAD_ACTIVITY(Registry.class),
 
-    /** Cursor for tracking monthly upload of MANIFEST.txt to ICANN. */
+    // TODO(sarahbot) Delete this cursor once all data in the database that refers to it is removed.
+    /** Cursor for tracking monthly uploads of MANIFEST.txt to ICANN. No longer used. */
+    @Deprecated
     ICANN_UPLOAD_MANIFEST(EntityGroupRoot.class);
 
     /** See the definition of scope on {@link #getScopeClass}. */
@@ -123,6 +127,11 @@ public class Cursor extends ImmutableObject {
 
   public DateTime getLastUpdateTime() {
     return lastUpdateTime.getTimestamp();
+  }
+
+  public CursorType getType() {
+    List<String> id = Splitter.on('_').splitToList(this.id);
+    return CursorType.valueOf(String.join("_", id.subList(1, id.size())));
   }
 
   /**

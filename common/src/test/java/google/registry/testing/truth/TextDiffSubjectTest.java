@@ -16,8 +16,8 @@ package google.registry.testing.truth;
 
 import static com.google.common.io.Resources.getResource;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.testing.truth.TextDiffSubject.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;

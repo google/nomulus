@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistResource;
-import static google.registry.testing.JUnitBackports.assertThrows;
+import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import google.registry.model.common.Cursor;
@@ -44,6 +44,9 @@ public class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsComma
     runCommandForced("--type=brda", "--timestamp=1984-12-18T00:00:00Z", "foo");
     assertThat(ofy().load().key(Cursor.createKey(CursorType.BRDA, registry)).now().getCursorTime())
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
+    String changes = command.prompt();
+    assertThat(changes)
+        .isEqualTo("Change cursorTime of BRDA for Scope:foo to 1984-12-18T00:00:00.000Z\n");
   }
 
   void doGlobalUpdateTest() throws Exception {
@@ -55,6 +58,11 @@ public class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsComma
                 .now()
                 .getCursorTime())
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
+    String changes = command.prompt();
+    assertThat(changes)
+        .isEqualTo(
+            "Change cursorTime of RECURRING_BILLING for Scope:GLOBAL to"
+                + " 1984-12-18T00:00:00.000Z\n");
   }
 
   @Test
@@ -94,6 +102,11 @@ public class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsComma
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
     assertThat(ofy().load().key(Cursor.createKey(CursorType.BRDA, registry2)).now().getCursorTime())
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
+    String changes = command.prompt();
+    assertThat(changes)
+        .isEqualTo(
+            "Change cursorTime of BRDA for Scope:foo to 1984-12-18T00:00:00.000Z\n"
+                + "Change cursorTime of BRDA for Scope:bar to 1984-12-18T00:00:00.000Z\n");
   }
 
   @Test
@@ -107,6 +120,11 @@ public class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsComma
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
     assertThat(ofy().load().key(Cursor.createKey(CursorType.BRDA, registry2)).now().getCursorTime())
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
+    String changes = command.prompt();
+    assertThat(changes)
+        .isEqualTo(
+            "Change cursorTime of BRDA for Scope:foo to 1984-12-18T00:00:00.000Z\n"
+                + "Change cursorTime of BRDA for Scope:bar to 1984-12-18T00:00:00.000Z\n");
   }
 
   @Test

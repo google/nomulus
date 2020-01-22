@@ -166,7 +166,6 @@ dependencies {
   // release.
   compile files(
       "${rootDir}/third_party/objectify/v4_1/objectify-4.1.3.jar")
-  testRuntime project(':third_party')
 
   testRuntime files(sourceSets.test.resources.srcDirs)
 
@@ -270,7 +269,6 @@ dependencies {
   // Known issue: nebula-lint misses inherited dependency.
   compile project(':common')
   testCompile project(path: ':common', configuration: 'testing')
-  compile project(':third_party')
   compile project(':util')
   // Import NomulusPostreSql from ':db' for compile but exclude dependencies.
   compile project(path: ':db', configuration: 'compileApi')

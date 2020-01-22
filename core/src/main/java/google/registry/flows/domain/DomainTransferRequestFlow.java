@@ -15,6 +15,7 @@
 package google.registry.flows.domain;
 
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.ResourceFlowUtils.computeExDateForApprovalTime;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyAuthInfo;
 import static google.registry.flows.ResourceFlowUtils.verifyAuthInfoPresentForResourceTransfer;
@@ -29,10 +30,9 @@ import static google.registry.flows.domain.DomainTransferUtils.createLosingTrans
 import static google.registry.flows.domain.DomainTransferUtils.createPendingTransferData;
 import static google.registry.flows.domain.DomainTransferUtils.createTransferResponse;
 import static google.registry.flows.domain.DomainTransferUtils.createTransferServerApproveEntities;
-import static google.registry.model.domain.DomainBase.extendRegistrationWithCap;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -56,7 +56,6 @@ import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeTransferCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
-import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.superuser.DomainTransferRequestSuperuserExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
@@ -183,18 +182,10 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     //
     // See b/19430703#comment17 and https://www.icann.org/news/advisory-2002-06-06-en for the
     // policy documentation for transfers subsuming autorenews within the autorenew grace period.
-    int extraYears = period.getValue();
-    DomainBase domainAtTransferTime =
-        existingDomain.cloneProjectedAtTime(automaticTransferTime);
-    if (!domainAtTransferTime.getGracePeriodsOfType(GracePeriodStatus.AUTO_RENEW).isEmpty()) {
-      extraYears = 0;
-    }
+    DomainBase domainAtTransferTime = existingDomain.cloneProjectedAtTime(automaticTransferTime);
     // The new expiration time if there is a server approval.
     DateTime serverApproveNewExpirationTime =
-        extendRegistrationWithCap(
-            automaticTransferTime,
-            domainAtTransferTime.getRegistrationExpirationTime(),
-            extraYears);
+        computeExDateForApprovalTime(domainAtTransferTime, automaticTransferTime, period);
     // Create speculative entities in anticipation of an automatic server approval.
     ImmutableSet<TransferServerApproveEntity> serverApproveEntities =
         createTransferServerApproveEntities(
@@ -337,10 +328,8 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     // If the registration were approved this instant, this is what the new expiration would be,
     // because we cap at 10 years from the moment of approval. This is different than the server
     // approval new expiration time, which is capped at 10 years from the server approve time.
-    DateTime approveNowExtendedRegistrationTime = extendRegistrationWithCap(
-        now,
-        existingDomain.getRegistrationExpirationTime(),
-        period.getValue());
+    DateTime approveNowExtendedRegistrationTime =
+        computeExDateForApprovalTime(existingDomain, now, period);
     return createTransferResponse(
         targetId, newDomain.getTransferData(), approveNowExtendedRegistrationTime);
   }

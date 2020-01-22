@@ -16,13 +16,13 @@ package google.registry.persistence;
 import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.hash.Funnels.stringFunnel;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.hash.BloomFilter;
 import google.registry.model.ImmutableObject;
-import google.registry.model.transaction.JpaTestRules;
-import google.registry.model.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.junit.Rule;

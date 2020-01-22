@@ -21,7 +21,7 @@ import static google.registry.testing.DatastoreHelper.getPollMessages;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static google.registry.testing.JUnitBackports.assertThrows;
+import static org.junit.Assert.assertThrows;
 
 import google.registry.flows.EppException;
 import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
@@ -48,8 +48,8 @@ public class DomainTransferQueryFlowTest
     setupDomainWithPendingTransfer("example", "tld");
   }
 
-  private void doSuccessfulTest(String commandFilename, String expectedXmlFilename)
-      throws Exception {
+  private void doSuccessfulTest(
+      String commandFilename, String expectedXmlFilename, int numPollMessages) throws Exception {
     setEppInput(commandFilename);
     // Replace the ROID in the xml file with the one generated in our test.
     eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
@@ -65,7 +65,8 @@ public class DomainTransferQueryFlowTest
         getGainingClientAutorenewEvent(),
         getLosingClientAutorenewEvent());
     // Look in the future and make sure the poll messages for implicit ack are there.
-    assertThat(getPollMessages("NewRegistrar", clock.nowUtc().plusYears(1))).hasSize(1);
+    assertThat(getPollMessages("NewRegistrar", clock.nowUtc().plusYears(1)))
+        .hasSize(numPollMessages);
     assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusYears(1))).hasSize(1);
   }
 
@@ -80,62 +81,62 @@ public class DomainTransferQueryFlowTest
 
   @Test
   public void testSuccess() throws Exception {
-    doSuccessfulTest("domain_transfer_query.xml", "domain_transfer_query_response.xml");
+    doSuccessfulTest("domain_transfer_query.xml", "domain_transfer_query_response.xml", 1);
   }
 
   @Test
   public void testSuccess_sponsoringClient() throws Exception {
     setClientIdForFlow("TheRegistrar");
-    doSuccessfulTest("domain_transfer_query.xml", "domain_transfer_query_response.xml");
+    doSuccessfulTest("domain_transfer_query.xml", "domain_transfer_query_response.xml", 1);
   }
 
   @Test
   public void testSuccess_domainAuthInfo() throws Exception {
     setClientIdForFlow("ClientZ");
     doSuccessfulTest(
-        "domain_transfer_query_domain_authinfo.xml", "domain_transfer_query_response.xml");
+        "domain_transfer_query_domain_authinfo.xml", "domain_transfer_query_response.xml", 1);
   }
 
   @Test
   public void testSuccess_contactAuthInfo() throws Exception {
     setClientIdForFlow("ClientZ");
     doSuccessfulTest(
-        "domain_transfer_query_contact_authinfo.xml", "domain_transfer_query_response.xml");
+        "domain_transfer_query_contact_authinfo.xml", "domain_transfer_query_response.xml", 1);
   }
 
   @Test
   public void testSuccess_clientApproved() throws Exception {
     changeTransferStatus(TransferStatus.CLIENT_APPROVED);
     doSuccessfulTest(
-        "domain_transfer_query.xml", "domain_transfer_query_response_client_approved.xml");
+        "domain_transfer_query.xml", "domain_transfer_query_response_client_approved.xml", 1);
   }
 
   @Test
   public void testSuccess_clientRejected() throws Exception {
     changeTransferStatus(TransferStatus.CLIENT_REJECTED);
     doSuccessfulTest(
-        "domain_transfer_query.xml", "domain_transfer_query_response_client_rejected.xml");
+        "domain_transfer_query.xml", "domain_transfer_query_response_client_rejected.xml", 1);
   }
 
   @Test
   public void testSuccess_clientCancelled() throws Exception {
     changeTransferStatus(TransferStatus.CLIENT_CANCELLED);
     doSuccessfulTest(
-        "domain_transfer_query.xml", "domain_transfer_query_response_client_cancelled.xml");
+        "domain_transfer_query.xml", "domain_transfer_query_response_client_cancelled.xml", 1);
   }
 
   @Test
   public void testSuccess_serverApproved() throws Exception {
     changeTransferStatus(TransferStatus.SERVER_APPROVED);
     doSuccessfulTest(
-        "domain_transfer_query.xml", "domain_transfer_query_response_server_approved.xml");
+        "domain_transfer_query.xml", "domain_transfer_query_response_server_approved.xml", 1);
   }
 
   @Test
   public void testSuccess_serverCancelled() throws Exception {
     changeTransferStatus(TransferStatus.SERVER_CANCELLED);
     doSuccessfulTest(
-        "domain_transfer_query.xml", "domain_transfer_query_response_server_cancelled.xml");
+        "domain_transfer_query.xml", "domain_transfer_query_response_server_cancelled.xml", 1);
   }
 
   @Test
@@ -148,7 +149,7 @@ public class DomainTransferQueryFlowTest
                 .asBuilder()
                 .setRegistrationExpirationTime(domain.getRegistrationExpirationTime().plusYears(9))
                 .build());
-    doSuccessfulTest("domain_transfer_query.xml", "domain_transfer_query_response_10_years.xml");
+    doSuccessfulTest("domain_transfer_query.xml", "domain_transfer_query_response_10_years.xml", 1);
   }
 
   @Test
@@ -157,7 +158,7 @@ public class DomainTransferQueryFlowTest
     domain =
         persistResource(domain.asBuilder().setDeletionTime(clock.nowUtc().plusDays(1)).build());
     doSuccessfulTest(
-        "domain_transfer_query.xml", "domain_transfer_query_response_server_cancelled.xml");
+        "domain_transfer_query.xml", "domain_transfer_query_response_server_cancelled.xml", 1);
   }
 
   @Test
@@ -236,5 +237,16 @@ public class DomainTransferQueryFlowTest
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-dom-transfer-query");
     assertTldsFieldLogged("tld");
+  }
+
+  @Test
+  public void testSuccess_serverApproved_afterAutorenews() throws Exception {
+    // Set the clock to just past the extended registration time.  We'd expect the domain to have
+    // auto-renewed once, but the transfer query response should be the same.
+    clock.setTo(EXTENDED_REGISTRATION_EXPIRATION_TIME.plusMillis(1));
+    assertThat(domain.cloneProjectedAtTime(clock.nowUtc()).getRegistrationExpirationTime())
+        .isEqualTo(EXTENDED_REGISTRATION_EXPIRATION_TIME.plusYears(1));
+    doSuccessfulTest(
+        "domain_transfer_query.xml", "domain_transfer_query_response_server_approved.xml", 2);
   }
 }

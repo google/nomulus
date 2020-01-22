@@ -62,5 +62,4 @@ dependencies {
   testingCompile deps['io.github.java-diff-utils:java-diff-utils']
 
   testCompile deps['junit:junit']
-  testCompile project(':third_party')
 }

@@ -14,8 +14,8 @@
 
 package google.registry.util;
 
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InetAddresses;

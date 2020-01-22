@@ -238,106 +238,139 @@ public class DomainBaseToXjcConverterTest {
             .setBillingTime(DateTime.parse("1910-01-01T00:00:00Z"))
             .setParent(historyEntry)
             .build());
-    domain = domain.asBuilder()
-        .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("secret")))
-        .setContacts(ImmutableSet.of(
-            DesignatedContact.create(DesignatedContact.Type.ADMIN, Key.create(
-                makeContactResource(clock, "10-Q9JYB4C", "5372808-IRL",
-                    "be that word our sign in parting", "BOFH@cat.みんな"))),
-            DesignatedContact.create(DesignatedContact.Type.TECH, Key.create(
-                makeContactResource(clock, "11-Q9JYB4C", "5372808-TRL",
-                    "bird or fiend!? i shrieked upstarting", "bog@cat.みんな")))))
-        .setCreationClientId("LawyerCat")
-        .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
-        .setPersistedCurrentSponsorClientId("GetTheeBack")
-        .setDsData(ImmutableSet.of(DelegationSignerData.create(
-              123, 200, 230, base16().decode("1234567890"))))
-        .setFullyQualifiedDomainName(Idn.toASCII("love.みんな"))
-        .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
-        .setLastEppUpdateClientId("IntoTheTempest")
-        .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
-        .setNameservers(ImmutableSet.of(
-            Key.create(
-                makeHostResource(clock, "3-Q9JYB4C", "bird.or.devil.みんな", "1.2.3.4")),
-            Key.create(
-                    makeHostResource(clock, "4-Q9JYB4C", "ns2.cat.みんな", "bad:f00d:cafe::15:beef"))))
-        .setRegistrant(Key.create(makeContactResource(
-            clock, "12-Q9JYB4C", "5372808-ERL", "(◕‿◕) nevermore", "prophet@evil.みんな")))
-        .setRegistrationExpirationTime(DateTime.parse("1930-01-01T00:00:00Z"))
-        .setGracePeriods(ImmutableSet.of(
-            GracePeriod.forBillingEvent(GracePeriodStatus.RENEW,
-                persistResource(
-                    new BillingEvent.OneTime.Builder()
-                        .setReason(Reason.RENEW)
-                        .setTargetId("love.xn--q9jyb4c")
-                        .setClientId("TheRegistrar")
-                        .setCost(Money.of(USD, 456))
-                        .setPeriodYears(2)
-                        .setEventTime(DateTime.parse("1920-01-01T00:00:00Z"))
-                        .setBillingTime(DateTime.parse("1920-01-01T00:00:00Z"))
-                        .setParent(historyEntry)
-                        .build())),
-            GracePeriod.create(
-                GracePeriodStatus.TRANSFER, DateTime.parse("1920-01-01T00:00:00Z"), "foo", null)))
-        .setSubordinateHosts(ImmutableSet.of("home.by.horror.haunted"))
-        .setStatusValues(ImmutableSet.of(
-            StatusValue.CLIENT_DELETE_PROHIBITED,
-            StatusValue.CLIENT_RENEW_PROHIBITED,
-            StatusValue.CLIENT_TRANSFER_PROHIBITED,
-            StatusValue.SERVER_UPDATE_PROHIBITED))
-        .setAutorenewBillingEvent(
-            Key.create(persistResource(
-                new BillingEvent.Recurring.Builder()
-                    .setReason(Reason.RENEW)
-                    .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-                    .setTargetId("lol")
-                    .setClientId("TheRegistrar")
-                    .setEventTime(END_OF_TIME)
-                    .setRecurrenceEndTime(END_OF_TIME)
-                    .setParent(historyEntry)
-                    .build())))
-        .setAutorenewPollMessage(
-            Key.create(persistResource(
-                new PollMessage.Autorenew.Builder()
-                    .setTargetId("lol")
-                    .setClientId("TheRegistrar")
-                    .setEventTime(END_OF_TIME)
-                    .setAutorenewEndTime(END_OF_TIME)
-                    .setMsg("Domain was auto-renewed.")
-                    .setParent(historyEntry)
-                    .build())))
-        .setTransferData(new TransferData.Builder()
-            .setGainingClientId("gaining")
-            .setLosingClientId("losing")
-            .setPendingTransferExpirationTime(DateTime.parse("1925-04-20T00:00:00Z"))
-            .setServerApproveBillingEvent(Key.create(billingEvent))
-            .setServerApproveAutorenewEvent(
-                Key.create(persistResource(
-                    new BillingEvent.Recurring.Builder()
-                        .setReason(Reason.RENEW)
-                        .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-                        .setTargetId("example.xn--q9jyb4c")
-                        .setClientId("TheRegistrar")
-                        .setEventTime(END_OF_TIME)
-                        .setRecurrenceEndTime(END_OF_TIME)
-                        .setParent(historyEntry)
-                        .build())))
-            .setServerApproveAutorenewPollMessage(Key.create(persistResource(
-                new Autorenew.Builder()
-                    .setTargetId("example.xn--q9jyb4c")
-                    .setClientId("TheRegistrar")
-                    .setEventTime(END_OF_TIME)
-                    .setAutorenewEndTime(END_OF_TIME)
-                    .setMsg("Domain was auto-renewed.")
-                    .setParent(historyEntry)
-                    .build())))
-            .setServerApproveEntities(ImmutableSet.of(
-                Key.create(billingEvent)))
-            .setTransferRequestTime(DateTime.parse("1919-01-01T00:00:00Z"))
-            .setTransferStatus(TransferStatus.PENDING)
-            .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
-            .build())
-        .build();
+    domain =
+        domain
+            .asBuilder()
+            .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("secret")))
+            .setContacts(
+                ImmutableSet.of(
+                    DesignatedContact.create(
+                        DesignatedContact.Type.ADMIN,
+                        Key.create(
+                            makeContactResource(
+                                clock,
+                                "10-Q9JYB4C",
+                                "5372808-IRL",
+                                "be that word our sign in parting",
+                                "BOFH@cat.みんな"))),
+                    DesignatedContact.create(
+                        DesignatedContact.Type.TECH,
+                        Key.create(
+                            makeContactResource(
+                                clock,
+                                "11-Q9JYB4C",
+                                "5372808-TRL",
+                                "bird or fiend!? i shrieked upstarting",
+                                "bog@cat.みんな")))))
+            .setCreationClientId("LawyerCat")
+            .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
+            .setPersistedCurrentSponsorClientId("GetTheeBack")
+            .setDsData(
+                ImmutableSet.of(
+                    DelegationSignerData.create(123, 200, 230, base16().decode("1234567890"))))
+            .setFullyQualifiedDomainName(Idn.toASCII("love.みんな"))
+            .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+            .setLastEppUpdateClientId("IntoTheTempest")
+            .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
+            .setNameservers(
+                ImmutableSet.of(
+                    Key.create(
+                        makeHostResource(clock, "3-Q9JYB4C", "bird.or.devil.みんな", "1.2.3.4")),
+                    Key.create(
+                        makeHostResource(
+                            clock, "4-Q9JYB4C", "ns2.cat.みんな", "bad:f00d:cafe::15:beef"))))
+            .setRegistrant(
+                Key.create(
+                    makeContactResource(
+                        clock, "12-Q9JYB4C", "5372808-ERL", "(◕‿◕) nevermore", "prophet@evil.みんな")))
+            .setRegistrationExpirationTime(DateTime.parse("1930-01-01T00:00:00Z"))
+            .setGracePeriods(
+                ImmutableSet.of(
+                    GracePeriod.forBillingEvent(
+                        GracePeriodStatus.RENEW,
+                        persistResource(
+                            new BillingEvent.OneTime.Builder()
+                                .setReason(Reason.RENEW)
+                                .setTargetId("love.xn--q9jyb4c")
+                                .setClientId("TheRegistrar")
+                                .setCost(Money.of(USD, 456))
+                                .setPeriodYears(2)
+                                .setEventTime(DateTime.parse("1920-01-01T00:00:00Z"))
+                                .setBillingTime(DateTime.parse("1920-01-01T00:00:00Z"))
+                                .setParent(historyEntry)
+                                .build())),
+                    GracePeriod.create(
+                        GracePeriodStatus.TRANSFER,
+                        DateTime.parse("1920-01-01T00:00:00Z"),
+                        "foo",
+                        null)))
+            .setSubordinateHosts(ImmutableSet.of("home.by.horror.haunted"))
+            .setStatusValues(
+                ImmutableSet.of(
+                    StatusValue.CLIENT_DELETE_PROHIBITED,
+                    StatusValue.CLIENT_RENEW_PROHIBITED,
+                    StatusValue.CLIENT_TRANSFER_PROHIBITED,
+                    StatusValue.SERVER_UPDATE_PROHIBITED))
+            .setAutorenewBillingEvent(
+                Key.create(
+                    persistResource(
+                        new BillingEvent.Recurring.Builder()
+                            .setReason(Reason.RENEW)
+                            .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+                            .setTargetId("lol")
+                            .setClientId("TheRegistrar")
+                            .setEventTime(END_OF_TIME)
+                            .setRecurrenceEndTime(END_OF_TIME)
+                            .setParent(historyEntry)
+                            .build())))
+            .setAutorenewPollMessage(
+                Key.create(
+                    persistResource(
+                        new PollMessage.Autorenew.Builder()
+                            .setTargetId("lol")
+                            .setClientId("TheRegistrar")
+                            .setEventTime(END_OF_TIME)
+                            .setAutorenewEndTime(END_OF_TIME)
+                            .setMsg("Domain was auto-renewed.")
+                            .setParent(historyEntry)
+                            .build())))
+            .setTransferData(
+                new TransferData.Builder()
+                    .setGainingClientId("gaining")
+                    .setLosingClientId("losing")
+                    .setPendingTransferExpirationTime(DateTime.parse("1925-04-20T00:00:00Z"))
+                    .setServerApproveBillingEvent(Key.create(billingEvent))
+                    .setServerApproveAutorenewEvent(
+                        Key.create(
+                            persistResource(
+                                new BillingEvent.Recurring.Builder()
+                                    .setReason(Reason.RENEW)
+                                    .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+                                    .setTargetId("example.xn--q9jyb4c")
+                                    .setClientId("TheRegistrar")
+                                    .setEventTime(END_OF_TIME)
+                                    .setRecurrenceEndTime(END_OF_TIME)
+                                    .setParent(historyEntry)
+                                    .build())))
+                    .setServerApproveAutorenewPollMessage(
+                        Key.create(
+                            persistResource(
+                                new Autorenew.Builder()
+                                    .setTargetId("example.xn--q9jyb4c")
+                                    .setClientId("TheRegistrar")
+                                    .setEventTime(END_OF_TIME)
+                                    .setAutorenewEndTime(END_OF_TIME)
+                                    .setMsg("Domain was auto-renewed.")
+                                    .setParent(historyEntry)
+                                    .build())))
+                    .setServerApproveEntities(ImmutableSet.of(Key.create(billingEvent)))
+                    .setTransferRequestTime(DateTime.parse("1919-01-01T00:00:00Z"))
+                    .setTransferStatus(TransferStatus.PENDING)
+                    .setTransferredRegistrationExpirationTime(
+                        DateTime.parse("1931-01-01T00:00:00Z"))
+                    .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
+                    .build())
+            .build();
     clock.advanceOneMilli();
     return persistResource(domain);
   }

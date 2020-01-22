@@ -19,7 +19,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.Cursor.CursorType.BRDA;
 import static google.registry.model.common.Cursor.CursorType.RDE_STAGING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
 import static google.registry.rde.RdeFixtures.makeContactResource;
 import static google.registry.rde.RdeFixtures.makeDomainBase;
 import static google.registry.rde.RdeFixtures.makeHostResource;
@@ -27,7 +26,6 @@ import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.DatastoreHelper.persistResourceWithCommitLog;
 import static google.registry.testing.GcsTestingUtils.readGcsFile;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.testing.TaskQueueHelper.assertAtLeastOneTaskIsEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
@@ -35,6 +33,7 @@ import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.tldconfig.idn.IdnTableEnum.EXTENDED_LATIN;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertThrows;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.appengine.tools.cloudstorage.GcsService;
@@ -55,6 +54,7 @@ import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.RequestParameters;
+import google.registry.schema.cursor.CursorDao;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.FakeLockHandler;
@@ -848,7 +848,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   private void setCursor(
       final Registry registry, final CursorType cursorType, final DateTime value) {
     clock.advanceOneMilli();
-    tm().transact(() -> ofy().save().entity(Cursor.create(cursorType, value, registry)).now());
+    CursorDao.saveCursor(Cursor.create(cursorType, value, registry), registry.getTldStr());
   }
 
   public static <T> T unmarshal(Class<T> clazz, byte[] xml) throws XmlException {

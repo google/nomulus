@@ -16,7 +16,7 @@ package google.registry.rde;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.common.collect.ImmutableSetMultimap;
@@ -27,6 +27,7 @@ import google.registry.model.rde.RdeMode;
 import google.registry.model.registry.Registries;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
+import google.registry.schema.cursor.CursorDao;
 import google.registry.util.Clock;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -107,14 +108,14 @@ public final class PendingDepositChecker {
       final Registry registry,
       final CursorType cursorType,
       final DateTime initialValue) {
-    return tm()
-        .transact(
+    return tm().transact(
             () -> {
               Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, registry)).now();
               if (cursor != null) {
                 return cursor.getCursorTime();
               }
-              ofy().save().entity(Cursor.create(cursorType, initialValue, registry));
+              CursorDao.saveCursor(
+                  Cursor.create(cursorType, initialValue, registry), registry.getTldStr());
               return initialValue;
             });
   }

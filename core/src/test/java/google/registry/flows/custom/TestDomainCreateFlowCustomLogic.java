@@ -14,7 +14,7 @@
 
 package google.registry.flows.custom;
 
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import google.registry.flows.FlowMetadata;
 import google.registry.flows.SessionMetadata;

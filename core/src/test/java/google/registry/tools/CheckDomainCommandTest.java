@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
-import static google.registry.testing.JUnitBackports.assertThrows;
+import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import google.registry.model.registrar.Registrar.Type;

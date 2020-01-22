@@ -15,7 +15,7 @@
 package google.registry.schema.tld;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -66,10 +66,15 @@ public class PremiumListDao {
     jpaTm()
         .transact(
             () -> {
-              checkArgument(
-                  checkExists(premiumList.getName()),
-                  "Can't update non-existent premium list '%s'",
-                  premiumList.getName());
+              // This check is currently disabled because, during the Cloud SQL migration, we need
+              // to be able to update premium lists in Datastore while simultaneously creating their
+              // first revision in Cloud SQL (i.e. if they haven't been migrated over yet).
+              // TODO(b/147246613): Reinstate this once all premium lists are migrated to Cloud SQL,
+              //                 and re-enable the test update_throwsWhenListDoesntExist().
+              // checkArgument(
+              //     checkExists(premiumList.getName()),
+              //     "Can't update non-existent premium list '%s'",
+              //     premiumList.getName());
               jpaTm().getEntityManager().persist(premiumList);
             });
   }

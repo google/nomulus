@@ -55,12 +55,6 @@ by Joshua Bloch in his book Effective Java -->
     <property name="message" value="Use java.util.Optional instead of Guava's Optional."/>
   </module>
 
-  <!-- Checks that our backport JUnit exception assertion methods are used instead of the ones slated for release in JUnit 4.13. -->
-  <module name="RegexpSingleline">
-    <property name="format" value="org\.junit\.Assert\.(assert|expect)Throws"/>
-    <property name="message" value="Use the exception assertion methods in google.registry.testing.JUnitBackports instead of those in JUnit."/>
-  </module>
-
   <!-- Checks that the deprecated ExpectedException is not used. -->
   <module name="RegexpSingleline">
     <property name="format" value="org\.junit\.rules\.ExpectedException"/>

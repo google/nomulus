@@ -21,7 +21,7 @@ import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_NO_MESSAG
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.makePollMessageExternalId;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.parsePollMessageExternalId;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.googlecode.objectify.Key;

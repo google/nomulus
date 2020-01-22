@@ -15,7 +15,7 @@
 package google.registry.tools.params;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.JUnitBackports.assertThrows;
+import static org.junit.Assert.assertThrows;
 
 import org.joda.time.DateTime;
 import org.junit.Test;

@@ -24,9 +24,9 @@ import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistPremiumList;
 import static google.registry.testing.DatastoreHelper.persistSimpleResource;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.registrar.Registrar;
@@ -153,7 +153,8 @@ public final class OteAccountBuilderTest {
   public void testCreateOteEntities_setPassword() {
     OteAccountBuilder.forClientId("myclientid").setPassword("myPassword").buildAndPersist();
 
-    assertThat(Registrar.loadByClientId("myclientid-3").get().verifyPassword("myPassword")).isTrue();
+    assertThat(Registrar.loadByClientId("myclientid-3").get().verifyPassword("myPassword"))
+        .isTrue();
   }
 
   @Test
@@ -268,7 +269,8 @@ public final class OteAccountBuilderTest {
         .addContact("email@example.com")
         .buildAndPersist();
 
-    assertThat(Registrar.loadByClientId("myclientid-3").get().verifyPassword("oldPassword")).isTrue();
+    assertThat(Registrar.loadByClientId("myclientid-3").get().verifyPassword("oldPassword"))
+        .isTrue();
 
     OteAccountBuilder.forClientId("myclientid")
         .setPassword("newPassword")
@@ -278,7 +280,8 @@ public final class OteAccountBuilderTest {
 
     assertThat(Registrar.loadByClientId("myclientid-3").get().verifyPassword("oldPassword"))
         .isFalse();
-    assertThat(Registrar.loadByClientId("myclientid-3").get().verifyPassword("newPassword")).isTrue();
+    assertThat(Registrar.loadByClientId("myclientid-3").get().verifyPassword("newPassword"))
+        .isTrue();
   }
 
   @Test

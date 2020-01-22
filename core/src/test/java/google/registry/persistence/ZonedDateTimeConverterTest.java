@@ -15,11 +15,11 @@
 package google.registry.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import google.registry.model.ImmutableObject;
-import google.registry.model.transaction.JpaTestRules;
-import google.registry.model.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZonedDateTime;

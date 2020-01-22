@@ -30,7 +30,7 @@ import static google.registry.model.ResourceTransferUtils.createTransferResponse
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.registry.label.PremiumListUtils.parentPremiumListEntriesOnRevision;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.difference;
 import static google.registry.util.CollectionUtils.union;
@@ -399,7 +399,6 @@ public class DatastoreHelper {
       String clientId,
       DateTime requestTime,
       DateTime expirationTime,
-      DateTime now,
       @Nullable DateTime extendedRegistrationExpirationTime) {
     TransferData transferData =
         createTransferDataBuilder(requestTime, expirationTime)
@@ -409,7 +408,7 @@ public class DatastoreHelper {
         .setClientId(clientId)
         .setEventTime(expirationTime)
         .setMsg("Transfer server approved.")
-        .setResponseData(ImmutableList.of(createTransferResponse(resource, transferData, now)))
+        .setResponseData(ImmutableList.of(createTransferResponse(resource, transferData)))
         .setParent(historyEntry)
         .build();
   }
@@ -458,7 +457,6 @@ public class DatastoreHelper {
                             "NewRegistrar",
                             requestTime,
                             expirationTime,
-                            now,
                             null))),
                     Key.create(persistResource(
                         createPollMessageForImplicitTransfer(
@@ -467,7 +465,6 @@ public class DatastoreHelper {
                             "TheRegistrar",
                             requestTime,
                             expirationTime,
-                            now,
                             null)))))
                 .setTransferRequestTrid(Trid.create("transferClient-trid", "transferServer-trid"))
                 .build())
@@ -538,8 +535,7 @@ public class DatastoreHelper {
       DomainBase domain,
       DateTime requestTime,
       DateTime expirationTime,
-      DateTime extendedRegistrationExpirationTime,
-      DateTime now) {
+      DateTime extendedRegistrationExpirationTime) {
     HistoryEntry historyEntryDomainTransfer = persistResource(
         new HistoryEntry.Builder()
             .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
@@ -608,7 +604,6 @@ public class DatastoreHelper {
                         "NewRegistrar",
                         requestTime,
                         expirationTime,
-                        now,
                         extendedRegistrationExpirationTime))),
                 Key.create(persistResource(
                     createPollMessageForImplicitTransfer(
@@ -617,7 +612,6 @@ public class DatastoreHelper {
                         "TheRegistrar",
                         requestTime,
                         expirationTime,
-                        now,
                         extendedRegistrationExpirationTime)))))
             .setTransferRequestTrid(Trid.create("transferClient-trid", "transferServer-trid"))
             .build())

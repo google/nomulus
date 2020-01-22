@@ -102,6 +102,7 @@ artifacts:
     - 'release/cloudbuild-tag.yaml'
     - 'release/cloudbuild-sync.yaml'
     - 'release/cloudbuild-deploy-*.yaml'
+    - 'release/cloudbuild-schema-deploy-*.yaml'
 
 timeout: 3600s
 options:

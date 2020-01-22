@@ -19,8 +19,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.registrar.Registrar.loadByClientId;
 import static google.registry.testing.DatastoreHelper.persistPremiumList;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 

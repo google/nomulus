@@ -52,7 +52,8 @@ class DockerWebDriverRule extends ExternalResource {
       url =
           new URL(
               String.format(
-                  "http://localhost:%d/wd/hub",
+                  "http://%s:%d/wd/hub",
+                  container.getContainerIpAddress(),
                   container.getMappedPort(CHROME_DRIVER_SERVICE_PORT)));
     } catch (MalformedURLException e) {
       throw new IllegalArgumentException(e);

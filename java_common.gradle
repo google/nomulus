@@ -121,6 +121,11 @@ spotless {
   }
 }
 
+jacocoTestReport {
+    // Use coverage data from all tests tasks, not just the one named 'test'.
+    getExecutionData().setFrom(fileTree(buildDir).include("/jacoco/*.exec"))
+}
+
 // Initialize for coverage minimum determination for each sub project.
 task initCoverageMinimums {
   // Use current coverage ratio of each subproject as placeholder value.

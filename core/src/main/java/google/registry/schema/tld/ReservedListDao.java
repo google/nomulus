@@ -14,7 +14,11 @@
 
 package google.registry.schema.tld;
 
-import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+
+import com.google.common.util.concurrent.UncheckedExecutionException;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 /** Data access object class for {@link ReservedList} */
 public class ReservedListDao {
@@ -41,6 +45,39 @@ public class ReservedListDao {
                         .getResultList()
                         .size()
                     > 0);
+  }
+
+  /**
+   * Returns the most recent revision of the {@link ReservedList} with the specified name, if it
+   * exists. TODO(shicong): Change this method to package level access after dual-read phase.
+   */
+  public static Optional<ReservedList> getLatestRevision(String reservedListName) {
+    return jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .getEntityManager()
+                    .createQuery(
+                        "FROM ReservedList rl LEFT JOIN FETCH rl.labelsToReservations WHERE"
+                            + " rl.revisionId IN (SELECT MAX(revisionId) FROM ReservedList subrl"
+                            + " WHERE subrl.name = :name)",
+                        ReservedList.class)
+                    .setParameter("name", reservedListName)
+                    .getResultStream()
+                    .findFirst());
+  }
+
+  /**
+   * Returns the most recent revision of the {@link ReservedList} with the specified name, from
+   * cache.
+   */
+  public static Optional<ReservedList> getLatestRevisionCached(String reservedListName) {
+    try {
+      return ReservedListCache.cacheReservedLists.get(reservedListName);
+    } catch (ExecutionException e) {
+      throw new UncheckedExecutionException(
+          "Could not retrieve reserved list named " + reservedListName, e);
+    }
   }
 
   private ReservedListDao() {}

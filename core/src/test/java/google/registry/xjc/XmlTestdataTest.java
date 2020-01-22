@@ -15,9 +15,9 @@
 package google.registry.xjc;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.xjc.XjcXmlTransformer.unmarshal;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertThrows;
 
 import google.registry.testing.TestDataHelper;
 import google.registry.xjc.epp.XjcEpp;

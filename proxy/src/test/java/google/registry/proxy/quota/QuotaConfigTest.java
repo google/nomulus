@@ -15,8 +15,8 @@
 package google.registry.proxy.quota;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.JUnitBackports.assertThrows;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
+import static org.junit.Assert.assertThrows;
 
 import google.registry.proxy.ProxyConfig.Quota;
 import org.joda.time.Duration;

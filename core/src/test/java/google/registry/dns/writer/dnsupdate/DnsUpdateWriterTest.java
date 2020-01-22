@@ -26,7 +26,7 @@ import static google.registry.testing.DatastoreHelper.persistActiveSubordinateHo
 import static google.registry.testing.DatastoreHelper.persistDeletedDomain;
 import static google.registry.testing.DatastoreHelper.persistDeletedHost;
 import static google.registry.testing.DatastoreHelper.persistResource;
-import static google.registry.testing.JUnitBackports.assertThrows;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -378,6 +378,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
+  @SuppressWarnings("AssertThrowsMultipleStatements")
   public void testPublishDomainFails_whenDnsUpdateReturnsError() throws Exception {
     DomainBase domain =
         persistActiveDomain("example.tld")
@@ -397,6 +398,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
+  @SuppressWarnings("AssertThrowsMultipleStatements")
   public void testPublishHostFails_whenDnsUpdateReturnsError() throws Exception {
     HostResource host =
         persistActiveSubordinateHost("ns1.example.tld", persistActiveDomain("example.tld"))

@@ -30,7 +30,6 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.transfer.TransferData;
-import google.registry.model.transfer.TransferStatus;
 import google.registry.util.Idn;
 import google.registry.xjc.domain.XjcDomainContactAttrType;
 import google.registry.xjc.domain.XjcDomainContactType;
@@ -45,7 +44,6 @@ import google.registry.xjc.rgp.XjcRgpStatusType;
 import google.registry.xjc.rgp.XjcRgpStatusValueType;
 import google.registry.xjc.secdns.XjcSecdnsDsDataType;
 import google.registry.xjc.secdns.XjcSecdnsDsOrKeyType;
-import org.joda.time.DateTime;
 
 /** Utility class that turns {@link DomainBase} as {@link XjcRdeDomainElement}. */
 final class DomainBaseToXjcConverter {
@@ -241,8 +239,7 @@ final class DomainBaseToXjcConverter {
           // empty transfer records to get generated for deleted domains.
           // TODO(b/33289763): remove the hasGainingAndLosingRegistrars check in February 2017
           if (hasGainingAndLosingRegistrars(model)) {
-            bean.setTrnData(convertTransferData(model.getTransferData(),
-                model.getRegistrationExpirationTime()));
+            bean.setTrnData(convertTransferData(model.getTransferData()));
           }
         }
 
@@ -261,8 +258,7 @@ final class DomainBaseToXjcConverter {
   }
 
   /** Converts {@link TransferData} to {@link XjcRdeDomainTransferDataType}. */
-  private static XjcRdeDomainTransferDataType convertTransferData(
-      TransferData model, DateTime domainExpires) {
+  private static XjcRdeDomainTransferDataType convertTransferData(TransferData model) {
     XjcRdeDomainTransferDataType bean = new XjcRdeDomainTransferDataType();
     bean.setTrStatus(
         XjcEppcomTrStatusType.fromValue(model.getTransferStatus().getXmlName()));
@@ -270,12 +266,7 @@ final class DomainBaseToXjcConverter {
     bean.setAcRr(RdeUtil.makeXjcRdeRrType(model.getLosingClientId()));
     bean.setReDate(model.getTransferRequestTime());
     bean.setAcDate(model.getPendingTransferExpirationTime());
-    // TODO(b/25084229): fix exDate computation logic.
-    if (model.getTransferStatus() == TransferStatus.PENDING) {
-      bean.setExDate(domainExpires.plusYears(1));
-    } else {
-      bean.setExDate(domainExpires);
-    }
+    bean.setExDate(model.getTransferredRegistrationExpirationTime());
     return bean;
   }
 
