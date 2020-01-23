@@ -27,8 +27,9 @@ import java.util.Set;
 import javax.persistence.Entity;
 import org.junit.rules.ExternalResource;
 
-/* Checks for JPA {@link Entity entities} that are declared in persistence.xml
- * but not persisted in integration tests.
+/**
+ * Checks for JPA {@link Entity entities} that are declared in persistence.xml but not persisted in
+ * integration tests.
  */
 public class JpaEntityCoverage extends ExternalResource {
 
@@ -49,7 +50,7 @@ public class JpaEntityCoverage extends ExternalResource {
           .collect(ImmutableSet.toImmutableSet());
   private static final Set<Class> allCoveredJpaEntities = Sets.newHashSet();
   // Map of test class name to boolean flag indicating if it tests any JPA entities.
-  private static final Map<String, Boolean> testClassRelevance = Maps.newHashMap();
+  private static final Map<String, Boolean> testsJpaEntities = Maps.newHashMap();
 
   // Provides class name of the test being executed.
   private final TestCaseWatcher watcher;
@@ -60,7 +61,7 @@ public class JpaEntityCoverage extends ExternalResource {
 
   @Override
   public void before() {
-    testClassRelevance.putIfAbsent(watcher.getTestClass(), false);
+    testsJpaEntities.putIfAbsent(watcher.getTestClass(), false);
   }
 
   @Override
@@ -70,13 +71,13 @@ public class JpaEntityCoverage extends ExternalResource {
         .forEach(
             entity -> {
               allCoveredJpaEntities.add(entity);
-              testClassRelevance.put(watcher.getTestClass(), true);
+              testsJpaEntities.put(watcher.getTestClass(), true);
             });
   }
 
   public static void init() {
     allCoveredJpaEntities.clear();
-    testClassRelevance.clear();
+    testsJpaEntities.clear();
   }
 
   public static Set<Class> getUncoveredEntities() {
@@ -84,7 +85,7 @@ public class JpaEntityCoverage extends ExternalResource {
   }
 
   public static ImmutableList<String> getIrrelevantTestClasses() {
-    return testClassRelevance.entrySet().stream()
+    return testsJpaEntities.entrySet().stream()
         .filter(e -> !e.getValue())
         .map(Map.Entry::getKey)
         .collect(ImmutableList.toImmutableList());

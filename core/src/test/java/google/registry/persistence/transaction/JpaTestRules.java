@@ -77,8 +77,8 @@ public class JpaTestRules {
    * the declare JPA entities (in persistence.xml).
    *
    * <p>It is enforced through tests that all test classes using this rule must be included in the
-   * {@code SqlIntegrationTestSuite}. For the sake of efficiencies, end-to-end tests that mainly
-   * tests non-database functionalities should not use this rule.
+   * {@code SqlIntegrationTestSuite}. For the sake of efficiency, end-to-end tests that mainly test
+   * non-database functionalities should not use this rule.
    */
   public static final class JpaIntegrationWithCoverageRule implements TestRule {
     private final RuleChain ruleChain;
