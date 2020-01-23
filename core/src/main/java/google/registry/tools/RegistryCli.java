@@ -212,8 +212,6 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
     }
 
     // CommandWithRemoteApis need to have the remote api installed to work.
-    // CommandWithCloudSql extends CommandWithRemoteApi so the command will also get the remote
-    // api installed. This is because the DB password is stored in Datastore.
     if (command instanceof CommandWithRemoteApi) {
       if (installer == null) {
         installer = new RemoteApiInstaller();
@@ -235,9 +233,10 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
       // Make sure we start the command with a clean cache, so that any previous command won't
       // interfere with this one.
       ofy().clearSessionCache();
-    }
 
-    if (command instanceof CommandWithCloudSql) {
+      // Enable Cloud SQL for command that needs remote API as they will very likely use
+      // Cloud SQL after the database migration. Note that the DB password is stored in Datastore
+      // and it is already initialized above.
       RegistryToolEnvironment.get().enableJpaTm();
     }
 
