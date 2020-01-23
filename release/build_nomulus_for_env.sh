@@ -17,6 +17,8 @@
 # artifacts for all services to a designated location, and then creates a
 # tarball from there.
 
+set -e
+
 if [ $# -ne 2 ];
 then
   echo "Usage: $0 alpha|crash|sandbox|production|tool <destination>"
