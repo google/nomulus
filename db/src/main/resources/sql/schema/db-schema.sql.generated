@@ -50,13 +50,9 @@
         deletion_time timestamptz,
         last_epp_update_client_id text,
         last_epp_update_time timestamptz,
-        revisions bytea,
         status text[],
         auth_info_repo_id text,
         auth_info_value text,
-        autorenew_billing_event bytea,
-        autorenew_poll_message bytea,
-        delete_poll_message bytea,
         fully_qualified_domain_name text,
         idn_table_name text,
         last_transfer_time timestamptz,
@@ -66,36 +62,9 @@
         launch_notice_validator_id text,
         registration_expiration_time timestamptz,
         smd_id text,
+        subordinate_hosts text[],
         tld text,
-        transfer_data_server_approve_autorenrew_event bytea,
-        transfer_data_server_approve_autorenrew_poll_message bytea,
-        transfer_data_server_approve_billing_event bytea,
-        unit int4,
-        value int4,
-        client_transaction_id text,
-        server_transaction_id text,
-        transfer_data_registration_expiration_time timestamptz,
-        gaining_client_id text,
-        losing_client_id text,
-        pending_transfer_expiration_time timestamptz,
-        transfer_request_time timestamptz,
-        transfer_status int4,
         primary key (repo_id)
-    );
-
-    create table "DomainBase_nsHosts" (
-       domain_base_repo_id text not null,
-        ns_hosts bytea
-    );
-
-    create table "DomainBase_serverApproveEntities" (
-       domain_base_repo_id text not null,
-        transfer_data_server_approve_entities bytea
-    );
-
-    create table "DomainBase_subordinateHosts" (
-       domain_base_repo_id text not null,
-        subordinate_hosts text
     );
 
     create table "GracePeriod" (
@@ -155,6 +124,11 @@
         should_publish boolean not null,
         primary key (revision_id)
     );
+create index IDX8nr0ke9mrrx4ewj6pd2ag4rmr on "Domain" (creation_time);
+create index IDX8ffrqm27qtj20jac056j7yq07 on "Domain" (current_sponsor_client_id);
+create index IDX5mnf0wn20tno4b9do88j61klr on "Domain" (deletion_time);
+create index IDX1rcgkdd777bpvj0r94sltwd5y on "Domain" (fully_qualified_domain_name);
+create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
 create index premiumlist_name_idx on "PremiumList" (name);
 create index idx_registry_lock_verification_code on "RegistryLock" (verification_code);
 create index idx_registry_lock_registrar_id on "RegistryLock" (registrar_id);
@@ -167,21 +141,6 @@ create index reservedlist_name_idx on "ReservedList" (name);
        add constraint FK6sc6at5hedffc0nhdcab6ivuq 
        foreign key (revision_id) 
        references "ClaimsList";
-
-    alter table if exists "DomainBase_nsHosts" 
-       add constraint FKow28763fcl1ilx8unxrfjtbja 
-       foreign key (domain_base_repo_id) 
-       references "Domain";
-
-    alter table if exists "DomainBase_serverApproveEntities" 
-       add constraint FK7vuyqcsmcfvpv5648femoxien 
-       foreign key (domain_base_repo_id) 
-       references "Domain";
-
-    alter table if exists "DomainBase_subordinateHosts" 
-       add constraint FKkva2lb57ri8qf39hthcej538k 
-       foreign key (domain_base_repo_id) 
-       references "Domain";
 
     alter table if exists "PremiumEntry" 
        add constraint FKo0gw90lpo1tuee56l0nb6y6g5 

@@ -21,22 +21,14 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
-import google.registry.model.billing.BillingEvent;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.launch.LaunchNotice;
-import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostResource;
-import google.registry.model.poll.PollMessage;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transaction.JpaTestRules;
 import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
-import google.registry.model.transfer.TransferData;
-import google.registry.model.transfer.TransferStatus;
 import javax.persistence.EntityManager;
 import org.junit.Before;
 import org.junit.Rule;
@@ -58,18 +50,8 @@ public class DomainBaseSqlTest extends EntityTestCase {
 
   @Before
   public void setUp() {
-    Key<HistoryEntry> historyEntryKey = Key.create(HistoryEntry.class, "history");
     contactKey = Key.create(ContactResource.class, "contact_id1");
     contact2Key = Key.create(ContactResource.class, "contact_id2");
-    Key<HostResource> hostKey = Key.create(HostResource.class, "host1");
-    Key<BillingEvent.OneTime> oneTimeBillKey =
-        Key.create(historyEntryKey, BillingEvent.OneTime.class, 1);
-    Key<BillingEvent.Recurring> recurringBillKey =
-        Key.create(historyEntryKey, BillingEvent.Recurring.class, 2);
-    Key<PollMessage.Autorenew> autorenewPollKey =
-        Key.create(historyEntryKey, PollMessage.Autorenew.class, 3);
-    Key<PollMessage.OneTime> onetimePollKey =
-        Key.create(historyEntryKey, PollMessage.OneTime.class, 1);
 
     domain =
         new DomainBase.Builder()
@@ -89,7 +71,6 @@ public class DomainBaseSqlTest extends EntityTestCase {
                     StatusValue.SERVER_HOLD))
             .setRegistrant(contactKey)
             .setContacts(ImmutableSet.of(DesignatedContact.create(Type.ADMIN, contact2Key)))
-            .setNameservers(ImmutableSet.of(hostKey))
             .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
             .setPersistedCurrentSponsorClientId("losing")
             .setRegistrationExpirationTime(clock.nowUtc().plusYears(1))
@@ -97,28 +78,7 @@ public class DomainBaseSqlTest extends EntityTestCase {
             .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
             .setLaunchNotice(
                 LaunchNotice.create("tcnid", "validatorId", START_OF_TIME, START_OF_TIME))
-            .setTransferData(
-                new TransferData.Builder()
-                    .setGainingClientId("gaining")
-                    .setLosingClientId("losing")
-                    .setPendingTransferExpirationTime(clock.nowUtc())
-                    .setServerApproveEntities(
-                        ImmutableSet.of(oneTimeBillKey, recurringBillKey, autorenewPollKey))
-                    .setServerApproveBillingEvent(oneTimeBillKey)
-                    .setServerApproveAutorenewEvent(recurringBillKey)
-                    .setServerApproveAutorenewPollMessage(autorenewPollKey)
-                    .setTransferRequestTime(clock.nowUtc().plusDays(1))
-                    .setTransferStatus(TransferStatus.SERVER_APPROVED)
-                    .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
-                    .setTransferredRegistrationExpirationTime(clock.nowUtc().plusYears(2))
-                    .build())
-            .setDeletePollMessage(onetimePollKey)
-            .setAutorenewBillingEvent(recurringBillKey)
-            .setAutorenewPollMessage(autorenewPollKey)
             .setSmdId("smdid")
-            .addGracePeriod(
-                GracePeriod.create(
-                    GracePeriodStatus.ADD, clock.nowUtc().plusDays(1), "registrar", null))
             .build();
   }
 
@@ -149,9 +109,6 @@ public class DomainBaseSqlTest extends EntityTestCase {
                       .setDsData(
                           ImmutableSet.of(
                               DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
-                      .addGracePeriod(
-                          GracePeriod.create(
-                              GracePeriodStatus.ADD, clock.nowUtc().plusDays(1), "registrar", null))
                       .build();
 
               // Fix the original creation timestamp (this gets initialized on first write)

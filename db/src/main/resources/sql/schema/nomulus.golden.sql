@@ -99,13 +99,9 @@ CREATE TABLE public."Domain" (
     deletion_time timestamp with time zone,
     last_epp_update_client_id text,
     last_epp_update_time timestamp with time zone,
-    revisions bytea,
     status text[],
     auth_info_repo_id text,
     auth_info_value text,
-    autorenew_billing_event bytea,
-    autorenew_poll_message bytea,
-    delete_poll_message bytea,
     fully_qualified_domain_name text,
     idn_table_name text,
     last_transfer_time timestamp with time zone,
@@ -115,50 +111,8 @@ CREATE TABLE public."Domain" (
     launch_notice_validator_id text,
     registration_expiration_time timestamp with time zone,
     smd_id text,
-    tld text,
-    transfer_data_server_approve_autorenrew_event bytea,
-    transfer_data_server_approve_autorenrew_poll_message bytea,
-    transfer_data_server_approve_billing_event bytea,
-    unit integer,
-    value integer,
-    client_transaction_id text,
-    server_transaction_id text,
-    transfer_data_registration_expiration_time timestamp with time zone,
-    gaining_client_id text,
-    losing_client_id text,
-    pending_transfer_expiration_time timestamp with time zone,
-    transfer_request_time timestamp with time zone,
-    transfer_status integer
-);
-
-
---
--- Name: DomainBase_nsHosts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."DomainBase_nsHosts" (
-    domain_base_repo_id text NOT NULL,
-    ns_hosts bytea
-);
-
-
---
--- Name: DomainBase_serverApproveEntities; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."DomainBase_serverApproveEntities" (
-    domain_base_repo_id text NOT NULL,
-    transfer_data_server_approve_entities bytea
-);
-
-
---
--- Name: DomainBase_subordinateHosts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."DomainBase_subordinateHosts" (
-    domain_base_repo_id text NOT NULL,
-    subordinate_hosts text
+    subordinate_hosts text[],
+    tld text
 );
 
 
@@ -396,6 +350,34 @@ ALTER TABLE ONLY public."RegistryLock"
 
 
 --
+-- Name: idx1rcgkdd777bpvj0r94sltwd5y; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx1rcgkdd777bpvj0r94sltwd5y ON public."Domain" USING btree (fully_qualified_domain_name);
+
+
+--
+-- Name: idx5mnf0wn20tno4b9do88j61klr; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx5mnf0wn20tno4b9do88j61klr ON public."Domain" USING btree (deletion_time);
+
+
+--
+-- Name: idx8ffrqm27qtj20jac056j7yq07; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx8ffrqm27qtj20jac056j7yq07 ON public."Domain" USING btree (current_sponsor_client_id);
+
+
+--
+-- Name: idx8nr0ke9mrrx4ewj6pd2ag4rmr; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx8nr0ke9mrrx4ewj6pd2ag4rmr ON public."Domain" USING btree (creation_time);
+
+
+--
 -- Name: idx_registry_lock_registrar_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -407,6 +389,13 @@ CREATE INDEX idx_registry_lock_registrar_id ON public."RegistryLock" USING btree
 --
 
 CREATE INDEX idx_registry_lock_verification_code ON public."RegistryLock" USING btree (verification_code);
+
+
+--
+-- Name: idxrwl38wwkli1j7gkvtywi9jokq; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxrwl38wwkli1j7gkvtywi9jokq ON public."Domain" USING btree (tld);
 
 
 --
@@ -432,14 +421,6 @@ ALTER TABLE ONLY public."ClaimsEntry"
 
 
 --
--- Name: DomainBase_serverApproveEntities fk7vuyqcsmcfvpv5648femoxien; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."DomainBase_serverApproveEntities"
-    ADD CONSTRAINT fk7vuyqcsmcfvpv5648femoxien FOREIGN KEY (domain_base_repo_id) REFERENCES public."Domain"(repo_id);
-
-
---
 -- Name: ReservedEntry fkgq03rk0bt1hb915dnyvd3vnfc; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -448,27 +429,11 @@ ALTER TABLE ONLY public."ReservedEntry"
 
 
 --
--- Name: DomainBase_subordinateHosts fkkva2lb57ri8qf39hthcej538k; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."DomainBase_subordinateHosts"
-    ADD CONSTRAINT fkkva2lb57ri8qf39hthcej538k FOREIGN KEY (domain_base_repo_id) REFERENCES public."Domain"(repo_id);
-
-
---
 -- Name: PremiumEntry fko0gw90lpo1tuee56l0nb6y6g5; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."PremiumEntry"
     ADD CONSTRAINT fko0gw90lpo1tuee56l0nb6y6g5 FOREIGN KEY (revision_id) REFERENCES public."PremiumList"(revision_id);
-
-
---
--- Name: DomainBase_nsHosts fkow28763fcl1ilx8unxrfjtbja; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."DomainBase_nsHosts"
-    ADD CONSTRAINT fkow28763fcl1ilx8unxrfjtbja FOREIGN KEY (domain_base_repo_id) REFERENCES public."Domain"(repo_id);
 
 
 --

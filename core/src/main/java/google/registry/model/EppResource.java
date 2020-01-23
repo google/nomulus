@@ -51,6 +51,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.Transient;
 import org.hibernate.annotations.Type;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -126,6 +127,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
    *
    * @see google.registry.model.translators.CommitLogRevisionsTranslatorFactory
    */
+  @Transient
   ImmutableSortedMap<DateTime, Key<CommitLogManifest>> revisions = ImmutableSortedMap.of();
 
   public final String getRepoId() {
