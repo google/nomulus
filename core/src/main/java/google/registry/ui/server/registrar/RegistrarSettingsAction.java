@@ -21,7 +21,7 @@ import static com.google.common.collect.Sets.difference;
 import static google.registry.config.RegistryEnvironment.PRODUCTION;
 import static google.registry.export.sheet.SyncRegistrarsSheetAction.enqueueRegistrarSheetSync;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.security.JsonResponseHelper.Status.ERROR;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;

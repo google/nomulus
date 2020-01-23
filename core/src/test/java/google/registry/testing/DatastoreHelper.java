@@ -30,7 +30,7 @@ import static google.registry.model.ResourceTransferUtils.createTransferResponse
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.registry.label.PremiumListUtils.parentPremiumListEntriesOnRevision;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.difference;
 import static google.registry.util.CollectionUtils.union;
@@ -948,7 +948,7 @@ public class DatastoreHelper {
    * Returns all of the history entries that are parented off the given EppResource with the given
    * type.
    */
-  public static List<HistoryEntry> getHistoryEntriesOfType(
+  public static ImmutableList<HistoryEntry> getHistoryEntriesOfType(
       EppResource resource, final HistoryEntry.Type type) {
     return getHistoryEntries(resource)
         .stream()

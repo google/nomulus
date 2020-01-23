@@ -13,7 +13,7 @@
 // limitations under the License.
 package google.registry.persistence;
 
-import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.util.DateTimeUtils;

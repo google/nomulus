@@ -15,7 +15,7 @@
 package google.registry.model.server;
 
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;

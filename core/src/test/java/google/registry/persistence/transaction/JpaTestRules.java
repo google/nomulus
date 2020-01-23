@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.transaction;
+package google.registry.persistence.transaction;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -30,6 +30,7 @@ import java.util.Optional;
  * JpaTransactionManager} instances.
  */
 public class JpaTestRules {
+
   private static final String GOLDEN_SCHEMA_SQL_PATH = "sql/schema/nomulus.golden.sql";
 
   /**

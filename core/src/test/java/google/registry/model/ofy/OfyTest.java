@@ -20,7 +20,7 @@ import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterrup
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.ofy.Ofy.getBaseEntityClassFromEntityOrKey;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.newContactResource;
 import static google.registry.testing.DatastoreHelper.persistActiveContact;

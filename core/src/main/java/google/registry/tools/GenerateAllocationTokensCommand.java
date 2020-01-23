@@ -21,7 +21,7 @@ import static com.google.common.collect.Sets.difference;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.StringGenerator.DEFAULT_PASSWORD_LENGTH;
 import static java.nio.charset.StandardCharsets.UTF_8;

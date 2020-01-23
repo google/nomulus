@@ -22,16 +22,23 @@ import static google.registry.util.CollectionUtils.findDuplicates;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.base.Joiner;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.schema.domain.RegistryLock;
+import google.registry.util.Clock;
 import java.util.List;
 import javax.inject.Inject;
 
 /** Shared base class for commands to registry lock or unlock a domain via EPP. */
-public abstract class LockOrUnlockDomainCommand extends MutatingEppToolCommand {
+public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
+    implements CommandWithCloudSql {
 
-  protected static final ImmutableSet<StatusValue> REGISTRY_LOCK_STATUSES =
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  static final ImmutableSet<StatusValue> REGISTRY_LOCK_STATUSES =
       ImmutableSet.of(
           SERVER_DELETE_PROHIBITED, SERVER_TRANSFER_PROHIBITED, SERVER_UPDATE_PROHIBITED);
 
@@ -48,23 +55,52 @@ public abstract class LockOrUnlockDomainCommand extends MutatingEppToolCommand {
   @Config("registryAdminClientId")
   String registryAdminClientId;
 
+  @Inject Clock clock;
+
+  protected ImmutableSet<String> relevantDomains = ImmutableSet.of();
+
   protected ImmutableSet<String> getDomains() {
     return ImmutableSet.copyOf(mainParameters);
   }
 
   @Override
-  protected void initEppToolCommand() throws Exception {
-    // Superuser status is required to update registry lock statuses.
-    superuser = true;
-
+  protected void init() {
     // Default clientId to the registry registrar account if otherwise unspecified.
     if (clientId == null) {
       clientId = registryAdminClientId;
     }
     String duplicates = Joiner.on(", ").join(findDuplicates(mainParameters));
     checkArgument(duplicates.isEmpty(), "Duplicate domain arguments found: '%s'", duplicates);
-    initMutatingEppToolCommand();
     System.out.println(
         "== ENSURE THAT YOU HAVE AUTHENTICATED THE REGISTRAR BEFORE RUNNING THIS COMMAND ==");
+    relevantDomains = getRelevantDomains();
   }
+
+  @Override
+  protected String execute() {
+    int failures = 0;
+    for (String domain : relevantDomains) {
+      try {
+        RegistryLock lock = createLock(domain);
+        finalizeLockOrUnlockRequest(lock);
+      } catch (Throwable t) {
+        Throwable rootCause = Throwables.getRootCause(t);
+        logger.atSevere().withCause(rootCause).log("Error when (un)locking domain %s.", domain);
+        failures++;
+      }
+    }
+    if (failures == 0) {
+      return String.format("Successfully locked/unlocked %d domains.", relevantDomains.size());
+    } else {
+      return String.format(
+          "Successfully locked/unlocked %d domains with %d failures.",
+          relevantDomains.size() - failures, failures);
+    }
+  }
+
+  protected abstract ImmutableSet<String> getRelevantDomains();
+
+  protected abstract RegistryLock createLock(String domain);
+
+  protected abstract void finalizeLockOrUnlockRequest(RegistryLock lock);
 }

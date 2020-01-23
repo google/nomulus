@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
-import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
 import java.lang.reflect.Field;

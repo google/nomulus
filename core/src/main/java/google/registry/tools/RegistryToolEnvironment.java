@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.config.RegistryEnvironment;
 import google.registry.config.SystemPropertySetter;
+import google.registry.persistence.transaction.TransactionManagerFactory;
 
 /** Enum of production environments, used for the {@code --environment} flag. */
 public enum RegistryToolEnvironment {
@@ -113,7 +114,7 @@ public enum RegistryToolEnvironment {
 
   /**
    * Returns true if the JpaTransactionManager is enabled. Note that JpaTm is actually enabled in
-   * {@link google.registry.model.transaction.TransactionManagerFactory} by reading this flag.
+   * {@link TransactionManagerFactory} by reading this flag.
    */
   public static boolean isJpaTmEnabled() {
     return isJpaTmEnabled;

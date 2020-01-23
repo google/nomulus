@@ -62,6 +62,7 @@ public class SyncRegistrarsSheetTest {
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
   @Rule public final InjectRule inject = new InjectRule();
 
+
   @Captor private ArgumentCaptor<ImmutableList<ImmutableMap<String, String>>> rowsCaptor;
   @Mock private SheetSynchronizer sheetSynchronizer;
 

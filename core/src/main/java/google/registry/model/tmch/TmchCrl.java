@@ -16,7 +16,7 @@ package google.registry.model.tmch;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.annotations.NotBackedUp;

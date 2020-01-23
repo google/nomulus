@@ -19,7 +19,7 @@ import static com.google.common.base.Verify.verify;
 import static com.google.common.base.Verify.verifyNotNull;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.rde.RdeNamingUtils.makePartialName;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.base.VerifyException;
 import com.googlecode.objectify.annotation.Entity;

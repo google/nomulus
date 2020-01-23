@@ -31,7 +31,7 @@ import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registries.assertTldsExist;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
 import static google.registry.util.PasswordUtils.SALT_SUPPLIER;

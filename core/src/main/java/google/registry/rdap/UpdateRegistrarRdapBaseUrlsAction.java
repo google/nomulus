@@ -17,7 +17,7 @@ package google.registry.rdap;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.api.client.http.GenericUrl;

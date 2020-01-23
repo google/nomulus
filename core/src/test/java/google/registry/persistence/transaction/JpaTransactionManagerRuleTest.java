@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.transaction;
+package google.registry.persistence.transaction;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static org.junit.Assert.assertThrows;
 
 import google.registry.model.ImmutableObject;
-import google.registry.model.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import google.registry.schema.tmch.ClaimsList;
 import java.util.List;
 import javax.persistence.Entity;

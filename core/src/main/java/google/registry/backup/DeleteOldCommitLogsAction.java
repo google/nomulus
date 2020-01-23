@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.mapreduce.MapreduceRunner.PARAM_DRY_RUN;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 

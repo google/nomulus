@@ -19,7 +19,7 @@ import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.EppResourceUtils.queryForLinkedDomains;
 import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;

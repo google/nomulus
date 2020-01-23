@@ -15,7 +15,7 @@
 package google.registry.schema.tld;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
 import com.google.common.util.concurrent.UncheckedExecutionException;

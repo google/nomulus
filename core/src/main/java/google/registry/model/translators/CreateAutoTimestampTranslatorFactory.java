@@ -15,7 +15,7 @@
 package google.registry.model.translators;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
-import static google.registry.model.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.model.CreateAutoTimestamp;

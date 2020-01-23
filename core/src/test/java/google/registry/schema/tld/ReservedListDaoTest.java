@@ -15,12 +15,12 @@
 package google.registry.schema.tld;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.registry.label.ReservationType;
-import google.registry.model.transaction.JpaTestRules;
-import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.schema.tld.ReservedList.ReservedEntry;
 import org.junit.Rule;
 import org.junit.Test;

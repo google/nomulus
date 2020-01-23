@@ -14,25 +14,19 @@
 
 package google.registry.tools;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameters;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
-import com.google.template.soy.data.SoyMapData;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.tools.soy.DomainUpdateSoyInfo;
-import java.util.Optional;
+import google.registry.schema.domain.RegistryLock;
 import org.joda.time.DateTime;
 
 /**
- * A command to registry lock domain names via EPP.
+ * A command to registry lock domain names.
  *
  * <p>A registry lock consists of server-side statuses preventing deletes, updates, and transfers.
  */
@@ -42,41 +36,35 @@ public class LockDomainCommand extends LockOrUnlockDomainCommand {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Override
-  protected void initMutatingEppToolCommand() {
+  protected ImmutableSet<String> getRelevantDomains() {
     // Project all domains as of the same time so that argument order doesn't affect behavior.
-    DateTime now = DateTime.now(UTC);
+    DateTime now = clock.nowUtc();
+    ImmutableSet.Builder<String> relevantDomains = new ImmutableSet.Builder<>();
     for (String domain : getDomains()) {
-      Optional<DomainBase> domainBase = loadByForeignKey(DomainBase.class, domain, now);
-      checkArgumentPresent(domainBase, "Domain '%s' does not exist or is deleted", domain);
+      DomainBase domainBase =
+          loadByForeignKey(DomainBase.class, domain, now)
+              .orElseThrow(
+                  () ->
+                      new IllegalArgumentException(
+                          String.format("Domain '%s' does not exist or is deleted", domain)));
       ImmutableSet<StatusValue> statusesToAdd =
-          Sets.difference(REGISTRY_LOCK_STATUSES, domainBase.get().getStatusValues())
-              .immutableCopy();
+          Sets.difference(REGISTRY_LOCK_STATUSES, domainBase.getStatusValues()).immutableCopy();
       if (statusesToAdd.isEmpty()) {
         logger.atInfo().log("Domain '%s' is already locked and needs no updates.", domain);
         continue;
       }
-
-      setSoyTemplate(DomainUpdateSoyInfo.getInstance(), DomainUpdateSoyInfo.DOMAINUPDATE);
-      addSoyRecord(
-          clientId,
-          new SoyMapData(
-              "domain", domain,
-              "add", true,
-              "addNameservers", ImmutableList.of(),
-              "addAdmins", ImmutableList.of(),
-              "addTechs", ImmutableList.of(),
-              "addStatuses",
-                  statusesToAdd.stream().map(StatusValue::getXmlName).collect(toImmutableList()),
-              "remove", false,
-              "removeNameservers", ImmutableList.of(),
-              "removeAdmins", ImmutableList.of(),
-              "removeTechs", ImmutableList.of(),
-              "removeStatuses", ImmutableList.of(),
-              "change", false,
-              "secdns", false,
-              "addDsRecords", ImmutableList.of(),
-              "removeDsRecords", ImmutableList.of(),
-              "removeAllDsRecords", false));
+      relevantDomains.add(domain);
     }
+    return relevantDomains.build();
+  }
+
+  @Override
+  protected RegistryLock createLock(String domain) {
+    return DomainLockUtils.createRegistryLockRequest(domain, clientId, null, true, clock);
+  }
+
+  @Override
+  protected void finalizeLockOrUnlockRequest(RegistryLock lock) {
+    DomainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, clock);
   }
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.transaction;
+package google.registry.persistence.transaction;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
@@ -23,11 +23,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
-import google.registry.model.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.persistence.HibernateSchemaExporter;
 import google.registry.persistence.NomulusPostgreSql;
 import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceXmlUtility;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.testing.FakeClock;
 import java.io.File;
 import java.io.IOException;
@@ -63,7 +63,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
  */
 abstract class JpaTransactionManagerRule extends ExternalResource {
   private static final String DB_CLEANUP_SQL_PATH =
-      "google/registry/model/transaction/cleanup_database.sql";
+      "google/registry/persistence/transaction/cleanup_database.sql";
   private static final String MANAGEMENT_DB_NAME = "management";
   private static final String POSTGRES_DB_NAME = "postgres";
   // The type of JDBC connections started by the tests. This string value

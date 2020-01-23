@@ -15,6 +15,7 @@
 package google.registry.schema.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.toZonedDateTime;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -22,6 +23,7 @@ import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
+import google.registry.util.Clock;
 import google.registry.util.DateTimeUtils;
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -180,6 +182,20 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
 
   public boolean isLocked() {
     return lockCompletionTimestamp != null && unlockCompletionTimestamp == null;
+  }
+
+  /** Returns true iff the lock was requested >= 1 hour ago and has not been verified. */
+  public boolean isLockRequestExpired(Clock clock) {
+    return !getLockCompletionTimestamp().isPresent()
+        && isBeforeOrAt(getLockRequestTimestamp(), clock.nowUtc().minusHours(1));
+  }
+
+  /** Returns true iff the unlock was requested >= 1 hour ago and has not been verified. */
+  public boolean isUnlockRequestExpired(Clock clock) {
+    Optional<DateTime> unlockRequestTimestamp = getUnlockRequestTimestamp();
+    return unlockRequestTimestamp.isPresent()
+        && !getUnlockCompletionTimestamp().isPresent()
+        && isBeforeOrAt(unlockRequestTimestamp.get(), clock.nowUtc().minusHours(1));
   }
 
   @Override

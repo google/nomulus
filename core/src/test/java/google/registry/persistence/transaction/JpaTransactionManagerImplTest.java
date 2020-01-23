@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.transaction;
+package google.registry.persistence.transaction;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.TestDataHelper.fileClassPath;
 import static org.junit.Assert.assertThrows;
 
-import google.registry.model.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import google.registry.testing.FakeClock;
 import java.math.BigInteger;
 import javax.persistence.EntityManager;
@@ -32,6 +32,7 @@ import org.junit.runners.JUnit4;
 /** Unit tests for {@link JpaTransactionManagerImpl}. */
 @RunWith(JUnit4.class)
 public class JpaTransactionManagerImplTest {
+
   @Rule
   public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder()
