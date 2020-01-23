@@ -31,6 +31,7 @@ import google.registry.ui.server.registrar.OteStatusAction;
 import google.registry.ui.server.registrar.RegistrarConsoleModule;
 import google.registry.ui.server.registrar.RegistrarSettingsAction;
 import google.registry.ui.server.registrar.RegistryLockGetAction;
+import google.registry.ui.server.registrar.RegistryLockPostAction;
 
 /** Dagger component with per-request lifetime for "default" App Engine module. */
 @RequestScope
@@ -52,6 +53,8 @@ interface FrontendRequestComponent {
   RegistrarSettingsAction registrarSettingsAction();
 
   RegistryLockGetAction registryLockGetAction();
+
+  RegistryLockPostAction registryLockPostAction();
 
   @Subcomponent.Builder
   abstract class Builder implements RequestComponentBuilder<FrontendRequestComponent> {

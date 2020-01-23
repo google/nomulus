@@ -6,3 +6,4 @@ PATH                  CLASS                         METHODS  OK AUTH_METHODS    
 /registrar-ote-status OteStatusAction               POST     n  API,LEGACY          USER PUBLIC
 /registrar-settings   RegistrarSettingsAction       POST     n  API,LEGACY          USER PUBLIC
 /registry-lock-get    RegistryLockGetAction         GET      n  API,LEGACY          USER PUBLIC
+/registry-lock-post   RegistryLockPostAction        POST     n  API,LEGACY          USER PUBLIC
