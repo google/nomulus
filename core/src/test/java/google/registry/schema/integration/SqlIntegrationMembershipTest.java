@@ -14,32 +14,32 @@
 
 package google.registry.schema.integration;
 
-import static com.google.common.truth.Truth.assertWithMessage;
-
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
+import com.google.common.truth.Expect;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
 import java.lang.reflect.Field;
 import java.util.stream.Stream;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.junit.runners.Suite.SuiteClasses;
 
 /**
- * Verifies that all tests that depends on the Cloud SQL schema are included in the project's
- * sqlIntegrationTest suite. Names of the test classes is set to the 'test.sqlIntergrationTests'
- * system property as a comma-separated string.
+ * Verifies that {@link SqlIntegrationTestSuite} includes all integration tests for JPA entities and
+ * nothing else. The test suite is used in server/schema compatibility tests between releases.
  *
- * <p>A test is deemed dependent on the SQL schema iff it has a field with type {@link
- * JpaIntegrationTestRule}.
+ * <p>All JPA entity test classes are expected to have a field with type {@link
+ * JpaIntegrationWithCoverageRule}.
  */
-// TODO(weiminyu): consider generating a TestSuite class instead.
 @RunWith(JUnit4.class)
 public class SqlIntegrationMembershipTest {
+
+  @ClassRule public static final Expect expect = Expect.create();
 
   @Test
   public void sqlIntegrationMembershipComplete() {
@@ -59,13 +59,15 @@ public class SqlIntegrationMembershipTest {
             .map(Class::getName)
             .collect(ImmutableSet.toImmutableSet());
     SetView<String> undeclaredTests = Sets.difference(sqlDependentTests, declaredTests);
-    assertWithMessage(
+    expect
+        .withMessage(
             "Undeclared sql-dependent tests found. "
                 + "Please add them to SqlIntegrationTestSuite.java.")
         .that(undeclaredTests)
         .isEmpty();
     SetView<String> unnecessaryDeclarations = Sets.difference(declaredTests, sqlDependentTests);
-    assertWithMessage("Found tests that should not be included in SqlIntegrationTestSuite.java.")
+    expect
+        .withMessage("Found tests that should not be included in SqlIntegrationTestSuite.java.")
         .that(unnecessaryDeclarations)
         .isEmpty();
   }
@@ -74,7 +76,7 @@ public class SqlIntegrationMembershipTest {
     for (Class<?> clazz = testClass; clazz != null; clazz = clazz.getSuperclass()) {
       if (Stream.of(clazz.getDeclaredFields())
           .map(Field::getType)
-          .anyMatch(JpaIntegrationTestRule.class::equals)) {
+          .anyMatch(JpaIntegrationWithCoverageRule.class::equals)) {
         return true;
       }
     }

@@ -18,8 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.schema.tld.PremiumListUtils.parseToPremiumList;
 import static org.junit.Assert.assertThrows;
 
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.testing.AppEngineRule;
 import java.math.BigDecimal;
 import org.junit.Rule;
@@ -32,10 +30,6 @@ import org.junit.runners.JUnit4;
 public class PremiumListUtilsTest {
 
   @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
-
-  @Rule
-  public final JpaIntegrationTestRule jpaRule =
-      new JpaTestRules.Builder().buildIntegrationTestRule();
 
   @Test
   public void parseInputToPremiumList_works() {

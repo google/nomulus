@@ -33,10 +33,13 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class JpaTransactionManagerImplTest {
 
+  private final FakeClock fakeClock = new FakeClock();
+
   @Rule
   public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder()
           .withInitScript(fileClassPath(getClass(), "test_schema.sql"))
+          .withClock(fakeClock)
           .buildUnitTestRule();
 
   @Test
@@ -55,7 +58,7 @@ public class JpaTransactionManagerImplTest {
 
   @Test
   public void getTransactionTime_throwsExceptionWhenNotInTransaction() {
-    FakeClock txnClock = jpaRule.getTxnClock();
+    FakeClock txnClock = fakeClock;
     txnClock.advanceOneMilli();
     assertThrows(PersistenceException.class, () -> jpaTm().getTransactionTime());
     jpaTm().transact(() -> assertThat(jpaTm().getTransactionTime()).isEqualTo(txnClock.nowUtc()));

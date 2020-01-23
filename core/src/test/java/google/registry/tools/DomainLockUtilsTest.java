@@ -34,7 +34,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.RegistryLockDao;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.DatastoreHelper;
@@ -56,6 +56,8 @@ public final class DomainLockUtilsTest {
   private static final String DOMAIN_NAME = "example.tld";
   private static final String POC_ID = "marla.singer@example.com";
 
+  private final FakeClock clock = new FakeClock();
+
   @Rule
   public final AppEngineRule appEngineRule =
       AppEngineRule.builder()
@@ -64,10 +66,8 @@ public final class DomainLockUtilsTest {
           .build();
 
   @Rule
-  public final JpaIntegrationTestRule jpaRule =
-      new JpaTestRules.Builder().buildIntegrationTestRule();
-
-  private final FakeClock clock = jpaRule.getTxnClock();
+  public final JpaIntegrationWithCoverageRule jpaRule =
+      new JpaTestRules.Builder().withClock(clock).buildIntegrationWithCoverageRule();
 
   private DomainBase domain;
 

@@ -14,11 +14,11 @@
 
 package google.registry.schema.integration;
 
+import com.google.common.truth.Expect;
 import google.registry.model.registry.RegistryLockDaoTest;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.persistence.transaction.JpaEntityCoverage;
 import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
-import google.registry.schema.tld.PremiumListUtilsTest;
 import google.registry.schema.tld.ReservedListDaoTest;
 import google.registry.schema.tmch.ClaimsListDaoTest;
 import google.registry.tools.CreateReservedListCommandTest;
@@ -29,19 +29,24 @@ import google.registry.tools.UpdateReservedListCommandTest;
 import google.registry.tools.server.CreatePremiumListActionTest;
 import google.registry.tools.server.UpdatePremiumListActionTest;
 import google.registry.ui.server.registrar.RegistryLockGetActionTest;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 /**
- * Groups all tests that may depends on Cloud SQL schema. They will be run for server-schema
- * compatibility check.
+ * Groups all JPA entity tests in one suite for easy invocation. This suite is used for
+ * server/schema compatibility tests between releases.
  *
- * <p>Schema dependency is approximated by the use of {@link JpaIntegrationTestRule}.
+ * <p>Every member class must use the {@link
+ * google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule} and have at
+ * least one test method that persists a JPA entity declared in persistence.xml.
  *
- * @see SqlIntegrationMembershipTest
+ * <p>Membership of this suite is monitored by the checks in {@link #checkJpaEntityCoverage()} and
+ * {@link SqlIntegrationMembershipTest#sqlIntegrationMembershipComplete()}.
  */
-// TODO(weiminyu): refactor JpaTransactionManagerRule to eliminate false positives.
 @RunWith(Suite.class)
 @SuiteClasses({
   ClaimsListDaoTest.class,
@@ -51,7 +56,6 @@ import org.junit.runners.Suite.SuiteClasses;
   DomainLockUtilsTest.class,
   LockDomainCommandTest.class,
   PremiumListDaoTest.class,
-  PremiumListUtilsTest.class,
   RegistryLockDaoTest.class,
   RegistryLockGetActionTest.class,
   ReservedListDaoTest.class,
@@ -59,4 +63,25 @@ import org.junit.runners.Suite.SuiteClasses;
   UpdatePremiumListActionTest.class,
   UpdateReservedListCommandTest.class
 })
-public class SqlIntegrationTestSuite {}
+public class SqlIntegrationTestSuite {
+
+  @ClassRule public static final Expect expect = Expect.create();
+
+  @BeforeClass
+  public static void initJpaEntityCoverage() {
+    JpaEntityCoverage.init();
+  }
+
+  @AfterClass
+  public static void checkJpaEntityCoverage() {
+    expect
+        .withMessage("Tests are missing for the following JPA entities:")
+        .that(JpaEntityCoverage.getUncoveredEntities())
+        .isEmpty();
+    expect
+        .withMessage(
+            "The following classes do not test JPA entities. Please remove them from this suite")
+        .that(JpaEntityCoverage.getIrrelevantTestClasses())
+        .isEmpty();
+  }
+}

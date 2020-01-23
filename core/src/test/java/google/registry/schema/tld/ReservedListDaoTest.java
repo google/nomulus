@@ -20,8 +20,9 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.registry.label.ReservationType;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.tld.ReservedList.ReservedEntry;
+import google.registry.testing.FakeClock;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,9 +31,12 @@ import org.junit.runners.JUnit4;
 /** Unit tests for {@link ReservedListDao}. */
 @RunWith(JUnit4.class)
 public class ReservedListDaoTest {
+
+  private final FakeClock fakeClock = new FakeClock();
+
   @Rule
-  public final JpaIntegrationTestRule jpaRule =
-      new JpaTestRules.Builder().buildIntegrationTestRule();
+  public final JpaIntegrationWithCoverageRule jpaRule =
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
 
   private static final ImmutableMap<String, ReservedEntry> TEST_RESERVATIONS =
       ImmutableMap.of(
@@ -56,8 +60,7 @@ public class ReservedListDaoTest {
                       .getSingleResult();
               assertThat(persistedList.getLabelsToReservations())
                   .containsExactlyEntriesIn(TEST_RESERVATIONS);
-              assertThat(persistedList.getCreationTimestamp())
-                  .isEqualTo(jpaRule.getTxnClock().nowUtc());
+              assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
             });
   }
 
@@ -74,7 +77,7 @@ public class ReservedListDaoTest {
     ReservedListDao.save(ReservedList.create("testlist", false, TEST_RESERVATIONS));
     ReservedList persistedList = ReservedListDao.getLatestRevision("testlist").get();
     assertThat(persistedList.getRevisionId()).isNotNull();
-    assertThat(persistedList.getCreationTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
+    assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
     assertThat(persistedList.getName()).isEqualTo("testlist");
     assertThat(persistedList.getShouldPublish()).isFalse();
     assertThat(persistedList.getLabelsToReservations()).containsExactlyEntriesIn(TEST_RESERVATIONS);
@@ -91,7 +94,7 @@ public class ReservedListDaoTest {
     ReservedListDao.save(ReservedList.create("testlist", false, TEST_RESERVATIONS));
     ReservedList persistedList = ReservedListDao.getLatestRevision("testlist").get();
     assertThat(persistedList.getRevisionId()).isNotNull();
-    assertThat(persistedList.getCreationTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
+    assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
     assertThat(persistedList.getName()).isEqualTo("testlist");
     assertThat(persistedList.getShouldPublish()).isFalse();
     assertThat(persistedList.getLabelsToReservations()).containsExactlyEntriesIn(TEST_RESERVATIONS);
@@ -102,7 +105,7 @@ public class ReservedListDaoTest {
     ReservedListDao.save(ReservedList.create("testlist", false, TEST_RESERVATIONS));
     ReservedList persistedList = ReservedListDao.getLatestRevisionCached("testlist").get();
     assertThat(persistedList.getRevisionId()).isNotNull();
-    assertThat(persistedList.getCreationTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
+    assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
     assertThat(persistedList.getName()).isEqualTo("testlist");
     assertThat(persistedList.getShouldPublish()).isFalse();
     assertThat(persistedList.getLabelsToReservations()).containsExactlyEntriesIn(TEST_RESERVATIONS);

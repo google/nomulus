@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.testing.FakeClock;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,11 +29,11 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class ClaimsListDaoTest {
 
-  private FakeClock fakeClock = new FakeClock();
+  private final FakeClock fakeClock = new FakeClock();
 
   @Rule
-  public final JpaIntegrationTestRule jpaRule =
-      new JpaTestRules.Builder().buildIntegrationTestRule();
+  public final JpaIntegrationWithCoverageRule jpaRule =
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
 
   @Test
   public void trySave_insertsClaimsListSuccessfully() {
@@ -42,7 +42,7 @@ public class ClaimsListDaoTest {
     ClaimsListDao.trySave(claimsList);
     ClaimsList insertedClaimsList = ClaimsListDao.getLatestRevision().get();
     assertClaimsListEquals(claimsList, insertedClaimsList);
-    assertThat(insertedClaimsList.getCreationTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
+    assertThat(insertedClaimsList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
   }
 
   @Test

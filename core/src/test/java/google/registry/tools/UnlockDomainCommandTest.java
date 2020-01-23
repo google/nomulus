@@ -31,7 +31,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.model.registry.RegistryLockDao;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.FakeClock;
 import java.util.ArrayList;
@@ -45,8 +45,8 @@ import org.junit.Test;
 public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand> {
 
   @Rule
-  public final JpaIntegrationTestRule jpaRule =
-      new JpaTestRules.Builder().buildIntegrationTestRule();
+  public final JpaIntegrationWithCoverageRule jpaRule =
+      new JpaTestRules.Builder().buildIntegrationWithCoverageRule();
 
   @Before
   public void before() {

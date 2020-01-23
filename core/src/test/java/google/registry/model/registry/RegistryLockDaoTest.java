@@ -20,9 +20,10 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static org.junit.Assert.assertThrows;
 
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.AppEngineRule;
+import google.registry.testing.FakeClock;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.Rule;
@@ -34,11 +35,13 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public final class RegistryLockDaoTest {
 
+  private final FakeClock fakeClock = new FakeClock();
+
   @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
 
   @Rule
-  public final JpaIntegrationTestRule jpaRule =
-      new JpaTestRules.Builder().buildIntegrationTestRule();
+  public final JpaIntegrationWithCoverageRule jpaRule =
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
 
   @Test
   public void testSaveAndLoad_success() {
@@ -48,24 +51,21 @@ public final class RegistryLockDaoTest {
         RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
     assertThat(fromDatabase.getDomainName()).isEqualTo(lock.getDomainName());
     assertThat(fromDatabase.getVerificationCode()).isEqualTo(lock.getVerificationCode());
-    assertThat(fromDatabase.getLastUpdateTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
+    assertThat(fromDatabase.getLastUpdateTimestamp()).isEqualTo(fakeClock.nowUtc());
   }
 
   @Test
   public void testSaveTwiceAndLoad_returnsLatest() {
     RegistryLock lock = createLock();
     jpaTm().transact(() -> RegistryLockDao.save(lock));
-    jpaRule.getTxnClock().advanceOneMilli();
+    fakeClock.advanceOneMilli();
     jpaTm()
         .transact(
             () -> {
               RegistryLock updatedLock =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
               RegistryLockDao.save(
-                  updatedLock
-                      .asBuilder()
-                      .setLockCompletionTimestamp(jpaRule.getTxnClock().nowUtc())
-                      .build());
+                  updatedLock.asBuilder().setLockCompletionTimestamp(fakeClock.nowUtc()).build());
             });
     jpaTm()
         .transact(
@@ -73,9 +73,8 @@ public final class RegistryLockDaoTest {
               RegistryLock fromDatabase =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
               assertThat(fromDatabase.getLockCompletionTimestamp().get())
-                  .isEqualTo(jpaRule.getTxnClock().nowUtc());
-              assertThat(fromDatabase.getLastUpdateTimestamp())
-                  .isEqualTo(jpaRule.getTxnClock().nowUtc());
+                  .isEqualTo(fakeClock.nowUtc());
+              assertThat(fromDatabase.getLastUpdateTimestamp()).isEqualTo(fakeClock.nowUtc());
             });
   }
 
@@ -85,26 +84,25 @@ public final class RegistryLockDaoTest {
         RegistryLockDao.save(
             createLock()
                 .asBuilder()
-                .setLockCompletionTimestamp(jpaRule.getTxnClock().nowUtc())
-                .setUnlockRequestTimestamp(jpaRule.getTxnClock().nowUtc())
-                .setUnlockCompletionTimestamp(jpaRule.getTxnClock().nowUtc())
+                .setLockCompletionTimestamp(fakeClock.nowUtc())
+                .setUnlockRequestTimestamp(fakeClock.nowUtc())
+                .setUnlockCompletionTimestamp(fakeClock.nowUtc())
                 .build());
     RegistryLockDao.save(lock);
     RegistryLock fromDatabase =
         RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
-    assertThat(fromDatabase.getUnlockRequestTimestamp())
-        .isEqualTo(Optional.of(jpaRule.getTxnClock().nowUtc()));
+    assertThat(fromDatabase.getUnlockRequestTimestamp()).isEqualTo(Optional.of(fakeClock.nowUtc()));
     assertThat(fromDatabase.getUnlockCompletionTimestamp())
-        .isEqualTo(Optional.of(jpaRule.getTxnClock().nowUtc()));
+        .isEqualTo(Optional.of(fakeClock.nowUtc()));
     assertThat(fromDatabase.isLocked()).isFalse();
   }
 
   @Test
   public void testUpdateLock_usingSamePrimaryKey() {
     RegistryLock lock = RegistryLockDao.save(createLock());
-    jpaRule.getTxnClock().advanceOneMilli();
+    fakeClock.advanceOneMilli();
     RegistryLock updatedLock =
-        lock.asBuilder().setLockCompletionTimestamp(jpaRule.getTxnClock().nowUtc()).build();
+        lock.asBuilder().setLockCompletionTimestamp(fakeClock.nowUtc()).build();
     jpaTm().transact(() -> RegistryLockDao.save(updatedLock));
     jpaTm()
         .transact(
@@ -112,7 +110,7 @@ public final class RegistryLockDaoTest {
               RegistryLock fromDatabase =
                   RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
               assertThat(fromDatabase.getLockCompletionTimestamp())
-                  .isEqualTo(Optional.of(jpaRule.getTxnClock().nowUtc()));
+                  .isEqualTo(Optional.of(fakeClock.nowUtc()));
             });
   }
 
@@ -129,20 +127,20 @@ public final class RegistryLockDaoTest {
   @Test
   public void testLoad_lockedDomains_byRegistrarId() {
     RegistryLock lock =
-        createLock().asBuilder().setLockCompletionTimestamp(jpaRule.getTxnClock().nowUtc()).build();
+        createLock().asBuilder().setLockCompletionTimestamp(fakeClock.nowUtc()).build();
     RegistryLock secondLock =
         createLock()
             .asBuilder()
             .setDomainName("otherexample.test")
-            .setLockCompletionTimestamp(jpaRule.getTxnClock().nowUtc())
+            .setLockCompletionTimestamp(fakeClock.nowUtc())
             .build();
     RegistryLock unlockedLock =
         createLock()
             .asBuilder()
             .setDomainName("unlocked.test")
-            .setLockCompletionTimestamp(jpaRule.getTxnClock().nowUtc())
-            .setUnlockRequestTimestamp(jpaRule.getTxnClock().nowUtc())
-            .setUnlockCompletionTimestamp(jpaRule.getTxnClock().nowUtc())
+            .setLockCompletionTimestamp(fakeClock.nowUtc())
+            .setUnlockRequestTimestamp(fakeClock.nowUtc())
+            .setUnlockCompletionTimestamp(fakeClock.nowUtc())
             .build();
     RegistryLockDao.save(lock);
     RegistryLockDao.save(secondLock);
@@ -159,10 +157,10 @@ public final class RegistryLockDaoTest {
   @Test
   public void testLoad_byRepoId() {
     RegistryLock completedLock =
-        createLock().asBuilder().setLockCompletionTimestamp(jpaRule.getTxnClock().nowUtc()).build();
+        createLock().asBuilder().setLockCompletionTimestamp(fakeClock.nowUtc()).build();
     RegistryLockDao.save(completedLock);
 
-    jpaRule.getTxnClock().advanceOneMilli();
+    fakeClock.advanceOneMilli();
     RegistryLock inProgressLock = createLock();
     RegistryLockDao.save(inProgressLock);
 
@@ -179,10 +177,10 @@ public final class RegistryLockDaoTest {
   @Test
   public void testLoad_verified_byRepoId() {
     RegistryLock completedLock =
-        createLock().asBuilder().setLockCompletionTimestamp(jpaRule.getTxnClock().nowUtc()).build();
+        createLock().asBuilder().setLockCompletionTimestamp(fakeClock.nowUtc()).build();
     RegistryLockDao.save(completedLock);
 
-    jpaRule.getTxnClock().advanceOneMilli();
+    fakeClock.advanceOneMilli();
     RegistryLock inProgressLock = createLock();
     RegistryLockDao.save(inProgressLock);
 

@@ -29,8 +29,9 @@ import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.testing.AppEngineRule;
+import google.registry.testing.FakeClock;
 import java.math.BigDecimal;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
@@ -45,9 +46,11 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class PremiumListDaoTest {
 
+  private final FakeClock fakeClock = new FakeClock();
+
   @Rule
-  public final JpaIntegrationTestRule jpaRule =
-      new JpaTestRules.Builder().buildIntegrationTestRule();
+  public final JpaIntegrationWithCoverageRule jpaRule =
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
 
   @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
 
@@ -71,8 +74,7 @@ public class PremiumListDaoTest {
               assertThat(persistedListOpt).isPresent();
               PremiumList persistedList = persistedListOpt.get();
               assertThat(persistedList.getLabelsToPrices()).containsExactlyEntriesIn(TEST_PRICES);
-              assertThat(persistedList.getCreationTimestamp())
-                  .isEqualTo(jpaRule.getTxnClock().nowUtc());
+              assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
             });
   }
 
@@ -108,11 +110,9 @@ public class PremiumListDaoTest {
                           BigDecimal.valueOf(0.01),
                           "silver",
                           BigDecimal.valueOf(30.03)));
-              assertThat(updatedList.getCreationTimestamp())
-                  .isEqualTo(jpaRule.getTxnClock().nowUtc());
+              assertThat(updatedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
               assertThat(updatedList.getRevisionId()).isGreaterThan(firstRevisionId);
-              assertThat(updatedList.getCreationTimestamp())
-                  .isEqualTo(jpaRule.getTxnClock().nowUtc());
+              assertThat(updatedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
             });
   }
 

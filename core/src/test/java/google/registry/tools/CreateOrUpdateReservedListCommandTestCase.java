@@ -26,9 +26,10 @@ import com.google.common.io.Files;
 import com.google.common.truth.Truth8;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.tld.ReservedList.ReservedEntry;
 import google.registry.schema.tld.ReservedListDao;
+import google.registry.testing.FakeClock;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
@@ -45,9 +46,11 @@ import org.junit.Test;
 public abstract class CreateOrUpdateReservedListCommandTestCase
     <T extends CreateOrUpdateReservedListCommand> extends CommandTestCase<T> {
 
+  private final FakeClock fakeClock = new FakeClock();
+
   @Rule
-  public final JpaIntegrationTestRule jpaRule =
-      new JpaTestRules.Builder().buildIntegrationTestRule();
+  public final JpaIntegrationWithCoverageRule jpaRule =
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
 
   String reservedTermsPath;
   String invalidReservedTermsPath;
@@ -112,7 +115,7 @@ public abstract class CreateOrUpdateReservedListCommandTestCase
         getCloudSqlReservedList("xn--q9jyb4c_common-reserved");
     assertThat(persistedList.getName()).isEqualTo("xn--q9jyb4c_common-reserved");
     assertThat(persistedList.getShouldPublish()).isTrue();
-    assertThat(persistedList.getCreationTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
+    assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
     assertThat(persistedList.getLabelsToReservations())
         .containsExactly(
             "baddies",

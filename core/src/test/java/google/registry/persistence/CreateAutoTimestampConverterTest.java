@@ -20,6 +20,7 @@ import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.testing.FakeClock;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.DateTime;
@@ -32,9 +33,14 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class CreateAutoTimestampConverterTest {
 
+  private final FakeClock fakeClock = new FakeClock();
+
   @Rule
   public final JpaUnitTestRule jpaRule =
-      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
+      new JpaTestRules.Builder()
+          .withClock(fakeClock)
+          .withEntityClass(TestEntity.class)
+          .buildUnitTestRule();
 
   @Test
   public void testTypeConversion() {
@@ -56,7 +62,7 @@ public class CreateAutoTimestampConverterTest {
 
     TestEntity result =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "autoinit"));
-    assertThat(result.cat.getTimestamp()).isEqualTo(jpaRule.getTxnClock().nowUtc());
+    assertThat(result.cat.getTimestamp()).isEqualTo(fakeClock.nowUtc());
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
