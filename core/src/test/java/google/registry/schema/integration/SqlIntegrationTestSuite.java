@@ -14,8 +14,8 @@
 
 package google.registry.schema.integration;
 
-import google.registry.model.domain.DomainBaseSqlTest;
 import com.google.common.truth.Expect;
+import google.registry.model.domain.DomainBaseSqlTest;
 import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.persistence.transaction.JpaEntityCoverage;
 import google.registry.schema.cursor.CursorDaoTest;
