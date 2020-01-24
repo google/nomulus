@@ -20,7 +20,7 @@
         deletion_time timestamptz,
         last_epp_update_client_id text,
         last_epp_update_time timestamptz,
-        status text[],
+        statuses text[],
         auth_info_repo_id text,
         auth_info_value text,
         fully_qualified_domain_name text,

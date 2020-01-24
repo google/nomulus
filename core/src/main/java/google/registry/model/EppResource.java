@@ -50,6 +50,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 import org.hibernate.annotations.Type;
@@ -117,6 +118,8 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
 
   /** Status values associated with this resource. */
   @Type(type = "google.registry.model.eppcommon.StatusValue$StatusValueSetType")
+  @Column(name = "statuses")
+  // TODO(mmuller): rename to "statuses" once we're off datastore.
   Set<StatusValue> status;
 
   /**
