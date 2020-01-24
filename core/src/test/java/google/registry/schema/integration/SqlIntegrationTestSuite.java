@@ -29,6 +29,7 @@ import google.registry.tools.UpdateReservedListCommandTest;
 import google.registry.tools.server.CreatePremiumListActionTest;
 import google.registry.tools.server.UpdatePremiumListActionTest;
 import google.registry.ui.server.registrar.RegistryLockGetActionTest;
+import google.registry.ui.server.registrar.RegistryLockVerifyActionTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -58,6 +59,7 @@ import org.junit.runners.Suite.SuiteClasses;
   PremiumListDaoTest.class,
   RegistryLockDaoTest.class,
   RegistryLockGetActionTest.class,
+  RegistryLockVerifyActionTest.class,
   ReservedListDaoTest.class,
   UnlockDomainCommandTest.class,
   UpdatePremiumListActionTest.class,

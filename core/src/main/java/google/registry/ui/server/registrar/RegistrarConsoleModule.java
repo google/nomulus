@@ -144,4 +144,16 @@ public final class RegistrarConsoleModule {
   static Optional<String> provideOptionalPasscode(HttpServletRequest req) {
     return extractOptionalParameter(req, "passcode");
   }
+
+  @Provides
+  @Parameter("lockVerificationCode")
+  static String provideLockVerificationCode(HttpServletRequest req) {
+    return extractRequiredParameter(req, "lockVerificationCode");
+  }
+
+  @Provides
+  @Parameter("isLock")
+  static Boolean provideIsLock(HttpServletRequest req) {
+    return Boolean.parseBoolean(extractRequiredParameter(req, "isLock"));
+  }
 }

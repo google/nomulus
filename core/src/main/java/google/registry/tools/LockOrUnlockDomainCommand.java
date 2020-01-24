@@ -38,7 +38,7 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  static final ImmutableSet<StatusValue> REGISTRY_LOCK_STATUSES =
+  public static final ImmutableSet<StatusValue> REGISTRY_LOCK_STATUSES =
       ImmutableSet.of(
           SERVER_DELETE_PROHIBITED, SERVER_TRANSFER_PROHIBITED, SERVER_UPDATE_PROHIBITED);
 
