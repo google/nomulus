@@ -19,8 +19,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.security.JsonResponseHelper.Status.ERROR;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
 import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
+import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
@@ -43,12 +44,14 @@ import google.registry.tools.DomainLockUtils;
 import google.registry.util.Clock;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
+import org.apache.http.client.utils.URIBuilder;
 
 /**
  * UI action that allows for creating registry locks. Locks / unlocks must be verified separately
@@ -74,7 +77,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
           + "this code will expire in one hour.\n\n%s";
 
   private final JsonActionRunner jsonActionRunner;
-  @VisibleForTesting AuthResult authResult;
+  private final AuthResult authResult;
   private final AuthenticatedRegistrarAccessor registrarAccessor;
   private final SendEmailService sendEmailService;
   private final Clock clock;
@@ -104,7 +107,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
   @Override
   public Map<String, ?> handleJsonRequest(Map<String, ?> input) {
     try {
-      checkArgument(input != null, "Null JSON");
+      checkArgumentNotNull(input, "Null JSON");
       RegistryLockPostInput postInput =
           GSON.fromJson(GSON.toJsonTree(input), RegistryLockPostInput.class);
       checkArgument(
@@ -115,7 +118,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
           !Strings.isNullOrEmpty(postInput.fullyQualifiedDomainName),
           "Missing key for fullyQualifiedDomainName");
       checkNotNull(postInput.isLock, "Missing key for isLock");
-      checkArgument(authResult.userAuthInfo().isPresent(), "User is not logged in");
+      checkArgumentPresent(authResult.userAuthInfo(), "User is not logged in");
 
       boolean isAdmin = authResult.userAuthInfo().get().isUserAdmin();
       verifyRegistryLockPassword(postInput);
@@ -135,11 +138,17 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
     }
   }
 
-  private void sendVerificationEmail(RegistryLock lock, boolean isLock) throws AddressException {
+  private void sendVerificationEmail(RegistryLock lock, boolean isLock)
+      throws AddressException, URISyntaxException {
     String url =
-        String.format(
-            "%s%s?lockVerificationCode=%s&isLock=%s",
-            URL_BASE, "/registry-lock-verify", lock.getVerificationCode(), isLock);
+        new URIBuilder()
+            .setScheme("https")
+            .setHost(URL_BASE.getHost())
+            .setPath("registry-lock-verify")
+            .setParameter("lockVerificationCode", lock.getVerificationCode())
+            .setParameter("isLock", String.valueOf(isLock))
+            .build()
+            .toString();
     String body = String.format(VERIFICATION_EMAIL_TEMPLATE, lock.getDomainName(), url);
     ImmutableList<InternetAddress> recipients =
         ImmutableList.of(
@@ -172,7 +181,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
               .orElseThrow(
                   () ->
                       new IllegalArgumentException(
-                          String.format("Unknown pocId %s", postInput.pocId)));
+                          String.format("Unknown registrar POC ID %s", postInput.pocId)));
       checkArgument(
           registrarContact.verifyRegistryLockPassword(postInput.password),
           "Incorrect registry lock password for contact");

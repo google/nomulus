@@ -62,6 +62,12 @@ import org.mockito.junit.MockitoRule;
 @RunWith(JUnit4.class)
 public final class RegistryLockPostActionTest {
 
+  private static final String EMAIL_MESSAGE_TEMPLATE =
+      "Please click the link below to perform the lock \\/ unlock action on domain example.tld. "
+          + "Note: this code will expire in one hour.\n\n"
+          + "https:\\/\\/localhost\\/registry-lock-verify\\?lockVerificationCode="
+          + "[0-9a-zA-Z_\\-]+&isLock=(true|false)";
+
   @Rule public final AppEngineRule appEngineRule = AppEngineRule.builder().withDatastore().build();
 
   @Rule
@@ -77,7 +83,6 @@ public final class RegistryLockPostActionTest {
       new User("Marla.Singer@crr.com", "gmail.com", "31337");
   private final FakeClock clock = new FakeClock();
 
-  private AuthResult authResult;
   private InternetAddress outgoingAddress;
   private DomainBase domain;
   private RegistryLockPostAction action;
@@ -89,18 +94,11 @@ public final class RegistryLockPostActionTest {
   public void setup() throws Exception {
     createTld("tld");
     domain = persistResource(newDomainBase("example.tld"));
-
-    authResult =
-        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithLockPermission, false));
     outgoingAddress = new InternetAddress("domain-registry@example.com");
-    JsonActionRunner jsonActionRunner =
-        new JsonActionRunner(ImmutableMap.of(), new JsonResponse(new ResponseImpl(mockResponse)));
-    AuthenticatedRegistrarAccessor registrarAccessor =
-        AuthenticatedRegistrarAccessor.createForTesting(
-            ImmutableSetMultimap.of("TheRegistrar", Role.OWNER, "NewRegistrar", Role.OWNER));
+
     action =
-        new RegistryLockPostAction(
-            jsonActionRunner, authResult, registrarAccessor, emailService, clock, outgoingAddress);
+        createAction(
+            AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithLockPermission, false)));
   }
 
   @Test
@@ -127,8 +125,9 @@ public final class RegistryLockPostActionTest {
             .setLockCompletionTimestamp(clock.nowUtc())
             .build());
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
-    action.authResult =
-        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, true));
+    action =
+        createAction(
+            AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, true)));
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertSuccess(response, "unlock", "johndoe@theregistrar.com");
   }
@@ -170,8 +169,9 @@ public final class RegistryLockPostActionTest {
   @Test
   public void testSuccess_adminUser() throws Exception {
     // Admin user should be able to lock/unlock regardless
-    action.authResult =
-        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, true));
+    action =
+        createAction(
+            AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, true)));
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertSuccess(response, "lock", "johndoe@theregistrar.com");
   }
@@ -294,7 +294,7 @@ public final class RegistryLockPostActionTest {
                 "isLock", true,
                 "pocId", "someotherpoc@crr.com",
                 "password", "hi"));
-    assertFailureWithMessage(response, "Unknown pocId someotherpoc@crr.com");
+    assertFailureWithMessage(response, "Unknown registrar POC ID someotherpoc@crr.com");
   }
 
   @Test
@@ -391,8 +391,18 @@ public final class RegistryLockPostActionTest {
     verify(emailService).sendEmail(emailCaptor.capture());
     EmailMessage sentMessage = emailCaptor.getValue();
     assertThat(sentMessage.subject()).isEqualTo("Registry lock / unlock verification");
-    assertThat(sentMessage.body()).startsWith("Please click the link below");
+    assertThat(sentMessage.body()).matches(EMAIL_MESSAGE_TEMPLATE);
     assertThat(sentMessage.from()).isEqualTo(new InternetAddress("domain-registry@example.com"));
     assertThat(sentMessage.recipients()).containsExactly(new InternetAddress(recipient));
+  }
+
+  private RegistryLockPostAction createAction(AuthResult authResult) {
+    AuthenticatedRegistrarAccessor registrarAccessor =
+        AuthenticatedRegistrarAccessor.createForTesting(
+            ImmutableSetMultimap.of("TheRegistrar", Role.OWNER, "NewRegistrar", Role.OWNER));
+    JsonActionRunner jsonActionRunner =
+        new JsonActionRunner(ImmutableMap.of(), new JsonResponse(new ResponseImpl(mockResponse)));
+    return new RegistryLockPostAction(
+        jsonActionRunner, authResult, registrarAccessor, emailService, clock, outgoingAddress);
   }
 }
