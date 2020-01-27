@@ -97,21 +97,6 @@ public final class RegistryLockVerifyActionTest {
     action = createAction(lockId, true);
   }
 
-  private RegistryLockVerifyAction createAction(String lockVerificationCode, Boolean isLock) {
-    RegistryLockVerifyAction action =
-        new RegistryLockVerifyAction(fakeClock, lockVerificationCode, isLock);
-    authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
-    action.req = request;
-    action.response = response;
-    action.authResult = authResult;
-    action.userService = userService;
-    action.logoFilename = "logo.png";
-    action.productName = "Nomulus";
-    action.analyticsConfig = ImmutableMap.of("googleAnalyticsId", "sampleId");
-    action.xsrfTokenManager = new XsrfTokenManager(new FakeClock(), action.userService);
-    return action;
-  }
-
   @Test
   public void testSuccess_lockDomain() {
     RegistryLockDao.save(createLock());
@@ -295,5 +280,20 @@ public final class RegistryLockVerifyActionTest {
             .setBillingTime(fakeClock.nowUtc())
             .setParent(historyEntry)
             .build());
+  }
+
+  private RegistryLockVerifyAction createAction(String lockVerificationCode, Boolean isLock) {
+    RegistryLockVerifyAction action =
+        new RegistryLockVerifyAction(fakeClock, lockVerificationCode, isLock);
+    authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
+    action.req = request;
+    action.response = response;
+    action.authResult = authResult;
+    action.userService = userService;
+    action.logoFilename = "logo.png";
+    action.productName = "Nomulus";
+    action.analyticsConfig = ImmutableMap.of("googleAnalyticsId", "sampleId");
+    action.xsrfTokenManager = new XsrfTokenManager(new FakeClock(), action.userService);
+    return action;
   }
 }
