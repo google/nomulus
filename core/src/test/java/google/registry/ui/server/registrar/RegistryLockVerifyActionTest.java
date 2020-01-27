@@ -94,7 +94,12 @@ public final class RegistryLockVerifyActionTest {
     HostResource host = persistActiveHost("ns1.example.net");
     domain = persistResource(newDomainBase("example.tld", host));
     when(request.getRequestURI()).thenReturn("https://registry.example/registry-lock-verification");
-    action = new RegistryLockVerifyAction(fakeClock, lockId, true);
+    action = createAction(lockId, true);
+  }
+
+  private RegistryLockVerifyAction createAction(String lockVerificationCode, Boolean isLock) {
+    RegistryLockVerifyAction action =
+        new RegistryLockVerifyAction(fakeClock, lockVerificationCode, isLock);
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
     action.req = request;
     action.response = response;
@@ -104,6 +109,7 @@ public final class RegistryLockVerifyActionTest {
     action.productName = "Nomulus";
     action.analyticsConfig = ImmutableMap.of("googleAnalyticsId", "sampleId");
     action.xsrfTokenManager = new XsrfTokenManager(new FakeClock(), action.userService);
+    return action;
   }
 
   @Test
@@ -122,7 +128,7 @@ public final class RegistryLockVerifyActionTest {
 
   @Test
   public void testSuccess_unlockDomain() {
-    action.isLock = false;
+    action = createAction(lockId, false);
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     RegistryLockDao.save(
         createLock().asBuilder().setUnlockRequestTimestamp(fakeClock.nowUtc()).build());
@@ -187,7 +193,7 @@ public final class RegistryLockVerifyActionTest {
 
   @Test
   public void testFailure_alreadyUnlocked() {
-    action.isLock = false;
+    action = createAction(lockId, false);
     RegistryLockDao.save(
         createLock()
             .asBuilder()
@@ -253,7 +259,7 @@ public final class RegistryLockVerifyActionTest {
 
   @Test
   public void testFailure_isLockFalse_shouldBeTrue() {
-    action.isLock = false;
+    action = createAction(lockId, false);
     RegistryLockDao.save(createLock());
     action.run();
     assertThat(response.getPayload()).contains("Failed: Domain example.tld is already unlocked");

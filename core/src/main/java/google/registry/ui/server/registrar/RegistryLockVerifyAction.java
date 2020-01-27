@@ -16,7 +16,6 @@ package google.registry.ui.server.registrar;
 
 import static google.registry.ui.server.SoyTemplateUtils.CSS_RENAMING_MAP_SUPPLIER;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.flogger.FluentLogger;
@@ -49,8 +48,8 @@ public final class RegistryLockVerifyAction extends HtmlAction {
           google.registry.ui.soy.registrar.RegistryLockVerificationSoyInfo.getInstance());
 
   private final Clock clock;
-  @VisibleForTesting String lockVerificationCode;
-  @VisibleForTesting Boolean isLock;
+  private final String lockVerificationCode;
+  private final Boolean isLock;
 
   @Inject
   public RegistryLockVerifyAction(
@@ -73,11 +72,10 @@ public final class RegistryLockVerifyAction extends HtmlAction {
       }
       data.put("success", true);
     } catch (Throwable t) {
-      Throwable rootCause = Throwables.getRootCause(t);
-      logger.atWarning().withCause(rootCause).log(
-          "Error when verifying verification code: %s", rootCause.getMessage());
+      logger.atWarning().withCause(t).log(
+          "Error when verifying verification code %s", lockVerificationCode);
       data.put("success", false);
-      data.put("errorMessage", rootCause.getMessage());
+      data.put("errorMessage", Throwables.getRootCause(t).getMessage());
     }
     response.setPayload(
         TOFU_SUPPLIER
