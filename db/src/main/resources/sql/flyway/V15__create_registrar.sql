@@ -36,7 +36,7 @@ create table "Registrar" (
         i18n_street_line2 text,
         i18n_street_line3 text,
         i18n_zip text,
-        ip_address_whitelist text,
+        ip_address_whitelist text[],
         last_certificate_update_time timestamptz,
         last_update_time timestamptz,
         local_city text,

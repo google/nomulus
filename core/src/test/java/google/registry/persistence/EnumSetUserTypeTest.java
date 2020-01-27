@@ -56,8 +56,8 @@ public class EnumSetUserTypeTest {
 
     public static class TestEnumType extends EnumSetUserType<TestEnum> {
       @Override
-      protected Object convertToElem(Object value) {
-        return TestEnum.valueOf((String) value);
+      protected TestEnum convertToElem(String value) {
+        return TestEnum.valueOf(value);
       }
     }
   }

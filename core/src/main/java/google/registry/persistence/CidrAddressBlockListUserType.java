@@ -14,9 +14,24 @@
 
 package google.registry.persistence;
 
-import google.registry.model.registrar.Registrar;
+import google.registry.util.CidrAddressBlock;
+import java.util.List;
 import javax.persistence.Converter;
 
-/** JPA converter for storing/retrieving {@link Registrar.State} objects. */
+/**
+ * Hibernate {@link org.hibernate.usertype.UserType} for storing/retrieving {@link
+ * List<CidrAddressBlock>} objects.
+ */
 @Converter(autoApply = true)
-public class RegistrarStateConverter extends GenericEnumConverter<Registrar.State> {}
+public class CidrAddressBlockListUserType extends StringListUserType<CidrAddressBlock> {
+
+  @Override
+  protected CidrAddressBlock convertToElem(String columnValue) {
+    return columnValue == null ? null : CidrAddressBlock.create(columnValue);
+  }
+
+  @Override
+  protected String convertToColumn(CidrAddressBlock elementValue) {
+    return elementValue == null ? null : elementValue.toString();
+  }
+}

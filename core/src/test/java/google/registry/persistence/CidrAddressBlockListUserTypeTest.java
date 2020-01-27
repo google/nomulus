@@ -15,24 +15,25 @@
 package google.registry.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
-import google.registry.model.transaction.JpaTestRules;
-import google.registry.model.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import google.registry.util.CidrAddressBlock;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import org.hibernate.annotations.Type;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link CidrAddressBlockListConverter}. */
+/** Unit tests for {@link CidrAddressBlockListUserType}. */
 @RunWith(JUnit4.class)
-public class CidrAddressBlockListConverterTest {
+public class CidrAddressBlockListUserTypeTest {
   @Rule
   public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
@@ -58,6 +59,7 @@ public class CidrAddressBlockListConverterTest {
 
     @Id String name = "id";
 
+    @Type(type = "google.registry.persistence.CidrAddressBlockListUserType")
     List<CidrAddressBlock> addresses;
 
     private TestEntity() {}

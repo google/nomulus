@@ -14,6 +14,7 @@
 
 package google.registry.persistence;
 
+import google.registry.util.TypeUtils.TypeInstantiator;
 import java.sql.Array;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,7 +25,8 @@ import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 
 /** Generic Hibernate user type to store/retrieve Java collection as an array in Cloud SQL. */
-public abstract class GenericCollectionUserType<T extends Collection> extends MutableUserType {
+public abstract class GenericCollectionUserType<T extends Collection<E>, E, C>
+    extends MutableUserType {
 
   abstract T getNewCollection();
 
@@ -55,6 +57,11 @@ public abstract class GenericCollectionUserType<T extends Collection> extends Mu
   }
 
   @Override
+  public Class returnedClass() {
+    return new TypeInstantiator<T>(getClass()) {}.getExactType();
+  }
+
+  @Override
   public int[] sqlTypes() {
     return new int[] {getColumnType().getTypeCode()};
   }
@@ -65,7 +72,7 @@ public abstract class GenericCollectionUserType<T extends Collection> extends Mu
       throws HibernateException, SQLException {
     if (rs.getArray(names[0]) != null) {
       T result = getNewCollection();
-      for (Object element : (Object[]) rs.getArray(names[0]).getArray()) {
+      for (C element : (C[]) rs.getArray(names[0]).getArray()) {
         result.add(convertToElem(element));
       }
       return result;
@@ -81,8 +88,12 @@ public abstract class GenericCollectionUserType<T extends Collection> extends Mu
       st.setArray(index, null);
       return;
     }
-    T list = (T) value;
-    Array arr = st.getConnection().createArrayOf(getColumnType().getTypeName(), list.toArray());
+    T collection = (T) value;
+    Array arr =
+        st.getConnection()
+            .createArrayOf(
+                getColumnType().getTypeName(),
+                collection.stream().map(this::convertToColumn).toArray());
     st.setArray(index, arr);
   }
 
@@ -92,7 +103,11 @@ public abstract class GenericCollectionUserType<T extends Collection> extends Mu
    * <p>This method is useful when encoding a java type to one of the types that can be used as an
    * array element.
    */
-  protected Object convertToElem(Object columnValue) {
-    return columnValue;
+  protected E convertToElem(C columnValue) {
+    return (E) columnValue;
+  }
+
+  protected C convertToColumn(E elementValue) {
+    return (C) elementValue;
   }
 }

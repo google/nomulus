@@ -14,11 +14,11 @@
 
 package google.registry.persistence;
 
+import google.registry.util.TypeUtils.TypeInstantiator;
 import javax.persistence.AttributeConverter;
 
 /** Generic converter for storing/retrieving {@link Enum} objects. */
-public abstract class GenericEnumConverter<T extends Enum<T>>
-    implements AttributeConverter<T, String> {
+public class GenericEnumConverter<T extends Enum<T>> implements AttributeConverter<T, String> {
 
   @Override
   public String convertToDatabaseColumn(T attribute) {
@@ -27,8 +27,8 @@ public abstract class GenericEnumConverter<T extends Enum<T>>
 
   @Override
   public T convertToEntityAttribute(String dbData) {
-    return dbData == null ? null : Enum.valueOf(getEnumClass(), dbData);
+    return dbData == null
+        ? null
+        : Enum.valueOf(new TypeInstantiator<T>(getClass()) {}.getExactType(), dbData);
   }
-
-  abstract Class<T> getEnumClass();
 }

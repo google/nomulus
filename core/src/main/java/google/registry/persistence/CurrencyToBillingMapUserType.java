@@ -14,7 +14,7 @@
 
 package google.registry.persistence;
 
-import static java.util.stream.Collectors.toMap;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
 import google.registry.model.registrar.Registrar.BillingAccountEntry;
 import java.util.Map;
@@ -31,7 +31,7 @@ public class CurrencyToBillingMapUserType extends MapUserType {
   public Object toEntityTypeMap(Map<String, String> map) {
     return map.entrySet().stream()
         .collect(
-            toMap(
+            toImmutableMap(
                 entry -> CurrencyUnit.of(entry.getKey()),
                 entry ->
                     new BillingAccountEntry(CurrencyUnit.of(entry.getKey()), entry.getValue())));
@@ -42,6 +42,7 @@ public class CurrencyToBillingMapUserType extends MapUserType {
     return ((Map<CurrencyUnit, BillingAccountEntry>) map)
         .entrySet().stream()
             .collect(
-                toMap(entry -> entry.getKey().getCode(), entry -> entry.getValue().getAccountId()));
+                toImmutableMap(
+                    entry -> entry.getKey().getCode(), entry -> entry.getValue().getAccountId()));
   }
 }

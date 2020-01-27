@@ -19,22 +19,22 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.googlecode.objectify.annotation.Ignore;
+import com.googlecode.objectify.annotation.OnLoad;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import java.util.List;
 import java.util.Map;
-import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.Transient;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import javax.xml.bind.annotation.adapters.NormalizedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import org.hibernate.annotations.Columns;
-import org.hibernate.annotations.Type;
 
 /**
  * Container for generic street address.
@@ -53,9 +53,14 @@ public class Address extends ImmutableObject implements Jsonifiable {
 
   /** The schema validation will enforce that this has 3 lines at most. */
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
-  @Type(type = "google.registry.persistence.StreetUserType")
-  @Columns(columns = {@Column(name = "line1"), @Column(name = "line2"), @Column(name = "line3")})
+  @Transient
   List<String> street;
+
+  @Ignore String streetLine1;
+
+  @Ignore String streetLine2;
+
+  @Ignore String streetLine3;
 
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
   String city;
@@ -74,6 +79,18 @@ public class Address extends ImmutableObject implements Jsonifiable {
 
   public ImmutableList<String> getStreet() {
     return nullToEmptyImmutableCopy(street);
+  }
+
+  public String getStreetLine1() {
+    return streetLine1;
+  }
+
+  public String getStreetLine2() {
+    return streetLine2;
+  }
+
+  public String getStreetLine13() {
+    return streetLine3;
   }
 
   public String getCity() {
@@ -147,5 +164,15 @@ public class Address extends ImmutableObject implements Jsonifiable {
       getInstance().countryCode = countryCode;
       return this;
     }
+  }
+
+  @OnLoad
+  void setStreetForCloudSql() {
+    if (street == null || street.size() == 0) {
+      return;
+    }
+    streetLine1 = street.get(0);
+    streetLine2 = street.size() >= 2 ? street.get(1) : null;
+    streetLine3 = street.size() >= 3 ? street.get(2) : null;
   }
 }

@@ -18,20 +18,15 @@ import com.google.common.collect.Sets;
 import java.util.Set;
 
 /** Abstract Hibernate user type for storing/retrieving {@link Set<String>}. */
-public class StringSetUserType extends GenericCollectionUserType<Set<String>> {
+public class StringSetUserType<E> extends GenericCollectionUserType<Set<E>, E, String> {
 
   @Override
-  Set<String> getNewCollection() {
+  Set<E> getNewCollection() {
     return Sets.newHashSet();
   }
 
   @Override
   ArrayColumnType getColumnType() {
     return ArrayColumnType.STRING;
-  }
-
-  @Override
-  public Class returnedClass() {
-    return Set.class;
   }
 }

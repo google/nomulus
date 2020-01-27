@@ -19,10 +19,4 @@ import javax.persistence.Converter;
 
 /** JPA converter for storing/retrieving {@link Registrar.Type} objects. */
 @Converter(autoApply = true)
-public class RegistrarTypeConverter extends GenericEnumConverter<Registrar.Type> {
-
-  @Override
-  Class<Registrar.Type> getEnumClass() {
-    return Registrar.Type.class;
-  }
-}
+public class RegistrarTypeConverter extends GenericEnumConverter<Registrar.Type> {}

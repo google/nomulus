@@ -18,20 +18,15 @@ import com.google.common.collect.Lists;
 import java.util.List;
 
 /** Abstract Hibernate user type for storing/retrieving {@link List<String>}. */
-public class StringListUserType extends GenericCollectionUserType<List<String>> {
+public class StringListUserType<E> extends GenericCollectionUserType<List<E>, E, String> {
 
   @Override
-  List<String> getNewCollection() {
+  List<E> getNewCollection() {
     return Lists.newArrayList();
   }
 
   @Override
   ArrayColumnType getColumnType() {
     return ArrayColumnType.STRING;
-  }
-
-  @Override
-  public Class returnedClass() {
-    return List.class;
   }
 }
