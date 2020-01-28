@@ -125,7 +125,11 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       RegistryLock registryLock =
           postInput.isLock
               ? DomainLockUtils.createRegistryLockRequest(
-                  postInput.fullyQualifiedDomainName, postInput.clientId, "pocId", isAdmin, clock)
+                  postInput.fullyQualifiedDomainName,
+                  postInput.clientId,
+                  postInput.pocId,
+                  isAdmin,
+                  clock)
               : DomainLockUtils.createRegistryUnlockRequest(
                   postInput.fullyQualifiedDomainName, postInput.clientId, isAdmin, clock);
       sendVerificationEmail(registryLock, postInput.isLock);
