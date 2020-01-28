@@ -23,6 +23,7 @@ import com.google.template.soy.tofu.SoyTofu;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
+import google.registry.schema.domain.RegistryLock;
 import google.registry.tools.DomainLockUtils;
 import google.registry.ui.server.SoyTemplateUtils;
 import google.registry.ui.soy.registrar.RegistryLockVerificationSoyInfo;
@@ -65,12 +66,15 @@ public final class RegistryLockVerifyAction extends HtmlAction {
   public void runAfterLogin(HashMap<String, Object> data) {
     try {
       boolean isAdmin = authResult.userAuthInfo().get().isUserAdmin();
+      final RegistryLock resultLock;
       if (isLock) {
-        DomainLockUtils.verifyAndApplyLock(lockVerificationCode, isAdmin, clock);
+        resultLock = DomainLockUtils.verifyAndApplyLock(lockVerificationCode, isAdmin, clock);
       } else {
-        DomainLockUtils.verifyAndApplyUnlock(lockVerificationCode, isAdmin, clock);
+        resultLock = DomainLockUtils.verifyAndApplyUnlock(lockVerificationCode, isAdmin, clock);
       }
+      data.put("isLock", isLock);
       data.put("success", true);
+      data.put("fullyQualifiedDomainName", resultLock.getDomainName());
     } catch (Throwable t) {
       logger.atWarning().withCause(t).log(
           "Error when verifying verification code %s", lockVerificationCode);

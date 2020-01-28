@@ -79,11 +79,11 @@ public final class RegistryLockVerifyActionTest {
   @Rule public final InjectRule inject = new InjectRule();
 
   private final HttpServletRequest request = mock(HttpServletRequest.class);
-  private final FakeResponse response = new FakeResponse();
   private final UserService userService = UserServiceFactory.getUserService();
   private final User user = new User("marla.singer@example.com", "gmail.com", "12345");
   private final String lockId = "f1be78a2-2d61-458c-80f0-9dd8f2f8625f";
 
+  private FakeResponse response;
   private DomainBase domain;
   private AuthResult authResult;
   private RegistryLockVerifyAction action;
@@ -103,6 +103,7 @@ public final class RegistryLockVerifyActionTest {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(reloadDomain().getStatusValues()).containsExactlyElementsIn(REGISTRY_LOCK_STATUSES);
+    assertThat(response.getPayload()).contains("Success: lock has been applied to example.tld");
     HistoryEntry historyEntry = getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE);
     assertThat(historyEntry.getRequestedByRegistrar()).isTrue();
     assertThat(historyEntry.getBySuperuser()).isFalse();
@@ -119,6 +120,7 @@ public final class RegistryLockVerifyActionTest {
         createLock().asBuilder().setUnlockRequestTimestamp(fakeClock.nowUtc()).build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload()).contains("Success: unlock has been applied to example.tld");
     assertThat(reloadDomain().getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
     HistoryEntry historyEntry = getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE);
     assertThat(historyEntry.getRequestedByRegistrar()).isTrue();
@@ -250,6 +252,49 @@ public final class RegistryLockVerifyActionTest {
     assertThat(response.getPayload()).contains("Failed: Domain example.tld is already unlocked");
   }
 
+  @Test
+  public void testFailure_lock_unlock_lockAgain() {
+    RegistryLock lock = RegistryLockDao.save(createLock());
+    action.run();
+    assertThat(response.getPayload()).contains("Success: lock has been applied to example.tld");
+    String unlockVerificationCode = "some-unlock-code";
+    RegistryLockDao.save(
+        lock.asBuilder()
+            .setVerificationCode(unlockVerificationCode)
+            .setUnlockRequestTimestamp(fakeClock.nowUtc())
+            .build());
+    action = createAction(unlockVerificationCode, false);
+    action.run();
+    assertThat(response.getPayload()).contains("Success: unlock has been applied to example.tld");
+    action = createAction(lockId, true);
+    action.run();
+    assertThat(response.getPayload()).contains("Failed: Invalid verification code");
+  }
+
+  @Test
+  public void testFailure_lock_lockAgain() {
+    RegistryLockDao.save(createLock());
+    action.run();
+    assertThat(response.getPayload()).contains("Success: lock has been applied to example.tld");
+    action = createAction(lockId, true);
+    action.run();
+    assertThat(response.getPayload()).contains("Failed: Domain example.tld is already locked");
+  }
+
+  @Test
+  public void testFailure_unlock_unlockAgain() {
+    action = createAction(lockId, false);
+    domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
+    RegistryLockDao.save(
+        createLock().asBuilder().setUnlockRequestTimestamp(fakeClock.nowUtc()).build());
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload()).contains("Success: unlock has been applied to example.tld");
+    action = createAction(lockId, false);
+    action.run();
+    assertThat(response.getPayload()).contains("Failed: Domain example.tld is already unlocked");
+  }
+
   private RegistryLock createLock() {
     return new RegistryLock.Builder()
         .setDomainName("example.tld")
@@ -283,6 +328,7 @@ public final class RegistryLockVerifyActionTest {
   }
 
   private RegistryLockVerifyAction createAction(String lockVerificationCode, Boolean isLock) {
+    response = new FakeResponse();
     RegistryLockVerifyAction action =
         new RegistryLockVerifyAction(fakeClock, lockVerificationCode, isLock);
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
