@@ -24,7 +24,13 @@ import java.util.Collection;
 import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 
-/** Generic Hibernate user type to store/retrieve Java collection as an array in Cloud SQL. */
+/**
+ * Generic Hibernate user type to store/retrieve Java collection as an array in Cloud SQL.
+ *
+ * @param <T> the concrete {@link Collection} type of the entity field
+ * @param <E> the Java type of the element for the collection of the entity field
+ * @param <C> the JDBC supported type of the element in the DB column array
+ */
 public abstract class GenericCollectionUserType<T extends Collection<E>, E, C>
     extends MutableUserType {
 

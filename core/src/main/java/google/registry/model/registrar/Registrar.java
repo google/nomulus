@@ -229,6 +229,7 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
    * Unique registrar client id. Must conform to "clIDType" as defined in RFC5730.
    *
    * @see <a href="http://tools.ietf.org/html/rfc5730#section-4.2">Shared Structure Schema</a>
+   *     <p>TODO(shicong): Rename this field to clientId
    */
   @Id
   @javax.persistence.Id
@@ -314,13 +315,21 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
-    @AttributeOverride(name = "streetLine1", column = @Column(name = "local_street_line1")),
-    @AttributeOverride(name = "streetLine2", column = @Column(name = "local_street_line2")),
-    @AttributeOverride(name = "streetLine3", column = @Column(name = "local_street_line3")),
-    @AttributeOverride(name = "city", column = @Column(name = "local_city")),
-    @AttributeOverride(name = "state", column = @Column(name = "local_state")),
-    @AttributeOverride(name = "zip", column = @Column(name = "local_zip")),
-    @AttributeOverride(name = "countryCode", column = @Column(name = "local_country_code"))
+    @AttributeOverride(
+        name = "streetLine1",
+        column = @Column(name = "localized_address_street_line1")),
+    @AttributeOverride(
+        name = "streetLine2",
+        column = @Column(name = "localized_address_street_line2")),
+    @AttributeOverride(
+        name = "streetLine3",
+        column = @Column(name = "localized_address_street_line3")),
+    @AttributeOverride(name = "city", column = @Column(name = "localized_address_city")),
+    @AttributeOverride(name = "state", column = @Column(name = "localized_address_state")),
+    @AttributeOverride(name = "zip", column = @Column(name = "localized_address_zip")),
+    @AttributeOverride(
+        name = "countryCode",
+        column = @Column(name = "localized_address_country_code"))
   })
   RegistrarAddress localizedAddress;
 
@@ -331,13 +340,13 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
-    @AttributeOverride(name = "streetLine1", column = @Column(name = "i18n_street_line1")),
-    @AttributeOverride(name = "streetLine2", column = @Column(name = "i18n_street_line2")),
-    @AttributeOverride(name = "streetLine3", column = @Column(name = "i18n_street_line3")),
-    @AttributeOverride(name = "city", column = @Column(name = "i18n_city")),
-    @AttributeOverride(name = "state", column = @Column(name = "i18n_state")),
-    @AttributeOverride(name = "zip", column = @Column(name = "i18n_zip")),
-    @AttributeOverride(name = "countryCode", column = @Column(name = "i18n_country_code"))
+    @AttributeOverride(name = "streetLine1", column = @Column(name = "i18n_address_street_line1")),
+    @AttributeOverride(name = "streetLine2", column = @Column(name = "i18n_address_street_line2")),
+    @AttributeOverride(name = "streetLine3", column = @Column(name = "i18n_address_street_line3")),
+    @AttributeOverride(name = "city", column = @Column(name = "i18n_address_city")),
+    @AttributeOverride(name = "state", column = @Column(name = "i18n_address_state")),
+    @AttributeOverride(name = "zip", column = @Column(name = "i18n_address_zip")),
+    @AttributeOverride(name = "countryCode", column = @Column(name = "i18n_address_country_code"))
   })
   RegistrarAddress internationalizedAddress;
 

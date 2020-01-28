@@ -15,6 +15,7 @@
 package google.registry.model.eppcommon;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Strings.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -78,7 +79,11 @@ public class Address extends ImmutableObject implements Jsonifiable {
   String countryCode;
 
   public ImmutableList<String> getStreet() {
-    return nullToEmptyImmutableCopy(street);
+    if (street == null && streetLine1 != null) {
+      return ImmutableList.of(streetLine1, nullToEmpty(streetLine2), nullToEmpty(streetLine3));
+    } else {
+      return nullToEmptyImmutableCopy(street);
+    }
   }
 
   public String getStreetLine1() {

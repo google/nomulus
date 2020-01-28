@@ -16,13 +16,11 @@ package google.registry.persistence;
 
 import google.registry.util.CidrAddressBlock;
 import java.util.List;
-import javax.persistence.Converter;
 
 /**
  * Hibernate {@link org.hibernate.usertype.UserType} for storing/retrieving {@link
  * List<CidrAddressBlock>} objects.
  */
-@Converter(autoApply = true)
 public class CidrAddressBlockListUserType extends StringListUserType<CidrAddressBlock> {
 
   @Override
