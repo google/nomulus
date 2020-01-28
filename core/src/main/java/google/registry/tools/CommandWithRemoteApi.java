@@ -20,4 +20,4 @@ package google.registry.tools;
  * <p>Just implementing this is sufficient to use the remote api; {@link RegistryTool} will install
  * it as needed.
  */
-interface CommandWithRemoteApi extends Command {}
+public interface CommandWithRemoteApi extends Command {}
