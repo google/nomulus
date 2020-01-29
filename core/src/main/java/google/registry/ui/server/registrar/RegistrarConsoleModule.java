@@ -14,7 +14,7 @@
 
 package google.registry.ui.server.registrar;
 
-
+import static google.registry.request.RequestParameters.extractBooleanParameter;
 import static google.registry.request.RequestParameters.extractOptionalIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
@@ -143,5 +143,17 @@ public final class RegistrarConsoleModule {
   @Parameter("passcode")
   static Optional<String> provideOptionalPasscode(HttpServletRequest req) {
     return extractOptionalParameter(req, "passcode");
+  }
+
+  @Provides
+  @Parameter("lockVerificationCode")
+  static String provideLockVerificationCode(HttpServletRequest req) {
+    return extractRequiredParameter(req, "lockVerificationCode");
+  }
+
+  @Provides
+  @Parameter("isLock")
+  static Boolean provideIsLock(HttpServletRequest req) {
+    return extractBooleanParameter(req, "isLock");
   }
 }

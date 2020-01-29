@@ -18,11 +18,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 /** Abstract Hibernate user type for storing/retrieving {@link Set<Enum<E>>}. */
-public class EnumSetUserType<E extends Enum<E>> extends GenericCollectionUserType<Set<Enum<E>>> {
+public class EnumSetUserType<E extends Enum<E>>
+    extends GenericCollectionUserType<Set<E>, E, String> {
 
   @Override
-  Set<Enum<E>> getNewCollection() {
-    return new HashSet<Enum<E>>();
+  Set<E> getNewCollection() {
+    return new HashSet<>();
   }
 
   @Override

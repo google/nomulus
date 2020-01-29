@@ -14,19 +14,22 @@
 
 package google.registry.persistence;
 
-import com.google.common.collect.Sets;
-import java.util.Set;
+import google.registry.util.CidrAddressBlock;
+import java.util.List;
 
-/** Abstract Hibernate user type for storing/retrieving {@link Set<String>}. */
-public class StringSetUserType<E> extends GenericCollectionUserType<Set<E>, E, String> {
+/**
+ * Hibernate {@link org.hibernate.usertype.UserType} for storing/retrieving {@link
+ * List<CidrAddressBlock>} objects.
+ */
+public class CidrAddressBlockListUserType extends StringListUserType<CidrAddressBlock> {
 
   @Override
-  Set<E> getNewCollection() {
-    return Sets.newHashSet();
+  protected CidrAddressBlock convertToElem(String columnValue) {
+    return columnValue == null ? null : CidrAddressBlock.create(columnValue);
   }
 
   @Override
-  ArrayColumnType getColumnType() {
-    return ArrayColumnType.STRING;
+  protected String convertToColumn(CidrAddressBlock elementValue) {
+    return elementValue == null ? null : elementValue.toString();
   }
 }

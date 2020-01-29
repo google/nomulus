@@ -75,6 +75,7 @@ import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
+import javax.persistence.Transient;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 
@@ -89,8 +90,16 @@ import org.joda.time.Interval;
  */
 @ReportedOn
 @Entity
-@javax.persistence.Entity
-@javax.persistence.Table(name = "Domain")
+@javax.persistence.Entity(name = "Domain")
+@javax.persistence.Table(
+    name = "Domain",
+    indexes = {
+      @javax.persistence.Index(columnList = "creationTime"),
+      @javax.persistence.Index(columnList = "currentSponsorClientId"),
+      @javax.persistence.Index(columnList = "deletionTime"),
+      @javax.persistence.Index(columnList = "fullyQualifiedDomainName"),
+      @javax.persistence.Index(columnList = "tld")
+    })
 @ExternalMessagingName("domain")
 public class DomainBase extends EppResource
     implements ForeignKeyedEppResource, ResourceWithTransferData {
@@ -105,7 +114,7 @@ public class DomainBase extends EppResource
           StatusValue.INACTIVE,
           StatusValue.PENDING_DELETE,
           StatusValue.SERVER_HOLD);
-  
+
   /**
    * Fully qualified domain name (puny-coded), which serves as the foreign key for this domain.
    *
@@ -115,22 +124,21 @@ public class DomainBase extends EppResource
    *
    * @invariant fullyQualifiedDomainName == fullyQualifiedDomainName.toLowerCase(Locale.ENGLISH)
    */
-  @Index
-  String fullyQualifiedDomainName;
+  @Index String fullyQualifiedDomainName;
 
   /** The top level domain this is under, dernormalized from {@link #fullyQualifiedDomainName}. */
   @Index
   String tld;
 
   /** References to hosts that are the nameservers for the domain. */
-  @Index @ElementCollection Set<Key<HostResource>> nsHosts;
+  @Index @ElementCollection @Transient Set<Key<HostResource>> nsHosts;
 
   /**
    * The union of the contacts visible via {@link #getContacts} and {@link #getRegistrant}.
    *
    * <p>These are stored in one field so that we can query across all contacts at once.
    */
-  @ElementCollection Set<DesignatedContact> allContacts;
+  @Transient Set<DesignatedContact> allContacts;
 
   /** Authorization info (aka transfer secret) of the domain. */
   @Embedded
@@ -146,7 +154,7 @@ public class DomainBase extends EppResource
    * <p>This is {@literal @}XmlTransient because it needs to be returned under the "extension" tag
    * of an info response rather than inside the "infData" tag.
    */
-  @ElementCollection Set<DelegationSignerData> dsData;
+  @Transient Set<DelegationSignerData> dsData;
 
   /**
    * The claims notice supplied when this application or domain was created, if there was one. It's
@@ -177,7 +185,8 @@ public class DomainBase extends EppResource
   String idnTableName;
 
   /** Fully qualified host names of this domain's active subordinate hosts. */
-  @ElementCollection Set<String> subordinateHosts;
+  @org.hibernate.annotations.Type(type = "google.registry.persistence.StringSetUserType")
+  Set<String> subordinateHosts;
 
   /** When this domain's registration will expire. */
   DateTime registrationExpirationTime;
@@ -189,7 +198,7 @@ public class DomainBase extends EppResource
    * refer to a {@link PollMessage} timed to when the domain is fully deleted. If the domain is
    * restored, the message should be deleted.
    */
-  Key<PollMessage.OneTime> deletePollMessage;
+  @Transient Key<PollMessage.OneTime> deletePollMessage;
 
   /**
    * The recurring billing event associated with this domain's autorenewals.
@@ -199,7 +208,7 @@ public class DomainBase extends EppResource
    * {@link #registrationExpirationTime} is changed the recurrence should be closed, a new one
    * should be created, and this field should be updated to point to the new one.
    */
-  Key<BillingEvent.Recurring> autorenewBillingEvent;
+  @Transient Key<BillingEvent.Recurring> autorenewBillingEvent;
 
   /**
    * The recurring poll message associated with this domain's autorenewals.
@@ -209,10 +218,10 @@ public class DomainBase extends EppResource
    * {@link #registrationExpirationTime} is changed the recurrence should be closed, a new one
    * should be created, and this field should be updated to point to the new one.
    */
-  Key<PollMessage.Autorenew> autorenewPollMessage;
+  @Transient Key<PollMessage.Autorenew> autorenewPollMessage;
 
   /** The unexpired grace periods for this domain (some of which may not be active yet). */
-  @ElementCollection Set<GracePeriod> gracePeriods;
+  @Transient @ElementCollection Set<GracePeriod> gracePeriods;
 
   /**
    * The id of the signed mark that was used to create this domain in sunrise.
@@ -223,31 +232,7 @@ public class DomainBase extends EppResource
   String smdId;
 
   /** Data about any pending or past transfers on this domain. */
-  @Embedded
-  @AttributeOverrides({
-    @AttributeOverride(
-        name = "transferRequestTrid",
-        column = @Column(name = "transfer_data_request_trid")),
-    @AttributeOverride(
-        name = "transferPeriod",
-        column = @Column(name = "transfer_data_transfer_period")),
-    @AttributeOverride(
-        name = "transferredRegistrationExpirationTime",
-        column = @Column(name = "transfer_data_registration_expiration_time")),
-    @AttributeOverride(
-        name = "serverApproveEntities",
-        column = @Column(name = "transfer_data_server_approve_entities")),
-    @AttributeOverride(
-        name = "serverApproveBillingEvent",
-        column = @Column(name = "transfer_data_server_approve_billing_event")),
-    @AttributeOverride(
-        name = "serverApproveAutorenewEvent",
-        column = @Column(name = "transfer_data_server_approve_autorenrew_event")),
-    @AttributeOverride(
-        name = "serverApproveAutorenewPollMessage",
-        column = @Column(name = "transfer_data_server_approve_autorenrew_poll_message")),
-  })
-  TransferData transferData;
+  @Transient TransferData transferData;
 
   /**
    * The time that this resource was last transferred.
@@ -285,7 +270,7 @@ public class DomainBase extends EppResource
   }
 
   @Override
-  public final TransferData getTransferData() {
+  public TransferData getTransferData() {
     return Optional.ofNullable(transferData).orElse(TransferData.EMPTY);
   }
 

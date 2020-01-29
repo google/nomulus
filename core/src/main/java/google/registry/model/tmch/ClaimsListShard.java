@@ -156,7 +156,7 @@ public class ClaimsListShard extends ImmutableObject {
         try {
           loadAndCompareCloudSqlList(datastoreList);
         } catch (Throwable t) {
-          logger.atSevere().withCause(t).log("Error comparing reserved lists.");
+          logger.atSevere().withCause(t).log("Error comparing claims lists.");
         }
         return datastoreList;
       };

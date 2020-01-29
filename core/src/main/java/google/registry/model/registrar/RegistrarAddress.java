@@ -20,6 +20,7 @@ import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import com.google.common.annotations.VisibleForTesting;
 import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.eppcommon.Address;
+import javax.persistence.Embeddable;
 
 /**
  * Registrar Address
@@ -29,6 +30,7 @@ import google.registry.model.eppcommon.Address;
  * classes.
  */
 @Embed
+@Embeddable
 public class RegistrarAddress extends Address {
 
   @Override

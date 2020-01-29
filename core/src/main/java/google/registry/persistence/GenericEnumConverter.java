@@ -14,19 +14,21 @@
 
 package google.registry.persistence;
 
-import com.google.common.collect.Sets;
-import java.util.Set;
+import google.registry.util.TypeUtils.TypeInstantiator;
+import javax.persistence.AttributeConverter;
 
-/** Abstract Hibernate user type for storing/retrieving {@link Set<String>}. */
-public class StringSetUserType<E> extends GenericCollectionUserType<Set<E>, E, String> {
+/** Generic converter for storing/retrieving {@link Enum} objects. */
+public class GenericEnumConverter<T extends Enum<T>> implements AttributeConverter<T, String> {
 
   @Override
-  Set<E> getNewCollection() {
-    return Sets.newHashSet();
+  public String convertToDatabaseColumn(T attribute) {
+    return attribute == null ? null : attribute.toString();
   }
 
   @Override
-  ArrayColumnType getColumnType() {
-    return ArrayColumnType.STRING;
+  public T convertToEntityAttribute(String dbData) {
+    return dbData == null
+        ? null
+        : Enum.valueOf(new TypeInstantiator<T>(getClass()) {}.getExactType(), dbData);
   }
 }

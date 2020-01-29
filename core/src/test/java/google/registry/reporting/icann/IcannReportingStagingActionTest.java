@@ -81,12 +81,8 @@ public class IcannReportingStagingActionTest {
         .thenReturn(ImmutableList.of("c", "d"));
   }
 
-  private static void assertUploadTaskEnqueued(String subdir) {
-    TaskMatcher matcher =
-        new TaskMatcher()
-            .url("/_dr/task/icannReportingUpload")
-            .method("POST")
-            .param("subdir", subdir);
+  private static void assertUploadTaskEnqueued() {
+    TaskMatcher matcher = new TaskMatcher().url("/_dr/task/icannReportingUpload").method("POST");
     assertTasksEnqueued("retryable-cron-tasks", matcher);
   }
 
@@ -103,7 +99,7 @@ public class IcannReportingStagingActionTest {
                 "Completed staging the following 2 ICANN reports:\na\nb",
                 new InternetAddress("recipient@example.com"),
                 new InternetAddress("sender@example.com")));
-    assertUploadTaskEnqueued("default/dir");
+    assertUploadTaskEnqueued();
   }
 
   @Test
@@ -119,7 +115,7 @@ public class IcannReportingStagingActionTest {
                 "Completed staging the following 4 ICANN reports:\na\nb\nc\nd",
                 new InternetAddress("recipient@example.com"),
                 new InternetAddress("sender@example.com")));
-    assertUploadTaskEnqueued("default/dir");
+    assertUploadTaskEnqueued();
   }
 
   @Test
@@ -138,7 +134,7 @@ public class IcannReportingStagingActionTest {
                 "Completed staging the following 4 ICANN reports:\na\nb\nc\nd",
                 new InternetAddress("recipient@example.com"),
                 new InternetAddress("sender@example.com")));
-    assertUploadTaskEnqueued("default/dir");
+    assertUploadTaskEnqueued();
   }
 
   @Test

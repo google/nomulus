@@ -42,25 +42,17 @@
         primary key (key_tag)
     );
 
-    create table "DesignatedContact" (
-       contact bytea not null,
-        type int4,
-        primary key (contact)
-    );
-
     create table "Domain" (
        repo_id text not null,
         creation_client_id text,
+        creation_time timestamptz,
         current_sponsor_client_id text,
         deletion_time timestamptz,
         last_epp_update_client_id text,
         last_epp_update_time timestamptz,
-        revisions bytea,
+        statuses text[],
         auth_info_repo_id text,
         auth_info_value text,
-        autorenew_billing_event bytea,
-        autorenew_poll_message bytea,
-        delete_poll_message bytea,
         fully_qualified_domain_name text,
         idn_table_name text,
         last_transfer_time timestamptz,
@@ -70,54 +62,9 @@
         launch_notice_validator_id text,
         registration_expiration_time timestamptz,
         smd_id text,
+        subordinate_hosts text[],
         tld text,
-        transfer_data_server_approve_autorenrew_event bytea,
-        transfer_data_server_approve_autorenrew_poll_message bytea,
-        transfer_data_server_approve_billing_event bytea,
-        unit int4,
-        value int4,
-        client_transaction_id text,
-        server_transaction_id text,
-        transfer_data_registration_expiration_time timestamptz,
-        gaining_client_id text,
-        losing_client_id text,
-        pending_transfer_expiration_time timestamptz,
-        transfer_request_time timestamptz,
-        transfer_status int4,
         primary key (repo_id)
-    );
-
-    create table "Domain_DelegationSignerData" (
-       domain_base_repo_id text not null,
-        ds_data_key_tag int4 not null,
-        primary key (domain_base_repo_id, ds_data_key_tag)
-    );
-
-    create table "Domain_DesignatedContact" (
-       domain_base_repo_id text not null,
-        all_contacts_contact bytea not null,
-        primary key (domain_base_repo_id, all_contacts_contact)
-    );
-
-    create table "Domain_GracePeriod" (
-       domain_base_repo_id text not null,
-        grace_periods_id int8 not null,
-        primary key (domain_base_repo_id, grace_periods_id)
-    );
-
-    create table "DomainBase_nsHosts" (
-       domain_base_repo_id text not null,
-        ns_hosts bytea
-    );
-
-    create table "DomainBase_serverApproveEntities" (
-       domain_base_repo_id text not null,
-        transfer_data_server_approve_entities bytea
-    );
-
-    create table "DomainBase_subordinateHosts" (
-       domain_base_repo_id text not null,
-        subordinate_hosts text
     );
 
     create table "GracePeriod" (
@@ -144,6 +91,55 @@
         currency text not null,
         name text not null,
         primary key (revision_id)
+    );
+
+    create table "Registrar" (
+       client_id text not null,
+        allowed_tlds text[],
+        billing_account_map hstore,
+        billing_identifier int8,
+        block_premium_names boolean not null,
+        client_certificate text,
+        client_certificate_hash text,
+        contacts_require_syncing boolean not null,
+        creation_time timestamptz,
+        drive_folder_id text,
+        email_address text,
+        failover_client_certificate text,
+        failover_client_certificate_hash text,
+        fax_number text,
+        iana_identifier int8,
+        icann_referral_email text,
+        i18n_address_city text,
+        i18n_address_country_code text,
+        i18n_address_state text,
+        i18n_address_street_line1 text,
+        i18n_address_street_line2 text,
+        i18n_address_street_line3 text,
+        i18n_address_zip text,
+        ip_address_whitelist text[],
+        last_certificate_update_time timestamptz,
+        last_update_time timestamptz,
+        localized_address_city text,
+        localized_address_country_code text,
+        localized_address_state text,
+        localized_address_street_line1 text,
+        localized_address_street_line2 text,
+        localized_address_street_line3 text,
+        localized_address_zip text,
+        password_hash text,
+        phone_number text,
+        phone_passcode text,
+        po_number text,
+        rdap_base_urls text[],
+        registrar_name text not null,
+        registry_lock_allowed boolean not null,
+        password_salt text,
+        state text,
+        type text not null,
+        url text,
+        whois_server text,
+        primary key (client_id)
     );
 
     create table "RegistryLock" (
@@ -177,16 +173,14 @@
         should_publish boolean not null,
         primary key (revision_id)
     );
-
-    alter table if exists "Domain_DelegationSignerData" 
-       add constraint UK_2yp55erx1i51pa7gnb8bu7tjn unique (ds_data_key_tag);
-
-    alter table if exists "Domain_DesignatedContact" 
-       add constraint UK_4ys6wdxcmndimlr6af3tsl0ow unique (all_contacts_contact);
-
-    alter table if exists "Domain_GracePeriod" 
-       add constraint UK_4ps2u4y8i5r91wu2n1x2xea28 unique (grace_periods_id);
+create index IDX8nr0ke9mrrx4ewj6pd2ag4rmr on "Domain" (creation_time);
+create index IDX8ffrqm27qtj20jac056j7yq07 on "Domain" (current_sponsor_client_id);
+create index IDX5mnf0wn20tno4b9do88j61klr on "Domain" (deletion_time);
+create index IDX1rcgkdd777bpvj0r94sltwd5y on "Domain" (fully_qualified_domain_name);
+create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
 create index premiumlist_name_idx on "PremiumList" (name);
+create index registrar_name_idx on "Registrar" (registrar_name);
+create index registrar_iana_identifier_idx on "Registrar" (iana_identifier);
 create index idx_registry_lock_verification_code on "RegistryLock" (verification_code);
 create index idx_registry_lock_registrar_id on "RegistryLock" (registrar_id);
 
@@ -198,51 +192,6 @@ create index reservedlist_name_idx on "ReservedList" (name);
        add constraint FK6sc6at5hedffc0nhdcab6ivuq 
        foreign key (revision_id) 
        references "ClaimsList";
-
-    alter table if exists "Domain_DelegationSignerData" 
-       add constraint FKho8wxowo3f4e688ehdl4wpni5 
-       foreign key (ds_data_key_tag) 
-       references "DelegationSignerData";
-
-    alter table if exists "Domain_DelegationSignerData" 
-       add constraint FK2nvqbovvy5wasa8arhyhy8mge 
-       foreign key (domain_base_repo_id) 
-       references "Domain";
-
-    alter table if exists "Domain_DesignatedContact" 
-       add constraint FKqnnsrj0vi9eqhoth305cd4bi7 
-       foreign key (all_contacts_contact) 
-       references "DesignatedContact";
-
-    alter table if exists "Domain_DesignatedContact" 
-       add constraint FK169lte99hlt3otom9di13ubfn 
-       foreign key (domain_base_repo_id) 
-       references "Domain";
-
-    alter table if exists "Domain_GracePeriod" 
-       add constraint FKny62h7k1nd3910rp56gdo5pfi 
-       foreign key (grace_periods_id) 
-       references "GracePeriod";
-
-    alter table if exists "Domain_GracePeriod" 
-       add constraint FKkpor7amcdp7gwe0hp3obng6do 
-       foreign key (domain_base_repo_id) 
-       references "Domain";
-
-    alter table if exists "DomainBase_nsHosts" 
-       add constraint FKow28763fcl1ilx8unxrfjtbja 
-       foreign key (domain_base_repo_id) 
-       references "Domain";
-
-    alter table if exists "DomainBase_serverApproveEntities" 
-       add constraint FK7vuyqcsmcfvpv5648femoxien 
-       foreign key (domain_base_repo_id) 
-       references "Domain";
-
-    alter table if exists "DomainBase_subordinateHosts" 
-       add constraint FKkva2lb57ri8qf39hthcej538k 
-       foreign key (domain_base_repo_id) 
-       references "Domain";
 
     alter table if exists "PremiumEntry" 
        add constraint FKo0gw90lpo1tuee56l0nb6y6g5 

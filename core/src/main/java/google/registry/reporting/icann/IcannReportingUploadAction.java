@@ -20,7 +20,6 @@ import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.reporting.icann.IcannReportingModule.PARAM_SUBDIR;
 import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
@@ -40,7 +39,6 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
 import google.registry.request.Action;
 import google.registry.request.HttpException.ServiceUnavailableException;
-import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
@@ -90,8 +88,6 @@ public final class IcannReportingUploadAction implements Runnable {
   @Inject
   @Config("reportingBucket")
   String reportingBucket;
-
-  @Inject @Parameter(PARAM_SUBDIR) String subdir;
 
   @Inject GcsUtils gcsUtils;
   @Inject IcannHttpReporter icannReporter;
@@ -145,7 +141,12 @@ public final class IcannReportingUploadAction implements Runnable {
       CursorType cursorType,
       String tldStr,
       ImmutableMap.Builder<String, Boolean> reportSummaryBuilder) {
-    String reportBucketname = String.format("%s/%s", reportingBucket, subdir);
+    DateTime cursorTimeMinusMonth = cursorTime.withDayOfMonth(1).minusMonths(1);
+    String reportSubdir =
+        String.format(
+            "icann/monthly/%d-%02d",
+            cursorTimeMinusMonth.getYear(), cursorTimeMinusMonth.getMonthOfYear());
+    String reportBucketname = String.format("%s/%s", reportingBucket, reportSubdir);
     String filename = getFileName(cursorType, cursorTime, tldStr);
     final GcsFilename gcsFilename = new GcsFilename(reportBucketname, filename);
     logger.atInfo().log("Reading ICANN report %s from bucket %s", filename, reportBucketname);
@@ -195,12 +196,13 @@ public final class IcannReportingUploadAction implements Runnable {
   }
 
   private String getFileName(CursorType cursorType, DateTime cursorTime, String tld) {
+    DateTime cursorTimeMinusMonth = cursorTime.withDayOfMonth(1).minusMonths(1);
     return String.format(
         "%s%s%d%02d.csv",
         tld,
         (cursorType.equals(CursorType.ICANN_UPLOAD_ACTIVITY) ? "-activity-" : "-transactions-"),
-        cursorTime.year().get(),
-        cursorTime.withDayOfMonth(1).minusMonths(1).monthOfYear().get());
+        cursorTimeMinusMonth.year().get(),
+        cursorTimeMinusMonth.monthOfYear().get());
   }
 
   /** Returns a map of each cursor to the CursorType and tld. */

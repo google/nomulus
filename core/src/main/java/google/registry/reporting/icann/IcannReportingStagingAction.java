@@ -122,8 +122,7 @@ public final class IcannReportingStagingAction implements Runnable {
             TaskOptions uploadTask =
                 TaskOptions.Builder.withUrl(IcannReportingUploadAction.PATH)
                     .method(Method.POST)
-                    .countdownMillis(Duration.standardMinutes(2).getMillis())
-                    .param(PARAM_SUBDIR, subdir);
+                    .countdownMillis(Duration.standardMinutes(2).getMillis());
             QueueFactory.getQueue(CRON_QUEUE).add(uploadTask);
             return null;
           },

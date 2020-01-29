@@ -156,7 +156,11 @@ public class PremiumListDao {
         RevisionIdAndLabel.create(premiumList.getRevisionId(), label);
     try {
       Optional<BigDecimal> price = PremiumListCache.cachePremiumEntries.get(revisionIdAndLabel);
-      return price.map(p -> Money.of(premiumList.getCurrency(), p));
+      return price.map(
+          p ->
+              Money.of(
+                  premiumList.getCurrency(),
+                  p.setScale(premiumList.getCurrency().getDecimalPlaces())));
     } catch (InvalidCacheLoadException | ExecutionException e) {
       throw new RuntimeException(
           String.format(

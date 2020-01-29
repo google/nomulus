@@ -202,4 +202,38 @@ public class PremiumListDaoTest {
             () -> PremiumListDao.getPremiumPrice("foobar", Registry.get("tld")));
     assertThat(thrown).hasMessageThat().isEqualTo("Could not load premium list 'tld'");
   }
+
+  @Test
+  public void testGetPremiumPrice_worksForJPY() {
+    persistResource(
+        newRegistry("foobar", "FOOBAR")
+            .asBuilder()
+            .setPremiumListKey(
+                Key.create(
+                    getCrossTldKey(),
+                    google.registry.model.registry.label.PremiumList.class,
+                    "premlist"))
+            .build());
+    PremiumListDao.saveNew(
+        PremiumList.create(
+            "premlist",
+            JPY,
+            ImmutableMap.of(
+                "silver",
+                BigDecimal.valueOf(10.00),
+                "gold",
+                BigDecimal.valueOf(1000.0),
+                "palladium",
+                BigDecimal.valueOf(15000))));
+    assertThat(PremiumListDao.getPremiumPrice("silver", Registry.get("foobar")))
+        .hasValue(moneyOf(JPY, 10));
+    assertThat(PremiumListDao.getPremiumPrice("gold", Registry.get("foobar")))
+        .hasValue(moneyOf(JPY, 1000));
+    assertThat(PremiumListDao.getPremiumPrice("palladium", Registry.get("foobar")))
+        .hasValue(moneyOf(JPY, 15000));
+  }
+
+  private static Money moneyOf(CurrencyUnit unit, double amount) {
+    return Money.of(unit, BigDecimal.valueOf(amount).setScale(unit.getDecimalPlaces()));
+  }
 }

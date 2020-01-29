@@ -78,7 +78,6 @@ public class IcannReportingUploadActionTest {
     action.icannReporter = mockReporter;
     action.gcsUtils = new GcsUtils(gcsService, 1024);
     action.retrier = new Retrier(new FakeSleeper(new FakeClock()), 3);
-    action.subdir = "icann/monthly/2006-06";
     action.reportingBucket = "basin";
     action.emailService = emailService;
     action.sender = new InternetAddress("sender@example.com");
@@ -147,6 +146,43 @@ public class IcannReportingUploadActionTest {
                     + "tld-activity-200606.csv - FAILURE\n"
                     + "foo-transactions-200606.csv - SUCCESS\n"
                     + "tld-transactions-200606.csv - SUCCESS",
+                new InternetAddress("recipient@example.com"),
+                new InternetAddress("sender@example.com")));
+  }
+
+  @Test
+  public void testSuccess_january() throws Exception {
+    clock.setTo(DateTime.parse("2006-01-22T00:30:00Z"));
+    persistResource(
+        Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-01-01TZ"), Registry.get("tld")));
+    persistResource(
+        Cursor.create(
+            CursorType.ICANN_UPLOAD_TX, DateTime.parse("2006-01-01TZ"), Registry.get("tld")));
+    writeGcsFile(
+        gcsService,
+        new GcsFilename("basin/icann/monthly/2005-12", "tld-transactions-200512.csv"),
+        PAYLOAD_SUCCESS);
+    writeGcsFile(
+        gcsService,
+        new GcsFilename("basin/icann/monthly/2005-12", "tld-activity-200512.csv"),
+        PAYLOAD_SUCCESS);
+    when(mockReporter.send(PAYLOAD_SUCCESS, "tld-activity-200512.csv")).thenReturn(true);
+    when(mockReporter.send(PAYLOAD_SUCCESS, "tld-transactions-200512.csv")).thenReturn(true);
+
+    IcannReportingUploadAction action = createAction();
+    action.run();
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "tld-activity-200512.csv");
+    verify(mockReporter).send(PAYLOAD_SUCCESS, "tld-transactions-200512.csv");
+
+    verifyNoMoreInteractions(mockReporter);
+    verify(emailService)
+        .sendEmail(
+            EmailMessage.create(
+                "ICANN Monthly report upload summary: 2/2 succeeded",
+                "Report Filename - Upload status:\n"
+                    + "tld-activity-200512.csv - SUCCESS\n"
+                    + "tld-transactions-200512.csv - SUCCESS",
                 new InternetAddress("recipient@example.com"),
                 new InternetAddress("sender@example.com")));
   }
@@ -280,15 +316,18 @@ public class IcannReportingUploadActionTest {
 
   @Test
   public void testFail_fileNotFound() throws Exception {
+    clock.setTo(DateTime.parse("2006-01-22T00:30:00Z"));
+    persistResource(
+        Cursor.create(
+            CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-01-01TZ"), Registry.get("tld")));
     IcannReportingUploadAction action = createAction();
-    action.subdir = "somewhere/else";
     action.run();
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.SEVERE,
-            "Could not upload ICANN_UPLOAD_ACTIVITY report for foo because file"
-                + " foo-activity-200606.csv did not exist");
+            "Could not upload ICANN_UPLOAD_ACTIVITY report for tld because file"
+                + " tld-activity-200512.csv did not exist");
   }
 
   @Test
@@ -298,7 +337,6 @@ public class IcannReportingUploadActionTest {
             CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-08-01TZ"), Registry.get("foo")));
     clock.setTo(DateTime.parse("2006-08-01T00:30:00Z"));
     IcannReportingUploadAction action = createAction();
-    action.subdir = "icann/monthly/2006-07";
     action.run();
     assertAboutLogs()
         .that(logHandler)

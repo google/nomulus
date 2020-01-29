@@ -88,6 +88,35 @@ CREATE TABLE public."Cursor" (
 
 
 --
+-- Name: Domain; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Domain" (
+    repo_id text NOT NULL,
+    creation_client_id text,
+    creation_time timestamp with time zone,
+    current_sponsor_client_id text,
+    deletion_time timestamp with time zone,
+    last_epp_update_client_id text,
+    last_epp_update_time timestamp with time zone,
+    statuses text[],
+    auth_info_repo_id text,
+    auth_info_value text,
+    fully_qualified_domain_name text,
+    idn_table_name text,
+    last_transfer_time timestamp with time zone,
+    launch_notice_accepted_time timestamp with time zone,
+    launch_notice_expiration_time timestamp with time zone,
+    launch_notice_tcn_id text,
+    launch_notice_validator_id text,
+    registration_expiration_time timestamp with time zone,
+    smd_id text,
+    subordinate_hosts text[],
+    tld text
+);
+
+
+--
 -- Name: PremiumEntry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -128,6 +157,59 @@ CREATE SEQUENCE public."PremiumList_revision_id_seq"
 --
 
 ALTER SEQUENCE public."PremiumList_revision_id_seq" OWNED BY public."PremiumList".revision_id;
+
+
+--
+-- Name: Registrar; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Registrar" (
+    client_id text NOT NULL,
+    allowed_tlds text[],
+    billing_account_map public.hstore,
+    billing_identifier bigint,
+    block_premium_names boolean NOT NULL,
+    client_certificate text,
+    client_certificate_hash text,
+    contacts_require_syncing boolean NOT NULL,
+    creation_time timestamp with time zone,
+    drive_folder_id text,
+    email_address text,
+    failover_client_certificate text,
+    failover_client_certificate_hash text,
+    fax_number text,
+    iana_identifier bigint,
+    icann_referral_email text,
+    i18n_address_city text,
+    i18n_address_country_code text,
+    i18n_address_state text,
+    i18n_address_street_line1 text,
+    i18n_address_street_line2 text,
+    i18n_address_street_line3 text,
+    i18n_address_zip text,
+    ip_address_whitelist text[],
+    last_certificate_update_time timestamp with time zone,
+    last_update_time timestamp with time zone,
+    localized_address_city text,
+    localized_address_country_code text,
+    localized_address_state text,
+    localized_address_street_line1 text,
+    localized_address_street_line2 text,
+    localized_address_street_line3 text,
+    localized_address_zip text,
+    password_hash text,
+    phone_number text,
+    phone_passcode text,
+    po_number text,
+    rdap_base_urls text[],
+    registrar_name text NOT NULL,
+    registry_lock_allowed boolean NOT NULL,
+    password_salt text,
+    state text,
+    type text NOT NULL,
+    url text,
+    whois_server text
+);
 
 
 --
@@ -265,6 +347,14 @@ ALTER TABLE ONLY public."Cursor"
 
 
 --
+-- Name: Domain Domain_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT "Domain_pkey" PRIMARY KEY (repo_id);
+
+
+--
 -- Name: PremiumEntry PremiumEntry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -278,6 +368,14 @@ ALTER TABLE ONLY public."PremiumEntry"
 
 ALTER TABLE ONLY public."PremiumList"
     ADD CONSTRAINT "PremiumList_pkey" PRIMARY KEY (revision_id);
+
+
+--
+-- Name: Registrar Registrar_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Registrar"
+    ADD CONSTRAINT "Registrar_pkey" PRIMARY KEY (client_id);
 
 
 --
@@ -313,6 +411,34 @@ ALTER TABLE ONLY public."RegistryLock"
 
 
 --
+-- Name: idx1rcgkdd777bpvj0r94sltwd5y; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx1rcgkdd777bpvj0r94sltwd5y ON public."Domain" USING btree (fully_qualified_domain_name);
+
+
+--
+-- Name: idx5mnf0wn20tno4b9do88j61klr; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx5mnf0wn20tno4b9do88j61klr ON public."Domain" USING btree (deletion_time);
+
+
+--
+-- Name: idx8ffrqm27qtj20jac056j7yq07; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx8ffrqm27qtj20jac056j7yq07 ON public."Domain" USING btree (current_sponsor_client_id);
+
+
+--
+-- Name: idx8nr0ke9mrrx4ewj6pd2ag4rmr; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx8nr0ke9mrrx4ewj6pd2ag4rmr ON public."Domain" USING btree (creation_time);
+
+
+--
 -- Name: idx_registry_lock_registrar_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -327,10 +453,31 @@ CREATE INDEX idx_registry_lock_verification_code ON public."RegistryLock" USING 
 
 
 --
+-- Name: idxrwl38wwkli1j7gkvtywi9jokq; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxrwl38wwkli1j7gkvtywi9jokq ON public."Domain" USING btree (tld);
+
+
+--
 -- Name: premiumlist_name_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX premiumlist_name_idx ON public."PremiumList" USING btree (name);
+
+
+--
+-- Name: registrar_iana_identifier_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX registrar_iana_identifier_idx ON public."Registrar" USING btree (iana_identifier);
+
+
+--
+-- Name: registrar_name_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX registrar_name_idx ON public."Registrar" USING btree (registrar_name);
 
 
 --

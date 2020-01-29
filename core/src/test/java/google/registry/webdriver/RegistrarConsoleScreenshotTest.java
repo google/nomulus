@@ -18,7 +18,9 @@ import static google.registry.server.Fixture.BASIC;
 import static google.registry.server.Route.route;
 import static google.registry.testing.AppEngineRule.makeRegistrar2;
 import static google.registry.testing.AppEngineRule.makeRegistrarContact2;
+import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
+import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
@@ -26,7 +28,9 @@ import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.ObjectifyFilter;
 import google.registry.model.ofy.OfyFilter;
 import google.registry.model.registrar.Registrar.State;
+import google.registry.model.registry.RegistryLockDao;
 import google.registry.module.frontend.FrontendServlet;
+import google.registry.schema.domain.RegistryLock;
 import google.registry.server.RegistryTestServer;
 import google.registry.testing.CertificateSamples;
 import org.junit.Rule;
@@ -46,7 +50,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
           .setRoutes(
               route("/registrar", FrontendServlet.class),
               route("/registrar-ote-status", FrontendServlet.class),
-              route("/registrar-settings", FrontendServlet.class))
+              route("/registrar-settings", FrontendServlet.class),
+              route("/registry-lock-verify", FrontendServlet.class))
           .setFilters(ObjectifyFilter.class, OfyFilter.class)
           .setFixtures(BASIC)
           .setEmail("Marla.Singer@google.com")
@@ -368,6 +373,38 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.waitForElement(By.tagName("h1"));
     driver.executeScript("document.getElementById('reg-content-and-footer').scrollTop = 200");
     Thread.sleep(500);
+    driver.diffPage("page");
+  }
+
+  @Test
+  public void registryLockVerify_success() throws Throwable {
+    String lockVerificationCode = "f1be78a2-2d61-458c-80f0-9dd8f2f8625f";
+    server.runInAppEngineEnvironment(
+        () -> {
+          createTld("tld");
+          persistResource(newDomainBase("example.tld"));
+          RegistryLockDao.save(
+              new RegistryLock.Builder()
+                  .setRegistrarPocId("johndoe@theregistrar.com")
+                  .setRepoId("repoId")
+                  .setRegistrarId("TheRegistrar")
+                  .setVerificationCode("f1be78a2-2d61-458c-80f0-9dd8f2f8625f")
+                  .isSuperuser(false)
+                  .setDomainName("example.tld")
+                  .build());
+          return null;
+        });
+    driver.get(
+        server.getUrl(
+            "/registry-lock-verify?isLock=true&lockVerificationCode=" + lockVerificationCode));
+    driver.waitForElement(By.id("reg-content"));
+    driver.diffPage("page");
+  }
+
+  @Test
+  public void registryLockVerify_unknownLock() throws Throwable {
+    driver.get(server.getUrl("/registry-lock-verify?isLock=true&lockVerificationCode=asdfasdf"));
+    driver.waitForElement(By.id("reg-content"));
     driver.diffPage("page");
   }
 }

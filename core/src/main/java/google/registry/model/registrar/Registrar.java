@@ -85,12 +85,27 @@ import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
+import javax.persistence.Column;
+import javax.persistence.Embedded;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+import org.hibernate.annotations.Type;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 
 /** Information about a registrar. */
 @ReportedOn
 @Entity
+@javax.persistence.Entity
+@Table(
+    indexes = {
+      @javax.persistence.Index(columnList = "registrarName", name = "registrar_name_idx"),
+      @javax.persistence.Index(
+          columnList = "ianaIdentifier",
+          name = "registrar_iana_identifier_idx"),
+    })
 public class Registrar extends ImmutableObject implements Buildable, Jsonifiable {
 
   /** Represents the type of a registrar entity. */
@@ -208,14 +223,17 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
                   .doTransactionless(
                       () -> Maps.uniqueIndex(loadAll(), Registrar::getClientId)));
 
-  @Parent
-  Key<EntityGroupRoot> parent = getCrossTldKey();
+  @Parent @Transient Key<EntityGroupRoot> parent = getCrossTldKey();
 
   /**
    * Unique registrar client id. Must conform to "clIDType" as defined in RFC5730.
+   *
    * @see <a href="http://tools.ietf.org/html/rfc5730#section-4.2">Shared Structure Schema</a>
+   *     <p>TODO(shicong): Rename this field to clientId
    */
   @Id
+  @javax.persistence.Id
+  @Column(name = "client_id", nullable = false)
   String clientIdentifier;
 
   /**
@@ -229,21 +247,27 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
    * @see <a href="http://www.icann.org/registrar-reports/accredited-list.html">ICANN-Accredited
    *     Registrars</a>
    */
-  @Index String registrarName;
+  @Index
+  @Column(nullable = false)
+  String registrarName;
 
   /** The type of this registrar. */
+  @Column(nullable = false)
   Type type;
 
   /** The state of this registrar. */
   State state;
 
   /** The set of TLDs which this registrar is allowed to access. */
+  // TODO(b/147908600): Investigate how to automatically apply user type
+  @org.hibernate.annotations.Type(type = "google.registry.persistence.StringSetUserType")
   Set<String> allowedTlds;
 
   /** Host name of WHOIS server. */
   String whoisServer;
 
   /** Base URLs for the registrar's RDAP servers. */
+  @org.hibernate.annotations.Type(type = "google.registry.persistence.StringSetUserType")
   Set<String> rdapBaseUrls;
 
   /**
@@ -271,12 +295,14 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
   String failoverClientCertificateHash;
 
   /** A whitelist of netmasks (in CIDR notation) which the client is allowed to connect from. */
+  @org.hibernate.annotations.Type(type = "google.registry.persistence.CidrAddressBlockListUserType")
   List<CidrAddressBlock> ipAddressWhitelist;
 
   /** A hashed password for EPP access. The hash is a base64 encoded SHA256 string. */
   String passwordHash;
 
   /** Randomly generated hash salt. */
+  @Column(name = "password_salt")
   String salt;
 
   // The following fields may appear redundant to the above, but are
@@ -287,6 +313,24 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
    * unrestricted UTF-8.
    */
   @IgnoreSave(IfNull.class)
+  @Embedded
+  @AttributeOverrides({
+    @AttributeOverride(
+        name = "streetLine1",
+        column = @Column(name = "localized_address_street_line1")),
+    @AttributeOverride(
+        name = "streetLine2",
+        column = @Column(name = "localized_address_street_line2")),
+    @AttributeOverride(
+        name = "streetLine3",
+        column = @Column(name = "localized_address_street_line3")),
+    @AttributeOverride(name = "city", column = @Column(name = "localized_address_city")),
+    @AttributeOverride(name = "state", column = @Column(name = "localized_address_state")),
+    @AttributeOverride(name = "zip", column = @Column(name = "localized_address_zip")),
+    @AttributeOverride(
+        name = "countryCode",
+        column = @Column(name = "localized_address_country_code"))
+  })
   RegistrarAddress localizedAddress;
 
   /**
@@ -294,6 +338,16 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
    * representable in the 7-bit US-ASCII character set.
    */
   @IgnoreSave(IfNull.class)
+  @Embedded
+  @AttributeOverrides({
+    @AttributeOverride(name = "streetLine1", column = @Column(name = "i18n_address_street_line1")),
+    @AttributeOverride(name = "streetLine2", column = @Column(name = "i18n_address_street_line2")),
+    @AttributeOverride(name = "streetLine3", column = @Column(name = "i18n_address_street_line3")),
+    @AttributeOverride(name = "city", column = @Column(name = "i18n_address_city")),
+    @AttributeOverride(name = "state", column = @Column(name = "i18n_address_state")),
+    @AttributeOverride(name = "zip", column = @Column(name = "i18n_address_zip")),
+    @AttributeOverride(name = "countryCode", column = @Column(name = "i18n_address_country_code"))
+  })
   RegistrarAddress internationalizedAddress;
 
   /** Voice number. */
@@ -309,16 +363,17 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
 
   /**
    * Registrar identifier used for reporting to ICANN.
+   *
    * <ul>
    *   <li>8 is used for Testing Registrar.
    *   <li>9997 is used by ICAAN for SLA monitoring.
    *   <li>9999 is used for cases when the registry operator acts as registrar.
    * </ul>
-   * @see <a href="http://www.iana.org/assignments/registrar-ids/registrar-ids.txt">Registrar IDs</a>
+   *
+   * @see <a href="http://www.iana.org/assignments/registrar-ids/registrar-ids.txt">Registrar
+   *     IDs</a>
    */
-  @Index
-  @Nullable
-  Long ianaIdentifier;
+  @Index @Nullable Long ianaIdentifier;
 
   /** Identifier of registrar used in external billing system (e.g. Oracle). */
   @Nullable
@@ -338,18 +393,19 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
    */
   @Nullable
   @Mapify(CurrencyMapper.class)
+  @org.hibernate.annotations.Type(type = "google.registry.persistence.CurrencyToBillingMapUserType")
   Map<CurrencyUnit, BillingAccountEntry> billingAccountMap;
 
   /** A billing account entry for this registrar, consisting of a currency and an account Id. */
   @Embed
-  static class BillingAccountEntry extends ImmutableObject {
+  public static class BillingAccountEntry extends ImmutableObject {
 
     CurrencyUnit currency;
     String accountId;
 
     BillingAccountEntry() {}
 
-    BillingAccountEntry(CurrencyUnit currency, String accountId) {
+    public BillingAccountEntry(CurrencyUnit currency, String accountId) {
       this.accountId = accountId;
       this.currency = currency;
     }
@@ -365,6 +421,11 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
       public CurrencyUnit getKey(BillingAccountEntry billingAccountEntry) {
         return billingAccountEntry.currency;
       }
+    }
+
+    /** Returns the account id of this entry. */
+    public String getAccountId() {
+      return accountId;
     }
   }
 
@@ -390,14 +451,10 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
   /** An automatically managed last-saved timestamp. */
   UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
 
-  /**
-   * The time that the certificate was last updated.
-   */
+  /** The time that the certificate was last updated. */
   DateTime lastCertificateUpdateTime;
 
-  /**
-   * Telephone support passcode (5-digit numeric)
-   */
+  /** Telephone support passcode (5-digit numeric) */
   String phonePasscode;
 
   /**

@@ -14,7 +14,7 @@
 
 package google.registry.persistence.transaction;
 
-import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import com.google.common.base.Charsets;
@@ -67,6 +67,7 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
   // The type of JDBC connections started by the tests. This string value
   // is documented in PSQL's official user guide.
   private static final String CONNECTION_BACKEND_TYPE = "client backend";
+  private static final int ACTIVE_CONNECTIONS_CAP = 5;
 
   private final Clock clock;
   private final Optional<String> initScriptPath;
@@ -122,7 +123,7 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
       builder.put(Environment.SHOW_SQL, "true");
       properties = builder.build();
     }
-    assertNoActiveTestConnections();
+    assertReasonableNumDbConnections();
     emf =
         createEntityManagerFactory(
             getJdbcUrlFor(POSTGRES_DB_NAME),
@@ -143,14 +144,18 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
       emf = null;
     }
     cachedTm = null;
-    assertNoActiveTestConnections();
+    assertReasonableNumDbConnections();
   }
 
   /**
-   * Asserts that all JDBC connections started by the test classes to the 'postgres' database have
-   * been closed.
+   * Asserts that the number of connections to the test database is reasonable, i.e. less than 5.
+   * Ideally, it should be 0 if the connection is closed by the test as we don't use a connection
+   * pool. However, Hibernate may still maintain some connection by it self. In addition, the
+   * metadata table we use to detect active connection may not remove the closed connection
+   * immediately. So, we decide to relax the condition to check if the number of active connection
+   * is less than 5 to reduce flakiness.
    */
-  private void assertNoActiveTestConnections() {
+  private void assertReasonableNumDbConnections() {
     // Use the 'management' db to connect so that this connection needs not to be accounted for.
     try (Connection conn = createConnection(MANAGEMENT_DB_NAME);
         Statement statement = conn.createStatement()) {
@@ -165,7 +170,9 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
                       + " and backend_type = '%3s'",
                   database.getUsername(), POSTGRES_DB_NAME, CONNECTION_BACKEND_TYPE));
       rs.next();
-      assertThat(rs.getLong(1)).isEqualTo(0);
+      assertWithMessage("Too many active connections to database")
+          .that(rs.getLong(1))
+          .isLessThan(ACTIVE_CONNECTIONS_CAP);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

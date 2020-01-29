@@ -1,4 +1,4 @@
-// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+// Copyright 2020 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.tools;
+package google.registry.persistence;
 
-/**
- * Marker interface for commands that use Cloud Sql.
- *
- * <p>Just implementing this is sufficient to use Cloud Sql; {@link RegistryTool} will install it as
- * needed.
- */
-interface CommandWithCloudSql extends CommandWithRemoteApi {}
+import google.registry.model.registrar.Registrar;
+import javax.persistence.Converter;
+
+/** JPA converter for storing/retrieving {@link Registrar.State} objects. */
+@Converter(autoApply = true)
+public class RegistrarStateConverter extends GenericEnumConverter<Registrar.State> {}

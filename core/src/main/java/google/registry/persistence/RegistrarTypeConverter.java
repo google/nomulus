@@ -14,19 +14,9 @@
 
 package google.registry.persistence;
 
-import com.google.common.collect.Sets;
-import java.util.Set;
+import google.registry.model.registrar.Registrar;
+import javax.persistence.Converter;
 
-/** Abstract Hibernate user type for storing/retrieving {@link Set<String>}. */
-public class StringSetUserType<E> extends GenericCollectionUserType<Set<E>, E, String> {
-
-  @Override
-  Set<E> getNewCollection() {
-    return Sets.newHashSet();
-  }
-
-  @Override
-  ArrayColumnType getColumnType() {
-    return ArrayColumnType.STRING;
-  }
-}
+/** JPA converter for storing/retrieving {@link Registrar.Type} objects. */
+@Converter(autoApply = true)
+public class RegistrarTypeConverter extends GenericEnumConverter<Registrar.Type> {}
