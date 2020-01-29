@@ -390,7 +390,7 @@ public final class RegistryLockPostActionTest {
     ArgumentCaptor<EmailMessage> emailCaptor = ArgumentCaptor.forClass(EmailMessage.class);
     verify(emailService).sendEmail(emailCaptor.capture());
     EmailMessage sentMessage = emailCaptor.getValue();
-    assertThat(sentMessage.subject()).isEqualTo("Registry lock / unlock verification");
+    assertThat(sentMessage.subject()).matches("Registry (un)?lock verification");
     assertThat(sentMessage.body()).matches(EMAIL_MESSAGE_TEMPLATE);
     assertThat(sentMessage.from()).isEqualTo(new InternetAddress("domain-registry@example.com"));
     assertThat(sentMessage.recipients()).containsExactly(new InternetAddress(recipient));

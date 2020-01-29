@@ -164,10 +164,11 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       ImmutableList<InternetAddress> recipients =
           ImmutableList.of(
               new InternetAddress(authResult.userAuthInfo().get().user().getEmail(), true));
+      String action = isLock ? "lock" : "unlock";
       sendEmailService.sendEmail(
           EmailMessage.newBuilder()
               .setBody(body)
-              .setSubject("Registry lock / unlock verification")
+              .setSubject(String.format("Registry %s verification", action))
               .setRecipients(recipients)
               .setFrom(gSuiteOutgoingEmailAddress)
               .build());
