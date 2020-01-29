@@ -12,16 +12,23 @@
 #
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
+#
+# Note: to work around issue in Spinnaker's 'Deployment Manifest' stage,
+# variable references must avoid the ${var} format. Valid formats include
+# $var or ${"${var}"}. This file use the former. Since TAG_NAME and _ENV are
+# hardened in the copies sent to Spinnaker, we preserve the brackets around
+# them for safe pattern matching during release.
+# See https://github.com/spinnaker/spinnaker/issues/3028 for more information.
 steps:
 # Pull the credential for nomulus tool.
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
   args:
   - gsutil
   - cp
-  - gs://${PROJECT_ID}-deploy/secrets/tool-credential.json.enc
+  - gs://$PROJECT_ID-deploy/secrets/tool-credential.json.enc
   - .
 # Decrypt the credential.
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
   entrypoint: /bin/bash
   args:
   - -c
@@ -31,7 +38,7 @@ steps:
       --ciphertext-file=- --plaintext-file=tool-credential.json \
       --location=global --keyring=nomulus-tool-keyring --key=nomulus-tool-key
 # Deploy the Spec11 pipeline to GCS.
-- name: 'gcr.io/${PROJECT_ID}/nomulus-tool:latest'
+- name: 'gcr.io/$PROJECT_ID/nomulus-tool:latest'
   args:
   - -e
   - ${_ENV}
@@ -39,7 +46,7 @@ steps:
   - tool-credential.json
   - deploy_spec11_pipeline
 # Deploy the invoicing pipeline to GCS.
-- name: 'gcr.io/${PROJECT_ID}/nomulus-tool:latest'
+- name: 'gcr.io/$PROJECT_ID/nomulus-tool:latest'
   args:
   - -e
   - ${_ENV}
@@ -49,18 +56,18 @@ steps:
 # Save the deployed tag for the current environment on GCS. Because of b/137891685
 # which causes the for-loop in the next step to fail, this may not be the last step.
 # TODO(weiminyu): do this in last step.
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
   entrypoint: /bin/bash
   args:
   - -c
   - |
     set -e
     echo ${TAG_NAME} | \
-      gsutil cp - gs://${PROJECT_ID}-deployed-tags/nomulus.${_ENV}.tag
+      gsutil cp - gs://$PROJECT_ID-deployed-tags/nomulus.${_ENV}.tag
 # Deploy the GAE config files.
 # First authorize the gcloud tool to use the credential json file, then
 # download and unzip the tarball that contains the relevant config files
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
   entrypoint: /bin/bash
   args:
   - -c
@@ -72,13 +79,13 @@ steps:
     else
       project_id="domain-registry-${_ENV}"
     fi
-    gsutil cp gs://${PROJECT_ID}-deploy/${TAG_NAME}/${_ENV}.tar .
+    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/${_ENV}.tar .
     tar -xvf ${_ENV}.tar
     # Note that this currently does not work for google.com projects that
     # we use due to b/137891685. External projects are likely to work.
     for filename in cron dispatch dos index queue; do
-      gcloud -q --project ${project_id} app deploy \
-        default/WEB-INF/appengine-generated/${filename}.yaml
+      gcloud -q --project $project_id app deploy \
+        default/WEB-INF/appengine-generated/$filename.yaml
     done
 
 timeout: 3600s

@@ -11,15 +11,22 @@
 #
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
+#
+# Note: to work around issue in Spinnaker's 'Deployment Manifest' stage,
+# variable references must avoid the ${var} format. Valid formats include
+# $var or ${"${var}"}. This file use the former. Since TAG_NAME is
+# hardened in the copies sent to Spinnaker, we preserve the brackets around
+# them for safe pattern matching during release.
+# See https://github.com/spinnaker/spinnaker/issues/3028 for more information.
 steps:
-- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
   args:
   - gcloud
   - container
   - images
   - add-tag
-  - gcr.io/${PROJECT_ID}/${_IMAGE}:${TAG_NAME}
-  - gcr.io/${PROJECT_ID}/${_IMAGE}:live
+  - gcr.io/$PROJECT_ID/${_IMAGE}:${TAG_NAME}
+  - gcr.io/$PROJECT_ID/${_IMAGE}:live
 timeout: 3600s
 options:
   machineType: 'N1_HIGHCPU_8'
