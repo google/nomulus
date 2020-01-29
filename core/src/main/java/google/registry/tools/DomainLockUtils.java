@@ -32,12 +32,14 @@ import google.registry.model.registry.RegistryLockDao;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.util.Clock;
+import google.registry.util.StringGenerator;
 import java.util.Optional;
-import java.util.UUID;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
- * Utility class for validating and applying {@link RegistryLock}s.
+ * Utility functions for validating and applying {@link RegistryLock}s.
  *
  * <p>For both locks and unlocks, a lock must be requested via the createRegistry*Requst methods
  * then verified through the verifyAndApply* methods. These methods will verify that the domain in
@@ -45,9 +47,16 @@ import javax.annotation.Nullable;
  */
 public final class DomainLockUtils {
 
-  private DomainLockUtils() {}
+  private static final int VERIFICATION_CODE_LENGTH = 32;
 
-  public static RegistryLock createRegistryLockRequest(
+  private final StringGenerator stringGenerator;
+
+  @Inject
+  public DomainLockUtils(@Named("base58StringGenerator") StringGenerator stringGenerator) {
+    this.stringGenerator = stringGenerator;
+  }
+
+  public RegistryLock createRegistryLockRequest(
       String domainName,
       String registrarId,
       @Nullable String registrarPocId,
@@ -68,7 +77,7 @@ public final class DomainLockUtils {
 
     RegistryLock lock =
         new RegistryLock.Builder()
-            .setVerificationCode(UUID.randomUUID().toString())
+            .setVerificationCode(stringGenerator.createString(VERIFICATION_CODE_LENGTH))
             .setDomainName(domainName)
             .setRepoId(domainBase.getRepoId())
             .setRegistrarId(registrarId)
@@ -78,7 +87,7 @@ public final class DomainLockUtils {
     return RegistryLockDao.save(lock);
   }
 
-  public static RegistryLock createRegistryUnlockRequest(
+  public RegistryLock createRegistryUnlockRequest(
       String domainName, String registrarId, boolean isAdmin, Clock clock) {
     DomainBase domainBase = getDomain(domainName, clock);
     Optional<RegistryLock> lockOptional =
@@ -121,7 +130,7 @@ public final class DomainLockUtils {
     }
     RegistryLock newLock =
         newLockBuilder
-            .setVerificationCode(UUID.randomUUID().toString())
+            .setVerificationCode(stringGenerator.createString(VERIFICATION_CODE_LENGTH))
             .isSuperuser(isAdmin)
             .setUnlockRequestTimestamp(clock.nowUtc())
             .setRegistrarId(registrarId)
@@ -129,8 +138,7 @@ public final class DomainLockUtils {
     return RegistryLockDao.save(newLock);
   }
 
-  public static RegistryLock verifyAndApplyLock(
-      String verificationCode, boolean isAdmin, Clock clock) {
+  public RegistryLock verifyAndApplyLock(String verificationCode, boolean isAdmin, Clock clock) {
     return jpaTm()
         .transact(
             () -> {
@@ -156,8 +164,7 @@ public final class DomainLockUtils {
             });
   }
 
-  public static RegistryLock verifyAndApplyUnlock(
-      String verificationCode, boolean isAdmin, Clock clock) {
+  public RegistryLock verifyAndApplyUnlock(String verificationCode, boolean isAdmin, Clock clock) {
     return jpaTm()
         .transact(
             () -> {

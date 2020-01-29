@@ -42,9 +42,12 @@ import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.AppEngineRule;
+import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
+import google.registry.tools.DomainLockUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
+import google.registry.util.StringGenerator.Alphabets;
 import java.util.Map;
 import java.util.UUID;
 import javax.mail.internet.InternetAddress;
@@ -402,7 +405,15 @@ public final class RegistryLockPostActionTest {
             ImmutableSetMultimap.of("TheRegistrar", Role.OWNER, "NewRegistrar", Role.OWNER));
     JsonActionRunner jsonActionRunner =
         new JsonActionRunner(ImmutableMap.of(), new JsonResponse(new ResponseImpl(mockResponse)));
+    DomainLockUtils domainLockUtils =
+        new DomainLockUtils(new DeterministicStringGenerator(Alphabets.BASE_58));
     return new RegistryLockPostAction(
-        jsonActionRunner, authResult, registrarAccessor, emailService, clock, outgoingAddress);
+        jsonActionRunner,
+        authResult,
+        registrarAccessor,
+        emailService,
+        clock,
+        domainLockUtils,
+        outgoingAddress);
   }
 }

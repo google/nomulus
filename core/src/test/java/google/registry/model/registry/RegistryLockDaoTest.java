@@ -25,7 +25,6 @@ import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import java.util.Optional;
-import java.util.UUID;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -201,7 +200,7 @@ public final class RegistryLockDaoTest {
         .setRepoId("repoId")
         .setDomainName("example.test")
         .setRegistrarId("TheRegistrar")
-        .setVerificationCode(UUID.randomUUID().toString())
+        .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
         .isSuperuser(true)
         .build();
   }

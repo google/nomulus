@@ -33,7 +33,9 @@ import google.registry.model.registry.RegistryLockDao;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.domain.RegistryLock;
+import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
+import google.registry.util.StringGenerator.Alphabets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,14 +56,16 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
     createTld("tld");
     command.registryAdminClientId = "adminreg";
     command.clock = new FakeClock();
+    command.domainLockUtils =
+        new DomainLockUtils(new DeterministicStringGenerator(Alphabets.BASE_58));
   }
 
   private DomainBase persistLockedDomain(String domainName, String registrarId) {
     DomainBase domain = persistResource(newDomainBase(domainName));
     RegistryLock lock =
-        DomainLockUtils.createRegistryLockRequest(
+        command.domainLockUtils.createRegistryLockRequest(
             domainName, registrarId, null, true, command.clock);
-    DomainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, command.clock);
+    command.domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, command.clock);
     return reloadResource(domain);
   }
 

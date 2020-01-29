@@ -30,7 +30,9 @@ import google.registry.model.registrar.Registrar.Type;
 import google.registry.model.registry.RegistryLockDao;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
+import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
+import google.registry.util.StringGenerator.Alphabets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -51,6 +53,8 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
     createTld("tld");
     command.registryAdminClientId = "adminreg";
     command.clock = new FakeClock();
+    command.domainLockUtils =
+        new DomainLockUtils(new DeterministicStringGenerator(Alphabets.BASE_58));
   }
 
   @Test

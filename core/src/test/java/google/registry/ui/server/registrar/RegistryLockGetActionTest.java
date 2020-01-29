@@ -43,7 +43,6 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Rule;
@@ -97,7 +96,7 @@ public final class RegistryLockGetActionTest {
             .setRepoId("repoId")
             .setDomainName("example.test")
             .setRegistrarId("TheRegistrar")
-            .setVerificationCode(UUID.randomUUID().toString())
+            .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
             .setRegistrarPocId("johndoe@theregistrar.com")
             .setLockCompletionTimestamp(fakeClock.nowUtc())
             .build();
@@ -107,7 +106,7 @@ public final class RegistryLockGetActionTest {
             .setRepoId("repoId")
             .setDomainName("adminexample.test")
             .setRegistrarId("TheRegistrar")
-            .setVerificationCode(UUID.randomUUID().toString())
+            .setVerificationCode("122222222ABCDEFGHJKLMNPQRSTUVWXY")
             .isSuperuser(true)
             .setLockCompletionTimestamp(fakeClock.nowUtc())
             .build();
@@ -116,7 +115,7 @@ public final class RegistryLockGetActionTest {
             .setRepoId("repoId")
             .setDomainName("incomplete.test")
             .setRegistrarId("TheRegistrar")
-            .setVerificationCode(UUID.randomUUID().toString())
+            .setVerificationCode("111111111ABCDEFGHJKLMNPQRSTUVWXY")
             .setRegistrarPocId("johndoe@theregistrar.com")
             .build();
 
@@ -126,7 +125,7 @@ public final class RegistryLockGetActionTest {
             .setDomainName("unlocked.test")
             .setRegistrarId("TheRegistrar")
             .setRegistrarPocId("johndoe@theregistrar.com")
-            .setVerificationCode(UUID.randomUUID().toString())
+            .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUUUUU")
             .setLockCompletionTimestamp(fakeClock.nowUtc())
             .setUnlockRequestTimestamp(fakeClock.nowUtc())
             .setUnlockCompletionTimestamp(fakeClock.nowUtc())

@@ -60,11 +60,11 @@ public class LockDomainCommand extends LockOrUnlockDomainCommand {
 
   @Override
   protected RegistryLock createLock(String domain) {
-    return DomainLockUtils.createRegistryLockRequest(domain, clientId, null, true, clock);
+    return domainLockUtils.createRegistryLockRequest(domain, clientId, null, true, clock);
   }
 
   @Override
   protected void finalizeLockOrUnlockRequest(RegistryLock lock) {
-    DomainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, clock);
+    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, clock);
   }
 }

@@ -47,11 +47,14 @@ import google.registry.schema.domain.RegistryLock;
 import google.registry.security.XsrfTokenManager;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.DatastoreHelper;
+import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectRule;
 import google.registry.testing.UserInfo;
-import java.util.UUID;
+import google.registry.tools.DomainLockUtils;
+import google.registry.util.StringGenerator;
+import google.registry.util.StringGenerator.Alphabets;
 import javax.servlet.http.HttpServletRequest;
 import org.joda.time.Duration;
 import org.junit.Before;
@@ -81,7 +84,9 @@ public final class RegistryLockVerifyActionTest {
   private final HttpServletRequest request = mock(HttpServletRequest.class);
   private final UserService userService = UserServiceFactory.getUserService();
   private final User user = new User("marla.singer@example.com", "gmail.com", "12345");
-  private final String lockId = "f1be78a2-2d61-458c-80f0-9dd8f2f8625f";
+  private final String lockId = "123456789ABCDEFGHJKLMNPQRSTUVWXY";
+  private final StringGenerator stringGenerator =
+      new DeterministicStringGenerator(Alphabets.BASE_58);
 
   private FakeResponse response;
   private DomainBase domain;
@@ -145,7 +150,7 @@ public final class RegistryLockVerifyActionTest {
   @Test
   public void testFailure_badVerificationCode() {
     RegistryLockDao.save(
-        createLock().asBuilder().setVerificationCode(UUID.randomUUID().toString()).build());
+        createLock().asBuilder().setVerificationCode("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA").build());
     action.run();
     assertThat(response.getPayload()).contains("Failed: Invalid verification code");
     assertNoDomainChanges();
@@ -330,7 +335,8 @@ public final class RegistryLockVerifyActionTest {
   private RegistryLockVerifyAction createAction(String lockVerificationCode, Boolean isLock) {
     response = new FakeResponse();
     RegistryLockVerifyAction action =
-        new RegistryLockVerifyAction(fakeClock, lockVerificationCode, isLock);
+        new RegistryLockVerifyAction(
+            fakeClock, new DomainLockUtils(stringGenerator), lockVerificationCode, isLock);
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
     action.req = request;
     action.response = response;

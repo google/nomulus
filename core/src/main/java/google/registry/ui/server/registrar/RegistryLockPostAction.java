@@ -83,6 +83,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
   private final AuthenticatedRegistrarAccessor registrarAccessor;
   private final SendEmailService sendEmailService;
   private final Clock clock;
+  private final DomainLockUtils domainLockUtils;
   private final InternetAddress gSuiteOutgoingEmailAddress;
 
   @Inject
@@ -92,12 +93,14 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       AuthenticatedRegistrarAccessor registrarAccessor,
       SendEmailService sendEmailService,
       Clock clock,
+      DomainLockUtils domainLockUtils,
       @Config("gSuiteOutgoingEmailAddress") InternetAddress gSuiteOutgoingEmailAddress) {
     this.jsonActionRunner = jsonActionRunner;
     this.authResult = authResult;
     this.registrarAccessor = registrarAccessor;
     this.sendEmailService = sendEmailService;
     this.clock = clock;
+    this.domainLockUtils = domainLockUtils;
     this.gSuiteOutgoingEmailAddress = gSuiteOutgoingEmailAddress;
   }
 
@@ -129,13 +132,13 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
               () -> {
                 RegistryLock registryLock =
                     postInput.isLock
-                        ? DomainLockUtils.createRegistryLockRequest(
+                        ? domainLockUtils.createRegistryLockRequest(
                             postInput.fullyQualifiedDomainName,
                             postInput.clientId,
                             postInput.pocId,
                             isAdmin,
                             clock)
-                        : DomainLockUtils.createRegistryUnlockRequest(
+                        : domainLockUtils.createRegistryUnlockRequest(
                             postInput.fullyQualifiedDomainName, postInput.clientId, isAdmin, clock);
                 sendVerificationEmail(registryLock, postInput.isLock);
               });

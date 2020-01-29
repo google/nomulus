@@ -38,8 +38,10 @@ import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCo
 import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.DatastoreHelper;
+import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.UserInfo;
+import google.registry.util.StringGenerator.Alphabets;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.joda.time.Duration;
@@ -57,6 +59,8 @@ public final class DomainLockUtilsTest {
   private static final String POC_ID = "marla.singer@example.com";
 
   private final FakeClock clock = new FakeClock();
+  private final DomainLockUtils domainLockUtils =
+      new DomainLockUtils(new DeterministicStringGenerator(Alphabets.BASE_58));
 
   @Rule
   public final AppEngineRule appEngineRule =
@@ -80,39 +84,39 @@ public final class DomainLockUtilsTest {
 
   @Test
   public void testSuccess_createLock() {
-    DomainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock);
+    domainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock);
   }
 
   @Test
   public void testSuccess_createUnlock() {
     RegistryLock lock =
-        DomainLockUtils.createRegistryLockRequest(
+        domainLockUtils.createRegistryLockRequest(
             DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock);
-    DomainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, clock);
-    DomainLockUtils.createRegistryUnlockRequest(DOMAIN_NAME, "TheRegistrar", false, clock);
+    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, clock);
+    domainLockUtils.createRegistryUnlockRequest(DOMAIN_NAME, "TheRegistrar", false, clock);
   }
 
   @Test
   public void testSuccess_createUnlock_adminUnlockingAdmin() {
     RegistryLock lock =
-        DomainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true, clock);
-    DomainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, clock);
-    DomainLockUtils.createRegistryUnlockRequest(DOMAIN_NAME, "TheRegistrar", true, clock);
+        domainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true, clock);
+    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, clock);
+    domainLockUtils.createRegistryUnlockRequest(DOMAIN_NAME, "TheRegistrar", true, clock);
   }
 
   @Test
   public void testSuccess_createLock_previousLockExpired() {
-    DomainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock);
+    domainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock);
     clock.advanceBy(Duration.standardDays(1));
-    DomainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock);
+    domainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock);
   }
 
   @Test
   public void testSuccess_applyLockDomain() {
     RegistryLock lock =
-        DomainLockUtils.createRegistryLockRequest(
+        domainLockUtils.createRegistryLockRequest(
             DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock);
-    DomainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, clock);
+    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, clock);
     assertThat(reloadDomain().getStatusValues()).containsExactlyElementsIn(REGISTRY_LOCK_STATUSES);
     HistoryEntry historyEntry = getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE);
     assertThat(historyEntry.getRequestedByRegistrar()).isTrue();
@@ -125,12 +129,12 @@ public final class DomainLockUtilsTest {
   @Test
   public void testSuccess_applyUnlockDomain() {
     RegistryLock lock =
-        DomainLockUtils.createRegistryLockRequest(
+        domainLockUtils.createRegistryLockRequest(
             DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock);
-    DomainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, clock);
+    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, clock);
     RegistryLock unlock =
-        DomainLockUtils.createRegistryUnlockRequest(DOMAIN_NAME, "TheRegistrar", false, clock);
-    DomainLockUtils.verifyAndApplyUnlock(unlock.getVerificationCode(), false, clock);
+        domainLockUtils.createRegistryUnlockRequest(DOMAIN_NAME, "TheRegistrar", false, clock);
+    domainLockUtils.verifyAndApplyUnlock(unlock.getVerificationCode(), false, clock);
 
     assertThat(reloadDomain().getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
     ImmutableList<HistoryEntry> historyEntries =
@@ -149,8 +153,8 @@ public final class DomainLockUtilsTest {
   @Test
   public void testSuccess_applyAdminLock_onlyHistoryEntry() {
     RegistryLock lock =
-        DomainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true, clock);
-    DomainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, clock);
+        domainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true, clock);
+    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, clock);
 
     HistoryEntry historyEntry = getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE);
     assertThat(historyEntry.getRequestedByRegistrar()).isFalse();
@@ -161,16 +165,16 @@ public final class DomainLockUtilsTest {
   @Test
   public void testFailure_createUnlock_alreadyPendingUnlock() {
     RegistryLock lock =
-        DomainLockUtils.createRegistryLockRequest(
+        domainLockUtils.createRegistryLockRequest(
             DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock);
-    DomainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, clock);
-    DomainLockUtils.createRegistryUnlockRequest(DOMAIN_NAME, "TheRegistrar", false, clock);
+    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, clock);
+    domainLockUtils.createRegistryUnlockRequest(DOMAIN_NAME, "TheRegistrar", false, clock);
 
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
                 () ->
-                    DomainLockUtils.createRegistryUnlockRequest(
+                    domainLockUtils.createRegistryUnlockRequest(
                         DOMAIN_NAME, "TheRegistrar", false, clock)))
         .hasMessageThat()
         .isEqualTo("A pending unlock action already exists for example.tld");
@@ -179,13 +183,13 @@ public final class DomainLockUtilsTest {
   @Test
   public void testFailure_createUnlock_nonAdminUnlockingAdmin() {
     RegistryLock lock =
-        DomainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true, clock);
-    DomainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, clock);
+        domainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true, clock);
+    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, clock);
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
                 () ->
-                    DomainLockUtils.createRegistryUnlockRequest(
+                    domainLockUtils.createRegistryUnlockRequest(
                         DOMAIN_NAME, "TheRegistrar", false, clock)))
         .hasMessageThat()
         .isEqualTo("Non-admin user cannot unlock admin-locked domain example.tld");
@@ -197,7 +201,7 @@ public final class DomainLockUtilsTest {
             assertThrows(
                 IllegalArgumentException.class,
                 () ->
-                    DomainLockUtils.createRegistryLockRequest(
+                    domainLockUtils.createRegistryLockRequest(
                         "asdf.tld", "TheRegistrar", POC_ID, false, clock)))
         .hasMessageThat()
         .isEqualTo("Unknown domain asdf.tld");
@@ -205,12 +209,12 @@ public final class DomainLockUtilsTest {
 
   @Test
   public void testFailure_createLock_alreadyPendingLock() {
-    DomainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock);
+    domainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock);
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
                 () ->
-                    DomainLockUtils.createRegistryLockRequest(
+                    domainLockUtils.createRegistryLockRequest(
                         DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock)))
         .hasMessageThat()
         .isEqualTo("A pending or completed lock action already exists for example.tld");
@@ -223,7 +227,7 @@ public final class DomainLockUtilsTest {
             assertThrows(
                 IllegalArgumentException.class,
                 () ->
-                    DomainLockUtils.createRegistryLockRequest(
+                    domainLockUtils.createRegistryLockRequest(
                         DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock)))
         .hasMessageThat()
         .isEqualTo("Domain example.tld is already locked");
@@ -235,7 +239,7 @@ public final class DomainLockUtilsTest {
             assertThrows(
                 IllegalArgumentException.class,
                 () ->
-                    DomainLockUtils.createRegistryUnlockRequest(
+                    domainLockUtils.createRegistryUnlockRequest(
                         DOMAIN_NAME, "TheRegistrar", false, clock)))
         .hasMessageThat()
         .isEqualTo("Domain example.tld is already unlocked");
@@ -244,14 +248,14 @@ public final class DomainLockUtilsTest {
   @Test
   public void testFailure_applyLock_alreadyApplied() {
     RegistryLock lock =
-        DomainLockUtils.createRegistryLockRequest(
+        domainLockUtils.createRegistryLockRequest(
             DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock);
-    DomainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, clock);
+    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, clock);
     domain = reloadDomain();
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
-                () -> DomainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, clock)))
+                () -> domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, clock)))
         .hasMessageThat()
         .isEqualTo("Domain example.tld is already locked");
     assertNoDomainChanges();
@@ -260,13 +264,13 @@ public final class DomainLockUtilsTest {
   @Test
   public void testFailure_applyLock_expired() {
     RegistryLock lock =
-        DomainLockUtils.createRegistryLockRequest(
+        domainLockUtils.createRegistryLockRequest(
             DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock);
     clock.advanceBy(Duration.standardDays(1));
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
-                () -> DomainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, clock)))
+                () -> domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, clock)))
         .hasMessageThat()
         .isEqualTo("The pending lock has expired; please try again");
     assertNoDomainChanges();
@@ -275,11 +279,11 @@ public final class DomainLockUtilsTest {
   @Test
   public void testFailure_applyLock_nonAdmin_applyAdminLock() {
     RegistryLock lock =
-        DomainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true, clock);
+        domainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true, clock);
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
-                () -> DomainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, clock)))
+                () -> domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, clock)))
         .hasMessageThat()
         .isEqualTo("Non-admin user cannot complete admin lock");
     assertNoDomainChanges();
@@ -288,18 +292,18 @@ public final class DomainLockUtilsTest {
   @Test
   public void testFailure_applyUnlock_alreadyUnlocked() {
     RegistryLock lock =
-        DomainLockUtils.createRegistryLockRequest(
+        domainLockUtils.createRegistryLockRequest(
             DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock);
-    DomainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, clock);
+    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, clock);
     RegistryLock unlock =
-        DomainLockUtils.createRegistryUnlockRequest(DOMAIN_NAME, "TheRegistrar", false, clock);
-    DomainLockUtils.verifyAndApplyUnlock(unlock.getVerificationCode(), false, clock);
+        domainLockUtils.createRegistryUnlockRequest(DOMAIN_NAME, "TheRegistrar", false, clock);
+    domainLockUtils.verifyAndApplyUnlock(unlock.getVerificationCode(), false, clock);
 
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
                 () ->
-                    DomainLockUtils.verifyAndApplyUnlock(
+                    domainLockUtils.verifyAndApplyUnlock(
                         unlock.getVerificationCode(), false, clock)))
         .hasMessageThat()
         .isEqualTo("Domain example.tld is already unlocked");
@@ -309,7 +313,7 @@ public final class DomainLockUtilsTest {
   @Test
   public void testFailure_applyLock_alreadyLocked() {
     RegistryLock lock =
-        DomainLockUtils.createRegistryLockRequest(
+        domainLockUtils.createRegistryLockRequest(
             DOMAIN_NAME, "TheRegistrar", POC_ID, false, clock);
     String verificationCode = lock.getVerificationCode();
     // reload to pick up modification times, etc
@@ -318,7 +322,7 @@ public final class DomainLockUtilsTest {
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
-                () -> DomainLockUtils.verifyAndApplyLock(verificationCode, false, clock)))
+                () -> domainLockUtils.verifyAndApplyLock(verificationCode, false, clock)))
         .hasMessageThat()
         .isEqualTo("Domain example.tld is already locked");
 
