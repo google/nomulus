@@ -16,6 +16,7 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.security.JsonResponseHelper.Status.ERROR;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
 import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
@@ -23,6 +24,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
@@ -122,48 +124,56 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
 
       boolean isAdmin = authResult.userAuthInfo().get().isUserAdmin();
       verifyRegistryLockPassword(postInput);
-      RegistryLock registryLock =
-          postInput.isLock
-              ? DomainLockUtils.createRegistryLockRequest(
-                  postInput.fullyQualifiedDomainName,
-                  postInput.clientId,
-                  postInput.pocId,
-                  isAdmin,
-                  clock)
-              : DomainLockUtils.createRegistryUnlockRequest(
-                  postInput.fullyQualifiedDomainName, postInput.clientId, isAdmin, clock);
-      sendVerificationEmail(registryLock, postInput.isLock);
+      jpaTm()
+          .transact(
+              () -> {
+                RegistryLock registryLock =
+                    postInput.isLock
+                        ? DomainLockUtils.createRegistryLockRequest(
+                            postInput.fullyQualifiedDomainName,
+                            postInput.clientId,
+                            postInput.pocId,
+                            isAdmin,
+                            clock)
+                        : DomainLockUtils.createRegistryUnlockRequest(
+                            postInput.fullyQualifiedDomainName, postInput.clientId, isAdmin, clock);
+                sendVerificationEmail(registryLock, postInput.isLock);
+              });
       String action = postInput.isLock ? "lock" : "unlock";
       return JsonResponseHelper.create(SUCCESS, String.format("Successful %s", action));
     } catch (Throwable e) {
       logger.atWarning().withCause(e).log("Failed to lock/unlock domain with input %s", input);
       return JsonResponseHelper.create(
-          ERROR, Optional.ofNullable(e.getMessage()).orElse("Unspecified error"));
+          ERROR,
+          Optional.ofNullable(Throwables.getRootCause(e).getMessage()).orElse("Unspecified error"));
     }
   }
 
-  private void sendVerificationEmail(RegistryLock lock, boolean isLock)
-      throws AddressException, URISyntaxException {
-    String url =
-        new URIBuilder()
-            .setScheme("https")
-            .setHost(URL_BASE.getHost())
-            .setPath("registry-lock-verify")
-            .setParameter("lockVerificationCode", lock.getVerificationCode())
-            .setParameter("isLock", String.valueOf(isLock))
-            .build()
-            .toString();
-    String body = String.format(VERIFICATION_EMAIL_TEMPLATE, lock.getDomainName(), url);
-    ImmutableList<InternetAddress> recipients =
-        ImmutableList.of(
-            new InternetAddress(authResult.userAuthInfo().get().user().getEmail(), true));
-    sendEmailService.sendEmail(
-        EmailMessage.newBuilder()
-            .setBody(body)
-            .setSubject("Registry lock / unlock verification")
-            .setRecipients(recipients)
-            .setFrom(gSuiteOutgoingEmailAddress)
-            .build());
+  private void sendVerificationEmail(RegistryLock lock, boolean isLock) {
+    try {
+      String url =
+          new URIBuilder()
+              .setScheme("https")
+              .setHost(URL_BASE.getHost())
+              .setPath("registry-lock-verify")
+              .setParameter("lockVerificationCode", lock.getVerificationCode())
+              .setParameter("isLock", String.valueOf(isLock))
+              .build()
+              .toString();
+      String body = String.format(VERIFICATION_EMAIL_TEMPLATE, lock.getDomainName(), url);
+      ImmutableList<InternetAddress> recipients =
+          ImmutableList.of(
+              new InternetAddress(authResult.userAuthInfo().get().user().getEmail(), true));
+      sendEmailService.sendEmail(
+          EmailMessage.newBuilder()
+              .setBody(body)
+              .setSubject("Registry lock / unlock verification")
+              .setRecipients(recipients)
+              .setFrom(gSuiteOutgoingEmailAddress)
+              .build());
+    } catch (AddressException | URISyntaxException e) {
+      throw new RuntimeException(e); // caught above -- this is so we can run in a transaction
+    }
   }
 
   private void verifyRegistryLockPassword(RegistryLockPostInput postInput)
