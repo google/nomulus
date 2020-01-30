@@ -22,15 +22,17 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link RegistrarStateConverter}. */
+/** Unit tests for {@link Enumerated} annotation. */
 @RunWith(JUnit4.class)
-public class RegistrarStateConverterTest {
+public class StringValueEnumeratedTest {
 
   @Rule
   public final JpaUnitTestRule jpaRule =
@@ -66,6 +68,7 @@ public class RegistrarStateConverterTest {
 
     @Id String name = "id";
 
+    @Enumerated(EnumType.STRING)
     State state;
 
     private TestEntity() {}

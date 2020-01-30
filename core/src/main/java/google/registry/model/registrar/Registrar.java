@@ -89,9 +89,10 @@ import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Table;
 import javax.persistence.Transient;
-import org.hibernate.annotations.Type;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 
@@ -253,9 +254,11 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
 
   /** The type of this registrar. */
   @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
   Type type;
 
   /** The state of this registrar. */
+  @Enumerated(EnumType.STRING)
   State state;
 
   /** The set of TLDs which this registrar is allowed to access. */

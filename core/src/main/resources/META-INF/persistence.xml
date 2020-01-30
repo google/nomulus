@@ -41,8 +41,6 @@
     <class>google.registry.persistence.CreateAutoTimestampConverter</class>
     <class>google.registry.persistence.CurrencyUnitConverter</class>
     <class>google.registry.persistence.DateTimeConverter</class>
-    <class>google.registry.persistence.RegistrarStateConverter</class>
-    <class>google.registry.persistence.RegistrarTypeConverter</class>
     <class>google.registry.persistence.UpdateAutoTimestampConverter</class>
     <class>google.registry.persistence.ZonedDateTimeConverter</class>
 
