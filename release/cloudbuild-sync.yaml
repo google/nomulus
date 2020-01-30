@@ -13,7 +13,7 @@
 # Note: to work around issue in Spinnaker's 'Deployment Manifest' stage,
 # variable references must avoid the ${var} format. Valid formats include
 # $var or ${"${var}"}. This file use the former. Since TAG_NAME is
-# hardened in the copies sent to Spinnaker, we preserve the brackets around
+# expanded in the copies sent to Spinnaker, we preserve the brackets around
 # them for safe pattern matching during release.
 # See https://github.com/spinnaker/spinnaker/issues/3028 for more information.
 steps:
