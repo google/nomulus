@@ -88,10 +88,9 @@ public abstract class PostgresqlCommand implements Command {
               + "the location of a running instance.  To start a long-lived instance (suitable\n"
               + "for running this command multiple times) run this:\n\n"
               + "  docker run --rm --name some-postgres -e POSTGRES_PASSWORD=domain-registry \\\n"
-              + "    -d postgres:"
+              + "    -d "
               + NomulusPostgreSql.getDockerTag()
-              + "\n\n"
-              + "Copy the container id output from the command, then run:\n\n"
+              + "\n\nCopy the container id output from the command, then run:\n\n"
               + "  docker inspect <container-id> | grep IPAddress\n\n"
               + "To obtain the value for --db-host.\n");
       // TODO(mmuller): need exit(1), see above.
