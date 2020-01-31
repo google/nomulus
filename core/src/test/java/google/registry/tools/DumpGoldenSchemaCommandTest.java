@@ -32,9 +32,8 @@ public class DumpGoldenSchemaCommandTest extends CommandTestCase<DumpGoldenSchem
 
   @Test
   public void testSchemaGeneration() throws Exception {
-    runCommand("--output=" + tmp.getRoot() + File.separatorChar + "golden.sql",
-               "--start_postgresql");
-    System.err.println("xxx sleeping");
+    runCommand(
+        "--output=" + tmp.getRoot() + File.separatorChar + "golden.sql", "--start_postgresql");
     assertThat(new File(tmp.getRoot(), "golden.sql").length()).isGreaterThan(1);
   }
 }

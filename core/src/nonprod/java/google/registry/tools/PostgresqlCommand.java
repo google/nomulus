@@ -32,8 +32,7 @@ public abstract class PostgresqlCommand implements Command {
       "Database host and port may not be specified along with the option to start a "
           + "PostgreSQL container.";
 
-  @VisibleForTesting
-  public static final int POSTGRESQL_PORT = 5432;
+  @VisibleForTesting public static final int POSTGRESQL_PORT = 5432;
 
   protected PostgreSQLContainer postgresContainer = null;
 
@@ -52,7 +51,8 @@ public abstract class PostgresqlCommand implements Command {
       description = "Database port number.  This defaults to the PostgreSQL default port.")
   Integer databasePort;
 
-  /** Starts the database if appropriate.
+  /**
+   * Starts the database if appropriate.
    *
    * <p>Returns true if the database was successfully initialized, false if not.
    */
@@ -88,7 +88,9 @@ public abstract class PostgresqlCommand implements Command {
               + "the location of a running instance.  To start a long-lived instance (suitable\n"
               + "for running this command multiple times) run this:\n\n"
               + "  docker run --rm --name some-postgres -e POSTGRES_PASSWORD=domain-registry \\\n"
-              + "    -d postgres:9.6.12\n\n"
+              + "    -d postgres:"
+              + NomulusPostgreSql.getDockerTag()
+              + "\n\n"
               + "Copy the container id output from the command, then run:\n\n"
               + "  docker inspect <container-id> | grep IPAddress\n\n"
               + "To obtain the value for --db-host.\n");
@@ -120,8 +122,7 @@ public abstract class PostgresqlCommand implements Command {
   }
 
   /** Called after the container has been created but before it has been started. */
-  protected void onContainerCreate() throws Exception {
-  }
+  protected void onContainerCreate() throws Exception {}
 
   /** Command to be run while the database is running. */
   abstract void runCommand() throws Exception;
