@@ -65,7 +65,8 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
 
   @Override
   protected void onContainerCreate() throws IOException {
-    new FileOutputStream(output.toFile()); // open the output file for write so we can mount it.
+    // open the output file for write so we can mount it.
+    new FileOutputStream(output.toFile()).close();
     postgresContainer.withFileSystemBind(
         output.toString(), CONTAINER_MOUNT_POINT, BindMode.READ_WRITE);
   }
