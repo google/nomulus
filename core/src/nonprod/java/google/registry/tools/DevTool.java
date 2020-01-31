@@ -26,7 +26,9 @@ public class DevTool {
    * any invocations in scripts (e.g. PDT, ICANN reporting).
    */
   public static final ImmutableMap<String, Class<? extends Command>> COMMAND_MAP =
-      ImmutableMap.of("generate_sql_schema", GenerateSqlSchemaCommand.class);
+      ImmutableMap.of(
+          "dump_golden_schema", DumpGoldenSchemaCommand.class,
+          "generate_sql_schema", GenerateSqlSchemaCommand.class);
 
   public static void main(String[] args) throws Exception {
     RegistryToolEnvironment.parseFromArgs(args).setup();

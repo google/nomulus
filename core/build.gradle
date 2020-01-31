@@ -52,9 +52,11 @@ def outcastTestPatterns = [
 def dockerIncompatibleTestPatterns = [
     // The webdriver tests start headless Chrome in a Docker container,
     // resulting in Docker-in-Docker complications.  Likewise,
-    // GenerateSqlSchemaCommandTest launches postgresql in a docker container.
+    // GenerateSqlSchemaCommandTest and DumpGoldenSchemaCommandTest launch
+    // postgresql in a docker container.
     "google/registry/webdriver/*",
     "google/registry/tools/GenerateSqlSchemaCommandTest.*",
+    "google/registry/tools/DumpGoldenSchemaCommandTest.*",
     // PathParameterTest includes tests which validate that file permissions are
     // respected. However when running in Docker the user is root by default, so
     // every file is read/write-able. There is no way to exclude specific test
@@ -93,7 +95,11 @@ sourceSets {
   nonprod {
     java {
       compileClasspath += main.output
-      runtimeClasspath += main.output
+
+      // Add the DB runtime classpath to nonprod so we can load the flyway
+      // scripts.
+      runtimeClasspath += main.output +
+          rootProject.project(":db").sourceSets.main.runtimeClasspath
     }
   }
   test {
@@ -320,6 +326,9 @@ dependencies {
 
   // Tool dependencies.  used for doc generation.
   compile files("${System.properties['java.home']}/../lib/tools.jar")
+
+  // Flyway classes needed to generate the golden file.
+  compile deps['org.flywaydb:flyway-core']
 
   closureCompiler deps['com.google.javascript:closure-compiler']
 }
