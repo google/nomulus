@@ -39,9 +39,13 @@
 
     <!-- Customized type converters -->
     <class>google.registry.persistence.BloomFilterConverter</class>
+    <class>google.registry.persistence.CidrAddressBlockListConverter</class>
     <class>google.registry.persistence.CreateAutoTimestampConverter</class>
     <class>google.registry.persistence.CurrencyUnitConverter</class>
     <class>google.registry.persistence.DateTimeConverter</class>
+    <class>google.registry.persistence.StatusValueSetConverter</class>
+    <class>google.registry.persistence.StringListConverter</class>
+    <class>google.registry.persistence.StringSetConverter</class>
     <class>google.registry.persistence.UpdateAutoTimestampConverter</class>
     <class>google.registry.persistence.ZonedDateTimeConverter</class>
 

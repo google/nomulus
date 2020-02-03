@@ -185,7 +185,6 @@ public class DomainBase extends EppResource
   String idnTableName;
 
   /** Fully qualified host names of this domain's active subordinate hosts. */
-  @org.hibernate.annotations.Type(type = "google.registry.persistence.StringSetUserType")
   Set<String> subordinateHosts;
 
   /** When this domain's registration will expire. */

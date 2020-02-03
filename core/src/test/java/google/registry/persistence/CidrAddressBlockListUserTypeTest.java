@@ -25,13 +25,12 @@ import google.registry.util.CidrAddressBlock;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import org.hibernate.annotations.Type;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link CidrAddressBlockListUserType}. */
+/** Unit tests for {@link CidrAddressBlockListConverter}. */
 @RunWith(JUnit4.class)
 public class CidrAddressBlockListUserTypeTest {
   @Rule
@@ -59,7 +58,6 @@ public class CidrAddressBlockListUserTypeTest {
 
     @Id String name = "id";
 
-    @Type(type = "google.registry.persistence.CidrAddressBlockListUserType")
     List<CidrAddressBlock> addresses;
 
     private TestEntity() {}

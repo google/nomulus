@@ -13,9 +13,10 @@
 // limitations under the License.
 package google.registry.persistence;
 
-import google.registry.persistence.GenericCollectionUserType.ArrayColumnType;
 import java.sql.Types;
+import org.hibernate.boot.model.TypeContributions;
 import org.hibernate.dialect.PostgreSQL95Dialect;
+import org.hibernate.service.ServiceRegistry;
 
 /** Nomulus mapping rules for column types in Postgresql. */
 public class NomulusPostgreSQLDialect extends PostgreSQL95Dialect {
@@ -25,8 +26,15 @@ public class NomulusPostgreSQLDialect extends PostgreSQL95Dialect {
     registerColumnType(Types.TIMESTAMP_WITH_TIMEZONE, "timestamptz");
     registerColumnType(Types.TIMESTAMP, "timestamptz");
     registerColumnType(Types.OTHER, "hstore");
-    for (ArrayColumnType arrayType : ArrayColumnType.values()) {
-      registerColumnType(arrayType.getTypeCode(), arrayType.getTypeDdlName());
-    }
+    registerColumnType(
+        StringCollectionDescriptor.COLUMN_TYPE, StringCollectionDescriptor.COLUMN_DDL_NAME);
+  }
+
+  @Override
+  public void contributeTypes(
+      TypeContributions typeContributions, ServiceRegistry serviceRegistry) {
+    super.contributeTypes(typeContributions, serviceRegistry);
+    typeContributions.contributeJavaTypeDescriptor(new StringCollectionDescriptor());
+    typeContributions.contributeSqlTypeDescriptor(new StringCollectionDescriptor());
   }
 }

@@ -42,14 +42,12 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.annotations.ReportedOn;
-import google.registry.persistence.EnumSetUserType;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.Table;
 import javax.persistence.Transient;
-import org.hibernate.annotations.Type;
 
 /**
  * A contact for a Registrar. Note, equality, hashCode and comparable have been overridden to only
@@ -103,9 +101,6 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
       this.displayName = display;
       this.required = required;
     }
-
-    /** Hibernate type for sets of {@link Type}. */
-    public static class RegistrarPocType extends EnumSetUserType<Type> {}
   }
 
   /** The name of the contact. */
@@ -127,8 +122,6 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
    * Multiple types are used to associate the registrar contact with various mailing groups. This
    * data is internal to the registry.
    */
-  @org.hibernate.annotations.Type(
-      type = "google.registry.model.registrar.RegistrarContact$Type$RegistrarPocType")
   Set<Type> types;
 
   /**
