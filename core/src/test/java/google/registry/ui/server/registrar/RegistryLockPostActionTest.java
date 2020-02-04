@@ -132,6 +132,7 @@ public final class RegistryLockPostActionTest {
         createAction(
             AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, true)));
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
+    // we should still email the admin user's email address
     assertSuccess(response, "unlock", "johndoe@theregistrar.com");
   }
 
@@ -171,11 +172,25 @@ public final class RegistryLockPostActionTest {
 
   @Test
   public void testSuccess_adminUser() throws Exception {
-    // Admin user should be able to lock/unlock regardless
+    // Admin user should be able to lock/unlock regardless -- and we use the admin user's email
     action =
         createAction(
             AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, true)));
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
+    assertSuccess(response, "lock", "johndoe@theregistrar.com");
+  }
+
+  @Test
+  public void testSuccess_adminUser_doesNotRequirePassword() throws Exception {
+    action =
+        createAction(
+            AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, true)));
+    Map<String, ?> response =
+        action.handleJsonRequest(
+            ImmutableMap.of(
+                "clientId", "TheRegistrar",
+                "fullyQualifiedDomainName", "example.tld",
+                "isLock", true));
     assertSuccess(response, "lock", "johndoe@theregistrar.com");
   }
 

@@ -21,7 +21,6 @@ import static google.registry.security.JsonResponseHelper.Status.ERROR;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
 import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
-import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
@@ -34,6 +33,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
+import google.registry.request.HttpException.ForbiddenException;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthResult;
@@ -123,10 +123,16 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
           !Strings.isNullOrEmpty(postInput.fullyQualifiedDomainName),
           "Missing key for fullyQualifiedDomainName");
       checkNotNull(postInput.isLock, "Missing key for isLock");
-      checkArgumentPresent(authResult.userAuthInfo(), "User is not logged in");
+      UserAuthInfo userAuthInfo =
+          authResult
+              .userAuthInfo()
+              .orElseThrow(() -> new ForbiddenException("User is not logged in"));
 
-      boolean isAdmin = authResult.userAuthInfo().get().isUserAdmin();
-      verifyRegistryLockPassword(postInput);
+      boolean isAdmin = userAuthInfo.isUserAdmin();
+      if (!isAdmin) {
+        verifyRegistryLockPassword(postInput);
+      }
+      String pocId = isAdmin ? userAuthInfo.user().getEmail() : postInput.pocId;
       jpaTm()
           .transact(
               () -> {
@@ -135,12 +141,12 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
                         ? domainLockUtils.createRegistryLockRequest(
                             postInput.fullyQualifiedDomainName,
                             postInput.clientId,
-                            postInput.pocId,
+                            pocId,
                             isAdmin,
                             clock)
                         : domainLockUtils.createRegistryUnlockRequest(
                             postInput.fullyQualifiedDomainName, postInput.clientId, isAdmin, clock);
-                sendVerificationEmail(registryLock, postInput.isLock);
+                sendVerificationEmail(registryLock, pocId, postInput.isLock);
               });
       String action = postInput.isLock ? "lock" : "unlock";
       return JsonResponseHelper.create(SUCCESS, String.format("Successful %s", action));
@@ -152,7 +158,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
     }
   }
 
-  private void sendVerificationEmail(RegistryLock lock, boolean isLock) {
+  private void sendVerificationEmail(RegistryLock lock, String pocId, boolean isLock) {
     try {
       String url =
           new URIBuilder()
@@ -165,8 +171,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
               .toString();
       String body = String.format(VERIFICATION_EMAIL_TEMPLATE, lock.getDomainName(), url);
       ImmutableList<InternetAddress> recipients =
-          ImmutableList.of(
-              new InternetAddress(authResult.userAuthInfo().get().user().getEmail(), true));
+          ImmutableList.of(new InternetAddress(pocId, true));
       String action = isLock ? "lock" : "unlock";
       sendEmailService.sendEmail(
           EmailMessage.newBuilder()
@@ -182,28 +187,24 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
 
   private void verifyRegistryLockPassword(RegistryLockPostInput postInput)
       throws RegistrarAccessDeniedException {
-    // Verify that the user can access the registrar and that the user is either an admin or has
+    // Verify that the user can access the registrar and that the user has
     // registry lock enabled and provided a correct password
-    checkArgument(authResult.userAuthInfo().isPresent(), "Auth result not present");
     Registrar registrar = registrarAccessor.getRegistrar(postInput.clientId);
     checkArgument(
         registrar.isRegistryLockAllowed(), "Registry lock not allowed for this registrar");
-    UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();
-    if (!userAuthInfo.isUserAdmin()) {
-      checkArgument(!Strings.isNullOrEmpty(postInput.pocId), "Missing key for pocId");
-      checkArgument(!Strings.isNullOrEmpty(postInput.password), "Missing key for password");
-      RegistrarContact registrarContact =
-          registrar.getContacts().stream()
-              .filter(contact -> contact.getEmailAddress().equals(postInput.pocId))
-              .findFirst()
-              .orElseThrow(
-                  () ->
-                      new IllegalArgumentException(
-                          String.format("Unknown registrar POC ID %s", postInput.pocId)));
-      checkArgument(
-          registrarContact.verifyRegistryLockPassword(postInput.password),
-          "Incorrect registry lock password for contact");
-    }
+    checkArgument(!Strings.isNullOrEmpty(postInput.pocId), "Missing key for pocId");
+    checkArgument(!Strings.isNullOrEmpty(postInput.password), "Missing key for password");
+    RegistrarContact registrarContact =
+        registrar.getContacts().stream()
+            .filter(contact -> contact.getEmailAddress().equals(postInput.pocId))
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        String.format("Unknown registrar POC ID %s", postInput.pocId)));
+    checkArgument(
+        registrarContact.verifyRegistryLockPassword(postInput.password),
+        "Incorrect registry lock password for contact");
   }
 
   /** Value class that represents the expected input body from the UI request. */
