@@ -14,25 +14,23 @@
 
 package google.registry.persistence;
 
-import com.google.common.collect.ImmutableList;
-import google.registry.persistence.StringCollectionDescriptor.StringCollection;
 import java.util.List;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
 /** JPA {@link AttributeConverter} for storing/retrieving {@link List<String>}. */
 @Converter(autoApply = true)
-public class StringListConverter implements AttributeConverter<List<String>, StringCollection> {
+public class StringListConverter extends StringListConverterBase<String> {
 
   @Override
-  public StringCollection convertToDatabaseColumn(List<String> attribute) {
-    return StringCollection.create(attribute);
+  String toString(String element) {
+    return element;
   }
 
   @Override
-  public List<String> convertToEntityAttribute(StringCollection dbData) {
-    return dbData == null || dbData.getCollection() == null
-        ? null
-        : ImmutableList.copyOf(dbData.getCollection());
+  String fromString(String value) {
+    return value;
   }
+
+
 }

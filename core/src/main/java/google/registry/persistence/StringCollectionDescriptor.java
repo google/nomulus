@@ -34,7 +34,18 @@ import org.hibernate.type.descriptor.sql.BasicBinder;
 import org.hibernate.type.descriptor.sql.BasicExtractor;
 import org.hibernate.type.descriptor.sql.SqlTypeDescriptor;
 
-/** The {@link JavaTypeDescriptor} and {@link SqlTypeDescriptor} for {@link StringCollection}. */
+/**
+ * The {@link JavaTypeDescriptor} and {@link SqlTypeDescriptor} for {@link StringCollection}.
+ *
+ * <p>A {@link StringCollection} object is a simple wrapper for a {@link Collection<String>} which
+ * can be stored as a string array in the database. The {@link JavaTypeDescriptor} and {@link
+ * SqlTypeDescriptor} is used by JPA/Hibernate to map between the collection and {@link Array} which
+ * is the actual type that JDBC uses to read from and write to the database.
+ *
+ * @see <a
+ *     href="https://docs.jboss.org/hibernate/orm/current/userguide/html_single/Hibernate_User_Guide.html#basic-jpa-convert">JPA
+ *     2.1 AttributeConverters</a>
+ */
 public class StringCollectionDescriptor extends AbstractTypeDescriptor<StringCollection>
     implements SqlTypeDescriptor {
   public static final int COLUMN_TYPE = Types.ARRAY;

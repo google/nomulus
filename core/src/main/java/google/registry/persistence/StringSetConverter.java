@@ -14,25 +14,21 @@
 
 package google.registry.persistence;
 
-import com.google.common.collect.ImmutableSet;
-import google.registry.persistence.StringCollectionDescriptor.StringCollection;
 import java.util.Set;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
 /** JPA {@link AttributeConverter} for storing/retrieving {@link Set<String>}. */
 @Converter(autoApply = true)
-public class StringSetConverter implements AttributeConverter<Set<String>, StringCollection> {
+public class StringSetConverter extends StringSetConverterBase<String> {
 
   @Override
-  public StringCollection convertToDatabaseColumn(Set<String> attribute) {
-    return StringCollection.create(attribute);
+  String toString(String element) {
+    return element;
   }
 
   @Override
-  public Set<String> convertToEntityAttribute(StringCollection dbData) {
-    return dbData == null || dbData.getCollection() == null
-        ? null
-        : ImmutableSet.copyOf(dbData.getCollection());
+  String fromString(String value) {
+    return value;
   }
 }

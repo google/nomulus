@@ -14,30 +14,22 @@
 
 package google.registry.persistence;
 
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.persistence.StringCollectionDescriptor.StringCollection;
 import java.util.Set;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
 /** JPA {@link AttributeConverter} for storing/retrieving {@link Set<StatusValue>}. */
 @Converter(autoApply = true)
-public class StatusValueSetConverter
-    implements AttributeConverter<Set<StatusValue>, StringCollection> {
+public class StatusValueSetConverter extends StringSetConverterBase<StatusValue> {
+
   @Override
-  public StringCollection convertToDatabaseColumn(Set<StatusValue> attribute) {
-    return attribute == null
-        ? null
-        : StringCollection.create(
-            attribute.stream().map(StatusValue::name).collect(toImmutableSet()));
+  String toString(StatusValue element) {
+    return element.name();
   }
 
   @Override
-  public Set<StatusValue> convertToEntityAttribute(StringCollection dbData) {
-    return dbData == null
-        ? null
-        : dbData.getCollection().stream().map(StatusValue::valueOf).collect(toImmutableSet());
+  StatusValue fromString(String value) {
+    return StatusValue.valueOf(value);
   }
 }
