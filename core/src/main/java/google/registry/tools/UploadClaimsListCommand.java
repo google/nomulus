@@ -37,11 +37,6 @@ final class UploadClaimsListCommand extends ConfirmingCommand implements Command
   @Parameter(description = "Claims list filename")
   private List<String> mainParameters = new ArrayList<>();
 
-  @Parameter(
-      names = {"--also_cloud_sql"},
-      description = "Persist claims list to Cloud SQL in addition to Datastore; defaults to false.")
-  boolean alsoCloudSql;
-
   private String claimsListFilename;
 
   private ClaimsList claimsList;
@@ -64,9 +59,7 @@ final class UploadClaimsListCommand extends ConfirmingCommand implements Command
   @Override
   public String execute() {
     ClaimsListShard.create(claimsList.getTmdbGenerationTime(), claimsList.getLabelsToKeys()).save();
-    if (alsoCloudSql) {
-      ClaimsListDao.trySave(claimsList);
-    }
+    ClaimsListDao.trySave(claimsList);
     return String.format("Successfully uploaded claims list %s", claimsListFilename);
   }
 }
