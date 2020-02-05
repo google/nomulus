@@ -50,11 +50,9 @@ final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand 
             .setLastUpdateTime(new SystemClock().nowUtc())
             .setShouldPublish(shouldPublish);
     stageEntityChange(existing.get(), updated.build());
-    if (alsoCloudSql) {
-      cloudSqlReservedList =
-          google.registry.schema.tld.ReservedList.create(
-              name, shouldPublish, parseToReservationsByLabels(allLines));
-    }
+    cloudSqlReservedList =
+        google.registry.schema.tld.ReservedList.create(
+            name, shouldPublish, parseToReservationsByLabels(allLines));
   }
 
   @Override

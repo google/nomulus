@@ -178,8 +178,7 @@ public class CreateReservedListCommandTest extends
 
   @Test
   public void testSaveToCloudSql_succeeds() throws Exception {
-    runCommandForced(
-        "--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath, "--also_cloud_sql");
+    runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
     verifyXnq9jyb4cInDatastore();
     verifyXnq9jyb4cInCloudSql();
   }
@@ -193,8 +192,7 @@ public class CreateReservedListCommandTest extends
             "xn--q9jyb4c_common-reserved",
             true,
             ImmutableMap.of("testdomain", ReservedEntry.create(FULLY_BLOCKED, ""))));
-    runCommandForced(
-        "--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath, "--also_cloud_sql");
+    runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
     verifyXnq9jyb4cInDatastore();
   }
 

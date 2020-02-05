@@ -62,12 +62,6 @@ public abstract class CreateOrUpdateReservedListCommand extends MutatingCommand 
       arity = 1)
   Boolean shouldPublish;
 
-  @Parameter(
-      names = {"--also_cloud_sql"},
-      description =
-          "Persist reserved list to Cloud SQL in addition to Datastore; defaults to false.")
-  boolean alsoCloudSql;
-
   google.registry.schema.tld.ReservedList cloudSqlReservedList;
 
   abstract void saveToCloudSql();
@@ -78,23 +72,18 @@ public abstract class CreateOrUpdateReservedListCommand extends MutatingCommand 
     String output = super.execute();
     logger.atInfo().log(output);
 
-    String cloudSqlMessage;
-    if (alsoCloudSql) {
+    String cloudSqlMessage =
+        String.format(
+            "Saved reserved list %s with %d entries",
+            name, cloudSqlReservedList.getLabelsToReservations().size());
+    try {
+      logger.atInfo().log("Saving reserved list to Cloud SQL for TLD %s", name);
+      saveToCloudSql();
+      logger.atInfo().log(cloudSqlMessage);
+    } catch (Throwable e) {
       cloudSqlMessage =
-          String.format(
-              "Saved reserved list %s with %d entries",
-              name, cloudSqlReservedList.getLabelsToReservations().size());
-      try {
-        logger.atInfo().log("Saving reserved list to Cloud SQL for TLD %s", name);
-        saveToCloudSql();
-        logger.atInfo().log(cloudSqlMessage);
-      } catch (Throwable e) {
-        cloudSqlMessage =
-            "Unexpected error saving reserved list to Cloud SQL from nomulus tool command";
-        logger.atSevere().withCause(e).log(cloudSqlMessage);
-      }
-    } else {
-      cloudSqlMessage = "Persisting reserved list to Cloud SQL is not enabled";
+          "Unexpected error saving reserved list to Cloud SQL from nomulus tool command";
+      logger.atSevere().withCause(e).log(cloudSqlMessage);
     }
     return cloudSqlMessage;
   }
