@@ -132,7 +132,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       if (!isAdmin) {
         verifyRegistryLockPassword(postInput);
       }
-      String pocId = isAdmin ? userAuthInfo.user().getEmail() : postInput.pocId;
+      String userEmail = isAdmin ? userAuthInfo.user().getEmail() : postInput.pocId;
       jpaTm()
           .transact(
               () -> {
@@ -141,12 +141,12 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
                         ? domainLockUtils.createRegistryLockRequest(
                             postInput.fullyQualifiedDomainName,
                             postInput.clientId,
-                            pocId,
+                            userEmail,
                             isAdmin,
                             clock)
                         : domainLockUtils.createRegistryUnlockRequest(
                             postInput.fullyQualifiedDomainName, postInput.clientId, isAdmin, clock);
-                sendVerificationEmail(registryLock, pocId, postInput.isLock);
+                sendVerificationEmail(registryLock, userEmail, postInput.isLock);
               });
       String action = postInput.isLock ? "lock" : "unlock";
       return JsonResponseHelper.create(SUCCESS, String.format("Successful %s", action));
@@ -158,7 +158,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
     }
   }
 
-  private void sendVerificationEmail(RegistryLock lock, String pocId, boolean isLock) {
+  private void sendVerificationEmail(RegistryLock lock, String userEmail, boolean isLock) {
     try {
       String url =
           new URIBuilder()
@@ -171,7 +171,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
               .toString();
       String body = String.format(VERIFICATION_EMAIL_TEMPLATE, lock.getDomainName(), url);
       ImmutableList<InternetAddress> recipients =
-          ImmutableList.of(new InternetAddress(pocId, true));
+          ImmutableList.of(new InternetAddress(userEmail, true));
       String action = isLock ? "lock" : "unlock";
       sendEmailService.sendEmail(
           EmailMessage.newBuilder()
