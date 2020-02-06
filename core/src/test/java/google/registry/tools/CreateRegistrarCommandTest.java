@@ -33,18 +33,29 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Range;
 import com.google.common.net.MediaType;
 import google.registry.model.registrar.Registrar;
+import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
+import google.registry.schema.registrar.RegistrarDao;
 import google.registry.testing.CertificateSamples;
+import google.registry.testing.FakeClock;
 import java.io.IOException;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 
 /** Unit tests for {@link CreateRegistrarCommand}. */
 public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand> {
+
+  private final FakeClock fakeClock = new FakeClock();
+
+  @Rule
+  public final JpaIntegrationWithCoverageRule jpaRule =
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
 
   @Mock private AppEngineConnection connection;
 
@@ -98,6 +109,28 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
             eq(ImmutableMap.of("clientId", "clientz")),
             eq(MediaType.PLAIN_TEXT_UTF_8),
             eq(new byte[0]));
+  }
+
+  @Test
+  public void testSuccess_alsoSaveToCloudSql() throws Exception {
+    runCommandForced(
+        "--name=blobio",
+        "--password=\"some_password\"",
+        "--registrar_type=REAL",
+        "--iana_id=8",
+        "--passcode=01234",
+        "--icann_referral_email=foo@bar.test",
+        "--street=\"123 Fake St\"",
+        "--city Fakington",
+        "--state MA",
+        "--zip 00351",
+        "--cc US",
+        "clientz");
+
+    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    assertThat(registrar).isPresent();
+    assertThat(registrar.get().verifyPassword("some_password")).isTrue();
+    assertThat(RegistrarDao.checkExists("clientz")).isTrue();
   }
 
   @Test

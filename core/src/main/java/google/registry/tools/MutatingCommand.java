@@ -45,11 +45,11 @@ import javax.annotation.Nullable;
 public abstract class MutatingCommand extends ConfirmingCommand implements CommandWithRemoteApi {
 
   /**
-   * A mutation of a specific entity, represented by an old and a new version of the entity.
-   * Storing the old version is necessary to enable checking that the existing entity has not been
-   * modified when applying a mutation that was created outside the same transaction.
+   * A mutation of a specific entity, represented by an old and a new version of the entity. Storing
+   * the old version is necessary to enable checking that the existing entity has not been modified
+   * when applying a mutation that was created outside the same transaction.
    */
-  private static class EntityChange {
+  protected static class EntityChange {
 
     /** The possible types of mutation that can be performed on an entity. */
     public enum ChangeType {
@@ -169,10 +169,10 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
   }
 
   /**
-   * Returns a set of lists of EntityChange actions to commit.  Each list should be executed in
-   * order inside a single transaction.
+   * Returns a set of lists of EntityChange actions to commit. Each list should be executed in order
+   * inside a single transaction.
    */
-  private ImmutableSet<ImmutableList<EntityChange>> getCollatedEntityChangeBatches() {
+  protected ImmutableSet<ImmutableList<EntityChange>> getCollatedEntityChangeBatches() {
     ImmutableSet.Builder<ImmutableList<EntityChange>> batches = new ImmutableSet.Builder<>();
     ArrayList<EntityChange> nextBatch = new ArrayList<>();
     for (EntityChange change : changedEntitiesMap.values()) {

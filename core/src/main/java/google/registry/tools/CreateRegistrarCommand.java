@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static google.registry.model.registrar.Registrar.State.ACTIVE;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.tools.RegistryToolEnvironment.PRODUCTION;
 import static google.registry.tools.RegistryToolEnvironment.SANDBOX;
 import static google.registry.tools.RegistryToolEnvironment.UNITTEST;
@@ -32,6 +33,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.registrar.Registrar;
+import google.registry.schema.registrar.RegistrarDao;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -67,6 +69,19 @@ final class CreateRegistrarCommand extends CreateOrUpdateRegistrarCommand
     checkArgumentNotNull(street, "Address fields are required when creating a registrar");
     // Default new registrars to active.
     registrarState = Optional.ofNullable(registrarState).orElse(ACTIVE);
+  }
+
+  @Override
+  void saveToCloudSql(Registrar registrar) {
+    jpaTm()
+        .transact(
+            () -> {
+              checkArgument(
+                  !RegistrarDao.checkExists(registrar.getClientId()),
+                  "A registrar of this id already exists: %s.",
+                  registrar.getClientId());
+              RegistrarDao.save(registrar);
+            });
   }
 
   @Nullable

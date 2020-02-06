@@ -32,15 +32,35 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.Registrar.Type;
+import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
+import google.registry.schema.registrar.RegistrarDao;
 import google.registry.testing.AppEngineRule;
+import google.registry.testing.FakeClock;
 import google.registry.util.CidrAddressBlock;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
+import org.junit.Rule;
 import org.junit.Test;
 
 /** Unit tests for {@link UpdateRegistrarCommand}. */
 public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand> {
+
+  private final FakeClock fakeClock = new FakeClock();
+
+  @Rule
+  public final JpaIntegrationWithCoverageRule jpaRule =
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
+
+  @Test
+  public void testSuccess_alsoUpdateInCloudSql() throws Exception {
+    assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isFalse();
+    RegistrarDao.save(loadRegistrar("NewRegistrar"));
+    runCommand("--password=some_password", "--force", "NewRegistrar");
+    assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isTrue();
+    assertThat(RegistrarDao.load("NewRegistrar").get().verifyPassword("some_password")).isTrue();
+  }
 
   @Test
   public void testSuccess_password() throws Exception {
