@@ -20,7 +20,7 @@ import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.persistence.transaction.JpaEntityCoverage;
 import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.server.LockDaoTest;
-import google.registry.schema.registrar.RegistrarDao;
+import google.registry.schema.registrar.RegistrarDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
 import google.registry.schema.tld.ReservedListDaoTest;
 import google.registry.schema.tmch.ClaimsListDaoTest;
@@ -65,7 +65,7 @@ import org.junit.runners.Suite.SuiteClasses;
   LockDomainCommandTest.class,
   DomainBaseSqlTest.class,
   PremiumListDaoTest.class,
-  RegistrarDao.class,
+  RegistrarDaoTest.class,
   RegistryLockDaoTest.class,
   RegistryLockGetActionTest.class,
   RegistryLockVerifyActionTest.class,
