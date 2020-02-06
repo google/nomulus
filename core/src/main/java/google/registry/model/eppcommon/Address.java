@@ -144,6 +144,24 @@ public class Address extends ImmutableObject implements Jsonifiable {
           street == null || (!street.isEmpty() && street.size() <= 3),
           "Street address must have [1-3] lines: %s", street);
       getInstance().street = street;
+      getInstance().streetLine1 = street.get(0);
+      getInstance().streetLine2 = street.size() >= 2 ? street.get(1) : null;
+      getInstance().streetLine3 = street.size() == 3 ? street.get(2) : null;
+      return this;
+    }
+
+    public Builder<T> setStreetLine1(String streetLine1) {
+      getInstance().streetLine1 = streetLine1;
+      return this;
+    }
+
+    public Builder<T> setStreetLine2(String streetLine2) {
+      getInstance().streetLine2 = streetLine2;
+      return this;
+    }
+
+    public Builder<T> setStreetLine3(String streetLine3) {
+      getInstance().streetLine3 = streetLine3;
       return this;
     }
 
@@ -172,7 +190,7 @@ public class Address extends ImmutableObject implements Jsonifiable {
   }
 
   @OnLoad
-  void setStreetForCloudSql() {
+  public void onload() {
     if (street == null || street.size() == 0) {
       return;
     }
