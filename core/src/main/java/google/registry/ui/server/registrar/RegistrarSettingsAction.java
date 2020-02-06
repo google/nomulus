@@ -65,7 +65,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
@@ -120,8 +119,9 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     // handler, registrar-settings really only supports read and update.
     String op = Optional.ofNullable((String) input.get(OP_PARAM)).orElse("read");
     @SuppressWarnings("unchecked")
-    Map<String, ?> args = (Map<String, Object>)
-        Optional.<Object>ofNullable(input.get(ARGS_PARAM)).orElse(ImmutableMap.of());
+    Map<String, ?> args =
+        (Map<String, Object>)
+            Optional.<Object>ofNullable(input.get(ARGS_PARAM)).orElse(ImmutableMap.of());
 
     logger.atInfo().log("Received request '%s' on registrar '%s' with args %s", op, clientId, args);
     String status = "SUCCESS";
@@ -255,18 +255,6 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
             .collect(toImmutableSet());
     // Use LinkedHashMap here to preserve ordering; null values mean we can't use ImmutableMap.
     LinkedHashMap<String, Object> result = new LinkedHashMap<>(registrar.toDiffableFieldMap());
-    // Remove the street field in both localizedAddress and internationalizedAddress as it will be
-    // replaced by the
-    // streetLine[1-3] fields after the database migration
-    Stream.of(result.get("localizedAddress"), result.get("internationalizedAddress"))
-        .filter(Objects::nonNull)
-        .forEach(
-            obj -> {
-              Map<String, Object> map = (Map<String, Object>) obj;
-              if (map.containsKey("street")) {
-                map.remove("street");
-              }
-            });
     result.put("contacts", expandedContacts);
     return result;
   }
@@ -309,8 +297,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
         .ifPresent(builder::setEmailAddress);
     builder.setPhoneNumber(
         RegistrarFormFields.PHONE_NUMBER_FIELD.extractUntyped(args).orElse(null));
-    builder.setFaxNumber(
-        RegistrarFormFields.FAX_NUMBER_FIELD.extractUntyped(args).orElse(null));
+    builder.setFaxNumber(RegistrarFormFields.FAX_NUMBER_FIELD.extractUntyped(args).orElse(null));
     builder.setLocalizedAddress(
         RegistrarFormFields.L10N_ADDRESS_FIELD.extractUntyped(args).orElse(null));
 
@@ -370,9 +357,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
    * <p>On success, returns {@code builder.build()}.
    */
   private Registrar checkNotChangedUnlessAllowed(
-      Registrar.Builder builder,
-      Registrar originalRegistrar,
-      Role allowedRole) {
+      Registrar.Builder builder, Registrar originalRegistrar, Role allowedRole) {
     Registrar updatedRegistrar =  builder.build();
     if (updatedRegistrar.equals(originalRegistrar)) {
       return updatedRegistrar;
@@ -387,9 +372,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     }
     Map<?, ?> diffs =
         DiffUtils.deepDiff(
-            originalRegistrar.toDiffableFieldMap(),
-            updatedRegistrar.toDiffableFieldMap(),
-            true);
+            originalRegistrar.toDiffableFieldMap(), updatedRegistrar.toDiffableFieldMap(), true);
     throw new ForbiddenException(
         String.format("Unauthorized: only %s can change fields %s", allowedRole, diffs.keySet()));
   }
@@ -413,9 +396,10 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     Set<String> emails = new HashSet<>();
     for (RegistrarContact contact : updatedContacts) {
       if (!emails.add(contact.getEmailAddress())) {
-        throw new ContactRequirementException(String.format(
-            "One email address (%s) cannot be used for multiple contacts",
-            contact.getEmailAddress()));
+        throw new ContactRequirementException(
+            String.format(
+                "One email address (%s) cannot be used for multiple contacts",
+                contact.getEmailAddress()));
       }
     }
     // Check that required contacts don't go away, once they are set.

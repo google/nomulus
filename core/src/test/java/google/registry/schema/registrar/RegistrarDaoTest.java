@@ -77,7 +77,7 @@ public class RegistrarDaoTest extends EntityTestCase {
     assertThat(persisted.getLocalizedAddress())
         .isEqualTo(
             new RegistrarAddress.Builder()
-                .setStreetLine1("123 Example Boulevard.")
+                .setStreet(ImmutableList.of("123 Example Boulevard."))
                 .setCity("Williamsburg")
                 .setState("NY")
                 .setZip("11211")

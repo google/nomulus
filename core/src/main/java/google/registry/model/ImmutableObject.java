@@ -162,7 +162,10 @@ public abstract class ImmutableObject implements Cloneable {
       // values.
       Map<String, Object> result = new LinkedHashMap<>();
       for (Entry<Field, Object> entry : ModelUtils.getFieldValues(o).entrySet()) {
-        result.put(entry.getKey().getName(), toMapRecursive(entry.getValue()));
+        Field field = entry.getKey();
+        if (!field.isAnnotationPresent(IgnoredInDiffableMap.class)) {
+          result.put(field.getName(), toMapRecursive(entry.getValue()));
+        }
       }
       return result;
     } else if (o instanceof Map) {
@@ -190,6 +193,12 @@ public abstract class ImmutableObject implements Cloneable {
       return o.toString();
     }
   }
+
+  /** Marker to indicate that this filed should be ignored by {@link #toDiffableFieldMap}. */
+  @Documented
+  @Retention(RUNTIME)
+  @Target(FIELD)
+  protected @interface IgnoredInDiffableMap {}
 
   /** Returns a map of all object fields (including sensitive data) that's used to produce diffs. */
   @SuppressWarnings("unchecked")

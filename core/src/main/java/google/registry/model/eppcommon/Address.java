@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import javax.persistence.Embeddable;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
@@ -57,11 +58,11 @@ public class Address extends ImmutableObject implements Jsonifiable {
   @Transient
   List<String> street;
 
-  @Ignore @XmlTransient String streetLine1;
+  @Ignore @XmlTransient @IgnoredInDiffableMap String streetLine1;
 
-  @Ignore @XmlTransient String streetLine2;
+  @Ignore @XmlTransient @IgnoredInDiffableMap String streetLine2;
 
-  @Ignore @XmlTransient String streetLine3;
+  @Ignore @XmlTransient @IgnoredInDiffableMap String streetLine3;
 
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
   String city;
@@ -84,18 +85,6 @@ public class Address extends ImmutableObject implements Jsonifiable {
     } else {
       return nullToEmptyImmutableCopy(street);
     }
-  }
-
-  public String getStreetLine1() {
-    return streetLine1;
-  }
-
-  public String getStreetLine2() {
-    return streetLine2;
-  }
-
-  public String getStreetLine13() {
-    return streetLine3;
   }
 
   public String getCity() {
@@ -150,21 +139,6 @@ public class Address extends ImmutableObject implements Jsonifiable {
       return this;
     }
 
-    public Builder<T> setStreetLine1(String streetLine1) {
-      getInstance().streetLine1 = streetLine1;
-      return this;
-    }
-
-    public Builder<T> setStreetLine2(String streetLine2) {
-      getInstance().streetLine2 = streetLine2;
-      return this;
-    }
-
-    public Builder<T> setStreetLine3(String streetLine3) {
-      getInstance().streetLine3 = streetLine3;
-      return this;
-    }
-
     public Builder<T> setCity(String city) {
       getInstance().city = city;
       return this;
@@ -189,12 +163,37 @@ public class Address extends ImmutableObject implements Jsonifiable {
     }
   }
 
-  void onload(@AlsoLoad("street") List<String> street) {
+  /**
+   * This callback method is used by Objectify to set streetLine[1,2,3] fields as they are not
+   * persisted in the Datastore. TODO(shicong): Delete this method after database migration.
+   */
+  void onLoad(@AlsoLoad("street") List<String> street) {
     if (street == null || street.size() == 0) {
       return;
     }
     streetLine1 = street.get(0);
     streetLine2 = street.size() >= 2 ? street.get(1) : null;
     streetLine3 = street.size() >= 3 ? street.get(2) : null;
+  }
+
+  /**
+   * This callback method is used by Hibernate to set {@link #street} field as it is not persisted
+   * in Cloud SQL. We are doing this because the street list field is exposed by Address class and
+   * is used everywhere in our code base. Also, setting/reading a list of strings is more
+   * convenient.
+   */
+  @PostLoad
+  void postLoad() {
+    ImmutableList.Builder<String> builder = new ImmutableList.Builder<>();
+    if (streetLine1 != null) {
+      builder.add(streetLine1);
+      if (streetLine2 != null) {
+        builder.add(streetLine2);
+        if (streetLine3 != null) {
+          builder.add(streetLine3);
+        }
+      }
+    }
+    street = streetLine1 == null ? null : builder.build();
   }
 }
