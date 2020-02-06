@@ -20,8 +20,8 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.googlecode.objectify.annotation.AlsoLoad;
 import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.OnLoad;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
@@ -189,8 +189,7 @@ public class Address extends ImmutableObject implements Jsonifiable {
     }
   }
 
-  @OnLoad
-  public void onload() {
+  private void onload(@AlsoLoad("street") List<String> street) {
     if (street == null || street.size() == 0) {
       return;
     }

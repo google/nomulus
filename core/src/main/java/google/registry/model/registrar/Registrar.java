@@ -60,7 +60,6 @@ import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Mapify;
-import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.Parent;
 import com.googlecode.objectify.condition.IfNull;
 import com.googlecode.objectify.mapper.Mapper;
@@ -1007,16 +1006,5 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
     Optional<Registrar> registrar = loadByClientIdCached(clientId);
     checkArgument(registrar.isPresent(), "couldn't find registrar '%s'", clientId);
     return registrar.get();
-  }
-
-  // TODO(shicong): Investigate a better way to recursively call @OnLoad on embedded entity
-  @OnLoad
-  void onload() {
-    if (localizedAddress != null) {
-      localizedAddress.onload();
-    }
-    if (internationalizedAddress != null) {
-      internationalizedAddress.onload();
-    }
   }
 }
