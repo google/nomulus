@@ -21,6 +21,7 @@ import static google.registry.networking.handler.SslInitializerTestUtils.signKey
 import static google.registry.networking.handler.SslInitializerTestUtils.verifySslExcpetion;
 
 import com.google.common.collect.ImmutableList;
+import google.registry.networking.util.SelfSignedCaCertificate;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
@@ -35,7 +36,6 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import io.netty.handler.ssl.util.SelfSignedCertificate;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.CertPathBuilderException;
@@ -153,7 +153,7 @@ public class SslClientInitializerTest {
 
   @Test
   public void testFailure_defaultTrustManager_rejectSelfSignedCert() throws Exception {
-    SelfSignedCertificate ssc = new SelfSignedCertificate(SSL_HOST);
+    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create(SSL_HOST);
     LocalAddress localAddress =
         new LocalAddress("DEFAULT_TRUST_MANAGER_REJECT_SELF_SIGNED_CERT_" + sslProvider);
     nettyRule.setUpServer(localAddress, getServerHandler(false, ssc.key(), ssc.cert()));
@@ -177,7 +177,7 @@ public class SslClientInitializerTest {
     KeyPair keyPair = getKeyPair();
 
     // Generate a self signed certificate, and use it to sign the key pair.
-    SelfSignedCertificate ssc = new SelfSignedCertificate();
+    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create();
     X509Certificate cert = signKeyPair(ssc, keyPair, SSL_HOST);
 
     // Set up the server to use the signed cert and private key to perform handshake;
@@ -206,7 +206,7 @@ public class SslClientInitializerTest {
     KeyPair keyPair = getKeyPair();
 
     // Generate a self signed certificate, and use it to sign the key pair.
-    SelfSignedCertificate ssc = new SelfSignedCertificate();
+    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create();
     X509Certificate cert =
         signKeyPair(
             ssc,
@@ -240,7 +240,7 @@ public class SslClientInitializerTest {
     KeyPair keyPair = getKeyPair();
 
     // Generate a self signed certificate, and use it to sign the key pair.
-    SelfSignedCertificate ssc = new SelfSignedCertificate();
+    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create();
     X509Certificate cert =
         signKeyPair(
             ssc,
@@ -272,8 +272,8 @@ public class SslClientInitializerTest {
         new LocalAddress(
             "CUSTOM_TRUST_MANAGER_ACCEPT_SELF_SIGNED_CERT_CLIENT_CERT_REQUIRED_" + sslProvider);
 
-    SelfSignedCertificate serverSsc = new SelfSignedCertificate(SSL_HOST);
-    SelfSignedCertificate clientSsc = new SelfSignedCertificate();
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
+    SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create();
 
     // Set up the server to require client certificate.
     nettyRule.setUpServer(localAddress, getServerHandler(true, serverSsc.key(), serverSsc.cert()));
@@ -311,7 +311,7 @@ public class SslClientInitializerTest {
     KeyPair keyPair = getKeyPair();
 
     // Generate a self signed certificate, and use it to sign the key pair.
-    SelfSignedCertificate ssc = new SelfSignedCertificate();
+    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create();
     X509Certificate cert = signKeyPair(ssc, keyPair, "wrong.com");
 
     // Set up the server to use the signed cert and private key to perform handshake;

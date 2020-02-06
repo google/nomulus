@@ -26,7 +26,7 @@ import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.networking.module.CertificateSupplierModule.Mode;
-import io.netty.handler.ssl.util.SelfSignedCertificate;
+import google.registry.networking.util.SelfSignedCaCertificate;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.security.KeyPair;
@@ -47,7 +47,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class CertificateSupplierModuleTest {
 
-  private SelfSignedCertificate ssc;
+  private SelfSignedCaCertificate ssc;
   private PrivateKey key;
   private Certificate cert;
   private TestComponent component;
@@ -62,7 +62,7 @@ public class CertificateSupplierModuleTest {
 
   @Before
   public void setUp() throws Exception {
-    ssc = new SelfSignedCertificate();
+    ssc = SelfSignedCaCertificate.create();
     KeyPair keyPair = getKeyPair();
     key = keyPair.getPrivate();
     cert = signKeyPair(ssc, keyPair, "example.tld");

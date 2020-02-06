@@ -23,6 +23,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Throwables;
+import google.registry.networking.util.SelfSignedCaCertificate;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;
 import google.registry.testing.FakeClock;
 import io.netty.buffer.ByteBuf;
@@ -34,7 +35,6 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
-import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.netty.util.concurrent.Promise;
 import java.security.cert.X509Certificate;
 import org.junit.Before;
@@ -123,7 +123,7 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
   @Before
   public void setUp() throws Exception {
     testComponent = makeTestComponent(new FakeClock());
-    certificate = new SelfSignedCertificate().cert();
+    certificate = SelfSignedCaCertificate.create().cert();
     initializeChannel(
         ch -> {
           ch.attr(REMOTE_ADDRESS_KEY).set(CLIENT_ADDRESS);

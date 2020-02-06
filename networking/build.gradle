@@ -41,12 +41,6 @@ dependencies {
   testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
 }
 
-test {
-  // Temporarily allow non-CA cert as trust anchor (legacy behavior) in tests.
-  // TODO(weiminyu): generate test cert as a CA cert.
-  systemProperty 'jdk.security.allowNonCaAnchor', 'true'
-}
-
 // Make testing artifacts available to be depended up on by other projects.
 task testJar(type: Jar) {
   classifier = 'test'

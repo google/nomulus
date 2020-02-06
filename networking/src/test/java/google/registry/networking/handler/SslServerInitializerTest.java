@@ -23,6 +23,7 @@ import static google.registry.networking.handler.SslServerInitializer.CLIENT_CER
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
+import google.registry.networking.util.SelfSignedCaCertificate;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -33,7 +34,6 @@ import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
-import io.netty.handler.ssl.util.SelfSignedCertificate;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
@@ -127,7 +127,7 @@ public class SslServerInitializerTest {
 
   @Test
   public void testSuccess_swappedInitializerWithSslHandler() throws Exception {
-    SelfSignedCertificate ssc = new SelfSignedCertificate(SSL_HOST);
+    SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create(SSL_HOST);
     SslServerInitializer<EmbeddedChannel> sslServerInitializer =
         new SslServerInitializer<>(
             true,
@@ -147,12 +147,12 @@ public class SslServerInitializerTest {
 
   @Test
   public void testSuccess_trustAnyClientCert() throws Exception {
-    SelfSignedCertificate serverSsc = new SelfSignedCertificate(SSL_HOST);
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
     LocalAddress localAddress = new LocalAddress("TRUST_ANY_CLIENT_CERT_" + sslProvider);
 
     nettyRule.setUpServer(
         localAddress, getServerHandler(true, false, serverSsc.key(), serverSsc.cert()));
-    SelfSignedCertificate clientSsc = new SelfSignedCertificate();
+    SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create();
     nettyRule.setUpClient(
         localAddress, getClientHandler(serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
 
@@ -168,13 +168,13 @@ public class SslServerInitializerTest {
 
   @Test
   public void testFailure_clientCertExpired() throws Exception {
-    SelfSignedCertificate serverSsc = new SelfSignedCertificate(SSL_HOST);
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
     LocalAddress localAddress = new LocalAddress("CLIENT_CERT_EXPIRED_" + sslProvider);
 
     nettyRule.setUpServer(
         localAddress, getServerHandler(true, true, serverSsc.key(), serverSsc.cert()));
-    SelfSignedCertificate clientSsc =
-        new SelfSignedCertificate(
+    SelfSignedCaCertificate clientSsc =
+        SelfSignedCaCertificate.create(
             "CLIENT",
             Date.from(Instant.now().minus(Duration.ofDays(2))),
             Date.from(Instant.now().minus(Duration.ofDays(1))));
@@ -189,13 +189,13 @@ public class SslServerInitializerTest {
 
   @Test
   public void testFailure_clientCertNotYetValid() throws Exception {
-    SelfSignedCertificate serverSsc = new SelfSignedCertificate(SSL_HOST);
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
     LocalAddress localAddress = new LocalAddress("CLIENT_CERT_EXPIRED_" + sslProvider);
 
     nettyRule.setUpServer(
         localAddress, getServerHandler(true, true, serverSsc.key(), serverSsc.cert()));
-    SelfSignedCertificate clientSsc =
-        new SelfSignedCertificate(
+    SelfSignedCaCertificate clientSsc =
+        SelfSignedCaCertificate.create(
             "CLIENT",
             Date.from(Instant.now().plus(Duration.ofDays(1))),
             Date.from(Instant.now().plus(Duration.ofDays(2))));
@@ -210,7 +210,7 @@ public class SslServerInitializerTest {
 
   @Test
   public void testSuccess_doesNotRequireClientCert() throws Exception {
-    SelfSignedCertificate serverSsc = new SelfSignedCertificate(SSL_HOST);
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
     LocalAddress localAddress = new LocalAddress("DOES_NOT_REQUIRE_CLIENT_CERT_" + sslProvider);
 
     nettyRule.setUpServer(
@@ -230,7 +230,7 @@ public class SslServerInitializerTest {
   @Test
   public void testSuccess_CertSignedByOtherCA() throws Exception {
     // The self-signed cert of the CA.
-    SelfSignedCertificate caSsc = new SelfSignedCertificate();
+    SelfSignedCaCertificate caSsc = SelfSignedCaCertificate.create();
     KeyPair keyPair = getKeyPair();
     X509Certificate serverCert = signKeyPair(caSsc, keyPair, SSL_HOST);
     LocalAddress localAddress = new LocalAddress("CERT_SIGNED_BY_OTHER_CA_" + sslProvider);
@@ -244,7 +244,7 @@ public class SslServerInitializerTest {
             // Serving both the server cert, and the CA cert
             serverCert,
             caSsc.cert()));
-    SelfSignedCertificate clientSsc = new SelfSignedCertificate();
+    SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create();
     nettyRule.setUpClient(
         localAddress,
         getClientHandler(
@@ -263,7 +263,7 @@ public class SslServerInitializerTest {
 
   @Test
   public void testFailure_requireClientCertificate() throws Exception {
-    SelfSignedCertificate serverSsc = new SelfSignedCertificate(SSL_HOST);
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
     LocalAddress localAddress = new LocalAddress("REQUIRE_CLIENT_CERT_" + sslProvider);
 
     nettyRule.setUpServer(
@@ -285,12 +285,12 @@ public class SslServerInitializerTest {
 
   @Test
   public void testFailure_wrongHostnameInCertificate() throws Exception {
-    SelfSignedCertificate serverSsc = new SelfSignedCertificate("wrong.com");
+    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create("wrong.com");
     LocalAddress localAddress = new LocalAddress("WRONG_HOSTNAME_" + sslProvider);
 
     nettyRule.setUpServer(
         localAddress, getServerHandler(true, false, serverSsc.key(), serverSsc.cert()));
-    SelfSignedCertificate clientSsc = new SelfSignedCertificate();
+    SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create();
     nettyRule.setUpClient(
         localAddress, getClientHandler(serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
 

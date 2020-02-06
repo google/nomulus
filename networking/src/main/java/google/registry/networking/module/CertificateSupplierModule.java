@@ -25,7 +25,7 @@ import com.google.common.collect.ImmutableList;
 import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
-import io.netty.handler.ssl.util.SelfSignedCertificate;
+import google.registry.networking.util.SelfSignedCaCertificate;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -163,9 +163,9 @@ public final class CertificateSupplierModule {
 
   @Singleton
   @Provides
-  static SelfSignedCertificate provideSelfSignedCertificate() {
+  static SelfSignedCaCertificate provideSelfSignedCertificate() {
     try {
-      return new SelfSignedCertificate();
+      return SelfSignedCaCertificate.create();
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -174,7 +174,7 @@ public final class CertificateSupplierModule {
   @Singleton
   @Provides
   @SelfSigned
-  static Supplier<PrivateKey> provideSelfSignedPrivateKeySupplier(SelfSignedCertificate ssc) {
+  static Supplier<PrivateKey> provideSelfSignedPrivateKeySupplier(SelfSignedCaCertificate ssc) {
     return Suppliers.ofInstance(ssc.key());
   }
 
@@ -182,7 +182,7 @@ public final class CertificateSupplierModule {
   @Provides
   @SelfSigned
   static Supplier<ImmutableList<X509Certificate>> provideSelfSignedCertificatesSupplier(
-      SelfSignedCertificate ssc) {
+      SelfSignedCaCertificate ssc) {
     return Suppliers.ofInstance(ImmutableList.of(ssc.cert()));
   }
 
