@@ -31,6 +31,4 @@ public class StringListConverter extends StringListConverterBase<String> {
   String fromString(String value) {
     return value;
   }
-
-
 }
