@@ -29,20 +29,26 @@ public class CurrencyToBillingMapUserType extends MapUserType {
 
   @Override
   public Object toEntityTypeMap(Map<String, String> map) {
-    return map.entrySet().stream()
-        .collect(
-            toImmutableMap(
-                entry -> CurrencyUnit.of(entry.getKey()),
-                entry ->
-                    new BillingAccountEntry(CurrencyUnit.of(entry.getKey()), entry.getValue())));
+    return map == null
+        ? null
+        : map.entrySet().stream()
+            .collect(
+                toImmutableMap(
+                    entry -> CurrencyUnit.of(entry.getKey()),
+                    entry ->
+                        new BillingAccountEntry(
+                            CurrencyUnit.of(entry.getKey()), entry.getValue())));
   }
 
   @Override
   public Map<String, String> toDbSupportedMap(Object map) {
-    return ((Map<CurrencyUnit, BillingAccountEntry>) map)
-        .entrySet().stream()
-            .collect(
-                toImmutableMap(
-                    entry -> entry.getKey().getCode(), entry -> entry.getValue().getAccountId()));
+    return map == null
+        ? null
+        : ((Map<CurrencyUnit, BillingAccountEntry>) map)
+            .entrySet().stream()
+                .collect(
+                    toImmutableMap(
+                        entry -> entry.getKey().getCode(),
+                        entry -> entry.getValue().getAccountId()));
   }
 }

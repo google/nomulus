@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.isNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 import static google.registry.util.RegistrarUtils.normalizeRegistrarName;
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -28,6 +29,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.common.flogger.FluentLogger;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registry.Registry;
@@ -52,6 +54,8 @@ import org.joda.time.DateTime;
 
 /** Shared base class for commands to create or update a {@link Registrar}. */
 abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
+
+  static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Parameter(
       description = "Client identifier of the registrar account",
@@ -458,4 +462,30 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       stageEntityChange(oldRegistrar, newRegistrar);
     }
   }
+
+  @Override
+  protected String execute() throws Exception {
+    // Save registrar to datastore and output its response
+    logger.atInfo().log(super.execute());
+
+    String cloudSqlMessage;
+    try {
+      int count = 0;
+      for (final List<EntityChange> batch : getCollatedEntityChangeBatches()) {
+        jpaTm()
+            .transact(
+                () ->
+                    batch.forEach(
+                        entityChange -> saveToCloudSql((Registrar) entityChange.newEntity)));
+        count += batch.size();
+      }
+      cloudSqlMessage = String.format("Updated %d entities in Cloud SQL.\n", count);
+    } catch (Throwable t) {
+      cloudSqlMessage = "Unexpected error saving registrar to Cloud SQL from nomulus tool command";
+      logger.atSevere().withCause(t).log(cloudSqlMessage);
+    }
+    return cloudSqlMessage;
+  }
+
+  abstract void saveToCloudSql(Registrar registrar);
 }

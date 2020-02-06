@@ -14,12 +14,15 @@
 
 package google.registry.tools;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.Parameters;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.registrar.Registrar;
+import google.registry.schema.registrar.RegistrarDao;
 import javax.annotation.Nullable;
 
 /** Command to update a Registrar. */
@@ -48,5 +51,18 @@ final class UpdateRegistrarCommand extends CreateOrUpdateRegistrarCommand {
               + " \"nomulus registrar_contact\" command on this registrar to set a WHOIS abuse"
               + " contact.");
     }
+  }
+
+  @Override
+  void saveToCloudSql(Registrar registrar) {
+    jpaTm()
+        .transact(
+            () -> {
+              checkArgument(
+                  RegistrarDao.checkExists(registrar.getClientId()),
+                  "A registrar of this id does not exist: %s.",
+                  registrar.getClientId());
+              RegistrarDao.save(registrar);
+            });
   }
 }
