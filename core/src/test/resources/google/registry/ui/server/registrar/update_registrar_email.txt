@@ -2,8 +2,8 @@ The following changes were made in registry unittest environment to the registra
 
 whoisServer: null -> foo.bar.baz
 ipAddressWhitelist: null -> [1.1.1.1/32, 2.2.2.2/32, 4.4.4.4/32]
-localizedAddress.street.0: 123 Example Bőulevard -> 123 Street Rd
-localizedAddress.street.1: null -> Ste 156
+localizedAddress.streetLine1: 123 Example Bőulevard -> 123 Street Rd
+localizedAddress.streetLine2: null -> Ste 156
 localizedAddress.city: Williamsburg -> New York
 localizedAddress.zip: 11211 -> 10011
 phoneNumber: +1.2223334444 -> +1.2223335555
