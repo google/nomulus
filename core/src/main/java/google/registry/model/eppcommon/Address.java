@@ -57,11 +57,11 @@ public class Address extends ImmutableObject implements Jsonifiable {
   @Transient
   List<String> street;
 
-  @Ignore String streetLine1;
+  @Ignore @XmlTransient String streetLine1;
 
-  @Ignore String streetLine2;
+  @Ignore @XmlTransient String streetLine2;
 
-  @Ignore String streetLine3;
+  @Ignore @XmlTransient String streetLine3;
 
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
   String city;
@@ -189,7 +189,7 @@ public class Address extends ImmutableObject implements Jsonifiable {
     }
   }
 
-  private void onload(@AlsoLoad("street") List<String> street) {
+  void onload(@AlsoLoad("street") List<String> street) {
     if (street == null || street.size() == 0) {
       return;
     }

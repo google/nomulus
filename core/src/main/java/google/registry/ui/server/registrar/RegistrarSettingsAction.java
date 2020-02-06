@@ -65,6 +65,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
@@ -254,6 +255,18 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
             .collect(toImmutableSet());
     // Use LinkedHashMap here to preserve ordering; null values mean we can't use ImmutableMap.
     LinkedHashMap<String, Object> result = new LinkedHashMap<>(registrar.toDiffableFieldMap());
+    // Remove the street field in both localizedAddress and internationalizedAddress as it will be
+    // replaced by the
+    // streetLine[1-3] fields after the database migration
+    Stream.of(result.get("localizedAddress"), result.get("internationalizedAddress"))
+        .filter(Objects::nonNull)
+        .forEach(
+            obj -> {
+              Map<String, Object> map = (Map<String, Object>) obj;
+              if (map.containsKey("street")) {
+                map.remove("street");
+              }
+            });
     result.put("contacts", expandedContacts);
     return result;
   }
