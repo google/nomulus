@@ -16,6 +16,7 @@ package google.registry.model.eppcommon;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.nullToEmpty;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -28,6 +29,8 @@ import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 import javax.persistence.Embeddable;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.PostLoad;
@@ -184,16 +187,11 @@ public class Address extends ImmutableObject implements Jsonifiable {
    */
   @PostLoad
   void postLoad() {
-    ImmutableList.Builder<String> builder = new ImmutableList.Builder<>();
-    if (streetLine1 != null) {
-      builder.add(streetLine1);
-      if (streetLine2 != null) {
-        builder.add(streetLine2);
-        if (streetLine3 != null) {
-          builder.add(streetLine3);
-        }
-      }
-    }
-    street = streetLine1 == null ? null : builder.build();
+    street =
+        streetLine1 == null
+            ? null
+            : Stream.of(streetLine1, streetLine2, streetLine3)
+                .filter(Objects::nonNull)
+                .collect(toImmutableList());
   }
 }
