@@ -246,20 +246,21 @@ public final class RegistryLockPostActionTest {
             ImmutableMap.of(
                 "clientId", "TheRegistrar",
                 "fullyQualifiedDomainName", "example.tld",
-                "isLock", true,
-                "pocId", "Marla.Singer@crr.com"));
+                "isLock", true));
     assertFailureWithMessage(response, "Missing key for password");
   }
 
   @Test
   public void testFailure_notEnabledForRegistrarContact() {
+    action =
+        createAction(
+            AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, false)));
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of(
                 "clientId", "TheRegistrar",
                 "fullyQualifiedDomainName", "example.tld",
                 "isLock", true,
-                "pocId", "johndoe@theregistrar.com",
                 "password", "hi"));
     assertFailureWithMessage(response, "Incorrect registry lock password for contact");
   }
@@ -272,7 +273,6 @@ public final class RegistryLockPostActionTest {
                 "clientId", "TheRegistrar",
                 "fullyQualifiedDomainName", "example.tld",
                 "isLock", true,
-                "pocId", "Marla.Singer@crr.com",
                 "password", "badPassword"));
     assertFailureWithMessage(response, "Incorrect registry lock password for contact");
   }
@@ -285,34 +285,8 @@ public final class RegistryLockPostActionTest {
                 "clientId", "TheRegistrar",
                 "fullyQualifiedDomainName", "bad.tld",
                 "isLock", true,
-                "pocId", "Marla.Singer@crr.com",
                 "password", "hi"));
     assertFailureWithMessage(response, "Unknown domain bad.tld");
-  }
-
-  @Test
-  public void testFailure_noPocId() {
-    Map<String, ?> response =
-        action.handleJsonRequest(
-            ImmutableMap.of(
-                "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "bad.tld",
-                "isLock", true,
-                "password", "hi"));
-    assertFailureWithMessage(response, "Missing key for pocId");
-  }
-
-  @Test
-  public void testFailure_invalidPocId() {
-    Map<String, ?> response =
-        action.handleJsonRequest(
-            ImmutableMap.of(
-                "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "bad.tld",
-                "isLock", true,
-                "pocId", "someotherpoc@crr.com",
-                "password", "hi"));
-    assertFailureWithMessage(response, "Unknown registrar POC ID someotherpoc@crr.com");
   }
 
   @Test
@@ -372,7 +346,6 @@ public final class RegistryLockPostActionTest {
         "isLock", lock,
         "clientId", "TheRegistrar",
         "fullyQualifiedDomainName", "example.tld",
-        "pocId", "Marla.Singer@crr.com",
         "password", "hi");
   }
 

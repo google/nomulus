@@ -129,10 +129,10 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
               .orElseThrow(() -> new ForbiddenException("User is not logged in"));
 
       boolean isAdmin = userAuthInfo.isUserAdmin();
+      String userEmail = userAuthInfo.user().getEmail();
       if (!isAdmin) {
-        verifyRegistryLockPassword(postInput);
+        verifyRegistryLockPassword(postInput, userEmail);
       }
-      String userEmail = isAdmin ? userAuthInfo.user().getEmail() : postInput.pocId;
       jpaTm()
           .transact(
               () -> {
@@ -185,23 +185,22 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
     }
   }
 
-  private void verifyRegistryLockPassword(RegistryLockPostInput postInput)
+  private void verifyRegistryLockPassword(RegistryLockPostInput postInput, String userEmail)
       throws RegistrarAccessDeniedException {
     // Verify that the user can access the registrar and that the user has
     // registry lock enabled and provided a correct password
     Registrar registrar = registrarAccessor.getRegistrar(postInput.clientId);
     checkArgument(
         registrar.isRegistryLockAllowed(), "Registry lock not allowed for this registrar");
-    checkArgument(!Strings.isNullOrEmpty(postInput.pocId), "Missing key for pocId");
     checkArgument(!Strings.isNullOrEmpty(postInput.password), "Missing key for password");
     RegistrarContact registrarContact =
         registrar.getContacts().stream()
-            .filter(contact -> contact.getEmailAddress().equals(postInput.pocId))
+            .filter(contact -> contact.getEmailAddress().equals(userEmail))
             .findFirst()
             .orElseThrow(
                 () ->
                     new IllegalArgumentException(
-                        String.format("Unknown registrar POC ID %s", postInput.pocId)));
+                        String.format("Unknown user email %s", userEmail)));
     checkArgument(
         registrarContact.verifyRegistryLockPassword(postInput.password),
         "Incorrect registry lock password for contact");
@@ -212,7 +211,6 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
     private String clientId;
     private String fullyQualifiedDomainName;
     private Boolean isLock;
-    private String pocId;
     private String password;
   }
 }
