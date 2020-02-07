@@ -14,6 +14,7 @@
 
 package google.registry.schema.registrar;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -26,9 +27,23 @@ public class RegistrarDao {
   private RegistrarDao() {}
 
   /** Persists a new or updates an existing registrar in Cloud SQL. */
-  public static void save(Registrar registrar) {
+  public static void saveNew(Registrar registrar) {
     checkArgumentNotNull(registrar, "registrar must be specified");
-    jpaTm().transact(() -> jpaTm().getEntityManager().merge(registrar));
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(registrar));
+  }
+
+  /** Updates an existing registrar in Cloud SQL, throws excpetion if it does not exist. */
+  public static void update(Registrar registrar) {
+    checkArgumentNotNull(registrar, "registrar must be specified");
+    jpaTm()
+        .transact(
+            () -> {
+              checkArgument(
+                  checkExists(registrar.getClientId()),
+                  "A registrar of this id does not exist: %s.",
+                  registrar.getClientId());
+              jpaTm().getEntityManager().merge(registrar);
+            });
   }
 
   /** Returns whether the registrar of the given id exists. */

@@ -167,7 +167,10 @@ public class Address extends ImmutableObject implements Jsonifiable {
   }
 
   /**
-   * This callback method is used by Objectify to set streetLine[1,2,3] fields as they are not
+   * Sets {@link #streetLine1}, {@link #streetLine2} and {@link #streetLine3} after loading the
+   * entity from Datastore.
+   *
+   * <p>This callback method is used by Objectify to set streetLine[1,2,3] fields as they are not
    * persisted in the Datastore. TODO(shicong): Delete this method after database migration.
    */
   void onLoad(@AlsoLoad("street") List<String> street) {
@@ -180,9 +183,11 @@ public class Address extends ImmutableObject implements Jsonifiable {
   }
 
   /**
-   * This callback method is used by Hibernate to set {@link #street} field as it is not persisted
-   * in Cloud SQL. We are doing this because the street list field is exposed by Address class and
-   * is used everywhere in our code base. Also, setting/reading a list of strings is more
+   * Sets {@link #street} after loading the entity from Cloud SQL.
+   *
+   * <p>This callback method is used by Hibernate to set {@link #street} field as it is not
+   * persisted in Cloud SQL. We are doing this because the street list field is exposed by Address
+   * class and is used everywhere in our code base. Also, setting/reading a list of strings is more
    * convenient.
    */
   @PostLoad

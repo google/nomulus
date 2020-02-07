@@ -465,21 +465,17 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
 
   @Override
   protected String execute() throws Exception {
-    // Save registrar to datastore and output its response
+    // Save registrar to Datastore and output its response
     logger.atInfo().log(super.execute());
 
     String cloudSqlMessage;
     try {
-      int count = 0;
-      for (final List<EntityChange> batch : getCollatedEntityChangeBatches()) {
-        jpaTm()
-            .transact(
-                () ->
-                    batch.forEach(
-                        entityChange -> saveToCloudSql((Registrar) entityChange.newEntity)));
-        count += batch.size();
-      }
-      cloudSqlMessage = String.format("Updated %d entities in Cloud SQL.\n", count);
+      jpaTm()
+          .transact(
+              () ->
+                  getChangedEntities().forEach(newEntity -> saveToCloudSql((Registrar) newEntity)));
+      cloudSqlMessage =
+          String.format("Updated %d entities in Cloud SQL.\n", getChangedEntities().size());
     } catch (Throwable t) {
       cloudSqlMessage = "Unexpected error saving registrar to Cloud SQL from nomulus tool command";
       logger.atSevere().withCause(t).log(cloudSqlMessage);

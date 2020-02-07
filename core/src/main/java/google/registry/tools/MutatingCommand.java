@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.emptyToNull;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DatastoreServiceUtils.getNameOrId;
@@ -49,7 +50,7 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
    * the old version is necessary to enable checking that the existing entity has not been modified
    * when applying a mutation that was created outside the same transaction.
    */
-  protected static class EntityChange {
+  private static class EntityChange {
 
     /** The possible types of mutation that can be performed on an entity. */
     public enum ChangeType {
@@ -172,7 +173,7 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
    * Returns a set of lists of EntityChange actions to commit. Each list should be executed in order
    * inside a single transaction.
    */
-  protected ImmutableSet<ImmutableList<EntityChange>> getCollatedEntityChangeBatches() {
+  private ImmutableSet<ImmutableList<EntityChange>> getCollatedEntityChangeBatches() {
     ImmutableSet.Builder<ImmutableList<EntityChange>> batches = new ImmutableSet.Builder<>();
     ArrayList<EntityChange> nextBatch = new ArrayList<>();
     for (EntityChange change : changedEntitiesMap.values()) {
@@ -220,5 +221,12 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
     return changedEntitiesMap.isEmpty()
         ? "No entity changes to apply."
         : changedEntitiesMap.values().stream().map(Object::toString).collect(joining("\n"));
+  }
+
+  /** Returns the collection of the new entity in the {@link EntityChange}. */
+  protected ImmutableList<ImmutableObject> getChangedEntities() {
+    return changedEntitiesMap.values().stream()
+        .map(entityChange -> entityChange.newEntity)
+        .collect(toImmutableList());
   }
 }

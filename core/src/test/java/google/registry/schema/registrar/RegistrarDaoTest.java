@@ -15,6 +15,7 @@
 package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.EntityTestCase;
@@ -59,16 +60,32 @@ public class RegistrarDaoTest extends EntityTestCase {
   }
 
   @Test
-  public void save_worksSuccessfully() {
+  public void saveNew_worksSuccessfully() {
     assertThat(RegistrarDao.checkExists("registrarId")).isFalse();
-    RegistrarDao.save(testRegistrar);
+    RegistrarDao.saveNew(testRegistrar);
     assertThat(RegistrarDao.checkExists("registrarId")).isTrue();
+  }
+
+  @Test
+  public void update_worksSuccessfully() {
+    RegistrarDao.saveNew(testRegistrar);
+    Registrar persisted = RegistrarDao.load("registrarId").get();
+    assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");
+    RegistrarDao.update(persisted.asBuilder().setRegistrarName("changedRegistrarName").build());
+    persisted = RegistrarDao.load("registrarId").get();
+    assertThat(persisted.getRegistrarName()).isEqualTo("changedRegistrarName");
+  }
+
+  @Test
+  public void update_throwsExceptionWhenEntityDoesNotExist() {
+    assertThat(RegistrarDao.checkExists("registrarId")).isFalse();
+    assertThrows(IllegalArgumentException.class, () -> RegistrarDao.update(testRegistrar));
   }
 
   @Test
   public void load_worksSuccessfully() {
     assertThat(RegistrarDao.checkExists("registrarId")).isFalse();
-    RegistrarDao.save(testRegistrar);
+    RegistrarDao.saveNew(testRegistrar);
     Registrar persisted = RegistrarDao.load("registrarId").get();
 
     assertThat(persisted.getClientId()).isEqualTo("registrarId");
