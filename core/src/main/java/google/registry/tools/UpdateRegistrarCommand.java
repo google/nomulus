@@ -14,8 +14,6 @@
 
 package google.registry.tools;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
@@ -55,14 +53,6 @@ final class UpdateRegistrarCommand extends CreateOrUpdateRegistrarCommand {
 
   @Override
   void saveToCloudSql(Registrar registrar) {
-    jpaTm()
-        .transact(
-            () -> {
-              checkArgument(
-                  RegistrarDao.checkExists(registrar.getClientId()),
-                  "A registrar of this id does not exist: %s.",
-                  registrar.getClientId());
-              RegistrarDao.save(registrar);
-            });
+    RegistrarDao.update(registrar);
   }
 }
