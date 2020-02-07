@@ -27,6 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.common.base.Throwables;
+import google.registry.networking.util.SelfSignedCaCertificate;
 import google.registry.proxy.TestUtils;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;
 import google.registry.proxy.metric.FrontendMetrics;
@@ -41,7 +42,6 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
-import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.netty.util.concurrent.Promise;
 import java.security.cert.X509Certificate;
 import org.junit.Before;
@@ -114,7 +114,7 @@ public class EppServiceHandlerTest {
 
   @Before
   public void setUp() throws Exception {
-    clientCertificate = new SelfSignedCertificate().cert();
+    clientCertificate = SelfSignedCaCertificate.create().cert();
     channel = setUpNewChannel(eppServiceHandler);
   }
 
@@ -179,7 +179,7 @@ public class EppServiceHandlerTest {
             HELLO.getBytes(UTF_8),
             metrics);
     EmbeddedChannel channel2 = setUpNewChannel(eppServiceHandler2);
-    X509Certificate clientCertificate2 = new SelfSignedCertificate().cert();
+    X509Certificate clientCertificate2 = SelfSignedCaCertificate.create().cert();
     setHandshakeSuccess(channel2, clientCertificate2);
     String certHash2 = getCertificateHash(clientCertificate2);
 

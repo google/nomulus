@@ -14,6 +14,7 @@
 
 package google.registry.persistence;
 
+import google.registry.util.TypeUtils.TypeInstantiator;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -34,5 +35,17 @@ public class EnumSetUserType<E extends Enum<E>>
   @Override
   public Class returnedClass() {
     return Set.class;
+  }
+
+  @Override
+  protected E convertToElem(String columnValue) {
+    return columnValue == null
+        ? null
+        : Enum.valueOf(new TypeInstantiator<E>(getClass()) {}.getExactType(), columnValue);
+  }
+
+  @Override
+  protected String convertToColumn(E elementValue) {
+    return elementValue == null ? null : elementValue.toString();
   }
 }

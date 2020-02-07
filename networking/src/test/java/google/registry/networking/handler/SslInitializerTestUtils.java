@@ -18,15 +18,14 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Throwables;
+import google.registry.networking.util.SelfSignedCaCertificate;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.ssl.util.SelfSignedCertificate;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
@@ -34,17 +33,13 @@ import java.util.Date;
 import java.util.concurrent.ExecutionException;
 import javax.net.ssl.SSLSession;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
-import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
-import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 /**
  * Utility class that provides methods used by {@link SslClientInitializerTest} and {@link
@@ -52,16 +47,23 @@ import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
  */
 public final class SslInitializerTestUtils {
 
-  static {
-    Security.addProvider(new BouncyCastleProvider());
-  }
+  private static final BouncyCastleProvider PROVIDER = new BouncyCastleProvider();
+  private static final KeyPairGenerator KEY_PAIR_GENERATOR = getKeyPairGenerator();
 
   private SslInitializerTestUtils() {}
 
+  private static KeyPairGenerator getKeyPairGenerator() {
+    try {
+      KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", PROVIDER);
+      keyPairGenerator.initialize(2048, new SecureRandom());
+      return keyPairGenerator;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public static KeyPair getKeyPair() throws Exception {
-    KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", "BC");
-    keyPairGenerator.initialize(2048, new SecureRandom());
-    return keyPairGenerator.generateKeyPair();
+    return KEY_PAIR_GENERATOR.generateKeyPair();
   }
 
   /**
@@ -71,26 +73,20 @@ public final class SslInitializerTestUtils {
    * @return signed public key (of the key pair) certificate
    */
   public static X509Certificate signKeyPair(
-      SelfSignedCertificate ssc, KeyPair keyPair, String hostname, Date from, Date to)
+      SelfSignedCaCertificate ssc, KeyPair keyPair, String hostname, Date from, Date to)
       throws Exception {
     X500Name subjectDnName = new X500Name("CN=" + hostname);
     BigInteger serialNumber = BigInteger.valueOf(System.currentTimeMillis());
     X500Name issuerDnName = new X500Name(ssc.cert().getIssuerDN().getName());
-    SubjectPublicKeyInfo subPubKeyInfo =
-        SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
-    AlgorithmIdentifier sigAlgId =
-        new DefaultSignatureAlgorithmIdentifierFinder().find("SHA256WithRSAEncryption");
-    AlgorithmIdentifier digAlgId = new DefaultDigestAlgorithmIdentifierFinder().find(sigAlgId);
-
-    ContentSigner sigGen =
-        new BcRSAContentSignerBuilder(sigAlgId, digAlgId)
-            .build(PrivateKeyFactory.createKey(ssc.key().getEncoded()));
+    ContentSigner sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(ssc.key());
     X509v3CertificateBuilder v3CertGen =
-        new X509v3CertificateBuilder(
-            issuerDnName, serialNumber, from, to, subjectDnName, subPubKeyInfo);
+        new JcaX509v3CertificateBuilder(
+            issuerDnName, serialNumber, from, to, subjectDnName, keyPair.getPublic());
 
     X509CertificateHolder certificateHolder = v3CertGen.build(sigGen);
-    return new JcaX509CertificateConverter().setProvider("BC").getCertificate(certificateHolder);
+    return new JcaX509CertificateConverter()
+        .setProvider(PROVIDER)
+        .getCertificate(certificateHolder);
   }
 
   /**
@@ -100,7 +96,7 @@ public final class SslInitializerTestUtils {
    * @return signed public key (of the key pair) certificate
    */
   public static X509Certificate signKeyPair(
-      SelfSignedCertificate ssc, KeyPair keyPair, String hostname) throws Exception {
+      SelfSignedCaCertificate ssc, KeyPair keyPair, String hostname) throws Exception {
     return signKeyPair(
         ssc,
         keyPair,

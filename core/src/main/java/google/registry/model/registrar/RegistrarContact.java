@@ -42,9 +42,14 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.annotations.ReportedOn;
+import google.registry.persistence.EnumSetUserType;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
+import javax.persistence.Column;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+import org.hibernate.annotations.Type;
 
 /**
  * A contact for a Registrar. Note, equality, hashCode and comparable have been overridden to only
@@ -56,10 +61,16 @@ import java.util.Set;
  */
 @ReportedOn
 @Entity
+@javax.persistence.Entity
+@Table(
+    name = "RegistrarPoc",
+    indexes = {
+      @javax.persistence.Index(columnList = "gaeUserId", name = "registrarpoc_gae_user_id_idx")
+    })
+// TODO(shicong): Rename the class name to RegistrarPoc after database migration
 public class RegistrarContact extends ImmutableObject implements Jsonifiable {
 
-  @Parent
-  Key<Registrar> parent;
+  @Parent @Transient Key<Registrar> parent;
 
   /**
    * Registrar contacts types for partner communication tracking.
@@ -92,6 +103,9 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
       this.displayName = display;
       this.required = required;
     }
+
+    /** Hibernate type for sets of {@link Type}. */
+    public static class RegistrarPocType extends EnumSetUserType<Type> {}
   }
 
   /** The name of the contact. */
@@ -99,6 +113,8 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
 
   /** The email address of the contact. */
   @Id
+  @javax.persistence.Id
+  @Column(nullable = false)
   String emailAddress;
 
   /** The voice number of the contact. */
@@ -108,9 +124,11 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
   String faxNumber;
 
   /**
-   * Multiple types are used to associate the registrar contact with
-   * various mailing groups. This data is internal to the registry.
+   * Multiple types are used to associate the registrar contact with various mailing groups. This
+   * data is internal to the registry.
    */
+  @org.hibernate.annotations.Type(
+      type = "google.registry.model.registrar.RegistrarContact$Type$RegistrarPocType")
   Set<Type> types;
 
   /**

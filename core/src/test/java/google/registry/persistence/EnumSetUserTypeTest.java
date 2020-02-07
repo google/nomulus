@@ -49,17 +49,33 @@ public class EnumSetUserTypeTest {
     assertThat(persisted.data).isEqualTo(enums);
   }
 
+  @Test
+  public void testNativeQuery_succeeds() {
+    Set<TestEnum> enums = ImmutableSet.of(TestEnum.BAR, TestEnum.FOO);
+    TestEntity obj = new TestEntity("foo", enums);
+
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(obj));
+
+    assertThat(
+            ImmutableSet.of(
+                getSingleResultFromNativeQuery(
+                    "SELECT data[1] FROM \"TestEntity\" WHERE name = 'foo'"),
+                getSingleResultFromNativeQuery(
+                    "SELECT data[2] FROM \"TestEntity\" WHERE name = 'foo'")))
+        .containsExactly("BAR", "FOO");
+  }
+
+  private static Object getSingleResultFromNativeQuery(String sql) {
+    return jpaTm()
+        .transact(() -> jpaTm().getEntityManager().createNativeQuery(sql).getSingleResult());
+  }
+
   enum TestEnum {
     FOO,
     BAR,
     BAZ;
 
-    public static class TestEnumType extends EnumSetUserType<TestEnum> {
-      @Override
-      protected TestEnum convertToElem(String value) {
-        return TestEnum.valueOf(value);
-      }
-    }
+    public static class TestEnumType extends EnumSetUserType<TestEnum> {}
   }
 
   @Entity(name = "TestEntity")
