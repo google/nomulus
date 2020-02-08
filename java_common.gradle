@@ -115,6 +115,7 @@ spotless {
   format 'misc', {
     clearSteps()
     target '**/*.gradle'
+    targetExclude '**/cloudbuild-caches/**'
     trimTrailingWhitespace()
     indentWithSpaces(2)
     endWithNewline()
