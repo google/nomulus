@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.persistence;
+package google.registry.persistence.converter;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
-import google.registry.persistence.StringCollectionDescriptor.StringCollection;
+import google.registry.persistence.converter.StringCollectionDescriptor.StringCollection;
 import java.util.List;
 import javax.persistence.AttributeConverter;
 

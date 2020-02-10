@@ -20,6 +20,7 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
+import google.registry.persistence.converter.MapUserType;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import java.util.Map;
@@ -131,7 +132,7 @@ public class MapUserTypeTest {
 
     @Id String name = "id";
 
-    @Type(type = "google.registry.persistence.MapUserType")
+    @Type(type = "google.registry.persistence.converter.MapUserType")
     Map<String, String> map;
 
     private TestEntity() {}

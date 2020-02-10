@@ -11,17 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package google.registry.persistence;
+package google.registry.persistence.converter;
 
 import javax.annotation.Nullable;
-import javax.persistence.AttributeConverter;
+import javax.persistence.Converter;
+import org.joda.money.CurrencyUnit;
 
-/** Abstract JPA converter for objects that are stored by their toString() value. */
-abstract class ToStringConverterBase<T> implements AttributeConverter<T, String> {
+/** JPA converter for {@link CurrencyUnit}s. */
+@Converter(autoApply = true)
+public class CurrencyUnitConverter extends ToStringConverterBase<CurrencyUnit> {
 
   @Override
   @Nullable
-  public String convertToDatabaseColumn(@Nullable T entity) {
-    return (entity == null) ? null : entity.toString();
+  public CurrencyUnit convertToEntityAttribute(@Nullable String columnValue) {
+    return (columnValue == null) ? null : CurrencyUnit.of(columnValue);
   }
 }

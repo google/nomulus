@@ -11,19 +11,31 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package google.registry.persistence;
 
+package google.registry.persistence.converter;
+
+import static org.joda.time.DateTimeZone.UTC;
+
+import java.sql.Timestamp;
 import javax.annotation.Nullable;
+import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
-import org.joda.money.CurrencyUnit;
+import org.joda.time.DateTime;
 
-/** JPA converter for {@link CurrencyUnit}s. */
+/** JPA converter to for storing/retrieving {@link org.joda.time.DateTime} objects. */
 @Converter(autoApply = true)
-public class CurrencyUnitConverter extends ToStringConverterBase<CurrencyUnit> {
+public class DateTimeConverter implements AttributeConverter<DateTime, Timestamp> {
 
   @Override
   @Nullable
-  public CurrencyUnit convertToEntityAttribute(@Nullable String columnValue) {
-    return (columnValue == null) ? null : CurrencyUnit.of(columnValue);
+  public Timestamp convertToDatabaseColumn(@Nullable DateTime attribute) {
+    return attribute == null ? null : new Timestamp(attribute.getMillis());
+  }
+
+  @Override
+  @Nullable
+  public DateTime convertToEntityAttribute(@Nullable Timestamp dbData) {
+    DateTime result = dbData == null ? null : new DateTime(dbData.getTime(), UTC);
+    return result;
   }
 }

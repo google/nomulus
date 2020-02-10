@@ -20,6 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
 import google.registry.model.registrar.Registrar.BillingAccountEntry;
+import google.registry.persistence.converter.CurrencyToBillingMapUserType;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import java.util.Map;
@@ -62,7 +63,7 @@ public class CurrencyToBillingMapUserTypeTest {
 
     @Id String name = "id";
 
-    @Type(type = "google.registry.persistence.CurrencyToBillingMapUserType")
+    @Type(type = "google.registry.persistence.converter.CurrencyToBillingMapUserType")
     Map<CurrencyUnit, BillingAccountEntry> currencyToBilling;
 
     private TestEntity() {}

@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.persistence;
+package google.registry.persistence.converter;
 
-import java.util.List;
+import google.registry.model.registrar.RegistrarContact.Type;
+import java.util.Set;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
-/** JPA {@link AttributeConverter} for storing/retrieving {@link List<String>}. */
+/** JPA {@link AttributeConverter} for storing/retrieving {@link Set<Type>}. */
 @Converter(autoApply = true)
-public class StringListConverter extends StringListConverterBase<String> {
-
+public class RegistrarPocSetConverter extends StringSetConverterBase<Type> {
   @Override
-  String toString(String element) {
-    return element;
+  String toString(Type element) {
+    return element.name();
   }
 
   @Override
-  String fromString(String value) {
-    return value;
+  Type fromString(String value) {
+    return Type.valueOf(value);
   }
 }

@@ -19,6 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.persistence.converter.StatusValueSetConverter;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import java.util.Set;

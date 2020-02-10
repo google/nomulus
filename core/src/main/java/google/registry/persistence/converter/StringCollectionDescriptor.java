@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.persistence;
+package google.registry.persistence.converter;
 
-import static google.registry.persistence.StringCollectionDescriptor.StringCollection;
+import static google.registry.persistence.converter.StringCollectionDescriptor.StringCollection;
 
 import com.google.common.collect.ImmutableList;
 import java.sql.Array;
@@ -51,9 +51,14 @@ public class StringCollectionDescriptor extends AbstractTypeDescriptor<StringCol
   public static final int COLUMN_TYPE = Types.ARRAY;
   public static final String COLUMN_NAME = "text";
   public static final String COLUMN_DDL_NAME = COLUMN_NAME + "[]";
+  private static final StringCollectionDescriptor INSTANCE = new StringCollectionDescriptor();
 
   protected StringCollectionDescriptor() {
     super(StringCollection.class);
+  }
+
+  public static StringCollectionDescriptor getInstance() {
+    return INSTANCE;
   }
 
   @Override

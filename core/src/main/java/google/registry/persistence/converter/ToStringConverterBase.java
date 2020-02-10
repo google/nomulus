@@ -1,4 +1,4 @@
-// Copyright 2020 The Nomulus Authors. All Rights Reserved.
+// Copyright 2019 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,24 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+package google.registry.persistence.converter;
 
-package google.registry.persistence;
-
-import java.util.Set;
+import javax.annotation.Nullable;
 import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
 
-/** JPA {@link AttributeConverter} for storing/retrieving {@link Set<String>}. */
-@Converter(autoApply = true)
-public class StringSetConverter extends StringSetConverterBase<String> {
+/** Abstract JPA converter for objects that are stored by their toString() value. */
+abstract class ToStringConverterBase<T> implements AttributeConverter<T, String> {
 
   @Override
-  String toString(String element) {
-    return element;
-  }
-
-  @Override
-  String fromString(String value) {
-    return value;
+  @Nullable
+  public String convertToDatabaseColumn(@Nullable T entity) {
+    return (entity == null) ? null : entity.toString();
   }
 }

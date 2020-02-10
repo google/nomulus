@@ -392,7 +392,8 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
    */
   @Nullable
   @Mapify(CurrencyMapper.class)
-  @org.hibernate.annotations.Type(type = "google.registry.persistence.CurrencyToBillingMapUserType")
+  @org.hibernate.annotations.Type(
+      type = "google.registry.persistence.converter.CurrencyToBillingMapUserType")
   Map<CurrencyUnit, BillingAccountEntry> billingAccountMap;
 
   /** A billing account entry for this registrar, consisting of a currency and an account Id. */

@@ -19,6 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
+import google.registry.persistence.converter.CidrAddressBlockListConverter;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import google.registry.util.CidrAddressBlock;

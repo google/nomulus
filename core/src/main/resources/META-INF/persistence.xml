@@ -33,17 +33,17 @@
     <class>google.registry.model.domain.GracePeriod</class>
 
     <!-- Customized type converters -->
-    <class>google.registry.persistence.BloomFilterConverter</class>
-    <class>google.registry.persistence.CidrAddressBlockListConverter</class>
-    <class>google.registry.persistence.CreateAutoTimestampConverter</class>
-    <class>google.registry.persistence.CurrencyUnitConverter</class>
-    <class>google.registry.persistence.DateTimeConverter</class>
-    <class>google.registry.persistence.RegistrarPocSetConverter</class>
-    <class>google.registry.persistence.StatusValueSetConverter</class>
-    <class>google.registry.persistence.StringListConverter</class>
-    <class>google.registry.persistence.StringSetConverter</class>
-    <class>google.registry.persistence.UpdateAutoTimestampConverter</class>
-    <class>google.registry.persistence.ZonedDateTimeConverter</class>
+    <class>google.registry.persistence.converter.BloomFilterConverter</class>
+    <class>google.registry.persistence.converter.CidrAddressBlockListConverter</class>
+    <class>google.registry.persistence.converter.CreateAutoTimestampConverter</class>
+    <class>google.registry.persistence.converter.CurrencyUnitConverter</class>
+    <class>google.registry.persistence.converter.DateTimeConverter</class>
+    <class>google.registry.persistence.converter.RegistrarPocSetConverter</class>
+    <class>google.registry.persistence.converter.StatusValueSetConverter</class>
+    <class>google.registry.persistence.converter.StringListConverter</class>
+    <class>google.registry.persistence.converter.StringSetConverter</class>
+    <class>google.registry.persistence.converter.UpdateAutoTimestampConverter</class>
+    <class>google.registry.persistence.converter.ZonedDateTimeConverter</class>
 
     <!-- TODO(weiminyu): check out application-layer validation. -->
     <validation-mode>NONE</validation-mode>

@@ -18,6 +18,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
+import google.registry.persistence.converter.UpdateAutoTimestampConverter;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import google.registry.testing.FakeClock;

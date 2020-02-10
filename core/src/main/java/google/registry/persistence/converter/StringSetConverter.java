@@ -12,28 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.persistence;
+package google.registry.persistence.converter;
 
-import google.registry.util.CidrAddressBlock;
-import java.util.List;
+import java.util.Set;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
-/**
- * JPA {@link AttributeConverter} for storing/retrieving {@link List<CidrAddressBlock>} objects.
- * TODO(shicong): Investigate if we can have one converter for any List type
- */
+/** JPA {@link AttributeConverter} for storing/retrieving {@link Set<String>}. */
 @Converter(autoApply = true)
-public class CidrAddressBlockListConverter extends StringListConverterBase<CidrAddressBlock> {
+public class StringSetConverter extends StringSetConverterBase<String> {
 
   @Override
-  String toString(CidrAddressBlock element) {
-    return element.toString();
+  String toString(String element) {
+    return element;
   }
 
   @Override
-  CidrAddressBlock fromString(String value) {
-    return CidrAddressBlock.create(value);
+  String fromString(String value) {
+    return value;
   }
-
 }

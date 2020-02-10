@@ -18,6 +18,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static org.junit.Assert.assertThrows;
 
 import google.registry.model.ImmutableObject;
+import google.registry.persistence.converter.CurrencyUnitConverter;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import javax.persistence.Entity;
