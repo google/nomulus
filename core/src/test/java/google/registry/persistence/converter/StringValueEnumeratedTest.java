@@ -12,50 +12,55 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.persistence;
+package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
-import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
-import google.registry.model.registrar.Registrar.BillingAccountEntry;
-import google.registry.persistence.converter.CurrencyToBillingMapUserType;
+import google.registry.model.registrar.Registrar.State;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
-import java.util.Map;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
-import org.hibernate.annotations.Type;
-import org.joda.money.CurrencyUnit;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link CurrencyToBillingMapUserType}. */
+/** Unit tests for {@link Enumerated} annotation. */
 @RunWith(JUnit4.class)
-public class CurrencyToBillingMapUserTypeTest {
+public class StringValueEnumeratedTest {
+
   @Rule
   public final JpaUnitTestRule jpaRule =
-      new JpaTestRules.Builder()
-          .withInitScript("sql/flyway/V14__load_extension_for_hstore.sql")
-          .withEntityClass(TestEntity.class)
-          .buildUnitTestRule();
+      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
-  public void roundTripConversion_returnsSameCurrencyToBillingMap() {
-    ImmutableMap<CurrencyUnit, BillingAccountEntry> currencyToBilling =
-        ImmutableMap.of(
-            CurrencyUnit.of("USD"),
-            new BillingAccountEntry(CurrencyUnit.of("USD"), "accountId1"),
-            CurrencyUnit.of("CNY"),
-            new BillingAccountEntry(CurrencyUnit.of("CNY"), "accountId2"));
-    TestEntity testEntity = new TestEntity(currencyToBilling);
+  public void roundTripConversion_returnsSameEnum() {
+    TestEntity testEntity = new TestEntity(State.ACTIVE);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(persisted.currencyToBilling).containsExactlyEntriesIn(currencyToBilling);
+    assertThat(persisted.state).isEqualTo(State.ACTIVE);
+  }
+
+  @Test
+  public void testNativeQuery_succeeds() {
+    TestEntity testEntity = new TestEntity(State.DISABLED);
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+
+    assertThat(
+            jpaTm()
+                .transact(
+                    () ->
+                        jpaTm()
+                            .getEntityManager()
+                            .createNativeQuery("SELECT state FROM \"TestEntity\" WHERE name = 'id'")
+                            .getSingleResult()))
+        .isEqualTo("DISABLED");
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
@@ -63,13 +68,13 @@ public class CurrencyToBillingMapUserTypeTest {
 
     @Id String name = "id";
 
-    @Type(type = "google.registry.persistence.converter.CurrencyToBillingMapUserType")
-    Map<CurrencyUnit, BillingAccountEntry> currencyToBilling;
+    @Enumerated(EnumType.STRING)
+    State state;
 
     private TestEntity() {}
 
-    private TestEntity(Map<CurrencyUnit, BillingAccountEntry> currencyToBilling) {
-      this.currencyToBilling = currencyToBilling;
+    private TestEntity(State state) {
+      this.state = state;
     }
   }
 }

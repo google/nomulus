@@ -12,55 +12,61 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.persistence;
+package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static org.junit.Assert.assertThrows;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
-import google.registry.persistence.converter.StringListConverter;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
-import java.util.List;
+import java.util.Map;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.NoResultException;
+import org.hibernate.annotations.Type;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link StringListConverter}. */
+/** Unit tests for {@link MapUserType}. */
 @RunWith(JUnit4.class)
-public class StringListConverterTest {
+public class MapUserTypeTest {
+
+  // Reusing production script sql/flyway/V14__load_extension_for_hstore.sql, which loads the
+  // hstore extension but nothing else.
   @Rule
   public final JpaUnitTestRule jpaRule =
-      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
+      new JpaTestRules.Builder()
+          .withInitScript("sql/flyway/V14__load_extension_for_hstore.sql")
+          .withEntityClass(TestEntity.class)
+          .buildUnitTestRule();
 
   @Test
-  public void roundTripConversion_returnsSameStringList() {
-    List<String> tlds = ImmutableList.of("app", "dev", "how");
-    TestEntity testEntity = new TestEntity(tlds);
+  public void roundTripConversion_returnsSameMap() {
+    Map<String, String> map = ImmutableMap.of("key1", "value1", "key2", "value2");
+    TestEntity testEntity = new TestEntity(map);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(persisted.tlds).containsExactly("app", "dev", "how");
+    assertThat(persisted.map).containsExactly("key1", "value1", "key2", "value2");
   }
 
   @Test
   public void testMerge_succeeds() {
-    List<String> tlds = ImmutableList.of("app", "dev", "how");
-    TestEntity testEntity = new TestEntity(tlds);
+    Map<String, String> map = ImmutableMap.of("key1", "value1", "key2", "value2");
+    TestEntity testEntity = new TestEntity(map);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    persisted.tlds = ImmutableList.of("com", "gov");
+    persisted.map = ImmutableMap.of("key3", "value3");
     jpaTm().transact(() -> jpaTm().getEntityManager().merge(persisted));
     TestEntity updated =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(updated.tlds).containsExactly("com", "gov");
+    assertThat(updated.map).containsExactly("key3", "value3");
   }
 
   @Test
@@ -69,43 +75,45 @@ public class StringListConverterTest {
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(persisted.tlds).isNull();
+    assertThat(persisted.map).isNull();
   }
 
   @Test
   public void testEmptyCollection_writesAndReadsEmptyCollectionSuccessfully() {
-    TestEntity testEntity = new TestEntity(ImmutableList.of());
+    TestEntity testEntity = new TestEntity(ImmutableMap.of());
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(persisted.tlds).isEmpty();
+    assertThat(persisted.map).isEmpty();
   }
 
   @Test
   public void testNativeQuery_succeeds() throws Exception {
-    executeNativeQuery("INSERT INTO \"TestEntity\" (name, tlds) VALUES ('id', '{app, dev}')");
+    executeNativeQuery(
+        "INSERT INTO \"TestEntity\" (name, map) VALUES ('id', 'key1=>value1, key2=>value2')");
 
     assertThat(
-            getSingleResultFromNativeQuery("SELECT tlds[1] FROM \"TestEntity\" WHERE name = 'id'"))
-        .isEqualTo("app");
+            getSingleResultFromNativeQuery(
+                "SELECT map -> 'key1' FROM \"TestEntity\" WHERE name = 'id'"))
+        .isEqualTo("value1");
     assertThat(
-            getSingleResultFromNativeQuery("SELECT tlds[2] FROM \"TestEntity\" WHERE name = 'id'"))
-        .isEqualTo("dev");
+            getSingleResultFromNativeQuery(
+                "SELECT map -> 'key2' FROM \"TestEntity\" WHERE name = 'id'"))
+        .isEqualTo("value2");
 
-    executeNativeQuery("UPDATE \"TestEntity\" SET tlds = '{com, gov}' WHERE name = 'id'");
+    executeNativeQuery("UPDATE \"TestEntity\" SET map = 'key3=>value3' WHERE name = 'id'");
 
     assertThat(
-            getSingleResultFromNativeQuery("SELECT tlds[1] FROM \"TestEntity\" WHERE name = 'id'"))
-        .isEqualTo("com");
-    assertThat(
-            getSingleResultFromNativeQuery("SELECT tlds[2] FROM \"TestEntity\" WHERE name = 'id'"))
-        .isEqualTo("gov");
+            getSingleResultFromNativeQuery(
+                "SELECT map -> 'key3' FROM \"TestEntity\" WHERE name = 'id'"))
+        .isEqualTo("value3");
 
     executeNativeQuery("DELETE FROM \"TestEntity\" WHERE name = 'id'");
     assertThrows(
         NoResultException.class,
         () ->
-            getSingleResultFromNativeQuery("SELECT tlds[1] FROM \"TestEntity\" WHERE name = 'id'"));
+            getSingleResultFromNativeQuery(
+                "SELECT map -> 'key3' FROM \"TestEntity\" WHERE name = 'id'"));
   }
 
   private static Object getSingleResultFromNativeQuery(String sql) {
@@ -123,12 +131,13 @@ public class StringListConverterTest {
 
     @Id String name = "id";
 
-    List<String> tlds;
+    @Type(type = "google.registry.persistence.converter.MapUserType")
+    Map<String, String> map;
 
     private TestEntity() {}
 
-    private TestEntity(List<String> tlds) {
-      this.tlds = tlds;
+    private TestEntity(Map<String, String> map) {
+      this.map = map;
     }
   }
 }

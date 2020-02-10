@@ -11,28 +11,26 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package google.registry.persistence;
+package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
-import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
-import google.registry.persistence.converter.CreateAutoTimestampConverter;
+import google.registry.model.UpdateAutoTimestamp;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import google.registry.testing.FakeClock;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import org.joda.time.DateTime;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link CreateAutoTimestampConverter}. */
+/** Unit tests for {@link UpdateAutoTimestampConverter}. */
 @RunWith(JUnit4.class)
-public class CreateAutoTimestampConverterTest {
+public class UpdateAutoTimestampConverterTest {
 
   private final FakeClock fakeClock = new FakeClock();
 
@@ -45,25 +43,37 @@ public class CreateAutoTimestampConverterTest {
 
   @Test
   public void testTypeConversion() {
-    CreateAutoTimestamp ts = CreateAutoTimestamp.create(DateTime.parse("2019-09-9T11:39:00Z"));
-    TestEntity ent = new TestEntity("myinst", ts);
+    TestEntity ent = new TestEntity("myinst", null);
 
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent));
+
     TestEntity result =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst"));
-    assertThat(result).isEqualTo(new TestEntity("myinst", ts));
+
+    assertThat(result.name).isEqualTo("myinst");
+    assertThat(result.uat.getTimestamp()).isEqualTo(fakeClock.nowUtc());
   }
 
   @Test
-  public void testAutoInitialization() {
-    CreateAutoTimestamp ts = CreateAutoTimestamp.create(null);
-    TestEntity ent = new TestEntity("autoinit", ts);
+  public void testTimeChangesOnSubsequentTransactions() {
+    TestEntity ent1 = new TestEntity("myinst1", null);
 
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent));
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent1));
 
-    TestEntity result =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "autoinit"));
-    assertThat(result.cat.getTimestamp()).isEqualTo(fakeClock.nowUtc());
+    TestEntity result1 =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst1"));
+
+    fakeClock.advanceOneMilli();
+
+    TestEntity ent2 = new TestEntity("myinst2", result1.uat);
+
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent2));
+
+    TestEntity result2 =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst2"));
+
+    assertThat(result1.uat.getTimestamp()).isNotEqualTo(result2.uat.getTimestamp());
+    assertThat(result2.uat.getTimestamp()).isEqualTo(fakeClock.nowUtc());
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
@@ -71,13 +81,13 @@ public class CreateAutoTimestampConverterTest {
 
     @Id String name;
 
-    CreateAutoTimestamp cat;
+    UpdateAutoTimestamp uat;
 
     public TestEntity() {}
 
-    TestEntity(String name, CreateAutoTimestamp cat) {
+    TestEntity(String name, UpdateAutoTimestamp uat) {
       this.name = name;
-      this.cat = cat;
+      this.uat = uat;
     }
   }
 }

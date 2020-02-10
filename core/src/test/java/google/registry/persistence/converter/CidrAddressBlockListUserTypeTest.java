@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.persistence;
+package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
-import google.registry.persistence.converter.StringSetConverter;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
-import java.util.Set;
+import google.registry.util.CidrAddressBlock;
+import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.junit.Rule;
@@ -30,39 +30,27 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link StringSetConverter}. */
+/** Unit tests for {@link CidrAddressBlockListConverter}. */
 @RunWith(JUnit4.class)
-public class StringSetConverterTest {
+public class CidrAddressBlockListUserTypeTest {
   @Rule
   public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
-  public void roundTripConversion_returnsSameStringList() {
-    Set<String> tlds = ImmutableSet.of("app", "dev", "how");
-    TestEntity testEntity = new TestEntity(tlds);
+  public void roundTripConversion_returnsSameCidrAddressBlock() {
+    List<CidrAddressBlock> addresses =
+        ImmutableList.of(
+            CidrAddressBlock.create("0.0.0.0/32"),
+            CidrAddressBlock.create("255.255.255.254/31"),
+            CidrAddressBlock.create("::"),
+            CidrAddressBlock.create("8000::/1"),
+            CidrAddressBlock.create("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128"));
+    TestEntity testEntity = new TestEntity(addresses);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(persisted.tlds).containsExactly("app", "dev", "how");
-  }
-
-  @Test
-  public void testNullValue_writesAndReadsNullSuccessfully() {
-    TestEntity testEntity = new TestEntity(null);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
-    TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(persisted.tlds).isNull();
-  }
-
-  @Test
-  public void testEmptyCollection_writesAndReadsEmptyCollectionSuccessfully() {
-    TestEntity testEntity = new TestEntity(ImmutableSet.of());
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
-    TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(persisted.tlds).isEmpty();
+    assertThat(persisted.addresses).isEqualTo(addresses);
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
@@ -70,12 +58,12 @@ public class StringSetConverterTest {
 
     @Id String name = "id";
 
-    Set<String> tlds;
+    List<CidrAddressBlock> addresses;
 
     private TestEntity() {}
 
-    private TestEntity(Set<String> tlds) {
-      this.tlds = tlds;
+    private TestEntity(List<CidrAddressBlock> addresses) {
+      this.addresses = addresses;
     }
   }
 }

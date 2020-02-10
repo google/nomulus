@@ -12,55 +12,56 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.persistence;
+package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
+import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
-import google.registry.model.registrar.Registrar.State;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import java.util.Set;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link Enumerated} annotation. */
+/** Unit tests for {@link StringSetConverter}. */
 @RunWith(JUnit4.class)
-public class StringValueEnumeratedTest {
-
+public class StringSetConverterTest {
   @Rule
   public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
-  public void roundTripConversion_returnsSameEnum() {
-    TestEntity testEntity = new TestEntity(State.ACTIVE);
+  public void roundTripConversion_returnsSameStringList() {
+    Set<String> tlds = ImmutableSet.of("app", "dev", "how");
+    TestEntity testEntity = new TestEntity(tlds);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(persisted.state).isEqualTo(State.ACTIVE);
+    assertThat(persisted.tlds).containsExactly("app", "dev", "how");
   }
 
   @Test
-  public void testNativeQuery_succeeds() {
-    TestEntity testEntity = new TestEntity(State.DISABLED);
+  public void testNullValue_writesAndReadsNullSuccessfully() {
+    TestEntity testEntity = new TestEntity(null);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    TestEntity persisted =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+    assertThat(persisted.tlds).isNull();
+  }
 
-    assertThat(
-            jpaTm()
-                .transact(
-                    () ->
-                        jpaTm()
-                            .getEntityManager()
-                            .createNativeQuery("SELECT state FROM \"TestEntity\" WHERE name = 'id'")
-                            .getSingleResult()))
-        .isEqualTo("DISABLED");
+  @Test
+  public void testEmptyCollection_writesAndReadsEmptyCollectionSuccessfully() {
+    TestEntity testEntity = new TestEntity(ImmutableSet.of());
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    TestEntity persisted =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+    assertThat(persisted.tlds).isEmpty();
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
@@ -68,13 +69,12 @@ public class StringValueEnumeratedTest {
 
     @Id String name = "id";
 
-    @Enumerated(EnumType.STRING)
-    State state;
+    Set<String> tlds;
 
     private TestEntity() {}
 
-    private TestEntity(State state) {
-      this.state = state;
+    private TestEntity(Set<String> tlds) {
+      this.tlds = tlds;
     }
   }
 }

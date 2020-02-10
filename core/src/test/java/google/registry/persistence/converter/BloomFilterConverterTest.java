@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package google.registry.persistence;
+package google.registry.persistence.converter;
 
 import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.hash.Funnels.stringFunnel;
@@ -21,7 +21,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableSet;
 import com.google.common.hash.BloomFilter;
 import google.registry.model.ImmutableObject;
-import google.registry.persistence.converter.BloomFilterConverter;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import javax.persistence.Entity;
