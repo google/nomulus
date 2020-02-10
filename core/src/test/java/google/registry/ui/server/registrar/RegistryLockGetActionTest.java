@@ -156,11 +156,13 @@ public final class RegistryLockGetActionTest {
                             ImmutableMap.of(
                                 "fullyQualifiedDomainName", "example.test",
                                 "lockedTime", "2000-06-08T22:00:00.000Z",
-                                "lockedBy", "johndoe@theregistrar.com"),
+                                "lockedBy", "johndoe@theregistrar.com",
+                                "userCanUnlock", true),
                             ImmutableMap.of(
                                 "fullyQualifiedDomainName", "adminexample.test",
                                 "lockedTime", "2000-06-08T22:00:00.001Z",
-                                "lockedBy", "admin")))));
+                                "lockedBy", "admin",
+                                "userCanUnlock", false)))));
   }
 
   @Test

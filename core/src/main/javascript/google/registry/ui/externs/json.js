@@ -36,7 +36,8 @@ registry.json.locks = {};
  * @typedef {{
  *   fullyQualifiedDomainName: string,
  *   lockedTime: string,
- *   lockedBy: string
+ *   lockedBy: string,
+ *   userCanUnlock: boolean
  * }}
  */
 registry.json.locks.ExistingLock;

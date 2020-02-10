@@ -67,6 +67,7 @@ public final class RegistryLockGetAction implements JsonGetAction {
   private static final String FULLY_QUALIFIED_DOMAIN_NAME_PARAM = "fullyQualifiedDomainName";
   private static final String LOCKED_TIME_PARAM = "lockedTime";
   private static final String LOCKED_BY_PARAM = "lockedBy";
+  private static final String USER_CAN_UNLOCK_PARAM = "userCanUnlock";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Gson GSON = new Gson();
@@ -118,7 +119,7 @@ public final class RegistryLockGetAction implements JsonGetAction {
     // Note: admins always have access to the locks page
     checkArgument(authResult.userAuthInfo().isPresent(), "User auth info must be present");
     UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();
-    boolean isAdmin = userAuthInfo.isUserAdmin();
+    boolean isAdmin = registrarAccessor.isAdmin();
     Registrar registrar = getRegistrarAndVerifyLockAccess(clientId, isAdmin);
     User user = userAuthInfo.user();
     boolean isRegistryLockAllowed =
@@ -136,7 +137,7 @@ public final class RegistryLockGetAction implements JsonGetAction {
         PARAM_CLIENT_ID,
         registrar.getClientId(),
         LOCKS_PARAM,
-        getLockedDomains(clientId));
+        getLockedDomains(clientId, isAdmin));
   }
 
   private Registrar getRegistrarAndVerifyLockAccess(String clientId, boolean isAdmin)
@@ -148,19 +149,22 @@ public final class RegistryLockGetAction implements JsonGetAction {
     return registrar;
   }
 
-  private ImmutableList<ImmutableMap<String, ?>> getLockedDomains(String clientId) {
+  private ImmutableList<ImmutableMap<String, ?>> getLockedDomains(
+      String clientId, boolean isAdmin) {
     return RegistryLockDao.getLockedDomainsByRegistrarId(clientId).stream()
-        .map(this::lockToMap)
+        .map(lock -> lockToMap(lock, isAdmin))
         .collect(toImmutableList());
   }
 
-  private ImmutableMap<String, ?> lockToMap(RegistryLock lock) {
+  private ImmutableMap<String, ?> lockToMap(RegistryLock lock, boolean isAdmin) {
     return ImmutableMap.of(
         FULLY_QUALIFIED_DOMAIN_NAME_PARAM,
         lock.getDomainName(),
         LOCKED_TIME_PARAM,
         lock.getLockCompletionTimestamp().map(DateTime::toString).orElse(""),
         LOCKED_BY_PARAM,
-        lock.isSuperuser() ? "admin" : lock.getRegistrarPocId());
+        lock.isSuperuser() ? "admin" : lock.getRegistrarPocId(),
+        USER_CAN_UNLOCK_PARAM,
+        isAdmin || !lock.isSuperuser());
   }
 }

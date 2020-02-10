@@ -34,6 +34,7 @@ import google.registry.model.registry.RegistryLockDao;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.server.RegistryTestServer;
+import google.registry.testing.AppEngineRule;
 import google.registry.testing.CertificateSamples;
 import java.util.UUID;
 import org.junit.Rule;
@@ -58,7 +59,7 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
               route("/registry-lock-verify", FrontendServlet.class))
           .setFilters(ObjectifyFilter.class, OfyFilter.class)
           .setFixtures(BASIC)
-          .setEmail("Marla.Singer@google.com")
+          .setEmail("Marla.Singer@crr.com")
           .build();
 
   @Test
@@ -450,6 +451,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
           createTld("tld");
           DomainBase domain = persistActiveDomain("example.tld");
           RegistryLockDao.save(createRegistryLock(domain).asBuilder().isSuperuser(true).build());
+          DomainBase otherDomain = persistActiveDomain("otherexample.tld");
+          RegistryLockDao.save(createRegistryLock(otherDomain));
           return null;
         });
     driver.get(server.getUrl("/registrar#registry-lock"));
@@ -459,6 +462,7 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @Test
   public void registryLock_unlockModal() throws Throwable {
+    server.setIsAdmin(true);
     server.runInAppEngineEnvironment(
         () -> {
           saveRegistryLock();
@@ -473,6 +477,7 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @Test
   public void registryLock_lockModal() throws Throwable {
+    server.setIsAdmin(true);
     server.runInAppEngineEnvironment(
         () -> {
           createTld("tld");
@@ -484,6 +489,22 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.findElement(By.id("lock-domain-input")).sendKeys("example.tld");
     driver.findElement(By.id("lock-domain-submit")).click();
     driver.waitForElement(By.className("modal-content"));
+    driver.diffPage("page");
+  }
+
+  @Test
+  public void registryLock_notAllowedForUser() throws Throwable {
+    server.runInAppEngineEnvironment(
+        () -> {
+          persistResource(
+              AppEngineRule.makeRegistrarContact3()
+                  .asBuilder()
+                  .setAllowedToSetRegistryLockPassword(true)
+                  .build());
+          return null;
+        });
+    driver.get(server.getUrl("/registrar?clientId=TheRegistrar#registry-lock"));
+    driver.waitForElement(By.tagName("h2"));
     driver.diffPage("page");
   }
 

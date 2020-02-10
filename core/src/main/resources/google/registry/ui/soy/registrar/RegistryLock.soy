@@ -1,4 +1,4 @@
-// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+// Copyright 2020 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 /** Registry locks viewing, adding, and removing. */
 {template .settings}
-  <h1>Registry Lock</h1>
+  <h1>Registry lock</h1>
   <br>
   <div id="locks-content"></div>
 {/template}
 
 {template .locksContent}
   {@param email: string}
-  {@param locks: list<[fullyQualifiedDomainName: string, lockedTime: string, lockedBy: string]>}
+  {@param locks: list<[fullyQualifiedDomainName: string, lockedTime: string, lockedBy: string, userCanUnlock: bool]>}
   {@param lockEnabledForContact: bool}
 
   {call .newLock}
@@ -41,7 +41,7 @@
   {@param lockEnabledForContact: bool}
   <div class="{css('new-registry-lock')}">
     {if $lockEnabledForContact}
-      <h2>Lock a Domain</h2>
+      <h2>Lock a domain</h2>
       <br>
       <p>You will be billed $20 for this operation. The lock will not take effect until you click
         the confirmation link that will be emailed to you at {$email}.</p>
@@ -60,15 +60,15 @@
 
 /** Table that displays existing locks for this registrar. */
 {template .existingLocksTable}
-  {@param locks: list<[fullyQualifiedDomainName: string, lockedTime: string, lockedBy: string]>}
+  {@param locks: list<[fullyQualifiedDomainName: string, lockedTime: string, lockedBy: string, userCanUnlock: bool]>}
   {@param lockEnabledForContact: bool}
-  <h2>Existing Locks</h2>
+  <h2>Existing locks</h2>
   <br>
   <table class="{css('registry-locks-table')}">
     <tr>
-      <th><b>Domain Name</b></th>
-      <th><b>Date/Time Locked</b></th>
-      <th><b>Locked By</b></th>
+      <th><b>Domain name</b></th>
+      <th><b>Date/time locked</b></th>
+      <th><b>Locked by</b></th>
       <th><b>Actions</b></th>
     </tr>
     {for $lock in $locks}
@@ -78,7 +78,7 @@
         <td>{$lock.lockedBy}</td>
         <td>
           <button id="button-unlock-{$lock.fullyQualifiedDomainName}"
-              {if $lockEnabledForContact}
+              {if $lockEnabledForContact and $lock.userCanUnlock}
                   id="button-unlock-{$lock.fullyQualifiedDomainName}"
                   class="domain-unlock-button {css('kd-button')} {css('kd-button-submit')}"
               {else}
@@ -94,7 +94,7 @@
   </table>
 {/template}
 
-/** Modal that confirms that the user wishes to lock / unlock a domain. */
+/** Modal that confirms that the user wishes to lock/unlock a domain. */
 {template .confirmModal}
   {@param domain: string}
   {@param isLock: bool}
