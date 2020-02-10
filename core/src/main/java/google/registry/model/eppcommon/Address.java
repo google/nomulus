@@ -57,6 +57,8 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 public class Address extends ImmutableObject implements Jsonifiable {
 
   /** The schema validation will enforce that this has 3 lines at most. */
+  // TODO(shicong): Remove this field after migration. We need to figure out how to generate same
+  // XML from streetLine[1,2,3].
   @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
   @Transient
   List<String> street;
