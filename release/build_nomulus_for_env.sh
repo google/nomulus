@@ -34,6 +34,7 @@ gcs_prefix="storage.googleapis.com/domain-registry-maven-repository"
 # task. (See ./cloudbuild-nomulus.yaml, which calls this script in several
 # steps). If left at their default location, the caches will be lost after
 # each step.
+# Note: must be consistent with value in ./cloudbuild-nomulus.yaml
 export GRADLE_USER_HOME="./cloudbuild-caches"
 
 if [ "${environment}" == tool ]
