@@ -20,6 +20,7 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.Parameters;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
@@ -44,6 +45,11 @@ import org.joda.time.DateTime;
  * <p>This will save new objects for all existing domains that are locked but don't have any
  * corresponding lock objects already in the database.
  */
+@Parameters(
+    separators = " =",
+    commandDescription =
+        "Backfills RegistryLock objects for specified domain resource IDs that are locked but don't"
+            + " already have a corresponding RegistryLock object.")
 public class BackfillRegistryLocksCommand extends ConfirmingCommand
     implements CommandWithRemoteApi {
 

@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import com.google.common.collect.ImmutableMap;
+import google.registry.tools.javascrap.BackfillRegistryLocksCommand;
 import google.registry.tools.javascrap.PopulateNullRegistrarFieldsCommand;
 import google.registry.tools.javascrap.RemoveIpAddressCommand;
 
@@ -30,6 +31,7 @@ public final class RegistryTool {
   public static final ImmutableMap<String, Class<? extends Command>> COMMAND_MAP =
       new ImmutableMap.Builder<String, Class<? extends Command>>()
           .put("ack_poll_messages", AckPollMessagesCommand.class)
+          .put("backfill_registry_locks", BackfillRegistryLocksCommand.class)
           .put("canonicalize_labels", CanonicalizeLabelsCommand.class)
           .put("check_domain", CheckDomainCommand.class)
           .put("check_domain_claims", CheckDomainClaimsCommand.class)
