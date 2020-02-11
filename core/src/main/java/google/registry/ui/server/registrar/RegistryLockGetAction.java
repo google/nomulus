@@ -74,7 +74,7 @@ public final class RegistryLockGetAction implements JsonGetAction {
 
   @VisibleForTesting Method method;
   private final Response response;
-  private final AuthenticatedRegistrarAccessor registrarAccessor;
+  @VisibleForTesting AuthenticatedRegistrarAccessor registrarAccessor;
   @VisibleForTesting AuthResult authResult;
   @VisibleForTesting Optional<String> paramClientId;
 
