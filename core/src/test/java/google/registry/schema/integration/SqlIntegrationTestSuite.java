@@ -19,12 +19,14 @@ import google.registry.model.domain.DomainBaseSqlTest;
 import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.persistence.transaction.JpaEntityCoverage;
 import google.registry.schema.cursor.CursorDaoTest;
+import google.registry.schema.registrar.RegistrarPocDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
 import google.registry.schema.tld.ReservedListDaoTest;
 import google.registry.schema.tmch.ClaimsListDaoTest;
 import google.registry.tools.CreateReservedListCommandTest;
 import google.registry.tools.DomainLockUtilsTest;
 import google.registry.tools.LockDomainCommandTest;
+import google.registry.tools.RegistrarContactCommandTest;
 import google.registry.tools.UnlockDomainCommandTest;
 import google.registry.tools.UpdateReservedListCommandTest;
 import google.registry.tools.server.CreatePremiumListActionTest;
@@ -59,6 +61,8 @@ import org.junit.runners.Suite.SuiteClasses;
   LockDomainCommandTest.class,
   DomainBaseSqlTest.class,
   PremiumListDaoTest.class,
+  RegistrarContactCommandTest.class,
+  RegistrarPocDaoTest.class,
   RegistryLockDaoTest.class,
   RegistryLockGetActionTest.class,
   RegistryLockVerifyActionTest.class,

@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
@@ -29,9 +30,11 @@ import com.google.common.base.Enums;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.GaeUserIdConverter;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
+import google.registry.schema.registrar.RegistrarPocDao;
 import google.registry.tools.params.OptionalPhoneNumberParameter;
 import google.registry.tools.params.PathParameter;
 import java.io.IOException;
@@ -52,6 +55,8 @@ import javax.annotation.Nullable;
     separators = " =",
     commandDescription = "Create/read/update/delete the various contact lists for a Registrar.")
 final class RegistrarContactCommand extends MutatingCommand {
+
+  static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Parameter(
       description = "Client identifier of the registrar account.",
@@ -153,6 +158,8 @@ final class RegistrarContactCommand extends MutatingCommand {
 
   @Nullable
   private ImmutableSet<RegistrarContact.Type> contactTypes;
+  private RegistrarContact oldContact;
+  private RegistrarContact newContact;
 
   @Override
   protected void init() throws Exception {
@@ -185,13 +192,13 @@ final class RegistrarContactCommand extends MutatingCommand {
     for (RegistrarContact rc : contacts) {
       contactsMap.put(rc.getEmailAddress(), rc);
     }
-    RegistrarContact oldContact;
     switch (mode) {
       case LIST:
         listContacts(contacts);
         break;
       case CREATE:
-        stageEntityChange(null, createContact(registrar));
+        newContact = createContact(registrar);
+        stageEntityChange(null, newContact);
         if ((visibleInDomainWhoisAsAbuse != null) && visibleInDomainWhoisAsAbuse) {
           unsetOtherWhoisAbuseFlags(contacts, null);
         }
@@ -202,7 +209,7 @@ final class RegistrarContactCommand extends MutatingCommand {
                 contactsMap.get(checkNotNull(email, "--email is required when --mode=UPDATE")),
                 "No contact with the given email: %s",
                 email);
-        RegistrarContact newContact = updateContact(oldContact, registrar);
+        newContact = updateContact(oldContact, registrar);
         checkArgument(
             !oldContact.getVisibleInDomainWhoisAsAbuse()
                 || newContact.getVisibleInDomainWhoisAsAbuse(),
@@ -230,6 +237,39 @@ final class RegistrarContactCommand extends MutatingCommand {
     if (MODES_REQUIRING_CONTACT_SYNC.contains(mode)) {
       stageEntityChange(registrar, registrar.asBuilder().setContactsRequireSyncing(true).build());
     }
+  }
+
+  @Override
+  protected String execute() throws Exception {
+    // Save registrarPoc to Datastore and output its response
+    logger.atInfo().log(super.execute());
+
+    String cloudSqlMessage;
+    try {
+      jpaTm()
+          .transact(
+              () -> {
+                switch (mode) {
+                  case CREATE:
+                    RegistrarPocDao.saveNew(newContact);
+                    break;
+                  case UPDATE:
+                    RegistrarPocDao.update(newContact);
+                    break;
+                  case DELETE:
+                    RegistrarPocDao.delete(oldContact.getEmailAddress());
+                    break;
+                  default:
+                    throw new AssertionError(String.format("Unknown mode: ", mode.name()));
+                }
+              });
+      cloudSqlMessage = "Updated the registrar POC in Cloud SQL.\n";
+    } catch (Throwable t) {
+      cloudSqlMessage =
+          "Unexpected error saving registrar POC to Cloud SQL from nomulus tool command";
+      logger.atSevere().withCause(t).log(cloudSqlMessage);
+    }
+    return cloudSqlMessage;
   }
 
   private void listContacts(Set<RegistrarContact> contacts) throws IOException {

@@ -28,17 +28,28 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
+import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.schema.registrar.RegistrarPocDao;
+import google.registry.testing.FakeClock;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 /** Unit tests for {@link RegistrarContactCommand}. */
 public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContactCommand> {
 
   private String output;
+
+  private final FakeClock fakeClock = new FakeClock();
+
+  @Rule
+  public final JpaTestRules.JpaIntegrationWithCoverageRule jpaRule =
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
 
   @Before
   public void before() throws Exception {
@@ -74,7 +85,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   @Test
   public void testUpdate() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
-    ImmutableList<RegistrarContact> contacts = ImmutableList.of(
+    RegistrarContact contact =
         new RegistrarContact.Builder()
             .setParent(registrar)
             .setName("Judith Doe")
@@ -83,8 +94,9 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
             .setVisibleInWhoisAsAdmin(true)
             .setVisibleInWhoisAsTech(true)
             .setVisibleInDomainWhoisAsAbuse(false)
-            .build());
-    persistSimpleResources(contacts);
+            .build();
+    persistSimpleResources(ImmutableList.of(contact));
+    RegistrarPocDao.saveNew(contact);
     runCommandForced(
         "--mode=UPDATE",
         "--name=Judith Registrar",
@@ -97,7 +109,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
         "--visible_in_domain_whois_as_abuse=false",
         "NewRegistrar");
     RegistrarContact registrarContact = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
-    assertThat(registrarContact).isEqualTo(
+    RegistrarContact updated =
         new RegistrarContact.Builder()
             .setParent(registrar)
             .setName("Judith Registrar")
@@ -108,7 +120,15 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
             .setVisibleInWhoisAsAdmin(true)
             .setVisibleInWhoisAsTech(false)
             .setVisibleInDomainWhoisAsAbuse(false)
-            .build());
+            .build();
+    assertThat(registrarContact).isEqualTo(updated);
+    RegistrarContact persisted =
+        RegistrarPocDao.load("judith.doe@example.com")
+            .get()
+            .asBuilder()
+            .setParent(registrar)
+            .build();
+    assertThat(persisted).isEqualTo(updated);
   }
 
   @Test
@@ -309,16 +329,20 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
             .setVisibleInDomainWhoisAsAbuse(true)
             .build());
     assertThat(registrarContact.getGaeUserId()).isNull();
+    assertThat(RegistrarPocDao.checkExists("jim.doe@example.com")).isTrue();
   }
 
   @Test
   public void testDelete() throws Exception {
-    assertThat(loadRegistrar("NewRegistrar").getContacts()).isNotEmpty();
+    ImmutableSortedSet<RegistrarContact> contacts = loadRegistrar("NewRegistrar").getContacts();
+    assertThat(contacts).isNotEmpty();
+    contacts.forEach(RegistrarPocDao::saveNew);
     runCommandForced(
         "--mode=DELETE",
         "--email=janedoe@theregistrar.com",
         "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getContacts()).isEmpty();
+    assertThat(RegistrarPocDao.checkExists("janedoe@theregistrar.com")).isFalse();
   }
 
   @Test
