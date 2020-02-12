@@ -23,6 +23,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
@@ -39,8 +40,7 @@ import javax.inject.Named;
 import org.joda.time.DateTime;
 
 /**
- * Scrap tool to backfill {@link google.registry.schema.domain.RegistryLock}s for domains that were
- * locked prior to the introduction of the objects.
+ * Scrap tool to backfill {@link RegistryLock}s for domains previously locked.
  *
  * <p>This will save new objects for all existing domains that are locked but don't have any
  * corresponding lock objects already in the database.
@@ -92,7 +92,7 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
 
   @Override
   protected String execute() {
-    int failures = 0;
+    ImmutableSet.Builder<DomainBase> failedDomainsBuilder = new ImmutableSet.Builder<>();
     for (DomainBase domainBase : lockedDomains) {
       try {
         RegistryLockDao.save(
@@ -109,16 +109,18 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
         logger.atSevere().withCause(rootCause).log(
             "Error when creating lock object for domain %s.",
             domainBase.getFullyQualifiedDomainName());
-        failures++;
+        failedDomainsBuilder.add(domainBase);
       }
     }
-    if (failures == 0) {
+    ImmutableSet<DomainBase> failedDomains = failedDomainsBuilder.build();
+    if (failedDomains.isEmpty()) {
       return String.format(
           "Successfully created lock objects for %d domains.", lockedDomains.size());
     } else {
       return String.format(
-          "Successfully created lock objects for %d domains with %d failures.",
-          lockedDomains.size() - failures, failures);
+          "Successfully created lock objects for %d domains. We failed to create locks "
+              + "for the following domains: %s",
+          lockedDomains.size() - failedDomains.size(), lockedDomains);
     }
   }
 
