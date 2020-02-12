@@ -27,8 +27,8 @@ steps:
   args: ['./gradlew',
          'test',
          '-PskipDockerIncompatibleTests=true',
-         '-PmavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven',
-         '-PpluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins'
+         '-PmavenUrl=gcs://domain-registry-maven-repository/maven',
+         '-PpluginsUrl=gcs://domain-registry-maven-repository/plugins'
         ]
 # Build the tool binary and image.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
@@ -87,14 +87,14 @@ steps:
     set -e
     ./gradlew \
       :db:publish \
-      -PmavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven \
-      -PpluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins \
+      -PmavenUrl=gcs://domain-registry-maven-repository/maven \
+      -PpluginsUrl=gcs://domain-registry-maven-repository/plugins \
       -Ppublish_repo=gcs://${PROJECT_ID}-deployed-tags/maven \
       -Pschema_version=${TAG_NAME}
     ./gradlew \
       :core:publish \
-      -PmavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven \
-      -PpluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins \
+      -PmavenUrl=gcs://domain-registry-maven-repository/maven \
+      -PpluginsUrl=gcs://domain-registry-maven-repository/plugins \
       -Ppublish_repo=gcs://${PROJECT_ID}-deployed-tags/maven \
       -Pnomulus_version=${TAG_NAME}
     # Upload schema jar for use by schema deployment.

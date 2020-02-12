@@ -27,7 +27,7 @@ fi
 
 environment="$1"
 dest="$2"
-gcs_prefix="storage.googleapis.com/domain-registry-maven-repository"
+gcs_prefix="gcs://domain-registry-maven-repository"
 
 # Let Gradle put its caches (dependency cache and build cache) in the source
 # tree. This allows sharing of the caches between steps in a Cloud Build
@@ -42,8 +42,8 @@ then
   mkdir -p "${dest}"
 
   ./gradlew clean :core:buildToolImage \
-    -PmavenUrl=https://"${gcs_prefix}"/maven \
-    -PpluginsUrl=https://"${gcs_prefix}"/plugins
+    -PmavenUrl="${gcs_prefix}"/maven \
+    -PpluginsUrl="${gcs_prefix}"/plugins
 
   mv core/build/libs/nomulus.jar "${dest}"
 else
@@ -51,8 +51,8 @@ else
   mkdir -p "${dest}"
 
   ./gradlew clean stage -Penvironment="${environment}" \
-    -PmavenUrl=https://"${gcs_prefix}"/maven \
-    -PpluginsUrl=https://"${gcs_prefix}"/plugins
+    -PmavenUrl="${gcs_prefix}"/maven \
+    -PpluginsUrl="${gcs_prefix}"/plugins
 
   for service in default pubapi backend tools
   do

@@ -19,8 +19,8 @@ steps:
   - ./gradlew
   - :proxy:test
   - :proxy:buildProxyImage
-  - -PmavenUrl=https://storage.googleapis.com/domain-registry-maven-repository/maven
-  - -PpluginsUrl=https://storage.googleapis.com/domain-registry-maven-repository/plugins
+  - -PmavenUrl=gcs://domain-registry-maven-repository/maven
+  - -PpluginsUrl=gcs://domain-registry-maven-repository/plugins
 # Tag and push the image. We can't let Cloud Build's default processing do that for us
 # because we need to push the image before we can sign it in the following step.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
