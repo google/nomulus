@@ -42,6 +42,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public EntityManagerFactory getEntityManagerFactory() {
+    return emf;
+  }
+
+  @Override
   public EntityManager getEntityManager() {
     if (transactionInfo.get().entityManager == null) {
       throw new PersistenceException(
