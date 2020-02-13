@@ -15,6 +15,7 @@
 package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.schema.registrar.RegistrarDao.registrarDao;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -61,32 +62,32 @@ public class RegistrarDaoTest extends EntityTestCase {
 
   @Test
   public void saveNew_worksSuccessfully() {
-    assertThat(RegistrarDao.checkExists("registrarId")).isFalse();
-    RegistrarDao.saveNew(testRegistrar);
-    assertThat(RegistrarDao.checkExists("registrarId")).isTrue();
+    assertThat(registrarDao().checkExists(testRegistrar)).isFalse();
+    registrarDao().saveNew(testRegistrar);
+    assertThat(registrarDao().checkExists(testRegistrar)).isTrue();
   }
 
   @Test
   public void update_worksSuccessfully() {
-    RegistrarDao.saveNew(testRegistrar);
-    Registrar persisted = RegistrarDao.load("registrarId").get();
+    registrarDao().saveNew(testRegistrar);
+    Registrar persisted = registrarDao().load("registrarId").get();
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");
-    RegistrarDao.update(persisted.asBuilder().setRegistrarName("changedRegistrarName").build());
-    persisted = RegistrarDao.load("registrarId").get();
+    registrarDao().update(persisted.asBuilder().setRegistrarName("changedRegistrarName").build());
+    persisted = registrarDao().load("registrarId").get();
     assertThat(persisted.getRegistrarName()).isEqualTo("changedRegistrarName");
   }
 
   @Test
   public void update_throwsExceptionWhenEntityDoesNotExist() {
-    assertThat(RegistrarDao.checkExists("registrarId")).isFalse();
-    assertThrows(IllegalArgumentException.class, () -> RegistrarDao.update(testRegistrar));
+    assertThat(registrarDao().checkExists(testRegistrar)).isFalse();
+    assertThrows(IllegalArgumentException.class, () -> registrarDao().update(testRegistrar));
   }
 
   @Test
   public void load_worksSuccessfully() {
-    assertThat(RegistrarDao.checkExists("registrarId")).isFalse();
-    RegistrarDao.saveNew(testRegistrar);
-    Registrar persisted = RegistrarDao.load("registrarId").get();
+    assertThat(registrarDao().checkExists(testRegistrar)).isFalse();
+    registrarDao().saveNew(testRegistrar);
+    Registrar persisted = registrarDao().load("registrarId").get();
 
     assertThat(persisted.getClientId()).isEqualTo("registrarId");
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");

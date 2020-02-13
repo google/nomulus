@@ -14,13 +14,13 @@
 
 package google.registry.tools;
 
+import static google.registry.schema.registrar.RegistrarDao.registrarDao;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.Parameters;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.registrar.Registrar;
-import google.registry.schema.registrar.RegistrarDao;
 import javax.annotation.Nullable;
 
 /** Command to update a Registrar. */
@@ -53,6 +53,6 @@ final class UpdateRegistrarCommand extends CreateOrUpdateRegistrarCommand {
 
   @Override
   void saveToCloudSql(Registrar registrar) {
-    RegistrarDao.update(registrar);
+    registrarDao().update(registrar);
   }
 }

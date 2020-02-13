@@ -14,60 +14,18 @@
 
 package google.registry.schema.registrar;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
-
 import google.registry.model.registrar.Registrar;
-import java.util.Optional;
+import google.registry.schema.BasicDao;
 
 /** Data access object for {@link Registrar}. */
-public class RegistrarDao {
+public class RegistrarDao extends BasicDao<Registrar> {
+
+  private static final RegistrarDao INSTANCE = new RegistrarDao();
 
   private RegistrarDao() {}
 
-  /** Persists a new or updates an existing registrar in Cloud SQL. */
-  public static void saveNew(Registrar registrar) {
-    checkArgumentNotNull(registrar, "registrar must be specified");
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(registrar));
-  }
-
-  /** Updates an existing registrar in Cloud SQL, throws excpetion if it does not exist. */
-  public static void update(Registrar registrar) {
-    checkArgumentNotNull(registrar, "registrar must be specified");
-    jpaTm()
-        .transact(
-            () -> {
-              checkArgument(
-                  checkExists(registrar.getClientId()),
-                  "A registrar of this id does not exist: %s.",
-                  registrar.getClientId());
-              jpaTm().getEntityManager().merge(registrar);
-            });
-  }
-
-  /** Returns whether the registrar of the given id exists. */
-  public static boolean checkExists(String clientId) {
-    checkArgumentNotNull(clientId, "clientId must be specified");
-    return jpaTm()
-        .transact(
-            () ->
-                jpaTm()
-                        .getEntityManager()
-                        .createQuery(
-                            "SELECT 1 FROM Registrar WHERE clientIdentifier = :clientIdentifier",
-                            Integer.class)
-                        .setParameter("clientIdentifier", clientId)
-                        .setMaxResults(1)
-                        .getResultList()
-                        .size()
-                    > 0);
-  }
-
-  /** Loads the registrar by its id, returns empty if it doesn't exist. */
-  public static Optional<Registrar> load(String clientId) {
-    checkArgumentNotNull(clientId, "clientId must be specified");
-    return Optional.ofNullable(
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(Registrar.class, clientId)));
+  /** Returns a {@link RegistrarDao} instance. */
+  public static RegistrarDao registrarDao() {
+    return INSTANCE;
   }
 }

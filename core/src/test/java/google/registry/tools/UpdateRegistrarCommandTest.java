@@ -17,6 +17,7 @@ package google.registry.tools;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.schema.registrar.RegistrarDao.registrarDao;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatastoreHelper.createTlds;
@@ -34,7 +35,6 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
-import google.registry.schema.registrar.RegistrarDao;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.util.CidrAddressBlock;
@@ -56,10 +56,10 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   @Test
   public void testSuccess_alsoUpdateInCloudSql() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isFalse();
-    RegistrarDao.saveNew(loadRegistrar("NewRegistrar"));
+    registrarDao().saveNew(loadRegistrar("NewRegistrar"));
     runCommand("--password=some_password", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isTrue();
-    assertThat(RegistrarDao.load("NewRegistrar").get().verifyPassword("some_password")).isTrue();
+    assertThat(registrarDao().load("NewRegistrar").get().verifyPassword("some_password")).isTrue();
   }
 
   @Test
