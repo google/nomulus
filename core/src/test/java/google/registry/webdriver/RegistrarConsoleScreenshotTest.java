@@ -472,6 +472,7 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.waitForElement(By.tagName("h2"));
     driver.findElement(By.id("button-unlock-example.tld")).click();
     driver.waitForElement(By.className("modal-content"));
+    driver.findElement(By.id("domain-lock-password")).sendKeys("password");
     driver.diffPage("page");
   }
 
@@ -486,9 +487,10 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         });
     driver.get(server.getUrl("/registrar#registry-lock"));
     driver.waitForElement(By.tagName("h2"));
-    driver.findElement(By.id("lock-domain-input")).sendKeys("example.tld");
-    driver.findElement(By.id("lock-domain-submit")).click();
+    driver.findElement(By.id("button-lock-domain")).click();
     driver.waitForElement(By.className("modal-content"));
+    driver.findElement(By.id("domain-lock-input-value")).sendKeys("somedomain.tld");
+    driver.findElement(By.id("domain-lock-password")).sendKeys("password");
     driver.diffPage("page");
   }
 

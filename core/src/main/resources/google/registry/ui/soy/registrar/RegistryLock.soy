@@ -46,12 +46,14 @@
       <p>The lock will not take effect until you click the confirmation link that will be emailed to
         you at {$email}. When it takes effect, you will be billed the standard server status change
         billing cost (default is $20 USD).</p>
-      <input type="text"
-             id="lock-domain-input"
-             placeholder="mydomain.example"
-             {if not $lockEnabledForContact}disabled{/if}>
-      <input type="submit" value="Lock" id="lock-domain-submit"
-             class="{css('kd-button')} {css('kd-button-submit')}">
+      <button id="button-lock-domain"
+          {if $lockEnabledForContact}
+              class="{css('kd-button')} {css('kd-button-submit')}"
+          {else}
+              class="{css('kd-button')}" disabled
+          {/if}
+      >Lock a new domain
+      </button>
     {else}
       <h2>You are not permitted to change registry locks.</h2>
     {/if}
@@ -80,7 +82,6 @@
         <td>
           <button id="button-unlock-{$lock.fullyQualifiedDomainName}"
               {if $lockEnabledForContact and $lock.userCanUnlock}
-                  id="button-unlock-{$lock.fullyQualifiedDomainName}"
                   class="domain-unlock-button {css('kd-button')} {css('kd-button-submit')}"
               {else}
                   class="{css('kd-button')}"
@@ -97,12 +98,18 @@
 
 /** Modal that confirms that the user wishes to lock/unlock a domain. */
 {template .confirmModal}
-  {@param domain: string}
   {@param isLock: bool}
+  {@param? domain: string|null}
   <div id="lock-confirm-modal" class="{css('lock-confirm-modal')}">
     <div class="modal-content">
       <p>Are you sure you want to {if not $isLock}un{/if}lock the domain {$domain}? We will send
         an email to the email address on file to confirm the {if not $isLock}un{/if}lock.</p>
+      <label for="domain-to-lock">Domain: </label>
+      <input id="domain-lock-input-value"
+          {if isNonnull($domain)}
+             value="{$domain}" disabled
+          {/if}>
+      <br>
       <label for="domain-lock-password">Registry lock password: </label>
       <input type="password" id="domain-lock-password">
       <br>
