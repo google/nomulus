@@ -30,6 +30,7 @@ import com.google.common.truth.Truth8;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registry.RegistryLockDao;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.domain.RegistryLock;
@@ -38,6 +39,7 @@ import google.registry.testing.FakeClock;
 import google.registry.tools.CommandTestCase;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.Optional;
+import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.Before;
 import org.junit.Rule;
@@ -129,6 +131,35 @@ public class BackfillRegistryLocksCommandTest
                 .get()
                 .getLockCompletionTimestamp())
         .isEqualTo(previousLock.getLockCompletionTimestamp());
+  }
+
+  @Test
+  public void testBackfill_usesUrsTime_ifExists() throws Exception {
+    DateTime ursTime = fakeClock.nowUtc();
+    DomainBase ursDomain = persistLockedDomain("urs.tld");
+    HistoryEntry historyEntry =
+        new HistoryEntry.Builder()
+            .setBySuperuser(true)
+            .setClientId("adminreg")
+            .setModificationTime(ursTime)
+            .setParent(ursDomain)
+            .setReason("Uniform Rapid Suspension")
+            .setType(HistoryEntry.Type.DOMAIN_UPDATE)
+            .setRequestedByRegistrar(false)
+            .build();
+    persistResource(historyEntry);
+    DomainBase nonUrsDomain = persistLockedDomain("nonurs.tld");
+
+    fakeClock.advanceBy(Duration.standardDays(10));
+    runCommandForced(
+        "--domain_roids", String.format("%s,%s", ursDomain.getRepoId(), nonUrsDomain.getRepoId()));
+
+    RegistryLock ursLock =
+        RegistryLockDao.getMostRecentVerifiedLockByRepoId(ursDomain.getRepoId()).get();
+    assertThat(ursLock.getLockCompletionTimestamp().get()).isEqualTo(ursTime);
+    RegistryLock nonUrsLock =
+        RegistryLockDao.getMostRecentVerifiedLockByRepoId(nonUrsDomain.getRepoId()).get();
+    assertThat(nonUrsLock.getLockCompletionTimestamp().get()).isEqualTo(fakeClock.nowUtc());
   }
 
   @Test

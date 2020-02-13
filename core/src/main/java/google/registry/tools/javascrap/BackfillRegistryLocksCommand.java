@@ -29,11 +29,13 @@ import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registry.RegistryLockDao;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.tools.CommandWithRemoteApi;
 import google.registry.tools.ConfirmingCommand;
 import google.registry.util.Clock;
 import google.registry.util.StringGenerator;
+import java.util.Comparator;
 import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -101,7 +103,7 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
                 .setRegistrarId(registryAdminClientId)
                 .setRepoId(domainBase.getRepoId())
                 .setDomainName(domainBase.getFullyQualifiedDomainName())
-                .setLockCompletionTimestamp(now)
+                .setLockCompletionTimestamp(getLockCompletionTimestamp(domainBase, now))
                 .setVerificationCode(stringGenerator.createString(VERIFICATION_CODE_LENGTH))
                 .build());
       } catch (Throwable t) {
@@ -122,6 +124,18 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
               + "for the following domains: %s",
           lockedDomains.size() - failedDomains.size(), lockedDomains);
     }
+  }
+
+  private DateTime getLockCompletionTimestamp(DomainBase domainBase, DateTime now) {
+    // Best-effort, if a domain was URS-locked we should use that time
+    // If we can't find that, return now.
+    return ofy().load().type(HistoryEntry.class).ancestor(domainBase).list().stream()
+        // sort by modification time descending so we get the most recent one if it was locked twice
+        .sorted(Comparator.comparing(HistoryEntry::getModificationTime).reversed())
+        .filter(entry -> entry.getReason().equals("Uniform Rapid Suspension"))
+        .findFirst()
+        .map(HistoryEntry::getModificationTime)
+        .orElse(now);
   }
 
   private ImmutableList<DomainBase> getLockedDomainsWithoutLocks() {
