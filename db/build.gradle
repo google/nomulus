@@ -155,6 +155,8 @@ dependencies {
   testCompile deps['com.google.truth:truth']
   testRuntime deps['io.github.java-diff-utils:java-diff-utils']
   testCompile deps['junit:junit']
+  testCompile deps['org.junit.jupiter:junit-jupiter-engine']
+  testCompile deps['org.junit.vintage:junit-vintage-engine']
   testCompile deps['org.testcontainers:postgresql']
   testCompile deps['org.testcontainers:testcontainers']
   testCompile project(path: ':common', configuration: 'testing')

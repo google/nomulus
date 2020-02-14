@@ -145,6 +145,9 @@
       "moduleLicense": "Eclipse Public License 2.0"
     },
     {
+      "moduleLicense": "Eclipse Public License v2.0"
+    },
+    {
       "moduleLicense": "https://www.eclipse.org/legal/epl-2.0/, http://www.gnu.org/copyleft/gpl.html, http://www.gnu.org/licenses/lgpl.html"
     },
     {
@@ -223,6 +226,11 @@
     {
       "moduleLicense": "Public Domain",
       "moduleName": "org.tukaani:xz"
+    },
+    {
+      // Actually Eclipse Public License v2.0
+      "moduleLicense": null,
+      "moduleName": "org.junit:junit-bom"
     },
     {
       "moduleLicense": "The W3C Software License"

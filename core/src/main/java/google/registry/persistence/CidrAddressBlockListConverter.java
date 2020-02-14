@@ -35,5 +35,4 @@ public class CidrAddressBlockListConverter extends StringListConverterBase<CidrA
   CidrAddressBlock fromString(String value) {
     return CidrAddressBlock.create(value);
   }
-
 }

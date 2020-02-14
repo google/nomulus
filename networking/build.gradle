@@ -34,6 +34,8 @@ dependencies {
 
   testCompile deps['com.google.truth:truth']
   testCompile deps['junit:junit']
+  testCompile deps['org.junit.jupiter:junit-jupiter-engine']
+  testCompile deps['org.junit.vintage:junit-vintage-engine']
   testCompile deps['org.bouncycastle:bcpkix-jdk15on']
   testCompile deps['org.bouncycastle:bcprov-jdk15on']
 
