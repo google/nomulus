@@ -18,23 +18,20 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.util.YamlUtils.mergeYaml;
 
 import com.google.common.base.Joiner;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link YamlUtils}. */
-@RunWith(JUnit4.class)
-public class YamlUtilsTest {
+class YamlUtilsTest {
 
   @Test
-  public void testSuccess_mergeSimpleMaps() {
+  void testSuccess_mergeSimpleMaps() {
     String defaultYaml = join("one: ay", "two: bee", "three: sea");
     String customYaml = join("two: dee", "four: ignored");
     assertThat(mergeYaml(defaultYaml, customYaml)).isEqualTo("{one: ay, two: dee, three: sea}\n");
   }
 
   @Test
-  public void testSuccess_mergeNestedMaps() {
+  void testSuccess_mergeNestedMaps() {
     String defaultYaml = join("non: ay", "nested:", "  blah: tim", "  neat: 12");
     String customYaml = join("nested:", "  blah: max", "  extra: none");
     assertThat(mergeYaml(defaultYaml, customYaml))
@@ -42,7 +39,7 @@ public class YamlUtilsTest {
   }
 
   @Test
-  public void testSuccess_listsAreOverridden() {
+  void testSuccess_listsAreOverridden() {
     String defaultYaml = join("non: ay", "list:", "  - foo", "  - bar", "  - baz");
     String customYaml = join("list:", "  - crackle", "  - pop var");
     assertThat(mergeYaml(defaultYaml, customYaml))
@@ -50,14 +47,14 @@ public class YamlUtilsTest {
   }
 
   @Test
-  public void testSuccess_mergeEmptyMap_isNoop() {
+  void testSuccess_mergeEmptyMap_isNoop() {
     String defaultYaml = join("one: ay", "two: bee", "three: sea");
     assertThat(mergeYaml(defaultYaml, "# Just a comment\n"))
         .isEqualTo("{one: ay, two: bee, three: sea}\n");
   }
 
   @Test
-  public void testSuccess_mergeNamedMap_overwritesEntirelyWithNewKey() {
+  void testSuccess_mergeNamedMap_overwritesEntirelyWithNewKey() {
     String defaultYaml = join("one: ay", "two: bee", "threeMap:", "  foo: bar", "  baz: gak");
     assertThat(mergeYaml(defaultYaml, "threeMap: {time: money}"))
         .isEqualTo(join("one: ay", "two: bee", "threeMap: {time: money}"));

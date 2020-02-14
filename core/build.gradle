@@ -300,6 +300,8 @@ dependencies {
   testCompile deps['org.hamcrest:hamcrest-library']
   compile deps['org.hibernate:hibernate-hikaricp']
   testCompile deps['junit:junit']
+  testCompile deps['org.junit.jupiter:junit-jupiter-engine']
+  testCompile deps['org.junit.vintage:junit-vintage-engine']
   testCompile deps['org.mockito:mockito-core']
   runtime deps['org.postgresql:postgresql']
 

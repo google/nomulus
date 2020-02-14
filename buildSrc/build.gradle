@@ -43,6 +43,7 @@ repositories {
   if (project.ext.properties.mavenUrl == null) {
     println "Plugin dependencies: Using Maven central..."
     mavenCentral()
+    google()
   } else {
     maven {
       println "Plugin dependencies: Using repo ${mavenUrl}..."
@@ -81,6 +82,8 @@ dependencies {
   testCompile deps['com.google.truth:truth']
   testCompile deps['com.google.truth.extensions:truth-java8-extension']
   testCompile deps['junit:junit']
+  testCompile deps['org.junit.jupiter:junit-jupiter-engine']
+  testCompile deps['org.junit.vintage:junit-vintage-engine']
   testCompile deps['org.mockito:mockito-core']
 }
 

@@ -62,4 +62,6 @@ dependencies {
   testingCompile deps['io.github.java-diff-utils:java-diff-utils']
 
   testCompile deps['junit:junit']
+  testCompile deps['org.junit.jupiter:junit-jupiter-engine']
+  testCompile deps['org.junit.vintage:junit-vintage-engine']
 }
