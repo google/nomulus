@@ -43,6 +43,7 @@ repositories {
   if (project.ext.properties.mavenUrl == null) {
     println "Plugin dependencies: Using Maven central..."
     mavenCentral()
+    google()
   } else {
     maven {
       println "Plugin dependencies: Using repo ${mavenUrl}..."

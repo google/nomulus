@@ -177,6 +177,7 @@ allprojects {
     } else {
       println "Java dependencies: Using Maven Central..."
       mavenCentral()
+      google()
     }
   }
 
