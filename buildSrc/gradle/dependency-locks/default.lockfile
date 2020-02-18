@@ -22,7 +22,7 @@ com.google.code.gson:gson:2.7
 com.google.common.html.types:types:1.0.4
 com.google.errorprone:error_prone_annotations:2.3.2
 com.google.guava:failureaccess:1.0.1
-com.google.guava:guava:28.1-jre
+com.google.guava:guava:28.2-jre
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava
 com.google.gwt:gwt-user:2.8.0-beta1
 com.google.http-client:google-http-client-appengine:1.27.0
@@ -51,7 +51,7 @@ org.apache.commons:commons-text:1.6
 org.apache.httpcomponents:httpclient:4.5.8
 org.apache.httpcomponents:httpcore:4.4.11
 org.checkerframework:checker-qual:2.8.1
-org.codehaus.mojo:animal-sniffer-annotations:1.18
+org.codehaus.mojo:animal-sniffer-annotations:1.17
 org.json:json:20160212
 org.ow2.asm:asm-analysis:6.0
 org.ow2.asm:asm-commons:6.0
