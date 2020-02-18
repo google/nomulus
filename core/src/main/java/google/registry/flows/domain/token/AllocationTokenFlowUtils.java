@@ -17,6 +17,7 @@ package google.registry.flows.domain.token;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -24,7 +25,7 @@ import com.google.common.net.InternetDomainName;
 import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.AssociationProhibitsOperationException;
-import google.registry.flows.EppException.ParameterValueSyntaxErrorException;
+import google.registry.flows.EppException.AuthorizationErrorException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.token.AllocationToken;
@@ -137,6 +138,9 @@ public class AllocationTokenFlowUtils {
 
   /** Loads a given token and validates that it is not redeemed */
   private AllocationToken loadToken(String token) throws EppException {
+    if (Strings.isNullOrEmpty(token)) {
+      throw new InvalidAllocationTokenException();
+    }
     AllocationToken tokenEntity = ofy().load().key(Key.create(AllocationToken.class, token)).now();
     if (tokenEntity == null) {
       throw new InvalidAllocationTokenException();
@@ -181,7 +185,7 @@ public class AllocationTokenFlowUtils {
   }
 
   /** The allocation token is invalid. */
-  public static class InvalidAllocationTokenException extends ParameterValueSyntaxErrorException {
+  public static class InvalidAllocationTokenException extends AuthorizationErrorException {
     public InvalidAllocationTokenException() {
       super("The allocation token is invalid");
     }

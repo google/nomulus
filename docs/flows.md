@@ -324,7 +324,6 @@ An EPP flow that creates a new domain resource.
     *   The checksum in the specified TCNID does not validate.
     *   Domain name is under tld which doesn't exist.
 *   2005
-    *   The allocation token is invalid.
     *   Domain name must have exactly one part above the TLD.
     *   Domain name must not equal an existing multi-part TLD.
     *   The requested fee is expressed in a scale that is invalid for the given
@@ -337,6 +336,7 @@ An EPP flow that creates a new domain resource.
 *   2103
     *   Specified extension is not implemented.
 *   2201
+    *   The allocation token is invalid.
     *   Only a tool can pass a metadata extension.
     *   Registrar is not authorized to access this TLD.
     *   Registrar must be active in order to perform this operation.

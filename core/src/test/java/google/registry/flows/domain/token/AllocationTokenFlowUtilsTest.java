@@ -91,6 +91,22 @@ public class AllocationTokenFlowUtilsTest extends ShardableTestCase {
   }
 
   @Test
+  public void test_validateToken_failsOnNullToken() {
+    assertAboutEppExceptions()
+        .that(
+            assertThrows(
+                InvalidAllocationTokenException.class,
+                () ->
+                    flowUtils.loadTokenAndValidateDomainCreate(
+                        createCommand("blah.tld"),
+                        null,
+                        Registry.get("tld"),
+                        "TheRegistrar",
+                        DateTime.now(UTC))))
+        .marshalsToXml();
+  }
+
+  @Test
   public void test_validateToken_callsCustomLogic() {
     AllocationTokenFlowUtils failingFlowUtils =
         new AllocationTokenFlowUtils(new FailingAllocationTokenCustomLogic());
