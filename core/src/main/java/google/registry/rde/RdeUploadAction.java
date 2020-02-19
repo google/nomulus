@@ -24,6 +24,7 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.schema.cursor.CursorDao.loadAndCompare;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static java.util.Arrays.asList;
 
@@ -132,8 +133,10 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   @Override
   public void runWithLock(final DateTime watermark) throws Exception {
     logger.atInfo().log("Verifying readiness to upload the RDE deposit.");
-    DateTime stagingCursorTime = getCursorTimeOrStartOfTime(
-        ofy().load().key(Cursor.createKey(CursorType.RDE_STAGING, Registry.get(tld))).now());
+    Cursor cursor =
+        ofy().load().key(Cursor.createKey(CursorType.RDE_STAGING, Registry.get(tld))).now();
+    loadAndCompare(cursor, tld);
+    DateTime stagingCursorTime = getCursorTimeOrStartOfTime(cursor);
     if (isBeforeOrAt(stagingCursorTime, watermark)) {
       throw new NoContentException(
           String.format(
@@ -141,9 +144,10 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
                   + "last RDE staging completion was at %s",
               tld, watermark, stagingCursorTime));
     }
-    DateTime sftpCursorTime =
-        getCursorTimeOrStartOfTime(
-            ofy().load().key(Cursor.createKey(RDE_UPLOAD_SFTP, Registry.get(tld))).now());
+    Cursor sftpCursor =
+        ofy().load().key(Cursor.createKey(RDE_UPLOAD_SFTP, Registry.get(tld))).now();
+    loadAndCompare(sftpCursor, tld);
+    DateTime sftpCursorTime = getCursorTimeOrStartOfTime(sftpCursor);
     Duration timeSinceLastSftp = new Duration(sftpCursorTime, clock.nowUtc());
     if (timeSinceLastSftp.isShorterThan(sftpCooldown)) {
       throw new NoContentException(

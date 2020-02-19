@@ -13,6 +13,7 @@
 // limitations under the License.
 package google.registry.persistence;
 
+import google.registry.persistence.converter.StringCollectionDescriptor;
 import java.sql.Types;
 import org.hibernate.boot.model.TypeContributions;
 import org.hibernate.dialect.PostgreSQL95Dialect;
@@ -34,7 +35,7 @@ public class NomulusPostgreSQLDialect extends PostgreSQL95Dialect {
   public void contributeTypes(
       TypeContributions typeContributions, ServiceRegistry serviceRegistry) {
     super.contributeTypes(typeContributions, serviceRegistry);
-    typeContributions.contributeJavaTypeDescriptor(new StringCollectionDescriptor());
-    typeContributions.contributeSqlTypeDescriptor(new StringCollectionDescriptor());
+    typeContributions.contributeJavaTypeDescriptor(StringCollectionDescriptor.getInstance());
+    typeContributions.contributeSqlTypeDescriptor(StringCollectionDescriptor.getInstance());
   }
 }

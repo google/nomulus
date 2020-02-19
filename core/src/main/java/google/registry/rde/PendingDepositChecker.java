@@ -17,6 +17,7 @@ package google.registry.rde;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.schema.cursor.CursorDao.loadAndCompare;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.common.collect.ImmutableSetMultimap;
@@ -91,6 +92,7 @@ public final class PendingDepositChecker {
       }
       // Avoid creating a transaction unless absolutely necessary.
       Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, registry)).now();
+      loadAndCompare(cursor, registry.getTldStr());
       DateTime cursorValue = (cursor != null ? cursor.getCursorTime() : startingPoint);
       if (isBeforeOrAt(cursorValue, now)) {
         DateTime watermark = (cursor != null
@@ -111,6 +113,7 @@ public final class PendingDepositChecker {
     return tm().transact(
             () -> {
               Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, registry)).now();
+              loadAndCompare(cursor, registry.getTldStr());
               if (cursor != null) {
                 return cursor.getCursorTime();
               }

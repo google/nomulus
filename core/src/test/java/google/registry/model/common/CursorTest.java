@@ -19,6 +19,8 @@ import static google.registry.model.common.Cursor.CursorType.BRDA;
 import static google.registry.model.common.Cursor.CursorType.RDE_UPLOAD;
 import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.schema.cursor.Cursor.GLOBAL;
+import static google.registry.schema.cursor.CursorDao.loadAndCompare;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -27,19 +29,30 @@ import static org.junit.Assert.assertThrows;
 import google.registry.model.EntityTestCase;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registry.Registry;
+import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.cursor.CursorDao;
+import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
+import org.junit.Rule;
 import org.junit.Test;
 
 /** Unit tests for {@link Cursor}. */
 public class CursorTest extends EntityTestCase {
+
+  private final FakeClock fakeClock = new FakeClock(DateTime.parse("2010-10-17TZ"));
+
+  @Rule
+  public final JpaIntegrationWithCoverageRule jpaRule =
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
 
   @Test
   public void testSuccess_persistScopedCursor() {
     createTld("tld");
     clock.advanceOneMilli();
     final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
-    CursorDao.saveCursor(Cursor.create(RDE_UPLOAD, time, Registry.get("tld")), "tld");
+    Cursor cursor = Cursor.create(RDE_UPLOAD, time, Registry.get("tld"));
+    CursorDao.saveCursor(cursor, "tld");
     assertThat(ofy().load().key(Cursor.createKey(BRDA, Registry.get("tld"))).now()).isNull();
     assertThat(
             ofy()
@@ -48,23 +61,24 @@ public class CursorTest extends EntityTestCase {
                 .now()
                 .getCursorTime())
         .isEqualTo(time);
+    loadAndCompare(cursor, "tld");
   }
 
   @Test
   public void testSuccess_persistGlobalCursor() {
     final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
-    CursorDao.saveCursor(
-        Cursor.createGlobal(RECURRING_BILLING, time), google.registry.schema.cursor.Cursor.GLOBAL);
+    CursorDao.saveCursor(Cursor.createGlobal(RECURRING_BILLING, time), GLOBAL);
     assertThat(ofy().load().key(Cursor.createGlobalKey(RECURRING_BILLING)).now().getCursorTime())
         .isEqualTo(time);
+    loadAndCompare(Cursor.createGlobal(RECURRING_BILLING, time), GLOBAL);
   }
 
   @Test
   public void testIndexing() throws Exception {
     final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
-    CursorDao.saveCursor(
-        Cursor.createGlobal(RECURRING_BILLING, time), google.registry.schema.cursor.Cursor.GLOBAL);
+    CursorDao.saveCursor(Cursor.createGlobal(RECURRING_BILLING, time), GLOBAL);
     Cursor cursor = ofy().load().key(Cursor.createGlobalKey(RECURRING_BILLING)).now();
+    loadAndCompare(cursor, GLOBAL);
     verifyIndexing(cursor);
   }
 

@@ -15,6 +15,7 @@
 package google.registry.schema.cursor;
 
 import static com.google.appengine.api.search.checkers.Preconditions.checkNotNull;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -25,6 +26,7 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.schema.cursor.Cursor.CursorId;
 import java.util.List;
+import javax.annotation.Nullable;
 
 /** Data access object class for {@link Cursor}. */
 public class CursorDao {
@@ -128,6 +130,75 @@ public class CursorDao {
       saveAll(cloudSqlCursors.build());
     } catch (Exception e) {
       logger.atSevere().withCause(e).log("Error saving cursor to Cloud SQL.");
+    }
+  }
+
+  /**
+   * Loads in cursor from Cloud SQL and compares it to the Datastore cursor
+   *
+   * <p>This takes in a cursor from Datastore and checks to see if it exists in Cloud SQL and has
+   * the same value. If a difference is detected, or the Cloud SQL cursor does not exist, a warning
+   * is logged.
+   */
+  public static void loadAndCompare(
+      @Nullable google.registry.model.common.Cursor datastoreCursor, String scope) {
+    if (datastoreCursor == null) {
+      return;
+    }
+    try {
+      // Load the corresponding cursor from Cloud SQL
+      Cursor cloudSqlCursor = load(datastoreCursor.getType(), scope);
+      compare(datastoreCursor, cloudSqlCursor, scope);
+    } catch (Throwable t) {
+      logger.atSevere().withCause(t).log("Error comparing cursors.");
+    }
+  }
+
+  /**
+   * Loads in all cursors of a given type from Cloud SQL and compares them to Datastore
+   *
+   * <p>This takes in cursors from Datastore and checks to see if they exists in Cloud SQL and have
+   * the same value. If a difference is detected, or a Cloud SQL cursor does not exist, a warning is
+   * logged.
+   */
+  public static void loadAndCompareAll(
+      ImmutableMap<google.registry.model.common.Cursor, String> cursors, CursorType type) {
+    try {
+      // Load all the cursors of that type from Cloud SQL
+      List<Cursor> cloudSqlCursors = loadByType(type);
+
+      // Create a map of each tld to its cursor if one exists
+      ImmutableMap<String, Cursor> cloudSqlCursorMap =
+          cloudSqlCursors.stream().collect(toImmutableMap(c -> c.getScope(), c -> c));
+
+      // Compare each Datastore cursor with its corresponding Cloud SQL cursor
+      for (google.registry.model.common.Cursor cursor : cursors.keySet()) {
+        Cursor cloudSqlCursor = cloudSqlCursorMap.get(cursors.get(cursor));
+        compare(cursor, cloudSqlCursor, cursors.get(cursor));
+      }
+    } catch (Throwable t) {
+      logger.atSevere().withCause(t).log("Error comparing cursors.");
+    }
+  }
+
+  private static void compare(
+      google.registry.model.common.Cursor datastoreCursor,
+      @Nullable Cursor cloudSqlCursor,
+      String scope) {
+    if (cloudSqlCursor == null) {
+      logger.atWarning().log(
+          String.format(
+              "Cursor of type %s with the scope %s was not found in Cloud SQL.",
+              datastoreCursor.getType().name(), scope));
+    } else if (!datastoreCursor.getCursorTime().equals(cloudSqlCursor.getCursorTime())) {
+      logger.atWarning().log(
+          String.format(
+              "This cursor of type %s with the scope %s has a cursorTime of %s in Datastore and %s"
+                  + " in Cloud SQL.",
+              datastoreCursor.getType(),
+              scope,
+              datastoreCursor.getCursorTime(),
+              cloudSqlCursor.getCursorTime()));
     }
   }
 }
