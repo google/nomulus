@@ -21,7 +21,6 @@ import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STAT
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
@@ -107,8 +106,7 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
                 .setVerificationCode(stringGenerator.createString(VERIFICATION_CODE_LENGTH))
                 .build());
       } catch (Throwable t) {
-        Throwable rootCause = Throwables.getRootCause(t);
-        logger.atSevere().withCause(rootCause).log(
+        logger.atSevere().withCause(t).log(
             "Error when creating lock object for domain %s.",
             domainBase.getFullyQualifiedDomainName());
         failedDomainsBuilder.add(domainBase);
