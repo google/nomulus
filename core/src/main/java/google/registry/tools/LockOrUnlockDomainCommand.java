@@ -27,7 +27,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.schema.domain.RegistryLock;
 import google.registry.util.Clock;
 import java.util.List;
 import javax.inject.Inject;
@@ -87,8 +86,7 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
     int failures = 0;
     for (String domain : relevantDomains) {
       try {
-        RegistryLock lock = createLock(domain);
-        finalizeLockOrUnlockRequest(lock);
+        createAndApplyRequest(domain);
       } catch (Throwable t) {
         Throwable rootCause = Throwables.getRootCause(t);
         logger.atSevere().withCause(rootCause).log("Error when (un)locking domain %s.", domain);
@@ -106,7 +104,5 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
 
   protected abstract ImmutableSet<String> getRelevantDomains();
 
-  protected abstract RegistryLock createLock(String domain);
-
-  protected abstract void finalizeLockOrUnlockRequest(RegistryLock lock);
+  protected abstract void createAndApplyRequest(String domain);
 }

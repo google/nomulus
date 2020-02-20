@@ -22,7 +22,6 @@ import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.schema.domain.RegistryLock;
 
 /**
  * A command to registry lock domain names.
@@ -57,12 +56,7 @@ public class LockDomainCommand extends LockOrUnlockDomainCommand {
   }
 
   @Override
-  protected RegistryLock createLock(String domain) {
-    return domainLockUtils.createRegistryLockRequest(domain, clientId, null, true, now);
-  }
-
-  @Override
-  protected void finalizeLockOrUnlockRequest(RegistryLock lock) {
-    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, now);
+  protected void createAndApplyRequest(String domain) {
+    domainLockUtils.administrativelyApplyLock(domain, clientId, null, true, now);
   }
 }

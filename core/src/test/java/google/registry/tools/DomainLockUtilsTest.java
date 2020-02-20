@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.testing.DatastoreHelper.assertNoBillingEvents;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.getHistoryEntriesOfType;
 import static google.registry.testing.DatastoreHelper.getOnlyHistoryEntryOfType;
@@ -118,13 +119,7 @@ public final class DomainLockUtilsTest {
     RegistryLock lock =
         domainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false, now);
     domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, now);
-    assertThat(reloadDomain().getStatusValues()).containsExactlyElementsIn(REGISTRY_LOCK_STATUSES);
-    HistoryEntry historyEntry = getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE);
-    assertThat(historyEntry.getRequestedByRegistrar()).isTrue();
-    assertThat(historyEntry.getBySuperuser()).isFalse();
-    assertThat(historyEntry.getReason())
-        .isEqualTo("Lock or unlock of a domain through a RegistryLock operation");
-    assertBillingEvent(historyEntry);
+    verifyProperlyLockedDomain(false);
   }
 
   @Test
@@ -135,19 +130,7 @@ public final class DomainLockUtilsTest {
     RegistryLock unlock =
         domainLockUtils.createRegistryUnlockRequest(DOMAIN_NAME, "TheRegistrar", false, now);
     domainLockUtils.verifyAndApplyUnlock(unlock.getVerificationCode(), false, now);
-
-    assertThat(reloadDomain().getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
-    ImmutableList<HistoryEntry> historyEntries =
-        getHistoryEntriesOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE);
-    assertThat(historyEntries.size()).isEqualTo(2);
-    historyEntries.forEach(
-        entry -> {
-          assertThat(entry.getRequestedByRegistrar()).isTrue();
-          assertThat(entry.getBySuperuser()).isFalse();
-          assertThat(entry.getReason())
-              .isEqualTo("Lock or unlock of a domain through a RegistryLock operation");
-        });
-    assertBillingEvents(historyEntries);
+    verifyProperlyUnlockedDomain(false);
   }
 
   @Test
@@ -155,11 +138,49 @@ public final class DomainLockUtilsTest {
     RegistryLock lock =
         domainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true, now);
     domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, now);
+    verifyProperlyLockedDomain(true);
+  }
 
-    HistoryEntry historyEntry = getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE);
-    assertThat(historyEntry.getRequestedByRegistrar()).isFalse();
-    assertThat(historyEntry.getBySuperuser()).isTrue();
-    DatastoreHelper.assertNoBillingEvents();
+  @Test
+  public void testSuccess_applyAdminUnlock_onlyHistoryEntry() {
+    RegistryLock lock =
+        domainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true, now);
+    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, now);
+    RegistryLock unlock =
+        domainLockUtils.createRegistryUnlockRequest(DOMAIN_NAME, "TheRegistrar", true, now);
+    domainLockUtils.verifyAndApplyUnlock(unlock.getVerificationCode(), true, now);
+    verifyProperlyUnlockedDomain(true);
+  }
+
+  @Test
+  public void testSuccess_administrativelyLock_nonAdmin() {
+    domainLockUtils.administrativelyApplyLock(
+        DOMAIN_NAME, "TheRegistrar", "Marla.Singer@crr.com", false, now);
+    verifyProperlyLockedDomain(false);
+  }
+
+  @Test
+  public void testSuccess_administrativelyLock_admin() {
+    domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", null, true, now);
+    verifyProperlyLockedDomain(true);
+  }
+
+  @Test
+  public void testSuccess_administrativelyUnlock_nonAdmin() {
+    RegistryLock lock =
+        domainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false, now);
+    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false, now);
+    domainLockUtils.administrativelyApplyUnlock(DOMAIN_NAME, "TheRegistrar", false, now);
+    verifyProperlyUnlockedDomain(false);
+  }
+
+  @Test
+  public void testSuccess_administrativelyUnlock_admin() {
+    RegistryLock lock =
+        domainLockUtils.createRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", null, true, now);
+    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, now);
+    domainLockUtils.administrativelyApplyUnlock(DOMAIN_NAME, "TheRegistrar", true, now);
+    verifyProperlyUnlockedDomain(true);
   }
 
   @Test
@@ -327,6 +348,39 @@ public final class DomainLockUtilsTest {
         RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
     assertThat(afterAction).isEqualTo(lock);
     assertNoDomainChanges();
+  }
+
+  private void verifyProperlyLockedDomain(boolean isAdmin) {
+    assertThat(reloadDomain().getStatusValues()).containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
+    HistoryEntry historyEntry = getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE);
+    assertThat(historyEntry.getRequestedByRegistrar()).isEqualTo(!isAdmin);
+    assertThat(historyEntry.getBySuperuser()).isEqualTo(isAdmin);
+    assertThat(historyEntry.getReason())
+        .isEqualTo("Lock of a domain through a RegistryLock operation");
+    if (isAdmin) {
+      assertNoBillingEvents();
+    } else {
+      assertBillingEvent(historyEntry);
+    }
+  }
+
+  private void verifyProperlyUnlockedDomain(boolean isAdmin) {
+    assertThat(reloadDomain().getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
+    ImmutableList<HistoryEntry> historyEntries =
+        getHistoryEntriesOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE);
+    assertThat(historyEntries.size()).isEqualTo(2);
+    historyEntries.forEach(
+        entry -> {
+          assertThat(entry.getRequestedByRegistrar()).isEqualTo(!isAdmin);
+          assertThat(entry.getBySuperuser()).isEqualTo(isAdmin);
+          assertThat(entry.getReason())
+              .contains("ock of a domain through a RegistryLock operation");
+        });
+    if (isAdmin) {
+      assertNoBillingEvents();
+    } else {
+      assertBillingEvents(historyEntries);
+    }
   }
 
   private DomainBase reloadDomain() {
