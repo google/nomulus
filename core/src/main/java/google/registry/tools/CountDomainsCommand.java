@@ -30,15 +30,18 @@ import org.joda.time.DateTime;
 @Parameters(separators = " =", commandDescription = "Show count of domains on TLD")
 final class CountDomainsCommand implements CommandWithRemoteApi {
 
-  @Parameter(description = "TLD(s) to count domains on", required = true)
-  private List<String> mainParameters;
+  @Parameter(
+      names = {"-t", "--tld", "--tlds"},
+      description = "Comma-delimited list of TLD(s) to count domains on",
+      required = true)
+  private List<String> tlds;
 
   @Inject Clock clock;
 
   @Override
   public void run() {
     DateTime now = clock.nowUtc();
-    assertTldsExist(mainParameters)
+    assertTldsExist(tlds)
         .forEach(tld -> System.out.printf("%s,%d\n", tld, getCountForTld(tld, now)));
   }
 

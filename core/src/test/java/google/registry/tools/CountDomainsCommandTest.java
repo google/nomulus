@@ -49,7 +49,7 @@ public class CountDomainsCommandTest extends CommandTestCase<CountDomainsCommand
         persistActiveDomain(String.format("test-%d.baz", i));
       }
     }
-    runCommand("foo");
+    runCommand("-t=foo");
     assertStdoutIs("foo,51\n");
   }
 
@@ -64,7 +64,7 @@ public class CountDomainsCommandTest extends CommandTestCase<CountDomainsCommand
       persistDeletedDomain(String.format("del-%d.foo", j), clock.nowUtc().minusYears(1));
     }
     persistActiveDomain("not-counted.qux");
-    runCommand("foo", "bar", "baz");
+    runCommand("--tlds=foo,bar,baz");
     assertStdoutIs("foo,29\nbar,0\nbaz,17\n");
   }
 }
