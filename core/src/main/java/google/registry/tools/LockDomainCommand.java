@@ -23,7 +23,6 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.schema.domain.RegistryLock;
-import org.joda.time.DateTime;
 
 /**
  * A command to registry lock domain names.
@@ -38,7 +37,6 @@ public class LockDomainCommand extends LockOrUnlockDomainCommand {
   @Override
   protected ImmutableSet<String> getRelevantDomains() {
     // Project all domains as of the same time so that argument order doesn't affect behavior.
-    DateTime now = clock.nowUtc();
     ImmutableSet.Builder<String> relevantDomains = new ImmutableSet.Builder<>();
     for (String domain : getDomains()) {
       DomainBase domainBase =
@@ -60,11 +58,11 @@ public class LockDomainCommand extends LockOrUnlockDomainCommand {
 
   @Override
   protected RegistryLock createLock(String domain) {
-    return domainLockUtils.createRegistryLockRequest(domain, clientId, null, true, clock);
+    return domainLockUtils.createRegistryLockRequest(domain, clientId, null, true, now);
   }
 
   @Override
   protected void finalizeLockOrUnlockRequest(RegistryLock lock) {
-    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, clock);
+    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, now);
   }
 }

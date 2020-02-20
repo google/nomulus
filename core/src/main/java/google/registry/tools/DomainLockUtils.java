@@ -31,12 +31,12 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.RegistryLockDao;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.schema.domain.RegistryLock;
-import google.registry.util.Clock;
 import google.registry.util.StringGenerator;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
+import org.joda.time.DateTime;
 
 /**
  * Utility functions for validating and applying {@link RegistryLock}s.
@@ -61,8 +61,8 @@ public final class DomainLockUtils {
       String registrarId,
       @Nullable String registrarPocId,
       boolean isAdmin,
-      Clock clock) {
-    DomainBase domainBase = getDomain(domainName, clock);
+      DateTime dateTime) {
+    DomainBase domainBase = getDomain(domainName, dateTime);
     verifyDomainNotLocked(domainBase);
 
     // Multiple pending actions are not allowed
@@ -70,7 +70,7 @@ public final class DomainLockUtils {
         .ifPresent(
             previousLock ->
                 checkArgument(
-                    previousLock.isLockRequestExpired(clock)
+                    previousLock.isLockRequestExpired(dateTime)
                         || previousLock.getUnlockCompletionTimestamp().isPresent(),
                     "A pending or completed lock action already exists for %s",
                     previousLock.getDomainName()));
@@ -88,8 +88,8 @@ public final class DomainLockUtils {
   }
 
   public RegistryLock createRegistryUnlockRequest(
-      String domainName, String registrarId, boolean isAdmin, Clock clock) {
-    DomainBase domainBase = getDomain(domainName, clock);
+      String domainName, String registrarId, boolean isAdmin, DateTime dateTime) {
+    DomainBase domainBase = getDomain(domainName, dateTime);
     Optional<RegistryLock> lockOptional =
         RegistryLockDao.getMostRecentVerifiedLockByRepoId(domainBase.getRepoId());
 
@@ -105,7 +105,7 @@ public final class DomainLockUtils {
                   new RegistryLock.Builder()
                       .setRepoId(domainBase.getRepoId())
                       .setDomainName(domainName)
-                      .setLockCompletionTimestamp(clock.nowUtc())
+                      .setLockCompletionTimestamp(dateTime)
                       .setRegistrarId(registrarId));
     } else {
       verifyDomainLocked(domainBase);
@@ -117,7 +117,7 @@ public final class DomainLockUtils {
       checkArgument(
           lock.isLocked(), "Lock object for domain %s is not currently locked", domainName);
       checkArgument(
-          !lock.getUnlockRequestTimestamp().isPresent() || lock.isUnlockRequestExpired(clock),
+          !lock.getUnlockRequestTimestamp().isPresent() || lock.isUnlockRequestExpired(dateTime),
           "A pending unlock action already exists for %s",
           domainName);
       checkArgument(
@@ -132,13 +132,14 @@ public final class DomainLockUtils {
         newLockBuilder
             .setVerificationCode(stringGenerator.createString(VERIFICATION_CODE_LENGTH))
             .isSuperuser(isAdmin)
-            .setUnlockRequestTimestamp(clock.nowUtc())
+            .setUnlockRequestTimestamp(dateTime)
             .setRegistrarId(registrarId)
             .build();
     return RegistryLockDao.save(newLock);
   }
 
-  public RegistryLock verifyAndApplyLock(String verificationCode, boolean isAdmin, Clock clock) {
+  public RegistryLock verifyAndApplyLock(
+      String verificationCode, boolean isAdmin, DateTime dateTime) {
     return jpaTm()
         .transact(
             () -> {
@@ -150,7 +151,7 @@ public final class DomainLockUtils {
                   lock.getDomainName());
 
               checkArgument(
-                  !lock.isLockRequestExpired(clock),
+                  !lock.isLockRequestExpired(dateTime),
                   "The pending lock has expired; please try again");
 
               checkArgument(
@@ -158,13 +159,14 @@ public final class DomainLockUtils {
 
               RegistryLock newLock =
                   RegistryLockDao.save(
-                      lock.asBuilder().setLockCompletionTimestamp(clock.nowUtc()).build());
-              tm().transact(() -> applyLockStatuses(newLock, clock));
+                      lock.asBuilder().setLockCompletionTimestamp(dateTime).build());
+              tm().transact(() -> applyLockStatuses(newLock, dateTime));
               return newLock;
             });
   }
 
-  public RegistryLock verifyAndApplyUnlock(String verificationCode, boolean isAdmin, Clock clock) {
+  public RegistryLock verifyAndApplyUnlock(
+      String verificationCode, boolean isAdmin, DateTime dateTime) {
     return jpaTm()
         .transact(
             () -> {
@@ -175,7 +177,7 @@ public final class DomainLockUtils {
                   lock.getDomainName());
 
               checkArgument(
-                  !lock.isUnlockRequestExpired(clock),
+                  !lock.isUnlockRequestExpired(dateTime),
                   "The pending unlock has expired; please try again");
 
               checkArgument(
@@ -183,8 +185,8 @@ public final class DomainLockUtils {
 
               RegistryLock newLock =
                   RegistryLockDao.save(
-                      lock.asBuilder().setUnlockCompletionTimestamp(clock.nowUtc()).build());
-              tm().transact(() -> removeLockStatuses(newLock, isAdmin, clock));
+                      lock.asBuilder().setUnlockCompletionTimestamp(dateTime).build());
+              tm().transact(() -> removeLockStatuses(newLock, isAdmin, dateTime));
               return newLock;
             });
   }
@@ -203,8 +205,8 @@ public final class DomainLockUtils {
         domainBase.getFullyQualifiedDomainName());
   }
 
-  private static DomainBase getDomain(String domainName, Clock clock) {
-    return loadByForeignKeyCached(DomainBase.class, domainName, clock.nowUtc())
+  private static DomainBase getDomain(String domainName, DateTime dateTime) {
+    return loadByForeignKeyCached(DomainBase.class, domainName, dateTime)
         .orElseThrow(
             () -> new IllegalArgumentException(String.format("Unknown domain %s", domainName)));
   }
@@ -217,8 +219,8 @@ public final class DomainLockUtils {
                     String.format("Invalid verification code %s", verificationCode)));
   }
 
-  private static void applyLockStatuses(RegistryLock lock, Clock clock) {
-    DomainBase domain = getDomain(lock.getDomainName(), clock);
+  private static void applyLockStatuses(RegistryLock lock, DateTime dateTime) {
+    DomainBase domain = getDomain(lock.getDomainName(), dateTime);
     verifyDomainNotLocked(domain);
 
     DomainBase newDomain =
@@ -227,11 +229,11 @@ public final class DomainLockUtils {
             .setStatusValues(
                 ImmutableSet.copyOf(Sets.union(domain.getStatusValues(), REGISTRY_LOCK_STATUSES)))
             .build();
-    saveEntities(newDomain, lock, clock);
+    saveEntities(newDomain, lock, dateTime);
   }
 
-  private static void removeLockStatuses(RegistryLock lock, boolean isAdmin, Clock clock) {
-    DomainBase domain = getDomain(lock.getDomainName(), clock);
+  private static void removeLockStatuses(RegistryLock lock, boolean isAdmin, DateTime dateTime) {
+    DomainBase domain = getDomain(lock.getDomainName(), dateTime);
     if (!isAdmin) {
       verifyDomainLocked(domain);
     }
@@ -243,10 +245,10 @@ public final class DomainLockUtils {
                 ImmutableSet.copyOf(
                     Sets.difference(domain.getStatusValues(), REGISTRY_LOCK_STATUSES)))
             .build();
-    saveEntities(newDomain, lock, clock);
+    saveEntities(newDomain, lock, dateTime);
   }
 
-  private static void saveEntities(DomainBase domain, RegistryLock lock, Clock clock) {
+  private static void saveEntities(DomainBase domain, RegistryLock lock, DateTime dateTime) {
     String reason = "Lock or unlock of a domain through a RegistryLock operation";
     HistoryEntry historyEntry =
         new HistoryEntry.Builder()
@@ -254,7 +256,7 @@ public final class DomainLockUtils {
             .setBySuperuser(lock.isSuperuser())
             .setRequestedByRegistrar(!lock.isSuperuser())
             .setType(HistoryEntry.Type.DOMAIN_UPDATE)
-            .setModificationTime(clock.nowUtc())
+            .setModificationTime(dateTime)
             .setParent(Key.create(domain))
             .setReason(reason)
             .build();
@@ -266,8 +268,8 @@ public final class DomainLockUtils {
               .setTargetId(domain.getForeignKey())
               .setClientId(domain.getCurrentSponsorClientId())
               .setCost(Registry.get(domain.getTld()).getServerStatusChangeCost())
-              .setEventTime(clock.nowUtc())
-              .setBillingTime(clock.nowUtc())
+              .setEventTime(dateTime)
+              .setBillingTime(dateTime)
               .setParent(historyEntry)
               .build();
       ofy().save().entity(oneTime);

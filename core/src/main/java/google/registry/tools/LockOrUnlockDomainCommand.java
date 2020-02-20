@@ -31,6 +31,7 @@ import google.registry.schema.domain.RegistryLock;
 import google.registry.util.Clock;
 import java.util.List;
 import javax.inject.Inject;
+import org.joda.time.DateTime;
 
 /** Shared base class for commands to registry lock or unlock a domain via EPP. */
 public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
@@ -59,6 +60,7 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
 
   @Inject DomainLockUtils domainLockUtils;
 
+  protected DateTime now;
   protected ImmutableSet<String> relevantDomains = ImmutableSet.of();
 
   protected ImmutableSet<String> getDomains() {
@@ -67,6 +69,8 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
 
   @Override
   protected void init() {
+    // use the same time for everything
+    now = clock.nowUtc();
     // Default clientId to the registry registrar account if otherwise unspecified.
     if (clientId == null) {
       clientId = registryAdminClientId;

@@ -43,7 +43,6 @@ import google.registry.request.auth.UserAuthInfo;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.security.JsonResponseHelper;
 import google.registry.tools.DomainLockUtils;
-import google.registry.util.Clock;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
 import java.net.URISyntaxException;
@@ -82,7 +81,6 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
   private final AuthResult authResult;
   private final AuthenticatedRegistrarAccessor registrarAccessor;
   private final SendEmailService sendEmailService;
-  private final Clock clock;
   private final DomainLockUtils domainLockUtils;
   private final InternetAddress gSuiteOutgoingEmailAddress;
 
@@ -92,14 +90,12 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       AuthResult authResult,
       AuthenticatedRegistrarAccessor registrarAccessor,
       SendEmailService sendEmailService,
-      Clock clock,
       DomainLockUtils domainLockUtils,
       @Config("gSuiteOutgoingEmailAddress") InternetAddress gSuiteOutgoingEmailAddress) {
     this.jsonActionRunner = jsonActionRunner;
     this.authResult = authResult;
     this.registrarAccessor = registrarAccessor;
     this.sendEmailService = sendEmailService;
-    this.clock = clock;
     this.domainLockUtils = domainLockUtils;
     this.gSuiteOutgoingEmailAddress = gSuiteOutgoingEmailAddress;
   }
@@ -143,9 +139,12 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
                             postInput.clientId,
                             userEmail,
                             isAdmin,
-                            clock)
+                            jpaTm().getTransactionTime())
                         : domainLockUtils.createRegistryUnlockRequest(
-                            postInput.fullyQualifiedDomainName, postInput.clientId, isAdmin, clock);
+                            postInput.fullyQualifiedDomainName,
+                            postInput.clientId,
+                            isAdmin,
+                            jpaTm().getTransactionTime());
                 sendVerificationEmail(registryLock, userEmail, postInput.isLock);
               });
       String action = postInput.isLock ? "lock" : "unlock";

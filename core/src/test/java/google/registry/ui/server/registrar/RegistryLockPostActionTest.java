@@ -71,11 +71,13 @@ public final class RegistryLockPostActionTest {
           + "https:\\/\\/localhost\\/registry-lock-verify\\?lockVerificationCode="
           + "[0-9a-zA-Z_\\-]+&isLock=(true|false)";
 
+  private final FakeClock clock = new FakeClock();
+
   @Rule public final AppEngineRule appEngineRule = AppEngineRule.builder().withDatastore().build();
 
   @Rule
   public final JpaIntegrationTestRule jpaRule =
-      new JpaTestRules.Builder().buildIntegrationTestRule();
+      new JpaTestRules.Builder().withClock(clock).buildIntegrationTestRule();
 
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 
@@ -84,7 +86,6 @@ public final class RegistryLockPostActionTest {
   // Marla Singer has registry lock auth permissions
   private final User userWithLockPermission =
       new User("Marla.Singer@crr.com", "gmail.com", "31337");
-  private final FakeClock clock = new FakeClock();
 
   private InternetAddress outgoingAddress;
   private DomainBase domain;
@@ -400,7 +401,6 @@ public final class RegistryLockPostActionTest {
         authResult,
         registrarAccessor,
         emailService,
-        clock,
         domainLockUtils,
         outgoingAddress);
   }

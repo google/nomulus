@@ -30,6 +30,7 @@ import google.registry.ui.soy.registrar.RegistryLockVerificationSoyInfo;
 import google.registry.util.Clock;
 import java.util.HashMap;
 import javax.inject.Inject;
+import org.joda.time.DateTime;
 
 /** Action that allows for verification of registry lock / unlock requests */
 @Action(
@@ -69,11 +70,12 @@ public final class RegistryLockVerifyAction extends HtmlAction {
   public void runAfterLogin(HashMap<String, Object> data) {
     try {
       boolean isAdmin = authResult.userAuthInfo().get().isUserAdmin();
+      DateTime now = clock.nowUtc();
       final RegistryLock resultLock;
       if (isLock) {
-        resultLock = domainLockUtils.verifyAndApplyLock(lockVerificationCode, isAdmin, clock);
+        resultLock = domainLockUtils.verifyAndApplyLock(lockVerificationCode, isAdmin, now);
       } else {
-        resultLock = domainLockUtils.verifyAndApplyUnlock(lockVerificationCode, isAdmin, clock);
+        resultLock = domainLockUtils.verifyAndApplyUnlock(lockVerificationCode, isAdmin, now);
       }
       data.put("isLock", isLock);
       data.put("success", true);
