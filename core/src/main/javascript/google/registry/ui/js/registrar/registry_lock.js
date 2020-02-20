@@ -50,10 +50,11 @@ registry.registrar.RegistryLock.prototype.runAfterRender = function(objArgs) {
 
   if (objArgs.registryLockAllowed) {
     // Load the existing locks and display them in the table
-    goog.net.XhrIo.send('/registry-lock-get?clientId=' + objArgs.clientId,
-        e => this.fillLocksPage_(e));
+    goog.net.XhrIo.send(
+        '/registry-lock-get?clientId=' + objArgs.clientId, e => this.fillLocksPage_(e));
   } else {
-    goog.soy.renderElement(goog.dom.getRequiredElement('locks-content'),
+    goog.soy.renderElement(
+        goog.dom.getRequiredElement('locks-content'),
         registry.soy.registrar.registrylock.lockNotAllowedOnRegistrar,
         {supportEmail: objArgs.supportEmail});
   }
@@ -84,7 +85,8 @@ registry.registrar.RegistryLock.prototype.fillLocksPage_ = function(e) {
     var locksDetails = response.results[0]
     var locksContentDiv = goog.dom.getRequiredElement('locks-content');
     goog.soy.renderElement(
-        locksContentDiv, registry.soy.registrar.registrylock.locksContent,
+        locksContentDiv,
+        registry.soy.registrar.registrylock.locksContent,
         {locks: locksDetails.locks,
             email: locksDetails.email,
             lockEnabledForContact: locksDetails.lockEnabledForContact});
@@ -112,16 +114,24 @@ registry.registrar.RegistryLock.prototype.fillLocksPage_ = function(e) {
 registry.registrar.RegistryLock.prototype.showModal_ = function(targetElement, domain, isLock) {
   var parentElement = targetElement.parentElement;
   // attach the modal to the parent element so focus remains correct if the user closes the modal
-  var modalElement = goog.soy.renderAsElement(registry.soy.registrar.registrylock.confirmModal,
-      {domain: domain, isLock: isLock});
+  var modalElement = goog.soy.renderAsElement(
+      registry.soy.registrar.registrylock.confirmModal, {domain: domain, isLock: isLock});
   parentElement.prepend(modalElement);
   goog.dom.getRequiredElement('domain-lock-password').focus();
   // delete the modal when the user clicks the cancel button
-  goog.events.listen(goog.dom.getRequiredElement('domain-lock-cancel'), goog.events.EventType.CLICK,
-      removeModalIfExists_, false, this);
+  goog.events.listen(
+      goog.dom.getRequiredElement('domain-lock-cancel'),
+      goog.events.EventType.CLICK,
+      removeModalIfExists_,
+      false,
+      this);
 
-  goog.events.listen(goog.dom.getRequiredElement('domain-lock-submit'), goog.events.EventType.CLICK,
-      e => this.lockOrUnlockDomain_(isLock, e), false, this);
+  goog.events.listen(
+      goog.dom.getRequiredElement('domain-lock-submit'),
+      goog.events.EventType.CLICK,
+      e => this.lockOrUnlockDomain_(isLock, e),
+      false,
+      this);
 }
 
 /**
