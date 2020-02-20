@@ -132,13 +132,13 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
             properties,
             extraEntityClasses);
     JpaTransactionManagerImpl txnManager = new JpaTransactionManagerImpl(emf, clock);
-    cachedTm = TransactionManagerFactory.jpaTm;
-    TransactionManagerFactory.jpaTm = txnManager;
+    cachedTm = TransactionManagerFactory.jpaTm();
+    TransactionManagerFactory.setJpaTmForTesting(txnManager);
   }
 
   @Override
   public void after() {
-    TransactionManagerFactory.jpaTm = cachedTm;
+    TransactionManagerFactory.setJpaTmForTesting(cachedTm);
     if (emf != null) {
       emf.close();
       emf = null;

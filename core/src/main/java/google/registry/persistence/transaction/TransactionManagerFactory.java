@@ -17,16 +17,23 @@ package google.registry.persistence.transaction;
 import com.google.appengine.api.utils.SystemProperty;
 import com.google.appengine.api.utils.SystemProperty.Environment.Value;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Suppliers;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.persistence.DaggerPersistenceComponent;
 import google.registry.tools.RegistryToolEnvironment;
+import google.registry.util.NonFinalForTesting;
+import java.util.function.Supplier;
 
 /** Factory class to create {@link TransactionManager} instance. */
 // TODO: Rename this to PersistenceFactory and move to persistence package.
 public class TransactionManagerFactory {
 
   private static final TransactionManager TM = createTransactionManager();
-  @VisibleForTesting static JpaTransactionManager jpaTm = createJpaTransactionManager();
+
+  /** Supplier for jpaTm so that it is initialized only once, upon first usage. */
+  @NonFinalForTesting
+  private static Supplier<JpaTransactionManager> jpaTm =
+      Suppliers.memoize(TransactionManagerFactory::createJpaTransactionManager);
 
   private TransactionManagerFactory() {}
 
@@ -68,6 +75,11 @@ public class TransactionManagerFactory {
 
   /** Returns {@link JpaTransactionManager} instance. */
   public static JpaTransactionManager jpaTm() {
-    return jpaTm;
+    return jpaTm.get();
+  }
+
+  @VisibleForTesting
+  static void setJpaTmForTesting(JpaTransactionManager newJpaTm) {
+    jpaTm = Suppliers.ofInstance(newJpaTm);
   }
 }
