@@ -139,6 +139,9 @@ public class AllocationTokenFlowUtils {
   /** Loads a given token and validates that it is not redeemed */
   private AllocationToken loadToken(String token) throws EppException {
     if (Strings.isNullOrEmpty(token)) {
+      // We load the token directly from the input XML. If it's null or empty we should throw
+      // an InvalidAllocationTokenException before the Datastore load attempt fails.
+      // See https://tools.ietf.org/html/draft-ietf-regext-allocation-token-04#section-2.1
       throw new InvalidAllocationTokenException();
     }
     AllocationToken tokenEntity = ofy().load().key(Key.create(AllocationToken.class, token)).now();
