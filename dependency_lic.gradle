@@ -23,7 +23,7 @@ buildscript {
     }
   }
   dependencies {
-    classpath 'com.github.jk1:gradle-license-report:1.8'
+    classpath 'com.github.jk1:gradle-license-report:1.13'
   }
 }
 apply plugin: com.github.jk1.license.LicenseReportPlugin
