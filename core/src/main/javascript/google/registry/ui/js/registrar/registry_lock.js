@@ -51,13 +51,11 @@ registry.registrar.RegistryLock.prototype.runAfterRender = function(objArgs) {
   if (objArgs.registryLockAllowed) {
     // Load the existing locks and display them in the table
     goog.net.XhrIo.send('/registry-lock-get?clientId=' + objArgs.clientId,
-      // note: bind this.onUnlockDomain because we lose the "this" reference in the XhrIo callback
-      // so we won't have it in fillLocksPage_()
-      goog.bind(this.fillLocksPage_, this, this.onUnlockDomain_));
+        e => this.fillLocksPage_(e));
   } else {
     goog.soy.renderElement(goog.dom.getRequiredElement('locks-content'),
-      registry.soy.registrar.registrylock.lockNotAllowedOnRegistrar,
-      {supportEmail: objArgs.supportEmail});
+        registry.soy.registrar.registrylock.lockNotAllowedOnRegistrar,
+        {supportEmail: objArgs.supportEmail});
   }
 };
 
@@ -66,7 +64,7 @@ registry.registrar.RegistryLock.prototype.runAfterRender = function(objArgs) {
  * @private
  */
 const removeModalIfExists_ = function() {
-  var modalElement = goog.dom.getElement("lock-confirm-modal");
+  var modalElement = goog.dom.getElement('lock-confirm-modal');
   if (modalElement != null) {
     modalElement.parentElement.removeChild(modalElement);
   }
@@ -77,38 +75,33 @@ const removeModalIfExists_ = function() {
  * retrieved from the server.
  * @private
  */
-registry.registrar.RegistryLock.prototype.fillLocksPage_ = function(onUnlockClick, e) {
+registry.registrar.RegistryLock.prototype.fillLocksPage_ = function(e) {
   var response =
-          /** @type {!registry.json.locks.ExistingLocksResponse} */
-          (e.target.getResponseJson(registry.Resource.PARSER_BREAKER_));
-  if (response.status === "SUCCESS") {
+      /** @type {!registry.json.locks.ExistingLocksResponse} */
+      (e.target.getResponseJson(registry.Resource.PARSER_BREAKER_));
+  if (response.status === 'SUCCESS') {
     removeModalIfExists_();
     var locksDetails = response.results[0]
     var locksContentDiv = goog.dom.getRequiredElement('locks-content');
     goog.soy.renderElement(
         locksContentDiv, registry.soy.registrar.registrylock.locksContent,
         {locks: locksDetails.locks,
-          email: locksDetails.email,
-          lockEnabledForContact: locksDetails.lockEnabledForContact});
+            email: locksDetails.email,
+            lockEnabledForContact: locksDetails.lockEnabledForContact});
 
     if (locksDetails.lockEnabledForContact) {
-      // Listen to the lock-domain "submit" button click as well as the enter key
+      // Listen to the lock-domain 'submit' button click as well as the enter key
       var lockButton = goog.dom.getRequiredElement('button-lock-domain');
-      goog.events.listen(lockButton,
-                         goog.events.EventType.CLICK,
-                         this.onLockDomain_,
-                         false,
-                         this);
+      goog.events.listen(lockButton, goog.events.EventType.CLICK, this.onLockDomain_, false, this);
       // For all unlock buttons, listen and perform the unlock action if they're clicked
       var unlockButtons = goog.dom.getElementsByClass('domain-unlock-button', locksContentDiv);
-      for (let i = 0; i < unlockButtons.length; i++) {
-        goog.events.listen(unlockButtons[i], goog.events.EventType.CLICK, onUnlockClick, false, this);
-      }
+      unlockButtons.forEach(button =>
+        goog.events.listen(button, goog.events.EventType.CLICK, this.onUnlockDomain_, false, this));
     }
   } else {
     var errorDiv = goog.dom.getRequiredElement('modal-error-message');
     errorDiv.textContent = response.message;
-    errorDiv.removeAttribute("hidden");
+    errorDiv.removeAttribute('hidden');
   }
 }
 
@@ -120,21 +113,15 @@ registry.registrar.RegistryLock.prototype.showModal_ = function(targetElement, d
   var parentElement = targetElement.parentElement;
   // attach the modal to the parent element so focus remains correct if the user closes the modal
   var modalElement = goog.soy.renderAsElement(registry.soy.registrar.registrylock.confirmModal,
-                                              {domain: domain, isLock: isLock});
+      {domain: domain, isLock: isLock});
   parentElement.prepend(modalElement);
-  goog.dom.getRequiredElement("domain-lock-password").focus();
+  goog.dom.getRequiredElement('domain-lock-password').focus();
   // delete the modal when the user clicks the cancel button
-  goog.events.listen(goog.dom.getRequiredElement('domain-lock-cancel'),
-                     goog.events.EventType.CLICK,
-                     removeModalIfExists_,
-                     false,
-                     this);
+  goog.events.listen(goog.dom.getRequiredElement('domain-lock-cancel'), goog.events.EventType.CLICK,
+      removeModalIfExists_, false, this);
 
-  goog.events.listen(goog.dom.getRequiredElement('domain-lock-submit'),
-                     goog.events.EventType.CLICK,
-                     goog.bind(this.lockOrUnlockDomain_, this, isLock),
-                     false,
-                     this);
+  goog.events.listen(goog.dom.getRequiredElement('domain-lock-submit'), goog.events.EventType.CLICK,
+      e => this.lockOrUnlockDomain_(isLock, e), false, this);
 }
 
 /**
@@ -145,19 +132,17 @@ registry.registrar.RegistryLock.prototype.lockOrUnlockDomain_ = function(isLock,
   var domain = goog.dom.getRequiredElement('domain-lock-input-value').value;
   var password = goog.dom.getRequiredElement('domain-lock-password').value;
   goog.net.XhrIo.send('/registry-lock-post',
-    // note: bind this.onUnlockDomain because we lose the "this" reference in the XhrIo callback
-    // so we won't have it in fillLocksPage_()
-    goog.bind(this.fillLocksPage_, this, this.onUnlockDomain_),
-    'POST',
-    goog.json.serialize({
-      'clientId': this.clientId,
-      "fullyQualifiedDomainName": domain,
-      "isLock": isLock,
-      "password": password
-    }), {
-      'X-CSRF-Token': this.xsrfToken,
-      'Content-Type': 'application/json; charset=UTF-8'
-    });
+      e => this.fillLocksPage_(e),
+      'POST',
+      goog.json.serialize({
+        'clientId': this.clientId,
+        'fullyQualifiedDomainName': domain,
+        'isLock': isLock,
+        'password': password
+      }), {
+        'X-CSRF-Token': this.xsrfToken,
+        'Content-Type': 'application/json; charset=UTF-8'
+      });
 }
 
 /**
