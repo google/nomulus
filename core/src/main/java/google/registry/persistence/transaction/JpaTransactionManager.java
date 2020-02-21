@@ -15,13 +15,9 @@
 package google.registry.persistence.transaction;
 
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
 
 /** Sub-interface of {@link TransactionManager} which defines JPA related methods. */
 public interface JpaTransactionManager extends TransactionManager {
-
-  /** Returns the instance of {@link EntityManagerFactory}. */
-  EntityManagerFactory getEntityManagerFactory();
 
   /** Returns the {@link EntityManager} for the current request. */
   EntityManager getEntityManager();

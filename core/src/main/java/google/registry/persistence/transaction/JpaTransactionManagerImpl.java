@@ -14,13 +14,29 @@
 
 package google.registry.persistence.transaction;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
+import static java.util.stream.Collectors.joining;
+
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
+import google.registry.persistence.VKey;
 import google.registry.util.Clock;
+import java.lang.reflect.Field;
+import java.util.Collection;
+import java.util.Optional;
 import java.util.function.Supplier;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.PersistenceException;
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+import javax.persistence.metamodel.EntityType;
+import javax.persistence.metamodel.SingularAttribute;
 import org.joda.time.DateTime;
 
 /** Implementation of {@link JpaTransactionManager} for JPA compatible database. */
@@ -39,11 +55,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public JpaTransactionManagerImpl(EntityManagerFactory emf, Clock clock) {
     this.emf = emf;
     this.clock = clock;
-  }
-
-  @Override
-  public EntityManagerFactory getEntityManagerFactory() {
-    return emf;
   }
 
   @Override
@@ -145,6 +156,151 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       throw new PersistenceException("In a transaction but transactionTime is null");
     }
     return txnInfo.transactionTime;
+  }
+
+  @Override
+  public void saveNew(Object entity) {
+    checkArgumentNotNull(entity, "entity must be specified");
+    transact(() -> getEntityManager().persist(entity));
+  }
+
+  @Override
+  public void saveAllNew(ImmutableCollection<?> entities) {
+    checkArgumentNotNull(entities, "entities must be specified");
+    transact(() -> entities.forEach(this::saveNew));
+  }
+
+  @Override
+  public void merge(Object entity) {
+    checkArgumentNotNull(entity, "entity must be specified");
+    transact(() -> getEntityManager().merge(entity));
+  }
+
+  @Override
+  public void mergeAll(ImmutableCollection<?> entities) {
+    checkArgumentNotNull(entities, "entities must be specified");
+    transact(() -> entities.forEach(this::merge));
+  }
+
+  @Override
+  public void update(Object entity) {
+    checkArgumentNotNull(entity, "entity must be specified");
+    transact(
+        () -> {
+          checkArgument(checkExists(entity), "Given entity does not exist");
+          getEntityManager().merge(entity);
+        });
+  }
+
+  @Override
+  public void updateAll(ImmutableCollection<?> entities) {
+    checkArgumentNotNull(entities, "entities must be specified");
+    transact(() -> entities.forEach(this::update));
+  }
+
+  @Override
+  public boolean checkExists(Object entity) {
+    checkArgumentNotNull(entity, "entity must be specified");
+    EntityType<?> entityType = getEntityType(entity.getClass());
+    ImmutableSet<String> entityIdFieldNames = getEntityIdFieldNames(entityType);
+    return transact(
+        () -> {
+          TypedQuery<Integer> query =
+              getEntityManager()
+                  .createQuery(
+                      String.format(
+                          "SELECT 1 FROM %s WHERE %s",
+                          entityType.getName(), getAndClause(entityIdFieldNames)),
+                      Integer.class)
+                  .setMaxResults(1);
+          entityIdFieldNames.forEach(
+              idFieldName -> query.setParameter(idFieldName, getFieldValue(entity, idFieldName)));
+          return query.getResultList().size() > 0;
+        });
+  }
+
+  @Override
+  public <T> Optional<T> load(VKey<T> key) {
+    checkArgumentNotNull(key, "key must be specified");
+    return Optional.ofNullable(
+        transact(() -> getEntityManager().find(key.getKind(), key.getSqlKey())));
+  }
+
+  @Override
+  public <T> ImmutableList<T> loadAll(Class<T> clazz) {
+    checkArgumentNotNull(clazz, "clazz must be specified");
+    return ImmutableList.copyOf(
+        transact(
+            () -> {
+              EntityType<T> entityType = getEntityManager().getMetamodel().entity(clazz);
+              return getEntityManager()
+                  .createQuery(
+                      String.format("SELECT entity FROM %s entity", entityType.getName()), clazz)
+                  .getResultList();
+            }));
+  }
+
+  @Override
+  public <T> int delete(VKey<T> key) {
+    checkArgumentNotNull(key, "key must be specified");
+    EntityType<?> entityType = getEntityType(key.getKind());
+    ImmutableSet<String> entityIdFieldNames = getEntityIdFieldNames(entityType);
+    return transact(
+        () -> {
+          String sql =
+              String.format(
+                  "DELETE FROM %s WHERE %s",
+                  entityType.getName(), getAndClause(entityIdFieldNames));
+          Query query = getEntityManager().createQuery(sql);
+          entityIdFieldNames.forEach(
+              idFieldName -> {
+                Object idFieldValue =
+                    entityType.hasSingleIdAttribute()
+                        ? key.getSqlKey()
+                        : getFieldValue(key.getSqlKey(), idFieldName);
+                query.setParameter(idFieldName, idFieldValue);
+              });
+          return query.executeUpdate();
+        });
+  }
+
+  @Override
+  public <T> void assertDelete(VKey<T> key) {
+    transact(
+        () -> {
+          if (delete(key) != 1) {
+            throw new IllegalArgumentException(
+                String.format("Error deleting the entity of the key: %s", key.getSqlKey()));
+          }
+        });
+  }
+
+  private String getAndClause(Collection<String> fieldNames) {
+    return fieldNames.stream()
+        .map(idName -> String.format("%s = :%s", idName, idName))
+        .collect(joining(" AND "));
+  }
+
+  private <T> EntityType<T> getEntityType(Class<T> clazz) {
+    return emf.getMetamodel().entity(clazz);
+  }
+
+  private static ImmutableSet<String> getEntityIdFieldNames(EntityType<?> entityType) {
+    return entityType.hasSingleIdAttribute()
+        ? ImmutableSet.of(entityType.getDeclaredId(entityType.getIdType().getJavaType()).getName())
+        : entityType.getIdClassAttributes().stream()
+            .map(SingularAttribute::getName)
+            .collect(toImmutableSet());
+  }
+
+  private static Object getFieldValue(Object object, String fieldName) {
+    try {
+      Field field = object.getClass().getDeclaredField(fieldName);
+      field.setAccessible(true);
+      return field.get(object);
+    } catch (NoSuchFieldException | IllegalAccessException e) {
+      throw new IllegalArgumentException(e);
+    }
   }
 
   private static class TransactionInfo {

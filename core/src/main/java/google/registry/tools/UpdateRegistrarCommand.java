@@ -14,7 +14,7 @@
 
 package google.registry.tools;
 
-import static google.registry.schema.registrar.RegistrarDao.registrarDao;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
@@ -53,6 +53,6 @@ final class UpdateRegistrarCommand extends CreateOrUpdateRegistrarCommand {
 
   @Override
   void saveToCloudSql(Registrar registrar) {
-    registrarDao().update(registrar);
+    jpaTm().update(registrar);
   }
 }

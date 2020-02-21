@@ -17,7 +17,7 @@ package google.registry.tools;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.schema.registrar.RegistrarDao.registrarDao;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatastoreHelper.createTlds;
@@ -57,11 +57,11 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   @Test
   public void testSuccess_alsoUpdateInCloudSql() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isFalse();
-    registrarDao().saveNew(loadRegistrar("NewRegistrar"));
+    jpaTm().saveNew(loadRegistrar("NewRegistrar"));
     runCommand("--password=some_password", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isTrue();
     assertThat(
-            registrarDao()
+            jpaTm()
                 .load(VKey.create(Registrar.class, "NewRegistrar"))
                 .get()
                 .verifyPassword("some_password"))

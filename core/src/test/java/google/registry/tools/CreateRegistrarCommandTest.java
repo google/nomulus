@@ -17,7 +17,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.schema.registrar.RegistrarDao.registrarDao;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatastoreHelper.createTlds;
@@ -130,7 +130,7 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
     Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().verifyPassword("some_password")).isTrue();
-    assertThat(registrarDao().checkExists(registrar.get())).isTrue();
+    assertThat(jpaTm().checkExists(registrar.get())).isTrue();
   }
 
   @Test

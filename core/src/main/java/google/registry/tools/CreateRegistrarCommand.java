@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static google.registry.model.registrar.Registrar.State.ACTIVE;
-import static google.registry.schema.registrar.RegistrarDao.registrarDao;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.tools.RegistryToolEnvironment.PRODUCTION;
 import static google.registry.tools.RegistryToolEnvironment.SANDBOX;
 import static google.registry.tools.RegistryToolEnvironment.UNITTEST;
@@ -72,7 +72,7 @@ final class CreateRegistrarCommand extends CreateOrUpdateRegistrarCommand
 
   @Override
   void saveToCloudSql(Registrar registrar) {
-    registrarDao().saveNew(registrar);
+    jpaTm().saveNew(registrar);
   }
 
   @Nullable

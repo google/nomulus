@@ -16,7 +16,11 @@ package google.registry.model.ofy;
 
 import static google.registry.model.ofy.ObjectifyService.ofy;
 
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
+import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.TransactionManager;
+import java.util.Optional;
 import java.util.function.Supplier;
 import org.joda.time.DateTime;
 
@@ -82,5 +86,60 @@ public class DatastoreTransactionManager implements TransactionManager {
   @Override
   public DateTime getTransactionTime() {
     return getOfy().getTransactionTime();
+  }
+
+  @Override
+  public void saveNew(Object entity) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void saveAllNew(ImmutableCollection<?> entities) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void merge(Object entity) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void mergeAll(ImmutableCollection<?> entities) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void update(Object entity) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void updateAll(ImmutableCollection<?> entities) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public boolean checkExists(Object entity) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public <T> Optional<T> load(VKey<T> key) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public <T> ImmutableList<T> loadAll(Class<T> clazz) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public <T> int delete(VKey<T> key) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public <T> void assertDelete(VKey<T> key) {
+    throw new UnsupportedOperationException();
   }
 }
