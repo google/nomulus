@@ -138,13 +138,9 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
                             postInput.fullyQualifiedDomainName,
                             postInput.clientId,
                             userEmail,
-                            isAdmin,
-                            jpaTm().getTransactionTime())
+                            isAdmin)
                         : domainLockUtils.saveNewRegistryUnlockRequest(
-                            postInput.fullyQualifiedDomainName,
-                            postInput.clientId,
-                            isAdmin,
-                            jpaTm().getTransactionTime());
+                            postInput.fullyQualifiedDomainName, postInput.clientId, isAdmin);
                 sendVerificationEmail(registryLock, userEmail, postInput.isLock);
               });
       String action = postInput.isLock ? "lock" : "unlock";

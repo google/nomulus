@@ -57,6 +57,6 @@ public class LockDomainCommand extends LockOrUnlockDomainCommand {
 
   @Override
   protected void createAndApplyRequest(String domain) {
-    domainLockUtils.administrativelyApplyLock(domain, clientId, null, true, now);
+    domainLockUtils.administrativelyApplyLock(domain, clientId, null, true);
   }
 }

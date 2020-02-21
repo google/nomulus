@@ -113,7 +113,7 @@ public final class RegistryLockVerifyActionTest {
     assertThat(historyEntry.getRequestedByRegistrar()).isTrue();
     assertThat(historyEntry.getBySuperuser()).isFalse();
     assertThat(historyEntry.getReason())
-        .isEqualTo("Lock or unlock of a domain through a RegistryLock operation");
+        .isEqualTo("Lock of a domain through a RegistryLock operation");
     assertBillingEvent(historyEntry);
   }
 
@@ -131,7 +131,7 @@ public final class RegistryLockVerifyActionTest {
     assertThat(historyEntry.getRequestedByRegistrar()).isTrue();
     assertThat(historyEntry.getBySuperuser()).isFalse();
     assertThat(historyEntry.getReason())
-        .isEqualTo("Lock or unlock of a domain through a RegistryLock operation");
+        .isEqualTo("Unlock of a domain through a RegistryLock operation");
     assertBillingEvent(historyEntry);
   }
 
@@ -336,7 +336,7 @@ public final class RegistryLockVerifyActionTest {
     response = new FakeResponse();
     RegistryLockVerifyAction action =
         new RegistryLockVerifyAction(
-            fakeClock, new DomainLockUtils(stringGenerator), lockVerificationCode, isLock);
+            new DomainLockUtils(stringGenerator), lockVerificationCode, isLock);
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
     action.req = request;
     action.response = response;

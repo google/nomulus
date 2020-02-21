@@ -27,10 +27,8 @@ import google.registry.schema.domain.RegistryLock;
 import google.registry.tools.DomainLockUtils;
 import google.registry.ui.server.SoyTemplateUtils;
 import google.registry.ui.soy.registrar.RegistryLockVerificationSoyInfo;
-import google.registry.util.Clock;
 import java.util.HashMap;
 import javax.inject.Inject;
-import org.joda.time.DateTime;
 
 /** Action that allows for verification of registry lock / unlock requests */
 @Action(
@@ -49,18 +47,15 @@ public final class RegistryLockVerifyAction extends HtmlAction {
           google.registry.ui.soy.AnalyticsSoyInfo.getInstance(),
           google.registry.ui.soy.registrar.RegistryLockVerificationSoyInfo.getInstance());
 
-  private final Clock clock;
   private final DomainLockUtils domainLockUtils;
   private final String lockVerificationCode;
   private final Boolean isLock;
 
   @Inject
   public RegistryLockVerifyAction(
-      Clock clock,
       DomainLockUtils domainLockUtils,
       @Parameter("lockVerificationCode") String lockVerificationCode,
       @Parameter("isLock") Boolean isLock) {
-    this.clock = clock;
     this.domainLockUtils = domainLockUtils;
     this.lockVerificationCode = lockVerificationCode;
     this.isLock = isLock;
@@ -70,12 +65,11 @@ public final class RegistryLockVerifyAction extends HtmlAction {
   public void runAfterLogin(HashMap<String, Object> data) {
     try {
       boolean isAdmin = authResult.userAuthInfo().get().isUserAdmin();
-      DateTime now = clock.nowUtc();
       final RegistryLock resultLock;
       if (isLock) {
-        resultLock = domainLockUtils.verifyAndApplyLock(lockVerificationCode, isAdmin, now);
+        resultLock = domainLockUtils.verifyAndApplyLock(lockVerificationCode, isAdmin);
       } else {
-        resultLock = domainLockUtils.verifyAndApplyUnlock(lockVerificationCode, isAdmin, now);
+        resultLock = domainLockUtils.verifyAndApplyUnlock(lockVerificationCode, isAdmin);
       }
       data.put("isLock", isLock);
       data.put("success", true);
