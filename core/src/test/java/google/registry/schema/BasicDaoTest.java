@@ -19,6 +19,7 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
+import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import java.io.Serializable;
@@ -37,9 +38,11 @@ import org.junit.runners.JUnit4;
 public class BasicDaoTest {
 
   private final TestEntity theEntity = new TestEntity("theEntity", "foo");
+  private final VKey<TestEntity> theEntityKey = VKey.create(TestEntity.class, "theEntity");
   private final TestCompoundIdEntity compoundIdEntity =
       new TestCompoundIdEntity("compoundIdEntity", 10, "foo");
-  private final CompoundId compoundId = new CompoundId("compoundIdEntity", 10);
+  private final VKey<TestCompoundIdEntity> compoundIdEntityKey =
+      VKey.create(TestCompoundIdEntity.class, new CompoundId("compoundIdEntity", 10));
   private final ImmutableList<TestEntity> moreEntities =
       ImmutableList.of(
           new TestEntity("entity1", "foo"),
@@ -110,11 +113,11 @@ public class BasicDaoTest {
   @Test
   public void merge_updatesExistingEntity() {
     dao.saveNew(theEntity);
-    TestEntity persisted = dao.load("theEntity").get();
+    TestEntity persisted = dao.load(theEntityKey).get();
     assertThat(persisted.data).isEqualTo("foo");
     theEntity.data = "bar";
     dao.merge(theEntity);
-    persisted = dao.load("theEntity").get();
+    persisted = dao.load(theEntityKey).get();
     assertThat(persisted.data).isEqualTo("bar");
   }
 
@@ -128,22 +131,22 @@ public class BasicDaoTest {
   @Test
   public void update_succeeds() {
     dao.saveNew(theEntity);
-    TestEntity persisted = dao.load("theEntity").get();
+    TestEntity persisted = dao.load(VKey.create(TestEntity.class, "theEntity")).get();
     assertThat(persisted.data).isEqualTo("foo");
     theEntity.data = "bar";
     dao.update(theEntity);
-    persisted = dao.load("theEntity").get();
+    persisted = dao.load(theEntityKey).get();
     assertThat(persisted.data).isEqualTo("bar");
   }
 
   @Test
   public void updateCompoundIdEntity_succeeds() {
     compoundIdDao.saveNew(compoundIdEntity);
-    TestCompoundIdEntity persisted = compoundIdDao.load(compoundId).get();
+    TestCompoundIdEntity persisted = compoundIdDao.load(compoundIdEntityKey).get();
     assertThat(persisted.data).isEqualTo("foo");
     compoundIdEntity.data = "bar";
     compoundIdDao.update(compoundIdEntity);
-    persisted = compoundIdDao.load(compoundId).get();
+    persisted = compoundIdDao.load(compoundIdEntityKey).get();
     assertThat(persisted.data).isEqualTo("bar");
   }
 
@@ -163,7 +166,7 @@ public class BasicDaoTest {
             new TestEntity("entity2", "bar_updated"),
             new TestEntity("entity3", "qux_updated"));
     dao.updateAll(updated);
-    assertThat(dao.loadAll()).containsExactlyElementsIn(updated);
+    assertThat(dao.loadAll(TestEntity.class)).containsExactlyElementsIn(updated);
   }
 
   @Test
@@ -176,14 +179,14 @@ public class BasicDaoTest {
             new TestEntity("entity3", "qux_updated"),
             theEntity);
     assertThrows(IllegalArgumentException.class, () -> dao.updateAll(updated));
-    assertThat(dao.loadAll()).containsExactlyElementsIn(moreEntities);
+    assertThat(dao.loadAll(TestEntity.class)).containsExactlyElementsIn(moreEntities);
   }
 
   @Test
   public void load_succeeds() {
     assertThat(dao.checkExists(theEntity)).isFalse();
     dao.saveNew(theEntity);
-    TestEntity persisted = dao.load("theEntity").get();
+    TestEntity persisted = dao.load(theEntityKey).get();
     assertThat(persisted.name).isEqualTo("theEntity");
     assertThat(persisted.data).isEqualTo("foo");
   }
@@ -192,7 +195,7 @@ public class BasicDaoTest {
   public void loadCompoundIdEntity_succeeds() {
     assertThat(compoundIdDao.checkExists(compoundIdEntity)).isFalse();
     compoundIdDao.saveNew(compoundIdEntity);
-    TestCompoundIdEntity persisted = compoundIdDao.load(compoundId).get();
+    TestCompoundIdEntity persisted = compoundIdDao.load(compoundIdEntityKey).get();
     assertThat(persisted.name).isEqualTo("compoundIdEntity");
     assertThat(persisted.age).isEqualTo(10);
     assertThat(persisted.data).isEqualTo("foo");
@@ -201,7 +204,7 @@ public class BasicDaoTest {
   @Test
   public void loadAll_succeeds() {
     dao.saveAllNew(moreEntities);
-    ImmutableList<TestEntity> persisted = dao.loadAll();
+    ImmutableList<TestEntity> persisted = dao.loadAll(TestEntity.class);
     assertThat(persisted).containsExactlyElementsIn(moreEntities);
   }
 
@@ -209,14 +212,14 @@ public class BasicDaoTest {
   public void delete_succeeds() {
     dao.saveNew(theEntity);
     assertThat(dao.checkExists(theEntity)).isTrue();
-    assertThat(dao.delete("theEntity")).isEqualTo(1);
+    assertThat(dao.delete(theEntityKey)).isEqualTo(1);
     assertThat(dao.checkExists(theEntity)).isFalse();
   }
 
   @Test
   public void delete_returnsZeroWhenNoEntity() {
     assertThat(dao.checkExists(theEntity)).isFalse();
-    assertThat(dao.delete("theEntity")).isEqualTo(0);
+    assertThat(dao.delete(theEntityKey)).isEqualTo(0);
     assertThat(dao.checkExists(theEntity)).isFalse();
   }
 
@@ -224,14 +227,14 @@ public class BasicDaoTest {
   public void deleteCompoundIdEntity_succeeds() {
     compoundIdDao.saveNew(compoundIdEntity);
     assertThat(compoundIdDao.checkExists(compoundIdEntity)).isTrue();
-    compoundIdDao.delete(compoundId);
+    compoundIdDao.delete(compoundIdEntityKey);
     assertThat(compoundIdDao.checkExists(compoundIdEntity)).isFalse();
   }
 
   @Test
   public void assertDelete_throwsExceptionWhenEntityNotDeleted() {
     assertThat(dao.checkExists(theEntity)).isFalse();
-    assertThrows(IllegalArgumentException.class, () -> dao.assertDelete("theEntity"));
+    assertThrows(IllegalArgumentException.class, () -> dao.assertDelete(theEntityKey));
   }
 
   @Entity(name = "TestEntity")
@@ -277,7 +280,7 @@ public class BasicDaoTest {
     }
   }
 
-  private static class TestEntityDao extends BasicDao<TestEntity> {}
+  private static class TestEntityDao extends BasicDao {}
 
-  private static class TestCompoundIdEntityDao extends BasicDao<TestCompoundIdEntity> {}
+  private static class TestCompoundIdEntityDao extends BasicDao {}
 }

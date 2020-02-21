@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.Registrar.Type;
+import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.testing.AppEngineRule;
@@ -59,7 +60,12 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
     registrarDao().saveNew(loadRegistrar("NewRegistrar"));
     runCommand("--password=some_password", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isTrue();
-    assertThat(registrarDao().load("NewRegistrar").get().verifyPassword("some_password")).isTrue();
+    assertThat(
+            registrarDao()
+                .load(VKey.create(Registrar.class, "NewRegistrar"))
+                .get()
+                .verifyPassword("some_password"))
+        .isTrue();
   }
 
   @Test

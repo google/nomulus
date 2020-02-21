@@ -18,7 +18,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.schema.BasicDao;
 
 /** Data access object for {@link Registrar}. */
-public class RegistrarDao extends BasicDao<Registrar> {
+public class RegistrarDao extends BasicDao {
 
   private static final RegistrarDao INSTANCE = new RegistrarDao();
 

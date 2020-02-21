@@ -23,7 +23,7 @@ import static java.util.stream.Collectors.joining;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import google.registry.util.TypeUtils.TypeInstantiator;
+import google.registry.persistence.VKey;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Optional;
@@ -33,50 +33,34 @@ import javax.persistence.metamodel.EntityType;
 import javax.persistence.metamodel.SingularAttribute;
 
 /** Basic data access object which provides common CRUD methods for entities. */
-public class BasicDao<T> {
-
-  private final Class<T> entityClass;
-  private final EntityType<T> entityType;
-  private final ImmutableSet<String> entityIdFieldNames;
-
-  protected BasicDao() {
-    entityClass = new TypeInstantiator<T>(getClass()) {}.getExactType();
-    entityType = jpaTm().getEntityManagerFactory().getMetamodel().entity(entityClass);
-    entityIdFieldNames =
-        entityType.hasSingleIdAttribute()
-            ? ImmutableSet.of(
-                entityType.getDeclaredId(entityType.getIdType().getJavaType()).getName())
-            : entityType.getIdClassAttributes().stream()
-                .map(SingularAttribute::getName)
-                .collect(toImmutableSet());
-  }
+public class BasicDao {
 
   /** Persists a new entity in Cloud SQL, throws exception if the entity already exists. */
-  public void saveNew(T entity) {
+  public void saveNew(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
   }
 
   /** Persists all new entities in Cloud SQL, throws exception if any entity already exists. */
-  public void saveAllNew(ImmutableCollection<T> entities) {
+  public void saveAllNew(ImmutableCollection<?> entities) {
     checkArgumentNotNull(entities, "entities must be specified");
     jpaTm().transact(() -> entities.forEach(this::saveNew));
   }
 
   /** Persists a new entity or update the existing entity in Cloud SQL. */
-  public void merge(T entity) {
+  public void merge(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     jpaTm().transact(() -> jpaTm().getEntityManager().merge(entity));
   }
 
   /** Persists all new entities or update the existing entities in Cloud SQL. */
-  public void mergeAll(ImmutableCollection<T> entities) {
+  public void mergeAll(ImmutableCollection<?> entities) {
     checkArgumentNotNull(entities, "entities must be specified");
     jpaTm().transact(() -> entities.forEach(this::merge));
   }
 
   /** Updates an entity in Cloud SQL, throws exception if the entity does not exist. */
-  public void update(T entity) {
+  public void update(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     jpaTm()
         .transact(
@@ -87,19 +71,19 @@ public class BasicDao<T> {
   }
 
   /** Updates all entities in Cloud SQL, throws exception if any entity does not exist. */
-  public void updateAll(ImmutableCollection<T> entities) {
+  public void updateAll(ImmutableCollection<?> entities) {
     checkArgumentNotNull(entities, "entities must be specified");
     jpaTm().transact(() -> entities.forEach(this::update));
   }
 
   /** Returns whether the given entity exists. */
-  public boolean checkExists(T entity) {
+  public boolean checkExists(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
+    EntityType<?> entityType = getEntityType(entity.getClass());
+    ImmutableSet<String> entityIdFieldNames = getEntityIdFieldNames(entityType);
     return jpaTm()
         .transact(
             () -> {
-              EntityType<T> entityType =
-                  jpaTm().getEntityManager().getMetamodel().entity(entityClass);
               TypedQuery<Integer> query =
                   jpaTm()
                       .getEntityManager()
@@ -117,32 +101,35 @@ public class BasicDao<T> {
   }
 
   /** Loads the entity by its id, returns empty if the entity doesn't exist. */
-  public Optional<T> load(Object id) {
-    checkArgumentNotNull(id, "id must be specified");
+  public <T> Optional<T> load(VKey<T> key) {
+    checkArgumentNotNull(key, "key must be specified");
     return Optional.ofNullable(
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(entityClass, id)));
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(key.getKind(), key.getSqlKey())));
   }
 
   /** Loads all entities of the given type, returns empty if there is no such entity. */
-  public ImmutableList<T> loadAll() {
+  public <T> ImmutableList<T> loadAll(Class<T> clazz) {
+    checkArgumentNotNull(clazz, "clazz must be specified");
     return ImmutableList.copyOf(
         jpaTm()
             .transact(
                 () -> {
                   EntityType<T> entityType =
-                      jpaTm().getEntityManager().getMetamodel().entity(entityClass);
+                      jpaTm().getEntityManager().getMetamodel().entity(clazz);
                   return jpaTm()
                       .getEntityManager()
                       .createQuery(
                           String.format("SELECT entity FROM %s entity", entityType.getName()),
-                          entityClass)
+                          clazz)
                       .getResultList();
                 }));
   }
 
   /** Deletes the entity by its id, returns the number of deleted entity. */
-  public int delete(Object id) {
-    checkArgumentNotNull(id, "id must be specified");
+  public <T> int delete(VKey<T> key) {
+    checkArgumentNotNull(key, "key must be specified");
+    EntityType<?> entityType = getEntityType(key.getKind());
+    ImmutableSet<String> entityIdFieldNames = getEntityIdFieldNames(entityType);
     return jpaTm()
         .transact(
             () -> {
@@ -154,7 +141,9 @@ public class BasicDao<T> {
               entityIdFieldNames.forEach(
                   idFieldName -> {
                     Object idFieldValue =
-                        entityType.hasSingleIdAttribute() ? id : getFieldValue(id, idFieldName);
+                        entityType.hasSingleIdAttribute()
+                            ? key.getSqlKey()
+                            : getFieldValue(key.getSqlKey(), idFieldName);
                     query.setParameter(idFieldName, idFieldValue);
                   });
               return query.executeUpdate();
@@ -162,13 +151,13 @@ public class BasicDao<T> {
   }
 
   /** Deletes the entity by its id, throws exception if the entity is not deleted. */
-  public void assertDelete(Object id) {
+  public <T> void assertDelete(VKey<T> key) {
     jpaTm()
         .transact(
             () -> {
-              if (delete(id) != 1) {
+              if (delete(key) != 1) {
                 throw new IllegalArgumentException(
-                    String.format("Error deleting the entity of the id: %s", id));
+                    String.format("Error deleting the entity of the key: %s", key.getSqlKey()));
               }
             });
   }
@@ -177,6 +166,18 @@ public class BasicDao<T> {
     return fieldNames.stream()
         .map(idName -> String.format("%s = :%s", idName, idName))
         .collect(joining(" AND "));
+  }
+
+  private static <T> EntityType<T> getEntityType(Class<T> clazz) {
+    return jpaTm().getEntityManagerFactory().getMetamodel().entity(clazz);
+  }
+
+  private static ImmutableSet<String> getEntityIdFieldNames(EntityType<?> entityType) {
+    return entityType.hasSingleIdAttribute()
+        ? ImmutableSet.of(entityType.getDeclaredId(entityType.getIdType().getJavaType()).getName())
+        : entityType.getIdClassAttributes().stream()
+            .map(SingularAttribute::getName)
+            .collect(toImmutableSet());
   }
 
   private static Object getFieldValue(Object object, String fieldName) {
