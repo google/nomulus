@@ -85,16 +85,16 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
     ImmutableSet.Builder<String> failedDomainsBuilder = new ImmutableSet.Builder<>();
     partition(getDomains(), BATCH_SIZE).forEach(batch -> tm().transact(() -> {
       for (String domain : batch) {
-        try {
-          if (shouldApplyToDomain(domain, tm().getTransactionTime())) {
+        if (shouldApplyToDomain(domain, tm().getTransactionTime())) {
+          try {
             createAndApplyRequest(domain);
-            successfulDomainsBuilder.add(domain);
-          } else {
-            skippedDomainsBuilder.add(domain);
+          } catch (Throwable t) {
+            logger.atSevere().withCause(t).log("Error when (un)locking domain %s.", domain);
+            failedDomainsBuilder.add(domain);
           }
-        } catch (Throwable t) {
-          logger.atSevere().withCause(t).log("Error when (un)locking domain %s.", domain);
-          failedDomainsBuilder.add(domain);
+          successfulDomainsBuilder.add(domain);
+        } else {
+          skippedDomainsBuilder.add(domain);
         }
       }
     }));
