@@ -34,7 +34,6 @@ import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.DeterministicStringGenerator;
-import google.registry.testing.FakeClock;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +54,6 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
     persistNewRegistrar("adminreg", "Admin Registrar", Type.REAL, 693L);
     createTld("tld");
     command.registryAdminClientId = "adminreg";
-    command.clock = new FakeClock();
     command.domainLockUtils =
         new DomainLockUtils(new DeterministicStringGenerator(Alphabets.BASE_58));
   }

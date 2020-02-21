@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.eppcommon.StatusValue.SERVER_DELETE_PROHIBITED;
 import static google.registry.model.eppcommon.StatusValue.SERVER_TRANSFER_PROHIBITED;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.findDuplicates;
 
 import com.beust.jcommander.Parameter;
@@ -27,12 +28,13 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.util.Clock;
 import java.util.List;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
-/** Shared base class for commands to registry lock or unlock a domain via EPP. */
+/**
+ * Shared base class for commands to registry lock or unlock a domain via EPP.
+ */
 public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
     implements CommandWithRemoteApi {
 
@@ -55,12 +57,8 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
   @Config("registryAdminClientId")
   String registryAdminClientId;
 
-  @Inject Clock clock;
-
-  @Inject DomainLockUtils domainLockUtils;
-
-  protected DateTime now;
-  protected ImmutableSet<String> relevantDomains = ImmutableSet.of();
+  @Inject
+  DomainLockUtils domainLockUtils;
 
   protected ImmutableSet<String> getDomains() {
     return ImmutableSet.copyOf(mainParameters);
@@ -68,8 +66,6 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
 
   @Override
   protected void init() {
-    // use the same time for everything
-    now = clock.nowUtc();
     // Default clientId to the registry registrar account if otherwise unspecified.
     if (clientId == null) {
       clientId = registryAdminClientId;
@@ -78,31 +74,33 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
     checkArgument(duplicates.isEmpty(), "Duplicate domain arguments found: '%s'", duplicates);
     System.out.println(
         "== ENSURE THAT YOU HAVE AUTHENTICATED THE REGISTRAR BEFORE RUNNING THIS COMMAND ==");
-    relevantDomains = getRelevantDomains();
   }
 
   @Override
   protected String execute() {
-    int failures = 0;
-    for (String domain : relevantDomains) {
-      try {
-        createAndApplyRequest(domain);
-      } catch (Throwable t) {
-        Throwable rootCause = Throwables.getRootCause(t);
-        logger.atSevere().withCause(rootCause).log("Error when (un)locking domain %s.", domain);
-        failures++;
+    return tm().transact(() -> {
+      ImmutableSet<String> relevantDomains = getRelevantDomains(tm().getTransactionTime());
+      int failures = 0;
+      for (String domain : relevantDomains) {
+        try {
+          createAndApplyRequest(domain);
+        } catch (Throwable t) {
+          Throwable rootCause = Throwables.getRootCause(t);
+          logger.atSevere().withCause(rootCause).log("Error when (un)locking domain %s.", domain);
+          failures++;
+        }
       }
-    }
-    if (failures == 0) {
-      return String.format("Successfully locked/unlocked %d domains.", relevantDomains.size());
-    } else {
-      return String.format(
-          "Successfully locked/unlocked %d domains with %d failures.",
-          relevantDomains.size() - failures, failures);
-    }
+      if (failures == 0) {
+        return String.format("Successfully locked/unlocked %d domains.", relevantDomains.size());
+      } else {
+        return String.format(
+            "Successfully locked/unlocked %d domains with %d failures.",
+            relevantDomains.size() - failures, failures);
+      }
+    });
   }
 
-  protected abstract ImmutableSet<String> getRelevantDomains();
+  protected abstract ImmutableSet<String> getRelevantDomains(DateTime now);
 
   protected abstract void createAndApplyRequest(String domain);
 }

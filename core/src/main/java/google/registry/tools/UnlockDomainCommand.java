@@ -22,6 +22,7 @@ import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
+import org.joda.time.DateTime;
 
 /**
  * A command to registry unlock domain names.
@@ -34,7 +35,7 @@ public class UnlockDomainCommand extends LockOrUnlockDomainCommand {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Override
-  protected ImmutableSet<String> getRelevantDomains() {
+  protected ImmutableSet<String> getRelevantDomains(DateTime now) {
     // Project all domains as of the same time so that argument order doesn't affect behavior.
     ImmutableSet.Builder<String> relevantDomains = new ImmutableSet.Builder<>();
     for (String domain : getDomains()) {
