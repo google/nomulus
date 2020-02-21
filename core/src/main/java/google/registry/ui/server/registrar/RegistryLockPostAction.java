@@ -134,13 +134,13 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
               () -> {
                 RegistryLock registryLock =
                     postInput.isLock
-                        ? domainLockUtils.createRegistryLockRequest(
+                        ? domainLockUtils.saveNewRegistryLockRequest(
                             postInput.fullyQualifiedDomainName,
                             postInput.clientId,
                             userEmail,
                             isAdmin,
                             jpaTm().getTransactionTime())
-                        : domainLockUtils.createRegistryUnlockRequest(
+                        : domainLockUtils.saveNewRegistryUnlockRequest(
                             postInput.fullyQualifiedDomainName,
                             postInput.clientId,
                             isAdmin,

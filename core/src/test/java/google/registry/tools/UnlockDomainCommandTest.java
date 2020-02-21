@@ -63,7 +63,7 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
   private DomainBase persistLockedDomain(String domainName, String registrarId) {
     DomainBase domain = persistResource(newDomainBase(domainName));
     RegistryLock lock =
-        command.domainLockUtils.createRegistryLockRequest(
+        command.domainLockUtils.saveNewRegistryLockRequest(
             domainName, registrarId, null, true, command.clock.nowUtc());
     command.domainLockUtils.verifyAndApplyLock(
         lock.getVerificationCode(), true, command.clock.nowUtc());
