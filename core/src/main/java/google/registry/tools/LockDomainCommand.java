@@ -35,25 +35,20 @@ public class LockDomainCommand extends LockOrUnlockDomainCommand {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Override
-  protected ImmutableSet<String> getRelevantDomains(DateTime now) {
-    // Project all domains as of the same time so that argument order doesn't affect behavior.
-    ImmutableSet.Builder<String> relevantDomains = new ImmutableSet.Builder<>();
-    for (String domain : getDomains()) {
-      DomainBase domainBase =
-          loadByForeignKey(DomainBase.class, domain, now)
-              .orElseThrow(
-                  () ->
-                      new IllegalArgumentException(
-                          String.format("Domain '%s' does not exist or is deleted", domain)));
-      ImmutableSet<StatusValue> statusesToAdd =
-          Sets.difference(REGISTRY_LOCK_STATUSES, domainBase.getStatusValues()).immutableCopy();
-      if (statusesToAdd.isEmpty()) {
-        logger.atInfo().log("Domain '%s' is already locked and needs no updates.", domain);
-        continue;
-      }
-      relevantDomains.add(domain);
+  protected boolean shouldApplyToDomain(String domain, DateTime now) {
+    DomainBase domainBase =
+        loadByForeignKey(DomainBase.class, domain, now)
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        String.format("Domain '%s' does not exist or is deleted", domain)));
+    ImmutableSet<StatusValue> statusesToAdd =
+        Sets.difference(REGISTRY_LOCK_STATUSES, domainBase.getStatusValues()).immutableCopy();
+    if (statusesToAdd.isEmpty()) {
+      logger.atInfo().log("Domain '%s' is already locked and needs no updates.", domain);
+      return false;
     }
-    return relevantDomains.build();
+    return true;
   }
 
   @Override
