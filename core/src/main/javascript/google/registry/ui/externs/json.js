@@ -37,7 +37,8 @@ registry.json.locks = {};
  *   fullyQualifiedDomainName: string,
  *   lockedTime: string,
  *   lockedBy: string,
- *   userCanUnlock: boolean
+ *   userCanUnlock: boolean,
+ *   isPending: boolean
  * }}
  */
 registry.json.locks.ExistingLock;

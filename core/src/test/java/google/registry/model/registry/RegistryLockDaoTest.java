@@ -125,8 +125,7 @@ public final class RegistryLockDaoTest {
 
   @Test
   public void testLoad_lockedDomains_byRegistrarId() {
-    RegistryLock lock =
-        createLock().asBuilder().setLockCompletionTimestamp(fakeClock.nowUtc()).build();
+    RegistryLock lock = createLock();
     RegistryLock secondLock =
         createLock()
             .asBuilder()
@@ -146,11 +145,11 @@ public final class RegistryLockDaoTest {
     RegistryLockDao.save(unlockedLock);
 
     assertThat(
-            RegistryLockDao.getLockedDomainsByRegistrarId("TheRegistrar").stream()
+            RegistryLockDao.getDomainLocksByRegistrarId("TheRegistrar").stream()
                 .map(RegistryLock::getDomainName)
                 .collect(toImmutableSet()))
         .containsExactly("example.test", "otherexample.test");
-    assertThat(RegistryLockDao.getLockedDomainsByRegistrarId("nonexistent")).isEmpty();
+    assertThat(RegistryLockDao.getDomainLocksByRegistrarId("nonexistent")).isEmpty();
   }
 
   @Test

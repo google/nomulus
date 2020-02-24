@@ -25,11 +25,7 @@ import javax.persistence.EntityManager;
 /** Data access object for {@link google.registry.schema.domain.RegistryLock}. */
 public final class RegistryLockDao {
 
-  /**
-   * Returns the most recent version of the {@link RegistryLock} referred to by the verification
-   * code (there may be two instances of the same code in the database--one after lock object
-   * creation and one after verification.
-   */
+  /** Returns the most recent version of the {@link RegistryLock} referred to by the code. */
   public static Optional<RegistryLock> getByVerificationCode(String verificationCode) {
     return jpaTm()
         .transact(
@@ -37,8 +33,8 @@ public final class RegistryLockDao {
               EntityManager em = jpaTm().getEntityManager();
               Long revisionId =
                   em.createQuery(
-                          "SELECT MAX(revisionId) FROM RegistryLock WHERE verificationCode ="
-                              + " :verificationCode",
+                          "SELECT MAX(revisionId) FROM RegistryLock WHERE verificationCode = "
+                              + ":verificationCode",
                           Long.class)
                       .setParameter("verificationCode", verificationCode)
                       .getSingleResult();
@@ -47,8 +43,8 @@ public final class RegistryLockDao {
             });
   }
 
-  /** Returns all lock objects that this registrar has created. */
-  public static ImmutableList<RegistryLock> getLockedDomainsByRegistrarId(String registrarId) {
+  /** Returns all lock objects that this registrar has created, including pending locks. */
+  public static ImmutableList<RegistryLock> getDomainLocksByRegistrarId(String registrarId) {
     return jpaTm()
         .transact(
             () ->
@@ -56,9 +52,8 @@ public final class RegistryLockDao {
                     jpaTm()
                         .getEntityManager()
                         .createQuery(
-                            "SELECT lock FROM RegistryLock lock WHERE"
-                                + " lock.registrarId = :registrarId "
-                                + "AND lock.lockCompletionTimestamp IS NOT NULL "
+                            "SELECT lock FROM RegistryLock lock WHERE "
+                                + "lock.registrarId = :registrarId "
                                 + "AND lock.unlockCompletionTimestamp IS NULL",
                             RegistryLock.class)
                         .setParameter("registrarId", registrarId)
@@ -66,8 +61,9 @@ public final class RegistryLockDao {
   }
 
   /**
-   * Returns the most recent lock object for a given domain specified by repo ID, or empty if this
-   * domain hasn't been locked before.
+   * Returns the most recent lock object for a given domain specified by repo ID.
+   *
+   * <p>Returns empty if this domain hasn't been locked before.
    */
   public static Optional<RegistryLock> getMostRecentByRepoId(String repoId) {
     return jpaTm()
@@ -86,9 +82,10 @@ public final class RegistryLockDao {
   }
 
   /**
-   * Returns the most recent verified lock object for a given domain specified by repo ID, or empty
-   * if no lock has ever been finalized for this domain. This is different from {@link
-   * #getMostRecentByRepoId(String)} in that it only returns verified locks.
+   * Returns the most recent verified lock object for a given domain specified by repo ID.
+   *
+   * <p>Returns empty if no lock has ever been finalized for this domain. This is different from
+   * {@link #getMostRecentByRepoId(String)} in that it only returns verified locks.
    */
   public static Optional<RegistryLock> getMostRecentVerifiedLockByRepoId(String repoId) {
     return jpaTm()

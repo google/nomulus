@@ -67,6 +67,7 @@ public final class RegistryLockGetAction implements JsonGetAction {
   private static final String FULLY_QUALIFIED_DOMAIN_NAME_PARAM = "fullyQualifiedDomainName";
   private static final String LOCKED_TIME_PARAM = "lockedTime";
   private static final String LOCKED_BY_PARAM = "lockedBy";
+  private static final String IS_PENDING_PARAM = "isPending";
   private static final String USER_CAN_UNLOCK_PARAM = "userCanUnlock";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -151,7 +152,7 @@ public final class RegistryLockGetAction implements JsonGetAction {
 
   private ImmutableList<ImmutableMap<String, ?>> getLockedDomains(
       String clientId, boolean isAdmin) {
-    return RegistryLockDao.getLockedDomainsByRegistrarId(clientId).stream()
+    return RegistryLockDao.getDomainLocksByRegistrarId(clientId).stream()
         .map(lock -> lockToMap(lock, isAdmin))
         .collect(toImmutableList());
   }
@@ -164,6 +165,8 @@ public final class RegistryLockGetAction implements JsonGetAction {
         lock.getLockCompletionTimestamp().map(DateTime::toString).orElse(""),
         LOCKED_BY_PARAM,
         lock.isSuperuser() ? "admin" : lock.getRegistrarPocId(),
+        IS_PENDING_PARAM,
+        !lock.getLockCompletionTimestamp().isPresent(),
         USER_CAN_UNLOCK_PARAM,
         isAdmin || !lock.isSuperuser());
   }

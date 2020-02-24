@@ -94,7 +94,7 @@ public class BackfillRegistryLocksCommandTest
             previouslyLockedDomain.getRepoId(),
             lockedDomain.getRepoId()));
 
-    ImmutableList<RegistryLock> locks = RegistryLockDao.getLockedDomainsByRegistrarId("adminreg");
+    ImmutableList<RegistryLock> locks = RegistryLockDao.getDomainLocksByRegistrarId("adminreg");
     assertThat(locks).hasSize(1);
     assertThat(Iterables.getOnlyElement(locks).getDomainName()).isEqualTo("locked.tld");
   }

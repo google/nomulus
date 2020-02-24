@@ -453,6 +453,17 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
           RegistryLockDao.save(createRegistryLock(domain).asBuilder().isSuperuser(true).build());
           DomainBase otherDomain = persistActiveDomain("otherexample.tld");
           RegistryLockDao.save(createRegistryLock(otherDomain));
+          // include one pending-lock domain
+          DomainBase pendingDomain = persistActiveDomain("pending.tld");
+          RegistryLockDao.save(
+              new RegistryLock.Builder()
+                  .setVerificationCode(UUID.randomUUID().toString())
+                  .isSuperuser(false)
+                  .setRegistrarId("TheRegistrar")
+                  .setRegistrarPocId("Marla.Singer@crr.com")
+                  .setDomainName("pending.tld")
+                  .setRepoId(pendingDomain.getRepoId())
+                  .build());
           return null;
         });
     driver.get(server.getUrl("/registrar#registry-lock"));
@@ -523,7 +534,7 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         .setRegistrarId("TheRegistrar")
         .setRegistrarPocId("Marla.Singer@crr.com")
         .setLockCompletionTimestamp(START_OF_TIME)
-        .setDomainName("example.tld")
+        .setDomainName(domainBase.getFullyQualifiedDomainName())
         .setRepoId(domainBase.getRepoId())
         .build();
   }

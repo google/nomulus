@@ -114,7 +114,7 @@ public final class RegistryLockGetActionTest {
     RegistryLock incompleteLock =
         new RegistryLock.Builder()
             .setRepoId("repoId")
-            .setDomainName("incomplete.test")
+            .setDomainName("pending.test")
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("111111111ABCDEFGHJKLMNPQRSTUVWXY")
             .setRegistrarPocId("johndoe@theregistrar.com")
@@ -158,12 +158,20 @@ public final class RegistryLockGetActionTest {
                                 "fullyQualifiedDomainName", "example.test",
                                 "lockedTime", "2000-06-08T22:00:00.000Z",
                                 "lockedBy", "johndoe@theregistrar.com",
-                                "userCanUnlock", true),
+                                "userCanUnlock", true,
+                                "isPending", false),
                             ImmutableMap.of(
                                 "fullyQualifiedDomainName", "adminexample.test",
                                 "lockedTime", "2000-06-08T22:00:00.001Z",
                                 "lockedBy", "admin",
-                                "userCanUnlock", false)))));
+                                "userCanUnlock", false,
+                                "isPending", false),
+                            ImmutableMap.of(
+                                "fullyQualifiedDomainName", "pending.test",
+                                "lockedTime", "Pending",
+                                "lockedBy", "johndoe@theregistrar.com",
+                                "userCanUnlock", true,
+                                "isPending", true)))));
   }
 
   @Test
