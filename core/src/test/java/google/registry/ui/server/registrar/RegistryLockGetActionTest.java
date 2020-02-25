@@ -15,6 +15,7 @@
 package google.registry.ui.server.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
 import static google.registry.testing.AppEngineRule.makeRegistrar2;
 import static google.registry.testing.AppEngineRule.makeRegistrarContact3;
@@ -131,10 +132,10 @@ public final class RegistryLockGetActionTest {
             .setUnlockCompletionTimestamp(fakeClock.nowUtc())
             .build();
 
-    RegistryLockDao.save(regularLock);
-    RegistryLockDao.save(adminLock);
-    RegistryLockDao.save(incompleteLock);
-    RegistryLockDao.save(unlockedLock);
+    saveLock(regularLock);
+    saveLock(adminLock);
+    saveLock(incompleteLock);
+    saveLock(unlockedLock);
 
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
@@ -267,5 +268,9 @@ public final class RegistryLockGetActionTest {
             Method.GET, response, accessor, authResult, Optional.of("SomeBadRegistrar"));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+  }
+
+  private RegistryLock saveLock(RegistryLock lock) {
+    return jpaTm().transact(() -> RegistryLockDao.save(lock));
   }
 }

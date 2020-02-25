@@ -14,6 +14,7 @@
 
 package google.registry.webdriver;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.server.Fixture.BASIC;
 import static google.registry.server.Route.route;
 import static google.registry.testing.AppEngineRule.makeRegistrar2;
@@ -383,15 +384,18 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         () -> {
           createTld("tld");
           persistResource(newDomainBase("example.tld"));
-          RegistryLockDao.save(
-              new RegistryLock.Builder()
-                  .setRegistrarPocId("johndoe@theregistrar.com")
-                  .setRepoId("repoId")
-                  .setRegistrarId("TheRegistrar")
-                  .setVerificationCode("f1be78a2-2d61-458c-80f0-9dd8f2f8625f")
-                  .isSuperuser(false)
-                  .setDomainName("example.tld")
-                  .build());
+          jpaTm()
+              .transact(
+                  () ->
+                      RegistryLockDao.save(
+                          new RegistryLock.Builder()
+                              .setRegistrarPocId("johndoe@theregistrar.com")
+                              .setRepoId("repoId")
+                              .setRegistrarId("TheRegistrar")
+                              .setVerificationCode("f1be78a2-2d61-458c-80f0-9dd8f2f8625f")
+                              .isSuperuser(false)
+                              .setDomainName("example.tld")
+                              .build()));
           return null;
         });
     driver.get(

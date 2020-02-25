@@ -108,7 +108,8 @@ public final class RegistryLockDao {
   }
 
   public static RegistryLock save(RegistryLock registryLock) {
+    jpaTm().assertInTransaction();
     checkNotNull(registryLock, "Null registry lock cannot be saved");
-    return jpaTm().transact(() -> jpaTm().getEntityManager().merge(registryLock));
+    return jpaTm().getEntityManager().merge(registryLock);
   }
 }
