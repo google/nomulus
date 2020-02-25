@@ -15,11 +15,11 @@
 package google.registry.ui.server.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
 import static google.registry.testing.AppEngineRule.makeRegistrar2;
 import static google.registry.testing.AppEngineRule.makeRegistrarContact3;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static org.junit.Assert.assertThrows;
@@ -30,7 +30,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.gson.Gson;
-import google.registry.model.registry.RegistryLockDao;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.request.Action.Method;
@@ -132,10 +131,10 @@ public final class RegistryLockGetActionTest {
             .setUnlockCompletionTimestamp(fakeClock.nowUtc())
             .build();
 
-    saveLock(regularLock);
-    saveLock(adminLock);
-    saveLock(incompleteLock);
-    saveLock(unlockedLock);
+    saveRegistryLock(regularLock);
+    saveRegistryLock(adminLock);
+    saveRegistryLock(incompleteLock);
+    saveRegistryLock(unlockedLock);
 
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);
@@ -268,9 +267,5 @@ public final class RegistryLockGetActionTest {
             Method.GET, response, accessor, authResult, Optional.of("SomeBadRegistrar"));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
-  }
-
-  private RegistryLock saveLock(RegistryLock lock) {
-    return jpaTm().transact(() -> RegistryLockDao.save(lock));
   }
 }

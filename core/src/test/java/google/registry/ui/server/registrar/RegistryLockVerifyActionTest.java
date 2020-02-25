@@ -16,12 +16,13 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistActiveHost;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
+import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
@@ -37,7 +38,6 @@ import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.registry.Registry;
-import google.registry.model.registry.RegistryLockDao;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
@@ -105,7 +105,7 @@ public final class RegistryLockVerifyActionTest {
 
   @Test
   public void testSuccess_lockDomain() {
-    saveLock(createLock());
+    saveRegistryLock(createLock());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(reloadDomain().getStatusValues()).containsExactlyElementsIn(REGISTRY_LOCK_STATUSES);
@@ -122,7 +122,8 @@ public final class RegistryLockVerifyActionTest {
   public void testSuccess_unlockDomain() {
     action = createAction(lockId, false);
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
-    saveLock(createLock().asBuilder().setUnlockRequestTimestamp(fakeClock.nowUtc()).build());
+    saveRegistryLock(
+        createLock().asBuilder().setUnlockRequestTimestamp(fakeClock.nowUtc()).build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload()).contains("Success: unlock has been applied to example.tld");
@@ -138,7 +139,7 @@ public final class RegistryLockVerifyActionTest {
   @Test
   public void testSuccess_adminLock_createsOnlyHistoryEntry() {
     action.authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, true));
-    saveLock(createLock().asBuilder().isSuperuser(true).build());
+    saveRegistryLock(createLock().asBuilder().isSuperuser(true).build());
 
     action.run();
     HistoryEntry historyEntry = getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE);
@@ -149,7 +150,7 @@ public final class RegistryLockVerifyActionTest {
 
   @Test
   public void testFailure_badVerificationCode() {
-    saveLock(
+    saveRegistryLock(
         createLock().asBuilder().setVerificationCode("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA").build());
     action.run();
     assertThat(response.getPayload()).contains("Failed: Invalid verification code");
@@ -158,7 +159,8 @@ public final class RegistryLockVerifyActionTest {
 
   @Test
   public void testFailure_alreadyVerified() {
-    saveLock(createLock().asBuilder().setLockCompletionTimestamp(fakeClock.nowUtc()).build());
+    saveRegistryLock(
+        createLock().asBuilder().setLockCompletionTimestamp(fakeClock.nowUtc()).build());
     action.run();
     assertThat(response.getPayload()).contains("Failed: Domain example.tld is already locked");
     assertNoDomainChanges();
@@ -166,7 +168,7 @@ public final class RegistryLockVerifyActionTest {
 
   @Test
   public void testFailure_expired() {
-    saveLock(createLock());
+    saveRegistryLock(createLock());
     fakeClock.advanceBy(Duration.standardHours(2));
     action.run();
     assertThat(response.getPayload())
@@ -176,7 +178,7 @@ public final class RegistryLockVerifyActionTest {
 
   @Test
   public void testFailure_nonAdmin_verifyingAdminLock() {
-    saveLock(createLock().asBuilder().isSuperuser(true).build());
+    saveRegistryLock(createLock().asBuilder().isSuperuser(true).build());
     action.run();
     assertThat(response.getPayload()).contains("Failed: Non-admin user cannot complete admin lock");
     assertNoDomainChanges();
@@ -185,7 +187,7 @@ public final class RegistryLockVerifyActionTest {
   @Test
   public void testFailure_alreadyUnlocked() {
     action = createAction(lockId, false);
-    saveLock(
+    saveRegistryLock(
         createLock()
             .asBuilder()
             .setLockCompletionTimestamp(fakeClock.nowUtc())
@@ -199,7 +201,7 @@ public final class RegistryLockVerifyActionTest {
 
   @Test
   public void testFailure_alreadyLocked() {
-    saveLock(createLock());
+    saveRegistryLock(createLock());
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     action.run();
     assertThat(response.getPayload()).contains("Failed: Domain example.tld is already locked");
@@ -220,9 +222,9 @@ public final class RegistryLockVerifyActionTest {
     // A failure when performing Datastore actions means that no actions should be taken in the
     // Cloud SQL RegistryLock object
     RegistryLock lock = createLock();
-    saveLock(lock);
+    saveRegistryLock(lock);
     // reload the lock to pick up creation time
-    lock = RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
+    lock = getRegistryLockByVerificationCode(lock.getVerificationCode()).get();
     fakeClock.advanceOneMilli();
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     action.run();
@@ -230,15 +232,14 @@ public final class RegistryLockVerifyActionTest {
     assertThat(response.getPayload()).contains("Failed: Domain example.tld is already locked");
 
     // verify that the changes to the SQL object were rolled back
-    RegistryLock afterAction =
-        RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
+    RegistryLock afterAction = getRegistryLockByVerificationCode(lock.getVerificationCode()).get();
     assertThat(afterAction).isEqualTo(lock);
   }
 
   @Test
   public void testFailure_isLockTrue_shouldBeFalse() {
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
-    saveLock(
+    saveRegistryLock(
         createLock()
             .asBuilder()
             .setLockCompletionTimestamp(fakeClock.nowUtc())
@@ -251,18 +252,18 @@ public final class RegistryLockVerifyActionTest {
   @Test
   public void testFailure_isLockFalse_shouldBeTrue() {
     action = createAction(lockId, false);
-    saveLock(createLock());
+    saveRegistryLock(createLock());
     action.run();
     assertThat(response.getPayload()).contains("Failed: Domain example.tld is already unlocked");
   }
 
   @Test
   public void testFailure_lock_unlock_lockAgain() {
-    RegistryLock lock = saveLock(createLock());
+    RegistryLock lock = saveRegistryLock(createLock());
     action.run();
     assertThat(response.getPayload()).contains("Success: lock has been applied to example.tld");
     String unlockVerificationCode = "some-unlock-code";
-    saveLock(
+    saveRegistryLock(
         lock.asBuilder()
             .setVerificationCode(unlockVerificationCode)
             .setUnlockRequestTimestamp(fakeClock.nowUtc())
@@ -277,7 +278,7 @@ public final class RegistryLockVerifyActionTest {
 
   @Test
   public void testFailure_lock_lockAgain() {
-    saveLock(createLock());
+    saveRegistryLock(createLock());
     action.run();
     assertThat(response.getPayload()).contains("Success: lock has been applied to example.tld");
     action = createAction(lockId, true);
@@ -289,17 +290,14 @@ public final class RegistryLockVerifyActionTest {
   public void testFailure_unlock_unlockAgain() {
     action = createAction(lockId, false);
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
-    saveLock(createLock().asBuilder().setUnlockRequestTimestamp(fakeClock.nowUtc()).build());
+    saveRegistryLock(
+        createLock().asBuilder().setUnlockRequestTimestamp(fakeClock.nowUtc()).build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload()).contains("Success: unlock has been applied to example.tld");
     action = createAction(lockId, false);
     action.run();
     assertThat(response.getPayload()).contains("Failed: Domain example.tld is already unlocked");
-  }
-
-  private RegistryLock saveLock(RegistryLock lock) {
-    return jpaTm().transact(() -> RegistryLockDao.save(lock));
   }
 
   private RegistryLock createLock() {

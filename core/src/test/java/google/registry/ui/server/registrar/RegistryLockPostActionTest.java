@@ -16,11 +16,12 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
+import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -30,7 +31,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import google.registry.model.domain.DomainBase;
-import google.registry.model.registry.RegistryLockDao;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.request.JsonActionRunner;
@@ -114,7 +114,7 @@ public final class RegistryLockPostActionTest {
 
   @Test
   public void testSuccess_unlock() throws Exception {
-    saveLock(createLock().asBuilder().setLockCompletionTimestamp(clock.nowUtc()).build());
+    saveRegistryLock(createLock().asBuilder().setLockCompletionTimestamp(clock.nowUtc()).build());
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertSuccess(response, "unlock", "Marla.Singer@crr.com");
@@ -122,7 +122,7 @@ public final class RegistryLockPostActionTest {
 
   @Test
   public void testSuccess_unlock_adminUnlockingAdmin() throws Exception {
-    saveLock(
+    saveRegistryLock(
         createLock()
             .asBuilder()
             .isSuperuser(true)
@@ -147,7 +147,7 @@ public final class RegistryLockPostActionTest {
   @Test
   public void testFailure_unlock_alreadyUnlocked() {
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
-    saveLock(
+    saveRegistryLock(
         createLock()
             .asBuilder()
             .setLockCompletionTimestamp(clock.nowUtc())
@@ -159,7 +159,7 @@ public final class RegistryLockPostActionTest {
 
   @Test
   public void testFailure_unlock_nonAdminUnlockingAdmin() {
-    saveLock(
+    saveRegistryLock(
         createLock()
             .asBuilder()
             .isSuperuser(true)
@@ -292,7 +292,7 @@ public final class RegistryLockPostActionTest {
 
   @Test
   public void testSuccess_previousLockUnlocked() throws Exception {
-    saveLock(
+    saveRegistryLock(
         createLock()
             .asBuilder()
             .setLockCompletionTimestamp(clock.nowUtc().minusMinutes(1))
@@ -306,8 +306,9 @@ public final class RegistryLockPostActionTest {
 
   @Test
   public void testSuccess_previousLockExpired() throws Exception {
-    RegistryLock previousLock = saveLock(createLock());
-    previousLock = RegistryLockDao.getByVerificationCode(previousLock.getVerificationCode()).get();
+    RegistryLock previousLock = saveRegistryLock(createLock());
+    String verificationCode = previousLock.getVerificationCode();
+    previousLock = getRegistryLockByVerificationCode(verificationCode).get();
     clock.setTo(previousLock.getLockRequestTimestamp().plusHours(2));
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertSuccess(response, "lock", "Marla.Singer@crr.com");
@@ -315,7 +316,7 @@ public final class RegistryLockPostActionTest {
 
   @Test
   public void testFailure_alreadyPendingLock() {
-    saveLock(createLock());
+    saveRegistryLock(createLock());
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertFailureWithMessage(
         response, "A pending or completed lock action already exists for example.tld");
@@ -403,9 +404,5 @@ public final class RegistryLockPostActionTest {
         emailService,
         domainLockUtils,
         outgoingAddress);
-  }
-
-  private RegistryLock saveLock(RegistryLock lock) {
-    return jpaTm().transact(() -> RegistryLockDao.save(lock));
   }
 }

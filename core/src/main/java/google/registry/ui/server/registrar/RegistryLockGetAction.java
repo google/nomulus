@@ -16,6 +16,7 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
 import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
@@ -149,9 +150,12 @@ public final class RegistryLockGetAction implements JsonGetAction {
   }
 
   private ImmutableList<ImmutableMap<String, ?>> getLockedDomains(String clientId) {
-    return RegistryLockDao.getLockedDomainsByRegistrarId(clientId).stream()
-        .map(this::lockToMap)
-        .collect(toImmutableList());
+    return jpaTm()
+        .transact(
+            () ->
+                RegistryLockDao.getLockedDomainsByRegistrarId(clientId).stream()
+                    .map(this::lockToMap)
+                    .collect(toImmutableList()));
   }
 
   private ImmutableMap<String, ?> lockToMap(RegistryLock lock) {
