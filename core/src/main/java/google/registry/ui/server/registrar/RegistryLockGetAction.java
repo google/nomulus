@@ -16,6 +16,7 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
 import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
@@ -152,22 +153,23 @@ public final class RegistryLockGetAction implements JsonGetAction {
 
   private ImmutableList<ImmutableMap<String, ?>> getLockedDomains(
       String clientId, boolean isAdmin) {
-    return RegistryLockDao.getDomainLocksByRegistrarId(clientId).stream()
-        .map(lock -> lockToMap(lock, isAdmin))
-        .collect(toImmutableList());
+    return jpaTm()
+        .transact(
+            () ->
+                RegistryLockDao.getDomainLocksByRegistrarId(clientId).stream()
+                    .filter(lock -> !lock.isLockRequestExpired(jpaTm().getTransactionTime()))
+                    .map(lock -> lockToMap(lock, isAdmin))
+                    .collect(toImmutableList()));
   }
 
   private ImmutableMap<String, ?> lockToMap(RegistryLock lock, boolean isAdmin) {
-    return ImmutableMap.of(
-        FULLY_QUALIFIED_DOMAIN_NAME_PARAM,
-        lock.getDomainName(),
-        LOCKED_TIME_PARAM,
-        lock.getLockCompletionTimestamp().map(DateTime::toString).orElse(""),
-        LOCKED_BY_PARAM,
-        lock.isSuperuser() ? "admin" : lock.getRegistrarPocId(),
-        IS_PENDING_PARAM,
-        !lock.getLockCompletionTimestamp().isPresent(),
-        USER_CAN_UNLOCK_PARAM,
-        isAdmin || !lock.isSuperuser());
+    ImmutableMap.Builder<String, Object> builder = new ImmutableMap.Builder<>();
+    builder.put(FULLY_QUALIFIED_DOMAIN_NAME_PARAM, lock.getDomainName());
+    builder.put(
+        LOCKED_TIME_PARAM, lock.getLockCompletionTimestamp().map(DateTime::toString).orElse(""));
+    builder.put(LOCKED_BY_PARAM, lock.isSuperuser() ? "admin" : lock.getRegistrarPocId());
+    builder.put(IS_PENDING_PARAM, !lock.getLockCompletionTimestamp().isPresent());
+    builder.put(USER_CAN_UNLOCK_PARAM, isAdmin || !lock.isSuperuser());
+    return builder.build();
   }
 }

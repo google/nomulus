@@ -45,6 +45,7 @@ import google.registry.testing.FakeResponse;
 import java.util.Map;
 import java.util.Optional;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -92,6 +93,17 @@ public final class RegistryLockGetActionTest {
 
   @Test
   public void testSuccess_retrievesLocks() {
+    RegistryLock expiredLock =
+        new RegistryLock.Builder()
+            .setRepoId("repoId")
+            .setDomainName("expired.test")
+            .setRegistrarId("TheRegistrar")
+            .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
+            .setRegistrarPocId("johndoe@theregistrar.com")
+            .build();
+    RegistryLockDao.save(expiredLock);
+    fakeClock.advanceBy(Duration.standardDays(1));
+
     RegistryLock regularLock =
         new RegistryLock.Builder()
             .setRepoId("repoId")
@@ -156,13 +168,13 @@ public final class RegistryLockGetActionTest {
                         ImmutableList.of(
                             ImmutableMap.of(
                                 "fullyQualifiedDomainName", "example.test",
-                                "lockedTime", "2000-06-08T22:00:00.000Z",
+                                "lockedTime", "2000-06-09T22:00:00.000Z",
                                 "lockedBy", "johndoe@theregistrar.com",
                                 "userCanUnlock", true,
                                 "isPending", false),
                             ImmutableMap.of(
                                 "fullyQualifiedDomainName", "adminexample.test",
-                                "lockedTime", "2000-06-08T22:00:00.001Z",
+                                "lockedTime", "2000-06-09T22:00:00.001Z",
                                 "lockedBy", "admin",
                                 "userCanUnlock", false,
                                 "isPending", false),

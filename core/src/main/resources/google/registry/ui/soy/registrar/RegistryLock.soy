@@ -76,9 +76,8 @@
     </tr>
     {for $lock in $locks}
       <tr class="{css('registry-locks-table-row')}">
-        <td>{if $lock.isPending}<i>{/if}
-          {$lock.fullyQualifiedDomainName}
-          {if $lock.isPending} (pending)</i>{/if}</td>
+        <td>{$lock.fullyQualifiedDomainName}
+          {if $lock.isPending}<i> (pending)</i>{/if}</td>
         <td>{$lock.lockedTime}</td>
         <td>{$lock.lockedBy}</td>
         <td>
