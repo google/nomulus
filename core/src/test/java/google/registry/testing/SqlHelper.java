@@ -21,7 +21,7 @@ import google.registry.model.registry.RegistryLockDao;
 import google.registry.schema.domain.RegistryLock;
 import java.util.Optional;
 
-/** Static utils for setting up test resources. */
+/** Static utils for setting up and retrieving test resources from the SQL database. */
 public class SqlHelper {
 
   public static RegistryLock saveRegistryLock(RegistryLock lock) {
