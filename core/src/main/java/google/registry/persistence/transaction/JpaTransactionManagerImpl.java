@@ -160,41 +160,44 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public void create(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
-    transact(() -> getEntityManager().persist(entity));
+    assertInTransaction();
+    getEntityManager().persist(entity);
   }
 
   @Override
   public void createAll(ImmutableCollection<?> entities) {
     checkArgumentNotNull(entities, "entities must be specified");
-    transact(() -> entities.forEach(this::create));
+    assertInTransaction();
+    entities.forEach(this::create);
   }
 
   @Override
   public void createOrUpdate(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
-    transact(() -> getEntityManager().merge(entity));
+    assertInTransaction();
+    getEntityManager().merge(entity);
   }
 
   @Override
   public void createOrUpdateAll(ImmutableCollection<?> entities) {
     checkArgumentNotNull(entities, "entities must be specified");
-    transact(() -> entities.forEach(this::createOrUpdate));
+    assertInTransaction();
+    entities.forEach(this::createOrUpdate);
   }
 
   @Override
   public void update(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
-    transact(
-        () -> {
-          checkArgument(checkExists(entity), "Given entity does not exist");
-          getEntityManager().merge(entity);
-        });
+    assertInTransaction();
+    checkArgument(checkExists(entity), "Given entity does not exist");
+    getEntityManager().merge(entity);
   }
 
   @Override
   public void updateAll(ImmutableCollection<?> entities) {
     checkArgumentNotNull(entities, "entities must be specified");
-    transact(() -> entities.forEach(this::update));
+    assertInTransaction();
+    entities.forEach(this::update);
   }
 
   @Override
@@ -214,66 +217,55 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   private boolean checkExists(String entityName, ImmutableSet<EntityId> entityIds) {
-    return transact(
-        () -> {
-          TypedQuery<Integer> query =
-              getEntityManager()
-                  .createQuery(
-                      String.format(
-                          "SELECT 1 FROM %s WHERE %s", entityName, getAndClause(entityIds)),
-                      Integer.class)
-                  .setMaxResults(1);
-          entityIds.forEach(entityId -> query.setParameter(entityId.name, entityId.value));
-          return query.getResultList().size() > 0;
-        });
+    assertInTransaction();
+    TypedQuery<Integer> query =
+        getEntityManager()
+            .createQuery(
+                String.format("SELECT 1 FROM %s WHERE %s", entityName, getAndClause(entityIds)),
+                Integer.class)
+            .setMaxResults(1);
+    entityIds.forEach(entityId -> query.setParameter(entityId.name, entityId.value));
+    return query.getResultList().size() > 0;
   }
 
   @Override
   public <T> Optional<T> load(VKey<T> key) {
     checkArgumentNotNull(key, "key must be specified");
-    return Optional.ofNullable(
-        transact(() -> getEntityManager().find(key.getKind(), key.getSqlKey())));
+    assertInTransaction();
+    return Optional.ofNullable(getEntityManager().find(key.getKind(), key.getSqlKey()));
   }
 
   @Override
   public <T> ImmutableList<T> loadAll(Class<T> clazz) {
     checkArgumentNotNull(clazz, "clazz must be specified");
+    assertInTransaction();
     return ImmutableList.copyOf(
-        transact(
-            () ->
-                getEntityManager()
-                    .createQuery(
-                        String.format(
-                            "SELECT entity FROM %s entity", getEntityType(clazz).getName()),
-                        clazz)
-                    .getResultList()));
+        getEntityManager()
+            .createQuery(
+                String.format("SELECT entity FROM %s entity", getEntityType(clazz).getName()),
+                clazz)
+            .getResultList());
   }
 
   @Override
   public <T> int delete(VKey<T> key) {
     checkArgumentNotNull(key, "key must be specified");
+    assertInTransaction();
     EntityType<?> entityType = getEntityType(key.getKind());
     ImmutableSet<EntityId> entityIds = getEntityIdsFromSqlKey(entityType, key.getSqlKey());
-    return transact(
-        () -> {
-          String sql =
-              String.format(
-                  "DELETE FROM %s WHERE %s", entityType.getName(), getAndClause(entityIds));
-          Query query = getEntityManager().createQuery(sql);
-          entityIds.forEach(entityId -> query.setParameter(entityId.name, entityId.value));
-          return query.executeUpdate();
-        });
+    String sql =
+        String.format("DELETE FROM %s WHERE %s", entityType.getName(), getAndClause(entityIds));
+    Query query = getEntityManager().createQuery(sql);
+    entityIds.forEach(entityId -> query.setParameter(entityId.name, entityId.value));
+    return query.executeUpdate();
   }
 
   @Override
   public <T> void assertDelete(VKey<T> key) {
-    transact(
-        () -> {
-          if (delete(key) != 1) {
-            throw new IllegalArgumentException(
-                String.format("Error deleting the entity of the key: %s", key.getSqlKey()));
-          }
-        });
+    if (delete(key) != 1) {
+      throw new IllegalArgumentException(
+          String.format("Error deleting the entity of the key: %s", key.getSqlKey()));
+    }
   }
 
   private <T> EntityType<T> getEntityType(Class<T> clazz) {

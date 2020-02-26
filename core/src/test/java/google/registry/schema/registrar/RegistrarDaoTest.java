@@ -64,32 +64,39 @@ public class RegistrarDaoTest extends EntityTestCase {
 
   @Test
   public void saveNew_worksSuccessfully() {
-    assertThat(jpaTm().checkExists(testRegistrar)).isFalse();
-    jpaTm().create(testRegistrar);
-    assertThat(jpaTm().checkExists(testRegistrar)).isTrue();
+    assertThat(jpaTm().transact(() -> jpaTm().checkExists(testRegistrar))).isFalse();
+    jpaTm().transact(() -> jpaTm().create(testRegistrar));
+    assertThat(jpaTm().transact(() -> jpaTm().checkExists(testRegistrar))).isTrue();
   }
 
   @Test
   public void update_worksSuccessfully() {
-    jpaTm().create(testRegistrar);
-    Registrar persisted = jpaTm().load(registrarKey).get();
+    jpaTm().transact(() -> jpaTm().create(testRegistrar));
+    Registrar persisted = jpaTm().transact(() -> jpaTm().load(registrarKey)).get();
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");
-    jpaTm().update(persisted.asBuilder().setRegistrarName("changedRegistrarName").build());
-    persisted = jpaTm().load(registrarKey).get();
-    assertThat(persisted.getRegistrarName()).isEqualTo("changedRegistrarName");
+    jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .update(
+                        persisted.asBuilder().setRegistrarName("changedRegistrarName").build()));
+    Registrar updated = jpaTm().transact(() -> jpaTm().load(registrarKey)).get();
+    assertThat(updated.getRegistrarName()).isEqualTo("changedRegistrarName");
   }
 
   @Test
   public void update_throwsExceptionWhenEntityDoesNotExist() {
-    assertThat(jpaTm().checkExists(testRegistrar)).isFalse();
-    assertThrows(IllegalArgumentException.class, () -> jpaTm().update(testRegistrar));
+    assertThat(jpaTm().transact(() -> jpaTm().checkExists(testRegistrar))).isFalse();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> jpaTm().transact(() -> jpaTm().update(testRegistrar)));
   }
 
   @Test
   public void load_worksSuccessfully() {
-    assertThat(jpaTm().checkExists(testRegistrar)).isFalse();
-    jpaTm().create(testRegistrar);
-    Registrar persisted = jpaTm().load(registrarKey).get();
+    assertThat(jpaTm().transact(() -> jpaTm().checkExists(testRegistrar))).isFalse();
+    jpaTm().transact(() -> jpaTm().create(testRegistrar));
+    Registrar persisted = jpaTm().transact(() -> jpaTm().load(registrarKey)).get();
 
     assertThat(persisted.getClientId()).isEqualTo("registrarId");
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");
