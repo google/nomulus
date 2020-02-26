@@ -26,6 +26,16 @@ import javax.persistence.EntityManager;
 public final class RegistryLockDao {
 
   /**
+   * Returns the {@link RegistryLock} referred to by this (unique) revision ID, or empty if none
+   * exists
+   */
+  public static Optional<RegistryLock> getByRevisionId(long revisionId) {
+    jpaTm().assertInTransaction();
+    return Optional.ofNullable(
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(RegistryLock.class, revisionId)));
+  }
+
+  /**
    * Returns the most recent version of the {@link RegistryLock} referred to by the verification
    * code (there may be two instances of the same code in the database--one after lock object
    * creation and one after verification.

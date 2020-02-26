@@ -21,6 +21,7 @@ import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
+import static google.registry.request.RequestParameters.extractLongParameter;
 import static google.registry.request.RequestParameters.extractOptionalBooleanParameter;
 import static google.registry.request.RequestParameters.extractOptionalIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
@@ -40,9 +41,7 @@ import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;
 
-/**
- * Dagger module for injecting common settings for batch actions.
- */
+/** Dagger module for injecting common settings for batch actions. */
 @Module
 public class BatchModule {
 
@@ -92,6 +91,12 @@ public class BatchModule {
   @Parameter(PARAM_RESAVE_TIMES)
   static ImmutableSet<DateTime> provideResaveTimes(HttpServletRequest req) {
     return extractSetOfDatetimeParameters(req, PARAM_RESAVE_TIMES);
+  }
+
+  @Provides
+  @Parameter("oldUnlockRevisionId")
+  static Long provideOldUnlockRevisionId(HttpServletRequest req) {
+    return extractLongParameter(req, "oldUnlockRevisionId");
   }
 
   @Provides

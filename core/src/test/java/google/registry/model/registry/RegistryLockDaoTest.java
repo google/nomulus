@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
 import static google.registry.testing.SqlHelper.getMostRecentVerifiedRegistryLockByRepoId;
+import static google.registry.testing.SqlHelper.getRegistryLockByRevisionId;
 import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
 import static google.registry.testing.SqlHelper.getRegistryLocksByRegistrarId;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
@@ -123,6 +124,20 @@ public final class RegistryLockDaoTest {
   @Test
   public void getLock_unknownCode() {
     assertThat(getRegistryLockByVerificationCode("hi").isPresent()).isFalse();
+  }
+
+  @Test
+  public void testByRevisionId_valid() {
+    RegistryLock lock = saveRegistryLock(createLock());
+    RegistryLock otherLock = getRegistryLockByRevisionId(lock.getRevisionId()).get();
+    // can't do direct comparison due to update time
+    assertThat(lock.getDomainName()).isEqualTo(otherLock.getDomainName());
+    assertThat(lock.getVerificationCode()).isEqualTo(otherLock.getVerificationCode());
+  }
+
+  @Test
+  public void testByRevisionId_invalid() {
+    assertThat(getRegistryLockByRevisionId(8675309L).isPresent()).isFalse();
   }
 
   @Test

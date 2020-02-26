@@ -15,6 +15,7 @@
 package google.registry.schema.integration;
 
 import com.google.common.truth.Expect;
+import google.registry.batch.RelockDomainActionTest;
 import google.registry.model.common.CursorTest;
 import google.registry.model.domain.DomainBaseSqlTest;
 import google.registry.model.registry.RegistryLockDaoTest;
@@ -73,6 +74,7 @@ import org.junit.runners.Suite.SuiteClasses;
   RegistryLockDaoTest.class,
   RegistryLockGetActionTest.class,
   RegistryLockVerifyActionTest.class,
+  RelockDomainActionTest.class,
   ReservedListDaoTest.class,
   UnlockDomainCommandTest.class,
   UpdatePremiumListActionTest.class,

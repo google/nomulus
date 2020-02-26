@@ -44,5 +44,9 @@ public class SqlHelper {
     return jpaTm().transact(() -> RegistryLockDao.getLockedDomainsByRegistrarId(registrarId));
   }
 
+  public static Optional<RegistryLock> getRegistryLockByRevisionId(long revisionId) {
+    return jpaTm().transact(() -> RegistryLockDao.getByRevisionId(revisionId));
+  }
+
   private SqlHelper() {}
 }

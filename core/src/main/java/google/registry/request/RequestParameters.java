@@ -96,6 +96,19 @@ public final class RequestParameters {
   }
 
   /**
+   * Returns first GET or POST parameter associated with {@code name} as a long.
+   *
+   * @throws BadRequestException if request parameter is absent, empty, or not a valid long
+   */
+  public static long extractLongParameter(HttpServletRequest req, String name) {
+    try {
+      return Long.parseLong(nullToEmpty(req.getParameter(name)));
+    } catch (NumberFormatException e) {
+      throw new BadRequestException("Expected long: " + name);
+    }
+  }
+
+  /**
    * Returns all GET or POST parameters associated with {@code name}.
    *
    * <p>The parameter value is assumed to be a comma-delimited set of values - so tlds=com,net would

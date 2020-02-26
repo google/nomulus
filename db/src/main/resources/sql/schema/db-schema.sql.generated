@@ -180,6 +180,7 @@
         unlock_completion_timestamp timestamptz,
         unlock_request_timestamp timestamptz,
         verification_code text not null,
+        relock_revision_id int8,
         primary key (revision_id)
     );
 
@@ -223,6 +224,11 @@ create index reservedlist_name_idx on "ReservedList" (name);
        add constraint FKo0gw90lpo1tuee56l0nb6y6g5 
        foreign key (revision_id) 
        references "PremiumList";
+
+    alter table if exists "RegistryLock" 
+       add constraint FK2lhcwpxlnqijr96irylrh1707 
+       foreign key (relock_revision_id) 
+       references "RegistryLock";
 
     alter table if exists "ReservedEntry" 
        add constraint FKgq03rk0bt1hb915dnyvd3vnfc 
