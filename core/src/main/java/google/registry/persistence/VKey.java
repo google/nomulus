@@ -32,10 +32,10 @@ public class VKey<T> extends ImmutableObject {
 
   private Class<? extends T> kind;
 
-  private VKey(Class<? extends T> kind, com.googlecode.objectify.Key<T> ofyKey, Object primayKey) {
+  private VKey(Class<? extends T> kind, com.googlecode.objectify.Key<T> ofyKey, Object primaryKey) {
     this.kind = kind;
     this.ofyKey = ofyKey;
-    this.primaryKey = primayKey;
+    this.primaryKey = primaryKey;
   }
 
   public static <T> VKey<T> create(

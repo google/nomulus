@@ -72,7 +72,7 @@ final class CreateRegistrarCommand extends CreateOrUpdateRegistrarCommand
 
   @Override
   void saveToCloudSql(Registrar registrar) {
-    jpaTm().saveNew(registrar);
+    jpaTm().create(registrar);
   }
 
   @Nullable
