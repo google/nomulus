@@ -101,7 +101,7 @@ public final class RegistryLockGetActionTest {
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
             .setRegistrarPocId("johndoe@theregistrar.com")
             .build();
-    RegistryLockDao.save(expiredLock);
+    saveRegistryLock(expiredLock);
     fakeClock.advanceBy(Duration.standardDays(1));
 
     RegistryLock regularLock =
@@ -180,7 +180,7 @@ public final class RegistryLockGetActionTest {
                                 "isPending", false),
                             ImmutableMap.of(
                                 "fullyQualifiedDomainName", "pending.test",
-                                "lockedTime", "Pending",
+                                "lockedTime", "",
                                 "lockedBy", "johndoe@theregistrar.com",
                                 "userCanUnlock", true,
                                 "isPending", true)))));
