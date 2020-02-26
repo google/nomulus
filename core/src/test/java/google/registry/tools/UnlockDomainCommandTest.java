@@ -22,6 +22,7 @@ import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static org.junit.Assert.assertThrows;
 
@@ -29,12 +30,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar.Type;
-import google.registry.model.registry.RegistryLockDao;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.DeterministicStringGenerator;
-import google.registry.testing.FakeClock;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +54,6 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
     persistNewRegistrar("adminreg", "Admin Registrar", Type.REAL, 693L);
     createTld("tld");
     command.registryAdminClientId = "adminreg";
-    command.clock = new FakeClock();
     command.domainLockUtils =
         new DomainLockUtils(new DeterministicStringGenerator(Alphabets.BASE_58));
   }
@@ -63,9 +61,8 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
   private DomainBase persistLockedDomain(String domainName, String registrarId) {
     DomainBase domain = persistResource(newDomainBase(domainName));
     RegistryLock lock =
-        command.domainLockUtils.createRegistryLockRequest(
-            domainName, registrarId, null, true, command.clock);
-    command.domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true, command.clock);
+        command.domainLockUtils.saveNewRegistryLockRequest(domainName, registrarId, null, true);
+    command.domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true);
     return reloadResource(domain);
   }
 
@@ -132,7 +129,7 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
   public void testSuccess_defaultsToAdminRegistrar_ifUnspecified() throws Exception {
     DomainBase domain = persistLockedDomain("example.tld", "NewRegistrar");
     runCommandForced("example.tld");
-    assertThat(RegistryLockDao.getMostRecentByRepoId(domain.getRepoId()).get().getRegistrarId())
+    assertThat(getMostRecentRegistryLockByRepoId(domain.getRepoId()).get().getRegistrarId())
         .isEqualTo("adminreg");
   }
 

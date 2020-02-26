@@ -23,6 +23,7 @@ import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableMap;
@@ -30,7 +31,6 @@ import com.googlecode.objectify.ObjectifyFilter;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.OfyFilter;
 import google.registry.model.registrar.Registrar.State;
-import google.registry.model.registry.RegistryLockDao;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.server.RegistryTestServer;
@@ -388,7 +388,7 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         () -> {
           createTld("tld");
           persistResource(newDomainBase("example.tld"));
-          RegistryLockDao.save(
+          saveRegistryLock(
               new RegistryLock.Builder()
                   .setRegistrarPocId("johndoe@theregistrar.com")
                   .setRepoId("repoId")
@@ -436,7 +436,7 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   public void registryLock_nonEmpty() throws Throwable {
     server.runInAppEngineEnvironment(
         () -> {
-          saveRegistryLock();
+          createDomainAndSaveLock();
           return null;
         });
     driver.get(server.getUrl("/registrar#registry-lock"));
@@ -450,12 +450,12 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         () -> {
           createTld("tld");
           DomainBase domain = persistActiveDomain("example.tld");
-          RegistryLockDao.save(createRegistryLock(domain).asBuilder().isSuperuser(true).build());
+          saveRegistryLock(createRegistryLock(domain).asBuilder().isSuperuser(true).build());
           DomainBase otherDomain = persistActiveDomain("otherexample.tld");
-          RegistryLockDao.save(createRegistryLock(otherDomain));
+          saveRegistryLock(createRegistryLock(otherDomain));
           // include one pending-lock domain
           DomainBase pendingDomain = persistActiveDomain("pending.tld");
-          RegistryLockDao.save(
+          saveRegistryLock(
               new RegistryLock.Builder()
                   .setVerificationCode(UUID.randomUUID().toString())
                   .isSuperuser(false)
@@ -476,7 +476,7 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     server.setIsAdmin(true);
     server.runInAppEngineEnvironment(
         () -> {
-          saveRegistryLock();
+          createDomainAndSaveLock();
           return null;
         });
     driver.get(server.getUrl("/registrar#registry-lock"));
@@ -521,10 +521,10 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  private void saveRegistryLock() {
+  private void createDomainAndSaveLock() {
     createTld("tld");
     DomainBase domainBase = persistActiveDomain("example.tld");
-    RegistryLockDao.save(createRegistryLock(domainBase));
+    saveRegistryLock(createRegistryLock(domainBase));
   }
 
   private RegistryLock createRegistryLock(DomainBase domainBase) {

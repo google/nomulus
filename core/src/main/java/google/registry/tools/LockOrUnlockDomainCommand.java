@@ -15,28 +15,32 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Iterables.partition;
 import static google.registry.model.eppcommon.StatusValue.SERVER_DELETE_PROHIBITED;
 import static google.registry.model.eppcommon.StatusValue.SERVER_TRANSFER_PROHIBITED;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.findDuplicates;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.base.Joiner;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.schema.domain.RegistryLock;
-import google.registry.util.Clock;
 import java.util.List;
 import javax.inject.Inject;
+import org.joda.time.DateTime;
 
-/** Shared base class for commands to registry lock or unlock a domain via EPP. */
+/**
+ * Shared base class for commands to registry lock or unlock a domain via EPP.
+ */
 public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
     implements CommandWithRemoteApi {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  private static final int BATCH_SIZE = 10;
 
   public static final ImmutableSet<StatusValue> REGISTRY_LOCK_STATUSES =
       ImmutableSet.of(
@@ -55,11 +59,8 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
   @Config("registryAdminClientId")
   String registryAdminClientId;
 
-  @Inject Clock clock;
-
-  @Inject DomainLockUtils domainLockUtils;
-
-  protected ImmutableSet<String> relevantDomains = ImmutableSet.of();
+  @Inject
+  DomainLockUtils domainLockUtils;
 
   protected ImmutableSet<String> getDomains() {
     return ImmutableSet.copyOf(mainParameters);
@@ -75,34 +76,37 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
     checkArgument(duplicates.isEmpty(), "Duplicate domain arguments found: '%s'", duplicates);
     System.out.println(
         "== ENSURE THAT YOU HAVE AUTHENTICATED THE REGISTRAR BEFORE RUNNING THIS COMMAND ==");
-    relevantDomains = getRelevantDomains();
   }
 
   @Override
   protected String execute() {
-    int failures = 0;
-    for (String domain : relevantDomains) {
-      try {
-        RegistryLock lock = createLock(domain);
-        finalizeLockOrUnlockRequest(lock);
-      } catch (Throwable t) {
-        Throwable rootCause = Throwables.getRootCause(t);
-        logger.atSevere().withCause(rootCause).log("Error when (un)locking domain %s.", domain);
-        failures++;
+    ImmutableSet.Builder<String> successfulDomainsBuilder = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<String> skippedDomainsBuilder = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<String> failedDomainsBuilder = new ImmutableSet.Builder<>();
+    partition(getDomains(), BATCH_SIZE).forEach(batch -> tm().transact(() -> {
+      for (String domain : batch) {
+        if (shouldApplyToDomain(domain, tm().getTransactionTime())) {
+          try {
+            createAndApplyRequest(domain);
+          } catch (Throwable t) {
+            logger.atSevere().withCause(t).log("Error when (un)locking domain %s.", domain);
+            failedDomainsBuilder.add(domain);
+          }
+          successfulDomainsBuilder.add(domain);
+        } else {
+          skippedDomainsBuilder.add(domain);
+        }
       }
-    }
-    if (failures == 0) {
-      return String.format("Successfully locked/unlocked %d domains.", relevantDomains.size());
-    } else {
-      return String.format(
-          "Successfully locked/unlocked %d domains with %d failures.",
-          relevantDomains.size() - failures, failures);
-    }
+    }));
+    ImmutableSet<String> successfulDomains = successfulDomainsBuilder.build();
+    ImmutableSet<String> skippedDomains = skippedDomainsBuilder.build();
+    ImmutableSet<String> failedDomains = failedDomainsBuilder.build();
+    return String.format(
+        "Successfully locked/unlocked domains:\n%s\nSkipped domains:\n%s\nFailed domains:\n%s",
+        successfulDomains, skippedDomains, failedDomains);
   }
 
-  protected abstract ImmutableSet<String> getRelevantDomains();
+  protected abstract boolean shouldApplyToDomain(String domain, DateTime now);
 
-  protected abstract RegistryLock createLock(String domain);
-
-  protected abstract void finalizeLockOrUnlockRequest(RegistryLock lock);
+  protected abstract void createAndApplyRequest(String domain);
 }

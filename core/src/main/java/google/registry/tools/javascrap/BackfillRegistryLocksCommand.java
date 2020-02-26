@@ -17,6 +17,7 @@ package google.registry.tools.javascrap;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 
 import com.beust.jcommander.Parameter;
@@ -73,15 +74,14 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
   @Named("base58StringGenerator")
   StringGenerator stringGenerator;
 
-  private DateTime now;
   private ImmutableList<DomainBase> lockedDomains;
 
   @Override
   protected String prompt() {
     checkArgument(
         roids != null && !roids.isEmpty(), "Must provide non-empty domain_roids argument");
-    now = clock.nowUtc();
-    lockedDomains = getLockedDomainsWithoutLocks();
+    lockedDomains =
+        jpaTm().transact(() -> getLockedDomainsWithoutLocks(jpaTm().getTransactionTime()));
     ImmutableList<String> lockedDomainNames =
         lockedDomains.stream()
             .map(DomainBase::getFullyQualifiedDomainName)
@@ -94,24 +94,30 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
   @Override
   protected String execute() {
     ImmutableSet.Builder<DomainBase> failedDomainsBuilder = new ImmutableSet.Builder<>();
-    for (DomainBase domainBase : lockedDomains) {
-      try {
-        RegistryLockDao.save(
-            new RegistryLock.Builder()
-                .isSuperuser(true)
-                .setRegistrarId(registryAdminClientId)
-                .setRepoId(domainBase.getRepoId())
-                .setDomainName(domainBase.getFullyQualifiedDomainName())
-                .setLockCompletionTimestamp(getLockCompletionTimestamp(domainBase, now))
-                .setVerificationCode(stringGenerator.createString(VERIFICATION_CODE_LENGTH))
-                .build());
-      } catch (Throwable t) {
-        logger.atSevere().withCause(t).log(
-            "Error when creating lock object for domain %s.",
-            domainBase.getFullyQualifiedDomainName());
-        failedDomainsBuilder.add(domainBase);
-      }
-    }
+    jpaTm()
+        .transact(
+            () -> {
+              for (DomainBase domainBase : lockedDomains) {
+                try {
+                  RegistryLockDao.save(
+                      new RegistryLock.Builder()
+                          .isSuperuser(true)
+                          .setRegistrarId(registryAdminClientId)
+                          .setRepoId(domainBase.getRepoId())
+                          .setDomainName(domainBase.getFullyQualifiedDomainName())
+                          .setLockCompletionTimestamp(
+                              getLockCompletionTimestamp(domainBase, jpaTm().getTransactionTime()))
+                          .setVerificationCode(
+                              stringGenerator.createString(VERIFICATION_CODE_LENGTH))
+                          .build());
+                } catch (Throwable t) {
+                  logger.atSevere().withCause(t).log(
+                      "Error when creating lock object for domain %s.",
+                      domainBase.getFullyQualifiedDomainName());
+                  failedDomainsBuilder.add(domainBase);
+                }
+              }
+            });
     ImmutableSet<DomainBase> failedDomains = failedDomainsBuilder.build();
     if (failedDomains.isEmpty()) {
       return String.format(
@@ -136,7 +142,7 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
         .orElse(now);
   }
 
-  private ImmutableList<DomainBase> getLockedDomainsWithoutLocks() {
+  private ImmutableList<DomainBase> getLockedDomainsWithoutLocks(DateTime now) {
     return ImmutableList.copyOf(
         ofy().load()
             .keys(

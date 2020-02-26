@@ -22,7 +22,6 @@ import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.schema.domain.RegistryLock;
 import org.joda.time.DateTime;
 
 /**
@@ -36,35 +35,24 @@ public class UnlockDomainCommand extends LockOrUnlockDomainCommand {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Override
-  protected ImmutableSet<String> getRelevantDomains() {
-    // Project all domains as of the same time so that argument order doesn't affect behavior.
-    DateTime now = clock.nowUtc();
-    ImmutableSet.Builder<String> relevantDomains = new ImmutableSet.Builder<>();
-    for (String domain : getDomains()) {
-      DomainBase domainBase =
-          loadByForeignKey(DomainBase.class, domain, now)
-              .orElseThrow(
-                  () ->
-                      new IllegalArgumentException(
-                          String.format("Domain '%s' does not exist or is deleted", domain)));
-      ImmutableSet<StatusValue> statusesToRemove =
-          Sets.intersection(domainBase.getStatusValues(), REGISTRY_LOCK_STATUSES).immutableCopy();
-      if (statusesToRemove.isEmpty()) {
-        logger.atInfo().log("Domain '%s' is already unlocked and needs no updates.", domain);
-        continue;
-      }
-      relevantDomains.add(domain);
+  protected boolean shouldApplyToDomain(String domain, DateTime now) {
+    DomainBase domainBase =
+        loadByForeignKey(DomainBase.class, domain, now)
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        String.format("Domain '%s' does not exist or is deleted", domain)));
+    ImmutableSet<StatusValue> statusesToRemove =
+        Sets.intersection(domainBase.getStatusValues(), REGISTRY_LOCK_STATUSES).immutableCopy();
+    if (statusesToRemove.isEmpty()) {
+      logger.atInfo().log("Domain '%s' is already unlocked and needs no updates.", domain);
+      return false;
     }
-    return relevantDomains.build();
+    return true;
   }
 
   @Override
-  protected RegistryLock createLock(String domain) {
-    return domainLockUtils.createRegistryUnlockRequest(domain, clientId, true, clock);
-  }
-
-  @Override
-  protected void finalizeLockOrUnlockRequest(RegistryLock lock) {
-    domainLockUtils.verifyAndApplyUnlock(lock.getVerificationCode(), true, clock);
+  protected void createAndApplyRequest(String domain) {
+    domainLockUtils.administrativelyApplyUnlock(domain, clientId, true);
   }
 }

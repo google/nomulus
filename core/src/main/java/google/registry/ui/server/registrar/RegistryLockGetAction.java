@@ -156,7 +156,7 @@ public final class RegistryLockGetAction implements JsonGetAction {
     return jpaTm()
         .transact(
             () ->
-                RegistryLockDao.getDomainLocksByRegistrarId(clientId).stream()
+                RegistryLockDao.getLocksByRegistrarId(clientId).stream()
                     .filter(lock -> !lock.isLockRequestExpired(jpaTm().getTransactionTime()))
                     .map(lock -> lockToMap(lock, isAdmin))
                     .collect(toImmutableList()));

@@ -20,6 +20,7 @@ import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.O
 import static google.registry.testing.AppEngineRule.makeRegistrar2;
 import static google.registry.testing.AppEngineRule.makeRegistrarContact3;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static org.junit.Assert.assertThrows;
@@ -30,7 +31,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.gson.Gson;
-import google.registry.model.registry.RegistryLockDao;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.request.Action.Method;
@@ -144,10 +144,10 @@ public final class RegistryLockGetActionTest {
             .setUnlockCompletionTimestamp(fakeClock.nowUtc())
             .build();
 
-    RegistryLockDao.save(regularLock);
-    RegistryLockDao.save(adminLock);
-    RegistryLockDao.save(incompleteLock);
-    RegistryLockDao.save(unlockedLock);
+    saveRegistryLock(regularLock);
+    saveRegistryLock(adminLock);
+    saveRegistryLock(incompleteLock);
+    saveRegistryLock(unlockedLock);
 
     action.run();
     assertThat(response.getStatus()).isEqualTo(HttpStatusCodes.STATUS_CODE_OK);

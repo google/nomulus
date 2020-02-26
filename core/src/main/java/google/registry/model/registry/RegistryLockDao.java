@@ -27,37 +27,30 @@ public final class RegistryLockDao {
 
   /** Returns the most recent version of the {@link RegistryLock} referred to by the code. */
   public static Optional<RegistryLock> getByVerificationCode(String verificationCode) {
-    return jpaTm()
-        .transact(
-            () -> {
-              EntityManager em = jpaTm().getEntityManager();
-              Long revisionId =
-                  em.createQuery(
-                          "SELECT MAX(revisionId) FROM RegistryLock WHERE verificationCode = "
-                              + ":verificationCode",
-                          Long.class)
-                      .setParameter("verificationCode", verificationCode)
-                      .getSingleResult();
-              return Optional.ofNullable(revisionId)
-                  .map(revision -> em.find(RegistryLock.class, revision));
-            });
+    jpaTm().assertInTransaction();
+    EntityManager em = jpaTm().getEntityManager();
+    Long revisionId =
+        em.createQuery(
+                "SELECT MAX(revisionId) FROM RegistryLock WHERE verificationCode ="
+                    + " :verificationCode",
+                Long.class)
+            .setParameter("verificationCode", verificationCode)
+            .getSingleResult();
+    return Optional.ofNullable(revisionId).map(revision -> em.find(RegistryLock.class, revision));
   }
 
   /** Returns all lock objects that this registrar has created, including pending locks. */
-  public static ImmutableList<RegistryLock> getDomainLocksByRegistrarId(String registrarId) {
-    return jpaTm()
-        .transact(
-            () ->
-                ImmutableList.copyOf(
-                    jpaTm()
-                        .getEntityManager()
-                        .createQuery(
-                            "SELECT lock FROM RegistryLock lock WHERE "
-                                + "lock.registrarId = :registrarId "
-                                + "AND lock.unlockCompletionTimestamp IS NULL",
-                            RegistryLock.class)
-                        .setParameter("registrarId", registrarId)
-                        .getResultList()));
+  public static ImmutableList<RegistryLock> getLocksByRegistrarId(String registrarId) {
+    jpaTm().assertInTransaction();
+    return ImmutableList.copyOf(
+        jpaTm()
+            .getEntityManager()
+            .createQuery(
+                "SELECT lock FROM RegistryLock lock WHERE lock.registrarId = :registrarId"
+                    + " AND lock.unlockCompletionTimestamp IS NULL",
+                RegistryLock.class)
+            .setParameter("registrarId", registrarId)
+            .getResultList());
   }
 
   /**
@@ -66,19 +59,17 @@ public final class RegistryLockDao {
    * <p>Returns empty if this domain hasn't been locked before.
    */
   public static Optional<RegistryLock> getMostRecentByRepoId(String repoId) {
+    jpaTm().assertInTransaction();
     return jpaTm()
-        .transact(
-            () ->
-                jpaTm()
-                    .getEntityManager()
-                    .createQuery(
-                        "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId"
-                            + " ORDER BY lock.revisionId DESC",
-                        RegistryLock.class)
-                    .setParameter("repoId", repoId)
-                    .setMaxResults(1)
-                    .getResultStream()
-                    .findFirst());
+        .getEntityManager()
+        .createQuery(
+            "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId"
+                + " ORDER BY lock.revisionId DESC",
+            RegistryLock.class)
+        .setParameter("repoId", repoId)
+        .setMaxResults(1)
+        .getResultStream()
+        .findFirst();
   }
 
   /**
@@ -88,24 +79,23 @@ public final class RegistryLockDao {
    * {@link #getMostRecentByRepoId(String)} in that it only returns verified locks.
    */
   public static Optional<RegistryLock> getMostRecentVerifiedLockByRepoId(String repoId) {
+    jpaTm().assertInTransaction();
     return jpaTm()
-        .transact(
-            () ->
-                jpaTm()
-                    .getEntityManager()
-                    .createQuery(
-                        "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId AND"
-                            + " lock.lockCompletionTimestamp IS NOT NULL ORDER BY lock.revisionId"
-                            + " DESC",
-                        RegistryLock.class)
-                    .setParameter("repoId", repoId)
-                    .setMaxResults(1)
-                    .getResultStream()
-                    .findFirst());
+        .getEntityManager()
+        .createQuery(
+            "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId AND"
+                + " lock.lockCompletionTimestamp IS NOT NULL ORDER BY lock.revisionId"
+                + " DESC",
+            RegistryLock.class)
+        .setParameter("repoId", repoId)
+        .setMaxResults(1)
+        .getResultStream()
+        .findFirst();
   }
 
   public static RegistryLock save(RegistryLock registryLock) {
+    jpaTm().assertInTransaction();
     checkNotNull(registryLock, "Null registry lock cannot be saved");
-    return jpaTm().transact(() -> jpaTm().getEntityManager().merge(registryLock));
+    return jpaTm().getEntityManager().merge(registryLock);
   }
 }
