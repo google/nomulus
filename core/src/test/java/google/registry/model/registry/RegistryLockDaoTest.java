@@ -17,6 +17,11 @@ package google.registry.model.registry;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
+import static google.registry.testing.SqlHelper.getMostRecentVerifiedRegistryLockByRepoId;
+import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
+import static google.registry.testing.SqlHelper.getRegistryLocksByRegistrarId;
+import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static org.junit.Assert.assertThrows;
 
 import google.registry.persistence.transaction.JpaTestRules;
@@ -45,9 +50,8 @@ public final class RegistryLockDaoTest {
   @Test
   public void testSaveAndLoad_success() {
     RegistryLock lock = createLock();
-    RegistryLockDao.save(lock);
-    RegistryLock fromDatabase =
-        RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
+    saveRegistryLock(lock);
+    RegistryLock fromDatabase = getRegistryLockByVerificationCode(lock.getVerificationCode()).get();
     assertThat(fromDatabase.getDomainName()).isEqualTo(lock.getDomainName());
     assertThat(fromDatabase.getVerificationCode()).isEqualTo(lock.getVerificationCode());
     assertThat(fromDatabase.getLastUpdateTimestamp()).isEqualTo(fakeClock.nowUtc());
@@ -56,7 +60,7 @@ public final class RegistryLockDaoTest {
   @Test
   public void testSaveTwiceAndLoad_returnsLatest() {
     RegistryLock lock = createLock();
-    jpaTm().transact(() -> RegistryLockDao.save(lock));
+    saveRegistryLock(lock);
     fakeClock.advanceOneMilli();
     jpaTm()
         .transact(
@@ -80,16 +84,14 @@ public final class RegistryLockDaoTest {
   @Test
   public void testSave_load_withUnlock() {
     RegistryLock lock =
-        RegistryLockDao.save(
+        saveRegistryLock(
             createLock()
                 .asBuilder()
                 .setLockCompletionTimestamp(fakeClock.nowUtc())
                 .setUnlockRequestTimestamp(fakeClock.nowUtc())
                 .setUnlockCompletionTimestamp(fakeClock.nowUtc())
                 .build());
-    RegistryLockDao.save(lock);
-    RegistryLock fromDatabase =
-        RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
+    RegistryLock fromDatabase = getRegistryLockByVerificationCode(lock.getVerificationCode()).get();
     assertThat(fromDatabase.getUnlockRequestTimestamp()).isEqualTo(Optional.of(fakeClock.nowUtc()));
     assertThat(fromDatabase.getUnlockCompletionTimestamp())
         .isEqualTo(Optional.of(fakeClock.nowUtc()));
@@ -98,11 +100,11 @@ public final class RegistryLockDaoTest {
 
   @Test
   public void testUpdateLock_usingSamePrimaryKey() {
-    RegistryLock lock = RegistryLockDao.save(createLock());
+    RegistryLock lock = saveRegistryLock(createLock());
     fakeClock.advanceOneMilli();
     RegistryLock updatedLock =
         lock.asBuilder().setLockCompletionTimestamp(fakeClock.nowUtc()).build();
-    jpaTm().transact(() -> RegistryLockDao.save(updatedLock));
+    saveRegistryLock(updatedLock);
     jpaTm()
         .transact(
             () -> {
@@ -115,12 +117,12 @@ public final class RegistryLockDaoTest {
 
   @Test
   public void testFailure_saveNull() {
-    assertThrows(NullPointerException.class, () -> RegistryLockDao.save(null));
+    assertThrows(NullPointerException.class, () -> saveRegistryLock(null));
   }
 
   @Test
   public void getLock_unknownCode() {
-    assertThat(RegistryLockDao.getByVerificationCode("hi").isPresent()).isFalse();
+    assertThat(getRegistryLockByVerificationCode("hi").isPresent()).isFalse();
   }
 
   @Test
@@ -141,57 +143,57 @@ public final class RegistryLockDaoTest {
             .setUnlockRequestTimestamp(fakeClock.nowUtc())
             .setUnlockCompletionTimestamp(fakeClock.nowUtc())
             .build();
-    RegistryLockDao.save(lock);
-    RegistryLockDao.save(secondLock);
-    RegistryLockDao.save(unlockedLock);
+    saveRegistryLock(lock);
+    saveRegistryLock(secondLock);
+    saveRegistryLock(unlockedLock);
 
     assertThat(
-            RegistryLockDao.getLockedDomainsByRegistrarId("TheRegistrar").stream()
+            getRegistryLocksByRegistrarId("TheRegistrar").stream()
                 .map(RegistryLock::getDomainName)
                 .collect(toImmutableSet()))
         .containsExactly("example.test", "otherexample.test");
-    assertThat(RegistryLockDao.getLockedDomainsByRegistrarId("nonexistent")).isEmpty();
+    assertThat(getRegistryLocksByRegistrarId("nonexistent")).isEmpty();
   }
 
   @Test
   public void testLoad_byRepoId() {
     RegistryLock completedLock =
         createLock().asBuilder().setLockCompletionTimestamp(fakeClock.nowUtc()).build();
-    RegistryLockDao.save(completedLock);
+    saveRegistryLock(completedLock);
 
     fakeClock.advanceOneMilli();
     RegistryLock inProgressLock = createLock();
-    RegistryLockDao.save(inProgressLock);
+    saveRegistryLock(inProgressLock);
 
-    Optional<RegistryLock> mostRecent = RegistryLockDao.getMostRecentByRepoId("repoId");
+    Optional<RegistryLock> mostRecent = getMostRecentRegistryLockByRepoId("repoId");
     assertThat(mostRecent.isPresent()).isTrue();
     assertThat(mostRecent.get().isLocked()).isFalse();
   }
 
   @Test
   public void testLoad_byRepoId_empty() {
-    assertThat(RegistryLockDao.getMostRecentByRepoId("nonexistent").isPresent()).isFalse();
+    assertThat(getMostRecentRegistryLockByRepoId("nonexistent").isPresent()).isFalse();
   }
 
   @Test
   public void testLoad_verified_byRepoId() {
     RegistryLock completedLock =
         createLock().asBuilder().setLockCompletionTimestamp(fakeClock.nowUtc()).build();
-    RegistryLockDao.save(completedLock);
+    saveRegistryLock(completedLock);
 
     fakeClock.advanceOneMilli();
     RegistryLock inProgressLock = createLock();
-    RegistryLockDao.save(inProgressLock);
+    saveRegistryLock(inProgressLock);
 
-    Optional<RegistryLock> mostRecent = RegistryLockDao.getMostRecentVerifiedLockByRepoId("repoId");
+    Optional<RegistryLock> mostRecent = getMostRecentVerifiedRegistryLockByRepoId("repoId");
     assertThat(mostRecent.isPresent()).isTrue();
     assertThat(mostRecent.get().isLocked()).isTrue();
   }
 
   @Test
   public void testLoad_verified_byRepoId_empty() {
-    RegistryLockDao.save(createLock());
-    Optional<RegistryLock> mostRecent = RegistryLockDao.getMostRecentVerifiedLockByRepoId("repoId");
+    saveRegistryLock(createLock());
+    Optional<RegistryLock> mostRecent = getMostRecentVerifiedRegistryLockByRepoId("repoId");
     assertThat(mostRecent.isPresent()).isFalse();
   }
 

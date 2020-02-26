@@ -23,6 +23,7 @@ import static google.registry.testing.DatastoreHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistActiveHost;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static org.junit.Assert.assertThrows;
 
@@ -32,7 +33,6 @@ import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.registry.Registry;
-import google.registry.model.registry.RegistryLockDao;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
@@ -328,7 +328,7 @@ public final class DomainLockUtilsTest {
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
     String verificationCode = lock.getVerificationCode();
     // reload to pick up modification times, etc
-    lock = RegistryLockDao.getByVerificationCode(verificationCode).get();
+    lock = getRegistryLockByVerificationCode(verificationCode).get();
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     assertThat(
             assertThrows(
@@ -338,8 +338,7 @@ public final class DomainLockUtilsTest {
         .isEqualTo("Domain example.tld is already locked");
 
     // Failure during Datastore portion shouldn't affect the SQL object
-    RegistryLock afterAction =
-        RegistryLockDao.getByVerificationCode(lock.getVerificationCode()).get();
+    RegistryLock afterAction = getRegistryLockByVerificationCode(lock.getVerificationCode()).get();
     assertThat(afterAction).isEqualTo(lock);
     assertNoDomainChanges();
   }

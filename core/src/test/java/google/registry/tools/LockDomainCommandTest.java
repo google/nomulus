@@ -21,13 +21,13 @@ import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar.Type;
-import google.registry.model.registry.RegistryLockDao;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.testing.DeterministicStringGenerator;
@@ -124,7 +124,7 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
   public void testSuccess_defaultsToAdminRegistrar_ifUnspecified() throws Exception {
     DomainBase domain = persistActiveDomain("example.tld");
     runCommandForced("example.tld");
-    assertThat(RegistryLockDao.getMostRecentByRepoId(domain.getRepoId()).get().getRegistrarId())
+    assertThat(getMostRecentRegistryLockByRepoId(domain.getRepoId()).get().getRegistrarId())
         .isEqualTo("adminreg");
   }
 

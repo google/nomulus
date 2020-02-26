@@ -20,6 +20,10 @@ import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistDeletedDomain;
 import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
+import static google.registry.testing.SqlHelper.getMostRecentVerifiedRegistryLockByRepoId;
+import static google.registry.testing.SqlHelper.getRegistryLocksByRegistrarId;
+import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static org.junit.Assert.assertThrows;
 
@@ -29,7 +33,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.truth.Truth8;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registry.RegistryLockDao;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
@@ -56,7 +59,7 @@ public class BackfillRegistryLocksCommandTest
 
   @Rule
   public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().buildIntegrationWithCoverageRule();
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
 
   @Before
   public void before() {
@@ -70,11 +73,11 @@ public class BackfillRegistryLocksCommandTest
   @Test
   public void testSimpleBackfill() throws Exception {
     DomainBase domain = persistLockedDomain("example.tld");
-    Truth8.assertThat(RegistryLockDao.getMostRecentByRepoId(domain.getRepoId())).isEmpty();
+    Truth8.assertThat(getMostRecentRegistryLockByRepoId(domain.getRepoId())).isEmpty();
 
     runCommandForced("--domain_roids", domain.getRepoId());
 
-    Optional<RegistryLock> lockOptional = RegistryLockDao.getMostRecentByRepoId(domain.getRepoId());
+    Optional<RegistryLock> lockOptional = getMostRecentRegistryLockByRepoId(domain.getRepoId());
     Truth8.assertThat(lockOptional).isPresent();
     Truth8.assertThat(lockOptional.get().getLockCompletionTimestamp()).isPresent();
   }
@@ -94,7 +97,7 @@ public class BackfillRegistryLocksCommandTest
             previouslyLockedDomain.getRepoId(),
             lockedDomain.getRepoId()));
 
-    ImmutableList<RegistryLock> locks = RegistryLockDao.getLockedDomainsByRegistrarId("adminreg");
+    ImmutableList<RegistryLock> locks = getRegistryLocksByRegistrarId("adminreg");
     assertThat(locks).hasSize(1);
     assertThat(Iterables.getOnlyElement(locks).getDomainName()).isEqualTo("locked.tld");
   }
@@ -105,7 +108,7 @@ public class BackfillRegistryLocksCommandTest
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     fakeClock.advanceBy(Duration.standardSeconds(1));
     runCommandForced("--domain_roids", domain.getRepoId());
-    Truth8.assertThat(RegistryLockDao.getMostRecentByRepoId(domain.getRepoId())).isEmpty();
+    Truth8.assertThat(getMostRecentRegistryLockByRepoId(domain.getRepoId())).isEmpty();
   }
 
   @Test
@@ -113,7 +116,7 @@ public class BackfillRegistryLocksCommandTest
     DomainBase domain = persistLockedDomain("example.tld");
 
     RegistryLock previousLock =
-        RegistryLockDao.save(
+        saveRegistryLock(
             new RegistryLock.Builder()
                 .isSuperuser(true)
                 .setRegistrarId("adminreg")
@@ -127,7 +130,7 @@ public class BackfillRegistryLocksCommandTest
     runCommandForced("--domain_roids", domain.getRepoId());
 
     assertThat(
-            RegistryLockDao.getMostRecentByRepoId(domain.getRepoId())
+            getMostRecentRegistryLockByRepoId(domain.getRepoId())
                 .get()
                 .getLockCompletionTimestamp())
         .isEqualTo(previousLock.getLockCompletionTimestamp());
@@ -154,11 +157,10 @@ public class BackfillRegistryLocksCommandTest
     runCommandForced(
         "--domain_roids", String.format("%s,%s", ursDomain.getRepoId(), nonUrsDomain.getRepoId()));
 
-    RegistryLock ursLock =
-        RegistryLockDao.getMostRecentVerifiedLockByRepoId(ursDomain.getRepoId()).get();
+    RegistryLock ursLock = getMostRecentVerifiedRegistryLockByRepoId(ursDomain.getRepoId()).get();
     assertThat(ursLock.getLockCompletionTimestamp().get()).isEqualTo(ursTime);
     RegistryLock nonUrsLock =
-        RegistryLockDao.getMostRecentVerifiedLockByRepoId(nonUrsDomain.getRepoId()).get();
+        getMostRecentVerifiedRegistryLockByRepoId(nonUrsDomain.getRepoId()).get();
     assertThat(nonUrsLock.getLockCompletionTimestamp().get()).isEqualTo(fakeClock.nowUtc());
   }
 

@@ -16,6 +16,7 @@ package google.registry.testing;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
+import com.google.common.collect.ImmutableList;
 import google.registry.model.registry.RegistryLockDao;
 import google.registry.schema.domain.RegistryLock;
 import java.util.Optional;
@@ -30,4 +31,18 @@ public class SqlHelper {
   public static Optional<RegistryLock> getRegistryLockByVerificationCode(String verificationCode) {
     return jpaTm().transact(() -> RegistryLockDao.getByVerificationCode(verificationCode));
   }
+
+  public static Optional<RegistryLock> getMostRecentRegistryLockByRepoId(String repoId) {
+    return jpaTm().transact(() -> RegistryLockDao.getMostRecentByRepoId(repoId));
+  }
+
+  public static Optional<RegistryLock> getMostRecentVerifiedRegistryLockByRepoId(String repoId) {
+    return jpaTm().transact(() -> RegistryLockDao.getMostRecentVerifiedLockByRepoId(repoId));
+  }
+
+  public static ImmutableList<RegistryLock> getRegistryLocksByRegistrarId(String registrarId) {
+    return jpaTm().transact(() -> RegistryLockDao.getLockedDomainsByRegistrarId(registrarId));
+  }
+
+  private SqlHelper() {}
 }
