@@ -19,6 +19,7 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -95,11 +96,14 @@ public class CursorDao {
   public static void saveCursor(google.registry.model.common.Cursor cursor, String scope) {
     tm().transact(() -> ofy().save().entity(cursor));
     CursorType type = cursor.getType();
+    checkArgumentNotNull(scope, "The scope of the cursor cannot be null");
+    Cursor cloudSqlCursor = Cursor.create(type, scope, cursor.getCursorTime());
     try {
-      Cursor cloudSqlCursor = Cursor.create(type, scope, cursor.getCursorTime());
       save(cloudSqlCursor);
+      logger.atInfo().log(
+          "Rolled forward CloudSQL cursor for %s to %s.", scope, cursor.getCursorTime());
     } catch (Exception e) {
-      logger.atSevere().withCause(e).log("Error saving cursor to Cloud SQL.");
+      logger.atSevere().withCause(e).log("Error saving cursor to Cloud SQL: %s.", cloudSqlCursor);
     }
   }
 

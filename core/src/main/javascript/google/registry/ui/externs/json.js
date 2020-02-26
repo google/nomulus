@@ -30,6 +30,37 @@ var registry = {};
  */
 registry.json = {};
 
+registry.json.locks = {};
+
+/**
+ * @typedef {{
+ *   fullyQualifiedDomainName: string,
+ *   lockedTime: string,
+ *   lockedBy: string,
+ *   userCanUnlock: boolean
+ * }}
+ */
+registry.json.locks.ExistingLock;
+
+/**
+ * @typedef {{
+ *   clientId: string,
+ *   email: string,
+ *   details: !Array.<registry.json.locks.ExistingLock>,
+ *   lockEnabledForContact: boolean
+ * }}
+ */
+registry.json.locks.ExistingLocksResult;
+
+/**
+ * @typedef {{
+ *   status: string,
+ *   message: string,
+ *   results: !Array.<registry.json.locks.ExistingLocksResult>
+ * }}
+ */
+registry.json.locks.ExistingLocksResponse;
+
 registry.json.ote = {};
 
 /**

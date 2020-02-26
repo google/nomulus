@@ -1,0 +1,132 @@
+// Copyright 2020 The Nomulus Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+{namespace registry.soy.registrar.registrylock}
+
+/** Registry locks viewing, adding, and removing. */
+{template .settings}
+  <h1>Registry lock</h1>
+  <br>
+  <div id="locks-content"></div>
+{/template}
+
+{template .locksContent}
+  {@param email: string}
+  {@param locks: list<[fullyQualifiedDomainName: string, lockedTime: string, lockedBy: string, userCanUnlock: bool]>}
+  {@param lockEnabledForContact: bool}
+
+  {call .newLock}
+    {param email: $email /}
+    {param lockEnabledForContact: $lockEnabledForContact /}
+  {/call}
+  {call .existingLocksTable}
+    {param locks: $locks /}
+    {param lockEnabledForContact: $lockEnabledForContact /}
+  {/call}
+{/template}
+
+{template .newLock}
+  {@param email: string}
+  {@param lockEnabledForContact: bool}
+  <div class="{css('new-registry-lock')}">
+    {if $lockEnabledForContact}
+      <h2>Lock a domain</h2>
+      <br>
+      <p>The lock will not take effect until you click the confirmation link that will be emailed to
+        you at {$email}. When it takes effect, you will be billed the standard server status change
+        billing cost.</p>
+      <button id="button-lock-domain"
+          {if $lockEnabledForContact}
+              class="{css('kd-button')} {css('kd-button-submit')}"
+          {else}
+              class="{css('kd-button')}" disabled
+          {/if}
+      >Lock a new domain
+      </button>
+    {else}
+      <h2>You are not permitted to change registry locks.</h2>
+    {/if}
+    <br><br>
+  </div>
+{/template}
+
+/** Table that displays existing locks for this registrar. */
+{template .existingLocksTable}
+  {@param locks: list<[fullyQualifiedDomainName: string, lockedTime: string, lockedBy: string, userCanUnlock: bool]>}
+  {@param lockEnabledForContact: bool}
+  <h2>Existing locks</h2>
+  <br>
+  <table class="{css('registry-locks-table')}">
+    <tr>
+      <th><b>Domain name</b></th>
+      <th><b>Date/time locked</b></th>
+      <th><b>Locked by</b></th>
+      <th><b>Actions</b></th>
+    </tr>
+    {for $lock in $locks}
+      <tr class="{css('registry-locks-table-row')}">
+        <td>{$lock.fullyQualifiedDomainName}</td>
+        <td>{$lock.lockedTime}</td>
+        <td>{$lock.lockedBy}</td>
+        <td>
+          <button id="button-unlock-{$lock.fullyQualifiedDomainName}"
+              {if $lockEnabledForContact and $lock.userCanUnlock}
+                  class="domain-unlock-button {css('kd-button')} {css('kd-button-submit')}"
+              {else}
+                  class="{css('kd-button')}"
+                  disabled
+              {/if}
+          >Unlock
+          </button>
+        </td>
+      </tr>
+    {/for}
+
+  </table>
+{/template}
+
+/** Modal that confirms that the user wishes to lock/unlock a domain. */
+{template .confirmModal}
+  {@param isLock: bool}
+  {@param? domain: string|null}
+  <div id="lock-confirm-modal" class="{css('lock-confirm-modal')}">
+    <div class="modal-content">
+      <p>Are you sure you want to {if not $isLock}un{/if}lock the domain {$domain}? We will send
+        an email to the email address on file to confirm the {if not $isLock}un{/if}lock.</p>
+      <label for="domain-to-lock">Domain: </label>
+      <input id="domain-lock-input-value"
+          {if isNonnull($domain)}
+             value="{$domain}" disabled
+          {/if}>
+      <br>
+      <label for="domain-lock-password">Registry lock password: </label>
+      <input type="password" id="domain-lock-password">
+      <br>
+      <div id="modal-error-message" hidden class="{css('kd-errormessage')}"></div>
+      <div class="{css('buttons-div')}">
+        <button id="domain-lock-cancel" class="{css('kd-button')}">Cancel</button>
+        <button id="domain-lock-submit"
+                class="{css('kd-button')} {css('kd-button-submit')}">Submit
+        </button>
+      </div>
+    </div>
+  </div>
+{/template}
+
+/** Content if the registrar is not allowed to use registry lock. */
+{template .lockNotAllowedOnRegistrar}
+  {@param supportEmail: string}
+  <h2>Sorry, your registrar hasn't enrolled in registry lock yet. To do so, please
+    contact {$supportEmail}.</h2>
+{/template}

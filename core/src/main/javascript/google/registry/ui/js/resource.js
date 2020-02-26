@@ -78,3 +78,9 @@ registry.Resource.prototype.send_ =
   req['id'] = this.id_;
   this.sendXhrIo(goog.json.serialize(req), callback);
 };
+
+/**
+ * JSON response prefix which prevents evaluation.
+ * @const
+ */
+registry.Resource.PARSER_BREAKER_ = ')]}\'\n';

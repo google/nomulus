@@ -15,6 +15,7 @@
 package google.registry.ui.server.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.ADMIN;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
 import static google.registry.testing.AppEngineRule.makeRegistrar2;
 import static google.registry.testing.AppEngineRule.makeRegistrarContact3;
@@ -156,11 +157,13 @@ public final class RegistryLockGetActionTest {
                             ImmutableMap.of(
                                 "fullyQualifiedDomainName", "example.test",
                                 "lockedTime", "2000-06-08T22:00:00.000Z",
-                                "lockedBy", "johndoe@theregistrar.com"),
+                                "lockedBy", "johndoe@theregistrar.com",
+                                "userCanUnlock", true),
                             ImmutableMap.of(
                                 "fullyQualifiedDomainName", "adminexample.test",
                                 "lockedTime", "2000-06-08T22:00:00.001Z",
-                                "lockedBy", "admin")))));
+                                "lockedBy", "admin",
+                                "userCanUnlock", false)))));
   }
 
   @Test
@@ -218,10 +221,15 @@ public final class RegistryLockGetActionTest {
   }
 
   @Test
-  public void testSuccess_lockAllowedForAdmin() throws Exception {
+  public void testSuccess_lockAllowedForAdmin() {
     // Locks are allowed for admins even when they're not enabled for the registrar
     persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(false).build());
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, true));
+    accessor =
+        AuthenticatedRegistrarAccessor.createForTesting(
+            ImmutableSetMultimap.of(
+                "TheRegistrar", ADMIN,
+                "NewRegistrar", OWNER));
     action =
         new RegistryLockGetAction(
             Method.GET, response, accessor, authResult, Optional.of("TheRegistrar"));

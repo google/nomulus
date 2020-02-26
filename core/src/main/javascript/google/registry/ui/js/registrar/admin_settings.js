@@ -85,13 +85,6 @@ registry.registrar.AdminSettings.prototype.setupEditor = function(objArgs) {
 };
 
 /**
- * JSON response prefix which prevents evaluation.
- * @private {string}
- * @const
- */
-registry.registrar.AdminSettings.PARSER_BREAKER_ = ')]}\'\n';
-
-/**
  * Click handler for OT&E status checking button.
  * @param {string} xsrfToken
  * @param {string} clientId
@@ -102,8 +95,7 @@ registry.registrar.AdminSettings.prototype.oteStatusCheck_ = function(
   goog.net.XhrIo.send('/registrar-ote-status', function(e) {
     var response =
         /** @type {!registry.json.ote.OteStatusResponse} */
-        (e.target.getResponseJson(
-            registry.registrar.AdminSettings.PARSER_BREAKER_));
+        (e.target.getResponseJson(registry.Resource.PARSER_BREAKER_));
     var oteResultParent = goog.dom.getRequiredElement('ote-status-area-parent');
     if (response.status === 'SUCCESS') {
       var results = response.results[0];

@@ -191,27 +191,6 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void saveCursor_logsErrorWhenSaveToCloudSqlFails() {
-    loggerToIntercept.addHandler(logHandler);
-    createTld("tld");
-    google.registry.model.common.Cursor cursor =
-        google.registry.model.common.Cursor.create(
-            CursorType.ICANN_UPLOAD_ACTIVITY, fakeClock.nowUtc(), Registry.get("tld"));
-    CursorDao.saveCursor(cursor, null);
-    assertAboutLogs()
-        .that(logHandler)
-        .hasLogAtLevelWithMessage(Level.SEVERE, "Error saving cursor to Cloud SQL.");
-    google.registry.model.common.Cursor dataStoreCursor =
-        ofy()
-            .load()
-            .key(
-                google.registry.model.common.Cursor.createKey(
-                    CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("tld")))
-            .now();
-    assertThat(cursor).isEqualTo(dataStoreCursor);
-  }
-
-  @Test
   public void saveCursors_worksSuccessfully() {
     createTlds("tld", "foo");
     google.registry.model.common.Cursor cursor1 =
