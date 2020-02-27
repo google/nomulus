@@ -117,7 +117,11 @@ registry.registrar.RegistryLock.prototype.showModal_ = function(targetElement, d
   var modalElement = goog.soy.renderAsElement(
       registry.soy.registrar.registrylock.confirmModal, {domain: domain, isLock: isLock});
   parentElement.prepend(modalElement);
-  goog.dom.getRequiredElement('domain-lock-password').focus();
+  if (domain == null) {
+    goog.dom.getRequiredElement('domain-lock-input-value').focus();
+  } else {
+    goog.dom.getRequiredElement('domain-lock-password').focus();
+  }
   // delete the modal when the user clicks the cancel button
   goog.events.listen(
       goog.dom.getRequiredElement('domain-lock-cancel'),
