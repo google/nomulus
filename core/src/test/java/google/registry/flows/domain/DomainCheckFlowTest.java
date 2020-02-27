@@ -186,7 +186,7 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
             .build());
     doCheckTest(
         create(false, "example1.tld", "In use"),
-        create(true, "example2.tld", null),
+        create(false, "example2.tld", "Alloc token invalid for domain"),
         create(false, "reserved.tld", "Reserved"),
         create(true, "specificuse.tld", null));
   }
@@ -203,7 +203,7 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
             .build());
     doCheckTest(
         create(false, "example1.tld", "In use"),
-        create(true, "example2.tld", null),
+        create(false, "example2.tld", "Alloc token invalid for domain"),
         create(false, "reserved.tld", "Reserved"),
         create(false, "specificuse.tld", "Allocation token required"));
   }
@@ -224,8 +224,8 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
                     .build())
             .build());
     doCheckTest(
-        create(true, "example1.tld", null),
-        create(true, "example2.tld", null),
+        create(false, "example1.tld", "Alloc token invalid for domain"),
+        create(false, "example2.tld", "Alloc token invalid for domain"),
         create(false, "reserved.tld", "Reserved"),
         create(true, "specificuse.tld", null));
   }
@@ -246,8 +246,8 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
                     .build())
             .build());
     doCheckTest(
-        create(false, "example1.tld", "Alloc token not in promo period"),
-        create(false, "example2.tld", "Alloc token not in promo period"),
+        create(false, "example1.tld", "Alloc token invalid for domain"),
+        create(false, "example2.tld", "Alloc token invalid for domain"),
         create(false, "reserved.tld", "Reserved"),
         create(false, "specificuse.tld", "Alloc token not in promo period"));
   }
