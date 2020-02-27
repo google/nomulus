@@ -37,6 +37,7 @@ import google.registry.util.X509Utils;
 import java.security.cert.CertificateParsingException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -204,8 +205,10 @@ public final class RegistrarFormFields {
   public static final FormField<String, String> CONTACT_GAE_USER_ID_FIELD =
       FormFields.NAME.asBuilderNamed("gaeUserId").build();
 
-  public static final FormField<Boolean, Boolean> CONTACT_ALLOWED_TO_SET_REGISTRY_LOCK_PASSWORD =
-      FormField.named("allowedToSetRegistryLockPassword", Boolean.class).build();
+  public static final FormField<Object, Boolean> CONTACT_ALLOWED_TO_SET_REGISTRY_LOCK_PASSWORD =
+      FormField.named("allowedToSetRegistryLockPassword", Object.class)
+          .transform(Boolean.class, b -> Boolean.valueOf(Objects.toString(b)))
+          .build();
 
   public static final FormField<String, String> CONTACT_REGISTRY_LOCK_PASSWORD_FIELD =
       FormFields.NAME.asBuilderNamed("registryLockPassword").build();
@@ -384,6 +387,8 @@ public final class RegistrarFormFields {
     builder.setFaxNumber(CONTACT_FAX_NUMBER_FIELD.extractUntyped(args).orElse(null));
     builder.setTypes(CONTACT_TYPES.extractUntyped(args).orElse(ImmutableSet.of()));
     builder.setGaeUserId(CONTACT_GAE_USER_ID_FIELD.extractUntyped(args).orElse(null));
+    // The parser is inconsistent with whether it retrieves boolean values as strings or booleans.
+    // As a result, use a potentially-redundant converter that can deal with both.
     builder.setAllowedToSetRegistryLockPassword(
         CONTACT_ALLOWED_TO_SET_REGISTRY_LOCK_PASSWORD.extractUntyped(args).orElse(false));
 

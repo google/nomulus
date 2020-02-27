@@ -256,10 +256,13 @@
       {param placeholder: $placeholder /}
     {/call}
   {/if}
-  {if isNonnull($item['allowedToSetRegistryLockPassword'])}
-    <input type="hidden" name="allowedToSetRegistryLockPassword"
-           value="{$item['allowedToSetRegistryLockPassword']}">
-  {/if}
+  <input type="hidden" name="{$namePrefix}allowedToSetRegistryLockPassword"
+      {if isNonnull($item['allowedToSetRegistryLockPassword'])}
+      value={$item['allowedToSetRegistryLockPassword']}
+      {else}
+      value=false
+      {/if}
+  >
   <tr>
     <td colspan="2">
       <hr>
