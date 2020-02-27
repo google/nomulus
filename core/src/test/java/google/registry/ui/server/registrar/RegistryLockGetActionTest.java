@@ -102,6 +102,17 @@ public final class RegistryLockGetActionTest {
             .setRegistrarPocId("johndoe@theregistrar.com")
             .build();
     saveRegistryLock(expiredLock);
+    RegistryLock expiredUnlock =
+        new RegistryLock.Builder()
+            .setRepoId("repoId")
+            .setDomainName("expiredunlock.test")
+            .setRegistrarId("TheRegistrar")
+            .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
+            .setRegistrarPocId("johndoe@theregistrar.com")
+            .setLockCompletionTimestamp(fakeClock.nowUtc())
+            .setUnlockRequestTimestamp(fakeClock.nowUtc())
+            .build();
+    saveRegistryLock(expiredUnlock);
     fakeClock.advanceBy(Duration.standardDays(1));
 
     RegistryLock regularLock =
@@ -132,6 +143,17 @@ public final class RegistryLockGetActionTest {
             .setRegistrarPocId("johndoe@theregistrar.com")
             .build();
 
+    RegistryLock incompleteUnlock =
+        new RegistryLock.Builder()
+            .setRepoId("repoId")
+            .setDomainName("incompleteunlock.test")
+            .setRegistrarId("TheRegistrar")
+            .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
+            .setRegistrarPocId("johndoe@theregistrar.com")
+            .setLockCompletionTimestamp(fakeClock.nowUtc())
+            .setUnlockRequestTimestamp(fakeClock.nowUtc())
+            .build();
+
     RegistryLock unlockedLock =
         new RegistryLock.Builder()
             .setRepoId("repoId")
@@ -147,6 +169,7 @@ public final class RegistryLockGetActionTest {
     saveRegistryLock(regularLock);
     saveRegistryLock(adminLock);
     saveRegistryLock(incompleteLock);
+    saveRegistryLock(incompleteUnlock);
     saveRegistryLock(unlockedLock);
 
     action.run();
@@ -166,24 +189,38 @@ public final class RegistryLockGetActionTest {
                         "TheRegistrar",
                         "locks",
                         ImmutableList.of(
-                            ImmutableMap.of(
-                                "fullyQualifiedDomainName", "example.test",
-                                "lockedTime", "2000-06-09T22:00:00.000Z",
-                                "lockedBy", "johndoe@theregistrar.com",
-                                "userCanUnlock", true,
-                                "isPending", false),
-                            ImmutableMap.of(
-                                "fullyQualifiedDomainName", "adminexample.test",
-                                "lockedTime", "2000-06-09T22:00:00.001Z",
-                                "lockedBy", "admin",
-                                "userCanUnlock", false,
-                                "isPending", false),
-                            ImmutableMap.of(
-                                "fullyQualifiedDomainName", "pending.test",
-                                "lockedTime", "",
-                                "lockedBy", "johndoe@theregistrar.com",
-                                "userCanUnlock", true,
-                                "isPending", true)))));
+                            new ImmutableMap.Builder<>()
+                                .put("fullyQualifiedDomainName", "example.test")
+                                .put("lockedTime", "2000-06-09T22:00:00.000Z")
+                                .put("lockedBy", "johndoe@theregistrar.com")
+                                .put("userCanUnlock", true)
+                                .put("isLockPending", false)
+                                .put("isUnlockPending", false)
+                                .build(),
+                            new ImmutableMap.Builder<>()
+                                .put("fullyQualifiedDomainName", "adminexample.test")
+                                .put("lockedTime", "2000-06-09T22:00:00.001Z")
+                                .put("lockedBy", "admin")
+                                .put("userCanUnlock", false)
+                                .put("isLockPending", false)
+                                .put("isUnlockPending", false)
+                                .build(),
+                            new ImmutableMap.Builder<>()
+                                .put("fullyQualifiedDomainName", "pending.test")
+                                .put("lockedTime", "")
+                                .put("lockedBy", "johndoe@theregistrar.com")
+                                .put("userCanUnlock", true)
+                                .put("isLockPending", true)
+                                .put("isUnlockPending", false)
+                                .build(),
+                            new ImmutableMap.Builder<>()
+                                .put("fullyQualifiedDomainName", "incompleteunlock.test")
+                                .put("lockedTime", "2000-06-09T22:00:00.001Z")
+                                .put("lockedBy", "johndoe@theregistrar.com")
+                                .put("userCanUnlock", true)
+                                .put("isLockPending", false)
+                                .put("isUnlockPending", true)
+                                .build()))));
   }
 
   @Test

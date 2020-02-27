@@ -24,6 +24,7 @@ import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
+import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableMap;
@@ -37,6 +38,7 @@ import google.registry.server.RegistryTestServer;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.CertificateSamples;
 import java.util.UUID;
+import org.joda.time.DateTime;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -463,6 +465,24 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
                   .setRegistrarPocId("Marla.Singer@crr.com")
                   .setDomainName("pending.tld")
                   .setRepoId(pendingDomain.getRepoId())
+                  .build());
+          // and one pending-unlock domain
+          DomainBase pendingUnlockDomain =
+              persistResource(
+                  newDomainBase("pendingunlock.tld")
+                      .asBuilder()
+                      .setStatusValues(REGISTRY_LOCK_STATUSES)
+                      .build());
+          saveRegistryLock(
+              new RegistryLock.Builder()
+                  .setVerificationCode(UUID.randomUUID().toString())
+                  .isSuperuser(false)
+                  .setRegistrarId("TheRegistrar")
+                  .setRegistrarPocId("Marla.Singer@crr.com")
+                  .setDomainName(pendingUnlockDomain.getFullyQualifiedDomainName())
+                  .setRepoId(pendingUnlockDomain.getRepoId())
+                  .setLockCompletionTimestamp(DateTime.now())
+                  .setUnlockRequestTimestamp(DateTime.now())
                   .build());
           return null;
         });

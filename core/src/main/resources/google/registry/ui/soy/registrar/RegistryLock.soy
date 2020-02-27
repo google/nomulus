@@ -23,7 +23,8 @@
 
 {template .locksContent}
   {@param email: string}
-  {@param locks: list<[fullyQualifiedDomainName: string, lockedTime: string, lockedBy: string, userCanUnlock: bool, isPending: bool]>}
+  {@param locks: list<[fullyQualifiedDomainName: string, lockedTime: string, lockedBy: string,
+  userCanUnlock: bool, isLockPending: bool, isUnlockPending: bool]>}
   {@param lockEnabledForContact: bool}
 
   {call .newLock}
@@ -63,7 +64,8 @@
 
 /** Table that displays existing locks for this registrar. */
 {template .existingLocksTable}
-  {@param locks: list<[fullyQualifiedDomainName: string, lockedTime: string, lockedBy: string, userCanUnlock: bool, isPending: bool]>}
+  {@param locks: list<[fullyQualifiedDomainName: string, lockedTime: string, lockedBy: string,
+  userCanUnlock: bool, isLockPending: bool, isUnlockPending: bool]>}
   {@param lockEnabledForContact: bool}
   <h2>Existing locks</h2>
   <br>
@@ -77,11 +79,13 @@
     {for $lock in $locks}
       <tr class="{css('registry-locks-table-row')}">
         <td>{$lock.fullyQualifiedDomainName}
-          {if $lock.isPending}<i> (pending)</i>{/if}</td>
+          {if $lock.isLockPending}<i> (pending)</i>
+          {elseif $lock.isUnlockPending}<i> (unlock pending)</i>
+          {/if}</td>
         <td>{$lock.lockedTime}</td>
         <td>{$lock.lockedBy}</td>
         <td>
-          {if not $lock.isPending}
+          {if not $lock.isLockPending and not $lock.isUnlockPending}
             <button id="button-unlock-{$lock.fullyQualifiedDomainName}"
                 {if $lockEnabledForContact and $lock.userCanUnlock}
                     class="domain-unlock-button {css('kd-button')} {css('kd-button-submit')}"
