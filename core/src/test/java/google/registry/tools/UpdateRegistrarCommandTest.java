@@ -57,12 +57,12 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   @Test
   public void testSuccess_alsoUpdateInCloudSql() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isFalse();
-    jpaTm().create(loadRegistrar("NewRegistrar"));
+    jpaTm().transact(() -> jpaTm().create(loadRegistrar("NewRegistrar")));
     runCommand("--password=some_password", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isTrue();
     assertThat(
             jpaTm()
-                .load(VKey.create(Registrar.class, "NewRegistrar"))
+                .transact(() -> jpaTm().load(VKey.create(Registrar.class, "NewRegistrar")))
                 .get()
                 .verifyPassword("some_password"))
         .isTrue();
