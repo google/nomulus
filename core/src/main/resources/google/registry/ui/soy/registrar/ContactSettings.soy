@@ -258,9 +258,9 @@
   {/if}
   <input type="hidden" name="{$namePrefix}allowedToSetRegistryLockPassword"
       {if isNonnull($item['allowedToSetRegistryLockPassword'])}
-      value={$item['allowedToSetRegistryLockPassword']}
+         value="{$item['allowedToSetRegistryLockPassword']}"
       {else}
-      value=false
+         value="false"
       {/if}
   >
   <tr>
