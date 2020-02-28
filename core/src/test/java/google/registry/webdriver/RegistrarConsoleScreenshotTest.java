@@ -38,7 +38,6 @@ import google.registry.server.RegistryTestServer;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.CertificateSamples;
 import java.util.UUID;
-import org.joda.time.DateTime;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -481,8 +480,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
                   .setRegistrarPocId("Marla.Singer@crr.com")
                   .setDomainName(pendingUnlockDomain.getFullyQualifiedDomainName())
                   .setRepoId(pendingUnlockDomain.getRepoId())
-                  .setLockCompletionTimestamp(DateTime.now())
-                  .setUnlockRequestTimestamp(DateTime.now())
+                  .setLockCompletionTimestamp(START_OF_TIME)
+                  .setUnlockRequestTimestamp(START_OF_TIME)
                   .build());
           return null;
         });
