@@ -143,36 +143,36 @@ public class JpaTransactionManagerImplTest {
   }
 
   @Test
-  public void create_succeeds() {
+  public void saveNew_succeeds() {
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(theEntity))).isFalse();
-    jpaTm().transact(() -> jpaTm().create(theEntity));
+    jpaTm().transact(() -> jpaTm().saveNew(theEntity));
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(theEntity))).isTrue();
     assertThat(jpaTm().transact(() -> jpaTm().load(theEntityKey).get())).isEqualTo(theEntity);
   }
 
   @Test
-  public void create_throwsExceptionIfEntityExists() {
+  public void saveNew_throwsExceptionIfEntityExists() {
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(theEntity))).isFalse();
-    jpaTm().transact(() -> jpaTm().create(theEntity));
+    jpaTm().transact(() -> jpaTm().saveNew(theEntity));
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(theEntity))).isTrue();
     assertThat(jpaTm().transact(() -> jpaTm().load(theEntityKey).get())).isEqualTo(theEntity);
-    assertThrows(RollbackException.class, () -> jpaTm().transact(() -> jpaTm().create(theEntity)));
+    assertThrows(RollbackException.class, () -> jpaTm().transact(() -> jpaTm().saveNew(theEntity)));
   }
 
   @Test
   public void createCompoundIdEntity_succeeds() {
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(compoundIdEntity))).isFalse();
-    jpaTm().transact(() -> jpaTm().create(compoundIdEntity));
+    jpaTm().transact(() -> jpaTm().saveNew(compoundIdEntity));
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(compoundIdEntity))).isTrue();
     assertThat(jpaTm().transact(() -> jpaTm().load(compoundIdEntityKey).get()))
         .isEqualTo(compoundIdEntity);
   }
 
   @Test
-  public void createAll_succeeds() {
+  public void saveAllNew_succeeds() {
     moreEntities.forEach(
         entity -> assertThat(jpaTm().transact(() -> jpaTm().checkExists(entity))).isFalse());
-    jpaTm().transact(() -> jpaTm().createAll(moreEntities));
+    jpaTm().transact(() -> jpaTm().saveAllNew(moreEntities));
     moreEntities.forEach(
         entity -> assertThat(jpaTm().transact(() -> jpaTm().checkExists(entity))).isTrue());
     assertThat(jpaTm().transact(() -> jpaTm().loadAll(TestEntity.class)))
@@ -180,41 +180,41 @@ public class JpaTransactionManagerImplTest {
   }
 
   @Test
-  public void createAll_rollsBackWhenFailure() {
+  public void saveAllNew_rollsBackWhenFailure() {
     moreEntities.forEach(
         entity -> assertThat(jpaTm().transact(() -> jpaTm().checkExists(entity))).isFalse());
-    jpaTm().transact(() -> jpaTm().create(moreEntities.get(0)));
+    jpaTm().transact(() -> jpaTm().saveNew(moreEntities.get(0)));
     assertThrows(
-        RollbackException.class, () -> jpaTm().transact(() -> jpaTm().createAll(moreEntities)));
+        RollbackException.class, () -> jpaTm().transact(() -> jpaTm().saveAllNew(moreEntities)));
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(moreEntities.get(0)))).isTrue();
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(moreEntities.get(1)))).isFalse();
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(moreEntities.get(2)))).isFalse();
   }
 
   @Test
-  public void createOrUpdate_persistsNewEntity() {
+  public void saveNewOrUpdate_persistsNewEntity() {
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(theEntity))).isFalse();
-    jpaTm().transact(() -> jpaTm().createOrUpdate(theEntity));
+    jpaTm().transact(() -> jpaTm().saveNewOrUpdate(theEntity));
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(theEntity))).isTrue();
     assertThat(jpaTm().transact(() -> jpaTm().load(theEntityKey).get())).isEqualTo(theEntity);
   }
 
   @Test
-  public void createOrUpdate_updatesExistingEntity() {
-    jpaTm().transact(() -> jpaTm().create(theEntity));
+  public void saveNewOrUpdate_updatesExistingEntity() {
+    jpaTm().transact(() -> jpaTm().saveNew(theEntity));
     TestEntity persisted = jpaTm().transact(() -> jpaTm().load(theEntityKey)).get();
     assertThat(persisted.data).isEqualTo("foo");
     theEntity.data = "bar";
-    jpaTm().transact(() -> jpaTm().createOrUpdate(theEntity));
+    jpaTm().transact(() -> jpaTm().saveNewOrUpdate(theEntity));
     persisted = jpaTm().transact(() -> jpaTm().load(theEntityKey)).get();
     assertThat(persisted.data).isEqualTo("bar");
   }
 
   @Test
-  public void createOrUpdateAll_succeeds() {
+  public void saveNewOrUpdateAll_succeeds() {
     moreEntities.forEach(
         entity -> assertThat(jpaTm().transact(() -> jpaTm().checkExists(entity))).isFalse());
-    jpaTm().transact(() -> jpaTm().createOrUpdateAll(moreEntities));
+    jpaTm().transact(() -> jpaTm().saveNewOrUpdateAll(moreEntities));
     moreEntities.forEach(
         entity -> assertThat(jpaTm().transact(() -> jpaTm().checkExists(entity))).isTrue());
     assertThat(jpaTm().transact(() -> jpaTm().loadAll(TestEntity.class)))
@@ -223,7 +223,7 @@ public class JpaTransactionManagerImplTest {
 
   @Test
   public void update_succeeds() {
-    jpaTm().transact(() -> jpaTm().create(theEntity));
+    jpaTm().transact(() -> jpaTm().saveNew(theEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().load(VKey.create(TestEntity.class, "theEntity"))).get();
     assertThat(persisted.data).isEqualTo("foo");
@@ -235,7 +235,7 @@ public class JpaTransactionManagerImplTest {
 
   @Test
   public void updateCompoundIdEntity_succeeds() {
-    jpaTm().transact(() -> jpaTm().create(compoundIdEntity));
+    jpaTm().transact(() -> jpaTm().saveNew(compoundIdEntity));
     TestCompoundIdEntity persisted =
         jpaTm().transact(() -> jpaTm().load(compoundIdEntityKey)).get();
     assertThat(persisted.data).isEqualTo("foo");
@@ -255,7 +255,7 @@ public class JpaTransactionManagerImplTest {
 
   @Test
   public void updateAll_succeeds() {
-    jpaTm().transact(() -> jpaTm().createAll(moreEntities));
+    jpaTm().transact(() -> jpaTm().saveAllNew(moreEntities));
     ImmutableList<TestEntity> updated =
         ImmutableList.of(
             new TestEntity("entity1", "foo_updated"),
@@ -268,7 +268,7 @@ public class JpaTransactionManagerImplTest {
 
   @Test
   public void updateAll_rollsBackWhenFailure() {
-    jpaTm().transact(() -> jpaTm().createAll(moreEntities));
+    jpaTm().transact(() -> jpaTm().saveAllNew(moreEntities));
     ImmutableList<TestEntity> updated =
         ImmutableList.of(
             new TestEntity("entity1", "foo_updated"),
@@ -284,7 +284,7 @@ public class JpaTransactionManagerImplTest {
   @Test
   public void load_succeeds() {
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(theEntity))).isFalse();
-    jpaTm().transact(() -> jpaTm().create(theEntity));
+    jpaTm().transact(() -> jpaTm().saveNew(theEntity));
     TestEntity persisted = jpaTm().transact(() -> jpaTm().load(theEntityKey)).get();
     assertThat(persisted.name).isEqualTo("theEntity");
     assertThat(persisted.data).isEqualTo("foo");
@@ -293,7 +293,7 @@ public class JpaTransactionManagerImplTest {
   @Test
   public void loadCompoundIdEntity_succeeds() {
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(compoundIdEntity))).isFalse();
-    jpaTm().transact(() -> jpaTm().create(compoundIdEntity));
+    jpaTm().transact(() -> jpaTm().saveNew(compoundIdEntity));
     TestCompoundIdEntity persisted =
         jpaTm().transact(() -> jpaTm().load(compoundIdEntityKey)).get();
     assertThat(persisted.name).isEqualTo("compoundIdEntity");
@@ -303,14 +303,14 @@ public class JpaTransactionManagerImplTest {
 
   @Test
   public void loadAll_succeeds() {
-    jpaTm().transact(() -> jpaTm().createAll(moreEntities));
+    jpaTm().transact(() -> jpaTm().saveAllNew(moreEntities));
     ImmutableList<TestEntity> persisted = jpaTm().transact(() -> jpaTm().loadAll(TestEntity.class));
     assertThat(persisted).containsExactlyElementsIn(moreEntities);
   }
 
   @Test
   public void delete_succeeds() {
-    jpaTm().transact(() -> jpaTm().create(theEntity));
+    jpaTm().transact(() -> jpaTm().saveNew(theEntity));
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(theEntity))).isTrue();
     assertThat(jpaTm().transact(() -> jpaTm().delete(theEntityKey))).isEqualTo(1);
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(theEntity))).isFalse();
@@ -325,7 +325,7 @@ public class JpaTransactionManagerImplTest {
 
   @Test
   public void deleteCompoundIdEntity_succeeds() {
-    jpaTm().transact(() -> jpaTm().create(compoundIdEntity));
+    jpaTm().transact(() -> jpaTm().saveNew(compoundIdEntity));
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(compoundIdEntity))).isTrue();
     jpaTm().transact(() -> jpaTm().delete(compoundIdEntityKey));
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(compoundIdEntity))).isFalse();

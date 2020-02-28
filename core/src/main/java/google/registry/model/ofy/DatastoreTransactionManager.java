@@ -89,22 +89,22 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
-  public void create(Object entity) {
+  public void saveNew(Object entity) {
     throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
   }
 
   @Override
-  public void createAll(ImmutableCollection<?> entities) {
+  public void saveAllNew(ImmutableCollection<?> entities) {
     throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
   }
 
   @Override
-  public void createOrUpdate(Object entity) {
+  public void saveNewOrUpdate(Object entity) {
     throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
   }
 
   @Override
-  public void createOrUpdateAll(ImmutableCollection<?> entities) {
+  public void saveNewOrUpdateAll(ImmutableCollection<?> entities) {
     throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
   }
 

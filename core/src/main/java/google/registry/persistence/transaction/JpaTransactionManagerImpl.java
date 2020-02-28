@@ -158,31 +158,31 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void create(Object entity) {
+  public void saveNew(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     assertInTransaction();
     getEntityManager().persist(entity);
   }
 
   @Override
-  public void createAll(ImmutableCollection<?> entities) {
+  public void saveAllNew(ImmutableCollection<?> entities) {
     checkArgumentNotNull(entities, "entities must be specified");
     assertInTransaction();
-    entities.forEach(this::create);
+    entities.forEach(this::saveNew);
   }
 
   @Override
-  public void createOrUpdate(Object entity) {
+  public void saveNewOrUpdate(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     assertInTransaction();
     getEntityManager().merge(entity);
   }
 
   @Override
-  public void createOrUpdateAll(ImmutableCollection<?> entities) {
+  public void saveNewOrUpdateAll(ImmutableCollection<?> entities) {
     checkArgumentNotNull(entities, "entities must be specified");
     assertInTransaction();
-    entities.forEach(this::createOrUpdate);
+    entities.forEach(this::saveNewOrUpdate);
   }
 
   @Override

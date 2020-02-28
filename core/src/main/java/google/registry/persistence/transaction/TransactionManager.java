@@ -84,16 +84,16 @@ public interface TransactionManager {
   DateTime getTransactionTime();
 
   /** Persists a new entity in the database, throws exception if the entity already exists. */
-  void create(Object entity);
+  void saveNew(Object entity);
 
   /** Persists all new entities in the database, throws exception if any entity already exists. */
-  void createAll(ImmutableCollection<?> entities);
+  void saveAllNew(ImmutableCollection<?> entities);
 
   /** Persists a new entity or update the existing entity in the database. */
-  void createOrUpdate(Object entity);
+  void saveNewOrUpdate(Object entity);
 
   /** Persists all new entities or update the existing entities in the database. */
-  void createOrUpdateAll(ImmutableCollection<?> entities);
+  void saveNewOrUpdateAll(ImmutableCollection<?> entities);
 
   /** Updates an entity in the database, throws exception if the entity does not exist. */
   void update(Object entity);
