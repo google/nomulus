@@ -34,18 +34,14 @@ import com.google.common.truth.Truth8;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.DeterministicStringGenerator;
-import google.registry.testing.FakeClock;
 import google.registry.tools.CommandTestCase;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -54,12 +50,6 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class BackfillRegistryLocksCommandTest
     extends CommandTestCase<BackfillRegistryLocksCommand> {
-
-  private final FakeClock fakeClock = new FakeClock();
-
-  @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
 
   @Before
   public void before() {

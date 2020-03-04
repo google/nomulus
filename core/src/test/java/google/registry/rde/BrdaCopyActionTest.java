@@ -69,9 +69,7 @@ public class BrdaCopyActionTest extends ShardableTestCase {
   public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Rule
   public final GpgSystemCommandRule gpg = new GpgSystemCommandRule(

@@ -62,10 +62,9 @@ import org.junit.runners.JUnit4;
 public class BigqueryPollJobActionTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withTaskQueue()
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+
   private static final String PROJECT_ID = "project_id";
   private static final String JOB_ID = "job_id";
   private static final String CHAINED_QUEUE_NAME = UpdateSnapshotViewAction.QUEUE;

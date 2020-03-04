@@ -73,22 +73,25 @@ public class ReadDnsQueueActionTest {
   private FakeClock clock = new FakeClock(DateTime.parse("3000-01-01TZ"));
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withTaskQueue(Joiner.on('\n').join(
-          "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-          "<queue-entries>",
-          "  <queue>",
-          "    <name>dns-publish</name>",
-          "    <rate>1/s</rate>",
-          "  </queue>",
-          "  <queue>",
-          "    <name>dns-pull</name>",
-          "    <mode>pull</mode>",
-          "  </queue>",
-          "</queue-entries>"))
-      .withClock(clock)
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder()
+          .withDatastoreAndCloudSql()
+          .withTaskQueue(
+              Joiner.on('\n')
+                  .join(
+                      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+                      "<queue-entries>",
+                      "  <queue>",
+                      "    <name>dns-publish</name>",
+                      "    <rate>1/s</rate>",
+                      "  </queue>",
+                      "  <queue>",
+                      "    <name>dns-pull</name>",
+                      "    <mode>pull</mode>",
+                      "  </queue>",
+                      "</queue-entries>"))
+          .withClock(clock)
+          .build();
 
   @Before
   public void before() {

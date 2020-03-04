@@ -34,28 +34,18 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Range;
 import com.google.common.net.MediaType;
 import google.registry.model.registrar.Registrar;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.testing.CertificateSamples;
-import google.registry.testing.FakeClock;
 import java.io.IOException;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 
 /** Unit tests for {@link CreateRegistrarCommand}. */
 public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand> {
-
-  private final FakeClock fakeClock = new FakeClock();
-
-  @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
 
   @Mock private AppEngineConnection connection;
 
@@ -722,7 +712,6 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
     assertThat(registrar.getFaxNumber()).isNull();
     assertThat(registrar.getUrl()).isNull();
     assertThat(registrar.getDriveFolderId()).isNull();
-
   }
 
   @Test
@@ -1333,7 +1322,6 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
                 "--icann_referral_email=foo@bar.test",
                 "clientz"));
   }
-
 
   @Test
   public void testFailure_missingState() {

@@ -39,10 +39,8 @@ import org.junit.runners.JUnit4;
 public class EppLifecycleHostTest extends EppTestCase {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withTaskQueue()
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @Test
   public void testLifecycle() throws Exception {

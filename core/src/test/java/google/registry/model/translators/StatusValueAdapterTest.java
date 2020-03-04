@@ -41,9 +41,7 @@ public class StatusValueAdapterTest {
 
   // Needed to create HostResources.
   @Rule
-  public AppEngineRule appEngine = new AppEngineRule.Builder()
-      .withDatastore()
-      .build();
+  public AppEngineRule appEngine = new AppEngineRule.Builder().withDatastoreAndCloudSql().build();
 
   @Test
   public void testMarshalling() throws Exception {

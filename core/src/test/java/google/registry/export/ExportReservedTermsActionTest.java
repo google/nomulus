@@ -48,7 +48,8 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class ExportReservedTermsActionTest {
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private final DriveConnection driveConnection = mock(DriveConnection.class);
   private final Response response = mock(Response.class);

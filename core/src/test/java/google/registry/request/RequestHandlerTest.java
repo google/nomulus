@@ -56,7 +56,7 @@ public final class RequestHandlerTest {
   @Rule
   public final AppEngineRule appEngine =
       AppEngineRule.builder()
-          .withDatastore()
+          .withDatastoreAndCloudSql()
           .withUserService(UserInfo.create("test@example.com", "test@example.com"))
           .build();
 

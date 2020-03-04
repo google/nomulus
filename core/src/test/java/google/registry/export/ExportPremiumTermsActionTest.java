@@ -59,7 +59,8 @@ public class ExportPremiumTermsActionTest {
   private static final String EXPECTED_FILE_CONTENT =
       DISCLAIMER_WITH_NEWLINE + "0,USD 549.00\n" + "2048,USD 549.00\n";
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private final DriveConnection driveConnection = mock(DriveConnection.class);
   private final Response response = mock(Response.class);

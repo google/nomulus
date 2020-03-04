@@ -46,9 +46,7 @@ import org.junit.Rule;
 public abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Rule
   public final InjectRule inject = new InjectRule();

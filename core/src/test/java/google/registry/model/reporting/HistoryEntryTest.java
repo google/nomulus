@@ -40,7 +40,7 @@ public class HistoryEntryTest extends EntityTestCase {
     DomainTransactionRecord transactionRecord =
         new DomainTransactionRecord.Builder()
             .setTld("foobar")
-            .setReportingTime(clock.nowUtc())
+            .setReportingTime(fakeClock.nowUtc())
             .setReportField(TransactionReportField.NET_ADDS_1_YR)
             .setReportAmount(1)
             .build();
@@ -51,7 +51,7 @@ public class HistoryEntryTest extends EntityTestCase {
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setPeriod(Period.create(1, Period.Unit.YEARS))
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-            .setModificationTime(clock.nowUtc())
+            .setModificationTime(fakeClock.nowUtc())
             .setClientId("foo")
             .setOtherClientId("otherClient")
             .setTrid(Trid.create("ABC-123", "server-trid"))

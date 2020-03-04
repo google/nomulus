@@ -49,9 +49,7 @@ public class PendingDepositCheckerTest {
   public final InjectRule inject = new InjectRule();
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private final FakeClock clock = new FakeClock();
   private final PendingDepositChecker checker = new PendingDepositChecker();

@@ -36,9 +36,8 @@ import org.junit.runners.JUnit4;
 public class SignedMarkRevocationListTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+
   private final FakeClock clock = new FakeClock(DateTime.parse("2013-01-01T00:00:00Z"));
 
   @Test

@@ -25,6 +25,7 @@ import com.beust.jcommander.ParameterException;
 import google.registry.testing.InjectRule;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.AppEngineServiceUtils;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -34,8 +35,7 @@ import org.mockito.Mock;
 public class GenerateEscrowDepositCommandTest
     extends CommandTestCase<GenerateEscrowDepositCommand> {
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @Rule public final InjectRule inject = new InjectRule();
 
   @Mock AppEngineServiceUtils appEngineServiceUtils;
 
@@ -46,6 +46,7 @@ public class GenerateEscrowDepositCommandTest
     command = new GenerateEscrowDepositCommand();
     command.appEngineServiceUtils = appEngineServiceUtils;
     command.queue = getQueue("rde-report");
+    command.maybeEtaMillis = Optional.of(fakeClock.nowUtc().getMillis());
     when(appEngineServiceUtils.getCurrentVersionHostname("backend"))
         .thenReturn("backend.test.localhost");
   }
@@ -187,7 +188,8 @@ public class GenerateEscrowDepositCommandTest
   public void testCommand_success() throws Exception {
     runCommand("--tld=tld", "--watermark=2017-01-01T00:00:00Z", "--mode=thin", "-r 42", "-o test");
 
-    assertTasksEnqueued("rde-report",
+    assertTasksEnqueued(
+        "rde-report",
         new TaskMatcher()
             .url("/_dr/task/rdeStaging")
             .header("Host", "backend.test.localhost")
@@ -203,7 +205,8 @@ public class GenerateEscrowDepositCommandTest
   public void testCommand_successWithDefaultRevision() throws Exception {
     runCommand("--tld=tld", "--watermark=2017-01-01T00:00:00Z", "--mode=thin", "-o test");
 
-    assertTasksEnqueued("rde-report",
+    assertTasksEnqueued(
+        "rde-report",
         new TaskMatcher()
             .url("/_dr/task/rdeStaging")
             .header("Host", "backend.test.localhost")
@@ -218,7 +221,8 @@ public class GenerateEscrowDepositCommandTest
   public void testCommand_successWithDefaultMode() throws Exception {
     runCommand("--tld=tld", "--watermark=2017-01-01T00:00:00Z", "-r=42", "-o test");
 
-    assertTasksEnqueued("rde-report",
+    assertTasksEnqueued(
+        "rde-report",
         new TaskMatcher()
             .url("/_dr/task/rdeStaging")
             .header("Host", "backend.test.localhost")
@@ -239,7 +243,8 @@ public class GenerateEscrowDepositCommandTest
         "-r 42",
         "-o test");
 
-    assertTasksEnqueued("rde-report",
+    assertTasksEnqueued(
+        "rde-report",
         new TaskMatcher()
             .url("/_dr/task/rdeStaging")
             .header("Host", "backend.test.localhost")

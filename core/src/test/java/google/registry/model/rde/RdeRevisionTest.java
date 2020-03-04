@@ -35,7 +35,8 @@ import org.junit.runners.JUnit4;
 public class RdeRevisionTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+
   @Test
   public void testGetNextRevision_objectDoesntExist_returnsZero() {
     assertThat(getNextRevision("torment", DateTime.parse("1984-12-18TZ"), FULL))

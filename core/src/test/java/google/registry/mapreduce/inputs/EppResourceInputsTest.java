@@ -56,7 +56,8 @@ public class EppResourceInputsTest {
   private static final double EPSILON = 0.0001;
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+
   @SuppressWarnings("unchecked")
   private <T> T serializeAndDeserialize(T obj) throws Exception {
     try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();

@@ -87,9 +87,7 @@ import org.junit.runners.JUnit4;
 public class DomainBaseToXjcConverterTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private final DateTime now = DateTime.parse("2014-01-01T00:00:00Z");
   private final FakeClock clock = new FakeClock(now);

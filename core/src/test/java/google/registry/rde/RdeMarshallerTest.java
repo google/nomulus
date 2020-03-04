@@ -34,9 +34,7 @@ public class RdeMarshallerTest extends ShardableTestCase {
       "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n";
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
   public void testMarshalRegistrar_validData_producesXmlFragment() throws Exception {

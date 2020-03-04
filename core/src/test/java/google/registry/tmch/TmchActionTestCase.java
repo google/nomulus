@@ -41,7 +41,9 @@ public abstract class TmchActionTestCase {
   static final String MARKSDB_LOGIN_AND_PASSWORD = "lolcat:attack";
   static final String MARKSDB_URL = "http://127.0.0.1/love";
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
   @Rule public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
 

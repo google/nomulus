@@ -53,7 +53,9 @@ public class LockTest {
 
   private LockMetrics origLockMetrics;
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+
   @Rule public final InjectRule inject = new InjectRule();
 
   private Optional<Lock> acquire(String tld, Duration leaseLength, LockState expectedLockState) {

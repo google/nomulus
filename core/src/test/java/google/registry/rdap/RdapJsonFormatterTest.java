@@ -62,9 +62,8 @@ import org.junit.runners.JUnit4;
 public class RdapJsonFormatterTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+
   @Rule public final InjectRule inject = new InjectRule();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("1999-01-01T00:00:00Z"));

@@ -55,7 +55,7 @@ public class ForeignKeyIndexTest extends EntityTestCase {
     // Persist a host and implicitly persist a ForeignKeyIndex for it.
     HostResource host = persistActiveHost("ns1.example.com");
     ForeignKeyIndex<HostResource> fki =
-        ForeignKeyIndex.load(HostResource.class, "ns1.example.com", clock.nowUtc());
+        ForeignKeyIndex.load(HostResource.class, "ns1.example.com", fakeClock.nowUtc());
     assertThat(ofy().load().key(fki.getResourceKey()).now()).isEqualTo(host);
     assertThat(fki.getDeletionTime()).isEqualTo(END_OF_TIME);
   }
@@ -65,62 +65,64 @@ public class ForeignKeyIndexTest extends EntityTestCase {
     // Persist a host and implicitly persist a ForeignKeyIndex for it.
     persistActiveHost("ns1.example.com");
     verifyIndexing(
-        ForeignKeyIndex.load(HostResource.class, "ns1.example.com", clock.nowUtc()),
+        ForeignKeyIndex.load(HostResource.class, "ns1.example.com", fakeClock.nowUtc()),
         "deletionTime");
   }
 
   @Test
   public void testLoadForNonexistentForeignKey_returnsNull() {
-    assertThat(ForeignKeyIndex.load(HostResource.class, "ns1.example.com", clock.nowUtc()))
+    assertThat(ForeignKeyIndex.load(HostResource.class, "ns1.example.com", fakeClock.nowUtc()))
         .isNull();
   }
 
   @Test
   public void testLoadForDeletedForeignKey_returnsNull() {
     HostResource host = persistActiveHost("ns1.example.com");
-    persistResource(ForeignKeyIndex.create(host, clock.nowUtc().minusDays(1)));
-    assertThat(ForeignKeyIndex.load(HostResource.class, "ns1.example.com", clock.nowUtc()))
+    persistResource(ForeignKeyIndex.create(host, fakeClock.nowUtc().minusDays(1)));
+    assertThat(ForeignKeyIndex.load(HostResource.class, "ns1.example.com", fakeClock.nowUtc()))
         .isNull();
   }
 
   @Test
   public void testLoad_newerKeyHasBeenSoftDeleted() {
     HostResource host1 = persistActiveHost("ns1.example.com");
-    clock.advanceOneMilli();
+    fakeClock.advanceOneMilli();
     ForeignKeyHostIndex fki = new ForeignKeyHostIndex();
     fki.foreignKey = "ns1.example.com";
     fki.topReference = Key.create(host1);
-    fki.deletionTime = clock.nowUtc();
+    fki.deletionTime = fakeClock.nowUtc();
     persistResource(fki);
-    assertThat(ForeignKeyIndex.load(
-        HostResource.class, "ns1.example.com", clock.nowUtc())).isNull();
+    assertThat(ForeignKeyIndex.load(HostResource.class, "ns1.example.com", fakeClock.nowUtc()))
+        .isNull();
   }
 
   @Test
   public void testBatchLoad_skipsDeletedAndNonexistent() {
     persistActiveHost("ns1.example.com");
     HostResource host = persistActiveHost("ns2.example.com");
-    persistResource(ForeignKeyIndex.create(host, clock.nowUtc().minusDays(1)));
-    assertThat(ForeignKeyIndex.load(
-        HostResource.class,
-        ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
-        clock.nowUtc()).keySet())
-            .containsExactly("ns1.example.com");
+    persistResource(ForeignKeyIndex.create(host, fakeClock.nowUtc().minusDays(1)));
+    assertThat(
+            ForeignKeyIndex.load(
+                    HostResource.class,
+                    ImmutableList.of("ns1.example.com", "ns2.example.com", "ns3.example.com"),
+                    fakeClock.nowUtc())
+                .keySet())
+        .containsExactly("ns1.example.com");
   }
 
   @Test
   public void testDeadCodeThatDeletedScrapCommandsReference() {
     persistActiveHost("omg");
-    assertThat(ForeignKeyIndex.load(HostResource.class, "omg", clock.nowUtc()).getForeignKey())
+    assertThat(ForeignKeyIndex.load(HostResource.class, "omg", fakeClock.nowUtc()).getForeignKey())
         .isEqualTo("omg");
   }
 
   private ForeignKeyIndex<HostResource> loadHostFki(String hostname) {
-    return ForeignKeyIndex.load(HostResource.class, hostname, clock.nowUtc());
+    return ForeignKeyIndex.load(HostResource.class, hostname, fakeClock.nowUtc());
   }
 
   private ForeignKeyIndex<ContactResource> loadContactFki(String contactId) {
-    return ForeignKeyIndex.load(ContactResource.class, contactId, clock.nowUtc());
+    return ForeignKeyIndex.load(ContactResource.class, contactId, fakeClock.nowUtc());
   }
 
   @Test
@@ -129,17 +131,17 @@ public class ForeignKeyIndexTest extends EntityTestCase {
             ForeignKeyIndex.loadCached(
                 HostResource.class,
                 ImmutableList.of("ns5.example.com", "ns6.example.com"),
-                clock.nowUtc()))
+                fakeClock.nowUtc()))
         .isEmpty();
     persistActiveHost("ns4.example.com");
     persistActiveHost("ns5.example.com");
     persistActiveHost("ns6.example.com");
-    clock.advanceOneMilli();
+    fakeClock.advanceOneMilli();
     assertThat(
             ForeignKeyIndex.loadCached(
                 HostResource.class,
                 ImmutableList.of("ns6.example.com", "ns5.example.com", "ns4.example.com"),
-                clock.nowUtc()))
+                fakeClock.nowUtc()))
         .containsExactly("ns4.example.com", loadHostFki("ns4.example.com"));
   }
 
@@ -151,7 +153,7 @@ public class ForeignKeyIndexTest extends EntityTestCase {
             ForeignKeyIndex.loadCached(
                 HostResource.class,
                 ImmutableList.of("ns1.example.com", "ns2.example.com"),
-                clock.nowUtc()))
+                fakeClock.nowUtc()))
         .containsExactly(
             "ns1.example.com",
             loadHostFki("ns1.example.com"),
@@ -164,7 +166,7 @@ public class ForeignKeyIndexTest extends EntityTestCase {
             ForeignKeyIndex.loadCached(
                 HostResource.class,
                 ImmutableList.of("ns3.example.com", "ns2.example.com", "ns1.example.com"),
-                clock.nowUtc()))
+                fakeClock.nowUtc()))
         .containsExactly(
             "ns1.example.com", loadHostFki("ns1.example.com"),
             "ns2.example.com", loadHostFki("ns2.example.com"),
@@ -175,34 +177,34 @@ public class ForeignKeyIndexTest extends EntityTestCase {
   public void test_loadCached_doesntSeeHostChangesWhileCacheIsValid() {
     HostResource originalHost = persistActiveHost("ns1.example.com");
     ForeignKeyIndex<HostResource> originalFki = loadHostFki("ns1.example.com");
-    clock.advanceOneMilli();
+    fakeClock.advanceOneMilli();
     assertThat(
             ForeignKeyIndex.loadCached(
-                HostResource.class, ImmutableList.of("ns1.example.com"), clock.nowUtc()))
+                HostResource.class, ImmutableList.of("ns1.example.com"), fakeClock.nowUtc()))
         .containsExactly("ns1.example.com", originalFki);
     HostResource modifiedHost =
         persistResource(
             originalHost.asBuilder().setPersistedCurrentSponsorClientId("OtherRegistrar").build());
-    clock.advanceOneMilli();
+    fakeClock.advanceOneMilli();
     ForeignKeyIndex<HostResource> newFki = loadHostFki("ns1.example.com");
     assertThat(newFki).isNotEqualTo(originalFki);
-    assertThat(loadByForeignKey(HostResource.class, "ns1.example.com", clock.nowUtc()))
+    assertThat(loadByForeignKey(HostResource.class, "ns1.example.com", fakeClock.nowUtc()))
         .hasValue(modifiedHost);
     assertThat(
             ForeignKeyIndex.loadCached(
-                HostResource.class, ImmutableList.of("ns1.example.com"), clock.nowUtc()))
+                HostResource.class, ImmutableList.of("ns1.example.com"), fakeClock.nowUtc()))
         .containsExactly("ns1.example.com", originalFki);
   }
 
   @Test
   public void test_loadCached_filtersOutSoftDeletedHosts() {
     persistActiveHost("ns1.example.com");
-    persistDeletedHost("ns2.example.com", clock.nowUtc().minusDays(1));
+    persistDeletedHost("ns2.example.com", fakeClock.nowUtc().minusDays(1));
     assertThat(
             ForeignKeyIndex.loadCached(
                 HostResource.class,
                 ImmutableList.of("ns1.example.com", "ns2.example.com"),
-                clock.nowUtc()))
+                fakeClock.nowUtc()))
         .containsExactly("ns1.example.com", loadHostFki("ns1.example.com"));
   }
 
@@ -211,24 +213,24 @@ public class ForeignKeyIndexTest extends EntityTestCase {
     persistActiveContact("contactid1");
     ForeignKeyIndex<ContactResource> fki1 = loadContactFki("contactid1");
     assertThat(
-        ForeignKeyIndex.loadCached(
-            ContactResource.class,
-            ImmutableList.of("contactid1", "contactid2"),
-            clock.nowUtc()))
+            ForeignKeyIndex.loadCached(
+                ContactResource.class,
+                ImmutableList.of("contactid1", "contactid2"),
+                fakeClock.nowUtc()))
         .containsExactly("contactid1", fki1);
     persistActiveContact("contactid2");
     deleteResource(fki1);
     assertThat(
-        ForeignKeyIndex.loadCached(
-            ContactResource.class,
-            ImmutableList.of("contactid1", "contactid2"),
-            clock.nowUtc()))
+            ForeignKeyIndex.loadCached(
+                ContactResource.class,
+                ImmutableList.of("contactid1", "contactid2"),
+                fakeClock.nowUtc()))
         .containsExactly("contactid1", fki1);
     assertThat(
-        ForeignKeyIndex.load(
-            ContactResource.class,
-            ImmutableList.of("contactid1", "contactid2"),
-            clock.nowUtc()))
+            ForeignKeyIndex.load(
+                ContactResource.class,
+                ImmutableList.of("contactid1", "contactid2"),
+                fakeClock.nowUtc()))
         .containsExactly("contactid2", loadContactFki("contactid2"));
   }
 }

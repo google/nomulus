@@ -54,10 +54,8 @@ public class IcannReportingStagerTest {
   String subdir = "icann/monthly/2017-06";
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withLocalModules()
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withLocalModules().build();
 
   private IcannReportingStager createStager() {
     IcannReportingStager action = new IcannReportingStager();

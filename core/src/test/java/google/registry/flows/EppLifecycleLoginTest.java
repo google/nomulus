@@ -30,7 +30,7 @@ public class EppLifecycleLoginTest extends EppTestCase {
 
   @Rule
   public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastore().withTaskQueue().build();
+      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @Test
   public void testLoginAndLogout_recordsEppMetric() throws Exception {

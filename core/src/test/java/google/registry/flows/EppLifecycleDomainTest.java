@@ -64,7 +64,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
 
   @Rule
   public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastore().withTaskQueue().build();
+      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @Before
   public void initTld() {

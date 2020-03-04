@@ -48,7 +48,7 @@ public final class TaskQueueUtilsTest {
 
   @Rule
   public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastore().withTaskQueue().build();
+      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private int origBatchSize;
 

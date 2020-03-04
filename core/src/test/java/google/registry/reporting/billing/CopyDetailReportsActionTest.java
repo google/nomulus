@@ -52,10 +52,7 @@ import org.junit.runners.JUnit4;
 public class CopyDetailReportsActionTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
-
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private final GcsService gcsService = GcsServiceFactory.createGcsService();
   private final GcsUtils gcsUtils = new GcsUtils(gcsService, 1024);

@@ -42,7 +42,7 @@ public class RefreshDnsActionTest {
 
   @Rule
   public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastore().withTaskQueue().build();
+      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
   private final FakeClock clock = new FakeClock();

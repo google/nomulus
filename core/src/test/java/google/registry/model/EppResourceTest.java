@@ -46,7 +46,7 @@ public class EppResourceTest extends EntityTestCase {
         persistResource(originalContact.asBuilder().setEmailAddress("different@fake.lol").build());
     assertThat(EppResource.loadCached(ImmutableList.of(Key.create(originalContact))))
         .containsExactly(Key.create(originalContact), originalContact);
-    assertThat(loadByForeignKey(ContactResource.class, "contact123", clock.nowUtc()))
+    assertThat(loadByForeignKey(ContactResource.class, "contact123", fakeClock.nowUtc()))
         .hasValue(modifiedContact);
   }
 
@@ -57,10 +57,10 @@ public class EppResourceTest extends EntityTestCase {
         .containsExactly(Key.create(originalHost), originalHost);
     HostResource modifiedHost =
         persistResource(
-            originalHost.asBuilder().setLastTransferTime(clock.nowUtc().minusDays(60)).build());
+            originalHost.asBuilder().setLastTransferTime(fakeClock.nowUtc().minusDays(60)).build());
     assertThat(EppResource.loadCached(ImmutableList.of(Key.create(originalHost))))
         .containsExactly(Key.create(originalHost), originalHost);
-    assertThat(loadByForeignKey(HostResource.class, "ns1.example.com", clock.nowUtc()))
+    assertThat(loadByForeignKey(HostResource.class, "ns1.example.com", fakeClock.nowUtc()))
         .hasValue(modifiedHost);
   }
 }

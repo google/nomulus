@@ -23,11 +23,7 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.persistence.VKey;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
-import google.registry.testing.FakeClock;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -35,12 +31,8 @@ import org.junit.runners.JUnit4;
 /** Unit tests for {@link RegistrarDao}. */
 @RunWith(JUnit4.class)
 public class RegistrarDaoTest extends EntityTestCase {
-  private final VKey<Registrar> registrarKey = VKey.create(Registrar.class, "registrarId");
-  private final FakeClock fakeClock = new FakeClock();
 
-  @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
+  private final VKey<Registrar> registrarKey = VKey.create(Registrar.class, "registrarId");
 
   private Registrar testRegistrar;
 
