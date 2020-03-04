@@ -39,7 +39,7 @@ import google.registry.util.DateTimeUtils;
 import javax.inject.Inject;
 
 /**
- * Task that re-locks a previously-Registry-Locked domain after some predetermined period of time.
+ * Task that relocks a previously-Registry-Locked domain after some predetermined period of time.
  */
 @Action(
     service = Action.Service.BACKEND,
@@ -75,7 +75,34 @@ public class RelockDomainAction implements Runnable {
   private void relockDomain() {
     RegistryLock oldLock;
     try {
-      oldLock = retrieveAndValidateOldLock();
+      oldLock =
+          RegistryLockDao.getByRevisionId(oldUnlockRevisionId)
+              .orElseThrow(
+                  () ->
+                      new IllegalArgumentException(
+                          String.format("Unknown revision ID %d", oldUnlockRevisionId)));
+      DomainBase domain =
+          ofy()
+              .load()
+              .type(DomainBase.class)
+              .id(oldLock.getRepoId())
+              .now()
+              .cloneProjectedAtTime(jpaTm().getTransactionTime());
+
+      if (domain.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES)) {
+        // The domain was manually locked, so we shouldn't worry about relocking
+        String message =
+            String.format(
+                "Domain %s is already manually relocked, skipping automated relock.",
+                domain.getFullyQualifiedDomainName());
+        logger.atInfo().log(message);
+        // SC_NO_CONTENT (204) skips retry -- see the comment below
+        response.setStatus(SC_NO_CONTENT);
+        response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
+        response.setPayload(message);
+        return;
+      }
+      verifyDomainAndLockState(oldLock, domain);
     } catch (Throwable t) {
       /* If there's a bad verification code or the domain is in a bad state, we won't want to retry.
        * AppEngine will retry on non-2xx error codes, so we return SC_NO_CONTENT (204) to avoid it.
@@ -83,7 +110,7 @@ public class RelockDomainAction implements Runnable {
        * See https://cloud.google.com/appengine/docs/standard/java/taskqueue/push/retrying-tasks
        * for more details on retry behavior. */
       logger.atWarning().withCause(t).log(
-          "Exception when attempting to re-lock domain with old revision ID %d.",
+          "Exception when attempting to relock domain with old revision ID %d.",
           oldUnlockRevisionId);
       response.setStatus(SC_NO_CONTENT);
       response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
@@ -91,24 +118,6 @@ public class RelockDomainAction implements Runnable {
       return;
     }
     applyRelock(oldLock);
-  }
-
-  private RegistryLock retrieveAndValidateOldLock() {
-    RegistryLock oldLock =
-        RegistryLockDao.getByRevisionId(oldUnlockRevisionId)
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        String.format("Unknown revision ID %d", oldUnlockRevisionId)));
-    DomainBase domain =
-        ofy()
-            .load()
-            .type(DomainBase.class)
-            .id(oldLock.getRepoId())
-            .now()
-            .cloneProjectedAtTime(jpaTm().getTransactionTime());
-    verifyDomainAndLockState(oldLock, domain);
-    return oldLock;
   }
 
   private void applyRelock(RegistryLock oldLock) {
@@ -120,13 +129,13 @@ public class RelockDomainAction implements Runnable {
               oldLock.getRegistrarPocId(),
               oldLock.isSuperuser());
       RegistryLockDao.save(oldLock.asBuilder().setRelock(newLock).build());
-      logger.atInfo().log("Re-locked domain %s.", oldLock.getDomainName());
+      logger.atInfo().log("Relocked domain %s.", oldLock.getDomainName());
       response.setStatus(SC_OK);
     } catch (Throwable t) {
       // Any errors that occur here are unexpected, so we should retry. Return a non-2xx
       // error code to get AppEngine to retry
       logger.atSevere().withCause(t).log(
-          "Exception when attempting to re-lock domain %s.", oldLock.getDomainName());
+          "Exception when attempting to relock domain %s.", oldLock.getDomainName());
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
       response.setPayload(String.format("Relock failed: %s", t.getMessage()));
@@ -155,11 +164,6 @@ public class RelockDomainAction implements Runnable {
         domainName,
         oldLock.getRegistrarId(),
         domain.getCurrentSponsorClientId());
-    // We shouldn't continue if the domain is already locked
-    checkArgument(
-        !domain.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES),
-        "Domain %s is already locked",
-        domainName);
 
     // Relock shouldn't have been set already
     checkArgument(

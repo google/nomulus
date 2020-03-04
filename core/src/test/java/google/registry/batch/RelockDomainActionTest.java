@@ -134,7 +134,7 @@ public class RelockDomainActionTest {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload())
-        .isEqualTo("Relock failed: Domain example.tld is already locked");
+        .isEqualTo("Domain example.tld is already manually relocked, skipping automated relock.");
   }
 
   @Test
