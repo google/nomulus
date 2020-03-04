@@ -102,7 +102,7 @@ public class AllocationTokenTest extends EntityTestCase {
         new AllocationToken.Builder().setToken("abc123").setTokenType(SINGLE_USE).build();
     assertThat(tokenBeforePersisting.getCreationTime()).isEmpty();
     AllocationToken tokenAfterPersisting = persistResource(tokenBeforePersisting);
-    assertThat(tokenAfterPersisting.getCreationTime()).hasValue(clock.nowUtc());
+    assertThat(tokenAfterPersisting.getCreationTime()).hasValue(fakeClock.nowUtc());
   }
 
   @Test

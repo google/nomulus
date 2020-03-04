@@ -33,6 +33,7 @@ import google.registry.rde.RdeStagingAction;
 import google.registry.tools.params.DateTimeParameter;
 import google.registry.util.AppEngineServiceUtils;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -75,7 +76,12 @@ final class GenerateEscrowDepositCommand implements CommandWithRemoteApi {
   private String outdir;
 
   @Inject AppEngineServiceUtils appEngineServiceUtils;
-  @Inject @Named("rde-report") Queue queue;
+
+  @Inject
+  @Named("rde-report")
+  Queue queue;
+
+  Optional<Long> maybeEtaMillis = Optional.empty();
 
   @Override
   public void run() {
@@ -114,6 +120,9 @@ final class GenerateEscrowDepositCommand implements CommandWithRemoteApi {
                 watermarks.stream().map(DateTime::toString).collect(Collectors.joining(",")));
     if (revision != null) {
       opts = opts.param(PARAM_REVISION, String.valueOf(revision));
+    }
+    if (maybeEtaMillis.isPresent()) {
+      opts = opts.etaMillis(maybeEtaMillis.get());
     }
     queue.add(opts);
   }

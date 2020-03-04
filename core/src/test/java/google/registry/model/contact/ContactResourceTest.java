@@ -48,81 +48,89 @@ public class ContactResourceTest extends EntityTestCase {
   public void setUp() {
     createTld("foobar");
     // Set up a new persisted ContactResource entity.
-    contactResource = persistResource(cloneAndSetAutoTimestamps(
-        new ContactResource.Builder()
-            .setContactId("contact_id")
-            .setRepoId("1-FOOBAR")
-            .setCreationClientId("a registrar")
-            .setLastEppUpdateTime(clock.nowUtc())
-            .setLastEppUpdateClientId("another registrar")
-            .setLastTransferTime(clock.nowUtc())
-            .setPersistedCurrentSponsorClientId("a third registrar")
-            .setLocalizedPostalInfo(new PostalInfo.Builder()
-                .setType(Type.LOCALIZED)
-                .setAddress(new ContactAddress.Builder()
-                    .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
-                    .setCity("New York")
-                    .setState("NY")
-                    .setZip("10011")
-                    .setCountryCode("US")
-                    .build())
-                .build())
-            .setInternationalizedPostalInfo(new PostalInfo.Builder()
-                .setType(Type.INTERNATIONALIZED)
-                .setAddress(new ContactAddress.Builder()
-                    .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
-                    .setCity("New York")
-                    .setState("NY")
-                    .setZip("10011")
-                    .setCountryCode("US")
-                    .build())
-                .build())
-            .setVoiceNumber(new ContactPhoneNumber.Builder()
-                .setPhoneNumber("867-5309")
-                .build())
-            .setFaxNumber(new ContactPhoneNumber.Builder()
-                .setPhoneNumber("867-5309")
-                .setExtension("1000")
-                .build())
-            .setEmailAddress("jenny@example.com")
-            .setAuthInfo(ContactAuthInfo.create(PasswordAuth.create("passw0rd")))
-            .setDisclose(new Disclose.Builder()
-                .setVoice(new PresenceMarker())
-                .setEmail(new PresenceMarker())
-                .setFax(new PresenceMarker())
-                .setFlag(true)
-                .setAddrs(ImmutableList.of(PostalInfoChoice.create(Type.INTERNATIONALIZED)))
-                .setNames(ImmutableList.of(PostalInfoChoice.create(Type.INTERNATIONALIZED)))
-                .setOrgs(ImmutableList.of(PostalInfoChoice.create(Type.INTERNATIONALIZED)))
-                .build())
-            .setStatusValues(ImmutableSet.of(StatusValue.OK))
-            .setTransferData(new TransferData.Builder()
-                .setGainingClientId("gaining")
-                .setLosingClientId("losing")
-                .setPendingTransferExpirationTime(clock.nowUtc())
-                .setServerApproveEntities(
-                    ImmutableSet.of(Key.create(BillingEvent.OneTime.class, 1)))
-                .setTransferRequestTime(clock.nowUtc())
-                .setTransferStatus(TransferStatus.SERVER_APPROVED)
-                .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
-                .build())
-            .build()));
+    contactResource =
+        persistResource(
+            cloneAndSetAutoTimestamps(
+                new ContactResource.Builder()
+                    .setContactId("contact_id")
+                    .setRepoId("1-FOOBAR")
+                    .setCreationClientId("a registrar")
+                    .setLastEppUpdateTime(fakeClock.nowUtc())
+                    .setLastEppUpdateClientId("another registrar")
+                    .setLastTransferTime(fakeClock.nowUtc())
+                    .setPersistedCurrentSponsorClientId("a third registrar")
+                    .setLocalizedPostalInfo(
+                        new PostalInfo.Builder()
+                            .setType(Type.LOCALIZED)
+                            .setAddress(
+                                new ContactAddress.Builder()
+                                    .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
+                                    .setCity("New York")
+                                    .setState("NY")
+                                    .setZip("10011")
+                                    .setCountryCode("US")
+                                    .build())
+                            .build())
+                    .setInternationalizedPostalInfo(
+                        new PostalInfo.Builder()
+                            .setType(Type.INTERNATIONALIZED)
+                            .setAddress(
+                                new ContactAddress.Builder()
+                                    .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
+                                    .setCity("New York")
+                                    .setState("NY")
+                                    .setZip("10011")
+                                    .setCountryCode("US")
+                                    .build())
+                            .build())
+                    .setVoiceNumber(
+                        new ContactPhoneNumber.Builder().setPhoneNumber("867-5309").build())
+                    .setFaxNumber(
+                        new ContactPhoneNumber.Builder()
+                            .setPhoneNumber("867-5309")
+                            .setExtension("1000")
+                            .build())
+                    .setEmailAddress("jenny@example.com")
+                    .setAuthInfo(ContactAuthInfo.create(PasswordAuth.create("passw0rd")))
+                    .setDisclose(
+                        new Disclose.Builder()
+                            .setVoice(new PresenceMarker())
+                            .setEmail(new PresenceMarker())
+                            .setFax(new PresenceMarker())
+                            .setFlag(true)
+                            .setAddrs(
+                                ImmutableList.of(PostalInfoChoice.create(Type.INTERNATIONALIZED)))
+                            .setNames(
+                                ImmutableList.of(PostalInfoChoice.create(Type.INTERNATIONALIZED)))
+                            .setOrgs(
+                                ImmutableList.of(PostalInfoChoice.create(Type.INTERNATIONALIZED)))
+                            .build())
+                    .setStatusValues(ImmutableSet.of(StatusValue.OK))
+                    .setTransferData(
+                        new TransferData.Builder()
+                            .setGainingClientId("gaining")
+                            .setLosingClientId("losing")
+                            .setPendingTransferExpirationTime(fakeClock.nowUtc())
+                            .setServerApproveEntities(
+                                ImmutableSet.of(Key.create(BillingEvent.OneTime.class, 1)))
+                            .setTransferRequestTime(fakeClock.nowUtc())
+                            .setTransferStatus(TransferStatus.SERVER_APPROVED)
+                            .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
+                            .build())
+                    .build()));
   }
 
   @Test
   public void testPersistence() {
     assertThat(
-        loadByForeignKey(ContactResource.class, contactResource.getForeignKey(), clock.nowUtc()))
+            loadByForeignKey(
+                ContactResource.class, contactResource.getForeignKey(), fakeClock.nowUtc()))
         .hasValue(contactResource);
   }
 
   @Test
   public void testIndexing() throws Exception {
-    verifyIndexing(
-        contactResource,
-        "deletionTime",
-        "currentSponsorClientId",
-        "searchName");
+    verifyIndexing(contactResource, "deletionTime", "currentSponsorClientId", "searchName");
   }
 
   @Test
@@ -131,27 +139,30 @@ public class ContactResourceTest extends EntityTestCase {
     assertThat(new ContactResource.Builder().setContactId("").build().getContactId()).isNull();
     assertThat(new ContactResource.Builder().setContactId(" ").build().getContactId()).isNotNull();
     // Nested ImmutableObjects should also be fixed
-    assertThat(new ContactResource.Builder()
-        .setInternationalizedPostalInfo(new PostalInfo.Builder()
-            .setType(Type.INTERNATIONALIZED)
-                .setName(null)
-                .build())
-        .build()
-        .getInternationalizedPostalInfo().getName()).isNull();
-    assertThat(new ContactResource.Builder()
-        .setInternationalizedPostalInfo(new PostalInfo.Builder()
-            .setType(Type.INTERNATIONALIZED)
-                .setName("")
-                .build())
-        .build()
-        .getInternationalizedPostalInfo().getName()).isNull();
-    assertThat(new ContactResource.Builder()
-        .setInternationalizedPostalInfo(new PostalInfo.Builder()
-            .setType(Type.INTERNATIONALIZED)
-                .setName(" ")
-                .build())
-        .build()
-        .getInternationalizedPostalInfo().getName()).isNotNull();
+    assertThat(
+            new ContactResource.Builder()
+                .setInternationalizedPostalInfo(
+                    new PostalInfo.Builder().setType(Type.INTERNATIONALIZED).setName(null).build())
+                .build()
+                .getInternationalizedPostalInfo()
+                .getName())
+        .isNull();
+    assertThat(
+            new ContactResource.Builder()
+                .setInternationalizedPostalInfo(
+                    new PostalInfo.Builder().setType(Type.INTERNATIONALIZED).setName("").build())
+                .build()
+                .getInternationalizedPostalInfo()
+                .getName())
+        .isNull();
+    assertThat(
+            new ContactResource.Builder()
+                .setInternationalizedPostalInfo(
+                    new PostalInfo.Builder().setType(Type.INTERNATIONALIZED).setName(" ").build())
+                .build()
+                .getInternationalizedPostalInfo()
+                .getName())
+        .isNotNull();
   }
 
   @Test
@@ -170,32 +181,39 @@ public class ContactResourceTest extends EntityTestCase {
         .hasExactlyStatusValues(StatusValue.OK);
     // If there are other status values, OK should be suppressed.
     assertAboutContacts()
-        .that(new ContactResource.Builder()
-            .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_HOLD))
-            .build())
+        .that(
+            new ContactResource.Builder()
+                .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_HOLD))
+                .build())
         .hasExactlyStatusValues(StatusValue.CLIENT_HOLD);
     // When OK is suppressed, it should be removed even if it was originally there.
     assertAboutContacts()
-        .that(new ContactResource.Builder()
-            .setStatusValues(ImmutableSet.of(StatusValue.OK, StatusValue.CLIENT_HOLD))
-            .build())
+        .that(
+            new ContactResource.Builder()
+                .setStatusValues(ImmutableSet.of(StatusValue.OK, StatusValue.CLIENT_HOLD))
+                .build())
         .hasExactlyStatusValues(StatusValue.CLIENT_HOLD);
   }
 
   @Test
   public void testExpiredTransfer() {
-    ContactResource afterTransfer = contactResource.asBuilder()
-       .setTransferData(contactResource.getTransferData().asBuilder()
-           .setTransferStatus(TransferStatus.PENDING)
-           .setPendingTransferExpirationTime(clock.nowUtc().plusDays(1))
-           .setGainingClientId("winner")
-           .build())
-        .build()
-        .cloneProjectedAtTime(clock.nowUtc().plusDays(1));
-    assertThat(afterTransfer.getTransferData().getTransferStatus()).isEqualTo(
-        TransferStatus.SERVER_APPROVED);
+    ContactResource afterTransfer =
+        contactResource
+            .asBuilder()
+            .setTransferData(
+                contactResource
+                    .getTransferData()
+                    .asBuilder()
+                    .setTransferStatus(TransferStatus.PENDING)
+                    .setPendingTransferExpirationTime(fakeClock.nowUtc().plusDays(1))
+                    .setGainingClientId("winner")
+                    .build())
+            .build()
+            .cloneProjectedAtTime(fakeClock.nowUtc().plusDays(1));
+    assertThat(afterTransfer.getTransferData().getTransferStatus())
+        .isEqualTo(TransferStatus.SERVER_APPROVED);
     assertThat(afterTransfer.getCurrentSponsorClientId()).isEqualTo("winner");
-    assertThat(afterTransfer.getLastTransferTime()).isEqualTo(clock.nowUtc().plusDays(1));
+    assertThat(afterTransfer.getLastTransferTime()).isEqualTo(fakeClock.nowUtc().plusDays(1));
   }
 
   @Test

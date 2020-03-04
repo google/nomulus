@@ -36,9 +36,7 @@ import org.junit.runners.JUnit4;
 public class TransferDataTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private final DateTime now = DateTime.now(UTC);
 

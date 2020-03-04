@@ -26,7 +26,8 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public final class OteStatsTest {
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
   public void testSuccess_allPass() throws Exception {

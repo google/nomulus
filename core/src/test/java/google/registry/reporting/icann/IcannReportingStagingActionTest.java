@@ -56,11 +56,8 @@ public class IcannReportingStagingActionTest {
   IcannReportingStagingAction action;
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withLocalModules()
-      .withTaskQueue()
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withLocalModules().withTaskQueue().build();
 
   @Before
   public void setUp() throws Exception {

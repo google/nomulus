@@ -24,8 +24,6 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeJsonResponse;
 import org.joda.money.Money;
@@ -41,11 +39,13 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class CreatePremiumListActionTest {
 
-  @Rule
+  /*@Rule
   public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().buildIntegrationWithCoverageRule();
+      new JpaTestRules.Builder().buildIntegrationWithCoverageRule();*/
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+
   CreatePremiumListAction action;
   FakeJsonResponse response;
 

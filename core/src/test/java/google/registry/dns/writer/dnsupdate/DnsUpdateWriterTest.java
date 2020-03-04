@@ -76,7 +76,7 @@ public class DnsUpdateWriterTest {
 
   @Rule
   public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastore().withTaskQueue().build();
+      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
   @Rule public final InjectRule inject = new InjectRule();

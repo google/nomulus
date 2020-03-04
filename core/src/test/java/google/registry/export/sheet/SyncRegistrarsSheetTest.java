@@ -58,7 +58,9 @@ import org.mockito.junit.MockitoRule;
 @RunWith(JUnit4.class)
 public class SyncRegistrarsSheetTest {
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
   @Rule public final InjectRule inject = new InjectRule();
 

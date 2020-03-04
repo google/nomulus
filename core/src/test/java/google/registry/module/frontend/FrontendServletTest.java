@@ -32,7 +32,7 @@ public class FrontendServletTest {
 
   @Rule
   public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastore().withLocalModules().build();
+      AppEngineRule.builder().withDatastoreAndCloudSql().withLocalModules().build();
 
   private final HttpServletRequest req = mock(HttpServletRequest.class);
   private final HttpServletResponse rsp = mock(HttpServletResponse.class);

@@ -26,8 +26,6 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.tld.PremiumListDao;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.DatastoreHelper;
@@ -40,17 +38,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/**
- * Unit tests for {@link UpdatePremiumListAction}.
- */
+/** Unit tests for {@link UpdatePremiumListAction}. */
 @RunWith(JUnit4.class)
 public class UpdatePremiumListActionTest {
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
-
   @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().buildIntegrationWithCoverageRule();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   UpdatePremiumListAction action;
   FakeJsonResponse response;

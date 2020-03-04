@@ -37,7 +37,8 @@ public class KmsKeyringTest {
 
   @Rule public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private KmsKeyring keyring;
 

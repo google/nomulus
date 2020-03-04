@@ -23,8 +23,6 @@ import static google.registry.util.NetworkUtils.pickUnusedPort;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.server.Fixture;
 import google.registry.server.Route;
@@ -55,7 +53,6 @@ public final class TestServerRule extends ExternalResource {
 
   private final ImmutableList<Fixture> fixtures;
   private final AppEngineRule appEngineRule;
-  private final JpaIntegrationTestRule jpaTransactionManagerRule;
   private final BlockingQueue<FutureTask<?>> jobs = new LinkedBlockingDeque<>();
   private final ImmutableMap<String, Path> runfiles;
   private final ImmutableList<Route> routes;
@@ -76,14 +73,14 @@ public final class TestServerRule extends ExternalResource {
     this.fixtures = fixtures;
     // We create an GAE-Admin user, and then use AuthenticatedRegistrarAccessor.bypassAdminCheck to
     // choose whether the user is an admin or not.
-    this.appEngineRule = AppEngineRule.builder()
-        .withDatastore()
-        .withLocalModules()
-        .withUrlFetch()
-        .withTaskQueue()
-        .withUserService(UserInfo.createAdmin(email, THE_REGISTRAR_GAE_USER_ID))
-        .build();
-    this.jpaTransactionManagerRule = new JpaTestRules.Builder().buildIntegrationTestRule();
+    this.appEngineRule =
+        AppEngineRule.builder()
+            .withDatastoreAndCloudSql()
+            .withLocalModules()
+            .withUrlFetch()
+            .withTaskQueue()
+            .withUserService(UserInfo.createAdmin(email, THE_REGISTRAR_GAE_USER_ID))
+            .build();
   }
 
   @Override
@@ -168,8 +165,7 @@ public final class TestServerRule extends ExternalResource {
     @Override
     public void run() {
       try {
-        Statement appEngineStatement = appEngineRule.apply(this, Description.EMPTY);
-        jpaTransactionManagerRule.apply(appEngineStatement, Description.EMPTY).evaluate();
+        appEngineRule.apply(this, Description.EMPTY).evaluate();
       } catch (InterruptedException e) {
         // This is what we expect to happen.
       } catch (Throwable e) {

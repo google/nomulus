@@ -28,7 +28,6 @@ import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.server.RegistryTestServer;
-import google.registry.testing.AppEngineRule;
 import java.util.concurrent.TimeUnit;
 import org.junit.Rule;
 import org.junit.Test;
@@ -40,13 +39,6 @@ import org.openqa.selenium.WebElement;
 /** WebDriver tests for Registrar Console UI. */
 @RunWith(RepeatableRunner.class)
 public class RegistrarConsoleWebTest extends WebDriverTestCase {
-
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withLocalModules()
-      .withTaskQueue()
-      .build();
 
   @Rule
   public final TestServerRule server =

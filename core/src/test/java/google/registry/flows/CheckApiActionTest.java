@@ -56,7 +56,9 @@ public class CheckApiActionTest {
 
   private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 
   @Mock private CheckApiMetrics checkApiMetrics;

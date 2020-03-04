@@ -63,9 +63,7 @@ import org.junit.runners.JUnit4;
 public class OfyTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
   /** An entity to use in save and delete tests. */
   private HistoryEntry someObject;
 

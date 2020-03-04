@@ -158,7 +158,7 @@ public final class RegistryTestServerMain {
 
     Statement withAppEngine =
         AppEngineRule.builder()
-            .withDatastore()
+            .withDatastoreAndCloudSql()
             .withUrlFetch()
             .withTaskQueue()
             .withLocalModules()

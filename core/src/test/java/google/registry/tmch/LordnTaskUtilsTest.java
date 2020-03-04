@@ -48,10 +48,9 @@ public class LordnTaskUtilsTest {
   private static final Clock clock = new FakeClock(DateTime.parse("2010-05-01T10:11:12Z"));
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withTaskQueue()
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+
   @Rule
   public final InjectRule inject = new InjectRule();
 

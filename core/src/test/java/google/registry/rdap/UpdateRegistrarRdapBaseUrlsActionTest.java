@@ -79,7 +79,9 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest extends ShardableTestCa
           + "],"
           + "\"version\":\"1.0\"}";
 
-  @Rule public AppEngineRule appEngineRule = new AppEngineRule.Builder().withDatastore().build();
+  @Rule
+  public AppEngineRule appEngineRule =
+      new AppEngineRule.Builder().withDatastoreAndCloudSql().build();
 
   private static class TestHttpTransport extends MockHttpTransport {
     private final ArrayList<MockLowLevelHttpRequest> requestsSent = new ArrayList<>();

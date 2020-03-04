@@ -83,10 +83,8 @@ public abstract class FlowTestCase<F extends Flow> extends ShardableTestCase {
   public enum UserPrivileges { NORMAL, SUPERUSER }
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withTaskQueue()
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @Rule
   public final InjectRule inject = new InjectRule();

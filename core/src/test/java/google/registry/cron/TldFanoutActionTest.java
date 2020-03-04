@@ -54,17 +54,20 @@ public class TldFanoutActionTest {
   private final FakeResponse response = new FakeResponse();
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withTaskQueue(Joiner.on('\n').join(
-          "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-          "<queue-entries>",
-          "  <queue>",
-          "    <name>the-queue</name>",
-          "    <rate>1/s</rate>",
-          "  </queue>",
-          "</queue-entries>"))
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder()
+          .withDatastoreAndCloudSql()
+          .withTaskQueue(
+              Joiner.on('\n')
+                  .join(
+                      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+                      "<queue-entries>",
+                      "  <queue>",
+                      "    <name>the-queue</name>",
+                      "    <rate>1/s</rate>",
+                      "  </queue>",
+                      "</queue-entries>"))
+          .build();
 
   private static ImmutableListMultimap<String, String> getParamsMap(String... keysAndValues) {
     ImmutableListMultimap.Builder<String, String> params = new ImmutableListMultimap.Builder<>();

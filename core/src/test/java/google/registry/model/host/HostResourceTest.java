@@ -41,7 +41,7 @@ import org.junit.Test;
 /** Unit tests for {@link HostResource}. */
 public class HostResourceTest extends EntityTestCase {
 
-  final DateTime day3 = clock.nowUtc();
+  final DateTime day3 = fakeClock.nowUtc();
   final DateTime day2 = day3.minusDays(1);
   final DateTime day1 = day2.minusDays(1);
 
@@ -61,10 +61,10 @@ public class HostResourceTest extends EntityTestCase {
                     new TransferData.Builder()
                         .setGainingClientId("gaining")
                         .setLosingClientId("losing")
-                        .setPendingTransferExpirationTime(clock.nowUtc())
+                        .setPendingTransferExpirationTime(fakeClock.nowUtc())
                         .setServerApproveEntities(
                             ImmutableSet.of(Key.create(BillingEvent.OneTime.class, 1)))
-                        .setTransferRequestTime(clock.nowUtc())
+                        .setTransferRequestTime(fakeClock.nowUtc())
                         .setTransferStatus(TransferStatus.SERVER_APPROVED)
                         .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
                         .build())
@@ -76,9 +76,9 @@ public class HostResourceTest extends EntityTestCase {
                     .setRepoId("DEADBEEF-COM")
                     .setFullyQualifiedHostName("ns1.example.com")
                     .setCreationClientId("a registrar")
-                    .setLastEppUpdateTime(clock.nowUtc())
+                    .setLastEppUpdateTime(fakeClock.nowUtc())
                     .setLastEppUpdateClientId("another registrar")
-                    .setLastTransferTime(clock.nowUtc())
+                    .setLastTransferTime(fakeClock.nowUtc())
                     .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
                     .setStatusValues(ImmutableSet.of(StatusValue.OK))
                     .setSuperordinateDomain(Key.create(domain))
@@ -87,7 +87,7 @@ public class HostResourceTest extends EntityTestCase {
 
   @Test
   public void testPersistence() {
-    assertThat(loadByForeignKey(HostResource.class, host.getForeignKey(), clock.nowUtc()))
+    assertThat(loadByForeignKey(HostResource.class, host.getForeignKey(), fakeClock.nowUtc()))
         .hasValue(host);
   }
 
@@ -106,15 +106,24 @@ public class HostResourceTest extends EntityTestCase {
 
   @Test
   public void testEmptyStringsBecomeNull() {
-    assertThat(new HostResource.Builder().setPersistedCurrentSponsorClientId(null).build()
-        .getPersistedCurrentSponsorClientId())
-            .isNull();
-    assertThat(new HostResource.Builder().setPersistedCurrentSponsorClientId("").build()
-        .getPersistedCurrentSponsorClientId())
-            .isNull();
-    assertThat(new HostResource.Builder().setPersistedCurrentSponsorClientId(" ").build()
-        .getPersistedCurrentSponsorClientId())
-            .isNotNull();
+    assertThat(
+            new HostResource.Builder()
+                .setPersistedCurrentSponsorClientId(null)
+                .build()
+                .getPersistedCurrentSponsorClientId())
+        .isNull();
+    assertThat(
+            new HostResource.Builder()
+                .setPersistedCurrentSponsorClientId("")
+                .build()
+                .getPersistedCurrentSponsorClientId())
+        .isNull();
+    assertThat(
+            new HostResource.Builder()
+                .setPersistedCurrentSponsorClientId(" ")
+                .build()
+                .getPersistedCurrentSponsorClientId())
+        .isNotNull();
   }
 
   @Test
@@ -138,15 +147,17 @@ public class HostResourceTest extends EntityTestCase {
         .hasExactlyStatusValues(StatusValue.OK);
     // If there are other status values, OK should be suppressed.
     assertAboutHosts()
-        .that(new HostResource.Builder()
-            .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_HOLD))
-            .build())
+        .that(
+            new HostResource.Builder()
+                .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_HOLD))
+                .build())
         .hasExactlyStatusValues(StatusValue.CLIENT_HOLD);
     // When OK is suppressed, it should be removed even if it was originally there.
     assertAboutHosts()
-        .that(new HostResource.Builder()
-            .setStatusValues(ImmutableSet.of(StatusValue.OK, StatusValue.CLIENT_HOLD))
-            .build())
+        .that(
+            new HostResource.Builder()
+                .setStatusValues(ImmutableSet.of(StatusValue.OK, StatusValue.CLIENT_HOLD))
+                .build())
         .hasExactlyStatusValues(StatusValue.CLIENT_HOLD);
   }
 
@@ -181,10 +192,7 @@ public class HostResourceTest extends EntityTestCase {
   @Test
   public void testComputeLastTransferTime_hostNeverSwitchedDomains_domainWasNeverTransferred() {
     domain = domain.asBuilder().setLastTransferTime(null).build();
-    host = host.asBuilder()
-        .setLastTransferTime(null)
-        .setLastSuperordinateChange(null)
-        .build();
+    host = host.asBuilder().setLastTransferTime(null).setLastSuperordinateChange(null).build();
     assertThat(host.computeLastTransferTime(domain)).isNull();
   }
 
@@ -194,11 +202,12 @@ public class HostResourceTest extends EntityTestCase {
     // Domain was transferred on Day 2.
     // Host was always subordinate to domain (and was created before the transfer).
     domain = domain.asBuilder().setLastTransferTime(day2).build();
-    host = host.asBuilder()
-        .setCreationTimeForTest(day1)
-        .setLastTransferTime(null)
-        .setLastSuperordinateChange(null)
-        .build();
+    host =
+        host.asBuilder()
+            .setCreationTimeForTest(day1)
+            .setLastTransferTime(null)
+            .setLastSuperordinateChange(null)
+            .build();
     assertThat(host.computeLastTransferTime(domain)).isEqualTo(day2);
   }
 
@@ -215,7 +224,7 @@ public class HostResourceTest extends EntityTestCase {
                     .setRepoId("DEADBEEF-COM")
                     .setFullyQualifiedHostName("ns1.example.com")
                     .setCreationClientId("a registrar")
-                    .setLastEppUpdateTime(clock.nowUtc())
+                    .setLastEppUpdateTime(fakeClock.nowUtc())
                     .setLastEppUpdateClientId("another registrar")
                     .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
                     .setStatusValues(ImmutableSet.of(StatusValue.OK))
@@ -230,10 +239,7 @@ public class HostResourceTest extends EntityTestCase {
     // Host was made subordinate to domain on Day 2.
     // Domain was never transferred.
     domain = domain.asBuilder().setLastTransferTime(null).build();
-    host = host.asBuilder()
-        .setLastTransferTime(day1)
-        .setLastSuperordinateChange(day2)
-        .build();
+    host = host.asBuilder().setLastTransferTime(day1).setLastSuperordinateChange(day2).build();
     assertThat(host.computeLastTransferTime(domain)).isEqualTo(day1);
   }
 
@@ -243,10 +249,7 @@ public class HostResourceTest extends EntityTestCase {
     // Domain was transferred on Day 2.
     // Host was made subordinate to domain on Day 3.
     domain = domain.asBuilder().setLastTransferTime(day2).build();
-    host = host.asBuilder()
-        .setLastTransferTime(day1)
-        .setLastSuperordinateChange(day3)
-        .build();
+    host = host.asBuilder().setLastTransferTime(day1).setLastSuperordinateChange(day3).build();
     assertThat(host.computeLastTransferTime(domain)).isEqualTo(day1);
   }
 
@@ -256,10 +259,7 @@ public class HostResourceTest extends EntityTestCase {
     // Host was made subordinate to domain on Day 2.
     // Domain was transferred on Day 3.
     domain = domain.asBuilder().setLastTransferTime(day3).build();
-    host = host.asBuilder()
-        .setLastTransferTime(day1)
-        .setLastSuperordinateChange(day2)
-        .build();
+    host = host.asBuilder().setLastTransferTime(day1).setLastSuperordinateChange(day2).build();
     assertThat(host.computeLastTransferTime(domain)).isEqualTo(day3);
   }
 }

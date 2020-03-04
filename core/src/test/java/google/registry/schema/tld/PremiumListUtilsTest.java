@@ -29,7 +29,8 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class PremiumListUtilsTest {
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
   public void parseInputToPremiumList_works() {

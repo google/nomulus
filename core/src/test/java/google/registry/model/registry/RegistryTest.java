@@ -112,30 +112,24 @@ public class RegistryTest extends EntityTestCase {
 
   @Test
   public void testSettingNumDnsPublishShards() {
-    Registry registry =
-        Registry.get("tld").asBuilder().setNumDnsPublishLocks(2).build();
+    Registry registry = Registry.get("tld").asBuilder().setNumDnsPublishLocks(2).build();
     assertThat(registry.getNumDnsPublishLocks()).isEqualTo(2);
   }
 
   @Test
   public void testSetReservedList_doesntMutateExistingRegistry() {
-    ReservedList rl15 = persistReservedList(
-        "tld-reserved15",
-        "potato,FULLY_BLOCKED",
-        "phone,FULLY_BLOCKED");
-    ReservedList rl16 = persistReservedList(
-        "tld-reserved16",
-        "port,FULLY_BLOCKED",
-        "manteau,FULLY_BLOCKED");
+    ReservedList rl15 =
+        persistReservedList("tld-reserved15", "potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED");
+    ReservedList rl16 =
+        persistReservedList("tld-reserved16", "port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED");
     Registry registry1 =
         newRegistry("propter", "PROPTER")
             .asBuilder()
             .setReservedLists(ImmutableSet.of(rl15))
             .build();
     assertThat(registry1.getReservedLists()).hasSize(1);
-    Registry registry2 = registry1.asBuilder()
-        .setReservedLists(ImmutableSet.of(rl15, rl16))
-        .build();
+    Registry registry2 =
+        registry1.asBuilder().setReservedLists(ImmutableSet.of(rl15, rl16)).build();
     assertThat(registry1.getReservedLists()).hasSize(1);
     assertThat(registry2.getReservedLists()).hasSize(2);
   }
@@ -162,16 +156,12 @@ public class RegistryTest extends EntityTestCase {
 
   @Test
   public void testSetReservedLists() {
-    ReservedList rl5 = persistReservedList(
-        "tld-reserved5",
-        "lol,FULLY_BLOCKED",
-        "cat,FULLY_BLOCKED");
-    ReservedList rl6 = persistReservedList(
-        "tld-reserved6",
-        "hammock,FULLY_BLOCKED",
-        "mouse,FULLY_BLOCKED");
-    Registry r = Registry.get("tld")
-        .asBuilder().setReservedLists(ImmutableSet.of(rl5, rl6)).build();
+    ReservedList rl5 =
+        persistReservedList("tld-reserved5", "lol,FULLY_BLOCKED", "cat,FULLY_BLOCKED");
+    ReservedList rl6 =
+        persistReservedList("tld-reserved6", "hammock,FULLY_BLOCKED", "mouse,FULLY_BLOCKED");
+    Registry r =
+        Registry.get("tld").asBuilder().setReservedLists(ImmutableSet.of(rl5, rl6)).build();
     assertThat(r.getReservedLists().stream().map(Key::getName))
         .containsExactly("tld-reserved5", "tld-reserved6");
     r = Registry.get("tld").asBuilder().setReservedLists(ImmutableSet.of()).build();
@@ -180,19 +170,13 @@ public class RegistryTest extends EntityTestCase {
 
   @Test
   public void testSetReservedListsByName() {
-    persistReservedList(
-        "tld-reserved24",
-        "lol,FULLY_BLOCKED",
-        "cat,FULLY_BLOCKED");
-    persistReservedList(
-        "tld-reserved25",
-        "mit,FULLY_BLOCKED",
-        "tim,FULLY_BLOCKED");
-    Registry r = Registry
-        .get("tld")
-        .asBuilder()
-        .setReservedListsByName(ImmutableSet.of("tld-reserved24", "tld-reserved25"))
-        .build();
+    persistReservedList("tld-reserved24", "lol,FULLY_BLOCKED", "cat,FULLY_BLOCKED");
+    persistReservedList("tld-reserved25", "mit,FULLY_BLOCKED", "tim,FULLY_BLOCKED");
+    Registry r =
+        Registry.get("tld")
+            .asBuilder()
+            .setReservedListsByName(ImmutableSet.of("tld-reserved24", "tld-reserved25"))
+            .build();
     assertThat(r.getReservedLists().stream().map(Key::getName))
         .containsExactly("tld-reserved24", "tld-reserved25");
     r = Registry.get("tld").asBuilder().setReservedListsByName(ImmutableSet.of()).build();
@@ -232,9 +216,11 @@ public class RegistryTest extends EntityTestCase {
 
   @Test
   public void testPdtLooksLikeGa() {
-    Registry registry = Registry.get("tld").asBuilder()
-        .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, TldState.PDT))
-        .build();
+    Registry registry =
+        Registry.get("tld")
+            .asBuilder()
+            .setTldStateTransitions(ImmutableSortedMap.of(START_OF_TIME, TldState.PDT))
+            .build();
     assertThat(registry.getTldState(START_OF_TIME)).isEqualTo(GENERAL_AVAILABILITY);
   }
 
@@ -246,71 +232,83 @@ public class RegistryTest extends EntityTestCase {
             .setTldStateTransitions(
                 ImmutableSortedMap.<DateTime, TldState>naturalOrder()
                     .put(START_OF_TIME, PREDELEGATION)
-                    .put(clock.nowUtc().plusMonths(1), START_DATE_SUNRISE)
-                    .put(clock.nowUtc().plusMonths(2), QUIET_PERIOD)
-                    .put(clock.nowUtc().plusMonths(3), GENERAL_AVAILABILITY)
+                    .put(fakeClock.nowUtc().plusMonths(1), START_DATE_SUNRISE)
+                    .put(fakeClock.nowUtc().plusMonths(2), QUIET_PERIOD)
+                    .put(fakeClock.nowUtc().plusMonths(3), GENERAL_AVAILABILITY)
                     .build())
             .build();
-    assertThat(registry.getTldState(clock.nowUtc())).isEqualTo(PREDELEGATION);
-    assertThat(registry.getTldState(clock.nowUtc().plusMillis(1))).isEqualTo(PREDELEGATION);
-    assertThat(registry.getTldState(clock.nowUtc().plusMonths(1).minusMillis(1)))
+    assertThat(registry.getTldState(fakeClock.nowUtc())).isEqualTo(PREDELEGATION);
+    assertThat(registry.getTldState(fakeClock.nowUtc().plusMillis(1))).isEqualTo(PREDELEGATION);
+    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(1).minusMillis(1)))
         .isEqualTo(PREDELEGATION);
-    assertThat(registry.getTldState(clock.nowUtc().plusMonths(1))).isEqualTo(START_DATE_SUNRISE);
-    assertThat(registry.getTldState(clock.nowUtc().plusMonths(1).plusMillis(1)))
+    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(1)))
         .isEqualTo(START_DATE_SUNRISE);
-    assertThat(registry.getTldState(clock.nowUtc().plusMonths(2).minusMillis(1)))
+    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(1).plusMillis(1)))
         .isEqualTo(START_DATE_SUNRISE);
-    assertThat(registry.getTldState(clock.nowUtc().plusMonths(2))).isEqualTo(QUIET_PERIOD);
-    assertThat(registry.getTldState(clock.nowUtc().plusMonths(2).plusMillis(1)))
+    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(2).minusMillis(1)))
+        .isEqualTo(START_DATE_SUNRISE);
+    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(2))).isEqualTo(QUIET_PERIOD);
+    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(2).plusMillis(1)))
         .isEqualTo(QUIET_PERIOD);
-    assertThat(registry.getTldState(clock.nowUtc().plusMonths(3).minusMillis(1)))
+    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(3).minusMillis(1)))
         .isEqualTo(QUIET_PERIOD);
-    assertThat(registry.getTldState(clock.nowUtc().plusMonths(3))).isEqualTo(GENERAL_AVAILABILITY);
-    assertThat(registry.getTldState(clock.nowUtc().plusMonths(3).plusMillis(1)))
+    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(3)))
+        .isEqualTo(GENERAL_AVAILABILITY);
+    assertThat(registry.getTldState(fakeClock.nowUtc().plusMonths(3).plusMillis(1)))
         .isEqualTo(GENERAL_AVAILABILITY);
     assertThat(registry.getTldState(END_OF_TIME)).isEqualTo(GENERAL_AVAILABILITY);
   }
 
   @Test
   public void testQuietPeriodCanAppearMultipleTimesAnywhere() {
-    Registry.get("tld").asBuilder()
-        .setTldStateTransitions(ImmutableSortedMap.<DateTime, TldState>naturalOrder()
-            .put(START_OF_TIME, PREDELEGATION)
-            .put(clock.nowUtc().plusMonths(1), QUIET_PERIOD)
-            .put(clock.nowUtc().plusMonths(2), START_DATE_SUNRISE)
-            .put(clock.nowUtc().plusMonths(3), QUIET_PERIOD)
-            .put(clock.nowUtc().plusMonths(6), GENERAL_AVAILABILITY)
-            .build())
+    Registry.get("tld")
+        .asBuilder()
+        .setTldStateTransitions(
+            ImmutableSortedMap.<DateTime, TldState>naturalOrder()
+                .put(START_OF_TIME, PREDELEGATION)
+                .put(fakeClock.nowUtc().plusMonths(1), QUIET_PERIOD)
+                .put(fakeClock.nowUtc().plusMonths(2), START_DATE_SUNRISE)
+                .put(fakeClock.nowUtc().plusMonths(3), QUIET_PERIOD)
+                .put(fakeClock.nowUtc().plusMonths(6), GENERAL_AVAILABILITY)
+                .build())
         .build();
   }
 
   @Test
   public void testRenewBillingCostTransitionTimes() {
-    Registry registry = Registry.get("tld").asBuilder()
-        .setRenewBillingCostTransitions(ImmutableSortedMap.of(
-            START_OF_TIME, Money.of(USD, 8),
-            clock.nowUtc(), Money.of(USD, 1),
-            clock.nowUtc().plusMonths(1), Money.of(USD, 2),
-            clock.nowUtc().plusMonths(2), Money.of(USD, 3))).build();
+    Registry registry =
+        Registry.get("tld")
+            .asBuilder()
+            .setRenewBillingCostTransitions(
+                ImmutableSortedMap.of(
+                    START_OF_TIME,
+                    Money.of(USD, 8),
+                    fakeClock.nowUtc(),
+                    Money.of(USD, 1),
+                    fakeClock.nowUtc().plusMonths(1),
+                    Money.of(USD, 2),
+                    fakeClock.nowUtc().plusMonths(2),
+                    Money.of(USD, 3)))
+            .build();
     assertThat(registry.getStandardRenewCost(START_OF_TIME)).isEqualTo(Money.of(USD, 8));
-    assertThat(registry.getStandardRenewCost(clock.nowUtc().minusMillis(1)))
+    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().minusMillis(1)))
         .isEqualTo(Money.of(USD, 8));
-    assertThat(registry.getStandardRenewCost(clock.nowUtc())).isEqualTo(Money.of(USD, 1));
-    assertThat(registry.getStandardRenewCost(clock.nowUtc().plusMillis(1)))
+    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 1));
+    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMillis(1)))
         .isEqualTo(Money.of(USD, 1));
-    assertThat(registry.getStandardRenewCost(clock.nowUtc().plusMonths(1).minusMillis(1)))
+    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMonths(1).minusMillis(1)))
         .isEqualTo(Money.of(USD, 1));
-    assertThat(registry.getStandardRenewCost(clock.nowUtc().plusMonths(1)))
+    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMonths(1)))
         .isEqualTo(Money.of(USD, 2));
-    assertThat(registry.getStandardRenewCost(clock.nowUtc().plusMonths(1).plusMillis(1)))
+    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMonths(1).plusMillis(1)))
         .isEqualTo(Money.of(USD, 2));
-    assertThat(registry.getStandardRenewCost(clock.nowUtc().plusMonths(2).minusMillis(1)))
+    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMonths(2).minusMillis(1)))
         .isEqualTo(Money.of(USD, 2));
-    assertThat(registry.getStandardRenewCost(clock.nowUtc().plusMonths(2)))
+    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMonths(2)))
         .isEqualTo(Money.of(USD, 3));
-    assertThat(registry.getStandardRenewCost(clock.nowUtc().plusMonths(2).plusMillis(1)))
+    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMonths(2).plusMillis(1)))
         .isEqualTo(Money.of(USD, 3));
-    assertThat(registry.getStandardRenewCost(clock.nowUtc().plusMonths(3).minusMillis(1)))
+    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMonths(3).minusMillis(1)))
         .isEqualTo(Money.of(USD, 3));
     assertThat(registry.getStandardRenewCost(END_OF_TIME)).isEqualTo(Money.of(USD, 3));
   }
@@ -320,10 +318,10 @@ public class RegistryTest extends EntityTestCase {
     Registry registry = Registry.get("tld");
     // The default value of 11 is set in createTld().
     assertThat(registry.getStandardRenewCost(START_OF_TIME)).isEqualTo(Money.of(USD, 11));
-    assertThat(registry.getStandardRenewCost(clock.nowUtc().minusMillis(1)))
+    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().minusMillis(1)))
         .isEqualTo(Money.of(USD, 11));
-    assertThat(registry.getStandardRenewCost(clock.nowUtc())).isEqualTo(Money.of(USD, 11));
-    assertThat(registry.getStandardRenewCost(clock.nowUtc().plusMillis(1)))
+    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc())).isEqualTo(Money.of(USD, 11));
+    assertThat(registry.getStandardRenewCost(fakeClock.nowUtc().plusMillis(1)))
         .isEqualTo(Money.of(USD, 11));
     assertThat(registry.getStandardRenewCost(END_OF_TIME)).isEqualTo(Money.of(USD, 11));
   }
@@ -371,8 +369,8 @@ public class RegistryTest extends EntityTestCase {
                 .asBuilder()
                 .setTldStateTransitions(
                     ImmutableSortedMap.of(
-                        clock.nowUtc(), GENERAL_AVAILABILITY,
-                        clock.nowUtc().plusMonths(1), START_DATE_SUNRISE))
+                        fakeClock.nowUtc(), GENERAL_AVAILABILITY,
+                        fakeClock.nowUtc().plusMonths(1), START_DATE_SUNRISE))
                 .build());
   }
 
@@ -385,8 +383,8 @@ public class RegistryTest extends EntityTestCase {
                 .asBuilder()
                 .setTldStateTransitions(
                     ImmutableSortedMap.of(
-                        clock.nowUtc(), START_DATE_SUNRISE,
-                        clock.nowUtc().plusMonths(1), START_DATE_SUNRISE))
+                        fakeClock.nowUtc(), START_DATE_SUNRISE,
+                        fakeClock.nowUtc().plusMonths(1), START_DATE_SUNRISE))
                 .build());
   }
 
@@ -511,26 +509,29 @@ public class RegistryTest extends EntityTestCase {
 
   @Test
   public void testEapFee_undefined() {
-    assertThat(Registry.get("tld").getEapFeeFor(clock.nowUtc()).getCost())
+    assertThat(Registry.get("tld").getEapFeeFor(fakeClock.nowUtc()).getCost())
         .isEqualTo(BigDecimal.ZERO.setScale(2, ROUND_UNNECESSARY));
   }
 
   @Test
   public void testEapFee_specified() {
-    DateTime a = clock.nowUtc().minusDays(1);
-    DateTime b = clock.nowUtc().plusDays(1);
+    DateTime a = fakeClock.nowUtc().minusDays(1);
+    DateTime b = fakeClock.nowUtc().plusDays(1);
     Registry registry =
-        Registry.get("tld").asBuilder().setEapFeeSchedule(
-            ImmutableSortedMap.of(
-                START_OF_TIME, Money.of(USD, 0),
-                a, Money.of(USD, 100),
-                b, Money.of(USD, 50))).build();
+        Registry.get("tld")
+            .asBuilder()
+            .setEapFeeSchedule(
+                ImmutableSortedMap.of(
+                    START_OF_TIME, Money.of(USD, 0),
+                    a, Money.of(USD, 100),
+                    b, Money.of(USD, 50)))
+            .build();
 
-    assertThat(registry.getEapFeeFor(clock.nowUtc()).getCost())
+    assertThat(registry.getEapFeeFor(fakeClock.nowUtc()).getCost())
         .isEqualTo(new BigDecimal("100.00"));
-    assertThat(registry.getEapFeeFor(clock.nowUtc().minusDays(2)).getCost())
+    assertThat(registry.getEapFeeFor(fakeClock.nowUtc().minusDays(2)).getCost())
         .isEqualTo(BigDecimal.ZERO.setScale(2, ROUND_UNNECESSARY));
-    assertThat(registry.getEapFeeFor(clock.nowUtc().plusDays(2)).getCost())
+    assertThat(registry.getEapFeeFor(fakeClock.nowUtc().plusDays(2)).getCost())
         .isEqualTo(new BigDecimal("50.00"));
   }
 

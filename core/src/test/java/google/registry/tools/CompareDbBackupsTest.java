@@ -37,7 +37,9 @@ public class CompareDbBackupsTest {
   private final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
 
   @Rule public final TemporaryFolder tempFs = new TemporaryFolder();
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
   public void testCommand() throws Exception {

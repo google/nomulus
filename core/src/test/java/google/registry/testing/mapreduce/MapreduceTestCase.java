@@ -79,11 +79,8 @@ public abstract class MapreduceTestCase<T> extends ShardableTestCase {
   private LocalTaskQueue taskQueue;
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withLocalModules()
-      .withTaskQueue()
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withLocalModules().withTaskQueue().build();
 
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 

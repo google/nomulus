@@ -29,27 +29,23 @@ import static org.junit.Assert.assertThrows;
 import google.registry.model.EntityTestCase;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registry.Registry;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.cursor.CursorDao;
-import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
-import org.junit.Rule;
+import org.junit.Before;
 import org.junit.Test;
 
 /** Unit tests for {@link Cursor}. */
 public class CursorTest extends EntityTestCase {
 
-  private final FakeClock fakeClock = new FakeClock(DateTime.parse("2010-10-17TZ"));
-
-  @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
+  @Before
+  public void setUp() {
+    fakeClock.setTo(DateTime.parse("2010-10-17TZ"));
+  }
 
   @Test
   public void testSuccess_persistScopedCursor() {
     createTld("tld");
-    clock.advanceOneMilli();
+    this.fakeClock.advanceOneMilli();
     final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
     Cursor cursor = Cursor.create(RDE_UPLOAD, time, Registry.get("tld"));
     CursorDao.saveCursor(cursor, "tld");
@@ -85,7 +81,7 @@ public class CursorTest extends EntityTestCase {
   @Test
   public void testFailure_invalidScopeOnCreate() {
     createTld("tld");
-    clock.advanceOneMilli();
+    this.fakeClock.advanceOneMilli();
     final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
     final DomainBase domain = persistActiveDomain("notaregistry.tld");
     IllegalArgumentException thrown =

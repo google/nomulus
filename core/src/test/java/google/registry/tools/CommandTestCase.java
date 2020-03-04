@@ -31,6 +31,7 @@ import com.google.common.reflect.TypeToken;
 import google.registry.model.poll.PollMessage;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.CertificateSamples;
+import google.registry.testing.FakeClock;
 import google.registry.testing.SystemPropertyRule;
 import google.registry.tools.params.ParameterFactory;
 import java.io.ByteArrayOutputStream;
@@ -67,9 +68,15 @@ public abstract class CommandTestCase<C extends Command> {
 
   protected C command;
 
+  public final FakeClock fakeClock = new FakeClock();
+
   @Rule
   public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastore().withTaskQueue().build();
+      AppEngineRule.builder()
+          .withDatastoreAndCloudSql()
+          .withClock(fakeClock)
+          .withTaskQueue()
+          .build();
 
   @Rule public final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
 
