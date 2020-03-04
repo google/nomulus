@@ -41,7 +41,7 @@ public class SqlHelper {
   }
 
   public static ImmutableList<RegistryLock> getRegistryLocksByRegistrarId(String registrarId) {
-    return jpaTm().transact(() -> RegistryLockDao.getLockedDomainsByRegistrarId(registrarId));
+    return jpaTm().transact(() -> RegistryLockDao.getLocksByRegistrarId(registrarId));
   }
 
   public static Optional<RegistryLock> getRegistryLockByRevisionId(long revisionId) {

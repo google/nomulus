@@ -24,6 +24,7 @@ import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
+import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableMap;
@@ -453,6 +454,35 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
           saveRegistryLock(createRegistryLock(domain).asBuilder().isSuperuser(true).build());
           DomainBase otherDomain = persistActiveDomain("otherexample.tld");
           saveRegistryLock(createRegistryLock(otherDomain));
+          // include one pending-lock domain
+          DomainBase pendingDomain = persistActiveDomain("pending.tld");
+          saveRegistryLock(
+              new RegistryLock.Builder()
+                  .setVerificationCode(UUID.randomUUID().toString())
+                  .isSuperuser(false)
+                  .setRegistrarId("TheRegistrar")
+                  .setRegistrarPocId("Marla.Singer@crr.com")
+                  .setDomainName("pending.tld")
+                  .setRepoId(pendingDomain.getRepoId())
+                  .build());
+          // and one pending-unlock domain
+          DomainBase pendingUnlockDomain =
+              persistResource(
+                  newDomainBase("pendingunlock.tld")
+                      .asBuilder()
+                      .setStatusValues(REGISTRY_LOCK_STATUSES)
+                      .build());
+          saveRegistryLock(
+              new RegistryLock.Builder()
+                  .setVerificationCode(UUID.randomUUID().toString())
+                  .isSuperuser(false)
+                  .setRegistrarId("TheRegistrar")
+                  .setRegistrarPocId("Marla.Singer@crr.com")
+                  .setDomainName(pendingUnlockDomain.getFullyQualifiedDomainName())
+                  .setRepoId(pendingUnlockDomain.getRepoId())
+                  .setLockCompletionTimestamp(START_OF_TIME)
+                  .setUnlockRequestTimestamp(START_OF_TIME)
+                  .build());
           return null;
         });
     driver.get(server.getUrl("/registrar#registry-lock"));
@@ -523,7 +553,7 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         .setRegistrarId("TheRegistrar")
         .setRegistrarPocId("Marla.Singer@crr.com")
         .setLockCompletionTimestamp(START_OF_TIME)
-        .setDomainName("example.tld")
+        .setDomainName(domainBase.getFullyQualifiedDomainName())
         .setRepoId(domainBase.getRepoId())
         .build();
   }

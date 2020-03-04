@@ -68,6 +68,8 @@ public final class RegistryLockGetAction implements JsonGetAction {
   private static final String FULLY_QUALIFIED_DOMAIN_NAME_PARAM = "fullyQualifiedDomainName";
   private static final String LOCKED_TIME_PARAM = "lockedTime";
   private static final String LOCKED_BY_PARAM = "lockedBy";
+  private static final String IS_LOCK_PENDING_PARAM = "isLockPending";
+  private static final String IS_UNLOCK_PENDING_PARAM = "isUnlockPending";
   private static final String USER_CAN_UNLOCK_PARAM = "userCanUnlock";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -155,20 +157,25 @@ public final class RegistryLockGetAction implements JsonGetAction {
     return jpaTm()
         .transact(
             () ->
-                RegistryLockDao.getLockedDomainsByRegistrarId(clientId).stream()
+                RegistryLockDao.getLocksByRegistrarId(clientId).stream()
+                    .filter(lock -> !lock.isLockRequestExpired(jpaTm().getTransactionTime()))
+                    .filter(lock -> !lock.isUnlockRequestExpired(jpaTm().getTransactionTime()))
                     .map(lock -> lockToMap(lock, isAdmin))
                     .collect(toImmutableList()));
   }
 
   private ImmutableMap<String, ?> lockToMap(RegistryLock lock, boolean isAdmin) {
-    return ImmutableMap.of(
-        FULLY_QUALIFIED_DOMAIN_NAME_PARAM,
-        lock.getDomainName(),
-        LOCKED_TIME_PARAM,
-        lock.getLockCompletionTimestamp().map(DateTime::toString).orElse(""),
-        LOCKED_BY_PARAM,
-        lock.isSuperuser() ? "admin" : lock.getRegistrarPocId(),
-        USER_CAN_UNLOCK_PARAM,
-        isAdmin || !lock.isSuperuser());
+    return new ImmutableMap.Builder<String, Object>()
+        .put(FULLY_QUALIFIED_DOMAIN_NAME_PARAM, lock.getDomainName())
+        .put(
+            LOCKED_TIME_PARAM, lock.getLockCompletionTimestamp().map(DateTime::toString).orElse(""))
+        .put(LOCKED_BY_PARAM, lock.isSuperuser() ? "admin" : lock.getRegistrarPocId())
+        .put(IS_LOCK_PENDING_PARAM, !lock.getLockCompletionTimestamp().isPresent())
+        .put(
+            IS_UNLOCK_PENDING_PARAM,
+            lock.getUnlockRequestTimestamp().isPresent()
+                && !lock.getUnlockCompletionTimestamp().isPresent())
+        .put(USER_CAN_UNLOCK_PARAM, isAdmin || !lock.isSuperuser())
+        .build();
   }
 }

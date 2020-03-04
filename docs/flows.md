@@ -357,6 +357,7 @@ An EPP flow that creates a new domain resource.
     *   Registrant is not whitelisted for this TLD.
     *   Requested domain does not require a claims notice.
 *   2305
+    *   The allocation token is not valid for this domain.
     *   The allocation token is not valid for this registrar.
     *   The allocation token is not valid for this TLD.
     *   The allocation token was already redeemed.

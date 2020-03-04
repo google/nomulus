@@ -131,6 +131,7 @@ import google.registry.flows.domain.DomainFlowUtils.UnsupportedFeeAttributeExcep
 import google.registry.flows.domain.DomainFlowUtils.UnsupportedMarkTypeException;
 import google.registry.flows.domain.DomainPricingLogic.AllocationTokenInvalidForPremiumNameException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotInPromotionException;
+import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForDomainException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AlreadyRedeemedAllocationTokenException;
@@ -438,6 +439,44 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
     persistContactsAndHosts();
     EppException thrown = assertThrows(InvalidAllocationTokenException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
+  }
+
+  @Test
+  public void testFailure_reservedDomainCreate_allocationTokenIsForADifferentDomain() {
+    // Try to register a reserved domain name with an allocation token valid for a different domain
+    // name.
+    setEppInput("domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "resdom.tld"));
+    persistContactsAndHosts();
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("otherdomain.tld")
+            .build());
+    clock.advanceOneMilli();
+    EppException thrown =
+        assertThrows(AllocationTokenNotValidForDomainException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    assertAllocationTokenWasNotRedeemed("abc123");
+  }
+
+  @Test
+  public void testFailure_nonreservedDomainCreate_allocationTokenIsForADifferentDomain() {
+    // Try to register a non-reserved domain name with an allocation token valid for a different
+    // domain name.
+    setEppInput("domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    persistContactsAndHosts();
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("otherdomain.tld")
+            .build());
+    clock.advanceOneMilli();
+    EppException thrown =
+        assertThrows(AllocationTokenNotValidForDomainException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    assertAllocationTokenWasNotRedeemed("abc123");
   }
 
   @Test
@@ -1210,6 +1249,12 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
     assertThat(reloadedToken.isRedeemed()).isTrue();
     assertThat(reloadedToken.getRedemptionHistoryEntry())
         .isEqualTo(Key.create(getHistoryEntries(reloadResourceByForeignKey()).get(0)));
+  }
+
+  private void assertAllocationTokenWasNotRedeemed(String token) {
+    AllocationToken reloadedToken =
+        ofy().load().key(Key.create(AllocationToken.class, token)).now();
+    assertThat(reloadedToken.isRedeemed()).isFalse();
   }
 
   @Test

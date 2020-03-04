@@ -32,9 +32,7 @@ import java.util.List;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
-/**
- * Shared base class for commands to registry lock or unlock a domain via EPP.
- */
+/** Shared base class for commands to registry lock or unlock a domain via EPP. */
 public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
     implements CommandWithRemoteApi {
 
@@ -59,8 +57,7 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
   @Config("registryAdminClientId")
   String registryAdminClientId;
 
-  @Inject
-  DomainLockUtils domainLockUtils;
+  @Inject DomainLockUtils domainLockUtils;
 
   protected ImmutableSet<String> getDomains() {
     return ImmutableSet.copyOf(mainParameters);
@@ -83,21 +80,26 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
     ImmutableSet.Builder<String> successfulDomainsBuilder = new ImmutableSet.Builder<>();
     ImmutableSet.Builder<String> skippedDomainsBuilder = new ImmutableSet.Builder<>();
     ImmutableSet.Builder<String> failedDomainsBuilder = new ImmutableSet.Builder<>();
-    partition(getDomains(), BATCH_SIZE).forEach(batch -> tm().transact(() -> {
-      for (String domain : batch) {
-        if (shouldApplyToDomain(domain, tm().getTransactionTime())) {
-          try {
-            createAndApplyRequest(domain);
-          } catch (Throwable t) {
-            logger.atSevere().withCause(t).log("Error when (un)locking domain %s.", domain);
-            failedDomainsBuilder.add(domain);
-          }
-          successfulDomainsBuilder.add(domain);
-        } else {
-          skippedDomainsBuilder.add(domain);
-        }
-      }
-    }));
+    partition(getDomains(), BATCH_SIZE)
+        .forEach(
+            batch ->
+                tm().transact(
+                        () -> {
+                          for (String domain : batch) {
+                            if (shouldApplyToDomain(domain, tm().getTransactionTime())) {
+                              try {
+                                createAndApplyRequest(domain);
+                              } catch (Throwable t) {
+                                logger.atSevere().withCause(t).log(
+                                    "Error when (un)locking domain %s.", domain);
+                                failedDomainsBuilder.add(domain);
+                              }
+                              successfulDomainsBuilder.add(domain);
+                            } else {
+                              skippedDomainsBuilder.add(domain);
+                            }
+                          }
+                        }));
     ImmutableSet<String> successfulDomains = successfulDomainsBuilder.build();
     ImmutableSet<String> skippedDomains = skippedDomainsBuilder.build();
     ImmutableSet<String> failedDomains = failedDomainsBuilder.build();

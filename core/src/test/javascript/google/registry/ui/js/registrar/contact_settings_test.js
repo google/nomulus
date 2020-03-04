@@ -335,7 +335,8 @@ describe("contact settings test", function() {
       visibleInWhoisAsAdmin: false,
       visibleInWhoisAsTech: false,
       visibleInDomainWhoisAsAbuse: false,
-      types: 'ADMIN'
+      types: 'ADMIN',
+      allowedToSetRegistryLockPassword: 'false'
     };
   }
 

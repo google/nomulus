@@ -144,12 +144,14 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
 
   private ImmutableList<DomainBase> getLockedDomainsWithoutLocks(DateTime now) {
     return ImmutableList.copyOf(
-        ofy().load()
+        ofy()
+            .load()
             .keys(
                 roids.stream()
                     .map(roid -> Key.create(DomainBase.class, roid))
                     .collect(toImmutableList()))
-            .values().stream()
+            .values()
+            .stream()
             .filter(d -> d.getDeletionTime().isAfter(now))
             .filter(d -> d.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES))
             .filter(d -> !RegistryLockDao.getMostRecentByRepoId(d.getRepoId()).isPresent())

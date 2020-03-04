@@ -41,7 +41,7 @@ import org.joda.time.DateTime;
 /** Utility functions for dealing with {@link AllocationToken}s in domain flows. */
 public class AllocationTokenFlowUtils {
 
-  final AllocationTokenCustomLogic tokenCustomLogic;
+  private final AllocationTokenCustomLogic tokenCustomLogic;
 
   @Inject
   AllocationTokenFlowUtils(AllocationTokenCustomLogic tokenCustomLogic) {
@@ -60,7 +60,8 @@ public class AllocationTokenFlowUtils {
       DomainCommand.Create command, String token, Registry registry, String clientId, DateTime now)
       throws EppException {
     AllocationToken tokenEntity = loadToken(token);
-    validateToken(tokenEntity, clientId, registry.getTldStr(), now);
+    validateToken(
+        InternetDomainName.from(command.getFullyQualifiedDomainName()), tokenEntity, clientId, now);
     return tokenCustomLogic.validateToken(command, tokenEntity, registry, clientId, now);
   }
 
@@ -89,7 +90,7 @@ public class AllocationTokenFlowUtils {
     ImmutableMap.Builder<InternetDomainName, String> resultsBuilder = new ImmutableMap.Builder<>();
     for (InternetDomainName domainName : domainNames) {
       try {
-        validateToken(tokenEntity, clientId, domainName.parent().toString(), now);
+        validateToken(domainName, tokenEntity, clientId, now);
         validDomainNames.add(domainName);
       } catch (EppException e) {
         resultsBuilder.put(domainName, e.getMessage());
@@ -120,13 +121,19 @@ public class AllocationTokenFlowUtils {
    *
    * @throws EppException if the token is invalid in any way
    */
-  private void validateToken(AllocationToken token, String clientId, String tld, DateTime now)
+  private void validateToken(
+      InternetDomainName domainName, AllocationToken token, String clientId, DateTime now)
       throws EppException {
     if (!token.getAllowedClientIds().isEmpty() && !token.getAllowedClientIds().contains(clientId)) {
       throw new AllocationTokenNotValidForRegistrarException();
     }
-    if (!token.getAllowedTlds().isEmpty() && !token.getAllowedTlds().contains(tld)) {
+    if (!token.getAllowedTlds().isEmpty()
+        && !token.getAllowedTlds().contains(domainName.parent().toString())) {
       throw new AllocationTokenNotValidForTldException();
+    }
+    if (token.getDomainName().isPresent()
+        && !token.getDomainName().get().equals(domainName.toString())) {
+      throw new AllocationTokenNotValidForDomainException();
     }
     // Tokens without status transitions will just have a single-entry NOT_STARTED map, so only
     // check the status transitions map if it's non-trivial.
@@ -159,22 +166,30 @@ public class AllocationTokenFlowUtils {
   /** The allocation token is not currently valid. */
   public static class AllocationTokenNotInPromotionException
       extends StatusProhibitsOperationException {
-    public AllocationTokenNotInPromotionException() {
+    AllocationTokenNotInPromotionException() {
       super("Alloc token not in promo period");
     }
   }
   /** The allocation token is not valid for this TLD. */
   public static class AllocationTokenNotValidForTldException
       extends AssociationProhibitsOperationException {
-    public AllocationTokenNotValidForTldException() {
+    AllocationTokenNotValidForTldException() {
       super("Alloc token invalid for TLD");
+    }
+  }
+
+  /** The allocation token is not valid for this domain. */
+  public static class AllocationTokenNotValidForDomainException
+      extends AssociationProhibitsOperationException {
+    AllocationTokenNotValidForDomainException() {
+      super("Alloc token invalid for domain");
     }
   }
 
   /** The allocation token is not valid for this registrar. */
   public static class AllocationTokenNotValidForRegistrarException
       extends AssociationProhibitsOperationException {
-    public AllocationTokenNotValidForRegistrarException() {
+    AllocationTokenNotValidForRegistrarException() {
       super("Alloc token invalid for client");
     }
   }
@@ -182,14 +197,14 @@ public class AllocationTokenFlowUtils {
   /** The allocation token was already redeemed. */
   public static class AlreadyRedeemedAllocationTokenException
       extends AssociationProhibitsOperationException {
-    public AlreadyRedeemedAllocationTokenException() {
+    AlreadyRedeemedAllocationTokenException() {
       super("Alloc token was already redeemed");
     }
   }
 
   /** The allocation token is invalid. */
   public static class InvalidAllocationTokenException extends AuthorizationErrorException {
-    public InvalidAllocationTokenException() {
+    InvalidAllocationTokenException() {
       super("The allocation token is invalid");
     }
   }
