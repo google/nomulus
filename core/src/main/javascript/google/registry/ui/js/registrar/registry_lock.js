@@ -92,7 +92,7 @@ registry.registrar.RegistryLock.prototype.fillLocksPage_ = function(e) {
             lockEnabledForContact: locksDetails.lockEnabledForContact});
 
     if (locksDetails.lockEnabledForContact) {
-      // Listen to the lock-domain 'submit' button click as well as the enter key
+      // Listen to the lock-domain 'submit' button click
       var lockButton = goog.dom.getRequiredElement('button-lock-domain');
       goog.events.listen(lockButton, goog.events.EventType.CLICK, this.onLockDomain_, false, this);
       // For all unlock buttons, listen and perform the unlock action if they're clicked
@@ -130,12 +130,26 @@ registry.registrar.RegistryLock.prototype.showModal_ = function(targetElement, d
       false,
       this);
 
+  // Listen to the "submit" click and also the user hitting enter
   goog.events.listen(
       goog.dom.getRequiredElement('domain-lock-submit'),
       goog.events.EventType.CLICK,
       e => this.lockOrUnlockDomain_(isLock, e),
       false,
       this);
+
+  [goog.dom.getRequiredElement('domain-lock-password'),
+      goog.dom.getRequiredElement('domain-lock-input-value')].forEach(elem =>
+        goog.events.listen(
+            elem,
+            goog.events.EventType.KEYPRESS,
+            e => {
+              if (e.keyCode === goog.events.KeyCodes.ENTER) {
+                this.lockOrUnlockDomain_(isLock, e);
+              }
+            },
+            false,
+            this));
 }
 
 /**
