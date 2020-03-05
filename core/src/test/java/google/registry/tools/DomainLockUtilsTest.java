@@ -23,6 +23,7 @@ import static google.registry.testing.DatastoreHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistActiveHost;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.SqlHelper.getRegistryLockByRevisionId;
 import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static org.junit.Assert.assertThrows;
@@ -181,6 +182,31 @@ public final class DomainLockUtilsTest {
     domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), true);
     domainLockUtils.administrativelyApplyUnlock(DOMAIN_NAME, "TheRegistrar", true);
     verifyProperlyUnlockedDomain(true);
+  }
+
+  @Test
+  public void testSuccess_regularLock_relockSet() {
+    domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
+    RegistryLock oldLock =
+        domainLockUtils.administrativelyApplyUnlock(DOMAIN_NAME, "TheRegistrar", false);
+    RegistryLock newLock =
+        domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
+    newLock = domainLockUtils.verifyAndApplyLock(newLock.getVerificationCode(), false);
+    assertThat(
+            getRegistryLockByRevisionId(oldLock.getRevisionId()).get().getRelock().getRevisionId())
+        .isEqualTo(newLock.getRevisionId());
+  }
+
+  @Test
+  public void testSuccess_administrativelyLock_relockSet() {
+    domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
+    RegistryLock oldLock =
+        domainLockUtils.administrativelyApplyUnlock(DOMAIN_NAME, "TheRegistrar", false);
+    RegistryLock newLock =
+        domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
+    assertThat(
+            getRegistryLockByRevisionId(oldLock.getRevisionId()).get().getRelock().getRevisionId())
+        .isEqualTo(newLock.getRevisionId());
   }
 
   @Test

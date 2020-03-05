@@ -106,6 +106,7 @@ public final class DomainLockUtils {
 
               RegistryLock newLock =
                   RegistryLockDao.save(lock.asBuilder().setLockCompletionTimestamp(now).build());
+              setAsRelock(newLock);
               tm().transact(() -> applyLockStatuses(newLock, now));
               return newLock;
             });
@@ -145,18 +146,23 @@ public final class DomainLockUtils {
    */
   public RegistryLock administrativelyApplyLock(
       String domainName, String registrarId, @Nullable String registrarPocId, boolean isAdmin) {
-    return jpaTm()
-        .transact(
-            () -> {
-              DateTime now = jpaTm().getTransactionTime();
-              RegistryLock result =
-                  RegistryLockDao.save(
-                      createLockBuilder(domainName, registrarId, registrarPocId, isAdmin)
-                          .setLockCompletionTimestamp(now)
-                          .build());
-              tm().transact(() -> applyLockStatuses(result, now));
-              return result;
-            });
+    RegistryLock result =
+        jpaTm()
+            .transact(
+                () -> {
+                  DateTime now = jpaTm().getTransactionTime();
+                  RegistryLock newLock =
+                      RegistryLockDao.save(
+                          createLockBuilder(domainName, registrarId, registrarPocId, isAdmin)
+                              .setLockCompletionTimestamp(now)
+                              .build());
+                  tm().transact(() -> applyLockStatuses(newLock, now));
+                  return newLock;
+                });
+    // Because we're creating the new lock inside the transaction, referencing it as the relock
+    // must be done in a separate transaction
+    setAsRelock(result);
+    return result;
   }
 
   /**
@@ -177,6 +183,16 @@ public final class DomainLockUtils {
               tm().transact(() -> removeLockStatuses(result, isAdmin, now));
               return result;
             });
+  }
+
+  private void setAsRelock(RegistryLock newLock) {
+    jpaTm()
+        .transact(
+            () ->
+                RegistryLockDao.getMostRecentVerifiedUnlockByRepoId(newLock.getRepoId())
+                    .ifPresent(
+                        oldLock ->
+                            RegistryLockDao.save(oldLock.asBuilder().setRelock(newLock).build())));
   }
 
   private RegistryLock.Builder createLockBuilder(

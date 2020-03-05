@@ -126,6 +126,7 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   @Column(nullable = false)
   private boolean isSuperuser;
 
+  /** The lock that undoes this lock, if this lock has been unlocked and the domain locked again. */
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "relockRevisionId", referencedColumnName = "revisionId")
   private RegistryLock relock;
@@ -186,6 +187,12 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
     return revisionId;
   }
 
+  /**
+   * The lock that undoes this lock, if this lock has been unlocked and the domain locked again.
+   *
+   * <p>Note: this is lazily loaded, so it may not be initialized if referenced outside of the
+   * transaction in which this lock is loaded.
+   */
   public RegistryLock getRelock() {
     return relock;
   }

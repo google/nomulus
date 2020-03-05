@@ -40,6 +40,10 @@ public class SqlHelper {
     return jpaTm().transact(() -> RegistryLockDao.getMostRecentVerifiedLockByRepoId(repoId));
   }
 
+  public static Optional<RegistryLock> getMostRecentUnlockedRegistryLockByRepoId(String repoId) {
+    return jpaTm().transact(() -> RegistryLockDao.getMostRecentVerifiedUnlockByRepoId(repoId));
+  }
+
   public static ImmutableList<RegistryLock> getRegistryLocksByRegistrarId(String registrarId) {
     return jpaTm().transact(() -> RegistryLockDao.getLocksByRegistrarId(registrarId));
   }

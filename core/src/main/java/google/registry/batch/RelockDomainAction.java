@@ -89,7 +89,8 @@ public class RelockDomainAction implements Runnable {
               .now()
               .cloneProjectedAtTime(jpaTm().getTransactionTime());
 
-      if (domain.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES)) {
+      if (domain.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES)
+          || oldLock.getRelock() != null) {
         // The domain was manually locked, so we shouldn't worry about relocking
         String message =
             String.format(
@@ -122,13 +123,11 @@ public class RelockDomainAction implements Runnable {
 
   private void applyRelock(RegistryLock oldLock) {
     try {
-      RegistryLock newLock =
-          domainLockUtils.administrativelyApplyLock(
-              oldLock.getDomainName(),
-              oldLock.getRegistrarId(),
-              oldLock.getRegistrarPocId(),
-              oldLock.isSuperuser());
-      RegistryLockDao.save(oldLock.asBuilder().setRelock(newLock).build());
+      domainLockUtils.administrativelyApplyLock(
+          oldLock.getDomainName(),
+          oldLock.getRegistrarId(),
+          oldLock.getRegistrarPocId(),
+          oldLock.isSuperuser());
       logger.atInfo().log("Relocked domain %s.", oldLock.getDomainName());
       response.setStatus(SC_OK);
     } catch (Throwable t) {
@@ -164,11 +163,5 @@ public class RelockDomainAction implements Runnable {
         domainName,
         oldLock.getRegistrarId(),
         domain.getCurrentSponsorClientId());
-
-    // Relock shouldn't have been set already
-    checkArgument(
-        oldLock.getRelock() == null,
-        "Relock already set on old lock with revision ID %s",
-        oldLock.getRevisionId());
   }
 }

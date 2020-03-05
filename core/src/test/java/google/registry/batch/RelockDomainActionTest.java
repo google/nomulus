@@ -169,10 +169,7 @@ public class RelockDomainActionTest {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload())
-        .isEqualTo(
-            String.format(
-                "Relock failed: Relock already set on old lock with revision ID %s",
-                oldLock.getRevisionId()));
+        .isEqualTo("Domain example.tld is already manually relocked, skipping automated relock.");
   }
 
   private DomainBase reloadDomain(DomainBase domain) {

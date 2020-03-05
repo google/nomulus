@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
+import static google.registry.testing.SqlHelper.getMostRecentUnlockedRegistryLockByRepoId;
 import static google.registry.testing.SqlHelper.getMostRecentVerifiedRegistryLockByRepoId;
 import static google.registry.testing.SqlHelper.getRegistryLockByRevisionId;
 import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
@@ -209,6 +210,30 @@ public final class RegistryLockDaoTest {
     saveRegistryLock(createLock());
     Optional<RegistryLock> mostRecent = getMostRecentVerifiedRegistryLockByRepoId("repoId");
     assertThat(mostRecent.isPresent()).isFalse();
+  }
+
+  @Test
+  public void testLoad_verifiedUnlock_byRepoId() {
+    RegistryLock lock =
+        saveRegistryLock(
+            createLock()
+                .asBuilder()
+                .setLockCompletionTimestamp(fakeClock.nowUtc())
+                .setUnlockRequestTimestamp(fakeClock.nowUtc())
+                .setUnlockCompletionTimestamp(fakeClock.nowUtc())
+                .build());
+
+    Optional<RegistryLock> mostRecent = getMostRecentUnlockedRegistryLockByRepoId(lock.getRepoId());
+    assertThat(mostRecent.get().getRevisionId()).isEqualTo(lock.getRevisionId());
+  }
+
+  @Test
+  public void testLoad_verifiedUnlock_empty() {
+    RegistryLock completedLock =
+        createLock().asBuilder().setLockCompletionTimestamp(fakeClock.nowUtc()).build();
+    saveRegistryLock(completedLock);
+    assertThat(getMostRecentUnlockedRegistryLockByRepoId(completedLock.getRepoId()).isPresent())
+        .isFalse();
   }
 
   private RegistryLock createLock() {
