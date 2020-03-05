@@ -28,6 +28,7 @@ import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.TaskOptions;
+import com.google.common.annotations.VisibleForTesting;
 import google.registry.model.rde.RdeMode;
 import google.registry.rde.RdeStagingAction;
 import google.registry.tools.params.DateTimeParameter;
@@ -81,7 +82,11 @@ final class GenerateEscrowDepositCommand implements CommandWithRemoteApi {
   @Named("rde-report")
   Queue queue;
 
-  Optional<Long> maybeEtaMillis = Optional.empty();
+  // ETA is a required property for TaskOptions but we let the service to set it when submitting the
+  // task to the task queue. However, the local test service doesn't do that for us during the unit
+  // test, so we add this field here to let the unit test be able to inject the ETA to pass the
+  // test.
+  @VisibleForTesting Optional<Long> maybeEtaMillis = Optional.empty();
 
   @Override
   public void run() {
