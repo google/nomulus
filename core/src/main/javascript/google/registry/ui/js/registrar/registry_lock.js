@@ -45,6 +45,7 @@ registry.registrar.RegistryLock = function(console, resource) {
 goog.inherits(registry.registrar.RegistryLock, registry.ResourceComponent);
 
 registry.registrar.RegistryLock.prototype.runAfterRender = function(objArgs) {
+  this.isAdmin = objArgs.isAdmin;
   this.clientId = objArgs.clientId;
   this.xsrfToken = objArgs.xsrfToken;
 
@@ -115,7 +116,8 @@ registry.registrar.RegistryLock.prototype.showModal_ = function(targetElement, d
   var parentElement = targetElement.parentElement;
   // attach the modal to the parent element so focus remains correct if the user closes the modal
   var modalElement = goog.soy.renderAsElement(
-      registry.soy.registrar.registrylock.confirmModal, {domain: domain, isLock: isLock});
+      registry.soy.registrar.registrylock.confirmModal,
+      {domain: domain, isLock: isLock, isAdmin: this.isAdmin});
   parentElement.prepend(modalElement);
   if (domain == null) {
     goog.dom.getRequiredElement('domain-lock-input-value').focus();

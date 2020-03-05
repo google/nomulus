@@ -106,6 +106,7 @@
 /** Modal that confirms that the user wishes to lock/unlock a domain. */
 {template .confirmModal}
   {@param isLock: bool}
+  {@param isAdmin: bool}
   {@param? domain: string|null}
   <div id="lock-confirm-modal" class="{css('lock-confirm-modal')}">
     <div class="modal-content">
@@ -118,7 +119,9 @@
           {/if}>
       <br>
       <label for="domain-lock-password">Registry lock password: </label>
-      <input type="password" id="domain-lock-password">
+      <input type="password" id="domain-lock-password"
+          {if $isAdmin} disabled{/if}
+      >
       <br>
       <div id="modal-error-message" hidden class="{css('kd-errormessage')}"></div>
       <div class="{css('buttons-div')}">

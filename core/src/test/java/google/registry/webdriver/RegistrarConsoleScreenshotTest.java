@@ -492,7 +492,6 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @Test
   public void registryLock_unlockModal() throws Throwable {
-    server.setIsAdmin(true);
     server.runInAppEngineEnvironment(
         () -> {
           createDomainAndSaveLock();
@@ -520,7 +519,6 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.findElement(By.id("button-lock-domain")).click();
     driver.waitForElement(By.className("modal-content"));
     driver.findElement(By.id("domain-lock-input-value")).sendKeys("somedomain.tld");
-    driver.findElement(By.id("domain-lock-password")).sendKeys("password");
     driver.diffPage("page");
   }
 
