@@ -159,12 +159,12 @@ public final class RegistryLockGetAction implements JsonGetAction {
             () ->
                 RegistryLockDao.getLocksByRegistrarId(clientId).stream()
                     .filter(lock -> !lock.isLockRequestExpired(jpaTm().getTransactionTime()))
-                    .filter(lock -> !lock.isUnlockRequestExpired(jpaTm().getTransactionTime()))
                     .map(lock -> lockToMap(lock, isAdmin))
                     .collect(toImmutableList()));
   }
 
   private ImmutableMap<String, ?> lockToMap(RegistryLock lock, boolean isAdmin) {
+    DateTime now = jpaTm().getTransactionTime();
     return new ImmutableMap.Builder<String, Object>()
         .put(FULLY_QUALIFIED_DOMAIN_NAME_PARAM, lock.getDomainName())
         .put(
@@ -174,7 +174,8 @@ public final class RegistryLockGetAction implements JsonGetAction {
         .put(
             IS_UNLOCK_PENDING_PARAM,
             lock.getUnlockRequestTimestamp().isPresent()
-                && !lock.getUnlockCompletionTimestamp().isPresent())
+                && !lock.getUnlockCompletionTimestamp().isPresent()
+                && !lock.isUnlockRequestExpired(now))
         .put(USER_CAN_UNLOCK_PARAM, isAdmin || !lock.isSuperuser())
         .build();
   }
