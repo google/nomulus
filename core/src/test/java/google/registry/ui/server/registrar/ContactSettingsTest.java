@@ -66,13 +66,12 @@ public class ContactSettingsTest extends RegistrarSettingsActionTestCase {
 
   @Test
   public void testPost_updateContacts_success() throws Exception {
-    // Remove all the contacts but the first by updating with list of
-    // just it.
+    // Remove all the contacts but one by updating with a list of just it
     ImmutableMap<String, String> adminContact1 =
         ImmutableMap.of(
-            "name", "contact1",
-            "emailAddress", "contact1@email.com",
-            "phoneNumber", "+1.2125650001",
+            "name", "Marla Singer",
+            "emailAddress", "Marla.Singer@crr.com",
+            "phoneNumber", "+1.2128675309",
             // Have to keep ADMIN or else expect FormException for at-least-one.
             "types", "ADMIN,TECH");
 
@@ -83,15 +82,12 @@ public class ContactSettingsTest extends RegistrarSettingsActionTestCase {
         action.handleJsonRequest(ImmutableMap.of("op", "update", "id", CLIENT_ID, "args", regMap));
     assertThat(response).containsEntry("status", "SUCCESS");
 
-    RegistrarContact newContact =
-        new RegistrarContact.Builder()
-            .setParent(registrar)
-            .setName(adminContact1.get("name"))
-            .setEmailAddress(adminContact1.get("emailAddress"))
-            .setPhoneNumber(adminContact1.get("phoneNumber"))
-            .setTypes(ImmutableList.of(Type.ADMIN, Type.TECH))
-            .build();
-    assertThat(loadRegistrar(CLIENT_ID).getContacts()).containsExactly(newContact);
+    RegistrarContact foundContact =
+        Iterables.getOnlyElement(loadRegistrar(CLIENT_ID).getContacts());
+    assertThat(foundContact.getName()).isEqualTo(adminContact1.get("name"));
+    assertThat(foundContact.getEmailAddress()).isEqualTo(adminContact1.get("emailAddress"));
+    assertThat(foundContact.getPhoneNumber()).isEqualTo(adminContact1.get("phoneNumber"));
+    assertThat(foundContact.getTypes()).containsExactly(Type.ADMIN, Type.TECH);
     assertMetric(CLIENT_ID, "update", "[OWNER]", "SUCCESS");
     verifyNotificationEmailsSent();
   }
@@ -188,41 +184,64 @@ public class ContactSettingsTest extends RegistrarSettingsActionTestCase {
 
   @Test
   public void testSuccess_setRegistryLockPassword() {
-    addPasswordToTechContact();
-    techContact = Iterables.getOnlyElement(loadRegistrar(CLIENT_ID).getContactsOfType(Type.TECH));
-    assertThat(techContact.verifyRegistryLockPassword("hi")).isTrue();
+    addPasswordToContactTwo();
+    String emailAddress = AppEngineRule.makeRegistrarContact2().getEmailAddress();
+    RegistrarContact newContactWithPassword =
+        loadRegistrar(CLIENT_ID).getContacts().stream()
+            .filter(rc -> rc.getEmailAddress().equals(emailAddress))
+            .findFirst()
+            .get();
+    assertThat(newContactWithPassword.verifyRegistryLockPassword("hello")).isTrue();
     assertMetric(CLIENT_ID, "update", "[OWNER]", "SUCCESS");
   }
 
   @Test
   public void testSuccess_setRegistryLockPassword_notOverriddenLater() {
-    addPasswordToTechContact();
-    techContact = Iterables.getOnlyElement(loadRegistrar(CLIENT_ID).getContactsOfType(Type.TECH));
-    assertThat(techContact.verifyRegistryLockPassword("hi")).isTrue();
+    addPasswordToContactTwo();
+    String emailAddress = AppEngineRule.makeRegistrarContact2().getEmailAddress();
+    RegistrarContact newContactWithPassword =
+        loadRegistrar(CLIENT_ID).getContacts().stream()
+            .filter(rc -> rc.getEmailAddress().equals(emailAddress))
+            .findFirst()
+            .get();
+    assertThat(newContactWithPassword.verifyRegistryLockPassword("hello")).isTrue();
 
-    techContact = Iterables.getOnlyElement(loadRegistrar(CLIENT_ID).getContactsOfType(Type.TECH));
-    Map<String, Object> techContactMap = techContact.toJsonMap();
-    techContactMap.put("name", "Some Other Name");
+    Map<String, Object> newContactMap = newContactWithPassword.toJsonMap();
+    newContactMap.put("name", "Some Other Name");
     Map<String, Object> reqJson = loadRegistrar(CLIENT_ID).toJsonMap();
     reqJson.put(
         "contacts",
-        ImmutableList.of(AppEngineRule.makeRegistrarContact2().toJsonMap(), techContactMap));
+        ImmutableList.of(
+            AppEngineRule.makeRegistrarContact1().toJsonMap(),
+            newContactMap,
+            AppEngineRule.makeRegistrarContact3().toJsonMap()));
     Map<String, Object> response =
         action.handleJsonRequest(ImmutableMap.of("op", "update", "id", CLIENT_ID, "args", reqJson));
     assertThat(response).containsAtLeastEntriesIn(ImmutableMap.of("status", "SUCCESS"));
-    techContact = Iterables.getOnlyElement(loadRegistrar(CLIENT_ID).getContactsOfType(Type.TECH));
-    assertThat(techContact.verifyRegistryLockPassword("hi")).isTrue();
+    newContactWithPassword =
+        loadRegistrar(CLIENT_ID).getContacts().stream()
+            .filter(rc -> rc.getEmailAddress().equals(emailAddress))
+            .findFirst()
+            .get();
+    assertThat(newContactWithPassword.verifyRegistryLockPassword("hello")).isTrue();
   }
 
-  private void addPasswordToTechContact() {
-    techContact =
-        persistResource(techContact.asBuilder().setAllowedToSetRegistryLockPassword(true).build());
-    Map<String, Object> contactMap = techContact.toJsonMap();
-    contactMap.put("registryLockPassword", "hi");
+  private void addPasswordToContactTwo() {
+    RegistrarContact contact =
+        persistResource(
+            AppEngineRule.makeRegistrarContact2()
+                .asBuilder()
+                .setAllowedToSetRegistryLockPassword(true)
+                .build());
+    Map<String, Object> contactMap = contact.toJsonMap();
+    contactMap.put("registryLockPassword", "hello");
     Map<String, Object> reqJson = loadRegistrar(CLIENT_ID).toJsonMap();
     reqJson.put(
         "contacts",
-        ImmutableList.of(AppEngineRule.makeRegistrarContact2().toJsonMap(), contactMap));
+        ImmutableList.of(
+            AppEngineRule.makeRegistrarContact1().toJsonMap(),
+            contactMap,
+            AppEngineRule.makeRegistrarContact3().toJsonMap()));
     Map<String, Object> response =
         action.handleJsonRequest(ImmutableMap.of("op", "update", "id", CLIENT_ID, "args", reqJson));
     assertThat(response).containsAtLeastEntriesIn(ImmutableMap.of("status", "SUCCESS"));
@@ -259,13 +278,16 @@ public class ContactSettingsTest extends RegistrarSettingsActionTestCase {
   public void testPost_failure_setRegistryLockPassword_notAllowed() {
     // "allowedToSetRegistryLockPassword" must be set through the back end first
     // before we can set a password through the UI
-    Map<String, Object> contactMap =
-        techContact.asBuilder().setAllowedToSetRegistryLockPassword(true).build().toJsonMap();
+    Map<String, Object> contactMap = AppEngineRule.makeRegistrarContact2().toJsonMap();
+    contactMap.put("allowedToSetRegistryLockPassword", true);
     contactMap.put("registryLockPassword", "hi");
     Map<String, Object> reqJson = loadRegistrar(CLIENT_ID).toJsonMap();
     reqJson.put(
         "contacts",
-        ImmutableList.of(AppEngineRule.makeRegistrarContact2().toJsonMap(), contactMap));
+        ImmutableList.of(
+            AppEngineRule.makeRegistrarContact1().toJsonMap(),
+            contactMap,
+            AppEngineRule.makeRegistrarContact3().toJsonMap()));
 
     Map<String, Object> response =
         action.handleJsonRequest(ImmutableMap.of("op", "update", "id", CLIENT_ID, "args", reqJson));
@@ -300,6 +322,30 @@ public class ContactSettingsTest extends RegistrarSettingsActionTestCase {
             ImmutableList.of(),
             "message",
             "Cannot set isAllowedToSetRegistryLockPassword through UI");
+    assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: FormException");
+  }
+
+  @Test
+  public void testPost_failure_removingRegistryLockContact() {
+    ImmutableMap<String, String> contact =
+        ImmutableMap.of(
+            "name", "contact1",
+            "emailAddress", "contact1@email.com",
+            "phoneNumber", "+1.2125650001",
+            // Have to keep ADMIN or else expect FormException for at-least-one.
+            "types", "ADMIN,TECH");
+    Map<String, Object> regMap = loadRegistrar(CLIENT_ID).toJsonMap();
+    regMap.put("contacts", ImmutableList.of(contact));
+    Map<String, Object> response =
+        action.handleJsonRequest(ImmutableMap.of("op", "update", "id", CLIENT_ID, "args", regMap));
+    assertThat(response)
+        .containsExactly(
+            "status",
+            "ERROR",
+            "results",
+            ImmutableList.of(),
+            "message",
+            "Cannot delete the contact Marla.Singer@crr.com that has registry lock enabled");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: FormException");
   }
 }

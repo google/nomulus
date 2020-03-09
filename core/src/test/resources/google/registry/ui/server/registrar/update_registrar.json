@@ -18,6 +18,16 @@
         "emailAddress": "etphonehome@example.com",
         "gaeUserId": null,
         "types": "ADMIN,BILLING,TECH,WHOIS"
+      },
+      {
+        "visibleInWhoisAsAdmin": false,
+        "faxNumber": null,
+        "phoneNumber": "+1.2128675309",
+        "name": "Marla Singer",
+        "visibleInWhoisAsTech": false,
+        "emailAddress": "Marla.Singer@crr.com",
+        "gaeUserId": "31337",
+        "types": "TECH"
       }
     ],
     "allowedTlds": [

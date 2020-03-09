@@ -391,7 +391,8 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
    * @throws FormException if the checks fail.
    */
   void checkContactRequirements(
-      Set<RegistrarContact> existingContacts, Set<RegistrarContact> updatedContacts) {
+      ImmutableSet<RegistrarContact> existingContacts,
+      ImmutableSet<RegistrarContact> updatedContacts) {
     // Check that no two contacts use the same email address.
     Set<String> emails = new HashSet<>();
     for (RegistrarContact contact : updatedContacts) {
@@ -435,7 +436,12 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       throw new ContactRequirementException(
           "An abuse contact visible in domain WHOIS query must be designated");
     }
+    checkContactRegistryLockRequirements(existingContacts, updatedContacts);
+  }
 
+  private static void checkContactRegistryLockRequirements(
+      ImmutableSet<RegistrarContact> existingContacts,
+      ImmutableSet<RegistrarContact> updatedContacts) {
     // Any contact(s) with new passwords must be allowed to set them
     for (RegistrarContact updatedContact : updatedContacts) {
       if (updatedContact.isRegistryLockAllowed()
@@ -463,6 +469,31 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
         }
       }
     }
+
+    // Any previously-existing contacts with registry lock enabled cannot be deleted
+    existingContacts.stream()
+        .filter(RegistrarContact::isRegistryLockAllowed)
+        .forEach(
+            contact -> {
+              Optional<RegistrarContact> updatedContactOptional =
+                  updatedContacts.stream()
+                      .filter(
+                          updatedContact ->
+                              updatedContact.getEmailAddress().equals(contact.getEmailAddress()))
+                      .findFirst();
+              if (!updatedContactOptional.isPresent()) {
+                throw new FormException(
+                    String.format(
+                        "Cannot delete the contact %s that has registry lock enabled",
+                        contact.getEmailAddress()));
+              }
+              if (!updatedContactOptional.get().isRegistryLockAllowed()) {
+                throw new FormException(
+                    String.format(
+                        "Cannot remove the ability to use registry lock on %s",
+                        contact.getEmailAddress()));
+              }
+            });
   }
 
   /**
