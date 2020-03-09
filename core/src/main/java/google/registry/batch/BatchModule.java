@@ -95,7 +95,7 @@ public class BatchModule {
 
   @Provides
   @Parameter("oldUnlockRevisionId")
-  static Long provideOldUnlockRevisionId(HttpServletRequest req) {
+  static long provideOldUnlockRevisionId(HttpServletRequest req) {
     return extractLongParameter(req, "oldUnlockRevisionId");
   }
 
