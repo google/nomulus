@@ -450,6 +450,13 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     server.runInAppEngineEnvironment(
         () -> {
           createTld("tld");
+          // expired unlock request
+          DomainBase expiredUnlockRequestDomain = persistActiveDomain("expiredunlock.tld");
+          saveRegistryLock(createRegistryLock(expiredUnlockRequestDomain)
+              .asBuilder()
+              .setLockCompletionTimestamp(START_OF_TIME.minusDays(1))
+              .setUnlockRequestTimestamp(START_OF_TIME.minusDays(1))
+              .build());
           DomainBase domain = persistActiveDomain("example.tld");
           saveRegistryLock(createRegistryLock(domain).asBuilder().isSuperuser(true).build());
           DomainBase otherDomain = persistActiveDomain("otherexample.tld");

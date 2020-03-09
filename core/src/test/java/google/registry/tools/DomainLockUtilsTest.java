@@ -114,7 +114,19 @@ public final class DomainLockUtilsTest {
     clock.advanceBy(Duration.standardDays(1));
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
-    assertThat(lock.getLockCompletionTimestamp().isPresent()).isFalse();
+    domainLockUtils.verifyAndApplyLock(lock.getVerificationCode(), false);
+    verifyProperlyLockedDomain(false);
+  }
+
+  @Test
+  public void testSuccess_createUnlock_previousUnlockRequestExpired() {
+    domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
+    domainLockUtils.saveNewRegistryUnlockRequest(DOMAIN_NAME, "TheRegistrar", false);
+    clock.advanceBy(Duration.standardDays(1));
+    RegistryLock unlockRequest =
+        domainLockUtils.saveNewRegistryUnlockRequest(DOMAIN_NAME, "TheRegistrar", false);
+    domainLockUtils.verifyAndApplyUnlock(unlockRequest.getVerificationCode(), false);
+    assertThat(reloadDomain().getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
   }
 
   @Test

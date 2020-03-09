@@ -18,6 +18,7 @@ import javax.persistence.EntityManager;
 
 /** Sub-interface of {@link TransactionManager} which defines JPA related methods. */
 public interface JpaTransactionManager extends TransactionManager {
+
   /** Returns the {@link EntityManager} for the current request. */
   EntityManager getEntityManager();
 }
