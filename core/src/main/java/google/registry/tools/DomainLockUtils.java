@@ -146,23 +146,19 @@ public final class DomainLockUtils {
    */
   public RegistryLock administrativelyApplyLock(
       String domainName, String registrarId, @Nullable String registrarPocId, boolean isAdmin) {
-    RegistryLock result =
-        jpaTm()
-            .transact(
-                () -> {
-                  DateTime now = jpaTm().getTransactionTime();
-                  RegistryLock newLock =
-                      RegistryLockDao.save(
-                          createLockBuilder(domainName, registrarId, registrarPocId, isAdmin)
-                              .setLockCompletionTimestamp(now)
-                              .build());
-                  tm().transact(() -> applyLockStatuses(newLock, now));
-                  return newLock;
-                });
-    // Because we're creating the new lock inside the transaction, referencing it as the relock
-    // must be done in a separate transaction
-    setAsRelock(result);
-    return result;
+    return jpaTm()
+        .transact(
+            () -> {
+              DateTime now = jpaTm().getTransactionTime();
+              RegistryLock newLock =
+                  RegistryLockDao.save(
+                      createLockBuilder(domainName, registrarId, registrarPocId, isAdmin)
+                          .setLockCompletionTimestamp(now)
+                          .build());
+              tm().transact(() -> applyLockStatuses(newLock, now));
+              setAsRelock(newLock);
+              return newLock;
+            });
   }
 
   /**

@@ -92,7 +92,7 @@ public final class RegistryLockDao {
         .createQuery(
             "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId AND"
                 + " lock.lockCompletionTimestamp IS NOT NULL AND"
-                + " lock.unlockCompetionTimestamp IS NULL ORDER BY lock.revisionId"
+                + " lock.unlockCompletionTimestamp IS NULL ORDER BY lock.revisionId"
                 + " DESC",
             RegistryLock.class)
         .setParameter("repoId", repoId)
