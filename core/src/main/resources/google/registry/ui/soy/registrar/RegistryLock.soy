@@ -118,11 +118,11 @@
              value="{$domain}" disabled
           {/if}>
       <br>
-      <label for="domain-lock-password">Registry lock password: </label>
-      <input type="password" id="domain-lock-password"
-          {if $isAdmin} disabled{/if}
-      >
-      <br>
+      {if not $isAdmin}
+        <label for="domain-lock-password">Registry lock password: </label>
+        <input type="password" id="domain-lock-password">
+        <br>
+      {/if}
       <div id="modal-error-message" hidden class="{css('kd-errormessage')}"></div>
       <div class="{css('buttons-div')}">
         <button id="domain-lock-cancel" class="{css('kd-button')}">Cancel</button>
