@@ -138,18 +138,21 @@ registry.registrar.RegistryLock.prototype.showModal_ = function(targetElement, d
       false,
       this);
 
-  [goog.dom.getRequiredElement('domain-lock-password'),
-      goog.dom.getRequiredElement('domain-lock-input-value')].forEach(elem =>
-        goog.events.listen(
-            elem,
-            goog.events.EventType.KEYPRESS,
-            e => {
-              if (e.keyCode === goog.events.KeyCodes.ENTER) {
-                this.lockOrUnlockDomain_(isLock, e);
-              }
-            },
-            false,
-            this));
+  [goog.dom.getElement('domain-lock-password'),
+      goog.dom.getElement('domain-lock-input-value')].forEach(elem => {
+        if (elem != null) {
+          goog.events.listen(
+              elem,
+              goog.events.EventType.KEYPRESS,
+              e => {
+                if (e.keyCode === goog.events.KeyCodes.ENTER) {
+                  this.lockOrUnlockDomain_(isLock, e);
+                }
+              },
+              false,
+              this);
+        }
+      });
 }
 
 /**
