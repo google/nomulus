@@ -15,9 +15,8 @@
 package google.registry.schema.integration;
 
 import com.google.common.truth.Expect;
-import google.registry.model.common.CursorTest;
+import google.registry.model.domain.DomainBaseSqlTest;
 import google.registry.model.registry.RegistryLockDaoTest;
-import google.registry.model.server.LockTest;
 import google.registry.persistence.transaction.JpaEntityCoverage;
 import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.registrar.RegistrarDaoTest;
@@ -25,18 +24,6 @@ import google.registry.schema.server.LockDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
 import google.registry.schema.tld.ReservedListDaoTest;
 import google.registry.schema.tmch.ClaimsListDaoTest;
-import google.registry.tools.CreateRegistrarCommandTest;
-import google.registry.tools.CreateReservedListCommandTest;
-import google.registry.tools.DomainLockUtilsTest;
-import google.registry.tools.LockDomainCommandTest;
-import google.registry.tools.UnlockDomainCommandTest;
-import google.registry.tools.UpdateRegistrarCommandTest;
-import google.registry.tools.UpdateReservedListCommandTest;
-import google.registry.tools.javascrap.BackfillRegistryLocksCommandTest;
-import google.registry.tools.server.CreatePremiumListActionTest;
-import google.registry.tools.server.UpdatePremiumListActionTest;
-import google.registry.ui.server.registrar.RegistryLockGetActionTest;
-import google.registry.ui.server.registrar.RegistryLockVerifyActionTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -48,36 +35,29 @@ import org.junit.runners.Suite.SuiteClasses;
  * Groups all JPA entity tests in one suite for easy invocation. This suite is used for
  * server/schema compatibility tests between releases.
  *
- * <p>Every member class must use the {@link
- * google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule} and have at
- * least one test method that persists a JPA entity declared in persistence.xml.
+ * <p>Suite members are typically DAO tests, which perform simple create/update/delete operations on
+ * JPA entities. Each member class must use the {@link
+ * google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule} (either
+ * directly or through a rule chain) and have at least one test method that persists a JPA entity
+ * declared in persistence.xml.
  *
  * <p>Membership of this suite is monitored by the checks in {@link #checkJpaEntityCoverage()} and
  * {@link SqlIntegrationMembershipTest#sqlIntegrationMembershipComplete()}.
+ *
+ * <p>Note that with {@code JpaIntegrationWithCoverageRule}, each method starts with an empty
+ * database. Therefore this is not the right place for verifying backward data compatibility in
+ * end-to-end functional tests.
  */
 @RunWith(Suite.class)
 @SuiteClasses({
-  BackfillRegistryLocksCommandTest.class,
   ClaimsListDaoTest.class,
-  CreatePremiumListActionTest.class,
-  CreateRegistrarCommandTest.class,
-  CreateReservedListCommandTest.class,
   CursorDaoTest.class,
-  CursorTest.class,
-  DomainLockUtilsTest.class,
+  DomainBaseSqlTest.class,
   LockDaoTest.class,
-  LockDomainCommandTest.class,
-  LockTest.class,
   PremiumListDaoTest.class,
   RegistrarDaoTest.class,
   RegistryLockDaoTest.class,
-  RegistryLockGetActionTest.class,
-  RegistryLockVerifyActionTest.class,
-  ReservedListDaoTest.class,
-  UnlockDomainCommandTest.class,
-  UpdatePremiumListActionTest.class,
-  UpdateRegistrarCommandTest.class,
-  UpdateReservedListCommandTest.class
+  ReservedListDaoTest.class
 })
 public class SqlIntegrationTestSuite {
 
