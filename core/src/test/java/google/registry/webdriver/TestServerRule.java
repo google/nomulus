@@ -32,6 +32,7 @@ import google.registry.testing.UserInfo;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -66,7 +67,8 @@ public final class TestServerRule extends ExternalResource {
       ImmutableList<Route> routes,
       ImmutableList<Class<? extends Filter>> filters,
       ImmutableList<Fixture> fixtures,
-      String email) {
+      String email,
+      Optional<String> gaeUserId) {
     this.runfiles = runfiles;
     this.routes = routes;
     this.filters = filters;
@@ -79,7 +81,8 @@ public final class TestServerRule extends ExternalResource {
             .withLocalModules()
             .withUrlFetch()
             .withTaskQueue()
-            .withUserService(UserInfo.createAdmin(email, THE_REGISTRAR_GAE_USER_ID))
+            .withUserService(
+                UserInfo.createAdmin(email, gaeUserId.orElse(THE_REGISTRAR_GAE_USER_ID)))
             .build();
   }
 
@@ -149,8 +152,8 @@ public final class TestServerRule extends ExternalResource {
   /**
    * Runs arbitrary code inside server event loop thread.
    *
-   * <p>You should use this method when you want to do things like change Datastore, because the
-   * App Engine testing environment is thread-local.
+   * <p>You should use this method when you want to do things like change Datastore, because the App
+   * Engine testing environment is thread-local.
    */
   public <T> T runInAppEngineEnvironment(Callable<T> callback) throws Throwable {
     FutureTask<T> job = new FutureTask<>(callback);
@@ -211,7 +214,6 @@ public final class TestServerRule extends ExternalResource {
    *
    * <p>This builder has three required fields: {@link #setRunfiles}, {@link #setRoutes}, and {@link
    * #setFilters}.
-   *
    */
   public static final class Builder {
     private ImmutableMap<String, Path> runfiles;
@@ -219,6 +221,7 @@ public final class TestServerRule extends ExternalResource {
     ImmutableList<Class<? extends Filter>> filters;
     private ImmutableList<Fixture> fixtures = ImmutableList.of();
     private String email;
+    private Optional<String> gaeUserId;
 
     /** Sets the directories containing the static files for {@link TestServer}. */
     public Builder setRunfiles(ImmutableMap<String, Path> runfiles) {
@@ -256,6 +259,12 @@ public final class TestServerRule extends ExternalResource {
       return this;
     }
 
+    /** Optionally, sets the GAE user ID for the logged in user. */
+    public Builder setGaeUserId(String gaeUserId) {
+      this.gaeUserId = Optional.of(checkNotNull(gaeUserId));
+      return this;
+    }
+
     /** Returns a new {@link TestServerRule} instance. */
     public TestServerRule build() {
       return new TestServerRule(
@@ -263,7 +272,8 @@ public final class TestServerRule extends ExternalResource {
           checkNotNull(this.routes),
           checkNotNull(this.filters),
           checkNotNull(this.fixtures),
-          checkNotNull(this.email));
+          checkNotNull(this.email),
+          this.gaeUserId);
     }
   }
 }

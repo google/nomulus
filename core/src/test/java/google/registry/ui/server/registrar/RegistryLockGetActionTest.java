@@ -31,6 +31,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.gson.Gson;
+import google.registry.model.registrar.RegistrarContact;
 import google.registry.request.Action.Method;
 import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
@@ -67,14 +68,15 @@ public final class RegistryLockGetActionTest {
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 
   private final FakeResponse response = new FakeResponse();
-  private final User user = new User("Marla.Singer@crr.com", "gmail.com", "12345");
 
+  private User user;
   private AuthResult authResult;
   private AuthenticatedRegistrarAccessor accessor;
   private RegistryLockGetAction action;
 
   @Before
   public void setup() {
+    user = userFromRegistrarContact(AppEngineRule.makeRegistrarContact3());
     fakeClock.setTo(DateTime.parse("2000-06-08T22:00:00.0Z"));
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
     accessor =
@@ -310,6 +312,29 @@ public final class RegistryLockGetActionTest {
   }
 
   @Test
+  public void testSuccess_linkedToContactEmail() {
+    // Even though the user is some.email@gmail.com the contact is still Marla Singer
+    user = new User("some.email@gmail.com", "gmail.com", user.getUserId());
+    authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
+    action =
+        new RegistryLockGetAction(
+            Method.GET, response, accessor, authResult, Optional.of("TheRegistrar"));
+    action.run();
+    assertThat(GSON.fromJson(response.getPayload(), Map.class).get("results"))
+        .isEqualTo(
+            ImmutableList.of(
+                ImmutableMap.of(
+                    "lockEnabledForContact",
+                    true,
+                    "email",
+                    "Marla.Singer@crr.com",
+                    "clientId",
+                    "TheRegistrar",
+                    "locks",
+                    ImmutableList.of())));
+  }
+
+  @Test
   public void testFailure_lockNotAllowedForRegistrar() {
     // The UI shouldn't be making requests where lock isn't enabled for this registrar
     action =
@@ -336,5 +361,10 @@ public final class RegistryLockGetActionTest {
             Method.GET, response, accessor, authResult, Optional.of("SomeBadRegistrar"));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+  }
+
+  static User userFromRegistrarContact(RegistrarContact registrarContact) {
+    return new User(
+        registrarContact.getEmailAddress(), "gmail.com", registrarContact.getGaeUserId());
   }
 }

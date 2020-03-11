@@ -249,7 +249,7 @@ public final class AppEngineRule extends ExternalResource {
         .setEmailAddress("Marla.Singer@crr.com")
         .setPhoneNumber("+1.2128675309")
         .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
-        .setGaeUserId(THE_REGISTRAR_GAE_USER_ID)
+        .setGaeUserId("12345")
         .setAllowedToSetRegistryLockPassword(true)
         .setRegistryLockPassword("hi")
         .build();

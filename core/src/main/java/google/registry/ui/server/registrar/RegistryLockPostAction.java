@@ -20,8 +20,11 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.security.JsonResponseHelper.Status.ERROR;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
 import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
+import static google.registry.ui.server.registrar.RegistryLockGetAction.getContactMatchingLogin;
+import static google.registry.ui.server.registrar.RegistryLockGetAction.getRegistrarAndVerifyLockAccess;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
+import com.google.appengine.api.users.User;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -124,11 +127,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
               .userAuthInfo()
               .orElseThrow(() -> new ForbiddenException("User is not logged in"));
 
-      boolean isAdmin = userAuthInfo.isUserAdmin();
-      String userEmail = userAuthInfo.user().getEmail();
-      if (!isAdmin) {
-        verifyRegistryLockPassword(postInput, userEmail);
-      }
+      String userEmail = verifyPasswordAndGetEmail(userAuthInfo, postInput);
       jpaTm()
           .transact(
               () -> {
@@ -138,9 +137,11 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
                             postInput.fullyQualifiedDomainName,
                             postInput.clientId,
                             userEmail,
-                            isAdmin)
+                            registrarAccessor.isAdmin())
                         : domainLockUtils.saveNewRegistryUnlockRequest(
-                            postInput.fullyQualifiedDomainName, postInput.clientId, isAdmin);
+                            postInput.fullyQualifiedDomainName,
+                            postInput.clientId,
+                            registrarAccessor.isAdmin());
                 sendVerificationEmail(registryLock, userEmail, postInput.isLock);
               });
       String action = postInput.isLock ? "lock" : "unlock";
@@ -180,25 +181,28 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
     }
   }
 
-  private void verifyRegistryLockPassword(RegistryLockPostInput postInput, String userEmail)
+  private String verifyPasswordAndGetEmail(
+      UserAuthInfo userAuthInfo, RegistryLockPostInput postInput)
       throws RegistrarAccessDeniedException {
-    // Verify that the user can access the registrar and that the user has
-    // registry lock enabled and provided a correct password
-    Registrar registrar = registrarAccessor.getRegistrar(postInput.clientId);
-    checkArgument(
-        registrar.isRegistryLockAllowed(), "Registry lock not allowed for this registrar");
-    checkArgument(!Strings.isNullOrEmpty(postInput.password), "Missing key for password");
+    User user = userAuthInfo.user();
+    if (registrarAccessor.isAdmin()) {
+      return user.getEmail();
+    }
+    // Verify that the user can access the registrar, that the user has
+    // registry lock enabled, and that the user providjed a correct password
+    Registrar registrar =
+        getRegistrarAndVerifyLockAccess(registrarAccessor, postInput.clientId, false);
     RegistrarContact registrarContact =
-        registrar.getContacts().stream()
-            .filter(contact -> contact.getEmailAddress().equals(userEmail))
-            .findFirst()
+        getContactMatchingLogin(user, registrar)
             .orElseThrow(
                 () ->
                     new IllegalArgumentException(
-                        String.format("Unknown user email %s", userEmail)));
+                        String.format(
+                            "Cannot match user %s to registrar contact", user.getUserId())));
     checkArgument(
         registrarContact.verifyRegistryLockPassword(postInput.password),
         "Incorrect registry lock password for contact");
+    return registrarContact.getEmailAddress();
   }
 
   /** Value class that represents the expected input body from the UI request. */

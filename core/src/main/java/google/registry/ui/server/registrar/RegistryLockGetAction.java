@@ -41,7 +41,6 @@ import google.registry.request.auth.Auth;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
-import google.registry.request.auth.UserAuthInfo;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.security.JsonResponseHelper;
 import java.util.Optional;
@@ -117,39 +116,46 @@ public final class RegistryLockGetAction implements JsonGetAction {
     }
   }
 
-  private ImmutableMap<String, ?> getLockedDomainsMap(String clientId)
-      throws RegistrarAccessDeniedException {
-    // Note: admins always have access to the locks page
-    checkArgument(authResult.userAuthInfo().isPresent(), "User auth info must be present");
-    UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();
-    boolean isAdmin = registrarAccessor.isAdmin();
-    Registrar registrar = getRegistrarAndVerifyLockAccess(clientId, isAdmin);
-    User user = userAuthInfo.user();
-    boolean isRegistryLockAllowed =
-        isAdmin
-            || registrar.getContacts().stream()
-                .filter(contact -> contact.getEmailAddress().equals(user.getEmail()))
-                .findFirst()
-                .map(RegistrarContact::isRegistryLockAllowed)
-                .orElse(false);
-    return ImmutableMap.of(
-        LOCK_ENABLED_FOR_CONTACT_PARAM,
-        isRegistryLockAllowed,
-        EMAIL_PARAM,
-        user.getEmail(),
-        PARAM_CLIENT_ID,
-        registrar.getClientId(),
-        LOCKS_PARAM,
-        getLockedDomains(clientId, isAdmin));
+  static Optional<RegistrarContact> getContactMatchingLogin(User user, Registrar registrar) {
+    return registrar.getContacts().stream()
+        .filter(contact -> contact.getGaeUserId().equals(user.getUserId()))
+        .findFirst();
   }
 
-  private Registrar getRegistrarAndVerifyLockAccess(String clientId, boolean isAdmin)
+  static Registrar getRegistrarAndVerifyLockAccess(
+      AuthenticatedRegistrarAccessor registrarAccessor, String clientId, boolean isAdmin)
       throws RegistrarAccessDeniedException {
     Registrar registrar = registrarAccessor.getRegistrar(clientId);
     checkArgument(
         isAdmin || registrar.isRegistryLockAllowed(),
         "Registry lock not allowed for this registrar");
     return registrar;
+  }
+
+  private ImmutableMap<String, ?> getLockedDomainsMap(String clientId)
+      throws RegistrarAccessDeniedException {
+    // Note: admins always have access to the locks page
+    checkArgument(authResult.userAuthInfo().isPresent(), "User auth info must be present");
+
+    boolean isAdmin = registrarAccessor.isAdmin();
+    Registrar registrar = getRegistrarAndVerifyLockAccess(registrarAccessor, clientId, isAdmin);
+    User user = authResult.userAuthInfo().get().user();
+
+    Optional<RegistrarContact> contactOptional = getContactMatchingLogin(user, registrar);
+    boolean isRegistryLockAllowed =
+        isAdmin || contactOptional.map(RegistrarContact::isRegistryLockAllowed).orElse(false);
+    // Use the contact email if it's present, else use the login email
+    String relevantEmail =
+        contactOptional.map(RegistrarContact::getEmailAddress).orElse(user.getEmail());
+    return ImmutableMap.of(
+        LOCK_ENABLED_FOR_CONTACT_PARAM,
+        isRegistryLockAllowed,
+        EMAIL_PARAM,
+        relevantEmail,
+        PARAM_CLIENT_ID,
+        registrar.getClientId(),
+        LOCKS_PARAM,
+        getLockedDomains(clientId, isAdmin));
   }
 
   private ImmutableList<ImmutableMap<String, ?>> getLockedDomains(

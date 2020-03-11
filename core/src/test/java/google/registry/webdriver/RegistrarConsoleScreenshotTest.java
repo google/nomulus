@@ -60,7 +60,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
               route("/registry-lock-verify", FrontendServlet.class))
           .setFilters(ObjectifyFilter.class, OfyFilter.class)
           .setFixtures(BASIC)
-          .setEmail("Marla.Singer@crr.com")
+          .setEmail("Marla.Singer@crr.com") // from AppEngineRule.makeRegistrarContact3
+          .setGaeUserId("12345") // from AppEngineRule.makeRegistrarContact3
           .build();
 
   @Test
@@ -452,11 +453,12 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
           createTld("tld");
           // expired unlock request
           DomainBase expiredUnlockRequestDomain = persistActiveDomain("expiredunlock.tld");
-          saveRegistryLock(createRegistryLock(expiredUnlockRequestDomain)
-              .asBuilder()
-              .setLockCompletionTimestamp(START_OF_TIME.minusDays(1))
-              .setUnlockRequestTimestamp(START_OF_TIME.minusDays(1))
-              .build());
+          saveRegistryLock(
+              createRegistryLock(expiredUnlockRequestDomain)
+                  .asBuilder()
+                  .setLockCompletionTimestamp(START_OF_TIME.minusDays(1))
+                  .setUnlockRequestTimestamp(START_OF_TIME.minusDays(1))
+                  .build());
           DomainBase domain = persistActiveDomain("example.tld");
           saveRegistryLock(createRegistryLock(domain).asBuilder().isSuperuser(true).build());
           DomainBase otherDomain = persistActiveDomain("otherexample.tld");

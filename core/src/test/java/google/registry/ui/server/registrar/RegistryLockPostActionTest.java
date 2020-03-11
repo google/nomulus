@@ -23,6 +23,7 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
+import static google.registry.ui.server.registrar.RegistryLockGetActionTest.userFromRegistrarContact;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -78,11 +79,8 @@ public final class RegistryLockPostActionTest {
 
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 
-  private final User userWithoutPermission =
-      new User("johndoe@theregistrar.com", "gmail.com", "31337");
-  // Marla Singer has registry lock auth permissions
-  private final User userWithLockPermission =
-      new User("Marla.Singer@crr.com", "gmail.com", "31337");
+  private User userWithoutPermission;
+  private User userWithLockPermission;
 
   private InternetAddress outgoingAddress;
   private DomainBase domain;
@@ -93,6 +91,8 @@ public final class RegistryLockPostActionTest {
 
   @Before
   public void setup() throws Exception {
+    userWithLockPermission = userFromRegistrarContact(AppEngineRule.makeRegistrarContact3());
+    userWithoutPermission = userFromRegistrarContact(AppEngineRule.makeRegistrarContact2());
     createTld("tld");
     domain = persistResource(newDomainBase("example.tld"));
     outgoingAddress = new InternetAddress("domain-registry@example.com");
@@ -131,6 +131,18 @@ public final class RegistryLockPostActionTest {
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     // we should still email the admin user's email address
     assertSuccess(response, "unlock", "johndoe@theregistrar.com");
+  }
+
+  @Test
+  public void testSuccess_linkedToContactEmail() throws Exception {
+    // Even though the user is some.email@gmail.com the contact is still Marla Singer
+    userWithLockPermission =
+        new User("some.email@gmail.com", "gmail.com", userWithLockPermission.getUserId());
+    action =
+        createAction(
+            AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithLockPermission, false)));
+    Map<String, ?> response = action.handleJsonRequest(lockRequest());
+    assertSuccess(response, "lock", "Marla.Singer@crr.com");
   }
 
   @Test
@@ -244,7 +256,7 @@ public final class RegistryLockPostActionTest {
                 "clientId", "TheRegistrar",
                 "fullyQualifiedDomainName", "example.tld",
                 "isLock", true));
-    assertFailureWithMessage(response, "Missing key for password");
+    assertFailureWithMessage(response, "Incorrect registry lock password for contact");
   }
 
   @Test
@@ -386,9 +398,10 @@ public final class RegistryLockPostActionTest {
   }
 
   private RegistryLockPostAction createAction(AuthResult authResult) {
+    Role role = authResult.userAuthInfo().get().isUserAdmin() ? Role.ADMIN : Role.OWNER;
     AuthenticatedRegistrarAccessor registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(
-            ImmutableSetMultimap.of("TheRegistrar", Role.OWNER, "NewRegistrar", Role.OWNER));
+            ImmutableSetMultimap.of("TheRegistrar", role, "NewRegistrar", role));
     JsonActionRunner jsonActionRunner =
         new JsonActionRunner(ImmutableMap.of(), new JsonResponse(new ResponseImpl(mockResponse)));
     DomainLockUtils domainLockUtils =
