@@ -128,7 +128,8 @@ public final class RegistryLockGetAction implements JsonGetAction {
     Registrar registrar = registrarAccessor.getRegistrar(clientId);
     checkArgument(
         isAdmin || registrar.isRegistryLockAllowed(),
-        "Registry lock not allowed for this registrar");
+        "Registry lock not allowed for registrar %s",
+        clientId);
     return registrar;
   }
 

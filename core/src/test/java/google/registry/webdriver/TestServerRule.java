@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.testing.AppEngineRule.THE_REGISTRAR_GAE_USER_ID;
 import static google.registry.util.NetworkUtils.getExternalAddressOfLocalSystem;
 import static google.registry.util.NetworkUtils.pickUnusedPort;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -261,7 +262,8 @@ public final class TestServerRule extends ExternalResource {
 
     /** Optionally, sets the GAE user ID for the logged in user. */
     public Builder setGaeUserId(String gaeUserId) {
-      this.gaeUserId = Optional.of(checkNotNull(gaeUserId));
+      this.gaeUserId =
+          Optional.of(checkArgumentNotNull(gaeUserId, "Must specify a non-null GAE user ID"));
       return this;
     }
 
