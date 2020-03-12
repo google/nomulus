@@ -222,7 +222,7 @@ public final class TestServerRule extends ExternalResource {
     ImmutableList<Class<? extends Filter>> filters;
     private ImmutableList<Fixture> fixtures = ImmutableList.of();
     private String email;
-    private Optional<String> gaeUserId;
+    private Optional<String> gaeUserId = Optional.empty();
 
     /** Sets the directories containing the static files for {@link TestServer}. */
     public Builder setRunfiles(ImmutableMap<String, Path> runfiles) {
