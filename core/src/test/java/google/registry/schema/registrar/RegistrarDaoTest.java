@@ -32,7 +32,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class RegistrarDaoTest extends EntityTestCase {
 
-  private final VKey<Registrar> registrarKey = VKey.create(Registrar.class, "registrarId");
+  private final VKey<Registrar> registrarKey = VKey.createSql(Registrar.class, "registrarId");
 
   private Registrar testRegistrar;
 

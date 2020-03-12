@@ -43,11 +43,11 @@ public class VKey<T> extends ImmutableObject {
     return new VKey(kind, ofyKey, primaryKey);
   }
 
-  public static <T> VKey<T> create(Class<? extends T> kind, Object primaryKey) {
+  public static <T> VKey<T> createSql(Class<? extends T> kind, Object primaryKey) {
     return new VKey(kind, null, primaryKey);
   }
 
-  public static <T> VKey<T> create(
+  public static <T> VKey<T> createOfy(
       Class<? extends T> kind, com.googlecode.objectify.Key<T> ofyKey) {
     return new VKey(kind, ofyKey, null);
   }

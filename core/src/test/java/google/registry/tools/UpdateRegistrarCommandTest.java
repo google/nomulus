@@ -52,7 +52,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
     assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isTrue();
     assertThat(
             jpaTm()
-                .transact(() -> jpaTm().load(VKey.create(Registrar.class, "NewRegistrar")))
+                .transact(() -> jpaTm().load(VKey.createSql(Registrar.class, "NewRegistrar")))
                 .get()
                 .verifyPassword("some_password"))
         .isTrue();

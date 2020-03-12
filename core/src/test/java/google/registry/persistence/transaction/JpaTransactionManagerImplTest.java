@@ -43,11 +43,11 @@ public class JpaTransactionManagerImplTest {
 
   private final FakeClock fakeClock = new FakeClock();
   private final TestEntity theEntity = new TestEntity("theEntity", "foo");
-  private final VKey<TestEntity> theEntityKey = VKey.create(TestEntity.class, "theEntity");
+  private final VKey<TestEntity> theEntityKey = VKey.createSql(TestEntity.class, "theEntity");
   private final TestCompoundIdEntity compoundIdEntity =
       new TestCompoundIdEntity("compoundIdEntity", 10, "foo");
   private final VKey<TestCompoundIdEntity> compoundIdEntityKey =
-      VKey.create(TestCompoundIdEntity.class, new CompoundId("compoundIdEntity", 10));
+      VKey.createSql(TestCompoundIdEntity.class, new CompoundId("compoundIdEntity", 10));
   private final ImmutableList<TestEntity> moreEntities =
       ImmutableList.of(
           new TestEntity("entity1", "foo"),
@@ -225,7 +225,7 @@ public class JpaTransactionManagerImplTest {
   public void update_succeeds() {
     jpaTm().transact(() -> jpaTm().saveNew(theEntity));
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().load(VKey.create(TestEntity.class, "theEntity"))).get();
+        jpaTm().transact(() -> jpaTm().load(VKey.createSql(TestEntity.class, "theEntity"))).get();
     assertThat(persisted.data).isEqualTo("foo");
     theEntity.data = "bar";
     jpaTm().transact(() -> jpaTm().update(theEntity));
