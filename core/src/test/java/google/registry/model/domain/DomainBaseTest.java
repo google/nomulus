@@ -108,9 +108,9 @@ public class DomainBaseTest extends EntityTestCase {
                     .setFullyQualifiedDomainName("example.com")
                     .setRepoId("4-COM")
                     .setCreationClientId("a registrar")
-                    .setLastEppUpdateTime(clock.nowUtc())
+                    .setLastEppUpdateTime(fakeClock.nowUtc())
                     .setLastEppUpdateClientId("AnotherRegistrar")
-                    .setLastTransferTime(clock.nowUtc())
+                    .setLastTransferTime(fakeClock.nowUtc())
                     .setStatusValues(
                         ImmutableSet.of(
                             StatusValue.CLIENT_DELETE_PROHIBITED,
@@ -124,7 +124,7 @@ public class DomainBaseTest extends EntityTestCase {
                     .setNameservers(ImmutableSet.of(hostKey))
                     .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
                     .setPersistedCurrentSponsorClientId("losing")
-                    .setRegistrationExpirationTime(clock.nowUtc().plusYears(1))
+                    .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
                     .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))
                     .setDsData(
                         ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
@@ -134,13 +134,13 @@ public class DomainBaseTest extends EntityTestCase {
                         new TransferData.Builder()
                             .setGainingClientId("gaining")
                             .setLosingClientId("losing")
-                            .setPendingTransferExpirationTime(clock.nowUtc())
+                            .setPendingTransferExpirationTime(fakeClock.nowUtc())
                             .setServerApproveEntities(
                                 ImmutableSet.of(oneTimeBillKey, recurringBillKey, autorenewPollKey))
                             .setServerApproveBillingEvent(oneTimeBillKey)
                             .setServerApproveAutorenewEvent(recurringBillKey)
                             .setServerApproveAutorenewPollMessage(autorenewPollKey)
-                            .setTransferRequestTime(clock.nowUtc().plusDays(1))
+                            .setTransferRequestTime(fakeClock.nowUtc().plusDays(1))
                             .setTransferStatus(TransferStatus.SERVER_APPROVED)
                             .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
                             .build())
@@ -150,13 +150,16 @@ public class DomainBaseTest extends EntityTestCase {
                     .setSmdId("smdid")
                     .addGracePeriod(
                         GracePeriod.create(
-                            GracePeriodStatus.ADD, clock.nowUtc().plusDays(1), "registrar", null))
+                            GracePeriodStatus.ADD,
+                            fakeClock.nowUtc().plusDays(1),
+                            "registrar",
+                            null))
                     .build()));
   }
 
   @Test
   public void testPersistence() {
-    assertThat(loadByForeignKey(DomainBase.class, domain.getForeignKey(), clock.nowUtc()))
+    assertThat(loadByForeignKey(DomainBase.class, domain.getForeignKey(), fakeClock.nowUtc()))
         .hasValue(domain);
   }
 
@@ -323,7 +326,7 @@ public class DomainBaseTest extends EntityTestCase {
     assertThat(domain.getTransferData().getTransferStatus())
         .isEqualTo(TransferStatus.SERVER_APPROVED);
     assertThat(domain.getCurrentSponsorClientId()).isEqualTo("winner");
-    assertThat(domain.getLastTransferTime()).isEqualTo(clock.nowUtc().plusDays(1));
+    assertThat(domain.getLastTransferTime()).isEqualTo(fakeClock.nowUtc().plusDays(1));
     assertThat(domain.getRegistrationExpirationTime()).isEqualTo(newExpirationTime);
     assertThat(domain.getAutorenewBillingEvent()).isEqualTo(newAutorenewEvent);
   }
@@ -336,9 +339,9 @@ public class DomainBaseTest extends EntityTestCase {
                 .setReason(Reason.TRANSFER)
                 .setClientId("winner")
                 .setTargetId("example.com")
-                .setEventTime(clock.nowUtc())
+                .setEventTime(fakeClock.nowUtc())
                 .setBillingTime(
-                    clock
+                    fakeClock
                         .nowUtc()
                         .plusDays(1)
                         .plus(Registry.get("com").getTransferGracePeriodLength()))
@@ -355,8 +358,8 @@ public class DomainBaseTest extends EntityTestCase {
                     .getTransferData()
                     .asBuilder()
                     .setTransferStatus(TransferStatus.PENDING)
-                    .setTransferRequestTime(clock.nowUtc().minusDays(4))
-                    .setPendingTransferExpirationTime(clock.nowUtc().plusDays(1))
+                    .setTransferRequestTime(fakeClock.nowUtc().minusDays(4))
+                    .setPendingTransferExpirationTime(fakeClock.nowUtc().plusDays(1))
                     .setGainingClientId("winner")
                     .setServerApproveBillingEvent(Key.create(transferBillingEvent))
                     .setServerApproveEntities(ImmutableSet.of(Key.create(transferBillingEvent)))
@@ -365,9 +368,9 @@ public class DomainBaseTest extends EntityTestCase {
                 // Okay for billing event to be null since the point of this grace period is just
                 // to check that the transfer will clear all existing grace periods.
                 GracePeriod.create(
-                    GracePeriodStatus.ADD, clock.nowUtc().plusDays(100), "foo", null))
+                    GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(100), "foo", null))
             .build();
-    DomainBase afterTransfer = domain.cloneProjectedAtTime(clock.nowUtc().plusDays(1));
+    DomainBase afterTransfer = domain.cloneProjectedAtTime(fakeClock.nowUtc().plusDays(1));
     DateTime newExpirationTime = oldExpirationTime.plusYears(1);
     Key<BillingEvent.Recurring> serverApproveAutorenewEvent =
         domain.getTransferData().getServerApproveAutorenewEvent();
@@ -376,20 +379,26 @@ public class DomainBaseTest extends EntityTestCase {
         .containsExactly(
             GracePeriod.create(
                 GracePeriodStatus.TRANSFER,
-                clock.nowUtc().plusDays(1).plus(Registry.get("com").getTransferGracePeriodLength()),
+                fakeClock
+                    .nowUtc()
+                    .plusDays(1)
+                    .plus(Registry.get("com").getTransferGracePeriodLength()),
                 "winner",
                 Key.create(transferBillingEvent)));
     // If we project after the grace period expires all should be the same except the grace period.
     DomainBase afterGracePeriod =
         domain.cloneProjectedAtTime(
-            clock.nowUtc().plusDays(2).plus(Registry.get("com").getTransferGracePeriodLength()));
+            fakeClock
+                .nowUtc()
+                .plusDays(2)
+                .plus(Registry.get("com").getTransferGracePeriodLength()));
     assertTransferred(afterGracePeriod, newExpirationTime, serverApproveAutorenewEvent);
     assertThat(afterGracePeriod.getGracePeriods()).isEmpty();
   }
 
   @Test
   public void testExpiredTransfer() {
-    doExpiredTransferTest(clock.nowUtc().plusMonths(1));
+    doExpiredTransferTest(fakeClock.nowUtc().plusMonths(1));
   }
 
   @Test
@@ -397,7 +406,7 @@ public class DomainBaseTest extends EntityTestCase {
     // Since transfer swallows a preceding autorenew, this should be identical to the regular
     // transfer case (and specifically, the new expiration and grace periods will be the same as if
     // there was no autorenew).
-    doExpiredTransferTest(clock.nowUtc().minusDays(1));
+    doExpiredTransferTest(fakeClock.nowUtc().minusDays(1));
   }
 
   private void setupPendingTransferDomain(
@@ -421,7 +430,7 @@ public class DomainBaseTest extends EntityTestCase {
 
   @Test
   public void testEppLastUpdateTimeAndClientId_autoRenewBeforeTransferSuccess() {
-    DateTime now = clock.nowUtc();
+    DateTime now = fakeClock.nowUtc();
     DateTime transferRequestDateTime = now.plusDays(1);
     DateTime autorenewDateTime = now.plusDays(3);
     DateTime transferSuccessDateTime = now.plusDays(5);
@@ -440,7 +449,7 @@ public class DomainBaseTest extends EntityTestCase {
 
   @Test
   public void testEppLastUpdateTimeAndClientId_autoRenewAfterTransferSuccess() {
-    DateTime now = clock.nowUtc();
+    DateTime now = fakeClock.nowUtc();
     DateTime transferRequestDateTime = now.plusDays(1);
     DateTime autorenewDateTime = now.plusDays(3);
     DateTime transferSuccessDateTime = now.plusDays(5);
@@ -470,7 +479,7 @@ public class DomainBaseTest extends EntityTestCase {
 
   @Test
   public void testEppLastUpdateTimeAndClientId_isSetCorrectlyWithNullPreviousValue() {
-    DateTime now = clock.nowUtc();
+    DateTime now = fakeClock.nowUtc();
     DateTime autorenewDateTime = now.plusDays(3);
     setupUnmodifiedDomain(autorenewDateTime);
 
@@ -487,12 +496,12 @@ public class DomainBaseTest extends EntityTestCase {
   public void testStackedGracePeriods() {
     ImmutableList<GracePeriod> gracePeriods =
         ImmutableList.of(
-            GracePeriod.create(GracePeriodStatus.ADD, clock.nowUtc().plusDays(3), "foo", null),
-            GracePeriod.create(GracePeriodStatus.ADD, clock.nowUtc().plusDays(2), "bar", null),
-            GracePeriod.create(GracePeriodStatus.ADD, clock.nowUtc().plusDays(1), "baz", null));
+            GracePeriod.create(GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(3), "foo", null),
+            GracePeriod.create(GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(2), "bar", null),
+            GracePeriod.create(GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(1), "baz", null));
     domain = domain.asBuilder().setGracePeriods(ImmutableSet.copyOf(gracePeriods)).build();
     for (int i = 1; i < 3; ++i) {
-      assertThat(domain.cloneProjectedAtTime(clock.nowUtc().plusDays(i)).getGracePeriods())
+      assertThat(domain.cloneProjectedAtTime(fakeClock.nowUtc().plusDays(i)).getGracePeriods())
           .containsExactlyElementsIn(Iterables.limit(gracePeriods, 3 - i));
     }
   }
@@ -501,12 +510,14 @@ public class DomainBaseTest extends EntityTestCase {
   public void testGracePeriodsByType() {
     ImmutableSet<GracePeriod> addGracePeriods =
         ImmutableSet.of(
-            GracePeriod.create(GracePeriodStatus.ADD, clock.nowUtc().plusDays(3), "foo", null),
-            GracePeriod.create(GracePeriodStatus.ADD, clock.nowUtc().plusDays(1), "baz", null));
+            GracePeriod.create(GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(3), "foo", null),
+            GracePeriod.create(GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(1), "baz", null));
     ImmutableSet<GracePeriod> renewGracePeriods =
         ImmutableSet.of(
-            GracePeriod.create(GracePeriodStatus.RENEW, clock.nowUtc().plusDays(3), "foo", null),
-            GracePeriod.create(GracePeriodStatus.RENEW, clock.nowUtc().plusDays(1), "baz", null));
+            GracePeriod.create(
+                GracePeriodStatus.RENEW, fakeClock.nowUtc().plusDays(3), "foo", null),
+            GracePeriod.create(
+                GracePeriodStatus.RENEW, fakeClock.nowUtc().plusDays(1), "baz", null));
     domain =
         domain
             .asBuilder()

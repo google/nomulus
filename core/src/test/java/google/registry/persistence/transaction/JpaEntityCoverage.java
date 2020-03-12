@@ -14,8 +14,10 @@
 
 package google.registry.persistence.transaction;
 
+import static com.google.common.base.Preconditions.checkState;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
@@ -33,15 +35,10 @@ import org.junit.rules.ExternalResource;
  */
 public class JpaEntityCoverage extends ExternalResource {
 
-  // TODO(weiminyu): remove this set after pr/438 is submitted. The pr is expected to fix the
-  // problems with these entities and allow them to be tested.
+  // TODO(weiminyu): update this set when entities written to Cloud SQL and tests are added.
   private static final ImmutableSet<String> IGNORE_ENTITIES =
       ImmutableSet.of(
-          "DomainBase",
-          "BaseTransferObject",
-          "DelegationSignerData",
-          "DesignatedContact",
-          "GracePeriod");
+          "DelegationSignerData", "DesignatedContact", "GracePeriod", "RegistrarContact");
 
   private static final ImmutableSet<Class> ALL_JPA_ENTITIES =
       PersistenceXmlUtility.getManagedClasses().stream()
@@ -106,10 +103,19 @@ public class JpaEntityCoverage extends ExternalResource {
                     jpaTm()
                         .getEntityManager()
                         .createQuery(
-                            String.format("SELECT e FROM %s e", entityType.getSimpleName()),
+                            String.format("SELECT e FROM %s e", getJpaEntityName(entityType)),
                             entityType)
                         .setMaxResults(1)
                         .getResultList());
     return !result.isEmpty() && entityType.isInstance(result.get(0));
+  }
+
+  private static String getJpaEntityName(Class entityType) {
+    Entity entityAnnotation = (Entity) entityType.getAnnotation(Entity.class);
+    checkState(
+        entityAnnotation != null, "Unexpected non-entity type %s", entityType.getSimpleName());
+    return Strings.isNullOrEmpty(entityAnnotation.name())
+        ? entityType.getSimpleName()
+        : entityAnnotation.name();
   }
 }

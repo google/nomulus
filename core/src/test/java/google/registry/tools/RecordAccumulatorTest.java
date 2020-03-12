@@ -33,7 +33,9 @@ public class RecordAccumulatorTest {
   private static final int BASE_ID = 1001;
 
   @Rule public final TemporaryFolder tempFs = new TemporaryFolder();
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
   public void testReadDirectory() throws IOException {

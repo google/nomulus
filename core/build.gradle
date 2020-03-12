@@ -300,6 +300,7 @@ dependencies {
   testCompile deps['org.hamcrest:hamcrest-library']
   compile deps['org.hibernate:hibernate-hikaricp']
   testCompile deps['junit:junit']
+  testCompile deps['org.junit.jupiter:junit-jupiter-api']
   testCompile deps['org.junit.jupiter:junit-jupiter-engine']
   testCompile deps['org.junit.vintage:junit-vintage-engine']
   testCompile deps['org.mockito:mockito-core']
@@ -869,7 +870,8 @@ test {
   // Don't run any tests from this task, all testing gets done in the
   // FilteringTest tasks.
   exclude "**"
-}.dependsOn(fragileTest, outcastTest, standardTest, registryToolIntegrationTest)
+  // TODO(weiminyu): Remove dependency on sqlIntegrationTest
+}.dependsOn(fragileTest, outcastTest, standardTest, registryToolIntegrationTest, sqlIntegrationTest)
 
 createUberJar('nomulus', 'nomulus', 'google.registry.tools.RegistryTool')
 

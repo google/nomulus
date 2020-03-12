@@ -61,7 +61,8 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class PremiumListUtilsTest {
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   // Set long persist times on caches so they can be tested (cache times default to 0 in tests).
   @Rule

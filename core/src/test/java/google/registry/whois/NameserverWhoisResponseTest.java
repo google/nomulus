@@ -41,9 +41,7 @@ import org.junit.runners.JUnit4;
 public class NameserverWhoisResponseTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private HostResource hostResource1;
   private HostResource hostResource2;

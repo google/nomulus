@@ -30,9 +30,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class ServerSecretTest {
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Before
   public void before() {

@@ -51,10 +51,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class DomainWhoisResponseTest {
 
-  @Rule
-  public final AppEngineRule gae = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  @Rule public final AppEngineRule gae = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   HostResource hostResource1;
   HostResource hostResource2;

@@ -46,10 +46,8 @@ public class CommitLogCheckpointActionTest {
   private static final String QUEUE_NAME = "export-commits";
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withTaskQueue()
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   CommitLogCheckpointStrategy strategy = mock(CommitLogCheckpointStrategy.class);
 

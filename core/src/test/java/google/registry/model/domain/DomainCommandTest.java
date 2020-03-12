@@ -82,7 +82,7 @@ public class DomainCommandTest extends ResourceCommandTestCase {
     persistActiveContact("jd1234");
     DomainCommand.Create create =
         (DomainCommand.Create) loadEppResourceCommand("domain_create.xml");
-    create.cloneAndLinkReferences(clock.nowUtc());
+    create.cloneAndLinkReferences(fakeClock.nowUtc());
   }
 
   @Test
@@ -90,7 +90,7 @@ public class DomainCommandTest extends ResourceCommandTestCase {
     // This EPP command wouldn't be allowed for policy reasons, but should clone-and-link fine.
     DomainCommand.Create create =
         (DomainCommand.Create) loadEppResourceCommand("domain_create_empty.xml");
-    create.cloneAndLinkReferences(clock.nowUtc());
+    create.cloneAndLinkReferences(fakeClock.nowUtc());
   }
 
   @Test
@@ -100,7 +100,7 @@ public class DomainCommandTest extends ResourceCommandTestCase {
     DomainCommand.Create create =
         (DomainCommand.Create)
             loadEppResourceCommand("domain_create_missing_non_registrant_contacts.xml");
-    create.cloneAndLinkReferences(clock.nowUtc());
+    create.cloneAndLinkReferences(fakeClock.nowUtc());
   }
 
   @Test
@@ -132,7 +132,7 @@ public class DomainCommandTest extends ResourceCommandTestCase {
     persistActiveContact("sh8013");
     DomainCommand.Update update =
         (DomainCommand.Update) loadEppResourceCommand("domain_update.xml");
-    update.cloneAndLinkReferences(clock.nowUtc());
+    update.cloneAndLinkReferences(fakeClock.nowUtc());
   }
 
   @Test
@@ -140,7 +140,7 @@ public class DomainCommandTest extends ResourceCommandTestCase {
     // This EPP command wouldn't be allowed for policy reasons, but should clone-and-link fine.
     DomainCommand.Update update =
         (DomainCommand.Update) loadEppResourceCommand("domain_update_empty.xml");
-    update.cloneAndLinkReferences(clock.nowUtc());
+    update.cloneAndLinkReferences(fakeClock.nowUtc());
   }
 
   @Test

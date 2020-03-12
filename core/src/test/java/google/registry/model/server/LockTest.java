@@ -28,8 +28,6 @@ import static org.mockito.Mockito.when;
 
 import google.registry.model.ofy.Ofy;
 import google.registry.model.server.Lock.LockState;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.server.LockDao;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
@@ -56,12 +54,11 @@ public class LockTest {
 
   private LockMetrics origLockMetrics;
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
-  @Rule public final InjectRule inject = new InjectRule();
-
   @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().withClock(clock).buildIntegrationWithCoverageRule();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withClock(clock).build();
+
+  @Rule public final InjectRule inject = new InjectRule();
 
   private Optional<Lock> acquire(String tld, Duration leaseLength, LockState expectedLockState) {
     Lock.lockMetrics = mock(LockMetrics.class);

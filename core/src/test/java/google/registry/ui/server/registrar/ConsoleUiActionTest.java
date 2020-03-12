@@ -54,7 +54,7 @@ public class ConsoleUiActionTest {
   @Rule
   public final AppEngineRule appEngineRule =
       AppEngineRule.builder()
-          .withDatastore()
+          .withDatastoreAndCloudSql()
           .withUserService(UserInfo.create("marla.singer@example.com", "12345"))
           .build();
 

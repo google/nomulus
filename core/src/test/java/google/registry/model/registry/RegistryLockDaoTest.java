@@ -26,8 +26,6 @@ import static google.registry.testing.SqlHelper.getRegistryLocksByRegistrarId;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static org.junit.Assert.assertThrows;
 
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
@@ -43,11 +41,9 @@ public final class RegistryLockDaoTest {
 
   private final FakeClock fakeClock = new FakeClock();
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
-
   @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withClock(fakeClock).build();
 
   @Test
   public void testSaveAndLoad_success() {

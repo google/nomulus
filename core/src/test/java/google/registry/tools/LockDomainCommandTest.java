@@ -28,23 +28,16 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar.Type;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 
 /** Unit tests for {@link LockDomainCommand}. */
 public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
-
-  @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().buildIntegrationWithCoverageRule();
 
   @Before
   public void before() {

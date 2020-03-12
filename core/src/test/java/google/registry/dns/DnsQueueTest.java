@@ -35,10 +35,9 @@ import org.junit.runners.JUnit4;
 public class DnsQueueTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withTaskQueue()
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+
   private DnsQueue dnsQueue;
   private final FakeClock clock = new FakeClock(DateTime.parse("2010-01-01T10:00:00Z"));
 

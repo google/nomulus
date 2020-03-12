@@ -53,9 +53,7 @@ public class ReservedListTest {
   public final InjectRule inject = new InjectRule();
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   FakeClock clock = new FakeClock(DateTime.parse("2010-01-01T10:00:00Z"));
 

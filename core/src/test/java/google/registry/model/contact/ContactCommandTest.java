@@ -32,9 +32,7 @@ import org.junit.runners.JUnit4;
 public class ContactCommandTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private void doXmlRoundtripTest(String inputFilename) throws Exception {
     EppLoader eppLoader = new EppLoader(this, inputFilename);

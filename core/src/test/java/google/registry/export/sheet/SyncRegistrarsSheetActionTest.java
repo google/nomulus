@@ -40,10 +40,8 @@ import org.junit.runners.JUnit4;
 public class SyncRegistrarsSheetActionTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withTaskQueue()
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private final FakeResponse response = new FakeResponse();
   private final SyncRegistrarsSheet syncRegistrarsSheet = mock(SyncRegistrarsSheet.class);

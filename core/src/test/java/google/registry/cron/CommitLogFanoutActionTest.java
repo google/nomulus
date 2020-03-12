@@ -39,17 +39,20 @@ public class CommitLogFanoutActionTest {
   private static final String QUEUE = "the-queue";
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withTaskQueue(Joiner.on('\n').join(
-          "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-          "<queue-entries>",
-          "  <queue>",
-          "    <name>the-queue</name>",
-          "    <rate>1/s</rate>",
-          "  </queue>",
-          "</queue-entries>"))
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder()
+          .withDatastoreAndCloudSql()
+          .withTaskQueue(
+              Joiner.on('\n')
+                  .join(
+                      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+                      "<queue-entries>",
+                      "  <queue>",
+                      "    <name>the-queue</name>",
+                      "    <rate>1/s</rate>",
+                      "  </queue>",
+                      "</queue-entries>"))
+          .build();
 
   @Test
   public void testSuccess() {

@@ -47,10 +47,8 @@ import org.junit.runners.JUnit4;
 public class EscrowTaskRunnerTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withTaskQueue()
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private final EscrowTask task = mock(EscrowTask.class);
   private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));

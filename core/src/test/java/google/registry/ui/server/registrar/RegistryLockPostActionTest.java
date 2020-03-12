@@ -31,8 +31,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import google.registry.model.domain.DomainBase;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.JsonResponse;
 import google.registry.request.ResponseImpl;
@@ -74,11 +72,9 @@ public final class RegistryLockPostActionTest {
 
   private final FakeClock clock = new FakeClock();
 
-  @Rule public final AppEngineRule appEngineRule = AppEngineRule.builder().withDatastore().build();
-
   @Rule
-  public final JpaIntegrationTestRule jpaRule =
-      new JpaTestRules.Builder().withClock(clock).buildIntegrationTestRule();
+  public final AppEngineRule appEngineRule =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withClock(clock).build();
 
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 

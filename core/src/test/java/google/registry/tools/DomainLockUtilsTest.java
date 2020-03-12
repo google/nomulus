@@ -35,8 +35,6 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.DatastoreHelper;
@@ -67,13 +65,10 @@ public final class DomainLockUtilsTest {
   @Rule
   public final AppEngineRule appEngineRule =
       AppEngineRule.builder()
-          .withDatastore()
+          .withDatastoreAndCloudSql()
+          .withClock(clock)
           .withUserService(UserInfo.create(POC_ID, "12345"))
           .build();
-
-  @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().withClock(clock).buildIntegrationWithCoverageRule();
 
   private DomainBase domain;
 

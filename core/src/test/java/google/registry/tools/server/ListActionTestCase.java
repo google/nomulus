@@ -30,9 +30,7 @@ import org.junit.Rule;
 public class ListActionTestCase {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private FakeJsonResponse response;
 

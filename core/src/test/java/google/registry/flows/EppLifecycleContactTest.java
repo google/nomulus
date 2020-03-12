@@ -32,10 +32,8 @@ import org.junit.runners.JUnit4;
 public class EppLifecycleContactTest extends EppTestCase {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withTaskQueue()
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @Test
   public void testContactLifecycle() throws Exception {

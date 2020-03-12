@@ -45,6 +45,7 @@ registry.registrar.RegistryLock = function(console, resource) {
 goog.inherits(registry.registrar.RegistryLock, registry.ResourceComponent);
 
 registry.registrar.RegistryLock.prototype.runAfterRender = function(objArgs) {
+  this.isAdmin = objArgs.isAdmin;
   this.clientId = objArgs.clientId;
   this.xsrfToken = objArgs.xsrfToken;
 
@@ -91,7 +92,7 @@ registry.registrar.RegistryLock.prototype.fillLocksPage_ = function(e) {
             lockEnabledForContact: locksDetails.lockEnabledForContact});
 
     if (locksDetails.lockEnabledForContact) {
-      // Listen to the lock-domain 'submit' button click as well as the enter key
+      // Listen to the lock-domain 'submit' button click
       var lockButton = goog.dom.getRequiredElement('button-lock-domain');
       goog.events.listen(lockButton, goog.events.EventType.CLICK, this.onLockDomain_, false, this);
       // For all unlock buttons, listen and perform the unlock action if they're clicked
@@ -114,7 +115,8 @@ registry.registrar.RegistryLock.prototype.showModal_ = function(targetElement, d
   var parentElement = targetElement.parentElement;
   // attach the modal to the parent element so focus remains correct if the user closes the modal
   var modalElement = goog.soy.renderAsElement(
-      registry.soy.registrar.registrylock.confirmModal, {domain: domain, isLock: isLock});
+      registry.soy.registrar.registrylock.confirmModal,
+      {domain: domain, isLock: isLock, isAdmin: this.isAdmin});
   parentElement.prepend(modalElement);
   if (domain == null) {
     goog.dom.getRequiredElement('domain-lock-input-value').focus();
@@ -129,12 +131,29 @@ registry.registrar.RegistryLock.prototype.showModal_ = function(targetElement, d
       false,
       this);
 
+  // Listen to the "submit" click and also the user hitting enter
   goog.events.listen(
       goog.dom.getRequiredElement('domain-lock-submit'),
       goog.events.EventType.CLICK,
       e => this.lockOrUnlockDomain_(isLock, e),
       false,
       this);
+
+  [goog.dom.getElement('domain-lock-password'),
+      goog.dom.getElement('domain-lock-input-value')].forEach(elem => {
+        if (elem != null) {
+          goog.events.listen(
+              elem,
+              goog.events.EventType.KEYPRESS,
+              e => {
+                if (e.keyCode === goog.events.KeyCodes.ENTER) {
+                  this.lockOrUnlockDomain_(isLock, e);
+                }
+              },
+              false,
+              this);
+        }
+      });
 }
 
 /**

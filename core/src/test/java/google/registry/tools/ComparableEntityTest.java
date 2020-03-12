@@ -33,7 +33,8 @@ public final class ComparableEntityTest {
   private static final String TEST_ENTITY_KIND = "TestEntity";
   private static final int ARBITRARY_KEY_ID = 1001;
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
   public void testEquals() {

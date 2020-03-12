@@ -96,7 +96,8 @@ public class Spec11EmailUtilsTest {
           + " domains are added to these lists.</p><p>If you have any questions regarding this"
           + " notice, please contact abuse@test.com.</p>";
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private SendEmailService emailService;
   private Spec11EmailUtils emailUtils;

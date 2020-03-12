@@ -43,9 +43,7 @@ import org.junit.runners.JUnit4;
 public class TmchXmlSignatureTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Rule
   public final InjectRule inject = new InjectRule();

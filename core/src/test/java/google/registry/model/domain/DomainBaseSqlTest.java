@@ -27,11 +27,8 @@ import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import javax.persistence.EntityManager;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -39,10 +36,6 @@ import org.junit.runners.JUnit4;
 /** Verify that we can store/retrieve DomainBase objects from a SQL database. */
 @RunWith(JUnit4.class)
 public class DomainBaseSqlTest extends EntityTestCase {
-
-  @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().buildIntegrationWithCoverageRule();
 
   DomainBase domain;
   Key<ContactResource> contactKey;
@@ -58,9 +51,9 @@ public class DomainBaseSqlTest extends EntityTestCase {
             .setFullyQualifiedDomainName("example.com")
             .setRepoId("4-COM")
             .setCreationClientId("a registrar")
-            .setLastEppUpdateTime(clock.nowUtc())
+            .setLastEppUpdateTime(fakeClock.nowUtc())
             .setLastEppUpdateClientId("AnotherRegistrar")
-            .setLastTransferTime(clock.nowUtc())
+            .setLastTransferTime(fakeClock.nowUtc())
             .setStatusValues(
                 ImmutableSet.of(
                     StatusValue.CLIENT_DELETE_PROHIBITED,
@@ -73,7 +66,7 @@ public class DomainBaseSqlTest extends EntityTestCase {
             .setContacts(ImmutableSet.of(DesignatedContact.create(Type.ADMIN, contact2Key)))
             .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
             .setPersistedCurrentSponsorClientId("losing")
-            .setRegistrationExpirationTime(clock.nowUtc().plusYears(1))
+            .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
             .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))
             .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
             .setLaunchNotice(

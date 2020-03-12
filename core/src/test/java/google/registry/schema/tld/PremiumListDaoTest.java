@@ -28,8 +28,6 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import java.math.BigDecimal;
@@ -49,10 +47,8 @@ public class PremiumListDaoTest {
   private final FakeClock fakeClock = new FakeClock();
 
   @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
-
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withClock(fakeClock).build();
 
   private static final ImmutableMap<String, BigDecimal> TEST_PRICES =
       ImmutableMap.of(
