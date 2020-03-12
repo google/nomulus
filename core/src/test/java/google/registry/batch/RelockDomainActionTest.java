@@ -32,8 +32,6 @@ import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.DeterministicStringGenerator;
@@ -67,10 +65,6 @@ public class RelockDomainActionTest {
           .withDatastoreAndCloudSql()
           .withUserService(UserInfo.create(POC_ID, "12345"))
           .build();
-
-  @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().withClock(clock).buildIntegrationWithCoverageRule();
 
   private DomainBase domain;
   private RegistryLock oldLock;
