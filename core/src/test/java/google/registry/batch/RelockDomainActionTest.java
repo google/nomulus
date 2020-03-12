@@ -64,7 +64,7 @@ public class RelockDomainActionTest {
   @Rule
   public final AppEngineRule appEngineRule =
       AppEngineRule.builder()
-          .withDatastore()
+          .withDatastoreAndCloudSql()
           .withUserService(UserInfo.create(POC_ID, "12345"))
           .build();
 
