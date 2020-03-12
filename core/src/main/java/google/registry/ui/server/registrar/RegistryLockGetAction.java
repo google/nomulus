@@ -117,9 +117,15 @@ public final class RegistryLockGetAction implements JsonGetAction {
   }
 
   static Optional<RegistrarContact> getContactMatchingLogin(User user, Registrar registrar) {
-    return registrar.getContacts().stream()
-        .filter(contact -> contact.getGaeUserId().equals(user.getUserId()))
-        .findFirst();
+    ImmutableList<RegistrarContact> matchingContacts =
+        registrar.getContacts().stream()
+            .filter(contact -> contact.getGaeUserId().equals(user.getUserId()))
+            .collect(toImmutableList());
+    checkArgument(
+        matchingContacts.size() <= 1,
+        "User ID %s had multiple matching contacts",
+        user.getUserId());
+    return matchingContacts.stream().findFirst();
   }
 
   static Registrar getRegistrarAndVerifyLockAccess(
