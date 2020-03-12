@@ -121,10 +121,16 @@ public final class RegistryLockGetAction implements JsonGetAction {
         registrar.getContacts().stream()
             .filter(contact -> contact.getGaeUserId().equals(user.getUserId()))
             .collect(toImmutableList());
-    checkArgument(
-        matchingContacts.size() <= 1,
-        "User ID %s had multiple matching contacts",
-        user.getUserId());
+    if (matchingContacts.size() > 1) {
+      ImmutableList<String> matchingEmails =
+          matchingContacts.stream()
+              .map(RegistrarContact::getEmailAddress)
+              .collect(toImmutableList());
+      throw new IllegalArgumentException(
+          String.format(
+              "User ID %s had multiple matching contacts with email addresses %s",
+              user.getUserId(), matchingEmails));
+    }
     return matchingContacts.stream().findFirst();
   }
 
