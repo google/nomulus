@@ -37,6 +37,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
 /**
  * Represents a registry lock/unlock object, meaning that the domain is locked on the registry
@@ -131,6 +132,9 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
   @JoinColumn(name = "relockRevisionId", referencedColumnName = "revisionId")
   private RegistryLock relock;
 
+  /** The duration after which we will re-lock this domain after it is unlocked. */
+  private Duration relockDuration;
+
   /** Time that this entity was last updated. */
   private UpdateAutoTimestamp lastUpdateTimestamp;
 
@@ -195,6 +199,11 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
    */
   public RegistryLock getRelock() {
     return relock;
+  }
+
+  /** The duration after which we will re-lock this domain after it is unlocked. */
+  public Optional<Duration> getRelockDuration() {
+    return Optional.ofNullable(relockDuration);
   }
 
   public boolean isLocked() {
@@ -287,6 +296,11 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
 
     public Builder setRelock(RegistryLock relock) {
       getInstance().relock = relock;
+      return this;
+    }
+
+    public Builder setRelockDuration(Duration relockDuration) {
+      getInstance().relockDuration = relockDuration;
       return this;
     }
   }

@@ -262,7 +262,8 @@ CREATE TABLE public."RegistryLock" (
     unlock_request_timestamp timestamp with time zone,
     unlock_completion_timestamp timestamp with time zone,
     last_update_timestamp timestamp with time zone,
-    relock_revision_id bigint
+    relock_revision_id bigint,
+    relock_duration bytea
 );
 
 

@@ -176,6 +176,7 @@
         lock_request_timestamp timestamptz not null,
         registrar_id text not null,
         registrar_poc_id text,
+        relock_duration bytea,
         repo_id text not null,
         unlock_completion_timestamp timestamptz,
         unlock_request_timestamp timestamptz,
