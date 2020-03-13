@@ -245,7 +245,7 @@ public final class RegistryLockPostActionTest {
     persistResource(
         loadRegistrar("TheRegistrar").asBuilder().setRegistryLockAllowed(false).build());
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
-    assertFailureWithMessage(response, "Registry lock not allowed for this registrar");
+    assertFailureWithMessage(response, "Registry lock not allowed for registrar TheRegistrar");
   }
 
   @Test
