@@ -31,6 +31,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import google.registry.config.RegistryConfig;
 import google.registry.model.ofy.ObjectifyService;
+import google.registry.persistence.transaction.CloudSqlCredentialFactory;
+import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.tools.AuthModule.LoginRequiredException;
 import google.registry.tools.params.ParameterFactory;
 import java.io.ByteArrayInputStream;
@@ -237,7 +239,9 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
       // Enable Cloud SQL for command that needs remote API as they will very likely use
       // Cloud SQL after the database migration. Note that the DB password is stored in Datastore
       // and it is already initialized above.
-      RegistryToolEnvironment.enableJpaTm();
+      CloudSqlCredentialFactory.setupCredentialFactory(
+          component.googleCredentialJson(), component.googleCredentialScopes());
+      TransactionManagerFactory.setJpaTm(component.nomulusToolJpaTransactionManager());
     }
 
     command.run();
