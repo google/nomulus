@@ -68,6 +68,7 @@ import javax.inject.Singleton;
       KeyringModule.class,
       KmsModule.class,
       LocalCredentialModule.class,
+      PersistenceModule.class,
       RdeModule.class,
       RequestFactoryModule.class,
       URLFetchServiceModule.class,
@@ -75,8 +76,7 @@ import javax.inject.Singleton;
       UserServiceModule.class,
       UtilsModule.class,
       VoidDnsWriterModule.class,
-      WhoisModule.class,
-      PersistenceModule.class
+      WhoisModule.class
     })
 interface RegistryToolComponent {
   void inject(AckPollMessagesCommand command);
