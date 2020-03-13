@@ -14,10 +14,12 @@
 
 package google.registry.tools;
 
+import com.google.common.collect.ImmutableList;
 import dagger.BindsInstance;
 import dagger.Component;
 import google.registry.bigquery.BigqueryModule;
 import google.registry.config.CredentialModule.LocalCredentialJson;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.dns.writer.VoidDnsWriterModule;
 import google.registry.dns.writer.clouddns.CloudDnsWriterModule;
@@ -27,6 +29,9 @@ import google.registry.keyring.KeyringModule;
 import google.registry.keyring.api.DummyKeyringModule;
 import google.registry.keyring.api.KeyModule;
 import google.registry.keyring.kms.KmsModule;
+import google.registry.persistence.PersistenceModule;
+import google.registry.persistence.PersistenceModule.NomulusToolJpaTm;
+import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.rde.RdeModule;
 import google.registry.request.Modules.DatastoreServiceModule;
 import google.registry.request.Modules.Jackson2Module;
@@ -71,6 +76,7 @@ import javax.inject.Singleton;
       UtilsModule.class,
       VoidDnsWriterModule.class,
       WhoisModule.class,
+      PersistenceModule.class
     })
 interface RegistryToolComponent {
   void inject(AckPollMessagesCommand command);
@@ -116,6 +122,12 @@ interface RegistryToolComponent {
 
   @LocalCredentialJson
   String googleCredentialJson();
+
+  @Config("localCredentialOauthScopes")
+  ImmutableList<String> googleCredentialScopes();
+
+  @NomulusToolJpaTm
+  JpaTransactionManager nomulusToolJpaTransactionManager();
 
   @Component.Builder
   interface Builder {

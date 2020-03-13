@@ -158,7 +158,7 @@ public class PersistenceModule {
   /** Dagger qualifier for {@link JpaTransactionManager} used for Nomulus tool. */
   @Qualifier
   @Documented
-  @interface NomulusToolJpaTm {}
+  public @interface NomulusToolJpaTm {}
 
   /** Dagger qualifier for the partial Cloud SQL configs. */
   @Qualifier
