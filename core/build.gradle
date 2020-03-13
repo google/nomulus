@@ -197,7 +197,7 @@ dependencies {
   compile deps['com.google.appengine:appengine-remote-api']
   compile deps['com.google.auth:google-auth-library-credentials']
   compile deps['com.google.auth:google-auth-library-oauth2-http']
-  runtimeOnly deps['com.google.cloud.sql:postgres-socket-factory']
+  compile deps['com.google.cloud.sql:postgres-socket-factory']
   compile deps['com.google.code.gson:gson']
   compile deps['com.google.auto.value:auto-value-annotations']
   compile deps['com.google.code.findbugs:jsr305']

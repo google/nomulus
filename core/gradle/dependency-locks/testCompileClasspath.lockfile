@@ -10,6 +10,14 @@ com.fasterxml.jackson.core:jackson-annotations:2.9.10
 com.fasterxml.jackson.core:jackson-core:2.9.10
 com.fasterxml.jackson.core:jackson-databind:2.9.10
 com.fasterxml:classmate:1.3.4
+com.github.jnr:jffi:1.2.17
+com.github.jnr:jnr-a64asm:1.0.0
+com.github.jnr:jnr-constants:0.9.11
+com.github.jnr:jnr-enxio:0.19
+com.github.jnr:jnr-ffi:2.1.9
+com.github.jnr:jnr-posix:3.0.47
+com.github.jnr:jnr-unixsocket:0.21
+com.github.jnr:jnr-x86asm:1.0.2
 com.google.api-client:google-api-client-appengine:1.29.0
 com.google.api-client:google-api-client-jackson2:1.27.0
 com.google.api-client:google-api-client-java6:1.27.0
@@ -50,6 +58,7 @@ com.google.apis:google-api-services-groupssettings:v1-rev60-1.22.0
 com.google.apis:google-api-services-monitoring:v3-rev426-1.23.0
 com.google.apis:google-api-services-pubsub:v1-rev20181105-1.27.0
 com.google.apis:google-api-services-sheets:v4-rev483-1.22.0
+com.google.apis:google-api-services-sqladmin:v1beta4-rev56-1.23.0
 com.google.apis:google-api-services-storage:v1-rev20181109-1.27.0
 com.google.appengine.tools:appengine-gcs-client:0.6
 com.google.appengine.tools:appengine-mapreduce:0.9
@@ -66,6 +75,8 @@ com.google.cloud.bigdataoss:gcsio:1.9.16
 com.google.cloud.bigdataoss:util:1.9.16
 com.google.cloud.bigtable:bigtable-client-core:1.8.0
 com.google.cloud.datastore:datastore-v1-proto-client:1.6.0
+com.google.cloud.sql:jdbc-socket-factory-core:1.0.12
+com.google.cloud.sql:postgres-socket-factory:1.0.12
 com.google.cloud:google-cloud-bigquerystorage:0.79.0-alpha
 com.google.cloud:google-cloud-bigtable-admin:0.73.0-alpha
 com.google.cloud:google-cloud-bigtable:0.73.0-alpha
@@ -242,11 +253,11 @@ org.mortbay.jetty:jetty-util:6.1.26
 org.mortbay.jetty:jetty:6.1.26
 org.objenesis:objenesis:2.6
 org.opentest4j:opentest4j:1.2.0
-org.ow2.asm:asm-analysis:6.0
+org.ow2.asm:asm-analysis:7.0
 org.ow2.asm:asm-commons:6.0
-org.ow2.asm:asm-tree:6.0
-org.ow2.asm:asm-util:6.0
-org.ow2.asm:asm:6.0
+org.ow2.asm:asm-tree:7.0
+org.ow2.asm:asm-util:7.0
+org.ow2.asm:asm:7.0
 org.rnorth.duct-tape:duct-tape:1.0.8
 org.rnorth.visible-assertions:visible-assertions:2.1.2
 org.rnorth:tcp-unix-socket-proxy:1.0.2
