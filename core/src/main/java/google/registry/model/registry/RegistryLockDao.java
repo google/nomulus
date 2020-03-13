@@ -52,8 +52,10 @@ public final class RegistryLockDao {
         jpaTm()
             .getEntityManager()
             .createQuery(
-                "SELECT lock FROM RegistryLock lock WHERE lock.registrarId = :registrarId"
-                    + " AND lock.unlockCompletionTimestamp IS NULL",
+                "SELECT lock FROM RegistryLock lock"
+                    + " WHERE lock.registrarId = :registrarId"
+                    + " AND lock.unlockCompletionTimestamp IS NULL"
+                    + " ORDER BY lock.domainName ASC",
                 RegistryLock.class)
             .setParameter("registrarId", registrarId)
             .getResultList());
