@@ -26,6 +26,7 @@ import google.registry.model.UpdateAutoTimestamp;
 import google.registry.util.DateTimeUtils;
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -299,7 +300,7 @@ public final class RegistryLock extends ImmutableObject implements Buildable {
       return this;
     }
 
-    public Builder setRelockDuration(Duration relockDuration) {
+    public Builder setRelockDuration(@Nullable Duration relockDuration) {
       getInstance().relockDuration = relockDuration;
       return this;
     }
