@@ -21,26 +21,20 @@ import static google.registry.config.RegistryConfig.getHibernateHikariIdleTimeou
 import static google.registry.config.RegistryConfig.getHibernateHikariMaximumPoolSize;
 import static google.registry.config.RegistryConfig.getHibernateHikariMinimumIdle;
 import static google.registry.config.RegistryConfig.getHibernateLogSqlQueries;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.kms.KmsKeyring;
 import google.registry.persistence.transaction.CloudSqlCredentialSupplier;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.JpaTransactionManagerImpl;
+import google.registry.tools.AuthModule.CloudSqlClientCredential;
 import google.registry.util.Clock;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.lang.annotation.Documented;
 import java.util.HashMap;
 import java.util.Map;
@@ -136,24 +130,6 @@ public class PersistenceModule {
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
-  @Provides
-  @CloudSqlClientCredential
-  public static Credential providesLocalCredentialForCloudSqlClient(
-      @CredentialModule.LocalCredentialJson String credentialJson,
-      @Config("localCredentialOauthScopes") ImmutableList<String> credentialScopes) {
-    try {
-      GoogleCredential credential =
-          GoogleCredential.fromStream(new ByteArrayInputStream(credentialJson.getBytes(UTF_8)));
-      if (credential.createScopedRequired()) {
-        credential = credential.createScoped(credentialScopes);
-      }
-      return credential;
-    } catch (IOException e) {
-      throw new UncheckedIOException(
-          "Error occurred while creating a GoogleCredential for Cloud SQL client", e);
-    }
-  }
-
   /** Constructs the {@link EntityManagerFactory} instance. */
   @VisibleForTesting
   public static EntityManagerFactory create(
@@ -183,11 +159,6 @@ public class PersistenceModule {
   @Qualifier
   @Documented
   @interface AppEngineJpaTm {}
-
-  /** Dagger qualifier for {@link Credential} used by the Cloud SQL client in the nomulus tool. */
-  @Qualifier
-  @Documented
-  @interface CloudSqlClientCredential {}
 
   /** Dagger qualifier for {@link JpaTransactionManager} used for Nomulus tool. */
   @Qualifier
