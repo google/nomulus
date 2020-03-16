@@ -43,6 +43,7 @@ ext {
       'com.google.auto.value:auto-value-annotations:1.6.3',
       'com.google.auto.value:auto-value:1.6.3',
       'com.google.closure-stylesheets:closure-stylesheets:1.5.0',
+      'com.google.cloud.sql:jdbc-socket-factory-core:1.0.12',
       'com.google.cloud.sql:postgres-socket-factory:1.0.12',
       'com.google.cloud:google-cloud-core:1.59.0',
       'com.google.cloud:google-cloud-storage:1.59.0',
