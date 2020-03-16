@@ -39,8 +39,6 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.UserAuthInfo;
@@ -51,7 +49,6 @@ import google.registry.testing.DatastoreHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectRule;
 import google.registry.testing.UserInfo;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.StringGenerator;
@@ -72,15 +69,10 @@ public final class RegistryLockVerifyActionTest {
   @Rule
   public final AppEngineRule appEngineRule =
       AppEngineRule.builder()
-          .withDatastore()
+          .withDatastoreAndCloudSql()
+          .withClock(fakeClock)
           .withUserService(UserInfo.create("marla.singer@example.com", "12345"))
           .build();
-
-  @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
-
-  @Rule public final InjectRule inject = new InjectRule();
 
   private final HttpServletRequest request = mock(HttpServletRequest.class);
   private final UserService userService = UserServiceFactory.getUserService();

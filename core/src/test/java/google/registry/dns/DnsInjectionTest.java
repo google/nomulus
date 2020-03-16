@@ -46,10 +46,8 @@ import org.junit.runners.JUnit4;
 public final class DnsInjectionTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withTaskQueue()
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @Rule
   public final InjectRule inject = new InjectRule();

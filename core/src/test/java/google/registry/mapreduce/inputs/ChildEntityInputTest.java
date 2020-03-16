@@ -62,7 +62,8 @@ public class ChildEntityInputTest {
   private static final DateTime now = DateTime.now(DateTimeZone.UTC);
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+
   DomainBase domainA;
   DomainBase domainB;
   HistoryEntry domainHistoryEntryA;

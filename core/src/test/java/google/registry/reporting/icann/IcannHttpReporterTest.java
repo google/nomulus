@@ -50,7 +50,10 @@ public class IcannHttpReporterTest {
   private static final byte[] FAKE_PAYLOAD = "test,csv\n1,2".getBytes(UTF_8);
 
   private MockLowLevelHttpRequest mockRequest;
-  @Rule public AppEngineRule appEngineRule = new AppEngineRule.Builder().withDatastore().build();
+
+  @Rule
+  public AppEngineRule appEngineRule =
+      new AppEngineRule.Builder().withDatastoreAndCloudSql().build();
 
   private MockHttpTransport createMockTransport (final ByteSource iirdeaResponse) {
     return new MockHttpTransport() {

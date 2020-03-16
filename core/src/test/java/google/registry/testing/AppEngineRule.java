@@ -39,6 +39,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
+import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.util.Clock;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -52,9 +53,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.rules.ExternalResource;
-import org.junit.rules.RuleChain;
 import org.junit.rules.TemporaryFolder;
-import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
@@ -93,7 +92,7 @@ public final class AppEngineRule extends ExternalResource {
   /** A rule-within-a-rule to provide a temporary folder for AppEngineRule's internal temp files. */
   TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-  private boolean withDatastore;
+  private boolean withDatastoreAndCloudSql;
   private boolean withLocalModules;
   private boolean withTaskQueue;
   private boolean withUserService;
@@ -108,9 +107,9 @@ public final class AppEngineRule extends ExternalResource {
 
     private AppEngineRule rule = new AppEngineRule();
 
-    /** Turn on the Datastore service. */
-    public Builder withDatastore() {
-      rule.withDatastore = true;
+    /** Turn on the Datastore service and the Cloud SQL service. */
+    public Builder withDatastoreAndCloudSql() {
+      rule.withDatastoreAndCloudSql = true;
       return this;
     }
 
@@ -250,7 +249,7 @@ public final class AppEngineRule extends ExternalResource {
         .setEmailAddress("Marla.Singer@crr.com")
         .setPhoneNumber("+1.2128675309")
         .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
-        .setGaeUserId(THE_REGISTRAR_GAE_USER_ID)
+        .setGaeUserId("12345")
         .setAllowedToSetRegistryLockPassword(true)
         .setRegistryLockPassword("hi")
         .build();
@@ -259,11 +258,15 @@ public final class AppEngineRule extends ExternalResource {
   /** Hack to make sure AppEngineRule is always wrapped in a TemporaryFolder rule. */
   @Override
   public Statement apply(Statement base, Description description) {
-    return RuleChain.outerRule(temporaryFolder).around(new TestRule() {
-      @Override
-      public Statement apply(Statement base, Description description) {
-        return AppEngineRule.super.apply(base, null);
-      }}).apply(base, description);
+    Statement statement = base;
+    if (withDatastoreAndCloudSql) {
+      JpaTestRules.Builder builder = new JpaTestRules.Builder();
+      if (clock != null) {
+        builder.withClock(clock);
+      }
+      statement = builder.buildIntegrationWithCoverageRule().apply(base, description);
+    }
+    return temporaryFolder.apply(super.apply(statement, description), description);
   }
 
   @Override
@@ -273,7 +276,7 @@ public final class AppEngineRule extends ExternalResource {
     if (withUrlFetch) {
       configs.add(new LocalURLFetchServiceTestConfig());
     }
-    if (withDatastore) {
+    if (withDatastoreAndCloudSql) {
       configs.add(new LocalDatastoreServiceTestConfig()
           // We need to set this to allow cross entity group transactions.
           .setApplyAllHighRepJobPolicy()
@@ -325,7 +328,7 @@ public final class AppEngineRule extends ExternalResource {
 
     helper.setUp();
 
-    if (withDatastore) {
+    if (withDatastoreAndCloudSql) {
       ObjectifyService.initOfy();
       // Reset id allocation in ObjectifyService so that ids are deterministic in tests.
       ObjectifyService.resetNextTestId();

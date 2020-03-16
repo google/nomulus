@@ -49,19 +49,17 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public abstract class EntityTestCase {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
   @Rule
-  public InjectRule inject = new InjectRule();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withClock(fakeClock).build();
 
-  protected FakeClock clock = new FakeClock(DateTime.now(UTC));
+  @Rule public InjectRule inject = new InjectRule();
 
   @Before
   public void injectClock() {
-    inject.setStaticField(Ofy.class, "clock", clock);
+    inject.setStaticField(Ofy.class, "clock", fakeClock);
   }
 
   // Helper method to find private fields including inherited ones.
@@ -77,17 +75,17 @@ public abstract class EntityTestCase {
   }
 
   /** Verify that fields are either indexed or not, depending on the parameter. */
-  private void verifyIndexingHelper(
-      Object obj,
-      boolean indexed,
-      Collection<String> fieldPaths) throws Exception {
-    outer: for (String fieldPath : fieldPaths) {
+  private void verifyIndexingHelper(Object obj, boolean indexed, Collection<String> fieldPaths)
+      throws Exception {
+    outer:
+    for (String fieldPath : fieldPaths) {
       // Walk the field path and grab the value referred to on the object using reflection.
       Object fieldValue = obj;
       for (String fieldName : Splitter.on('.').split(fieldPath)) {
         if (fieldValue == null) {
-          throw new RuntimeException(String.format("field '%s' not found on %s",
-              fieldPath, obj.getClass().getSimpleName()));
+          throw new RuntimeException(
+              String.format(
+                  "field '%s' not found on %s", fieldPath, obj.getClass().getSimpleName()));
         }
         Field field = getField(fieldValue.getClass(), fieldName);
         field.setAccessible(true);
@@ -149,14 +147,14 @@ public abstract class EntityTestCase {
           // because verifyIndexingHelper knows how to descend into collections.
           if (Collection.class.isAssignableFrom(fieldClass)) {
             Type inner = ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
-            fieldClass = inner instanceof ParameterizedType
-                ? (Class<?>) ((ParameterizedType) inner).getRawType()
-                : (Class<?>) inner;
+            fieldClass =
+                inner instanceof ParameterizedType
+                    ? (Class<?>) ((ParameterizedType) inner).getRawType()
+                    : (Class<?>) inner;
           }
           // Descend into persisted ImmutableObject classes, but not anything else.
           if (ImmutableObject.class.isAssignableFrom(fieldClass)) {
-            getAllPotentiallyIndexedFieldPaths(fieldClass)
-                .stream()
+            getAllPotentiallyIndexedFieldPaths(fieldClass).stream()
                 .map(subfield -> field.getName() + "." + subfield)
                 .distinct()
                 .forEachOrdered(fields::add);

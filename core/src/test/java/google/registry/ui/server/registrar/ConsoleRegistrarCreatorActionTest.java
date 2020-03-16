@@ -64,9 +64,8 @@ import org.mockito.junit.MockitoRule;
 public final class ConsoleRegistrarCreatorActionTest {
 
   @Rule
-  public final AppEngineRule appEngineRule = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngineRule =
+      AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 

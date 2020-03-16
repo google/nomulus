@@ -193,8 +193,7 @@ public class PublishSpec11ReportAction implements Runnable {
     // Group by email address then flat-map all of the ThreatMatch objects together
     return ImmutableMap.copyOf(
         Maps.transformValues(
-            Multimaps.index(registrarThreatMatches, RegistrarThreatMatches::clientId)
-                .asMap(),
+            Multimaps.index(registrarThreatMatches, RegistrarThreatMatches::clientId).asMap(),
             registrarThreatMatchesCollection ->
                 registrarThreatMatchesCollection.stream()
                     .flatMap(matches -> matches.threatMatches().stream())

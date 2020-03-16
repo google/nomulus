@@ -28,11 +28,13 @@ import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.TaskOptions;
+import com.google.common.annotations.VisibleForTesting;
 import google.registry.model.rde.RdeMode;
 import google.registry.rde.RdeStagingAction;
 import google.registry.tools.params.DateTimeParameter;
 import google.registry.util.AppEngineServiceUtils;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -75,7 +77,16 @@ final class GenerateEscrowDepositCommand implements CommandWithRemoteApi {
   private String outdir;
 
   @Inject AppEngineServiceUtils appEngineServiceUtils;
-  @Inject @Named("rde-report") Queue queue;
+
+  @Inject
+  @Named("rde-report")
+  Queue queue;
+
+  // ETA is a required property for TaskOptions but we let the service to set it when submitting the
+  // task to the task queue. However, the local test service doesn't do that for us during the unit
+  // test, so we add this field here to let the unit test be able to inject the ETA to pass the
+  // test.
+  @VisibleForTesting Optional<Long> maybeEtaMillis = Optional.empty();
 
   @Override
   public void run() {
@@ -114,6 +125,9 @@ final class GenerateEscrowDepositCommand implements CommandWithRemoteApi {
                 watermarks.stream().map(DateTime::toString).collect(Collectors.joining(",")));
     if (revision != null) {
       opts = opts.param(PARAM_REVISION, String.valueOf(revision));
+    }
+    if (maybeEtaMillis.isPresent()) {
+      opts = opts.etaMillis(maybeEtaMillis.get());
     }
     queue.add(opts);
   }

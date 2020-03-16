@@ -39,9 +39,11 @@ import org.junit.runners.JUnit4;
 public class GracePeriodTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()  // Needed to be able to construct Keys.
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder()
+          .withDatastoreAndCloudSql() // Needed to be able to construct Keys.
+          .build();
+
   private final DateTime now = DateTime.now(UTC);
   private BillingEvent.OneTime onetime;
 

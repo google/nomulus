@@ -51,26 +51,29 @@ public class LockDao {
    * else empty.
    */
   public static Optional<Lock> load(String resourceName) {
-    checkArgumentNotNull(resourceName, "The resource name of the lock to load cannot be null");
-    return Optional.ofNullable(
-        jpaTm()
-            .transact(
-                () ->
-                    jpaTm().getEntityManager().find(Lock.class, new LockId(resourceName, GLOBAL))));
+    return load(resourceName, GLOBAL);
   }
 
   /**
-   * Deletes the given {@link Lock} object from Cloud SQL. This method is idempotent and will simply
-   * return if the lock has already been deleted.
+   * Deletes the {@link Lock} object with the given resourceName and tld from Cloud SQL. This method
+   * is idempotent and will simply return if the lock has already been deleted.
    */
-  public static void delete(Lock lock) {
+  public static void delete(String resourceName, String tld) {
     jpaTm()
         .transact(
             () -> {
-              Optional<Lock> loadedLock = load(lock.resourceName, lock.tld);
+              Optional<Lock> loadedLock = load(resourceName, tld);
               if (loadedLock.isPresent()) {
                 jpaTm().getEntityManager().remove(loadedLock.get());
               }
             });
+  }
+
+  /**
+   * Deletes the global {@link Lock} object with the given resourceName from Cloud SQL. This method
+   * is idempotent and will simply return if the lock has already been deleted.
+   */
+  public static void delete(String resourceName) {
+    delete(resourceName, GLOBAL);
   }
 }

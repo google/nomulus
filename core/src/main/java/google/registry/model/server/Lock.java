@@ -16,6 +16,7 @@ package google.registry.model.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 
@@ -28,6 +29,7 @@ import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
+import google.registry.schema.server.LockDao;
 import google.registry.util.RequestStatusChecker;
 import google.registry.util.RequestStatusCheckerImpl;
 import java.io.Serializable;
@@ -177,8 +179,7 @@ public class Lock extends ImmutableObject implements Serializable {
     // access to resources like GCS that can't be transactionally rolled back. Therefore, the lock
     // must be definitively acquired before it is used, even when called inside another transaction.
     AcquireResult acquireResult =
-        tm()
-            .transactNew(
+        tm().transactNew(
                 () -> {
                   DateTime now = tm().getTransactionTime();
 
@@ -207,6 +208,31 @@ public class Lock extends ImmutableObject implements Serializable {
                   // contention) and
                   // don't need to be backed up.
                   ofy().saveWithoutBackup().entity(newLock);
+
+                  // create and save the lock to Cloud SQL
+                  try {
+                    jpaTm()
+                        .transact(
+                            () -> {
+                              google.registry.schema.server.Lock cloudSqlLock =
+                                  google.registry.schema.server.Lock.create(
+                                      resourceName,
+                                      Optional.ofNullable(tld).orElse("GLOBAL"),
+                                      requestStatusChecker.getLogId(),
+                                      now,
+                                      leaseLength);
+                              // cloudSqlLock should not already exist in Cloud SQL, but call delete
+                              // just in case
+                              // TODO: Remove this delete once dual read is added
+                              LockDao.delete(
+                                  resourceName, Optional.ofNullable(tld).orElse("GLOBAL"));
+                              LockDao.saveNew(cloudSqlLock);
+                            });
+                  } catch (Exception e) {
+                    logger.atSevere().withCause(e).log(
+                        "Error saving lock to Cloud SQL: %s", newLock);
+                  }
+
                   return AcquireResult.create(now, lock, newLock, lockState);
                 });
 
@@ -218,8 +244,7 @@ public class Lock extends ImmutableObject implements Serializable {
   /** Release the lock. */
   public void release() {
     // Just use the default clock because we aren't actually doing anything that will use the clock.
-    tm()
-        .transact(
+    tm().transact(
             () -> {
               // To release a lock, check that no one else has already obtained it and if not
               // delete it. If the lock in Datastore was different then this lock is gone already;
@@ -231,6 +256,19 @@ public class Lock extends ImmutableObject implements Serializable {
                 // lock.
                 logger.atInfo().log("Deleting lock: %s", lockId);
                 ofy().deleteWithoutBackup().entity(Lock.this);
+
+                // Remove the lock from Cloud SQL
+                try {
+                  jpaTm()
+                      .transact(
+                          () ->
+                              LockDao.delete(
+                                  resourceName, Optional.ofNullable(tld).orElse("GLOBAL")));
+                } catch (Exception e) {
+                  logger.atSevere().withCause(e).log(
+                      "Error deleting lock from Cloud SQL: %s", loadedLock);
+                }
+
                 lockMetrics.recordRelease(
                     resourceName, tld, new Duration(acquiredTime, tm().getTransactionTime()));
               } else {

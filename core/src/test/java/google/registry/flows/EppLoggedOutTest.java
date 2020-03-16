@@ -30,9 +30,7 @@ import org.junit.runners.JUnit4;
 public class EppLoggedOutTest extends EppTestCase {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
   public void testHello() throws Exception {

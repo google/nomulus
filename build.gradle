@@ -169,10 +169,10 @@ allprojects {
   if (project.name == 'services') return
 
   repositories {
-    if (rootProject.mavenUrl) {
+    if (!mavenUrl.isEmpty()) {
       maven {
-        println "Java dependencies: Using repo $pluginsUrl..."
-        url rootProject.mavenUrl
+        println "Java dependencies: Using repo ${mavenUrl}..."
+        url mavenUrl
       }
     } else {
       println "Java dependencies: Using Maven Central..."

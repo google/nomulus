@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 buildscript {
   if (project.enableDependencyLocking.toBoolean()) {
     // Lock buildscript dependencies.
@@ -40,13 +42,13 @@ if (rootProject.enableDependencyLocking.toBoolean()) {
 }
 
 repositories {
-  if (project.ext.properties.mavenUrl == null) {
-    println "Plugin dependencies: Using Maven central..."
+  if (isNullOrEmpty(project.ext.properties.mavenUrl)) {
+    println "Java dependencies: Using Maven central..."
     mavenCentral()
     google()
   } else {
     maven {
-      println "Plugin dependencies: Using repo ${mavenUrl}..."
+      println "Java dependencies: Using repo ${mavenUrl}..."
       url mavenUrl
     }
   }
@@ -82,6 +84,7 @@ dependencies {
   testCompile deps['com.google.truth:truth']
   testCompile deps['com.google.truth.extensions:truth-java8-extension']
   testCompile deps['junit:junit']
+  testCompile deps['org.junit.jupiter:junit-jupiter-api']
   testCompile deps['org.junit.jupiter:junit-jupiter-engine']
   testCompile deps['org.junit.vintage:junit-vintage-engine']
   testCompile deps['org.mockito:mockito-core']

@@ -36,7 +36,8 @@ public class GenruleReservedListTest {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final String LISTS_DIRECTORY = "google/registry/config/files/reserved/";
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
   public void testParse_allReservedLists() throws Exception {

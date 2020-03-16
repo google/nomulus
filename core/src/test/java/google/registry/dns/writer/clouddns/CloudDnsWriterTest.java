@@ -69,7 +69,9 @@ import org.mockito.junit.MockitoRule;
 @RunWith(JUnit4.class)
 public class CloudDnsWriterTest {
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  @Rule
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 
   private static final Inet4Address IPv4 = (Inet4Address) InetAddresses.forString("127.0.0.1");

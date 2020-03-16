@@ -19,12 +19,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.testing.AppEngineRule.THE_REGISTRAR_GAE_USER_ID;
 import static google.registry.util.NetworkUtils.getExternalAddressOfLocalSystem;
 import static google.registry.util.NetworkUtils.pickUnusedPort;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.server.Fixture;
 import google.registry.server.Route;
@@ -34,6 +33,7 @@ import google.registry.testing.UserInfo;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -55,7 +55,6 @@ public final class TestServerRule extends ExternalResource {
 
   private final ImmutableList<Fixture> fixtures;
   private final AppEngineRule appEngineRule;
-  private final JpaIntegrationTestRule jpaTransactionManagerRule;
   private final BlockingQueue<FutureTask<?>> jobs = new LinkedBlockingDeque<>();
   private final ImmutableMap<String, Path> runfiles;
   private final ImmutableList<Route> routes;
@@ -69,21 +68,23 @@ public final class TestServerRule extends ExternalResource {
       ImmutableList<Route> routes,
       ImmutableList<Class<? extends Filter>> filters,
       ImmutableList<Fixture> fixtures,
-      String email) {
+      String email,
+      Optional<String> gaeUserId) {
     this.runfiles = runfiles;
     this.routes = routes;
     this.filters = filters;
     this.fixtures = fixtures;
     // We create an GAE-Admin user, and then use AuthenticatedRegistrarAccessor.bypassAdminCheck to
     // choose whether the user is an admin or not.
-    this.appEngineRule = AppEngineRule.builder()
-        .withDatastore()
-        .withLocalModules()
-        .withUrlFetch()
-        .withTaskQueue()
-        .withUserService(UserInfo.createAdmin(email, THE_REGISTRAR_GAE_USER_ID))
-        .build();
-    this.jpaTransactionManagerRule = new JpaTestRules.Builder().buildIntegrationTestRule();
+    this.appEngineRule =
+        AppEngineRule.builder()
+            .withDatastoreAndCloudSql()
+            .withLocalModules()
+            .withUrlFetch()
+            .withTaskQueue()
+            .withUserService(
+                UserInfo.createAdmin(email, gaeUserId.orElse(THE_REGISTRAR_GAE_USER_ID)))
+            .build();
   }
 
   @Override
@@ -152,8 +153,8 @@ public final class TestServerRule extends ExternalResource {
   /**
    * Runs arbitrary code inside server event loop thread.
    *
-   * <p>You should use this method when you want to do things like change Datastore, because the
-   * App Engine testing environment is thread-local.
+   * <p>You should use this method when you want to do things like change Datastore, because the App
+   * Engine testing environment is thread-local.
    */
   public <T> T runInAppEngineEnvironment(Callable<T> callback) throws Throwable {
     FutureTask<T> job = new FutureTask<>(callback);
@@ -168,8 +169,7 @@ public final class TestServerRule extends ExternalResource {
     @Override
     public void run() {
       try {
-        Statement appEngineStatement = appEngineRule.apply(this, Description.EMPTY);
-        jpaTransactionManagerRule.apply(appEngineStatement, Description.EMPTY).evaluate();
+        appEngineRule.apply(this, Description.EMPTY).evaluate();
       } catch (InterruptedException e) {
         // This is what we expect to happen.
       } catch (Throwable e) {
@@ -215,7 +215,6 @@ public final class TestServerRule extends ExternalResource {
    *
    * <p>This builder has three required fields: {@link #setRunfiles}, {@link #setRoutes}, and {@link
    * #setFilters}.
-   *
    */
   public static final class Builder {
     private ImmutableMap<String, Path> runfiles;
@@ -223,6 +222,7 @@ public final class TestServerRule extends ExternalResource {
     ImmutableList<Class<? extends Filter>> filters;
     private ImmutableList<Fixture> fixtures = ImmutableList.of();
     private String email;
+    private Optional<String> gaeUserId = Optional.empty();
 
     /** Sets the directories containing the static files for {@link TestServer}. */
     public Builder setRunfiles(ImmutableMap<String, Path> runfiles) {
@@ -260,6 +260,13 @@ public final class TestServerRule extends ExternalResource {
       return this;
     }
 
+    /** Optionally, sets the GAE user ID for the logged in user. */
+    public Builder setGaeUserId(String gaeUserId) {
+      this.gaeUserId =
+          Optional.of(checkArgumentNotNull(gaeUserId, "Must specify a non-null GAE user ID"));
+      return this;
+    }
+
     /** Returns a new {@link TestServerRule} instance. */
     public TestServerRule build() {
       return new TestServerRule(
@@ -267,7 +274,8 @@ public final class TestServerRule extends ExternalResource {
           checkNotNull(this.routes),
           checkNotNull(this.filters),
           checkNotNull(this.fixtures),
-          checkNotNull(this.email));
+          checkNotNull(this.email),
+          this.gaeUserId);
     }
   }
 }

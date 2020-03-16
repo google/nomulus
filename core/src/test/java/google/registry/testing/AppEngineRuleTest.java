@@ -50,7 +50,8 @@ public class AppEngineRuleTest {
 
   @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-  private final AppEngineRule appEngineRule = AppEngineRule.builder().withDatastore().build();
+  private final AppEngineRule appEngineRule =
+      AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Before
   public void setupAppEngineRule() throws Exception {

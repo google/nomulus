@@ -40,9 +40,8 @@ import org.junit.runners.JUnit4;
 public class MutatingCommandTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+
   Registrar registrar1;
   Registrar registrar2;
   Registrar newRegistrar1;

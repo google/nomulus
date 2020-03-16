@@ -31,7 +31,7 @@ Below are the steps to submit a schema change:
 
 1.  Make your changes to entity classes, remembering to add new ones to
     `core/src/main/resources/META-INF/persistence.xml` so they'll be picked up.
-2.  Run the `nomulus generate_sql_schema` command to generate a new version of
+2.  Run the `devTool generate_sql_schema` command to generate a new version of
     `db-schema.sql.generated`. The full command line to do this is:
 
     `./gradlew devTool --args="-e localhost generate_sql_schema

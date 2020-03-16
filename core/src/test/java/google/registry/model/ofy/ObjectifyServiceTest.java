@@ -25,9 +25,7 @@ import org.junit.runners.JUnit4;
 public class ObjectifyServiceTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
   public void test_initOfy_canBeCalledTwice() {

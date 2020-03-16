@@ -55,10 +55,8 @@ import org.junit.runners.JUnit4;
 public class PublishDnsUpdatesActionTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withDatastore()
-      .withTaskQueue()
-      .build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @Rule
   public final InjectRule inject = new InjectRule();

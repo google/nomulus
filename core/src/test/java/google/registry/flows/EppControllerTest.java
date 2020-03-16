@@ -66,7 +66,10 @@ import org.mockito.junit.MockitoRule;
 @RunWith(JUnit4.class)
 public class EppControllerTest extends ShardableTestCase {
 
-  @Rule public AppEngineRule appEngineRule = new AppEngineRule.Builder().withDatastore().build();
+  @Rule
+  public AppEngineRule appEngineRule =
+      new AppEngineRule.Builder().withDatastoreAndCloudSql().build();
+
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 
   @Mock SessionMetadata sessionMetadata;

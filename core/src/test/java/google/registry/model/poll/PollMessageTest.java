@@ -36,57 +36,62 @@ public class PollMessageTest extends EntityTestCase {
   @Before
   public void setUp() {
     createTld("foobar");
-    historyEntry = persistResource(new HistoryEntry.Builder()
-      .setParent(persistActiveDomain("foo.foobar"))
-      .setType(HistoryEntry.Type.DOMAIN_CREATE)
-      .setPeriod(Period.create(1, Period.Unit.YEARS))
-      .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-      .setModificationTime(clock.nowUtc())
-      .setClientId("foo")
-      .setTrid(Trid.create("ABC-123", "server-trid"))
-      .setBySuperuser(false)
-      .setReason("reason")
-      .setRequestedByRegistrar(false)
-      .build());
+    historyEntry =
+        persistResource(
+            new HistoryEntry.Builder()
+                .setParent(persistActiveDomain("foo.foobar"))
+                .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                .setPeriod(Period.create(1, Period.Unit.YEARS))
+                .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+                .setModificationTime(fakeClock.nowUtc())
+                .setClientId("foo")
+                .setTrid(Trid.create("ABC-123", "server-trid"))
+                .setBySuperuser(false)
+                .setReason("reason")
+                .setRequestedByRegistrar(false)
+                .build());
   }
 
   @Test
   public void testPersistenceOneTime() {
-    PollMessage.OneTime pollMessage = persistResource(
-        new PollMessage.OneTime.Builder()
-            .setClientId("TheRegistrar")
-            .setEventTime(clock.nowUtc())
-            .setMsg("Test poll message")
-            .setParent(historyEntry)
-            .build());
+    PollMessage.OneTime pollMessage =
+        persistResource(
+            new PollMessage.OneTime.Builder()
+                .setClientId("TheRegistrar")
+                .setEventTime(fakeClock.nowUtc())
+                .setMsg("Test poll message")
+                .setParent(historyEntry)
+                .build());
     assertThat(ofy().load().entity(pollMessage).now()).isEqualTo(pollMessage);
   }
 
   @Test
   public void testPersistenceAutorenew() {
-    PollMessage.Autorenew pollMessage = persistResource(
-        new PollMessage.Autorenew.Builder()
-            .setClientId("TheRegistrar")
-            .setEventTime(clock.nowUtc())
-            .setMsg("Test poll message")
-            .setParent(historyEntry)
-            .setAutorenewEndTime(clock.nowUtc().plusDays(365))
-            .setTargetId("foobar.foo")
-            .build());
+    PollMessage.Autorenew pollMessage =
+        persistResource(
+            new PollMessage.Autorenew.Builder()
+                .setClientId("TheRegistrar")
+                .setEventTime(fakeClock.nowUtc())
+                .setMsg("Test poll message")
+                .setParent(historyEntry)
+                .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
+                .setTargetId("foobar.foo")
+                .build());
     assertThat(ofy().load().entity(pollMessage).now()).isEqualTo(pollMessage);
   }
 
   @Test
   public void testIndexingAutorenew() throws Exception {
-    PollMessage.Autorenew pollMessage = persistResource(
-        new PollMessage.Autorenew.Builder()
-            .setClientId("TheRegistrar")
-            .setEventTime(clock.nowUtc())
-            .setMsg("Test poll message")
-            .setParent(historyEntry)
-            .setAutorenewEndTime(clock.nowUtc().plusDays(365))
-            .setTargetId("foobar.foo")
-            .build());
+    PollMessage.Autorenew pollMessage =
+        persistResource(
+            new PollMessage.Autorenew.Builder()
+                .setClientId("TheRegistrar")
+                .setEventTime(fakeClock.nowUtc())
+                .setMsg("Test poll message")
+                .setParent(historyEntry)
+                .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
+                .setTargetId("foobar.foo")
+                .build());
     verifyIndexing(pollMessage);
   }
 }

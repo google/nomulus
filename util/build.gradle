@@ -38,6 +38,7 @@ dependencies {
   testCompile deps['com.google.guava:guava-testlib']
   testCompile deps['com.google.truth:truth']
   testCompile deps['junit:junit']
+  testCompile deps['org.junit.jupiter:junit-jupiter-api']
   testCompile deps['org.junit.jupiter:junit-jupiter-engine']
   testCompile deps['org.junit.vintage:junit-vintage-engine']
   testCompile deps['org.hamcrest:hamcrest-all']

@@ -261,7 +261,8 @@ CREATE TABLE public."RegistryLock" (
     verification_code text NOT NULL,
     unlock_request_timestamp timestamp with time zone,
     unlock_completion_timestamp timestamp with time zone,
-    last_update_timestamp timestamp with time zone
+    last_update_timestamp timestamp with time zone,
+    relock_revision_id bigint
 );
 
 
@@ -541,6 +542,14 @@ CREATE INDEX registrarpoc_gae_user_id_idx ON public."RegistrarPoc" USING btree (
 --
 
 CREATE INDEX reservedlist_name_idx ON public."ReservedList" USING btree (name);
+
+
+--
+-- Name: RegistryLock fk2lhcwpxlnqijr96irylrh1707; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RegistryLock"
+    ADD CONSTRAINT fk2lhcwpxlnqijr96irylrh1707 FOREIGN KEY (relock_revision_id) REFERENCES public."RegistryLock"(revision_id);
 
 
 --

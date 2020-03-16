@@ -25,6 +25,12 @@ import javax.persistence.EntityManager;
 /** Data access object for {@link google.registry.schema.domain.RegistryLock}. */
 public final class RegistryLockDao {
 
+  /** Returns the {@link RegistryLock} referred to by this revision ID, or empty if none exists. */
+  public static Optional<RegistryLock> getByRevisionId(long revisionId) {
+    jpaTm().assertInTransaction();
+    return Optional.ofNullable(jpaTm().getEntityManager().find(RegistryLock.class, revisionId));
+  }
+
   /** Returns the most recent version of the {@link RegistryLock} referred to by the code. */
   public static Optional<RegistryLock> getByVerificationCode(String verificationCode) {
     jpaTm().assertInTransaction();
@@ -84,7 +90,29 @@ public final class RegistryLockDao {
         .getEntityManager()
         .createQuery(
             "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId AND"
-                + " lock.lockCompletionTimestamp IS NOT NULL ORDER BY lock.revisionId"
+                + " lock.lockCompletionTimestamp IS NOT NULL AND"
+                + " lock.unlockCompletionTimestamp IS NULL ORDER BY lock.revisionId"
+                + " DESC",
+            RegistryLock.class)
+        .setParameter("repoId", repoId)
+        .setMaxResults(1)
+        .getResultStream()
+        .findFirst();
+  }
+
+  /**
+   * Returns the most recent verified unlock for a given domain specified by repo ID.
+   *
+   * <p>Returns empty if no unlock has ever been finalized for this domain. This is different from
+   * {@link #getMostRecentByRepoId(String)} in that it only returns verified unlocks.
+   */
+  public static Optional<RegistryLock> getMostRecentVerifiedUnlockByRepoId(String repoId) {
+    jpaTm().assertInTransaction();
+    return jpaTm()
+        .getEntityManager()
+        .createQuery(
+            "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId AND"
+                + " lock.unlockCompletionTimestamp IS NOT NULL ORDER BY lock.revisionId"
                 + " DESC",
             RegistryLock.class)
         .setParameter("repoId", repoId)

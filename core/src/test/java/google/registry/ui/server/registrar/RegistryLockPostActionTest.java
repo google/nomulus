@@ -23,6 +23,7 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
+import static google.registry.ui.server.registrar.RegistryLockGetActionTest.userFromRegistrarContact;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -31,8 +32,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import google.registry.model.domain.DomainBase;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.JsonResponse;
 import google.registry.request.ResponseImpl;
@@ -74,19 +73,14 @@ public final class RegistryLockPostActionTest {
 
   private final FakeClock clock = new FakeClock();
 
-  @Rule public final AppEngineRule appEngineRule = AppEngineRule.builder().withDatastore().build();
-
   @Rule
-  public final JpaIntegrationTestRule jpaRule =
-      new JpaTestRules.Builder().withClock(clock).buildIntegrationTestRule();
+  public final AppEngineRule appEngineRule =
+      AppEngineRule.builder().withDatastoreAndCloudSql().withClock(clock).build();
 
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 
-  private final User userWithoutPermission =
-      new User("johndoe@theregistrar.com", "gmail.com", "31337");
-  // Marla Singer has registry lock auth permissions
-  private final User userWithLockPermission =
-      new User("Marla.Singer@crr.com", "gmail.com", "31337");
+  private User userWithoutPermission;
+  private User userWithLockPermission;
 
   private InternetAddress outgoingAddress;
   private DomainBase domain;
@@ -97,6 +91,8 @@ public final class RegistryLockPostActionTest {
 
   @Before
   public void setup() throws Exception {
+    userWithLockPermission = userFromRegistrarContact(AppEngineRule.makeRegistrarContact3());
+    userWithoutPermission = userFromRegistrarContact(AppEngineRule.makeRegistrarContact2());
     createTld("tld");
     domain = persistResource(newDomainBase("example.tld"));
     outgoingAddress = new InternetAddress("domain-registry@example.com");
@@ -135,6 +131,18 @@ public final class RegistryLockPostActionTest {
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     // we should still email the admin user's email address
     assertSuccess(response, "unlock", "johndoe@theregistrar.com");
+  }
+
+  @Test
+  public void testSuccess_linkedToContactEmail() throws Exception {
+    // Even though the user is some.email@gmail.com the contact is still Marla Singer
+    userWithLockPermission =
+        new User("some.email@gmail.com", "gmail.com", userWithLockPermission.getUserId());
+    action =
+        createAction(
+            AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithLockPermission, false)));
+    Map<String, ?> response = action.handleJsonRequest(lockRequest());
+    assertSuccess(response, "lock", "Marla.Singer@crr.com");
   }
 
   @Test
@@ -237,7 +245,7 @@ public final class RegistryLockPostActionTest {
     persistResource(
         loadRegistrar("TheRegistrar").asBuilder().setRegistryLockAllowed(false).build());
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
-    assertFailureWithMessage(response, "Registry lock not allowed for this registrar");
+    assertFailureWithMessage(response, "Registry lock not allowed for registrar TheRegistrar");
   }
 
   @Test
@@ -248,7 +256,7 @@ public final class RegistryLockPostActionTest {
                 "clientId", "TheRegistrar",
                 "fullyQualifiedDomainName", "example.tld",
                 "isLock", true));
-    assertFailureWithMessage(response, "Missing key for password");
+    assertFailureWithMessage(response, "Incorrect registry lock password for contact");
   }
 
   @Test
@@ -390,9 +398,10 @@ public final class RegistryLockPostActionTest {
   }
 
   private RegistryLockPostAction createAction(AuthResult authResult) {
+    Role role = authResult.userAuthInfo().get().isUserAdmin() ? Role.ADMIN : Role.OWNER;
     AuthenticatedRegistrarAccessor registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(
-            ImmutableSetMultimap.of("TheRegistrar", Role.OWNER, "NewRegistrar", Role.OWNER));
+            ImmutableSetMultimap.of("TheRegistrar", role, "NewRegistrar", role));
     JsonActionRunner jsonActionRunner =
         new JsonActionRunner(ImmutableMap.of(), new JsonResponse(new ResponseImpl(mockResponse)));
     DomainLockUtils domainLockUtils =

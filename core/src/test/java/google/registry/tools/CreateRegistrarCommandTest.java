@@ -17,6 +17,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatastoreHelper.createTlds;
@@ -33,29 +34,18 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Range;
 import com.google.common.net.MediaType;
 import google.registry.model.registrar.Registrar;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
-import google.registry.schema.registrar.RegistrarDao;
 import google.registry.testing.CertificateSamples;
-import google.registry.testing.FakeClock;
 import java.io.IOException;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 
 /** Unit tests for {@link CreateRegistrarCommand}. */
 public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand> {
-
-  private final FakeClock fakeClock = new FakeClock();
-
-  @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
 
   @Mock private AppEngineConnection connection;
 
@@ -130,7 +120,7 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
     Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().verifyPassword("some_password")).isTrue();
-    assertThat(RegistrarDao.checkExists("clientz")).isTrue();
+    assertThat(jpaTm().transact(() -> jpaTm().checkExists(registrar.get()))).isTrue();
   }
 
   @Test
@@ -722,7 +712,6 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
     assertThat(registrar.getFaxNumber()).isNull();
     assertThat(registrar.getUrl()).isNull();
     assertThat(registrar.getDriveFolderId()).isNull();
-
   }
 
   @Test
@@ -1333,7 +1322,6 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
                 "--icann_referral_email=foo@bar.test",
                 "clientz"));
   }
-
 
   @Test
   public void testFailure_missingState() {

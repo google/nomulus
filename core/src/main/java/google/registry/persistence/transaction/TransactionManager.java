@@ -14,6 +14,10 @@
 
 package google.registry.persistence.transaction;
 
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
+import google.registry.persistence.VKey;
+import java.util.Optional;
 import java.util.function.Supplier;
 import org.joda.time.DateTime;
 
@@ -78,4 +82,40 @@ public interface TransactionManager {
 
   /** Returns the time associated with the start of this particular transaction attempt. */
   DateTime getTransactionTime();
+
+  /** Persists a new entity in the database, throws exception if the entity already exists. */
+  void saveNew(Object entity);
+
+  /** Persists all new entities in the database, throws exception if any entity already exists. */
+  void saveAllNew(ImmutableCollection<?> entities);
+
+  /** Persists a new entity or update the existing entity in the database. */
+  void saveNewOrUpdate(Object entity);
+
+  /** Persists all new entities or update the existing entities in the database. */
+  void saveNewOrUpdateAll(ImmutableCollection<?> entities);
+
+  /** Updates an entity in the database, throws exception if the entity does not exist. */
+  void update(Object entity);
+
+  /** Updates all entities in the database, throws exception if any entity does not exist. */
+  void updateAll(ImmutableCollection<?> entities);
+
+  /** Returns whether the given entity with same ID exists. */
+  boolean checkExists(Object entity);
+
+  /** Returns whether the entity of given key exists. */
+  <T> boolean checkExists(VKey<T> key);
+
+  /** Loads the entity by its id, returns empty if the entity doesn't exist. */
+  <T> Optional<T> load(VKey<T> key);
+
+  /** Loads all entities of the given type, returns empty if there is no such entity. */
+  <T> ImmutableList<T> loadAll(Class<T> clazz);
+
+  /** Deletes the entity by its id, returns the number of deleted entity. */
+  <T> int delete(VKey<T> key);
+
+  /** Deletes the entity by its id, throws exception if the entity is not deleted. */
+  <T> void assertDelete(VKey<T> key);
 }

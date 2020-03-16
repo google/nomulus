@@ -34,7 +34,7 @@ import org.junit.runners.JUnit4;
 public class RegistriesTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private void initTestTlds() {
     createTlds("foo", "a.b.c"); // Test a multipart tld.

@@ -103,7 +103,7 @@ public class LockDaoTest {
     LockDao.saveNew(lock);
     Optional<Lock> returnedLock = LockDao.load("testResource", "tld");
     assertThat(returnedLock.get().expirationTime).isEqualTo(lock.expirationTime);
-    LockDao.delete(lock);
+    LockDao.delete("testResource", "tld");
     returnedLock = LockDao.load("testResource", "tld");
     assertThat(returnedLock.isPresent()).isFalse();
   }
@@ -115,15 +115,13 @@ public class LockDaoTest {
     LockDao.saveNew(lock);
     Optional<Lock> returnedLock = LockDao.load("testResource");
     assertThat(returnedLock.get().expirationTime).isEqualTo(lock.expirationTime);
-    LockDao.delete(lock);
+    LockDao.delete("testResource");
     returnedLock = LockDao.load("testResource");
     assertThat(returnedLock.isPresent()).isFalse();
   }
 
   @Test
   public void delete_succeedsLockDoesntExist() {
-    Lock lock =
-        Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.delete(lock);
+    LockDao.delete("testResource");
   }
 }

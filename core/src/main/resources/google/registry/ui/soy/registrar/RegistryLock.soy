@@ -106,6 +106,7 @@
 /** Modal that confirms that the user wishes to lock/unlock a domain. */
 {template .confirmModal}
   {@param isLock: bool}
+  {@param isAdmin: bool}
   {@param? domain: string|null}
   <div id="lock-confirm-modal" class="{css('lock-confirm-modal')}">
     <div class="modal-content">
@@ -117,9 +118,11 @@
              value="{$domain}" disabled
           {/if}>
       <br>
-      <label for="domain-lock-password">Registry lock password: </label>
-      <input type="password" id="domain-lock-password">
-      <br>
+      {if not $isAdmin}
+        <label for="domain-lock-password">Registry lock password: </label>
+        <input type="password" id="domain-lock-password">
+        <br>
+      {/if}
       <div id="modal-error-message" hidden class="{css('kd-errormessage')}"></div>
       <div class="{css('buttons-div')}">
         <button id="domain-lock-cancel" class="{css('kd-button')}">Cancel</button>
@@ -133,7 +136,5 @@
 
 /** Content if the registrar is not allowed to use registry lock. */
 {template .lockNotAllowedOnRegistrar}
-  {@param supportEmail: string}
-  <h2>Sorry, your registrar hasn't enrolled in registry lock yet. To do so, please
-    contact {$supportEmail}.</h2>
+  <h2>Registry Lock is coming soon; please stay tuned for updates.</h2>
 {/template}

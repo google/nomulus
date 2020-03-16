@@ -106,6 +106,7 @@ public final class DomainLockUtils {
 
               RegistryLock newLock =
                   RegistryLockDao.save(lock.asBuilder().setLockCompletionTimestamp(now).build());
+              setAsRelock(newLock);
               tm().transact(() -> applyLockStatuses(newLock, now));
               return newLock;
             });
@@ -149,13 +150,14 @@ public final class DomainLockUtils {
         .transact(
             () -> {
               DateTime now = jpaTm().getTransactionTime();
-              RegistryLock result =
+              RegistryLock newLock =
                   RegistryLockDao.save(
                       createLockBuilder(domainName, registrarId, registrarPocId, isAdmin)
                           .setLockCompletionTimestamp(now)
                           .build());
-              tm().transact(() -> applyLockStatuses(result, now));
-              return result;
+              tm().transact(() -> applyLockStatuses(newLock, now));
+              setAsRelock(newLock);
+              return newLock;
             });
   }
 
@@ -177,6 +179,16 @@ public final class DomainLockUtils {
               tm().transact(() -> removeLockStatuses(result, isAdmin, now));
               return result;
             });
+  }
+
+  private void setAsRelock(RegistryLock newLock) {
+    jpaTm()
+        .transact(
+            () ->
+                RegistryLockDao.getMostRecentVerifiedUnlockByRepoId(newLock.getRepoId())
+                    .ifPresent(
+                        oldLock ->
+                            RegistryLockDao.save(oldLock.asBuilder().setRelock(newLock).build())));
   }
 
   private RegistryLock.Builder createLockBuilder(

@@ -60,7 +60,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
               route("/registry-lock-verify", FrontendServlet.class))
           .setFilters(ObjectifyFilter.class, OfyFilter.class)
           .setFixtures(BASIC)
-          .setEmail("Marla.Singer@crr.com")
+          .setEmail("Marla.Singer@crr.com") // from AppEngineRule.makeRegistrarContact3
+          .setGaeUserId("12345") // from AppEngineRule.makeRegistrarContact3
           .build();
 
   @Test
@@ -450,6 +451,14 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     server.runInAppEngineEnvironment(
         () -> {
           createTld("tld");
+          // expired unlock request
+          DomainBase expiredUnlockRequestDomain = persistActiveDomain("expiredunlock.tld");
+          saveRegistryLock(
+              createRegistryLock(expiredUnlockRequestDomain)
+                  .asBuilder()
+                  .setLockCompletionTimestamp(START_OF_TIME.minusDays(1))
+                  .setUnlockRequestTimestamp(START_OF_TIME.minusDays(1))
+                  .build());
           DomainBase domain = persistActiveDomain("example.tld");
           saveRegistryLock(createRegistryLock(domain).asBuilder().isSuperuser(true).build());
           DomainBase otherDomain = persistActiveDomain("otherexample.tld");
@@ -492,7 +501,6 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
   @Test
   public void registryLock_unlockModal() throws Throwable {
-    server.setIsAdmin(true);
     server.runInAppEngineEnvironment(
         () -> {
           createDomainAndSaveLock();
@@ -520,7 +528,6 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.findElement(By.id("button-lock-domain")).click();
     driver.waitForElement(By.className("modal-content"));
     driver.findElement(By.id("domain-lock-input-value")).sendKeys("somedomain.tld");
-    driver.findElement(By.id("domain-lock-password")).sendKeys("password");
     driver.diffPage("page");
   }
 

@@ -15,17 +15,15 @@
 package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.EntityTestCase;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
-import google.registry.testing.FakeClock;
+import google.registry.persistence.VKey;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -33,11 +31,8 @@ import org.junit.runners.JUnit4;
 /** Unit tests for {@link RegistrarDao}. */
 @RunWith(JUnit4.class)
 public class RegistrarDaoTest extends EntityTestCase {
-  private final FakeClock fakeClock = new FakeClock();
 
-  @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
+  private final VKey<Registrar> registrarKey = VKey.createSql(Registrar.class, "registrarId");
 
   private Registrar testRegistrar;
 
@@ -61,32 +56,39 @@ public class RegistrarDaoTest extends EntityTestCase {
 
   @Test
   public void saveNew_worksSuccessfully() {
-    assertThat(RegistrarDao.checkExists("registrarId")).isFalse();
-    RegistrarDao.saveNew(testRegistrar);
-    assertThat(RegistrarDao.checkExists("registrarId")).isTrue();
+    assertThat(jpaTm().transact(() -> jpaTm().checkExists(testRegistrar))).isFalse();
+    jpaTm().transact(() -> jpaTm().saveNew(testRegistrar));
+    assertThat(jpaTm().transact(() -> jpaTm().checkExists(testRegistrar))).isTrue();
   }
 
   @Test
   public void update_worksSuccessfully() {
-    RegistrarDao.saveNew(testRegistrar);
-    Registrar persisted = RegistrarDao.load("registrarId").get();
+    jpaTm().transact(() -> jpaTm().saveNew(testRegistrar));
+    Registrar persisted = jpaTm().transact(() -> jpaTm().load(registrarKey)).get();
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");
-    RegistrarDao.update(persisted.asBuilder().setRegistrarName("changedRegistrarName").build());
-    persisted = RegistrarDao.load("registrarId").get();
-    assertThat(persisted.getRegistrarName()).isEqualTo("changedRegistrarName");
+    jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .update(
+                        persisted.asBuilder().setRegistrarName("changedRegistrarName").build()));
+    Registrar updated = jpaTm().transact(() -> jpaTm().load(registrarKey)).get();
+    assertThat(updated.getRegistrarName()).isEqualTo("changedRegistrarName");
   }
 
   @Test
   public void update_throwsExceptionWhenEntityDoesNotExist() {
-    assertThat(RegistrarDao.checkExists("registrarId")).isFalse();
-    assertThrows(IllegalArgumentException.class, () -> RegistrarDao.update(testRegistrar));
+    assertThat(jpaTm().transact(() -> jpaTm().checkExists(testRegistrar))).isFalse();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> jpaTm().transact(() -> jpaTm().update(testRegistrar)));
   }
 
   @Test
   public void load_worksSuccessfully() {
-    assertThat(RegistrarDao.checkExists("registrarId")).isFalse();
-    RegistrarDao.saveNew(testRegistrar);
-    Registrar persisted = RegistrarDao.load("registrarId").get();
+    assertThat(jpaTm().transact(() -> jpaTm().checkExists(testRegistrar))).isFalse();
+    jpaTm().transact(() -> jpaTm().saveNew(testRegistrar));
+    Registrar persisted = jpaTm().transact(() -> jpaTm().load(registrarKey)).get();
 
     assertThat(persisted.getClientId()).isEqualTo("registrarId");
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");
