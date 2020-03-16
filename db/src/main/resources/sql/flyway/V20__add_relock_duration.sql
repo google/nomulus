@@ -12,4 +12,4 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-ALTER TABLE "RegistryLock" ADD COLUMN relock_duration bytea;
+ALTER TABLE "RegistryLock" ADD COLUMN relock_duration bigint;
