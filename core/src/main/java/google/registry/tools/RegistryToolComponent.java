@@ -14,12 +14,10 @@
 
 package google.registry.tools;
 
-import com.google.common.collect.ImmutableList;
 import dagger.BindsInstance;
 import dagger.Component;
 import google.registry.bigquery.BigqueryModule;
 import google.registry.config.CredentialModule.LocalCredentialJson;
-import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.dns.writer.VoidDnsWriterModule;
 import google.registry.dns.writer.clouddns.CloudDnsWriterModule;
@@ -122,9 +120,6 @@ interface RegistryToolComponent {
 
   @LocalCredentialJson
   String googleCredentialJson();
-
-  @Config("localCredentialOauthScopes")
-  ImmutableList<String> googleCredentialScopes();
 
   @NomulusToolJpaTm
   JpaTransactionManager nomulusToolJpaTransactionManager();

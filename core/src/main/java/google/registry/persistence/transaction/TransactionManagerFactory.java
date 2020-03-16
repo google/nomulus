@@ -75,6 +75,7 @@ public class TransactionManagerFactory {
     return jpaTm.get();
   }
 
+  /** Sets the return of {@link #jpaTm()} to the given instance of {@link JpaTransactionManager}. */
   public static void setJpaTm(JpaTransactionManager newJpaTm) {
     jpaTm = Suppliers.ofInstance(newJpaTm);
   }
