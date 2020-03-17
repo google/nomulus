@@ -94,6 +94,8 @@ public class AuthModule {
     }
   }
 
+  // TODO(b/138195359): Deprecate this credential once Cloud SQL socket library uses the new auth
+  // library.
   @Provides
   @CloudSqlClientCredential
   public static Credential providesLocalCredentialForCloudSqlClient(
