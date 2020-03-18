@@ -36,6 +36,7 @@
     <class>google.registry.persistence.converter.BloomFilterConverter</class>
     <class>google.registry.persistence.converter.CidrAddressBlockListConverter</class>
     <class>google.registry.persistence.converter.CreateAutoTimestampConverter</class>
+    <class>google.registry.persistence.converter.CurrencyToBillingConverter</class>
     <class>google.registry.persistence.converter.CurrencyUnitConverter</class>
     <class>google.registry.persistence.converter.DateTimeConverter</class>
     <class>google.registry.persistence.converter.DurationConverter</class>
