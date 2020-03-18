@@ -184,6 +184,11 @@ public final class RegistrarFormFields {
           .required()
           .build();
 
+  public static final FormField<String, String> REGISTRY_LOCK_EMAIL_ADDRESS_FIELD =
+      FormFields.EMAIL
+          .asBuilderNamed("registryLockEmailAddress")
+          .build();
+
   public static final FormField<Boolean, Boolean> CONTACT_VISIBLE_IN_WHOIS_AS_ADMIN_FIELD =
       FormField.named("visibleInWhoisAsAdmin", Boolean.class)
           .build();
@@ -377,6 +382,8 @@ public final class RegistrarFormFields {
       RegistrarContact.Builder builder, Map<String, ?> args) {
     builder.setName(CONTACT_NAME_FIELD.extractUntyped(args).orElse(null));
     builder.setEmailAddress(CONTACT_EMAIL_ADDRESS_FIELD.extractUntyped(args).orElse(null));
+    builder.setRegistryLockEmailAddress(
+        REGISTRY_LOCK_EMAIL_ADDRESS_FIELD.extractUntyped(args).orElse(null));
     builder.setVisibleInWhoisAsAdmin(
         CONTACT_VISIBLE_IN_WHOIS_AS_ADMIN_FIELD.extractUntyped(args).orElse(false));
     builder.setVisibleInWhoisAsTech(

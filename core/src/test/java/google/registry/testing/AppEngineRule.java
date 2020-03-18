@@ -247,6 +247,7 @@ public final class AppEngineRule extends ExternalResource {
         .setParent(makeRegistrar2())
         .setName("Marla Singer")
         .setEmailAddress("Marla.Singer@crr.com")
+        .setRegistryLockEmailAddress("Marla.Singer.RegistryLock@crr.com")
         .setPhoneNumber("+1.2128675309")
         .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
         .setGaeUserId("12345")

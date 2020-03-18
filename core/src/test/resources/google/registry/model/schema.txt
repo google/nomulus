@@ -477,6 +477,7 @@ class google.registry.model.registrar.RegistrarContact {
   java.lang.String gaeUserId;
   java.lang.String name;
   java.lang.String phoneNumber;
+  java.lang.String registryLockEmailAddress;
   java.lang.String registryLockPasswordHash;
   java.lang.String registryLockPasswordSalt;
   java.util.Set<google.registry.model.registrar.RegistrarContact$Type> types;

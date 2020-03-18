@@ -237,6 +237,7 @@ public class ContactSettingsTest extends RegistrarSettingsActionTestCase {
             AppEngineRule.makeRegistrarContact2()
                 .asBuilder()
                 .setEmailAddress("someotheremail@example.com")
+                .setRegistryLockEmailAddress("someotherexample@example.com")
                 .setAllowedToSetRegistryLockPassword(true)
                 .build()
                 .toJsonMap(),

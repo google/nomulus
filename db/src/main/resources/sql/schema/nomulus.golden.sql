@@ -241,7 +241,8 @@ CREATE TABLE public."RegistrarPoc" (
     types text[],
     visible_in_domain_whois_as_abuse boolean NOT NULL,
     visible_in_whois_as_admin boolean NOT NULL,
-    visible_in_whois_as_tech boolean NOT NULL
+    visible_in_whois_as_tech boolean NOT NULL,
+    registry_lock_email_address text
 );
 
 

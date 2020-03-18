@@ -158,6 +158,7 @@
         gae_user_id text,
         name text,
         phone_number text,
+        registry_lock_email_address text,
         registry_lock_password_hash text,
         registry_lock_password_salt text,
         types text[],

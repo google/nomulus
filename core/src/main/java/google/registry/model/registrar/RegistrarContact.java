@@ -44,7 +44,9 @@ import google.registry.model.Jsonifiable;
 import google.registry.model.annotations.ReportedOn;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Table;
 import javax.persistence.Transient;
@@ -111,6 +113,9 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
   @javax.persistence.Id
   @Column(nullable = false)
   String emailAddress;
+
+  /** External email address of this contact used for registry lock confirmations. */
+  String registryLockEmailAddress;
 
   /** The voice number of the contact. */
   String phoneNumber;
@@ -210,6 +215,10 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
 
   public String getEmailAddress() {
     return emailAddress;
+  }
+
+  public Optional<String> getRegistryLockEmailAddress() {
+    return Optional.ofNullable(registryLockEmailAddress);
   }
 
   public String getPhoneNumber() {
@@ -318,6 +327,7 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
     return new JsonMapBuilder()
         .put("name", name)
         .put("emailAddress", emailAddress)
+        .put("registryLockEmailAddress", registryLockEmailAddress)
         .put("phoneNumber", phoneNumber)
         .put("faxNumber", faxNumber)
         .put("types", getTypes().stream().map(Object::toString).collect(joining(",")))
@@ -352,6 +362,11 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
     public RegistrarContact build() {
       checkNotNull(getInstance().parent, "Registrar parent cannot be null");
       checkValidEmail(getInstance().emailAddress);
+      if (getInstance().allowedToSetRegistryLockPassword) {
+        checkArgument(
+            !isNullOrEmpty(getInstance().registryLockEmailAddress),
+            "Registry lock email must not be null if allowing registry lock access");
+      }
       return cloneEmptyToNull(super.build());
     }
 
@@ -362,6 +377,11 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
 
     public Builder setEmailAddress(String emailAddress) {
       getInstance().emailAddress = emailAddress;
+      return this;
+    }
+
+    public Builder setRegistryLockEmailAddress(@Nullable String registryLockEmailAddress) {
+      getInstance().registryLockEmailAddress = registryLockEmailAddress;
       return this;
     }
 

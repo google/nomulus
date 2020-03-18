@@ -100,6 +100,7 @@ public abstract class RegistrarSettingsActionTestCase {
                 .setParent(loadRegistrar(CLIENT_ID))
                 .setName("Jian-Yang")
                 .setEmailAddress("jyang@bachman.accelerator")
+                .setRegistryLockEmailAddress("jyang.registrylock@bachman.accelerator")
                 .setPhoneNumber("+1.1234567890")
                 .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
                 .build());
