@@ -29,6 +29,7 @@ import com.google.re2j.Pattern;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
+import google.registry.ui.forms.FormException;
 import google.registry.ui.forms.FormField;
 import google.registry.ui.forms.FormFieldException;
 import google.registry.ui.forms.FormFields;
@@ -398,6 +399,10 @@ public final class RegistrarFormFields {
         .ifPresent(
             password -> {
               if (!Strings.isNullOrEmpty(password)) {
+                if (password.length() < 8) {
+                  throw new FormException(
+                      "Registry lock password must be at least 8 characters long");
+                }
                 builder.setRegistryLockPassword(password);
               }
             });
