@@ -19,7 +19,6 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HostAndPort;
-import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.UserInfo;
 import google.registry.tools.params.HostAndPortParameter;
@@ -156,23 +155,18 @@ public final class RegistryTestServerMain {
           }
         };
 
-    Statement withAppEngine =
-        AppEngineRule.builder()
-            .withDatastoreAndCloudSql()
-            .withUrlFetch()
-            .withTaskQueue()
-            .withLocalModules()
-            .withUserService(
-                loginIsAdmin
-                    ? UserInfo.createAdmin(loginEmail, loginUserId)
-                    : UserInfo.create(loginEmail, loginUserId))
-            .build()
-            .apply(runner, Description.EMPTY);
-
     System.out.printf("%sLoading SQL fixtures and AppEngineRule...%s\n", BLUE, RESET);
-    new JpaTestRules.Builder()
-        .buildIntegrationTestRule()
-        .apply(withAppEngine, Description.EMPTY)
+    AppEngineRule.builder()
+        .withDatastoreAndCloudSql()
+        .withUrlFetch()
+        .withTaskQueue()
+        .withLocalModules()
+        .withUserService(
+            loginIsAdmin
+                ? UserInfo.createAdmin(loginEmail, loginUserId)
+                : UserInfo.create(loginEmail, loginUserId))
+        .build()
+        .apply(runner, Description.EMPTY)
         .evaluate();
   }
 
