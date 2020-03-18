@@ -76,7 +76,6 @@ com.google.cloud.bigdataoss:util:1.9.16
 com.google.cloud.bigtable:bigtable-client-core:1.8.0
 com.google.cloud.datastore:datastore-v1-proto-client:1.6.0
 com.google.cloud.sql:jdbc-socket-factory-core:1.0.12
-com.google.cloud.sql:postgres-socket-factory:1.0.12
 com.google.cloud:google-cloud-bigquerystorage:0.79.0-alpha
 com.google.cloud:google-cloud-bigtable-admin:0.73.0-alpha
 com.google.cloud:google-cloud-bigtable:0.73.0-alpha
