@@ -56,6 +56,7 @@ import javax.inject.Inject;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import org.apache.http.client.utils.URIBuilder;
+import org.joda.time.Duration;
 
 /**
  * UI action that allows for creating registry locks. Locks / unlocks must be verified separately
@@ -141,7 +142,8 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
                         : domainLockUtils.saveNewRegistryUnlockRequest(
                             postInput.fullyQualifiedDomainName,
                             postInput.clientId,
-                            registrarAccessor.isAdmin());
+                            registrarAccessor.isAdmin(),
+                            Optional.ofNullable(postInput.relockDurationMillis).map(Duration::new));
                 sendVerificationEmail(registryLock, userEmail, postInput.isLock);
               });
       String action = postInput.isLock ? "lock" : "unlock";
@@ -211,5 +213,6 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
     private String fullyQualifiedDomainName;
     private Boolean isLock;
     private String password;
+    private Long relockDurationMillis;
   }
 }

@@ -40,6 +40,7 @@ import google.registry.testing.FakeResponse;
 import google.registry.testing.UserInfo;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.StringGenerator.Alphabets;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -79,7 +80,9 @@ public class RelockDomainActionTest {
     oldLock = domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, CLIENT_ID, POC_ID, false);
     assertThat(reloadDomain(domain).getStatusValues())
         .containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
-    oldLock = domainLockUtils.administrativelyApplyUnlock(DOMAIN_NAME, CLIENT_ID, false);
+    oldLock =
+        domainLockUtils.administrativelyApplyUnlock(
+            DOMAIN_NAME, CLIENT_ID, false, Optional.empty());
     assertThat(reloadDomain(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
     action = createAction(oldLock.getRevisionId());
   }
