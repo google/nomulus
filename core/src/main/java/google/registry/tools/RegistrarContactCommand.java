@@ -284,9 +284,9 @@ final class RegistrarContactCommand extends MutatingCommand {
 
   private RegistrarContact updateContact(RegistrarContact contact, Registrar registrar) {
     checkNotNull(registrar);
-    checkNotNull(email, "--email is required when --mode=UPDATE");
-    RegistrarContact.Builder builder = contact.asBuilder().setEmailAddress(email);
-    builder.setParent(registrar);
+    checkArgument(isNullOrEmpty(email), "--email is required when --mode=UPDATE");
+    RegistrarContact.Builder builder =
+        contact.asBuilder().setEmailAddress(email).setParent(registrar);
     if (!isNullOrEmpty(name)) {
       builder.setName(name);
     }

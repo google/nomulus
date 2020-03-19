@@ -362,6 +362,9 @@ public class RegistrarContact extends ImmutableObject implements Jsonifiable {
     public RegistrarContact build() {
       checkNotNull(getInstance().parent, "Registrar parent cannot be null");
       checkValidEmail(getInstance().emailAddress);
+      // Check allowedToSetRegistryLockPassword here because if we want to allow the user to set
+      // a registry lock password, we must also set up the correct registry lock email concurrently
+      // or beforehand.
       if (getInstance().allowedToSetRegistryLockPassword) {
         checkArgument(
             !isNullOrEmpty(getInstance().registryLockEmailAddress),

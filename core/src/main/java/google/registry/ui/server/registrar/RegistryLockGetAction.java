@@ -157,7 +157,7 @@ public final class RegistryLockGetAction implements JsonGetAction {
     Optional<RegistrarContact> contactOptional = getContactMatchingLogin(user, registrar);
     boolean isRegistryLockAllowed =
         isAdmin || contactOptional.map(RegistrarContact::isRegistryLockAllowed).orElse(false);
-    // Use the contact email if it's present, else use the login email
+    // Use the contact's registry lock email if it's present, else use the login email (for admins)
     String relevantEmail =
         contactOptional
             .map(contact -> contact.getRegistryLockEmailAddress().get())
