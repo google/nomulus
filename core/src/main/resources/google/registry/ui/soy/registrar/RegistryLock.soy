@@ -18,7 +18,15 @@
 {template .settings}
   <h1>Registry lock</h1>
   <br>
-  <div id="locks-content"></div>
+  <div id="locks-content">
+    // CSS-ified loading spinner
+    <div class="{css('lds-ring')}">
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+  </div>
 {/template}
 
 {template .locksContent}
