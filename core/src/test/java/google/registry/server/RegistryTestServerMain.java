@@ -62,7 +62,7 @@ public final class RegistryTestServerMain {
   @Parameter(
       names = "--login_user_id",
       description = "GAE User ID for App Engine Local User Service.")
-  private String loginUserId = AppEngineRule.THE_REGISTRAR_GAE_USER_ID;
+  private String loginUserId = "12345";
 
   @Parameter(
       names = "--login_is_admin",

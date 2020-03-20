@@ -304,7 +304,7 @@ public final class RegistryLockGetActionTest {
                     "lockEnabledForContact",
                     true,
                     "email",
-                    "Marla.Singer.RegistryLock@crr.com",
+                    "Marla.Singer@crr.com",
                     "clientId",
                     "TheRegistrar",
                     "locks",
