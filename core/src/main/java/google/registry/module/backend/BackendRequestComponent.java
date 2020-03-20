@@ -87,80 +87,126 @@ import google.registry.tmch.TmchSmdrlAction;
 @RequestScope
 @Subcomponent(
     modules = {
-        BackendModule.class,
-        BackupModule.class,
-        BatchModule.class,
-        BillingModule.class,
-        CloudDnsWriterModule.class,
-        CronModule.class,
-        DnsCountQueryCoordinatorModule.class,
-        DnsModule.class,
-        DnsUpdateConfigModule.class,
-        DnsUpdateWriterModule.class,
-        ExportRequestModule.class,
-        IcannReportingModule.class,
-        MapreduceModule.class,
-        RdeModule.class,
-        ReportingModule.class,
-        RequestModule.class,
-        SheetModule.class,
-        Spec11Module.class,
-        TmchModule.class,
-        VoidDnsWriterModule.class,
-        WhiteboxModule.class,
+      BackendModule.class,
+      BackupModule.class,
+      BatchModule.class,
+      BillingModule.class,
+      CloudDnsWriterModule.class,
+      CronModule.class,
+      DnsCountQueryCoordinatorModule.class,
+      DnsModule.class,
+      DnsUpdateConfigModule.class,
+      DnsUpdateWriterModule.class,
+      ExportRequestModule.class,
+      IcannReportingModule.class,
+      MapreduceModule.class,
+      RdeModule.class,
+      ReportingModule.class,
+      RequestModule.class,
+      SheetModule.class,
+      Spec11Module.class,
+      TmchModule.class,
+      VoidDnsWriterModule.class,
+      WhiteboxModule.class,
     })
 interface BackendRequestComponent {
+
   BackupDatastoreAction backupDatastoreAction();
+
   BigqueryPollJobAction bigqueryPollJobAction();
+
   BrdaCopyAction brdaCopyAction();
+
   CheckBackupAction checkBackupAction();
+
   CommitLogCheckpointAction commitLogCheckpointAction();
+
   CommitLogFanoutAction commitLogFanoutAction();
+
   CopyDetailReportsAction copyDetailReportAction();
+
   DeleteContactsAndHostsAction deleteContactsAndHostsAction();
+
   DeleteLoadTestDataAction deleteLoadTestDataAction();
+
   DeleteOldCommitLogsAction deleteOldCommitLogsAction();
+
   DeleteProberDataAction deleteProberDataAction();
+
   ExpandRecurringBillingEventsAction expandRecurringBillingEventsAction();
+
   ExportCommitLogDiffAction exportCommitLogDiffAction();
+
   ExportDomainListsAction exportDomainListsAction();
+
   ExportPremiumTermsAction exportPremiumTermsAction();
+
   ExportReservedTermsAction exportReservedTermsAction();
+
   GenerateInvoicesAction generateInvoicesAction();
+
   GenerateSpec11ReportAction generateSpec11ReportAction();
+
   IcannReportingStagingAction icannReportingStagingAction();
+
   IcannReportingUploadAction icannReportingUploadAction();
+
   NordnUploadAction nordnUploadAction();
+
   NordnVerifyAction nordnVerifyAction();
+
   PublishDnsUpdatesAction publishDnsUpdatesAction();
+
   PublishSpec11ReportAction publishSpec11ReportAction();
+
   ReadDnsQueueAction readDnsQueueAction();
+
   RdeReportAction rdeReportAction();
+
   RdeStagingAction rdeStagingAction();
+
   RdeUploadAction rdeUploadAction();
+
   RdeReporter rdeReporter();
+
   RefreshDnsAction refreshDnsAction();
+
   RefreshDnsOnHostRenameAction refreshDnsOnHostRenameAction();
 
   RelockDomainAction relockDomainAction();
 
   ResaveAllEppResourcesAction resaveAllEppResourcesAction();
+
   ResaveEntityAction resaveEntityAction();
+
   SyncGroupMembersAction syncGroupMembersAction();
+
   SyncRegistrarsSheetAction syncRegistrarsSheetAction();
+
   TldFanoutAction tldFanoutAction();
+
   TmchCrlAction tmchCrlAction();
+
   TmchDnlAction tmchDnlAction();
+
   TmchSmdrlAction tmchSmdrlAction();
+
   UploadDatastoreBackupAction uploadDatastoreBackupAction();
+
   UpdateRegistrarRdapBaseUrlsAction updateRegistrarRdapBaseUrlsAction();
+
   UpdateSnapshotViewAction updateSnapshotViewAction();
+
   PublishInvoicesAction uploadInvoicesAction();
 
   @Subcomponent.Builder
   abstract class Builder implements RequestComponentBuilder<BackendRequestComponent> {
-    @Override public abstract Builder requestModule(RequestModule requestModule);
-    @Override public abstract BackendRequestComponent build();
+
+    @Override
+    public abstract Builder requestModule(RequestModule requestModule);
+
+    @Override
+    public abstract BackendRequestComponent build();
   }
 
   @Module(subcomponents = BackendRequestComponent.class)
