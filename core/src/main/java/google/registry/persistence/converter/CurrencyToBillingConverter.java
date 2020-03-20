@@ -16,7 +16,9 @@ package google.registry.persistence.converter;
 
 import static google.registry.model.registrar.Registrar.BillingAccountEntry;
 
+import com.google.common.collect.Maps;
 import java.util.Map;
+import java.util.Map.Entry;
 import javax.persistence.Converter;
 import org.joda.money.CurrencyUnit;
 
@@ -26,14 +28,15 @@ public class CurrencyToBillingConverter
     extends StringMapConverterBase<CurrencyUnit, BillingAccountEntry> {
 
   @Override
-  Pair<String, String> convertToDatabaseMapPair(Pair<CurrencyUnit, BillingAccountEntry> pair) {
-    return Pair.create(pair.key().getCode(), pair.value().getAccountId());
+  Entry<String, String> convertToDatabaseMapEntry(Entry<CurrencyUnit, BillingAccountEntry> entry) {
+    return Maps.immutableEntry(entry.getKey().getCode(), entry.getValue().getAccountId());
   }
 
   @Override
-  Pair<CurrencyUnit, BillingAccountEntry> convertToEntityMapPair(Pair<String, String> pair) {
-    CurrencyUnit currencyUnit = CurrencyUnit.of(pair.key());
-    BillingAccountEntry billingAccountEntry = new BillingAccountEntry(currencyUnit, pair.value());
-    return Pair.create(currencyUnit, billingAccountEntry);
+  Entry<CurrencyUnit, BillingAccountEntry> convertToEntityMapEntry(Entry<String, String> entry) {
+    CurrencyUnit currencyUnit = CurrencyUnit.of(entry.getKey());
+    BillingAccountEntry billingAccountEntry =
+        new BillingAccountEntry(currencyUnit, entry.getValue());
+    return Maps.immutableEntry(currencyUnit, billingAccountEntry);
   }
 }

@@ -19,6 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
 import java.util.Map;
@@ -147,13 +148,13 @@ public class StringMapConverterBaseTest {
   private static class TestStringMapConverter extends StringMapConverterBase<Key, Value> {
 
     @Override
-    Pair<String, String> convertToDatabaseMapPair(Pair<Key, Value> pair) {
-      return Pair.create(pair.key().key, pair.value().value);
+    Map.Entry<String, String> convertToDatabaseMapEntry(Map.Entry<Key, Value> entry) {
+      return Maps.immutableEntry(entry.getKey().key, entry.getValue().value);
     }
 
     @Override
-    Pair<Key, Value> convertToEntityMapPair(Pair<String, String> pair) {
-      return Pair.create(new Key(pair.key()), new Value(pair.value()));
+    Map.Entry<Key, Value> convertToEntityMapEntry(Map.Entry<String, String> entry) {
+      return Maps.immutableEntry(new Key(entry.getKey()), new Value(entry.getValue()));
     }
   }
 
