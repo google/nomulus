@@ -29,21 +29,20 @@ import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.model.registry.label.PremiumList.PremiumListRevision;
 import google.registry.testing.AppEngineRule;
 import org.joda.money.Money;
-import org.junit.Before;
 import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
 
 /** Unit tests for {@link PremiumList}. */
-@RunWith(JUnit4.class)
+@EnableRuleMigrationSupport
 public class PremiumListTest {
 
   @Rule
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void before() {
     // createTld() overwrites the premium list, so call it first.
     createTld("tld");
     PremiumList pl =
@@ -57,20 +56,20 @@ public class PremiumListTest {
   }
 
   @Test
-  public void testSave_badSyntax() {
+  void testSave_badSyntax() {
     assertThrows(
         IllegalArgumentException.class,
         () -> persistPremiumList("gtld1", "lol,nonsense USD,e,e # yup"));
   }
 
   @Test
-  public void testSave_invalidCurrencySymbol() {
+  void testSave_invalidCurrencySymbol() {
     assertThrows(
         IllegalArgumentException.class, () -> persistReservedList("gtld1", "lol,XBTC 200"));
   }
 
   @Test
-  public void testProbablePremiumLabels() {
+  void testProbablePremiumLabels() {
     PremiumList pl = PremiumList.getUncached("tld").get();
     PremiumListRevision revision = ofy().load().key(pl.getRevisionKey()).now();
     assertThat(revision.getProbablePremiumLabels().mightContain("notpremium")).isFalse();
@@ -82,7 +81,7 @@ public class PremiumListTest {
   }
 
   @Test
-  public void testParse_cannotIncludeDuplicateLabels() {
+  void testParse_cannotIncludeDuplicateLabels() {
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
@@ -103,7 +102,7 @@ public class PremiumListTest {
   }
 
   @Test
-  public void testValidation_labelMustBeLowercase() {
+  void testValidation_labelMustBeLowercase() {
     Exception e =
         assertThrows(
             IllegalArgumentException.class,
@@ -116,7 +115,7 @@ public class PremiumListTest {
   }
 
   @Test
-  public void testValidation_labelMustBePunyCoded() {
+  void testValidation_labelMustBePunyCoded() {
     Exception e =
         assertThrows(
             IllegalArgumentException.class,

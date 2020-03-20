@@ -101,6 +101,7 @@ ext {
       'junit:junit:4.13',
       'org.junit.jupiter:junit-jupiter-api:5.6.0',
       'org.junit.jupiter:junit-jupiter-engine:5.6.0',
+      'org.junit.jupiter:junit-jupiter-migrationsupport:5.6.0',
       'org.junit.vintage:junit-vintage-engine:5.6.0',
       'org.apache.avro:avro:1.8.2',
       'org.apache.beam:beam-runners-direct-java:2.16.0',

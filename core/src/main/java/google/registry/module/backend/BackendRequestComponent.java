@@ -141,7 +141,9 @@ interface BackendRequestComponent {
   RdeReporter rdeReporter();
   RefreshDnsAction refreshDnsAction();
   RefreshDnsOnHostRenameAction refreshDnsOnHostRenameAction();
+
   RelockDomainAction relockDomainAction();
+
   ResaveAllEppResourcesAction resaveAllEppResourcesAction();
   ResaveEntityAction resaveEntityAction();
   SyncGroupMembersAction syncGroupMembersAction();
