@@ -27,6 +27,9 @@ import google.registry.keyring.KeyringModule;
 import google.registry.keyring.api.DummyKeyringModule;
 import google.registry.keyring.api.KeyModule;
 import google.registry.keyring.kms.KmsModule;
+import google.registry.persistence.PersistenceModule;
+import google.registry.persistence.PersistenceModule.NomulusToolJpaTm;
+import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.rde.RdeModule;
 import google.registry.request.Modules.DatastoreServiceModule;
 import google.registry.request.Modules.Jackson2Module;
@@ -63,6 +66,7 @@ import javax.inject.Singleton;
       KeyringModule.class,
       KmsModule.class,
       LocalCredentialModule.class,
+      PersistenceModule.class,
       RdeModule.class,
       RequestFactoryModule.class,
       URLFetchServiceModule.class,
@@ -70,7 +74,7 @@ import javax.inject.Singleton;
       UserServiceModule.class,
       UtilsModule.class,
       VoidDnsWriterModule.class,
-      WhoisModule.class,
+      WhoisModule.class
     })
 interface RegistryToolComponent {
   void inject(AckPollMessagesCommand command);
@@ -116,6 +120,9 @@ interface RegistryToolComponent {
 
   @LocalCredentialJson
   String googleCredentialJson();
+
+  @NomulusToolJpaTm
+  JpaTransactionManager nomulusToolJpaTransactionManager();
 
   @Component.Builder
   interface Builder {

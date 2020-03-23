@@ -30,6 +30,7 @@ import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import java.util.Optional;
+import org.joda.time.Duration;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -88,12 +89,14 @@ public final class RegistryLockDaoTest {
                 .setLockCompletionTimestamp(fakeClock.nowUtc())
                 .setUnlockRequestTimestamp(fakeClock.nowUtc())
                 .setUnlockCompletionTimestamp(fakeClock.nowUtc())
+                .setRelockDuration(Duration.standardHours(6))
                 .build());
     RegistryLock fromDatabase = getRegistryLockByVerificationCode(lock.getVerificationCode()).get();
     assertThat(fromDatabase.getUnlockRequestTimestamp()).isEqualTo(Optional.of(fakeClock.nowUtc()));
     assertThat(fromDatabase.getUnlockCompletionTimestamp())
         .isEqualTo(Optional.of(fakeClock.nowUtc()));
     assertThat(fromDatabase.isLocked()).isFalse();
+    assertThat(fromDatabase.getRelockDuration().get()).isEqualTo(Duration.standardHours(6));
   }
 
   @Test

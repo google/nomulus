@@ -89,6 +89,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
         "--mode=UPDATE",
         "--name=Judith Registrar",
         "--email=judith.doe@example.com",
+        "--registry_lock_email=judith.doe@external.com",
         "--phone=+1.2125650000",
         "--fax=+1.2125650001",
         "--contact_type=WHOIS",
@@ -102,6 +103,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
             .setParent(registrar)
             .setName("Judith Registrar")
             .setEmailAddress("judith.doe@example.com")
+            .setRegistryLockEmailAddress("judith.doe@external.com")
             .setPhoneNumber("+1.2125650000")
             .setFaxNumber("+1.2125650001")
             .setTypes(ImmutableSet.of(WHOIS))
@@ -292,6 +294,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
         "--mode=CREATE",
         "--name=Jim Doe",
         "--email=jim.doe@example.com",
+        "--registry_lock_email=jim.doe@external.com",
         "--contact_type=ADMIN,ABUSE",
         "--visible_in_whois_as_admin=true",
         "--visible_in_whois_as_tech=false",
@@ -303,6 +306,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
             .setParent(registrar)
             .setName("Jim Doe")
             .setEmailAddress("jim.doe@example.com")
+            .setRegistryLockEmailAddress("jim.doe@external.com")
             .setTypes(ImmutableSet.of(ADMIN, ABUSE))
             .setVisibleInWhoisAsAdmin(true)
             .setVisibleInWhoisAsTech(false)
@@ -374,6 +378,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
         "--mode=CREATE",
         "--name=Jim Doe",
         "--email=jim.doe@example.com",
+        "--registry_lock_email=jim.doe.registry.lock@example.com",
         "--allowed_to_set_registry_lock_password=true",
         "NewRegistrar");
     RegistrarContact registrarContact = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
@@ -392,12 +397,30 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
                 .setEmailAddress("jim.doe@example.com")
                 .build());
     assertThat(registrarContact.isAllowedToSetRegistryLockPassword()).isFalse();
+
+    // First, try (and fail) to set the password directly
     assertThrows(
         IllegalArgumentException.class,
         () -> registrarContact.asBuilder().setRegistryLockPassword("foo"));
+
+    // Next, try (and fail) to allow registry lock without a registry lock email
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    runCommandForced(
+                        "--mode=UPDATE",
+                        "--email=jim.doe@example.com",
+                        "--allowed_to_set_registry_lock_password=true",
+                        "NewRegistrar")))
+        .hasMessageThat()
+        .isEqualTo("Registry lock email must not be null if allowing registry lock access");
+
+    // Next, include the email and it should succeed
     runCommandForced(
         "--mode=UPDATE",
         "--email=jim.doe@example.com",
+        "--registry_lock_email=jim.doe.registry.lock@example.com",
         "--allowed_to_set_registry_lock_password=true",
         "NewRegistrar");
     RegistrarContact newContact = reloadResource(registrarContact);
@@ -415,6 +438,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
                 .setParent(registrar)
                 .setName("Jim Doe")
                 .setEmailAddress("jim.doe@example.com")
+                .setRegistryLockEmailAddress("jim.doe.registry.lock@example.com")
                 .setAllowedToSetRegistryLockPassword(true)
                 .setRegistryLockPassword("hi")
                 .build());

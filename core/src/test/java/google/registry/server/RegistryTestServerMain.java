@@ -19,7 +19,6 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HostAndPort;
-import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.UserInfo;
 import google.registry.tools.params.HostAndPortParameter;
@@ -63,7 +62,7 @@ public final class RegistryTestServerMain {
   @Parameter(
       names = "--login_user_id",
       description = "GAE User ID for App Engine Local User Service.")
-  private String loginUserId = AppEngineRule.THE_REGISTRAR_GAE_USER_ID;
+  private String loginUserId = AppEngineRule.MARLA_SINGER_GAE_USER_ID;
 
   @Parameter(
       names = "--login_is_admin",
@@ -156,23 +155,18 @@ public final class RegistryTestServerMain {
           }
         };
 
-    Statement withAppEngine =
-        AppEngineRule.builder()
-            .withDatastoreAndCloudSql()
-            .withUrlFetch()
-            .withTaskQueue()
-            .withLocalModules()
-            .withUserService(
-                loginIsAdmin
-                    ? UserInfo.createAdmin(loginEmail, loginUserId)
-                    : UserInfo.create(loginEmail, loginUserId))
-            .build()
-            .apply(runner, Description.EMPTY);
-
     System.out.printf("%sLoading SQL fixtures and AppEngineRule...%s\n", BLUE, RESET);
-    new JpaTestRules.Builder()
-        .buildIntegrationTestRule()
-        .apply(withAppEngine, Description.EMPTY)
+    AppEngineRule.builder()
+        .withDatastoreAndCloudSql()
+        .withUrlFetch()
+        .withTaskQueue()
+        .withLocalModules()
+        .withUserService(
+            loginIsAdmin
+                ? UserInfo.createAdmin(loginEmail, loginUserId)
+                : UserInfo.create(loginEmail, loginUserId))
+        .build()
+        .apply(runner, Description.EMPTY)
         .evaluate();
   }
 

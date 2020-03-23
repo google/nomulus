@@ -20,6 +20,7 @@ import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets.Details;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.util.store.AbstractDataStoreFactory;
@@ -42,6 +43,7 @@ import google.registry.util.GoogleCredentialsBundle;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -89,6 +91,26 @@ public class AuthModule {
       return GoogleCredentialsBundle.create(credential);
     } catch (IOException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  // TODO(b/138195359): Deprecate this credential once Cloud SQL socket library uses the new auth
+  // library.
+  @Provides
+  @CloudSqlClientCredential
+  public static Credential providesLocalCredentialForCloudSqlClient(
+      @LocalCredentialJson String credentialJson,
+      @Config("localCredentialOauthScopes") ImmutableList<String> credentialScopes) {
+    try {
+      GoogleCredential credential =
+          GoogleCredential.fromStream(new ByteArrayInputStream(credentialJson.getBytes(UTF_8)));
+      if (credential.createScopedRequired()) {
+        credential = credential.createScoped(credentialScopes);
+      }
+      return credential;
+    } catch (IOException e) {
+      throw new UncheckedIOException(
+          "Error occurred while creating a GoogleCredential for Cloud SQL client", e);
     }
   }
 
@@ -183,6 +205,11 @@ public class AuthModule {
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
   private @interface StoredCredential {}
+
+  /** Dagger qualifier for {@link Credential} used by the Cloud SQL client in the nomulus tool. */
+  @Qualifier
+  @Documented
+  public @interface CloudSqlClientCredential {}
 
   /** Dagger qualifier for the credential qualifier consisting of client and scopes. */
   @Qualifier

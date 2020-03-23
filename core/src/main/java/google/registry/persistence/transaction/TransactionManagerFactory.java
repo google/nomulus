@@ -16,11 +16,9 @@ package google.registry.persistence.transaction;
 
 import com.google.appengine.api.utils.SystemProperty;
 import com.google.appengine.api.utils.SystemProperty.Environment.Value;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.persistence.DaggerPersistenceComponent;
-import google.registry.tools.RegistryToolEnvironment;
 import google.registry.util.NonFinalForTesting;
 import java.util.function.Supplier;
 
@@ -38,11 +36,10 @@ public class TransactionManagerFactory {
   private TransactionManagerFactory() {}
 
   private static JpaTransactionManager createJpaTransactionManager() {
+    // If we are running a nomulus command, jpaTm will be injected in RegistryCli.java
+    // by calling setJpaTm().
     if (isInAppEngine()) {
       return DaggerPersistenceComponent.create().appEngineJpaTransactionManager();
-    } else if (RegistryToolEnvironment.isInRegistryTool()
-        && RegistryToolEnvironment.isJpaTmEnabled()) {
-      return DaggerPersistenceComponent.create().nomulusToolJpaTransactionManager();
     } else {
       return DummyJpaTransactionManager.create();
     }
@@ -78,8 +75,8 @@ public class TransactionManagerFactory {
     return jpaTm.get();
   }
 
-  @VisibleForTesting
-  static void setJpaTmForTesting(JpaTransactionManager newJpaTm) {
+  /** Sets the return of {@link #jpaTm()} to the given instance of {@link JpaTransactionManager}. */
+  public static void setJpaTm(JpaTransactionManager newJpaTm) {
     jpaTm = Suppliers.ofInstance(newJpaTm);
   }
 }

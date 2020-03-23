@@ -241,7 +241,8 @@ CREATE TABLE public."RegistrarPoc" (
     types text[],
     visible_in_domain_whois_as_abuse boolean NOT NULL,
     visible_in_whois_as_admin boolean NOT NULL,
-    visible_in_whois_as_tech boolean NOT NULL
+    visible_in_whois_as_tech boolean NOT NULL,
+    registry_lock_email_address text
 );
 
 
@@ -262,7 +263,8 @@ CREATE TABLE public."RegistryLock" (
     unlock_request_timestamp timestamp with time zone,
     unlock_completion_timestamp timestamp with time zone,
     last_update_timestamp timestamp with time zone,
-    relock_revision_id bigint
+    relock_revision_id bigint,
+    relock_duration bigint
 );
 
 

@@ -1,4 +1,4 @@
-// Copyright 2019 The Nomulus Authors. All Rights Reserved.
+// Copyright 2020 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,31 +16,38 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static org.junit.Assert.assertThrows;
 
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import java.math.BigInteger;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.PersistenceException;
-import org.joda.money.CurrencyUnit;
+import org.joda.time.Duration;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link CurrencyUnitConverter}. */
+/** Unit tests for {@link DurationConverter}. */
 @RunWith(JUnit4.class)
-public class CurrencyUnitConverterTest {
+public class DurationConverterTest {
 
   @Rule
   public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
+  private final DurationConverter converter = new DurationConverter();
+
   @Test
-  public void roundTripConversion() {
-    TestEntity entity = new TestEntity(CurrencyUnit.EUR);
+  public void testNulls() {
+    assertThat(converter.convertToDatabaseColumn(null)).isNull();
+    assertThat(converter.convertToEntityAttribute(null)).isNull();
+  }
+
+  @Test
+  public void testRoundTrip() {
+    TestEntity entity = new TestEntity(Duration.standardDays(6));
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
     assertThat(
             jpaTm()
@@ -49,32 +56,12 @@ public class CurrencyUnitConverterTest {
                         jpaTm()
                             .getEntityManager()
                             .createNativeQuery(
-                                "SELECT currency FROM \"TestEntity\" WHERE name = 'id'")
+                                "SELECT duration FROM \"TestEntity\" WHERE name = 'id'")
                             .getResultList()))
-        .containsExactly("EUR");
+        .containsExactly(BigInteger.valueOf(Duration.standardDays(6).getMillis()));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(persisted.currency).isEqualTo(CurrencyUnit.EUR);
-  }
-
-  @Test
-  public void invalidCurrency() {
-    jpaTm()
-        .transact(
-            () ->
-                jpaTm()
-                    .getEntityManager()
-                    .createNativeQuery(
-                        "INSERT INTO \"TestEntity\" (name, currency) VALUES('id', 'XXXX')")
-                    .executeUpdate());
-    PersistenceException thrown =
-        assertThrows(
-            PersistenceException.class,
-            () ->
-                jpaTm()
-                    .transact(
-                        () -> jpaTm().getEntityManager().find(TestEntity.class, "id").currency));
-    assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("Unknown currency 'XXXX'");
+    assertThat(persisted.duration).isEqualTo(Duration.standardDays(6));
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
@@ -82,12 +69,12 @@ public class CurrencyUnitConverterTest {
 
     @Id String name = "id";
 
-    CurrencyUnit currency;
+    Duration duration;
 
     public TestEntity() {}
 
-    TestEntity(CurrencyUnit currency) {
-      this.currency = currency;
+    TestEntity(Duration duration) {
+      this.duration = duration;
     }
   }
 }

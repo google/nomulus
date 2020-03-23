@@ -78,6 +78,18 @@ public class Lock extends ImmutableObject implements Serializable {
   /** When the lock can be considered implicitly released. */
   DateTime expirationTime;
 
+  public String getRequestLogId() {
+    return requestLogId;
+  }
+
+  public DateTime getExpirationTime() {
+    return expirationTime;
+  }
+
+  public DateTime getAcquiredTime() {
+    return acquiredTime;
+  }
+
   /** When was the lock acquired. Used for logging. */
   DateTime acquiredTime;
 
@@ -89,10 +101,10 @@ public class Lock extends ImmutableObject implements Serializable {
   String tld;
 
   /**
-   * Create a new {@link Lock} for the given resource name in the specified tld (which can be
-   * null for cross-tld locks).
+   * Create a new {@link Lock} for the given resource name in the specified tld (which can be null
+   * for cross-tld locks).
    */
-  private static Lock create(
+  public static Lock create(
       String resourceName,
       @Nullable String tld,
       String requestLogId,
@@ -185,6 +197,18 @@ public class Lock extends ImmutableObject implements Serializable {
 
                   // Checking if an unexpired lock still exists - if so, the lock can't be acquired.
                   Lock lock = ofy().load().type(Lock.class).id(lockId).now();
+                  try {
+                    jpaTm()
+                        .transact(
+                            () -> {
+                              Optional<google.registry.schema.server.Lock> cloudSqlLockOptional =
+                                  LockDao.load(resourceName, tld);
+                              LockDao.compare(Optional.ofNullable(lock), cloudSqlLockOptional);
+                            });
+                  } catch (Exception e) {
+                    logger.atSevere().withCause(e).log(
+                        "Issue loading and comparing lock from Cloud SQL");
+                  }
                   if (lock != null) {
                     logger.atInfo().log(
                         "Loaded existing lock: %s for request: %s", lock.lockId, lock.requestLogId);
@@ -221,12 +245,7 @@ public class Lock extends ImmutableObject implements Serializable {
                                       requestStatusChecker.getLogId(),
                                       now,
                                       leaseLength);
-                              // cloudSqlLock should not already exist in Cloud SQL, but call delete
-                              // just in case
-                              // TODO: Remove this delete once dual read is added
-                              LockDao.delete(
-                                  resourceName, Optional.ofNullable(tld).orElse("GLOBAL"));
-                              LockDao.saveNew(cloudSqlLock);
+                              LockDao.save(cloudSqlLock);
                             });
                   } catch (Exception e) {
                     logger.atSevere().withCause(e).log(
@@ -251,6 +270,18 @@ public class Lock extends ImmutableObject implements Serializable {
               // this can happen if release() is called around the expiration time and the lock
               // expires underneath us.
               Lock loadedLock = ofy().load().type(Lock.class).id(lockId).now();
+              try {
+                jpaTm()
+                    .transact(
+                        () -> {
+                          Optional<google.registry.schema.server.Lock> cloudSqlLockOptional =
+                              LockDao.load(resourceName, tld);
+                          LockDao.compare(Optional.ofNullable(loadedLock), cloudSqlLockOptional);
+                        });
+              } catch (Exception e) {
+                logger.atSevere().withCause(e).log(
+                    "Issue loading and comparing lock from Cloud SQL");
+              }
               if (Lock.this.equals(loadedLock)) {
                 // Use noBackupOfy() so that we don't create a commit log entry for deleting the
                 // lock.

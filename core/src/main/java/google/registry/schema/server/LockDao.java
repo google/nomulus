@@ -18,18 +18,22 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.schema.server.Lock.GLOBAL;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
+import com.google.common.flogger.FluentLogger;
 import google.registry.schema.server.Lock.LockId;
+import google.registry.util.DateTimeUtils;
 import java.util.Optional;
 
 /** Data access object class for {@link Lock}. */
 public class LockDao {
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
   /** Saves the {@link Lock} object to Cloud SQL. */
-  public static void saveNew(Lock lock) {
+  public static void save(Lock lock) {
     jpaTm()
         .transact(
             () -> {
-              jpaTm().getEntityManager().persist(lock);
+              jpaTm().getEntityManager().merge(lock);
             });
   }
 
@@ -75,5 +79,58 @@ public class LockDao {
    */
   public static void delete(String resourceName) {
     delete(resourceName, GLOBAL);
+  }
+
+  /**
+   * Compares a {@link google.registry.model.server.Lock} object with a {@link Lock} object, logging
+   * a warning if there are any differences.
+   */
+  public static void compare(
+      Optional<google.registry.model.server.Lock> datastoreLockOptional,
+      Optional<Lock> cloudSqlLockOptional) {
+    if (!datastoreLockOptional.isPresent()) {
+      cloudSqlLockOptional.ifPresent(
+          value ->
+              logger.atWarning().log(
+                  String.format(
+                      "Cloud SQL lock for %s with tld %s should be null",
+                      value.resourceName, value.tld)));
+      return;
+    }
+    google.registry.schema.server.Lock cloudSqlLock;
+    google.registry.model.server.Lock datastoreLock = datastoreLockOptional.get();
+    if (cloudSqlLockOptional.isPresent()) {
+      cloudSqlLock = cloudSqlLockOptional.get();
+      if (!datastoreLock.getRequestLogId().equals(cloudSqlLock.requestLogId)) {
+        logger.atWarning().log(
+            String.format(
+                "Datastore lock requestLogId of %s does not equal Cloud SQL lock requestLogId of"
+                    + " %s",
+                datastoreLock.getRequestLogId(), cloudSqlLock.requestLogId));
+      }
+      if (!datastoreLock
+          .getAcquiredTime()
+          .equals(DateTimeUtils.toJodaDateTime(cloudSqlLock.acquiredTime))) {
+        logger.atWarning().log(
+            String.format(
+                "Datastore lock acquiredTime of %s does not equal Cloud SQL lock acquiredTime of"
+                    + " %s",
+                datastoreLock.getAcquiredTime(),
+                DateTimeUtils.toJodaDateTime(cloudSqlLock.acquiredTime)));
+      }
+      if (!datastoreLock
+          .getExpirationTime()
+          .equals(DateTimeUtils.toJodaDateTime(cloudSqlLock.expirationTime))) {
+        logger.atWarning().log(
+            String.format(
+                "Datastore lock expirationTime of %s does not equal Cloud SQL lock expirationTime"
+                    + " of %s",
+                datastoreLock.getExpirationTime(),
+                DateTimeUtils.toJodaDateTime(cloudSqlLock.expirationTime)));
+      }
+    } else {
+      logger.atWarning().log(
+          String.format("Datastore lock: %s was not found in Cloud SQL", datastoreLock));
+    }
   }
 }

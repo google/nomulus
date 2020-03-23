@@ -78,10 +78,14 @@ final class RegistrarContactCommand extends MutatingCommand {
   private List<String> contactTypeNames;
 
   @Nullable
-  @Parameter(
-      names = "--email",
-      description = "Contact email address.")
+  @Parameter(names = "--email", description = "Contact email address.")
   String email;
+
+  @Nullable
+  @Parameter(
+      names = "--registry_lock_email",
+      description = "Email address used for registry lock confirmation emails")
+  String registryLockEmail;
 
   @Nullable
   @Parameter(
@@ -247,6 +251,9 @@ final class RegistrarContactCommand extends MutatingCommand {
     builder.setParent(registrar);
     builder.setName(name);
     builder.setEmailAddress(email);
+    if (!isNullOrEmpty(registryLockEmail)) {
+      builder.setRegistryLockEmailAddress(registryLockEmail);
+    }
     if (phone != null) {
       builder.setPhoneNumber(phone.orElse(null));
     }
@@ -277,14 +284,14 @@ final class RegistrarContactCommand extends MutatingCommand {
 
   private RegistrarContact updateContact(RegistrarContact contact, Registrar registrar) {
     checkNotNull(registrar);
-    checkNotNull(email, "--email is required when --mode=UPDATE");
-    RegistrarContact.Builder builder = contact.asBuilder();
-    builder.setParent(registrar);
+    checkArgument(!isNullOrEmpty(email), "--email is required when --mode=UPDATE");
+    RegistrarContact.Builder builder =
+        contact.asBuilder().setEmailAddress(email).setParent(registrar);
     if (!isNullOrEmpty(name)) {
       builder.setName(name);
     }
-    if (!isNullOrEmpty(email)) {
-      builder.setEmailAddress(email);
+    if (!isNullOrEmpty(registryLockEmail)) {
+      builder.setRegistryLockEmailAddress(registryLockEmail);
     }
     if (phone != null) {
       builder.setPhoneNumber(phone.orElse(null));

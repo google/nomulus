@@ -15,13 +15,15 @@
 package google.registry.schema.server;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static google.registry.testing.LogsSubject.assertAboutLogs;
 
+import com.google.common.testing.TestLogHandler;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.testing.FakeClock;
 import java.util.Optional;
-import javax.persistence.RollbackException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.joda.time.Duration;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,6 +35,8 @@ import org.junit.runners.JUnit4;
 public class LockDaoTest {
 
   private final FakeClock fakeClock = new FakeClock();
+  private final TestLogHandler logHandler = new TestLogHandler();
+  private final Logger loggerToIntercept = Logger.getLogger(LockDao.class.getCanonicalName());
 
   @Rule
   public final JpaIntegrationWithCoverageRule jpaRule =
@@ -42,29 +46,28 @@ public class LockDaoTest {
   public void save_worksSuccessfully() {
     Lock lock =
         Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.saveNew(lock);
+    LockDao.save(lock);
     Optional<Lock> returnedLock = LockDao.load("testResource", "tld");
     assertThat(returnedLock.get().expirationTime).isEqualTo(lock.expirationTime);
     assertThat(returnedLock.get().requestLogId).isEqualTo(lock.requestLogId);
   }
 
   @Test
-  public void save_failsWhenLockAlreadyExists() {
+  public void save_succeedsWhenLockAlreadyExists() {
     Lock lock =
         Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.saveNew(lock);
+    LockDao.save(lock);
     Lock lock2 =
         Lock.create("testResource", "tld", "testLogId2", fakeClock.nowUtc(), Duration.millis(4));
-    RollbackException thrown = assertThrows(RollbackException.class, () -> LockDao.saveNew(lock2));
-    assertThat(thrown.getCause().getCause().getCause().getMessage())
-        .contains("duplicate key value violates unique constraint");
+    LockDao.save(lock2);
+    assertThat(LockDao.load("testResource", "tld").get().requestLogId).isEqualTo("testLogId2");
   }
 
   @Test
   public void save_worksSuccesfullyGlobalLock() {
     Lock lock =
         Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.saveNew(lock);
+    LockDao.save(lock);
     Optional<Lock> returnedLock = LockDao.load("testResource");
     assertThat(returnedLock.get().expirationTime).isEqualTo(lock.expirationTime);
     assertThat(returnedLock.get().requestLogId).isEqualTo(lock.requestLogId);
@@ -74,7 +77,7 @@ public class LockDaoTest {
   public void load_worksSuccessfully() {
     Lock lock =
         Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.saveNew(lock);
+    LockDao.save(lock);
     Optional<Lock> returnedLock = LockDao.load("testResource", "tld");
     assertThat(returnedLock.get().expirationTime).isEqualTo(lock.expirationTime);
     assertThat(returnedLock.get().requestLogId).isEqualTo(lock.requestLogId);
@@ -84,7 +87,7 @@ public class LockDaoTest {
   public void load_worksSuccessfullyGlobalLock() {
     Lock lock =
         Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.saveNew(lock);
+    LockDao.save(lock);
     Optional<Lock> returnedLock = LockDao.load("testResource");
     assertThat(returnedLock.get().expirationTime).isEqualTo(lock.expirationTime);
     assertThat(returnedLock.get().requestLogId).isEqualTo(lock.requestLogId);
@@ -100,7 +103,7 @@ public class LockDaoTest {
   public void delete_worksSuccesfully() {
     Lock lock =
         Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.saveNew(lock);
+    LockDao.save(lock);
     Optional<Lock> returnedLock = LockDao.load("testResource", "tld");
     assertThat(returnedLock.get().expirationTime).isEqualTo(lock.expirationTime);
     LockDao.delete("testResource", "tld");
@@ -112,7 +115,7 @@ public class LockDaoTest {
   public void delete_worksSuccessfullyGlobalLock() {
     Lock lock =
         Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
-    LockDao.saveNew(lock);
+    LockDao.save(lock);
     Optional<Lock> returnedLock = LockDao.load("testResource");
     assertThat(returnedLock.get().expirationTime).isEqualTo(lock.expirationTime);
     LockDao.delete("testResource");
@@ -123,5 +126,64 @@ public class LockDaoTest {
   @Test
   public void delete_succeedsLockDoesntExist() {
     LockDao.delete("testResource");
+  }
+
+  @Test
+  public void compare_logsWarningWhenCloudSqlLockMissing() {
+    loggerToIntercept.addHandler(logHandler);
+    google.registry.model.server.Lock datastoreLock =
+        google.registry.model.server.Lock.create(
+            "resourceName", "tld", "id", fakeClock.nowUtc(), Duration.millis(2));
+    LockDao.compare(Optional.of(datastoreLock), Optional.empty());
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.WARNING,
+            String.format("Datastore lock: %s was not found in Cloud SQL", datastoreLock));
+  }
+
+  @Test
+  public void compare_logsWarningWhenCloudSqlLockExistsWhenItShouldNot() {
+    loggerToIntercept.addHandler(logHandler);
+    Lock lock =
+        Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
+    LockDao.compare(Optional.ofNullable(null), Optional.of(lock));
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.WARNING,
+            String.format("Cloud SQL lock for testResource with tld GLOBAL should be null"));
+  }
+
+  @Test
+  public void compare_logsWarningWhenLocksDontMatch() {
+    loggerToIntercept.addHandler(logHandler);
+    Lock cloudSqlLock =
+        Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
+    google.registry.model.server.Lock datastoreLock =
+        google.registry.model.server.Lock.create(
+            "testResource", "tld", "wrong", fakeClock.nowUtc().minusDays(1), Duration.millis(3));
+    LockDao.compare(Optional.of(datastoreLock), Optional.of(cloudSqlLock));
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.WARNING,
+            String.format(
+                "Datastore lock requestLogId of wrong does not equal Cloud SQL lock requestLogId"
+                    + " of testLogId"));
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.WARNING,
+            String.format(
+                "Datastore lock acquiredTime of 1969-12-31T00:00:00.000Z does not equal Cloud SQL"
+                    + " lock acquiredTime of 1970-01-01T00:00:00.000Z"));
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.WARNING,
+            String.format(
+                "Datastore lock expirationTime of 1969-12-31T00:00:00.003Z does not equal Cloud"
+                    + " SQL lock expirationTime of 1970-01-01T00:00:00.002Z"));
   }
 }

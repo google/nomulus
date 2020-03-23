@@ -71,6 +71,7 @@ public final class AppEngineRule extends ExternalResource {
 
   public static final String NEW_REGISTRAR_GAE_USER_ID = "666";
   public static final String THE_REGISTRAR_GAE_USER_ID = "31337";
+  public static final String MARLA_SINGER_GAE_USER_ID = "12345";
 
   /**
    * The GAE testing library requires queue.xml to be a file, not a resource in a jar, so we read it
@@ -247,9 +248,10 @@ public final class AppEngineRule extends ExternalResource {
         .setParent(makeRegistrar2())
         .setName("Marla Singer")
         .setEmailAddress("Marla.Singer@crr.com")
+        .setRegistryLockEmailAddress("Marla.Singer.RegistryLock@crr.com")
         .setPhoneNumber("+1.2128675309")
         .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
-        .setGaeUserId("12345")
+        .setGaeUserId(MARLA_SINGER_GAE_USER_ID)
         .setAllowedToSetRegistryLockPassword(true)
         .setRegistryLockPassword("hi")
         .build();

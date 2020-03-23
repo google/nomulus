@@ -153,6 +153,7 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
           persistResource(
               makeRegistrarContact2()
                   .asBuilder()
+                  .setRegistryLockEmailAddress("johndoe.registrylock@example.com")
                   .setAllowedToSetRegistryLockPassword(true)
                   .build());
           persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build());

@@ -105,7 +105,7 @@ public final class RegistryLockPostActionTest {
   @Test
   public void testSuccess_lock() throws Exception {
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
-    assertSuccess(response, "lock", "Marla.Singer@crr.com");
+    assertSuccess(response, "lock", "Marla.Singer.RegistryLock@crr.com");
   }
 
   @Test
@@ -113,7 +113,7 @@ public final class RegistryLockPostActionTest {
     saveRegistryLock(createLock().asBuilder().setLockCompletionTimestamp(clock.nowUtc()).build());
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
-    assertSuccess(response, "unlock", "Marla.Singer@crr.com");
+    assertSuccess(response, "unlock", "Marla.Singer.RegistryLock@crr.com");
   }
 
   @Test
@@ -142,7 +142,7 @@ public final class RegistryLockPostActionTest {
         createAction(
             AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithLockPermission, false)));
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
-    assertSuccess(response, "lock", "Marla.Singer@crr.com");
+    assertSuccess(response, "lock", "Marla.Singer.RegistryLock@crr.com");
   }
 
   @Test
@@ -309,7 +309,7 @@ public final class RegistryLockPostActionTest {
             .build());
 
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
-    assertSuccess(response, "lock", "Marla.Singer@crr.com");
+    assertSuccess(response, "lock", "Marla.Singer.RegistryLock@crr.com");
   }
 
   @Test
@@ -319,7 +319,7 @@ public final class RegistryLockPostActionTest {
     previousLock = getRegistryLockByVerificationCode(verificationCode).get();
     clock.setTo(previousLock.getLockRequestTimestamp().plusHours(2));
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
-    assertSuccess(response, "lock", "Marla.Singer@crr.com");
+    assertSuccess(response, "lock", "Marla.Singer.RegistryLock@crr.com");
   }
 
   @Test

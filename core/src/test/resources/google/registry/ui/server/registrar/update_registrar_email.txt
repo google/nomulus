@@ -11,7 +11,7 @@ emailAddress: the.registrar@example.com -> thase@the.registrar
 url: http://my.fake.url -> http://my.new.url
 contacts:
     ADDED:
-        {parent=Key<?>(EntityGroupRoot("cross-tld")/Registrar("TheRegistrar")), name=Extra Terrestrial, emailAddress=etphonehome@example.com, phoneNumber=+1.2345678901, faxNumber=null, types=[ADMIN, BILLING, TECH, WHOIS], gaeUserId=null, visibleInWhoisAsAdmin=true, visibleInWhoisAsTech=false, visibleInDomainWhoisAsAbuse=false, allowedToSetRegistryLockPassword=false}
+        {parent=Key<?>(EntityGroupRoot("cross-tld")/Registrar("TheRegistrar")), name=Extra Terrestrial, emailAddress=etphonehome@example.com, registryLockEmailAddress=null, phoneNumber=+1.2345678901, faxNumber=null, types=[ADMIN, BILLING, TECH, WHOIS], gaeUserId=null, visibleInWhoisAsAdmin=true, visibleInWhoisAsTech=false, visibleInDomainWhoisAsAbuse=false, allowedToSetRegistryLockPassword=false}
     REMOVED:
         {parent=Key<?>(EntityGroupRoot("cross-tld")/Registrar("TheRegistrar")), name=John Doe, emailAddress=johndoe@theregistrar.com, phoneNumber=+1.1234567890, faxNumber=null, types=[ADMIN], gaeUserId=31337, visibleInWhoisAsAdmin=false, visibleInWhoisAsTech=false, visibleInDomainWhoisAsAbuse=false, allowedToSetRegistryLockPassword=false}
     FINAL CONTENTS:

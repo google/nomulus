@@ -22,6 +22,7 @@ import static google.registry.config.RegistryConfig.getHibernateHikariMaximumPoo
 import static google.registry.config.RegistryConfig.getHibernateHikariMinimumIdle;
 import static google.registry.config.RegistryConfig.getHibernateLogSqlQueries;
 
+import com.google.api.client.auth.oauth2.Credential;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -29,8 +30,10 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.kms.KmsKeyring;
+import google.registry.persistence.transaction.CloudSqlCredentialSupplier;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.JpaTransactionManagerImpl;
+import google.registry.tools.AuthModule.CloudSqlClientCredential;
 import google.registry.util.Clock;
 import java.lang.annotation.Documented;
 import java.util.HashMap;
@@ -118,7 +121,9 @@ public class PersistenceModule {
       @Config("toolsCloudSqlUsername") String username,
       KmsKeyring kmsKeyring,
       @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
+      @CloudSqlClientCredential Credential credential,
       Clock clock) {
+    CloudSqlCredentialSupplier.setupCredentialSupplier(credential);
     HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
     overrides.put(Environment.USER, username);
     overrides.put(Environment.PASS, kmsKeyring.getToolsCloudSqlPassword());
@@ -158,7 +163,7 @@ public class PersistenceModule {
   /** Dagger qualifier for {@link JpaTransactionManager} used for Nomulus tool. */
   @Qualifier
   @Documented
-  @interface NomulusToolJpaTm {}
+  public @interface NomulusToolJpaTm {}
 
   /** Dagger qualifier for the partial Cloud SQL configs. */
   @Qualifier
