@@ -26,6 +26,7 @@
         "name": "Marla Singer",
         "visibleInWhoisAsTech": false,
         "emailAddress": "Marla.Singer@crr.com",
+        "registryLockEmailAddress": "Marla.Singer.RegistryLock@crr.com",
         "gaeUserId": "12345",
         "types": "TECH"
       }
