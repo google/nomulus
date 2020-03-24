@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import dagger.BindsInstance;
 import dagger.Component;
+import google.registry.batch.BatchModule;
 import google.registry.bigquery.BigqueryModule;
 import google.registry.config.CredentialModule.LocalCredentialJson;
 import google.registry.config.RegistryConfig.ConfigModule;
@@ -54,6 +55,7 @@ import javax.inject.Singleton;
     modules = {
       AppEngineAdminApiModule.class,
       AuthModule.class,
+      BatchModule.class,
       BigqueryModule.class,
       ConfigModule.class,
       CloudDnsWriterModule.class,

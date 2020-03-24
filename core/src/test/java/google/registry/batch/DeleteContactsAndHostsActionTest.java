@@ -18,9 +18,7 @@ import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
-import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
 import static google.registry.batch.AsyncTaskMetrics.OperationResult.STALE;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
@@ -151,13 +149,8 @@ public class DeleteContactsAndHostsActionTest
   public void setup() {
     inject.setStaticField(Ofy.class, "clock", clock);
     enqueuer =
-        new AsyncTaskEnqueuer(
-            getQueue(QUEUE_ASYNC_ACTIONS),
-            getQueue(QUEUE_ASYNC_DELETE),
-            getQueue(QUEUE_ASYNC_HOST_RENAME),
-            Duration.ZERO,
-            mock(AppEngineServiceUtils.class),
-            new Retrier(new FakeSleeper(clock), 1));
+        AsyncTaskEnqueuerTest.createForTesting(
+            mock(AppEngineServiceUtils.class), clock, Duration.ZERO);
     AsyncTaskMetrics asyncTaskMetricsMock = mock(AsyncTaskMetrics.class);
     action = new DeleteContactsAndHostsAction();
     action.asyncTaskMetrics = asyncTaskMetricsMock;

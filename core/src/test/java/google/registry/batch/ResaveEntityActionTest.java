@@ -14,14 +14,11 @@
 
 package google.registry.batch;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.PATH_RESAVE_ENTITY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
-import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
-import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
@@ -47,12 +44,10 @@ import google.registry.model.ofy.Ofy;
 import google.registry.request.Response;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
-import google.registry.testing.FakeSleeper;
 import google.registry.testing.InjectRule;
 import google.registry.testing.ShardableTestCase;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.AppEngineServiceUtils;
-import google.registry.util.Retrier;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.Before;
@@ -85,13 +80,7 @@ public class ResaveEntityActionTest extends ShardableTestCase {
     inject.setStaticField(Ofy.class, "clock", clock);
     when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
     asyncTaskEnqueuer =
-        new AsyncTaskEnqueuer(
-            getQueue(QUEUE_ASYNC_ACTIONS),
-            getQueue(QUEUE_ASYNC_DELETE),
-            getQueue(QUEUE_ASYNC_HOST_RENAME),
-            Duration.ZERO,
-            appEngineServiceUtils,
-            new Retrier(new FakeSleeper(clock), 1));
+        AsyncTaskEnqueuerTest.createForTesting(appEngineServiceUtils, clock, Duration.ZERO);
     createTld("tld");
   }
 
