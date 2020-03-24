@@ -129,7 +129,7 @@ public final class RegistryLockPostActionTest {
             .put("relockDurationMillis", Duration.standardDays(1).getMillis())
             .build();
     Map<String, ?> response = action.handleJsonRequest(request);
-    assertSuccess(response, "unlock", "Marla.Singer@crr.com");
+    assertSuccess(response, "unlock", "Marla.Singer.RegistryLock@crr.com");
     RegistryLock savedUnlockRequest = getMostRecentRegistryLockByRepoId(domain.getRepoId()).get();
     assertThat(savedUnlockRequest.getRelockDuration())
         .isEqualTo(Optional.of(Duration.standardDays(1)));
