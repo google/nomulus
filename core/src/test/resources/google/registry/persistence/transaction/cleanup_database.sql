@@ -12,5 +12,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-DROP DATABASE IF EXISTS postgres;
-CREATE DATABASE postgres;
+-- In Postgresql, recreating schema is faster than recreating the database.
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+GRANT USAGE ON SCHEMA public to PUBLIC;
+GRANT CREATE ON SCHEMA public to PUBLIC;

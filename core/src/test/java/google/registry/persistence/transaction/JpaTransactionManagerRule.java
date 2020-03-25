@@ -62,7 +62,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 abstract class JpaTransactionManagerRule extends ExternalResource {
   private static final String DB_CLEANUP_SQL_PATH =
       "google/registry/persistence/transaction/cleanup_database.sql";
-  private static final String MANAGEMENT_DB_NAME = "management";
   private static final String POSTGRES_DB_NAME = "postgres";
   // The type of JDBC connections started by the tests. This string value
   // is documented in PSQL's official user guide.
@@ -95,14 +94,14 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
   private static JdbcDatabaseContainer create() {
     PostgreSQLContainer container =
         new PostgreSQLContainer(NomulusPostgreSql.getDockerTag())
-            .withDatabaseName(MANAGEMENT_DB_NAME);
+            .withDatabaseName(POSTGRES_DB_NAME);
     container.start();
     return container;
   }
 
   @Override
   public void before() throws Exception {
-    executeSql(MANAGEMENT_DB_NAME, readSqlInClassPath(DB_CLEANUP_SQL_PATH));
+    executeSql(POSTGRES_DB_NAME, readSqlInClassPath(DB_CLEANUP_SQL_PATH));
     initScriptPath.ifPresent(path -> executeSql(POSTGRES_DB_NAME, readSqlInClassPath(path)));
     if (!extraEntityClasses.isEmpty()) {
       File tempSqlFile = File.createTempFile("tempSqlFile", ".sql");
@@ -156,8 +155,7 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
    * is less than 5 to reduce flakiness.
    */
   private void assertReasonableNumDbConnections() {
-    // Use the 'management' db to connect so that this connection needs not to be accounted for.
-    try (Connection conn = createConnection(MANAGEMENT_DB_NAME);
+    try (Connection conn = createConnection(POSTGRES_DB_NAME);
         Statement statement = conn.createStatement()) {
       // Note: Since we use the admin user (returned by container's getUserName() method)
       // in tests, we need to filter connections by database name and/or backend type to filter out
