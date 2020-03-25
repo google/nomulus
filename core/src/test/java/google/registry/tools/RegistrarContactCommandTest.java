@@ -127,7 +127,11 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
         "--email=jane.doe@example.com",
         "--allow_console_access=true",
         "NewRegistrar");
-    RegistrarContact registrarContact = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
+    RegistrarContact registrarContact =
+        loadRegistrar("NewRegistrar").getContacts().stream()
+            .filter(rc -> rc.getEmailAddress().equals("jane.doe@example.com"))
+            .findFirst()
+            .get();
     assertThat(registrarContact.getGaeUserId()).matches("-?[0-9]+");
   }
 
