@@ -167,6 +167,7 @@ registry.registrar.RegistryLock.prototype.lockOrUnlockDomain_ = function(isLock,
   var domain = goog.dom.getRequiredElement('domain-lock-input-value').value;
   var passwordElem = goog.dom.getElement('domain-lock-password');
   var password = passwordElem == null ? null : passwordElem.value;
+  var relockDuration = this.getRelockDurationFromModal_()
   goog.net.XhrIo.send('/registry-lock-post',
       e => this.fillLocksPage_(e),
       'POST',
@@ -174,11 +175,28 @@ registry.registrar.RegistryLock.prototype.lockOrUnlockDomain_ = function(isLock,
         'clientId': this.clientId,
         'fullyQualifiedDomainName': domain,
         'isLock': isLock,
-        'password': password
+        'password': password,
+        'relockDurationMillis': relockDuration
       }), {
         'X-CSRF-Token': this.xsrfToken,
         'Content-Type': 'application/json; charset=UTF-8'
       });
+}
+
+/**
+ * Returns the duration after which we will re-lock a locked domain. Will return null if we
+ * are locking a domain, or if the user selects the "Never" option
+ * @private
+ */
+registry.registrar.RegistryLock.prototype.getRelockDurationFromModal_ = function() {
+  var inputElements = goog.dom.getElementsByTagNameAndClass("input", "relock-duration-input");
+  for (var i = 0; i < inputElements.length; i++) {
+    var elem = inputElements[i];
+    if (elem.checked && elem.value !== "0") {
+      return elem.value;
+    }
+  }
+  return null;
 }
 
 /**

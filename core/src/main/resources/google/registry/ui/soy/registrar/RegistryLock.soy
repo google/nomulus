@@ -132,6 +132,24 @@
         <input type="password" id="domain-lock-password">
         <br>
       {/if}
+      {if not $isLock}
+        <div>
+          <br>
+          <p>Automatically re-lock the domain after:</p>
+          <input type="radio" name="relock-duration" id="one-hour-duration" value="3600000"
+                 class="relock-duration-input">
+          <label for="one-hour-duration">1 hour</label><br>
+          <input type="radio" name="relock-duration" id="six-hour-duration" value="21600000"
+                 class="relock-duration-input" checked>
+          <label for="six-hour-duration">6 hours</label><br>
+          <input type="radio" name="relock-duration" id="twenty-four-hour-duration" value="86400000"
+                 class="relock-duration-input">
+          <label for="twenty-four-hour-duration">24 hours</label><br>
+          <input type="radio" name="relock-duration" id="never-relock-duration" value="0"
+                 class="relock-duration-input">
+          <label for="never-relock-duration">Never</label><br>
+        </div>
+      {/if}
       <div id="modal-error-message" hidden class="{css('kd-errormessage')}"></div>
       <div class="{css('buttons-div')}">
         <button id="domain-lock-cancel" class="{css('kd-button')}">Cancel</button>
