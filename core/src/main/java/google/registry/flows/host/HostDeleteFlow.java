@@ -14,6 +14,7 @@
 
 package google.registry.flows.host;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.failfastForAsyncDelete;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
@@ -81,6 +82,17 @@ public final class HostDeleteFlow implements TransactionalFlow {
   @Inject EppResponse.Builder responseBuilder;
   @Inject HostDeleteFlow() {}
 
+  /**
+   * Hack to convert DomainBase's nameserver VKey's to Ofy Key's.
+   *
+   * <p>We currently need this because {@code failfastForAsyncDelete()} checks to see if a name is
+   * in the ofy keys and is used for both nameservers and contacts. When we convert contacts to
+   * VKey's, we can remove this and do the conversion in {@code failfastForAsyncDelete()}.
+   */
+  private static ImmutableSet<Key<HostResource>> getNameserverOfyKeys(DomainBase domain) {
+    return domain.getNameservers().stream().map(key -> key.getOfyKey()).collect(toImmutableSet());
+  }
+
   @Override
   public final EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
@@ -88,7 +100,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
     validateClientIsLoggedIn(clientId);
     DateTime now = tm().getTransactionTime();
     validateHostName(targetId);
-    failfastForAsyncDelete(targetId, now, HostResource.class, DomainBase::getNameservers);
+    failfastForAsyncDelete(targetId, now, HostResource.class, HostDeleteFlow::getNameserverOfyKeys);
     HostResource existingHost = loadAndVerifyExistence(HostResource.class, targetId, now);
     verifyNoDisallowedStatuses(existingHost, DISALLOWED_STATUSES);
     if (!isSuperuser) {

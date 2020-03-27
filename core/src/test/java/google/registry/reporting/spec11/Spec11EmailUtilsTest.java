@@ -35,7 +35,6 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
@@ -375,7 +374,9 @@ public class Spec11EmailUtilsTest {
 
   private static DomainBase persistDomainWithHost(String domainName, HostResource host) {
     return persistResource(
-        newDomainBase(domainName).asBuilder().setNameservers(ImmutableSet.of(Key.create(host)))
+        newDomainBase(domainName)
+            .asBuilder()
+            .setNameservers(ImmutableSet.of(host.createKey()))
             .build());
   }
 }

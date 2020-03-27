@@ -18,7 +18,15 @@
 {template .settings}
   <h1>Registry lock</h1>
   <br>
-  <div id="locks-content"></div>
+  <div id="locks-content">
+    // CSS-ified loading spinner
+    <div class="{css('lds-ring')}">
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+  </div>
 {/template}
 
 {template .locksContent}
@@ -110,8 +118,9 @@
   {@param? domain: string|null}
   <div id="lock-confirm-modal" class="{css('lock-confirm-modal')}">
     <div class="modal-content">
-      <p>Are you sure you want to {if not $isLock}un{/if}lock the domain {$domain}? We will send
-        an email to the email address on file to confirm the {if not $isLock}un{/if}lock.</p>
+      <p>Are you sure you want to {if $isLock}lock a domain{else}unlock the domain {$domain}{/if}?
+        We will send an email to the email address on file to confirm the {if not $isLock}un{/if}
+        lock.</p>
       <label for="domain-to-lock">Domain: </label>
       <input id="domain-lock-input-value"
           {if isNonnull($domain)}

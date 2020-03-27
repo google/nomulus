@@ -33,6 +33,7 @@ import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.transfer.TransferData;
+import google.registry.persistence.VKey;
 import java.net.InetAddress;
 import java.util.Optional;
 import java.util.Set;
@@ -115,6 +116,10 @@ public class HostResource extends EppResource implements ForeignKeyedEppResource
   @Override
   public String getForeignKey() {
     return fullyQualifiedHostName;
+  }
+
+  public VKey<HostResource> createKey() {
+    return VKey.createOfy(HostResource.class, Key.create(this));
   }
 
   @Deprecated

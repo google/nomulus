@@ -54,6 +54,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -65,19 +66,20 @@ public class DomainBaseTest extends EntityTestCase {
   private DomainBase domain;
   private Key<BillingEvent.OneTime> oneTimeBillKey;
   private Key<BillingEvent.Recurring> recurringBillKey;
+  private Key<DomainBase> domainKey;
 
   @Before
   public void setUp() {
     createTld("com");
-    Key<DomainBase> domainKey = Key.create(null, DomainBase.class, "4-COM");
-    Key<HostResource> hostKey =
-        Key.create(
-            persistResource(
+    domainKey = Key.create(null, DomainBase.class, "4-COM");
+    VKey<HostResource> hostKey =
+        persistResource(
                 new HostResource.Builder()
                     .setFullyQualifiedHostName("ns1.example.com")
                     .setSuperordinateDomain(domainKey)
                     .setRepoId("1-COM")
-                    .build()));
+                    .build())
+            .createKey();
     Key<ContactResource> contact1Key =
         Key.create(
             persistResource(
@@ -219,7 +221,7 @@ public class DomainBaseTest extends EntityTestCase {
     assertThat(
             newDomainBase("example.com")
                 .asBuilder()
-                .setNameservers(ImmutableSet.of(Key.create(newHostResource("foo.example.tld"))))
+                .setNameservers(ImmutableSet.of(newHostResource("foo.example.tld").createKey()))
                 .build()
                 .nsHosts)
         .isNotNull();
@@ -266,8 +268,8 @@ public class DomainBaseTest extends EntityTestCase {
 
   @Test
   public void testImplicitStatusValues() {
-    ImmutableSet<Key<HostResource>> nameservers =
-        ImmutableSet.of(Key.create(newHostResource("foo.example.tld")));
+    ImmutableSet<VKey<HostResource>> nameservers =
+        ImmutableSet.of(newHostResource("foo.example.tld").createKey());
     StatusValue[] statuses = {StatusValue.OK};
     // OK is implicit if there's no other statuses but there are nameservers.
     assertAboutDomains()
@@ -768,5 +770,61 @@ public class DomainBaseTest extends EntityTestCase {
     // Transferring removes the AUTORENEW grace period and adds a TRANSFER grace period
     assertThat(getOnlyElement(clone.getGracePeriods()).getType())
         .isEqualTo(GracePeriodStatus.TRANSFER);
+  }
+
+  private static ImmutableSet<Key<HostResource>> getOfyNameservers(DomainBase domain) {
+    return domain.getNameservers().stream().map(key -> key.getOfyKey()).collect(toImmutableSet());
+  }
+
+  @Test
+  public void testNameservers_nsHostsOfyKeys() {
+    assertThat(domain.nsHosts).isEqualTo(getOfyNameservers(domain));
+
+    // Test the setNameserver that functions on a function.
+    VKey<HostResource> host1Key =
+        persistResource(
+                new HostResource.Builder()
+                    .setFullyQualifiedHostName("ns2.example.com")
+                    .setSuperordinateDomain(domainKey)
+                    .setRepoId("2-COM")
+                    .build())
+            .createKey();
+
+    DomainBase dom = new DomainBase.Builder(domain).setNameservers(host1Key).build();
+    assertThat(dom.getNameservers()).isEqualTo(ImmutableSet.of(host1Key));
+    assertThat(getOfyNameservers(dom)).isEqualTo(ImmutableSet.of(host1Key.getOfyKey()));
+
+    // Test that setting to a single host of null throws an NPE.
+    assertThrows(
+        NullPointerException.class,
+        () -> new DomainBase.Builder(domain).setNameservers((VKey<HostResource>) null));
+
+    // Test that setting to a set of values works.
+    VKey<HostResource> host2Key =
+        persistResource(
+                new HostResource.Builder()
+                    .setFullyQualifiedHostName("ns3.example.com")
+                    .setSuperordinateDomain(domainKey)
+                    .setRepoId("3-COM")
+                    .build())
+            .createKey();
+    dom =
+        new DomainBase.Builder(domain).setNameservers(ImmutableSet.of(host1Key, host2Key)).build();
+    assertThat(dom.getNameservers()).isEqualTo(ImmutableSet.of(host1Key, host2Key));
+    assertThat(getOfyNameservers(dom))
+        .isEqualTo(ImmutableSet.of(host1Key.getOfyKey(), host2Key.getOfyKey()));
+
+    // Set of values, passing null.
+    dom =
+        new DomainBase.Builder(domain)
+            .setNameservers((ImmutableSet<VKey<HostResource>>) null)
+            .build();
+    assertThat(dom.nsHostVKeys).isNull();
+    assertThat(dom.nsHosts).isNull();
+
+    // Empty set of values gets translated to null.
+    dom = new DomainBase.Builder(domain).setNameservers(ImmutableSet.of()).build();
+    assertThat(dom.nsHostVKeys).isNull();
+    assertThat(dom.nsHosts).isNull();
   }
 }

@@ -43,6 +43,7 @@ import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.security.JsonResponseHelper;
+import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -119,7 +120,8 @@ public final class RegistryLockGetAction implements JsonGetAction {
   static Optional<RegistrarContact> getContactMatchingLogin(User user, Registrar registrar) {
     ImmutableList<RegistrarContact> matchingContacts =
         registrar.getContacts().stream()
-            .filter(contact -> contact.getGaeUserId().equals(user.getUserId()))
+            .filter(contact -> contact.getGaeUserId() != null)
+            .filter(contact -> Objects.equals(contact.getGaeUserId(), user.getUserId()))
             .collect(toImmutableList());
     if (matchingContacts.size() > 1) {
       ImmutableList<String> matchingEmails =

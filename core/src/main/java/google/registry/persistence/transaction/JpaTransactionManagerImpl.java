@@ -15,6 +15,7 @@
 package google.registry.persistence.transaction;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static java.util.stream.Collectors.joining;
@@ -26,8 +27,10 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
 import java.lang.reflect.Field;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.StreamSupport;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
@@ -233,6 +236,23 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     checkArgumentNotNull(key, "key must be specified");
     assertInTransaction();
     return Optional.ofNullable(getEntityManager().find(key.getKind(), key.getSqlKey()));
+  }
+
+  @Override
+  public <T> ImmutableList<T> load(Iterable<VKey<T>> keys) {
+    checkArgumentNotNull(keys, "keys must be specified");
+    assertInTransaction();
+    return StreamSupport.stream(keys.spliterator(), false)
+        .map(
+            key -> {
+              T entity = getEntityManager().find(key.getKind(), key.getSqlKey());
+              if (entity == null) {
+                throw new NoSuchElementException(
+                    key.getKind().getName() + " with key " + key.getSqlKey() + " not found.");
+              }
+              return entity;
+            })
+        .collect(toImmutableList());
   }
 
   @Override

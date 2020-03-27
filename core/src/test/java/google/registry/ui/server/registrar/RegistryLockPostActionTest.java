@@ -20,6 +20,7 @@ import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
 import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
@@ -49,9 +50,11 @@ import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletResponse;
+import org.joda.time.Duration;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -114,6 +117,22 @@ public final class RegistryLockPostActionTest {
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertSuccess(response, "unlock", "Marla.Singer.RegistryLock@crr.com");
+  }
+
+  @Test
+  public void testSuccess_unlock_relockDurationSet() throws Exception {
+    saveRegistryLock(createLock().asBuilder().setLockCompletionTimestamp(clock.nowUtc()).build());
+    persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
+    ImmutableMap<String, Object> request =
+        new ImmutableMap.Builder<String, Object>()
+            .putAll(unlockRequest())
+            .put("relockDurationMillis", Duration.standardDays(1).getMillis())
+            .build();
+    Map<String, ?> response = action.handleJsonRequest(request);
+    assertSuccess(response, "unlock", "Marla.Singer.RegistryLock@crr.com");
+    RegistryLock savedUnlockRequest = getMostRecentRegistryLockByRepoId(domain.getRepoId()).get();
+    assertThat(savedUnlockRequest.getRelockDuration())
+        .isEqualTo(Optional.of(Duration.standardDays(1)));
   }
 
   @Test

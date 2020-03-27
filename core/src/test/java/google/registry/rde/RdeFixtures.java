@@ -58,27 +58,30 @@ import org.joda.time.DateTime;
 final class RdeFixtures {
 
   static DomainBase makeDomainBase(FakeClock clock, String tld) {
-    DomainBase domain = new DomainBase.Builder()
-        .setFullyQualifiedDomainName("example." + tld)
-        .setRepoId(generateNewDomainRoid(tld))
-        .setRegistrant(Key.create(
-            makeContactResource(clock,
-                "5372808-ERL", "(◕‿◕) nevermore", "prophet@evil.みんな")))
-        .build();
+    DomainBase domain =
+        new DomainBase.Builder()
+            .setFullyQualifiedDomainName("example." + tld)
+            .setRepoId(generateNewDomainRoid(tld))
+            .setRegistrant(
+                Key.create(
+                    makeContactResource(
+                        clock, "5372808-ERL", "(◕‿◕) nevermore", "prophet@evil.みんな")))
+            .build();
     HistoryEntry historyEntry =
         persistResource(new HistoryEntry.Builder().setParent(domain).build());
     clock.advanceOneMilli();
-    BillingEvent.OneTime billingEvent = persistResourceWithCommitLog(
-        new BillingEvent.OneTime.Builder()
-            .setReason(Reason.CREATE)
-            .setTargetId("example." + tld)
-            .setClientId("TheRegistrar")
-            .setCost(Money.of(USD, 26))
-            .setPeriodYears(2)
-            .setEventTime(DateTime.parse("1990-01-01T00:00:00Z"))
-            .setBillingTime(DateTime.parse("1990-01-01T00:00:00Z"))
-            .setParent(historyEntry)
-            .build());
+    BillingEvent.OneTime billingEvent =
+        persistResourceWithCommitLog(
+            new BillingEvent.OneTime.Builder()
+                .setReason(Reason.CREATE)
+                .setTargetId("example." + tld)
+                .setClientId("TheRegistrar")
+                .setCost(Money.of(USD, 26))
+                .setPeriodYears(2)
+                .setEventTime(DateTime.parse("1990-01-01T00:00:00Z"))
+                .setBillingTime(DateTime.parse("1990-01-01T00:00:00Z"))
+                .setParent(historyEntry)
+                .build());
     domain =
         domain
             .asBuilder()
@@ -114,8 +117,8 @@ final class RdeFixtures {
             .setIdnTableName("extended_latin")
             .setNameservers(
                 ImmutableSet.of(
-                    Key.create(makeHostResource(clock, "bird.or.devil.みんな", "1.2.3.4")),
-                    Key.create(makeHostResource(clock, "ns2.cat.みんな", "bad:f00d:cafe::15:beef"))))
+                    makeHostResource(clock, "bird.or.devil.みんな", "1.2.3.4").createKey(),
+                    makeHostResource(clock, "ns2.cat.みんな", "bad:f00d:cafe::15:beef").createKey()))
             .setRegistrationExpirationTime(DateTime.parse("1994-01-01T00:00:00Z"))
             .setGracePeriods(
                 ImmutableSet.of(
@@ -220,26 +223,23 @@ final class RdeFixtures {
             .setPersistedCurrentSponsorClientId("GetTheeBack")
             .setCreationClientId("GetTheeBack")
             .setCreationTimeForTest(clock.nowUtc())
-            .setInternationalizedPostalInfo(new PostalInfo.Builder()
-                .setType(PostalInfo.Type.INTERNATIONALIZED)
-                .setName(name)
-                .setOrg("DOGE INCORPORATED")
-                .setAddress(new ContactAddress.Builder()
-                    .setStreet(ImmutableList.of("123 Example Boulevard"))
-                    .setCity("KOKOMO")
-                    .setState("BM")
-                    .setZip("31337")
-                    .setCountryCode("US")
+            .setInternationalizedPostalInfo(
+                new PostalInfo.Builder()
+                    .setType(PostalInfo.Type.INTERNATIONALIZED)
+                    .setName(name)
+                    .setOrg("DOGE INCORPORATED")
+                    .setAddress(
+                        new ContactAddress.Builder()
+                            .setStreet(ImmutableList.of("123 Example Boulevard"))
+                            .setCity("KOKOMO")
+                            .setState("BM")
+                            .setZip("31337")
+                            .setCountryCode("US")
+                            .build())
                     .build())
-                .build())
             .setVoiceNumber(
-                new ContactPhoneNumber.Builder()
-                .setPhoneNumber("+1.5558675309")
-                       .build())
-            .setFaxNumber(
-                new ContactPhoneNumber.Builder()
-                .setPhoneNumber("+1.5558675310")
-                .build())
+                new ContactPhoneNumber.Builder().setPhoneNumber("+1.5558675309").build())
+            .setFaxNumber(new ContactPhoneNumber.Builder().setPhoneNumber("+1.5558675310").build())
             .build());
   }
 

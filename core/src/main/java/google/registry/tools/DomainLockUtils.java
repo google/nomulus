@@ -37,6 +37,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
 /**
  * Utility functions for validating and applying {@link RegistryLock}s.
@@ -76,12 +77,12 @@ public final class DomainLockUtils {
    * <p>The unlock will not be applied until {@link #verifyAndApplyUnlock} is called.
    */
   public RegistryLock saveNewRegistryUnlockRequest(
-      String domainName, String registrarId, boolean isAdmin) {
+      String domainName, String registrarId, boolean isAdmin, Optional<Duration> relockDuration) {
     return jpaTm()
         .transact(
             () ->
                 RegistryLockDao.save(
-                    createUnlockBuilder(domainName, registrarId, isAdmin).build()));
+                    createUnlockBuilder(domainName, registrarId, isAdmin, relockDuration).build()));
   }
 
   /** Verifies and applies the lock request previously requested by a user. */
@@ -166,14 +167,14 @@ public final class DomainLockUtils {
    * Nomulus tool commands.
    */
   public RegistryLock administrativelyApplyUnlock(
-      String domainName, String registrarId, boolean isAdmin) {
+      String domainName, String registrarId, boolean isAdmin, Optional<Duration> relockDuration) {
     return jpaTm()
         .transact(
             () -> {
               DateTime now = jpaTm().getTransactionTime();
               RegistryLock result =
                   RegistryLockDao.save(
-                      createUnlockBuilder(domainName, registrarId, isAdmin)
+                      createUnlockBuilder(domainName, registrarId, isAdmin, relockDuration)
                           .setUnlockCompletionTimestamp(now)
                           .build());
               tm().transact(() -> removeLockStatuses(result, isAdmin, now));
@@ -217,7 +218,7 @@ public final class DomainLockUtils {
   }
 
   private RegistryLock.Builder createUnlockBuilder(
-      String domainName, String registrarId, boolean isAdmin) {
+      String domainName, String registrarId, boolean isAdmin, Optional<Duration> relockDuration) {
     DateTime now = jpaTm().getTransactionTime();
     DomainBase domainBase = getDomain(domainName, now);
     Optional<RegistryLock> lockOptional =
@@ -258,6 +259,7 @@ public final class DomainLockUtils {
           !lock.isSuperuser(), "Non-admin user cannot unlock admin-locked domain %s", domainName);
       newLockBuilder = lock.asBuilder();
     }
+    relockDuration.ifPresent(newLockBuilder::setRelockDuration);
     return newLockBuilder
         .setVerificationCode(stringGenerator.createString(VERIFICATION_CODE_LENGTH))
         .isSuperuser(isAdmin)

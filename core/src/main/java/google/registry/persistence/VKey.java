@@ -14,7 +14,10 @@
 
 package google.registry.persistence;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import google.registry.model.ImmutableObject;
+import java.util.Optional;
 
 /**
  * VKey is an abstraction that encapsulates the key concept.
@@ -25,12 +28,12 @@ import google.registry.model.ImmutableObject;
 public class VKey<T> extends ImmutableObject {
 
   // The primary key for the referenced entity.
-  private Object primaryKey;
+  private final Object primaryKey;
 
   // The objectify key for the referenced entity.
-  private com.googlecode.objectify.Key<T> ofyKey;
+  private final com.googlecode.objectify.Key<T> ofyKey;
 
-  private Class<? extends T> kind;
+  private final Class<? extends T> kind;
 
   private VKey(Class<? extends T> kind, com.googlecode.objectify.Key<T> ofyKey, Object primaryKey) {
     this.kind = kind;
@@ -52,17 +55,34 @@ public class VKey<T> extends ImmutableObject {
     return new VKey(kind, ofyKey, null);
   }
 
+  public static <T> VKey<T> create(
+      Class<? extends T> kind, Object primaryKey, com.googlecode.objectify.Key ofyKey) {
+    return new VKey(kind, ofyKey, primaryKey);
+  }
+
   public Class<? extends T> getKind() {
     return this.kind;
   }
 
   /** Returns the SQL primary key. */
   public Object getSqlKey() {
+    checkState(primaryKey != null, "Attempting obtain a null SQL key.");
     return this.primaryKey;
+  }
+
+  /** Returns the SQL primary key if it exists. */
+  public Optional<Object> maybeGetSqlKey() {
+    return Optional.of(this.primaryKey);
   }
 
   /** Returns the objectify key. */
   public com.googlecode.objectify.Key<T> getOfyKey() {
+    checkState(ofyKey != null, "Attempting obtain a null Objectify key.");
     return this.ofyKey;
+  }
+
+  /** Returns the objectify key if it exists. */
+  public Optional<com.googlecode.objectify.Key<T>> maybeGetOfyKey() {
+    return Optional.of(this.ofyKey);
   }
 }

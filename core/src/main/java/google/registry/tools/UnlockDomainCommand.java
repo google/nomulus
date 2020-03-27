@@ -22,6 +22,7 @@ import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
+import java.util.Optional;
 import org.joda.time.DateTime;
 
 /**
@@ -53,6 +54,6 @@ public class UnlockDomainCommand extends LockOrUnlockDomainCommand {
 
   @Override
   protected void createAndApplyRequest(String domain) {
-    domainLockUtils.administrativelyApplyUnlock(domain, clientId, true);
+    domainLockUtils.administrativelyApplyUnlock(domain, clientId, true, Optional.empty());
   }
 }

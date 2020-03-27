@@ -14,6 +14,7 @@
 
 package google.registry.flows.domain;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceDoesNotExist;
@@ -95,6 +96,7 @@ import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.CreateData.DomainCreateData;
 import google.registry.model.eppoutput.EppResponse;
+import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.ofy.ObjectifyService;
@@ -108,6 +110,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
+import google.registry.persistence.VKey;
 import google.registry.tmch.LordnTaskUtils;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -352,7 +355,11 @@ public class DomainCreateFlow implements TransactionalFlow {
             .setRegistrant(command.getRegistrant())
             .setAuthInfo(command.getAuthInfo())
             .setFullyQualifiedDomainName(targetId)
-            .setNameservers(command.getNameservers())
+            .setNameservers(
+                (ImmutableSet<VKey<HostResource>>)
+                    command.getNameservers().stream()
+                        .map(key -> VKey.createOfy(HostResource.class, key))
+                        .collect(toImmutableSet()))
             .setStatusValues(statuses.build())
             .setContacts(command.getContacts())
             .addGracePeriod(GracePeriod.forBillingEvent(GracePeriodStatus.ADD, createBillingEvent))

@@ -37,6 +37,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
+import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.whois.WhoisResponse.WhoisResponseResults;
@@ -220,8 +221,8 @@ public class DomainWhoisResponseTest {
         .setEmailAddress("EMAIL@EXAMPLE.tld")
         .build());
 
-    Key<HostResource> hostResource1Key = Key.create(hostResource1);
-    Key<HostResource> hostResource2Key = Key.create(hostResource2);
+    VKey<HostResource> hostResource1Key = hostResource1.createKey();
+    VKey<HostResource> hostResource2Key = hostResource2.createKey();
     Key<ContactResource> registrantResourceKey = Key.create(registrant);
     Key<ContactResource> adminResourceKey = Key.create(adminContact);
     Key<ContactResource> techResourceKey = Key.create(techContact);

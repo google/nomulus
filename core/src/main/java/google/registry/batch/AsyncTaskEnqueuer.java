@@ -30,6 +30,7 @@ import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
+import google.registry.persistence.VKey;
 import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.Retrier;
 import javax.inject.Inject;
@@ -148,12 +149,12 @@ public final class AsyncTaskEnqueuer {
 
   /** Enqueues a task to asynchronously refresh DNS for a renamed host. */
   public void enqueueAsyncDnsRefresh(HostResource host, DateTime now) {
-    Key<HostResource> hostKey = Key.create(host);
+    VKey<HostResource> hostKey = host.createKey();
     logger.atInfo().log("Enqueuing async DNS refresh for renamed host %s.", hostKey);
     addTaskToQueueWithRetry(
         asyncDnsRefreshPullQueue,
         TaskOptions.Builder.withMethod(Method.PULL)
-            .param(PARAM_HOST_KEY, hostKey.getString())
+            .param(PARAM_HOST_KEY, hostKey.getOfyKey().getString())
             .param(PARAM_REQUESTED_TIME, now.toString()));
   }
 

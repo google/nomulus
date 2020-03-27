@@ -34,10 +34,10 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
+import google.registry.persistence.VKey;
 import google.registry.testing.FakeClock;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import java.net.InetAddress;
@@ -67,8 +67,8 @@ public class GenerateZoneFilesActionTest extends MapreduceTestCase<GenerateZoneF
     HostResource host2 =
         persistResource(newHostResource("ns.bar.tld").asBuilder().addInetAddresses(ips).build());
 
-    ImmutableSet<Key<HostResource>> nameservers =
-        ImmutableSet.of(Key.create(host1), Key.create(host2));
+    ImmutableSet<VKey<HostResource>> nameservers =
+        ImmutableSet.of(host1.createKey(), host2.createKey());
     // This domain will have glue records, because it has a subordinate host which is its own
     // nameserver. None of the other domains should have glue records, because their nameservers are
     // subordinate to different domains.

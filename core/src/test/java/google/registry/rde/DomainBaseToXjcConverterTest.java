@@ -80,8 +80,8 @@ import org.junit.runners.JUnit4;
 /**
  * Unit tests for {@link DomainBaseToXjcConverter}.
  *
- * <p>This tests the mapping between {@link DomainBase} and {@link XjcRdeDomain} as well as
- * some exceptional conditions.
+ * <p>This tests the mapping between {@link DomainBase} and {@link XjcRdeDomain} as well as some
+ * exceptional conditions.
  */
 @RunWith(JUnit4.class)
 public class DomainBaseToXjcConverterTest {
@@ -99,14 +99,12 @@ public class DomainBaseToXjcConverterTest {
 
   @Test
   public void testConvertThick() {
-    XjcRdeDomain bean =
-        DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.FULL);
+    XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.FULL);
 
     assertThat(bean.getClID()).isEqualTo("GetTheeBack");
 
     assertThat(
-            bean.getContacts()
-                .stream()
+            bean.getContacts().stream()
                 .map(input -> String.format("%s %s", input.getType().toString(), input.getValue())))
         .containsExactly("ADMIN 5372808-IRL", "TECH 5372808-TRL");
 
@@ -182,8 +180,7 @@ public class DomainBaseToXjcConverterTest {
 
   @Test
   public void testConvertThin() {
-    XjcRdeDomain bean =
-        DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.THIN);
+    XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.THIN);
     assertThat(bean.getRegistrant()).isNull();
     assertThat(bean.getContacts()).isEmpty();
     assertThat(bean.getSecDNS()).isNull();
@@ -191,15 +188,13 @@ public class DomainBaseToXjcConverterTest {
 
   @Test
   public void testMarshalThick() throws Exception {
-    XjcRdeDomain bean =
-        DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.FULL);
+    XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.FULL);
     wrapDeposit(bean).marshal(new ByteArrayOutputStream(), UTF_8);
   }
 
   @Test
   public void testMarshalThin() throws Exception {
-    XjcRdeDomain bean =
-        DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.THIN);
+    XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.THIN);
     wrapDeposit(bean).marshal(new ByteArrayOutputStream(), UTF_8);
   }
 
@@ -225,17 +220,18 @@ public class DomainBaseToXjcConverterTest {
         newDomainBase("example.xn--q9jyb4c").asBuilder().setRepoId("2-Q9JYB4C").build();
     HistoryEntry historyEntry =
         persistResource(new HistoryEntry.Builder().setParent(domain).build());
-    BillingEvent.OneTime billingEvent = persistResource(
-        new BillingEvent.OneTime.Builder()
-            .setReason(Reason.CREATE)
-            .setTargetId("example.xn--q9jyb4c")
-            .setClientId("TheRegistrar")
-            .setCost(Money.of(USD, 26))
-            .setPeriodYears(2)
-            .setEventTime(DateTime.parse("1910-01-01T00:00:00Z"))
-            .setBillingTime(DateTime.parse("1910-01-01T00:00:00Z"))
-            .setParent(historyEntry)
-            .build());
+    BillingEvent.OneTime billingEvent =
+        persistResource(
+            new BillingEvent.OneTime.Builder()
+                .setReason(Reason.CREATE)
+                .setTargetId("example.xn--q9jyb4c")
+                .setClientId("TheRegistrar")
+                .setCost(Money.of(USD, 26))
+                .setPeriodYears(2)
+                .setEventTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                .setBillingTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                .setParent(historyEntry)
+                .build());
     domain =
         domain
             .asBuilder()
@@ -272,11 +268,10 @@ public class DomainBaseToXjcConverterTest {
             .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
             .setNameservers(
                 ImmutableSet.of(
-                    Key.create(
-                        makeHostResource(clock, "3-Q9JYB4C", "bird.or.devil.みんな", "1.2.3.4")),
-                    Key.create(
-                        makeHostResource(
-                            clock, "4-Q9JYB4C", "ns2.cat.みんな", "bad:f00d:cafe::15:beef"))))
+                    makeHostResource(clock, "3-Q9JYB4C", "bird.or.devil.みんな", "1.2.3.4")
+                        .createKey(),
+                    makeHostResource(clock, "4-Q9JYB4C", "ns2.cat.みんな", "bad:f00d:cafe::15:beef")
+                        .createKey()))
             .setRegistrant(
                 Key.create(
                     makeContactResource(
@@ -383,27 +378,24 @@ public class DomainBaseToXjcConverterTest {
             .setPersistedCurrentSponsorClientId("GetTheeBack")
             .setCreationClientId("GetTheeBack")
             .setCreationTimeForTest(END_OF_TIME)
-            .setInternationalizedPostalInfo(new PostalInfo.Builder()
-                .setType(PostalInfo.Type.INTERNATIONALIZED)
-                .setName(name)
-                .setOrg("SINNERS INCORPORATED")
-                .setAddress(new ContactAddress.Builder()
-                    .setStreet(ImmutableList.of("123 Example Boulevard"))
-                    .setCity("KOKOMO")
-                    .setState("BM")
-                    .setZip("31337")
-                    .setCountryCode("US")
+            .setInternationalizedPostalInfo(
+                new PostalInfo.Builder()
+                    .setType(PostalInfo.Type.INTERNATIONALIZED)
+                    .setName(name)
+                    .setOrg("SINNERS INCORPORATED")
+                    .setAddress(
+                        new ContactAddress.Builder()
+                            .setStreet(ImmutableList.of("123 Example Boulevard"))
+                            .setCity("KOKOMO")
+                            .setState("BM")
+                            .setZip("31337")
+                            .setCountryCode("US")
+                            .build())
                     .build())
-                .build())
             .setRepoId(repoId)
             .setVoiceNumber(
-                new ContactPhoneNumber.Builder()
-                .setPhoneNumber("+1.2126660420")
-                       .build())
-            .setFaxNumber(
-                new ContactPhoneNumber.Builder()
-                .setPhoneNumber("+1.2126660421")
-                .build())
+                new ContactPhoneNumber.Builder().setPhoneNumber("+1.2126660420").build())
+            .setFaxNumber(new ContactPhoneNumber.Builder().setPhoneNumber("+1.2126660421").build())
             .build());
   }
 

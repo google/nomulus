@@ -118,7 +118,7 @@ public class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Dom
                         DesignatedContact.create(Type.ADMIN, Key.create(contact)),
                         DesignatedContact.create(Type.TECH, Key.create(contact))))
                 .setNameservers(
-                    inactive ? null : ImmutableSet.of(Key.create(host1), Key.create(host2)))
+                    inactive ? null : ImmutableSet.of(host1.createKey(), host2.createKey()))
                 .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("2fooBAR")))
                 .build());
     // Set the superordinate domain of ns1.example.com to example.com. In reality, this would have
@@ -294,7 +294,7 @@ public class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Dom
                 ImmutableSet.of(
                     DelegationSignerData.create(
                         12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC"))))
-            .setNameservers(ImmutableSet.of(Key.create(host1), Key.create(host3)))
+            .setNameservers(ImmutableSet.of(host1.createKey(), host3.createKey()))
             .build());
     doSuccessfulTest("domain_info_response_dsdata.xml", false);
   }
@@ -843,7 +843,9 @@ public class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Dom
                                         Key.getKind(ContactResource.class),
                                         Key.getKind(HostResource.class)))))
                 .count();
-    assertThat(numReadsWithContactsOrHosts).isEqualTo(1);
+    // Nameserver keys now get persisted twice (because they are stored in nsHostsVKeys), so we
+    // check for two loads instead of 1.
+    assertThat(numReadsWithContactsOrHosts).isEqualTo(2);
   }
 
   @Test

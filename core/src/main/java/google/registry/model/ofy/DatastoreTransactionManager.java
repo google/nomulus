@@ -18,10 +18,13 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.googlecode.objectify.Key;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.TransactionManager;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.StreamSupport;
 import org.joda.time.DateTime;
 
 /** Datastore implementation of {@link TransactionManager}. */
@@ -128,9 +131,22 @@ public class DatastoreTransactionManager implements TransactionManager {
     throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
   }
 
+  // TODO: add tests for these methods.  They currently have some degree of test coverage because
+  // they are used when retrieving the nameservers which require these, as they are now loaded by
+  // VKey instead of by ofy Key.  But ideally, there should be one set of TransactionManager
+  // interface tests that are applied to both the datastore and SQL implementations.
   @Override
   public <T> Optional<T> load(VKey<T> key) {
-    throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
+    return Optional.of(getOfy().load().key(key.getOfyKey()).now());
+  }
+
+  @Override
+  public <T> ImmutableList<T> load(Iterable<VKey<T>> keys) {
+    Iterator<Key<T>> iter =
+        StreamSupport.stream(keys.spliterator(), false).map(key -> key.getOfyKey()).iterator();
+
+    // The lambda argument to keys() effectively converts Iterator -> Iterable.
+    return ImmutableList.copyOf(getOfy().load().keys(() -> iter).values());
   }
 
   @Override

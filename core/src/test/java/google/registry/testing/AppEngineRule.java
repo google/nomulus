@@ -224,7 +224,6 @@ public final class AppEngineRule extends ExternalResource {
         .setEmailAddress("janedoe@theregistrar.com")
         .setPhoneNumber("+1.1234567890")
         .setTypes(ImmutableSet.of(RegistrarContact.Type.ADMIN))
-        .setGaeUserId(NEW_REGISTRAR_GAE_USER_ID)
         .build();
   }
 

@@ -614,7 +614,7 @@ public class DeleteContactsAndHostsActionTest
         .hasDeletionTime(END_OF_TIME);
     DomainBase domain =
         loadByForeignKey(DomainBase.class, "example.tld", clock.nowUtc()).get();
-    assertThat(domain.getNameservers()).contains(Key.create(hostAfter));
+    assertThat(domain.getNameservers()).contains(hostAfter.createKey());
     HistoryEntry historyEntry = getOnlyHistoryEntryOfType(hostAfter, HOST_DELETE_FAILURE);
     assertPollMessageFor(
         historyEntry,
@@ -684,7 +684,7 @@ public class DeleteContactsAndHostsActionTest
     persistResource(
         newDomainBase("example.tld")
             .asBuilder()
-            .setNameservers(ImmutableSet.of(Key.create(host)))
+            .setNameservers(ImmutableSet.of(host.createKey()))
             .setDeletionTime(clock.nowUtc().minusDays(5))
             .build());
     enqueuer.enqueueAsyncDelete(
@@ -943,7 +943,7 @@ public class DeleteContactsAndHostsActionTest
     return persistResource(
         newDomainBase(domainName, contact)
             .asBuilder()
-            .setNameservers(ImmutableSet.of(Key.create(host)))
+            .setNameservers(ImmutableSet.of(host.createKey()))
             .build());
   }
 
