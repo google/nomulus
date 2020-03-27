@@ -262,6 +262,7 @@ dependencies {
   testCompile deps['org.seleniumhq.selenium:selenium-chrome-driver']
   testCompile deps['org.seleniumhq.selenium:selenium-java']
   testCompile deps['org.seleniumhq.selenium:selenium-remote-driver']
+  runtimeOnly deps['org.slf4j:slf4j-jdk14']
   testCompile deps['org.testcontainers:jdbc']
   compile deps['org.testcontainers:postgresql']
   testCompile deps['org.testcontainers:selenium']

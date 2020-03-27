@@ -138,6 +138,7 @@ ext {
       'org.seleniumhq.selenium:selenium-chrome-driver:3.141.59',
       'org.seleniumhq.selenium:selenium-java:3.141.59',
       'org.seleniumhq.selenium:selenium-remote-driver:3.141.59',
+      'org.slf4j:slf4j-jdk14:1.7.28',
       'org.testcontainers:jdbc:1.12.1',
       'org.testcontainers:postgresql:1.12.1',
       'org.testcontainers:selenium:1.12.1',
