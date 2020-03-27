@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import google.registry.persistence.PersistenceXmlUtility;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -96,18 +97,34 @@ public class JpaEntityCoverage extends ExternalResource {
    * @return true if an instance of {@code entityType} is found in the database and can be read
    */
   private static boolean isPersisted(Class entityType) {
-    List result =
-        jpaTm()
-            .transact(
-                () ->
-                    jpaTm()
-                        .getEntityManager()
-                        .createQuery(
-                            String.format("SELECT e FROM %s e", getJpaEntityName(entityType)),
-                            entityType)
-                        .setMaxResults(1)
-                        .getResultList());
-    return !result.isEmpty() && entityType.isInstance(result.get(0));
+    try {
+      List result =
+          jpaTm()
+              .transact(
+                  () ->
+                      jpaTm()
+                          .getEntityManager()
+                          .createQuery(
+                              String.format("SELECT e FROM %s e", getJpaEntityName(entityType)),
+                              entityType)
+                          .setMaxResults(1)
+                          .getResultList());
+      return !result.isEmpty() && entityType.isInstance(result.get(0));
+    } catch (RuntimeException e) {
+      // See if this was caused by a "relation does not exist" error.
+      Throwable cause = e;
+      while ((cause = cause.getCause()) != null) {
+        if (cause instanceof SQLException
+            && cause.getMessage().matches("(?s).*relation .* does not exist.*")) {
+          throw new RuntimeException(
+              "SQLException occurred.  If you've updated the set of entities, make sure you've "
+                  + "also updated the golden schema.  See db/README.md for details.",
+              e);
+        }
+      }
+
+      throw e;
+    }
   }
 
   private static String getJpaEntityName(Class entityType) {
