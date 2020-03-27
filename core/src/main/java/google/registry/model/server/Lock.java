@@ -202,7 +202,8 @@ public class Lock extends ImmutableObject implements Serializable {
                         .transact(
                             () -> {
                               Optional<google.registry.schema.server.Lock> cloudSqlLockOptional =
-                                  LockDao.load(resourceName, tld);
+                                  LockDao.load(
+                                      resourceName, Optional.ofNullable(tld).orElse("GLOBAL"));
                               LockDao.compare(Optional.ofNullable(lock), cloudSqlLockOptional);
                             });
                   } catch (Exception e) {
@@ -275,7 +276,7 @@ public class Lock extends ImmutableObject implements Serializable {
                     .transact(
                         () -> {
                           Optional<google.registry.schema.server.Lock> cloudSqlLockOptional =
-                              LockDao.load(resourceName, tld);
+                              LockDao.load(resourceName, Optional.ofNullable(tld).orElse("GLOBAL"));
                           LockDao.compare(Optional.ofNullable(loadedLock), cloudSqlLockOptional);
                         });
               } catch (Exception e) {
