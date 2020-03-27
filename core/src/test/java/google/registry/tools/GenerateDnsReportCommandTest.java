@@ -32,7 +32,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.net.InetAddresses;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
@@ -144,15 +143,23 @@ public class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsRep
             .build());
     nameserver3 = persistActiveHost("ns1.google.com");
     nameserver4 = persistActiveHost("ns2.google.com");
-    domain1 = persistResource(newDomainBase("example.xn--q9jyb4c").asBuilder()
-        .setNameservers(ImmutableSet.of(Key.create(nameserver1), Key.create(nameserver2)))
-        .setDsData(ImmutableSet.of(
-            DelegationSignerData.create(12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC")),
-            DelegationSignerData.create(56789, 2, 4, base16().decode("69FD46E6C4A45C55D4AC"))))
-        .build());
-    persistResource(newDomainBase("foobar.xn--q9jyb4c").asBuilder()
-        .setNameservers(ImmutableSet.of(Key.create(nameserver3), Key.create(nameserver4)))
-        .build());
+    domain1 =
+        persistResource(
+            newDomainBase("example.xn--q9jyb4c")
+                .asBuilder()
+                .setNameservers(ImmutableSet.of(nameserver1.createKey(), nameserver2.createKey()))
+                .setDsData(
+                    ImmutableSet.of(
+                        DelegationSignerData.create(
+                            12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC")),
+                        DelegationSignerData.create(
+                            56789, 2, 4, base16().decode("69FD46E6C4A45C55D4AC"))))
+                .build());
+    persistResource(
+        newDomainBase("foobar.xn--q9jyb4c")
+            .asBuilder()
+            .setNameservers(ImmutableSet.of(nameserver3.createKey(), nameserver4.createKey()))
+            .build());
     // Persist a domain in a different tld that should be ignored.
     persistActiveDomain("should-be-ignored.example");
   }

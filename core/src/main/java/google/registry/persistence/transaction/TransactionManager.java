@@ -110,6 +110,13 @@ public interface TransactionManager {
   /** Loads the entity by its id, returns empty if the entity doesn't exist. */
   <T> Optional<T> load(VKey<T> key);
 
+  /**
+   * Leads the set of entities by their key id.
+   *
+   * @throws NoSuchElementException if any of the keys are not found.
+   */
+  <T> ImmutableList<T> load(Iterable<VKey<T>> keys);
+
   /** Loads all entities of the given type, returns empty if there is no such entity. */
   <T> ImmutableList<T> loadAll(Class<T> clazz);
 

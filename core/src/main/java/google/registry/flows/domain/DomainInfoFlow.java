@@ -14,7 +14,6 @@
 
 package google.registry.flows.domain;
 
-import static com.google.common.collect.Sets.union;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
@@ -23,6 +22,7 @@ import static google.registry.flows.domain.DomainFlowUtils.handleFeeRequest;
 import static google.registry.flows.domain.DomainFlowUtils.loadForeignKeyedDesignatedContacts;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -102,8 +102,9 @@ public final class DomainInfoFlow implements Flow {
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder().setDomain(domain).build());
     // Prefetch all referenced resources. Calling values() blocks until loading is done.
-    ofy().load()
-        .values(union(domain.getNameservers(), domain.getReferencedContacts())).values();
+    // We do nameservers separately since they've been converted to VKey.
+    tm().load(domain.getNameservers());
+    ofy().load().values(domain.getReferencedContacts()).values();
     // Registrars can only see a few fields on unauthorized domains.
     // This is a policy decision that is left up to us by the rfcs.
     DomainInfoData.Builder infoBuilder = DomainInfoData.newBuilder()

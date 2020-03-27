@@ -30,6 +30,7 @@ import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
+import google.registry.persistence.VKey;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.Retrier;
@@ -43,6 +44,7 @@ public final class AsyncTaskEnqueuer {
 
   /** The HTTP parameter names used by async flows. */
   public static final String PARAM_RESOURCE_KEY = "resourceKey";
+
   public static final String PARAM_REQUESTING_CLIENT_ID = "requestingClientId";
   public static final String PARAM_CLIENT_TRANSACTION_ID = "clientTransactionId";
   public static final String PARAM_SERVER_TRANSACTION_ID = "serverTransactionId";
@@ -53,6 +55,7 @@ public final class AsyncTaskEnqueuer {
 
   /** The task queue names used by async flows. */
   public static final String QUEUE_ASYNC_ACTIONS = "async-actions";
+
   public static final String QUEUE_ASYNC_DELETE = "async-delete-pull";
   public static final String QUEUE_ASYNC_HOST_RENAME = "async-host-rename-pull";
 
@@ -149,12 +152,12 @@ public final class AsyncTaskEnqueuer {
 
   /** Enqueues a task to asynchronously refresh DNS for a renamed host. */
   public void enqueueAsyncDnsRefresh(HostResource host, DateTime now) {
-    Key<HostResource> hostKey = Key.create(host);
+    VKey<HostResource> hostKey = host.createKey();
     logger.atInfo().log("Enqueuing async DNS refresh for renamed host %s.", hostKey);
     addTaskToQueueWithRetry(
         asyncDnsRefreshPullQueue,
         TaskOptions.Builder.withMethod(Method.PULL)
-            .param(PARAM_HOST_KEY, hostKey.getString())
+            .param(PARAM_HOST_KEY, hostKey.getOfyKey().getString())
             .param(PARAM_REQUESTED_TIME, now.toString()));
   }
 

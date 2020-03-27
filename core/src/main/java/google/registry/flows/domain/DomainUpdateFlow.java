@@ -15,6 +15,7 @@
 package google.registry.flows.domain;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.symmetricDifference;
 import static com.google.common.collect.Sets.union;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
@@ -71,9 +72,11 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.EppResponse;
+import google.registry.model.host.HostResource;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
+import google.registry.persistence.VKey;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -243,8 +246,14 @@ public final class DomainUpdateFlow implements TransactionalFlow {
             .setLastEppUpdateClientId(clientId)
             .addStatusValues(add.getStatusValues())
             .removeStatusValues(remove.getStatusValues())
-            .addNameservers(add.getNameservers())
-            .removeNameservers(remove.getNameservers())
+            .addNameservers(
+                add.getNameservers().stream()
+                    .map(key -> VKey.createOfy(HostResource.class, key))
+                    .collect(toImmutableSet()))
+            .removeNameservers(
+                remove.getNameservers().stream()
+                    .map(key -> VKey.createOfy(HostResource.class, key))
+                    .collect(toImmutableSet()))
             .addContacts(add.getContacts())
             .removeContacts(remove.getContacts())
             .setRegistrant(firstNonNull(change.getRegistrant(), domain.getRegistrant()))

@@ -42,8 +42,10 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
+import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.EppResource;
@@ -63,6 +65,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.registry.Registry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import google.registry.util.CollectionUtils;
 import java.util.HashSet;
 import java.util.Objects;
@@ -130,8 +133,15 @@ public class DomainBase extends EppResource
   @Index
   String tld;
 
-  /** References to hosts that are the nameservers for the domain. */
+  /**
+   * References to hosts that are the nameservers for the domain.
+   *
+   * <p>This is a legacy field: we have to preserve it because it is still persisted and indexed in
+   * the datastore, but all external references go through nsHostVKeys.
+   */
   @Index @ElementCollection @Transient Set<Key<HostResource>> nsHosts;
+
+  @Ignore @Transient Set<VKey<HostResource>> nsHostVKeys;
 
   /**
    * The union of the contacts visible via {@link #getContacts} and {@link #getRegistrant}.
@@ -240,6 +250,14 @@ public class DomainBase extends EppResource
    */
   DateTime lastTransferTime;
 
+  @OnLoad
+  void load() {
+    nsHostVKeys =
+        nullToEmptyImmutableCopy(nsHosts).stream()
+            .map(hostKey -> VKey.createOfy(HostResource.class, hostKey))
+            .collect(toImmutableSet());
+  }
+
   public ImmutableSet<String> getSubordinateHosts() {
     return nullToEmptyImmutableCopy(subordinateHosts);
   }
@@ -299,8 +317,10 @@ public class DomainBase extends EppResource
     return idnTableName;
   }
 
-  public ImmutableSet<Key<HostResource>> getNameservers() {
-    return nullToEmptyImmutableCopy(nsHosts);
+  public ImmutableSet<VKey<HostResource>> getNameservers() {
+    // Since nsHostVKeys gets initialized both from setNameservers() and the OnLoad method, this
+    // should always be valid.
+    return nullToEmptyImmutableCopy(nsHostVKeys);
   }
 
   public final String getCurrentSponsorClientId() {
@@ -482,7 +502,7 @@ public class DomainBase extends EppResource
   public ImmutableSortedSet<String> loadNameserverFullyQualifiedHostNames() {
     return ofy()
         .load()
-        .keys(getNameservers())
+        .keys(getNameservers().stream().map(VKey::getOfyKey).collect(toImmutableSet()))
         .values()
         .stream()
         .map(HostResource::getFullyQualifiedHostName)
@@ -542,6 +562,14 @@ public class DomainBase extends EppResource
 
     Builder(DomainBase instance) {
       super(instance);
+
+      // Convert nsHosts to nsHostVKeys.
+      if (instance.nsHosts != null) {
+        instance.nsHostVKeys =
+            instance.nsHosts.stream()
+                .map(key -> VKey.createOfy(HostResource.class, key))
+                .collect(toImmutableSet());
+      }
     }
 
     @Override
@@ -557,7 +585,7 @@ public class DomainBase extends EppResource
       } else {  // There are nameservers, so make sure INACTIVE isn't there.
         removeStatusValue(StatusValue.INACTIVE);
       }
-      
+
       checkArgumentNotNull(
           emptyToNull(instance.fullyQualifiedDomainName), "Missing fullyQualifiedDomainName");
       checkArgument(instance.allContacts.stream().anyMatch(IS_REGISTRANT), "Missing registrant");
@@ -591,30 +619,45 @@ public class DomainBase extends EppResource
       return thisCastToDerived();
     }
 
-    public Builder setNameservers(Key<HostResource> nameserver) {
-      getInstance().nsHosts = ImmutableSet.of(nameserver);
+    public Builder setNameservers(VKey<HostResource> nameserver) {
+      Optional<Key<HostResource>> nsKey = nameserver.maybeGetOfyKey();
+      if (nsKey.isPresent()) {
+        getInstance().nsHosts = ImmutableSet.of(nsKey.get());
+      } else {
+        getInstance().nsHosts = null;
+      }
+      getInstance().nsHostVKeys = ImmutableSet.of(nameserver);
       return thisCastToDerived();
     }
 
-    public Builder setNameservers(ImmutableSet<Key<HostResource>> nameservers) {
-      getInstance().nsHosts = forceEmptyToNull(nameservers);
+    public Builder setNameservers(ImmutableSet<VKey<HostResource>> nameservers) {
+      // If we have all of the ofy keys, we can set nsHosts.  Otherwise, make it null.
+      if (nameservers != null
+          && nameservers.stream().allMatch(key -> key.maybeGetOfyKey().isPresent())) {
+        getInstance().nsHosts =
+            nameservers.stream().map(key -> key.getOfyKey()).collect(toImmutableSet());
+      } else {
+        getInstance().nsHosts = null;
+      }
+
+      getInstance().nsHostVKeys = forceEmptyToNull(nameservers);
       return thisCastToDerived();
     }
 
-    public Builder addNameserver(Key<HostResource> nameserver) {
+    public Builder addNameserver(VKey<HostResource> nameserver) {
       return addNameservers(ImmutableSet.of(nameserver));
     }
 
-    public Builder addNameservers(ImmutableSet<Key<HostResource>> nameservers) {
+    public Builder addNameservers(ImmutableSet<VKey<HostResource>> nameservers) {
       return setNameservers(
           ImmutableSet.copyOf(union(getInstance().getNameservers(), nameservers)));
     }
 
-    public Builder removeNameserver(Key<HostResource> nameserver) {
+    public Builder removeNameserver(VKey<HostResource> nameserver) {
       return removeNameservers(ImmutableSet.of(nameserver));
     }
 
-    public Builder removeNameservers(ImmutableSet<Key<HostResource>> nameservers) {
+    public Builder removeNameservers(ImmutableSet<VKey<HostResource>> nameservers) {
       return setNameservers(
           ImmutableSet.copyOf(difference(getInstance().getNameservers(), nameservers)));
     }

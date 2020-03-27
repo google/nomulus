@@ -284,7 +284,7 @@ public class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Hos
     persistResource(
         newDomainBase("example.tld")
             .asBuilder()
-            .setNameservers(ImmutableSet.of(Key.create(persistActiveHost("ns1.example.tld"))))
+            .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createKey()))
             .build());
     EppException thrown = assertThrows(ResourceToDeleteIsReferencedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();

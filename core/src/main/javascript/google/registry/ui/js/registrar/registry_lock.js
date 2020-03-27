@@ -121,7 +121,10 @@ registry.registrar.RegistryLock.prototype.showModal_ = function(targetElement, d
   if (domain == null) {
     goog.dom.getRequiredElement('domain-lock-input-value').focus();
   } else {
-    goog.dom.getRequiredElement('domain-lock-password').focus();
+    var passwordElem = goog.dom.getElement('domain-lock-password');
+    if (passwordElem != null) {
+      passwordElem.focus();
+    }
   }
   // delete the modal when the user clicks the cancel button
   goog.events.listen(
@@ -162,7 +165,8 @@ registry.registrar.RegistryLock.prototype.showModal_ = function(targetElement, d
  */
 registry.registrar.RegistryLock.prototype.lockOrUnlockDomain_ = function(isLock, e) {
   var domain = goog.dom.getRequiredElement('domain-lock-input-value').value;
-  var password = goog.dom.getRequiredElement('domain-lock-password').value;
+  var passwordElem = goog.dom.getElement('domain-lock-password');
+  var password = passwordElem == null ? null : passwordElem.value;
   goog.net.XhrIo.send('/registry-lock-post',
       e => this.fillLocksPage_(e),
       'POST',

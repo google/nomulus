@@ -24,10 +24,10 @@ import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
+import google.registry.persistence.VKey;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,9 +53,9 @@ public class UniformRapidSuspensionCommandTest
   }
 
   private void persistDomainWithHosts(HostResource... hosts) {
-    ImmutableSet.Builder<Key<HostResource>> hostRefs = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<VKey<HostResource>> hostRefs = new ImmutableSet.Builder<>();
     for (HostResource host : hosts) {
-      hostRefs.add(Key.create(host));
+      hostRefs.add(host.createKey());
     }
     persistResource(newDomainBase("evil.tld").asBuilder()
         .setNameservers(hostRefs.build())

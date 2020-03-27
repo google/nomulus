@@ -40,6 +40,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import google.registry.util.Idn;
 import java.net.InetAddress;
 import java.util.List;
@@ -374,12 +375,12 @@ public final class FullFieldsTestEntityHelper {
       builder.setContacts(contactsBuilder.build());
     }
     if ((ns1 != null) || (ns2 != null)) {
-      ImmutableSet.Builder<Key<HostResource>> nsBuilder = new ImmutableSet.Builder<>();
+      ImmutableSet.Builder<VKey<HostResource>> nsBuilder = new ImmutableSet.Builder<>();
       if (ns1 != null) {
-        nsBuilder.add(Key.create(ns1));
+        nsBuilder.add(ns1.createKey());
       }
       if (ns2 != null) {
-        nsBuilder.add(Key.create(ns2));
+        nsBuilder.add(ns2.createKey());
       }
       builder.setNameservers(nsBuilder.build());
     }

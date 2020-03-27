@@ -20,7 +20,7 @@ import static com.google.common.collect.Iterators.filter;
 import static com.google.common.io.BaseEncoding.base16;
 import static google.registry.mapreduce.inputs.EppResourceInputs.createEntityInput;
 import static google.registry.model.EppResourceUtils.loadAtPointInTime;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
@@ -214,7 +214,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
     private void emitForSubordinateHosts(DomainBase domain) {
       ImmutableSet<String> subordinateHosts = domain.getSubordinateHosts();
       if (!subordinateHosts.isEmpty()) {
-        for (HostResource unprojectedHost : ofy().load().keys(domain.getNameservers()).values()) {
+        for (HostResource unprojectedHost : tm().load(domain.getNameservers())) {
           HostResource host = loadAtPointInTime(unprojectedHost, exportTime).now();
           // A null means the host was deleted (or not created) at this time.
           if ((host != null) && subordinateHosts.contains(host.getFullyQualifiedHostName())) {
@@ -283,7 +283,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
       Duration dnsDefaultDsTtl) {
     StringBuilder result = new StringBuilder();
     String domainLabel = stripTld(domain.getFullyQualifiedDomainName(), domain.getTld());
-    for (HostResource nameserver : ofy().load().keys(domain.getNameservers()).values()) {
+    for (HostResource nameserver : tm().load(domain.getNameservers())) {
       result.append(String.format(
           NS_FORMAT,
           domainLabel,

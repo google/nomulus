@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.ADMIN;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
 import static google.registry.testing.AppEngineRule.makeRegistrar2;
+import static google.registry.testing.AppEngineRule.makeRegistrarContact2;
 import static google.registry.testing.AppEngineRule.makeRegistrarContact3;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
@@ -287,6 +288,8 @@ public final class RegistryLockGetActionTest {
   public void testSuccess_lockAllowedForAdmin() {
     // Locks are allowed for admins even when they're not enabled for the registrar
     persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(false).build());
+    // disallow the other user
+    persistResource(makeRegistrarContact2().asBuilder().setGaeUserId(null).build());
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, true));
     accessor =
         AuthenticatedRegistrarAccessor.createForTesting(

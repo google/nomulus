@@ -195,7 +195,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
         newDomainBase("test.xn--q9jyb4c")
             .asBuilder()
             .setDeletionTime(END_OF_TIME)
-            .setNameservers(ImmutableSet.of(Key.create(host)))
+            .setNameservers(ImmutableSet.of(host.createKey()))
             .build());
     HostResource renamedHost = doSuccessfulTest();
     assertThat(renamedHost.isSubordinate()).isTrue();

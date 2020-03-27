@@ -36,6 +36,7 @@ import com.googlecode.objectify.impl.translate.opt.joda.MoneyStringTranslatorFac
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.EntityClasses;
 import google.registry.model.ImmutableObject;
+import google.registry.model.host.HostResource;
 import google.registry.model.translators.BloomFilterOfStringTranslatorFactory;
 import google.registry.model.translators.CidrAddressBlockTranslatorFactory;
 import google.registry.model.translators.CommitLogRevisionsTranslatorFactory;
@@ -45,6 +46,7 @@ import google.registry.model.translators.DurationTranslatorFactory;
 import google.registry.model.translators.InetAddressTranslatorFactory;
 import google.registry.model.translators.ReadableInstantUtcTranslatorFactory;
 import google.registry.model.translators.UpdateAutoTimestampTranslatorFactory;
+import google.registry.model.translators.VKeyTranslatorFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -117,17 +119,19 @@ public class ObjectifyService {
 
   /** Register translators that allow less common types to be stored directly in Datastore. */
   private static void registerTranslators() {
-    for (TranslatorFactory<?> translatorFactory : ImmutableList.of(
-        new BloomFilterOfStringTranslatorFactory(),
-        new CidrAddressBlockTranslatorFactory(),
-        new CommitLogRevisionsTranslatorFactory(),
-        new CreateAutoTimestampTranslatorFactory(),
-        new CurrencyUnitTranslatorFactory(),
-        new DurationTranslatorFactory(),
-        new InetAddressTranslatorFactory(),
-        new MoneyStringTranslatorFactory(),
-        new ReadableInstantUtcTranslatorFactory(),
-        new UpdateAutoTimestampTranslatorFactory())) {
+    for (TranslatorFactory<?> translatorFactory :
+        ImmutableList.of(
+            new BloomFilterOfStringTranslatorFactory(),
+            new CidrAddressBlockTranslatorFactory(),
+            new CommitLogRevisionsTranslatorFactory(),
+            new CreateAutoTimestampTranslatorFactory(),
+            new CurrencyUnitTranslatorFactory(),
+            new DurationTranslatorFactory(),
+            new InetAddressTranslatorFactory(),
+            new MoneyStringTranslatorFactory(),
+            new ReadableInstantUtcTranslatorFactory(),
+            new VKeyTranslatorFactory<HostResource>(HostResource.class),
+            new UpdateAutoTimestampTranslatorFactory())) {
       factory().getTranslators().add(translatorFactory);
     }
   }

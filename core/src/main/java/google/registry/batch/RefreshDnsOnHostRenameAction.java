@@ -52,6 +52,7 @@ import google.registry.mapreduce.inputs.NullInput;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.server.Lock;
+import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -206,7 +207,9 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
       Key<HostResource> referencingHostKey = null;
       for (DnsRefreshRequest request : refreshRequests) {
         if (isActive(domain, request.lastUpdateTime())
-            && domain.getNameservers().contains(request.hostKey())) {
+            && domain
+                .getNameservers()
+                .contains(VKey.createOfy(HostResource.class, request.hostKey()))) {
           referencingHostKey = request.hostKey();
           break;
         }

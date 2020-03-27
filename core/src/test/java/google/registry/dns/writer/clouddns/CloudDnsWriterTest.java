@@ -38,12 +38,12 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.RateLimiter;
-import com.googlecode.objectify.Key;
 import google.registry.dns.writer.clouddns.CloudDnsWriter.ZoneStateException;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
+import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineRule;
 import google.registry.util.Retrier;
 import google.registry.util.SystemClock;
@@ -292,9 +292,9 @@ public class CloudDnsWriterTest {
       dsDataBuilder.add(DelegationSignerData.create(i, 3, 1, base16().decode("1234567890ABCDEF")));
     }
 
-    ImmutableSet.Builder<Key<HostResource>> hostResourceRefBuilder = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<VKey<HostResource>> hostResourceRefBuilder = new ImmutableSet.Builder<>();
     for (HostResource nameserver : nameservers) {
-      hostResourceRefBuilder.add(Key.create(nameserver));
+      hostResourceRefBuilder.add(nameserver.createKey());
     }
 
     return newDomainBase(domainName)

@@ -80,11 +80,9 @@ public final class ResourceFlowUtils {
       final Function<DomainBase, ImmutableSet<?>> getPotentialReferences) throws EppException {
     // Enter a transactionless context briefly.
     EppException failfastException =
-        tm()
-            .doTransactionless(
+        tm().doTransactionless(
                 () -> {
-                  final ForeignKeyIndex<R> fki =
-                      ForeignKeyIndex.load(resourceClass, targetId, now);
+                  final ForeignKeyIndex<R> fki = ForeignKeyIndex.load(resourceClass, targetId, now);
                   if (fki == null) {
                     return new ResourceDoesNotExistException(resourceClass, targetId);
                   }
@@ -99,8 +97,7 @@ public final class ResourceFlowUtils {
                           .limit(FAILFAST_CHECK_COUNT)
                           .keys();
                   Predicate<DomainBase> predicate =
-                      domain ->
-                          getPotentialReferences.apply(domain).contains(fki.getResourceKey());
+                      domain -> getPotentialReferences.apply(domain).contains(fki.getResourceKey());
                   return ofy().load().keys(keys).values().stream().anyMatch(predicate)
                       ? new ResourceToDeleteIsReferencedException()
                       : null;
