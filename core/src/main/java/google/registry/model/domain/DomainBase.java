@@ -76,6 +76,7 @@ import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.Transient;
@@ -141,7 +142,10 @@ public class DomainBase extends EppResource
    */
   @Index @ElementCollection @Transient Set<Key<HostResource>> nsHosts;
 
-  @Ignore @Transient Set<VKey<HostResource>> nsHostVKeys;
+  @Ignore
+  @ElementCollection
+  @Convert(converter = HostResource.VKeyHostResourceConverter.class)
+  Set<VKey<HostResource>> nsHostVKeys;
 
   /**
    * The union of the contacts visible via {@link #getContacts} and {@link #getRegistrant}.
