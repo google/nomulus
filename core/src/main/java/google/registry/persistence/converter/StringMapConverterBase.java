@@ -18,7 +18,6 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
 import google.registry.persistence.converter.StringMapDescriptor.StringMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import javax.persistence.AttributeConverter;
 
 /**
@@ -28,9 +27,9 @@ import javax.persistence.AttributeConverter;
 public abstract class StringMapConverterBase<K, V>
     implements AttributeConverter<Map<K, V>, StringMap> {
 
-  abstract Entry<String, String> convertToDatabaseMapEntry(Entry<K, V> entry);
+  abstract Map.Entry<String, String> convertToDatabaseMapEntry(Map.Entry<K, V> entry);
 
-  abstract Entry<K, V> convertToEntityMapEntry(Entry<String, String> entry);
+  abstract Map.Entry<K, V> convertToEntityMapEntry(Map.Entry<String, String> entry);
 
   @Override
   public StringMap convertToDatabaseColumn(Map<K, V> attribute) {
@@ -39,7 +38,7 @@ public abstract class StringMapConverterBase<K, V>
         : StringMap.create(
             attribute.entrySet().stream()
                 .map(this::convertToDatabaseMapEntry)
-                .collect(toImmutableMap(Entry::getKey, Entry::getValue)));
+                .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue)));
   }
 
   @Override
@@ -48,6 +47,6 @@ public abstract class StringMapConverterBase<K, V>
         ? null
         : dbData.getMap().entrySet().stream()
             .map(this::convertToEntityMapEntry)
-            .collect(toImmutableMap(Entry::getKey, Entry::getValue));
+            .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 }

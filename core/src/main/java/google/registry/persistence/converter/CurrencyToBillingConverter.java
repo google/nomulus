@@ -18,7 +18,6 @@ import static google.registry.model.registrar.Registrar.BillingAccountEntry;
 
 import com.google.common.collect.Maps;
 import java.util.Map;
-import java.util.Map.Entry;
 import javax.persistence.Converter;
 import org.joda.money.CurrencyUnit;
 
@@ -28,12 +27,14 @@ public class CurrencyToBillingConverter
     extends StringMapConverterBase<CurrencyUnit, BillingAccountEntry> {
 
   @Override
-  Entry<String, String> convertToDatabaseMapEntry(Entry<CurrencyUnit, BillingAccountEntry> entry) {
+  Map.Entry<String, String> convertToDatabaseMapEntry(
+      Map.Entry<CurrencyUnit, BillingAccountEntry> entry) {
     return Maps.immutableEntry(entry.getKey().getCode(), entry.getValue().getAccountId());
   }
 
   @Override
-  Entry<CurrencyUnit, BillingAccountEntry> convertToEntityMapEntry(Entry<String, String> entry) {
+  Map.Entry<CurrencyUnit, BillingAccountEntry> convertToEntityMapEntry(
+      Map.Entry<String, String> entry) {
     CurrencyUnit currencyUnit = CurrencyUnit.of(entry.getKey());
     BillingAccountEntry billingAccountEntry =
         new BillingAccountEntry(currencyUnit, entry.getValue());
