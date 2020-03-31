@@ -1,8 +1,9 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-com.fasterxml.jackson.core:jackson-core:2.9.9
-com.google.api-client:google-api-client:1.29.2
+androidx.annotation:annotation:1.1.0
+com.fasterxml.jackson.core:jackson-core:2.10.2
+com.google.api-client:google-api-client:1.30.8
 com.google.appengine:appengine-api-1.0-sdk:1.9.48
 com.google.appengine:appengine-testing:1.9.58
 com.google.auth:google-auth-library-credentials:0.16.1
@@ -16,15 +17,15 @@ com.google.flogger:flogger:0.1
 com.google.guava:failureaccess:1.0.1
 com.google.guava:guava:28.2-jre
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava
-com.google.http-client:google-http-client-jackson2:1.30.1
-com.google.http-client:google-http-client:1.30.1
+com.google.http-client:google-http-client-jackson2:1.34.1
+com.google.http-client:google-http-client:1.34.1
 com.google.j2objc:j2objc-annotations:1.3
-com.google.oauth-client:google-oauth-client:1.29.2
+com.google.oauth-client:google-oauth-client:1.30.5
 com.google.re2j:re2j:1.1
 com.ibm.icu:icu4j:57.1
 commons-codec:commons-codec:1.11
 commons-logging:commons-logging:1.2
-io.grpc:grpc-context:1.19.0
+io.grpc:grpc-context:1.22.1
 io.netty:netty-buffer:4.1.31.Final
 io.netty:netty-codec-http:4.1.31.Final
 io.netty:netty-codec:4.1.31.Final
@@ -32,15 +33,15 @@ io.netty:netty-common:4.1.31.Final
 io.netty:netty-handler:4.1.31.Final
 io.netty:netty-resolver:4.1.31.Final
 io.netty:netty-transport:4.1.31.Final
-io.opencensus:opencensus-api:0.21.0
-io.opencensus:opencensus-contrib-http-util:0.21.0
+io.opencensus:opencensus-api:0.24.0
+io.opencensus:opencensus-contrib-http-util:0.24.0
 javax.activation:activation:1.1
 javax.inject:javax.inject:1
 javax.mail:mail:1.4
 javax.xml.bind:jaxb-api:2.3.0
 joda-time:joda-time:2.9.2
-org.apache.httpcomponents:httpclient:4.5.8
-org.apache.httpcomponents:httpcore:4.4.11
+org.apache.httpcomponents:httpclient:4.5.11
+org.apache.httpcomponents:httpcore:4.4.13
 org.bouncycastle:bcpkix-jdk15on:1.61
 org.bouncycastle:bcprov-jdk15on:1.61
 org.checkerframework:checker-qual:2.10.0

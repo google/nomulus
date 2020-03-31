@@ -177,6 +177,8 @@ dependencies {
 
   compile deps['com.beust:jcommander']
   compile deps['com.google.api-client:google-api-client']
+  compile deps['com.google.api-client:google-api-client-appengine']
+  compile deps['com.google.api-client:google-api-client-servlet']
   compile deps['com.google.monitoring-client:metrics']
   compile deps['com.google.monitoring-client:stackdriver']
   compile deps['com.google.api-client:google-api-client-java6']
@@ -216,6 +218,8 @@ dependencies {
   compile deps['com.google.oauth-client:google-oauth-client']
   compile deps['com.google.oauth-client:google-oauth-client-java6']
   compile deps['com.google.oauth-client:google-oauth-client-jetty']
+  compile deps['com.google.oauth-client:google-oauth-client-appengine']
+  compile deps['com.google.oauth-client:google-oauth-client-servlet']
   compile deps['com.google.re2j:re2j']
   compile deps['com.google.template:soy']
   compile deps['com.googlecode.json-simple:json-simple']
