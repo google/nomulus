@@ -44,7 +44,6 @@ public final class AsyncTaskEnqueuer {
 
   /** The HTTP parameter names used by async flows. */
   public static final String PARAM_RESOURCE_KEY = "resourceKey";
-
   public static final String PARAM_REQUESTING_CLIENT_ID = "requestingClientId";
   public static final String PARAM_CLIENT_TRANSACTION_ID = "clientTransactionId";
   public static final String PARAM_SERVER_TRANSACTION_ID = "serverTransactionId";
@@ -55,7 +54,6 @@ public final class AsyncTaskEnqueuer {
 
   /** The task queue names used by async flows. */
   public static final String QUEUE_ASYNC_ACTIONS = "async-actions";
-
   public static final String QUEUE_ASYNC_DELETE = "async-delete-pull";
   public static final String QUEUE_ASYNC_HOST_RENAME = "async-host-rename-pull";
 

@@ -120,41 +120,41 @@ public final class DomainLockUtils {
 
   /** Verifies and applies the unlock request previously requested by a user. */
   public RegistryLock verifyAndApplyUnlock(String verificationCode, boolean isAdmin) {
-    RegistryLock resultLock =
+    RegistryLock lock =
         jpaTm()
             .transact(
                 () -> {
                   DateTime now = jpaTm().getTransactionTime();
-                  RegistryLock lock = getByVerificationCode(verificationCode);
+                  RegistryLock previousLock = getByVerificationCode(verificationCode);
                   checkArgument(
-                      !lock.getUnlockCompletionTimestamp().isPresent(),
+                      !previousLock.getUnlockCompletionTimestamp().isPresent(),
                       "Domain %s is already unlocked",
-                      lock.getDomainName());
+                      previousLock.getDomainName());
 
                   checkArgument(
-                      !lock.isUnlockRequestExpired(now),
+                      !previousLock.isUnlockRequestExpired(now),
                       "The pending unlock has expired; please try again");
 
                   checkArgument(
-                      isAdmin || !lock.isSuperuser(),
+                      isAdmin || !previousLock.isSuperuser(),
                       "Non-admin user cannot complete admin unlock");
 
                   RegistryLock newLock =
                       RegistryLockDao.save(
-                          lock.asBuilder().setUnlockCompletionTimestamp(now).build());
+                          previousLock.asBuilder().setUnlockCompletionTimestamp(now).build());
                   tm().transact(() -> removeLockStatuses(newLock, isAdmin, now));
                   return newLock;
                 });
     // Submit relock outside of the transaction to make sure that it fully succeeded
-    submitRelockIfNecessary(resultLock);
-    return resultLock;
+    submitRelockIfNecessary(lock);
+    return lock;
   }
 
   /**
-   * Creates and applies a lock in one step -- this should only be used for admin actions, e.g.
-   * Nomulus tool commands or relocks.
+   * Creates and applies a lock in one step.
    *
-   * <p>Note: in the case of relocks, isAdmin is determined by the previous lock.
+   * <p>This should only be used for admin actions, e.g. Nomulus tool commands or relocks.
+   * Note: in the case of relocks, isAdmin is determined by the previous lock.
    */
   public RegistryLock administrativelyApplyLock(
       String domainName, String registrarId, @Nullable String registrarPocId, boolean isAdmin) {
@@ -174,12 +174,13 @@ public final class DomainLockUtils {
   }
 
   /**
-   * Creates and applies an unlock in one step -- this should only be used for admin actions, e.g.
-   * Nomulus tool commands.
+   * Creates and applies an unlock in one step.
+   * 
+   * <p>This should only be used for admin actions, e.g. Nomulus tool commands.
    */
   public RegistryLock administrativelyApplyUnlock(
       String domainName, String registrarId, boolean isAdmin, Optional<Duration> relockDuration) {
-    RegistryLock resultLock =
+    RegistryLock lock =
         jpaTm()
             .transact(
                 () -> {
@@ -193,8 +194,8 @@ public final class DomainLockUtils {
                   return result;
                 });
     // Submit relock outside of the transaction to make sure that it fully succeeded
-    submitRelockIfNecessary(resultLock);
-    return resultLock;
+    submitRelockIfNecessary(lock);
+    return lock;
   }
 
   private void submitRelockIfNecessary(RegistryLock lock) {
