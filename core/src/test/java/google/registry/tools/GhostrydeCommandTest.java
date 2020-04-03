@@ -23,11 +23,8 @@ import google.registry.rde.Ghostryde;
 import google.registry.testing.BouncyCastleProviderRule;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.InjectRule;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,19 +58,12 @@ public class GhostrydeCommandTest extends CommandTestCase<GhostrydeCommand> {
   public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
 
   private Keyring keyring;
-  private PrintStream orgStdout;
 
   @Before
   public void before() {
     keyring = new FakeKeyringModule().get();
     command.rdeStagingDecryptionKey = keyring::getRdeStagingDecryptionKey;
     command.rdeStagingEncryptionKey = keyring::getRdeStagingEncryptionKey;
-    orgStdout = System.out;
-  }
-
-  @After
-  public void after() {
-    System.setOut(orgStdout);
   }
 
   @Test
@@ -153,9 +143,7 @@ public class GhostrydeCommandTest extends CommandTestCase<GhostrydeCommand> {
     Path inFile = tmpDir.newFolder().toPath().resolve("atrain.ghostryde");
     Files.write(
         inFile, Ghostryde.encode(SONG_BY_CHRISTINA_ROSSETTI, keyring.getRdeStagingEncryptionKey()));
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    System.setOut(new PrintStream(out));
     runCommand("--decrypt", "--input=" + inFile);
-    assertThat(out.toByteArray()).isEqualTo(SONG_BY_CHRISTINA_ROSSETTI);
+    assertThat(getStdoutAsString().getBytes(UTF_8)).isEqualTo(SONG_BY_CHRISTINA_ROSSETTI);
   }
 }

@@ -17,11 +17,15 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.io.Resources;
 import google.registry.testing.AppEngineRule;
 import google.registry.tools.LevelDbFileBuilder.Property;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
+import java.net.URL;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -35,18 +39,38 @@ public class CompareDbBackupsTest {
 
   // Capture standard output.
   private final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+  private PrintStream orgStdout;
 
   @Rule public final TemporaryFolder tempFs = new TemporaryFolder();
 
   @Rule
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
+  @Before
+  public void before() {
+    orgStdout = System.out;
+    System.setOut(new PrintStream(stdout));
+  }
+
+  @After
+  public void after() {
+    System.setOut(orgStdout);
+  }
+
   @Test
-  public void testCommand() throws Exception {
+  public void testLoadBackup() {
+    URL backupRootFolder = Resources.getResource("google/registry/tools/datastore-export");
+    CompareDbBackups.main(new String[] {backupRootFolder.getPath(), backupRootFolder.getPath()});
+    String output = new String(stdout.toByteArray(), UTF_8);
+    assertThat(output).containsMatch("Both sets have the same 41 entities");
+  }
+
+  @Test
+  public void testCompareBackups() throws Exception {
 
     // Create two directories corresponding to data dumps.
     File dump1 = tempFs.newFolder("dump1");
-    LevelDbFileBuilder builder = new LevelDbFileBuilder(new File(dump1, "data1"));
+    LevelDbFileBuilder builder = new LevelDbFileBuilder(new File(dump1, "output-data1"));
     builder.addEntityProto(
         BASE_ID,
         Property.create("eeny", 100L),
@@ -60,7 +84,7 @@ public class CompareDbBackupsTest {
     builder.build();
 
     File dump2 = tempFs.newFolder("dump2");
-    builder = new LevelDbFileBuilder(new File(dump2, "data2"));
+    builder = new LevelDbFileBuilder(new File(dump2, "output-data2"));
     builder.addEntityProto(
         BASE_ID + 1,
         Property.create("moxey", 100L),
@@ -73,7 +97,6 @@ public class CompareDbBackupsTest {
         Property.create("strutz", 300L));
     builder.build();
 
-    System.setOut(new PrintStream(stdout));
     CompareDbBackups.main(new String[] {dump1.getCanonicalPath(), dump2.getCanonicalPath()});
     String output = new String(stdout.toByteArray(), UTF_8);
     assertThat(output)
