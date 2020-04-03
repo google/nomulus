@@ -72,6 +72,10 @@ dependencies {
     errorprone("com.google.errorprone:error_prone_core:2.3.3")
 }
 
+test {
+  useJUnitPlatform()
+}
+
 tasks.withType(JavaCompile).configureEach {
     // The -Werror flag causes Intellij to fail on deprecated api use.
     // Allow IDE user to turn off this flag by specifying a Gradle VM

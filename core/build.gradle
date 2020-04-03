@@ -646,6 +646,10 @@ artifacts {
  */
 class FilteringTest extends Test {
 
+  FilteringTest() {
+    useJUnitPlatform();
+  }
+
   private void applyTestFilter() {
     if (project.testFilter) {
       testNameIncludePatterns = project.testFilter.split(',')
