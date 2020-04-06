@@ -20,17 +20,18 @@ import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.function.Predicate;
 
-/** Utility class that accumulates Entity records from level db files. */
+/** Accumulates Entity records from level db files under a directory hierarchy. */
 class RecordAccumulator {
   private final LevelDbLogReader reader = new LevelDbLogReader();
 
   /** Recursively reads all records in the directory. */
-  public final RecordAccumulator readDirectory(File dir) {
+  public final RecordAccumulator readDirectory(File dir, Predicate<File> fileMatcher) {
     for (File child : dir.listFiles()) {
       if (child.isDirectory()) {
-        readDirectory(child);
-      } else if (child.isFile()) {
+        readDirectory(child, fileMatcher);
+      } else if (fileMatcher.test(child)) {
         try {
           reader.readFrom(new FileInputStream(child));
         } catch (IOException e) {
