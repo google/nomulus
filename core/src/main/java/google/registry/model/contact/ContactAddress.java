@@ -16,13 +16,14 @@ package google.registry.model.contact;
 
 import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.eppcommon.Address;
+import javax.persistence.Embeddable;
 
 /**
  * EPP Contact Address
  *
- * <p>This class is embedded inside the {@link PostalInfo} of an EPP contact to hold its
- * address. The fields are all defined in parent class {@link Address}, but the subclass is still
- * necessary to pick up the contact namespace.
+ * <p>This class is embedded inside the {@link PostalInfo} of an EPP contact to hold its address.
+ * The fields are all defined in parent class {@link Address}, but the subclass is still necessary
+ * to pick up the contact namespace.
  *
  * <p>This does not implement {@code Overlayable} because it is intended to be bulk replaced on
  * update.
@@ -30,6 +31,7 @@ import google.registry.model.eppcommon.Address;
  * @see PostalInfo
  */
 @Embed
+@Embeddable
 public class ContactAddress extends Address {
 
   /** Builder for {@link ContactAddress}. */

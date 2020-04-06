@@ -76,6 +76,59 @@ ALTER SEQUENCE public."ClaimsList_revision_id_seq" OWNED BY public."ClaimsList".
 
 
 --
+-- Name: Contact; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Contact" (
+    repo_id text NOT NULL,
+    creation_client_id text,
+    creation_time timestamp with time zone,
+    current_sponsor_client_id text,
+    deletion_time timestamp with time zone,
+    last_epp_update_client_id text,
+    last_epp_update_time timestamp with time zone,
+    statuses text[],
+    auth_info_repo_id text,
+    auth_info_value text,
+    contact_id text,
+    addr text[],
+    email_presence boolean,
+    fax_presence boolean,
+    flag boolean,
+    name text[],
+    org text[],
+    voice_presence boolean,
+    email text,
+    fax_phone_extension text,
+    fax_phone_number text,
+    i18n_postal_info_address_city text,
+    i18n_postal_info_address_country_code text,
+    i18n_postal_info_address_state text,
+    i18n_postal_info_address_street_line1 text,
+    i18n_postal_info_address_street_line2 text,
+    i18n_postal_info_address_street_line3 text,
+    i18n_postal_info_address_zip text,
+    i18n_postal_info_name text,
+    i18n_postal_info_org text,
+    i18n_postal_info_type integer,
+    last_transfer_time timestamp with time zone,
+    localized_postal_info_address_city text,
+    localized_postal_info_address_country_code text,
+    localized_postal_info_address_state text,
+    localized_postal_info_address_street_line1 text,
+    localized_postal_info_address_street_line2 text,
+    localized_postal_info_address_street_line3 text,
+    localized_postal_info_address_zip text,
+    localized_postal_info_name text,
+    localized_postal_info_org text,
+    localized_postal_info_type integer,
+    search_name text,
+    voice_phone_extension text,
+    voice_phone_number text
+);
+
+
+--
 -- Name: Cursor; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -415,6 +468,14 @@ ALTER TABLE ONLY public."ClaimsList"
 
 
 --
+-- Name: Contact Contact_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Contact"
+    ADD CONSTRAINT "Contact_pkey" PRIMARY KEY (repo_id);
+
+
+--
 -- Name: Cursor Cursor_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -511,10 +572,24 @@ ALTER TABLE ONLY public."RegistryLock"
 
 
 --
+-- Name: idx1p3esngcwwu6hstyua6itn6ff; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx1p3esngcwwu6hstyua6itn6ff ON public."Contact" USING btree (search_name);
+
+
+--
 -- Name: idx1rcgkdd777bpvj0r94sltwd5y; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx1rcgkdd777bpvj0r94sltwd5y ON public."Domain" USING btree (fully_qualified_domain_name);
+
+
+--
+-- Name: idx3y752kr9uh4kh6uig54vemx0l; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx3y752kr9uh4kh6uig54vemx0l ON public."Contact" USING btree (creation_time);
 
 
 --
@@ -550,6 +625,20 @@ CREATE INDEX idx_registry_lock_registrar_id ON public."RegistryLock" USING btree
 --
 
 CREATE INDEX idx_registry_lock_verification_code ON public."RegistryLock" USING btree (verification_code);
+
+
+--
+-- Name: idxbn8t4wp85fgxjl8q4ctlscx55; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxbn8t4wp85fgxjl8q4ctlscx55 ON public."Contact" USING btree (current_sponsor_client_id);
+
+
+--
+-- Name: idxn1f711wicdnooa2mqb7g1m55o; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxn1f711wicdnooa2mqb7g1m55o ON public."Contact" USING btree (deletion_time);
 
 
 --

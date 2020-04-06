@@ -17,6 +17,7 @@ package google.registry.model.contact;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
 import static google.registry.testing.DatastoreHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatastoreHelper.createTld;
@@ -37,87 +38,107 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import org.junit.Before;
 import org.junit.Test;
 
 /** Unit tests for {@link ContactResource}. */
 public class ContactResourceTest extends EntityTestCase {
+  ContactResource originalContact;
   ContactResource contactResource;
 
   @Before
   public void setUp() {
     createTld("foobar");
+    originalContact =
+        new ContactResource.Builder()
+            .setContactId("contact_id")
+            .setRepoId("1-FOOBAR")
+            .setCreationClientId("a registrar")
+            .setLastEppUpdateTime(fakeClock.nowUtc())
+            .setLastEppUpdateClientId("another registrar")
+            .setLastTransferTime(fakeClock.nowUtc())
+            .setPersistedCurrentSponsorClientId("a third registrar")
+            .setLocalizedPostalInfo(
+                new PostalInfo.Builder()
+                    .setType(Type.LOCALIZED)
+                    .setAddress(
+                        new ContactAddress.Builder()
+                            .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
+                            .setCity("New York")
+                            .setState("NY")
+                            .setZip("10011")
+                            .setCountryCode("US")
+                            .build())
+                    .build())
+            .setInternationalizedPostalInfo(
+                new PostalInfo.Builder()
+                    .setType(Type.INTERNATIONALIZED)
+                    .setAddress(
+                        new ContactAddress.Builder()
+                            .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
+                            .setCity("New York")
+                            .setState("NY")
+                            .setZip("10011")
+                            .setCountryCode("US")
+                            .build())
+                    .build())
+            .setVoiceNumber(new ContactPhoneNumber.Builder().setPhoneNumber("867-5309").build())
+            .setFaxNumber(
+                new ContactPhoneNumber.Builder()
+                    .setPhoneNumber("867-5309")
+                    .setExtension("1000")
+                    .build())
+            .setEmailAddress("jenny@example.com")
+            .setAuthInfo(ContactAuthInfo.create(PasswordAuth.create("passw0rd")))
+            .setDisclose(
+                new Disclose.Builder()
+                    .setVoice(new PresenceMarker())
+                    .setEmail(new PresenceMarker())
+                    .setFax(new PresenceMarker())
+                    .setFlag(true)
+                    .setAddrs(ImmutableList.of(PostalInfoChoice.create(Type.INTERNATIONALIZED)))
+                    .setNames(ImmutableList.of(PostalInfoChoice.create(Type.INTERNATIONALIZED)))
+                    .setOrgs(ImmutableList.of(PostalInfoChoice.create(Type.INTERNATIONALIZED)))
+                    .build())
+            .setStatusValues(ImmutableSet.of(StatusValue.OK))
+            .setTransferData(
+                new TransferData.Builder()
+                    .setGainingClientId("gaining")
+                    .setLosingClientId("losing")
+                    .setPendingTransferExpirationTime(fakeClock.nowUtc())
+                    .setServerApproveEntities(
+                        ImmutableSet.of(Key.create(BillingEvent.OneTime.class, 1)))
+                    .setTransferRequestTime(fakeClock.nowUtc())
+                    .setTransferStatus(TransferStatus.SERVER_APPROVED)
+                    .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
+                    .build())
+            .build();
     // Set up a new persisted ContactResource entity.
-    contactResource =
-        persistResource(
-            cloneAndSetAutoTimestamps(
-                new ContactResource.Builder()
-                    .setContactId("contact_id")
-                    .setRepoId("1-FOOBAR")
-                    .setCreationClientId("a registrar")
-                    .setLastEppUpdateTime(fakeClock.nowUtc())
-                    .setLastEppUpdateClientId("another registrar")
-                    .setLastTransferTime(fakeClock.nowUtc())
-                    .setPersistedCurrentSponsorClientId("a third registrar")
-                    .setLocalizedPostalInfo(
-                        new PostalInfo.Builder()
-                            .setType(Type.LOCALIZED)
-                            .setAddress(
-                                new ContactAddress.Builder()
-                                    .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
-                                    .setCity("New York")
-                                    .setState("NY")
-                                    .setZip("10011")
-                                    .setCountryCode("US")
-                                    .build())
-                            .build())
-                    .setInternationalizedPostalInfo(
-                        new PostalInfo.Builder()
-                            .setType(Type.INTERNATIONALIZED)
-                            .setAddress(
-                                new ContactAddress.Builder()
-                                    .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
-                                    .setCity("New York")
-                                    .setState("NY")
-                                    .setZip("10011")
-                                    .setCountryCode("US")
-                                    .build())
-                            .build())
-                    .setVoiceNumber(
-                        new ContactPhoneNumber.Builder().setPhoneNumber("867-5309").build())
-                    .setFaxNumber(
-                        new ContactPhoneNumber.Builder()
-                            .setPhoneNumber("867-5309")
-                            .setExtension("1000")
-                            .build())
-                    .setEmailAddress("jenny@example.com")
-                    .setAuthInfo(ContactAuthInfo.create(PasswordAuth.create("passw0rd")))
-                    .setDisclose(
-                        new Disclose.Builder()
-                            .setVoice(new PresenceMarker())
-                            .setEmail(new PresenceMarker())
-                            .setFax(new PresenceMarker())
-                            .setFlag(true)
-                            .setAddrs(
-                                ImmutableList.of(PostalInfoChoice.create(Type.INTERNATIONALIZED)))
-                            .setNames(
-                                ImmutableList.of(PostalInfoChoice.create(Type.INTERNATIONALIZED)))
-                            .setOrgs(
-                                ImmutableList.of(PostalInfoChoice.create(Type.INTERNATIONALIZED)))
-                            .build())
-                    .setStatusValues(ImmutableSet.of(StatusValue.OK))
-                    .setTransferData(
-                        new TransferData.Builder()
-                            .setGainingClientId("gaining")
-                            .setLosingClientId("losing")
-                            .setPendingTransferExpirationTime(fakeClock.nowUtc())
-                            .setServerApproveEntities(
-                                ImmutableSet.of(Key.create(BillingEvent.OneTime.class, 1)))
-                            .setTransferRequestTime(fakeClock.nowUtc())
-                            .setTransferStatus(TransferStatus.SERVER_APPROVED)
-                            .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
-                            .build())
-                    .build()));
+    contactResource = persistResource(cloneAndSetAutoTimestamps(originalContact));
+  }
+
+  @Test
+  public void testContactResourcePersistenceInCloudSql() {
+    jpaTm().transact(() -> jpaTm().saveNew(originalContact));
+    ContactResource persisted =
+        jpaTm()
+            .transact(
+                () ->
+                    jpaTm()
+                        .load(VKey.createSql(ContactResource.class, originalContact.getRepoId())))
+            .get();
+    // TODO(b/153378849): Remove the hard code for postal info after resolving the issue that
+    // @PostLoad doesn't work in Address
+    ContactResource fixed =
+        originalContact
+            .asBuilder()
+            .setCreationTime(persisted.getCreationTime())
+            .setInternationalizedPostalInfo(persisted.getInternationalizedPostalInfo())
+            .setLocalizedPostalInfo(persisted.getLocalizedPostalInfo())
+            .setTransferData(null)
+            .build();
+    assertThat(persisted).isEqualTo(fixed);
   }
 
   @Test

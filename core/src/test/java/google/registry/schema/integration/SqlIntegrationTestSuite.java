@@ -16,6 +16,7 @@ package google.registry.schema.integration;
 
 import static com.google.common.truth.Truth.assert_;
 
+import google.registry.model.contact.ContactResourceTest;
 import google.registry.model.domain.DomainBaseSqlTest;
 import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.persistence.transaction.JpaEntityCoverage;
@@ -68,6 +69,7 @@ import org.junit.runner.RunWith;
   // BeforeSuiteTest must be the first entry. See class javadoc for details.
   BeforeSuiteTest.class,
   ClaimsListDaoTest.class,
+  ContactResourceTest.class,
   CursorDaoTest.class,
   DomainBaseSqlTest.class,
   LockDaoTest.class,

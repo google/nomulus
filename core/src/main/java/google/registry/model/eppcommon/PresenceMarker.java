@@ -17,6 +17,7 @@ package google.registry.model.eppcommon;
 import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
 import java.io.Serializable;
+import javax.persistence.Embeddable;
 import javax.xml.bind.annotation.XmlTransient;
 
 /**
@@ -26,6 +27,7 @@ import javax.xml.bind.annotation.XmlTransient;
  * {@code <foo></foo>}, and will unmarshal always to {@code <foo/>}.
  */
 @Embed
+@Embeddable
 public class PresenceMarker extends ImmutableObject implements Serializable {
   @XmlTransient
   boolean marked = true;

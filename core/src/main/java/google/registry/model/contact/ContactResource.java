@@ -33,6 +33,11 @@ import google.registry.model.transfer.TransferData;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
+import javax.persistence.Column;
+import javax.persistence.Embedded;
+import javax.persistence.Transient;
 import javax.xml.bind.annotation.XmlElement;
 import org.joda.time.DateTime;
 
@@ -43,9 +48,18 @@ import org.joda.time.DateTime;
  */
 @ReportedOn
 @Entity
+@javax.persistence.Entity(name = "Contact")
+@javax.persistence.Table(
+    name = "Contact",
+    indexes = {
+      @javax.persistence.Index(columnList = "creationTime"),
+      @javax.persistence.Index(columnList = "currentSponsorClientId"),
+      @javax.persistence.Index(columnList = "deletionTime"),
+      @javax.persistence.Index(columnList = "searchName")
+    })
 @ExternalMessagingName("contact")
-public class ContactResource extends EppResource implements
-    ForeignKeyedEppResource, ResourceWithTransferData {
+public class ContactResource extends EppResource
+    implements ForeignKeyedEppResource, ResourceWithTransferData {
 
   /**
    * Unique identifier for this contact.
@@ -61,13 +75,67 @@ public class ContactResource extends EppResource implements
    * US-ASCII character set. Personal info; cleared by {@link Builder#wipeOut}.
    */
   @IgnoreSave(IfNull.class)
+  @Embedded
+  @AttributeOverrides({
+    @AttributeOverride(name = "name", column = @Column(name = "localized_postal_info_name")),
+    @AttributeOverride(name = "org", column = @Column(name = "localized_postal_info_org")),
+    @AttributeOverride(name = "type", column = @Column(name = "localized_postal_info_type")),
+    @AttributeOverride(
+        name = "address.streetLine1",
+        column = @Column(name = "localized_postal_info_address_street_line1")),
+    @AttributeOverride(
+        name = "address.streetLine2",
+        column = @Column(name = "localized_postal_info_address_street_line2")),
+    @AttributeOverride(
+        name = "address.streetLine3",
+        column = @Column(name = "localized_postal_info_address_street_line3")),
+    @AttributeOverride(
+        name = "address.city",
+        column = @Column(name = "localized_postal_info_address_city")),
+    @AttributeOverride(
+        name = "address.state",
+        column = @Column(name = "localized_postal_info_address_state")),
+    @AttributeOverride(
+        name = "address.zip",
+        column = @Column(name = "localized_postal_info_address_zip")),
+    @AttributeOverride(
+        name = "address.countryCode",
+        column = @Column(name = "localized_postal_info_address_country_code"))
+  })
   PostalInfo localizedPostalInfo;
 
   /**
-   * Internationalized postal info for the contact. Personal info; cleared by
-   * {@link Builder#wipeOut}.
+   * Internationalized postal info for the contact. Personal info; cleared by {@link
+   * Builder#wipeOut}.
    */
   @IgnoreSave(IfNull.class)
+  @Embedded
+  @AttributeOverrides({
+    @AttributeOverride(name = "name", column = @Column(name = "i18n_postal_info_name")),
+    @AttributeOverride(name = "org", column = @Column(name = "i18n_postal_info_org")),
+    @AttributeOverride(name = "type", column = @Column(name = "i18n_postal_info_type")),
+    @AttributeOverride(
+        name = "address.streetLine1",
+        column = @Column(name = "i18n_postal_info_address_street_line1")),
+    @AttributeOverride(
+        name = "address.streetLine2",
+        column = @Column(name = "i18n_postal_info_address_street_line2")),
+    @AttributeOverride(
+        name = "address.streetLine3",
+        column = @Column(name = "i18n_postal_info_address_street_line3")),
+    @AttributeOverride(
+        name = "address.city",
+        column = @Column(name = "i18n_postal_info_address_city")),
+    @AttributeOverride(
+        name = "address.state",
+        column = @Column(name = "i18n_postal_info_address_state")),
+    @AttributeOverride(
+        name = "address.zip",
+        column = @Column(name = "i18n_postal_info_address_zip")),
+    @AttributeOverride(
+        name = "address.countryCode",
+        column = @Column(name = "i18n_postal_info_address_country_code"))
+  })
   PostalInfo internationalizedPostalInfo;
 
   /**
@@ -80,10 +148,20 @@ public class ContactResource extends EppResource implements
 
   /** Contact’s voice number. Personal info; cleared by {@link Builder#wipeOut}. */
   @IgnoreSave(IfNull.class)
+  @Embedded
+  @AttributeOverrides({
+    @AttributeOverride(name = "phoneNumber", column = @Column(name = "voice_phone_number")),
+    @AttributeOverride(name = "extension", column = @Column(name = "voice_phone_extension")),
+  })
   ContactPhoneNumber voice;
 
   /** Contact’s fax number. Personal info; cleared by {@link Builder#wipeOut}. */
   @IgnoreSave(IfNull.class)
+  @Embedded
+  @AttributeOverrides({
+    @AttributeOverride(name = "phoneNumber", column = @Column(name = "fax_phone_number")),
+    @AttributeOverride(name = "extension", column = @Column(name = "fax_phone_extension")),
+  })
   ContactPhoneNumber fax;
 
   /** Contact’s email address. Personal info; cleared by {@link Builder#wipeOut}. */
@@ -91,10 +169,16 @@ public class ContactResource extends EppResource implements
   String email;
 
   /** Authorization info (aka transfer secret) of the contact. */
+  @Embedded
+  @AttributeOverrides({
+    @AttributeOverride(name = "pw.value", column = @Column(name = "auth_info_value")),
+    @AttributeOverride(name = "pw.repoId", column = @Column(name = "auth_info_repo_id")),
+  })
   ContactAuthInfo authInfo;
 
   /** Data about any pending or past transfers on this contact. */
-  TransferData transferData;
+  // TODO(b/153363295): Figure out how to persist transfer data
+  @Transient TransferData transferData;
 
   /**
    * The time that this resource was last transferred.
@@ -107,6 +191,12 @@ public class ContactResource extends EppResource implements
   // the wipeOut() function, so that data is not kept around for deleted contacts.
 
   /** Disclosure policy. */
+  @Embedded
+  @AttributeOverrides({
+    @AttributeOverride(name = "voice.marked", column = @Column(name = "voice_presence")),
+    @AttributeOverride(name = "fax.marked", column = @Column(name = "fax_presence")),
+    @AttributeOverride(name = "email.marked", column = @Column(name = "email_presence"))
+  })
   Disclose disclose;
 
   public String getContactId() {

@@ -22,11 +22,14 @@ import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppcommon.PresenceMarker;
 import java.util.List;
+import javax.persistence.Embeddable;
+import javax.persistence.Embedded;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
 
 /** The "discloseType" from {@link "http://tools.ietf.org/html/rfc5733"}. */
 @Embed
+@Embeddable
 @XmlType(propOrder = {"name", "org", "addr", "voice", "fax", "email"})
 public class Disclose extends ImmutableObject {
 
@@ -36,11 +39,11 @@ public class Disclose extends ImmutableObject {
 
   List<PostalInfoChoice> addr;
 
-  PresenceMarker voice;
+  @Embedded PresenceMarker voice;
 
-  PresenceMarker fax;
+  @Embedded PresenceMarker fax;
 
-  PresenceMarker email;
+  @Embedded PresenceMarker email;
 
   @XmlAttribute
   Boolean flag;
