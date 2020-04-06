@@ -40,6 +40,7 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.util.Clock;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -256,7 +257,14 @@ public final class AppEngineRule extends ExternalResource {
         .build();
   }
 
-  /** Hack to make sure AppEngineRule is always wrapped in a TemporaryFolder rule. */
+  /**
+   * Hack to make sure AppEngineRule is always wrapped in a {@link JpaIntegrationWithCoverageRule}.
+   */
+  // Note: Even with @EnableRuleMigrationSupport, JUnit5 runner does not call this method.
+  // Note 2: Do not migrate any members of SqlIntegrationTestSuite to JUnit5 before
+  // calls to JpaIntegrationWithCoverageRule can be made elsewhere.
+  // TODO(weiminyu): make JpaIntegrationWithCoverageRule implement ExternaResource and invoke it in
+  // before() and after(), then drop this method.
   @Override
   public Statement apply(Statement base, Description description) {
     Statement statement = base;
@@ -267,12 +275,13 @@ public final class AppEngineRule extends ExternalResource {
       }
       statement = builder.buildIntegrationWithCoverageRule().apply(base, description);
     }
-    return temporaryFolder.apply(super.apply(statement, description), description);
+    return super.apply(statement, description);
   }
 
   @Override
   protected void before() throws IOException {
     setupLogging();
+    temporaryFolder.create();
     Set<LocalServiceTestConfig> configs = new HashSet<>();
     if (withUrlFetch) {
       configs.add(new LocalURLFetchServiceTestConfig());
@@ -346,10 +355,10 @@ public final class AppEngineRule extends ExternalResource {
     helper = null;
     // Test that Datastore didn't need any indexes we don't have listed in our index file.
     File indexFile = new File(temporaryFolder.getRoot(), "datastore-indexes-auto.xml");
-    if (!indexFile.exists()) {
-      return;
-    }
     try {
+      if (!indexFile.exists()) {
+        return;
+      }
       String indexFileContent = Files.asCharSource(indexFile, UTF_8).read();
       if (indexFileContent.trim().isEmpty()) {
         return;
@@ -361,6 +370,8 @@ public final class AppEngineRule extends ExternalResource {
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
+    } finally {
+      temporaryFolder.delete();
     }
   }
 
