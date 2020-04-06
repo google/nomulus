@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import javax.persistence.Entity;
 import org.junit.rules.ExternalResource;
 
@@ -51,15 +52,15 @@ public class JpaEntityCoverage extends ExternalResource {
   private static final Map<String, Boolean> testsJpaEntities = Maps.newHashMap();
 
   // Provides class name of the test being executed.
-  private final TestCaseWatcher watcher;
+  private final Supplier<String> currTestClassNameSupplier;
 
-  public JpaEntityCoverage(TestCaseWatcher watcher) {
-    this.watcher = watcher;
+  public JpaEntityCoverage(Supplier<String> currTestClassNameSupplier) {
+    this.currTestClassNameSupplier = currTestClassNameSupplier;
   }
 
   @Override
   public void before() {
-    testsJpaEntities.putIfAbsent(watcher.getTestClass(), false);
+    testsJpaEntities.putIfAbsent(currTestClassNameSupplier.get(), false);
   }
 
   @Override
@@ -69,7 +70,7 @@ public class JpaEntityCoverage extends ExternalResource {
         .forEach(
             entity -> {
               allCoveredJpaEntities.add(entity);
-              testsJpaEntities.put(watcher.getTestClass(), true);
+              testsJpaEntities.put(currTestClassNameSupplier.get(), true);
             });
   }
 
