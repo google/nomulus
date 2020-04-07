@@ -288,7 +288,8 @@ public final class AppEngineRule extends ExternalResource
   @Override
   public void afterEach(ExtensionContext context) throws Exception {
     if (withDatastoreAndCloudSql) {
-      checkState(jpaIntegrationWithCoverageExtension != null, "");
+      checkState(
+          jpaIntegrationWithCoverageExtension != null, "Null jpaIntegrationWithCoverageExtension");
       jpaIntegrationWithCoverageExtension.afterEach(context);
     }
     after();
