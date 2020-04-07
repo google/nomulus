@@ -22,6 +22,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Nullable;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.rules.ExternalResource;
 
 /**
@@ -44,9 +46,10 @@ import org.junit.rules.ExternalResource;
  * to be evil; but hopefully one day we'll be able to delete this class and do things
  * <i>properly</i> with <a href="http://square.github.io/dagger/">Dagger</a> dependency injection.
  *
- * <p>You use this class by declaring it as a {@link org.junit.Rule &#064;Rule} field and then
- * calling {@link #setStaticField} from either your {@link org.junit.Test &#064;Test} or {@link
- * org.junit.Before &#064;Before} methods. For example:
+ * <p>This class temporarily supports both JUnit4 and JUnit5. You use this class in JUnit4 by
+ * declaring it as a {@link org.junit.Rule &#064;Rule} field and then calling {@link
+ * #setStaticField} from either your {@link org.junit.Test &#064;Test} or {@link org.junit.Before
+ * &#064;Before} methods. For example:
  *
  * <pre>
  * // Doomsday.java
@@ -85,7 +88,7 @@ import org.junit.rules.ExternalResource;
  * @see google.registry.util.NonFinalForTesting
  * @see org.junit.rules.ExternalResource
  */
-public class InjectRule extends ExternalResource {
+public class InjectRule extends ExternalResource implements AfterEachCallback {
 
   private static class Change {
     private final Field field;
@@ -138,6 +141,11 @@ public class InjectRule extends ExternalResource {
     }
     changes.add(new Change(field, oldValue, newValue));
     injected.add(field);
+  }
+
+  @Override
+  public void afterEach(ExtensionContext context) throws Exception {
+    after();
   }
 
   @Override
