@@ -14,6 +14,7 @@
 
 package google.registry.testing;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.DatastoreHelper.persistSimpleResources;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
@@ -40,6 +41,7 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.util.Clock;
 import java.io.ByteArrayInputStream;
@@ -53,6 +55,9 @@ import javax.annotation.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.Description;
@@ -66,9 +71,15 @@ import org.junit.runners.model.Statement;
  *
  * <p>This rule also resets global Objectify for the current thread.
  *
+ * <p>This class works with both JUnit 4 and JUnit 5. With JUnit 4, the test runner calls {@link
+ * #apply(Statement, Description)}, which in turns calls {@link #before()} on entry and {@link
+ * #after()} on exit. With JUnit 5, the test runner calls {@link #beforeEach(ExtensionContext)} and
+ * {@link #afterEach(ExtensionContext)}.
+ *
  * @see org.junit.rules.ExternalResource
  */
-public final class AppEngineRule extends ExternalResource {
+public final class AppEngineRule extends ExternalResource
+    implements BeforeEachCallback, AfterEachCallback {
 
   public static final String NEW_REGISTRAR_GAE_USER_ID = "666";
   public static final String THE_REGISTRAR_GAE_USER_ID = "31337";
@@ -93,6 +104,8 @@ public final class AppEngineRule extends ExternalResource {
 
   /** A rule-within-a-rule to provide a temporary folder for AppEngineRule's internal temp files. */
   TemporaryFolder temporaryFolder = new TemporaryFolder();
+  // Sets up a SQL database when running on JUnit 5.
+  JpaIntegrationWithCoverageExtension jpaIntegrationWithCoverageExtension = null;
 
   private boolean withDatastoreAndCloudSql;
   private boolean withLocalModules;
@@ -257,14 +270,38 @@ public final class AppEngineRule extends ExternalResource {
         .build();
   }
 
+  /** Called before every test method. JUnit 5 only. */
+  @Override
+  public void beforeEach(ExtensionContext context) throws Exception {
+    before();
+    if (withDatastoreAndCloudSql) {
+      JpaTestRules.Builder builder = new JpaTestRules.Builder();
+      if (clock != null) {
+        builder.withClock(clock);
+      }
+      jpaIntegrationWithCoverageExtension = builder.buildIntegrationWithCoverageExtension();
+      jpaIntegrationWithCoverageExtension.beforeEach(context);
+    }
+  }
+
+  /** Called after each test method. JUnit 5 only. */
+  @Override
+  public void afterEach(ExtensionContext context) throws Exception {
+    if (withDatastoreAndCloudSql) {
+      checkState(
+          jpaIntegrationWithCoverageExtension != null, "Null jpaIntegrationWithCoverageExtension");
+      jpaIntegrationWithCoverageExtension.afterEach(context);
+    }
+    after();
+  }
+
   /**
    * Hack to make sure AppEngineRule is always wrapped in a {@link JpaIntegrationWithCoverageRule}.
+   * JUnit 4 only.
    */
   // Note: Even with @EnableRuleMigrationSupport, JUnit5 runner does not call this method.
-  // Note 2: Do not migrate any members of SqlIntegrationTestSuite to JUnit5 before
-  // calls to JpaIntegrationWithCoverageRule can be made elsewhere.
-  // TODO(weiminyu): make JpaIntegrationWithCoverageRule implement ExternaResource and invoke it in
-  // before() and after(), then drop this method.
+  // Note 2: Do not migrate members of SqlIntegrationTestSuite to JUnit5 individually.
+  // TODO(weiminyu): migrate SqlIntegrationTestSuite in one go.
   @Override
   public Statement apply(Statement base, Description description) {
     Statement statement = base;
