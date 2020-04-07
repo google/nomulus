@@ -309,6 +309,8 @@ dependencies {
   testCompile deps['org.junit.jupiter:junit-jupiter-api']
   testCompile deps['org.junit.jupiter:junit-jupiter-engine']
   testCompile deps['org.junit.jupiter:junit-jupiter-migrationsupport']
+  testCompile deps['org.junit.platform:junit-platform-runner']
+  testCompile deps['org.junit.platform:junit-platform-suite-api']
   testCompile deps['org.junit.vintage:junit-vintage-engine']
   testCompile deps['org.mockito:mockito-core']
   runtime deps['org.postgresql:postgresql']
@@ -737,6 +739,10 @@ task registryToolIntegrationTest {
 
 // Dedicated test suite for schema-dependent tests.
 task sqlIntegrationTest(type: FilteringTest) {
+  // TestSuite still requires a JUnit 4 runner, which knows how to handle JUnit 5 tests.
+  // Here we need to override parent's choice of JUnit 5. If changing this, remember to
+  // change :integration:sqlIntegrationTest too.
+  useJUnit()
   excludeTestCases = false
   tests = ['google/registry/schema/integration/SqlIntegrationTestSuite.*']
 }

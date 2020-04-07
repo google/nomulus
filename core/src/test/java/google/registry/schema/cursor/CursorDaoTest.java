@@ -30,13 +30,10 @@ import google.registry.testing.FakeClock;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link Cursor}. */
-@RunWith(JUnit4.class)
 public class CursorDaoTest {
 
   private final FakeClock fakeClock = new FakeClock();
@@ -44,7 +41,7 @@ public class CursorDaoTest {
   private final TestLogHandler logHandler = new TestLogHandler();
   private final Logger loggerToIntercept = Logger.getLogger(CursorDao.class.getCanonicalName());
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withClock(fakeClock).build();
 
