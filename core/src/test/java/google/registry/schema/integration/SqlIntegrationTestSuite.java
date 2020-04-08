@@ -27,9 +27,9 @@ import google.registry.schema.tmch.ClaimsListDaoTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.platform.runner.JUnitPlatform;
+import org.junit.platform.suite.api.SelectClasses;
 import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
 
 /**
  * Groups all JPA entity tests in one suite for easy invocation. This suite is used for
@@ -48,8 +48,8 @@ import org.junit.runners.Suite.SuiteClasses;
  * database. Therefore this is not the right place for verifying backward data compatibility in
  * end-to-end functional tests.
  */
-@RunWith(Suite.class)
-@SuiteClasses({
+@RunWith(JUnitPlatform.class)
+@SelectClasses({
   ClaimsListDaoTest.class,
   CursorDaoTest.class,
   DomainBaseSqlTest.class,
