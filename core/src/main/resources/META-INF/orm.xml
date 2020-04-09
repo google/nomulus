@@ -10,4 +10,11 @@
       <basic name="amount" access="FIELD"/>
     </attributes>
   </embeddable>
+  <persistence-unit-metadata>
+    <persistence-unit-defaults>
+      <entity-listeners>
+        <entity-listener class="google.registry.persistence.EntityCallbacksListener" />
+      </entity-listeners>
+    </persistence-unit-defaults>
+  </persistence-unit-metadata>
 </entity-mappings>
