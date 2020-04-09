@@ -23,20 +23,17 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.persistence.VKey;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link RegistrarDao}. */
-@RunWith(JUnit4.class)
+/** Unit tests for persisting {@link Registrar} entities. */
 public class RegistrarDaoTest extends EntityTestCase {
 
   private final VKey<Registrar> registrarKey = VKey.createSql(Registrar.class, "registrarId");
 
   private Registrar testRegistrar;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     testRegistrar =
         new Registrar.Builder()

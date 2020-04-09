@@ -34,19 +34,16 @@ import java.math.BigDecimal;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PremiumListDao}. */
-@RunWith(JUnit4.class)
 public class PremiumListDaoTest {
 
   private final FakeClock fakeClock = new FakeClock();
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withClock(fakeClock).build();
 
@@ -124,7 +121,7 @@ public class PremiumListDaoTest {
 
   // TODO(b/147246613): Un-ignore this.
   @Test
-  @Ignore
+  @Disabled
   public void update_throwsWhenListDoesntExist() {
     IllegalArgumentException thrown =
         assertThrows(

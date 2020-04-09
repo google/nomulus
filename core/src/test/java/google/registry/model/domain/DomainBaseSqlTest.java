@@ -28,20 +28,17 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import javax.persistence.EntityManager;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Verify that we can store/retrieve DomainBase objects from a SQL database. */
-@RunWith(JUnit4.class)
 public class DomainBaseSqlTest extends EntityTestCase {
 
   DomainBase domain;
   Key<ContactResource> contactKey;
   Key<ContactResource> contact2Key;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     contactKey = Key.create(ContactResource.class, "contact_id1");
     contact2Key = Key.create(ContactResource.class, "contact_id2");
