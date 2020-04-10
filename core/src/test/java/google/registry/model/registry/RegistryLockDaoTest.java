@@ -41,7 +41,11 @@ public final class RegistryLockDaoTest {
 
   @RegisterExtension
   public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withClock(fakeClock).build();
+      AppEngineRule.builder()
+          .withDatastoreAndCloudSql()
+          .enableJpaEntityCoverageCheck(true)
+          .withClock(fakeClock)
+          .build();
 
   @Test
   public void testSaveAndLoad_success() {

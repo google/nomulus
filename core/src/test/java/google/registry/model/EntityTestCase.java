@@ -50,11 +50,22 @@ public abstract class EntityTestCase {
 
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
-  @Rule @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withClock(fakeClock).build();
+  @Rule @RegisterExtension public final AppEngineRule appEngine;
 
   @Rule @RegisterExtension public InjectRule inject = new InjectRule();
+
+  protected EntityTestCase() {
+    this(false);
+  }
+
+  protected EntityTestCase(boolean enableJpaEntityCheck) {
+    appEngine =
+        AppEngineRule.builder()
+            .withDatastoreAndCloudSql()
+            .enableJpaEntityCoverageCheck(enableJpaEntityCheck)
+            .withClock(fakeClock)
+            .build();
+  }
 
   @Before
   @BeforeEach
