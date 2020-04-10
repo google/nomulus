@@ -61,18 +61,43 @@ public abstract class CreateOrUpdateReservedListCommandTestCase<
 
   @Test
   public void testFailure_fileDoesntExist() {
-    assertThrows(
-        ParameterException.class,
-        () ->
-            runCommandForced(
-                "--name=xn--q9jyb4c-blah", "--input=" + reservedTermsPath + "-nonexistent"));
+    assertThat(
+            assertThrows(
+                ParameterException.class,
+                () ->
+                    runCommandForced(
+                        "--name=xn--q9jyb4c_common-reserved",
+                        "--input=" + reservedTermsPath + "-nonexistent")))
+        .hasMessageThat()
+        .contains("-i not found");
   }
 
   @Test
   public void testFailure_fileDoesntParse() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> runCommandForced("--name=xn--q9jyb4c-blork", "--input=" + invalidReservedTermsPath));
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    runCommandForced(
+                        "--name=xn--q9jyb4c_common-reserved",
+                        "--input=" + invalidReservedTermsPath)))
+        .hasMessageThat()
+        .contains("No enum constant");
+  }
+
+  @Test
+  public void testFailure_invalidLabel() throws Exception {
+    Files.asCharSink(new File(invalidReservedTermsPath), UTF_8)
+        .write("example.tld,FULLY_BLOCKED\n\n");
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    runCommandForced(
+                        "--name=xn--q9jyb4c_common-reserved",
+                        "--input=" + invalidReservedTermsPath)))
+        .hasMessageThat()
+        .isEqualTo("Label example.tld must not be a multi-level domain name");
   }
 
   google.registry.schema.tld.ReservedList createCloudSqlReservedList(

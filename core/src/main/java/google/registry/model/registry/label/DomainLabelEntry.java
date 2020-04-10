@@ -83,6 +83,10 @@ public abstract class DomainLabelEntry<T extends Comparable<?>, D extends Domain
           "Label '%s' must be in puny-coded, lower-case form",
           getInstance().label);
       checkArgumentNotNull(getInstance().getValue(), "Value must be specified");
+      checkArgument(
+          !getInstance().label.contains("."),
+          "Label %s must not be a multi-level domain name",
+          getInstance().label);
       return super.build();
     }
   }
