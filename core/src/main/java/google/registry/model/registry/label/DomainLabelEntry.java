@@ -56,19 +56,6 @@ public abstract class DomainLabelEntry<T extends Comparable<?>, D extends Domain
     return ((Comparable<Object>) getValue()).compareTo(other.getValue());
   }
 
-  private static void validateLabelNotDomainName(String label) {
-    // Unfortunately, InternetDomainName doesn't have a public "validate" method. We want to make
-    // sure the label isn't a full valid domain name (i.e. make sure it doesn't have a parent).
-    InternetDomainName domainName;
-    try {
-      domainName = InternetDomainName.from(label);
-    } catch (IllegalArgumentException e) {
-      // this is fine; strings like "2018" are invalid domain names
-      return;
-    }
-    checkArgument(!domainName.hasParent(), "Label %s must not be a multi-level domain name", label);
-  }
-
   /** A generic builder base. */
   public abstract static class Builder<T extends DomainLabelEntry<?, ?>, B extends Builder<T, ?>>
       extends GenericBuilder<T, B> {
@@ -97,7 +84,13 @@ public abstract class DomainLabelEntry<T extends Comparable<?>, D extends Domain
           "Label '%s' must be in puny-coded, lower-case form",
           getInstance().label);
       checkArgumentNotNull(getInstance().getValue(), "Value must be specified");
-      validateLabelNotDomainName(getInstance().label);
+      // Verify that the label creates a valid SLD if we add a TLD to the end of it.
+      // We require that the label is not already a full domain name including a dot.
+      // Domain name validation is tricky, so let InternetDomainName handle it for us.
+      checkArgument(
+          InternetDomainName.from(getInstance().label + ".tld").parts().size() == 2,
+          "Label %s must not be a multi-level domain name",
+          getInstance().label);
       return super.build();
     }
   }
