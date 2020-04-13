@@ -19,6 +19,7 @@ import static com.google.common.base.Strings.emptyToNull;
 import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
+import com.google.common.net.InternetDomainName;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
@@ -84,7 +85,7 @@ public abstract class DomainLabelEntry<T extends Comparable<?>, D extends Domain
           getInstance().label);
       checkArgumentNotNull(getInstance().getValue(), "Value must be specified");
       checkArgument(
-          !getInstance().label.contains("."),
+          !InternetDomainName.from(getInstance().label).hasParent(),
           "Label %s must not be a multi-level domain name",
           getInstance().label);
       return super.build();

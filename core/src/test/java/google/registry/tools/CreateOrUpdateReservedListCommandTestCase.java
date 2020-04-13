@@ -86,7 +86,7 @@ public abstract class CreateOrUpdateReservedListCommandTestCase<
   }
 
   @Test
-  public void testFailure_invalidLabel() throws Exception {
+  public void testFailure_invalidLabel_includesFullDomainName() throws Exception {
     Files.asCharSink(new File(invalidReservedTermsPath), UTF_8)
         .write("example.tld,FULLY_BLOCKED\n\n");
     assertThat(
