@@ -14,6 +14,8 @@
 
 package google.registry.tools;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.Multimap;
@@ -39,6 +41,11 @@ final class CheckDomainCommand extends NonMutatingEppToolCommand {
       required = true)
   private List<String> mainParameters;
 
+  @Parameter(
+      names = {"-t", "--token"},
+      description = "Allocation token to use in the command, if desired")
+  private String allocationToken;
+
   @Inject
   @Config("registryAdminClientId")
   String registryAdminClientId;
@@ -53,7 +60,11 @@ final class CheckDomainCommand extends NonMutatingEppToolCommand {
     Multimap<String, String> domainNameMap = validateAndGroupDomainNamesByTld(mainParameters);
     for (Collection<String> values : domainNameMap.asMap().values()) {
       setSoyTemplate(DomainCheckSoyInfo.getInstance(), DomainCheckSoyInfo.DOMAINCHECK);
-      addSoyRecord(clientId, new SoyMapData("domainNames", values));
+      SoyMapData soyMapData = new SoyMapData("domainNames", values);
+      if (!isNullOrEmpty(allocationToken)) {
+        soyMapData.put("allocationToken", allocationToken);
+      }
+      addSoyRecord(clientId, soyMapData);
     }
   }
 }

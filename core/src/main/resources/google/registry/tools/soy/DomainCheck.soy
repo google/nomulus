@@ -19,6 +19,7 @@
  */
 {template .domaincheck stricthtml="false"}
 {@param domainNames: list<string>}
+{@param? allocationToken: string|null}
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
   <command>
@@ -39,6 +40,12 @@
         </fee:domain>
       {/for}
       </fee:check>
+      {if isNonnull($allocationToken)}
+        <allocationToken:allocationToken
+            xmlns:allocationToken="urn:ietf:params:xml:ns:allocationToken-1.0">
+          {$allocationToken}
+        </allocationToken:allocationToken>
+      {/if}
     </extension>
     <clTRID>RegistryTool</clTRID>
   </command>
