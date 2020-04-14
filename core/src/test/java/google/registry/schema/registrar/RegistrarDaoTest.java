@@ -33,6 +33,10 @@ public class RegistrarDaoTest extends EntityTestCase {
 
   private Registrar testRegistrar;
 
+  public RegistrarDaoTest() {
+    super(true);
+  }
+
   @BeforeEach
   public void setUp() {
     testRegistrar =

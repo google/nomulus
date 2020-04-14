@@ -38,6 +38,10 @@ public class DomainBaseSqlTest extends EntityTestCase {
   Key<ContactResource> contactKey;
   Key<ContactResource> contact2Key;
 
+  public DomainBaseSqlTest() {
+    super(true);
+  }
+
   @BeforeEach
   public void setUp() {
     contactKey = Key.create(ContactResource.class, "contact_id1");

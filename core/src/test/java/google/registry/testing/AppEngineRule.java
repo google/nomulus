@@ -41,6 +41,7 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.util.Clock;
@@ -104,10 +105,19 @@ public final class AppEngineRule extends ExternalResource
 
   /** A rule-within-a-rule to provide a temporary folder for AppEngineRule's internal temp files. */
   TemporaryFolder temporaryFolder = new TemporaryFolder();
-  // Sets up a SQL database when running on JUnit 5.
+  /**
+   * Sets up a SQL database when running on JUnit 5. This is for test classes that are not member of
+   * the {@code SqlIntegrationTestSuite}.
+   */
+  JpaIntegrationTestRule jpaIntegrationTestRule = null;
+  /**
+   * Sets up a SQL database when running on JUnit 5 and records the JPA entities tested by each test
+   * class. This is for {@code SqlIntegrationTestSuite} members.
+   */
   JpaIntegrationWithCoverageExtension jpaIntegrationWithCoverageExtension = null;
 
   private boolean withDatastoreAndCloudSql;
+  private boolean enableJpaEntityCoverageCheck;
   private boolean withLocalModules;
   private boolean withTaskQueue;
   private boolean withUserService;
@@ -125,6 +135,14 @@ public final class AppEngineRule extends ExternalResource
     /** Turn on the Datastore service and the Cloud SQL service. */
     public Builder withDatastoreAndCloudSql() {
       rule.withDatastoreAndCloudSql = true;
+      return this;
+    }
+    /**
+     * Enables JPA entity coverage check if {@code enabled} is true. This should only be enabled for
+     * members of SqlIntegrationTestSuite.
+     */
+    public Builder enableJpaEntityCoverageCheck(boolean enabled) {
+      rule.enableJpaEntityCoverageCheck = enabled;
       return this;
     }
 
@@ -164,6 +182,9 @@ public final class AppEngineRule extends ExternalResource
     }
 
     public AppEngineRule build() {
+      checkState(
+          !rule.enableJpaEntityCoverageCheck || rule.withDatastoreAndCloudSql,
+          "withJpaEntityCoverageCheck enabled without Cloud SQL");
       return rule;
     }
   }
@@ -279,8 +300,13 @@ public final class AppEngineRule extends ExternalResource
       if (clock != null) {
         builder.withClock(clock);
       }
-      jpaIntegrationWithCoverageExtension = builder.buildIntegrationWithCoverageExtension();
-      jpaIntegrationWithCoverageExtension.beforeEach(context);
+      if (enableJpaEntityCoverageCheck) {
+        jpaIntegrationWithCoverageExtension = builder.buildIntegrationWithCoverageExtension();
+        jpaIntegrationWithCoverageExtension.beforeEach(context);
+      } else {
+        jpaIntegrationTestRule = builder.buildIntegrationTestRule();
+        jpaIntegrationTestRule.before();
+      }
     }
   }
 
@@ -288,9 +314,11 @@ public final class AppEngineRule extends ExternalResource
   @Override
   public void afterEach(ExtensionContext context) throws Exception {
     if (withDatastoreAndCloudSql) {
-      checkState(
-          jpaIntegrationWithCoverageExtension != null, "Null jpaIntegrationWithCoverageExtension");
-      jpaIntegrationWithCoverageExtension.afterEach(context);
+      if (enableJpaEntityCoverageCheck) {
+        jpaIntegrationWithCoverageExtension.afterEach(context);
+      } else {
+        jpaIntegrationTestRule.after();
+      }
     }
     after();
   }
@@ -310,7 +338,10 @@ public final class AppEngineRule extends ExternalResource
       if (clock != null) {
         builder.withClock(clock);
       }
-      statement = builder.buildIntegrationWithCoverageRule().apply(base, description);
+      checkState(
+          !enableJpaEntityCoverageCheck,
+          "JUnit4 tests must not enable withJpaEntityCoverageCheck.");
+      statement = builder.buildIntegrationTestRule().apply(base, description);
     }
     return super.apply(statement, description);
   }
