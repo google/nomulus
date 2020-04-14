@@ -894,11 +894,14 @@ createUberJar('nomulus', 'nomulus', 'google.registry.tools.RegistryTool')
 
 // A jar with classes and resources from main sourceSet, excluding internal
 // data. See comments on configurations.nomulus_test above for details.
+// TODO(weiminyu): release process should build this using the public repo to eliminate the need
+// for excludes.
 task nomulusFossJar (type: Jar) {
   archiveBaseName = 'nomulus'
   archiveClassifier = 'public'
   from (project.sourceSets.main.output) {
     exclude 'google/registry/config/files/**'
+    exclude 'google/registry/proxy/config/**'
   }
   from (project.sourceSets.main.output) {
     include 'google/registry/config/files/default-config.yaml'
