@@ -31,6 +31,7 @@ import javax.persistence.PostUpdate;
 import javax.persistence.PrePersist;
 import javax.persistence.PreRemove;
 import javax.persistence.PreUpdate;
+import javax.persistence.Transient;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,49 +46,71 @@ public class EntityCallbacksListenerTest {
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
-  public void verifyAllCallbacksWork() {
-    TestEntity testEntity = new TestEntity();
-    jpaTm().transact(() -> jpaTm().saveNew(testEntity));
-    assertEqualToOne(
-        testEntity.entityEmbedded.entityEmbeddedNested.entityEmbeddedNestedPostPersist);
-    jpaTm()
-        .transact(
-            () ->
-                jpaTm()
-                    .getEntityManager()
-                    .createQuery("UPDATE TestEntity SET foo = 1 WHERE name = 'id'")
-                    .executeUpdate());
+  public void verifyAllCallbacks_executedExpectedTimes() {
+    TestEntity testPersist = new TestEntity();
+    jpaTm().transact(() -> jpaTm().saveNew(testPersist));
+    checkAll(testPersist, 1, 0, 0, 0);
 
-    TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().load(VKey.createSql(TestEntity.class, "id"))).get();
-    assertEqualToOne(persisted.entityPostLoad);
-    assertEqualToOne(persisted.entityEmbedded.entityEmbeddedPostLoad);
-    assertEqualToOne(persisted.entityEmbedded.entityEmbeddedNested.entityEmbeddedNestedPostLoad);
-    assertEqualToOne(persisted.entityEmbedded.entityEmbeddedParentPostLoad);
-
-    assertEqualToOne(persisted.parentPostLoad);
-    assertEqualToOne(persisted.parentEmbedded.parentEmbeddedPostLoad);
-    assertEqualToOne(persisted.parentEmbedded.parentEmbeddedNested.parentEmbeddedNestedPostLoad);
-    assertEqualToOne(persisted.parentEmbedded.parentEmbeddedParentPostLoad);
-
-    assertEqualToOne(persisted.entityEmbedded.entityEmbeddedNested.entityEmbeddedNestedPrePersist);
-    assertEqualToOne(persisted.entityEmbedded.entityEmbeddedNested.entityEmbeddedNestedPreUpdate);
-    assertEqualToOne(persisted.entityEmbedded.entityEmbeddedNested.entityEmbeddedNestedPostUpdate);
-
-    TestEntity deleted =
+    TestEntity testUpdate = new TestEntity();
+    TestEntity updated =
         jpaTm()
             .transact(
                 () -> {
-                  TestEntity merged = jpaTm().getEntityManager().merge(persisted);
-                  jpaTm().getEntityManager().remove(merged);
+                  TestEntity merged = jpaTm().getEntityManager().merge(testUpdate);
+                  merged.foo++;
+                  jpaTm().getEntityManager().flush();
                   return merged;
                 });
-    assertEqualToOne(deleted.entityEmbedded.entityEmbeddedNested.entityEmbeddedNestedPreRemove);
-    assertEqualToOne(deleted.entityEmbedded.entityEmbeddedNested.entityEmbeddedNestedPostRemove);
+    // Note that when we get the merged entity, its @PostLoad callbacks are also invoked
+    checkAll(updated, 0, 1, 0, 1);
+
+    TestEntity testLoad =
+        jpaTm().transact(() -> jpaTm().load(VKey.createSql(TestEntity.class, "id"))).get();
+    checkAll(testLoad, 0, 0, 0, 1);
+
+    TestEntity testRemove =
+        jpaTm()
+            .transact(
+                () -> {
+                  TestEntity removed = jpaTm().load(VKey.createSql(TestEntity.class, "id")).get();
+                  jpaTm().getEntityManager().remove(removed);
+                  return removed;
+                });
+    checkAll(testRemove, 0, 0, 1, 1);
   }
 
-  private void assertEqualToOne(int executeTimes) {
-    assertThat(executeTimes).isEqualTo(1);
+  private static void checkAll(
+      TestEntity testEntity,
+      int expectedPersist,
+      int expectedUpdate,
+      int expectedRemove,
+      int expectedLoad) {
+    assertThat(testEntity.entityEmbedded.entityEmbeddedNested.entityEmbeddedNestedPostPersist)
+        .isEqualTo(expectedPersist);
+    assertThat(testEntity.entityEmbedded.entityEmbeddedNested.entityEmbeddedNestedPrePersist)
+        .isEqualTo(expectedPersist);
+
+    assertThat(testEntity.entityEmbedded.entityEmbeddedNested.entityEmbeddedNestedPreUpdate)
+        .isEqualTo(expectedUpdate);
+    assertThat(testEntity.entityEmbedded.entityEmbeddedNested.entityEmbeddedNestedPostUpdate)
+        .isEqualTo(expectedUpdate);
+
+    assertThat(testEntity.entityEmbedded.entityEmbeddedNested.entityEmbeddedNestedPreRemove)
+        .isEqualTo(expectedRemove);
+    assertThat(testEntity.entityEmbedded.entityEmbeddedNested.entityEmbeddedNestedPostRemove)
+        .isEqualTo(expectedRemove);
+
+    assertThat(testEntity.entityPostLoad).isEqualTo(expectedLoad);
+    assertThat(testEntity.entityEmbedded.entityEmbeddedPostLoad).isEqualTo(expectedLoad);
+    assertThat(testEntity.entityEmbedded.entityEmbeddedNested.entityEmbeddedNestedPostLoad)
+        .isEqualTo(expectedLoad);
+    assertThat(testEntity.entityEmbedded.entityEmbeddedParentPostLoad).isEqualTo(expectedLoad);
+
+    assertThat(testEntity.parentPostLoad).isEqualTo(expectedLoad);
+    assertThat(testEntity.parentEmbedded.parentEmbeddedPostLoad).isEqualTo(expectedLoad);
+    assertThat(testEntity.parentEmbedded.parentEmbeddedNested.parentEmbeddedNestedPostLoad)
+        .isEqualTo(expectedLoad);
+    assertThat(testEntity.parentEmbedded.parentEmbeddedParentPostLoad).isEqualTo(expectedLoad);
   }
 
   @Entity(name = "TestEntity")
@@ -95,7 +118,7 @@ public class EntityCallbacksListenerTest {
     @Id String name = "id";
     int foo = 0;
 
-    int entityPostLoad = 0;
+    @Transient int entityPostLoad = 0;
 
     @Embedded EntityEmbedded entityEmbedded = new EntityEmbedded();
 
@@ -109,7 +132,9 @@ public class EntityCallbacksListenerTest {
   private static class EntityEmbedded extends EntityEmbeddedParent {
     @Embedded EntityEmbeddedNested entityEmbeddedNested = new EntityEmbeddedNested();
 
-    int entityEmbeddedPostLoad = 0;
+    @Transient int entityEmbeddedPostLoad = 0;
+
+    String entityEmbedded = "placeholder";
 
     @PostLoad
     void entityEmbeddedPrePersist() {
@@ -119,7 +144,9 @@ public class EntityCallbacksListenerTest {
 
   @MappedSuperclass
   private static class EntityEmbeddedParent {
-    int entityEmbeddedParentPostLoad = 0;
+    @Transient int entityEmbeddedParentPostLoad = 0;
+
+    String entityEmbeddedParent = "placeholder";
 
     @PostLoad
     void entityEmbeddedParentPostLoad() {
@@ -129,13 +156,15 @@ public class EntityCallbacksListenerTest {
 
   @Embeddable
   private static class EntityEmbeddedNested {
-    int entityEmbeddedNestedPrePersist = 0;
-    int entityEmbeddedNestedPreRemove = 0;
-    int entityEmbeddedNestedPostPersist = 0;
-    int entityEmbeddedNestedPostRemove = 0;
-    int entityEmbeddedNestedPreUpdate = 0;
-    int entityEmbeddedNestedPostUpdate = 0;
-    int entityEmbeddedNestedPostLoad = 0;
+    @Transient int entityEmbeddedNestedPrePersist = 0;
+    @Transient int entityEmbeddedNestedPreRemove = 0;
+    @Transient int entityEmbeddedNestedPostPersist = 0;
+    @Transient int entityEmbeddedNestedPostRemove = 0;
+    @Transient int entityEmbeddedNestedPreUpdate = 0;
+    @Transient int entityEmbeddedNestedPostUpdate = 0;
+    @Transient int entityEmbeddedNestedPostLoad = 0;
+
+    String entityEmbeddedNested = "placeholder";
 
     @PrePersist
     void entityEmbeddedNestedPrePersist() {
@@ -176,7 +205,9 @@ public class EntityCallbacksListenerTest {
   @MappedSuperclass
   private static class ParentEntity {
     @Embedded ParentEmbedded parentEmbedded = new ParentEmbedded();
-    int parentPostLoad = 0;
+    @Transient int parentPostLoad = 0;
+
+    String parentEntity = "placeholder";
 
     @PostLoad
     void parentPostLoad() {
@@ -186,7 +217,9 @@ public class EntityCallbacksListenerTest {
 
   @Embeddable
   private static class ParentEmbedded extends ParentEmbeddedParent {
-    int parentEmbeddedPostLoad = 0;
+    @Transient int parentEmbeddedPostLoad = 0;
+
+    String parentEmbedded = "placeholder";
 
     @Embedded ParentEmbeddedNested parentEmbeddedNested = new ParentEmbeddedNested();
 
@@ -198,7 +231,9 @@ public class EntityCallbacksListenerTest {
 
   @Embeddable
   private static class ParentEmbeddedNested {
-    int parentEmbeddedNestedPostLoad = 0;
+    @Transient int parentEmbeddedNestedPostLoad = 0;
+
+    String parentEmbeddedNested = "placeholder";
 
     @PostLoad
     void parentEmbeddedNestedPostLoad() {
@@ -208,7 +243,9 @@ public class EntityCallbacksListenerTest {
 
   @MappedSuperclass
   private static class ParentEmbeddedParent {
-    int parentEmbeddedParentPostLoad = 0;
+    @Transient int parentEmbeddedParentPostLoad = 0;
+
+    String parentEmbeddedParent = "placeholder";
 
     @PostLoad
     void parentEmbeddedParentPostLoad() {

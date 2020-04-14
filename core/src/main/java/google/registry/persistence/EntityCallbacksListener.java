@@ -43,6 +43,15 @@ import javax.persistence.PreUpdate;
  * defined in an {@link Embeddable} class that is a property of another {@link Embeddable} class, or
  * it is defined in a parent class of the {@link Embeddable} class, Hibernate doesn't invoke it.
  *
+ * <p>This listener is added in core/src/main/resources/META-INF/orm.xml as a default entity
+ * listener whose annotated methods will be invoked by Hibernate when corresponding events happen.
+ * For example, {@link EntityCallbacksListener#prePersist} will be invoked before the entity is
+ * persisted to the database, then it will recursively invoke any other {@link PrePersist} method
+ * that should be invoked but not handled by Hibernate due to the bug.
+ *
+ * @see <a
+ *     href="https://docs.jboss.org/hibernate/orm/current/userguide/html_single/Hibernate_User_Guide.html#events-jpa-callbacks">JPA
+ *     Callbacks</a>
  * @see <a href="https://hibernate.atlassian.net/browse/HHH-13316">HHH-13316</a>
  */
 public class EntityCallbacksListener {
@@ -93,6 +102,12 @@ public class EntityCallbacksListener {
       return new EntityCallbackExecutor(callbackType);
     }
 
+    /**
+     * Executes eligible callbacks in {@link Embedded} properties recursively.
+     *
+     * @param entity the Java object of the entity class
+     * @param entityType either the type of the entity or an ancestor type
+     */
     private void execute(Object entity, Class<?> entityType) {
       Class<?> parentType = entityType.getSuperclass();
       if (parentType != null && parentType.isAnnotationPresent(MappedSuperclass.class)) {
@@ -102,7 +117,7 @@ public class EntityCallbacksListener {
       findEmbeddedProperties(entity, entityType)
           .forEach(
               normalEmbedded -> {
-                // For each normal embedded property, we don't execute its @PostLoad method because
+                // For each normal embedded property, we don't execute its callback method because
                 // it is handled by Hibernate. However, for the embedded property defined in the
                 // entity's parent class, we need to treat it as a nested embedded property and
                 // invoke its callback function.
