@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <check>
+      <domain:check xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>example.tld</domain:name>
+      </domain:check>
+    </check>
+    <extension>
+      <fee:check xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+        <fee:domain>
+          <fee:name>example.tld</fee:name>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+      </fee:check>
+      <allocationToken:allocationToken
+          xmlns:allocationToken="urn:ietf:params:xml:ns:allocationToken-1.0">
+        abc123
+      </allocationToken:allocationToken>
+    </extension>
+    <clTRID>RegistryTool</clTRID>
+  </command>
+</epp>
