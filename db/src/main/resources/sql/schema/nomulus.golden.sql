@@ -81,50 +81,50 @@ ALTER SEQUENCE public."ClaimsList_revision_id_seq" OWNED BY public."ClaimsList".
 
 CREATE TABLE public."Contact" (
     repo_id text NOT NULL,
-    creation_client_id text,
-    creation_time timestamp with time zone,
-    current_sponsor_client_id text,
+    creation_time timestamp with time zone NOT NULL,
     deletion_time timestamp with time zone,
-    last_epp_update_client_id text,
     last_epp_update_time timestamp with time zone,
     statuses text[],
     auth_info_repo_id text,
     auth_info_value text,
     contact_id text,
-    addr text[],
-    email_presence boolean,
-    fax_presence boolean,
-    flag boolean,
-    name text[],
-    org text[],
-    voice_presence boolean,
+    disclosure_policy_addr text[],
+    disclosure_policy_email boolean,
+    disclosure_policy_fax boolean,
+    disclosure_policy_flag boolean,
+    disclosure_policy_name text[],
+    disclosure_policy_org text[],
+    disclosure_policy_voice boolean,
     email text,
     fax_phone_extension text,
     fax_phone_number text,
-    i18n_postal_info_address_city text,
-    i18n_postal_info_address_country_code text,
-    i18n_postal_info_address_state text,
-    i18n_postal_info_address_street_line1 text,
-    i18n_postal_info_address_street_line2 text,
-    i18n_postal_info_address_street_line3 text,
-    i18n_postal_info_address_zip text,
-    i18n_postal_info_name text,
-    i18n_postal_info_org text,
-    i18n_postal_info_type integer,
+    addr_i18n_city text,
+    addr_i18n_country_code text,
+    addr_i18n_state text,
+    addr_i18n_street_line1 text,
+    addr_i18n_street_line2 text,
+    addr_i18n_street_line3 text,
+    addr_i18n_zip text,
+    addr_i18n_name text,
+    addr_i18n_org text,
+    addr_i18n_type integer,
     last_transfer_time timestamp with time zone,
-    localized_postal_info_address_city text,
-    localized_postal_info_address_country_code text,
-    localized_postal_info_address_state text,
-    localized_postal_info_address_street_line1 text,
-    localized_postal_info_address_street_line2 text,
-    localized_postal_info_address_street_line3 text,
-    localized_postal_info_address_zip text,
-    localized_postal_info_name text,
-    localized_postal_info_org text,
-    localized_postal_info_type integer,
+    addr_local_city text,
+    addr_local_country_code text,
+    addr_local_state text,
+    addr_local_street_line1 text,
+    addr_local_street_line2 text,
+    addr_local_street_line3 text,
+    addr_local_zip text,
+    addr_local_name text,
+    addr_local_org text,
+    addr_local_type integer,
     search_name text,
     voice_phone_extension text,
-    voice_phone_number text
+    voice_phone_number text,
+    creation_client_id text NOT NULL,
+    current_sponsor_client_id text NOT NULL,
+    last_epp_update_client_id text
 );
 
 
@@ -146,9 +146,9 @@ CREATE TABLE public."Cursor" (
 
 CREATE TABLE public."Domain" (
     repo_id text NOT NULL,
-    creation_client_id text,
-    creation_time timestamp with time zone,
-    current_sponsor_client_id text,
+    creation_client_id text NOT NULL,
+    creation_time timestamp with time zone NOT NULL,
+    current_sponsor_client_id text NOT NULL,
     deletion_time timestamp with time zone,
     last_epp_update_client_id text,
     last_epp_update_time timestamp with time zone,
@@ -586,6 +586,13 @@ CREATE INDEX idx1rcgkdd777bpvj0r94sltwd5y ON public."Domain" USING btree (fully_
 
 
 --
+-- Name: idx1s3d8wkyhyeapv7ri6wqitrhj; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx1s3d8wkyhyeapv7ri6wqitrhj ON public."Contact" USING btree (current_sponsor_client_id);
+
+
+--
 -- Name: idx3y752kr9uh4kh6uig54vemx0l; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -597,13 +604,6 @@ CREATE INDEX idx3y752kr9uh4kh6uig54vemx0l ON public."Contact" USING btree (creat
 --
 
 CREATE INDEX idx5mnf0wn20tno4b9do88j61klr ON public."Domain" USING btree (deletion_time);
-
-
---
--- Name: idx8ffrqm27qtj20jac056j7yq07; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx8ffrqm27qtj20jac056j7yq07 ON public."Domain" USING btree (current_sponsor_client_id);
 
 
 --
@@ -628,10 +628,10 @@ CREATE INDEX idx_registry_lock_verification_code ON public."RegistryLock" USING 
 
 
 --
--- Name: idxbn8t4wp85fgxjl8q4ctlscx55; Type: INDEX; Schema: public; Owner: -
+-- Name: idxkjt9yaq92876dstimd93hwckh; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idxbn8t4wp85fgxjl8q4ctlscx55 ON public."Contact" USING btree (current_sponsor_client_id);
+CREATE INDEX idxkjt9yaq92876dstimd93hwckh ON public."Domain" USING btree (current_sponsor_client_id);
 
 
 --
@@ -684,11 +684,35 @@ CREATE INDEX reservedlist_name_idx ON public."ReservedList" USING btree (name);
 
 
 --
+-- Name: Contact fk1sfyj7o7954prbn1exk7lpnoe; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Contact"
+    ADD CONSTRAINT fk1sfyj7o7954prbn1exk7lpnoe FOREIGN KEY (creation_client_id) REFERENCES public."Registrar"(client_id);
+
+
+--
+-- Name: Domain fk2jc69qyg2tv9hhnmif6oa1cx1; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk2jc69qyg2tv9hhnmif6oa1cx1 FOREIGN KEY (creation_client_id) REFERENCES public."Registrar"(client_id);
+
+
+--
 -- Name: RegistryLock fk2lhcwpxlnqijr96irylrh1707; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."RegistryLock"
     ADD CONSTRAINT fk2lhcwpxlnqijr96irylrh1707 FOREIGN KEY (relock_revision_id) REFERENCES public."RegistryLock"(revision_id);
+
+
+--
+-- Name: Domain fk2u3srsfbei272093m3b3xwj23; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk2u3srsfbei272093m3b3xwj23 FOREIGN KEY (current_sponsor_client_id) REFERENCES public."Registrar"(client_id);
 
 
 --
@@ -722,6 +746,12 @@ ALTER TABLE ONLY public."DomainHost"
 ALTER TABLE ONLY public."DomainHost"
     ADD CONSTRAINT fkfmi7bdink53swivs390m2btxg FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
 
+-- Name: Contact fk93c185fx7chn68uv7nl6uv2s0; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Contact"
+    ADD CONSTRAINT fk93c185fx7chn68uv7nl6uv2s0 FOREIGN KEY (current_sponsor_client_id) REFERENCES public."Registrar"(client_id);
+
 
 --
 -- Name: ReservedEntry fkgq03rk0bt1hb915dnyvd3vnfc; Type: FK CONSTRAINT; Schema: public; Owner: -
@@ -729,6 +759,22 @@ ALTER TABLE ONLY public."DomainHost"
 
 ALTER TABLE ONLY public."ReservedEntry"
     ADD CONSTRAINT fkgq03rk0bt1hb915dnyvd3vnfc FOREIGN KEY (revision_id) REFERENCES public."ReservedList"(revision_id);
+
+
+--
+-- Name: Domain fkjc0r9r5y1lfbt4gpbqw4wsuvq; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fkjc0r9r5y1lfbt4gpbqw4wsuvq FOREIGN KEY (last_epp_update_client_id) REFERENCES public."Registrar"(client_id);
+
+
+--
+-- Name: Contact fkmb7tdiv85863134w1wogtxrb2; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Contact"
+    ADD CONSTRAINT fkmb7tdiv85863134w1wogtxrb2 FOREIGN KEY (last_epp_update_client_id) REFERENCES public."Registrar"(client_id);
 
 
 --

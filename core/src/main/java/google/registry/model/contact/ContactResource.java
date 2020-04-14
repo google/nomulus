@@ -53,7 +53,9 @@ import org.joda.time.DateTime;
     name = "Contact",
     indexes = {
       @javax.persistence.Index(columnList = "creationTime"),
-      @javax.persistence.Index(columnList = "currentSponsorClientId"),
+      // TODO(b/154044182): Investigate why the sql generator requires column name only for this
+      // field
+      @javax.persistence.Index(columnList = "current_sponsor_client_id"),
       @javax.persistence.Index(columnList = "deletionTime"),
       @javax.persistence.Index(columnList = "searchName")
     })
@@ -77,30 +79,24 @@ public class ContactResource extends EppResource
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
-    @AttributeOverride(name = "name", column = @Column(name = "localized_postal_info_name")),
-    @AttributeOverride(name = "org", column = @Column(name = "localized_postal_info_org")),
-    @AttributeOverride(name = "type", column = @Column(name = "localized_postal_info_type")),
+    @AttributeOverride(name = "name", column = @Column(name = "addr_local_name")),
+    @AttributeOverride(name = "org", column = @Column(name = "addr_local_org")),
+    @AttributeOverride(name = "type", column = @Column(name = "addr_local_type")),
     @AttributeOverride(
         name = "address.streetLine1",
-        column = @Column(name = "localized_postal_info_address_street_line1")),
+        column = @Column(name = "addr_local_street_line1")),
     @AttributeOverride(
         name = "address.streetLine2",
-        column = @Column(name = "localized_postal_info_address_street_line2")),
+        column = @Column(name = "addr_local_street_line2")),
     @AttributeOverride(
         name = "address.streetLine3",
-        column = @Column(name = "localized_postal_info_address_street_line3")),
-    @AttributeOverride(
-        name = "address.city",
-        column = @Column(name = "localized_postal_info_address_city")),
-    @AttributeOverride(
-        name = "address.state",
-        column = @Column(name = "localized_postal_info_address_state")),
-    @AttributeOverride(
-        name = "address.zip",
-        column = @Column(name = "localized_postal_info_address_zip")),
+        column = @Column(name = "addr_local_street_line3")),
+    @AttributeOverride(name = "address.city", column = @Column(name = "addr_local_city")),
+    @AttributeOverride(name = "address.state", column = @Column(name = "addr_local_state")),
+    @AttributeOverride(name = "address.zip", column = @Column(name = "addr_local_zip")),
     @AttributeOverride(
         name = "address.countryCode",
-        column = @Column(name = "localized_postal_info_address_country_code"))
+        column = @Column(name = "addr_local_country_code"))
   })
   PostalInfo localizedPostalInfo;
 
@@ -111,30 +107,24 @@ public class ContactResource extends EppResource
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
-    @AttributeOverride(name = "name", column = @Column(name = "i18n_postal_info_name")),
-    @AttributeOverride(name = "org", column = @Column(name = "i18n_postal_info_org")),
-    @AttributeOverride(name = "type", column = @Column(name = "i18n_postal_info_type")),
+    @AttributeOverride(name = "name", column = @Column(name = "addr_i18n_name")),
+    @AttributeOverride(name = "org", column = @Column(name = "addr_i18n_org")),
+    @AttributeOverride(name = "type", column = @Column(name = "addr_i18n_type")),
     @AttributeOverride(
         name = "address.streetLine1",
-        column = @Column(name = "i18n_postal_info_address_street_line1")),
+        column = @Column(name = "addr_i18n_street_line1")),
     @AttributeOverride(
         name = "address.streetLine2",
-        column = @Column(name = "i18n_postal_info_address_street_line2")),
+        column = @Column(name = "addr_i18n_street_line2")),
     @AttributeOverride(
         name = "address.streetLine3",
-        column = @Column(name = "i18n_postal_info_address_street_line3")),
-    @AttributeOverride(
-        name = "address.city",
-        column = @Column(name = "i18n_postal_info_address_city")),
-    @AttributeOverride(
-        name = "address.state",
-        column = @Column(name = "i18n_postal_info_address_state")),
-    @AttributeOverride(
-        name = "address.zip",
-        column = @Column(name = "i18n_postal_info_address_zip")),
+        column = @Column(name = "addr_i18n_street_line3")),
+    @AttributeOverride(name = "address.city", column = @Column(name = "addr_i18n_city")),
+    @AttributeOverride(name = "address.state", column = @Column(name = "addr_i18n_state")),
+    @AttributeOverride(name = "address.zip", column = @Column(name = "addr_i18n_zip")),
     @AttributeOverride(
         name = "address.countryCode",
-        column = @Column(name = "i18n_postal_info_address_country_code"))
+        column = @Column(name = "addr_i18n_country_code"))
   })
   PostalInfo internationalizedPostalInfo;
 
@@ -193,9 +183,13 @@ public class ContactResource extends EppResource
   /** Disclosure policy. */
   @Embedded
   @AttributeOverrides({
-    @AttributeOverride(name = "voice.marked", column = @Column(name = "voice_presence")),
-    @AttributeOverride(name = "fax.marked", column = @Column(name = "fax_presence")),
-    @AttributeOverride(name = "email.marked", column = @Column(name = "email_presence"))
+    @AttributeOverride(name = "name", column = @Column(name = "disclosure_policy_name")),
+    @AttributeOverride(name = "org", column = @Column(name = "disclosure_policy_org")),
+    @AttributeOverride(name = "addr", column = @Column(name = "disclosure_policy_addr")),
+    @AttributeOverride(name = "flag", column = @Column(name = "disclosure_policy_flag")),
+    @AttributeOverride(name = "voice.marked", column = @Column(name = "disclosure_policy_voice")),
+    @AttributeOverride(name = "fax.marked", column = @Column(name = "disclosure_policy_fax")),
+    @AttributeOverride(name = "email.marked", column = @Column(name = "disclosure_policy_email"))
   })
   Disclose disclose;
 
