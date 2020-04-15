@@ -16,26 +16,39 @@ package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.model.EntityTestCase;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
+import google.registry.testing.DatastoreEntityExtension;
+import google.registry.testing.FakeClock;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for persisting {@link Registrar} entities. */
-public class RegistrarDaoTest extends EntityTestCase {
+public class RegistrarDaoTest {
+
+  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+
+  @RegisterExtension
+  @Order(value = 1)
+  DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
+
+  @RegisterExtension
+  JpaIntegrationWithCoverageExtension jpa =
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   private final VKey<Registrar> registrarKey = VKey.createSql(Registrar.class, "registrarId");
 
   private Registrar testRegistrar;
-
-  public RegistrarDaoTest() {
-    super(true);
-  }
 
   @BeforeEach
   public void setUp() {
