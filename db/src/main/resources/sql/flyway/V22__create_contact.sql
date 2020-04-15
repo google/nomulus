@@ -21,13 +21,13 @@ create table "Contact" (
     auth_info_repo_id text,
     auth_info_value text,
     contact_id text,
-    disclosure_policy_addr text[],
-    disclosure_policy_email boolean,
-    disclosure_policy_fax boolean,
-    disclosure_policy_flag boolean,
-    disclosure_policy_name text[],
-    disclosure_policy_org text[],
-    disclosure_policy_voice boolean,
+    disclose_types_addr text[],
+    disclose_show_email boolean,
+    disclose_show_fax boolean,
+    disclose_mode_flag boolean,
+    disclose_types_name text[],
+    disclose_types_org text[],
+    disclose_show_voice boolean,
     email text,
     fax_phone_extension text,
     fax_phone_number text,
@@ -40,7 +40,7 @@ create table "Contact" (
     addr_i18n_zip text,
     addr_i18n_name text,
     addr_i18n_org text,
-    addr_i18n_type int4,
+    addr_i18n_type text,
     last_transfer_time timestamptz,
     addr_local_city text,
     addr_local_country_code text,
@@ -51,7 +51,7 @@ create table "Contact" (
     addr_local_zip text,
     addr_local_name text,
     addr_local_org text,
-    addr_local_type int4,
+    addr_local_type text,
     search_name text,
     voice_phone_extension text,
     voice_phone_number text,
@@ -65,6 +65,8 @@ create index IDX3y752kr9uh4kh6uig54vemx0l on "Contact" (creation_time);
 create index IDX1s3d8wkyhyeapv7ri6wqitrhj on "Contact" (current_sponsor_client_id);
 create index IDXn1f711wicdnooa2mqb7g1m55o on "Contact" (deletion_time);
 create index IDX1p3esngcwwu6hstyua6itn6ff on "Contact" (search_name);
+alter table if exists "Contact"
+   add constraint UKoqd7n4hbx86hvlgkilq75olas unique (contact_id);
 
 alter table "Domain" alter column creation_time set not null;
 alter table "Domain" alter column creation_client_id set not null;

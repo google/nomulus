@@ -88,13 +88,13 @@ CREATE TABLE public."Contact" (
     auth_info_repo_id text,
     auth_info_value text,
     contact_id text,
-    disclosure_policy_addr text[],
-    disclosure_policy_email boolean,
-    disclosure_policy_fax boolean,
-    disclosure_policy_flag boolean,
-    disclosure_policy_name text[],
-    disclosure_policy_org text[],
-    disclosure_policy_voice boolean,
+    disclose_types_addr text[],
+    disclose_show_email boolean,
+    disclose_show_fax boolean,
+    disclose_mode_flag boolean,
+    disclose_types_name text[],
+    disclose_types_org text[],
+    disclose_show_voice boolean,
     email text,
     fax_phone_extension text,
     fax_phone_number text,
@@ -107,7 +107,7 @@ CREATE TABLE public."Contact" (
     addr_i18n_zip text,
     addr_i18n_name text,
     addr_i18n_org text,
-    addr_i18n_type integer,
+    addr_i18n_type text,
     last_transfer_time timestamp with time zone,
     addr_local_city text,
     addr_local_country_code text,
@@ -118,7 +118,7 @@ CREATE TABLE public."Contact" (
     addr_local_zip text,
     addr_local_name text,
     addr_local_org text,
-    addr_local_type integer,
+    addr_local_type text,
     search_name text,
     voice_phone_extension text,
     voice_phone_number text,
@@ -569,6 +569,14 @@ ALTER TABLE ONLY public."ReservedList"
 
 ALTER TABLE ONLY public."RegistryLock"
     ADD CONSTRAINT idx_registry_lock_repo_id_revision_id UNIQUE (repo_id, revision_id);
+
+
+--
+-- Name: Contact ukoqd7n4hbx86hvlgkilq75olas; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Contact"
+    ADD CONSTRAINT ukoqd7n4hbx86hvlgkilq75olas UNIQUE (contact_id);
 
 
 --
