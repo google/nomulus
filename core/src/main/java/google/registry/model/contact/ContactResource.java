@@ -57,6 +57,7 @@ import org.joda.time.DateTime;
       // field
       @javax.persistence.Index(columnList = "current_sponsor_client_id"),
       @javax.persistence.Index(columnList = "deletionTime"),
+      @javax.persistence.Index(columnList = "contactId", unique = true),
       @javax.persistence.Index(columnList = "searchName")
     })
 @ExternalMessagingName("contact")
@@ -183,13 +184,13 @@ public class ContactResource extends EppResource
   /** Disclosure policy. */
   @Embedded
   @AttributeOverrides({
-    @AttributeOverride(name = "name", column = @Column(name = "disclosure_policy_name")),
-    @AttributeOverride(name = "org", column = @Column(name = "disclosure_policy_org")),
-    @AttributeOverride(name = "addr", column = @Column(name = "disclosure_policy_addr")),
-    @AttributeOverride(name = "flag", column = @Column(name = "disclosure_policy_flag")),
-    @AttributeOverride(name = "voice.marked", column = @Column(name = "disclosure_policy_voice")),
-    @AttributeOverride(name = "fax.marked", column = @Column(name = "disclosure_policy_fax")),
-    @AttributeOverride(name = "email.marked", column = @Column(name = "disclosure_policy_email"))
+    @AttributeOverride(name = "name", column = @Column(name = "disclose_types_name")),
+    @AttributeOverride(name = "org", column = @Column(name = "disclose_types_org")),
+    @AttributeOverride(name = "addr", column = @Column(name = "disclose_types_addr")),
+    @AttributeOverride(name = "flag", column = @Column(name = "disclose_mode_flag")),
+    @AttributeOverride(name = "voice.marked", column = @Column(name = "disclose_show_voice")),
+    @AttributeOverride(name = "fax.marked", column = @Column(name = "disclose_show_fax")),
+    @AttributeOverride(name = "email.marked", column = @Column(name = "disclose_show_email"))
   })
   Disclose disclose;
 
