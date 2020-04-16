@@ -44,6 +44,7 @@
     <class>google.registry.persistence.converter.StatusValueSetConverter</class>
     <class>google.registry.persistence.converter.StringListConverter</class>
     <class>google.registry.persistence.converter.StringSetConverter</class>
+    <class>google.registry.persistence.converter.TimedTldStateTransitionMapConverter</class>
     <class>google.registry.persistence.converter.UpdateAutoTimestampConverter</class>
     <class>google.registry.persistence.converter.ZonedDateTimeConverter</class>
 
