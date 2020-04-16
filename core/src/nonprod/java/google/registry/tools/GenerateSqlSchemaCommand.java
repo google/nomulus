@@ -14,17 +14,24 @@
 
 package google.registry.tools;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Charsets;
+import com.google.common.io.CharSink;
+import com.google.common.io.FileWriteMode;
+import com.google.common.io.Resources;
 import google.registry.persistence.HibernateSchemaExporter;
 import google.registry.persistence.NomulusPostgreSql;
 import google.registry.persistence.PersistenceXmlUtility;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.util.List;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 /**
@@ -39,6 +46,7 @@ public class GenerateSqlSchemaCommand implements Command {
   private static final String DB_NAME = "postgres";
   private static final String DB_USERNAME = "postgres";
   private static final String DB_PASSWORD = "domain-registry";
+  private static final String ADDITIONAL_DDL = "sql/schema/additional-ddl.sql";
 
   @VisibleForTesting
   public static final String DB_OPTIONS_CLASH =
@@ -152,6 +160,18 @@ public class GenerateSqlSchemaCommand implements Command {
               DB_PASSWORD);
       exporter.export(PersistenceXmlUtility.getManagedClasses(), outputFile);
 
+      // TODO(shicong): Add a @ForeignKey annotation and deprecate additional-ddl.sql
+      List<String> additionalDdl =
+          Resources.asCharSource(Resources.getResource(ADDITIONAL_DDL), UTF_8).readLines().stream()
+              .filter(line -> !line.trim().startsWith("--"))
+              .collect(toImmutableList());
+
+      CharSink charSink =
+          com.google.common.io.Files.asCharSink(outputFile, Charsets.UTF_8, FileWriteMode.APPEND);
+      charSink.writeLines(additionalDdl);
+
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
     } finally {
       if (postgresContainer != null) {
         postgresContainer.stop();

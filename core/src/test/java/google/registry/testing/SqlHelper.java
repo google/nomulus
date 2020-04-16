@@ -15,6 +15,7 @@
 package google.registry.testing;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.AppEngineRule.makeRegistrar1;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.registry.RegistryLockDao;
@@ -50,6 +51,12 @@ public class SqlHelper {
 
   public static Optional<RegistryLock> getRegistryLockByRevisionId(long revisionId) {
     return jpaTm().transact(() -> RegistryLockDao.getByRevisionId(revisionId));
+  }
+
+  public static void saveRegistrar(String clientId) {
+    jpaTm()
+        .transact(
+            () -> jpaTm().saveNew(makeRegistrar1().asBuilder().setClientId(clientId).build()));
   }
 
   private SqlHelper() {}
