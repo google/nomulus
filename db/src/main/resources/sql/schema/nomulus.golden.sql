@@ -117,10 +117,10 @@ CREATE TABLE public."Domain" (
 
 
 --
--- Name: Domain_nsHostVKeys; Type: TABLE; Schema: public; Owner: -
+-- Name: DomainHost; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public."Domain_nsHostVKeys" (
+CREATE TABLE public."DomainHost" (
     domain_repo_id text NOT NULL,
     ns_host_v_keys text
 );
@@ -619,18 +619,18 @@ ALTER TABLE ONLY public."HostResource_inetAddresses"
 
 
 --
--- Name: Domain_nsHostVKeys fk_domain_nshostvkeys_host_valid; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: DomainHost fk_domainhost_host_valid; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public."Domain_nsHostVKeys"
-    ADD CONSTRAINT fk_domain_nshostvkeys_host_valid FOREIGN KEY (ns_host_v_keys) REFERENCES public."HostResource"(repo_id);
+ALTER TABLE ONLY public."DomainHost"
+    ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (ns_host_v_keys) REFERENCES public."HostResource"(repo_id);
 
 
 --
--- Name: Domain_nsHostVKeys fkfmi7bdink53swivs390m2btxg; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: DomainHost fkfmi7bdink53swivs390m2btxg; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public."Domain_nsHostVKeys"
+ALTER TABLE ONLY public."DomainHost"
     ADD CONSTRAINT fkfmi7bdink53swivs390m2btxg FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
 
 

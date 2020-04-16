@@ -169,7 +169,6 @@ public class DomainBaseSqlTest {
         .hasCauseThat() // ConstraintViolationException
         .hasCauseThat()
         .hasMessageThat()
-        .contains(
-            "\"Domain_nsHostVKeys\" violates foreign key constraint \"fk_domain_nshostvkeys_host");
+        .contains("\"DomainHost\" violates foreign key constraint \"fk_domainhost_host");
   }
 }

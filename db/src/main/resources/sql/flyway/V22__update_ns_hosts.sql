@@ -12,7 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-create table "Domain_nsHostVKeys" (
+create table "DomainHost" (
    domain_repo_id text not null,
     ns_host_v_keys text
 );
@@ -38,13 +38,13 @@ create table "HostResource_inetAddresses" (
     inet_addresses bytea
 );
 
-alter table if exists "Domain_nsHostVKeys"
+alter table if exists "DomainHost"
    add constraint FKfmi7bdink53swivs390m2btxg
    foreign key (domain_repo_id)
    references "Domain";
 
-alter table if exists "Domain_nsHostVKeys"
-  add constraint FK_Domain_nsHostVKeys_host_valid
+alter table if exists "DomainHost"
+  add constraint FK_DomainHost_host_valid
   foreign key (ns_host_v_keys)
   references "HostResource";
 

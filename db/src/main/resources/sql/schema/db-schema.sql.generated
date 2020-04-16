@@ -67,7 +67,7 @@
         primary key (repo_id)
     );
 
-    create table "Domain_nsHostVKeys" (
+    create table "DomainHost" (
        domain_repo_id text not null,
         ns_host_v_keys text
     );
@@ -248,8 +248,8 @@ create index reservedlist_name_idx on "ReservedList" (name);
        foreign key (revision_id) 
        references "ClaimsList";
 
-    alter table if exists "Domain_nsHostVKeys" 
-       add constraint FKfmi7bdink53swivs390m2btxg 
+    alter table if exists "DomainHost" 
+       add constraint FKeq1guccbre1yk3oosgp2io554 
        foreign key (domain_repo_id) 
        references "Domain";
 

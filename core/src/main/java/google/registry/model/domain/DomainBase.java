@@ -79,6 +79,7 @@ import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
+import javax.persistence.JoinTable;
 import javax.persistence.Transient;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -144,6 +145,7 @@ public class DomainBase extends EppResource
 
   @Ignore
   @ElementCollection
+  @JoinTable(name = "DomainHost")
   @Convert(converter = HostResource.VKeyHostResourceConverter.class)
   Set<VKey<HostResource>> nsHostVKeys;
 
