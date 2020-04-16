@@ -52,9 +52,9 @@ import org.junit.runner.RunWith;
  * end-to-end functional tests.
  *
  * <p>As of April 2020, none of the before/after annotations ({@code BeforeClass} and {@code
- * AfterClass} in JUnit 4, or {@code BeforeAll} and {@code AfterClass} in JUnit5) work in a test
- * suite run with {@link JUnitPlatform the current JUnit 5 runner}. However, staying with the JUnit
- * 4 runner would prevent any member tests from migrating to JUnit 5.
+ * AfterClass} in JUnit 4, or {@code BeforeAll} and {@code AfterAll} in JUnit5) work in a test suite
+ * run with {@link JUnitPlatform the current JUnit 5 runner}. However, staying with the JUnit 4
+ * runner would prevent any member tests from migrating to JUnit 5.
  *
  * <p>This class uses a hack to work with the current JUnit 5 runner. {@link BeforeSuiteTest} is
  * added to the front of the suite class list and invokes the suite's setup method, and {@link
@@ -108,7 +108,7 @@ public class SqlIntegrationTestSuite {
   static class BeforeSuiteTest {
 
     @Test
-    public void beforeAll() {
+    void beforeAll() {
       initJpaEntityCoverage();
     }
   }
