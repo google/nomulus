@@ -18,21 +18,19 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.io.Resources;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.DatastoreEntityExtension;
 import google.registry.tools.LevelDbFileBuilder.Property;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URL;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
-@RunWith(JUnit4.class)
 public class CompareDbBackupsTest {
 
   private static final int BASE_ID = 1001;
@@ -41,20 +39,22 @@ public class CompareDbBackupsTest {
   private final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
   private PrintStream orgStdout;
 
-  @Rule public final TemporaryFolder tempFs = new TemporaryFolder();
+  public final TemporaryFolder tempFs = new TemporaryFolder();
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
-  @Before
-  public void before() {
+  @BeforeEach
+  public void before() throws IOException {
     orgStdout = System.out;
     System.setOut(new PrintStream(stdout));
+    tempFs.create();
   }
 
-  @After
+  @AfterEach
   public void after() {
     System.setOut(orgStdout);
+    tempFs.delete();
   }
 
   @Test

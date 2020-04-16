@@ -17,30 +17,43 @@ package google.registry.model.domain;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
-import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
+import google.registry.testing.DatastoreEntityExtension;
+import google.registry.testing.FakeClock;
 import javax.persistence.EntityManager;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Verify that we can store/retrieve DomainBase objects from a SQL database. */
-public class DomainBaseSqlTest extends EntityTestCase {
+public class DomainBaseSqlTest {
+
+  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+
+  @RegisterExtension
+  @Order(value = 1)
+  DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
+
+  @RegisterExtension
+  JpaIntegrationWithCoverageExtension jpa =
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   DomainBase domain;
   Key<ContactResource> contactKey;
   Key<ContactResource> contact2Key;
-
-  public DomainBaseSqlTest() {
-    super(true);
-  }
 
   @BeforeEach
   public void setUp() {
