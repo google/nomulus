@@ -862,6 +862,8 @@ task standardTest(type: FilteringTest) {
   includeAllTests()
   exclude fragileTestPatterns
   exclude outcastTestPatterns
+  // See SqlIntegrationTestSuite.java
+  exclude '**/*BeforeSuiteTest.*', '**/*AfterSuiteTest.*'
 
   if (rootProject.findProperty("skipDockerIncompatibleTests") == "true") {
     exclude dockerIncompatibleTestPatterns
