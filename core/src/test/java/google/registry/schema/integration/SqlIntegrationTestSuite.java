@@ -14,19 +14,22 @@
 
 package google.registry.schema.integration;
 
-import com.google.common.truth.Expect;
+import static com.google.common.truth.Truth.assert_;
+
 import google.registry.model.domain.DomainBaseSqlTest;
 import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.persistence.transaction.JpaEntityCoverage;
 import google.registry.schema.cursor.CursorDaoTest;
+import google.registry.schema.integration.SqlIntegrationTestSuite.AfterSuiteTest;
+import google.registry.schema.integration.SqlIntegrationTestSuite.BeforeSuiteTest;
 import google.registry.schema.registrar.RegistrarDaoTest;
 import google.registry.schema.server.LockDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
 import google.registry.schema.tld.ReservedListDaoTest;
 import google.registry.schema.tmch.ClaimsListDaoTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.runner.RunWith;
@@ -47,9 +50,23 @@ import org.junit.runner.RunWith;
  * <p>Note that with {@code JpaIntegrationWithCoverageRule}, each method starts with an empty
  * database. Therefore this is not the right place for verifying backward data compatibility in
  * end-to-end functional tests.
+ *
+ * <p>As of April 2020, none of the before/after annotations ({@code BeforeClass} and {@code
+ * AfterClass} in JUnit 4, or {@code BeforeAll} and {@code AfterClass} in JUnit5) work in a test
+ * suite run with {@link JUnitPlatform the current JUnit 5 runner}. However, staying with the JUnit
+ * 4 runner would prevent any member tests from migrating to JUnit 5.
+ *
+ * <p>This class uses a hack to work with the current JUnit 5 runner. {@link BeforeSuiteTest} is
+ * added to the front of the suite class list and invokes the suite's setup method, and {@link
+ * AfterSuiteTest} is added to the tail of the suite class list and invokes the suite's teardown
+ * method. This works because the member tests are run in the order they are declared (See {@code
+ * org.junit.platform.engine.support.descriptor.AbstractTestDescriptor#addChild}). Should the
+ * ordering changes in the future, we will only get false alarms.
  */
 @RunWith(JUnitPlatform.class)
 @SelectClasses({
+  // BeforeSuiteTest must be the first entry. See class javadoc for details.
+  BeforeSuiteTest.class,
   ClaimsListDaoTest.class,
   CursorDaoTest.class,
   DomainBaseSqlTest.class,
@@ -57,27 +74,56 @@ import org.junit.runner.RunWith;
   PremiumListDaoTest.class,
   RegistrarDaoTest.class,
   RegistryLockDaoTest.class,
-  ReservedListDaoTest.class
+  ReservedListDaoTest.class,
+  // AfterSuiteTest must be the last entry. See class javadoc for details.
+  AfterSuiteTest.class
 })
 public class SqlIntegrationTestSuite {
 
-  @ClassRule public static final Expect expect = Expect.create();
-
-  @BeforeClass
+  @BeforeAll // Not yet supported in JUnit 5. Called through BeforeSuiteTest.
   public static void initJpaEntityCoverage() {
     JpaEntityCoverage.init();
   }
 
-  @AfterClass
+  @AfterAll // Not yet supported in JUnit 5. Called through AfterSuiteTest.
   public static void checkJpaEntityCoverage() {
-    expect
+    // TODO(weiminyu): collect both assertion errors like Truth's Expect does in JUnit 4.
+    assert_()
         .withMessage("Tests are missing for the following JPA entities:")
         .that(JpaEntityCoverage.getUncoveredEntities())
         .isEmpty();
-    expect
+    assert_()
         .withMessage(
             "The following classes do not test JPA entities. Please remove them from this suite")
         .that(JpaEntityCoverage.getIrrelevantTestClasses())
         .isEmpty();
+  }
+
+  /**
+   * Hack for calling {@link SqlIntegrationTestSuite#initJpaEntityCoverage()} before all real tests
+   * in suite. See outer class javadoc for details.
+   *
+   * <p>The 'Test' suffix in class name is required.
+   */
+  static class BeforeSuiteTest {
+
+    @Test
+    public void beforeAll() {
+      initJpaEntityCoverage();
+    }
+  }
+
+  /**
+   * Hack for invoking {@link SqlIntegrationTestSuite#checkJpaEntityCoverage()} after all real tests
+   * in suite. See outer class javadoc for details.
+   *
+   * <p>The 'Test' suffix in class name is required.
+   */
+  static class AfterSuiteTest {
+
+    @Test
+    void afterSuite() {
+      checkJpaEntityCoverage();
+    }
   }
 }
