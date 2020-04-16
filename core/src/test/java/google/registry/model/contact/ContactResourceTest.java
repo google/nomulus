@@ -42,15 +42,19 @@ import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import javax.persistence.RollbackException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactResource}. */
 public class ContactResourceTest extends EntityTestCase {
   ContactResource originalContact;
   ContactResource contactResource;
 
-  @Before
+  public ContactResourceTest() {
+    super(true);
+  }
+
+  @BeforeEach
   public void setUp() {
     createTld("foobar");
     originalContact =
