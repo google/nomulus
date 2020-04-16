@@ -14,11 +14,15 @@
 
 package google.registry.persistence;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
+import com.google.common.collect.ImmutableSet;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import java.lang.reflect.Method;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
@@ -77,6 +81,40 @@ public class EntityCallbacksListenerTest {
                   return removed;
                 });
     checkAll(testRemove, 0, 0, 1, 1);
+  }
+
+  @Test
+  public void verifyAllManagedEntities_haveNoMethodWithEmbedded() {
+    ImmutableSet<Class> violations =
+        PersistenceXmlUtility.getManagedClasses().stream()
+            .filter(clazz -> clazz.isAnnotationPresent(Entity.class))
+            .filter(EntityCallbacksListenerTest::hasMethodAnnotatedWithEmbedded)
+            .collect(toImmutableSet());
+    assertWithMessage(
+            "Found entity classes having methods annotated with @Embedded. EntityCallbacksListener"
+                + " only supports annotating fields with @Embedded.")
+        .that(violations)
+        .isEmpty();
+  }
+
+  @Test
+  public void verifyHasMethodAnnotatedWithEmbedded_work() {
+    assertThat(hasMethodAnnotatedWithEmbedded(ViolationEntity.class)).isTrue();
+  }
+
+  private static boolean hasMethodAnnotatedWithEmbedded(Class<?> entityType) {
+    boolean result = false;
+    Class<?> parentType = entityType.getSuperclass();
+    if (parentType != null && parentType.isAnnotationPresent(MappedSuperclass.class)) {
+      result = hasMethodAnnotatedWithEmbedded(parentType);
+    }
+    for (Method method : entityType.getDeclaredMethods()) {
+      if (method.isAnnotationPresent(Embedded.class)) {
+        result = true;
+        break;
+      }
+    }
+    return result;
   }
 
   private static void checkAll(
@@ -250,6 +288,15 @@ public class EntityCallbacksListenerTest {
     @PostLoad
     void parentEmbeddedParentPostLoad() {
       parentEmbeddedParentPostLoad++;
+    }
+  }
+
+  @Entity
+  private static class ViolationEntity {
+
+    @Embedded
+    EntityEmbedded getEntityEmbedded() {
+      return new EntityEmbedded();
     }
   }
 }
