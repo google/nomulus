@@ -18,6 +18,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -31,6 +32,7 @@ import javax.persistence.PostUpdate;
 import javax.persistence.PrePersist;
 import javax.persistence.PreRemove;
 import javax.persistence.PreUpdate;
+import javax.persistence.Transient;
 
 /**
  * A listener class to invoke entity callbacks in cases where Hibernate doesn't invoke the callback
@@ -167,10 +169,12 @@ public class EntityCallbacksListener {
 
     private Stream<Object> findEmbeddedProperties(Object object, Class<?> clazz) {
       return Arrays.stream(clazz.getDeclaredFields())
+          .filter(field -> !field.isAnnotationPresent(Transient.class))
           .filter(
               field ->
                   field.isAnnotationPresent(Embedded.class)
                       || field.getType().isAnnotationPresent(Embeddable.class))
+          .filter(field -> !Modifier.isStatic(field.getModifiers()))
           .map(field -> getFieldObject(field, object))
           .filter(Objects::nonNull);
     }

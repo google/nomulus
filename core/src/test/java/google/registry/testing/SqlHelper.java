@@ -14,12 +14,17 @@
 
 package google.registry.testing;
 
+import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.AppEngineRule.makeRegistrar1;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.registry.RegistryLockDao;
 import google.registry.schema.domain.RegistryLock;
+import java.sql.SQLException;
 import java.util.Optional;
+import org.junit.function.ThrowingRunnable;
 
 /** Static utils for setting up and retrieving test resources from the SQL database. */
 public class SqlHelper {
@@ -50,6 +55,28 @@ public class SqlHelper {
 
   public static Optional<RegistryLock> getRegistryLockByRevisionId(long revisionId) {
     return jpaTm().transact(() -> RegistryLockDao.getByRevisionId(revisionId));
+  }
+
+  public static void saveRegistrar(String clientId) {
+    jpaTm()
+        .transact(
+            () -> jpaTm().saveNew(makeRegistrar1().asBuilder().setClientId(clientId).build()));
+  }
+
+  public static <T extends Throwable> void assertThrowForeignKeyViolation(
+      Class<T> exception, ThrowingRunnable runnable) {
+    T thrown = assertThrows(exception, runnable);
+    assertThat(thrown)
+        .hasCauseThat() // ConstraintViolationException
+        .hasCauseThat() // ConstraintViolationException
+        .hasCauseThat()
+        .isInstanceOf(SQLException.class);
+    assertThat(thrown)
+        .hasCauseThat() // ConstraintViolationException
+        .hasCauseThat() // ConstraintViolationException
+        .hasCauseThat()
+        .hasMessageThat()
+        .contains("violates foreign key constraint");
   }
 
   private SqlHelper() {}

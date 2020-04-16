@@ -53,9 +53,7 @@ import org.joda.time.DateTime;
     name = "Contact",
     indexes = {
       @javax.persistence.Index(columnList = "creationTime"),
-      // TODO(b/154044182): Investigate why the sql generator requires column name only for this
-      // field
-      @javax.persistence.Index(columnList = "current_sponsor_client_id"),
+      @javax.persistence.Index(columnList = "currentSponsorClientId"),
       @javax.persistence.Index(columnList = "deletionTime"),
       @javax.persistence.Index(columnList = "contactId", unique = true),
       @javax.persistence.Index(columnList = "searchName")

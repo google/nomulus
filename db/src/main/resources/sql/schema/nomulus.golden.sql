@@ -81,8 +81,11 @@ ALTER SEQUENCE public."ClaimsList_revision_id_seq" OWNED BY public."ClaimsList".
 
 CREATE TABLE public."Contact" (
     repo_id text NOT NULL,
+    creation_client_id text NOT NULL,
     creation_time timestamp with time zone NOT NULL,
+    current_sponsor_client_id text NOT NULL,
     deletion_time timestamp with time zone,
+    last_epp_update_client_id text,
     last_epp_update_time timestamp with time zone,
     statuses text[],
     auth_info_repo_id text,
@@ -121,10 +124,7 @@ CREATE TABLE public."Contact" (
     addr_local_type text,
     search_name text,
     voice_phone_extension text,
-    voice_phone_number text,
-    creation_client_id text NOT NULL,
-    current_sponsor_client_id text NOT NULL,
-    last_epp_update_client_id text
+    voice_phone_number text
 );
 
 
@@ -594,13 +594,6 @@ CREATE INDEX idx1rcgkdd777bpvj0r94sltwd5y ON public."Domain" USING btree (fully_
 
 
 --
--- Name: idx1s3d8wkyhyeapv7ri6wqitrhj; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx1s3d8wkyhyeapv7ri6wqitrhj ON public."Contact" USING btree (current_sponsor_client_id);
-
-
---
 -- Name: idx3y752kr9uh4kh6uig54vemx0l; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -633,6 +626,13 @@ CREATE INDEX idx_registry_lock_registrar_id ON public."RegistryLock" USING btree
 --
 
 CREATE INDEX idx_registry_lock_verification_code ON public."RegistryLock" USING btree (verification_code);
+
+
+--
+-- Name: idxbn8t4wp85fgxjl8q4ctlscx55; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxbn8t4wp85fgxjl8q4ctlscx55 ON public."Contact" USING btree (current_sponsor_client_id);
 
 
 --

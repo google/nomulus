@@ -22,6 +22,8 @@ import static google.registry.testing.ContactResourceSubject.assertAboutContacts
 import static google.registry.testing.DatastoreHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
+import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.junit.Assert.assertThrows;
 
@@ -39,6 +41,7 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import javax.persistence.RollbackException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -54,11 +57,11 @@ public class ContactResourceTest extends EntityTestCase {
         new ContactResource.Builder()
             .setContactId("contact_id")
             .setRepoId("1-FOOBAR")
-            .setCreationClientId("a registrar")
+            .setCreationClientId("registrar1")
             .setLastEppUpdateTime(fakeClock.nowUtc())
-            .setLastEppUpdateClientId("another registrar")
+            .setLastEppUpdateClientId("registrar2")
             .setLastTransferTime(fakeClock.nowUtc())
-            .setPersistedCurrentSponsorClientId("a third registrar")
+            .setPersistedCurrentSponsorClientId("registrar3")
             .setLocalizedPostalInfo(
                 new PostalInfo.Builder()
                     .setType(Type.LOCALIZED)
@@ -119,7 +122,16 @@ public class ContactResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testContactResourcePersistenceInCloudSql() {
+  public void testCloudSqlPersistence_failWhenViolateForeignKeyConstraint() {
+    assertThrowForeignKeyViolation(
+        RollbackException.class, () -> jpaTm().transact(() -> jpaTm().saveNew(originalContact)));
+  }
+
+  @Test
+  public void testCloudSqlPersistence_succeed() {
+    saveRegistrar("registrar1");
+    saveRegistrar("registrar2");
+    saveRegistrar("registrar3");
     jpaTm().transact(() -> jpaTm().saveNew(originalContact));
     ContactResource persisted =
         jpaTm()

@@ -43,7 +43,6 @@ import com.googlecode.objectify.annotation.Index;
 import google.registry.config.RegistryConfig;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.ofy.CommitLogManifest;
-import google.registry.model.registrar.Registrar;
 import google.registry.model.transfer.TransferData;
 import google.registry.util.NonFinalForTesting;
 import java.util.Map;
@@ -52,8 +51,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import javax.persistence.Column;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 import org.joda.time.DateTime;
@@ -73,13 +70,11 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
 
   /** The ID of the registrar that is currently sponsoring this resource. */
   @Index
-  @ManyToOne(targetEntity = Registrar.class)
-  @JoinColumn(name = "current_sponsor_client_id", nullable = false)
+  @Column(nullable = false)
   String currentSponsorClientId;
 
   /** The ID of the registrar that created this resource. */
-  @ManyToOne(targetEntity = Registrar.class)
-  @JoinColumn(name = "creation_client_id", nullable = false)
+  @Column(nullable = false)
   String creationClientId;
 
   /**
@@ -89,8 +84,6 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
    * edits; it only includes EPP-visible modifications such as {@literal <update>}. Can be null if
    * the resource has never been modified.
    */
-  @ManyToOne(targetEntity = Registrar.class)
-  @JoinColumn(name = "last_epp_update_client_id")
   String lastEppUpdateClientId;
 
   /** The time when this resource was created. */
