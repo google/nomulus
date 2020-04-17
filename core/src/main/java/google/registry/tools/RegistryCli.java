@@ -132,10 +132,8 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
       jcommander.parse(args);
     } catch (ParameterException e) {
       // If we failed to fully parse the command but at least found a valid command name, show only
-      // the usage for that command. Otherwise, show full usage. Either way, rethrow the error.
-      if (jcommander.getParsedCommand() == null) {
-        jcommander.usage();
-      } else {
+      // the usage for that command.
+      if (jcommander.getParsedCommand() != null) {
         jcommander.usage(jcommander.getParsedCommand());
       }
       // Don't rethrow if we said: nomulus command --help
@@ -144,8 +142,13 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
       }
       throw e;
     }
-
-    if (showAllCommands) {
+    String parsedCommand = jcommander.getParsedCommand();
+    // Show the list of all commands either if requested or if no subcommand name was specified
+    // (which does not throw a ParameterException parse error above).
+    if (showAllCommands || parsedCommand == null) {
+      if (parsedCommand == null) {
+        System.out.println("The list of available subcommands is:");
+      }
       commands.keySet().forEach(System.out::println);
       return;
     }
@@ -161,8 +164,7 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
     // retrieving the first (and, by virtue of our usage, only) object from it.
     Command command =
         (Command)
-            Iterables.getOnlyElement(
-                jcommander.getCommands().get(jcommander.getParsedCommand()).getObjects());
+            Iterables.getOnlyElement(jcommander.getCommands().get(parsedCommand).getObjects());
     loggingParams.configureLogging();  // Must be called after parameters are parsed.
 
     try {

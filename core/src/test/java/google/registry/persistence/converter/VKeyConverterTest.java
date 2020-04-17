@@ -45,8 +45,8 @@ public class VKeyConverterTest {
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(original));
 
     TestEntity retrieved =
-        jpaTm().transact(
-            () -> jpaTm().getEntityManager().find(TestEntity.class, "TheRealSpartacus"));
+        jpaTm()
+            .transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "TheRealSpartacus"));
     assertThat(retrieved.other.getSqlKey()).isEqualTo("ImSpartacus!");
   }
 
@@ -60,8 +60,7 @@ public class VKeyConverterTest {
 
   @Entity(name = "TestEntity")
   static class TestEntity {
-    @Id
-    String id;
+    @Id String id;
 
     // Specifying "@Converter(autoApply = true) on TestEntityVKeyConverter this doesn't seem to
     // work.
