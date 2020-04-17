@@ -17,53 +17,46 @@ package google.registry.persistence.converter;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Maps;
 import google.registry.model.common.TimedTransitionProperty;
-import google.registry.model.registry.Registry.TldState;
-import google.registry.model.registry.Registry.TldStateTransition;
+import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.persistence.converter.StringMapDescriptor.StringMap;
 import java.util.Map;
 import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
 import org.joda.time.DateTime;
 
 /**
- * JPA converter for storing/retrieving {@link TimedTransitionProperty<TldState,
- * TldStateTransition>} objects.
+ * Base JPA converter for {@link TimedTransitionProperty} objects that are stored in a column with
+ * data type of hstore in the database.
  */
-@Converter(autoApply = true)
-public class TimedTldStateTransitionMapConverter
-    implements AttributeConverter<
-        TimedTransitionProperty<TldState, TldStateTransition>, StringMap> {
+public abstract class TimedTransitionPropertyConverterBase<K, V extends TimedTransition<K>>
+    implements AttributeConverter<TimedTransitionProperty<K, V>, StringMap> {
+
+  abstract Map.Entry<String, String> convertToDatabaseMapEntry(Map.Entry<DateTime, V> entry);
+
+  abstract Map.Entry<DateTime, K> convertToEntityMapEntry(Map.Entry<String, String> entry);
+
+  abstract Class<V> getTimedTransitionSubclass();
 
   @Override
-  public StringMap convertToDatabaseColumn(
-      TimedTransitionProperty<TldState, TldStateTransition> attribute) {
+  public StringMap convertToDatabaseColumn(TimedTransitionProperty<K, V> attribute) {
     return attribute == null
         ? null
         : StringMap.create(
             attribute.entrySet().stream()
-                .map(
-                    entry ->
-                        Maps.immutableEntry(
-                            entry.getKey().toString(), entry.getValue().getValue().name()))
+                .map(this::convertToDatabaseMapEntry)
                 .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue)));
   }
 
   @Override
-  public TimedTransitionProperty<TldState, TldStateTransition> convertToEntityAttribute(
-      StringMap dbData) {
+  public TimedTransitionProperty<K, V> convertToEntityAttribute(StringMap dbData) {
     if (dbData == null) {
       return null;
     }
-    Map map =
+    Map<DateTime, K> map =
         dbData.getMap().entrySet().stream()
-            .map(
-                entry ->
-                    Maps.immutableEntry(
-                        DateTime.parse(entry.getKey()), TldState.valueOf(entry.getValue())))
+            .map(this::convertToEntityMapEntry)
             .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
     return TimedTransitionProperty.fromValueMap(
-        ImmutableSortedMap.copyOf(map), TldStateTransition.class);
+        ImmutableSortedMap.copyOf(map), getTimedTransitionSubclass());
   }
 }

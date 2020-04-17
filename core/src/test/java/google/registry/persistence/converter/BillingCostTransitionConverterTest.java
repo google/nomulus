@@ -17,25 +17,26 @@ package google.registry.persistence.converter;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.joda.money.CurrencyUnit.USD;
 
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.ImmutableObject;
 import google.registry.model.common.TimedTransitionProperty;
-import google.registry.model.registry.Registry.TldState;
-import google.registry.model.registry.Registry.TldStateTransition;
+import google.registry.model.registry.Registry.BillingCostTransition;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link TimedTldStateTransitionMapConverter}. */
+/** Unit tests for {@link BillingCostTransitionConverter}. */
 @RunWith(JUnit4.class)
-public class TimedTldStateTransitionMapConverterTest {
+public class BillingCostTransitionConverterTest {
 
   @Rule
   public final JpaUnitTestRule jpaRule =
@@ -45,20 +46,16 @@ public class TimedTldStateTransitionMapConverterTest {
           .buildUnitTestRule();
 
   private static final DateTime DATE_1 = DateTime.parse("2001-01-01T00:00:00.0Z");
-  private static final DateTime DATE_2 = DateTime.parse("2002-01-01T00:00:00.0Z");
-  private static final DateTime DATE_3 = DateTime.parse("2003-01-01T00:00:00.0Z");
 
-  private static final ImmutableSortedMap<DateTime, TldState> values =
+  private static final ImmutableSortedMap<DateTime, Money> values =
       ImmutableSortedMap.of(
-          START_OF_TIME, TldState.PREDELEGATION,
-          DATE_1, TldState.QUIET_PERIOD,
-          DATE_2, TldState.PDT,
-          DATE_3, TldState.GENERAL_AVAILABILITY);
+          START_OF_TIME, Money.of(USD, 8),
+          DATE_1, Money.of(USD, 0));
 
   @Test
   public void roundTripConversion_returnsSameTimedTransitionProperty() {
-    TimedTransitionProperty<TldState, TldStateTransition> timedTransitionProperty =
-        TimedTransitionProperty.fromValueMap(values, TldStateTransition.class);
+    TimedTransitionProperty<Money, BillingCostTransition> timedTransitionProperty =
+        TimedTransitionProperty.fromValueMap(values, BillingCostTransition.class);
     TestEntity testEntity = new TestEntity(timedTransitionProperty);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
@@ -71,12 +68,12 @@ public class TimedTldStateTransitionMapConverterTest {
 
     @Id String name = "id";
 
-    TimedTransitionProperty<TldState, TldStateTransition> timedTransitionProperty;
+    TimedTransitionProperty<Money, BillingCostTransition> timedTransitionProperty;
 
     private TestEntity() {}
 
     private TestEntity(
-        TimedTransitionProperty<TldState, TldStateTransition> timedTransitionProperty) {
+        TimedTransitionProperty<Money, BillingCostTransition> timedTransitionProperty) {
       this.timedTransitionProperty = timedTransitionProperty;
     }
   }
