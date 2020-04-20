@@ -117,6 +117,46 @@ CREATE TABLE public."Domain" (
 
 
 --
+-- Name: DomainHost; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DomainHost" (
+    domain_repo_id text NOT NULL,
+    ns_host_v_keys text
+);
+
+
+--
+-- Name: HostResource; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."HostResource" (
+    repo_id text NOT NULL,
+    creation_client_id text,
+    creation_time timestamp with time zone,
+    current_sponsor_client_id text,
+    deletion_time timestamp with time zone,
+    last_epp_update_client_id text,
+    last_epp_update_time timestamp with time zone,
+    statuses text[],
+    fully_qualified_host_name text,
+    last_superordinate_change timestamp with time zone,
+    last_transfer_time timestamp with time zone,
+    superordinate_domain bytea
+);
+
+
+--
+-- Name: HostResource_inetAddresses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."HostResource_inetAddresses" (
+    host_resource_repo_id text NOT NULL,
+    inet_addresses bytea
+);
+
+
+--
 -- Name: Lock; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -391,6 +431,14 @@ ALTER TABLE ONLY public."Domain"
 
 
 --
+-- Name: HostResource HostResource_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostResource"
+    ADD CONSTRAINT "HostResource_pkey" PRIMARY KEY (repo_id);
+
+
+--
 -- Name: Lock Lock_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -560,6 +608,30 @@ ALTER TABLE ONLY public."RegistryLock"
 
 ALTER TABLE ONLY public."ClaimsEntry"
     ADD CONSTRAINT fk6sc6at5hedffc0nhdcab6ivuq FOREIGN KEY (revision_id) REFERENCES public."ClaimsList"(revision_id);
+
+
+--
+-- Name: HostResource_inetAddresses fk6unwhfkcu3oq6q347fxvpagv; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostResource_inetAddresses"
+    ADD CONSTRAINT fk6unwhfkcu3oq6q347fxvpagv FOREIGN KEY (host_resource_repo_id) REFERENCES public."HostResource"(repo_id);
+
+
+--
+-- Name: DomainHost fk_domainhost_host_valid; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainHost"
+    ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (ns_host_v_keys) REFERENCES public."HostResource"(repo_id);
+
+
+--
+-- Name: DomainHost fkfmi7bdink53swivs390m2btxg; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainHost"
+    ADD CONSTRAINT fkfmi7bdink53swivs390m2btxg FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
 
 
 --
