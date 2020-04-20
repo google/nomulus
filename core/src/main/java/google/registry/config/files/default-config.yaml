@@ -207,9 +207,7 @@ hibernate:
 
   # Connection pool configurations.
   hikariConnectionTimeout: 20000
-  hikariMinimumIdle: 0
   hikariMaximumPoolSize: 20
-  hikariIdleTimeout: 300000
 
 cloudSql:
   # jdbc url for the Cloud SQL database.

@@ -16,6 +16,7 @@ package google.registry.persistence.transaction;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static google.registry.persistence.PersistenceModule.HIKARI_MAXIMUM_POOL_SIZE;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import com.google.common.base.Charsets;
@@ -41,6 +42,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -76,7 +78,7 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
   private final Clock clock;
   private final Optional<String> initScriptPath;
   private final ImmutableList<Class> extraEntityClasses;
-  private final ImmutableMap userProperties;
+  private final ImmutableMap<String, String> userProperties;
 
   private static final JdbcDatabaseContainer database = create();
   private static final HibernateSchemaExporter exporter =
@@ -143,15 +145,17 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
           new String(Files.readAllBytes(tempSqlFile.toPath()), StandardCharsets.UTF_8));
     }
 
-    ImmutableMap properties = PersistenceModule.providesDefaultDatabaseConfigs();
+    Map<String, String> properties =
+        Maps.newHashMap(PersistenceModule.providesDefaultDatabaseConfigs());
+    // Set the maximum pool size to 1 as we only run 1 test at a time, if connection leak happens,
+    // the creation of new connection will time out and we will know it through the error log.
+    properties.put(HIKARI_MAXIMUM_POOL_SIZE, "1");
     if (!userProperties.isEmpty()) {
       // If there are user properties, create a new properties object with these added.
-      ImmutableMap.Builder builder = properties.builder();
-      builder.putAll(userProperties);
+      properties.putAll(userProperties);
       // Forbid Hibernate push to stay consistent with flyway-based schema management.
-      builder.put(Environment.HBM2DDL_AUTO, "none");
-      builder.put(Environment.SHOW_SQL, "true");
-      properties = builder.build();
+      properties.put(Environment.HBM2DDL_AUTO, "none");
+      properties.put(Environment.SHOW_SQL, "true");
     }
     assertReasonableNumDbConnections();
     emf =
@@ -159,7 +163,7 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
             getJdbcUrl(),
             database.getUsername(),
             database.getPassword(),
-            properties,
+            ImmutableMap.copyOf(properties),
             extraEntityClasses);
     emfEntityHash = entityHash;
   }
