@@ -66,6 +66,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
 import google.registry.util.CollectionUtils;
 import java.util.HashSet;
 import java.util.Objects;
@@ -107,7 +108,7 @@ import org.joda.time.Interval;
     })
 @ExternalMessagingName("domain")
 public class DomainBase extends EppResource
-    implements ForeignKeyedEppResource, ResourceWithTransferData {
+    implements ForeignKeyedEppResource, ResourceWithTransferData, DatastoreAndSqlEntity {
 
   /** The max number of years that a domain can be registered for, as set by ICANN policy. */
   public static final int MAX_REGISTRATION_YEARS = 10;
