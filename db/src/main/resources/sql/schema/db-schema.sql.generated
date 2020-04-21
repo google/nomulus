@@ -133,9 +133,9 @@
 
     create table "HostResource" (
        repo_id text not null,
-        creation_client_id text,
-        creation_time timestamptz,
-        current_sponsor_client_id text,
+        creation_client_id text not null,
+        creation_time timestamptz not null,
+        current_sponsor_client_id text not null,
         deletion_time timestamptz,
         last_epp_update_client_id text,
         last_epp_update_time timestamptz,
@@ -304,8 +304,7 @@ create index reservedlist_name_idx on "ReservedList" (name);
        foreign key (revision_id) 
        references "ClaimsList";
 
-<<<<<<< HEAD
-    alter table if exists "DomainHost"
+    alter table if exists "DomainHost" 
        add constraint FKeq1guccbre1yk3oosgp2io554 
        foreign key (domain_repo_id) 
        references "Domain";
@@ -315,38 +314,6 @@ create index reservedlist_name_idx on "ReservedList" (name);
        foreign key (host_resource_repo_id) 
        references "HostResource";
 
-    alter table if exists "Contact"
-       add constraint FK1sfyj7o7954prbn1exk7lpnoe 
-       foreign key (creation_client_id) 
-       references "Registrar";
-
-    alter table if exists "Contact" 
-       add constraint FK93c185fx7chn68uv7nl6uv2s0 
-       foreign key (current_sponsor_client_id) 
-       references "Registrar";
-
-    alter table if exists "Contact" 
-       add constraint FKmb7tdiv85863134w1wogtxrb2 
-       foreign key (last_epp_update_client_id) 
-       references "Registrar";
-
-    alter table if exists "Domain" 
-       add constraint FK2jc69qyg2tv9hhnmif6oa1cx1 
-       foreign key (creation_client_id) 
-       references "Registrar";
-
-    alter table if exists "Domain" 
-       add constraint FK2u3srsfbei272093m3b3xwj23 
-       foreign key (current_sponsor_client_id) 
-       references "Registrar";
-
-    alter table if exists "Domain" 
-       add constraint FKjc0r9r5y1lfbt4gpbqw4wsuvq 
-       foreign key (last_epp_update_client_id) 
-       references "Registrar";
-
-=======
->>>>>>> ceb3dcef8... Manually add foreign key constraints
     alter table if exists "PremiumEntry" 
        add constraint FKo0gw90lpo1tuee56l0nb6y6g5 
        foreign key (revision_id) 

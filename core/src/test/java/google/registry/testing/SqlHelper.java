@@ -19,6 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.AppEngineRule.makeRegistrar1;
 import static org.junit.Assert.assertThrows;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.registry.RegistryLockDao;
 import google.registry.schema.domain.RegistryLock;
@@ -66,15 +67,8 @@ public class SqlHelper {
   public static <T extends Throwable> void assertThrowForeignKeyViolation(
       Class<T> exception, ThrowingRunnable runnable) {
     T thrown = assertThrows(exception, runnable);
-    assertThat(thrown)
-        .hasCauseThat() // ConstraintViolationException
-        .hasCauseThat() // ConstraintViolationException
-        .hasCauseThat()
-        .isInstanceOf(SQLException.class);
-    assertThat(thrown)
-        .hasCauseThat() // ConstraintViolationException
-        .hasCauseThat() // ConstraintViolationException
-        .hasCauseThat()
+    assertThat(Throwables.getRootCause(thrown)).isInstanceOf(SQLException.class);
+    assertThat(Throwables.getRootCause(thrown))
         .hasMessageThat()
         .contains("violates foreign key constraint");
   }
