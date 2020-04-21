@@ -18,6 +18,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
+import javax.persistence.Embeddable;
+import javax.persistence.MappedSuperclass;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlValue;
@@ -31,17 +33,21 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * "e164Type" type from {@link "http://tools.ietf.org/html/draft-lozano-tmch-smd"}.
  *
  * <blockquote>
+ *
  * <p>"Contact telephone number structure is derived from structures defined in [ITU.E164.2005].
  * Telephone numbers described in this mapping are character strings that MUST begin with a plus
  * sign ("+", ASCII value 0x002B), followed by a country code defined in [ITU.E164.2005], followed
  * by a dot (".", ASCII value 0x002E), followed by a sequence of digits representing the telephone
  * number. An optional "x" attribute is provided to note telephone extension information."
+ *
  * </blockquote>
  *
  * @see google.registry.model.contact.ContactPhoneNumber
  * @see google.registry.model.mark.MarkPhoneNumber
  */
 @XmlTransient
+@Embeddable
+@MappedSuperclass
 public class PhoneNumber extends ImmutableObject {
 
   @XmlValue

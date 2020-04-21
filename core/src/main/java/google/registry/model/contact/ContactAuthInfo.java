@@ -20,6 +20,7 @@ import javax.xml.bind.annotation.XmlType;
 
 /** A version of authInfo specifically for contacts. */
 @Embed
+@javax.persistence.Embeddable
 @XmlType(namespace = "urn:ietf:params:xml:ns:contact-1.0")
 public class ContactAuthInfo extends AuthInfo {
   public static ContactAuthInfo create(PasswordAuth pw) {

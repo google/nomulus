@@ -21,6 +21,9 @@ import google.registry.model.Buildable;
 import google.registry.model.Buildable.Overlayable;
 import google.registry.model.ImmutableObject;
 import java.util.Optional;
+import javax.persistence.Embeddable;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlEnumValue;
@@ -29,10 +32,11 @@ import javax.xml.bind.annotation.adapters.NormalizedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
- * Implementation of both "postalInfoType" and "chgPostalInfoType" from
- * {@link "http://tools.ietf.org/html/rfc5733"}.
+ * Implementation of both "postalInfoType" and "chgPostalInfoType" from {@link
+ * "http://tools.ietf.org/html/rfc5733"}.
  */
 @Embed
+@Embeddable
 @XmlType(propOrder = {"name", "org", "address", "type"})
 public class PostalInfo extends ImmutableObject implements Overlayable<PostalInfo> {
 
@@ -53,6 +57,7 @@ public class PostalInfo extends ImmutableObject implements Overlayable<PostalInf
   @XmlElement(name = "addr")
   ContactAddress address;
 
+  @Enumerated(EnumType.STRING)
   @XmlAttribute
   Type type;
 
