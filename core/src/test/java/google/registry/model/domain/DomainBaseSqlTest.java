@@ -16,10 +16,10 @@ package google.registry.model.domain;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
@@ -35,9 +35,7 @@ import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
-import java.sql.SQLException;
 import javax.persistence.EntityManager;
-import javax.persistence.RollbackException;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
@@ -103,6 +101,8 @@ public class DomainBaseSqlTest {
         new HostResource.Builder()
             .setRepoId("host1")
             .setFullyQualifiedHostName("ns1.example.com")
+            .setCreationClientId("registrar1")
+            .setPersistedCurrentSponsorClientId("registrar2")
             .build();
   }
 
@@ -152,28 +152,15 @@ public class DomainBaseSqlTest {
 
   @Test
   public void testForeignKeyConstraints() {
-    Exception e =
-        assertThrows(
-            RollbackException.class,
-            () -> {
-              jpaTm()
-                  .transact(
-                      () -> {
-                        // Persist the domain without the associated host object.
-                        EntityManager em = jpaTm().getEntityManager();
-                        em.persist(domain);
-                      });
-            });
-    assertThat(e)
-        .hasCauseThat() // ConstraintViolationException
-        .hasCauseThat() // ConstraintViolationException
-        .hasCauseThat()
-        .isInstanceOf(SQLException.class);
-    assertThat(e)
-        .hasCauseThat() // ConstraintViolationException
-        .hasCauseThat() // ConstraintViolationException
-        .hasCauseThat()
-        .hasMessageThat()
-        .contains("\"DomainHost\" violates foreign key constraint \"fk_domainhost_host");
+    assertThrowForeignKeyViolation(
+        () -> {
+          jpaTm()
+              .transact(
+                  () -> {
+                    // Persist the domain without the associated host object.
+                    EntityManager em = jpaTm().getEntityManager();
+                    em.persist(domain);
+                  });
+        });
   }
 }

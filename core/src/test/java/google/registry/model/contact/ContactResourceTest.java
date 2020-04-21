@@ -41,7 +41,6 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
-import javax.persistence.RollbackException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -127,8 +126,7 @@ public class ContactResourceTest extends EntityTestCase {
 
   @Test
   public void testCloudSqlPersistence_failWhenViolateForeignKeyConstraint() {
-    assertThrowForeignKeyViolation(
-        RollbackException.class, () -> jpaTm().transact(() -> jpaTm().saveNew(originalContact)));
+    assertThrowForeignKeyViolation(() -> jpaTm().transact(() -> jpaTm().saveNew(originalContact)));
   }
 
   @Test
