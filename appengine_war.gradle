@@ -31,10 +31,6 @@ def coreResourcesDir = "${rootDir}/core/build/resources/main"
 war {
     webInf {
         from "../../core/src/main/java/google/registry/env/common/${project.name}/WEB-INF"
-
-        from("${coreResourcesDir}/META-INF/persistence.xml") {
-            into "classes/META-INF"
-        }
     }
 }
 
