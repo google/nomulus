@@ -216,6 +216,7 @@ hibernate:
   # HikariCP also recommends not setting minimumIdle for maximum performance
   # and responsiveness to spike demands (See
   # https://github.com/brettwooldridge/HikariCP).
+  # TODO(b/154720215): Experiment with a smaller pool size.
   hikariMaximumPoolSize: 20
 
 cloudSql:

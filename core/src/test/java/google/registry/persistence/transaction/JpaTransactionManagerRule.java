@@ -16,7 +16,6 @@ package google.registry.persistence.transaction;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.persistence.PersistenceModule.HIKARI_MAXIMUM_POOL_SIZE;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import com.google.common.base.Charsets;
@@ -147,9 +146,10 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
 
     Map<String, String> properties =
         Maps.newHashMap(PersistenceModule.providesDefaultDatabaseConfigs());
-    // Set the maximum pool size to 1 as we only run 1 test at a time, if connection leak happens,
-    // the creation of new connection will time out and we will know it through the error log.
-    properties.put(HIKARI_MAXIMUM_POOL_SIZE, "1");
+    // Set the minimumIdle to 0 so assertReasonableNumDbConnections() can check if there is
+    // connection leak after each test.
+    properties.put("hibernate.hikari.minimumIdle", "0");
+    properties.put("hibernate.hikari.idleTimeout", "300000");
     if (!userProperties.isEmpty()) {
       // If there are user properties, create a new properties object with these added.
       properties.putAll(userProperties);
