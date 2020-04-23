@@ -18,8 +18,11 @@ import static com.google.common.base.Preconditions.checkState;
 import static google.registry.util.DateTimeUtils.toJodaDateTime;
 import static google.registry.util.DateTimeUtils.toZonedDateTime;
 
+import com.google.common.collect.ImmutableList;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Optional;
@@ -46,7 +49,7 @@ import org.joda.time.DateTime;
  */
 @Entity
 @Table
-public class ClaimsList extends ImmutableObject {
+public class ClaimsList extends ImmutableObject implements SqlEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column
@@ -104,5 +107,10 @@ public class ClaimsList extends ImmutableObject {
   /** Returns the claim key for a given domain if there is one, empty otherwise. */
   public Optional<String> getClaimKey(String label) {
     return Optional.ofNullable(labelsToKeys.get(label));
+  }
+
+  @Override
+  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
+    return ImmutableList.of(); // ClaimsList is dual-written
   }
 }

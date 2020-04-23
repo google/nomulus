@@ -109,7 +109,7 @@ import org.joda.time.DateTime;
           name = "registrar_iana_identifier_idx"),
     })
 public class Registrar extends ImmutableObject
-    implements Buildable, Jsonifiable, DatastoreAndSqlEntity {
+    implements Buildable, DatastoreAndSqlEntity, Jsonifiable {
 
   /** Represents the type of a registrar entity. */
   public enum Type {

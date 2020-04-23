@@ -16,7 +16,10 @@ package google.registry.schema.server;
 
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
+import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import google.registry.schema.server.Lock.LockId;
 import google.registry.util.DateTimeUtils;
 import java.io.Serializable;
@@ -40,7 +43,7 @@ import org.joda.time.Duration;
 @Entity
 @Table
 @IdClass(LockId.class)
-public class Lock {
+public class Lock implements SqlEntity {
 
   /** The resource name used to create the lock. */
   @Column(nullable = false)
@@ -114,6 +117,11 @@ public class Lock {
   public static Lock createGlobal(
       String resourceName, String requestLogId, DateTime acquiredTime, Duration leaseLength) {
     return new Lock(resourceName, GLOBAL, requestLogId, acquiredTime, leaseLength);
+  }
+
+  @Override
+  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
+    return ImmutableList.of(); // Locks are not converted since they are ephemeral
   }
 
   static class LockId extends ImmutableObject implements Serializable {

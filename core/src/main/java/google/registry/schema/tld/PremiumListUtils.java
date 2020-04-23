@@ -54,7 +54,7 @@ public class PremiumListUtils {
 
     Map<String, BigDecimal> priceAmounts =
         Maps.transformValues(prices, ple -> ple.getValue().getAmount());
-    return google.registry.schema.tld.PremiumList.create(name, currency, priceAmounts);
+    return PremiumList.create(name, currency, priceAmounts);
   }
 
   private PremiumListUtils() {}

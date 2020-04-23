@@ -60,6 +60,7 @@ public class EntityTest {
         .filter(ClassInfo::isStandardClass)
         .map(ClassInfo::loadClass)
         .map(Class::getName)
+        .filter(name -> !name.contains("Test"))
         .collect(toImmutableSet());
   }
 }
