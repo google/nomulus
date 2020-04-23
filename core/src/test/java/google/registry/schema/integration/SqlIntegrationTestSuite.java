@@ -16,6 +16,7 @@ package google.registry.schema.integration;
 
 import static com.google.common.truth.Truth.assert_;
 
+import google.registry.model.billing.BillingEventTest;
 import google.registry.model.contact.ContactResourceTest;
 import google.registry.model.domain.DomainBaseSqlTest;
 import google.registry.model.registry.RegistryLockDaoTest;
@@ -68,6 +69,7 @@ import org.junit.runner.RunWith;
 @SelectClasses({
   // BeforeSuiteTest must be the first entry. See class javadoc for details.
   BeforeSuiteTest.class,
+  BillingEventTest.class,
   ClaimsListDaoTest.class,
   ContactResourceTest.class,
   CursorDaoTest.class,

@@ -46,7 +46,7 @@ public class VKey<T> extends ImmutableObject {
   }
 
   public static <T> VKey<T> createOfy(
-      Class<? extends T> kind, com.googlecode.objectify.Key<T> ofyKey) {
+      Class<? extends T> kind, com.googlecode.objectify.Key<? extends T> ofyKey) {
     return new VKey(kind, ofyKey, null);
   }
 
