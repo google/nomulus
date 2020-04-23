@@ -20,7 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
-import javax.persistence.Convert;
+import javax.persistence.Converter;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.junit.Rule;
@@ -30,13 +30,15 @@ import org.junit.runners.JUnit4;
 
 /** Test SQL persistence of VKey. */
 @RunWith(JUnit4.class)
-public class VKeyConverterTest {
+public class StringVKeyConverterBaseTest {
 
   @Rule
   public final JpaUnitTestRule jpaRule =
-      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
+      new JpaTestRules.Builder()
+          .withEntityClass(TestEntity.class, TestEntityStringVKeyConverter.class)
+          .buildUnitTestRule();
 
-  public VKeyConverterTest() {}
+  public StringVKeyConverterBaseTest() {}
 
   @Test
   public void testRoundTrip() {
@@ -50,22 +52,14 @@ public class VKeyConverterTest {
     assertThat(retrieved.other.getSqlKey()).isEqualTo("ImSpartacus!");
   }
 
-  static class TestEntityVKeyConverter extends VKeyConverter<TestEntity> {
-
-    @Override
-    protected Class<TestEntity> getAttributeClass() {
-      return TestEntity.class;
-    }
-  }
+  @Converter(autoApply = true)
+  private static class TestEntityStringVKeyConverter extends StringVKeyConverterBase<TestEntity> {}
 
   @Entity(name = "TestEntity")
-  static class TestEntity {
+  private static class TestEntity {
     @Id
     String id;
 
-    // Specifying "@Converter(autoApply = true) on TestEntityVKeyConverter this doesn't seem to
-    // work.
-    @Convert(converter = TestEntityVKeyConverter.class)
     VKey<TestEntity> other;
 
     TestEntity(String id, VKey<TestEntity> other) {

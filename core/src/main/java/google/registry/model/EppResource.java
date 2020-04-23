@@ -135,7 +135,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   @Transient
   ImmutableSortedMap<DateTime, Key<CommitLogManifest>> revisions = ImmutableSortedMap.of();
 
-  public final String getRepoId() {
+  public String getRepoId() {
     return repoId;
   }
 

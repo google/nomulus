@@ -47,8 +47,9 @@
     <class>google.registry.persistence.converter.StatusValueSetConverter</class>
     <class>google.registry.persistence.converter.StringListConverter</class>
     <class>google.registry.persistence.converter.StringSetConverter</class>
+    <class>google.registry.persistence.converter.StringVKeyConverterBase</class>
     <class>google.registry.persistence.converter.UpdateAutoTimestampConverter</class>
-    <class>google.registry.persistence.converter.VKeyConverter</class>
+    <class>google.registry.persistence.converter.VKeyConverters$HostResourceVKeyConverter</class>
     <class>google.registry.persistence.converter.ZonedDateTimeConverter</class>
 
     <!-- TODO(weiminyu): check out application-layer validation. -->
