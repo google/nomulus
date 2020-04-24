@@ -15,21 +15,27 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistDeletedDomain;
+import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMap;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.Ofy;
+import google.registry.model.registrar.Registrar;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import google.registry.util.Clock;
+import java.util.List;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 /** Unit tests for {@link RenewDomainCommand}. */
 public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCommand> {
@@ -63,23 +69,57 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
         .verifyNoMoreSent();
   }
 
+  private static List<DomainBase> persistThreeDomains() {
+    ImmutableList.Builder<DomainBase> domains = new ImmutableList.Builder<>();
+    domains.add(
+        persistActiveDomain(
+            "domain1.tld",
+            DateTime.parse("2014-09-05T05:05:05Z"),
+            DateTime.parse("2015-09-05T05:05:05Z")));
+    domains.add(
+        persistActiveDomain(
+            "domain2.tld",
+            DateTime.parse("2014-11-05T05:05:05Z"),
+            DateTime.parse("2015-11-05T05:05:05Z")));
+    // The third domain is owned by a different registrar.
+    domains.add(
+        persistResource(
+            newDomainBase("domain3.tld")
+                .asBuilder()
+                .setCreationTimeForTest(DateTime.parse("2015-01-05T05:05:05Z"))
+                .setRegistrationExpirationTime(DateTime.parse("2016-01-05T05:05:05Z"))
+                .setPersistedCurrentSponsorClientId("NewRegistrar")
+                .build()));
+    return domains.build();
+  }
+
   @Test
-  public void testSuccess_multipleDomains() throws Exception {
-    persistActiveDomain(
-        "domain1.tld",
-        DateTime.parse("2014-09-05T05:05:05Z"),
-        DateTime.parse("2015-09-05T05:05:05Z"));
-    persistActiveDomain(
-        "domain2.tld",
-        DateTime.parse("2014-11-05T05:05:05Z"),
-        DateTime.parse("2015-11-05T05:05:05Z"));
-    persistActiveDomain(
-        "domain3.tld",
-        DateTime.parse("2015-01-05T05:05:05Z"),
-        DateTime.parse("2016-01-05T05:05:05Z"));
+  public void testSuccess_multipleDomains_renewsAndUsesEachDomainsRegistrar() throws Exception {
+    persistThreeDomains();
     runCommandForced("--period 3", "domain1.tld", "domain2.tld", "domain3.tld");
     eppVerifier
         .expectClientId("TheRegistrar")
+        .verifySent(
+            "domain_renew.xml",
+            ImmutableMap.of("DOMAIN", "domain1.tld", "EXPDATE", "2015-09-05", "YEARS", "3"))
+        .verifySent(
+            "domain_renew.xml",
+            ImmutableMap.of("DOMAIN", "domain2.tld", "EXPDATE", "2015-11-05", "YEARS", "3"))
+        .expectClientId("NewRegistrar")
+        .verifySent(
+            "domain_renew.xml",
+            ImmutableMap.of("DOMAIN", "domain3.tld", "EXPDATE", "2016-01-05", "YEARS", "3"))
+        .verifyNoMoreSent();
+  }
+
+  @Test
+  public void testSuccess_multipleDomains_renewsAndUsesSpecifiedRegistrar() throws Exception {
+    persistThreeDomains();
+    persistNewRegistrar("reg3", "Registrar 3", Registrar.Type.REAL, 9783L);
+    runCommandForced("--period 3", "domain1.tld", "domain2.tld", "domain3.tld", "-u", "-c reg3");
+    eppVerifier
+        .expectClientId("reg3")
+        .expectSuperuser()
         .verifySent(
             "domain_renew.xml",
             ImmutableMap.of("DOMAIN", "domain1.tld", "EXPDATE", "2015-09-05", "YEARS", "3"))
@@ -106,9 +146,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
     persistDeletedDomain("deleted.tld", DateTime.parse("2012-10-05T05:05:05Z"));
     IllegalArgumentException e =
         assertThrows(IllegalArgumentException.class, () -> runCommandForced("deleted.tld"));
-    assertThat(e)
-        .hasMessageThat()
-        .isEqualTo("Domain 'deleted.tld' does not exist or is deleted");
+    assertThat(e).hasMessageThat().isEqualTo("Domain 'deleted.tld' does not exist or is deleted");
   }
 
   @Test
@@ -128,9 +166,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
     IllegalArgumentException e =
         assertThrows(
             IllegalArgumentException.class, () -> runCommandForced("domain.tld", "--period 10"));
-    assertThat(e)
-        .hasMessageThat()
-        .isEqualTo("Cannot renew domains for 10 or more years");
+    assertThat(e).hasMessageThat().isEqualTo("Cannot renew domains for 10 or more years");
   }
 
   @Test
