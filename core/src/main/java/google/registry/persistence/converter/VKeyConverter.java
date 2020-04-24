@@ -18,9 +18,7 @@ import google.registry.persistence.VKey;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeConverter;
 
-/**
- * Converts VKey to a string column.
- */
+/** Converts VKey to a string column. */
 public abstract class VKeyConverter<T> implements AttributeConverter<VKey<T>, String> {
   @Override
   @Nullable
@@ -34,8 +32,6 @@ public abstract class VKeyConverter<T> implements AttributeConverter<VKey<T>, St
     return dbData == null ? null : VKey.createSql(getAttributeClass(), dbData);
   }
 
-  /**
-   * Returns the class of the attribute.
-   */
+  /** Returns the class of the attribute. */
   protected abstract Class<T> getAttributeClass();
 }

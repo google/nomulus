@@ -153,8 +153,8 @@ public final class DomainLockUtils {
   /**
    * Creates and applies a lock in one step.
    *
-   * <p>This should only be used for admin actions, e.g. Nomulus tool commands or relocks.
-   * Note: in the case of relocks, isAdmin is determined by the previous lock.
+   * <p>This should only be used for admin actions, e.g. Nomulus tool commands or relocks. Note: in
+   * the case of relocks, isAdmin is determined by the previous lock.
    */
   public RegistryLock administrativelyApplyLock(
       String domainName, String registrarId, @Nullable String registrarPocId, boolean isAdmin) {
@@ -175,7 +175,7 @@ public final class DomainLockUtils {
 
   /**
    * Creates and applies an unlock in one step.
-   * 
+   *
    * <p>This should only be used for admin actions, e.g. Nomulus tool commands.
    */
   public RegistryLock administrativelyApplyUnlock(

@@ -186,9 +186,7 @@ public final class RegistrarFormFields {
           .build();
 
   public static final FormField<String, String> REGISTRY_LOCK_EMAIL_ADDRESS_FIELD =
-      FormFields.EMAIL
-          .asBuilderNamed("registryLockEmailAddress")
-          .build();
+      FormFields.EMAIL.asBuilderNamed("registryLockEmailAddress").build();
 
   public static final FormField<Boolean, Boolean> CONTACT_VISIBLE_IN_WHOIS_AS_ADMIN_FIELD =
       FormField.named("visibleInWhoisAsAdmin", Boolean.class)
