@@ -50,7 +50,11 @@ import org.junit.runners.JUnit4;
 public class ExportCommitLogDiffActionTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder()
+          .withDatastoreAndCloudSql()
+          .withOfyTestEntities(TestObject.class)
+          .build();
 
   /** Local GCS service available for testing. */
   private final GcsService gcsService = GcsServiceFactory.createGcsService();

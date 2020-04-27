@@ -18,6 +18,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Joiner;
+import com.googlecode.objectify.annotation.Entity;
 import java.io.File;
 import java.io.IOException;
 import org.junit.Before;
@@ -88,9 +89,29 @@ public class AppEngineRuleTest {
     assertThrows(AssertionError.class, () -> appEngineRule.after());
   }
 
+  @Test
+  public void testRegisterOfyEntities_failure() {
+    AppEngineRule appEngineRule =
+        AppEngineRule.builder()
+            .withDatastoreAndCloudSql()
+            .withOfyTestEntities(google.registry.testing.TestObject.class, TestObject.class)
+            .build();
+    String expectedErrorMessage =
+        String.format(
+            "Cannot register %s. The Kind %s is already registered with %s",
+            TestObject.class.getName(),
+            "TestObject",
+            google.registry.testing.TestObject.class.getName());
+    assertThrows(expectedErrorMessage, IllegalStateException.class, appEngineRule::before);
+    appEngineRule.after();
+  }
+
   private void writeAutoIndexFile(String content) throws IOException {
     com.google.common.io.Files.asCharSink(
             new File(temporaryFolder.getRoot(), "datastore-indexes-auto.xml"), UTF_8)
         .write(content);
   }
+
+  @Entity
+  private static final class TestObject {}
 }

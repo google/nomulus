@@ -19,12 +19,10 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.DateTimeZone.UTC;
 
-import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.common.CrossTldSingleton;
 import google.registry.testing.AppEngineRule;
 import org.joda.time.DateTime;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,17 +33,16 @@ import org.junit.runners.JUnit4;
 public class UpdateAutoTimestampTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder()
+          .withDatastoreAndCloudSql()
+          .withOfyTestEntities(TestObject.class)
+          .build();
 
   /** Timestamped class. */
-  @Entity
+  @Entity(name = "UatTestEntity")
   public static class TestObject extends CrossTldSingleton {
     UpdateAutoTimestamp updateTime = UpdateAutoTimestamp.create(null);
-  }
-
-  @Before
-  public void before() {
-    ObjectifyService.register(TestObject.class);
   }
 
   private TestObject reload() {

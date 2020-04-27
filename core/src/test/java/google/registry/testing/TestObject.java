@@ -17,7 +17,6 @@ package google.registry.testing;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Parent;
@@ -30,9 +29,6 @@ import google.registry.model.common.EntityGroupRoot;
  */
 @Entity
 public class TestObject extends ImmutableObject {
-  static {
-    ObjectifyService.register(TestObject.class);  // Register this kind on first reference.
-  }
 
   @Parent
   Key<EntityGroupRoot> parent;
@@ -70,9 +66,6 @@ public class TestObject extends ImmutableObject {
   @Entity
   @VirtualEntity
   public static class TestVirtualObject extends ImmutableObject {
-    static {
-      ObjectifyService.register(TestVirtualObject.class);  // Register this kind on first reference.
-    }
 
     @Id
     String id;

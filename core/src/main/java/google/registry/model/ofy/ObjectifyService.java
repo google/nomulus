@@ -151,11 +151,14 @@ public class ObjectifyService {
       String kind = Key.getKind(clazz);
       boolean registered = factory().getMetadata(kind) != null;
       if (clazz.isAnnotationPresent(Entity.class)) {
-        // Objectify silently ignores re-registrations for a given kind string, even if the classes
-        // being registered are distinct. Throw an exception if that would happen here.
-        checkState(!registered,
+        // Objectify silently replaces current registration for a given kind string when a different
+        // class is registered again for this kind. For simplicity's sake, throw an exception on any
+        // re-registration.
+        checkState(
+            !registered,
             "Kind '%s' already registered, cannot register new @Entity %s",
-            kind, clazz.getCanonicalName());
+            kind,
+            clazz.getCanonicalName());
       } else if (clazz.isAnnotationPresent(EntitySubclass.class)) {
         // Ensure that any @EntitySubclass classes have also had their parent @Entity registered,
         // which Objectify nominally requires but doesn't enforce in 4.x (though it may in 5.x).

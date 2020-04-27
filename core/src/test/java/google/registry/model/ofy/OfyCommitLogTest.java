@@ -16,7 +16,6 @@ package google.registry.model.ofy;
 
 import static com.google.appengine.api.datastore.EntityTranslator.convertToPb;
 import static com.google.common.truth.Truth.assertThat;
-import static com.googlecode.objectify.ObjectifyService.register;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.CommitLogBucket.getBucketKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
@@ -47,7 +46,11 @@ import org.junit.runners.JUnit4;
 public class OfyCommitLogTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder()
+          .withDatastoreAndCloudSql()
+          .withOfyTestEntities(TestVirtualObject.class, Root.class, Child.class)
+          .build();
 
   @Rule
   public final InjectRule inject = new InjectRule();
@@ -56,8 +59,6 @@ public class OfyCommitLogTest {
 
   @Before
   public void before() {
-    register(Root.class);
-    register(Child.class);
     inject.setStaticField(Ofy.class, "clock", clock);
   }
 

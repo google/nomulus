@@ -27,7 +27,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.testing.AppEngineRule;
@@ -39,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.joda.time.DateTime;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,12 +48,11 @@ import org.junit.runners.JUnit4;
 public class ImmutableObjectTest {
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
-
-  @Before
-  public void register() {
-    ObjectifyService.register(ValueObject.class);
-  }
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder()
+          .withDatastoreAndCloudSql()
+          .withOfyTestEntities(ValueObject.class)
+          .build();
 
   /** Simple subclass of ImmutableObject. */
   public static class SimpleObject extends ImmutableObject {

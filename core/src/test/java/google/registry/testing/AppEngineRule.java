@@ -34,6 +34,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.ObjectifyFilter;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.registrar.Registrar;
@@ -50,6 +51,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.LogManager;
 import javax.annotation.Nullable;
@@ -127,10 +129,14 @@ public final class AppEngineRule extends ExternalResource
   private String taskQueueXml;
   private UserInfo userInfo;
 
+  // Test Objectify entity classes to be used with this AppEngineRule instance.
+  private ImmutableList<Class<?>> ofyTestEntities;
+
   /** Builder for {@link AppEngineRule}. */
   public static class Builder {
 
     private AppEngineRule rule = new AppEngineRule();
+    private ImmutableList.Builder<Class<?>> ofyTestEntities = new ImmutableList.Builder();
 
     /** Turn on the Datastore service and the Cloud SQL service. */
     public Builder withDatastoreAndCloudSql() {
@@ -181,10 +187,29 @@ public final class AppEngineRule extends ExternalResource
       return this;
     }
 
+    /**
+     * Declares test-only entities to be registered with {@code ObjectifyService}.
+     *
+     * <p>Note that {@code ObjectifyService} silently replaces the current registration for a given
+     * kind when a different class is registered for this kind. Since {@code ObjectifyService} does
+     * not support de-registration, each test entity class must be of a unique kind across the
+     * entire code base. Although this requirement can be worked around by using different {@code
+     * ObjectifyService} instances for each test (class), the setup overhead would rise
+     * significantly.
+     *
+     * @see AppEngineRule#register(Class)
+     */
+    @SafeVarargs
+    public final Builder withOfyTestEntities(Class<?>... entities) {
+      ofyTestEntities.add(entities);
+      return this;
+    }
+
     public AppEngineRule build() {
       checkState(
           !rule.enableJpaEntityCoverageCheck || rule.withDatastoreAndCloudSql,
           "withJpaEntityCoverageCheck enabled without Cloud SQL");
+      rule.ofyTestEntities = this.ofyTestEntities.build();
       return rule;
     }
   }
@@ -411,6 +436,7 @@ public final class AppEngineRule extends ExternalResource
       // Reset id allocation in ObjectifyService so that ids are deterministic in tests.
       ObjectifyService.resetNextTestId();
       loadInitialData();
+      this.ofyTestEntities.forEach(AppEngineRule::register);
     }
   }
 
@@ -441,6 +467,24 @@ public final class AppEngineRule extends ExternalResource
     } finally {
       temporaryFolder.delete();
     }
+  }
+
+  /**
+   * Registers test-only Objectify entities and checks for re-registrations for the same kind by
+   * different classes.
+   */
+  private static void register(Class<?> entityClass) {
+    String kind = Key.getKind(entityClass);
+    Optional.ofNullable(com.googlecode.objectify.ObjectifyService.factory().getMetadata(kind))
+        .ifPresent(
+            meta ->
+                checkState(
+                    meta.getEntityClass() == entityClass,
+                    "Cannot register %s. The Kind %s is already registered with %s.",
+                    entityClass.getName(),
+                    kind,
+                    meta.getEntityClass().getName()));
+    com.googlecode.objectify.ObjectifyService.register(entityClass);
   }
 
   /** Install {@code testing/logging.properties} so logging is less noisy. */
