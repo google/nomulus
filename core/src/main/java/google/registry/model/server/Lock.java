@@ -16,7 +16,6 @@ package google.registry.model.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 
@@ -29,7 +28,6 @@ import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
-import google.registry.schema.server.LockDao;
 import google.registry.util.RequestStatusChecker;
 import google.registry.util.RequestStatusCheckerImpl;
 import java.io.Serializable;
@@ -197,22 +195,6 @@ public class Lock extends ImmutableObject implements Serializable {
 
                   // Checking if an unexpired lock still exists - if so, the lock can't be acquired.
                   Lock lock = ofy().load().type(Lock.class).id(lockId).now();
-                  try {
-                    jpaTm()
-                        .transact(
-                            () -> {
-                              Optional<google.registry.schema.server.Lock> cloudSqlLockOptional;
-                              if (tld == null) {
-                                cloudSqlLockOptional = LockDao.load(resourceName);
-                              } else {
-                                cloudSqlLockOptional = LockDao.load(resourceName, tld);
-                              }
-                              LockDao.compare(Optional.ofNullable(lock), cloudSqlLockOptional);
-                            });
-                  } catch (Exception e) {
-                    logger.atSevere().withCause(e).log(
-                        "Issue loading and comparing lock from Cloud SQL");
-                  }
                   if (lock != null) {
                     logger.atInfo().log(
                         "Loaded existing lock: %s for request: %s", lock.lockId, lock.requestLogId);
@@ -237,35 +219,6 @@ public class Lock extends ImmutableObject implements Serializable {
                   // don't need to be backed up.
                   ofy().saveWithoutBackup().entity(newLock);
 
-                  // create and save the lock to Cloud SQL
-                  try {
-                    jpaTm()
-                        .transact(
-                            () -> {
-                              google.registry.schema.server.Lock cloudSqlLock;
-                              if (tld == null) {
-                                cloudSqlLock =
-                                    google.registry.schema.server.Lock.createGlobal(
-                                        resourceName,
-                                        requestStatusChecker.getLogId(),
-                                        now,
-                                        leaseLength);
-                              } else {
-                                cloudSqlLock =
-                                    google.registry.schema.server.Lock.create(
-                                        resourceName,
-                                        tld,
-                                        requestStatusChecker.getLogId(),
-                                        now,
-                                        leaseLength);
-                              }
-                              LockDao.save(cloudSqlLock);
-                            });
-                  } catch (Exception e) {
-                    logger.atSevere().withCause(e).log(
-                        "Error saving lock to Cloud SQL: %s", newLock);
-                  }
-
                   return AcquireResult.create(now, lock, newLock, lockState);
                 });
 
@@ -284,43 +237,11 @@ public class Lock extends ImmutableObject implements Serializable {
               // this can happen if release() is called around the expiration time and the lock
               // expires underneath us.
               Lock loadedLock = ofy().load().type(Lock.class).id(lockId).now();
-              try {
-                jpaTm()
-                    .transact(
-                        () -> {
-                          Optional<google.registry.schema.server.Lock> cloudSqlLockOptional;
-                          if (tld == null) {
-                            cloudSqlLockOptional = LockDao.load(resourceName);
-                          } else {
-                            cloudSqlLockOptional = LockDao.load(resourceName, tld);
-                          }
-                          LockDao.compare(Optional.ofNullable(loadedLock), cloudSqlLockOptional);
-                        });
-              } catch (Exception e) {
-                logger.atSevere().withCause(e).log(
-                    "Issue loading and comparing lock from Cloud SQL");
-              }
               if (Lock.this.equals(loadedLock)) {
                 // Use noBackupOfy() so that we don't create a commit log entry for deleting the
                 // lock.
                 logger.atInfo().log("Deleting lock: %s", lockId);
                 ofy().deleteWithoutBackup().entity(Lock.this);
-
-                // Remove the lock from Cloud SQL
-                try {
-                  jpaTm()
-                      .transact(
-                          () -> {
-                            if (tld == null) {
-                              LockDao.delete(resourceName);
-                            } else {
-                              LockDao.delete(resourceName, tld);
-                            }
-                          });
-                } catch (Exception e) {
-                  logger.atSevere().withCause(e).log(
-                      "Error deleting lock from Cloud SQL: %s", loadedLock);
-                }
 
                 lockMetrics.recordRelease(
                     resourceName, tld, new Duration(acquiredTime, tm().getTransactionTime()));
