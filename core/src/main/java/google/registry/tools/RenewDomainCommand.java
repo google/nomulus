@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.util.CollectionUtils.findDuplicates;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
@@ -36,6 +37,13 @@ import org.joda.time.format.DateTimeFormatter;
 /** A command to renew domain(s) via EPP. */
 @Parameters(separators = " =", commandDescription = "Renew domain(s) via EPP.")
 final class RenewDomainCommand extends MutatingEppToolCommand {
+
+  @Parameter(
+      names = {"-c", "--client"},
+      description =
+          "The registrar to execute as and bill the renewal to; otherwise each domain's sponsoring"
+              + " registrar. Renewals by non-sponsoring registrars require --superuser as well.")
+  String clientId;
 
   @Parameter(
       names = {"-p", "--period"},
@@ -63,7 +71,7 @@ final class RenewDomainCommand extends MutatingEppToolCommand {
       setSoyTemplate(RenewDomainSoyInfo.getInstance(), RenewDomainSoyInfo.RENEWDOMAIN);
       DomainBase domain = domainOptional.get();
       addSoyRecord(
-          domain.getCurrentSponsorClientId(),
+          isNullOrEmpty(clientId) ? domain.getCurrentSponsorClientId() : clientId,
           new SoyMapData(
               "domainName", domain.getFullyQualifiedDomainName(),
               "expirationDate", domain.getRegistrationExpirationTime().toString(DATE_FORMATTER),

@@ -112,9 +112,7 @@ public class RegistryConfigSettings {
     public String connectionIsolation;
     public String logSqlQueries;
     public String hikariConnectionTimeout;
-    public String hikariMinimumIdle;
     public String hikariMaximumPoolSize;
-    public String hikariIdleTimeout;
   }
 
   /** Configuration for Cloud SQL. */

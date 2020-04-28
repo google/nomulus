@@ -76,7 +76,7 @@ public class RecordAccumulatorTest {
     builder.build();
 
     ImmutableSet<ComparableEntity> entities =
-        new RecordAccumulator().readDirectory(subdir).getComparableEntitySet();
+        new RecordAccumulator().readDirectory(subdir, any -> true).getComparableEntitySet();
     assertThat(entities).containsExactly(e1, e2, e3);
   }
 }

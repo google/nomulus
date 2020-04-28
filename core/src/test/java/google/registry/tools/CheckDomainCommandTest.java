@@ -77,6 +77,12 @@ public class CheckDomainCommandTest extends EppToolCommandTestCase<CheckDomainCo
   }
 
   @Test
+  public void testSuccess_allocationToken_reserved() throws Exception {
+    runCommand("--client=NewRegistrar", "--token=abc123", "example.tld");
+    eppVerifier.expectDryRun().verifySent("domain_check_fee_allocationtoken.xml");
+  }
+
+  @Test
   public void testFailure_NoMainParameter() {
     assertThrows(ParameterException.class, () -> runCommand("--client=NewRegistrar"));
   }

@@ -42,22 +42,33 @@ import java.util.Set;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Rule;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Base class of all unit tests for entities which are persisted to Datastore via Objectify. */
-@RunWith(JUnit4.class)
 public abstract class EntityTestCase {
 
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withClock(fakeClock).build();
+  @Rule @RegisterExtension public final AppEngineRule appEngine;
 
-  @Rule public InjectRule inject = new InjectRule();
+  @Rule @RegisterExtension public InjectRule inject = new InjectRule();
+
+  protected EntityTestCase() {
+    this(false);
+  }
+
+  protected EntityTestCase(boolean enableJpaEntityCheck) {
+    appEngine =
+        AppEngineRule.builder()
+            .withDatastoreAndCloudSql()
+            .enableJpaEntityCoverageCheck(enableJpaEntityCheck)
+            .withClock(fakeClock)
+            .build();
+  }
 
   @Before
+  @BeforeEach
   public void injectClock() {
     inject.setStaticField(Ofy.class, "clock", fakeClock);
   }

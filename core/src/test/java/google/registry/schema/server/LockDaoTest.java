@@ -19,28 +19,25 @@ import static google.registry.testing.LogsSubject.assertAboutLogs;
 
 import com.google.common.testing.TestLogHandler;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.joda.time.Duration;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link Lock}. */
-@RunWith(JUnit4.class)
 public class LockDaoTest {
 
   private final FakeClock fakeClock = new FakeClock();
   private final TestLogHandler logHandler = new TestLogHandler();
   private final Logger loggerToIntercept = Logger.getLogger(LockDao.class.getCanonicalName());
 
-  @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
+  @RegisterExtension
+  public final JpaIntegrationWithCoverageExtension jpa =
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   @Test
   public void save_worksSuccessfully() {

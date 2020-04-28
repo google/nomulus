@@ -29,6 +29,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
@@ -88,12 +91,46 @@ public class JpaTestRules {
       this.ruleChain =
           RuleChain.outerRule(watcher)
               .around(integrationTestRule)
-              .around(new JpaEntityCoverage(watcher));
+              .around(new JpaEntityCoverage(watcher::getTestClass));
     }
 
     @Override
     public Statement apply(Statement base, Description description) {
       return ruleChain.apply(base, description);
+    }
+  }
+
+  /**
+   * JUnit extension for member classes of {@link
+   * google.registry.schema.integration.SqlIntegrationTestSuite}. In addition to providing a
+   * database through {@link JpaIntegrationTestRule}, it also keeps track of the test coverage of
+   * the declared JPA entities (in persistence.xml). Per-class statistics are stored in static
+   * variables. The SqlIntegrationTestSuite inspects the cumulative statistics after all test
+   * classes have run.
+   */
+  public static final class JpaIntegrationWithCoverageExtension
+      implements BeforeEachCallback, AfterEachCallback {
+    private String currentTestClassName = null;
+    private final JpaEntityCoverage jpaEntityCoverage =
+        new JpaEntityCoverage(() -> this.currentTestClassName);
+    private final JpaIntegrationTestRule integrationTestRule;
+
+    JpaIntegrationWithCoverageExtension(JpaIntegrationTestRule integrationTestRule) {
+      this.integrationTestRule = integrationTestRule;
+    }
+
+    @Override
+    public void beforeEach(ExtensionContext context) throws Exception {
+      this.currentTestClassName = context.getRequiredTestClass().getName();
+      integrationTestRule.before();
+      jpaEntityCoverage.before();
+    }
+
+    @Override
+    public void afterEach(ExtensionContext context) throws Exception {
+      jpaEntityCoverage.after();
+      integrationTestRule.after();
+      this.currentTestClassName = null;
     }
   }
 
@@ -147,6 +184,15 @@ public class JpaTestRules {
     public JpaIntegrationWithCoverageRule buildIntegrationWithCoverageRule() {
       checkState(initScript == null, "Integration tests do not accept initScript");
       return new JpaIntegrationWithCoverageRule(buildIntegrationTestRule());
+    }
+
+    /**
+     * JUnit extension that adapts {@link JpaIntegrationTestRule} for JUnit 5 and also checks test
+     * coverage of JPA entity classes.
+     */
+    public JpaIntegrationWithCoverageExtension buildIntegrationWithCoverageExtension() {
+      checkState(initScript == null, "Integration tests do not accept initScript");
+      return new JpaIntegrationWithCoverageExtension(buildIntegrationTestRule());
     }
 
     /** Builds a {@link JpaUnitTestRule} instance. */

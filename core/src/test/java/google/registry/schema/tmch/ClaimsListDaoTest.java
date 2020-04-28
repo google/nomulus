@@ -18,22 +18,19 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.FakeClock;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ClaimsListDao}. */
-@RunWith(JUnit4.class)
 public class ClaimsListDaoTest {
 
   private final FakeClock fakeClock = new FakeClock();
 
-  @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
+  @RegisterExtension
+  public final JpaIntegrationWithCoverageExtension jpa =
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   @Test
   public void trySave_insertsClaimsListSuccessfully() {

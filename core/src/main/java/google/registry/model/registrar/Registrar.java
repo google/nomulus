@@ -73,6 +73,7 @@ import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.registrar.Registrar.BillingAccountEntry.CurrencyMapper;
 import google.registry.model.registry.Registry;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
 import google.registry.util.CidrAddressBlock;
 import java.security.cert.CertificateParsingException;
 import java.util.Comparator;
@@ -107,11 +108,12 @@ import org.joda.time.DateTime;
           columnList = "ianaIdentifier",
           name = "registrar_iana_identifier_idx"),
     })
-public class Registrar extends ImmutableObject implements Buildable, Jsonifiable {
+public class Registrar extends ImmutableObject
+    implements Buildable, Jsonifiable, DatastoreAndSqlEntity {
 
   /** Represents the type of a registrar entity. */
   public enum Type {
-    /** A real-world, third-party registrar.  Should have non-null IANA and billing IDs. */
+    /** A real-world, third-party registrar. Should have non-null IANA and billing IDs. */
     REAL(Objects::nonNull),
 
     /**
@@ -392,8 +394,6 @@ public class Registrar extends ImmutableObject implements Buildable, Jsonifiable
    */
   @Nullable
   @Mapify(CurrencyMapper.class)
-  @org.hibernate.annotations.Type(
-      type = "google.registry.persistence.converter.CurrencyToBillingMapUserType")
   Map<CurrencyUnit, BillingAccountEntry> billingAccountMap;
 
   /** A billing account entry for this registrar, consisting of a currency and an account Id. */

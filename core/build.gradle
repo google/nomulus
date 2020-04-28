@@ -177,6 +177,8 @@ dependencies {
 
   compile deps['com.beust:jcommander']
   compile deps['com.google.api-client:google-api-client']
+  compile deps['com.google.api-client:google-api-client-appengine']
+  compile deps['com.google.api-client:google-api-client-servlet']
   compile deps['com.google.monitoring-client:metrics']
   compile deps['com.google.monitoring-client:stackdriver']
   compile deps['com.google.api-client:google-api-client-java6']
@@ -216,6 +218,8 @@ dependencies {
   compile deps['com.google.oauth-client:google-oauth-client']
   compile deps['com.google.oauth-client:google-oauth-client-java6']
   compile deps['com.google.oauth-client:google-oauth-client-jetty']
+  compile deps['com.google.oauth-client:google-oauth-client-appengine']
+  compile deps['com.google.oauth-client:google-oauth-client-servlet']
   compile deps['com.google.re2j:re2j']
   compile deps['com.google.template:soy']
   compile deps['com.googlecode.json-simple:json-simple']
@@ -262,6 +266,7 @@ dependencies {
   testCompile deps['org.seleniumhq.selenium:selenium-chrome-driver']
   testCompile deps['org.seleniumhq.selenium:selenium-java']
   testCompile deps['org.seleniumhq.selenium:selenium-remote-driver']
+  runtimeOnly deps['org.slf4j:slf4j-jdk14']
   testCompile deps['org.testcontainers:jdbc']
   compile deps['org.testcontainers:postgresql']
   testCompile deps['org.testcontainers:selenium']
@@ -304,6 +309,8 @@ dependencies {
   testCompile deps['org.junit.jupiter:junit-jupiter-api']
   testCompile deps['org.junit.jupiter:junit-jupiter-engine']
   testCompile deps['org.junit.jupiter:junit-jupiter-migrationsupport']
+  testCompile deps['org.junit.platform:junit-platform-runner']
+  testCompile deps['org.junit.platform:junit-platform-suite-api']
   testCompile deps['org.junit.vintage:junit-vintage-engine']
   testCompile deps['org.mockito:mockito-core']
   runtime deps['org.postgresql:postgresql']
@@ -641,6 +648,10 @@ artifacts {
  */
 class FilteringTest extends Test {
 
+  FilteringTest() {
+    useJUnitPlatform();
+  }
+
   private void applyTestFilter() {
     if (project.testFilter) {
       testNameIncludePatterns = project.testFilter.split(',')
@@ -728,6 +739,10 @@ task registryToolIntegrationTest {
 
 // Dedicated test suite for schema-dependent tests.
 task sqlIntegrationTest(type: FilteringTest) {
+  // TestSuite still requires a JUnit 4 runner, which knows how to handle JUnit 5 tests.
+  // Here we need to override parent's choice of JUnit 5. If changing this, remember to
+  // change :integration:sqlIntegrationTest too.
+  useJUnit()
   excludeTestCases = false
   tests = ['google/registry/schema/integration/SqlIntegrationTestSuite.*']
 }
@@ -847,6 +862,8 @@ task standardTest(type: FilteringTest) {
   includeAllTests()
   exclude fragileTestPatterns
   exclude outcastTestPatterns
+  // See SqlIntegrationTestSuite.java
+  exclude '**/*BeforeSuiteTest.*', '**/*AfterSuiteTest.*'
 
   if (rootProject.findProperty("skipDockerIncompatibleTests") == "true") {
     exclude dockerIncompatibleTestPatterns
@@ -879,11 +896,14 @@ createUberJar('nomulus', 'nomulus', 'google.registry.tools.RegistryTool')
 
 // A jar with classes and resources from main sourceSet, excluding internal
 // data. See comments on configurations.nomulus_test above for details.
+// TODO(weiminyu): release process should build this using the public repo to eliminate the need
+// for excludes.
 task nomulusFossJar (type: Jar) {
   archiveBaseName = 'nomulus'
   archiveClassifier = 'public'
   from (project.sourceSets.main.output) {
     exclude 'google/registry/config/files/**'
+    exclude 'google/registry/proxy/config/**'
   }
   from (project.sourceSets.main.output) {
     include 'google/registry/config/files/default-config.yaml'

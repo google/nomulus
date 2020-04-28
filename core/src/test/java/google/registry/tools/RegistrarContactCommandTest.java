@@ -98,19 +98,20 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
         "--visible_in_domain_whois_as_abuse=false",
         "NewRegistrar");
     RegistrarContact registrarContact = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
-    assertThat(registrarContact).isEqualTo(
-        new RegistrarContact.Builder()
-            .setParent(registrar)
-            .setName("Judith Registrar")
-            .setEmailAddress("judith.doe@example.com")
-            .setRegistryLockEmailAddress("judith.doe@external.com")
-            .setPhoneNumber("+1.2125650000")
-            .setFaxNumber("+1.2125650001")
-            .setTypes(ImmutableSet.of(WHOIS))
-            .setVisibleInWhoisAsAdmin(true)
-            .setVisibleInWhoisAsTech(false)
-            .setVisibleInDomainWhoisAsAbuse(false)
-            .build());
+    assertThat(registrarContact)
+        .isEqualTo(
+            new RegistrarContact.Builder()
+                .setParent(registrar)
+                .setName("Judith Registrar")
+                .setEmailAddress("judith.doe@example.com")
+                .setRegistryLockEmailAddress("judith.doe@external.com")
+                .setPhoneNumber("+1.2125650000")
+                .setFaxNumber("+1.2125650001")
+                .setTypes(ImmutableSet.of(WHOIS))
+                .setVisibleInWhoisAsAdmin(true)
+                .setVisibleInWhoisAsTech(false)
+                .setVisibleInDomainWhoisAsAbuse(false)
+                .build());
   }
 
   @Test
@@ -305,17 +306,18 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
         "--visible_in_domain_whois_as_abuse=true",
         "NewRegistrar");
     RegistrarContact registrarContact = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
-    assertThat(registrarContact).isEqualTo(
-        new RegistrarContact.Builder()
-            .setParent(registrar)
-            .setName("Jim Doe")
-            .setEmailAddress("jim.doe@example.com")
-            .setRegistryLockEmailAddress("jim.doe@external.com")
-            .setTypes(ImmutableSet.of(ADMIN, ABUSE))
-            .setVisibleInWhoisAsAdmin(true)
-            .setVisibleInWhoisAsTech(false)
-            .setVisibleInDomainWhoisAsAbuse(true)
-            .build());
+    assertThat(registrarContact)
+        .isEqualTo(
+            new RegistrarContact.Builder()
+                .setParent(registrar)
+                .setName("Jim Doe")
+                .setEmailAddress("jim.doe@example.com")
+                .setRegistryLockEmailAddress("jim.doe@external.com")
+                .setTypes(ImmutableSet.of(ADMIN, ABUSE))
+                .setVisibleInWhoisAsAdmin(true)
+                .setVisibleInWhoisAsTech(false)
+                .setVisibleInDomainWhoisAsAbuse(true)
+                .build());
     assertThat(registrarContact.getGaeUserId()).isNull();
   }
 

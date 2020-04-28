@@ -26,6 +26,55 @@
         primary key (revision_id)
     );
 
+    create table "Contact" (
+       repo_id text not null,
+        creation_client_id text not null,
+        creation_time timestamptz not null,
+        current_sponsor_client_id text not null,
+        deletion_time timestamptz,
+        last_epp_update_client_id text,
+        last_epp_update_time timestamptz,
+        statuses text[],
+        auth_info_repo_id text,
+        auth_info_value text,
+        contact_id text,
+        disclose_types_addr text[],
+        disclose_show_email boolean,
+        disclose_show_fax boolean,
+        disclose_mode_flag boolean,
+        disclose_types_name text[],
+        disclose_types_org text[],
+        disclose_show_voice boolean,
+        email text,
+        fax_phone_extension text,
+        fax_phone_number text,
+        addr_i18n_city text,
+        addr_i18n_country_code text,
+        addr_i18n_state text,
+        addr_i18n_street_line1 text,
+        addr_i18n_street_line2 text,
+        addr_i18n_street_line3 text,
+        addr_i18n_zip text,
+        addr_i18n_name text,
+        addr_i18n_org text,
+        addr_i18n_type text,
+        last_transfer_time timestamptz,
+        addr_local_city text,
+        addr_local_country_code text,
+        addr_local_state text,
+        addr_local_street_line1 text,
+        addr_local_street_line2 text,
+        addr_local_street_line3 text,
+        addr_local_zip text,
+        addr_local_name text,
+        addr_local_org text,
+        addr_local_type text,
+        search_name text,
+        voice_phone_extension text,
+        voice_phone_number text,
+        primary key (repo_id)
+    );
+
     create table "Cursor" (
        scope text not null,
         type text not null,
@@ -44,9 +93,9 @@
 
     create table "Domain" (
        repo_id text not null,
-        creation_client_id text,
-        creation_time timestamptz,
-        current_sponsor_client_id text,
+        creation_client_id text not null,
+        creation_time timestamptz not null,
+        current_sponsor_client_id text not null,
         deletion_time timestamptz,
         last_epp_update_client_id text,
         last_epp_update_time timestamptz,
@@ -67,6 +116,11 @@
         primary key (repo_id)
     );
 
+    create table "DomainHost" (
+       domain_repo_id text not null,
+        ns_host_v_keys text
+    );
+
     create table "GracePeriod" (
        id  bigserial not null,
         billing_event_one_time bytea,
@@ -75,6 +129,27 @@
         expiration_time timestamptz,
         type int4,
         primary key (id)
+    );
+
+    create table "HostResource" (
+       repo_id text not null,
+        creation_client_id text not null,
+        creation_time timestamptz not null,
+        current_sponsor_client_id text not null,
+        deletion_time timestamptz,
+        last_epp_update_client_id text,
+        last_epp_update_time timestamptz,
+        statuses text[],
+        fully_qualified_host_name text,
+        last_superordinate_change timestamptz,
+        last_transfer_time timestamptz,
+        superordinate_domain bytea,
+        primary key (repo_id)
+    );
+
+    create table "HostResource_inetAddresses" (
+       host_resource_repo_id text not null,
+        inet_addresses bytea
     );
 
     create table "Lock" (
@@ -201,6 +276,13 @@
         should_publish boolean not null,
         primary key (revision_id)
     );
+create index IDX3y752kr9uh4kh6uig54vemx0l on "Contact" (creation_time);
+create index IDXbn8t4wp85fgxjl8q4ctlscx55 on "Contact" (current_sponsor_client_id);
+create index IDXn1f711wicdnooa2mqb7g1m55o on "Contact" (deletion_time);
+create index IDX1p3esngcwwu6hstyua6itn6ff on "Contact" (search_name);
+
+    alter table if exists "Contact" 
+       add constraint UKoqd7n4hbx86hvlgkilq75olas unique (contact_id);
 create index IDX8nr0ke9mrrx4ewj6pd2ag4rmr on "Domain" (creation_time);
 create index IDX8ffrqm27qtj20jac056j7yq07 on "Domain" (current_sponsor_client_id);
 create index IDX5mnf0wn20tno4b9do88j61klr on "Domain" (deletion_time);
@@ -221,6 +303,16 @@ create index reservedlist_name_idx on "ReservedList" (name);
        add constraint FK6sc6at5hedffc0nhdcab6ivuq 
        foreign key (revision_id) 
        references "ClaimsList";
+
+    alter table if exists "DomainHost" 
+       add constraint FKeq1guccbre1yk3oosgp2io554 
+       foreign key (domain_repo_id) 
+       references "Domain";
+
+    alter table if exists "HostResource_inetAddresses" 
+       add constraint FK6unwhfkcu3oq6q347fxvpagv 
+       foreign key (host_resource_repo_id) 
+       references "HostResource";
 
     alter table if exists "PremiumEntry" 
        add constraint FKo0gw90lpo1tuee56l0nb6y6g5 

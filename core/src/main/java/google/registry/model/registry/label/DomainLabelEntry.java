@@ -19,6 +19,7 @@ import static com.google.common.base.Strings.emptyToNull;
 import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
+import com.google.common.net.InternetDomainName;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
@@ -83,6 +84,13 @@ public abstract class DomainLabelEntry<T extends Comparable<?>, D extends Domain
           "Label '%s' must be in puny-coded, lower-case form",
           getInstance().label);
       checkArgumentNotNull(getInstance().getValue(), "Value must be specified");
+      // Verify that the label creates a valid SLD if we add a TLD to the end of it.
+      // We require that the label is not already a full domain name including a dot.
+      // Domain name validation is tricky, so let InternetDomainName handle it for us.
+      checkArgument(
+          InternetDomainName.from(getInstance().label + ".tld").parts().size() == 2,
+          "Label %s must not be a multi-level domain name",
+          getInstance().label);
       return super.build();
     }
   }

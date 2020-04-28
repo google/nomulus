@@ -25,16 +25,15 @@ import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import java.util.Map;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import org.hibernate.annotations.Type;
 import org.joda.money.CurrencyUnit;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link CurrencyToBillingMapUserType}. */
+/** Unit tests for {@link CurrencyToBillingConverter}. */
 @RunWith(JUnit4.class)
-public class CurrencyToBillingMapUserTypeTest {
+public class CurrencyToBillingConverterTest {
   @Rule
   public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder()
@@ -62,7 +61,6 @@ public class CurrencyToBillingMapUserTypeTest {
 
     @Id String name = "id";
 
-    @Type(type = "google.registry.persistence.converter.CurrencyToBillingMapUserType")
     Map<CurrencyUnit, BillingAccountEntry> currencyToBilling;
 
     private TestEntity() {}

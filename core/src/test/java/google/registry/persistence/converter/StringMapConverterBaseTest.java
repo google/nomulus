@@ -19,54 +19,56 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import java.util.Map;
+import javax.persistence.Converter;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.NoResultException;
-import org.hibernate.annotations.Type;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link MapUserType}. */
+/** Unit tests for {@link StringMapConverterBase}. */
 @RunWith(JUnit4.class)
-public class MapUserTypeTest {
-
-  // Reusing production script sql/flyway/V14__load_extension_for_hstore.sql, which loads the
-  // hstore extension but nothing else.
+public class StringMapConverterBaseTest {
   @Rule
-  public final JpaUnitTestRule jpaRule =
+  public final JpaTestRules.JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder()
           .withInitScript("sql/flyway/V14__load_extension_for_hstore.sql")
-          .withEntityClass(TestEntity.class)
+          .withEntityClass(TestStringMapConverter.class, TestEntity.class)
           .buildUnitTestRule();
+
+  private static final ImmutableMap<Key, Value> MAP =
+      ImmutableMap.of(
+          new Key("key1"), new Value("value1"),
+          new Key("key2"), new Value("value2"),
+          new Key("key3"), new Value("value3"));
 
   @Test
   public void roundTripConversion_returnsSameMap() {
-    Map<String, String> map = ImmutableMap.of("key1", "value1", "key2", "value2");
-    TestEntity testEntity = new TestEntity(map);
+    TestEntity testEntity = new TestEntity(MAP);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(persisted.map).containsExactly("key1", "value1", "key2", "value2");
+    assertThat(persisted.map).containsExactlyEntriesIn(MAP);
   }
 
   @Test
-  public void testMerge_succeeds() {
-    Map<String, String> map = ImmutableMap.of("key1", "value1", "key2", "value2");
-    TestEntity testEntity = new TestEntity(map);
+  public void testUpdateColumn_succeeds() {
+    TestEntity testEntity = new TestEntity(MAP);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    persisted.map = ImmutableMap.of("key3", "value3");
+    assertThat(persisted.map).containsExactlyEntriesIn(MAP);
+    persisted.map = ImmutableMap.of(new Key("key4"), new Value("value4"));
     jpaTm().transact(() -> jpaTm().getEntityManager().merge(persisted));
     TestEntity updated =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(updated.map).containsExactly("key3", "value3");
+    assertThat(updated.map).containsExactly(new Key("key4"), new Value("value4"));
   }
 
   @Test
@@ -79,7 +81,7 @@ public class MapUserTypeTest {
   }
 
   @Test
-  public void testEmptyCollection_writesAndReadsEmptyCollectionSuccessfully() {
+  public void testEmptyMap_writesAndReadsEmptyCollectionSuccessfully() {
     TestEntity testEntity = new TestEntity(ImmutableMap.of());
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
@@ -88,7 +90,7 @@ public class MapUserTypeTest {
   }
 
   @Test
-  public void testNativeQuery_succeeds() throws Exception {
+  public void testNativeQuery_succeeds() {
     executeNativeQuery(
         "INSERT INTO \"TestEntity\" (name, map) VALUES ('id', 'key1=>value1, key2=>value2')");
 
@@ -126,17 +128,46 @@ public class MapUserTypeTest {
         .transact(() -> jpaTm().getEntityManager().createNativeQuery(sql).executeUpdate());
   }
 
+  private static class Key extends ImmutableObject {
+    private String key;
+
+    private Key(String key) {
+      this.key = key;
+    }
+  }
+
+  private static class Value extends ImmutableObject {
+    private String value;
+
+    private Value(String value) {
+      this.value = value;
+    }
+  }
+
+  @Converter(autoApply = true)
+  private static class TestStringMapConverter extends StringMapConverterBase<Key, Value> {
+
+    @Override
+    Map.Entry<String, String> convertToDatabaseMapEntry(Map.Entry<Key, Value> entry) {
+      return Maps.immutableEntry(entry.getKey().key, entry.getValue().value);
+    }
+
+    @Override
+    Map.Entry<Key, Value> convertToEntityMapEntry(Map.Entry<String, String> entry) {
+      return Maps.immutableEntry(new Key(entry.getKey()), new Value(entry.getValue()));
+    }
+  }
+
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
   private static class TestEntity extends ImmutableObject {
 
     @Id String name = "id";
 
-    @Type(type = "google.registry.persistence.converter.MapUserType")
-    Map<String, String> map;
+    Map<Key, Value> map;
 
     private TestEntity() {}
 
-    private TestEntity(Map<String, String> map) {
+    private TestEntity(Map<Key, Value> map) {
       this.map = map;
     }
   }

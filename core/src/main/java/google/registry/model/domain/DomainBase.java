@@ -66,6 +66,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
 import google.registry.util.CollectionUtils;
 import java.util.HashSet;
 import java.util.Objects;
@@ -76,8 +77,10 @@ import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
+import javax.persistence.JoinTable;
 import javax.persistence.Transient;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -105,7 +108,7 @@ import org.joda.time.Interval;
     })
 @ExternalMessagingName("domain")
 public class DomainBase extends EppResource
-    implements ForeignKeyedEppResource, ResourceWithTransferData {
+    implements ForeignKeyedEppResource, ResourceWithTransferData, DatastoreAndSqlEntity {
 
   /** The max number of years that a domain can be registered for, as set by ICANN policy. */
   public static final int MAX_REGISTRATION_YEARS = 10;
@@ -141,7 +144,11 @@ public class DomainBase extends EppResource
    */
   @Index @ElementCollection @Transient Set<Key<HostResource>> nsHosts;
 
-  @Ignore @Transient Set<VKey<HostResource>> nsHostVKeys;
+  @Ignore
+  @ElementCollection
+  @JoinTable(name = "DomainHost")
+  @Convert(converter = HostResource.VKeyHostResourceConverter.class)
+  Set<VKey<HostResource>> nsHostVKeys;
 
   /**
    * The union of the contacts visible via {@link #getContacts} and {@link #getRegistrant}.

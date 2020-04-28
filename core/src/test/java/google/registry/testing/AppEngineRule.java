@@ -14,6 +14,7 @@
 
 package google.registry.testing;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.DatastoreHelper.persistSimpleResources;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
@@ -40,6 +41,9 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.util.Clock;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -52,6 +56,9 @@ import javax.annotation.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.Description;
@@ -65,9 +72,15 @@ import org.junit.runners.model.Statement;
  *
  * <p>This rule also resets global Objectify for the current thread.
  *
+ * <p>This class works with both JUnit 4 and JUnit 5. With JUnit 4, the test runner calls {@link
+ * #apply(Statement, Description)}, which in turns calls {@link #before()} on entry and {@link
+ * #after()} on exit. With JUnit 5, the test runner calls {@link #beforeEach(ExtensionContext)} and
+ * {@link #afterEach(ExtensionContext)}.
+ *
  * @see org.junit.rules.ExternalResource
  */
-public final class AppEngineRule extends ExternalResource {
+public final class AppEngineRule extends ExternalResource
+    implements BeforeEachCallback, AfterEachCallback {
 
   public static final String NEW_REGISTRAR_GAE_USER_ID = "666";
   public static final String THE_REGISTRAR_GAE_USER_ID = "31337";
@@ -92,8 +105,19 @@ public final class AppEngineRule extends ExternalResource {
 
   /** A rule-within-a-rule to provide a temporary folder for AppEngineRule's internal temp files. */
   TemporaryFolder temporaryFolder = new TemporaryFolder();
+  /**
+   * Sets up a SQL database when running on JUnit 5. This is for test classes that are not member of
+   * the {@code SqlIntegrationTestSuite}.
+   */
+  JpaIntegrationTestRule jpaIntegrationTestRule = null;
+  /**
+   * Sets up a SQL database when running on JUnit 5 and records the JPA entities tested by each test
+   * class. This is for {@code SqlIntegrationTestSuite} members.
+   */
+  JpaIntegrationWithCoverageExtension jpaIntegrationWithCoverageExtension = null;
 
   private boolean withDatastoreAndCloudSql;
+  private boolean enableJpaEntityCoverageCheck;
   private boolean withLocalModules;
   private boolean withTaskQueue;
   private boolean withUserService;
@@ -111,6 +135,14 @@ public final class AppEngineRule extends ExternalResource {
     /** Turn on the Datastore service and the Cloud SQL service. */
     public Builder withDatastoreAndCloudSql() {
       rule.withDatastoreAndCloudSql = true;
+      return this;
+    }
+    /**
+     * Enables JPA entity coverage check if {@code enabled} is true. This should only be enabled for
+     * members of SqlIntegrationTestSuite.
+     */
+    public Builder enableJpaEntityCoverageCheck(boolean enabled) {
+      rule.enableJpaEntityCoverageCheck = enabled;
       return this;
     }
 
@@ -150,6 +182,9 @@ public final class AppEngineRule extends ExternalResource {
     }
 
     public AppEngineRule build() {
+      checkState(
+          !rule.enableJpaEntityCoverageCheck || rule.withDatastoreAndCloudSql,
+          "withJpaEntityCoverageCheck enabled without Cloud SQL");
       return rule;
     }
   }
@@ -256,7 +291,45 @@ public final class AppEngineRule extends ExternalResource {
         .build();
   }
 
-  /** Hack to make sure AppEngineRule is always wrapped in a TemporaryFolder rule. */
+  /** Called before every test method. JUnit 5 only. */
+  @Override
+  public void beforeEach(ExtensionContext context) throws Exception {
+    before();
+    if (withDatastoreAndCloudSql) {
+      JpaTestRules.Builder builder = new JpaTestRules.Builder();
+      if (clock != null) {
+        builder.withClock(clock);
+      }
+      if (enableJpaEntityCoverageCheck) {
+        jpaIntegrationWithCoverageExtension = builder.buildIntegrationWithCoverageExtension();
+        jpaIntegrationWithCoverageExtension.beforeEach(context);
+      } else {
+        jpaIntegrationTestRule = builder.buildIntegrationTestRule();
+        jpaIntegrationTestRule.before();
+      }
+    }
+  }
+
+  /** Called after each test method. JUnit 5 only. */
+  @Override
+  public void afterEach(ExtensionContext context) throws Exception {
+    if (withDatastoreAndCloudSql) {
+      if (enableJpaEntityCoverageCheck) {
+        jpaIntegrationWithCoverageExtension.afterEach(context);
+      } else {
+        jpaIntegrationTestRule.after();
+      }
+    }
+    after();
+  }
+
+  /**
+   * Hack to make sure AppEngineRule is always wrapped in a {@link JpaIntegrationWithCoverageRule}.
+   * JUnit 4 only.
+   */
+  // Note: Even with @EnableRuleMigrationSupport, JUnit5 runner does not call this method.
+  // Note 2: Do not migrate members of SqlIntegrationTestSuite to JUnit5 individually.
+  // TODO(weiminyu): migrate SqlIntegrationTestSuite in one go.
   @Override
   public Statement apply(Statement base, Description description) {
     Statement statement = base;
@@ -265,14 +338,18 @@ public final class AppEngineRule extends ExternalResource {
       if (clock != null) {
         builder.withClock(clock);
       }
-      statement = builder.buildIntegrationWithCoverageRule().apply(base, description);
+      checkState(
+          !enableJpaEntityCoverageCheck,
+          "JUnit4 tests must not enable withJpaEntityCoverageCheck.");
+      statement = builder.buildIntegrationTestRule().apply(base, description);
     }
-    return temporaryFolder.apply(super.apply(statement, description), description);
+    return super.apply(statement, description);
   }
 
   @Override
   protected void before() throws IOException {
     setupLogging();
+    temporaryFolder.create();
     Set<LocalServiceTestConfig> configs = new HashSet<>();
     if (withUrlFetch) {
       configs.add(new LocalURLFetchServiceTestConfig());
@@ -346,10 +423,10 @@ public final class AppEngineRule extends ExternalResource {
     helper = null;
     // Test that Datastore didn't need any indexes we don't have listed in our index file.
     File indexFile = new File(temporaryFolder.getRoot(), "datastore-indexes-auto.xml");
-    if (!indexFile.exists()) {
-      return;
-    }
     try {
+      if (!indexFile.exists()) {
+        return;
+      }
       String indexFileContent = Files.asCharSource(indexFile, UTF_8).read();
       if (indexFileContent.trim().isEmpty()) {
         return;
@@ -361,6 +438,8 @@ public final class AppEngineRule extends ExternalResource {
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
+    } finally {
+      temporaryFolder.delete();
     }
   }
 

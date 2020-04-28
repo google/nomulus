@@ -26,11 +26,17 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.schema.tld.ReservedList.ReservedEntry;
 import google.registry.schema.tld.ReservedListDao;
+import org.junit.Before;
 import org.junit.Test;
 
 /** Unit tests for {@link UpdateReservedListCommand}. */
 public class UpdateReservedListCommandTest extends
     CreateOrUpdateReservedListCommandTestCase<UpdateReservedListCommand> {
+
+  @Before
+  public void setup() {
+    populateInitialReservedListInDatastore(true);
+  }
 
   private void populateInitialReservedListInDatastore(boolean shouldPublish) {
     persistResource(
@@ -63,7 +69,6 @@ public class UpdateReservedListCommandTest extends
 
   @Test
   public void testSuccess_lastUpdateTime_updatedCorrectly() throws Exception {
-    populateInitialReservedListInDatastore(true);
     ReservedList original = ReservedList.get("xn--q9jyb4c_common-reserved").get();
     runCommandForced("--input=" + reservedTermsPath);
     ReservedList updated = ReservedList.get("xn--q9jyb4c_common-reserved").get();
@@ -90,7 +95,6 @@ public class UpdateReservedListCommandTest extends
   }
 
   private void runSuccessfulUpdateTest(String... args) throws Exception {
-    populateInitialReservedListInDatastore(true);
     runCommandForced(args);
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
     ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
@@ -114,7 +118,6 @@ public class UpdateReservedListCommandTest extends
 
   @Test
   public void testSaveToCloudSql_succeeds() throws Exception {
-    populateInitialReservedListInDatastore(true);
     populateInitialReservedListInCloudSql(true);
     runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
     verifyXnq9jyb4cInDatastore();
@@ -126,7 +129,6 @@ public class UpdateReservedListCommandTest extends
     // Note that, during the dual-write phase, we always save the reserved list to Cloud SQL without
     // checking if there is a list with same name. This is to backfill the existing list in Cloud
     // Datastore when we update it.
-    populateInitialReservedListInDatastore(true);
     runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
     verifyXnq9jyb4cInDatastore();
     assertThat(ReservedListDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();

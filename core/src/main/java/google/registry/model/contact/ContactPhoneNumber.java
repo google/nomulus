@@ -16,17 +16,19 @@ package google.registry.model.contact;
 
 import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.eppcommon.PhoneNumber;
+import javax.persistence.Embeddable;
 
 /**
  * EPP Contact Phone Number
  *
  * <p>This class is embedded inside a {@link ContactResource} hold the phone number of an EPP
- * contact.  The fields are all defined in the parent class {@link PhoneNumber}, but the subclass is
+ * contact. The fields are all defined in the parent class {@link PhoneNumber}, but the subclass is
  * still necessary to pick up the contact namespace.
  *
  * @see ContactResource
  */
 @Embed
+@Embeddable
 public class ContactPhoneNumber extends PhoneNumber {
 
   /** Builder for {@link ContactPhoneNumber}. */

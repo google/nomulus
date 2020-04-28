@@ -25,6 +25,7 @@ import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCod
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static google.registry.ui.server.registrar.RegistryLockGetActionTest.userFromRegistrarContact;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -32,6 +33,7 @@ import com.google.appengine.api.users.User;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
+import google.registry.batch.AsyncTaskEnqueuerTest;
 import google.registry.model.domain.DomainBase;
 import google.registry.request.JsonActionRunner;
 import google.registry.request.JsonResponse;
@@ -46,6 +48,7 @@ import google.registry.testing.AppEngineRule;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.tools.DomainLockUtils;
+import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
 import google.registry.util.StringGenerator.Alphabets;
@@ -424,7 +427,10 @@ public final class RegistryLockPostActionTest {
     JsonActionRunner jsonActionRunner =
         new JsonActionRunner(ImmutableMap.of(), new JsonResponse(new ResponseImpl(mockResponse)));
     DomainLockUtils domainLockUtils =
-        new DomainLockUtils(new DeterministicStringGenerator(Alphabets.BASE_58));
+        new DomainLockUtils(
+            new DeterministicStringGenerator(Alphabets.BASE_58),
+            AsyncTaskEnqueuerTest.createForTesting(
+                mock(AppEngineServiceUtils.class), clock, Duration.ZERO));
     return new RegistryLockPostAction(
         jsonActionRunner,
         authResult,

@@ -14,6 +14,7 @@
 package google.registry.persistence;
 
 import google.registry.persistence.converter.StringCollectionDescriptor;
+import google.registry.persistence.converter.StringMapDescriptor;
 import java.sql.Types;
 import org.hibernate.boot.model.TypeContributions;
 import org.hibernate.dialect.PostgreSQL95Dialect;
@@ -26,7 +27,7 @@ public class NomulusPostgreSQLDialect extends PostgreSQL95Dialect {
     registerColumnType(Types.VARCHAR, "text");
     registerColumnType(Types.TIMESTAMP_WITH_TIMEZONE, "timestamptz");
     registerColumnType(Types.TIMESTAMP, "timestamptz");
-    registerColumnType(Types.OTHER, "hstore");
+    registerColumnType(StringMapDescriptor.COLUMN_TYPE, StringMapDescriptor.COLUMN_NAME);
     registerColumnType(
         StringCollectionDescriptor.COLUMN_TYPE, StringCollectionDescriptor.COLUMN_DDL_NAME);
   }
@@ -37,5 +38,7 @@ public class NomulusPostgreSQLDialect extends PostgreSQL95Dialect {
     super.contributeTypes(typeContributions, serviceRegistry);
     typeContributions.contributeJavaTypeDescriptor(StringCollectionDescriptor.getInstance());
     typeContributions.contributeSqlTypeDescriptor(StringCollectionDescriptor.getInstance());
+    typeContributions.contributeJavaTypeDescriptor(StringMapDescriptor.getInstance());
+    typeContributions.contributeSqlTypeDescriptor(StringMapDescriptor.getInstance());
   }
 }

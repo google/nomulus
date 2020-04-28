@@ -80,6 +80,8 @@ task extractSqlIntegrationTestSuite (type: Copy) {
 
 // TODO(weiminyu): inherit from FilteringTest (defined in :core).
 task sqlIntegrationTest(type: Test) {
+  // Explicitly choose JUnit 4 for test suites. See :core:sqlIntegrationTest for details.
+  useJUnit()
   testClassesDirs = files(unpackedTestDir)
   classpath = configurations.testRuntime
   include 'google/registry/schema/integration/SqlIntegrationTestSuite.*'

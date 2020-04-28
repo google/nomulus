@@ -14,10 +14,7 @@
 
 package google.registry.flows;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
-import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
-import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
-import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
+import static org.joda.time.Duration.standardSeconds;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -26,6 +23,7 @@ import dagger.Module;
 import dagger.Provides;
 import dagger.Subcomponent;
 import google.registry.batch.AsyncTaskEnqueuer;
+import google.registry.batch.AsyncTaskEnqueuerTest;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
 import google.registry.dns.DnsQueue;
@@ -42,10 +40,8 @@ import google.registry.tmch.TmchCertificateAuthority;
 import google.registry.tmch.TmchXmlSignature;
 import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.Clock;
-import google.registry.util.Retrier;
 import google.registry.util.Sleeper;
 import javax.inject.Singleton;
-import org.joda.time.Duration;
 
 /** Dagger component for running EPP tests. */
 @Singleton
@@ -84,20 +80,12 @@ interface EppTestComponent {
     }
 
     public static FakesAndMocksModule create(
-        FakeClock clock,
-        EppMetric.Builder eppMetricBuilder,
-        TmchXmlSignature tmchXmlSignature) {
+        FakeClock clock, EppMetric.Builder eppMetricBuilder, TmchXmlSignature tmchXmlSignature) {
       FakesAndMocksModule instance = new FakesAndMocksModule();
       AppEngineServiceUtils appEngineServiceUtils = mock(AppEngineServiceUtils.class);
       when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
       instance.asyncTaskEnqueuer =
-          new AsyncTaskEnqueuer(
-              getQueue(QUEUE_ASYNC_ACTIONS),
-              getQueue(QUEUE_ASYNC_DELETE),
-              getQueue(QUEUE_ASYNC_HOST_RENAME),
-              Duration.standardSeconds(90),
-              appEngineServiceUtils,
-              new Retrier(new FakeSleeper(clock), 1));
+          AsyncTaskEnqueuerTest.createForTesting(appEngineServiceUtils, clock, standardSeconds(90));
       instance.clock = clock;
       instance.domainFlowTmchUtils = new DomainFlowTmchUtils(tmchXmlSignature);
       instance.sleeper = new FakeSleeper(clock);

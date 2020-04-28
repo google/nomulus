@@ -36,6 +36,9 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
   // The mount point in the container.
   private static final String CONTAINER_MOUNT_POINT = "/tmp/pg_dump.out";
 
+  // Temporary workaround to fix permission issues on certain Linux distro (e. g. Arch Linux).
+  private static final String CONTAINER_MOUNT_POINT_TMP = "/tmp/pg_dump.tmp";
+
   @Parameter(
       names = {"--output", "-o"},
       description = "Output file",
@@ -61,6 +64,11 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
     if (result.getExitCode() != 0) {
       throw new RuntimeException(result.toString());
     }
+    result =
+        postgresContainer.execInContainer("cp", CONTAINER_MOUNT_POINT_TMP, CONTAINER_MOUNT_POINT);
+    if (result.getExitCode() != 0) {
+      throw new RuntimeException(result.toString());
+    }
   }
 
   @Override
@@ -79,7 +87,7 @@ public class DumpGoldenSchemaCommand extends PostgresqlCommand {
       "-U",
       username,
       "-f",
-      CONTAINER_MOUNT_POINT,
+      CONTAINER_MOUNT_POINT_TMP,
       "--schema-only",
       "--no-owner",
       "--no-privileges",

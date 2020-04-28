@@ -41,11 +41,6 @@ public class VKey<T> extends ImmutableObject {
     this.primaryKey = primaryKey;
   }
 
-  public static <T> VKey<T> create(
-      Class<? extends T> kind, com.googlecode.objectify.Key<T> ofyKey, Object primaryKey) {
-    return new VKey(kind, ofyKey, primaryKey);
-  }
-
   public static <T> VKey<T> createSql(Class<? extends T> kind, Object primaryKey) {
     return new VKey(kind, null, primaryKey);
   }
@@ -72,7 +67,7 @@ public class VKey<T> extends ImmutableObject {
 
   /** Returns the SQL primary key if it exists. */
   public Optional<Object> maybeGetSqlKey() {
-    return Optional.of(this.primaryKey);
+    return Optional.ofNullable(this.primaryKey);
   }
 
   /** Returns the objectify key. */
@@ -83,6 +78,6 @@ public class VKey<T> extends ImmutableObject {
 
   /** Returns the objectify key if it exists. */
   public Optional<com.googlecode.objectify.Key<T>> maybeGetOfyKey() {
-    return Optional.of(this.ofyKey);
+    return Optional.ofNullable(this.ofyKey);
   }
 }

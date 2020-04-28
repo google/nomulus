@@ -16,6 +16,7 @@ package google.registry.module.frontend;
 
 import dagger.Module;
 import dagger.Subcomponent;
+import google.registry.batch.BatchModule;
 import google.registry.dns.DnsModule;
 import google.registry.flows.EppTlsAction;
 import google.registry.flows.FlowComponent;
@@ -38,6 +39,7 @@ import google.registry.ui.server.registrar.RegistryLockVerifyAction;
 @RequestScope
 @Subcomponent(
     modules = {
+      BatchModule.class,
       DnsModule.class,
       EppTlsModule.class,
       RegistrarConsoleModule.class,

@@ -153,6 +153,8 @@ public class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, D
     doSuccessfulTest(
         responseFilename,
         renewalYears,
+        "TheRegistrar",
+        UserPrivileges.NORMAL,
         substitutions,
         Money.of(USD, 11).multipliedBy(renewalYears));
   }
@@ -160,13 +162,16 @@ public class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, D
   private void doSuccessfulTest(
       String responseFilename,
       int renewalYears,
+      String renewalClientId,
+      UserPrivileges userPrivileges,
       Map<String, String> substitutions,
       Money totalRenewCost)
       throws Exception {
     assertTransactionalFlow(true);
     DateTime currentExpiration = reloadResourceByForeignKey().getRegistrationExpirationTime();
     DateTime newExpiration = currentExpiration.plusYears(renewalYears);
-    runFlowAssertResponse(loadFile(responseFilename, substitutions));
+    runFlowAssertResponse(
+        CommitMode.LIVE, userPrivileges, loadFile(responseFilename, substitutions));
     DomainBase domain = reloadResourceByForeignKey();
     HistoryEntry historyEntryDomainRenew =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RENEW);
@@ -183,13 +188,13 @@ public class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, D
         .and()
         .hasLastEppUpdateTime(clock.nowUtc())
         .and()
-        .hasLastEppUpdateClientId("TheRegistrar");
+        .hasLastEppUpdateClientId(renewalClientId);
     assertAboutHistoryEntries().that(historyEntryDomainRenew).hasPeriodYears(renewalYears);
     BillingEvent.OneTime renewBillingEvent =
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.RENEW)
             .setTargetId(getUniqueIdFromCommand())
-            .setClientId("TheRegistrar")
+            .setClientId(renewalClientId)
             .setCost(totalRenewCost)
             .setPeriodYears(renewalYears)
             .setEventTime(clock.nowUtc())
@@ -233,7 +238,7 @@ public class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, D
             GracePeriod.create(
                 GracePeriodStatus.RENEW,
                 clock.nowUtc().plus(Registry.get("tld").getRenewGracePeriodLength()),
-                "TheRegistrar",
+                renewalClientId,
                 null),
             renewBillingEvent));
   }
@@ -257,6 +262,19 @@ public class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, D
   }
 
   @Test
+  public void testSuccess_recurringClientIdIsSame_whenSuperuserOverridesRenewal() throws Exception {
+    persistDomain();
+    setClientIdForFlow("NewRegistrar");
+    doSuccessfulTest(
+        "domain_renew_response.xml",
+        5,
+        "NewRegistrar",
+        UserPrivileges.SUPERUSER,
+        ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2005-04-03T22:00:00.0Z"),
+        Money.of(USD, 55));
+  }
+
+  @Test
   public void testSuccess_customLogicFee() throws Exception {
     // The "costly-renew" domain has an additional RENEW fee of 100 from custom logic on top of the
     // normal $11 standard renew price for this TLD.
@@ -269,7 +287,13 @@ public class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, D
             "FEE", "111.00");
     setEppInput("domain_renew_fee.xml", customFeeMap);
     persistDomain();
-    doSuccessfulTest("domain_renew_response_fee.xml", 1, customFeeMap, Money.of(USD, 111));
+    doSuccessfulTest(
+        "domain_renew_response_fee.xml",
+        1,
+        "TheRegistrar",
+        UserPrivileges.NORMAL,
+        customFeeMap,
+        Money.of(USD, 111));
   }
 
   @Test
@@ -687,7 +711,7 @@ public class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, D
 
   @Test
   public void testFailure_unauthorizedClient() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    setClientIdForFlow("NewRegistrar");
     persistActiveDomain(getUniqueIdFromCommand());
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -695,7 +719,7 @@ public class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, D
 
   @Test
   public void testSuccess_superuserUnauthorizedClient() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    setClientIdForFlow("NewRegistrar");
     persistDomain();
     runFlowAssertResponse(
         CommitMode.LIVE,

@@ -32,7 +32,7 @@ import org.junit.runners.JUnit4;
 
 /** Unit tests for {@link CidrAddressBlockListConverter}. */
 @RunWith(JUnit4.class)
-public class CidrAddressBlockListUserTypeTest {
+public class CidrAddressBlockListConverterTest {
   @Rule
   public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();

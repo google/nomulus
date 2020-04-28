@@ -28,6 +28,7 @@ import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCod
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static org.mockito.Mockito.mock;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.DomainBase;
@@ -39,8 +40,10 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.UserInfo;
 import google.registry.tools.DomainLockUtils;
+import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.Optional;
+import org.joda.time.Duration;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -58,7 +61,10 @@ public class RelockDomainActionTest {
   private final FakeResponse response = new FakeResponse();
   private final FakeClock clock = new FakeClock();
   private final DomainLockUtils domainLockUtils =
-      new DomainLockUtils(new DeterministicStringGenerator(Alphabets.BASE_58));
+      new DomainLockUtils(
+          new DeterministicStringGenerator(Alphabets.BASE_58),
+          AsyncTaskEnqueuerTest.createForTesting(
+              mock(AppEngineServiceUtils.class), clock, Duration.ZERO));
 
   @Rule
   public final AppEngineRule appEngineRule =

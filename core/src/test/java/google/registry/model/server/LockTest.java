@@ -28,7 +28,6 @@ import static org.mockito.Mockito.when;
 
 import google.registry.model.ofy.Ofy;
 import google.registry.model.server.Lock.LockState;
-import google.registry.schema.server.LockDao;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
@@ -65,19 +64,16 @@ public class LockTest {
     Optional<Lock> lock = Lock.acquire(RESOURCE_NAME, tld, leaseLength, requestStatusChecker, true);
     verify(Lock.lockMetrics).recordAcquire(RESOURCE_NAME, tld, expectedLockState);
     verifyNoMoreInteractions(Lock.lockMetrics);
-    assertThat(LockDao.load(RESOURCE_NAME, tld)).isPresent();
     Lock.lockMetrics = null;
     return lock;
   }
 
   private void release(Lock lock, String expectedTld, long expectedMillis) {
-    assertThat(LockDao.load(RESOURCE_NAME, expectedTld)).isPresent();
     Lock.lockMetrics = mock(LockMetrics.class);
     lock.release();
     verify(Lock.lockMetrics)
         .recordRelease(RESOURCE_NAME, expectedTld, Duration.millis(expectedMillis));
     verifyNoMoreInteractions(Lock.lockMetrics);
-    assertThat(LockDao.load(RESOURCE_NAME, expectedTld)).isEmpty();
     Lock.lockMetrics = null;
   }
 

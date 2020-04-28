@@ -235,6 +235,7 @@ org.rnorth.visible-assertions:visible-assertions:2.1.2
 org.rnorth:tcp-unix-socket-proxy:1.0.2
 org.scijava:native-lib-loader:2.0.2
 org.slf4j:slf4j-api:1.7.28
+org.slf4j:slf4j-jdk14:1.7.28
 org.testcontainers:database-commons:1.12.1
 org.testcontainers:jdbc:1.12.1
 org.testcontainers:postgresql:1.12.1

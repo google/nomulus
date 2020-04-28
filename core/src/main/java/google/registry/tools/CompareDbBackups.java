@@ -18,9 +18,20 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import java.io.File;
+import java.util.function.Predicate;
 
-/** Compare two database backups. */
+/**
+ * Compares two Datastore backups in V3 format on local file system. This is for use in tests and
+ * experiments with small data sizes.
+ *
+ * <p>This utility only supports the current Datastore backup format (version 3). A backup is a
+ * two-level directory hierarchy with data files in level-db format (output-*) and Datastore
+ * metadata files (*.export_metadata).
+ */
 class CompareDbBackups {
+  private static final String DS_V3_BACKUP_FILE_PREFIX = "output-";
+  private static final Predicate<File> DATA_FILE_MATCHER =
+      file -> file.isFile() && file.getName().startsWith(DS_V3_BACKUP_FILE_PREFIX);
 
   public static void main(String[] args) {
     if (args.length != 2) {
@@ -29,9 +40,13 @@ class CompareDbBackups {
     }
 
     ImmutableSet<ComparableEntity> entities1 =
-        new RecordAccumulator().readDirectory(new File(args[0])).getComparableEntitySet();
+        new RecordAccumulator()
+            .readDirectory(new File(args[0]), DATA_FILE_MATCHER)
+            .getComparableEntitySet();
     ImmutableSet<ComparableEntity> entities2 =
-        new RecordAccumulator().readDirectory(new File(args[1])).getComparableEntitySet();
+        new RecordAccumulator()
+            .readDirectory(new File(args[1]), DATA_FILE_MATCHER)
+            .getComparableEntitySet();
 
     // Calculate the entities added and removed.
     SetView<ComparableEntity> added = Sets.difference(entities2, entities1);
@@ -53,6 +68,10 @@ class CompareDbBackups {
       for (ComparableEntity entity : added) {
         System.out.println(entity);
       }
+    }
+
+    if (added.isEmpty() && removed.isEmpty()) {
+      System.out.printf("\nBoth sets have the same %d entities.\n", entities1.size());
     }
   }
 

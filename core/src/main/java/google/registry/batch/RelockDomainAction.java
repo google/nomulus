@@ -50,6 +50,7 @@ import javax.inject.Inject;
 public class RelockDomainAction implements Runnable {
 
   public static final String PATH = "/_dr/task/relockDomain";
+  public static final String OLD_UNLOCK_REVISION_ID_PARAM = "oldUnlockRevisionId";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -59,7 +60,7 @@ public class RelockDomainAction implements Runnable {
 
   @Inject
   public RelockDomainAction(
-      @Parameter("oldUnlockRevisionId") long oldUnlockRevisionId,
+      @Parameter(OLD_UNLOCK_REVISION_ID_PARAM) long oldUnlockRevisionId,
       DomainLockUtils domainLockUtils,
       Response response) {
     this.oldUnlockRevisionId = oldUnlockRevisionId;

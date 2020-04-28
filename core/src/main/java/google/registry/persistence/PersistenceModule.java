@@ -17,9 +17,7 @@ package google.registry.persistence;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.config.RegistryConfig.getHibernateConnectionIsolation;
 import static google.registry.config.RegistryConfig.getHibernateHikariConnectionTimeout;
-import static google.registry.config.RegistryConfig.getHibernateHikariIdleTimeout;
 import static google.registry.config.RegistryConfig.getHibernateHikariMaximumPoolSize;
-import static google.registry.config.RegistryConfig.getHibernateHikariMinimumIdle;
 import static google.registry.config.RegistryConfig.getHibernateLogSqlQueries;
 
 import com.google.api.client.auth.oauth2.Credential;
@@ -50,10 +48,7 @@ public class PersistenceModule {
   // This name must be the same as the one defined in persistence.xml.
   public static final String PERSISTENCE_UNIT_NAME = "nomulus";
   public static final String HIKARI_CONNECTION_TIMEOUT = "hibernate.hikari.connectionTimeout";
-  public static final String HIKARI_MINIMUM_IDLE = "hibernate.hikari.minimumIdle";
   public static final String HIKARI_MAXIMUM_POOL_SIZE = "hibernate.hikari.maximumPoolSize";
-  public static final String HIKARI_IDLE_TIMEOUT = "hibernate.hikari.idleTimeout";
-
   public static final String HIKARI_DS_SOCKET_FACTORY = "hibernate.hikari.dataSource.socketFactory";
   public static final String HIKARI_DS_CLOUD_SQL_INSTANCE =
       "hibernate.hikari.dataSource.cloudSqlInstance";
@@ -79,9 +74,7 @@ public class PersistenceModule {
     properties.put(Environment.ISOLATION, getHibernateConnectionIsolation());
     properties.put(Environment.SHOW_SQL, getHibernateLogSqlQueries());
     properties.put(HIKARI_CONNECTION_TIMEOUT, getHibernateHikariConnectionTimeout());
-    properties.put(HIKARI_MINIMUM_IDLE, getHibernateHikariMinimumIdle());
     properties.put(HIKARI_MAXIMUM_POOL_SIZE, getHibernateHikariMaximumPoolSize());
-    properties.put(HIKARI_IDLE_TIMEOUT, getHibernateHikariIdleTimeout());
     properties.put(Environment.DIALECT, NomulusPostgreSQLDialect.class.getName());
     return properties.build();
   }

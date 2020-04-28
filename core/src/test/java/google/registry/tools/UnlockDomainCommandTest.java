@@ -25,17 +25,21 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.Mockito.mock;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import google.registry.batch.AsyncTaskEnqueuerTest;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.DeterministicStringGenerator;
+import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.joda.time.Duration;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -48,7 +52,10 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
     createTld("tld");
     command.registryAdminClientId = "adminreg";
     command.domainLockUtils =
-        new DomainLockUtils(new DeterministicStringGenerator(Alphabets.BASE_58));
+        new DomainLockUtils(
+            new DeterministicStringGenerator(Alphabets.BASE_58),
+            AsyncTaskEnqueuerTest.createForTesting(
+                mock(AppEngineServiceUtils.class), fakeClock, Duration.ZERO));
   }
 
   private DomainBase persistLockedDomain(String domainName, String registrarId) {

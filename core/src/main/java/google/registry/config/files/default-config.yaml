@@ -207,9 +207,17 @@ hibernate:
 
   # Connection pool configurations.
   hikariConnectionTimeout: 20000
-  hikariMinimumIdle: 0
+
+  # We occasionally received "Connection is not available, request timed out"
+  # exception when setting minimumIdle to 0 and it turned out it is a bug (See
+  # https://github.com/brettwooldridge/HikariCP/issues/1212) in HikariCP and
+  # the workaround is to use a fixed size connection pool.
+  #
+  # HikariCP also recommends not setting minimumIdle for maximum performance
+  # and responsiveness to spike demands (See
+  # https://github.com/brettwooldridge/HikariCP).
+  # TODO(b/154720215): Experiment with a smaller pool size.
   hikariMaximumPoolSize: 20
-  hikariIdleTimeout: 300000
 
 cloudSql:
   # jdbc url for the Cloud SQL database.

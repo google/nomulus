@@ -31,20 +31,21 @@ import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import java.util.Optional;
 import org.joda.time.Duration;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RegistryLockDao}. */
-@RunWith(JUnit4.class)
 public final class RegistryLockDaoTest {
 
   private final FakeClock fakeClock = new FakeClock();
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withClock(fakeClock).build();
+      AppEngineRule.builder()
+          .withDatastoreAndCloudSql()
+          .enableJpaEntityCoverageCheck(true)
+          .withClock(fakeClock)
+          .build();
 
   @Test
   public void testSaveAndLoad_success() {

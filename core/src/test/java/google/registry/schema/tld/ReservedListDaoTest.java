@@ -20,23 +20,20 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.registry.label.ReservationType;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
 import google.registry.schema.tld.ReservedList.ReservedEntry;
 import google.registry.testing.FakeClock;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ReservedListDao}. */
-@RunWith(JUnit4.class)
 public class ReservedListDaoTest {
 
   private final FakeClock fakeClock = new FakeClock();
 
-  @Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageRule();
+  @RegisterExtension
+  public final JpaIntegrationWithCoverageExtension jpa =
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   private static final ImmutableMap<String, ReservedEntry> TEST_RESERVATIONS =
       ImmutableMap.of(
