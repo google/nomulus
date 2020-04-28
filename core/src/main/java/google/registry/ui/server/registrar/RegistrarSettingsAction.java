@@ -490,7 +490,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
               if (!updatedContactOptional.get().isRegistryLockAllowed()) {
                 throw new FormException(
                     String.format(
-                        "Cannot remove the ability to use registry lock on %s",
+                        "Cannot remove the ability to use registry lock on the contact %s",
                         contact.getEmailAddress()));
               }
             });
