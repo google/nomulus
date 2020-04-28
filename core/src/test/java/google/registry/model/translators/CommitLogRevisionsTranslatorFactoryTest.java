@@ -23,7 +23,6 @@ import static org.joda.time.Duration.standardHours;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.common.CrossTldSingleton;
 import google.registry.model.ofy.CommitLogManifest;
@@ -45,13 +44,17 @@ public class CommitLogRevisionsTranslatorFactoryTest {
 
   private static final DateTime START_TIME = DateTime.parse("2000-01-01TZ");
 
-  @Entity
+  @Entity(name = "ClrtfTestEntity")
   public static class TestObject extends CrossTldSingleton {
     ImmutableSortedMap<DateTime, Key<CommitLogManifest>> revisions = ImmutableSortedMap.of();
   }
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder()
+          .withDatastoreAndCloudSql()
+          .withOfyTestEntities(TestObject.class)
+          .build();
 
   @Rule
   public final InjectRule inject = new InjectRule();
@@ -60,7 +63,6 @@ public class CommitLogRevisionsTranslatorFactoryTest {
 
   @Before
   public void before() {
-    ObjectifyService.register(TestObject.class);
     inject.setStaticField(Ofy.class, "clock", clock);
   }
 

@@ -28,7 +28,10 @@ public class VKeyTest {
 
   @Rule
   public final AppEngineRule appEngineRule =
-      AppEngineRule.builder().withDatastoreAndCloudSql().build();
+      AppEngineRule.builder()
+          .withDatastoreAndCloudSql()
+          .withOfyTestEntities(TestObject.class)
+          .build();
 
   public VKeyTest() {}
 

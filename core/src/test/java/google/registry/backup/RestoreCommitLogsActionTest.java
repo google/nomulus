@@ -71,7 +71,11 @@ public class RestoreCommitLogsActionTest {
   final GcsService gcsService = createGcsService();
 
   @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder()
+          .withDatastoreAndCloudSql()
+          .withOfyTestEntities(TestObject.class)
+          .build();
 
   @Before
   public void init() {
