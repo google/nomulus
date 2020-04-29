@@ -34,7 +34,7 @@ import google.registry.model.annotations.ReportedOn;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
-import google.registry.persistence.converter.VKeyConverter;
+import google.registry.persistence.WithStringVKey;
 import java.net.InetAddress;
 import java.util.Optional;
 import java.util.Set;
@@ -54,6 +54,7 @@ import org.joda.time.DateTime;
 @Entity
 @javax.persistence.Entity
 @ExternalMessagingName("host")
+@WithStringVKey
 public class HostResource extends EppResource implements ForeignKeyedEppResource {
 
   /**
@@ -210,13 +211,6 @@ public class HostResource extends EppResource implements ForeignKeyedEppResource
     public Builder setLastTransferTime(DateTime lastTransferTime) {
       getInstance().lastTransferTime = lastTransferTime;
       return this;
-    }
-  }
-
-  public static class VKeyHostResourceConverter extends VKeyConverter<HostResource> {
-    @Override
-    protected Class<HostResource> getAttributeClass() {
-      return HostResource.class;
     }
   }
 }

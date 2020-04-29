@@ -18,9 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import google.registry.persistence.VKey;
+import google.registry.persistence.WithLongVKey;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
-import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.junit.Rule;
@@ -30,46 +30,33 @@ import org.junit.runners.JUnit4;
 
 /** Test SQL persistence of VKey. */
 @RunWith(JUnit4.class)
-public class VKeyConverterTest {
+public class LongVKeyConverterTest {
 
   @Rule
   public final JpaUnitTestRule jpaRule =
-      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
-
-  public VKeyConverterTest() {}
+      new JpaTestRules.Builder()
+          .withEntityClass(TestEntity.class, VKeyConverter_LongType.class)
+          .buildUnitTestRule();
 
   @Test
   public void testRoundTrip() {
-    TestEntity original =
-        new TestEntity("TheRealSpartacus", VKey.createSql(TestEntity.class, "ImSpartacus!"));
+    TestEntity original = new TestEntity(VKey.createSql(TestEntity.class, 10L));
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(original));
 
     TestEntity retrieved =
-        jpaTm()
-            .transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "TheRealSpartacus"));
-    assertThat(retrieved.other.getSqlKey()).isEqualTo("ImSpartacus!");
-  }
-
-  static class TestEntityVKeyConverter extends VKeyConverter<TestEntity> {
-
-    @Override
-    protected Class<TestEntity> getAttributeClass() {
-      return TestEntity.class;
-    }
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+    assertThat(retrieved.number.getSqlKey()).isEqualTo(10L);
   }
 
   @Entity(name = "TestEntity")
+  @WithLongVKey(classNameSuffix = "LongType")
   static class TestEntity {
-    @Id String id;
+    @Id String id = "id";
 
-    // Specifying "@Converter(autoApply = true) on TestEntityVKeyConverter this doesn't seem to
-    // work.
-    @Convert(converter = TestEntityVKeyConverter.class)
-    VKey<TestEntity> other;
+    VKey<TestEntity> number;
 
-    TestEntity(String id, VKey<TestEntity> other) {
-      this.id = id;
-      this.other = other;
+    TestEntity(VKey<TestEntity> number) {
+      this.number = number;
     }
 
     /** Default constructor, needed for hibernate. */
