@@ -15,6 +15,7 @@
 package google.registry.persistence;
 
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import google.registry.model.ImmutableObject;
 import java.util.Optional;
@@ -41,20 +42,31 @@ public class VKey<T> extends ImmutableObject {
     this.primaryKey = primaryKey;
   }
 
-  public static <T> VKey<T> createSql(Class<? extends T> kind, Object primaryKey) {
-    return new VKey(kind, null, primaryKey);
+  /** Creates a {@link VKey} which only contains the sql primary key. */
+  public static <T> VKey<T> createSql(Class<? extends T> kind, Object sqlKey) {
+    checkArgumentNotNull(kind, "kind must not be null");
+    checkArgumentNotNull(sqlKey, "sqlKey must not be null");
+    return new VKey(kind, null, sqlKey);
   }
 
+  /** Creates a {@link VKey} which only contains the ofy primary key. */
   public static <T> VKey<T> createOfy(
-      Class<? extends T> kind, com.googlecode.objectify.Key<T> ofyKey) {
+      Class<? extends T> kind, com.googlecode.objectify.Key<? extends T> ofyKey) {
+    checkArgumentNotNull(kind, "kind must not be null");
+    checkArgumentNotNull(ofyKey, "ofyKey must not be null");
     return new VKey(kind, ofyKey, null);
   }
 
+  /** Creates a {@link VKey} which only contains both sql and ofy primary key. */
   public static <T> VKey<T> create(
-      Class<? extends T> kind, Object primaryKey, com.googlecode.objectify.Key ofyKey) {
-    return new VKey(kind, ofyKey, primaryKey);
+      Class<? extends T> kind, Object sqlKey, com.googlecode.objectify.Key ofyKey) {
+    checkArgumentNotNull(kind, "kind must not be null");
+    checkArgumentNotNull(sqlKey, "sqlKey must not be null");
+    checkArgumentNotNull(ofyKey, "ofyKey must not be null");
+    return new VKey(kind, ofyKey, sqlKey);
   }
 
+  /** Returns the type of the entity. */
   public Class<? extends T> getKind() {
     return this.kind;
   }

@@ -19,16 +19,16 @@ import javax.annotation.Nullable;
 import javax.persistence.AttributeConverter;
 
 /** Converts VKey to a string column. */
-public abstract class VKeyConverter<T> implements AttributeConverter<VKey<T>, String> {
+public abstract class VKeyConverter<T, C> implements AttributeConverter<VKey<? extends T>, C> {
   @Override
   @Nullable
-  public String convertToDatabaseColumn(@Nullable VKey<T> attribute) {
-    return attribute == null ? null : (String) attribute.getSqlKey();
+  public C convertToDatabaseColumn(@Nullable VKey<? extends T> attribute) {
+    return attribute == null ? null : (C) attribute.getSqlKey();
   }
 
   @Override
   @Nullable
-  public VKey<T> convertToEntityAttribute(@Nullable String dbData) {
+  public VKey<? extends T> convertToEntityAttribute(@Nullable C dbData) {
     return dbData == null ? null : VKey.createSql(getAttributeClass(), dbData);
   }
 

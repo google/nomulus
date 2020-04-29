@@ -1,0 +1,2 @@
+google.registry.processors.StringVKeyProcessor
+google.registry.processors.LongVKeyProcessor

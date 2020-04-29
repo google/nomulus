@@ -78,6 +78,7 @@ ext {
       'com.googlecode.json-simple:json-simple:1.1.1',
       'com.ibm.icu:icu4j:57.1',
       'com.jcraft:jsch:0.1.55',
+      'com.squareup:javapoet:1.12.1',
       'com.sun.activation:javax.activation:1.2.0',
       'com.sun.xml.bind:jaxb-impl:2.2.11',
       'com.sun.xml.bind:jaxb-osgi:2.2.11',

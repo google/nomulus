@@ -37,9 +37,10 @@ public class VKeyTest {
 
   @Test
   public void testOptionalAccessors() {
-    VKey<TestObject> key = VKey.create(TestObject.class, null, null);
-    assertThat(key.maybeGetSqlKey().isPresent()).isFalse();
-    assertThat(key.maybeGetOfyKey().isPresent()).isFalse();
+    VKey<TestObject> key =
+        VKey.create(TestObject.class, "foo", Key.create(TestObject.create("foo")));
+    assertThat(key.maybeGetSqlKey().isPresent()).isTrue();
+    assertThat(key.maybeGetOfyKey().isPresent()).isTrue();
 
     Key<TestObject> ofyKey = Key.create(TestObject.create("foo"));
     assertThat(VKey.createOfy(TestObject.class, ofyKey).maybeGetOfyKey().get()).isEqualTo(ofyKey);

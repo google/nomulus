@@ -77,7 +77,6 @@ import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
-import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.JoinTable;
@@ -147,7 +146,6 @@ public class DomainBase extends EppResource
   @Ignore
   @ElementCollection
   @JoinTable(name = "DomainHost")
-  @Convert(converter = HostResource.VKeyHostResourceConverter.class)
   Set<VKey<HostResource>> nsHostVKeys;
 
   /**

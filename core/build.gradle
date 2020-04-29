@@ -295,6 +295,8 @@ dependencies {
   testAnnotationProcessor deps['com.google.auto.value:auto-value']
   annotationProcessor deps['com.google.dagger:dagger-compiler']
   testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
+  annotationProcessor project(':processor')
+  testAnnotationProcessor project(':processor')
 
   testCompile deps['com.google.appengine:appengine-testing']
   testCompile deps['com.google.guava:guava-testlib']
