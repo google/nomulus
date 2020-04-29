@@ -66,25 +66,6 @@ CREATE TABLE public."BillingEvent" (
 
 
 --
--- Name: BillingEvent_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public."BillingEvent_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: BillingEvent_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public."BillingEvent_id_seq" OWNED BY public."BillingEvent".id;
-
-
---
 -- Name: ClaimsEntry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -478,10 +459,15 @@ ALTER SEQUENCE public."ReservedList_revision_id_seq" OWNED BY public."ReservedLi
 
 
 --
--- Name: BillingEvent id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: hibernate_sequence; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public."BillingEvent" ALTER COLUMN id SET DEFAULT nextval('public."BillingEvent_id_seq"'::regclass);
+CREATE SEQUENCE public.hibernate_sequence
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
 --

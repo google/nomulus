@@ -12,9 +12,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+create sequence hibernate_sequence start 1 increment 1;
+
 create table "BillingEvent" (
    type text not null,
-    id  bigserial not null,
+    id  int8 not null,
     client_id text not null,
     event_time timestamptz not null,
     flags text[],
