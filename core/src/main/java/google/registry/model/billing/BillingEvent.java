@@ -122,7 +122,7 @@ public abstract class BillingEvent extends ImmutableObject
 
   @Ignore
   @javax.persistence.Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE)
   @Column(name = "id")
   Long sqlId;
 
