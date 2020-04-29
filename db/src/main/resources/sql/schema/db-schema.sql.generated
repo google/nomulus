@@ -12,6 +12,33 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+    create table "BillingEvent" (
+       type text not null,
+        id  bigserial not null,
+        client_id text not null,
+        event_time timestamptz not null,
+        flags text[],
+        reason text not null,
+        target_id text not null,
+        cancellation_billing_time timestamptz,
+        cancellation_ref_onetime_id int8,
+        cancellation_ref_recurring_id int8,
+        modification_cost_amount numeric(19, 2),
+        modification_cost_currency text,
+        modification_description text,
+        modification_ref_onetime_id int8,
+        onetime_allocation_token_id text,
+        onetime_billing_time timestamptz,
+        onetime_cancellation_matching_id int8,
+        onetime_cost_amount numeric(19, 2),
+        onetime_cost_currency text,
+        onetime_period_years int4,
+        onetime_synthetic_creation_time timestamptz,
+        recurrence_end_time timestamptz,
+        recurrence_time_of_year text,
+        primary key (id)
+    );
+
     create table "ClaimsEntry" (
        revision_id int8 not null,
         claim_key text not null,
@@ -280,6 +307,14 @@
         should_publish boolean not null,
         primary key (revision_id)
     );
+create index IDX73l103vc5900ig3p4odf0cngt on "BillingEvent" (client_id);
+create index IDX5yfbr88439pxw0v3j86c74fp8 on "BillingEvent" (event_time);
+create index IDX3m88tgkhnf7680useobc4au6v on "BillingEvent" (cancellation_billing_time);
+create index IDXteelvp4hry8w7xyc0pycv8hr6 on "BillingEvent" (onetime_billing_time);
+create index IDXfhbr41utchu6bpa43kn2ulx61 on "BillingEvent" (onetime_synthetic_creation_time);
+create index IDXe8ipvfuacqd1s5144fiw3exln on "BillingEvent" (onetime_allocation_token_id);
+create index IDX1vx9ue4mfn6466nuf7mrti04e on "BillingEvent" (recurrence_end_time);
+create index IDXp1ud5nyyxfjms32qwv17772wk on "BillingEvent" (recurrence_time_of_year);
 create index IDX3y752kr9uh4kh6uig54vemx0l on "Contact" (creation_time);
 create index IDXbn8t4wp85fgxjl8q4ctlscx55 on "Contact" (current_sponsor_client_id);
 create index IDXn1f711wicdnooa2mqb7g1m55o on "Contact" (deletion_time);
