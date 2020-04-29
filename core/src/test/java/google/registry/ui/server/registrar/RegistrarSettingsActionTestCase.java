@@ -14,6 +14,7 @@
 
 package google.registry.ui.server.registrar;
 
+import static com.google.appengine.repackaged.com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.monitoring.metrics.contrib.LongMetricSubject.assertThat;
 import static google.registry.config.RegistryConfig.getGSuiteOutgoingEmailAddress;
 import static google.registry.config.RegistryConfig.getGSuiteOutgoingEmailDisplayName;
@@ -23,14 +24,12 @@ import static google.registry.security.JsonHttpTestUtils.createJsonPayload;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.disallowRegistrarAccess;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
-import static google.registry.testing.DatastoreHelper.persistResource;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.appengine.api.users.User;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.truth.Truth;
 import google.registry.model.ofy.Ofy;
@@ -95,21 +94,13 @@ public abstract class RegistrarSettingsActionTestCase {
     // Add a technical contact to the registrar (in addition to the default admin contact created by
     // AppEngineRule).
     techContact =
-        persistResource(
-            new RegistrarContact.Builder()
-                .setParent(loadRegistrar(CLIENT_ID))
-                .setName("Jian-Yang")
-                .setEmailAddress("jyang@bachman.accelerator")
-                .setRegistryLockEmailAddress("jyang.registrylock@bachman.accelerator")
-                .setPhoneNumber("+1.1234567890")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
-                .build());
+        getOnlyElement(loadRegistrar(CLIENT_ID).getContactsOfType(RegistrarContact.Type.TECH));
 
     action.registrarAccessor = null;
     action.appEngineServiceUtils = appEngineServiceUtils;
     when(appEngineServiceUtils.getCurrentVersionHostname("backend")).thenReturn("backend.hostname");
-    action.jsonActionRunner = new JsonActionRunner(
-        ImmutableMap.of(), new JsonResponse(new ResponseImpl(rsp)));
+    action.jsonActionRunner =
+        new JsonActionRunner(ImmutableMap.of(), new JsonResponse(new ResponseImpl(rsp)));
     action.sendEmailUtils =
         new SendEmailUtils(
             getGSuiteOutgoingEmailAddress(),

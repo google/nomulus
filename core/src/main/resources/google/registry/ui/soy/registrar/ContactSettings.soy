@@ -145,6 +145,7 @@
         {param label: 'Email' /}
         {param namePrefix: $namePrefix /}
         {param name: 'emailAddress' /}
+        {param disabled: not $readonly and $item['emailAddress'] != null /}
       {/call}
       {call registry.soy.forms.inputFieldRow data="all"}
         {param label: 'Phone' /}
