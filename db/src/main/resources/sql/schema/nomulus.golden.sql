@@ -35,6 +35,56 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: BillingEvent; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."BillingEvent" (
+    type text NOT NULL,
+    id bigint NOT NULL,
+    client_id text NOT NULL,
+    event_time timestamp with time zone NOT NULL,
+    flags text[],
+    reason text NOT NULL,
+    target_id text NOT NULL,
+    cancellation_billing_time timestamp with time zone,
+    cancellation_ref_onetime_id bigint,
+    cancellation_ref_recurring_id bigint,
+    modification_cost_amount numeric(19,2),
+    modification_cost_currency text,
+    modification_description text,
+    modification_ref_onetime_id bigint,
+    onetime_allocation_token_id text,
+    onetime_billing_time timestamp with time zone,
+    onetime_cancellation_matching_id bigint,
+    onetime_cost_amount numeric(19,2),
+    onetime_cost_currency text,
+    onetime_period_years integer,
+    onetime_synthetic_creation_time timestamp with time zone,
+    recurrence_end_time timestamp with time zone,
+    recurrence_time_of_year text
+);
+
+
+--
+-- Name: BillingEvent_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."BillingEvent_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: BillingEvent_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."BillingEvent_id_seq" OWNED BY public."BillingEvent".id;
+
+
+--
 -- Name: ClaimsEntry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -428,6 +478,13 @@ ALTER SEQUENCE public."ReservedList_revision_id_seq" OWNED BY public."ReservedLi
 
 
 --
+-- Name: BillingEvent id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingEvent" ALTER COLUMN id SET DEFAULT nextval('public."BillingEvent_id_seq"'::regclass);
+
+
+--
 -- Name: ClaimsList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -453,6 +510,14 @@ ALTER TABLE ONLY public."RegistryLock" ALTER COLUMN revision_id SET DEFAULT next
 --
 
 ALTER TABLE ONLY public."ReservedList" ALTER COLUMN revision_id SET DEFAULT nextval('public."ReservedList_revision_id_seq"'::regclass);
+
+
+--
+-- Name: BillingEvent BillingEvent_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingEvent"
+    ADD CONSTRAINT "BillingEvent_pkey" PRIMARY KEY (id);
 
 
 --
@@ -598,6 +663,20 @@ CREATE INDEX idx1rcgkdd777bpvj0r94sltwd5y ON public."Domain" USING btree (fully_
 
 
 --
+-- Name: idx1vx9ue4mfn6466nuf7mrti04e; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx1vx9ue4mfn6466nuf7mrti04e ON public."BillingEvent" USING btree (recurrence_end_time);
+
+
+--
+-- Name: idx3m88tgkhnf7680useobc4au6v; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx3m88tgkhnf7680useobc4au6v ON public."BillingEvent" USING btree (cancellation_billing_time);
+
+
+--
 -- Name: idx3y752kr9uh4kh6uig54vemx0l; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -609,6 +688,20 @@ CREATE INDEX idx3y752kr9uh4kh6uig54vemx0l ON public."Contact" USING btree (creat
 --
 
 CREATE INDEX idx5mnf0wn20tno4b9do88j61klr ON public."Domain" USING btree (deletion_time);
+
+
+--
+-- Name: idx5yfbr88439pxw0v3j86c74fp8; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx5yfbr88439pxw0v3j86c74fp8 ON public."BillingEvent" USING btree (event_time);
+
+
+--
+-- Name: idx73l103vc5900ig3p4odf0cngt; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx73l103vc5900ig3p4odf0cngt ON public."BillingEvent" USING btree (client_id);
 
 
 --
@@ -640,6 +733,20 @@ CREATE INDEX idxbn8t4wp85fgxjl8q4ctlscx55 ON public."Contact" USING btree (curre
 
 
 --
+-- Name: idxe8ipvfuacqd1s5144fiw3exln; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxe8ipvfuacqd1s5144fiw3exln ON public."BillingEvent" USING btree (onetime_allocation_token_id);
+
+
+--
+-- Name: idxfhbr41utchu6bpa43kn2ulx61; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxfhbr41utchu6bpa43kn2ulx61 ON public."BillingEvent" USING btree (onetime_synthetic_creation_time);
+
+
+--
 -- Name: idxkjt9yaq92876dstimd93hwckh; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -654,10 +761,24 @@ CREATE INDEX idxn1f711wicdnooa2mqb7g1m55o ON public."Contact" USING btree (delet
 
 
 --
+-- Name: idxp1ud5nyyxfjms32qwv17772wk; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxp1ud5nyyxfjms32qwv17772wk ON public."BillingEvent" USING btree (recurrence_time_of_year);
+
+
+--
 -- Name: idxrwl38wwkli1j7gkvtywi9jokq; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idxrwl38wwkli1j7gkvtywi9jokq ON public."Domain" USING btree (tld);
+
+
+--
+-- Name: idxteelvp4hry8w7xyc0pycv8hr6; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxteelvp4hry8w7xyc0pycv8hr6 ON public."BillingEvent" USING btree (onetime_billing_time);
 
 
 --
@@ -829,6 +950,30 @@ ALTER TABLE ONLY public."Contact"
 
 ALTER TABLE ONLY public."PremiumEntry"
     ADD CONSTRAINT fko0gw90lpo1tuee56l0nb6y6g5 FOREIGN KEY (revision_id) REFERENCES public."PremiumList"(revision_id);
+
+
+--
+-- Name: BillingEvent foreign_key_billing_event_cancellation_ref_onetime_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingEvent"
+    ADD CONSTRAINT foreign_key_billing_event_cancellation_ref_onetime_id FOREIGN KEY (cancellation_ref_onetime_id) REFERENCES public."BillingEvent"(id);
+
+
+--
+-- Name: BillingEvent foreign_key_billing_event_cancellation_ref_recurring_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingEvent"
+    ADD CONSTRAINT foreign_key_billing_event_cancellation_ref_recurring_id FOREIGN KEY (cancellation_ref_recurring_id) REFERENCES public."BillingEvent"(id);
+
+
+--
+-- Name: BillingEvent foreign_key_billing_event_modification_ref_onetime_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingEvent"
+    ADD CONSTRAINT foreign_key_billing_event_modification_ref_onetime_id FOREIGN KEY (modification_ref_onetime_id) REFERENCES public."BillingEvent"(id);
 
 
 --

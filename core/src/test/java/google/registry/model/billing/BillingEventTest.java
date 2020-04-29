@@ -17,6 +17,7 @@ package google.registry.model.billing;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistResource;
@@ -37,19 +38,25 @@ import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import google.registry.util.DateTimeUtils;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link BillingEvent}. */
 public class BillingEventTest extends EntityTestCase {
   private final DateTime now = DateTime.now(UTC);
 
+  public BillingEventTest() {
+    super(true);
+  }
+
   HistoryEntry historyEntry;
   HistoryEntry historyEntry2;
   DomainBase domain;
+  BillingEvent.OneTime unsavedOneTime;
   BillingEvent.OneTime oneTime;
   BillingEvent.OneTime oneTimeSynthetic;
   BillingEvent.Recurring recurring;
@@ -57,7 +64,7 @@ public class BillingEventTest extends EntityTestCase {
   BillingEvent.Cancellation cancellationRecurring;
   BillingEvent.Modification modification;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     createTld("tld");
     domain = persistActiveDomain("foo.tld");
@@ -86,18 +93,20 @@ public class BillingEventTest extends EntityTestCase {
                         .build())
                 .build());
 
-    oneTime =
-        persistResource(
-            commonInit(
-                new BillingEvent.OneTime.Builder()
-                    .setParent(historyEntry)
-                    .setReason(Reason.CREATE)
-                    .setFlags(ImmutableSet.of(BillingEvent.Flag.ANCHOR_TENANT))
-                    .setPeriodYears(2)
-                    .setCost(Money.of(USD, 1))
-                    .setEventTime(now)
-                    .setBillingTime(now.plusDays(5))
-                    .setAllocationToken(Key.create(allocationToken))));
+    unsavedOneTime =
+        commonInit(
+            new BillingEvent.OneTime.Builder()
+                .setParent(historyEntry)
+                .setReason(Reason.CREATE)
+                .setFlags(ImmutableSet.of(BillingEvent.Flag.ANCHOR_TENANT))
+                .setPeriodYears(2)
+                .setCost(Money.of(USD, 1))
+                .setEventTime(now)
+                .setBillingTime(now.plusDays(5))
+                .setAllocationToken(Key.create(allocationToken)));
+
+    oneTime = persistResource(unsavedOneTime);
+
     recurring =
         persistResource(
             commonInit(
@@ -147,6 +156,26 @@ public class BillingEventTest extends EntityTestCase {
         .setClientId("a registrar")
         .setTargetId("foo.tld")
         .build();
+  }
+
+  @Test
+  public void testCloudSqlPersistence() {
+    jpaTm().transact(() -> jpaTm().saveNew(unsavedOneTime));
+    BillingEvent.OneTime persisted =
+        jpaTm()
+            .transact(
+                () ->
+                    jpaTm().load(VKey.createSql(BillingEvent.OneTime.class, unsavedOneTime.sqlId)))
+            .get();
+    // TODO(shicong): Remove these fixes after the entities are fully compatible
+    BillingEvent.OneTime fixed =
+        persisted
+            .asBuilder()
+            .setParent(unsavedOneTime.getParentKey())
+            .setAllocationToken(unsavedOneTime.getAllocationToken().get())
+            .build();
+    unsavedOneTime.id = unsavedOneTime.sqlId;
+    assertThat(fixed).isEqualTo(unsavedOneTime);
   }
 
   @Test

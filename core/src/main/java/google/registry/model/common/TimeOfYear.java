@@ -29,20 +29,22 @@ import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Index;
 import google.registry.model.ImmutableObject;
 import java.util.List;
+import javax.persistence.Embeddable;
 import org.joda.time.DateTime;
 
 /**
  * A time of year (month, day, millis of day) that can be stored in a sort-friendly format.
  *
- * <p>This is conceptually similar to {@code MonthDay} in Joda or more generally to Joda's
- * {@code Partial}, but the parts we need are too simple to justify a full implementation of
- * {@code Partial}.
+ * <p>This is conceptually similar to {@code MonthDay} in Joda or more generally to Joda's {@code
+ * Partial}, but the parts we need are too simple to justify a full implementation of {@code
+ * Partial}.
  *
  * <p>For simplicity, the native representation of this class's data is its stored format. This
  * allows it to be embeddable with no translation needed and also delays parsing of the string on
  * load until it's actually needed.
  */
 @Embed
+@Embeddable
 public class TimeOfYear extends ImmutableObject {
 
   /**
