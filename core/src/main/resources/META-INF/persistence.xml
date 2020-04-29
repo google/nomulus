@@ -19,6 +19,11 @@
       *  Move tests to another (sub)project. This is not a big problem, but feels unnatural.
       *  Use Hibernate's ServiceRegistry for bootstrapping (not JPA-compliant)
     -->
+    <class>google.registry.model.billing.BillingEvent</class>
+    <class>google.registry.model.billing.BillingEvent$Cancellation</class>
+    <class>google.registry.model.billing.BillingEvent$Modification</class>
+    <class>google.registry.model.billing.BillingEvent$OneTime</class>
+    <class>google.registry.model.billing.BillingEvent$Recurring</class>
     <class>google.registry.model.contact.ContactResource</class>
     <class>google.registry.model.domain.DomainBase</class>
     <class>google.registry.model.host.HostResource</class>
@@ -36,6 +41,7 @@
 
     <!-- Customized type converters -->
     <class>google.registry.persistence.converter.BillingCostTransitionConverter</class>
+    <class>google.registry.persistence.converter.BillingEventFlagSetConverter</class>
     <class>google.registry.persistence.converter.BloomFilterConverter</class>
     <class>google.registry.persistence.converter.CidrAddressBlockListConverter</class>
     <class>google.registry.persistence.converter.CreateAutoTimestampConverter</class>
@@ -53,6 +59,8 @@
     <class>google.registry.persistence.converter.ZonedDateTimeConverter</class>
 
     <!-- Generated converters for VKey -->
+    <class>google.registry.model.billing.VKeyConverter_BillingEvent</class>
+    <class>google.registry.model.domain.token.VKeyConverter_AllocationToken</class>
     <class>google.registry.model.host.VKeyConverter_HostResource</class>
     <class>google.registry.model.contact.VKeyConverter_ContactResource</class>
 
