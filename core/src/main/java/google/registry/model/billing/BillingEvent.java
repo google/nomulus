@@ -30,6 +30,7 @@ import com.google.common.collect.Sets;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Parent;
@@ -43,14 +44,39 @@ import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
+import google.registry.persistence.VKey;
+import google.registry.persistence.WithLongVKey;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
+import javax.persistence.Column;
+import javax.persistence.DiscriminatorColumn;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Embedded;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+import javax.persistence.PostLoad;
+import javax.persistence.Transient;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 
 /** A billable event in a domain's lifecycle. */
+@javax.persistence.Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "type")
+@javax.persistence.Table(
+    indexes = {
+      @javax.persistence.Index(columnList = "clientId"),
+      @javax.persistence.Index(columnList = "eventTime")
+    })
+@WithLongVKey
 public abstract class BillingEvent extends ImmutableObject
     implements Buildable, TransferServerApproveEntity {
 
@@ -92,29 +118,42 @@ public abstract class BillingEvent extends ImmutableObject
   }
 
   /** Entity id. */
-  @Id
-  long id;
+  @Transient @Id long id;
 
-  @Parent
-  @DoNotHydrate
-  Key<HistoryEntry> parent;
+  @Ignore
+  @javax.persistence.Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "id")
+  Long sqlId;
+
+  @Parent @DoNotHydrate @Transient Key<HistoryEntry> parent;
 
   /** The registrar to bill. */
   @Index
+  @Column(nullable = false)
   String clientId;
 
   /** When this event was created. For recurring events, this is also the recurrence start time. */
   @Index
+  @Column(nullable = false)
   DateTime eventTime;
 
   /** The reason for the bill. */
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
   Reason reason;
 
   /** The fully qualified domain name of the domain that the bill is for. */
+  @Column(nullable = false)
   String targetId;
 
   @Nullable
   Set<Flag> flags;
+
+  @PostLoad
+  void postLoad() {
+    id = sqlId;
+  }
 
   public String getClientId() {
     return clientId;
@@ -213,20 +252,34 @@ public abstract class BillingEvent extends ImmutableObject
   /** A one-time billable event. */
   @ReportedOn
   @Entity
+  @javax.persistence.Entity
+  @DiscriminatorValue("ONE_TIME")
+  @javax.persistence.Table(
+      indexes = {
+        @javax.persistence.Index(columnList = "onetime_billing_time"),
+        @javax.persistence.Index(columnList = "onetime_synthetic_creation_time"),
+        @javax.persistence.Index(columnList = "onetime_allocation_token_id")
+      })
   public static class OneTime extends BillingEvent {
 
     /** The billable value. */
+    @AttributeOverrides({
+      @AttributeOverride(name = "money.amount", column = @Column(name = "onetime_cost_amount")),
+      @AttributeOverride(name = "money.currency", column = @Column(name = "onetime_cost_currency"))
+    })
     Money cost;
 
     /** When the cost should be billed. */
     @Index
+    @Column(name = "onetime_billing_time")
     DateTime billingTime;
 
     /**
-     * The period in years of the action being billed for, if applicable, otherwise null.
-     * Used for financial reporting.
+     * The period in years of the action being billed for, if applicable, otherwise null. Used for
+     * financial reporting.
      */
     @IgnoreSave(IfNull.class)
+    @Column(name = "onetime_period_years")
     Integer periodYears = null;
 
     /**
@@ -236,19 +289,39 @@ public abstract class BillingEvent extends ImmutableObject
      * events.
      */
     @Index
+    @Column(name = "onetime_synthetic_creation_time")
     DateTime syntheticCreationTime;
 
     /**
      * For {@link Flag#SYNTHETIC} events, a {@link Key} to the {@link BillingEvent} from which this
-     * OneTime was created. This is needed in order to properly match billing events against
-     * {@link Cancellation}s.
+     * OneTime was created. This is needed in order to properly match billing events against {@link
+     * Cancellation}s.
      */
-    Key<? extends BillingEvent> cancellationMatchingBillingEvent;
+    @Transient Key<? extends BillingEvent> cancellationMatchingBillingEvent;
+
+    @Ignore
+    @Column(name = "onetime_cancellation_matching_id")
+    VKey<? extends BillingEvent> cancellationMatchingBillingEventId;
 
     /**
      * The {@link AllocationToken} used in the creation of this event, or null if one was not used.
      */
-    @Index @Nullable Key<AllocationToken> allocationToken;
+    @Index @Nullable @Transient Key<AllocationToken> allocationToken;
+
+    // TODO(shicong): Add foreign key constraint when AllocationToken schema is generated
+    @Ignore
+    @Column(name = "onetime_allocation_token_id")
+    VKey<AllocationToken> allocationTokenId;
+
+    // TODO(shicong): Add @OnLoad after changing to use VKey in the application code
+    void onLoad() {
+      cancellationMatchingBillingEventId =
+          cancellationMatchingBillingEvent == null
+              ? null
+              : VKey.createOfy(BillingEvent.class, cancellationMatchingBillingEvent);
+      allocationTokenId =
+          allocationToken == null ? null : VKey.createOfy(AllocationToken.class, allocationToken);
+    }
 
     public Money getCost() {
       return cost;
@@ -361,6 +434,13 @@ public abstract class BillingEvent extends ImmutableObject
    */
   @ReportedOn
   @Entity
+  @javax.persistence.Entity
+  @DiscriminatorValue("RECURRING")
+  @javax.persistence.Table(
+      indexes = {
+        @javax.persistence.Index(columnList = "recurrenceEndTime"),
+        @javax.persistence.Index(columnList = "recurrence_time_of_year")
+      })
   public static class Recurring extends BillingEvent {
 
     /**
@@ -384,6 +464,10 @@ public abstract class BillingEvent extends ImmutableObject
      * model, whereas the billing time is a fixed {@link org.joda.time.Duration} later.
      */
     @Index
+    @Embedded
+    @AttributeOverrides({
+      @AttributeOverride(name = "timeString", column = @Column(name = "recurrence_time_of_year"))
+    })
     TimeOfYear recurrenceTimeOfYear;
 
     public DateTime getRecurrenceEndTime() {
@@ -434,10 +518,15 @@ public abstract class BillingEvent extends ImmutableObject
    */
   @ReportedOn
   @Entity
+  @javax.persistence.Entity
+  @DiscriminatorValue("CANCELLATION")
+  @javax.persistence.Table(
+      indexes = {@javax.persistence.Index(columnList = "cancellation_billing_time")})
   public static class Cancellation extends BillingEvent {
 
     /** The billing time of the charge that is being cancelled. */
     @Index
+    @Column(name = "cancellation_billing_time")
     DateTime billingTime;
 
     /**
@@ -446,7 +535,12 @@ public abstract class BillingEvent extends ImmutableObject
      * <p>Although the type is {@link Key} the name "ref" is preserved for historical reasons.
      */
     @IgnoreSave(IfNull.class)
+    @Transient
     Key<BillingEvent.OneTime> refOneTime = null;
+
+    @Ignore
+    @Column(name = "cancellation_ref_onetime_id")
+    VKey<BillingEvent.OneTime> refOneTimeId;
 
     /**
      * The recurring billing event to cancel, or null for non-autorenew cancellations.
@@ -454,7 +548,20 @@ public abstract class BillingEvent extends ImmutableObject
      * <p>Although the type is {@link Key} the name "ref" is preserved for historical reasons.
      */
     @IgnoreSave(IfNull.class)
+    @Transient
     Key<BillingEvent.Recurring> refRecurring = null;
+
+    @Ignore
+    @Column(name = "cancellation_ref_recurring_id")
+    VKey<BillingEvent.Recurring> refRecurringId;
+
+    // TODO(shicong): Add @OnLoad after changing to use VKey in the application code
+    void onLoad() {
+      refOneTimeId =
+          refOneTime == null ? null : VKey.createOfy(BillingEvent.OneTime.class, refOneTime);
+      refRecurringId =
+          refRecurring == null ? null : VKey.createOfy(BillingEvent.Recurring.class, refRecurring);
+    }
 
     public DateTime getBillingTime() {
       return billingTime;
@@ -540,24 +647,42 @@ public abstract class BillingEvent extends ImmutableObject
     }
   }
 
-  /**
-   * An event representing a modification of an existing one-time billing event.
-   */
+  /** An event representing a modification of an existing one-time billing event. */
   @ReportedOn
   @Entity
+  @javax.persistence.Entity
+  @DiscriminatorValue("MODIFICATION")
   public static class Modification extends BillingEvent {
 
     /** The change in cost that should be applied to the original billing event. */
+    @AttributeOverrides({
+      @AttributeOverride(
+          name = "money.amount",
+          column = @Column(name = "modification_cost_amount")),
+      @AttributeOverride(
+          name = "money.currency",
+          column = @Column(name = "modification_cost_currency"))
+    })
     Money cost;
 
     /** The one-time billing event to modify. */
-    Key<BillingEvent.OneTime> eventRef;
+    @Transient Key<BillingEvent.OneTime> eventRef;
+
+    @Ignore
+    @Column(name = "modification_ref_onetime_id")
+    VKey<BillingEvent.OneTime> eventRefId;
 
     /**
      * Description of the modification (and presumably why it was issued). This text may appear as a
      * line item on an invoice or report about such modifications.
      */
+    @Column(name = "modification_description")
     String description;
+
+    // TODO(shicong): Add @OnLoad after changing to use VKey in the application code
+    void onLoad() {
+      eventRefId = eventRef == null ? null : VKey.createOfy(BillingEvent.OneTime.class, eventRef);
+    }
 
     public Money getCost() {
       return cost;
