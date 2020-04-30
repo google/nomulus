@@ -1512,9 +1512,19 @@ public final class RegistryConfig {
     return CONFIG_SETTINGS.get().hibernate.hikariConnectionTimeout;
   }
 
+  /** Returns the minimum idle connections for HikariCP. */
+  public static String getHibernateHikariMinimumIdle() {
+    return CONFIG_SETTINGS.get().hibernate.hikariMinimumIdle;
+  }
+
   /** Returns the maximum pool size for HikariCP. */
   public static String getHibernateHikariMaximumPoolSize() {
     return CONFIG_SETTINGS.get().hibernate.hikariMaximumPoolSize;
+  }
+
+  /** Returns the idle timeout for HikariCP. */
+  public static String getHibernateHikariIdleTimeout() {
+    return CONFIG_SETTINGS.get().hibernate.hikariIdleTimeout;
   }
 
   /** Returns the roid suffix to be used for the roids of all contacts and hosts. */
