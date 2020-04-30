@@ -19,6 +19,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.EppResourceUtils.projectResourceOntoBuilderAtTime;
 
 import com.google.common.collect.ImmutableList;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
@@ -30,6 +31,8 @@ import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.transfer.TransferData;
+import google.registry.persistence.VKey;
+import google.registry.persistence.WithStringVKey;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -59,6 +62,7 @@ import org.joda.time.DateTime;
       @javax.persistence.Index(columnList = "searchName")
     })
 @ExternalMessagingName("contact")
+@WithStringVKey
 public class ContactResource extends EppResource
     implements ForeignKeyedEppResource, ResourceWithTransferData {
 
@@ -191,6 +195,10 @@ public class ContactResource extends EppResource
     @AttributeOverride(name = "email.marked", column = @Column(name = "disclose_show_email"))
   })
   Disclose disclose;
+
+  public VKey<ContactResource> createKey() {
+    return VKey.createOfy(ContactResource.class, Key.create(this));
+  }
 
   public String getContactId() {
     return contactId;

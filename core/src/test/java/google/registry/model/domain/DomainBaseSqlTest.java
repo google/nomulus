@@ -22,7 +22,6 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.launch.LaunchNotice;
@@ -30,6 +29,7 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
+import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
@@ -56,15 +56,20 @@ public class DomainBaseSqlTest {
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   DomainBase domain;
-  Key<ContactResource> contactKey;
-  Key<ContactResource> contact2Key;
+  VKey<ContactResource> contactKey;
+  VKey<ContactResource> contact2Key;
   VKey<HostResource> host1VKey;
   HostResource host;
+  ContactResource contact;
+  ContactResource contact2;
 
   @BeforeEach
   public void setUp() {
-    contactKey = Key.create(ContactResource.class, "contact_id1");
-    contact2Key = Key.create(ContactResource.class, "contact_id2");
+    saveRegistrar("registrar1");
+    saveRegistrar("registrar2");
+    saveRegistrar("registrar3");
+    contactKey = VKey.createSql(ContactResource.class, "contact_id1");
+    contact2Key = VKey.createSql(ContactResource.class, "contact_id2");
 
     host1VKey = VKey.createSql(HostResource.class, "host1");
 
@@ -104,23 +109,26 @@ public class DomainBaseSqlTest {
             .setCreationClientId("registrar1")
             .setPersistedCurrentSponsorClientId("registrar2")
             .build();
+    contact = makeContact("contact_id1");
+    contact2 = makeContact("contact_id2");
   }
 
   @Test
   public void testDomainBasePersistence() {
-    saveRegistrar("registrar1");
-    saveRegistrar("registrar2");
-    saveRegistrar("registrar3");
-
     jpaTm()
         .transact(
             () -> {
-              // Persist the domain.
-              EntityManager em = jpaTm().getEntityManager();
-              em.persist(domain);
+              // Persist the contacts.  Note that these need to be persisted before the domain
+              // otherwise we get a foreign key constraint error.
+              jpaTm().saveNew(contact);
+              jpaTm().saveNew(contact2);
 
-              // Persist the host.
-              em.persist(host);
+              // Persist the domain.
+              jpaTm().saveNew(domain);
+
+              // Persist the host.  This does _not_ need to be persisted before the domain,
+              // presumably because its relationship is stored in a join table.
+              jpaTm().saveNew(host);
             });
 
     jpaTm()
@@ -130,13 +138,11 @@ public class DomainBaseSqlTest {
               EntityManager em = jpaTm().getEntityManager();
               DomainBase result = em.find(DomainBase.class, "4-COM");
 
-              // Fix contacts, grace period and DS data, since we can't persist them yet.
+              // Fix grace period and DS data, since we can't persist them yet.
               result =
                   result
                       .asBuilder()
                       .setRegistrant(contactKey)
-                      .setContacts(
-                          ImmutableSet.of(DesignatedContact.create(Type.ADMIN, contact2Key)))
                       .setDsData(
                           ImmutableSet.of(
                               DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
@@ -151,16 +157,40 @@ public class DomainBaseSqlTest {
   }
 
   @Test
-  public void testForeignKeyConstraints() {
+  public void testHostForeignKeyConstraints() {
     assertThrowForeignKeyViolation(
         () -> {
           jpaTm()
               .transact(
                   () -> {
                     // Persist the domain without the associated host object.
-                    EntityManager em = jpaTm().getEntityManager();
-                    em.persist(domain);
+                    jpaTm().saveNew(contact);
+                    jpaTm().saveNew(contact2);
+                    jpaTm().saveNew(domain);
                   });
         });
+  }
+
+  @Test
+  public void testContactForeignKeyConstraints() {
+    assertThrowForeignKeyViolation(
+        () -> {
+          jpaTm()
+              .transact(
+                  () -> {
+                    // Persist the domain without the associated contact objects.
+                    jpaTm().saveNew(domain);
+                    jpaTm().saveNew(host);
+                  });
+        });
+  }
+
+  public static ContactResource makeContact(String repoId) {
+    return new ContactResource.Builder()
+        .setRepoId(repoId)
+        .setCreationClientId("registrar1")
+        .setTransferData(new TransferData.Builder().build())
+        .setPersistedCurrentSponsorClientId("registrar1")
+        .build();
   }
 }

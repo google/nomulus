@@ -80,6 +80,7 @@ import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.JoinTable;
+import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -154,6 +155,17 @@ public class DomainBase extends EppResource
    * <p>These are stored in one field so that we can query across all contacts at once.
    */
   @Transient Set<DesignatedContact> allContacts;
+
+  /**
+   * Contacts as they are stored in cloud SQL.
+   *
+   * <p>This information is duplicated in allContacts, and must be kept in sync with it.
+   */
+  @Ignore VKey<ContactResource> adminContact;
+
+  @Ignore VKey<ContactResource> billingContact;
+  @Ignore VKey<ContactResource> techContact;
+  @Ignore VKey<ContactResource> registrantContact;
 
   /** Authorization info (aka transfer secret) of the domain. */
   @Embedded
@@ -261,6 +273,34 @@ public class DomainBase extends EppResource
         nullToEmptyImmutableCopy(nsHosts).stream()
             .map(hostKey -> VKey.createOfy(HostResource.class, hostKey))
             .collect(toImmutableSet());
+
+    // Reconstitute all of the contacts so that they have VKeys.
+    allContacts =
+        allContacts.stream().map(contact -> contact.reconstitute()).collect(toImmutableSet());
+    setContactFields(allContacts, true);
+  }
+
+  @PostLoad
+  void postLoad() {
+    // Reconstitute the contact list.
+    ImmutableSet.Builder<DesignatedContact> contactsBuilder =
+        new ImmutableSet.Builder<DesignatedContact>();
+
+    if (registrantContact != null) {
+      contactsBuilder.add(
+          DesignatedContact.create(DesignatedContact.Type.REGISTRANT, registrantContact));
+    }
+    if (billingContact != null) {
+      contactsBuilder.add(DesignatedContact.create(DesignatedContact.Type.BILLING, billingContact));
+    }
+    if (techContact != null) {
+      contactsBuilder.add(DesignatedContact.create(DesignatedContact.Type.TECH, techContact));
+    }
+    if (adminContact != null) {
+      contactsBuilder.add(DesignatedContact.create(DesignatedContact.Type.ADMIN, adminContact));
+    }
+
+    allContacts = contactsBuilder.build();
   }
 
   public ImmutableSet<String> getSubordinateHosts() {
@@ -515,13 +555,20 @@ public class DomainBase extends EppResource
   }
 
   /** A key to the registrant who registered this domain. */
-  public Key<ContactResource> getRegistrant() {
-    return nullToEmpty(allContacts)
-        .stream()
-        .filter(IS_REGISTRANT)
-        .findFirst()
-        .get()
-        .getContactKey();
+  public VKey<ContactResource> getRegistrant() {
+    return registrantContact;
+  }
+
+  public VKey<ContactResource> getAdminContact() {
+    return adminContact;
+  }
+
+  public VKey<ContactResource> getBillingContact() {
+    return billingContact;
+  }
+
+  public VKey<ContactResource> getTechContact() {
+    return techContact;
   }
 
   /** Associated contacts for the domain (other than registrant). */
@@ -537,7 +584,7 @@ public class DomainBase extends EppResource
   }
 
   /** Returns all referenced contacts from this domain or application. */
-  public ImmutableSet<Key<ContactResource>> getReferencedContacts() {
+  public ImmutableSet<VKey<ContactResource>> getReferencedContacts() {
     return nullToEmptyImmutableCopy(allContacts)
         .stream()
         .map(DesignatedContact::getContactKey)
@@ -547,6 +594,37 @@ public class DomainBase extends EppResource
 
   public String getTld() {
     return tld;
+  }
+
+  /**
+   * Sets the individual contact fields from {@code contacts}.
+   *
+   * <p>The registrant field is only set if {@code includeRegistrant} is true, as this field needs
+   * to be set in some circumstances but not in others.
+   */
+  private void setContactFields(Set<DesignatedContact> contacts, boolean includeRegistrant) {
+
+    // Set the individual contact fields.
+    for (DesignatedContact contact : contacts) {
+      switch (contact.getType()) {
+        case BILLING:
+          billingContact = contact.getContactKey();
+          break;
+        case TECH:
+          techContact = contact.getContactKey();
+          break;
+        case ADMIN:
+          adminContact = contact.getContactKey();
+          break;
+        case REGISTRANT:
+          if (includeRegistrant) {
+            registrantContact = contact.getContactKey();
+          }
+          break;
+        default:
+          throw new IllegalArgumentException("Unknown contact resource type: " + contact.getType());
+      }
+    }
   }
 
   /** Predicate to determine if a given {@link DesignatedContact} is the registrant. */
@@ -593,7 +671,11 @@ public class DomainBase extends EppResource
 
       checkArgumentNotNull(
           emptyToNull(instance.fullyQualifiedDomainName), "Missing fullyQualifiedDomainName");
-      checkArgument(instance.allContacts.stream().anyMatch(IS_REGISTRANT), "Missing registrant");
+      if (instance.getRegistrant() == null
+          && instance.allContacts.stream().anyMatch(IS_REGISTRANT)) {
+        throw new IllegalArgumentException("registrant is null but is in allContacts");
+      }
+      checkArgumentNotNull(instance.getRegistrant(), "Missing registrant");
       instance.tld = getTldFromDomainName(instance.fullyQualifiedDomainName);
       return super.build();
     }
@@ -611,11 +693,14 @@ public class DomainBase extends EppResource
       return thisCastToDerived();
     }
 
-    public Builder setRegistrant(Key<ContactResource> registrant) {
+    public Builder setRegistrant(VKey<ContactResource> registrant) {
       // Replace the registrant contact inside allContacts.
       getInstance().allContacts = union(
           getInstance().getContacts(),
           DesignatedContact.create(Type.REGISTRANT, checkArgumentNotNull(registrant)));
+
+      // Set the registrant field specifically.
+      getInstance().registrantContact = registrant;
       return thisCastToDerived();
     }
 
@@ -673,12 +758,16 @@ public class DomainBase extends EppResource
 
     public Builder setContacts(ImmutableSet<DesignatedContact> contacts) {
       checkArgument(contacts.stream().noneMatch(IS_REGISTRANT), "Registrant cannot be a contact");
+
       // Replace the non-registrant contacts inside allContacts.
       getInstance().allContacts =
           Streams.concat(
                   nullToEmpty(getInstance().allContacts).stream().filter(IS_REGISTRANT),
                   contacts.stream())
               .collect(toImmutableSet());
+
+      // Set the individual fields.
+      getInstance().setContactFields(contacts, false);
       return thisCastToDerived();
     }
 

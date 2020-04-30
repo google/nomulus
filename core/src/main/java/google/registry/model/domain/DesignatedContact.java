@@ -18,9 +18,11 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactResource;
+import google.registry.persistence.VKey;
 import javax.persistence.Embeddable;
 import javax.xml.bind.annotation.XmlEnumValue;
 
@@ -35,6 +37,9 @@ import javax.xml.bind.annotation.XmlEnumValue;
  * <p>Note one could in principle store contact foreign keys here in addition to keys, unlike the
  * situation with hosts where client-side renames would make that data stale. However, we sometimes
  * rename contacts internally ourselves, and it's easier to use the same model for both cases.
+ *
+ * <p>This entity type is not persisted in Cloud SQL. The different roles are represented as
+ * separate fields in the Domain table.
  *
  * @see <a href="http://tools.ietf.org/html/rfc5731#section-2.2">RFC 5731 - EPP Domain Name Mapping
  *     - Contact and Client Identifiers</a>
@@ -58,22 +63,28 @@ public class DesignatedContact extends ImmutableObject {
     REGISTRANT
   }
 
-  public static DesignatedContact create(Type type, Key<ContactResource> contact) {
+  public static DesignatedContact create(Type type, VKey<ContactResource> contact) {
     DesignatedContact instance = new DesignatedContact();
     instance.type = type;
-    instance.contact = checkArgumentNotNull(contact, "Must specify contact key");
+    instance.contactVKey = checkArgumentNotNull(contact, "Must specify contact key");
+    instance.contact = contact.maybeGetOfyKey().orElse(null);
     return instance;
   }
 
   Type type;
 
   @Index Key<ContactResource> contact;
+  @Ignore VKey<ContactResource> contactVKey;
 
   public Type getType() {
     return type;
   }
 
-  public Key<ContactResource> getContactKey() {
-    return contact;
+  public VKey<ContactResource> getContactKey() {
+    return contactVKey;
+  }
+
+  public DesignatedContact reconstitute() {
+    return create(type, VKey.createOfy(ContactResource.class, contact));
   }
 }

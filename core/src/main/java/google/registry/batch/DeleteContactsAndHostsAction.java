@@ -283,7 +283,9 @@ public class DeleteContactsAndHostsAction implements Runnable {
     /** Determine whether the target resource is a linked resource on the domain. */
     private boolean isLinked(DomainBase domain, Key<? extends EppResource> resourceKey) {
       if (resourceKey.getKind().equals(KIND_CONTACT)) {
-        return domain.getReferencedContacts().contains(resourceKey);
+        return domain
+            .getReferencedContacts()
+            .contains(VKey.createOfy(ContactResource.class, (Key<ContactResource>) resourceKey));
       } else if (resourceKey.getKind().equals(KIND_HOST)) {
         return domain
             .getNameservers()

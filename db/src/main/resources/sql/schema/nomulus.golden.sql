@@ -165,7 +165,11 @@ CREATE TABLE public."Domain" (
     registration_expiration_time timestamp with time zone,
     smd_id text,
     subordinate_hosts text[],
-    tld text
+    tld text,
+    admin_contact text,
+    billing_contact text,
+    registrant_contact text,
+    tech_contact text
 );
 
 
@@ -745,6 +749,38 @@ ALTER TABLE ONLY public."HostResource_inetAddresses"
 
 ALTER TABLE ONLY public."Contact"
     ADD CONSTRAINT fk93c185fx7chn68uv7nl6uv2s0 FOREIGN KEY (current_sponsor_client_id) REFERENCES public."Registrar"(client_id);
+
+
+--
+-- Name: Domain fk_domain_admin_contact; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_admin_contact FOREIGN KEY (admin_contact) REFERENCES public."Contact"(repo_id);
+
+
+--
+-- Name: Domain fk_domain_billing_contact; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_billing_contact FOREIGN KEY (billing_contact) REFERENCES public."Contact"(repo_id);
+
+
+--
+-- Name: Domain fk_domain_registrant_contact; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_registrant_contact FOREIGN KEY (registrant_contact) REFERENCES public."Contact"(repo_id);
+
+
+--
+-- Name: Domain fk_domain_tech_contact; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_tech_contact FOREIGN KEY (tech_contact) REFERENCES public."Contact"(repo_id);
 
 
 --

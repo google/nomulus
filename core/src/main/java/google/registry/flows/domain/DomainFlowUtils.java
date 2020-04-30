@@ -309,7 +309,10 @@ public class DomainFlowUtils {
       Set<Key<HostResource>> nameservers)
       throws EppException {
     ImmutableList.Builder<Key<? extends EppResource>> keysToLoad = new ImmutableList.Builder<>();
-    contacts.stream().map(DesignatedContact::getContactKey).forEach(keysToLoad::add);
+    contacts.stream()
+        .map(DesignatedContact::getContactKey)
+        .map(vkey -> vkey.getOfyKey())
+        .forEach(keysToLoad::add);
     Optional.ofNullable(registrant).ifPresent(keysToLoad::add);
     keysToLoad.addAll(nameservers);
     verifyNotInPendingDelete(EppResource.loadCached(keysToLoad.build()).values());
@@ -355,7 +358,7 @@ public class DomainFlowUtils {
         contacts.stream()
             .collect(
                 toImmutableSetMultimap(
-                    DesignatedContact::getType, DesignatedContact::getContactKey));
+                    DesignatedContact::getType, contact -> contact.getContactKey().getOfyKey()));
 
     // If any contact type has multiple contacts:
     if (contactsByType.asMap().values().stream().anyMatch(v -> v.size() > 1)) {
@@ -978,7 +981,8 @@ public class DomainFlowUtils {
     for (DesignatedContact contact : contacts) {
       builder.add(
           ForeignKeyedDesignatedContact.create(
-              contact.getType(), ofy().load().key(contact.getContactKey()).now().getContactId()));
+              contact.getType(),
+              ofy().load().key(contact.getContactKey().getOfyKey()).now().getContactId()));
     }
     return builder.build();
   }
