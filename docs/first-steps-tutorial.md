@@ -52,7 +52,7 @@ Updated 1 entities.
 *   `create_tld` is the subcommand to create a TLD. The TLD name is "example"
     which happens to be an ICANN reserved string, and therefore "example" can
     never be created on the Internet at large.
-*   `--initial_tld_state` defines the initital state of the TLD.
+*   `--initial_tld_state` defines the initial state of the TLD.
     `GENERAL_AVAILABILITY`, in the case of our example, allows you to
     immediately create domain names by bypassing the sunrise and landrush domain
     registration periods.
