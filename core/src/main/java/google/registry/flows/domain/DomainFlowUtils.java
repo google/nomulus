@@ -35,6 +35,7 @@ import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRIS
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
 import static google.registry.model.registry.label.ReservationType.RESERVED_FOR_ANCHOR_TENANT;
 import static google.registry.model.registry.label.ReservationType.RESERVED_FOR_SPECIFIC_USE;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -981,8 +982,7 @@ public class DomainFlowUtils {
     for (DesignatedContact contact : contacts) {
       builder.add(
           ForeignKeyedDesignatedContact.create(
-              contact.getType(),
-              ofy().load().key(contact.getContactKey().getOfyKey()).now().getContactId()));
+              contact.getType(), tm().load(contact.getContactKey()).get().getContactId()));
     }
     return builder.build();
   }
