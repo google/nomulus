@@ -22,7 +22,10 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
-import org.junit.Ignore;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import org.junit.Test;
 
 /**
@@ -31,7 +34,7 @@ import org.junit.Test;
 public class EntityTest {
 
   @Test
-  @Ignore("This won't be done until b/152410794 is done, since it requires many entity changes")
+  // @Ignore("This won't be done until b/152410794 is done, since it requires many entity changes")
   public void testSqlEntityPersistence() {
     try (ScanResult scanResult =
         new ClassGraph().enableAnnotationInfo().whitelistPackages("google.registry").scan()) {
@@ -59,8 +62,13 @@ public class EntityTest {
     return classInfoList.stream()
         .filter(ClassInfo::isStandardClass)
         .map(ClassInfo::loadClass)
+        .filter(clazz -> !clazz.isAnnotationPresent(EntityForTesting.class))
         .map(Class::getName)
-        .filter(name -> !name.contains("Test"))
         .collect(toImmutableSet());
   }
+
+  /** Entities that are solely used for testing, to avoid scanning them in {@link EntityTest}. */
+  @Target(ElementType.TYPE)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface EntityForTesting {}
 }

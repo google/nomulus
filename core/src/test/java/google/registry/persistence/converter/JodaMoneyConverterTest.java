@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.schema.replay.EntityTest.EntityForTesting;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
@@ -149,6 +150,7 @@ public class JodaMoneyConverterTest {
   // Override entity name to exclude outer-class name in table name. Not necessary if class is not
   // inner class. The double quotes are added to conform to our schema generation convention.
   @Entity(name = "\"TestEntity\"")
+  @EntityForTesting
   public static class TestEntity extends ImmutableObject {
 
     @Id String name = "id";
@@ -164,6 +166,7 @@ public class JodaMoneyConverterTest {
 
   // See comments on the annotation for TestEntity above for reason.
   @Entity(name = "\"ComplexTestEntity\"")
+  @EntityForTesting
   // This entity is used to test column override for embedded fields and collections.
   public static class ComplexTestEntity extends ImmutableObject {
 

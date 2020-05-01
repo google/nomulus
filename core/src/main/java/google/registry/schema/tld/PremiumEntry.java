@@ -47,6 +47,6 @@ public class PremiumEntry extends ImmutableObject implements Serializable, SqlEn
 
   @Override
   public ImmutableList<DatastoreEntity> toDatastoreEntities() {
-    return null;
+    return ImmutableList.of(); // PremiumList is dually-written
   }
 }

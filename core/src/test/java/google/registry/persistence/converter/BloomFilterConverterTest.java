@@ -23,6 +23,7 @@ import com.google.common.hash.BloomFilter;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.schema.replay.EntityTest.EntityForTesting;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.junit.Rule;
@@ -50,6 +51,7 @@ public class BloomFilterConverterTest {
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
+  @EntityForTesting
   public static class TestEntity extends ImmutableObject {
 
     @Id String name = "id";
