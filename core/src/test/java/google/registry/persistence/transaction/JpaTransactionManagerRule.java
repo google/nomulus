@@ -41,7 +41,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -77,7 +76,7 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
   private final Clock clock;
   private final Optional<String> initScriptPath;
   private final ImmutableList<Class> extraEntityClasses;
-  private final ImmutableMap<String, String> userProperties;
+  private final ImmutableMap userProperties;
 
   private static final JdbcDatabaseContainer database = create();
   private static final HibernateSchemaExporter exporter =
@@ -144,18 +143,15 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
           new String(Files.readAllBytes(tempSqlFile.toPath()), StandardCharsets.UTF_8));
     }
 
-    Map<String, String> properties =
-        Maps.newHashMap(PersistenceModule.providesDefaultDatabaseConfigs());
-    // Set the minimumIdle to 0 so assertReasonableNumDbConnections() can check if there is
-    // connection leak after each test.
-    properties.put("hibernate.hikari.minimumIdle", "0");
-    properties.put("hibernate.hikari.idleTimeout", "300000");
+    ImmutableMap properties = PersistenceModule.providesDefaultDatabaseConfigs();
     if (!userProperties.isEmpty()) {
       // If there are user properties, create a new properties object with these added.
-      properties.putAll(userProperties);
+      ImmutableMap.Builder builder = properties.builder();
+      builder.putAll(userProperties);
       // Forbid Hibernate push to stay consistent with flyway-based schema management.
-      properties.put(Environment.HBM2DDL_AUTO, "none");
-      properties.put(Environment.SHOW_SQL, "true");
+      builder.put(Environment.HBM2DDL_AUTO, "none");
+      builder.put(Environment.SHOW_SQL, "true");
+      properties = builder.build();
     }
     assertReasonableNumDbConnections();
     emf =
@@ -163,7 +159,7 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
             getJdbcUrl(),
             database.getUsername(),
             database.getPassword(),
-            ImmutableMap.copyOf(properties),
+            properties,
             extraEntityClasses);
     emfEntityHash = entityHash;
   }
