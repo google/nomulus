@@ -30,6 +30,7 @@ import com.google.common.base.Splitter;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.MapDifference;
@@ -45,6 +46,8 @@ import com.googlecode.objectify.mapper.Mapper;
 import google.registry.model.Buildable;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.DomainLabelMetrics.MetricsReservedListMatch;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import google.registry.schema.tld.ReservedList.ReservedEntry;
 import google.registry.schema.tld.ReservedListDao;
 import java.util.List;
@@ -59,7 +62,8 @@ import org.joda.time.DateTime;
  */
 @Entity
 public final class ReservedList
-    extends BaseDomainLabelList<ReservationType, ReservedList.ReservedListEntry> {
+    extends BaseDomainLabelList<ReservationType, ReservedList.ReservedListEntry> implements
+    DatastoreEntity {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -67,6 +71,11 @@ public final class ReservedList
   Map<String, ReservedListEntry> reservedListMap;
 
   boolean shouldPublish = true;
+
+  @Override
+  public ImmutableList<SqlEntity> toSqlEntities() {
+    return ImmutableList.of(); // ReservedList is dual-written
+  }
 
   /**
    * A reserved list entry entity, persisted to Datastore, that represents a single label and its

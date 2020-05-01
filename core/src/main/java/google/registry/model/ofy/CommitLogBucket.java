@@ -22,6 +22,7 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ContiguousSet;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Range;
@@ -33,6 +34,8 @@ import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import google.registry.util.NonFinalForTesting;
 import java.util.Random;
 import java.util.function.Supplier;
@@ -51,7 +54,7 @@ import org.joda.time.DateTime;
  */
 @Entity
 @NotBackedUp(reason = Reason.COMMIT_LOGS)
-public class CommitLogBucket extends ImmutableObject implements Buildable {
+public class CommitLogBucket extends ImmutableObject implements Buildable, DatastoreEntity {
 
   /**
    * Ranges from 1 to {@link RegistryConfig#getCommitLogBucketCount()}, inclusive; starts at 1 since
@@ -68,6 +71,11 @@ public class CommitLogBucket extends ImmutableObject implements Buildable {
 
   public DateTime getLastWrittenTime() {
     return lastWrittenTime;
+  }
+
+  @Override
+  public ImmutableList<SqlEntity> toSqlEntities() {
+    return ImmutableList.of(); // not persisted in SQL
   }
 
   /**

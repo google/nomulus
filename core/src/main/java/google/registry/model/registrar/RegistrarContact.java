@@ -42,6 +42,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.annotations.ReportedOn;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -68,7 +69,8 @@ import javax.persistence.Transient;
       @javax.persistence.Index(columnList = "gaeUserId", name = "registrarpoc_gae_user_id_idx")
     })
 // TODO(shicong): Rename the class name to RegistrarPoc after database migration
-public class RegistrarContact extends ImmutableObject implements Jsonifiable {
+public class RegistrarContact extends ImmutableObject
+    implements DatastoreAndSqlEntity, Jsonifiable {
 
   @Parent @Transient Key<Registrar> parent;
 

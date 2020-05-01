@@ -18,9 +18,12 @@ import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.hash.Funnels.stringFunnel;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.BloomFilter;
 import google.registry.model.CreateAutoTimestamp;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import java.math.BigDecimal;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -49,7 +52,7 @@ import org.joda.time.DateTime;
  */
 @Entity
 @Table(indexes = {@Index(columnList = "name", name = "premiumlist_name_idx")})
-public class PremiumList {
+public class PremiumList implements SqlEntity {
 
   @Column(nullable = false)
   private String name;
@@ -139,5 +142,10 @@ public class PremiumList {
    */
   public BloomFilter<String> getBloomFilter() {
     return bloomFilter;
+  }
+
+  @Override
+  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
+    return ImmutableList.of(); // PremiumList is dual-written
   }
 }

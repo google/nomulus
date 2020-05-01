@@ -30,6 +30,7 @@ import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.transfer.TransferData;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -60,7 +61,7 @@ import org.joda.time.DateTime;
     })
 @ExternalMessagingName("contact")
 public class ContactResource extends EppResource
-    implements ForeignKeyedEppResource, ResourceWithTransferData {
+    implements DatastoreAndSqlEntity, ForeignKeyedEppResource, ResourceWithTransferData {
 
   /**
    * Unique identifier for this contact.

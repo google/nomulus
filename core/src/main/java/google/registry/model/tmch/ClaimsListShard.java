@@ -26,6 +26,7 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Supplier;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.MapDifference.ValueDifference;
@@ -44,6 +45,8 @@ import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.annotations.VirtualEntity;
 import google.registry.model.common.CrossTldSingleton;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import google.registry.schema.tmch.ClaimsList;
 import google.registry.schema.tmch.ClaimsListDao;
 import google.registry.util.CollectionUtils;
@@ -75,7 +78,7 @@ import org.joda.time.DateTime;
  */
 @Entity
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
-public class ClaimsListShard extends ImmutableObject {
+public class ClaimsListShard extends ImmutableObject implements DatastoreEntity {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -289,10 +292,15 @@ public class ClaimsListShard extends ImmutableObject {
     }
   }
 
+  @Override
+  public ImmutableList<SqlEntity> toSqlEntities() {
+    return ImmutableList.of(); // ClaimsLists are dually written
+  }
+
   /** Virtual parent entity for claims list shards of a specific revision. */
   @Entity
   @VirtualEntity
-  public static class ClaimsListRevision extends ImmutableObject {
+  public static class ClaimsListRevision extends ImmutableObject implements DatastoreEntity {
     @Parent
     Key<ClaimsListSingleton> parent;
 
@@ -311,6 +319,11 @@ public class ClaimsListShard extends ImmutableObject {
     public static Key<ClaimsListRevision> createKey() {
       return createKey(new ClaimsListSingleton());
     }
+
+    @Override
+    public ImmutableList<SqlEntity> toSqlEntities() {
+      return ImmutableList.of(); // ClaimsLists are dually written
+    }
   }
 
   /**
@@ -319,7 +332,7 @@ public class ClaimsListShard extends ImmutableObject {
    */
   @Entity
   @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
-  public static class ClaimsListSingleton extends CrossTldSingleton {
+  public static class ClaimsListSingleton extends CrossTldSingleton implements DatastoreEntity {
     Key<ClaimsListRevision> activeRevision;
 
     static ClaimsListSingleton create(Key<ClaimsListRevision> revision) {
@@ -331,6 +344,11 @@ public class ClaimsListShard extends ImmutableObject {
     @VisibleForTesting
     public void setActiveRevision(Key<ClaimsListRevision> revision) {
       activeRevision = revision;
+    }
+
+    @Override
+    public ImmutableList<SqlEntity> toSqlEntities() {
+      return ImmutableList.of(); // ClaimsLists are dually written
     }
   }
 

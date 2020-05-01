@@ -22,6 +22,10 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -59,7 +63,13 @@ public class EntityTest {
     return classInfoList.stream()
         .filter(ClassInfo::isStandardClass)
         .map(ClassInfo::loadClass)
+        .filter(clazz -> !clazz.isAnnotationPresent(EntityForTesting.class))
         .map(Class::getName)
         .collect(toImmutableSet());
   }
+
+  /** Entities that are solely used for testing, to avoid scanning them in {@link EntityTest}. */
+  @Target(ElementType.TYPE)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface EntityForTesting {}
 }

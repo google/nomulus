@@ -35,6 +35,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.net.InetAddress;
 import java.util.Optional;
 import java.util.Set;
@@ -55,7 +56,8 @@ import org.joda.time.DateTime;
 @javax.persistence.Entity
 @ExternalMessagingName("host")
 @WithStringVKey
-public class HostResource extends EppResource implements ForeignKeyedEppResource {
+public class HostResource extends EppResource
+    implements DatastoreAndSqlEntity, ForeignKeyedEppResource {
 
   /**
    * Fully qualified hostname, which is a unique identifier for this host.

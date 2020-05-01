@@ -31,6 +31,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableList;
 import com.google.common.hash.BloomFilter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.googlecode.objectify.Key;
@@ -41,6 +42,8 @@ import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.registry.Registry;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import google.registry.util.NonFinalForTesting;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -53,26 +56,28 @@ import javax.annotation.Nullable;
 import org.joda.money.Money;
 import org.joda.time.Duration;
 
-/**
- * A premium list entity, persisted to Datastore, that is used to check domain label prices.
- */
+/** A premium list entity, persisted to Datastore, that is used to check domain label prices. */
 @ReportedOn
 @Entity
-public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.PremiumListEntry> {
+public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.PremiumListEntry>
+    implements DatastoreEntity {
 
   /** Stores the revision key for the set of currently used premium list entry entities. */
   Key<PremiumListRevision> revisionKey;
+
+  @Override
+  public ImmutableList<SqlEntity> toSqlEntities() {
+    return ImmutableList.of(); // PremiumList is dual-written
+  }
 
   /** Virtual parent entity for premium list entry entities associated with a single revision. */
   @ReportedOn
   @Entity
   public static class PremiumListRevision extends ImmutableObject {
 
-    @Parent
-    Key<PremiumList> parent;
+    @Parent Key<PremiumList> parent;
 
-    @Id
-    long revisionId;
+    @Id long revisionId;
 
     /**
      * A Bloom filter that is used to determine efficiently and quickly whether a label might be
@@ -249,7 +254,7 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
   @ReportedOn
   @Entity
   public static class PremiumListEntry extends DomainLabelEntry<Money, PremiumListEntry>
-      implements Buildable {
+      implements Buildable, DatastoreEntity {
 
     @Parent
     Key<PremiumListRevision> parent;
@@ -264,6 +269,11 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
     @Override
     public Builder asBuilder() {
       return new Builder(clone(this));
+    }
+
+    @Override
+    public ImmutableList<SqlEntity> toSqlEntities() {
+      return null;
     }
 
     /** A builder for constructing {@link PremiumListEntry} objects, since they are immutable. */

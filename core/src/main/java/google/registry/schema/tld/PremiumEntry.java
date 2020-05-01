@@ -14,7 +14,10 @@
 
 package google.registry.schema.tld;
 
+import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import javax.persistence.Column;
@@ -27,7 +30,7 @@ import javax.persistence.Id;
  * <p>These are not persisted directly, but rather, using {@link PremiumList#getLabelsToPrices()}.
  */
 @Entity
-public class PremiumEntry extends ImmutableObject implements Serializable {
+public class PremiumEntry extends ImmutableObject implements Serializable, SqlEntity {
 
   @Id
   @Column(nullable = false)
@@ -41,4 +44,9 @@ public class PremiumEntry extends ImmutableObject implements Serializable {
   String domainLabel;
 
   private PremiumEntry() {}
+
+  @Override
+  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
+    return ImmutableList.of(); // PremiumList is dually-written
+  }
 }

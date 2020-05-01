@@ -21,6 +21,7 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -28,11 +29,13 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 
 /** Representation of a saved entity in a {@link CommitLogManifest} (not deletes). */
 @Entity
 @NotBackedUp(reason = Reason.COMMIT_LOGS)
-public class CommitLogMutation extends ImmutableObject {
+public class CommitLogMutation extends ImmutableObject implements DatastoreEntity {
 
   /** The manifest this belongs to. */
   @Parent
@@ -56,6 +59,11 @@ public class CommitLogMutation extends ImmutableObject {
   /** Deserializes embedded entity bytes and returns it. */
   public com.google.appengine.api.datastore.Entity getEntity() {
     return createFromPbBytes(entityProtoBytes);
+  }
+
+  @Override
+  public ImmutableList<SqlEntity> toSqlEntities() {
+    return ImmutableList.of(); // not persisted in SQL
   }
 
   /**

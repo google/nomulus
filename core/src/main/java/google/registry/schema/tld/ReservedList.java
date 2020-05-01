@@ -26,6 +26,8 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.registry.label.ReservationType;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import java.util.Map;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
@@ -53,7 +55,7 @@ import org.joda.time.DateTime;
  */
 @Entity
 @Table(indexes = {@Index(columnList = "name", name = "reservedlist_name_idx")})
-public class ReservedList extends ImmutableObject {
+public class ReservedList extends ImmutableObject implements SqlEntity {
 
   @Column(nullable = false)
   private String name;
@@ -75,6 +77,11 @@ public class ReservedList extends ImmutableObject {
       joinColumns = @JoinColumn(name = "revisionId", referencedColumnName = "revisionId"))
   @MapKeyColumn(name = "domainLabel")
   private Map<String, ReservedEntry> labelsToReservations;
+
+  @Override
+  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
+    return ImmutableList.of(); // ReservedList is dual-written\
+  }
 
   @Embeddable
   public static class ReservedEntry extends ImmutableObject {

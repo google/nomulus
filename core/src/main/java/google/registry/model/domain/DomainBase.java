@@ -107,7 +107,7 @@ import org.joda.time.Interval;
     })
 @ExternalMessagingName("domain")
 public class DomainBase extends EppResource
-    implements ForeignKeyedEppResource, ResourceWithTransferData, DatastoreAndSqlEntity {
+    implements DatastoreAndSqlEntity, ForeignKeyedEppResource, ResourceWithTransferData {
 
   /** The max number of years that a domain can be registered for, as set by ICANN policy. */
   public static final int MAX_REGISTRATION_YEARS = 10;
