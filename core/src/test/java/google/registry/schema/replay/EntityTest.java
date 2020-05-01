@@ -26,6 +26,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -34,7 +35,7 @@ import org.junit.Test;
 public class EntityTest {
 
   @Test
-  // @Ignore("This won't be done until b/152410794 is done, since it requires many entity changes")
+  @Ignore("This won't be done until b/152410794 is done, since it requires many entity changes")
   public void testSqlEntityPersistence() {
     try (ScanResult scanResult =
         new ClassGraph().enableAnnotationInfo().whitelistPackages("google.registry").scan()) {
