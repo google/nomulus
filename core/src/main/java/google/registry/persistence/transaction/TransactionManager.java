@@ -108,7 +108,10 @@ public interface TransactionManager {
   <T> boolean checkExists(VKey<T> key);
 
   /** Loads the entity by its id, returns empty if the entity doesn't exist. */
-  <T> Optional<T> load(VKey<T> key);
+  <T> Optional<T> maybeLoad(VKey<T> key);
+
+  /** Loads the entity by its id, throws NoSuchElementException if it doesn't exist. */
+  <T> T load(VKey<T> key);
 
   /**
    * Leads the set of entities by their key id.
