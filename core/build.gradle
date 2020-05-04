@@ -709,7 +709,10 @@ task outcastTest(type: FilteringTest) {
   tests = outcastTestPatterns
 
   // Sets the maximum number of test executors that may exist at the same time.
-  maxParallelForks 5
+  // Note that this number appears to contribute to NoClassDefFoundError
+  // exceptions on certain machines and distros. The root cause is unclear.
+  // Try reducing this number if you experience similar problems.
+  maxParallelForks 3
 }
 
 // Whitebox test verifying that RegistryTool can be instantiated. Note the
