@@ -22,6 +22,7 @@ import com.googlecode.objectify.Key;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.TransactionManager;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
@@ -136,8 +137,17 @@ public class DatastoreTransactionManager implements TransactionManager {
   // VKey instead of by ofy Key.  But ideally, there should be one set of TransactionManager
   // interface tests that are applied to both the datastore and SQL implementations.
   @Override
-  public <T> Optional<T> load(VKey<T> key) {
+  public <T> Optional<T> maybeLoad(VKey<T> key) {
     return Optional.of(getOfy().load().key(key.getOfyKey()).now());
+  }
+
+  @Override
+  public <T> T load(VKey<T> key) {
+    T result = getOfy().load().key(key.getOfyKey()).now();
+    if (result == null) {
+      throw new NoSuchElementException(key.toString());
+    }
+    return result;
   }
 
   @Override

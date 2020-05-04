@@ -140,8 +140,7 @@ public class ContactResourceTest extends EntityTestCase {
             .transact(
                 () ->
                     jpaTm()
-                        .load(VKey.createSql(ContactResource.class, originalContact.getRepoId())))
-            .get();
+                        .load(VKey.createSql(ContactResource.class, originalContact.getRepoId())));
     // TODO(b/153378849): Remove the hard code for postal info after resolving the issue that
     // @PostLoad doesn't work in Address
     ContactResource fixed =

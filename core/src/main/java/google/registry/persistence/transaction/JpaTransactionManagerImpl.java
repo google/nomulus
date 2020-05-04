@@ -232,10 +232,21 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public <T> Optional<T> load(VKey<T> key) {
+  public <T> Optional<T> maybeLoad(VKey<T> key) {
     checkArgumentNotNull(key, "key must be specified");
     assertInTransaction();
     return Optional.ofNullable(getEntityManager().find(key.getKind(), key.getSqlKey()));
+  }
+
+  @Override
+  public <T> T load(VKey<T> key) {
+    checkArgumentNotNull(key, "key must be specified");
+    assertInTransaction();
+    T result = getEntityManager().find(key.getKind(), key.getSqlKey());
+    if (result == null) {
+      throw new NoSuchElementException(key.toString());
+    }
+    return result;
   }
 
   @Override
