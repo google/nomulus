@@ -41,7 +41,6 @@ import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
-import javax.persistence.Transient;
 import javax.xml.bind.annotation.XmlElement;
 import org.joda.time.DateTime;
 
@@ -171,8 +170,7 @@ public class ContactResource extends EppResource
   ContactAuthInfo authInfo;
 
   /** Data about any pending or past transfers on this contact. */
-  // TODO(b/153363295): Figure out how to persist transfer data
-  @Transient TransferData transferData;
+  TransferData transferData;
 
   /**
    * The time that this resource was last transferred.

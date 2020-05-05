@@ -19,6 +19,7 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Unindex;
 import com.googlecode.objectify.condition.IfNull;
@@ -29,10 +30,14 @@ import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
+import google.registry.persistence.VKey;
 import java.util.Set;
 import javax.annotation.Nullable;
-import javax.persistence.ElementCollection;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
+import javax.persistence.Column;
 import javax.persistence.Embedded;
+import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /**
@@ -47,7 +52,16 @@ public class TransferData extends BaseTransferObject implements Buildable {
   public static final TransferData EMPTY = new TransferData();
 
   /** The transaction id of the most recent transfer request (or null if there never was one). */
-  @Embedded Trid transferRequestTrid;
+  @Embedded
+  @AttributeOverrides({
+    @AttributeOverride(
+        name = "serverTransactionId",
+        column = @Column(name = "transfer_server_txn_id")),
+    @AttributeOverride(
+        name = "clientTransactionId",
+        column = @Column(name = "transfer_client_txn_id"))
+  })
+  Trid transferRequestTrid;
 
   /**
    * The period to extend the registration upon completion of the transfer.
@@ -55,23 +69,29 @@ public class TransferData extends BaseTransferObject implements Buildable {
    * <p>By default, domain transfers are for one year. This can be changed to zero by using the
    * superuser EPP extension.
    */
-  @Embedded Period transferPeriod = Period.create(1, Unit.YEARS);
+  @Embedded
+  @AttributeOverrides({
+    @AttributeOverride(name = "unit", column = @Column(name = "transfer_period_unit")),
+    @AttributeOverride(name = "value", column = @Column(name = "transfer_period_value"))
+  })
+  Period transferPeriod = Period.create(1, Unit.YEARS);
 
   /**
    * The registration expiration time resulting from the approval - speculative or actual - of the
    * most recent transfer request, applicable for domains only.
    *
    * <p>For pending transfers, this is the expiration time that will take effect under a projected
-   * server approval. For approved transfers, this is the actual expiration time of the domain as
-   * of the moment of transfer completion. For rejected or cancelled transfers, this field will be
+   * server approval. For approved transfers, this is the actual expiration time of the domain as of
+   * the moment of transfer completion. For rejected or cancelled transfers, this field will be
    * reset to null.
    *
    * <p>Note that even when this field is set, it does not necessarily mean that the post-transfer
-   * domain has a new expiration time.  Superuser transfers may not include a bundled 1 year renewal
+   * domain has a new expiration time. Superuser transfers may not include a bundled 1 year renewal
    * at all, or even when a renewal is bundled, for a transfer during the autorenew grace period the
    * bundled renewal simply subsumes the recent autorenewal, resulting in the same expiration time.
    */
   // TODO(b/36405140): backfill this field for existing domains to which it should apply.
+  @Column(name = "transfer_registration_expiration_time")
   DateTime transferredRegistrationExpirationTime;
 
   /**
@@ -83,9 +103,13 @@ public class TransferData extends BaseTransferObject implements Buildable {
    * pending transfer is explicitly approved, rejected or cancelled, the referenced entities should
    * be deleted.
    */
+  @Transient
   @IgnoreSave(IfNull.class)
-  @ElementCollection
   Set<Key<? extends TransferServerApproveEntity>> serverApproveEntities;
+
+  @Ignore
+  @Column(name = "transfer_server_approve_entity_ids")
+  Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntityIds;
 
   /**
    * The regular one-time billing event that will be charged for a server-approved transfer.
@@ -93,8 +117,14 @@ public class TransferData extends BaseTransferObject implements Buildable {
    * <p>This field should be null if there is not currently a pending transfer or if the object
    * being transferred is not a domain.
    */
+  @Transient
   @IgnoreSave(IfNull.class)
   Key<BillingEvent.OneTime> serverApproveBillingEvent;
+
+  // TODO(shicong): Add foreign key constraints after #565 is checked in
+  @Ignore
+  @Column(name = "transfer_server_approve_billing_event_id")
+  VKey<BillingEvent.OneTime> serverApproveBillingEventId;
 
   /**
    * The autorenew billing event that should be associated with this resource after the transfer.
@@ -102,8 +132,14 @@ public class TransferData extends BaseTransferObject implements Buildable {
    * <p>This field should be null if there is not currently a pending transfer or if the object
    * being transferred is not a domain.
    */
+  @Transient
   @IgnoreSave(IfNull.class)
   Key<BillingEvent.Recurring> serverApproveAutorenewEvent;
+
+  // TODO(shicong): Add foreign key constraints after #565 is checked in
+  @Ignore
+  @Column(name = "transfer_server_approve_autorenew_event_id")
+  VKey<BillingEvent.Recurring> serverApproveAutorenewEventId;
 
   /**
    * The autorenew poll message that should be associated with this resource after the transfer.
@@ -111,8 +147,14 @@ public class TransferData extends BaseTransferObject implements Buildable {
    * <p>This field should be null if there is not currently a pending transfer or if the object
    * being transferred is not a domain.
    */
+  @Transient
   @IgnoreSave(IfNull.class)
   Key<PollMessage.Autorenew> serverApproveAutorenewPollMessage;
+
+  // TODO(shicong): Add foreign key constraints when PollMessage schema is generated
+  @Ignore
+  @Column(name = "transfer_server_approve_autorenew_poll_message_id")
+  VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessageId;
 
   @Nullable
   public Trid getTransferRequestTrid() {

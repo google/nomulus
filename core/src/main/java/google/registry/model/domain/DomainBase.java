@@ -253,7 +253,7 @@ public class DomainBase extends EppResource
   String smdId;
 
   /** Data about any pending or past transfers on this domain. */
-  @Transient TransferData transferData;
+  TransferData transferData;
 
   /**
    * The time that this resource was last transferred.

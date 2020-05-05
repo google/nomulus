@@ -18,6 +18,7 @@ import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
@@ -38,6 +39,7 @@ public abstract class BaseTransferObject extends ImmutableObject {
 
   /** The gaining registrar of the current or last transfer. Can be null if never transferred. */
   @XmlElement(name = "reID")
+  @Column(name = "transfer_gaining_client_id")
   String gainingClientId;
 
   /** The time that the last transfer was requested. Can be null if never transferred. */
@@ -46,6 +48,7 @@ public abstract class BaseTransferObject extends ImmutableObject {
 
   /** The losing registrar of the current or last transfer. Can be null if never transferred. */
   @XmlElement(name = "acID")
+  @Column(name = "transfer_losing_client_id")
   String losingClientId;
 
   /**
@@ -54,6 +57,7 @@ public abstract class BaseTransferObject extends ImmutableObject {
    * this holds the time that the last pending transfer ended. Can be null if never transferred.
    */
   @XmlElement(name = "acDate")
+  @Column(name = "transfer_pending_expiration_time")
   DateTime pendingTransferExpirationTime;
 
   public TransferStatus getTransferStatus() {

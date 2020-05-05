@@ -134,6 +134,8 @@ public class ContactResourceTest extends EntityTestCase {
     saveRegistrar("registrar1");
     saveRegistrar("registrar2");
     saveRegistrar("registrar3");
+    saveRegistrar("gaining");
+    saveRegistrar("losing");
     jpaTm().transact(() -> jpaTm().saveNew(originalContact));
     ContactResource persisted =
         jpaTm()
@@ -141,15 +143,17 @@ public class ContactResourceTest extends EntityTestCase {
                 () ->
                     jpaTm()
                         .load(VKey.createSql(ContactResource.class, originalContact.getRepoId())));
-    // TODO(b/153378849): Remove the hard code for postal info after resolving the issue that
-    // @PostLoad doesn't work in Address
+
     ContactResource fixed =
         originalContact
             .asBuilder()
             .setCreationTime(persisted.getCreationTime())
-            .setInternationalizedPostalInfo(persisted.getInternationalizedPostalInfo())
-            .setLocalizedPostalInfo(persisted.getLocalizedPostalInfo())
-            .setTransferData(null)
+            .setTransferData(
+                originalContact
+                    .getTransferData()
+                    .asBuilder()
+                    .setServerApproveEntities(null)
+                    .build())
             .build();
     assertThat(persisted).isEqualTo(fixed);
   }
