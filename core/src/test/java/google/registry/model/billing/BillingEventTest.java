@@ -165,8 +165,7 @@ public class BillingEventTest extends EntityTestCase {
         jpaTm()
             .transact(
                 () ->
-                    jpaTm().load(VKey.createSql(BillingEvent.OneTime.class, unsavedOneTime.sqlId)))
-            .get();
+                    jpaTm().load(VKey.createSql(BillingEvent.OneTime.class, unsavedOneTime.sqlId)));
     // TODO(shicong): Remove these fixes after the entities are fully compatible
     BillingEvent.OneTime fixed =
         persisted
