@@ -74,7 +74,13 @@ import org.joda.time.DateTime;
 @javax.persistence.Table(
     indexes = {
       @javax.persistence.Index(columnList = "clientId"),
-      @javax.persistence.Index(columnList = "eventTime")
+      @javax.persistence.Index(columnList = "eventTime"),
+      @javax.persistence.Index(columnList = "onetime_billing_time"),
+      @javax.persistence.Index(columnList = "onetime_synthetic_creation_time"),
+      @javax.persistence.Index(columnList = "onetime_allocation_token_id"),
+      @javax.persistence.Index(columnList = "recurrenceEndTime"),
+      @javax.persistence.Index(columnList = "recurrence_time_of_year"),
+      @javax.persistence.Index(columnList = "cancellation_billing_time")
     })
 @WithLongVKey
 public abstract class BillingEvent extends ImmutableObject
@@ -254,12 +260,6 @@ public abstract class BillingEvent extends ImmutableObject
   @Entity
   @javax.persistence.Entity
   @DiscriminatorValue("ONE_TIME")
-  @javax.persistence.Table(
-      indexes = {
-        @javax.persistence.Index(columnList = "onetime_billing_time"),
-        @javax.persistence.Index(columnList = "onetime_synthetic_creation_time"),
-        @javax.persistence.Index(columnList = "onetime_allocation_token_id")
-      })
   public static class OneTime extends BillingEvent {
 
     /** The billable value. */
@@ -316,11 +316,8 @@ public abstract class BillingEvent extends ImmutableObject
     // TODO(shicong): Add @OnLoad after changing to use VKey in the application code
     void onLoad() {
       cancellationMatchingBillingEventId =
-          cancellationMatchingBillingEvent == null
-              ? null
-              : VKey.createOfy(BillingEvent.class, cancellationMatchingBillingEvent);
-      allocationTokenId =
-          allocationToken == null ? null : VKey.createOfy(AllocationToken.class, allocationToken);
+          VKey.createNullableOfy(BillingEvent.class, cancellationMatchingBillingEvent);
+      allocationTokenId = VKey.createNullableOfy(AllocationToken.class, allocationToken);
     }
 
     public Money getCost() {
@@ -436,11 +433,6 @@ public abstract class BillingEvent extends ImmutableObject
   @Entity
   @javax.persistence.Entity
   @DiscriminatorValue("RECURRING")
-  @javax.persistence.Table(
-      indexes = {
-        @javax.persistence.Index(columnList = "recurrenceEndTime"),
-        @javax.persistence.Index(columnList = "recurrence_time_of_year")
-      })
   public static class Recurring extends BillingEvent {
 
     /**
@@ -520,8 +512,6 @@ public abstract class BillingEvent extends ImmutableObject
   @Entity
   @javax.persistence.Entity
   @DiscriminatorValue("CANCELLATION")
-  @javax.persistence.Table(
-      indexes = {@javax.persistence.Index(columnList = "cancellation_billing_time")})
   public static class Cancellation extends BillingEvent {
 
     /** The billing time of the charge that is being cancelled. */
@@ -557,10 +547,8 @@ public abstract class BillingEvent extends ImmutableObject
 
     // TODO(shicong): Add @OnLoad after changing to use VKey in the application code
     void onLoad() {
-      refOneTimeId =
-          refOneTime == null ? null : VKey.createOfy(BillingEvent.OneTime.class, refOneTime);
-      refRecurringId =
-          refRecurring == null ? null : VKey.createOfy(BillingEvent.Recurring.class, refRecurring);
+      refOneTimeId = VKey.createNullableOfy(BillingEvent.OneTime.class, refOneTime);
+      refRecurringId = VKey.createNullableOfy(BillingEvent.Recurring.class, refRecurring);
     }
 
     public DateTime getBillingTime() {
@@ -681,7 +669,7 @@ public abstract class BillingEvent extends ImmutableObject
 
     // TODO(shicong): Add @OnLoad after changing to use VKey in the application code
     void onLoad() {
-      eventRefId = eventRef == null ? null : VKey.createOfy(BillingEvent.OneTime.class, eventRef);
+      eventRefId = VKey.createNullableOfy(BillingEvent.OneTime.class, eventRef);
     }
 
     public Money getCost() {
