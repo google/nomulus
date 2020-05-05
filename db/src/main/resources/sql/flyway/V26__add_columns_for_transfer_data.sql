@@ -45,21 +45,21 @@ alter table "Domain"
     add column transfer_status int4;
 
 alter table if exists "Contact"
-   add constraint foreign_key_contact_transfer_gaining_client_id
+   add constraint fk_contact_transfer_gaining_client_id
    foreign key (transfer_gaining_client_id)
    references "Registrar";
 
 alter table if exists "Contact"
-   add constraint foreign_key_contact_transfer_losing_client_id
+   add constraint fk_contact_transfer_losing_client_id
    foreign key (transfer_losing_client_id)
    references "Registrar";
 
 alter table if exists "Domain"
-   add constraint foreign_key_domain_transfer_gaining_client_id
+   add constraint fk_domain_transfer_gaining_client_id
    foreign key (transfer_gaining_client_id)
    references "Registrar";
 
 alter table if exists "Domain"
-   add constraint foreign_key_domain_transfer_losing_client_id
+   add constraint fk_domain_transfer_losing_client_id
    foreign key (transfer_losing_client_id)
    references "Registrar";
