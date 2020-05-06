@@ -17,6 +17,7 @@ package google.registry.export;
 import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static google.registry.testing.TestLogHandlerUtils.assertLogMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -174,6 +175,7 @@ public class BigqueryPollJobActionTest {
     action.run();
     assertLogMessage(
         logHandler, SEVERE, String.format("Bigquery job failed - %s:%s", PROJECT_ID, JOB_ID));
+    assertNoTasksEnqueued(CHAINED_QUEUE_NAME);
   }
 
   @Test
