@@ -102,6 +102,8 @@ public class UpdateSnapshotViewAction implements Runnable {
               "#standardSQL\nSELECT * FROM `%PROJECT%.%SOURCE_DATASET%.%SOURCE_TABLE%`");
       updateSnapshotView(datasetId, tableId, kindName, viewName, sqlTemplate);
     } catch (Throwable e) {
+      logger.atSevere().withCause(e).log(
+          "Could not update snapshot view %s for table %s", viewName, tableId);
       throw new InternalServerErrorException(
           String.format("Could not update snapshot view %s for table %s", viewName, tableId), e);
     }

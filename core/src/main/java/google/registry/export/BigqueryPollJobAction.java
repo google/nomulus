@@ -73,8 +73,10 @@ public class BigqueryPollJobAction implements Runnable {
 
   @Override
   public void run() {
-    checkJobOutcome();  // Throws a NotModifiedException if the job hasn't completed.
-    if (payload == null || payload.length == 0) {
+    boolean jobOutcome =
+        checkJobOutcome(); // Throws a NotModifiedException if the job hasn't completed.
+    // If the job failed, do not enqueue the next step.
+    if (!jobOutcome || payload == null || payload.length == 0) {
       return;
     }
     // If there is a payload, it's a chained task, so enqueue it.
