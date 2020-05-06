@@ -264,8 +264,8 @@ public abstract class BillingEvent extends ImmutableObject
 
     /** The billable value. */
     @AttributeOverrides({
-      @AttributeOverride(name = "money.amount", column = @Column(name = "onetime_cost_amount")),
-      @AttributeOverride(name = "money.currency", column = @Column(name = "onetime_cost_currency"))
+      @AttributeOverride(name = "money.amount", column = @Column(name = "cost_amount")),
+      @AttributeOverride(name = "money.currency", column = @Column(name = "cost_currency"))
     })
     Money cost;
 
@@ -644,12 +644,8 @@ public abstract class BillingEvent extends ImmutableObject
 
     /** The change in cost that should be applied to the original billing event. */
     @AttributeOverrides({
-      @AttributeOverride(
-          name = "money.amount",
-          column = @Column(name = "modification_cost_amount")),
-      @AttributeOverride(
-          name = "money.currency",
-          column = @Column(name = "modification_cost_currency"))
+      @AttributeOverride(name = "money.amount", column = @Column(name = "cost_amount")),
+      @AttributeOverride(name = "money.currency", column = @Column(name = "cost_currency"))
     })
     Money cost;
 
