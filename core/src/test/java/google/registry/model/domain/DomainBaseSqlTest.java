@@ -26,7 +26,6 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.secdns.DelegationSignerData;
-import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.transfer.TransferData;
@@ -35,6 +34,7 @@ import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
+import google.registry.testing.SqlHelper;
 import javax.persistence.EntityManager;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,14 +73,17 @@ public class DomainBaseSqlTest {
 
     host1VKey = VKey.createSql(HostResource.class, "host1");
 
-    domain =
-        new DomainBase.Builder()
-            .setFullyQualifiedDomainName("example.com")
-            .setRepoId("4-COM")
+    host =
+        new HostResource.Builder()
+            .setRepoId("host1")
+            .setFullyQualifiedHostName("ns1.example.com")
             .setCreationClientId("registrar1")
-            .setLastEppUpdateTime(fakeClock.nowUtc())
-            .setLastEppUpdateClientId("registrar2")
-            .setLastTransferTime(fakeClock.nowUtc())
+            .setPersistedCurrentSponsorClientId("registrar2")
+            .build();
+
+    domain =
+        SqlHelper.newDomain("example.com", contact)
+            .asBuilder()
             .setNameservers(host1VKey)
             .setStatusValues(
                 ImmutableSet.of(
@@ -90,24 +93,11 @@ public class DomainBaseSqlTest {
                     StatusValue.SERVER_UPDATE_PROHIBITED,
                     StatusValue.SERVER_RENEW_PROHIBITED,
                     StatusValue.SERVER_HOLD))
-            .setRegistrant(contactKey)
             .setContacts(ImmutableSet.of(DesignatedContact.create(Type.ADMIN, contact2Key)))
-            .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
-            .setPersistedCurrentSponsorClientId("registrar3")
-            .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
-            .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))
             .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
             .setLaunchNotice(
                 LaunchNotice.create("tcnid", "validatorId", START_OF_TIME, START_OF_TIME))
             .setSmdId("smdid")
-            .build();
-
-    host =
-        new HostResource.Builder()
-            .setRepoId("host1")
-            .setFullyQualifiedHostName("ns1.example.com")
-            .setCreationClientId("registrar1")
-            .setPersistedCurrentSponsorClientId("registrar2")
             .build();
     contact = makeContact("contact_id1");
     contact2 = makeContact("contact_id2");

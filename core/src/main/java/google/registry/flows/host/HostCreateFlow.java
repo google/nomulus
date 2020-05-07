@@ -133,7 +133,7 @@ public final class HostCreateFlow implements TransactionalFlow {
     historyBuilder
         .setType(HistoryEntry.Type.HOST_CREATE)
         .setModificationTime(now)
-        .setParent(Key.create(newHost));
+        .setParent(newHost.createKey());
     ImmutableSet<ImmutableObject> entitiesToSave =
         ImmutableSet.of(
             newHost,

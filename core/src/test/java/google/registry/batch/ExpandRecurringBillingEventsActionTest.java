@@ -126,7 +126,7 @@ public class ExpandRecurringBillingEventsActionTest
       boolean shouldHaveTxRecord) {
     assertThat(actual.getBySuperuser()).isFalse();
     assertThat(actual.getClientId()).isEqualTo(clientId);
-    assertThat(actual.getParent()).isEqualTo(Key.create(domain));
+    assertThat(actual.getParent().getOfyKey()).isEqualTo(Key.create(domain));
     assertThat(actual.getPeriod()).isEqualTo(Period.create(1, YEARS));
     assertThat(actual.getReason())
         .isEqualTo("Domain autorenewal by ExpandRecurringBillingEventsAction");

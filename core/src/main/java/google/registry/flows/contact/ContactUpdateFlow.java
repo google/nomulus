@@ -28,7 +28,6 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.ClientId;
@@ -107,7 +106,7 @@ public final class ContactUpdateFlow implements TransactionalFlow {
         .setType(HistoryEntry.Type.CONTACT_UPDATE)
         .setModificationTime(now)
         .setXmlBytes(null)  // We don't want to store contact details in the history entry.
-        .setParent(Key.create(existingContact));
+        .setParent(existingContact.createVKey());
     checkSameValuesNotAddedAndRemoved(statusesToAdd, statusToRemove);
     ContactResource.Builder builder = existingContact.asBuilder();
     Change change = command.getInnerChange();

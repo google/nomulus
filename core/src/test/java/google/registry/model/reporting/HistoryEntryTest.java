@@ -16,25 +16,41 @@ package google.registry.model.reporting;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.newDomainBase;
+import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
+import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.host.HostResource;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
-import org.junit.Before;
-import org.junit.Test;
+import google.registry.persistence.VKey;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HistoryEntry}. */
 public class HistoryEntryTest extends EntityTestCase {
 
   HistoryEntry historyEntry;
 
-  @Before
+  VKey<ContactResource> contactKey;
+  VKey<ContactResource> contact2Key;
+  VKey<HostResource> host1VKey;
+  HostResource host;
+  ContactResource contact;
+  ContactResource contact2;
+
+  public HistoryEntryTest() {
+    super(true);
+  }
+
+  @BeforeEach
   public void setUp() {
     createTld("foobar");
     DomainTransactionRecord transactionRecord =
@@ -44,10 +60,17 @@ public class HistoryEntryTest extends EntityTestCase {
             .setReportField(TransactionReportField.NET_ADDS_1_YR)
             .setReportAmount(1)
             .build();
+
+    contactKey = VKey.createSql(ContactResource.class, "contact_id1");
+    contact2Key = VKey.createSql(ContactResource.class, "contact_id2");
+
+    host1VKey = VKey.createSql(HostResource.class, "host1");
+    DomainBase domain = persistActiveDomain("foo.foobar");
+    jpaTm().transact(() -> jpaTm().saveNew(domain));
     // Set up a new persisted HistoryEntry entity.
     historyEntry =
         new HistoryEntry.Builder()
-            .setParent(newDomainBase("foo.foobar"))
+            .setParent(domain)
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setPeriod(Period.create(1, Period.Unit.YEARS))
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
@@ -60,7 +83,17 @@ public class HistoryEntryTest extends EntityTestCase {
             .setRequestedByRegistrar(false)
             .setDomainTransactionRecords(ImmutableSet.of(transactionRecord))
             .build();
-    persistResource(historyEntry);
+    historyEntry = persistResource(historyEntry);
+  }
+
+  @Test
+  public void testSqlPersistence() {
+    jpaTm().transact(() -> jpaTm().saveNew(historyEntry));
+    HistoryEntry persisted =
+        jpaTm().transact(() -> jpaTm().load(VKey.createSql(HistoryEntry.class, historyEntry.id)));
+    persisted.id = historyEntry.id;
+    persisted.parent = historyEntry.parent;
+    assertThat(persisted).isEqualTo(historyEntry);
   }
 
   @Test

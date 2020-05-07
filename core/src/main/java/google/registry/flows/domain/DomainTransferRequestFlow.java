@@ -36,7 +36,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
@@ -311,7 +310,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
         .setOtherClientId(existingDomain.getCurrentSponsorClientId())
         .setPeriod(period)
         .setModificationTime(now)
-        .setParent(Key.create(existingDomain))
+        .setParent(existingDomain)
         .setDomainTransactionRecords(
             ImmutableSet.of(
                 DomainTransactionRecord.create(

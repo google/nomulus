@@ -95,7 +95,11 @@ public class DomainBaseTest extends EntityTestCase {
                     .build())
             .createVKey();
     Key<HistoryEntry> historyEntryKey =
-        Key.create(persistResource(new HistoryEntry.Builder().setParent(domainKey).build()));
+        Key.create(
+            persistResource(
+                new HistoryEntry.Builder()
+                    .setParent(VKey.createOfy(DomainBase.class, domainKey))
+                    .build()));
     oneTimeBillKey = Key.create(historyEntryKey, BillingEvent.OneTime.class, 1);
     recurringBillKey = Key.create(historyEntryKey, BillingEvent.Recurring.class, 2);
     Key<PollMessage.Autorenew> autorenewPollKey =

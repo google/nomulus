@@ -301,7 +301,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     return historyBuilder
         .setType(HistoryEntry.Type.DOMAIN_DELETE)
         .setModificationTime(now)
-        .setParent(Key.create(existingResource))
+        .setParent(existingResource)
         .build();
   }
 

@@ -375,7 +375,7 @@ public class DeleteContactsAndHostsAction implements Runnable {
               .setClientId(deletionRequest.requestingClientId())
               .setModificationTime(now)
               .setType(getHistoryEntryType(resource, deleteAllowed))
-              .setParent(deletionRequest.key())
+              .setParent(VKey.createOfy(EppResource.class, deletionRequest.key()))
               .build();
 
       PollMessage.OneTime pollMessage =

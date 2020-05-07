@@ -501,7 +501,7 @@ public class DomainCreateFlow implements TransactionalFlow {
         .setType(HistoryEntry.Type.DOMAIN_CREATE)
         .setPeriod(period)
         .setModificationTime(now)
-        .setParent(Key.create(DomainBase.class, repoId))
+        .setParent(VKey.createOfy(DomainBase.class, Key.create(DomainBase.class, repoId)))
         .build();
   }
 

@@ -135,6 +135,33 @@
         primary key (id)
     );
 
+    create table "HistoryEntry" (
+       id  bigserial not null,
+        by_superuser boolean not null,
+        client_id text not null,
+        modification_time timestamptz not null,
+        other_client_id text,
+        parent_v_key text not null,
+        unit int4,
+        value int4,
+        reason text,
+        requested_by_registrar boolean not null,
+        client_transaction_id text,
+        server_transaction_id text,
+        type int4 not null,
+        xml_bytes bytea,
+        primary key (id)
+    );
+
+    create table "HistoryEntry_domainTransactionRecords" (
+       history_entry_id int8 not null,
+        report_amount int4 not null,
+        report_field int4 not null,
+        reporting_time timestamptz not null,
+        tld text not null,
+        primary key (history_entry_id, report_amount, report_field, reporting_time, tld)
+    );
+
     create table "HostResource" (
        repo_id text not null,
         creation_client_id text not null,
@@ -292,6 +319,8 @@ create index IDX8ffrqm27qtj20jac056j7yq07 on "Domain" (current_sponsor_client_id
 create index IDX5mnf0wn20tno4b9do88j61klr on "Domain" (deletion_time);
 create index IDX1rcgkdd777bpvj0r94sltwd5y on "Domain" (fully_qualified_domain_name);
 create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
+create index history_entry_modification_time_idx on "HistoryEntry" (modification_time);
+create index history_entry_client_id_idx on "HistoryEntry" (client_id);
 create index premiumlist_name_idx on "PremiumList" (name);
 create index registrar_name_idx on "Registrar" (registrar_name);
 create index registrar_iana_identifier_idx on "Registrar" (iana_identifier);
@@ -312,6 +341,11 @@ create index reservedlist_name_idx on "ReservedList" (name);
        add constraint FKeq1guccbre1yk3oosgp2io554 
        foreign key (domain_repo_id) 
        references "Domain";
+
+    alter table if exists "HistoryEntry_domainTransactionRecords" 
+       add constraint FKfsidevsihqpa6jf96qo6kka57 
+       foreign key (history_entry_id) 
+       references "HistoryEntry";
 
     alter table if exists "HostResource_inetAddresses" 
        add constraint FK6unwhfkcu3oq6q347fxvpagv 

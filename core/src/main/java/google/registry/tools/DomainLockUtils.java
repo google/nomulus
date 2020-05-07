@@ -23,7 +23,6 @@ import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STAT
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.googlecode.objectify.Key;
 import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -358,7 +357,7 @@ public final class DomainLockUtils {
             .setRequestedByRegistrar(!lock.isSuperuser())
             .setType(HistoryEntry.Type.DOMAIN_UPDATE)
             .setModificationTime(now)
-            .setParent(Key.create(domain))
+            .setParent(domain)
             .setReason(reason)
             .build();
     ofy().save().entities(domain, historyEntry);

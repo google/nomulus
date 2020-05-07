@@ -233,7 +233,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
         .setType(HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE)
         .setModificationTime(now)
         .setOtherClientId(gainingClientId)
-        .setParent(Key.create(existingDomain))
+        .setParent(existingDomain)
         .setDomainTransactionRecords(
             union(
                 cancelingRecords,

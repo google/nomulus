@@ -109,7 +109,7 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
     HistoryEntry historyEntry = historyBuilder
         .setType(HistoryEntry.Type.CONTACT_TRANSFER_REQUEST)
         .setModificationTime(now)
-        .setParent(Key.create(existingContact))
+        .setParent(existingContact.createVKey())
         .build();
     DateTime transferExpirationTime = now.plus(automaticTransferLength);
     TransferData serverApproveTransferData = new TransferData.Builder()

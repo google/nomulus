@@ -21,6 +21,8 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
 import org.joda.time.DateTime;
 
 /**
@@ -34,9 +36,11 @@ import org.joda.time.DateTime;
  * uses HistoryEntry.otherClientId because the losing party in a transfer is always the otherClient.
  */
 @Embed
+@Embeddable
 public class DomainTransactionRecord extends ImmutableObject implements Buildable {
 
   /** The TLD this record operates on. */
+  @Column(nullable = false)
   String tld;
 
   /**
@@ -50,9 +54,11 @@ public class DomainTransactionRecord extends ImmutableObject implements Buildabl
    *     href="https://www.icann.org/resources/unthemed-pages/registry-agmt-appc-10-2001-05-11-en">
    *     Grace period spec</a>
    */
+  @Column(nullable = false)
   DateTime reportingTime;
 
   /** The transaction report field we add reportAmount to for this registrar. */
+  @Column(nullable = false)
   TransactionReportField reportField;
 
   /**
@@ -67,6 +73,7 @@ public class DomainTransactionRecord extends ImmutableObject implements Buildabl
    * original SUCCESSFUL transfer counters. Finally, if we explicitly allow a transfer, the report
    * amount is 0, as we've already counted the transfer in the original request.
    */
+  @Column(nullable = false)
   Integer reportAmount;
 
   /**
