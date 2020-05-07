@@ -17,32 +17,32 @@ alter table "Contact"
     add column transfer_server_approve_autorenew_poll_message_id int8,
     add column transfer_server_approve_billing_event_id int8,
     add column transfer_server_approve_entity_ids text[],
-    add column transfer_period_unit int4,
+    add column transfer_period_unit text,
     add column transfer_period_value int4,
-    add column transfer_client_txn_id text,
-    add column transfer_server_txn_id text,
+    add column transfer_txn_client_id text,
+    add column transfer_txn_server_id text,
     add column transfer_registration_expiration_time timestamptz,
     add column transfer_gaining_client_id text,
     add column transfer_losing_client_id text,
     add column transfer_pending_expiration_time timestamptz,
     add column transfer_request_time timestamptz,
-    add column transfer_status int4;
+    add column transfer_status text;
 
 alter table "Domain"
     add column transfer_server_approve_autorenew_event_id int8,
     add column transfer_server_approve_autorenew_poll_message_id int8,
     add column transfer_server_approve_billing_event_id int8,
     add column transfer_server_approve_entity_ids text[],
-    add column transfer_period_unit int4,
+    add column transfer_period_unit text,
     add column transfer_period_value int4,
-    add column transfer_client_txn_id text,
-    add column transfer_server_txn_id text,
+    add column transfer_txn_client_id text,
+    add column transfer_txn_server_id text,
     add column transfer_registration_expiration_time timestamptz,
     add column transfer_gaining_client_id text,
     add column transfer_losing_client_id text,
     add column transfer_pending_expiration_time timestamptz,
     add column transfer_request_time timestamptz,
-    add column transfer_status int4;
+    add column transfer_status text;
 
 alter table if exists "Contact"
    add constraint fk_contact_transfer_gaining_client_id

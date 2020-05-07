@@ -56,10 +56,10 @@ public class TransferData extends BaseTransferObject implements Buildable {
   @AttributeOverrides({
     @AttributeOverride(
         name = "serverTransactionId",
-        column = @Column(name = "transfer_server_txn_id")),
+        column = @Column(name = "transfer_txn_server_id")),
     @AttributeOverride(
         name = "clientTransactionId",
-        column = @Column(name = "transfer_client_txn_id"))
+        column = @Column(name = "transfer_txn_client_id"))
   })
   Trid transferRequestTrid;
 
@@ -103,13 +103,9 @@ public class TransferData extends BaseTransferObject implements Buildable {
    * pending transfer is explicitly approved, rejected or cancelled, the referenced entities should
    * be deleted.
    */
-  @Transient
   @IgnoreSave(IfNull.class)
-  Set<Key<? extends TransferServerApproveEntity>> serverApproveEntities;
-
-  @Ignore
   @Column(name = "transfer_server_approve_entity_ids")
-  Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntityIds;
+  Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities;
 
   /**
    * The regular one-time billing event that will be charged for a server-approved transfer.
@@ -117,14 +113,10 @@ public class TransferData extends BaseTransferObject implements Buildable {
    * <p>This field should be null if there is not currently a pending transfer or if the object
    * being transferred is not a domain.
    */
-  @Transient
-  @IgnoreSave(IfNull.class)
-  Key<BillingEvent.OneTime> serverApproveBillingEvent;
-
   // TODO(shicong): Add foreign key constraints after #565 is checked in
-  @Ignore
+  @IgnoreSave(IfNull.class)
   @Column(name = "transfer_server_approve_billing_event_id")
-  VKey<BillingEvent.OneTime> serverApproveBillingEventId;
+  VKey<BillingEvent.OneTime> serverApproveBillingEvent;
 
   /**
    * The autorenew billing event that should be associated with this resource after the transfer.
