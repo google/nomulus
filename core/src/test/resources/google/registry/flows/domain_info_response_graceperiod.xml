@@ -1,0 +1,37 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <resData>
+      <domain:infData
+       xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>%DOMAIN%</domain:name>
+        <domain:roid>8-TLD</domain:roid>
+        <domain:status s="inactive"/>
+        <domain:registrant>jd1234</domain:registrant>
+        <domain:contact type="admin">sh8013</domain:contact>
+        <domain:contact type="tech">sh8013</domain:contact>
+        <domain:clID>NewRegistrar</domain:clID>
+        <domain:crID>NewRegistrar</domain:crID>
+        <domain:crDate>2000-06-01T00:02:00Z</domain:crDate>
+        <domain:upID>NewRegistrar</domain:upID>
+        <domain:upDate>%UPDATE%</domain:upDate>
+        <domain:exDate>%EXDATE%</domain:exDate>
+        <domain:authInfo>
+          <domain:pw>2fooBAR</domain:pw>
+        </domain:authInfo>
+      </domain:infData>
+    </resData>
+    <extension>
+      <rgp:infData xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0">
+        <rgp:rgpStatus s="%GRACEPERIOD%"/>
+      </rgp:infData>
+    </extension>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>
