@@ -100,8 +100,10 @@
         last_epp_update_client_id text,
         last_epp_update_time timestamptz,
         statuses text[],
+        admin_contact text,
         auth_info_repo_id text,
         auth_info_value text,
+        billing_contact text,
         fully_qualified_domain_name text,
         idn_table_name text,
         last_transfer_time timestamptz,
@@ -109,9 +111,11 @@
         launch_notice_expiration_time timestamptz,
         launch_notice_tcn_id text,
         launch_notice_validator_id text,
+        registrant_contact text,
         registration_expiration_time timestamptz,
         smd_id text,
         subordinate_hosts text[],
+        tech_contact text,
         tld text,
         primary key (repo_id)
     );

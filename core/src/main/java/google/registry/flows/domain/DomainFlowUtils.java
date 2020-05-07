@@ -35,6 +35,7 @@ import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRIS
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
 import static google.registry.model.registry.label.ReservationType.RESERVED_FOR_ANCHOR_TENANT;
 import static google.registry.model.registry.label.ReservationType.RESERVED_FOR_SPECIFIC_USE;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -120,6 +121,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tmch.ClaimsListShard;
+import google.registry.persistence.VKey;
 import google.registry.tldconfig.idn.IdnLabelValidator;
 import google.registry.util.Idn;
 import java.math.BigDecimal;
@@ -309,7 +311,10 @@ public class DomainFlowUtils {
       Set<Key<HostResource>> nameservers)
       throws EppException {
     ImmutableList.Builder<Key<? extends EppResource>> keysToLoad = new ImmutableList.Builder<>();
-    contacts.stream().map(DesignatedContact::getContactKey).forEach(keysToLoad::add);
+    contacts.stream()
+        .map(DesignatedContact::getContactKey)
+        .map(VKey::getOfyKey)
+        .forEach(keysToLoad::add);
     Optional.ofNullable(registrant).ifPresent(keysToLoad::add);
     keysToLoad.addAll(nameservers);
     verifyNotInPendingDelete(EppResource.loadCached(keysToLoad.build()).values());
@@ -355,7 +360,7 @@ public class DomainFlowUtils {
         contacts.stream()
             .collect(
                 toImmutableSetMultimap(
-                    DesignatedContact::getType, DesignatedContact::getContactKey));
+                    DesignatedContact::getType, contact -> contact.getContactKey().getOfyKey()));
 
     // If any contact type has multiple contacts:
     if (contactsByType.asMap().values().stream().anyMatch(v -> v.size() > 1)) {
@@ -978,7 +983,7 @@ public class DomainFlowUtils {
     for (DesignatedContact contact : contacts) {
       builder.add(
           ForeignKeyedDesignatedContact.create(
-              contact.getType(), ofy().load().key(contact.getContactKey()).now().getContactId()));
+              contact.getType(), tm().load(contact.getContactKey()).getContactId()));
     }
     return builder.build();
   }

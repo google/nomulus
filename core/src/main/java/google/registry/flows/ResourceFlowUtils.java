@@ -48,6 +48,7 @@ import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -96,8 +97,9 @@ public final class ResourceFlowUtils {
                       queryForLinkedDomains(fki.getResourceKey(), now)
                           .limit(FAILFAST_CHECK_COUNT)
                           .keys();
+                  VKey<R> resourceVKey = VKey.createOfy(resourceClass, fki.getResourceKey());
                   Predicate<DomainBase> predicate =
-                      domain -> getPotentialReferences.apply(domain).contains(fki.getResourceKey());
+                      domain -> getPotentialReferences.apply(domain).contains(resourceVKey);
                   return ofy().load().keys(keys).values().stream().anyMatch(predicate)
                       ? new ResourceToDeleteIsReferencedException()
                       : null;
@@ -184,9 +186,8 @@ public final class ResourceFlowUtils {
     }
     // The roid should match one of the contacts.
     Optional<Key<ContactResource>> foundContact =
-        domain
-            .getReferencedContacts()
-            .stream()
+        domain.getReferencedContacts().stream()
+            .map(VKey::getOfyKey)
             .filter(key -> key.getName().equals(authRepoId))
             .findFirst();
     if (!foundContact.isPresent()) {

@@ -60,6 +60,7 @@ import google.registry.flows.domain.DomainFlowUtils.MissingRegistrantException;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.DomainCommand.Update.AddRemove;
@@ -256,7 +257,12 @@ public final class DomainUpdateFlow implements TransactionalFlow {
                     .collect(toImmutableSet()))
             .addContacts(add.getContacts())
             .removeContacts(remove.getContacts())
-            .setRegistrant(firstNonNull(change.getRegistrant(), domain.getRegistrant()))
+            .setRegistrant(
+                firstNonNull(
+                    change.getRegistrant() != null
+                        ? VKey.createOfy(ContactResource.class, change.getRegistrant())
+                        : null,
+                    domain.getRegistrant()))
             .setAuthInfo(firstNonNull(change.getAuthInfo(), domain.getAuthInfo()));
     return domainBuilder.build();
   }
@@ -269,7 +275,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
 
   private void validateNewState(DomainBase newDomain) throws EppException {
     validateNoDuplicateContacts(newDomain.getContacts());
-    validateRequiredContactsPresent(newDomain.getRegistrant(), newDomain.getContacts());
+    validateRequiredContactsPresent(newDomain.getRegistrant().getOfyKey(), newDomain.getContacts());
     validateDsData(newDomain.getDsData());
     validateNameserversCountForTld(
         newDomain.getTld(),

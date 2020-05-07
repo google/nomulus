@@ -112,11 +112,11 @@ public class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Dom
                 .setLastEppUpdateTime(DateTime.parse("1999-12-03T09:00:00.0Z"))
                 .setLastTransferTime(DateTime.parse("2000-04-08T09:00:00.0Z"))
                 .setRegistrationExpirationTime(DateTime.parse("2005-04-03T22:00:00.0Z"))
-                .setRegistrant(Key.create(registrant))
+                .setRegistrant(registrant.createVKey())
                 .setContacts(
                     ImmutableSet.of(
-                        DesignatedContact.create(Type.ADMIN, Key.create(contact)),
-                        DesignatedContact.create(Type.TECH, Key.create(contact))))
+                        DesignatedContact.create(Type.ADMIN, contact.createVKey()),
+                        DesignatedContact.create(Type.TECH, contact.createVKey())))
                 .setNameservers(
                     inactive ? null : ImmutableSet.of(host1.createKey(), host2.createKey()))
                 .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("2fooBAR")))

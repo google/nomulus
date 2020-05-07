@@ -23,7 +23,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
-import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactPhoneNumber;
@@ -360,17 +359,17 @@ public final class FullFieldsTestEntityHelper {
                     StatusValue.SERVER_UPDATE_PROHIBITED))
             .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, "deadface")));
     if (registrant != null) {
-      builder.setRegistrant(Key.create(registrant));
+      builder.setRegistrant(registrant.createVKey());
     }
     if ((admin != null) || (tech != null)) {
       ImmutableSet.Builder<DesignatedContact> contactsBuilder = new ImmutableSet.Builder<>();
       if (admin != null) {
-        contactsBuilder.add(DesignatedContact.create(
-            DesignatedContact.Type.ADMIN, Key.create(admin)));
+        contactsBuilder.add(
+            DesignatedContact.create(DesignatedContact.Type.ADMIN, admin.createVKey()));
       }
       if (tech != null) {
-        contactsBuilder.add(DesignatedContact.create(
-            DesignatedContact.Type.TECH, Key.create(tech)));
+        contactsBuilder.add(
+            DesignatedContact.create(DesignatedContact.Type.TECH, tech.createVKey()));
       }
       builder.setContacts(contactsBuilder.build());
     }

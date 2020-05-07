@@ -80,20 +80,20 @@ public class DomainBaseTest extends EntityTestCase {
                     .setRepoId("1-COM")
                     .build())
             .createKey();
-    Key<ContactResource> contact1Key =
-        Key.create(
-            persistResource(
+    VKey<ContactResource> contact1Key =
+        persistResource(
                 new ContactResource.Builder()
                     .setContactId("contact_id1")
                     .setRepoId("2-COM")
-                    .build()));
-    Key<ContactResource> contact2Key =
-        Key.create(
-            persistResource(
+                    .build())
+            .createVKey();
+    VKey<ContactResource> contact2Key =
+        persistResource(
                 new ContactResource.Builder()
                     .setContactId("contact_id2")
                     .setRepoId("3-COM")
-                    .build()));
+                    .build())
+            .createVKey();
     Key<HistoryEntry> historyEntryKey =
         Key.create(persistResource(new HistoryEntry.Builder().setParent(domainKey).build()));
     oneTimeBillKey = Key.create(historyEntryKey, BillingEvent.OneTime.class, 1);

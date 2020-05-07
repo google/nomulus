@@ -93,6 +93,7 @@ import google.registry.model.registry.label.ReservedList;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import google.registry.tmch.LordnTaskUtils;
 import java.util.Arrays;
 import java.util.List;
@@ -144,7 +145,7 @@ public class DatastoreHelper {
 
   public static DomainBase newDomainBase(
       String domainName, String repoId, ContactResource contact) {
-    Key<ContactResource> contactKey = Key.create(contact);
+    VKey<ContactResource> contactKey = contact.createVKey();
     return new DomainBase.Builder()
         .setRepoId(repoId)
         .setFullyQualifiedDomainName(domainName)
@@ -487,11 +488,11 @@ public class DatastoreHelper {
             .setCreationClientId("TheRegistrar")
             .setCreationTimeForTest(creationTime)
             .setRegistrationExpirationTime(expirationTime)
-            .setRegistrant(Key.create(contact))
+            .setRegistrant(contact.createVKey())
             .setContacts(
                 ImmutableSet.of(
-                    DesignatedContact.create(Type.ADMIN, Key.create(contact)),
-                    DesignatedContact.create(Type.TECH, Key.create(contact))))
+                    DesignatedContact.create(Type.ADMIN, contact.createVKey()),
+                    DesignatedContact.create(Type.TECH, contact.createVKey())))
             .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("fooBAR")))
             .addGracePeriod(
                 GracePeriod.create(GracePeriodStatus.ADD, now.plusDays(10), "foo", null))

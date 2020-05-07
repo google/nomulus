@@ -23,7 +23,6 @@ import static google.registry.whois.WhoisTestData.loadFile;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactPhoneNumber;
 import google.registry.model.contact.ContactResource;
@@ -223,9 +222,9 @@ public class DomainWhoisResponseTest {
 
     VKey<HostResource> hostResource1Key = hostResource1.createKey();
     VKey<HostResource> hostResource2Key = hostResource2.createKey();
-    Key<ContactResource> registrantResourceKey = Key.create(registrant);
-    Key<ContactResource> adminResourceKey = Key.create(adminContact);
-    Key<ContactResource> techResourceKey = Key.create(techContact);
+    VKey<ContactResource> registrantResourceKey = registrant.createVKey();
+    VKey<ContactResource> adminResourceKey = adminContact.createVKey();
+    VKey<ContactResource> techResourceKey = techContact.createVKey();
 
     domainBase =
         persistResource(

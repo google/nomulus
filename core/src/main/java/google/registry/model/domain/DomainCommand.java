@@ -41,6 +41,7 @@ import google.registry.model.eppinput.ResourceCommand.ResourceUpdate;
 import google.registry.model.eppinput.ResourceCommand.SingleResourceCommand;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex;
+import google.registry.persistence.VKey;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -188,7 +189,7 @@ public class DomainCommand {
             now);
         for (DesignatedContact contact : contacts) {
           if (DesignatedContact.Type.REGISTRANT.equals(contact.getType())) {
-            clone.registrant = contact.getContactKey();
+            clone.registrant = contact.getContactKey().getOfyKey();
             clone.contacts = forceEmptyToNull(difference(contacts, contact));
             break;
           }
@@ -439,8 +440,10 @@ public class DomainCommand {
         loadByForeignKeysCached(foreignKeys.build(), ContactResource.class, now);
     ImmutableSet.Builder<DesignatedContact> linkedContacts = new ImmutableSet.Builder<>();
     for (ForeignKeyedDesignatedContact contact : contacts) {
-      linkedContacts.add(DesignatedContact.create(
-          contact.type, loadedContacts.get(contact.contactId)));
+      linkedContacts.add(
+          DesignatedContact.create(
+              contact.type,
+              VKey.createOfy(ContactResource.class, loadedContacts.get(contact.contactId))));
     }
     return linkedContacts.build();
   }

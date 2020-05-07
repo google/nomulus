@@ -27,7 +27,6 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.OteStatsTestHelper;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactResource;
@@ -127,9 +126,9 @@ public enum Fixture {
               .asBuilder()
               .setContacts(
                   ImmutableSet.of(
-                      DesignatedContact.create(ADMIN, Key.create(robert)),
-                      DesignatedContact.create(BILLING, Key.create(google)),
-                      DesignatedContact.create(TECH, Key.create(justine))))
+                      DesignatedContact.create(ADMIN, robert.createVKey()),
+                      DesignatedContact.create(BILLING, google.createVKey()),
+                      DesignatedContact.create(TECH, justine.createVKey())))
               .setNameservers(
                   ImmutableSet.of(
                       persistActiveHost("ns1.love.xn--q9jyb4c").createKey(),
@@ -141,9 +140,9 @@ public enum Fixture {
               .asBuilder()
               .setContacts(
                   ImmutableSet.of(
-                      DesignatedContact.create(ADMIN, Key.create(robert)),
-                      DesignatedContact.create(BILLING, Key.create(google)),
-                      DesignatedContact.create(TECH, Key.create(justine))))
+                      DesignatedContact.create(ADMIN, robert.createVKey()),
+                      DesignatedContact.create(BILLING, google.createVKey()),
+                      DesignatedContact.create(TECH, justine.createVKey())))
               .setNameservers(
                   ImmutableSet.of(
                       persistActiveHost("ns1.linode.com").createKey(),

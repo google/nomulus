@@ -15,13 +15,12 @@
 package google.registry.rde;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
-import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DomainBase;
@@ -30,6 +29,7 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.transfer.TransferData;
+import google.registry.persistence.VKey;
 import google.registry.util.Idn;
 import google.registry.xjc.domain.XjcDomainContactAttrType;
 import google.registry.xjc.domain.XjcDomainContactType;
@@ -167,11 +167,11 @@ final class DomainBaseToXjcConverter {
         // o  An OPTIONAL <registrant> element that contain the identifier for
         //    the human or organizational social information object associated
         //    as the holder of the domain name object.
-        Key<ContactResource> registrant = model.getRegistrant();
+        VKey<ContactResource> registrant = model.getRegistrant();
         if (registrant == null) {
           logger.atWarning().log("Domain %s has no registrant contact.", domainName);
         } else {
-          ContactResource registrantContact = ofy().load().key(registrant).now();
+          ContactResource registrantContact = tm().load(registrant);
           checkState(
               registrantContact != null,
               "Registrant contact %s on domain %s does not exist",
@@ -304,7 +304,7 @@ final class DomainBaseToXjcConverter {
         "Contact key for type %s is null on domain %s",
         model.getType(),
         domainName);
-    ContactResource contact = ofy().load().key(model.getContactKey()).now();
+    ContactResource contact = tm().load(model.getContactKey());
     checkState(
         contact != null,
         "Contact %s on domain %s does not exist",

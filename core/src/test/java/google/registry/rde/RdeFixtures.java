@@ -63,9 +63,8 @@ final class RdeFixtures {
             .setFullyQualifiedDomainName("example." + tld)
             .setRepoId(generateNewDomainRoid(tld))
             .setRegistrant(
-                Key.create(
-                    makeContactResource(
-                        clock, "5372808-ERL", "(◕‿◕) nevermore", "prophet@evil.みんな")))
+                makeContactResource(clock, "5372808-ERL", "(◕‿◕) nevermore", "prophet@evil.みんな")
+                    .createVKey())
             .build();
     HistoryEntry historyEntry =
         persistResource(new HistoryEntry.Builder().setParent(domain).build());
@@ -90,20 +89,20 @@ final class RdeFixtures {
                 ImmutableSet.of(
                     DesignatedContact.create(
                         DesignatedContact.Type.ADMIN,
-                        Key.create(
-                            makeContactResource(
+                        makeContactResource(
                                 clock,
                                 "5372808-IRL",
                                 "be that word our sign in parting",
-                                "BOFH@cat.みんな"))),
+                                "BOFH@cat.みんな")
+                            .createVKey()),
                     DesignatedContact.create(
                         DesignatedContact.Type.TECH,
-                        Key.create(
-                            makeContactResource(
+                        makeContactResource(
                                 clock,
                                 "5372808-TRL",
                                 "bird or fiend!? i shrieked upstarting",
-                                "bog@cat.みんな")))))
+                                "bog@cat.みんな")
+                            .createVKey())))
             .setCreationClientId("TheRegistrar")
             .setPersistedCurrentSponsorClientId("TheRegistrar")
             .setCreationTimeForTest(clock.nowUtc())

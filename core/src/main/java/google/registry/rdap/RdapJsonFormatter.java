@@ -52,6 +52,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import google.registry.rdap.RdapDataStructures.Event;
 import google.registry.rdap.RdapDataStructures.EventAction;
 import google.registry.rdap.RdapDataStructures.Link;
@@ -346,7 +347,12 @@ public class RdapJsonFormatter {
         ImmutableSet.copyOf(tm().load(domainBase.getNameservers()));
     // Load the registrant and other contacts and add them to the data.
     Map<Key<ContactResource>, ContactResource> loadedContacts =
-        ofy().load().keys(domainBase.getReferencedContacts());
+        ofy()
+            .load()
+            .keys(
+                domainBase.getReferencedContacts().stream()
+                    .map(VKey::getOfyKey)
+                    .collect(toImmutableSet()));
     // RDAP Response Profile 2.7.3, A domain MUST have the REGISTRANT, ADMIN, TECH roles and MAY
     // have others. We also add the BILLING.
     //
@@ -361,7 +367,7 @@ public class RdapJsonFormatter {
             .sorted(DESIGNATED_CONTACT_ORDERING)
             .collect(
                 toImmutableSetMultimap(
-                    DesignatedContact::getContactKey, DesignatedContact::getType));
+                    contact -> contact.getContactKey().getOfyKey(), DesignatedContact::getType));
 
     for (Key<ContactResource> contactKey : contactsToRoles.keySet()) {
       Set<RdapEntity.Role> roles =

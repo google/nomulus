@@ -151,7 +151,7 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
         newDomainBase(getUniqueIdFromCommand())
             .asBuilder()
             .setCreationTimeForTest(TIME_BEFORE_FLOW)
-            .setRegistrant(Key.create(contact))
+            .setRegistrant(contact.createVKey())
             .setRegistrationExpirationTime(expirationTime)
             .build();
     earlierHistoryEntry =
@@ -700,7 +700,9 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
         newDomainBase("example1.tld")
             .asBuilder()
             .setRegistrant(
-                Key.create(loadByForeignKey(ContactResource.class, "sh8013", clock.nowUtc()).get()))
+                loadByForeignKey(ContactResource.class, "sh8013", clock.nowUtc())
+                    .get()
+                    .createVKey())
             .setNameservers(ImmutableSet.of(host.createKey()))
             .setDeletionTime(START_OF_TIME)
             .build());

@@ -21,7 +21,6 @@ import static google.registry.flows.domain.DomainFlowUtils.addSecDnsExtensionIfP
 import static google.registry.flows.domain.DomainFlowUtils.handleFeeRequest;
 import static google.registry.flows.domain.DomainFlowUtils.loadForeignKeyedDesignatedContacts;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
@@ -102,16 +101,16 @@ public final class DomainInfoFlow implements Flow {
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder().setDomain(domain).build());
     // Prefetch all referenced resources. Calling values() blocks until loading is done.
-    // We do nameservers separately since they've been converted to VKey.
     tm().load(domain.getNameservers());
-    ofy().load().values(domain.getReferencedContacts()).values();
+    tm().load(domain.getReferencedContacts());
     // Registrars can only see a few fields on unauthorized domains.
     // This is a policy decision that is left up to us by the rfcs.
-    DomainInfoData.Builder infoBuilder = DomainInfoData.newBuilder()
-        .setFullyQualifiedDomainName(domain.getFullyQualifiedDomainName())
-        .setRepoId(domain.getRepoId())
-        .setCurrentSponsorClientId(domain.getCurrentSponsorClientId())
-        .setRegistrant(ofy().load().key(domain.getRegistrant()).now().getContactId());
+    DomainInfoData.Builder infoBuilder =
+        DomainInfoData.newBuilder()
+            .setFullyQualifiedDomainName(domain.getFullyQualifiedDomainName())
+            .setRepoId(domain.getRepoId())
+            .setCurrentSponsorClientId(domain.getCurrentSponsorClientId())
+            .setRegistrant(tm().load(domain.getRegistrant()).getContactId());
     // If authInfo is non-null, then the caller is authorized to see the full information since we
     // will have already verified the authInfo is valid.
     if (clientId.equals(domain.getCurrentSponsorClientId()) || authInfo.isPresent()) {

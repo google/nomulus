@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static org.joda.time.DateTimeZone.UTC;
 
@@ -291,11 +291,9 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
 
   ImmutableSet<String> getContactsOfType(
       DomainBase domainBase, final DesignatedContact.Type contactType) {
-    return domainBase
-        .getContacts()
-        .stream()
+    return domainBase.getContacts().stream()
         .filter(contact -> contact.getType().equals(contactType))
-        .map(contact -> ofy().load().key(contact.getContactKey()).now().getContactId())
+        .map(contact -> tm().load(contact.getContactKey()).getContactId())
         .collect(toImmutableSet());
   }
 }

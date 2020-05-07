@@ -26,7 +26,6 @@ import static org.junit.Assert.assertThrows;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.eppcommon.StatusValue;
@@ -187,10 +186,10 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
     ContactResource adminContact2 = persistResource(newContactResource("crr-admin2"));
     ContactResource techContact1 = persistResource(newContactResource("crr-tech1"));
     ContactResource techContact2 = persistResource(newContactResource("crr-tech2"));
-    Key<ContactResource> adminResourceKey1 = Key.create(adminContact1);
-    Key<ContactResource> adminResourceKey2 = Key.create(adminContact2);
-    Key<ContactResource> techResourceKey1 = Key.create(techContact1);
-    Key<ContactResource> techResourceKey2 = Key.create(techContact2);
+    VKey<ContactResource> adminResourceKey1 = adminContact1.createVKey();
+    VKey<ContactResource> adminResourceKey2 = adminContact2.createVKey();
+    VKey<ContactResource> techResourceKey1 = techContact1.createVKey();
+    VKey<ContactResource> techResourceKey2 = techContact2.createVKey();
 
     persistResource(
         newDomainBase("example.tld")

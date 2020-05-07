@@ -24,7 +24,6 @@ import static google.registry.testing.DatastoreHelper.persistDomainAndEnqueueLor
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static org.junit.Assert.assertThrows;
 
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.ofy.Ofy;
@@ -63,7 +62,7 @@ public class LordnTaskUtilsTest {
   private DomainBase.Builder newDomainBuilder() {
     return new DomainBase.Builder()
         .setFullyQualifiedDomainName("fleece.example")
-        .setRegistrant(Key.create(persistActiveContact("jd1234")))
+        .setRegistrant(persistActiveContact("jd1234").createVKey())
         .setSmdId("smdzzzz")
         .setCreationClientId("TheRegistrar");
   }

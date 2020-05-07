@@ -36,6 +36,7 @@ import com.googlecode.objectify.impl.translate.opt.joda.MoneyStringTranslatorFac
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.EntityClasses;
 import google.registry.model.ImmutableObject;
+import google.registry.model.contact.ContactResource;
 import google.registry.model.host.HostResource;
 import google.registry.model.translators.BloomFilterOfStringTranslatorFactory;
 import google.registry.model.translators.CidrAddressBlockTranslatorFactory;
@@ -130,6 +131,7 @@ public class ObjectifyService {
             new InetAddressTranslatorFactory(),
             new MoneyStringTranslatorFactory(),
             new ReadableInstantUtcTranslatorFactory(),
+            new VKeyTranslatorFactory<ContactResource>(ContactResource.class),
             new VKeyTranslatorFactory<HostResource>(HostResource.class),
             new UpdateAutoTimestampTranslatorFactory())) {
       factory().getTranslators().add(translatorFactory);

@@ -22,7 +22,6 @@ import static google.registry.xml.UtcDateTimeAdapter.getFormattedString;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
-import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactPhoneNumber;
 import google.registry.model.contact.ContactResource;
@@ -35,6 +34,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.translators.EnumToAttributeAdapter.EppEnum;
+import google.registry.persistence.VKey;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -128,7 +128,7 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
   }
 
   /** Returns the contact of the given type. */
-  private Optional<Key<ContactResource>> getContactReference(Type type) {
+  private Optional<VKey<ContactResource>> getContactReference(Type type) {
     Optional<DesignatedContact> contactOfType =
         domain.getContacts().stream().filter(d -> d.getType() == type).findFirst();
     return contactOfType.map(DesignatedContact::getContactKey);
@@ -149,14 +149,14 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
 
     /** Emit the contact entry of the given type. */
     DomainEmitter emitContact(
-        String contactType, Optional<Key<ContactResource>> contact, boolean preferUnicode) {
+        String contactType, Optional<VKey<ContactResource>> contact, boolean preferUnicode) {
       if (!contact.isPresent()) {
         return this;
       }
       // If we refer to a contact that doesn't exist, that's a bug. It means referential integrity
       // has somehow been broken. We skip the rest of this contact, but log it to hopefully bring it
       // someone's attention.
-      ContactResource contactResource = EppResource.loadCached(contact.get());
+      ContactResource contactResource = EppResource.loadCached(contact.get().getOfyKey());
       if (contactResource == null) {
         logger.atSevere().log(
             "(BUG) Broken reference found from domain %s to contact %s",
