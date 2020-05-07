@@ -81,7 +81,7 @@ public class OfyTest {
   }
 
   private void doBackupGroupRootTimestampInversionTest(Runnable runnable) {
-    DateTime groupTimestamp = ofy().load().key(someObject.getParent()).now()
+    DateTime groupTimestamp = ofy().load().key(someObject.getParent().getOfyKey()).now()
         .getUpdateAutoTimestamp().getTimestamp();
     // Set the clock in Ofy to the same time as the backup group root's save time.
     Ofy ofy = new Ofy(new FakeClock(groupTimestamp));

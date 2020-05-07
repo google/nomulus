@@ -56,6 +56,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
@@ -189,7 +190,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                 .setBySuperuser(false)
                 .setClientId(recurring.getClientId())
                 .setModificationTime(tm().getTransactionTime())
-                .setParent(domainKey)
+                .setParent(VKey.createOfy(DomainBase.class, domainKey))
                 .setPeriod(Period.create(1, YEARS))
                 .setReason("Domain autorenewal by ExpandRecurringBillingEventsAction")
                 .setRequestedByRegistrar(false)

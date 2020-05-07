@@ -43,7 +43,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
-import com.googlecode.objectify.Key;
 import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
@@ -220,7 +219,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     return historyBuilder
         .setType(HistoryEntry.Type.DOMAIN_UPDATE)
         .setModificationTime(now)
-        .setParent(Key.create(existingDomain))
+        .setParent(existingDomain)
         .build();
   }
 

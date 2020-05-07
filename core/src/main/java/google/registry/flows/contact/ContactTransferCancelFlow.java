@@ -25,7 +25,6 @@ import static google.registry.model.ResourceTransferUtils.denyPendingTransfer;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.ClientId;
@@ -85,7 +84,7 @@ public final class ContactTransferCancelFlow implements TransactionalFlow {
     HistoryEntry historyEntry = historyBuilder
         .setType(HistoryEntry.Type.CONTACT_TRANSFER_CANCEL)
         .setModificationTime(now)
-        .setParent(Key.create(existingContact))
+        .setParent(existingContact.createVKey())
         .build();
     // Create a poll message for the losing client.
     PollMessage losingPollMessage =

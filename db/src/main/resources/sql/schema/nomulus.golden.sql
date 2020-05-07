@@ -184,6 +184,41 @@ CREATE TABLE public."DomainHost" (
 
 
 --
+-- Name: HistoryEntry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."HistoryEntry" (
+    id bigint NOT NULL,
+    by_superuser boolean NOT NULL,
+    client_id text NOT NULL,
+    modification_time timestamp with time zone NOT NULL,
+    other_client_id text,
+    parent_v_key text NOT NULL,
+    unit integer,
+    value integer,
+    reason text,
+    requested_by_registrar boolean NOT NULL,
+    client_transaction_id text,
+    server_transaction_id text,
+    type integer NOT NULL,
+    xml_bytes bytea
+);
+
+
+--
+-- Name: HistoryEntry_domainTransactionRecords; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."HistoryEntry_domainTransactionRecords" (
+    history_entry_id bigint NOT NULL,
+    report_amount integer NOT NULL,
+    report_field integer NOT NULL,
+    reporting_time timestamp with time zone NOT NULL,
+    tld text NOT NULL
+);
+
+
+--
 -- Name: HostResource; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -496,6 +531,22 @@ ALTER TABLE ONLY public."Domain"
 
 
 --
+-- Name: HistoryEntry_domainTransactionRecords HistoryEntry_domainTransactionRecords_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HistoryEntry_domainTransactionRecords"
+    ADD CONSTRAINT "HistoryEntry_domainTransactionRecords_pkey" PRIMARY KEY (history_entry_id, report_amount, report_field, reporting_time, tld);
+
+
+--
+-- Name: HistoryEntry HistoryEntry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HistoryEntry"
+    ADD CONSTRAINT "HistoryEntry_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: HostResource HostResource_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -581,6 +632,20 @@ ALTER TABLE ONLY public."RegistryLock"
 
 ALTER TABLE ONLY public."Contact"
     ADD CONSTRAINT ukoqd7n4hbx86hvlgkilq75olas UNIQUE (contact_id);
+
+
+--
+-- Name: history_entry_client_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX history_entry_client_id_idx ON public."HistoryEntry" USING btree (client_id);
+
+
+--
+-- Name: history_entry_modification_time_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX history_entry_modification_time_idx ON public."HistoryEntry" USING btree (modification_time);
 
 
 --
@@ -797,6 +862,14 @@ ALTER TABLE ONLY public."DomainHost"
 
 ALTER TABLE ONLY public."DomainHost"
     ADD CONSTRAINT fkfmi7bdink53swivs390m2btxg FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
+
+
+--
+-- Name: HistoryEntry_domainTransactionRecords fkfsidevsihqpa6jf96qo6kka57; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HistoryEntry_domainTransactionRecords"
+    ADD CONSTRAINT fkfsidevsihqpa6jf96qo6kka57 FOREIGN KEY (history_entry_id) REFERENCES public."HistoryEntry"(id);
 
 
 --

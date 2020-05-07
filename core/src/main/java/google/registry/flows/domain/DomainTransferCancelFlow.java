@@ -31,7 +31,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.ClientId;
@@ -128,7 +127,7 @@ public final class DomainTransferCancelFlow implements TransactionalFlow {
         .setType(HistoryEntry.Type.DOMAIN_TRANSFER_CANCEL)
         .setOtherClientId(existingDomain.getTransferData().getLosingClientId())
         .setModificationTime(now)
-        .setParent(Key.create(existingDomain))
+        .setParent(existingDomain)
         .setDomainTransactionRecords(cancelingRecords)
         .build();
   }

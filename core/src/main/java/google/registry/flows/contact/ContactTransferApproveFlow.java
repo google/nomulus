@@ -25,7 +25,6 @@ import static google.registry.model.ResourceTransferUtils.approvePendingTransfer
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.ClientId;
@@ -89,7 +88,7 @@ public final class ContactTransferApproveFlow implements TransactionalFlow {
     HistoryEntry historyEntry = historyBuilder
         .setType(HistoryEntry.Type.CONTACT_TRANSFER_APPROVE)
         .setModificationTime(now)
-        .setParent(Key.create(existingContact))
+        .setParent(existingContact.createVKey())
         .build();
     // Create a poll message for the gaining client.
     PollMessage gainingPollMessage =

@@ -25,7 +25,6 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
@@ -108,7 +107,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
     historyBuilder
         .setType(HistoryEntry.Type.HOST_PENDING_DELETE)
         .setModificationTime(now)
-        .setParent(Key.create(existingHost));
+        .setParent(existingHost.createKey());
     ofy().save().<Object>entities(newHost, historyBuilder.build());
     return responseBuilder.setResultFromCode(SUCCESS_WITH_ACTION_PENDING).build();
   }

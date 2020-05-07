@@ -201,7 +201,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
     entitiesToSave.add(historyBuilder
         .setType(HistoryEntry.Type.HOST_UPDATE)
         .setModificationTime(now)
-        .setParent(Key.create(existingHost))
+        .setParent(existingHost.createKey())
         .build());
     ofy().save().entities(entitiesToSave.build());
     return responseBuilder.build();
