@@ -31,7 +31,6 @@ import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
-import javax.persistence.PersistenceException;
 import javax.persistence.RollbackException;
 import org.junit.Rule;
 import org.junit.Test;
@@ -72,18 +71,18 @@ public class JpaTransactionManagerImplTest {
 
   @Test
   public void assertInTransaction_throwsExceptionWhenNotInTransaction() {
-    assertThrows(PersistenceException.class, () -> jpaTm().assertInTransaction());
+    assertThrows(IllegalStateException.class, () -> jpaTm().assertInTransaction());
     jpaTm().transact(() -> jpaTm().assertInTransaction());
-    assertThrows(PersistenceException.class, () -> jpaTm().assertInTransaction());
+    assertThrows(IllegalStateException.class, () -> jpaTm().assertInTransaction());
   }
 
   @Test
   public void getTransactionTime_throwsExceptionWhenNotInTransaction() {
     FakeClock txnClock = fakeClock;
     txnClock.advanceOneMilli();
-    assertThrows(PersistenceException.class, () -> jpaTm().getTransactionTime());
+    assertThrows(IllegalStateException.class, () -> jpaTm().getTransactionTime());
     jpaTm().transact(() -> assertThat(jpaTm().getTransactionTime()).isEqualTo(txnClock.nowUtc()));
-    assertThrows(PersistenceException.class, () -> jpaTm().getTransactionTime());
+    assertThrows(IllegalStateException.class, () -> jpaTm().getTransactionTime());
   }
 
   @Test
@@ -333,14 +332,14 @@ public class JpaTransactionManagerImplTest {
   public void delete_succeeds() {
     jpaTm().transact(() -> jpaTm().saveNew(theEntity));
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(theEntity))).isTrue();
-    assertThat(jpaTm().transact(() -> jpaTm().delete(theEntityKey))).isEqualTo(1);
+    jpaTm().transact(() -> jpaTm().delete(theEntityKey));
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(theEntity))).isFalse();
   }
 
   @Test
   public void delete_returnsZeroWhenNoEntity() {
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(theEntity))).isFalse();
-    assertThat(jpaTm().transact(() -> jpaTm().delete(theEntityKey))).isEqualTo(0);
+    jpaTm().transact(() -> jpaTm().delete(theEntityKey));
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(theEntity))).isFalse();
   }
 

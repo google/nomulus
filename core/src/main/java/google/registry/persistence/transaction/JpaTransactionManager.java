@@ -14,6 +14,7 @@
 
 package google.registry.persistence.transaction;
 
+import google.registry.persistence.VKey;
 import javax.persistence.EntityManager;
 
 /** Sub-interface of {@link TransactionManager} which defines JPA related methods. */
@@ -21,4 +22,7 @@ public interface JpaTransactionManager extends TransactionManager {
 
   /** Returns the {@link EntityManager} for the current request. */
   EntityManager getEntityManager();
+
+  /** Deletes the entity by its id, throws exception if the entity is not deleted. */
+  public abstract <T> void assertDelete(VKey<T> key);
 }

@@ -77,7 +77,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public void assertInTransaction() {
     if (!inTransaction()) {
-      throw new PersistenceException("Not in a transaction");
+      throw new IllegalStateException("Not in a transaction");
     }
   }
 
@@ -278,8 +278,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
             .getResultList());
   }
 
-  @Override
-  public <T> int delete(VKey<T> key) {
+  private <T> int internalDelete(VKey<T> key) {
     checkArgumentNotNull(key, "key must be specified");
     assertInTransaction();
     EntityType<?> entityType = getEntityType(key.getKind());
@@ -292,8 +291,13 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public <T> void delete(VKey<T> key) {
+    internalDelete(key);
+  }
+
+  @Override
   public <T> void assertDelete(VKey<T> key) {
-    if (delete(key) != 1) {
+    if (internalDelete(key) != 1) {
       throw new IllegalArgumentException(
           String.format("Error deleting the entity of the key: %s", key.getSqlKey()));
     }
