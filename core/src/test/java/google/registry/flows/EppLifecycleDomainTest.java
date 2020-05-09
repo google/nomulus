@@ -18,6 +18,7 @@ import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_AND_CLOSE;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
+import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.registry.Registry.TldState.PREDELEGATION;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
@@ -26,6 +27,7 @@ import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
 import static google.registry.testing.EppMetricSubject.assertThat;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
@@ -84,18 +86,310 @@ public class EppLifecycleDomainTest extends EppTestCase {
             "domain_create_response.xml",
             ImmutableMap.of(
                 "DOMAIN", "example.tld",
-                "CRDATE", "2000-06-01T00:02:00.0Z",
-                "EXDATE", "2002-06-01T00:02:00.0Z"));
+                "CRDATE", "2000-06-01T00:02:00Z",
+                "EXDATE", "2002-06-01T00:02:00Z"));
+
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2000-06-07T00:02:00Z")
+        .hasResponse(
+            "domain_info_response_inactive.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                "EXDATE", "2002-06-01T00:02:00Z",
+                "UPDATE", "2000-06-06T00:02:00Z"));
 
     // Delete domain example.tld after its add grace period has expired.
     assertThatCommand("domain_delete.xml", ImmutableMap.of("DOMAIN", "example.tld"))
         .atTime("2000-07-01T00:02:00Z")
         .hasResponse("generic_success_action_pending_response.xml");
 
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2000-07-03T00:02:00Z")
+        .hasResponse(
+            "domain_info_response_redemptionperiod_wildcard.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                // The exp. date doesn't change because the deletion didn't cancel any charges.
+                "EXDATE", "2002-06-01T00:02:00Z",
+                "UPDATE", "2000-07-01T00:02:00Z"));
+
     // Restore the domain.
     assertThatCommand("domain_update_restore_request.xml")
         .atTime("2000-07-01T00:03:00Z")
         .hasResponse("generic_success_response.xml");
+
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2000-07-02T00:03:00Z")
+        .hasResponse(
+            "domain_info_response_inactive.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                // TODO(mcilwain): The exp. date should be restored back to 2002-06-01T00:02:00Z,
+                // but this is old behavior of being 1 year after the moment of the restore.
+                "EXDATE", "2001-07-01T00:03:00Z",
+                "UPDATE", "2000-07-01T00:03:00Z"));
+
+    assertThatLogoutSucceeds();
+  }
+
+  @Test
+  public void testDomainDeleteRestore_duringAutorenewGracePeriod() throws Exception {
+    assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
+    createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
+
+    // Create domain example.tld
+    assertThatCommand(
+            "domain_create_no_hosts_or_dsdata.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2000-06-01T00:02:00Z")
+        .hasResponse(
+            "domain_create_response.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                "EXDATE", "2002-06-01T00:02:00Z"));
+
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2000-06-07T00:02:00Z")
+        .hasResponse(
+            "domain_info_response_inactive.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                "EXDATE", "2002-06-01T00:02:00Z",
+                "UPDATE", "2000-06-06T00:02:00Z"));
+
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2002-06-07T00:02:00Z")
+        .hasResponse(
+            "domain_info_response_graceperiod.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                // The exp. date has advanced 1 year because of autorenew.
+                "EXDATE", "2003-06-01T00:02:00Z",
+                // This is the time of the autorenew.
+                "UPDATE", "2002-06-01T00:02:00Z",
+                "GRACEPERIOD", "autoRenewPeriod"));
+
+    // Delete domain example.tld during its autorenew grace period.
+    assertThatCommand("domain_delete.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2002-07-01T00:02:00Z")
+        .hasResponse("generic_success_action_pending_response.xml");
+
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2002-07-03T00:02:00Z")
+        .hasResponse(
+            "domain_info_response_redemptionperiod_wildcard.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                // The exp. date reverts back to what it was originally because the deletion
+                // canceled out the autorenew.
+                "EXDATE", "2002-06-01T00:02:00Z",
+                "UPDATE", "2002-07-01T00:02:00Z"));
+
+    // Restore the domain.
+    assertThatCommand("domain_update_restore_request.xml")
+        .atTime("2002-07-05T00:03:00Z")
+        .hasResponse("generic_success_response.xml");
+
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2002-07-07T00:03:00Z")
+        .hasResponse(
+            "domain_info_response_inactive.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                // TODO(mcilwain): The exp. date should be 2003-06-01T00:02:00Z, the same as its
+                // value prior to the deletion, because the year that was taken off when the
+                // autorenew was canceled will be re-added in renewal during the restore.
+                // For now though, the current behavior is 1 year after restore.
+                "EXDATE", "2003-07-05T00:03:00Z",
+                "UPDATE", "2002-07-05T00:03:00Z"));
+
+    assertThatLogoutSucceeds();
+  }
+
+  @Test
+  public void testDomainDeleteRestore_duringRenewalGracePeriod() throws Exception {
+    assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
+    createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
+
+    // Create domain example.tld
+    assertThatCommand(
+            "domain_create_no_hosts_or_dsdata.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2000-06-01T00:02:00Z")
+        .hasResponse(
+            "domain_create_response.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                "EXDATE", "2002-06-01T00:02:00Z"));
+
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2000-06-07T00:02:00Z")
+        .hasResponse(
+            "domain_info_response_inactive.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                "EXDATE", "2002-06-01T00:02:00Z",
+                "UPDATE", "2000-06-06T00:02:00Z"));
+
+    assertThatCommand(
+            "domain_renew.xml",
+            ImmutableMap.of("DOMAIN", "example.tld", "EXPDATE", "2002-06-01", "YEARS", "3"))
+        .atTime("2000-06-08T00:00:00Z")
+        .hasResponse(
+            "domain_renew_response.xml",
+            ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2005-06-01T00:02:00Z"));
+
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2000-06-10T00:02:00Z")
+        .hasResponse(
+            "domain_info_response_graceperiod.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                // The exp. date is 5 years in total after the create.
+                "EXDATE", "2005-06-01T00:02:00Z",
+                // This is the time of the renew.
+                "UPDATE", "2000-06-08T00:00:00Z",
+                "GRACEPERIOD", "renewPeriod"));
+
+    // Delete domain example.tld during its renew grace period.
+    assertThatCommand("domain_delete.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2000-06-12T00:00:00Z")
+        .hasResponse("generic_success_action_pending_response.xml");
+
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2000-06-13T00:00:00Z")
+        .hasResponse(
+            "domain_info_response_redemptionperiod_wildcard.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                // The exp. date reverts back to what it was originally because the deletion
+                // canceled out the 3-year renewal.
+                "EXDATE", "2002-06-01T00:02:00Z",
+                "UPDATE", "2000-06-12T00:00:00Z"));
+
+    // Restore the domain.
+    assertThatCommand("domain_update_restore_request.xml")
+        .atTime("2000-06-20T00:00:00Z")
+        .hasResponse("generic_success_response.xml");
+
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2000-06-21T00:00:00Z")
+        .hasResponse(
+            "domain_info_response_inactive.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                // TODO(mcilwain): The exp. date should be 2002-06-01T00:02:00Z, which is the
+                // current registration expiration time on the (deleted) domain, but for now is
+                // 1 year after restore.
+                "EXDATE", "2001-06-20T00:00:00Z",
+                "UPDATE", "2000-06-20T00:00:00Z"));
+
+    assertThatLogoutSucceeds();
+  }
+
+  @Test
+  public void testDomainDelete_duringAddAndRenewalGracePeriod_deletesImmediately()
+      throws Exception {
+    assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
+    createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
+
+    DateTime createTime = DateTime.parse("2000-06-01T00:02:00Z");
+    // Create domain example.tld
+    assertThatCommand(
+            "domain_create_no_hosts_or_dsdata.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime(createTime)
+        .hasResponse(
+            "domain_create_response.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                "EXDATE", "2002-06-01T00:02:00Z"));
+
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2000-06-02T00:02:00Z")
+        .hasResponse(
+            "domain_info_response_addperiod_wildcard.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                "EXDATE", "2002-06-01T00:02:00Z"));
+
+    DateTime renewTime = DateTime.parse("2000-06-03T00:00:00Z");
+    assertThatCommand(
+            "domain_renew.xml",
+            ImmutableMap.of("DOMAIN", "example.tld", "EXPDATE", "2002-06-01", "YEARS", "3"))
+        .atTime(renewTime)
+        .hasResponse(
+            "domain_renew_response.xml",
+            ImmutableMap.of("DOMAIN", "example.tld", "EXDATE", "2005-06-01T00:02:00Z"));
+
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2000-06-03T03:00:00Z")
+        .hasResponse(
+            "domain_info_response_graceperiod_add_and_renew.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                // The exp. date is 5 years in total after the create.
+                "EXDATE", "2005-06-01T00:02:00Z",
+                // This is the time of the renew.
+                "UPDATE", "2000-06-03T00:00:00Z"));
+
+    DomainBase domain =
+        loadByForeignKey(DomainBase.class, "example.tld", DateTime.parse("2000-06-03T04:00:00Z"))
+            .get();
+
+    DateTime deleteTime = DateTime.parse("2000-06-04T00:00:00Z");
+    // Delete domain example.tld during both grace periods.
+    assertThatCommand("domain_delete.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2000-06-04T00:00:00Z")
+        .hasResponse("generic_success_response.xml");
+
+    // Verify that it is immediately non-existent.
+    assertThatCommand("domain_info.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2000-06-04T00:01:00Z")
+        .hasResponse(
+            "response_error.xml",
+            ImmutableMap.of(
+                "CODE", "2303", "MSG", "The domain with given ID (example.tld) doesn't exist."));
+
+    // The expected one-time billing event, that should have an associated Cancellation.
+    OneTime oneTimeCreateBillingEvent = makeOneTimeCreateBillingEvent(domain, createTime);
+    OneTime oneTimeRenewBillingEvent = makeOneTimeRenewBillingEvent(domain, renewTime);
+
+    // Verify that the OneTime billing event associated with the domain creation is canceled.
+    assertBillingEventsForResource(
+        domain,
+        // There should be one-time billing events for the create and the renew.
+        oneTimeCreateBillingEvent,
+        oneTimeRenewBillingEvent,
+        // There should be two ended recurring billing events, one each from the create and renew.
+        // (The former was ended by the renew and the latter was ended by the delete.)
+        makeRecurringCreateBillingEvent(domain, createTime.plusYears(2), renewTime),
+        makeRecurringRenewBillingEvent(domain, createTime.plusYears(5), deleteTime),
+        // There should be Cancellations offsetting both of the one-times.
+        makeCancellationBillingEventForCreate(
+            domain, oneTimeCreateBillingEvent, createTime, deleteTime),
+        makeCancellationBillingEventForRenew(
+            domain, oneTimeRenewBillingEvent, renewTime, deleteTime));
+
+    // Verify that the registration expiration time was set back to the creation time, because the
+    // entire cost of registration was refunded. We have to do this through the DB instead of EPP
+    // because domains deleted during the add grace period vanish immediately as far as the world
+    // outside our system is concerned.
+    DomainBase deletedDomain = ofy().load().entity(domain).now();
+    assertAboutDomains().that(deletedDomain).hasRegistrationExpirationTime(createTime);
 
     assertThatLogoutSucceeds();
   }
@@ -143,8 +437,15 @@ public class EppLifecycleDomainTest extends EppTestCase {
         oneTimeCreateBillingEvent,
         makeRecurringCreateBillingEvent(domain, createTime.plusYears(2), deleteTime),
         // Check for the existence of a cancellation for the given one-time billing event.
-        makeCancellationBillingEventFor(
+        makeCancellationBillingEventForCreate(
             domain, oneTimeCreateBillingEvent, createTime, deleteTime));
+
+    // Verify that the registration expiration time was set back to the creation time, because the
+    // entire cost of registration was refunded. We have to do this through the DB instead of EPP
+    // because domains deleted during the add grace period vanish immediately as far as the world
+    // outside our system is concerned.
+    DomainBase deletedDomain = ofy().load().entity(domain).now();
+    assertAboutDomains().that(deletedDomain).hasRegistrationExpirationTime(createTime);
 
     assertThatLogoutSucceeds();
   }
@@ -268,7 +569,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
         expectedCreateEapBillingEvent,
         makeRecurringCreateBillingEvent(domain, createTime.plusYears(2), deleteTime),
         // ... and verify that the create one-time billing event was canceled ...
-        makeCancellationBillingEventFor(
+        makeCancellationBillingEventForCreate(
             domain, expectedOneTimeCreateBillingEvent, createTime, deleteTime));
     // ... but there was NOT a Cancellation for the EAP fee, as this would fail if additional
     // billing events were present.

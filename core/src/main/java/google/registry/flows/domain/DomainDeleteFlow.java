@@ -212,6 +212,28 @@ public final class DomainDeleteFlow implements TransactionalFlow {
       builder.setDeletePollMessage(Key.create(deletePollMessage));
     }
 
+    // Cancel any grace periods that were still active, and set the expiration time accordingly.
+    DateTime newExpirationTime = existingDomain.getRegistrationExpirationTime();
+    for (GracePeriod gracePeriod : existingDomain.getGracePeriods()) {
+      // No cancellation is written if the grace period was not for a billable event.
+      if (gracePeriod.hasBillingEvent()) {
+        entitiesToSave.add(
+            BillingEvent.Cancellation.forGracePeriod(gracePeriod, historyEntry, targetId));
+        if (gracePeriod.getOneTimeBillingEvent() != null) {
+          // Take the amount of amount of registration time being refunded off the expiration time.
+          // This can be either add grace periods or renew grace periods.
+          BillingEvent.OneTime oneTime =
+              ofy().load().key(gracePeriod.getOneTimeBillingEvent()).now();
+          newExpirationTime = newExpirationTime.minusYears(oneTime.getPeriodYears());
+        } else if (gracePeriod.getRecurringBillingEvent() != null) {
+          // Take 1 year off the registration if in the autorenew grace period (no need to load the
+          // recurring billing event; all autorenews are for 1 year).
+          newExpirationTime = newExpirationTime.minusYears(1);
+        }
+      }
+    }
+    builder.setRegistrationExpirationTime(newExpirationTime);
+
     DomainBase newDomain = builder.build();
     updateForeignKeyIndexDeletionTime(newDomain);
     handlePendingTransferOnDelete(existingDomain, newDomain, now, historyEntry);
@@ -221,14 +243,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     // event and poll message will already have been deleted in
     // ResourceDeleteFlow since it's listed in serverApproveEntities.
     dnsQueue.addDomainRefreshTask(existingDomain.getFullyQualifiedDomainName());
-    // Cancel any grace periods that were still active.
-    for (GracePeriod gracePeriod : existingDomain.getGracePeriods()) {
-      // No cancellation is written if the grace period was not for a billable event.
-      if (gracePeriod.hasBillingEvent()) {
-        entitiesToSave.add(
-            BillingEvent.Cancellation.forGracePeriod(gracePeriod, historyEntry, targetId));
-      }
-    }
+
     entitiesToSave.add(newDomain, historyEntry);
     EntityChanges entityChanges = flowCustomLogic.beforeSave(
         BeforeSaveParameters.newBuilder()
