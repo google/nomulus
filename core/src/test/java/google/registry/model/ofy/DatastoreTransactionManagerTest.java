@@ -28,13 +28,10 @@ import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import java.util.NoSuchElementException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@RunWith(JUnit4.class)
 public class DatastoreTransactionManagerTest {
 
   private final FakeClock fakeClock = new FakeClock();
@@ -46,9 +43,9 @@ public class DatastoreTransactionManagerTest {
           new TestEntity("entity2", "bar"),
           new TestEntity("entity3", "qux"));
 
-  @Rule public InjectRule inject = new InjectRule();
+  @RegisterExtension public InjectRule inject = new InjectRule();
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
       AppEngineRule.builder()
           .withClock(fakeClock)
@@ -58,7 +55,7 @@ public class DatastoreTransactionManagerTest {
 
   public DatastoreTransactionManagerTest() {}
 
-  @Before
+  @BeforeEach
   public void setUp() {
     inject.setStaticField(Ofy.class, "clock", fakeClock);
   }
