@@ -15,6 +15,7 @@
 package google.registry.model.ofy;
 
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -94,42 +95,45 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void saveNew(Object entity) {
-    throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
+    checkArgumentNotNull(entity, "entity must be specified");
+    getOfy().save().entity(entity);
   }
 
   @Override
   public void saveAllNew(ImmutableCollection<?> entities) {
-    throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
+    getOfy().save().entities(entities);
   }
 
   @Override
   public void saveNewOrUpdate(Object entity) {
-    throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
+    checkArgumentNotNull(entity, "entity must be specified");
+    getOfy().save().entity(entity);
   }
 
   @Override
   public void saveNewOrUpdateAll(ImmutableCollection<?> entities) {
-    throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
+    getOfy().save().entities(entities);
   }
 
   @Override
   public void update(Object entity) {
-    throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
+    checkArgumentNotNull(entity, "entity must be specified");
+    getOfy().save().entity(entity);
   }
 
   @Override
   public void updateAll(ImmutableCollection<?> entities) {
-    throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
+    getOfy().save().entities(entities);
   }
 
   @Override
   public boolean checkExists(Object entity) {
-    throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
+    return getOfy().load().key(Key.create(entity)).now() != null;
   }
 
   @Override
   public <T> boolean checkExists(VKey<T> key) {
-    throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
+    return getOfy().load().key(key.getOfyKey()).now() != null;
   }
 
   // TODO: add tests for these methods.  They currently have some degree of test coverage because
@@ -138,7 +142,7 @@ public class DatastoreTransactionManager implements TransactionManager {
   // interface tests that are applied to both the datastore and SQL implementations.
   @Override
   public <T> Optional<T> maybeLoad(VKey<T> key) {
-    return Optional.of(getOfy().load().key(key.getOfyKey()).now());
+    return Optional.ofNullable(getOfy().load().key(key.getOfyKey()).now());
   }
 
   @Override
@@ -161,16 +165,12 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> ImmutableList<T> loadAll(Class<T> clazz) {
+    // We can do a ofy().load().type(clazz), but this doesn't work in a transaction.
     throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
   }
 
   @Override
-  public <T> int delete(VKey<T> key) {
-    throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
-  }
-
-  @Override
-  public <T> void assertDelete(VKey<T> key) {
-    throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
+  public <T> void delete(VKey<T> key) {
+    getOfy().delete().key(key.getOfyKey()).now();
   }
 }

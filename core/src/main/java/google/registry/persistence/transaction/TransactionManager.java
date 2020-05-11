@@ -123,9 +123,6 @@ public interface TransactionManager {
   /** Loads all entities of the given type, returns empty if there is no such entity. */
   <T> ImmutableList<T> loadAll(Class<T> clazz);
 
-  /** Deletes the entity by its id, returns the number of deleted entity. */
-  <T> int delete(VKey<T> key);
-
-  /** Deletes the entity by its id, throws exception if the entity is not deleted. */
-  <T> void assertDelete(VKey<T> key);
+  /** Deletes the entity by its id. */
+  <T> void delete(VKey<T> key);
 }
