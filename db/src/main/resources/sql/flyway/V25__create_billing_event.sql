@@ -15,7 +15,7 @@
 create sequence hibernate_sequence start 1 increment 1;
 
 create table "BillingEvent" (
-   type text not null,
+    type text not null,
     id  int8 not null,
     client_id text not null,
     event_time timestamptz not null,
