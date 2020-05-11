@@ -11,6 +11,7 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
+create sequence hibernate_sequence start 1 increment 1;
 
     create table "BillingCancellation" (
        billing_cancellation_id  bigserial not null,
@@ -213,6 +214,17 @@
         primary key (resource_name, tld)
     );
 
+    create table "PollMessage" (
+       type text not null,
+        id int8 not null,
+        client_id text not null,
+        event_time timestamptz not null,
+        msg text,
+        autorenew_end_time timestamptz,
+        autorenew_target_id text,
+        primary key (id)
+    );
+
     create table "PremiumEntry" (
        revision_id int8 not null,
         domain_label text not null,
@@ -352,6 +364,8 @@ create index IDX8ffrqm27qtj20jac056j7yq07 on "Domain" (current_sponsor_client_id
 create index IDX5mnf0wn20tno4b9do88j61klr on "Domain" (deletion_time);
 create index IDX1rcgkdd777bpvj0r94sltwd5y on "Domain" (fully_qualified_domain_name);
 create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
+create index IDX26q3xla156kyqxwpnmsnjg6px on "PollMessage" (client_id);
+create index IDXaydgox62uno9qx8cjlj5lauye on "PollMessage" (event_time);
 create index premiumlist_name_idx on "PremiumList" (name);
 create index registrar_name_idx on "Registrar" (registrar_name);
 create index registrar_iana_identifier_idx on "Registrar" (iana_identifier);

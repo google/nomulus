@@ -16,6 +16,7 @@ package google.registry.model.poll;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistResource;
@@ -25,15 +26,20 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
-import org.junit.Before;
-import org.junit.Test;
+import google.registry.persistence.VKey;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link PollMessage}. */
 public class PollMessageTest extends EntityTestCase {
 
   HistoryEntry historyEntry;
 
-  @Before
+  public PollMessageTest() {
+    super(true);
+  }
+
+  @BeforeEach
   public void setUp() {
     createTld("foobar");
     historyEntry =
@@ -50,6 +56,46 @@ public class PollMessageTest extends EntityTestCase {
                 .setReason("reason")
                 .setRequestedByRegistrar(false)
                 .build());
+  }
+
+  @Test
+  void testCloudSqlPersistenceOneTime() {
+    PollMessage.OneTime pollMessage =
+        new PollMessage.OneTime.Builder()
+            .setClientId("TheRegistrar")
+            .setEventTime(fakeClock.nowUtc())
+            .setMsg("Test poll message")
+            .setParent(historyEntry)
+            .build();
+    jpaTm().transact(() -> jpaTm().saveNew(pollMessage));
+    PollMessage.OneTime persisted =
+        jpaTm()
+            .transact(
+                () -> jpaTm().load(VKey.createSql(PollMessage.OneTime.class, pollMessage.sqlId)));
+    persisted.id = pollMessage.id;
+    persisted.parent = pollMessage.parent;
+    assertThat(persisted).isEqualTo(pollMessage);
+  }
+
+  @Test
+  void testCloudSqlPersistenceAutorenew() {
+    PollMessage.Autorenew pollMessage =
+        new PollMessage.Autorenew.Builder()
+            .setClientId("TheRegistrar")
+            .setEventTime(fakeClock.nowUtc())
+            .setMsg("Test poll message")
+            .setParent(historyEntry)
+            .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
+            .setTargetId("foobar.foo")
+            .build();
+    jpaTm().transact(() -> jpaTm().saveNew(pollMessage));
+    PollMessage.Autorenew persisted =
+        jpaTm()
+            .transact(
+                () -> jpaTm().load(VKey.createSql(PollMessage.Autorenew.class, pollMessage.sqlId)));
+    persisted.id = pollMessage.id;
+    persisted.parent = pollMessage.parent;
+    assertThat(persisted).isEqualTo(pollMessage);
   }
 
   @Test

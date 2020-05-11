@@ -25,6 +25,7 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
@@ -41,8 +42,17 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
+import google.registry.persistence.WithLongVKey;
 import java.util.List;
 import java.util.Optional;
+import javax.persistence.Column;
+import javax.persistence.DiscriminatorColumn;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /**
@@ -68,23 +78,37 @@ import org.joda.time.DateTime;
 @Entity
 @ReportedOn
 @ExternalMessagingName("message")
+@javax.persistence.Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "type")
+@javax.persistence.Table(
+    indexes = {
+      @javax.persistence.Index(columnList = "clientId"),
+      @javax.persistence.Index(columnList = "eventTime")
+    })
+@WithLongVKey
 public abstract class PollMessage extends ImmutableObject
     implements Buildable, TransferServerApproveEntity {
 
   /** Entity id. */
-  @Id
-  long id;
+  @Transient @Id long id;
 
-  @Parent
-  @DoNotHydrate
-  Key<HistoryEntry> parent;
+  @Ignore
+  @javax.persistence.Id
+  @GeneratedValue(strategy = GenerationType.SEQUENCE)
+  @Column(name = "id")
+  Long sqlId;
+
+  @Parent @DoNotHydrate @Transient Key<HistoryEntry> parent;
 
   /** The registrar that this poll message will be delivered to. */
   @Index
+  @Column(nullable = false)
   String clientId;
 
   /** The time when the poll message should be delivered. May be in the future. */
   @Index
+  @Column(nullable = false)
   DateTime eventTime;
 
   /** Human readable message that will be returned with this poll message. */
@@ -180,15 +204,23 @@ public abstract class PollMessage extends ImmutableObject
    * <p>One-time poll messages are deleted from Datastore once they have been delivered and ACKed.
    */
   @EntitySubclass(index = false)
+  @javax.persistence.Entity
+  @DiscriminatorValue("ONE_TIME")
   public static class OneTime extends PollMessage {
 
     // Response data. Objectify cannot persist a base class type, so we must have a separate field
     // to hold every possible derived type of ResponseData that we might store.
+    // TODO(shicong): Rework below fields in SQL.
+    @Transient
     List<ContactPendingActionNotificationResponse> contactPendingActionNotificationResponses;
-    List<ContactTransferResponse> contactTransferResponses;
+
+    @Transient List<ContactTransferResponse> contactTransferResponses;
+
+    @Transient
     List<DomainPendingActionNotificationResponse> domainPendingActionNotificationResponses;
-    List<DomainTransferResponse> domainTransferResponses;
-    List<HostPendingActionNotificationResponse> hostPendingActionNotificationResponses;
+
+    @Transient List<DomainTransferResponse> domainTransferResponses;
+    @Transient List<HostPendingActionNotificationResponse> hostPendingActionNotificationResponses;
 
     @Override
     public Builder asBuilder() {
@@ -265,9 +297,12 @@ public abstract class PollMessage extends ImmutableObject
    * happens.
    */
   @EntitySubclass(index = false)
+  @javax.persistence.Entity
+  @DiscriminatorValue("AUTORENEW")
   public static class Autorenew extends PollMessage {
 
     /** The target id of the autorenew event. */
+    @Column(name = "autorenew_target_id")
     String targetId;
 
     /** The autorenew recurs annually between {@link #eventTime} and this time. */
