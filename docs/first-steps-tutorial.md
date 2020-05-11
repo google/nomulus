@@ -52,7 +52,7 @@ Updated 1 entities.
 *   `create_tld` is the subcommand to create a TLD. The TLD name is "example"
     which happens to be an ICANN reserved string, and therefore "example" can
     never be created on the Internet at large.
-*   `--initial_tld_state` defines the intital state of the TLD.
+*   `--initial_tld_state` defines the initial state of the TLD.
     `GENERAL_AVAILABILITY`, in the case of our example, allows you to
     immediately create domain names by bypassing the sunrise and landrush domain
     registration periods.
@@ -168,7 +168,7 @@ $ nomulus -e alpha create_domain fake.example --client acme --admins abcd1234 \
 Where:
 
 *   `create_domain` is the subcommand to create a domain name. It accepts a
-    whitespace-separted list of domain names to be created
+    whitespace-separated list of domain names to be created
 *   `--client` is used to define the registrar.
 *   `--admins` is the administrative contact's id(s).
 *   `--techs` is the technical contact's id(s).

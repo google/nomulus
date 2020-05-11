@@ -523,7 +523,7 @@ $ kubectl create secret generic service-account \
 --from-file=service-account-key.json=<service-account-key.json>
 ```
 
-More details on using sevice account on GKE can be found
+More details on using service account on GKE can be found
 [here](https://cloud.google.com/kubernetes-engine/docs/tutorials/authenticating-to-cloud-platform).
 
 Repeat the same step for all clusters you want to deploy to. Use `gcloud` to

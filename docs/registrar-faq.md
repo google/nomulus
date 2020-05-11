@@ -138,7 +138,7 @@ No, we do not require verification of zone configurations.
 
 Yes, IPv6 addresses are supported.
 
-**4.9 How many IP adresses can be listed on an in-bailiwick host object?**
+**4.9 How many IP addresses can be listed on an in-bailiwick host object?**
 
 Ten IP addresses can be listed on an in-bailiwick host object. This limit is for
 both IPv4 and IPv6 addresses combined.
