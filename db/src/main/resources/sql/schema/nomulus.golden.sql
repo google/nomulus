@@ -184,6 +184,72 @@ CREATE TABLE public."DomainHost" (
 
 
 --
+-- Name: HostHistory; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."HostHistory" (
+    revision_id bigint NOT NULL,
+    by_superuser boolean NOT NULL,
+    creation_time timestamp with time zone NOT NULL,
+    other_registrar_id text,
+    reason text,
+    registrar_id text NOT NULL,
+    requested_by_registrar boolean,
+    client_transaction_id text,
+    server_transaction_id text,
+    type integer NOT NULL,
+    xml_bytes bytea,
+    fully_qualified_host_name text,
+    last_superordinate_change timestamp with time zone,
+    last_transfer_time timestamp with time zone,
+    referenced_entity text,
+    superordinate_domain text
+);
+
+
+--
+-- Name: HostHistory_domainTransactionRecords; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."HostHistory_domainTransactionRecords" (
+    host_history_revision_id bigint NOT NULL,
+    report_amount integer NOT NULL,
+    report_field integer NOT NULL,
+    reporting_time timestamp with time zone NOT NULL,
+    tld text NOT NULL
+);
+
+
+--
+-- Name: HostHistory_inetAddresses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."HostHistory_inetAddresses" (
+    host_history_revision_id bigint NOT NULL,
+    inet_addresses bytea
+);
+
+
+--
+-- Name: HostHistory_revision_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."HostHistory_revision_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: HostHistory_revision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."HostHistory_revision_id_seq" OWNED BY public."HostHistory".revision_id;
+
+
+--
 -- Name: HostResource; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -435,6 +501,13 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 
 
 --
+-- Name: HostHistory revision_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory" ALTER COLUMN revision_id SET DEFAULT nextval('public."HostHistory_revision_id_seq"'::regclass);
+
+
+--
 -- Name: PremiumList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -493,6 +566,22 @@ ALTER TABLE ONLY public."Cursor"
 
 ALTER TABLE ONLY public."Domain"
     ADD CONSTRAINT "Domain_pkey" PRIMARY KEY (repo_id);
+
+
+--
+-- Name: HostHistory_domainTransactionRecords HostHistory_domainTransactionRecords_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory_domainTransactionRecords"
+    ADD CONSTRAINT "HostHistory_domainTransactionRecords_pkey" PRIMARY KEY (host_history_revision_id, report_amount, report_field, reporting_time, tld);
+
+
+--
+-- Name: HostHistory HostHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory"
+    ADD CONSTRAINT "HostHistory_pkey" PRIMARY KEY (revision_id);
 
 
 --
@@ -640,6 +729,13 @@ CREATE INDEX idxbn8t4wp85fgxjl8q4ctlscx55 ON public."Contact" USING btree (curre
 
 
 --
+-- Name: idxfg2nnjlujxo6cb9fha971bq2n; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxfg2nnjlujxo6cb9fha971bq2n ON public."HostHistory" USING btree (creation_time);
+
+
+--
 -- Name: idxkjt9yaq92876dstimd93hwckh; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -651,6 +747,13 @@ CREATE INDEX idxkjt9yaq92876dstimd93hwckh ON public."Domain" USING btree (curren
 --
 
 CREATE INDEX idxn1f711wicdnooa2mqb7g1m55o ON public."Contact" USING btree (deletion_time);
+
+
+--
+-- Name: idxnxei34hfrt20dyxtphh6j25mo; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxnxei34hfrt20dyxtphh6j25mo ON public."HostHistory" USING btree (registrar_id);
 
 
 --
@@ -792,6 +895,14 @@ ALTER TABLE ONLY public."DomainHost"
 
 
 --
+-- Name: HostHistory_inetAddresses fkdxdtvupo2b6xlqsq4og4nlo7k; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory_inetAddresses"
+    ADD CONSTRAINT fkdxdtvupo2b6xlqsq4og4nlo7k FOREIGN KEY (host_history_revision_id) REFERENCES public."HostHistory"(revision_id);
+
+
+--
 -- Name: DomainHost fkfmi7bdink53swivs390m2btxg; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -829,6 +940,14 @@ ALTER TABLE ONLY public."Contact"
 
 ALTER TABLE ONLY public."PremiumEntry"
     ADD CONSTRAINT fko0gw90lpo1tuee56l0nb6y6g5 FOREIGN KEY (revision_id) REFERENCES public."PremiumList"(revision_id);
+
+
+--
+-- Name: HostHistory_domainTransactionRecords fkofp2dm4xd9my12aex1456rn7d; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory_domainTransactionRecords"
+    ADD CONSTRAINT fkofp2dm4xd9my12aex1456rn7d FOREIGN KEY (host_history_revision_id) REFERENCES public."HostHistory"(revision_id);
 
 
 --

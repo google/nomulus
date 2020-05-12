@@ -21,6 +21,7 @@ import google.registry.model.domain.DomainBaseSqlTest;
 import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.persistence.transaction.JpaEntityCoverage;
 import google.registry.schema.cursor.CursorDaoTest;
+import google.registry.schema.history.HostHistoryTest;
 import google.registry.schema.integration.SqlIntegrationTestSuite.AfterSuiteTest;
 import google.registry.schema.integration.SqlIntegrationTestSuite.BeforeSuiteTest;
 import google.registry.schema.registrar.RegistrarDaoTest;
@@ -72,6 +73,7 @@ import org.junit.runner.RunWith;
   ContactResourceTest.class,
   CursorDaoTest.class,
   DomainBaseSqlTest.class,
+  HostHistoryTest.class,
   LockDaoTest.class,
   PremiumListDaoTest.class,
   RegistrarDaoTest.class,

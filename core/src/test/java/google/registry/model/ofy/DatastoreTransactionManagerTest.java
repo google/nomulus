@@ -28,8 +28,8 @@ import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import java.util.NoSuchElementException;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class DatastoreTransactionManagerTest {
@@ -97,8 +97,7 @@ public class DatastoreTransactionManagerTest {
     assertThrows(
         RuntimeException.class,
         () ->
-            tm()
-                .transact(
+            tm().transact(
                     () -> {
                       tm().saveNew(theEntity);
                       throw new RuntimeException();

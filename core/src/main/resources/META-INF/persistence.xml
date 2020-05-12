@@ -27,6 +27,7 @@
     <class>google.registry.schema.domain.RegistryLock</class>
     <class>google.registry.schema.tmch.ClaimsList</class>
     <class>google.registry.schema.cursor.Cursor</class>
+    <class>google.registry.schema.history.HostHistory</class>
     <class>google.registry.schema.server.Lock</class>
     <class>google.registry.schema.tld.PremiumList</class>
     <class>google.registry.schema.tld.PremiumEntry</class>
@@ -51,8 +52,9 @@
     <class>google.registry.persistence.converter.ZonedDateTimeConverter</class>
 
     <!-- Generated converters for VKey -->
-    <class>google.registry.model.host.VKeyConverter_HostResource</class>
     <class>google.registry.model.contact.VKeyConverter_ContactResource</class>
+    <class>google.registry.model.domain.VKeyConverter_DomainBase</class>
+    <class>google.registry.model.host.VKeyConverter_HostResource</class>
 
     <!-- TODO(weiminyu): check out application-layer validation. -->
     <validation-mode>NONE</validation-mode>

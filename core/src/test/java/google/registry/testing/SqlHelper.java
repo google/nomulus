@@ -15,21 +15,28 @@
 package google.registry.testing;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.config.RegistryConfig.getContactAndHostRoidSuffix;
+import static google.registry.model.EppResourceUtils.createRepoId;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.AppEngineRule.makeRegistrar1;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import google.registry.model.host.HostResource;
 import google.registry.model.registry.RegistryLockDao;
 import google.registry.schema.domain.RegistryLock;
 import java.sql.SQLException;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.persistence.RollbackException;
 import org.junit.function.ThrowingRunnable;
 
 /** Static utils for setting up and retrieving test resources from the SQL database. */
 public class SqlHelper {
+
+  private static final AtomicLong NEXT_TEST_ID = new AtomicLong(1); // ids cannot be zero
 
   public static RegistryLock saveRegistryLock(RegistryLock lock) {
     return jpaTm().transact(() -> RegistryLockDao.save(lock));
@@ -63,6 +70,20 @@ public class SqlHelper {
     jpaTm()
         .transact(
             () -> jpaTm().saveNew(makeRegistrar1().asBuilder().setClientId(clientId).build()));
+  }
+
+  public static HostResource newHostResource(String hostName) {
+    return new HostResource.Builder()
+        .setFullyQualifiedHostName(hostName)
+        .setCreationClientId("TheRegistrar")
+        .setPersistedCurrentSponsorClientId("TheRegistrar")
+        .setCreationTimeForTest(START_OF_TIME)
+        .setRepoId(generateNewContactHostRoid())
+        .build();
+  }
+
+  public static String generateNewContactHostRoid() {
+    return createRepoId(NEXT_TEST_ID.getAndIncrement(), getContactAndHostRoidSuffix());
   }
 
   public static void assertThrowForeignKeyViolation(ThrowingRunnable runnable) {
