@@ -35,6 +35,41 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: AllocationToken; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."AllocationToken" (
+    token text NOT NULL,
+    creation_time timestamp with time zone NOT NULL,
+    discount_fraction double precision NOT NULL,
+    domain_name text,
+    redemption_history_entry_v_key text,
+    token_status_transitions public.hstore,
+    token_type integer
+);
+
+
+--
+-- Name: AllocationToken_allowedClientIds; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."AllocationToken_allowedClientIds" (
+    allocation_token_token text NOT NULL,
+    allowed_client_ids text
+);
+
+
+--
+-- Name: AllocationToken_allowedTlds; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."AllocationToken_allowedTlds" (
+    allocation_token_token text NOT NULL,
+    allowed_tlds text
+);
+
+
+--
 -- Name: ClaimsEntry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -456,6 +491,14 @@ ALTER TABLE ONLY public."ReservedList" ALTER COLUMN revision_id SET DEFAULT next
 
 
 --
+-- Name: AllocationToken AllocationToken_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."AllocationToken"
+    ADD CONSTRAINT "AllocationToken_pkey" PRIMARY KEY (token);
+
+
+--
 -- Name: ClaimsEntry ClaimsEntry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -581,6 +624,13 @@ ALTER TABLE ONLY public."RegistryLock"
 
 ALTER TABLE ONLY public."Contact"
     ADD CONSTRAINT ukoqd7n4hbx86hvlgkilq75olas UNIQUE (contact_id);
+
+
+--
+-- Name: allocation_token_domain_name_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX allocation_token_domain_name_idx ON public."AllocationToken" USING btree (domain_name);
 
 
 --
@@ -792,6 +842,14 @@ ALTER TABLE ONLY public."DomainHost"
 
 
 --
+-- Name: AllocationToken_allowedClientIds fkew0bx8dsv5c5by7xai2kqpneh; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."AllocationToken_allowedClientIds"
+    ADD CONSTRAINT fkew0bx8dsv5c5by7xai2kqpneh FOREIGN KEY (allocation_token_token) REFERENCES public."AllocationToken"(token);
+
+
+--
 -- Name: DomainHost fkfmi7bdink53swivs390m2btxg; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -829,6 +887,14 @@ ALTER TABLE ONLY public."Contact"
 
 ALTER TABLE ONLY public."PremiumEntry"
     ADD CONSTRAINT fko0gw90lpo1tuee56l0nb6y6g5 FOREIGN KEY (revision_id) REFERENCES public."PremiumList"(revision_id);
+
+
+--
+-- Name: AllocationToken_allowedTlds fkok2xrui6m0gbyb9yjccoksl3o; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."AllocationToken_allowedTlds"
+    ADD CONSTRAINT fkok2xrui6m0gbyb9yjccoksl3o FOREIGN KEY (allocation_token_token) REFERENCES public."AllocationToken"(token);
 
 
 --

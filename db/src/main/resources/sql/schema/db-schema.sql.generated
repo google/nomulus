@@ -12,6 +12,27 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+    create table "AllocationToken" (
+       token text not null,
+        creation_time timestamptz not null,
+        discount_fraction float8 not null,
+        domain_name text,
+        redemption_history_entry_v_key int8,
+        token_status_transitions hstore,
+        token_type text,
+        primary key (token)
+    );
+
+    create table "AllocationToken_allowedClientIds" (
+       allocation_token_token text not null,
+        allowed_client_ids text
+    );
+
+    create table "AllocationToken_allowedTlds" (
+       allocation_token_token text not null,
+        allowed_tlds text
+    );
+
     create table "ClaimsEntry" (
        revision_id int8 not null,
         claim_key text not null,
@@ -280,6 +301,7 @@
         should_publish boolean not null,
         primary key (revision_id)
     );
+create index allocation_token_domain_name_idx on "AllocationToken" (domain_name);
 create index IDX3y752kr9uh4kh6uig54vemx0l on "Contact" (creation_time);
 create index IDXbn8t4wp85fgxjl8q4ctlscx55 on "Contact" (current_sponsor_client_id);
 create index IDXn1f711wicdnooa2mqb7g1m55o on "Contact" (deletion_time);
@@ -302,6 +324,16 @@ create index idx_registry_lock_registrar_id on "RegistryLock" (registrar_id);
     alter table if exists "RegistryLock" 
        add constraint idx_registry_lock_repo_id_revision_id unique (repo_id, revision_id);
 create index reservedlist_name_idx on "ReservedList" (name);
+
+    alter table if exists "AllocationToken_allowedClientIds" 
+       add constraint FKew0bx8dsv5c5by7xai2kqpneh 
+       foreign key (allocation_token_token) 
+       references "AllocationToken";
+
+    alter table if exists "AllocationToken_allowedTlds" 
+       add constraint FKok2xrui6m0gbyb9yjccoksl3o 
+       foreign key (allocation_token_token) 
+       references "AllocationToken";
 
     alter table if exists "ClaimsEntry" 
        add constraint FK6sc6at5hedffc0nhdcab6ivuq 

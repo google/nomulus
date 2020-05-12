@@ -46,6 +46,7 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.ShardableTestCase;
 import java.util.function.Function;
@@ -196,7 +197,8 @@ public class AllocationTokenFlowUtilsTest extends ShardableTestCase {
         new AllocationToken.Builder()
             .setToken("tokeN")
             .setTokenType(SINGLE_USE)
-            .setRedemptionHistoryEntry(Key.create(HistoryEntry.class, 101L))
+            .setRedemptionHistoryEntry(
+                VKey.createOfy(HistoryEntry.class, Key.create(HistoryEntry.class, 101L)))
             .build());
     assertThat(
             flowUtils

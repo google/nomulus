@@ -36,6 +36,7 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,7 +73,8 @@ public class AllocationTokenTest extends EntityTestCase {
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
-                .setRedemptionHistoryEntry(Key.create(HistoryEntry.class, 1L))
+                .setRedemptionHistoryEntry(
+                    VKey.createOfy(HistoryEntry.class, Key.create(HistoryEntry.class, 1L)))
                 .setDomainName("example.foo")
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setTokenType(SINGLE_USE)
@@ -87,7 +89,8 @@ public class AllocationTokenTest extends EntityTestCase {
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(SINGLE_USE)
-                .setRedemptionHistoryEntry(Key.create(HistoryEntry.class, 1L))
+                .setRedemptionHistoryEntry(
+                    VKey.createOfy(HistoryEntry.class, Key.create(HistoryEntry.class, 1L)))
                 .setDomainName("blahdomain.foo")
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .build()),
@@ -191,7 +194,8 @@ public class AllocationTokenTest extends EntityTestCase {
         new AllocationToken.Builder()
             .setToken("foobar")
             .setTokenType(TokenType.UNLIMITED_USE)
-            .setRedemptionHistoryEntry(Key.create(HistoryEntry.class, "hi"));
+            .setRedemptionHistoryEntry(
+                VKey.createOfy(HistoryEntry.class, Key.create(HistoryEntry.class, "hi")));
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
         .hasMessageThat()

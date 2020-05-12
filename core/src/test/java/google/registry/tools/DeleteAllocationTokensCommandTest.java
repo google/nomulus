@@ -25,6 +25,7 @@ import com.googlecode.objectify.Key;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import java.util.Collection;
 import javax.annotation.Nullable;
 import org.junit.Before;
@@ -168,12 +169,13 @@ public class DeleteAllocationTokensCommandTest
             .setTokenType(SINGLE_USE)
             .setDomainName(domainName);
     if (redeemed) {
-      builder.setRedemptionHistoryEntry(Key.create(HistoryEntry.class, 1051L));
+      builder.setRedemptionHistoryEntry(
+          VKey.createOfy(HistoryEntry.class, Key.create(HistoryEntry.class, 1051L)));
     }
     return persistResource(builder.build());
   }
 
-  private static Collection<AllocationToken> reloadTokens(AllocationToken ... tokens) {
+  private static Collection<AllocationToken> reloadTokens(AllocationToken... tokens) {
     return ofy().load().entities(tokens).values();
   }
 }

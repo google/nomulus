@@ -28,6 +28,8 @@ import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import org.joda.time.DateTime;
 import org.junit.Test;
 
@@ -83,7 +85,9 @@ public class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocation
                 .setToken("foo")
                 .setTokenType(SINGLE_USE)
                 .setDomainName("fqqdn.tld")
-                .setRedemptionHistoryEntry(Key.create(createHistoryEntryForEppResource(domain)))
+                .setRedemptionHistoryEntry(
+                    VKey.createOfy(
+                        HistoryEntry.class, Key.create(createHistoryEntryForEppResource(domain))))
                 .build());
     runCommand("foo");
     assertInStdout(

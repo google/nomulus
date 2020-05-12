@@ -33,8 +33,10 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Mapify;
+import com.googlecode.objectify.annotation.OnLoad;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.DomainFlowUtils;
 import google.registry.model.BackupGroupRoot;
@@ -45,15 +47,34 @@ import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.common.TimedTransitionProperty.TimeMapper;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /** An entity representing an allocation token. */
 @ReportedOn
 @Entity
-public class AllocationToken extends BackupGroupRoot implements Buildable {
+@javax.persistence.Entity
+@Table(
+    indexes = {
+        @javax.persistence.Index(
+            columnList = "token",
+            name = "allocation_token_token_idx",
+            unique = true),
+        @javax.persistence.Index(
+            columnList = "domainName",
+            name = "allocation_token_domain_name_idx"),
+    })
+public class AllocationToken extends BackupGroupRoot implements Buildable, DatastoreAndSqlEntity {
 
   // Promotions should only move forward, and ENDED / CANCELLED are terminal states.
   private static final ImmutableMultimap<TokenStatus, TokenStatus> VALID_TOKEN_STATUS_TRANSITIONS =
@@ -81,32 +102,43 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
   }
 
   /** The allocation token string. */
-  @Id String token;
+  @Column(nullable = false)
+  @Id
+  @javax.persistence.Id
+  String token;
 
   /** The key of the history entry for which the token was used. Null if not yet used. */
-  @Nullable @Index Key<HistoryEntry> redemptionHistoryEntry;
+  @Nullable @Index @Transient Key<HistoryEntry> redemptionHistoryEntry;
+
+  @Ignore
+  @Nullable
+  @Column(name = "redemptionHistoryEntry")
+  VKey<HistoryEntry> redemptionHistoryEntryVKey;
 
   /** The fully-qualified domain name that this token is limited to, if any. */
   @Nullable @Index String domainName;
 
   /** When this token was created. */
+  @Column(nullable = false)
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** Allowed registrar client IDs for this token, or null if all registrars are allowed. */
-  @Nullable Set<String> allowedClientIds;
+  @Nullable @ElementCollection Set<String> allowedClientIds;
 
   /** Allowed TLDs for this token, or null if all TLDs are allowed. */
-  @Nullable Set<String> allowedTlds;
+  @Nullable @ElementCollection Set<String> allowedTlds;
 
   /**
    * For promotions, a discount off the base price for the first year between 0.0 and 1.0.
    *
    * <p>e.g. a value of 0.15 will mean a 15% discount off the base price for the first year.
    */
+  @Column(nullable = false)
   double discountFraction;
 
   /** The type of the token, either single-use or unlimited-use. */
   // TODO(b/130301183): this should not be nullable, we can remove this once we're sure it isn't
+  @Enumerated(EnumType.STRING)
   @Nullable TokenType tokenType;
 
   /**
@@ -118,6 +150,14 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
   @Mapify(TimeMapper.class)
   TimedTransitionProperty<TokenStatus, TokenStatusTransition> tokenStatusTransitions =
       TimedTransitionProperty.forMapify(NOT_STARTED, TokenStatusTransition.class);
+
+  @OnLoad
+  void load() {
+    redemptionHistoryEntryVKey =
+        redemptionHistoryEntry == null
+            ? null
+            : VKey.createOfy(HistoryEntry.class, redemptionHistoryEntry);
+  }
 
   /**
    * A transition to a given token status at a specific time, for use in a TimedTransitionProperty.
@@ -143,12 +183,12 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
     return token;
   }
 
-  public Key<HistoryEntry> getRedemptionHistoryEntry() {
-    return redemptionHistoryEntry;
+  public VKey<HistoryEntry> getRedemptionHistoryEntry() {
+    return redemptionHistoryEntryVKey;
   }
 
   public boolean isRedeemed() {
-    return redemptionHistoryEntry != null;
+    return redemptionHistoryEntryVKey != null;
   }
 
   public Optional<String> getDomainName() {
@@ -200,7 +240,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
           getInstance().domainName == null || TokenType.SINGLE_USE.equals(getInstance().tokenType),
           "Domain name can only be specified for SINGLE_USE tokens");
       checkArgument(
-          getInstance().redemptionHistoryEntry == null
+          getInstance().redemptionHistoryEntryVKey == null
               || TokenType.SINGLE_USE.equals(getInstance().tokenType),
           "Redemption history entry can only be specified for SINGLE_USE tokens");
       if (getInstance().domainName != null) {
@@ -221,9 +261,13 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
       return this;
     }
 
-    public Builder setRedemptionHistoryEntry(Key<HistoryEntry> redemptionHistoryEntry) {
-      getInstance().redemptionHistoryEntry =
-          checkArgumentNotNull(redemptionHistoryEntry, "Redemption history entry must not be null");
+    public Builder setRedemptionHistoryEntry(VKey<HistoryEntry> redemptionHistoryEntryVKey) {
+      getInstance().redemptionHistoryEntryVKey =
+          checkArgumentNotNull(
+              redemptionHistoryEntryVKey, "Redemption history entry must not be null");
+      redemptionHistoryEntryVKey
+          .maybeGetOfyKey()
+          .ifPresent(entry -> getInstance().redemptionHistoryEntry = entry);
       return this;
     }
 

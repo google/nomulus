@@ -69,6 +69,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -165,7 +166,8 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(SINGLE_USE)
-            .setRedemptionHistoryEntry(Key.create(HistoryEntry.class, 1L))
+            .setRedemptionHistoryEntry(
+                VKey.createOfy(HistoryEntry.class, Key.create(HistoryEntry.class, 1L)))
             .build());
     doCheckTest(
         create(false, "example1.tld", "In use"),

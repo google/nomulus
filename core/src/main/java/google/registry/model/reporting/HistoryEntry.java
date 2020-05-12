@@ -30,6 +30,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
+import google.registry.persistence.WithLongVKey;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
@@ -37,6 +38,7 @@ import org.joda.time.DateTime;
 /** A record of an EPP command that mutated a resource. */
 @ReportedOn
 @Entity
+@WithLongVKey // Temporary, until we have added the *History tables in full
 public class HistoryEntry extends ImmutableObject implements Buildable {
 
   /** Represents the type of history entry. */

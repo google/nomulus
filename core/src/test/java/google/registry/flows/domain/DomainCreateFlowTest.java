@@ -160,6 +160,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.monitoring.whitebox.EppMetric;
+import google.registry.persistence.VKey;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.math.BigDecimal;
 import java.util.Map;
@@ -487,7 +488,8 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(SINGLE_USE)
-            .setRedemptionHistoryEntry(Key.create(HistoryEntry.class, 505L))
+            .setRedemptionHistoryEntry(
+                VKey.createOfy(HistoryEntry.class, Key.create(HistoryEntry.class, 505L)))
             .build());
     clock.advanceOneMilli();
     EppException thrown =
@@ -508,7 +510,7 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
     HistoryEntry historyEntry =
         ofy().load().type(HistoryEntry.class).ancestor(reloadResourceByForeignKey()).first().now();
     assertThat(ofy().load().entity(token).now().getRedemptionHistoryEntry())
-        .isEqualTo(Key.create(historyEntry));
+        .isEqualTo(VKey.createOfy(HistoryEntry.class, Key.create(historyEntry)));
   }
 
   @Test
@@ -1247,7 +1249,7 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
     AllocationToken reloadedToken =
         ofy().load().key(Key.create(AllocationToken.class, token)).now();
     assertThat(reloadedToken.isRedeemed()).isTrue();
-    assertThat(reloadedToken.getRedemptionHistoryEntry())
+    assertThat(reloadedToken.getRedemptionHistoryEntry().getOfyKey())
         .isEqualTo(Key.create(getHistoryEntries(reloadResourceByForeignKey()).get(0)));
   }
 

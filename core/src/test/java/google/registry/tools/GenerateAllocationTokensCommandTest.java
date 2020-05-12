@@ -39,6 +39,7 @@ import com.googlecode.objectify.Key;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.DeterministicStringGenerator.Rule;
 import google.registry.testing.FakeClock;
@@ -335,7 +336,7 @@ public class GenerateAllocationTokensCommandTest
     AllocationToken.Builder builder =
         new AllocationToken.Builder().setToken(token).setTokenType(SINGLE_USE);
     if (redemptionHistoryEntry != null) {
-      builder.setRedemptionHistoryEntry(redemptionHistoryEntry);
+      builder.setRedemptionHistoryEntry(VKey.createOfy(HistoryEntry.class, redemptionHistoryEntry));
     }
     builder.setDomainName(domainName);
     return builder.build();

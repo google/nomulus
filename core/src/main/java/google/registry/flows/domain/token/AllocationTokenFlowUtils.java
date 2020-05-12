@@ -33,6 +33,7 @@ import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -111,7 +112,10 @@ public class AllocationTokenFlowUtils {
     checkArgument(
         TokenType.SINGLE_USE.equals(token.getTokenType()),
         "Only SINGLE_USE tokens can be marked as redeemed");
-    return token.asBuilder().setRedemptionHistoryEntry(redemptionHistoryEntry).build();
+    return token
+        .asBuilder()
+        .setRedemptionHistoryEntry(VKey.createOfy(HistoryEntry.class, redemptionHistoryEntry))
+        .build();
   }
 
   /**
