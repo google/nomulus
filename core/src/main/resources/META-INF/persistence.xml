@@ -35,6 +35,7 @@
     <class>google.registry.model.domain.GracePeriod</class>
 
     <!-- Customized type converters -->
+    <class>google.registry.persistence.converter.BillingCostTransitionConverter</class>
     <class>google.registry.persistence.converter.BloomFilterConverter</class>
     <class>google.registry.persistence.converter.CidrAddressBlockListConverter</class>
     <class>google.registry.persistence.converter.CreateAutoTimestampConverter</class>
@@ -47,6 +48,7 @@
     <class>google.registry.persistence.converter.StatusValueSetConverter</class>
     <class>google.registry.persistence.converter.StringListConverter</class>
     <class>google.registry.persistence.converter.StringSetConverter</class>
+    <class>google.registry.persistence.converter.TldStateTransitionConverter</class>
     <class>google.registry.persistence.converter.UpdateAutoTimestampConverter</class>
     <class>google.registry.persistence.converter.ZonedDateTimeConverter</class>
 

@@ -60,16 +60,27 @@ public class JpaTestRules {
 
   /**
    * Junit rule for unit tests with JPA framework, when the underlying database is populated by the
-   * optional init script (which must not be the Nomulus Cloud SQL schema).
+   * optional init script (which must not be the Nomulus Cloud SQL schema). This rule can also be
+   * used as am extension for JUnit5 tests.
    */
-  public static class JpaUnitTestRule extends JpaTransactionManagerRule {
-
+  public static class JpaUnitTestRule extends JpaTransactionManagerRule
+      implements BeforeEachCallback, AfterEachCallback {
     private JpaUnitTestRule(
         Clock clock,
         Optional<String> initScriptPath,
         ImmutableList<Class> extraEntityClasses,
         ImmutableMap<String, String> userProperties) {
       super(clock, initScriptPath, extraEntityClasses, userProperties);
+    }
+
+    @Override
+    public void beforeEach(ExtensionContext context) throws Exception {
+      this.before();
+    }
+
+    @Override
+    public void afterEach(ExtensionContext context) throws Exception {
+      this.after();
     }
   }
 
@@ -195,7 +206,9 @@ public class JpaTestRules {
       return new JpaIntegrationWithCoverageExtension(buildIntegrationTestRule());
     }
 
-    /** Builds a {@link JpaUnitTestRule} instance. */
+    /**
+     * Builds a {@link JpaUnitTestRule} instance that can also be used as an extension for JUnit5.
+     */
     public JpaUnitTestRule buildUnitTestRule() {
       checkState(
           !Objects.equals(GOLDEN_SCHEMA_SQL_PATH, initScript),
