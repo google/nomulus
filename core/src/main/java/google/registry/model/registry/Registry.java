@@ -70,23 +70,35 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
+import javax.persistence.Column;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Transient;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeUtils;
 import org.joda.time.Duration;
+import org.joda.time.format.ISODateTimeFormat;
 
 /** Persisted per-TLD configuration data. */
 @ReportedOn
 @Entity
+@javax.persistence.Entity(name="Tld")
 public class Registry extends ImmutableObject implements Buildable {
 
-  @Parent Key<EntityGroupRoot> parent = getCrossTldKey();
+  @Parent
+  @Transient
+  Key<EntityGroupRoot> parent = getCrossTldKey();
 
   /**
    * The canonical string representation of the TLD associated with this {@link Registry}, which is
    * the standard ASCII for regular TLDs and punycoded ASCII for IDN TLDs.
    */
-  @Id String tldStrId;
+  @Id
+  @javax.persistence.Id
+  @Column(name = "tld_id", nullable = false)
+  String tldStrId;
 
   /**
    * A duplicate of {@link #tldStrId}, to simplify BigQuery reporting since the id field becomes
@@ -337,6 +349,8 @@ public class Registry extends ImmutableObject implements Buildable {
   String driveFolderId;
 
   /** The type of the TLD, whether it's real or for testing. */
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
   TldType tldType = TldType.REAL;
 
   /**
@@ -461,6 +475,11 @@ public class Registry extends ImmutableObject implements Buildable {
    * <p>Note that {@link TldState#PDT} TLDs pretend to be in {@link TldState#GENERAL_AVAILABILITY}.
    */
   public TldState getTldState(DateTime now) {
+    // Map.Entry<TldState, TldStateTransition> entry = tldStateTransitions.entrySet().iterator().next();
+    // entry.getKey().toString();
+    // String dateString = entry.getValue().getValue().toString();
+    // DateTime time = ISODateTimeFormat.dateTime().parseDateTime(dateString);
+
     TldState state = tldStateTransitions.getValueAtTime(now);
     return TldState.PDT.equals(state) ? TldState.GENERAL_AVAILABILITY : state;
   }
