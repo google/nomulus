@@ -18,6 +18,7 @@ import static com.google.common.html.HtmlEscapers.htmlEscaper;
 
 import com.google.common.flogger.FluentLogger;
 import java.io.IOException;
+import java.util.logging.Level;
 import javax.servlet.http.HttpServletResponse;
 
 /** Base for exceptions that cause an HTTP error response. */
@@ -28,11 +29,18 @@ public abstract class HttpException extends RuntimeException {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  private final Level logLevel;
+
   private final int responseCode;
 
-  protected HttpException(int responseCode, String message, Throwable cause) {
+  protected HttpException(int responseCode, String message, Throwable cause, Level logLevel) {
     super(message, cause);
     this.responseCode = responseCode;
+    this.logLevel = logLevel;
+  }
+
+  protected HttpException(int responseCode, String message, Throwable cause) {
+    this(responseCode, message, cause, Level.INFO);
   }
 
   public final int getResponseCode() {
@@ -57,7 +65,7 @@ public abstract class HttpException extends RuntimeException {
    */
   public final void send(HttpServletResponse rsp) throws IOException {
     rsp.sendError(getResponseCode(), htmlEscaper().escape(getMessage()));
-    logger.atInfo().withCause(getCause()).log("%s", this);
+    logger.at(logLevel).withCause(getCause()).log("%s", this);
   }
 
   /**
@@ -196,7 +204,7 @@ public abstract class HttpException extends RuntimeException {
   /** Exception that causes a 500 response. */
   public static final class InternalServerErrorException extends HttpException {
     public InternalServerErrorException(String message) {
-      super(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, message, null);
+      super(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, message, null, Level.SEVERE);
     }
 
     public InternalServerErrorException(String message, Throwable cause) {
