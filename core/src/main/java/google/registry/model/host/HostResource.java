@@ -16,7 +16,6 @@ package google.registry.model.host;
 
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Id;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
@@ -24,6 +23,8 @@ import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 
 /**
  * A persistable Host resource including mutable and non-mutable fields.
@@ -38,21 +39,15 @@ import google.registry.schema.replay.DatastoreAndSqlEntity;
 @javax.persistence.Entity
 @ExternalMessagingName("host")
 @WithStringVKey
+@Access(AccessType.FIELD)
 public class HostResource extends HostBase
     implements DatastoreAndSqlEntity, ForeignKeyedEppResource {
 
-  /**
-   * Unique identifier in the registry for this resource.
-   *
-   * <p>This is in the (\w|_){1,80}-\w{1,8} format specified by RFC 5730 for roidType.
-   *
-   * @see <a href="https://tools.ietf.org/html/rfc5730">RFC 5730</a>
-   */
-  @Id @javax.persistence.Id String repoId;
-
   @Override
+  @javax.persistence.Id
+  @Access(AccessType.PROPERTY)
   public String getRepoId() {
-    return repoId;
+    return super.getRepoId();
   }
 
   public VKey<HostResource> createKey() {
@@ -70,11 +65,6 @@ public class HostResource extends HostBase
 
     private Builder(HostResource instance) {
       super(instance);
-    }
-
-    public Builder setRepoId(String repoId) {
-      getInstance().repoId = repoId;
-      return this;
     }
   }
 }
