@@ -38,7 +38,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
 import google.registry.config.RegistryConfig;
 import google.registry.model.eppcommon.StatusValue;
@@ -59,14 +58,6 @@ import org.joda.time.Duration;
 /** An EPP entity object (i.e. a domain, contact, or host). */
 @MappedSuperclass
 public abstract class EppResource extends BackupGroupRoot implements Buildable {
-
-  /**
-   * Unique identifier in the registry for this resource.
-   *
-   * <p>This is in the (\w|_){1,80}-\w{1,8} format specified by RFC 5730 for roidType.
-   * @see <a href="https://tools.ietf.org/html/rfc5730">RFC 5730</a>
-   */
-  @Id @javax.persistence.Id String repoId;
 
   /** The ID of the registrar that is currently sponsoring this resource. */
   @Index
@@ -135,9 +126,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   @Transient
   ImmutableSortedMap<DateTime, Key<CommitLogManifest>> revisions = ImmutableSortedMap.of();
 
-  public String getRepoId() {
-    return repoId;
-  }
+  public abstract String getRepoId();
 
   public final DateTime getCreationTime() {
     return creationTime.getTimestamp();
@@ -307,12 +296,6 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     public B removeStatusValues(ImmutableSet<StatusValue> statusValues) {
       return setStatusValues(ImmutableSet.copyOf(
           difference(getInstance().getStatusValues(), statusValues)));
-    }
-
-    /** Set this resource's repoId. */
-    public B setRepoId(String repoId) {
-      getInstance().repoId = repoId;
-      return thisCastToDerived();
     }
 
     /** Build the resource, nullifying empty strings and sets and setting defaults. */

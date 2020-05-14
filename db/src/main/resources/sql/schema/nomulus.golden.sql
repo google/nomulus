@@ -301,6 +301,64 @@ CREATE TABLE public."DomainHost" (
 
 
 --
+-- Name: HostHistory; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."HostHistory" (
+    revision_id bigint NOT NULL,
+    by_superuser boolean NOT NULL,
+    creation_time timestamp with time zone NOT NULL,
+    reason text NOT NULL,
+    registrar_id text NOT NULL,
+    repo_id text NOT NULL,
+    requested_by_registrar boolean NOT NULL,
+    client_transaction_id text,
+    server_transaction_id text,
+    type integer NOT NULL,
+    xml_bytes bytea NOT NULL,
+    fully_qualified_host_name text,
+    last_superordinate_change timestamp with time zone,
+    last_transfer_time timestamp with time zone,
+    superordinate_domain bytea,
+    creation_client_id text NOT NULL,
+    current_sponsor_client_id text NOT NULL,
+    deletion_time timestamp with time zone,
+    last_epp_update_client_id text,
+    last_epp_update_time timestamp with time zone,
+    statuses text[]
+);
+
+
+--
+-- Name: HostHistory_inetAddresses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."HostHistory_inetAddresses" (
+    host_history_revision_id bigint NOT NULL,
+    inet_addresses bytea
+);
+
+
+--
+-- Name: HostHistory_revision_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."HostHistory_revision_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: HostHistory_revision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."HostHistory_revision_id_seq" OWNED BY public."HostHistory".revision_id;
+
+
+--
 -- Name: HostResource; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -573,6 +631,13 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 
 
 --
+-- Name: HostHistory revision_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory" ALTER COLUMN revision_id SET DEFAULT nextval('public."HostHistory_revision_id_seq"'::regclass);
+
+
+--
 -- Name: PremiumList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -655,6 +720,14 @@ ALTER TABLE ONLY public."Cursor"
 
 ALTER TABLE ONLY public."Domain"
     ADD CONSTRAINT "Domain_pkey" PRIMARY KEY (repo_id);
+
+
+--
+-- Name: HostHistory HostHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory"
+    ADD CONSTRAINT "HostHistory_pkey" PRIMARY KEY (revision_id);
 
 
 --
@@ -767,6 +840,13 @@ CREATE INDEX idx2exdfbx6oiiwnhr8j6gjpqt2j ON public."BillingCancellation" USING 
 
 
 --
+-- Name: idx3bep58si603pahajnxp41d9r1; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx3bep58si603pahajnxp41d9r1 ON public."HostHistory" USING btree (repo_id);
+
+
+--
 -- Name: idx3y752kr9uh4kh6uig54vemx0l; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -844,6 +924,13 @@ CREATE INDEX idxeokttmxtpq2hohcioe5t2242b ON public."BillingCancellation" USING 
 
 
 --
+-- Name: idxfg2nnjlujxo6cb9fha971bq2n; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxfg2nnjlujxo6cb9fha971bq2n ON public."HostHistory" USING btree (creation_time);
+
+
+--
 -- Name: idxhmv411mdqo5ibn4vy7ykxpmlv; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -876,6 +963,13 @@ CREATE INDEX idxn1f711wicdnooa2mqb7g1m55o ON public."Contact" USING btree (delet
 --
 
 CREATE INDEX idxn898pb9mwcg359cdwvolb11ck ON public."BillingRecurrence" USING btree (client_id);
+
+
+--
+-- Name: idxnxei34hfrt20dyxtphh6j25mo; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxnxei34hfrt20dyxtphh6j25mo ON public."HostHistory" USING btree (registrar_id);
 
 
 --
@@ -1083,6 +1177,14 @@ ALTER TABLE ONLY public."Domain"
 
 ALTER TABLE ONLY public."DomainHost"
     ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (ns_hosts) REFERENCES public."HostResource"(repo_id);
+
+
+--
+-- Name: HostHistory_inetAddresses fkdxdtvupo2b6xlqsq4og4nlo7k; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory_inetAddresses"
+    ADD CONSTRAINT fkdxdtvupo2b6xlqsq4og4nlo7k FOREIGN KEY (host_history_revision_id) REFERENCES public."HostHistory"(revision_id);
 
 
 --
