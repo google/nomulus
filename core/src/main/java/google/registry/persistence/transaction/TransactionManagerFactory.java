@@ -16,6 +16,7 @@ package google.registry.persistence.transaction;
 
 import com.google.appengine.api.utils.SystemProperty;
 import com.google.appengine.api.utils.SystemProperty.Environment.Value;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.persistence.DaggerPersistenceComponent;
@@ -26,7 +27,9 @@ import java.util.function.Supplier;
 // TODO: Rename this to PersistenceFactory and move to persistence package.
 public class TransactionManagerFactory {
 
-  private static final TransactionManager TM = createTransactionManager();
+  private static final DatastoreTransactionManager ofyTm = createTransactionManager();
+
+  @NonFinalForTesting private static TransactionManager tm = ofyTm;
 
   /** Supplier for jpaTm so that it is initialized only once, upon first usage. */
   @NonFinalForTesting
@@ -45,10 +48,7 @@ public class TransactionManagerFactory {
     }
   }
 
-  private static TransactionManager createTransactionManager() {
-    // TODO: Determine how to provision TransactionManager after the dual-write. During the
-    // dual-write transitional phase, we need the TransactionManager for both Datastore and Cloud
-    // SQL, and this method returns the one for Datastore.
+  private static DatastoreTransactionManager createTransactionManager() {
     return new DatastoreTransactionManager(null);
   }
 
@@ -67,7 +67,7 @@ public class TransactionManagerFactory {
 
   /** Returns {@link TransactionManager} instance. */
   public static TransactionManager tm() {
-    return TM;
+    return tm;
   }
 
   /** Returns {@link JpaTransactionManager} instance. */
@@ -75,8 +75,20 @@ public class TransactionManagerFactory {
     return jpaTm.get();
   }
 
+  /** Returns {@link DatastoreTransactionManager} instance. */
+  @VisibleForTesting
+  public static DatastoreTransactionManager ofyTm() {
+    return ofyTm;
+  }
+
   /** Sets the return of {@link #jpaTm()} to the given instance of {@link JpaTransactionManager}. */
   public static void setJpaTm(JpaTransactionManager newJpaTm) {
     jpaTm = Suppliers.ofInstance(newJpaTm);
+  }
+
+  /** Sets the return of {@link #tm()} to the given instance of {@link TransactionManager}. */
+  @VisibleForTesting
+  public static void setTm(TransactionManager newTm) {
+    tm = newTm;
   }
 }
