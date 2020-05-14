@@ -210,12 +210,12 @@ public final class AppEngineRule extends ExternalResource
     @SafeVarargs
     public final Builder withOfyTestEntities(Class<?>... entities) {
       ofyTestEntities.add(entities);
-      rule.withJpaUnitTest = true;
       return this;
     }
 
     public Builder withJpaUnitTestEntities(Class<?>... entities) {
       jpaTestEntities.add(entities);
+      rule.withJpaUnitTest = true;
       return this;
     }
 
@@ -225,10 +225,10 @@ public final class AppEngineRule extends ExternalResource
           "withJpaEntityCoverageCheck enabled without Cloud SQL");
       checkState(
           !rule.withJpaUnitTest || rule.withDatastoreAndCloudSql,
-          "withOfyTestEntities enabled without Cloud SQL");
+          "withJpaUnitTestEntities enabled without Cloud SQL");
       checkState(
           !rule.withJpaUnitTest || !rule.enableJpaEntityCoverageCheck,
-          "withOfyTestEntities cannot be set when enableJpaEntityCoverageCheck");
+          "withJpaUnitTestEntities cannot be set when enableJpaEntityCoverageCheck");
       rule.ofyTestEntities = this.ofyTestEntities.build();
       rule.jpaTestEntities = this.jpaTestEntities.build();
       return rule;
