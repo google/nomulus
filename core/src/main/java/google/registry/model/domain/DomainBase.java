@@ -42,7 +42,6 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
@@ -75,6 +74,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
@@ -108,6 +109,7 @@ import org.joda.time.Interval;
       @javax.persistence.Index(columnList = "tld")
     })
 @ExternalMessagingName("domain")
+@Access(AccessType.FIELD)
 public class DomainBase extends EppResource
     implements DatastoreAndSqlEntity, ForeignKeyedEppResource, ResourceWithTransferData {
 
@@ -121,15 +123,6 @@ public class DomainBase extends EppResource
           StatusValue.INACTIVE,
           StatusValue.PENDING_DELETE,
           StatusValue.SERVER_HOLD);
-
-  /**
-   * Unique identifier in the registry for this resource.
-   *
-   * <p>This is in the (\w|_){1,80}-\w{1,8} format specified by RFC 5730 for roidType.
-   * @see <a href="https://tools.ietf.org/html/rfc5730">RFC 5730</a>
-   */
-  @Id
-  @javax.persistence.Id String repoId;
 
   /**
    * Fully qualified domain name (puny-coded), which serves as the foreign key for this domain.
@@ -302,8 +295,10 @@ public class DomainBase extends EppResource
   }
 
   @Override
+  @javax.persistence.Id
+  @Access(AccessType.PROPERTY)
   public String getRepoId() {
-    return repoId;
+    return super.getRepoId();
   }
 
   public ImmutableSet<String> getSubordinateHosts() {
@@ -646,11 +641,6 @@ public class DomainBase extends EppResource
 
     Builder(DomainBase instance) {
       super(instance);
-    }
-
-    public Builder setRepoId(String repoId) {
-      getInstance().repoId = repoId;
-      return this;
     }
 
     @Override

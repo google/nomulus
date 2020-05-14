@@ -307,7 +307,7 @@ CREATE TABLE public."DomainHost" (
 CREATE TABLE public."HostHistory" (
     revision_id bigint NOT NULL,
     by_superuser boolean NOT NULL,
-    creation_time timestamp with time zone NOT NULL,
+    modification_time timestamp with time zone NOT NULL,
     reason text NOT NULL,
     registrar_id text NOT NULL,
     repo_id text NOT NULL,
@@ -321,6 +321,7 @@ CREATE TABLE public."HostHistory" (
     last_transfer_time timestamp with time zone,
     superordinate_domain bytea,
     creation_client_id text NOT NULL,
+    creation_time timestamp with time zone NOT NULL,
     current_sponsor_client_id text NOT NULL,
     deletion_time timestamp with time zone,
     last_epp_update_client_id text,

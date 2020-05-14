@@ -48,7 +48,7 @@ public abstract class EppHistory extends ImmutableObject implements Buildable {
   String registrarId;
 
   @Column(nullable = false)
-  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  CreateAutoTimestamp modificationTime = CreateAutoTimestamp.create(null);
 
   /** The actual EPP xml of the command, stored as bytes to be agnostic of encoding. */
   @Column(nullable = false)
@@ -82,8 +82,8 @@ public abstract class EppHistory extends ImmutableObject implements Buildable {
   }
 
   @Nullable
-  public DateTime getCreationTime() {
-    return creationTime.getTimestamp();
+  public DateTime getModificationTime() {
+    return modificationTime.getTimestamp();
   }
 
   public byte[] getXmlBytes() {

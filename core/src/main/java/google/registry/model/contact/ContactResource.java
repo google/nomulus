@@ -21,7 +21,6 @@ import static google.registry.model.EppResourceUtils.projectResourceOntoBuilderA
 import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.condition.IfNull;
@@ -38,6 +37,8 @@ import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
@@ -65,17 +66,9 @@ import org.joda.time.DateTime;
     })
 @ExternalMessagingName("contact")
 @WithStringVKey
+@Access(AccessType.FIELD)
 public class ContactResource extends EppResource
     implements DatastoreAndSqlEntity, ForeignKeyedEppResource, ResourceWithTransferData {
-
-  /**
-   * Unique identifier in the registry for this resource.
-   *
-   * <p>This is in the (\w|_){1,80}-\w{1,8} format specified by RFC 5730 for roidType.
-   * @see <a href="https://tools.ietf.org/html/rfc5730">RFC 5730</a>
-   */
-  @Id
-  @javax.persistence.Id String repoId;
 
   /**
    * Unique identifier for this contact.
@@ -212,8 +205,10 @@ public class ContactResource extends EppResource
   }
 
   @Override
+  @javax.persistence.Id
+  @Access(AccessType.PROPERTY)
   public String getRepoId() {
-    return repoId;
+    return super.getRepoId();
   }
 
   public String getContactId() {
@@ -306,11 +301,6 @@ public class ContactResource extends EppResource
 
     private Builder(ContactResource instance) {
       super(instance);
-    }
-
-    public Builder setRepoId(String repoId) {
-      getInstance().repoId = repoId;
-      return this;
     }
 
     public Builder setContactId(String contactId) {

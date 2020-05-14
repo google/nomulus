@@ -186,7 +186,7 @@
     create table "HostHistory" (
        revision_id  bigserial not null,
         by_superuser boolean not null,
-        creation_time timestamptz not null,
+        modification_time timestamptz not null,
         reason text not null,
         registrar_id text not null,
         repo_id text not null,
@@ -200,6 +200,7 @@
         last_transfer_time timestamptz,
         superordinate_domain bytea,
         creation_client_id text not null,
+        creation_time timestamptz not null,
         current_sponsor_client_id text not null,
         deletion_time timestamptz,
         last_epp_update_client_id text,

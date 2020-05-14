@@ -32,6 +32,8 @@ import java.net.InetAddress;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
 import javax.persistence.MappedSuperclass;
@@ -39,6 +41,7 @@ import org.joda.time.DateTime;
 
 @MappedSuperclass
 @Embeddable
+@Access(AccessType.FIELD)
 public abstract class HostBase extends EppResource {
 
   /**
