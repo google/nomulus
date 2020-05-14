@@ -145,6 +145,12 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     return repoId;
   }
 
+  // Hibernate needs this to populate the repo ID, but no one else should ever use it
+  @SuppressWarnings("UnusedMethod")
+  private void setRepoId(String repoId) {
+    this.repoId = repoId;
+  }
+
   public final DateTime getCreationTime() {
     return creationTime.getTimestamp();
   }
