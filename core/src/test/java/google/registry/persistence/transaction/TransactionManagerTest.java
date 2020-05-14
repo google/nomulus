@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.ofy;
+package google.registry.persistence.transaction;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -23,16 +23,24 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
+import google.registry.model.ofy.DatastoreTransactionManager;
+import google.registry.model.ofy.Ofy;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineRule;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import java.util.NoSuchElementException;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-public class DatastoreTransactionManagerTest {
+/**
+ * Unit tests for common APIs in {@link DatastoreTransactionManager} and {@link
+ * JpaTransactionManagerImpl}.
+ */
+@DualDatabaseTest
+public class TransactionManagerTest {
 
   private final FakeClock fakeClock = new FakeClock();
 
@@ -51,38 +59,31 @@ public class DatastoreTransactionManagerTest {
           .withClock(fakeClock)
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(TestEntity.class)
+          .withJpaUnitTestEntities(TestEntity.class)
           .build();
 
-  public DatastoreTransactionManagerTest() {}
+  public TransactionManagerTest() {}
 
   @BeforeEach
   public void setUp() {
     inject.setStaticField(Ofy.class, "clock", fakeClock);
   }
 
-  // TODO(mmuller): The tests below are just copy-pasted from JpaTransactionManagerImplTest
-  // (excluding the CompoundId tests and native query tests, which are not relevant to datastore,
-  // and the test methods using "count" which doesn't work for datastore, as well as tests for
-  // functionality that doesn't exist in datastore, like failures based on whether a newly saved or
-  // updated object exists or not). We need to merge these into a single test suite, but first we
-  // should move the JpaUnitTestRule functionality into AppEngineTest and migrate the whole thing
-  // to junit5.
-
-  @Test
+  @TestTemplate
   public void inTransaction_returnsCorrespondingResult() {
     assertThat(tm().inTransaction()).isFalse();
     tm().transact(() -> assertThat(tm().inTransaction()).isTrue());
     assertThat(tm().inTransaction()).isFalse();
   }
 
-  @Test
+  @TestTemplate
   public void assertInTransaction_throwsExceptionWhenNotInTransaction() {
     assertThrows(IllegalStateException.class, () -> tm().assertInTransaction());
     tm().transact(() -> tm().assertInTransaction());
     assertThrows(IllegalStateException.class, () -> tm().assertInTransaction());
   }
 
-  @Test
+  @TestTemplate
   public void getTransactionTime_throwsExceptionWhenNotInTransaction() {
     FakeClock txnClock = fakeClock;
     txnClock.advanceOneMilli();
@@ -91,7 +92,7 @@ public class DatastoreTransactionManagerTest {
     assertThrows(IllegalStateException.class, () -> tm().getTransactionTime());
   }
 
-  @Test
+  @TestTemplate
   public void transact_hasNoEffectWithPartialSuccess() {
     assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
     assertThrows(
@@ -106,7 +107,7 @@ public class DatastoreTransactionManagerTest {
     assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
   }
 
-  @Test
+  @TestTemplate
   public void transact_reusesExistingTransaction() {
     assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
     fakeClock.advanceOneMilli();
@@ -115,7 +116,7 @@ public class DatastoreTransactionManagerTest {
     assertThat(tm().transact(() -> tm().checkExists(theEntity))).isTrue();
   }
 
-  @Test
+  @TestTemplate
   public void saveNew_succeeds() {
     assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
     fakeClock.advanceOneMilli();
@@ -126,7 +127,7 @@ public class DatastoreTransactionManagerTest {
     assertThat(tm().transact(() -> tm().load(theEntity.key()))).isEqualTo(theEntity);
   }
 
-  @Test
+  @TestTemplate
   public void saveAllNew_succeeds() {
     moreEntities.forEach(
         entity -> assertThat(tm().transact(() -> tm().checkExists(entity))).isFalse());
@@ -137,7 +138,7 @@ public class DatastoreTransactionManagerTest {
         entity -> assertThat(tm().transact(() -> tm().checkExists(entity))).isTrue());
   }
 
-  @Test
+  @TestTemplate
   public void saveNewOrUpdate_persistsNewEntity() {
     assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
     fakeClock.advanceOneMilli();
@@ -148,7 +149,7 @@ public class DatastoreTransactionManagerTest {
     assertThat(tm().transact(() -> tm().load(theEntity.key()))).isEqualTo(theEntity);
   }
 
-  @Test
+  @TestTemplate
   public void saveNewOrUpdate_updatesExistingEntity() {
     fakeClock.advanceOneMilli();
     tm().transact(() -> tm().saveNew(theEntity));
@@ -163,7 +164,7 @@ public class DatastoreTransactionManagerTest {
     assertThat(persisted.data).isEqualTo("bar");
   }
 
-  @Test
+  @TestTemplate
   public void saveNewOrUpdateAll_succeeds() {
     moreEntities.forEach(
         entity -> assertThat(tm().transact(() -> tm().checkExists(entity))).isFalse());
@@ -174,13 +175,16 @@ public class DatastoreTransactionManagerTest {
         entity -> assertThat(tm().transact(() -> tm().checkExists(entity))).isTrue());
   }
 
-  @Test
+  @TestTemplate
   public void update_succeeds() {
     fakeClock.advanceOneMilli();
     tm().transact(() -> tm().saveNew(theEntity));
     fakeClock.advanceOneMilli();
     TestEntity persisted =
-        tm().transact(() -> tm().load(VKey.createOfy(TestEntity.class, Key.create(theEntity))));
+        tm().transact(
+                () ->
+                    tm().load(
+                            VKey.create(TestEntity.class, theEntity.name, Key.create(theEntity))));
     fakeClock.advanceOneMilli();
     assertThat(persisted.data).isEqualTo("foo");
     theEntity.data = "bar";
@@ -190,7 +194,7 @@ public class DatastoreTransactionManagerTest {
     assertThat(persisted.data).isEqualTo("bar");
   }
 
-  @Test
+  @TestTemplate
   public void load_succeeds() {
     assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
     fakeClock.advanceOneMilli();
@@ -201,7 +205,7 @@ public class DatastoreTransactionManagerTest {
     assertThat(persisted.data).isEqualTo("foo");
   }
 
-  @Test
+  @TestTemplate
   public void load_throwsOnMissingElement() {
     assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
     fakeClock.advanceOneMilli();
@@ -209,7 +213,7 @@ public class DatastoreTransactionManagerTest {
         NoSuchElementException.class, () -> tm().transact(() -> tm().load(theEntity.key())));
   }
 
-  @Test
+  @TestTemplate
   public void maybeLoad_succeeds() {
     assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
     fakeClock.advanceOneMilli();
@@ -220,14 +224,14 @@ public class DatastoreTransactionManagerTest {
     assertThat(persisted.data).isEqualTo("foo");
   }
 
-  @Test
+  @TestTemplate
   public void maybeLoad_nonExistentObject() {
     assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
     fakeClock.advanceOneMilli();
     assertThat(tm().transact(() -> tm().maybeLoad(theEntity.key())).isPresent()).isFalse();
   }
 
-  @Test
+  @TestTemplate
   public void delete_succeeds() {
     fakeClock.advanceOneMilli();
     tm().transact(() -> tm().saveNew(theEntity));
@@ -239,7 +243,7 @@ public class DatastoreTransactionManagerTest {
     assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
   }
 
-  @Test
+  @TestTemplate
   public void delete_returnsZeroWhenNoEntity() {
     assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
     fakeClock.advanceOneMilli();
@@ -249,8 +253,9 @@ public class DatastoreTransactionManagerTest {
   }
 
   @Entity(name = "TestEntity")
+  @javax.persistence.Entity(name = "TestEntity")
   private static class TestEntity extends ImmutableObject {
-    @Id private String name;
+    @Id @javax.persistence.Id private String name;
 
     private String data;
 
@@ -262,7 +267,7 @@ public class DatastoreTransactionManagerTest {
     }
 
     public VKey<TestEntity> key() {
-      return VKey.createOfy(TestEntity.class, Key.create(this));
+      return VKey.create(TestEntity.class, name, Key.create(this));
     }
   }
 }
