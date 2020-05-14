@@ -98,8 +98,7 @@ public class TransactionManagerTest {
     assertThrows(
         RuntimeException.class,
         () ->
-            tm()
-                .transact(
+            tm().transact(
                     () -> {
                       tm().saveNew(theEntity);
                       throw new RuntimeException();
