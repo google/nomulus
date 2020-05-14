@@ -37,6 +37,7 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.util.function.Supplier;
+import javax.net.ssl.SSLSession;
 
 /**
  * Adds a server side SSL handler to the channel pipeline.
@@ -108,9 +109,21 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
               .addListener(
                   future -> {
                     if (future.isSuccess()) {
+                      SSLSession sslSession = sslHandler.engine().getSession();
                       X509Certificate clientCertificate =
-                          (X509Certificate)
-                              sslHandler.engine().getSession().getPeerCertificates()[0];
+                          (X509Certificate) sslSession.getPeerCertificates()[0];
+                      logger.atInfo().log(
+                          "--SSL Information--\n"
+                              + "Client Certificate Hash: %s\n"
+                              + "SSL Protocol: %s\n"
+                              + "Cipher Suite: %s\n"
+                              + "Not Before: %s\n"
+                              + "Not After: %s\n",
+                          getCertificateHash(clientCertificate),
+                          sslSession.getProtocol(),
+                          sslSession.getCipherSuite(),
+                          clientCertificate.getNotBefore(),
+                          clientCertificate.getNotAfter());
                       try {
                         clientCertificate.checkValidity();
                       } catch (CertificateNotYetValidException | CertificateExpiredException e) {
