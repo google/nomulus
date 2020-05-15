@@ -48,6 +48,7 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Mapify;
 import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.annotation.Parent;
@@ -70,26 +71,26 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.JoinTable;
 import javax.persistence.Transient;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeUtils;
 import org.joda.time.Duration;
-import org.joda.time.format.ISODateTimeFormat;
 
 /** Persisted per-TLD configuration data. */
 @ReportedOn
 @Entity
-@javax.persistence.Entity(name="Tld")
+@javax.persistence.Entity(name = "Tld")
 public class Registry extends ImmutableObject implements Buildable {
 
-  @Parent
-  @Transient
-  Key<EntityGroupRoot> parent = getCrossTldKey();
+  @Parent @Transient Key<EntityGroupRoot> parent = getCrossTldKey();
 
   /**
    * The canonical string representation of the TLD associated with this {@link Registry}, which is
@@ -301,6 +302,7 @@ public class Registry extends ImmutableObject implements Buildable {
    * <p>All entries of this list must be valid keys for the map of {@code DnsWriter}s injected by
    * <code>@Inject Map<String, DnsWriter></code>
    */
+  @Column(nullable = false)
   Set<String> dnsWriters;
 
   /**
@@ -324,6 +326,7 @@ public class Registry extends ImmutableObject implements Buildable {
    * <p>Failure to do so can result in parallel writes to the {@link
    * google.registry.dns.writer.DnsWriter}, which may be dangerous depending on your implementation.
    */
+  @Column(nullable = false)
   int numDnsPublishLocks;
 
   /** Updates an unset numDnsPublishLocks (0) to the standard default of 1. */
@@ -339,6 +342,7 @@ public class Registry extends ImmutableObject implements Buildable {
    * <p>This will be equal to {@link #tldStr} for ASCII TLDs, but will be non-ASCII for IDN TLDs. We
    * store this in a field so that it will be retained upon import into BigQuery.
    */
+  @Column(nullable = false)
   String tldUnicode;
 
   /**
@@ -346,7 +350,7 @@ public class Registry extends ImmutableObject implements Buildable {
    *
    * <p>This is optional; if not configured, then information won't be exported for this TLD.
    */
-  String driveFolderId;
+  @Nullable String driveFolderId;
 
   /** The type of the TLD, whether it's real or for testing. */
   @Column(nullable = false)
@@ -357,15 +361,22 @@ public class Registry extends ImmutableObject implements Buildable {
    * A property that transitions to different TldStates at different times. Stored as a list of
    * TldStateTransition embedded objects using the @Mapify annotation.
    */
+  @Column(nullable = false)
   @Mapify(TimedTransitionProperty.TimeMapper.class)
   TimedTransitionProperty<TldState, TldStateTransition> tldStateTransitions =
       TimedTransitionProperty.forMapify(DEFAULT_TLD_STATE, TldStateTransition.class);
 
   /** An automatically managed creation timestamp. */
+  @Column(nullable = false)
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** The set of reserved lists that are applicable to this registry. */
-  Set<Key<ReservedList>> reservedLists;
+  @ElementCollection @Transient Set<Key<ReservedList>> reservedLists;
+
+  @Ignore
+  @ElementCollection
+  @JoinTable(name = "ReservedLists")
+  Set<google.registry.schema.tld.ReservedList> reservedListsVKeys;
 
   /** Retrieves an ImmutableSet of all ReservedLists associated with this tld. */
   public ImmutableSet<Key<ReservedList>> getReservedLists() {
@@ -373,7 +384,7 @@ public class Registry extends ImmutableObject implements Buildable {
   }
 
   /** The static {@link PremiumList} for this TLD, if there is one. */
-  Key<PremiumList> premiumList;
+  @Nullable Key<PremiumList> premiumList;
 
   /** Should RDE upload a nightly escrow deposit for this TLD? */
   boolean escrowEnabled = DEFAULT_ESCROW_ENABLED;
@@ -387,39 +398,72 @@ public class Registry extends ImmutableObject implements Buildable {
    * <p>Domain deletes are free and effective immediately so long as they take place within this
    * amount of time following creation.
    */
+  @Column(nullable = false)
   Duration addGracePeriodLength = DEFAULT_ADD_GRACE_PERIOD;
 
   /** The length of the anchor tenant add grace period for this TLD. */
+  @Column(nullable = false)
   Duration anchorTenantAddGracePeriodLength = DEFAULT_ANCHOR_TENANT_ADD_GRACE_PERIOD;
 
   /** The length of the auto renew grace period for this TLD. */
+  @Column(nullable = false)
   Duration autoRenewGracePeriodLength = DEFAULT_AUTO_RENEW_GRACE_PERIOD;
 
   /** The length of the redemption grace period for this TLD. */
+  @Column(nullable = false)
   Duration redemptionGracePeriodLength = DEFAULT_REDEMPTION_GRACE_PERIOD;
 
   /** The length of the renew grace period for this TLD. */
+  @Column(nullable = false)
   Duration renewGracePeriodLength = DEFAULT_RENEW_GRACE_PERIOD;
 
   /** The length of the transfer grace period for this TLD. */
+  @Column(nullable = false)
   Duration transferGracePeriodLength = DEFAULT_TRANSFER_GRACE_PERIOD;
 
   /** The length of time before a transfer is automatically approved for this TLD. */
+  @Column(nullable = false)
   Duration automaticTransferLength = DEFAULT_AUTOMATIC_TRANSFER_LENGTH;
 
   /** The length of time a domain spends in the non-redeemable pending delete phase for this TLD. */
+  @Column(nullable = false)
   Duration pendingDeleteLength = DEFAULT_PENDING_DELETE_LENGTH;
 
   /** The currency unit for all costs associated with this TLD. */
+  @Column(name = "currencyUnit", nullable = false)
   CurrencyUnit currency = DEFAULT_CURRENCY;
 
   /** The per-year billing cost for registering a new domain name. */
+  @AttributeOverrides({
+    @AttributeOverride(
+        name = "money.amount",
+        column = @Column(name = "create_billing_cost_amount")),
+    @AttributeOverride(
+        name = "money.currency",
+        column = @Column(name = "create_billing_cost_currency"))
+  })
   Money createBillingCost = DEFAULT_CREATE_BILLING_COST;
 
   /** The one-time billing cost for restoring a domain name from the redemption grace period. */
+  @AttributeOverrides({
+    @AttributeOverride(
+        name = "money.amount",
+        column = @Column(name = "restore_billing_cost_amount")),
+    @AttributeOverride(
+        name = "money.currency",
+        column = @Column(name = "restore_billing_cost_currency"))
+  })
   Money restoreBillingCost = DEFAULT_RESTORE_BILLING_COST;
 
   /** The one-time billing cost for changing the server status (i.e. lock). */
+  @AttributeOverrides({
+    @AttributeOverride(
+        name = "money.amount",
+        column = @Column(name = "server_status_change_billing_cost_amount")),
+    @AttributeOverride(
+        name = "money.currency",
+        column = @Column(name = "server_status_change_billing_cost_currency"))
+  })
   Money serverStatusChangeBillingCost = DEFAULT_SERVER_STATUS_CHANGE_BILLING_COST;
 
   /**
@@ -430,11 +474,13 @@ public class Registry extends ImmutableObject implements Buildable {
    * name. This cost is also used to compute costs for transfers, since each transfer includes a
    * renewal to ensure transfers have a cost.
    */
+  @Column(nullable = false)
   @Mapify(TimedTransitionProperty.TimeMapper.class)
   TimedTransitionProperty<Money, BillingCostTransition> renewBillingCostTransitions =
       TimedTransitionProperty.forMapify(DEFAULT_RENEW_BILLING_COST, BillingCostTransition.class);
 
   /** A property that tracks the EAP fee schedule (if any) for the TLD. */
+  @Column(nullable = false)
   @Mapify(TimedTransitionProperty.TimeMapper.class)
   TimedTransitionProperty<Money, BillingCostTransition> eapFeeSchedule =
       TimedTransitionProperty.forMapify(DEFAULT_EAP_BILLING_COST, BillingCostTransition.class);
@@ -443,13 +489,14 @@ public class Registry extends ImmutableObject implements Buildable {
   String lordnUsername;
 
   /** The end of the claims period (at or after this time, claims no longer applies). */
+  @Column(nullable = false)
   DateTime claimsPeriodEnd = END_OF_TIME;
 
   /** A whitelist of clients allowed to be used on domains on this TLD (ignored if empty). */
-  Set<String> allowedRegistrantContactIds;
+  @Nullable Set<String> allowedRegistrantContactIds;
 
   /** A whitelist of hosts allowed to be used on domains on this TLD (ignored if empty). */
-  Set<String> allowedFullyQualifiedHostNames;
+  @Nullable Set<String> allowedFullyQualifiedHostNames;
 
   public String getTldStr() {
     return tldStr;
@@ -475,11 +522,6 @@ public class Registry extends ImmutableObject implements Buildable {
    * <p>Note that {@link TldState#PDT} TLDs pretend to be in {@link TldState#GENERAL_AVAILABILITY}.
    */
   public TldState getTldState(DateTime now) {
-    // Map.Entry<TldState, TldStateTransition> entry = tldStateTransitions.entrySet().iterator().next();
-    // entry.getKey().toString();
-    // String dateString = entry.getValue().getValue().toString();
-    // DateTime time = ISODateTimeFormat.dateTime().parseDateTime(dateString);
-
     TldState state = tldStateTransitions.getValueAtTime(now);
     return TldState.PDT.equals(state) ? TldState.GENERAL_AVAILABILITY : state;
   }

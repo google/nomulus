@@ -23,6 +23,7 @@ import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABIL
 import static google.registry.model.registry.Registry.TldState.PREDELEGATION;
 import static google.registry.model.registry.Registry.TldState.QUIET_PERIOD;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.newRegistry;
 import static google.registry.testing.DatastoreHelper.persistPremiumList;
@@ -43,21 +44,37 @@ import google.registry.model.registry.Registry.RegistryNotFoundException;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
+import google.registry.persistence.VKey;
 import java.math.BigDecimal;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Registry}. */
 public class RegistryTest extends EntityTestCase {
 
   Registry registry;
 
-  @Before
+  public RegistryTest() {
+    super(true);
+  }
+
+  @BeforeEach
   public void setup() {
     createTld("tld");
     registry = Registry.get("tld");
+  }
+
+  @Test
+  public void testCloudSqlPersistence() {
+    Registry sqlRegistry =
+        newRegistry(
+            "tld", registry.roidSuffix, registry.getTldStateTransitions(), registry.tldType);
+    jpaTm().transact(() -> jpaTm().saveNew(sqlRegistry));
+    Registry persisted =
+        jpaTm().transact(() -> jpaTm().load(VKey.createSql(Registry.class, sqlRegistry.tldStrId)));
+    assertThat(persisted).isNotNull();
   }
 
   @Test
