@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.registry.label.ReservationType;
+import google.registry.persistence.WithLongVKey;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
 import java.util.Map;
@@ -55,6 +56,7 @@ import org.joda.time.DateTime;
  */
 @Entity
 @Table(indexes = {@Index(columnList = "name", name = "reservedlist_name_idx")})
+@WithLongVKey
 public class ReservedList extends ImmutableObject implements SqlEntity {
 
   @Column(nullable = false)

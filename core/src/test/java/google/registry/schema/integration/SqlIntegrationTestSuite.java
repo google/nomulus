@@ -20,6 +20,7 @@ import google.registry.model.billing.BillingEventTest;
 import google.registry.model.contact.ContactResourceTest;
 import google.registry.model.domain.DomainBaseSqlTest;
 import google.registry.model.registry.RegistryLockDaoTest;
+import google.registry.model.registry.RegistryTest;
 import google.registry.persistence.transaction.JpaEntityCoverage;
 import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.integration.SqlIntegrationTestSuite.AfterSuiteTest;
@@ -77,6 +78,7 @@ import org.junit.runner.RunWith;
   LockDaoTest.class,
   PremiumListDaoTest.class,
   RegistrarDaoTest.class,
+  RegistryTest.class,
   RegistryLockDaoTest.class,
   ReservedListDaoTest.class,
   // AfterSuiteTest must be the last entry. See class javadoc for details.

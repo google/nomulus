@@ -545,6 +545,7 @@ ALTER SEQUENCE public."ReservedList_revision_id_seq" OWNED BY public."ReservedLi
 
 
 --
+<<<<<<< HEAD
 -- Name: BillingCancellation billing_cancellation_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -563,6 +564,58 @@ ALTER TABLE ONLY public."BillingEvent" ALTER COLUMN billing_event_id SET DEFAULT
 --
 
 ALTER TABLE ONLY public."BillingRecurrence" ALTER COLUMN billing_recurrence_id SET DEFAULT nextval('public."BillingRecurrence_billing_recurrence_id_seq"'::regclass);
+=======
+-- Name: ReservedLists; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."ReservedLists" (
+    tld_tld_id text NOT NULL,
+    reserved_lists_v_keys_revision_id bigint NOT NULL
+);
+
+
+--
+-- Name: Tld; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Tld" (
+    tld_id text NOT NULL,
+    add_grace_period_length bigint NOT NULL,
+    allowed_fully_qualified_host_names text[],
+    allowed_registrant_contact_ids text[],
+    anchor_tenant_add_grace_period_length bigint NOT NULL,
+    auto_renew_grace_period_length bigint NOT NULL,
+    automatic_transfer_length bigint NOT NULL,
+    claims_period_end timestamp with time zone NOT NULL,
+    create_billing_cost_amount numeric(19,2),
+    create_billing_cost_currency text,
+    creation_time timestamp with time zone NOT NULL,
+    currency_unit text NOT NULL,
+    dns_paused boolean NOT NULL,
+    dns_writers text[] NOT NULL,
+    drive_folder_id text,
+    eap_fee_schedule public.hstore NOT NULL,
+    escrow_enabled boolean NOT NULL,
+    lordn_username text,
+    num_dns_publish_locks integer NOT NULL,
+    pending_delete_length bigint NOT NULL,
+    premium_list bytea,
+    pricing_engine_class_name text,
+    redemption_grace_period_length bigint NOT NULL,
+    renew_billing_cost_transitions public.hstore NOT NULL,
+    renew_grace_period_length bigint NOT NULL,
+    restore_billing_cost_amount numeric(19,2),
+    restore_billing_cost_currency text,
+    roid_suffix text,
+    server_status_change_billing_cost_amount numeric(19,2),
+    server_status_change_billing_cost_currency text,
+    tld_state_transitions public.hstore NOT NULL,
+    tld_str text,
+    tld_type text NOT NULL,
+    tld_unicode text NOT NULL,
+    transfer_grace_period_length bigint NOT NULL
+);
+>>>>>>> 1737cdf06... Add JPA annotations to Registry.java
 
 
 --
@@ -730,11 +783,35 @@ ALTER TABLE ONLY public."ReservedList"
 
 
 --
+-- Name: ReservedLists ReservedLists_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ReservedLists"
+    ADD CONSTRAINT "ReservedLists_pkey" PRIMARY KEY (tld_tld_id, reserved_lists_v_keys_revision_id);
+
+
+--
+-- Name: Tld Tld_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Tld"
+    ADD CONSTRAINT "Tld_pkey" PRIMARY KEY (tld_id);
+
+
+--
 -- Name: RegistryLock idx_registry_lock_repo_id_revision_id; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."RegistryLock"
     ADD CONSTRAINT idx_registry_lock_repo_id_revision_id UNIQUE (repo_id, revision_id);
+
+
+--
+-- Name: ReservedLists uk_odhn7pgtpcdi295pjchv2n4xs; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ReservedLists"
+    ADD CONSTRAINT uk_odhn7pgtpcdi295pjchv2n4xs UNIQUE (reserved_lists_v_keys_revision_id);
 
 
 --
@@ -1086,6 +1163,14 @@ ALTER TABLE ONLY public."DomainHost"
 
 
 --
+-- Name: ReservedLists fkc6qbbn47pr8wa1eerdsgrqbht; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ReservedLists"
+    ADD CONSTRAINT fkc6qbbn47pr8wa1eerdsgrqbht FOREIGN KEY (reserved_lists_v_keys_revision_id) REFERENCES public."ReservedList"(revision_id);
+
+
+--
 -- Name: DomainHost fkfmi7bdink53swivs390m2btxg; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1107,6 +1192,14 @@ ALTER TABLE ONLY public."ReservedEntry"
 
 ALTER TABLE ONLY public."Domain"
     ADD CONSTRAINT fkjc0r9r5y1lfbt4gpbqw4wsuvq FOREIGN KEY (last_epp_update_client_id) REFERENCES public."Registrar"(client_id);
+
+
+--
+-- Name: ReservedLists fkm3apblvy4jv12v0gn3o7y4pb0; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ReservedLists"
+    ADD CONSTRAINT fkm3apblvy4jv12v0gn3o7y4pb0 FOREIGN KEY (tld_tld_id) REFERENCES public."Tld"(tld_id);
 
 
 --

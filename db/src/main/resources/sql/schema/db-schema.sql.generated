@@ -328,6 +328,7 @@
         should_publish boolean not null,
         primary key (revision_id)
     );
+<<<<<<< HEAD
 create index IDXeokttmxtpq2hohcioe5t2242b on "BillingCancellation" (client_id);
 create index IDX2exdfbx6oiiwnhr8j6gjpqt2j on "BillingCancellation" (event_time);
 create index IDXqa3g92jc17e8dtiaviy4fet4x on "BillingCancellation" (billing_time);
@@ -340,6 +341,53 @@ create index IDXn898pb9mwcg359cdwvolb11ck on "BillingRecurrence" (client_id);
 create index IDX6syykou4nkc7hqa5p8r92cpch on "BillingRecurrence" (event_time);
 create index IDXp3usbtvk0v1m14i5tdp4xnxgc on "BillingRecurrence" (recurrence_end_time);
 create index IDXjny8wuot75b5e6p38r47wdawu on "BillingRecurrence" (recurrence_time_of_year);
+=======
+
+    create table "ReservedLists" (
+       tld_tld_id text not null,
+        reserved_lists_v_keys_revision_id int8 not null,
+        primary key (tld_tld_id, reserved_lists_v_keys_revision_id)
+    );
+
+    create table "Tld" (
+       tld_id text not null,
+        add_grace_period_length int8 not null,
+        allowed_fully_qualified_host_names text[],
+        allowed_registrant_contact_ids text[],
+        anchor_tenant_add_grace_period_length int8 not null,
+        auto_renew_grace_period_length int8 not null,
+        automatic_transfer_length int8 not null,
+        claims_period_end timestamptz not null,
+        create_billing_cost_amount numeric(19, 2),
+        create_billing_cost_currency text,
+        creation_time timestamptz not null,
+        currency_unit text not null,
+        dns_paused boolean not null,
+        dns_writers text[] not null,
+        drive_folder_id text,
+        eap_fee_schedule hstore not null,
+        escrow_enabled boolean not null,
+        lordn_username text,
+        num_dns_publish_locks int4 not null,
+        pending_delete_length int8 not null,
+        premium_list bytea,
+        pricing_engine_class_name text,
+        redemption_grace_period_length int8 not null,
+        renew_billing_cost_transitions hstore not null,
+        renew_grace_period_length int8 not null,
+        restore_billing_cost_amount numeric(19, 2),
+        restore_billing_cost_currency text,
+        roid_suffix text,
+        server_status_change_billing_cost_amount numeric(19, 2),
+        server_status_change_billing_cost_currency text,
+        tld_state_transitions hstore not null,
+        tld_str text,
+        tld_type text not null,
+        tld_unicode text not null,
+        transfer_grace_period_length int8 not null,
+        primary key (tld_id)
+    );
+>>>>>>> 1737cdf06... Add JPA annotations to Registry.java
 create index IDX3y752kr9uh4kh6uig54vemx0l on "Contact" (creation_time);
 create index IDXbn8t4wp85fgxjl8q4ctlscx55 on "Contact" (current_sponsor_client_id);
 create index IDXn1f711wicdnooa2mqb7g1m55o on "Contact" (deletion_time);
@@ -362,6 +410,9 @@ create index idx_registry_lock_registrar_id on "RegistryLock" (registrar_id);
     alter table if exists "RegistryLock" 
        add constraint idx_registry_lock_repo_id_revision_id unique (repo_id, revision_id);
 create index reservedlist_name_idx on "ReservedList" (name);
+
+    alter table if exists "ReservedLists" 
+       add constraint UK_odhn7pgtpcdi295pjchv2n4xs unique (reserved_lists_v_keys_revision_id);
 
     alter table if exists "ClaimsEntry" 
        add constraint FK6sc6at5hedffc0nhdcab6ivuq 
@@ -392,3 +443,13 @@ create index reservedlist_name_idx on "ReservedList" (name);
        add constraint FKgq03rk0bt1hb915dnyvd3vnfc 
        foreign key (revision_id) 
        references "ReservedList";
+
+    alter table if exists "ReservedLists" 
+       add constraint FKc6qbbn47pr8wa1eerdsgrqbht 
+       foreign key (reserved_lists_v_keys_revision_id) 
+       references "ReservedList";
+
+    alter table if exists "ReservedLists" 
+       add constraint FKm3apblvy4jv12v0gn3o7y4pb0 
+       foreign key (tld_tld_id) 
+       references "Tld";
