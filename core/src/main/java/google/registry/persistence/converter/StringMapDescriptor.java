@@ -36,7 +36,7 @@ import org.hibernate.type.descriptor.sql.SqlTypeDescriptor;
 /**
  * The {@link JavaTypeDescriptor} and {@link SqlTypeDescriptor} for {@link StringMap}.
  *
- * <p>A {@link StringMap} object is a simple wrapper for a {@link Map <String, String>} which can be
+ * <p>A {@link StringMap} object is a simple wrapper for a {@code Map<String, String>} which can be
  * stored in a column with data type of hstore in the database. The {@link JavaTypeDescriptor} and
  * {@link SqlTypeDescriptor} is used by JPA/Hibernate to map between the map and hstore which is the
  * actual type that JDBC uses to read from and write to the database.
@@ -156,7 +156,7 @@ public class StringMapDescriptor extends AbstractTypeDescriptor<StringMap>
     };
   }
 
-  /** A simple wrapper class for {@link Map<String, String>}. */
+  /** A simple wrapper class for {@code Map<String, String>}. */
   public static class StringMap {
     private Map<String, String> map;
 
@@ -169,7 +169,7 @@ public class StringMapDescriptor extends AbstractTypeDescriptor<StringMap>
       return new StringMap(ImmutableMap.copyOf(map));
     }
 
-    /** Returns the underlying {@link Map<String, String>} object. */
+    /** Returns the underlying {@code Map<String, String>} object. */
     public Map<String, String> getMap() {
       return map;
     }

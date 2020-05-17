@@ -46,9 +46,6 @@ public final class RdeUtil {
   /**
    * Look at some bytes from {@code xmlInput} to ensure it appears to be a FULL XML deposit and
    * then use a regular expression to extract the watermark timestamp which is returned.
-   *
-   * @throws IOException
-   * @throws XmlException
    */
   public static DateTime peekWatermark(BufferedInputStream xmlInput)
       throws IOException, XmlException {

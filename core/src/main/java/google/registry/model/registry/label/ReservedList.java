@@ -158,8 +158,8 @@ public final class ReservedList
   /**
    * Gets a ReservedList by name using the caching layer.
    *
-   * @return An Optional<ReservedList> that has a value if a reserved list exists by the given name,
-   *     or absent if not.
+   * @return An Optional&lt;ReservedList&gt; that has a value if a reserved list exists by the given
+   *     name, or absent if not.
    * @throws UncheckedExecutionException if some other error occurs while trying to load the
    *     ReservedList from the cache or Datastore.
    */

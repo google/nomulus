@@ -43,8 +43,8 @@ import org.joda.time.YearMonth;
  * PublishInvoicesAction} to publish the subsequent output.
  *
  * <p>This action runs the {@link google.registry.beam.invoicing.InvoicingPipeline} beam template,
- * staged at gs://<projectId>-beam/templates/invoicing. The pipeline then generates invoices for the
- * month and stores them on GCS.
+ * staged at gs://&lt;projectId&gt;-beam/templates/invoicing. The pipeline then generates invoices
+ * for the month and stores them on GCS.
  */
 @Action(
     service = Action.Service.BACKEND,

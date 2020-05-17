@@ -77,10 +77,6 @@ public class TmchXmlSignature {
    *
    * @throws GeneralSecurityException for unsupported protocols, certs not signed by the TMCH,
    *     incorrect keys, and for invalid, old, not-yet-valid or revoked certificates.
-   * @throws IOException
-   * @throws MarshalException
-   * @throws ParserConfigurationException
-   * @throws SAXException
    */
   public void verify(byte[] smdXml)
       throws GeneralSecurityException, IOException, MarshalException, ParserConfigurationException,

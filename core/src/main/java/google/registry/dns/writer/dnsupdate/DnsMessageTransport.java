@@ -84,7 +84,7 @@ public class DnsMessageTransport {
    * @param query a message to send
    * @return the response received from the server
    * @throws IOException if the Socket input/output streams throws one
-   * @throws IllegalArgumentException if the query is too large to be sent (> 65535 bytes)
+   * @throws IllegalArgumentException if the query is too large to be sent (&gt; 65535 bytes)
    */
   public Message send(Message query) throws IOException {
     try (Socket socket = factory.createSocket(InetAddress.getByName(updateHost), DNS_PORT)) {

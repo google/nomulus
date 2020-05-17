@@ -115,8 +115,6 @@ public class ImprovedOutputStream extends FilterOutputStream {
    * Overridable method that's called by {@link #close()}.
    *
    * <p>This method does nothing by default.
-   *
-   * @throws IOException
    */
   protected void onClose() throws IOException {
     // Does nothing by default.

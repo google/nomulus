@@ -40,7 +40,7 @@ import org.joda.time.Duration;
  *
  * <p>Main purpose is to verify {@link HttpResponseMessage} received is valid. If the response
  * implies a redirection it follows the redirection until either an Error Response is received, or
- * {@link HttpResponseStatus.OK} is received
+ * {@link HttpResponseStatus#OK} is received
  */
 public class WebWhoisActionHandler extends ActionHandler {
 

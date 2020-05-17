@@ -442,10 +442,8 @@ public class BigqueryConnection implements AutoCloseable {
    * Returns the result of calling queryToLocalTable, but synchronously to avoid spawning new
    * background threads, which App Engine doesn't support.
    *
-   * @see <a href="https://cloud.google.com/appengine/docs/standard/java/runtime#Threads">
-   *   App Engine Runtime</a>
-   *
-   * <p>Returns the results of the query in an ImmutableTable on success.
+   * @see <a href="https://cloud.google.com/appengine/docs/standard/java/runtime#Threads">App Engine
+   *     Runtime</a>
    */
   public ImmutableTable<Integer, TableFieldSchema, Object> queryToLocalTableSync(String querySql) {
     Job job = new Job()
@@ -576,8 +574,6 @@ public class BigqueryConnection implements AutoCloseable {
 
   /**
    * Launch a job, wait for it to complete, but <i>do not</i> check for errors.
-   *
-   * @throws BigqueryJobFailureException
    */
   public Job runJob(Job job, @Nullable AbstractInputStreamContent data) {
     return checkJob(waitForJob(launchJob(job, data)));

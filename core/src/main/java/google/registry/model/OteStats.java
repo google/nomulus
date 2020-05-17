@@ -50,7 +50,8 @@ import java.util.stream.Collectors;
 public class OteStats {
 
   /**
-   * Returns the statistics about the OT&E actions that have been taken by a particular registrar.
+   * Returns the statistics about the OT&amp;E actions that have been taken by a particular
+   * registrar.
    */
   public static OteStats getFromRegistrar(String registrarName) {
     return new OteStats().recordRegistrarHistory(registrarName);

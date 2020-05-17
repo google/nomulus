@@ -42,8 +42,8 @@ import javax.xml.stream.events.XMLEvent;
 /**
  * Sanitizes sensitive data in incoming/outgoing EPP XML messages.
  *
- * <p>Current implementation masks user credentials (text following <pw> and <newPW> tags) as
- * follows:
+ * <p>Current implementation masks user credentials (text following &lt;pw&gt; and &lt;newPW&gt;
+ * tags) as follows:
  *
  * <ul>
  *   <li>A control character (in ranges [0 - 1F] and [7F - 9F]) is replaced with 'C'.

@@ -32,7 +32,7 @@ import javax.xml.bind.annotation.XmlType;
 /** A collection of {@link HostResource} commands. */
 public class HostCommand {
 
-  /** The fields on "chgType" from {@link "http://tools.ietf.org/html/rfc5732"}. */
+  /** The fields on "chgType" from <a href="http://tools.ietf.org/html/rfc5732">RFC5732</a>. */
   @XmlTransient
   abstract static class HostCreateOrChange extends AbstractSingleResourceCommand
       implements ResourceCreateOrChange<HostResource.Builder> {
@@ -42,13 +42,13 @@ public class HostCommand {
   }
 
   /**
-   * A create command for a {@link HostResource}, mapping "createType" from
-   * {@link "http://tools.ietf.org/html/rfc5732"}.
+   * A create command for a {@link HostResource}, mapping "createType" from <a
+   * href="http://tools.ietf.org/html/rfc5732">RFC5732</a>.
    */
-  @XmlType(propOrder = {"targetId", "inetAddresses" })
+  @XmlType(propOrder = {"targetId", "inetAddresses"})
   @XmlRootElement
-  public static class Create
-      extends HostCreateOrChange implements ResourceCreateOrChange<HostResource.Builder> {
+  public static class Create extends HostCreateOrChange
+      implements ResourceCreateOrChange<HostResource.Builder> {
     /** IP Addresses for this host. Can be null if this is an external host. */
     @XmlElement(name = "addr")
     Set<InetAddress> inetAddresses;

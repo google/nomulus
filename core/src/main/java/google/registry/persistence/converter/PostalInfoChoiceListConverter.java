@@ -16,11 +16,10 @@ package google.registry.persistence.converter;
 
 import google.registry.model.contact.Disclose.PostalInfoChoice;
 import google.registry.model.contact.PostalInfo;
-import java.util.List;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
-/** JPA {@link AttributeConverter} for storing/retrieving {@link List < PostalInfoChoice >}. */
+/** JPA {@link AttributeConverter} for storing/retrieving {@code List<PostalInfoChoice>}. */
 @Converter(autoApply = true)
 public class PostalInfoChoiceListConverter extends StringListConverterBase<PostalInfoChoice> {
 

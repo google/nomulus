@@ -30,7 +30,7 @@ public class UpdateAutoTimestamp extends ImmutableObject {
 
   DateTime timestamp;
 
-  /** Returns the timestamp, or {@link START_OF_TIME} if it's null. */
+  /** Returns the timestamp, or {@code START_OF_TIME} if it's null. */
   public DateTime getTimestamp() {
     return Optional.ofNullable(timestamp).orElse(START_OF_TIME);
   }

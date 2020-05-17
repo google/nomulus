@@ -30,7 +30,7 @@ import java.util.function.Predicate;
 /** Utilities methods related to reflection. */
 public class TypeUtils {
 
-  /** A {@TypeToken} that removes an ugly cast in the common cases of getting a known type. */
+  /** A {@code TypeToken} that removes an ugly cast in the common cases of getting a known type. */
   public static class TypeInstantiator<T> extends TypeToken<T> {
     protected TypeInstantiator(Class<?> declaringClass) {
       super(declaringClass);
@@ -94,9 +94,7 @@ public class TypeUtils {
     return castedClass;
   }
 
-  /**
-   * Aggregates enum "values" in a typesafe enum pattern into a string->field map.
-   */
+  /** Aggregates enum "values" in a typesafe enum pattern into a string-&gt;field map. */
   @SuppressWarnings("unchecked")
   public static <T> ImmutableMap<String, T> getTypesafeEnumMapping(Class<T> clazz) {
     ImmutableMap.Builder<String, T> builder = new ImmutableMap.Builder<>();

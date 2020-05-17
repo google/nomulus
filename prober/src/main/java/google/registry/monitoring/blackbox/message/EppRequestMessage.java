@@ -117,7 +117,7 @@ public class EppRequestMessage extends EppMessage implements OutboundMessageType
    *
    * @return the {@link ByteBuf} instance that stores the bytes representing the requisite EPP
    *     Request
-   * @throws EppClientException- On the occasion that the prober can't appropriately convert the EPP
+   * @throws EppClientException On the occasion that the prober can't appropriately convert the EPP
    *     XML document to a {@link ByteBuf}, the blame falls on the prober, not the server, so it
    *     throws an {@link EppClientException}, which is a subclass of the {@link
    *     UndeterminedStateException}.

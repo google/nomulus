@@ -48,7 +48,7 @@ import javax.net.ssl.SSLHandshakeException;
  *
  * <p>This handler reads in a {@link ByteBuf}, converts it to an {@link FullHttpRequest}, and passes
  * it to the {@code channelRead} method of the next inbound handler the channel pipeline, which is
- * usually a {@link RelayHandler<FullHttpRequest>}. The relay handler writes the request to the
+ * usually a {@code RelayHandler<FullHttpRequest>}. The relay handler writes the request to the
  * relay channel, which is connected to an HTTPS endpoint. After the relay channel receives a {@link
  * FullHttpResponse} back, its own relay handler writes the response back to this channel, which is
  * the relay channel of the relay channel. This handler then handles write request by encoding the

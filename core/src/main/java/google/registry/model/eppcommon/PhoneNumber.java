@@ -29,8 +29,9 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 /**
  * Container for generic E164 phone number.
  *
- * <p>This is the "e164" type from {@link "http://tools.ietf.org/html/rfc5733"}. It also matches the
- * "e164Type" type from {@link "http://tools.ietf.org/html/draft-lozano-tmch-smd"}.
+ * <p>This is the "e164" type from <a href="http://tools.ietf.org/html/rfc5733">RFC5733</a>. It also
+ * matches the "e164Type" type from <a href="http://tools.ietf.org/html/draft-lozano-tmch-smd">Mark
+ * and Signed Mark Objects Mapping</a>
  *
  * <blockquote>
  *

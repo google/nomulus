@@ -76,18 +76,19 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
   }
 
   /**
-   * Write <hello> to the server after SSL handshake completion to request <greeting>
+   * Write {@code <hello>} to the server after SSL handshake completion to request {@code
+   * <greeting>}
    *
-   * <p>When handling EPP over TCP, the server should issue a <greeting> to the client when a
-   * connection is established. Nomulus app however does not automatically sends the <greeting> upon
-   * connection. The proxy therefore first sends a <hello> to registry to request a <greeting>
-   * response.
+   * <p>When handling EPP over TCP, the server should issue a {@code <greeting>} to the client when
+   * a connection is established. Nomulus app however does not automatically sends the {@code
+   * <greeting>} upon connection. The proxy therefore first sends a {@code <hello>} to registry to
+   * request a {@code <greeting>} response.
    *
-   * <p>The <hello> request is only sent after SSL handshake is completed between the client and the
-   * proxy so that the client certificate hash is available, which is needed to communicate with the
-   * server. Because {@link SslHandshakeCompletionEvent} is triggered before any calls to {@link
-   * #channelRead} are scheduled by the event loop executor, the <hello> request is guaranteed to be
-   * the first message sent to the server.
+   * <p>The {@code <hello>} request is only sent after SSL handshake is completed between the client
+   * and the proxy so that the client certificate hash is available, which is needed to communicate
+   * with the server. Because {@link SslHandshakeCompletionEvent} is triggered before any calls to
+   * {@link #channelRead} are scheduled by the event loop executor, the {@code <hello>} request is
+   * guaranteed to be the first message sent to the server.
    *
    * @see <a href="https://tools.ietf.org/html/rfc5734">RFC 5732 EPP Transport over TCP</a>
    * @see <a href="https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt">The Proxy

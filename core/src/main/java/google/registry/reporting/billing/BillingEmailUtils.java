@@ -34,7 +34,7 @@ import javax.mail.internet.InternetAddress;
 import org.joda.time.YearMonth;
 
 /** Utility functions for sending emails involving monthly invoices. */
-class BillingEmailUtils {
+public class BillingEmailUtils {
 
   private final SendEmailService emailService;
   private final YearMonth yearMonth;

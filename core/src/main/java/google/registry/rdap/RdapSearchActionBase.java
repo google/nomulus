@@ -221,10 +221,9 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
    *
    * <p>This version handles a list of parameter values, all associated with the same name.
    *
-   * <p>Example: If the original parameters were "a=w&a=x&b=y&c=z", and this method is called with
-   * parameterName = "b" and parameterValues of "p" and "q", the result will be
-   * "a=w&a=x&c=z&b=p&b=q". The new values of parameter "b" replace the old ones.
-   *
+   * <p>Example: If the original parameters were "a=w&amp;a=x&amp;b=y&amp;c=z", and this method is
+   * called with parameterName = "b" and parameterValues of "p" and "q", the result will be
+   * "a=w&amp;a=x&amp;c=z&amp;b=p&amp;b=q". The new values of parameter "b" replace the old ones.
    */
   protected String getRequestUrlWithExtraParameter(
       String parameterName, List<String> parameterValues) {

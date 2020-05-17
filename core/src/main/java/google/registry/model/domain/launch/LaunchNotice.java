@@ -95,9 +95,6 @@ public class LaunchNotice extends ImmutableObject {
 
   /**
    * Validate the checksum of the notice against the domain label.
-   *
-   * @throws IllegalArgumentException
-   * @throws InvalidChecksumException
    */
   public void validate(String domainLabel) throws InvalidChecksumException {
     // According to http://tools.ietf.org/html/draft-lozano-tmch-func-spec-08#section-6.3, a TCNID

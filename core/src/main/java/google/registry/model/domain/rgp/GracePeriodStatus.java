@@ -49,9 +49,9 @@ public enum GracePeriodStatus implements EppEnum {
   AUTO_RENEW("autoRenewPeriod"),
 
   /**
-   * This status value is used to describe a domain for which a <delete> command has been received,
-   * but the domain has not yet been purged because an opportunity exists to restore the domain and
-   * abort the deletion process.
+   * This status value is used to describe a domain for which a &lt;delete&gt; command has been
+   * received, but the domain has not yet been purged because an opportunity exists to restore the
+   * domain and abort the deletion process.
    */
   REDEMPTION("redemptionPeriod"),
 

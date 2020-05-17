@@ -68,7 +68,7 @@ public class Retrier implements Serializable {
    * original exception is propagated through to the caller. Checked exceptions are wrapped in a
    * RuntimeException, while unchecked exceptions are propagated as-is.
    *
-   * @return <V> the value returned by the {@link Callable}.
+   * @return the value returned by the {@link Callable}.
    */
   public <V> V callWithRetry(Callable<V> callable, Predicate<Throwable> isRetryable) {
     return callWithRetry(callable, LOGGING_FAILURE_REPORTER, isRetryable);
@@ -85,7 +85,7 @@ public class Retrier implements Serializable {
    *
    * <p>Uses a default FailureReporter that logs before each retry.
    *
-   * @return <V> the value returned by the {@link Callable}.
+   * @return the value returned by the {@link Callable}.
    */
   @SafeVarargs
   public final <V> V callWithRetry(
@@ -117,7 +117,7 @@ public class Retrier implements Serializable {
    * exception is propagated through to the caller. Checked exceptions are wrapped in a
    * RuntimeException, while unchecked exceptions are propagated as-is.
    *
-   * @return <V> the value returned by the {@link Callable}.
+   * @return the value returned by the {@link Callable}.
    */
   @SafeVarargs
   public final <V> V callWithRetry(

@@ -15,12 +15,11 @@
 package google.registry.persistence.converter;
 
 import google.registry.util.CidrAddressBlock;
-import java.util.List;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
 /**
- * JPA {@link AttributeConverter} for storing/retrieving {@link List<CidrAddressBlock>} objects.
+ * JPA {@link AttributeConverter} for storing/retrieving {@code List<CidrAddressBlock>} objects.
  * TODO(shicong): Investigate if we can have one converter for any List type
  */
 @Converter(autoApply = true)

@@ -416,8 +416,6 @@ public final class PosixTarHeader {
      * <p>The modified time is always stored as a UNIX timestamp which is seconds since the UNIX
      * epoch in UTC time. Because {@link DateTime} has millisecond precision, it gets rounded down
      * (floor) to the second.
-     *
-     * @throws NullPointerException
      */
     public Builder setMtime(DateTime mtime) {
       checkNotNull(mtime, "mtime");

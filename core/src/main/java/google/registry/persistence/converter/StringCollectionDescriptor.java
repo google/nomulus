@@ -37,7 +37,7 @@ import org.hibernate.type.descriptor.sql.SqlTypeDescriptor;
 /**
  * The {@link JavaTypeDescriptor} and {@link SqlTypeDescriptor} for {@link StringCollection}.
  *
- * <p>A {@link StringCollection} object is a simple wrapper for a {@link Collection<String>} which
+ * <p>A {@link StringCollection} object is a simple wrapper for a {@code Collection<String>} which
  * can be stored as a string array in the database. The {@link JavaTypeDescriptor} and {@link
  * SqlTypeDescriptor} is used by JPA/Hibernate to map between the collection and {@link Array} which
  * is the actual type that JDBC uses to read from and write to the database.

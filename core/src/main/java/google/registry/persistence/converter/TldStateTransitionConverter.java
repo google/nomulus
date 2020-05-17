@@ -15,7 +15,6 @@
 package google.registry.persistence.converter;
 
 import com.google.common.collect.Maps;
-import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.Registry.TldStateTransition;
 import java.util.Map;
@@ -23,7 +22,7 @@ import javax.persistence.Converter;
 import org.joda.time.DateTime;
 
 /**
- * JPA converter for storing/retrieving {@link TimedTransitionProperty<TldState,
+ * JPA converter for storing/retrieving {@code TimedTransitionProperty<TldState,
  * TldStateTransition>} objects.
  */
 @Converter(autoApply = true)

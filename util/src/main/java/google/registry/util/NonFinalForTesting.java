@@ -32,8 +32,6 @@ import java.lang.annotation.Target;
  *
  * <p>When this annotation is used on methods, it means that you should not override the method
  * and it's only non-{@code final} so it can be mocked.
- *
- * @see google.registry.testing.InjectRule
  */
 @Documented
 @Retention(SOURCE)

@@ -25,7 +25,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * An allocation token extension that may be present on EPP domain commands.
  *
  * @see <a href="https://tools.ietf.org/html/draft-ietf-regext-allocation-token-04">the IETF
- *     draft</a> for full details.
+ *     draft</a>
  */
 @XmlRootElement(name = "allocationToken")
 public class AllocationTokenExtension extends ImmutableObject implements CommandExtension {

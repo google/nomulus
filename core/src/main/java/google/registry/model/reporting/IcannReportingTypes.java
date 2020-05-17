@@ -22,8 +22,8 @@ public final class IcannReportingTypes {
    * Represents the set of possible ICANN Monthly Registry Functions Activity Report fields.
    *
    * <p>Refer to the <a
-   * href="https://newgtlds.icann.org/sites/default/files/agreements/agreement-approved-09jan14-en.htm#_DV_M278>ICANN
-   * registry agreement Specification 3 Section 2</a> for details.
+   * href="https://newgtlds.icann.org/sites/default/files/agreements/agreement-approved-09jan14-en.htm#_DV_M278">
+   * ICANN registry agreement Specification 3 Section 2</a> for details.
    */
   public enum ActivityReportField {
     DOMAIN_CHECK("srs-dom-check"),

@@ -72,10 +72,10 @@ public class DomainCommand {
     T cloneAndLinkReferences(DateTime now) throws InvalidReferencesException;
   }
 
-  /** The fields on "chgType" from {@link "http://tools.ietf.org/html/rfc5731"}. */
+  /** The fields on "chgType" from <a href="http://tools.ietf.org/html/rfc5731">RFC5731</a>. */
   @XmlTransient
-  public static class DomainCreateOrChange<B extends DomainBase.Builder>
-      extends ImmutableObject implements ResourceCreateOrChange<B> {
+  public static class DomainCreateOrChange<B extends DomainBase.Builder> extends ImmutableObject
+      implements ResourceCreateOrChange<B> {
 
     /** The contactId of the registrant who registered this domain. */
     @XmlElement(name = "registrant")
@@ -103,19 +103,20 @@ public class DomainCommand {
   }
 
   /**
-   * A create command for a {@link DomainBase}, mapping "createType" from
-   * {@link "http://tools.ietf.org/html/rfc5731"}.
+   * A create command for a {@link DomainBase}, mapping "createType" from <a
+   * href="http://tools.ietf.org/html/rfc5731">RFC5731</a>.
    */
   @XmlRootElement
-  @XmlType(propOrder = {
-      "fullyQualifiedDomainName",
-      "period",
-      "nameserverFullyQualifiedHostNames",
-      "registrantContactId",
-      "foreignKeyedDesignatedContacts",
-      "authInfo"})
-  public static class Create
-      extends DomainCreateOrChange<DomainBase.Builder>
+  @XmlType(
+      propOrder = {
+        "fullyQualifiedDomainName",
+        "period",
+        "nameserverFullyQualifiedHostNames",
+        "registrantContactId",
+        "foreignKeyedDesignatedContacts",
+        "authInfo"
+      })
+  public static class Create extends DomainCreateOrChange<DomainBase.Builder>
       implements CreateOrUpdate<Create> {
 
     /** Fully qualified domain name, which serves as a unique identifier for this domain. */

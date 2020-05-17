@@ -24,7 +24,7 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import org.joda.time.DateTime;
 
 /**
- * A greeting, defined in {@link "http://tools.ietf.org/html/rfc5730"}.
+ * A greeting, defined in <a href="http://tools.ietf.org/html/rfc5730">RFC5730</a>.
  *
  * <p>It would be nice to make this a singleton, but we need the {@link #svDate} field to stay
  * current.

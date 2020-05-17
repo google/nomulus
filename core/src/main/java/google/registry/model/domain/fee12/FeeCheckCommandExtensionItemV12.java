@@ -29,11 +29,13 @@ import org.joda.time.DateTime;
  * An individual price check item in version 0.12 of the fee extension on domain check commands.
  * Items look like:
  *
+ * <pre>{@code
  * <fee:command name="renew" phase="sunrise" subphase="hello">
  *   <fee:period unit="y">1</fee:period>
  *   <fee:class>premium</fee:class>
  *   <fee:date>2017-05-17T13:22:21.0Z</fee:date>
  * </fee:command>
+ * }</pre>
  *
  * In a change from previous versions of the extension, items do not contain domain names; instead,
  * the names from the non-extension check element are used.
