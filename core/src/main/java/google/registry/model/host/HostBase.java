@@ -42,7 +42,7 @@ import org.joda.time.DateTime;
 @MappedSuperclass
 @Embeddable
 @Access(AccessType.FIELD)
-public abstract class HostBase extends EppResource {
+public class HostBase extends EppResource {
 
   /**
    * Fully qualified hostname, which is a unique identifier for this host.
@@ -113,6 +113,11 @@ public abstract class HostBase extends EppResource {
     return this;
   }
 
+  @Override
+  public Builder asBuilder() {
+    return new Builder<>(clone(this));
+  }
+
   /**
    * Compute the correct last transfer time for this host given its loaded superordinate domain.
    *
@@ -145,12 +150,24 @@ public abstract class HostBase extends EppResource {
   }
 
   /** A builder for constructing {@link HostBase}, since it is immutable. */
-  public abstract static class Builder<T extends HostBase, B extends Builder<?, ?>>
+  public static class Builder<T extends HostBase, B extends Builder<T, B>>
       extends EppResource.Builder<T, B> {
     public Builder() {}
 
     protected Builder(T instance) {
       super(instance);
+    }
+
+    // Strangely, if we don't add these @Overrides the methods return an EppResource.Builder
+    // even though we parameterize it with B in both cases anyway.
+    @Override
+    public B setRepoId(String repoId) {
+      return super.setRepoId(repoId);
+    }
+
+    @Override
+    public T build() {
+      return super.build();
     }
 
     public B setFullyQualifiedHostName(String fullyQualifiedHostName) {

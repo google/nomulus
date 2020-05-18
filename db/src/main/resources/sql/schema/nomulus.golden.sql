@@ -305,12 +305,12 @@ CREATE TABLE public."DomainHost" (
 --
 
 CREATE TABLE public."HostHistory" (
-    revision_id bigint NOT NULL,
+    id bigint NOT NULL,
     by_superuser boolean NOT NULL,
-    modification_time timestamp with time zone NOT NULL,
-    reason text NOT NULL,
     registrar_id text NOT NULL,
-    repo_id text NOT NULL,
+    modification_time timestamp with time zone NOT NULL,
+    parent_v_key text NOT NULL,
+    reason text NOT NULL,
     requested_by_registrar boolean NOT NULL,
     client_transaction_id text,
     server_transaction_id text,
@@ -335,28 +335,9 @@ CREATE TABLE public."HostHistory" (
 --
 
 CREATE TABLE public."HostHistory_inetAddresses" (
-    host_history_revision_id bigint NOT NULL,
+    host_history_id bigint NOT NULL,
     inet_addresses bytea
 );
-
-
---
--- Name: HostHistory_revision_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public."HostHistory_revision_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: HostHistory_revision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public."HostHistory_revision_id_seq" OWNED BY public."HostHistory".revision_id;
 
 
 --
@@ -632,13 +613,6 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 
 
 --
--- Name: HostHistory revision_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."HostHistory" ALTER COLUMN revision_id SET DEFAULT nextval('public."HostHistory_revision_id_seq"'::regclass);
-
-
---
 -- Name: PremiumList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -728,7 +702,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."HostHistory"
-    ADD CONSTRAINT "HostHistory_pkey" PRIMARY KEY (revision_id);
+    ADD CONSTRAINT "HostHistory_pkey" PRIMARY KEY (id);
 
 
 --
@@ -841,13 +815,6 @@ CREATE INDEX idx2exdfbx6oiiwnhr8j6gjpqt2j ON public."BillingCancellation" USING 
 
 
 --
--- Name: idx3bep58si603pahajnxp41d9r1; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx3bep58si603pahajnxp41d9r1 ON public."HostHistory" USING btree (repo_id);
-
-
---
 -- Name: idx3y752kr9uh4kh6uig54vemx0l; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -929,6 +896,13 @@ CREATE INDEX idxeokttmxtpq2hohcioe5t2242b ON public."BillingCancellation" USING 
 --
 
 CREATE INDEX idxfg2nnjlujxo6cb9fha971bq2n ON public."HostHistory" USING btree (creation_time);
+
+
+--
+-- Name: idxhancbub2w7c2rirfaeu4j9uh2; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxhancbub2w7c2rirfaeu4j9uh2 ON public."HostHistory" USING btree (parent_v_key);
 
 
 --
@@ -1093,6 +1067,14 @@ ALTER TABLE ONLY public."Contact"
 
 
 --
+-- Name: HostHistory_inetAddresses fk9svsf0mplnb9d7tdpl44lssvp; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory_inetAddresses"
+    ADD CONSTRAINT fk9svsf0mplnb9d7tdpl44lssvp FOREIGN KEY (host_history_id) REFERENCES public."HostHistory"(id);
+
+
+--
 -- Name: BillingCancellation fk_billing_cancellation_billing_event_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1178,14 +1160,6 @@ ALTER TABLE ONLY public."Domain"
 
 ALTER TABLE ONLY public."DomainHost"
     ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (ns_hosts) REFERENCES public."HostResource"(repo_id);
-
-
---
--- Name: HostHistory_inetAddresses fkdxdtvupo2b6xlqsq4og4nlo7k; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."HostHistory_inetAddresses"
-    ADD CONSTRAINT fkdxdtvupo2b6xlqsq4og4nlo7k FOREIGN KEY (host_history_revision_id) REFERENCES public."HostHistory"(revision_id);
 
 
 --

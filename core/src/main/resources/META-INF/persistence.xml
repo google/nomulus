@@ -59,9 +59,10 @@
 
     <!-- Generated converters for VKey -->
     <class>google.registry.model.billing.VKeyConverter_BillingEvent</class>
-    <class>google.registry.model.domain.token.VKeyConverter_AllocationToken</class>
-    <class>google.registry.model.host.VKeyConverter_HostResource</class>
     <class>google.registry.model.contact.VKeyConverter_ContactResource</class>
+    <class>google.registry.model.domain.token.VKeyConverter_AllocationToken</class>
+    <class>google.registry.model.domain.VKeyConverter_DomainBase</class>
+    <class>google.registry.model.host.VKeyConverter_HostResource</class>
 
     <!-- TODO(weiminyu): check out application-layer validation. -->
     <validation-mode>NONE</validation-mode>
