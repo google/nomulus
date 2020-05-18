@@ -18,7 +18,7 @@ import com.google.appengine.api.datastore.Key;
 import com.google.common.base.Splitter;
 import google.registry.persistence.VKey;
 import java.util.List;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Translator factory for VKey.
@@ -30,7 +30,8 @@ public class VKeyTranslatorFactory<T> extends AbstractSimpleTranslatorFactory<VK
 
   // Class registry allowing us to restore the original class object from the unqualified class
   // name, which is all the datastore key gives us.
-  public static TreeMap<String, Class<?>> classRegistry = new TreeMap<String, Class<?>>();
+  private static final ConcurrentHashMap<String, Class<?>> classRegistry =
+      new ConcurrentHashMap<String, Class<?>>();
 
   public VKeyTranslatorFactory(Class<T> refClass) {
     super(VKey.class);
