@@ -880,6 +880,9 @@ task standardTest(type: FilteringTest) {
   // forkEvery 1
 
   // Sets the maximum number of test executors that may exist at the same time.
+  // Also, Gradle executes tests in 1 thread and some of our test infrastructures
+  // depend on that, e.g. DualDatabaseTestInvocationContextProvider injects
+  // different implementation of TransactionManager into TransactionManagerFactory.
   maxParallelForks 5
 
   systemProperty 'test.projectRoot', rootProject.projectRootDir

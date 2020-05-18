@@ -37,7 +37,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link JpaTransactionManagerImpl}. */
+/**
+ * Unit tests for SQL only APIs defined in {@link JpaTransactionManagerImpl}. Note that the tests
+ * for common APIs in {@link TransactionManager} are added in {@link TransactionManagerTest}.
+ *
+ * <p>TODO(shicong): Remove duplicate tests that covered by TransactionManagerTest by refactoring
+ * the test schema.
+ */
 @RunWith(JUnit4.class)
 public class JpaTransactionManagerImplTest {
 
@@ -61,29 +67,6 @@ public class JpaTransactionManagerImplTest {
           .withClock(fakeClock)
           .withEntityClass(TestEntity.class, TestCompoundIdEntity.class)
           .buildUnitTestRule();
-
-  @Test
-  public void inTransaction_returnsCorrespondingResult() {
-    assertThat(jpaTm().inTransaction()).isFalse();
-    jpaTm().transact(() -> assertThat(jpaTm().inTransaction()).isTrue());
-    assertThat(jpaTm().inTransaction()).isFalse();
-  }
-
-  @Test
-  public void assertInTransaction_throwsExceptionWhenNotInTransaction() {
-    assertThrows(IllegalStateException.class, () -> jpaTm().assertInTransaction());
-    jpaTm().transact(() -> jpaTm().assertInTransaction());
-    assertThrows(IllegalStateException.class, () -> jpaTm().assertInTransaction());
-  }
-
-  @Test
-  public void getTransactionTime_throwsExceptionWhenNotInTransaction() {
-    FakeClock txnClock = fakeClock;
-    txnClock.advanceOneMilli();
-    assertThrows(IllegalStateException.class, () -> jpaTm().getTransactionTime());
-    jpaTm().transact(() -> assertThat(jpaTm().getTransactionTime()).isEqualTo(txnClock.nowUtc()));
-    assertThrows(IllegalStateException.class, () -> jpaTm().getTransactionTime());
-  }
 
   @Test
   public void transact_succeeds() {

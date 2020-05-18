@@ -17,6 +17,8 @@ package google.registry.testing;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.DatastoreHelper.persistSimpleResources;
+import static google.registry.testing.DualDatabaseTestInvocationContextProvider.injectTmForDualDatabaseTest;
+import static google.registry.testing.DualDatabaseTestInvocationContextProvider.restoreTmAfterDualDatabaseTest;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.json.XML.toJSONObject;
@@ -45,6 +47,7 @@ import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import google.registry.util.Clock;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -118,8 +121,11 @@ public final class AppEngineRule extends ExternalResource
    */
   JpaIntegrationWithCoverageExtension jpaIntegrationWithCoverageExtension = null;
 
+  JpaUnitTestRule jpaUnitTestRule;
+
   private boolean withDatastoreAndCloudSql;
   private boolean enableJpaEntityCoverageCheck;
+  private boolean withJpaUnitTest;
   private boolean withLocalModules;
   private boolean withTaskQueue;
   private boolean withUserService;
@@ -131,12 +137,14 @@ public final class AppEngineRule extends ExternalResource
 
   // Test Objectify entity classes to be used with this AppEngineRule instance.
   private ImmutableList<Class<?>> ofyTestEntities;
+  private ImmutableList<Class<?>> jpaTestEntities;
 
   /** Builder for {@link AppEngineRule}. */
   public static class Builder {
 
     private AppEngineRule rule = new AppEngineRule();
-    private ImmutableList.Builder<Class<?>> ofyTestEntities = new ImmutableList.Builder();
+    private ImmutableList.Builder<Class<?>> ofyTestEntities = new ImmutableList.Builder<>();
+    private ImmutableList.Builder<Class<?>> jpaTestEntities = new ImmutableList.Builder<>();
 
     /** Turn on the Datastore service and the Cloud SQL service. */
     public Builder withDatastoreAndCloudSql() {
@@ -205,11 +213,24 @@ public final class AppEngineRule extends ExternalResource
       return this;
     }
 
+    public Builder withJpaUnitTestEntities(Class<?>... entities) {
+      jpaTestEntities.add(entities);
+      rule.withJpaUnitTest = true;
+      return this;
+    }
+
     public AppEngineRule build() {
       checkState(
           !rule.enableJpaEntityCoverageCheck || rule.withDatastoreAndCloudSql,
           "withJpaEntityCoverageCheck enabled without Cloud SQL");
+      checkState(
+          !rule.withJpaUnitTest || rule.withDatastoreAndCloudSql,
+          "withJpaUnitTestEntities enabled without Cloud SQL");
+      checkState(
+          !rule.withJpaUnitTest || !rule.enableJpaEntityCoverageCheck,
+          "withJpaUnitTestEntities cannot be set when enableJpaEntityCoverageCheck");
       rule.ofyTestEntities = this.ofyTestEntities.build();
+      rule.jpaTestEntities = this.jpaTestEntities.build();
       return rule;
     }
   }
@@ -328,11 +349,18 @@ public final class AppEngineRule extends ExternalResource
       if (enableJpaEntityCoverageCheck) {
         jpaIntegrationWithCoverageExtension = builder.buildIntegrationWithCoverageExtension();
         jpaIntegrationWithCoverageExtension.beforeEach(context);
+      } else if (withJpaUnitTest) {
+        jpaUnitTestRule =
+            builder
+                .withEntityClass(jpaTestEntities.toArray(new Class[jpaTestEntities.size()]))
+                .buildUnitTestRule();
+        jpaUnitTestRule.before();
       } else {
         jpaIntegrationTestRule = builder.buildIntegrationTestRule();
         jpaIntegrationTestRule.before();
       }
     }
+    injectTmForDualDatabaseTest(context);
   }
 
   /** Called after each test method. JUnit 5 only. */
@@ -341,11 +369,14 @@ public final class AppEngineRule extends ExternalResource
     if (withDatastoreAndCloudSql) {
       if (enableJpaEntityCoverageCheck) {
         jpaIntegrationWithCoverageExtension.afterEach(context);
+      } else if (withJpaUnitTest) {
+        jpaUnitTestRule.after();
       } else {
         jpaIntegrationTestRule.after();
       }
     }
     after();
+    restoreTmAfterDualDatabaseTest(context);
   }
 
   /**
@@ -559,5 +590,9 @@ public final class AppEngineRule extends ExternalResource
             makeRegistrar2(),
             makeRegistrarContact2(),
             makeRegistrarContact3()));
+  }
+
+  boolean isWithDatastoreAndCloudSql() {
+    return withDatastoreAndCloudSql;
   }
 }
