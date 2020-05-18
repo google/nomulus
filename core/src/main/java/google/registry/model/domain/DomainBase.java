@@ -136,18 +136,11 @@ public class DomainBase extends EppResource
   @Index
   String tld;
 
-  /**
-   * References to hosts that are the nameservers for the domain.
-   *
-   * <p>This is a legacy field: we have to preserve it because it is still persisted and indexed in
-   * the datastore, but all external references go through nsHostVKeys.
-   */
-  @Index @ElementCollection @Transient Set<Key<HostResource>> nsHosts;
-
-  @Ignore
+  /** References to hosts that are the nameservers for the domain. */
+  @Index
   @ElementCollection
   @JoinTable(name = "DomainHost")
-  Set<VKey<HostResource>> nsHostVKeys;
+  Set<VKey<HostResource>> nsHosts;
 
   /**
    * The union of the contacts visible via {@link #getContacts} and {@link #getRegistrant}.
@@ -269,11 +262,6 @@ public class DomainBase extends EppResource
 
   @OnLoad
   void load() {
-    nsHostVKeys =
-        nullToEmptyImmutableCopy(nsHosts).stream()
-            .map(hostKey -> VKey.createOfy(HostResource.class, hostKey))
-            .collect(toImmutableSet());
-
     // Reconstitute all of the contacts so that they have VKeys.
     allContacts =
         allContacts.stream().map(contact -> contact.reconstitute()).collect(toImmutableSet());
@@ -363,9 +351,7 @@ public class DomainBase extends EppResource
   }
 
   public ImmutableSet<VKey<HostResource>> getNameservers() {
-    // Since nsHostVKeys gets initialized both from setNameservers() and the OnLoad method, this
-    // should always be valid.
-    return nullToEmptyImmutableCopy(nsHostVKeys);
+    return nullToEmptyImmutableCopy(nsHosts);
   }
 
   public final String getCurrentSponsorClientId() {
@@ -645,14 +631,6 @@ public class DomainBase extends EppResource
 
     Builder(DomainBase instance) {
       super(instance);
-
-      // Convert nsHosts to nsHostVKeys.
-      if (instance.nsHosts != null) {
-        instance.nsHostVKeys =
-            instance.nsHosts.stream()
-                .map(key -> VKey.createOfy(HostResource.class, key))
-                .collect(toImmutableSet());
-      }
     }
 
     @Override
@@ -710,27 +688,12 @@ public class DomainBase extends EppResource
     }
 
     public Builder setNameservers(VKey<HostResource> nameserver) {
-      Optional<Key<HostResource>> nsKey = nameserver.maybeGetOfyKey();
-      if (nsKey.isPresent()) {
-        getInstance().nsHosts = ImmutableSet.of(nsKey.get());
-      } else {
-        getInstance().nsHosts = null;
-      }
-      getInstance().nsHostVKeys = ImmutableSet.of(nameserver);
+      getInstance().nsHosts = ImmutableSet.of(nameserver);
       return thisCastToDerived();
     }
 
     public Builder setNameservers(ImmutableSet<VKey<HostResource>> nameservers) {
-      // If we have all of the ofy keys, we can set nsHosts.  Otherwise, make it null.
-      if (nameservers != null
-          && nameservers.stream().allMatch(key -> key.maybeGetOfyKey().isPresent())) {
-        getInstance().nsHosts =
-            nameservers.stream().map(key -> key.getOfyKey()).collect(toImmutableSet());
-      } else {
-        getInstance().nsHosts = null;
-      }
-
-      getInstance().nsHostVKeys = forceEmptyToNull(nameservers);
+      getInstance().nsHosts = forceEmptyToNull(nameservers);
       return thisCastToDerived();
     }
 

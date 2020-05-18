@@ -122,7 +122,7 @@
 
     create table "DomainHost" (
        domain_repo_id text not null,
-        ns_host_v_keys text
+        ns_hosts text
     );
 
     create table "GracePeriod" (

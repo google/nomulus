@@ -179,7 +179,7 @@ CREATE TABLE public."Domain" (
 
 CREATE TABLE public."DomainHost" (
     domain_repo_id text NOT NULL,
-    ns_host_v_keys text
+    ns_hosts text
 );
 
 
@@ -788,7 +788,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."DomainHost"
-    ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (ns_host_v_keys) REFERENCES public."HostResource"(repo_id);
+    ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (ns_hosts) REFERENCES public."HostResource"(repo_id);
 
 
 --
