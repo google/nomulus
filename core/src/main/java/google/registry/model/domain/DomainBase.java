@@ -66,6 +66,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import google.registry.persistence.WithStringVKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
 import google.registry.util.CollectionUtils;
 import java.util.HashSet;
@@ -108,6 +109,7 @@ import org.joda.time.Interval;
       @javax.persistence.Index(columnList = "fullyQualifiedDomainName"),
       @javax.persistence.Index(columnList = "tld")
     })
+@WithStringVKey
 @ExternalMessagingName("domain")
 @Access(AccessType.FIELD)
 public class DomainBase extends EppResource

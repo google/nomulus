@@ -223,7 +223,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   }
 
   /** Abstract builder for {@link EppResource} types. */
-  public abstract static class Builder<T extends EppResource, B extends Builder<?, ?>>
+  public abstract static class Builder<T extends EppResource, B extends Builder<T, B>>
       extends GenericBuilder<T, B> {
 
     /** Create a {@link Builder} wrapping a new instance. */
@@ -232,11 +232,6 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     /** Create a {@link Builder} wrapping the given instance. */
     protected Builder(T instance) {
       super(instance);
-    }
-
-    public B setRepoId(String repoId) {
-      getInstance().repoId = repoId;
-      return thisCastToDerived();
     }
 
     /**
@@ -324,6 +319,12 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     public B removeStatusValues(ImmutableSet<StatusValue> statusValues) {
       return setStatusValues(ImmutableSet.copyOf(
           difference(getInstance().getStatusValues(), statusValues)));
+    }
+
+    /** Set this resource's repoId. */
+    public B setRepoId(String repoId) {
+      getInstance().repoId = repoId;
+      return thisCastToDerived();
     }
 
     /** Build the resource, nullifying empty strings and sets and setting defaults. */

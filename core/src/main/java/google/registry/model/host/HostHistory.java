@@ -14,7 +14,11 @@
 
 package google.registry.model.host;
 
-import google.registry.model.history.EppHistory;
+import com.googlecode.objectify.Key;
+import google.registry.model.EppResource;
+import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 
 @Entity
@@ -22,19 +26,29 @@ import javax.persistence.Entity;
     indexes = {
       @javax.persistence.Index(columnList = "creationTime"),
       @javax.persistence.Index(columnList = "registrarId"),
-      @javax.persistence.Index(columnList = "repoId"),
     })
-public class HostHistory extends EppHistory {
+public class HostHistory extends HistoryEntry {
 
   // Store HostBase instead of HostResource so we don't pick up its @Id
   HostBase hostBase;
+
+  @Column(nullable = false)
+  VKey<HostResource> parentVKey;
+
+  public HostBase getHostBase() {
+    return hostBase;
+  }
+
+  public VKey<HostResource> getParentVKey() {
+    return parentVKey;
+  }
 
   @Override
   public Builder asBuilder() {
     return new Builder(clone(this));
   }
 
-  public static class Builder extends EppHistory.Builder<HostHistory, HostHistory.Builder> {
+  public static class Builder extends HistoryEntry.Builder<HostHistory, Builder> {
 
     public Builder() {}
 
@@ -44,6 +58,20 @@ public class HostHistory extends EppHistory {
 
     public Builder setHostBase(HostBase hostBase) {
       getInstance().hostBase = hostBase;
+      return this;
+    }
+
+    public Builder setParentVKey(VKey<HostResource> parentVKey) {
+      getInstance().parentVKey = parentVKey;
+      parentVKey.maybeGetOfyKey().ifPresent(parent -> getInstance().parent = parent);
+      return this;
+    }
+
+    // We can remove this once all HistoryEntries are converted to History objects
+    @Override
+    public Builder setParent(Key<? extends EppResource> parent) {
+      super.setParent(parent);
+      getInstance().parentVKey = VKey.createOfy(HostResource.class, (Key<HostResource>) parent);
       return this;
     }
   }

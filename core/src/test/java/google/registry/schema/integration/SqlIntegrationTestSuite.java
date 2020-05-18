@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assert_;
 
 import google.registry.model.contact.ContactResourceTest;
 import google.registry.model.domain.DomainBaseSqlTest;
+import google.registry.model.history.HostHistoryTest;
 import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.persistence.transaction.JpaEntityCoverage;
 import google.registry.schema.cursor.CursorDaoTest;
@@ -72,6 +73,7 @@ import org.junit.runner.RunWith;
   ContactResourceTest.class,
   CursorDaoTest.class,
   DomainBaseSqlTest.class,
+  HostHistoryTest.class,
   LockDaoTest.class,
   PremiumListDaoTest.class,
   RegistrarDaoTest.class,
