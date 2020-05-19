@@ -45,7 +45,8 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
             .collect(
                 toImmutableMap(
                     clazz -> {
-                      List<String> nameComponent = Splitter.on('.').splitToList(clazz.getName());
+                      List<String> nameComponent =
+                          Splitter.on('.').splitToList(clazz.getCanonicalName());
                       return nameComponent.get(nameComponent.size() - 1);
                     },
                     identity()));
@@ -57,6 +58,9 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
       @Override
       public VKey loadValue(Key datastoreValue) {
         // TODO(mmuller): we need to call a method on refClass to also reconstitute the SQL key.
+        if (datastoreValue == null || datastoreValue.getKind() == null) {
+          return null;
+        }
         return VKey.createOfy(
             classRegistry.get(datastoreValue.getKind()),
             com.googlecode.objectify.Key.create(datastoreValue));
@@ -64,7 +68,7 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
 
       @Override
       public Key saveValue(VKey key) {
-        return key.getOfyKey().getRaw();
+        return key == null ? null : key.getOfyKey().getRaw();
       }
     };
   }

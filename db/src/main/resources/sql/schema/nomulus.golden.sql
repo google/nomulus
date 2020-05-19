@@ -39,28 +39,75 @@ SET default_with_oids = false;
 --
 
 CREATE TABLE public."BillingEvent" (
-    type text NOT NULL,
-    id bigint NOT NULL,
+    billing_event_id bigint NOT NULL,
     client_id text NOT NULL,
     event_time timestamp with time zone NOT NULL,
     flags text[],
     reason text NOT NULL,
     target_id text NOT NULL,
-    cancellation_billing_time timestamp with time zone,
-    cancellation_ref_onetime_id bigint,
-    cancellation_ref_recurring_id bigint,
+    allocation_token_id text,
+    billing_time timestamp with time zone,
+    cancellation_matching_billing_event_id bigint,
     cost_amount numeric(19,2),
     cost_currency text,
-    modification_description text,
-    modification_ref_onetime_id bigint,
-    onetime_allocation_token_id text,
-    onetime_billing_time timestamp with time zone,
-    onetime_cancellation_matching_id bigint,
-    onetime_period_years integer,
-    onetime_synthetic_creation_time timestamp with time zone,
-    recurrence_end_time timestamp with time zone,
-    recurrence_time_of_year text
+    period_years integer,
+    synthetic_creation_time timestamp with time zone
 );
+
+
+--
+-- Name: BillingEventCancellation; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."BillingEventCancellation" (
+    billing_event_id bigint NOT NULL,
+    client_id text NOT NULL,
+    event_time timestamp with time zone NOT NULL,
+    flags text[],
+    reason text NOT NULL,
+    target_id text NOT NULL,
+    billing_time timestamp with time zone,
+    ref_one_time_id bigint,
+    ref_recurring_id bigint
+);
+
+
+--
+-- Name: BillingEventCancellation_billing_event_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."BillingEventCancellation_billing_event_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: BillingEventCancellation_billing_event_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."BillingEventCancellation_billing_event_id_seq" OWNED BY public."BillingEventCancellation".billing_event_id;
+
+
+--
+-- Name: BillingEvent_billing_event_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."BillingEvent_billing_event_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: BillingEvent_billing_event_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."BillingEvent_billing_event_id_seq" OWNED BY public."BillingEvent".billing_event_id;
 
 
 --
@@ -299,6 +346,41 @@ ALTER SEQUENCE public."PremiumList_revision_id_seq" OWNED BY public."PremiumList
 
 
 --
+-- Name: RecurringBillingEvent; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."RecurringBillingEvent" (
+    billing_event_id bigint NOT NULL,
+    client_id text NOT NULL,
+    event_time timestamp with time zone NOT NULL,
+    flags text[],
+    reason text NOT NULL,
+    target_id text NOT NULL,
+    recurrence_end_time timestamp with time zone,
+    recurrence_time_of_year text
+);
+
+
+--
+-- Name: RecurringBillingEvent_billing_event_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."RecurringBillingEvent_billing_event_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: RecurringBillingEvent_billing_event_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."RecurringBillingEvent_billing_event_id_seq" OWNED BY public."RecurringBillingEvent".billing_event_id;
+
+
+--
 -- Name: Registrar; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -457,15 +539,17 @@ ALTER SEQUENCE public."ReservedList_revision_id_seq" OWNED BY public."ReservedLi
 
 
 --
--- Name: hibernate_sequence; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: BillingEvent billing_event_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.hibernate_sequence
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
+ALTER TABLE ONLY public."BillingEvent" ALTER COLUMN billing_event_id SET DEFAULT nextval('public."BillingEvent_billing_event_id_seq"'::regclass);
+
+
+--
+-- Name: BillingEventCancellation billing_event_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingEventCancellation" ALTER COLUMN billing_event_id SET DEFAULT nextval('public."BillingEventCancellation_billing_event_id_seq"'::regclass);
 
 
 --
@@ -483,6 +567,13 @@ ALTER TABLE ONLY public."PremiumList" ALTER COLUMN revision_id SET DEFAULT nextv
 
 
 --
+-- Name: RecurringBillingEvent billing_event_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RecurringBillingEvent" ALTER COLUMN billing_event_id SET DEFAULT nextval('public."RecurringBillingEvent_billing_event_id_seq"'::regclass);
+
+
+--
 -- Name: RegistryLock revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -497,11 +588,19 @@ ALTER TABLE ONLY public."ReservedList" ALTER COLUMN revision_id SET DEFAULT next
 
 
 --
+-- Name: BillingEventCancellation BillingEventCancellation_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingEventCancellation"
+    ADD CONSTRAINT "BillingEventCancellation_pkey" PRIMARY KEY (billing_event_id);
+
+
+--
 -- Name: BillingEvent BillingEvent_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."BillingEvent"
-    ADD CONSTRAINT "BillingEvent_pkey" PRIMARY KEY (id);
+    ADD CONSTRAINT "BillingEvent_pkey" PRIMARY KEY (billing_event_id);
 
 
 --
@@ -577,6 +676,14 @@ ALTER TABLE ONLY public."PremiumList"
 
 
 --
+-- Name: RecurringBillingEvent RecurringBillingEvent_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RecurringBillingEvent"
+    ADD CONSTRAINT "RecurringBillingEvent_pkey" PRIMARY KEY (billing_event_id);
+
+
+--
 -- Name: RegistrarPoc RegistrarPoc_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -647,24 +754,24 @@ CREATE INDEX idx1rcgkdd777bpvj0r94sltwd5y ON public."Domain" USING btree (fully_
 
 
 --
--- Name: idx1vx9ue4mfn6466nuf7mrti04e; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx1vx9ue4mfn6466nuf7mrti04e ON public."BillingEvent" USING btree (recurrence_end_time);
-
-
---
--- Name: idx3m88tgkhnf7680useobc4au6v; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx3m88tgkhnf7680useobc4au6v ON public."BillingEvent" USING btree (cancellation_billing_time);
-
-
---
 -- Name: idx3y752kr9uh4kh6uig54vemx0l; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx3y752kr9uh4kh6uig54vemx0l ON public."Contact" USING btree (creation_time);
+
+
+--
+-- Name: idx4napr9rx5yx9yfsnpnajytvu4; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx4napr9rx5yx9yfsnpnajytvu4 ON public."RecurringBillingEvent" USING btree (event_time);
+
+
+--
+-- Name: idx4y2cx3n6qb064347jhqk8e5vg; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx4y2cx3n6qb064347jhqk8e5vg ON public."BillingEventCancellation" USING btree (client_id);
 
 
 --
@@ -679,6 +786,20 @@ CREATE INDEX idx5mnf0wn20tno4b9do88j61klr ON public."Domain" USING btree (deleti
 --
 
 CREATE INDEX idx5yfbr88439pxw0v3j86c74fp8 ON public."BillingEvent" USING btree (event_time);
+
+
+--
+-- Name: idx6pbkomdkdjup5ldsg4252vxgd; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx6pbkomdkdjup5ldsg4252vxgd ON public."BillingEventCancellation" USING btree (billing_time);
+
+
+--
+-- Name: idx6py6ocrab0ivr76srcd2okpnq; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx6py6ocrab0ivr76srcd2okpnq ON public."BillingEvent" USING btree (billing_time);
 
 
 --
@@ -717,17 +838,17 @@ CREATE INDEX idxbn8t4wp85fgxjl8q4ctlscx55 ON public."Contact" USING btree (curre
 
 
 --
--- Name: idxe8ipvfuacqd1s5144fiw3exln; Type: INDEX; Schema: public; Owner: -
+-- Name: idxg5ric3vcutj6p3d6qnycy6mp7; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idxe8ipvfuacqd1s5144fiw3exln ON public."BillingEvent" USING btree (onetime_allocation_token_id);
+CREATE INDEX idxg5ric3vcutj6p3d6qnycy6mp7 ON public."RecurringBillingEvent" USING btree (client_id);
 
 
 --
--- Name: idxfhbr41utchu6bpa43kn2ulx61; Type: INDEX; Schema: public; Owner: -
+-- Name: idxhmv411mdqo5ibn4vy7ykxpmlv; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idxfhbr41utchu6bpa43kn2ulx61 ON public."BillingEvent" USING btree (onetime_synthetic_creation_time);
+CREATE INDEX idxhmv411mdqo5ibn4vy7ykxpmlv ON public."BillingEvent" USING btree (allocation_token_id);
 
 
 --
@@ -738,6 +859,13 @@ CREATE INDEX idxkjt9yaq92876dstimd93hwckh ON public."Domain" USING btree (curren
 
 
 --
+-- Name: idxlm085j4hxe2x8yoh5ol9t4iyj; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxlm085j4hxe2x8yoh5ol9t4iyj ON public."RecurringBillingEvent" USING btree (recurrence_end_time);
+
+
+--
 -- Name: idxn1f711wicdnooa2mqb7g1m55o; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -745,10 +873,17 @@ CREATE INDEX idxn1f711wicdnooa2mqb7g1m55o ON public."Contact" USING btree (delet
 
 
 --
--- Name: idxp1ud5nyyxfjms32qwv17772wk; Type: INDEX; Schema: public; Owner: -
+-- Name: idxplxf9v56p0wg8ws6qsvd082hk; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idxp1ud5nyyxfjms32qwv17772wk ON public."BillingEvent" USING btree (recurrence_time_of_year);
+CREATE INDEX idxplxf9v56p0wg8ws6qsvd082hk ON public."BillingEvent" USING btree (synthetic_creation_time);
+
+
+--
+-- Name: idxqlf2qj3tpds0ixqobrbysspn4; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxqlf2qj3tpds0ixqobrbysspn4 ON public."RecurringBillingEvent" USING btree (recurrence_time_of_year);
 
 
 --
@@ -759,10 +894,10 @@ CREATE INDEX idxrwl38wwkli1j7gkvtywi9jokq ON public."Domain" USING btree (tld);
 
 
 --
--- Name: idxteelvp4hry8w7xyc0pycv8hr6; Type: INDEX; Schema: public; Owner: -
+-- Name: idxt94rv06pr8spwdkwed5bb0y4e; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idxteelvp4hry8w7xyc0pycv8hr6 ON public."BillingEvent" USING btree (onetime_billing_time);
+CREATE INDEX idxt94rv06pr8spwdkwed5bb0y4e ON public."BillingEventCancellation" USING btree (event_time);
 
 
 --
@@ -857,6 +992,46 @@ ALTER TABLE ONLY public."Contact"
 
 
 --
+-- Name: BillingEventCancellation fk_billing_event_cancellation_client_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingEventCancellation"
+    ADD CONSTRAINT fk_billing_event_cancellation_client_id FOREIGN KEY (client_id) REFERENCES public."Registrar"(client_id);
+
+
+--
+-- Name: BillingEvent fk_billing_event_cancellation_matching_billing_event_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingEvent"
+    ADD CONSTRAINT fk_billing_event_cancellation_matching_billing_event_id FOREIGN KEY (cancellation_matching_billing_event_id) REFERENCES public."RecurringBillingEvent"(billing_event_id);
+
+
+--
+-- Name: BillingEventCancellation fk_billing_event_cancellation_ref_one_time_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingEventCancellation"
+    ADD CONSTRAINT fk_billing_event_cancellation_ref_one_time_id FOREIGN KEY (ref_one_time_id) REFERENCES public."BillingEvent"(billing_event_id);
+
+
+--
+-- Name: BillingEventCancellation fk_billing_event_cancellation_ref_recurring_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingEventCancellation"
+    ADD CONSTRAINT fk_billing_event_cancellation_ref_recurring_id FOREIGN KEY (ref_recurring_id) REFERENCES public."RecurringBillingEvent"(billing_event_id);
+
+
+--
+-- Name: BillingEvent fk_billing_event_client_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingEvent"
+    ADD CONSTRAINT fk_billing_event_client_id FOREIGN KEY (client_id) REFERENCES public."Registrar"(client_id);
+
+
+--
 -- Name: Domain fk_domain_admin_contact; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -897,6 +1072,14 @@ ALTER TABLE ONLY public."DomainHost"
 
 
 --
+-- Name: RecurringBillingEvent fk_recurring_billing_event_client_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RecurringBillingEvent"
+    ADD CONSTRAINT fk_recurring_billing_event_client_id FOREIGN KEY (client_id) REFERENCES public."Registrar"(client_id);
+
+
+--
 -- Name: DomainHost fkfmi7bdink53swivs390m2btxg; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -934,30 +1117,6 @@ ALTER TABLE ONLY public."Contact"
 
 ALTER TABLE ONLY public."PremiumEntry"
     ADD CONSTRAINT fko0gw90lpo1tuee56l0nb6y6g5 FOREIGN KEY (revision_id) REFERENCES public."PremiumList"(revision_id);
-
-
---
--- Name: BillingEvent foreign_key_billing_event_cancellation_ref_onetime_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BillingEvent"
-    ADD CONSTRAINT foreign_key_billing_event_cancellation_ref_onetime_id FOREIGN KEY (cancellation_ref_onetime_id) REFERENCES public."BillingEvent"(id);
-
-
---
--- Name: BillingEvent foreign_key_billing_event_cancellation_ref_recurring_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BillingEvent"
-    ADD CONSTRAINT foreign_key_billing_event_cancellation_ref_recurring_id FOREIGN KEY (cancellation_ref_recurring_id) REFERENCES public."BillingEvent"(id);
-
-
---
--- Name: BillingEvent foreign_key_billing_event_modification_ref_onetime_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BillingEvent"
-    ADD CONSTRAINT foreign_key_billing_event_modification_ref_onetime_id FOREIGN KEY (modification_ref_onetime_id) REFERENCES public."BillingEvent"(id);
 
 
 --
