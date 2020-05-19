@@ -14,11 +14,15 @@
 
 package google.registry.model.translators;
 
+import static com.google.common.base.Functions.identity;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
+
 import com.google.appengine.api.datastore.Key;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableMap;
 import google.registry.persistence.VKey;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 /**
  * Translator factory for VKey.
@@ -26,19 +30,25 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>These get translated to a string containing the URL safe encoding of the objectify key
  * followed by a (url-unsafe) ampersand delimiter and the SQL key.
  */
-public class VKeyTranslatorFactory<T> extends AbstractSimpleTranslatorFactory<VKey, Key> {
+public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey, Key> {
 
   // Class registry allowing us to restore the original class object from the unqualified class
   // name, which is all the datastore key gives us.
-  private static final ConcurrentHashMap<String, Class<?>> classRegistry =
-      new ConcurrentHashMap<String, Class<?>>();
+  private final ImmutableMap<String, Class> classRegistry;
 
-  public VKeyTranslatorFactory(Class<T> refClass) {
+  public VKeyTranslatorFactory(Class... refClasses) {
     super(VKey.class);
 
-    // Register the class by it's unqualified name.
-    List<String> nameComponent = Splitter.on('.').splitToList(refClass.getName());
-    classRegistry.put(nameComponent.get(nameComponent.size() - 1), refClass);
+    // Store a registry of all classes by their unqualified name.
+    classRegistry =
+        Stream.of(refClasses)
+            .collect(
+                toImmutableMap(
+                    clazz -> {
+                      List<String> nameComponent = Splitter.on('.').splitToList(clazz.getName());
+                      return nameComponent.get(nameComponent.size() - 1);
+                    },
+                    identity()));
   }
 
   @Override
