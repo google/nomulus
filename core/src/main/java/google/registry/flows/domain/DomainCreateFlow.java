@@ -534,7 +534,7 @@ public class DomainCreateFlow implements TransactionalFlow {
         .setPeriodYears(years)
         .setCost(feesAndCredits.getCreateCost())
         .setEventTime(now)
-        .setAllocationToken(allocationToken.map(Key::create).orElse(null))
+        .setAllocationToken(allocationToken.map(AllocationToken::createVKey).orElse(null))
         .setBillingTime(
             now.plus(
                 isAnchorTenant

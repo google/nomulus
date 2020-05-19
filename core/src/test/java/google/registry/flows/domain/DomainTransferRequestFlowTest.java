@@ -100,6 +100,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.util.Map;
 import java.util.Optional;
@@ -1136,7 +1137,8 @@ public class DomainTransferRequestFlowTest
             .setEventTime(clock.nowUtc().plus(Registry.get("tld").getAutomaticTransferLength()))
             .setBillingTime(autorenewTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()))
             // The cancellation should refer to the old autorenew billing event.
-            .setRecurringEventKey(existingAutorenewEvent));
+            .setRecurringEventKey(
+                VKey.createOfy(BillingEvent.Recurring.class, existingAutorenewEvent)));
   }
 
   @Test
@@ -1164,7 +1166,8 @@ public class DomainTransferRequestFlowTest
             .setBillingTime(
                 expirationTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()))
             // The cancellation should refer to the old autorenew billing event.
-            .setRecurringEventKey(existingAutorenewEvent));
+            .setRecurringEventKey(
+                VKey.createOfy(BillingEvent.Recurring.class, existingAutorenewEvent)));
   }
 
   @Test

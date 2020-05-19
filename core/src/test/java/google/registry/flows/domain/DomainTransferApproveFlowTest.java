@@ -71,6 +71,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import java.util.Arrays;
 import java.util.stream.Stream;
 import org.joda.money.Money;
@@ -402,7 +403,8 @@ public class DomainTransferApproveFlowTest
             .setEventTime(clock.nowUtc()) // The cancellation happens at the moment of transfer.
             .setBillingTime(
                 oldExpirationTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()))
-            .setRecurringEventKey(domain.getAutorenewBillingEvent()));
+            .setRecurringEventKey(
+                VKey.createOfy(BillingEvent.Recurring.class, domain.getAutorenewBillingEvent())));
   }
 
   @Test

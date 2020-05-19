@@ -45,6 +45,7 @@ import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.common.TimedTransitionProperty.TimeMapper;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
 import java.util.Optional;
 import java.util.Set;
@@ -179,6 +180,10 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
 
   public TimedTransitionProperty<TokenStatus, TokenStatusTransition> getTokenStatusTransitions() {
     return tokenStatusTransitions;
+  }
+
+  public VKey<AllocationToken> createVKey() {
+    return VKey.createOfy(getClass(), Key.create(this));
   }
 
   @Override

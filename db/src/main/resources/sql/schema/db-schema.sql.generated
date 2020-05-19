@@ -11,31 +11,35 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
-create sequence hibernate_sequence start 1 increment 1;
 
     create table "BillingEvent" (
-       type text not null,
-        id int8 not null,
+       billing_event_id  bigserial not null,
         client_id text not null,
         event_time timestamptz not null,
         flags text[],
         reason text not null,
         target_id text not null,
-        cancellation_billing_time timestamptz,
-        cancellation_ref_onetime_id int8,
-        cancellation_ref_recurring_id int8,
+        allocation_token_id text,
+        billing_time timestamptz,
+        cancellation_matching_billing_event_id int8,
         cost_amount numeric(19, 2),
         cost_currency text,
-        modification_description text,
-        modification_ref_onetime_id int8,
-        onetime_allocation_token_id text,
-        onetime_billing_time timestamptz,
-        onetime_cancellation_matching_id int8,
-        onetime_period_years int4,
-        onetime_synthetic_creation_time timestamptz,
-        recurrence_end_time timestamptz,
-        recurrence_time_of_year text,
-        primary key (id)
+        period_years int4,
+        synthetic_creation_time timestamptz,
+        primary key (billing_event_id)
+    );
+
+    create table "BillingEventCancellation" (
+       billing_event_id  bigserial not null,
+        client_id text not null,
+        event_time timestamptz not null,
+        flags text[],
+        reason text not null,
+        target_id text not null,
+        billing_time timestamptz,
+        ref_one_time_id int8,
+        ref_recurring_id int8,
+        primary key (billing_event_id)
     );
 
     create table "ClaimsEntry" (
@@ -207,6 +211,18 @@ create sequence hibernate_sequence start 1 increment 1;
         primary key (revision_id)
     );
 
+    create table "RecurringBillingEvent" (
+       billing_event_id  bigserial not null,
+        client_id text not null,
+        event_time timestamptz not null,
+        flags text[],
+        reason text not null,
+        target_id text not null,
+        recurrence_end_time timestamptz,
+        recurrence_time_of_year text,
+        primary key (billing_event_id)
+    );
+
     create table "Registrar" (
        client_id text not null,
         allowed_tlds text[],
@@ -308,12 +324,12 @@ create sequence hibernate_sequence start 1 increment 1;
     );
 create index IDX73l103vc5900ig3p4odf0cngt on "BillingEvent" (client_id);
 create index IDX5yfbr88439pxw0v3j86c74fp8 on "BillingEvent" (event_time);
-create index IDXteelvp4hry8w7xyc0pycv8hr6 on "BillingEvent" (onetime_billing_time);
-create index IDXfhbr41utchu6bpa43kn2ulx61 on "BillingEvent" (onetime_synthetic_creation_time);
-create index IDXe8ipvfuacqd1s5144fiw3exln on "BillingEvent" (onetime_allocation_token_id);
-create index IDX1vx9ue4mfn6466nuf7mrti04e on "BillingEvent" (recurrence_end_time);
-create index IDXp1ud5nyyxfjms32qwv17772wk on "BillingEvent" (recurrence_time_of_year);
-create index IDX3m88tgkhnf7680useobc4au6v on "BillingEvent" (cancellation_billing_time);
+create index IDX6py6ocrab0ivr76srcd2okpnq on "BillingEvent" (billing_time);
+create index IDXplxf9v56p0wg8ws6qsvd082hk on "BillingEvent" (synthetic_creation_time);
+create index IDXhmv411mdqo5ibn4vy7ykxpmlv on "BillingEvent" (allocation_token_id);
+create index IDX4y2cx3n6qb064347jhqk8e5vg on "BillingEventCancellation" (client_id);
+create index IDXt94rv06pr8spwdkwed5bb0y4e on "BillingEventCancellation" (event_time);
+create index IDX6pbkomdkdjup5ldsg4252vxgd on "BillingEventCancellation" (billing_time);
 create index IDX3y752kr9uh4kh6uig54vemx0l on "Contact" (creation_time);
 create index IDXbn8t4wp85fgxjl8q4ctlscx55 on "Contact" (current_sponsor_client_id);
 create index IDXn1f711wicdnooa2mqb7g1m55o on "Contact" (deletion_time);
@@ -327,6 +343,10 @@ create index IDX5mnf0wn20tno4b9do88j61klr on "Domain" (deletion_time);
 create index IDX1rcgkdd777bpvj0r94sltwd5y on "Domain" (fully_qualified_domain_name);
 create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
 create index premiumlist_name_idx on "PremiumList" (name);
+create index IDXg5ric3vcutj6p3d6qnycy6mp7 on "RecurringBillingEvent" (client_id);
+create index IDX4napr9rx5yx9yfsnpnajytvu4 on "RecurringBillingEvent" (event_time);
+create index IDXlm085j4hxe2x8yoh5ol9t4iyj on "RecurringBillingEvent" (recurrence_end_time);
+create index IDXqlf2qj3tpds0ixqobrbysspn4 on "RecurringBillingEvent" (recurrence_time_of_year);
 create index registrar_name_idx on "Registrar" (registrar_name);
 create index registrar_iana_identifier_idx on "Registrar" (iana_identifier);
 create index registrarpoc_gae_user_id_idx on "RegistrarPoc" (gae_user_id);

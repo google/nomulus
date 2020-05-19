@@ -21,6 +21,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
@@ -103,7 +104,11 @@ public class BillingEventTest extends EntityTestCase {
                 .setCost(Money.of(USD, 1))
                 .setEventTime(now)
                 .setBillingTime(now.plusDays(5))
-                .setAllocationToken(Key.create(allocationToken)));
+                .setAllocationToken(
+                    VKey.create(
+                        AllocationToken.class,
+                        allocationToken.getToken(),
+                        Key.create(allocationToken))));
 
     oneTime = persistResource(unsavedOneTime);
 
@@ -116,31 +121,41 @@ public class BillingEventTest extends EntityTestCase {
                     .setReason(Reason.RENEW)
                     .setEventTime(now.plusYears(1))
                     .setRecurrenceEndTime(END_OF_TIME)));
-    oneTimeSynthetic = persistResource(commonInit(
-        new BillingEvent.OneTime.Builder()
-            .setParent(historyEntry)
-            .setReason(Reason.CREATE)
-            .setFlags(ImmutableSet.of(BillingEvent.Flag.ANCHOR_TENANT, BillingEvent.Flag.SYNTHETIC))
-            .setSyntheticCreationTime(now.plusDays(10))
-            .setCancellationMatchingBillingEvent(Key.create(recurring))
-            .setPeriodYears(2)
-            .setCost(Money.of(USD, 1))
-            .setEventTime(now)
-            .setBillingTime(now.plusDays(5))));
-    cancellationOneTime = persistResource(commonInit(
-        new BillingEvent.Cancellation.Builder()
-            .setParent(historyEntry2)
-            .setReason(Reason.CREATE)
-            .setEventTime(now.plusDays(1))
-            .setBillingTime(now.plusDays(5))
-            .setOneTimeEventKey(Key.create(oneTime))));
-    cancellationRecurring = persistResource(commonInit(
-        new BillingEvent.Cancellation.Builder()
-            .setParent(historyEntry2)
-            .setReason(Reason.RENEW)
-            .setEventTime(now.plusDays(1))
-            .setBillingTime(now.plusYears(1).plusDays(45))
-            .setRecurringEventKey(Key.create(recurring))));
+    oneTimeSynthetic =
+        persistResource(
+            commonInit(
+                new BillingEvent.OneTime.Builder()
+                    .setParent(historyEntry)
+                    .setReason(Reason.CREATE)
+                    .setFlags(
+                        ImmutableSet.of(
+                            BillingEvent.Flag.ANCHOR_TENANT, BillingEvent.Flag.SYNTHETIC))
+                    .setSyntheticCreationTime(now.plusDays(10))
+                    .setCancellationMatchingBillingEvent(recurring.createVKey())
+                    .setPeriodYears(2)
+                    .setCost(Money.of(USD, 1))
+                    .setEventTime(now)
+                    .setBillingTime(now.plusDays(5))));
+
+    cancellationOneTime =
+        persistResource(
+            commonInit(
+                new BillingEvent.Cancellation.Builder()
+                    .setParent(historyEntry2)
+                    .setReason(Reason.CREATE)
+                    .setEventTime(now.plusDays(1))
+                    .setBillingTime(now.plusDays(5))
+                    .setOneTimeEventKey(oneTime.createVKey())));
+
+    cancellationRecurring =
+        persistResource(
+            commonInit(
+                new BillingEvent.Cancellation.Builder()
+                    .setParent(historyEntry2)
+                    .setReason(Reason.RENEW)
+                    .setEventTime(now.plusDays(1))
+                    .setBillingTime(now.plusYears(1).plusDays(45))
+                    .setRecurringEventKey(recurring.createVKey())));
     modification = persistResource(commonInit(
         new BillingEvent.Modification.Builder()
             .setParent(historyEntry2)
@@ -158,14 +173,20 @@ public class BillingEventTest extends EntityTestCase {
         .build();
   }
 
+  private void saveNewBillingEvent(BillingEvent billingEvent) {
+    billingEvent.id = null;
+    jpaTm().transact(() -> jpaTm().saveNew(billingEvent));
+  }
+
   @Test
-  public void testCloudSqlPersistence() {
-    jpaTm().transact(() -> jpaTm().saveNew(unsavedOneTime));
+  public void testCloudSqlPersistence_OneTime() {
+    saveRegistrar("a registrar");
+    saveNewBillingEvent(unsavedOneTime);
+
     BillingEvent.OneTime persisted =
         jpaTm()
             .transact(
-                () ->
-                    jpaTm().load(VKey.createSql(BillingEvent.OneTime.class, unsavedOneTime.sqlId)));
+                () -> jpaTm().load(VKey.createSql(BillingEvent.OneTime.class, unsavedOneTime.id)));
     // TODO(shicong): Remove these fixes after the entities are fully compatible
     BillingEvent.OneTime fixed =
         persisted
@@ -173,8 +194,50 @@ public class BillingEventTest extends EntityTestCase {
             .setParent(unsavedOneTime.getParentKey())
             .setAllocationToken(unsavedOneTime.getAllocationToken().get())
             .build();
-    unsavedOneTime.id = unsavedOneTime.sqlId;
     assertThat(fixed).isEqualTo(unsavedOneTime);
+  }
+
+  @Test
+  public void testCloudSqlPersistence_Cancellation() {
+    saveRegistrar("a registrar");
+    saveNewBillingEvent(unsavedOneTime);
+    VKey<BillingEvent.OneTime> sqlVKey =
+        VKey.createSql(BillingEvent.OneTime.class, unsavedOneTime.id);
+    BillingEvent fixedCancellationOneTime =
+        cancellationOneTime.asBuilder().setOneTimeEventKey(sqlVKey).build();
+    saveNewBillingEvent(fixedCancellationOneTime);
+
+    BillingEvent.Cancellation persisted =
+        jpaTm()
+            .transact(
+                () ->
+                    jpaTm()
+                        .load(
+                            VKey.createSql(
+                                BillingEvent.Cancellation.class, fixedCancellationOneTime.id)));
+    // TODO(shicong): Remove these fixes after the entities are fully compatible
+    BillingEvent.Cancellation fixed =
+        persisted
+            .asBuilder()
+            .setParent(fixedCancellationOneTime.getParentKey())
+            .setOneTimeEventKey(sqlVKey)
+            .build();
+    assertThat(fixed).isEqualTo(fixedCancellationOneTime);
+  }
+
+  @Test
+  public void testCloudSqlPersistence_Recurring() {
+    saveRegistrar("a registrar");
+    saveNewBillingEvent(recurring);
+
+    BillingEvent.Recurring persisted =
+        jpaTm()
+            .transact(
+                () -> jpaTm().load(VKey.createSql(BillingEvent.Recurring.class, recurring.id)));
+    // TODO(shicong): Remove these fixes after the entities are fully compatible
+    BillingEvent.Recurring fixed =
+        persisted.asBuilder().setParent(recurring.getParentKey()).build();
+    assertThat(fixed).isEqualTo(recurring);
   }
 
   @Test
@@ -211,8 +274,13 @@ public class BillingEventTest extends EntityTestCase {
 
   @Test
   public void testCancellationMatching() {
-    Key<?> recurringKey = ofy().load().entity(oneTimeSynthetic).now()
-        .getCancellationMatchingBillingEvent();
+    Key<?> recurringKey =
+        ofy()
+            .load()
+            .entity(oneTimeSynthetic)
+            .now()
+            .getCancellationMatchingBillingEvent()
+            .getOfyKey();
     assertThat(ofy().load().key(recurringKey).now()).isEqualTo(recurring);
   }
 
@@ -247,7 +315,7 @@ public class BillingEventTest extends EntityTestCase {
                 oneTime
                     .asBuilder()
                     .setFlags(ImmutableSet.of(BillingEvent.Flag.SYNTHETIC))
-                    .setCancellationMatchingBillingEvent(Key.create(recurring))
+                    .setCancellationMatchingBillingEvent(recurring.createVKey())
                     .build());
     assertThat(thrown)
         .hasMessageThat()
@@ -291,7 +359,7 @@ public class BillingEventTest extends EntityTestCase {
             () ->
                 oneTime
                     .asBuilder()
-                    .setCancellationMatchingBillingEvent(Key.create(recurring))
+                    .setCancellationMatchingBillingEvent(recurring.createVKey())
                     .build());
     assertThat(thrown)
         .hasMessageThat()
@@ -362,8 +430,8 @@ public class BillingEventTest extends EntityTestCase {
             () ->
                 cancellationOneTime
                     .asBuilder()
-                    .setOneTimeEventKey(Key.create(oneTime))
-                    .setRecurringEventKey(Key.create(recurring))
+                    .setOneTimeEventKey(oneTime.createVKey())
+                    .setRecurringEventKey(recurring.createVKey())
                     .build());
     assertThat(thrown).hasMessageThat().contains("exactly one billing event");
   }
