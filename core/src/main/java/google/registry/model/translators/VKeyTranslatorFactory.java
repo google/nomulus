@@ -14,13 +14,15 @@
 
 package google.registry.model.translators;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.google.common.base.Functions.identity;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
-import com.googlecode.objectify.Key;
+import com.google.appengine.api.datastore.Key;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableMap;
 import google.registry.persistence.VKey;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
+import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Translator factory for VKey.
@@ -28,57 +30,42 @@ import java.net.URLEncoder;
  * <p>These get translated to a string containing the URL safe encoding of the objectify key
  * followed by a (url-unsafe) ampersand delimiter and the SQL key.
  */
-public class VKeyTranslatorFactory<T> extends AbstractSimpleTranslatorFactory<VKey, String> {
-  private final Class<T> refClass;
+public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey, Key> {
 
-  public VKeyTranslatorFactory(Class<T> refClass) {
+  // Class registry allowing us to restore the original class object from the unqualified class
+  // name, which is all the datastore key gives us.
+  private final ImmutableMap<String, Class> classRegistry;
+
+  public VKeyTranslatorFactory(Class... refClasses) {
     super(VKey.class);
-    this.refClass = refClass;
+
+    // Store a registry of all classes by their unqualified name.
+    classRegistry =
+        Stream.of(refClasses)
+            .collect(
+                toImmutableMap(
+                    clazz -> {
+                      List<String> nameComponent = Splitter.on('.').splitToList(clazz.getName());
+                      return nameComponent.get(nameComponent.size() - 1);
+                    },
+                    identity()));
   }
 
   @Override
-  public SimpleTranslator<VKey, String> createTranslator() {
-    return new SimpleTranslator<VKey, String>() {
+  public SimpleTranslator<VKey, Key> createTranslator() {
+    return new SimpleTranslator<VKey, Key>() {
       @Override
-      public VKey loadValue(String datastoreValue) {
-        int pos = datastoreValue.indexOf('&');
-        Key ofyKey = null;
-        String sqlKey = null;
-        if (pos > 0) {
-          // We have an objectify key.
-          ofyKey = Key.create(datastoreValue.substring(0, pos));
-        }
-
-        if (pos < datastoreValue.length() - 1) {
-          // We have an SQL key.
-          sqlKey = decode(datastoreValue.substring(pos + 1));
-        }
-
-        return VKey.create(refClass, sqlKey, ofyKey);
+      public VKey loadValue(Key datastoreValue) {
+        // TODO(mmuller): we need to call a method on refClass to also reconstitute the SQL key.
+        return VKey.createOfy(
+            classRegistry.get(datastoreValue.getKind()),
+            com.googlecode.objectify.Key.create(datastoreValue));
       }
 
       @Override
-      public String saveValue(VKey key) {
-        return ((key.getOfyKey() == null) ? "" : key.getOfyKey().getString())
-            + "&"
-            + ((key.getSqlKey() == null) ? "" : encode(key.getSqlKey().toString()));
+      public Key saveValue(VKey key) {
+        return key.getOfyKey().getRaw();
       }
     };
-  }
-
-  private static String encode(String val) {
-    try {
-      return URLEncoder.encode(val, UTF_8.toString());
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private static String decode(String encoded) {
-    try {
-      return URLDecoder.decode(encoded, UTF_8.toString());
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException(e);
-    }
   }
 }
