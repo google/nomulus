@@ -131,8 +131,7 @@ public class ObjectifyService {
             new InetAddressTranslatorFactory(),
             new MoneyStringTranslatorFactory(),
             new ReadableInstantUtcTranslatorFactory(),
-            new VKeyTranslatorFactory<ContactResource>(ContactResource.class),
-            new VKeyTranslatorFactory<HostResource>(HostResource.class),
+            new VKeyTranslatorFactory(HostResource.class, ContactResource.class),
             new UpdateAutoTimestampTranslatorFactory())) {
       factory().getTranslators().add(translatorFactory);
     }
