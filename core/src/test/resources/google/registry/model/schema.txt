@@ -5,11 +5,11 @@ class google.registry.model.UpdateAutoTimestamp {
   org.joda.time.DateTime timestamp;
 }
 class google.registry.model.billing.BillingEvent$Cancellation {
-  @Id long id;
+  @Id java.lang.Long id;
   @Parent com.googlecode.objectify.Key<google.registry.model.reporting.HistoryEntry> parent;
-  com.googlecode.objectify.Key<google.registry.model.billing.BillingEvent$OneTime> refOneTime;
-  com.googlecode.objectify.Key<google.registry.model.billing.BillingEvent$Recurring> refRecurring;
   google.registry.model.billing.BillingEvent$Reason reason;
+  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$OneTime> refOneTime;
+  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$Recurring> refRecurring;
   java.lang.String clientId;
   java.lang.String targetId;
   java.util.Set<google.registry.model.billing.BillingEvent$Flag> flags;
@@ -26,7 +26,7 @@ enum google.registry.model.billing.BillingEvent$Flag {
   SYNTHETIC;
 }
 class google.registry.model.billing.BillingEvent$Modification {
-  @Id long id;
+  @Id java.lang.Long id;
   @Parent com.googlecode.objectify.Key<google.registry.model.reporting.HistoryEntry> parent;
   com.googlecode.objectify.Key<google.registry.model.billing.BillingEvent$OneTime> eventRef;
   google.registry.model.billing.BillingEvent$Reason reason;
@@ -38,11 +38,11 @@ class google.registry.model.billing.BillingEvent$Modification {
   org.joda.time.DateTime eventTime;
 }
 class google.registry.model.billing.BillingEvent$OneTime {
-  @Id long id;
+  @Id java.lang.Long id;
   @Parent com.googlecode.objectify.Key<google.registry.model.reporting.HistoryEntry> parent;
-  com.googlecode.objectify.Key<? extends google.registry.model.billing.BillingEvent> cancellationMatchingBillingEvent;
-  com.googlecode.objectify.Key<google.registry.model.domain.token.AllocationToken> allocationToken;
   google.registry.model.billing.BillingEvent$Reason reason;
+  google.registry.persistence.VKey<? extends google.registry.model.billing.BillingEvent> cancellationMatchingBillingEvent;
+  google.registry.persistence.VKey<google.registry.model.domain.token.AllocationToken> allocationToken;
   java.lang.Integer periodYears;
   java.lang.String clientId;
   java.lang.String targetId;
@@ -62,7 +62,7 @@ enum google.registry.model.billing.BillingEvent$Reason {
   TRANSFER;
 }
 class google.registry.model.billing.BillingEvent$Recurring {
-  @Id long id;
+  @Id java.lang.Long id;
   @Parent com.googlecode.objectify.Key<google.registry.model.reporting.HistoryEntry> parent;
   google.registry.model.billing.BillingEvent$Reason reason;
   google.registry.model.common.TimeOfYear recurrenceTimeOfYear;
@@ -753,4 +753,9 @@ enum google.registry.model.transfer.TransferStatus {
   PENDING;
   SERVER_APPROVED;
   SERVER_CANCELLED;
+}
+class google.registry.persistence.VKey {
+  com.googlecode.objectify.Key<T> ofyKey;
+  java.lang.Class<? extends T> kind;
+  java.lang.Object primaryKey;
 }

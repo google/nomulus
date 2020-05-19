@@ -19,9 +19,7 @@
       *  Move tests to another (sub)project. This is not a big problem, but feels unnatural.
       *  Use Hibernate's ServiceRegistry for bootstrapping (not JPA-compliant)
     -->
-    <class>google.registry.model.billing.BillingEvent</class>
     <class>google.registry.model.billing.BillingEvent$Cancellation</class>
-    <class>google.registry.model.billing.BillingEvent$Modification</class>
     <class>google.registry.model.billing.BillingEvent$OneTime</class>
     <class>google.registry.model.billing.BillingEvent$Recurring</class>
     <class>google.registry.model.contact.ContactResource</class>
