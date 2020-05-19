@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import org.junit.rules.ExternalResource;
 
@@ -47,7 +46,6 @@ public class JpaEntityCoverage extends ExternalResource {
       PersistenceXmlUtility.getManagedClasses().stream()
           .filter(e -> !IGNORE_ENTITIES.contains(e.getSimpleName()))
           .filter(e -> e.isAnnotationPresent(Entity.class))
-          .filter(e -> !e.isAnnotationPresent(DiscriminatorValue.class))
           .collect(ImmutableSet.toImmutableSet());
   private static final Set<Class> allCoveredJpaEntities = Sets.newHashSet();
   // Map of test class name to boolean flag indicating if it tests any JPA entities.

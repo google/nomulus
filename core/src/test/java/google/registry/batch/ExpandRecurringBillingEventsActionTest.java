@@ -155,7 +155,7 @@ public class ExpandRecurringBillingEventsActionTest
         .setPeriodYears(1)
         .setReason(Reason.RENEW)
         .setSyntheticCreationTime(beginningOfTest)
-        .setCancellationMatchingBillingEvent(Key.create(recurring))
+        .setCancellationMatchingBillingEvent(recurring.createVKey())
         .setTargetId(domain.getFullyQualifiedDomainName());
   }
 
@@ -274,10 +274,12 @@ public class ExpandRecurringBillingEventsActionTest
         .setParent(persistedEntries.get(0))
         .build();
     // Persist an otherwise identical billing event that differs only in recurring event key.
-    BillingEvent.OneTime persisted = expected.asBuilder()
-        .setParent(persistedEntries.get(1))
-        .setCancellationMatchingBillingEvent(Key.create(recurring2))
-        .build();
+    BillingEvent.OneTime persisted =
+        expected
+            .asBuilder()
+            .setParent(persistedEntries.get(1))
+            .setCancellationMatchingBillingEvent(recurring2.createVKey())
+            .build();
     assertCursorAt(beginningOfTest);
     assertBillingEventsForResource(domain, persisted, expected, recurring, recurring2);
   }
@@ -604,19 +606,21 @@ public class ExpandRecurringBillingEventsActionTest
     assertHistoryEntryMatches(
         domain, persistedEntries.get(0), "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"),
         true);
-    BillingEvent.OneTime expected = defaultOneTimeBuilder()
-        .setParent(persistedEntries.get(0))
-        .setCancellationMatchingBillingEvent(Key.create(recurring))
-        .build();
+    BillingEvent.OneTime expected =
+        defaultOneTimeBuilder()
+            .setParent(persistedEntries.get(0))
+            .setCancellationMatchingBillingEvent(recurring.createVKey())
+            .build();
     assertHistoryEntryMatches(
         domain, persistedEntries.get(1), "TheRegistrar", DateTime.parse("2000-05-20T00:00:00Z"),
         true);
-    BillingEvent.OneTime expected2 = defaultOneTimeBuilder()
-        .setBillingTime(DateTime.parse("2000-05-20T00:00:00Z"))
-        .setEventTime(DateTime.parse("2000-04-05T00:00:00Z"))
-        .setParent(persistedEntries.get(1))
-        .setCancellationMatchingBillingEvent(Key.create(recurring2))
-        .build();
+    BillingEvent.OneTime expected2 =
+        defaultOneTimeBuilder()
+            .setBillingTime(DateTime.parse("2000-05-20T00:00:00Z"))
+            .setEventTime(DateTime.parse("2000-04-05T00:00:00Z"))
+            .setParent(persistedEntries.get(1))
+            .setCancellationMatchingBillingEvent(recurring2.createVKey())
+            .build();
     assertBillingEventsForResource(domain, expected, expected2, recurring, recurring2);
     assertCursorAt(beginningOfTest);
   }

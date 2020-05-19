@@ -276,7 +276,7 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
             .setBillingTime(billingTime)
             .setFlags(expectedBillingFlags)
             .setParent(historyEntry)
-            .setAllocationToken(allocationToken == null ? null : Key.create(allocationToken))
+            .setAllocationToken(allocationToken == null ? null : allocationToken.createVKey())
             .build();
 
     BillingEvent.Recurring renewBillingEvent =
