@@ -34,6 +34,8 @@ import java.util.Optional;
 /**
  * Iterator that incrementally parses binary data in LevelDb format into records.
  *
+ * <p>The input source is automatically closed when all data have been read.
+ *
  * <p>See <a
  * href="https://github.com/google/leveldb/blob/master/doc/log_format.md">log_format.md</a> for the
  * leveldb log format specification.</a>
@@ -92,11 +94,12 @@ public final class LevelDbLogReader implements Iterator<byte[]> {
    */
   // TODO(weiminyu): use ByteBuffer directly.
   private Optional<byte[]> readFromChannel() throws IOException {
-    while (true) {
+    while (channel.isOpen()) {
       int bytesRead = channel.read(byteBuffer);
       if (!byteBuffer.hasRemaining() || bytesRead < 0) {
         byteBuffer.flip();
         if (!byteBuffer.hasRemaining()) {
+          channel.close();
           return Optional.empty();
         }
         byte[] result = new byte[byteBuffer.remaining()];
@@ -105,6 +108,7 @@ public final class LevelDbLogReader implements Iterator<byte[]> {
         return Optional.of(result);
       }
     }
+    return Optional.empty();
   }
 
   /** Read a complete block, which must be exactly 32 KB. */
