@@ -18,6 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.tools.LevelDbUtil.MAX_RECORD;
 import static google.registry.tools.LevelDbUtil.addRecord;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Bytes;
@@ -93,7 +96,7 @@ public final class LevelDbLogReaderTest {
   }
 
   @Test
-  void read_noData() {
+  void read_noData() throws IOException {
     assertThat(readIncrementally(new byte[0])).isEmpty();
   }
 
@@ -119,10 +122,11 @@ public final class LevelDbLogReaderTest {
   }
 
   @SafeVarargs
-  private static ImmutableList<byte[]> readIncrementally(byte[]... blocks) {
-    LevelDbLogReader recordReader =
-        LevelDbLogReader.from(new ByteArrayInputStream(Bytes.concat(blocks)));
-    return ImmutableList.copyOf(recordReader);
+  private static ImmutableList<byte[]> readIncrementally(byte[]... blocks) throws IOException {
+    ByteArrayInputStream source = spy(new ByteArrayInputStream(Bytes.concat(blocks)));
+    ImmutableList<byte[]> records = ImmutableList.copyOf(LevelDbLogReader.from(source));
+    verify(source, times(1)).close();
+    return records;
   }
 
   /** Aggregates the bytes of a test block with the record count. */
