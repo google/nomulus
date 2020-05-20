@@ -23,7 +23,6 @@ import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
 import google.registry.testing.AppEngineRule;
 import google.registry.tools.LevelDbFileBuilder.Property;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import org.junit.Rule;
 import org.junit.Test;
@@ -51,10 +50,7 @@ public class LevelDbFileBuilderTest {
             BASE_ID, Property.create("first", 100L), Property.create("second", 200L));
     builder.build();
 
-    LevelDbLogReader reader = new LevelDbLogReader();
-    reader.readFrom(new FileInputStream(logFile));
-
-    ImmutableList<byte[]> records = reader.getRecords();
+    ImmutableList<byte[]> records = ImmutableList.copyOf(LevelDbLogReader.from(logFile.getPath()));
     assertThat(records).hasSize(1);
 
     // Reconstitute an entity, make sure that what we've got is the same as what we started with.
@@ -82,10 +78,7 @@ public class LevelDbFileBuilderTest {
     builder.build();
     ImmutableList<ComparableEntity> originalEntities = originalEntitiesBuilder.build();
 
-    LevelDbLogReader reader = new LevelDbLogReader();
-    reader.readFrom(new FileInputStream(logFile));
-
-    ImmutableList<byte[]> records = reader.getRecords();
+    ImmutableList<byte[]> records = ImmutableList.copyOf(LevelDbLogReader.from(logFile.getPath()));
     assertThat(records).hasSize(1000);
     int index = 0;
     for (byte[] record : records) {

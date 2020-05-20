@@ -17,6 +17,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.tools.LevelDbUtil.MAX_RECORD;
 import static google.registry.tools.LevelDbUtil.addRecord;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Bytes;
@@ -24,12 +25,9 @@ import google.registry.tools.LevelDbLogReader.ChunkType;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
-/** LevelDbLogReader tests. */
-@RunWith(JUnit4.class)
+/** Unit tests of {@link LevelDbLogReader}. */
 public final class LevelDbLogReaderTest {
 
   // Size of the test record.  Any value < 256 will do.
@@ -54,28 +52,23 @@ public final class LevelDbLogReaderTest {
   @Test
   public void testSimpleBlock() throws IOException {
     TestBlock block = makeBlockOfRepeatingBytes(0);
-    LevelDbLogReader reader = new LevelDbLogReader();
-    reader.readFrom(new ByteArrayInputStream(block.data));
-    ImmutableList<byte[]> records = reader.getRecords();
-    assertThat(records).hasSize(block.recordCount);
+    assertThat(readIncrementally(block.data)).hasSize(block.recordCount);
   }
 
   @Test
   public void testLargeRecord() throws IOException {
-    byte[] block = new byte[LevelDbLogReader.BLOCK_SIZE];
-    addRecord(block, 0, ChunkType.FIRST, MAX_RECORD, (byte) 1);
-    LevelDbLogReader reader = new LevelDbLogReader();
-    reader.readFrom(new ByteArrayInputStream(block));
-    assertThat(reader.getRecords()).isEmpty();
+    byte[] block0 = new byte[LevelDbLogReader.BLOCK_SIZE];
+    addRecord(block0, 0, ChunkType.FIRST, MAX_RECORD, (byte) 1);
+    assertThat(readIncrementally(block0)).isEmpty();
 
-    addRecord(block, 0, ChunkType.MIDDLE, MAX_RECORD, (byte) 2);
-    reader.readFrom(new ByteArrayInputStream(block));
-    assertThat(reader.getRecords()).isEmpty();
+    byte[] block1 = new byte[LevelDbLogReader.BLOCK_SIZE];
+    addRecord(block1, 0, ChunkType.MIDDLE, MAX_RECORD, (byte) 2);
+    assertThat(readIncrementally(block0, block1)).isEmpty();
 
-    addRecord(block, 0, ChunkType.LAST, MAX_RECORD, (byte) 3);
-    reader.readFrom(new ByteArrayInputStream(block));
+    byte[] block2 = new byte[LevelDbLogReader.BLOCK_SIZE];
+    addRecord(block2, 0, ChunkType.LAST, MAX_RECORD, (byte) 3);
 
-    List<byte[]> records = reader.getRecords();
+    List<byte[]> records = readIncrementally(block0, block1, block2);
     assertThat(records).hasSize(1);
     byte[] record = records.get(0);
 
@@ -95,11 +88,24 @@ public final class LevelDbLogReaderTest {
   public void readFromMultiBlockStream() throws IOException {
     TestBlock block0 = makeBlockOfRepeatingBytes(0);
     TestBlock block1 = makeBlockOfRepeatingBytes(138);
-    ByteArrayInputStream source = new ByteArrayInputStream(Bytes.concat(block0.data, block1.data));
+    assertThat(readIncrementally(block0.data, block1.data))
+        .hasSize(block0.recordCount + block1.recordCount);
+  }
 
-    LevelDbLogReader reader = new LevelDbLogReader();
-    reader.readFrom(source);
-    assertThat(reader.getRecords()).hasSize(block0.recordCount + block1.recordCount);
+  @Test
+  void read_noData() {
+    assertThat(readIncrementally(new byte[0])).isEmpty();
+  }
+
+  @Test
+  void read_failBadFirstBlock() {
+    assertThrows(IllegalStateException.class, () -> readIncrementally(new byte[1]));
+  }
+
+  @Test
+  void read_failBadTrailingBlock() {
+    TestBlock block = makeBlockOfRepeatingBytes(0);
+    assertThrows(IllegalStateException.class, () -> readIncrementally(block.data, new byte[2]));
   }
 
   @Test
@@ -110,6 +116,13 @@ public final class LevelDbLogReaderTest {
     assertThat(ChunkType.fromCode(ChunkType.FIRST.getCode())).isEqualTo(ChunkType.FIRST);
     assertThat(ChunkType.fromCode(ChunkType.MIDDLE.getCode())).isEqualTo(ChunkType.MIDDLE);
     assertThat(ChunkType.fromCode(ChunkType.LAST.getCode())).isEqualTo(ChunkType.LAST);
+  }
+
+  @SafeVarargs
+  private static ImmutableList<byte[]> readIncrementally(byte[]... blocks) {
+    LevelDbLogReader recordReader =
+        LevelDbLogReader.from(new ByteArrayInputStream(Bytes.concat(blocks)));
+    return ImmutableList.copyOf(recordReader);
   }
 
   /** Aggregates the bytes of a test block with the record count. */
