@@ -46,6 +46,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithLongVKey;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -274,7 +275,7 @@ public abstract class BillingEvent extends ImmutableObject
         @javax.persistence.Index(columnList = "allocation_token_id")
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_event_id"))
-  public static class OneTime extends BillingEvent {
+  public static class OneTime extends BillingEvent implements DatastoreAndSqlEntity {
 
     /** The billable value. */
     @AttributeOverrides({
@@ -450,7 +451,7 @@ public abstract class BillingEvent extends ImmutableObject
         @javax.persistence.Index(columnList = "recurrence_time_of_year")
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_recurrence_id"))
-  public static class Recurring extends BillingEvent {
+  public static class Recurring extends BillingEvent implements DatastoreAndSqlEntity {
 
     /**
      * The billing event recurs every year between {@link #eventTime} and this time on the
@@ -544,7 +545,7 @@ public abstract class BillingEvent extends ImmutableObject
         @javax.persistence.Index(columnList = "billingTime")
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_cancellation_id"))
-  public static class Cancellation extends BillingEvent {
+  public static class Cancellation extends BillingEvent implements DatastoreAndSqlEntity {
 
     /** The billing time of the charge that is being cancelled. */
     @Index
@@ -664,7 +665,7 @@ public abstract class BillingEvent extends ImmutableObject
   /** An event representing a modification of an existing one-time billing event. */
   @ReportedOn
   @Entity
-  public static class Modification extends BillingEvent {
+  public static class Modification extends BillingEvent implements DatastoreAndSqlEntity {
 
     /** The change in cost that should be applied to the original billing event. */
     Money cost;

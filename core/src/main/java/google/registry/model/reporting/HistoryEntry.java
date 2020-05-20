@@ -18,6 +18,7 @@ import static com.googlecode.objectify.Key.getKind;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
@@ -40,6 +41,8 @@ import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.Access;
@@ -59,7 +62,7 @@ import org.joda.time.DateTime;
 @MappedSuperclass
 @WithStringVKey // TODO(b/162229294): This should be resolved during the course of that bug
 @Access(AccessType.FIELD)
-public class HistoryEntry extends ImmutableObject implements Buildable {
+public class HistoryEntry extends ImmutableObject implements Buildable, DatastoreEntity {
 
   /** Represents the type of history entry. */
   public enum Type {
@@ -305,6 +308,12 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
           String.format("Unknown kind of HistoryEntry parent %s", parentKind));
     }
     return resultEntity;
+  }
+
+  // In SQL, save the child type
+  @Override
+  public ImmutableList<SqlEntity> toSqlEntities() {
+    return ImmutableList.of((SqlEntity) toChildHistoryEntity());
   }
 
   /** A builder for {@link HistoryEntry} since it is immutable */

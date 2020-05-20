@@ -23,11 +23,11 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.VirtualEntity;
 import google.registry.model.common.EntityGroupRoot;
+import google.registry.schema.replay.EntityTest.EntityForTesting;
 
-/**
- * A test model object that can be persisted in any entity group.
- */
+/** A test model object that can be persisted in any entity group. */
 @Entity
+@EntityForTesting
 public class TestObject extends ImmutableObject {
 
   @Parent
@@ -65,6 +65,7 @@ public class TestObject extends ImmutableObject {
   /** A test @VirtualEntity model object, which should not be persisted. */
   @Entity
   @VirtualEntity
+  @EntityForTesting
   public static class TestVirtualObject extends ImmutableObject {
 
     @Id

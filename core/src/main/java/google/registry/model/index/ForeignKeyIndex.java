@@ -43,6 +43,8 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import google.registry.util.NonFinalForTesting;
 import java.util.Map;
 import java.util.Optional;
@@ -61,28 +63,44 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
   /** The {@link ForeignKeyIndex} type for {@link ContactResource} entities. */
   @ReportedOn
   @Entity
-  public static class ForeignKeyContactIndex extends ForeignKeyIndex<ContactResource> {}
+  public static class ForeignKeyContactIndex extends ForeignKeyIndex<ContactResource>
+      implements DatastoreEntity {
+    @Override
+    public ImmutableList<SqlEntity> toSqlEntities() {
+      return ImmutableList.of(); // not relevant in SQL
+    }
+  }
 
   /** The {@link ForeignKeyIndex} type for {@link DomainBase} entities. */
   @ReportedOn
   @Entity
-  public static class ForeignKeyDomainIndex extends ForeignKeyIndex<DomainBase> {}
+  public static class ForeignKeyDomainIndex extends ForeignKeyIndex<DomainBase>
+      implements DatastoreEntity {
+    @Override
+    public ImmutableList<SqlEntity> toSqlEntities() {
+      return ImmutableList.of(); // not relevant in SQL
+    }
+  }
 
   /** The {@link ForeignKeyIndex} type for {@link HostResource} entities. */
   @ReportedOn
   @Entity
-  public static class ForeignKeyHostIndex extends ForeignKeyIndex<HostResource> {}
+  public static class ForeignKeyHostIndex extends ForeignKeyIndex<HostResource>
+      implements DatastoreEntity {
+    @Override
+    public ImmutableList<SqlEntity> toSqlEntities() {
+      return ImmutableList.of(); // not relevant in SQL
+    }
+  }
 
-  static final ImmutableMap<
-          Class<? extends EppResource>, Class<? extends ForeignKeyIndex<?>>>
+  static final ImmutableMap<Class<? extends EppResource>, Class<? extends ForeignKeyIndex<?>>>
       RESOURCE_CLASS_TO_FKI_CLASS =
           ImmutableMap.of(
               ContactResource.class, ForeignKeyContactIndex.class,
               DomainBase.class, ForeignKeyDomainIndex.class,
               HostResource.class, ForeignKeyHostIndex.class);
 
-  @Id
-  String foreignKey;
+  @Id String foreignKey;
 
   /**
    * The deletion time of this {@link ForeignKeyIndex}.
@@ -90,8 +108,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
    * <p>This will generally be equal to the deletion time of {@link #topReference}. However, in the
    * case of a {@link HostResource} that was renamed, this field will hold the time of the rename.
    */
-  @Index
-  DateTime deletionTime;
+  @Index DateTime deletionTime;
 
   /**
    * The referenced resource.

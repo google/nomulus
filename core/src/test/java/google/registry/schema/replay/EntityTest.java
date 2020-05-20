@@ -41,22 +41,30 @@ public class EntityTest {
         new ClassGraph().enableAnnotationInfo().whitelistPackages("google.registry").scan()) {
       // All javax.persistence entities must implement SqlEntity and vice versa
       ImmutableSet<String> javaxPersistenceClasses =
-          getClassNames(
-              scanResult.getClassesWithAnnotation(javax.persistence.Entity.class.getName()));
+          getAllClassesWithAnnotation(scanResult, javax.persistence.Entity.class.getName());
       ImmutableSet<String> sqlEntityClasses =
           getClassNames(scanResult.getClassesImplementing(SqlEntity.class.getName()));
-      assertThat(javaxPersistenceClasses).isEqualTo(sqlEntityClasses);
+      assertThat(sqlEntityClasses).containsExactlyElementsIn(javaxPersistenceClasses);
 
-      // All com.googlecode.objectify.annotation.Entity classes must implement DatastoreEntity and
-      // vice versa
+      // All com.googlecode.objectify entities must implement DatastoreEntity and vice versa
       ImmutableSet<String> objectifyClasses =
-          getClassNames(
-              scanResult.getClassesWithAnnotation(
-                  com.googlecode.objectify.annotation.Entity.class.getName()));
+          getAllClassesWithAnnotation(
+              scanResult, com.googlecode.objectify.annotation.Entity.class.getName());
       ImmutableSet<String> datastoreEntityClasses =
           getClassNames(scanResult.getClassesImplementing(DatastoreEntity.class.getName()));
-      assertThat(objectifyClasses).isEqualTo(datastoreEntityClasses);
+      assertThat(datastoreEntityClasses).containsExactlyElementsIn(objectifyClasses);
     }
+  }
+
+  private ImmutableSet<String> getAllClassesWithAnnotation(
+      ScanResult scanResult, String annotation) {
+    ImmutableSet.Builder<String> result = new ImmutableSet.Builder<>();
+    ClassInfoList classesWithAnnotation = scanResult.getClassesWithAnnotation(annotation);
+    result.addAll(getClassNames(classesWithAnnotation));
+    classesWithAnnotation.stream()
+        .map(ClassInfo::getSubclasses)
+        .forEach(classInfoList -> result.addAll(getClassNames(classInfoList)));
+    return result.build();
   }
 
   private ImmutableSet<String> getClassNames(ClassInfoList classInfoList) {

@@ -17,6 +17,7 @@ package google.registry.model.index;
 import static google.registry.util.TypeUtils.instantiate;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -25,11 +26,13 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.EppResource;
 import google.registry.model.annotations.ReportedOn;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 
 /** An index that allows for quick enumeration of all EppResource entities (e.g. via map reduce). */
 @ReportedOn
 @Entity
-public class EppResourceIndex extends BackupGroupRoot {
+public class EppResourceIndex extends BackupGroupRoot implements DatastoreEntity {
 
   @Id
   String id;
@@ -73,5 +76,10 @@ public class EppResourceIndex extends BackupGroupRoot {
 
   public static <T extends EppResource> EppResourceIndex create(Key<T> resourceKey) {
     return create(EppResourceIndexBucket.getBucketKey(resourceKey), resourceKey);
+  }
+
+  @Override
+  public ImmutableList<SqlEntity> toSqlEntities() {
+    return ImmutableList.of(); // not relevant in SQL
   }
 }

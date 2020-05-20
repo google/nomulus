@@ -45,6 +45,7 @@ import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithLongVKey;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.util.List;
 import java.util.Optional;
 import javax.persistence.AttributeOverride;
@@ -92,7 +93,7 @@ import org.joda.time.DateTime;
       @javax.persistence.Index(columnList = "eventTime")
     })
 public abstract class PollMessage extends ImmutableObject
-    implements Buildable, TransferServerApproveEntity {
+    implements Buildable, DatastoreAndSqlEntity, TransferServerApproveEntity {
 
   /** Entity id. */
   @Id
