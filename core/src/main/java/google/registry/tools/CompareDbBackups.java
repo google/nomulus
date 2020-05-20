@@ -40,12 +40,10 @@ class CompareDbBackups {
     }
 
     ImmutableSet<ComparableEntity> entities1 =
-        new RecordAccumulator()
-            .readDirectory(new File(args[0]), DATA_FILE_MATCHER)
+        RecordAccumulator.readDirectory(new File(args[0]), DATA_FILE_MATCHER)
             .getComparableEntitySet();
     ImmutableSet<ComparableEntity> entities2 =
-        new RecordAccumulator()
-            .readDirectory(new File(args[1]), DATA_FILE_MATCHER)
+        RecordAccumulator.readDirectory(new File(args[1]), DATA_FILE_MATCHER)
             .getComparableEntitySet();
 
     // Calculate the entities added and removed.

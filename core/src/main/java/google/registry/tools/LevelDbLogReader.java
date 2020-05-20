@@ -14,17 +14,25 @@
 
 package google.registry.tools;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Optional;
 
 /**
- * Reads records from a set of LevelDB files and builds a gigantic ImmutableList from them.
+ * Iterator that incrementally parses binary data in LevelDb format into records.
  *
  * <p>See <a
  * href="https://github.com/google/leveldb/blob/master/doc/log_format.md">log_format.md</a> for the
@@ -32,19 +40,72 @@ import java.nio.file.Path;
  *
  * <p>There are several other implementations of this, none of which appeared suitable for our use
  * case: <a href="https://github.com/google/leveldb">The original C++ implementation</a>. <a
- * href="https://cloud.google.com/appengine/docs/standard/java/javadoc/com/google/appengine/api/files/RecordWriteChannel">
- * com.google.appengine.api.files.RecordWriteChannel</a> - Exactly what we need but deprecated. The
+ * href="https://cloud.google.com/appengine/docs/standard/java/javadoc/com/google/appengine/api/files/RecordReadChannel">
+ * com.google.appengine.api.files.RecordReadChannel</a> - Exactly what we need but deprecated. The
  * referenced replacement: <a
  * href="https://github.com/GoogleCloudPlatform/appengine-gcs-client.git">The App Engine GCS
  * Client</a> - Does not appear to have any support for working with LevelDB.
  */
-public final class LevelDbLogReader {
+public final class LevelDbLogReader implements Iterator<byte[]> {
 
   @VisibleForTesting static final int BLOCK_SIZE = 32 * 1024;
   @VisibleForTesting static final int HEADER_SIZE = 7;
 
   private final ByteArrayOutputStream recordContents = new ByteArrayOutputStream();
-  private final ImmutableList.Builder<byte[]> recordListBuilder = new ImmutableList.Builder<>();
+  private final LinkedList<byte[]> recordList = Lists.newLinkedList();
+
+  private final ByteBuffer byteBuffer = ByteBuffer.allocate(BLOCK_SIZE);
+  private final ReadableByteChannel channel;
+
+  LevelDbLogReader(ReadableByteChannel channel) {
+    this.channel = channel;
+  }
+
+  @Override
+  public boolean hasNext() {
+    while (recordList.isEmpty()) {
+      try {
+        Optional<byte[]> block = readFromChannel();
+        if (!block.isPresent()) {
+          return false;
+        }
+        if (block.get().length != BLOCK_SIZE) {
+          throw new IllegalStateException("Data size is not multiple of " + BLOCK_SIZE);
+        }
+        processBlock(block.get());
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return true;
+  }
+
+  @Override
+  public byte[] next() {
+    checkState(hasNext(), "The next() method called on empty iterator.");
+    return recordList.removeFirst();
+  }
+
+  /**
+   * Returns the next {@link #BLOCK_SIZE} bytes from the input channel, or {@link
+   * Optional#empty()} if there is no more data.
+   */
+  // TODO(weiminyu): use ByteBuffer directly.
+  private Optional<byte[]> readFromChannel() throws IOException {
+    while (true) {
+      int bytesRead = channel.read(byteBuffer);
+      if (!byteBuffer.hasRemaining() || bytesRead < 0) {
+        byteBuffer.flip();
+        if (!byteBuffer.hasRemaining()) {
+          return Optional.empty();
+        }
+        byte[] result = new byte[byteBuffer.remaining()];
+        byteBuffer.get(result);
+        byteBuffer.clear();
+        return Optional.of(result);
+      }
+    }
+  }
 
   /** Read a complete block, which must be exactly 32 KB. */
   private void processBlock(byte[] block) {
@@ -63,7 +124,7 @@ public final class LevelDbLogReader {
 
       // If this is the last (or only) chunk in the record, store the full contents into the List.
       if (recordHeader.type == ChunkType.FULL || recordHeader.type == ChunkType.LAST) {
-        recordListBuilder.add(recordContents.toByteArray());
+        recordList.add(recordContents.toByteArray());
         recordContents.reset();
       }
 
@@ -96,40 +157,24 @@ public final class LevelDbLogReader {
     return new RecordHeader(checksum, size, ChunkType.fromCode(type));
   }
 
-  /** Reads all records in the Reader into the record set. */
-  public void readFrom(InputStream source) throws IOException {
-    byte[] block = new byte[BLOCK_SIZE];
-
-    // read until we have no more.
-    while (true) {
-      int amountRead = source.read(block, 0, BLOCK_SIZE);
-      if (amountRead <= 0) {
-        break;
-      }
-      assert amountRead == BLOCK_SIZE;
-
-      processBlock(block);
-    }
+  /** Returns a {@link LevelDbLogReader} over a {@link ReadableByteChannel}. */
+  public static LevelDbLogReader from(ReadableByteChannel channel) {
+    return new LevelDbLogReader(channel);
   }
 
-  /** Reads all records from the file specified by "path" into the record set. */
-  public void readFrom(Path path) throws IOException {
-    readFrom(Files.newInputStream(path));
+  /** Returns a {@link LevelDbLogReader} over an {@link InputStream}. */
+  public static LevelDbLogReader from(InputStream source) {
+    return new LevelDbLogReader(Channels.newChannel(source));
   }
 
-  /** Reads all records from the specified file into the record set. */
-  public void readFrom(String filename) throws IOException {
-    readFrom(FileSystems.getDefault().getPath(filename));
+  /** Returns a {@link LevelDbLogReader} over a file specified by {@link Path}. */
+  public static LevelDbLogReader from(Path path) throws IOException {
+    return from(Files.newInputStream(path));
   }
 
-  /**
-   * Gets the list of records constructed so far.
-   *
-   * <p>Note that this does not invalidate the internal state of the object: we return a copy and
-   * this can be called multiple times.
-   */
-  ImmutableList<byte[]> getRecords() {
-    return recordListBuilder.build();
+  /** Returns a {@link LevelDbLogReader} over a file specified by {@code filename}. */
+  public static LevelDbLogReader from(String filename) throws IOException {
+    return from(FileSystems.getDefault().getPath(filename));
   }
 
   /** Aggregates the fields in a record header. */

@@ -15,38 +15,43 @@
 package google.registry.tools;
 
 import com.google.appengine.api.datastore.EntityTranslator;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.function.Predicate;
 
 /** Accumulates Entity records from level db files under a directory hierarchy. */
 class RecordAccumulator {
-  private final LevelDbLogReader reader = new LevelDbLogReader();
+  private final ImmutableList<byte[]> records;
+
+  RecordAccumulator(ImmutableList<byte[]> records) {
+    this.records = records;
+  }
 
   /** Recursively reads all records in the directory. */
-  public final RecordAccumulator readDirectory(File dir, Predicate<File> fileMatcher) {
+  public static RecordAccumulator readDirectory(File dir, Predicate<File> fileMatcher) {
+    ImmutableList.Builder<byte[]> builder = new ImmutableList.Builder<>();
     for (File child : dir.listFiles()) {
       if (child.isDirectory()) {
-        readDirectory(child, fileMatcher);
+        builder.addAll(readDirectory(child, fileMatcher).records);
       } else if (fileMatcher.test(child)) {
         try {
-          reader.readFrom(new FileInputStream(child));
+          builder.addAll(LevelDbLogReader.from(child.getPath()));
         } catch (IOException e) {
           throw new RuntimeException("IOException reading from file: " + child, e);
         }
       }
     }
 
-    return this;
+    return new RecordAccumulator(builder.build());
   }
 
   /** Creates an entity set from the current set of raw records. */
   ImmutableSet<ComparableEntity> getComparableEntitySet() {
     ImmutableSet.Builder<ComparableEntity> builder = new ImmutableSet.Builder<>();
-    for (byte[] rawRecord : reader.getRecords()) {
+    for (byte[] rawRecord : records) {
       // Parse the entity proto and create an Entity object from it.
       EntityProto proto = new EntityProto();
       proto.parseFrom(rawRecord);
