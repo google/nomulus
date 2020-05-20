@@ -16,13 +16,12 @@ package google.registry.model.translators;
 
 import static com.google.common.base.Functions.identity;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static google.registry.model.EntityClasses.ALL_CLASSES;
 
 import com.google.appengine.api.datastore.Key;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
+import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.persistence.VKey;
-import java.util.List;
-import java.util.stream.Stream;
 
 /**
  * Translator factory for VKey.
@@ -34,21 +33,16 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
 
   // Class registry allowing us to restore the original class object from the unqualified class
   // name, which is all the datastore key gives us.
-  private final ImmutableMap<String, Class> classRegistry;
+  // Note that entities annotated with @EntitySubclass are removed because they share the same
+  // kind of the key with their parent class.
+  private static final ImmutableMap<String, Class> CLASS_REGISTRY =
+      ALL_CLASSES.stream()
+          .filter(clazz -> !clazz.isAnnotationPresent(EntitySubclass.class))
+          .collect(toImmutableMap(com.googlecode.objectify.Key::getKind, identity()));
+  ;
 
-  public VKeyTranslatorFactory(Class... refClasses) {
+  public VKeyTranslatorFactory() {
     super(VKey.class);
-
-    // Store a registry of all classes by their unqualified name.
-    classRegistry =
-        Stream.of(refClasses)
-            .collect(
-                toImmutableMap(
-                    clazz -> {
-                      List<String> nameComponent = Splitter.on('.').splitToList(clazz.getName());
-                      return nameComponent.get(nameComponent.size() - 1);
-                    },
-                    identity()));
   }
 
   @Override
@@ -57,14 +51,16 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
       @Override
       public VKey loadValue(Key datastoreValue) {
         // TODO(mmuller): we need to call a method on refClass to also reconstitute the SQL key.
-        return VKey.createOfy(
-            classRegistry.get(datastoreValue.getKind()),
-            com.googlecode.objectify.Key.create(datastoreValue));
+        return datastoreValue == null
+            ? null
+            : VKey.createOfy(
+                CLASS_REGISTRY.get(datastoreValue.getKind()),
+                com.googlecode.objectify.Key.create(datastoreValue));
       }
 
       @Override
       public Key saveValue(VKey key) {
-        return key.getOfyKey().getRaw();
+        return key == null ? null : key.getOfyKey().getRaw();
       }
     };
   }
