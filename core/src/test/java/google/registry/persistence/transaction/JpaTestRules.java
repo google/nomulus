@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import org.hibernate.cfg.Environment;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -177,6 +178,17 @@ public class JpaTestRules {
     /** Adds the specified property to those used to initialize the transaction manager. */
     public Builder withProperty(String name, String value) {
       this.userProperties.put(name, value);
+      return this;
+    }
+
+    /**
+     * Enables logging of SQL statements.
+     *
+     * <p>SQL logging is very noisy and disabled by default. This method maybe useful when
+     * troubleshooting a specific test.
+     */
+    public Builder withSqlLogging() {
+      withProperty(Environment.SHOW_SQL, "true");
       return this;
     }
 

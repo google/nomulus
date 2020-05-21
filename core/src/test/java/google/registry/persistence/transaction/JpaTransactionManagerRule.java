@@ -41,6 +41,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -146,13 +148,15 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
     ImmutableMap properties = PersistenceModule.providesDefaultDatabaseConfigs();
     if (!userProperties.isEmpty()) {
       // If there are user properties, create a new properties object with these added.
-      ImmutableMap.Builder builder = properties.builder();
-      builder.putAll(userProperties);
-      // Forbid Hibernate push to stay consistent with flyway-based schema management.
-      builder.put(Environment.HBM2DDL_AUTO, "none");
-      builder.put(Environment.SHOW_SQL, "true");
-      properties = builder.build();
+      Map<String, String> mergedProperties = Maps.newHashMap();
+      mergedProperties.putAll(properties);
+      mergedProperties.putAll(userProperties);
+      properties = ImmutableMap.copyOf(mergedProperties);
     }
+    // Forbid Hibernate push to stay consistent with flyway-based schema management.
+    checkState(
+        Objects.equals(properties.get(Environment.HBM2DDL_AUTO), "none"),
+        "The HBM2DDL_AUTO property must be 'none'.");
     assertReasonableNumDbConnections();
     emf =
         createEntityManagerFactory(
