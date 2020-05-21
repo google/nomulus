@@ -16,6 +16,7 @@ package google.registry.model.history;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.SqlHelper.saveRegistrar;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableSet;
@@ -36,6 +37,8 @@ public class HostHistoryTest extends EntityTestCase {
 
   @Test
   public void testPersistence() {
+    saveRegistrar("registrar1");
+
     HostResource host =
         new HostResource.Builder()
             .setRepoId("host1")
@@ -53,7 +56,7 @@ public class HostHistoryTest extends EntityTestCase {
             .setType(HistoryEntry.Type.HOST_CREATE)
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
             .setModificationTime(fakeClock.nowUtc())
-            .setClientId("foo")
+            .setClientId("registrar1")
             .setTrid(Trid.create("ABC-123", "server-trid"))
             .setBySuperuser(false)
             .setReason("reason")
