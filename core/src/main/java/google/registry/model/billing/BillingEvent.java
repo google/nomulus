@@ -30,6 +30,7 @@ import com.google.common.collect.Sets;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Parent;
@@ -109,7 +110,6 @@ public abstract class BillingEvent extends ImmutableObject
   @Id
   @javax.persistence.Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "billingEventId")
   Long id;
 
   @Parent @DoNotHydrate @Transient Key<HistoryEntry> parent;
@@ -118,6 +118,18 @@ public abstract class BillingEvent extends ImmutableObject
   @Index
   @Column(nullable = false)
   String clientId;
+
+  /** Revision id of the entry in DomainHistory table that ths bill belongs to. */
+  // TODO(shicong): Add foreign key constraint when DomainHistory table is generated
+  @Ignore
+  @Column(nullable = false)
+  Long domainHistoryRevisionId;
+
+  /** ID of the EPP resource that the bill is for. */
+  // TODO(shicong): Add foreign key constraint when we expand DatastoreHelp for Postgresql
+  @Ignore
+  @Column(nullable = false)
+  String repoId;
 
   /** When this event was created. For recurring events, this is also the recurrence start time. */
   @Index
@@ -138,6 +150,14 @@ public abstract class BillingEvent extends ImmutableObject
 
   public String getClientId() {
     return clientId;
+  }
+
+  public Long getDomainHistoryRevisionId() {
+    return domainHistoryRevisionId;
+  }
+
+  public String getRepoId() {
+    return repoId;
   }
 
   public DateTime getEventTime() {
@@ -193,6 +213,16 @@ public abstract class BillingEvent extends ImmutableObject
       return thisCastToDerived();
     }
 
+    public B setDomainHistoryRevisionId(Long domainHistoryRevisionId) {
+      getInstance().domainHistoryRevisionId = domainHistoryRevisionId;
+      return thisCastToDerived();
+    }
+
+    public B setRepoId(String repoId) {
+      getInstance().repoId = repoId;
+      return thisCastToDerived();
+    }
+
     public B setEventTime(DateTime eventTime) {
       getInstance().eventTime = eventTime;
       return thisCastToDerived();
@@ -242,6 +272,7 @@ public abstract class BillingEvent extends ImmutableObject
         @javax.persistence.Index(columnList = "syntheticCreationTime"),
         @javax.persistence.Index(columnList = "allocation_token_id")
       })
+  @AttributeOverride(name = "id", column = @Column(name = "billing_event_id"))
   public static class OneTime extends BillingEvent {
 
     /** The billable value. */
@@ -276,7 +307,7 @@ public abstract class BillingEvent extends ImmutableObject
      * OneTime was created. This is needed in order to properly match billing events against {@link
      * Cancellation}s.
      */
-    @Column(name = "cancellation_matching_billing_event_id")
+    @Column(name = "cancellation_matching_billing_recurrence_id")
     VKey<? extends BillingEvent> cancellationMatchingBillingEvent;
 
     /**
@@ -404,7 +435,7 @@ public abstract class BillingEvent extends ImmutableObject
    */
   @ReportedOn
   @Entity
-  @javax.persistence.Entity(name = "RecurringBillingEvent")
+  @javax.persistence.Entity(name = "BillingRecurrence")
   @javax.persistence.Table(
       indexes = {
         @javax.persistence.Index(columnList = "clientId"),
@@ -412,6 +443,7 @@ public abstract class BillingEvent extends ImmutableObject
         @javax.persistence.Index(columnList = "recurrenceEndTime"),
         @javax.persistence.Index(columnList = "recurrence_time_of_year")
       })
+  @AttributeOverride(name = "id", column = @Column(name = "billing_recurrence_id"))
   public static class Recurring extends BillingEvent {
 
     /**
@@ -493,13 +525,14 @@ public abstract class BillingEvent extends ImmutableObject
    */
   @ReportedOn
   @Entity
-  @javax.persistence.Entity(name = "BillingEventCancellation")
+  @javax.persistence.Entity(name = "BillingCancellation")
   @javax.persistence.Table(
       indexes = {
         @javax.persistence.Index(columnList = "clientId"),
         @javax.persistence.Index(columnList = "eventTime"),
         @javax.persistence.Index(columnList = "billingTime")
       })
+  @AttributeOverride(name = "id", column = @Column(name = "billing_cancellation_id"))
   public static class Cancellation extends BillingEvent {
 
     /** The billing time of the charge that is being cancelled. */
@@ -512,7 +545,7 @@ public abstract class BillingEvent extends ImmutableObject
      * <p>Although the type is {@link Key} the name "ref" is preserved for historical reasons.
      */
     @IgnoreSave(IfNull.class)
-    @Column(name = "ref_one_time_id")
+    @Column(name = "billing_event_id")
     VKey<BillingEvent.OneTime> refOneTime = null;
 
     /**
@@ -521,7 +554,7 @@ public abstract class BillingEvent extends ImmutableObject
      * <p>Although the type is {@link Key} the name "ref" is preserved for historical reasons.
      */
     @IgnoreSave(IfNull.class)
-    @Column(name = "ref_recurring_id")
+    @Column(name = "billing_recurrence_id")
     VKey<BillingEvent.Recurring> refRecurring = null;
 
     public DateTime getBillingTime() {

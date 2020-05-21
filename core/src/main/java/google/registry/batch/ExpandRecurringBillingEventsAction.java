@@ -164,8 +164,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                           Registry.get(getTldFromDomainName(recurring.getTargetId()));
 
                       // Determine the complete set of times at which this recurring event should
-                      // occur
-                      // (up to and including the runtime of the mapreduce).
+                      // occur (up to and including the runtime of the mapreduce).
                       Iterable<DateTime> eventTimes =
                           recurring
                               .getRecurrenceTimeOfYear()
@@ -189,8 +188,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                       ImmutableSet.Builder<HistoryEntry> historyEntriesBuilder =
                           new ImmutableSet.Builder<>();
                       // Create synthetic OneTime events for all billing times that do not yet have
-                      // an event
-                      // persisted.
+                      // an event persisted.
                       for (DateTime billingTime : difference(billingTimes, existingBillingTimes)) {
                         // Construct a new HistoryEntry that parents over the OneTime
                         HistoryEntry historyEntry =
@@ -205,9 +203,8 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                                 .setRequestedByRegistrar(false)
                                 .setType(DOMAIN_AUTORENEW)
                                 // Don't write a domain transaction record if the recurrence was
-                                // ended prior to the
-                                // billing time (i.e. a domain was deleted during the autorenew
-                                // grace period).
+                                // ended prior to the billing time (i.e. a domain was deleted
+                                // during the autorenew grace period).
                                 .setDomainTransactionRecords(
                                     recurring.getRecurrenceEndTime().isBefore(billingTime)
                                         ? ImmutableSet.of()
