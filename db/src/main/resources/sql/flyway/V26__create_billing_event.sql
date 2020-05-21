@@ -12,16 +12,33 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-create table "BillingEvent" (
-    billing_event_id  bigserial not null,
+create table "BillingCancellation" (
+    billing_cancellation_id  bigserial not null,
     client_id text not null,
+    domain_history_revision_id int8 not null,
     event_time timestamptz not null,
     flags text[],
     reason text not null,
+    repo_id text not null,
+    target_id text not null,
+    billing_time timestamptz,
+    billing_event_id int8,
+    billing_recurrence_id int8,
+    primary key (billing_cancellation_id)
+);
+
+create table "BillingEvent" (
+    billing_event_id  bigserial not null,
+    client_id text not null,
+    domain_history_revision_id int8 not null,
+    event_time timestamptz not null,
+    flags text[],
+    reason text not null,
+    repo_id text not null,
     target_id text not null,
     allocation_token_id text,
     billing_time timestamptz,
-    cancellation_matching_billing_event_id int8,
+    cancellation_matching_billing_recurrence_id int8,
     cost_amount numeric(19, 2),
     cost_currency text,
     period_years int4,
@@ -29,43 +46,32 @@ create table "BillingEvent" (
     primary key (billing_event_id)
 );
 
-create table "BillingEventCancellation" (
-    billing_event_id  bigserial not null,
+create table "BillingRecurrence" (
+    billing_recurrence_id  bigserial not null,
     client_id text not null,
+    domain_history_revision_id int8 not null,
     event_time timestamptz not null,
     flags text[],
     reason text not null,
-    target_id text not null,
-    billing_time timestamptz,
-    ref_one_time_id int8,
-    ref_recurring_id int8,
-    primary key (billing_event_id)
-);
-
-create table "RecurringBillingEvent" (
-    billing_event_id  bigserial not null,
-    client_id text not null,
-    event_time timestamptz not null,
-    flags text[],
-    reason text not null,
+    repo_id text not null,
     target_id text not null,
     recurrence_end_time timestamptz,
     recurrence_time_of_year text,
-    primary key (billing_event_id)
+    primary key (billing_recurrence_id)
 );
 
+create index IDXeokttmxtpq2hohcioe5t2242b on "BillingCancellation" (client_id);
+create index IDX2exdfbx6oiiwnhr8j6gjpqt2j on "BillingCancellation" (event_time);
+create index IDXqa3g92jc17e8dtiaviy4fet4x on "BillingCancellation" (billing_time);
 create index IDX73l103vc5900ig3p4odf0cngt on "BillingEvent" (client_id);
 create index IDX5yfbr88439pxw0v3j86c74fp8 on "BillingEvent" (event_time);
 create index IDX6py6ocrab0ivr76srcd2okpnq on "BillingEvent" (billing_time);
 create index IDXplxf9v56p0wg8ws6qsvd082hk on "BillingEvent" (synthetic_creation_time);
 create index IDXhmv411mdqo5ibn4vy7ykxpmlv on "BillingEvent" (allocation_token_id);
-create index IDX4y2cx3n6qb064347jhqk8e5vg on "BillingEventCancellation" (client_id);
-create index IDXt94rv06pr8spwdkwed5bb0y4e on "BillingEventCancellation" (event_time);
-create index IDX6pbkomdkdjup5ldsg4252vxgd on "BillingEventCancellation" (billing_time);
-create index IDXg5ric3vcutj6p3d6qnycy6mp7 on "RecurringBillingEvent" (client_id);
-create index IDX4napr9rx5yx9yfsnpnajytvu4 on "RecurringBillingEvent" (event_time);
-create index IDXlm085j4hxe2x8yoh5ol9t4iyj on "RecurringBillingEvent" (recurrence_end_time);
-create index IDXqlf2qj3tpds0ixqobrbysspn4 on "RecurringBillingEvent" (recurrence_time_of_year);
+create index IDXn898pb9mwcg359cdwvolb11ck on "BillingRecurrence" (client_id);
+create index IDX6syykou4nkc7hqa5p8r92cpch on "BillingRecurrence" (event_time);
+create index IDXp3usbtvk0v1m14i5tdp4xnxgc on "BillingRecurrence" (recurrence_end_time);
+create index IDXjny8wuot75b5e6p38r47wdawu on "BillingRecurrence" (recurrence_time_of_year);
 
 alter table if exists "BillingEvent"
    add constraint fk_billing_event_client_id
@@ -73,26 +79,26 @@ alter table if exists "BillingEvent"
    references "Registrar";
 
 alter table if exists "BillingEvent"
-   add constraint fk_billing_event_cancellation_matching_billing_event_id
-   foreign key (cancellation_matching_billing_event_id)
-   references "RecurringBillingEvent";
+   add constraint fk_billing_event_cancellation_matching_billing_recurrence_id
+   foreign key (cancellation_matching_billing_recurrence_id)
+   references "BillingRecurrence";
 
-alter table if exists "BillingEventCancellation"
-   add constraint fk_billing_event_cancellation_client_id
+alter table if exists "BillingCancellation"
+   add constraint fk_billing_cancellation_client_id
    foreign key (client_id)
    references "Registrar";
 
-alter table if exists "BillingEventCancellation"
-   add constraint fk_billing_event_cancellation_ref_one_time_id
-   foreign key (ref_one_time_id)
+alter table if exists "BillingCancellation"
+   add constraint fk_billing_cancellation_billing_event_id
+   foreign key (billing_event_id)
    references "BillingEvent";
 
-alter table if exists "BillingEventCancellation"
-   add constraint fk_billing_event_cancellation_ref_recurring_id
-   foreign key (ref_recurring_id)
-   references "RecurringBillingEvent";
+alter table if exists "BillingCancellation"
+   add constraint fk_billing_cancellation_billing_recurrence_id
+   foreign key (billing_recurrence_id)
+   references "BillingRecurrence";
 
-alter table if exists "RecurringBillingEvent"
-   add constraint fk_recurring_billing_event_client_id
+alter table if exists "BillingRecurrence"
+   add constraint fk_billing_recurrence_client_id
    foreign key (client_id)
    references "Registrar";
