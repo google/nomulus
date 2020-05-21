@@ -13,11 +13,10 @@
 -- limitations under the License.
 
 CREATE TABLE "HostHistory" (
-   id int8 NOT NULL,
+   revision_id int8 NOT NULL,
     by_superuser boolean NOT NULL,
     registrar_id text NOT NULL,
     modification_time timestamptz NOT NULL,
-    parent_v_key text NOT NULL,
     reason text NOT NULL,
     requested_by_registrar boolean NOT NULL,
     client_transaction_id text,
@@ -35,19 +34,25 @@ CREATE TABLE "HostHistory" (
     last_epp_update_client_id text,
     last_epp_update_time timestamptz,
     statuses text[],
-    primary key (id)
+    host_resource_foreign_key text NOT NULL,
+    primary key (revision_id)
 );
 
 CREATE TABLE "HostHistory_inetAddresses" (
-   host_history_id int8 NOT NULL,
+   host_history_revision_id int8 NOT NULL,
     inet_addresses bytea
 );
 
 CREATE INDEX IDXfg2nnjlujxo6cb9fha971bq2n ON "HostHistory" (creation_time);
 CREATE INDEX IDXnxei34hfrt20dyxtphh6j25mo ON "HostHistory" (registrar_id);
-CREATE INDEX IDXhancbub2w7c2rirfaeu4j9uh2 ON "HostHistory" (parent_v_key);
+CREATE INDEX IDXhancbub2w7c2rirfaeu4j9uh2 ON "HostHistory" (host_resource_foreign_key);
 
 ALTER TABLE IF EXISTS "HostHistory_inetAddresses"
    ADD CONSTRAINT FK9svsf0mplnb9d7tdpl44lssvp
-   FOREIGN KEY (host_history_id)
+   FOREIGN KEY (host_history_revision_id)
    REFERENCES "HostHistory";
+
+ALTER TABLE IF EXISTS "HostHistory"
+   ADD CONSTRAINT FK3d09knnmxrt6iniwnp8j2ykga
+   FOREIGN KEY (registrar_id)
+   REFERENCES "Registrar";
