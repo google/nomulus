@@ -59,7 +59,7 @@ public class HostHistoryTest extends EntityTestCase {
             .setReason("reason")
             .setRequestedByRegistrar(true)
             .setHostBase(hostFromDb)
-            .setParentVKey(hostVKey)
+            .setHostResourceForeignKey(hostVKey)
             .build();
     jpaTm().transact(() -> jpaTm().saveNew(hostHistory));
     jpaTm()
@@ -73,7 +73,7 @@ public class HostHistoryTest extends EntityTestCase {
   private void assertHostHistoriesEqual(HostHistory one, HostHistory two) {
     // enough of the fields get changed during serialization that we can't depend on .equals()
     assertThat(one.getClientId()).isEqualTo(two.getClientId());
-    assertThat(one.getParentVKey()).isEqualTo(two.getParentVKey());
+    assertThat(one.getHostResourceForeignKey()).isEqualTo(two.getHostResourceForeignKey());
     assertThat(one.getBySuperuser()).isEqualTo(two.getBySuperuser());
     assertThat(one.getRequestedByRegistrar()).isEqualTo(two.getRequestedByRegistrar());
     assertThat(one.getReason()).isEqualTo(two.getReason());

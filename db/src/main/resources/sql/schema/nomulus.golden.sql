@@ -305,11 +305,10 @@ CREATE TABLE public."DomainHost" (
 --
 
 CREATE TABLE public."HostHistory" (
-    id bigint NOT NULL,
+    revision_id bigint NOT NULL,
     by_superuser boolean NOT NULL,
     registrar_id text NOT NULL,
     modification_time timestamp with time zone NOT NULL,
-    parent_v_key text NOT NULL,
     reason text NOT NULL,
     requested_by_registrar boolean NOT NULL,
     client_transaction_id text,
@@ -326,7 +325,8 @@ CREATE TABLE public."HostHistory" (
     deletion_time timestamp with time zone,
     last_epp_update_client_id text,
     last_epp_update_time timestamp with time zone,
-    statuses text[]
+    statuses text[],
+    host_resource_foreign_key text NOT NULL
 );
 
 
@@ -335,7 +335,7 @@ CREATE TABLE public."HostHistory" (
 --
 
 CREATE TABLE public."HostHistory_inetAddresses" (
-    host_history_id bigint NOT NULL,
+    host_history_revision_id bigint NOT NULL,
     inet_addresses bytea
 );
 
@@ -702,7 +702,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."HostHistory"
-    ADD CONSTRAINT "HostHistory_pkey" PRIMARY KEY (id);
+    ADD CONSTRAINT "HostHistory_pkey" PRIMARY KEY (revision_id);
 
 
 --
@@ -902,7 +902,7 @@ CREATE INDEX idxfg2nnjlujxo6cb9fha971bq2n ON public."HostHistory" USING btree (c
 -- Name: idxhancbub2w7c2rirfaeu4j9uh2; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idxhancbub2w7c2rirfaeu4j9uh2 ON public."HostHistory" USING btree (parent_v_key);
+CREATE INDEX idxhancbub2w7c2rirfaeu4j9uh2 ON public."HostHistory" USING btree (host_resource_foreign_key);
 
 
 --
@@ -1043,6 +1043,14 @@ ALTER TABLE ONLY public."Domain"
 
 
 --
+-- Name: HostHistory fk3d09knnmxrt6iniwnp8j2ykga; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory"
+    ADD CONSTRAINT fk3d09knnmxrt6iniwnp8j2ykga FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(client_id);
+
+
+--
 -- Name: ClaimsEntry fk6sc6at5hedffc0nhdcab6ivuq; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1071,7 +1079,7 @@ ALTER TABLE ONLY public."Contact"
 --
 
 ALTER TABLE ONLY public."HostHistory_inetAddresses"
-    ADD CONSTRAINT fk9svsf0mplnb9d7tdpl44lssvp FOREIGN KEY (host_history_id) REFERENCES public."HostHistory"(id);
+    ADD CONSTRAINT fk9svsf0mplnb9d7tdpl44lssvp FOREIGN KEY (host_history_revision_id) REFERENCES public."HostHistory"(revision_id);
 
 
 --
