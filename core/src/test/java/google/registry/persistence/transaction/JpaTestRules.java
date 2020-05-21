@@ -184,7 +184,7 @@ public class JpaTestRules {
     /**
      * Enables logging of SQL statements.
      *
-     * <p>SQL logging is very noise and disabled by default. This method maybe useful when
+     * <p>SQL logging is very noisy and disabled by default. This method maybe useful when
      * troubleshooting a specific test.
      */
     public Builder withSqlLogging() {
