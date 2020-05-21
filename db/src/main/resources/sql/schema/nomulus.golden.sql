@@ -326,7 +326,7 @@ CREATE TABLE public."HostHistory" (
     last_epp_update_client_id text,
     last_epp_update_time timestamp with time zone,
     statuses text[],
-    host_resource_foreign_key text NOT NULL
+    host_resource text NOT NULL
 );
 
 
@@ -902,7 +902,7 @@ CREATE INDEX idxfg2nnjlujxo6cb9fha971bq2n ON public."HostHistory" USING btree (c
 -- Name: idxhancbub2w7c2rirfaeu4j9uh2; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idxhancbub2w7c2rirfaeu4j9uh2 ON public."HostHistory" USING btree (host_resource_foreign_key);
+CREATE INDEX idxhancbub2w7c2rirfaeu4j9uh2 ON public."HostHistory" USING btree (host_resource);
 
 
 --
@@ -1168,6 +1168,14 @@ ALTER TABLE ONLY public."Domain"
 
 ALTER TABLE ONLY public."DomainHost"
     ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (ns_hosts) REFERENCES public."HostResource"(repo_id);
+
+
+--
+-- Name: HostHistory fk_hosthistory_hostresource; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory"
+    ADD CONSTRAINT fk_hosthistory_hostresource FOREIGN KEY (host_resource) REFERENCES public."HostResource"(repo_id);
 
 
 --

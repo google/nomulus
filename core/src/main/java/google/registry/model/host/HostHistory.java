@@ -33,7 +33,7 @@ public class HostHistory extends HistoryEntry {
   HostBase hostBase;
 
   @Column(nullable = false)
-  VKey<HostResource> hostResourceForeignKey;
+  VKey<HostResource> hostResource;
 
   /** The state of the {@link HostBase} object at this point in time. */
   public HostBase getHostBase() {
@@ -41,8 +41,8 @@ public class HostHistory extends HistoryEntry {
   }
 
   /** The key to the {@link google.registry.model.host.HostResource} this is based off of. */
-  public VKey<HostResource> getHostResourceForeignKey() {
-    return hostResourceForeignKey;
+  public VKey<HostResource> getHostResource() {
+    return hostResource;
   }
 
   @Override
@@ -63,9 +63,9 @@ public class HostHistory extends HistoryEntry {
       return this;
     }
 
-    public Builder setHostResourceForeignKey(VKey<HostResource> hostResourceForeignKey) {
-      getInstance().hostResourceForeignKey = hostResourceForeignKey;
-      hostResourceForeignKey.maybeGetOfyKey().ifPresent(parent -> getInstance().parent = parent);
+    public Builder setHostResource(VKey<HostResource> hostResource) {
+      getInstance().hostResource = hostResource;
+      hostResource.maybeGetOfyKey().ifPresent(parent -> getInstance().parent = parent);
       return this;
     }
 
@@ -73,7 +73,7 @@ public class HostHistory extends HistoryEntry {
     @Override
     public Builder setParent(Key<? extends EppResource> parent) {
       super.setParent(parent);
-      getInstance().hostResourceForeignKey =
+      getInstance().hostResource =
           VKey.createOfy(HostResource.class, (Key<HostResource>) parent);
       return this;
     }

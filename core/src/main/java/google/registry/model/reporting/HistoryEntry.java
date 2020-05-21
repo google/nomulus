@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Parent;
@@ -31,13 +30,9 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.registrar.Registrar;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 import org.joda.time.DateTime;
@@ -128,16 +123,6 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
   @Index
   @Column(name = "registrarId")
   String clientId;
-
-  /**
-   * The field used to generate the SQL foreign key mapping. We don't use this since we don't always
-   * have the full Registrar object handy when we want to set the registrar ID.
-   */
-  @JoinColumn(name = "registrarId", insertable = false, updatable = false)
-  @ManyToOne(targetEntity = Registrar.class, fetch = FetchType.LAZY)
-  @SuppressWarnings("UnusedVariable")
-  @Ignore
-  private Registrar registrar;
 
   /**
    * For transfers, the id of the other registrar.

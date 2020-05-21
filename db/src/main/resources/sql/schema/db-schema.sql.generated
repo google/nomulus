@@ -205,7 +205,7 @@
         last_epp_update_client_id text,
         last_epp_update_time timestamptz,
         statuses text[],
-        host_resource_foreign_key text not null,
+        host_resource text not null,
         primary key (revision_id)
     );
 
@@ -405,11 +405,6 @@ create index reservedlist_name_idx on "ReservedList" (name);
        add constraint FKeq1guccbre1yk3oosgp2io554 
        foreign key (domain_repo_id) 
        references "Domain";
-
-    alter table if exists "HostHistory" 
-       add constraint FK3d09knnmxrt6iniwnp8j2ykga 
-       foreign key (registrar_id) 
-       references "Registrar";
 
     alter table if exists "HostHistory_inetAddresses" 
        add constraint FKdxdtvupo2b6xlqsq4og4nlo7k 

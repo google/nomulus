@@ -34,7 +34,7 @@ CREATE TABLE "HostHistory" (
     last_epp_update_client_id text,
     last_epp_update_time timestamptz,
     statuses text[],
-    host_resource_foreign_key text NOT NULL,
+    host_resource text NOT NULL,
     primary key (revision_id)
 );
 
@@ -45,7 +45,7 @@ CREATE TABLE "HostHistory_inetAddresses" (
 
 CREATE INDEX IDXfg2nnjlujxo6cb9fha971bq2n ON "HostHistory" (creation_time);
 CREATE INDEX IDXnxei34hfrt20dyxtphh6j25mo ON "HostHistory" (registrar_id);
-CREATE INDEX IDXhancbub2w7c2rirfaeu4j9uh2 ON "HostHistory" (host_resource_foreign_key);
+CREATE INDEX IDXhancbub2w7c2rirfaeu4j9uh2 ON "HostHistory" (host_resource);
 
 ALTER TABLE IF EXISTS "HostHistory_inetAddresses"
    ADD CONSTRAINT FK9svsf0mplnb9d7tdpl44lssvp
@@ -56,3 +56,8 @@ ALTER TABLE IF EXISTS "HostHistory"
    ADD CONSTRAINT FK3d09knnmxrt6iniwnp8j2ykga
    FOREIGN KEY (registrar_id)
    REFERENCES "Registrar";
+
+ALTER TABLE IF EXISTS "HostHistory"
+   ADD CONSTRAINT FK_HostHistory_HostResource
+   FOREIGN KEY (host_resource)
+   REFERENCES "HostResource";
