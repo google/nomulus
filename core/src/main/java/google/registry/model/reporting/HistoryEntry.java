@@ -126,14 +126,14 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
 
   /** The id of the registrar that sent the command. */
   @Index
-  @Column(name = "registrarId", insertable = false, updatable = false)
+  @Column(name = "registrarId")
   String clientId;
 
   /**
    * The field used to generate the SQL foreign key mapping. We don't use this since we don't always
    * have the full Registrar object handy when we want to set the registrar ID.
    */
-  @JoinColumn(name = "registrarId")
+  @JoinColumn(name = "registrarId", insertable = false, updatable = false)
   @ManyToOne(targetEntity = Registrar.class, fetch = FetchType.LAZY)
   @SuppressWarnings("UnusedVariable")
   @Ignore
