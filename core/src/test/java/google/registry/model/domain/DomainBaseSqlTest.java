@@ -119,7 +119,8 @@ public class DomainBaseSqlTest {
         .transact(
             () -> {
               // Persist the contacts.  Note that these need to be persisted before the domain
-              // otherwise we get a foreign key constraint error.
+              // otherwise we get a foreign key constraint error.  If we ever decide to defer the
+              // relevant foreign key checks to commit time, then the order would not matter.
               jpaTm().saveNew(contact);
               jpaTm().saveNew(contact2);
 
@@ -127,7 +128,8 @@ public class DomainBaseSqlTest {
               jpaTm().saveNew(domain);
 
               // Persist the host.  This does _not_ need to be persisted before the domain,
-              // presumably because its relationship is stored in a join table.
+              // because only the row in the join table (DomainHost) is subject to foreign key
+              // constraints, and Hibernate knows to insert it after domain and host.
               jpaTm().saveNew(host);
             });
 
