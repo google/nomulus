@@ -110,7 +110,7 @@ public class BillingEventTest extends EntityTestCase {
     sqlOneTime =
         oneTime
             .asBuilder()
-            .setRepoId(domain.getRepoId())
+            .setDomainRepoId(domain.getRepoId())
             .setDomainHistoryRevisionId(1L)
             .setAllocationToken(
                 VKey.create(
@@ -211,7 +211,7 @@ public class BillingEventTest extends EntityTestCase {
         cancellationOneTime
             .asBuilder()
             .setOneTimeEventKey(sqlVKey)
-            .setRepoId(domain.getRepoId())
+            .setDomainRepoId(domain.getRepoId())
             .setDomainHistoryRevisionId(1L)
             .build();
     saveNewBillingEvent(sqlCancellationOneTime);
@@ -238,7 +238,11 @@ public class BillingEventTest extends EntityTestCase {
   public void testCloudSqlPersistence_Recurring() {
     saveRegistrar("a registrar");
     BillingEvent.Recurring sqlRecurring =
-        recurring.asBuilder().setRepoId(domain.getRepoId()).setDomainHistoryRevisionId(1L).build();
+        recurring
+            .asBuilder()
+            .setDomainRepoId(domain.getRepoId())
+            .setDomainHistoryRevisionId(1L)
+            .build();
     saveNewBillingEvent(sqlRecurring);
 
     BillingEvent.Recurring persisted =
