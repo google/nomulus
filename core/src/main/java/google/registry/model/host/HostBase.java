@@ -150,7 +150,7 @@ public class HostBase extends EppResource {
   }
 
   /** A builder for constructing {@link HostBase}, since it is immutable. */
-  public static class Builder<T extends HostBase, B extends Builder<T, B>>
+  protected static class Builder<T extends HostBase, B extends Builder<T, B>>
       extends EppResource.Builder<T, B> {
     public Builder() {}
 

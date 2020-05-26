@@ -21,7 +21,7 @@ CREATE TABLE "HostHistory" (
     requested_by_registrar boolean NOT NULL,
     client_transaction_id text,
     server_transaction_id text,
-    type int4 NOT NULL,
+    type text NOT NULL,
     xml_bytes bytea NOT NULL,
     fully_qualified_host_name text,
     last_superordinate_change timestamptz,

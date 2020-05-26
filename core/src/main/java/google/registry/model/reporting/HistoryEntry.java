@@ -33,6 +33,8 @@ import google.registry.model.eppcommon.Trid;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 import org.joda.time.DateTime;
@@ -100,6 +102,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
 
   /** The type of history entry. */
   @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
   Type type;
 
   /**

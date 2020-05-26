@@ -313,7 +313,7 @@ CREATE TABLE public."HostHistory" (
     requested_by_registrar boolean NOT NULL,
     client_transaction_id text,
     server_transaction_id text,
-    type integer NOT NULL,
+    type text NOT NULL,
     xml_bytes bytea NOT NULL,
     fully_qualified_host_name text,
     last_superordinate_change timestamp with time zone,
