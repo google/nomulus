@@ -129,7 +129,7 @@ public abstract class BillingEvent extends ImmutableObject
   // TODO(shicong): Add foreign key constraint when we expand DatastoreHelp for Postgresql
   @Ignore
   @Column(nullable = false)
-  String repoId;
+  String domainRepoId;
 
   /** When this event was created. For recurring events, this is also the recurrence start time. */
   @Index
@@ -156,8 +156,8 @@ public abstract class BillingEvent extends ImmutableObject
     return domainHistoryRevisionId;
   }
 
-  public String getRepoId() {
-    return repoId;
+  public String getDomainRepoId() {
+    return domainRepoId;
   }
 
   public DateTime getEventTime() {
@@ -218,8 +218,8 @@ public abstract class BillingEvent extends ImmutableObject
       return thisCastToDerived();
     }
 
-    public B setRepoId(String repoId) {
-      getInstance().repoId = repoId;
+    public B setDomainRepoId(String domainRepoId) {
+      getInstance().domainRepoId = domainRepoId;
       return thisCastToDerived();
     }
 
