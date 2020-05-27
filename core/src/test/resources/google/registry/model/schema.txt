@@ -754,8 +754,3 @@ enum google.registry.model.transfer.TransferStatus {
   SERVER_APPROVED;
   SERVER_CANCELLED;
 }
-class google.registry.persistence.VKey {
-  com.googlecode.objectify.Key<T> ofyKey;
-  java.lang.Class<? extends T> kind;
-  java.lang.Object primaryKey;
-}
