@@ -197,6 +197,10 @@ task runPresubmits(type: Exec) {
   args('config/presubmits.py')
 }
 
+def javadocSource = []
+def javadocClasspath = []
+def javadocDependentTasks = []
+
 subprojects {
   // Skip no-op project
   if (project.name == 'services') return
@@ -317,6 +321,10 @@ subprojects {
       }
     }
   }
+
+  javadocSource << project.sourceSets.main.allJava
+  javadocClasspath << project.sourceSets.main.compileClasspath
+  javadocDependentTasks << project.tasks.compileJava
 }
 
 // If "-P verboseTestOutput=true" is passed in, configure all subprojects to dump all of their
@@ -445,3 +453,18 @@ task javaIncrementalFormatApply {
 }
 
 tasks.build.dependsOn(tasks.javaIncrementalFormatCheck)
+
+task javadoc(type: Javadoc) {
+  source javadocSource
+  classpath = files(javadocClasspath)
+  destinationDir = file("${buildDir}/docs/javadoc")
+  // In a lot of places we don't write @return so suppress warnings about that.
+  options.addBooleanOption('Xdoclint:all,-missing', true)
+  options.addBooleanOption("-allow-script-in-comments",true)
+  options.tags = ["type:a:Generic Type",
+                  "error:a:Expected Error"]
+}
+
+tasks.build.dependsOn(tasks.javadoc)
+
+javadocDependentTasks.each { tasks.javadoc.shouldRunAfter(it) }

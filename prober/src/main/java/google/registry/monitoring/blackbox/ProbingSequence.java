@@ -33,8 +33,8 @@ import io.netty.channel.EventLoopGroup;
  * <p>Inherits from {@link CircularList}, with element type of {@link ProbingStep} as the manner in
  * which the sequence is carried out is similar to the {@link CircularList}. However, the {@link
  * Builder} of {@link ProbingSequence} override {@link CircularList.AbstractBuilder} allowing for
- * more customized flows, that are looped, but not necessarily entirely circular. Example: first ->
- * second -> third -> fourth -> second -> third -> fourth -> second -> ...
+ * more customized flows, that are looped, but not necessarily entirely circular. Example: first
+ * -&gt; second -&gt; third -&gt; fourth -&gt; second -&gt; third -&gt; fourth -&gt; second -&gt;...
  *
  * <p>Created with {@link Builder} where we specify {@link EventLoopGroup}, {@link AbstractChannel}
  * class type, then sequentially add in the {@link ProbingStep.Builder}s in order and mark which one

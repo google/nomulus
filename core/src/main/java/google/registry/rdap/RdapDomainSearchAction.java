@@ -61,10 +61,9 @@ import javax.inject.Inject;
  *     (RDAP) Query Format</a>
  * @see <a href="http://tools.ietf.org/html/rfc7483">RFC 7483: JSON Responses for the Registration
  *     Data Access Protocol (RDAP)</a>
- *
- * TODO(guyben):This isn't required by the RDAP Technical Implementation Guide, and hence should be
- * deleted, at least until it's actually required.
  */
+// TODO: This isn't required by the RDAP Technical Implementation Guide, and hence should be
+// deleted, at least until it's actually required.
 @Action(
     service = Action.Service.PUBAPI,
     path = "/rdap/domains",

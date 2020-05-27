@@ -36,17 +36,16 @@ import java.util.Optional;
  *
  * <p>The input source is automatically closed when all data have been read.
  *
- * <p>See <a
- * href="https://github.com/google/leveldb/blob/master/doc/log_format.md">log_format.md</a> for the
- * leveldb log format specification.</a>
- *
  * <p>There are several other implementations of this, none of which appeared suitable for our use
  * case: <a href="https://github.com/google/leveldb">The original C++ implementation</a>. <a
  * href="https://cloud.google.com/appengine/docs/standard/java/javadoc/com/google/appengine/api/files/RecordReadChannel">
  * com.google.appengine.api.files.RecordReadChannel</a> - Exactly what we need but deprecated. The
  * referenced replacement: <a
  * href="https://github.com/GoogleCloudPlatform/appengine-gcs-client.git">The App Engine GCS
- * Client</a> - Does not appear to have any support for working with LevelDB.
+ * Client</a> - Does not appear to have any support for working with LevelDB. *
+ *
+ * <p>See <a
+ * href="https://github.com/google/leveldb/blob/master/doc/log_format.md">log_format.md</a>
  */
 public final class LevelDbLogReader implements Iterator<byte[]> {
 

@@ -59,7 +59,7 @@ public class CursorDao {
         .transact(() -> jpaTm().getEntityManager().find(Cursor.class, new CursorId(type, scope)));
   }
 
-  /** If no scope is given, use {@link Cursor.GLOBAL} as the scope. */
+  /** If no scope is given, use {@link Cursor#GLOBAL} as the scope. */
   public static Cursor load(CursorType type) {
     checkNotNull(type, "The type of the cursor to load must be specified");
     return load(type, Cursor.GLOBAL);

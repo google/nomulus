@@ -15,7 +15,6 @@
 package google.registry.persistence.converter;
 
 import avro.shaded.com.google.common.collect.Maps;
-import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.registry.Registry.BillingCostTransition;
 import java.util.Map;
 import javax.persistence.Converter;
@@ -23,8 +22,8 @@ import org.joda.money.Money;
 import org.joda.time.DateTime;
 
 /**
- * JPA converter for storing/retrieving {@link TimedTransitionProperty <Money, BillingCostTransition
- * >} objects.
+ * JPA converter for storing/retrieving {@code TimedTransitionProperty<Money,BillingCostTransition>}
+ * objects.
  */
 @Converter(autoApply = true)
 public class BillingCostTransitionConverter

@@ -15,11 +15,11 @@
 package google.registry.util;
 
 /**
- * Class that stores value {@param <T>}, and points in circle to other {@link CircularList} objects.
+ * Class that stores value {@code <T>}, and points in circle to other {@link CircularList} objects.
  *
- * <p>In its construction, we create a sequence of {@link CircularList} objects, each storing an *
- * instance of T. They each point to each other in a circular manner, such that we can perform *
- * circular iteration on the elements. Once finished building, we return this first {@link *
+ * <p>In its construction, we create a sequence of {@link CircularList} objects, each storing an
+ * instance of T. They each point to each other in a circular manner, such that we can perform
+ * circular iteration on the elements. Once finished building, we return this first {@link
  * CircularList} object in the sequence.
  *
  * @param <T> - Element type stored in the {@link CircularList}

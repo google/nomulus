@@ -20,7 +20,7 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlValue;
 
-/** The "periodType" from {@link "http://tools.ietf.org/html/rfc5731"}. */
+/** The "periodType" from <a href="http://tools.ietf.org/html/rfc5731">RFC5731</a>. */
 @Embed
 @javax.persistence.Embeddable
 public class Period extends ImmutableObject {

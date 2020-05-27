@@ -47,8 +47,9 @@ public interface AppEngineServiceUtils {
    * GCP. The work-around is to change all of the "." subdomain markers to "-dot-". E.g.:
    *
    * <ul>
-   *   <li>tools.projectid.appspot.com --> tools-dot-projectid.appspot.com
-   *   <li>version.backend.projectid.appspot.com --> version-dot-backend-dot-projectid.appspot.com
+   *   <li>tools.projectid.appspot.com --&gt; tools-dot-projectid.appspot.com
+   *   <li>version.backend.projectid.appspot.com --&gt;
+   *       version-dot-backend-dot-projectid.appspot.com
    * </ul>
    *
    * @see <a

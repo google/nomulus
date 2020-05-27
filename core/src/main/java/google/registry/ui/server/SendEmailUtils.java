@@ -105,9 +105,10 @@ public class SendEmailUtils {
     }
   }
 
-  /** Sends an email from Nomulus to the registrarChangesNotificationEmailAddresses.
+  /**
+   * Sends an email from Nomulus to the registrarChangesNotificationEmailAddresses.
    *
-   * <p>See {@link #sendEmail(String, String, ImmutableList<String>)}.
+   * <p>See {@link #sendEmail(String, String, ImmutableList)}.
    */
   public boolean sendEmail(final String subject, String body) {
     return sendEmail(subject, body, ImmutableList.of());

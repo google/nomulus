@@ -45,9 +45,9 @@ public final class RequestParameters {
    *
    * <ul>
    *   <li>/foo?bar=hello → hello
-   *   <li>/foo?bar=hello&bar=there → hello
+   *   <li>/foo?bar=hello&amp;bar=there → hello
    *   <li>/foo?bar= → 400 error (empty)
-   *   <li>/foo?bar=&bar=there → 400 error (empty)
+   *   <li>/foo?bar=&amp;bar=there → 400 error (empty)
    *   <li>/foo → 400 error (absent)
    * </ul>
    *

@@ -53,7 +53,7 @@ import org.json.JSONException;
  * pipeline accordingly.
  *
  * <p>This calls {@link Spec11EmailUtils#emailSpec11Reports(LocalDate, SoyTemplateInfo, String,
- * Set)} on success or {@link Spec11EmailUtils#sendAlertEmail(String, String)} on failure.
+ * ImmutableSet)} on success or {@link Spec11EmailUtils#sendAlertEmail(String, String)} on failure.
  */
 @Action(
     service = Action.Service.BACKEND,

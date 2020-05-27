@@ -15,11 +15,10 @@
 package google.registry.persistence.converter;
 
 import google.registry.model.eppcommon.StatusValue;
-import java.util.Set;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
-/** JPA {@link AttributeConverter} for storing/retrieving {@link Set<StatusValue>}. */
+/** JPA {@link AttributeConverter} for storing/retrieving {@code Set<StatusValue>}. */
 @Converter(autoApply = true)
 public class StatusValueSetConverter extends StringSetConverterBase<StatusValue> {
 

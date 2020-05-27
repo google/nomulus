@@ -32,8 +32,8 @@ import javax.xml.bind.annotation.adapters.NormalizedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
- * Implementation of both "postalInfoType" and "chgPostalInfoType" from {@link
- * "http://tools.ietf.org/html/rfc5733"}.
+ * Implementation of both "postalInfoType" and "chgPostalInfoType" from <a href=
+ * "http://tools.ietf.org/html/rfc5733">RFC5733</a>.
  */
 @Embed
 @Embeddable

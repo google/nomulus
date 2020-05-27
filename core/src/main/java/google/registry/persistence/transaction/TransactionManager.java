@@ -17,6 +17,7 @@ package google.registry.persistence.transaction;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import google.registry.persistence.VKey;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.joda.time.DateTime;

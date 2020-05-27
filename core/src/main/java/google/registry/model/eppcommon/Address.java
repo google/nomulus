@@ -44,8 +44,9 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 /**
  * Container for generic street address.
  *
- * <p>This is the "addrType" type from {@link "http://tools.ietf.org/html/rfc5733"}. It also matches
- * the "addrType" type from {@link "http://tools.ietf.org/html/draft-lozano-tmch-smd"}.
+ * <p>This is the "addrType" type from <a href="http://tools.ietf.org/html/rfc5733">RFC5733</a>. It
+ * also matches the "addrType" type from <a
+ * href="http://tools.ietf.org/html/draft-lozano-tmch-smd">Mark and Signed Mark Objects Mapping</a>.
  *
  * @see google.registry.model.contact.ContactAddress
  * @see google.registry.model.mark.MarkAddress

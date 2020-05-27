@@ -21,7 +21,6 @@ import org.joda.time.ReadableDuration;
  * An object which accepts requests to put the current thread to sleep.
  *
  * @see SystemSleeper
- * @see google.registry.testing.FakeSleeper
  */
 @ThreadSafe
 public interface Sleeper {

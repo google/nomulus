@@ -58,40 +58,38 @@ import org.joda.time.Duration;
  * <p>You can send AJAX requests to our WHOIS API from your <em>very own</em> website using the
  * following embed code:
  *
- * <pre>
- *   <p>
- *     <input id="query-input" placeholder="Domain, Nameserver, IP, etc." autofocus>
- *     <button id="search-button">Lookup</button>
- *   <p>
- *     <pre id="whois-results"></pre>
- *   <script>
- *    (function() {
- *      var WHOIS_API_URL = 'https://domain-registry-alpha.appspot.com/whois/';
- *      function OnKeyPressQueryInput(ev) {
- *        if (typeof ev == 'undefined' && window.event) {
- *          ev = window.event;
- *        }
- *        if (ev.keyCode == 13) {
- *          document.getElementById('search-button').click();
- *        }
+ * <pre>{@code
+ * <input id="query-input" placeholder="Domain, Nameserver, IP, etc." autofocus>
+ * <button id="search-button">Lookup</button>
+ * <pre id="whois-results"></pre>
+ * <script>
+ *  (function() {
+ *    var WHOIS_API_URL = 'https://domain-registry-alpha.appspot.com/whois/';
+ *    function OnKeyPressQueryInput(ev) {
+ *      if (typeof ev == 'undefined' && window.event) {
+ *        ev = window.event;
  *      }
- *      function OnClickSearchButton() {
- *        var query = document.getElementById('query-input').value;
- *        var req = new XMLHttpRequest();
- *        req.onreadystatechange = function() {
- *          if (req.readyState == 4) {
- *            var results = document.getElementById('whois-results');
- *            results.textContent = req.responseText;
- *          }
- *        };
- *        req.open('GET', WHOIS_API_URL + escape(query), true);
- *        req.send();
+ *      if (ev.keyCode == 13) {
+ *        document.getElementById('search-button').click();
  *      }
- *      document.getElementById('search-button').onclick = OnClickSearchButton;
- *      document.getElementById('query-input').onkeypress = OnKeyPressQueryInput;
- *    })();
- *   </script>
- * </pre>
+ *    }
+ *    function OnClickSearchButton() {
+ *      var query = document.getElementById('query-input').value;
+ *      var req = new XMLHttpRequest();
+ *      req.onreadystatechange = function() {
+ *        if (req.readyState == 4) {
+ *          var results = document.getElementById('whois-results');
+ *          results.textContent = req.responseText;
+ *        }
+ *      };
+ *      req.open('GET', WHOIS_API_URL + escape(query), true);
+ *      req.send();
+ *    }
+ *    document.getElementById('search-button').onclick = OnClickSearchButton;
+ *    document.getElementById('query-input').onkeypress = OnKeyPressQueryInput;
+ *  })();
+ * </script>
+ * }</pre>
  *
  * @see WhoisAction
  */

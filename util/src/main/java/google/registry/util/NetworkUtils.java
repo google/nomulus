@@ -86,7 +86,7 @@ public final class NetworkUtils {
    * href="http://bugs.java.com/bugdatabase/view_bug.do?bug_id=4665037">issue</a> in {@link
    * InetAddress#getLocalHost}.
    *
-   * <p><b>Note:</b> This code was pilfered from {@link "com.google.net.base.LocalHost"} which was
+   * <p><b>Note:</b> This code was pilfered from {@code com.google.net.base.LocalHost} which was
    * never made open source.
    *
    * @throws UnknownHostException if the local host could not be resolved into an address

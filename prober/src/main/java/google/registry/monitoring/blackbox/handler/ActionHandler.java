@@ -27,8 +27,8 @@ import io.netty.channel.SimpleChannelInboundHandler;
 /**
  * Superclass of all {@link io.netty.channel.ChannelHandler}s placed at end of channel pipeline
  *
- * <p>{@link ActionHandler} inherits from {@link SimpleChannelInboundHandler<InboundMessageType>},
- * as it should only be passed in messages that implement the {@link InboundMessageType} interface.
+ * <p>{@link ActionHandler} inherits from {@link SimpleChannelInboundHandler}, as it should only be
+ * passed in messages that implement the {@link InboundMessageType} interface.
  *
  * <p>The {@link ActionHandler} skeleton exists for a few main purposes. First, it returns a {@link
  * ChannelPromise}, which informs the {@link ProbingAction} in charge that a response has been read.

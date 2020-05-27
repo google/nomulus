@@ -120,9 +120,6 @@ public final class Ghostryde {
 
   /**
    * Creates a ghostryde file from an in-memory byte array.
-   *
-   * @throws PGPException
-   * @throws IOException
    */
   public static byte[] encode(byte[] data, PGPPublicKey key)
       throws IOException, PGPException {
@@ -137,9 +134,6 @@ public final class Ghostryde {
 
   /**
    * Deciphers a ghostryde file from an in-memory byte array.
-   *
-   * @throws PGPException
-   * @throws IOException
    */
   public static byte[] decode(byte[] data, PGPPrivateKey key)
       throws IOException, PGPException {

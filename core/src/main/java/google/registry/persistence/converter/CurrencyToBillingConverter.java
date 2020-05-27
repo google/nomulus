@@ -21,7 +21,7 @@ import java.util.Map;
 import javax.persistence.Converter;
 import org.joda.money.CurrencyUnit;
 
-/** JPA converter for storing/retrieving {@link Map <CurrencyUnit, BillingAccountEntry>} objects. */
+/** JPA converter for storing/retrieving {@code Map<CurrencyUnit, BillingAccountEntry>} objects. */
 @Converter(autoApply = true)
 public class CurrencyToBillingConverter
     extends StringMapConverterBase<CurrencyUnit, BillingAccountEntry> {

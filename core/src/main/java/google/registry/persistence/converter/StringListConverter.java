@@ -14,11 +14,10 @@
 
 package google.registry.persistence.converter;
 
-import java.util.List;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
-/** JPA {@link AttributeConverter} for storing/retrieving {@link List<String>}. */
+/** JPA {@link AttributeConverter} for storing/retrieving {@code List<String>}. */
 @Converter(autoApply = true)
 public class StringListConverter extends StringListConverterBase<String> {
 

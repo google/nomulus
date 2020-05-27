@@ -42,7 +42,7 @@ public class DriveConnection {
   /**
    * Creates a folder with the given parent.
    *
-   * @returns the folder id.
+   * @return the folder id.
    */
   public String createFolder(String title, String parentFolderId) throws IOException {
     return drive.files()
@@ -58,7 +58,7 @@ public class DriveConnection {
    * existing file is the desired behavior, use {@link #createOrUpdateFile(String, MediaType,
    * String, byte[])} instead.
    *
-   * @returns the file id.
+   * @return the file id.
    */
   public String createFile(String title, MediaType mimeType, String parentFolderId, byte[] bytes)
       throws IOException {
@@ -76,13 +76,10 @@ public class DriveConnection {
    *
    * @throws IllegalStateException if multiple files with that name exist in the given folder.
    * @throws IOException if communication with Google Drive fails for any reason.
-   * @returns the file id.
+   * @return the file id.
    */
   public String createOrUpdateFile(
-      String title,
-      MediaType mimeType,
-      String parentFolderId,
-      byte[] bytes) throws IOException {
+      String title, MediaType mimeType, String parentFolderId, byte[] bytes) throws IOException {
     List<String> existingFiles = listFiles(parentFolderId, String.format("title = '%s'", title));
     if (existingFiles.size() > 1) {
       throw new IllegalStateException(String.format(
@@ -97,10 +94,10 @@ public class DriveConnection {
   }
 
   /**
-   * Updates the file with the given id in place, setting the title, content, and mime type to
-   * the newly specified values.
+   * Updates the file with the given id in place, setting the title, content, and mime type to the
+   * newly specified values.
    *
-   * @returns the file id.
+   * @return the file id.
    */
   public String updateFile(String fileId, String title, MediaType mimeType, byte[] bytes)
       throws IOException {

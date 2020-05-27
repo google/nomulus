@@ -27,7 +27,7 @@ import javax.persistence.Embedded;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
 
-/** The "discloseType" from {@link "http://tools.ietf.org/html/rfc5733"}. */
+/** The "discloseType" from <a href="http://tools.ietf.org/html/rfc5733">RFC5733</a>. */
 @Embed
 @Embeddable
 @XmlType(propOrder = {"name", "org", "addr", "voice", "fax", "email"})
@@ -76,7 +76,7 @@ public class Disclose extends ImmutableObject {
     return flag;
   }
 
-  /** The "intLocType" from {@link "http://tools.ietf.org/html/rfc5733"}. */
+  /** The "intLocType" from <a href="http://tools.ietf.org/html/rfc5733">RFC5733</a>. */
   @Embed
   public static class PostalInfoChoice extends ImmutableObject {
     @XmlAttribute

@@ -209,8 +209,7 @@ public class EppMessage {
    * @param xml the XML Document containing the EPP reponse to verify
    * @param expressions a list of XPath expressions to query the document with.
    * @param validate a boolean flag to control if schema validation occurs (useful for testing)
-   * @throws IOException if InputStream throws one
-   * @throws EppClientException if the EPP response cannot be read, parsed, or doesn't containing
+   * @throws FailureException if the EPP response cannot be read, parsed, or doesn't containing
    *     matching data specified in expressions
    */
   protected static void verifyEppResponse(Document xml, List<String> expressions, boolean validate)
@@ -309,7 +308,7 @@ public class EppMessage {
    *
    * @param responseBuffer the byte array to transform
    * @return the resulting Document
-   * @throws EppClientException if the transform fails
+   * @throws FailureException if the transform fails
    */
   public static Document byteArrayToXmlDoc(byte[] responseBuffer) throws FailureException {
     Document xml;

@@ -75,7 +75,7 @@ public class DomainCheckFlowCustomLogic extends BaseFlowCustomLogic {
 
     /**
      * The time to perform the domain check as of. This defaults to the current time, but can be
-     * overridden in v>=0.12 of the fee extension.
+     * overridden in v&gt;=0.12 of the fee extension.
      */
     public abstract DateTime asOfDate();
 
@@ -105,7 +105,7 @@ public class DomainCheckFlowCustomLogic extends BaseFlowCustomLogic {
 
     /**
      * The time to perform the domain check as of. This defaults to the current time, but can be
-     * overridden in v>=0.12 of the fee extension.
+     * overridden in v&gt;=0.12 of the fee extension.
      */
     public abstract DateTime asOfDate();
 

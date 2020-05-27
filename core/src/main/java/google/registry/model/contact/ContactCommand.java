@@ -37,7 +37,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 /** A collection of {@link ContactResource} commands. */
 public class ContactCommand {
 
-  /** The fields on "chgType" from {@link "http://tools.ietf.org/html/rfc5733"}. */
+  /** The fields on "chgType" from <a href="http://tools.ietf.org/html/rfc5733">RFC5733</a>. */
   @XmlTransient
   public static class ContactCreateOrChange extends ImmutableObject
       implements ResourceCreateOrChange<ContactResource.Builder> {
@@ -111,8 +111,8 @@ public class ContactCommand {
   }
 
   /**
-   * A create command for a {@link ContactResource}, mapping "createType" from
-   * {@link "http://tools.ietf.org/html/rfc5733"}.
+   * A create command for a {@link ContactResource}, mapping "createType" from <a
+   * href="http://tools.ietf.org/html/rfc5733">RFC5733</a>}.
    */
   @XmlType(propOrder = {"contactId", "postalInfo", "voice", "fax", "email", "authInfo", "disclose"})
   @XmlRootElement

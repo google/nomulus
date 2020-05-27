@@ -214,13 +214,13 @@ public final class RegistryLock extends ImmutableObject implements Buildable, Sq
     return lockCompletionTimestamp != null && unlockCompletionTimestamp == null;
   }
 
-  /** Returns true iff the lock was requested >= 1 hour ago and has not been verified. */
+  /** Returns true iff the lock was requested &gt;= 1 hour ago and has not been verified. */
   public boolean isLockRequestExpired(DateTime now) {
     return !getLockCompletionTimestamp().isPresent()
         && isBeforeOrAt(getLockRequestTimestamp(), now.minusHours(1));
   }
 
-  /** Returns true iff the unlock was requested >= 1 hour ago and has not been verified. */
+  /** Returns true iff the unlock was requested &gt;= 1 hour ago and has not been verified. */
   public boolean isUnlockRequestExpired(DateTime now) {
     Optional<DateTime> unlockRequestTimestamp = getUnlockRequestTimestamp();
     return unlockRequestTimestamp.isPresent()
