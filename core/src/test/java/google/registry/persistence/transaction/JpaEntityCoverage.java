@@ -45,7 +45,7 @@ public class JpaEntityCoverage extends ExternalResource {
   private static final ImmutableSet<Class> ALL_JPA_ENTITIES =
       PersistenceXmlUtility.getManagedClasses().stream()
           .filter(e -> !IGNORE_ENTITIES.contains(e.getSimpleName()))
-          .filter(e -> e.getAnnotation(Entity.class) != null)
+          .filter(e -> e.isAnnotationPresent(Entity.class))
           .collect(ImmutableSet.toImmutableSet());
   private static final Set<Class> allCoveredJpaEntities = Sets.newHashSet();
   // Map of test class name to boolean flag indicating if it tests any JPA entities.

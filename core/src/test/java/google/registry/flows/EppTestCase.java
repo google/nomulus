@@ -41,6 +41,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.monitoring.whitebox.EppMetric;
+import google.registry.persistence.VKey;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.testing.FakeResponse;
@@ -339,7 +340,8 @@ public class EppTestCase extends ShardableTestCase {
         .setTargetId(domain.getFullyQualifiedDomainName())
         .setClientId(domain.getCurrentSponsorClientId())
         .setEventTime(deleteTime)
-        .setOneTimeEventKey(findKeyToActualOneTimeBillingEvent(billingEventToCancel))
+        .setOneTimeEventKey(
+            VKey.createOfy(OneTime.class, findKeyToActualOneTimeBillingEvent(billingEventToCancel)))
         .setBillingTime(createTime.plus(Registry.get(domain.getTld()).getAddGracePeriodLength()))
         .setReason(Reason.CREATE)
         .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE))
@@ -353,7 +355,8 @@ public class EppTestCase extends ShardableTestCase {
         .setTargetId(domain.getFullyQualifiedDomainName())
         .setClientId(domain.getCurrentSponsorClientId())
         .setEventTime(deleteTime)
-        .setOneTimeEventKey(findKeyToActualOneTimeBillingEvent(billingEventToCancel))
+        .setOneTimeEventKey(
+            VKey.createOfy(OneTime.class, findKeyToActualOneTimeBillingEvent(billingEventToCancel)))
         .setBillingTime(renewTime.plus(Registry.get(domain.getTld()).getRenewGracePeriodLength()))
         .setReason(Reason.RENEW)
         .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE))
