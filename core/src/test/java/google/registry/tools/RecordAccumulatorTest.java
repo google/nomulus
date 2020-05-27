@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.testing.AppEngineRule;
-import google.registry.tools.LevelDbFileBuilder.Property;
+import google.registry.tools.ComparableEntity.Property;
 import java.io.File;
 import java.io.IOException;
 import org.junit.Rule;
@@ -45,34 +45,39 @@ public class RecordAccumulatorTest {
     // Note that we need to specify property values as "Long" for property comparisons to work
     // correctly because that's how they are deserialized from protos.
     ComparableEntity e1 =
-        builder.addEntityProto(
+        ComparableEntity.from(
             BASE_ID,
             Property.create("eeny", 100L),
             Property.create("meeny", 200L),
             Property.create("miney", 300L));
+    builder.addEntity(e1.getEntity());
     ComparableEntity e2 =
-        builder.addEntityProto(
+        ComparableEntity.from(
             BASE_ID + 1,
             Property.create("eeny", 100L),
             Property.create("meeny", 200L),
             Property.create("miney", 300L));
+    builder.addEntity(e2.getEntity());
     builder.build();
 
     builder = new LevelDbFileBuilder(new File(subdir, "data2"));
 
     // Duplicate of the record in the other file.
-    builder.addEntityProto(
-        BASE_ID,
-        Property.create("eeny", 100L),
-        Property.create("meeny", 200L),
-        Property.create("miney", 300L));
+    builder.addEntity(
+        ComparableEntity.from(
+                BASE_ID,
+                Property.create("eeny", 100L),
+                Property.create("meeny", 200L),
+                Property.create("miney", 300L))
+            .getEntity());
 
     ComparableEntity e3 =
-        builder.addEntityProto(
+        ComparableEntity.from(
             BASE_ID + 2,
             Property.create("moxy", 100L),
             Property.create("fruvis", 200L),
             Property.create("cortex", 300L));
+    builder.addEntity(e3.getEntity());
     builder.build();
 
     ImmutableSet<ComparableEntity> entities =

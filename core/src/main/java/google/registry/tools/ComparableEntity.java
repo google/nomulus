@@ -15,14 +15,21 @@
 package google.registry.tools;
 
 import com.google.appengine.api.datastore.Entity;
+import com.google.auto.value.AutoValue;
 import com.google.common.base.Objects;
 
 /** Wraps {@link Entity} to do hashCode/equals based on both the entity's key and its properties. */
 final class ComparableEntity {
+  private static final String TEST_ENTITY_KIND = "TestEntity";
+
   private final Entity entity;
 
   ComparableEntity(Entity entity) {
     this.entity = entity;
+  }
+
+  public Entity getEntity() {
+    return entity;
   }
 
   @Override
@@ -44,5 +51,25 @@ final class ComparableEntity {
   @Override
   public String toString() {
     return "ComparableEntity(" + entity + ")";
+  }
+
+  public static ComparableEntity from(int id, Property... properties) {
+    Entity entity = new Entity(TEST_ENTITY_KIND, id);
+    for (Property prop : properties) {
+      entity.setProperty(prop.name(), prop.value());
+    }
+    return new ComparableEntity(entity);
+  }
+
+  @AutoValue
+  abstract static class Property {
+
+    static Property create(String name, Object value) {
+      return new AutoValue_ComparableEntity_Property(name, value);
+    }
+
+    abstract String name();
+
+    abstract Object value();
   }
 }
