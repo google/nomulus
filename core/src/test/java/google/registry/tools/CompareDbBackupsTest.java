@@ -19,7 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.io.Resources;
 import google.registry.testing.DatastoreEntityExtension;
-import google.registry.tools.ComparableEntity.Property;
+import google.registry.tools.EntityWrapper.Property;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -72,14 +72,14 @@ public class CompareDbBackupsTest {
     File dump1 = tempFs.newFolder("dump1");
     LevelDbFileBuilder builder = new LevelDbFileBuilder(new File(dump1, "output-data1"));
     builder.addEntity(
-        ComparableEntity.from(
+        EntityWrapper.from(
                 BASE_ID,
                 Property.create("eeny", 100L),
                 Property.create("meeny", 200L),
                 Property.create("miney", 300L))
             .getEntity());
     builder.addEntity(
-        ComparableEntity.from(
+        EntityWrapper.from(
                 BASE_ID + 1,
                 Property.create("moxey", 100L),
                 Property.create("minney", 200L),
@@ -90,14 +90,14 @@ public class CompareDbBackupsTest {
     File dump2 = tempFs.newFolder("dump2");
     builder = new LevelDbFileBuilder(new File(dump2, "output-data2"));
     builder.addEntity(
-        ComparableEntity.from(
+        EntityWrapper.from(
                 BASE_ID + 1,
                 Property.create("moxey", 100L),
                 Property.create("minney", 200L),
                 Property.create("motz", 300L))
             .getEntity());
     builder.addEntity(
-        ComparableEntity.from(
+        EntityWrapper.from(
                 BASE_ID + 2,
                 Property.create("blutzy", 100L),
                 Property.create("fishey", 200L),

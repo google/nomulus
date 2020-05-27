@@ -39,16 +39,14 @@ class CompareDbBackups {
       return;
     }
 
-    ImmutableSet<ComparableEntity> entities1 =
-        RecordAccumulator.readDirectory(new File(args[0]), DATA_FILE_MATCHER)
-            .getComparableEntitySet();
-    ImmutableSet<ComparableEntity> entities2 =
-        RecordAccumulator.readDirectory(new File(args[1]), DATA_FILE_MATCHER)
-            .getComparableEntitySet();
+    ImmutableSet<EntityWrapper> entities1 =
+        RecordAccumulator.readDirectory(new File(args[0]), DATA_FILE_MATCHER).getEntityWrapperSet();
+    ImmutableSet<EntityWrapper> entities2 =
+        RecordAccumulator.readDirectory(new File(args[1]), DATA_FILE_MATCHER).getEntityWrapperSet();
 
     // Calculate the entities added and removed.
-    SetView<ComparableEntity> added = Sets.difference(entities2, entities1);
-    SetView<ComparableEntity> removed = Sets.difference(entities1, entities2);
+    SetView<EntityWrapper> added = Sets.difference(entities2, entities1);
+    SetView<EntityWrapper> removed = Sets.difference(entities1, entities2);
 
     printHeader(
         String.format("First backup: %d records", entities1.size()),
@@ -56,14 +54,14 @@ class CompareDbBackups {
 
     if (!removed.isEmpty()) {
       printHeader(removed.size() + " records were removed:");
-      for (ComparableEntity entity : removed) {
+      for (EntityWrapper entity : removed) {
         System.out.println(entity);
       }
     }
 
     if (!added.isEmpty()) {
       printHeader(added.size() + " records were added:");
-      for (ComparableEntity entity : added) {
+      for (EntityWrapper entity : added) {
         System.out.println(entity);
       }
     }

@@ -25,7 +25,7 @@ import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
 import google.registry.model.contact.ContactResource;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.DatastoreHelper;
-import google.registry.tools.ComparableEntity.Property;
+import google.registry.tools.EntityWrapper.Property;
 import java.io.File;
 import java.io.IOException;
 import org.junit.Rule;
@@ -49,8 +49,8 @@ public class LevelDbFileBuilderTest {
     File subdir = tempFs.newFolder("folder");
     File logFile = new File(subdir, "testfile");
     LevelDbFileBuilder builder = new LevelDbFileBuilder(logFile);
-    ComparableEntity entity =
-        ComparableEntity.from(
+    EntityWrapper entity =
+        EntityWrapper.from(
             BASE_ID, Property.create("first", 100L), Property.create("second", 200L));
     builder.addEntity(entity.getEntity());
     builder.build();
@@ -60,7 +60,7 @@ public class LevelDbFileBuilderTest {
 
     // Reconstitute an entity, make sure that what we've got is the same as what we started with.
     Entity materializedEntity = rawRecordToEntity(records.get(0));
-    assertThat(new ComparableEntity(materializedEntity)).isEqualTo(entity);
+    assertThat(new EntityWrapper(materializedEntity)).isEqualTo(entity);
   }
 
   @Test
@@ -71,23 +71,23 @@ public class LevelDbFileBuilderTest {
 
     // Generate enough records to cross a block boundary.  These records end up being around 80
     // bytes, so 1000 works.
-    ImmutableList.Builder<ComparableEntity> originalEntitiesBuilder = new ImmutableList.Builder<>();
+    ImmutableList.Builder<EntityWrapper> originalEntitiesBuilder = new ImmutableList.Builder<>();
     for (int i = 0; i < 1000; ++i) {
-      ComparableEntity entity =
-          ComparableEntity.from(
+      EntityWrapper entity =
+          EntityWrapper.from(
               BASE_ID + i, Property.create("first", 100L), Property.create("second", 200L));
       builder.addEntity(entity.getEntity());
       originalEntitiesBuilder.add(entity);
     }
     builder.build();
-    ImmutableList<ComparableEntity> originalEntities = originalEntitiesBuilder.build();
+    ImmutableList<EntityWrapper> originalEntities = originalEntitiesBuilder.build();
 
     ImmutableList<byte[]> records = ImmutableList.copyOf(LevelDbLogReader.from(logFile.getPath()));
     assertThat(records).hasSize(1000);
     int index = 0;
     for (byte[] record : records) {
       Entity materializedEntity = rawRecordToEntity(record);
-      assertThat(new ComparableEntity(materializedEntity)).isEqualTo(originalEntities.get(index));
+      assertThat(new EntityWrapper(materializedEntity)).isEqualTo(originalEntities.get(index));
       ++index;
     }
   }
