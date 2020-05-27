@@ -19,7 +19,7 @@ import java.util.Set;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
-/** JPA {@link AttributeConverter} for storing/retrieving {@link Set <Flag>}. */
+/** JPA {@link AttributeConverter} for storing/retrieving {@link Set}. */
 @Converter(autoApply = true)
 public class BillingEventFlagSetConverter extends StringSetConverterBase<Flag> {
 
