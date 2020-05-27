@@ -142,7 +142,7 @@ public abstract class BillingEvent extends ImmutableObject
   Reason reason;
 
   /** The fully qualified domain name of the domain that the bill is for. */
-  @Column(nullable = false)
+  @Column(name = "domain_name", nullable = false)
   String targetId;
 
   @Nullable

@@ -46,7 +46,7 @@ CREATE TABLE public."BillingCancellation" (
     event_time timestamp with time zone NOT NULL,
     flags text[],
     reason text NOT NULL,
-    target_id text NOT NULL,
+    domain_name text NOT NULL,
     billing_time timestamp with time zone,
     billing_event_id bigint,
     billing_recurrence_id bigint
@@ -84,7 +84,7 @@ CREATE TABLE public."BillingEvent" (
     event_time timestamp with time zone NOT NULL,
     flags text[],
     reason text NOT NULL,
-    target_id text NOT NULL,
+    domain_name text NOT NULL,
     allocation_token_id text,
     billing_time timestamp with time zone,
     cancellation_matching_billing_recurrence_id bigint,
@@ -126,7 +126,7 @@ CREATE TABLE public."BillingRecurrence" (
     event_time timestamp with time zone NOT NULL,
     flags text[],
     reason text NOT NULL,
-    target_id text NOT NULL,
+    domain_name text NOT NULL,
     recurrence_end_time timestamp with time zone,
     recurrence_time_of_year text
 );
