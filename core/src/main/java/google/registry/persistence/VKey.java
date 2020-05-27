@@ -57,18 +57,6 @@ public class VKey<T> extends ImmutableObject {
     return new VKey(kind, ofyKey, null);
   }
 
-  /**
-   * Creates a {@link VKey} which only contains the ofy primary key, returns null if {@link #ofyKey}
-   * is null.
-   */
-  public static <T> VKey<T> createNullableOfy(
-      Class<? extends T> kind, com.googlecode.objectify.Key<? extends T> ofyKey) {
-    if (ofyKey == null) {
-      return null;
-    }
-    return createOfy(kind, ofyKey);
-  }
-
   /** Creates a {@link VKey} which only contains both sql and ofy primary key. */
   public static <T> VKey<T> create(
       Class<? extends T> kind, Object sqlKey, com.googlecode.objectify.Key ofyKey) {

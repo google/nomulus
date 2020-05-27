@@ -144,7 +144,7 @@ public class ModelUtils {
       // actually embed themselves in the persisted object anyway.
       Class<?> fieldClazz = field.getType();
       Type fieldType = field.getGenericType();
-      if (fieldClazz.equals(VKey.class)) {
+      if (VKey.class.equals(fieldClazz)) {
         continue;
       }
       builder.add(fieldClazz);

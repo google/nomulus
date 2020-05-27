@@ -152,7 +152,7 @@ public abstract class BillingEvent extends ImmutableObject
     return clientId;
   }
 
-  public Long getDomainHistoryRevisionId() {
+  public long getDomainHistoryRevisionId() {
     return domainHistoryRevisionId;
   }
 
@@ -164,7 +164,7 @@ public abstract class BillingEvent extends ImmutableObject
     return eventTime;
   }
 
-  public Long getId() {
+  public long getId() {
     return id;
   }
 
@@ -203,7 +203,7 @@ public abstract class BillingEvent extends ImmutableObject
       return thisCastToDerived();
     }
 
-    public B setId(Long id) {
+    public B setId(long id) {
       getInstance().id = id;
       return thisCastToDerived();
     }
@@ -213,7 +213,7 @@ public abstract class BillingEvent extends ImmutableObject
       return thisCastToDerived();
     }
 
-    public B setDomainHistoryRevisionId(Long domainHistoryRevisionId) {
+    public B setDomainHistoryRevisionId(long domainHistoryRevisionId) {
       getInstance().domainHistoryRevisionId = domainHistoryRevisionId;
       return thisCastToDerived();
     }
@@ -244,6 +244,7 @@ public abstract class BillingEvent extends ImmutableObject
     }
 
     public B setParent(Key<HistoryEntry> parentKey) {
+      // TODO(shicong): Figure out how to set domainHistoryRevisionId and domainRepoId
       getInstance().parent = parentKey;
       return thisCastToDerived();
     }
