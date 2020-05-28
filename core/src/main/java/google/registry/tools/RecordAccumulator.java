@@ -48,14 +48,14 @@ class RecordAccumulator {
     return new RecordAccumulator(builder.build());
   }
 
-  /** Creates an entity set from the current set of raw records. */
-  ImmutableSet<ComparableEntity> getComparableEntitySet() {
-    ImmutableSet.Builder<ComparableEntity> builder = new ImmutableSet.Builder<>();
+  /** Creates an {@link EntityWrapper} set from the current set of raw records. */
+  ImmutableSet<EntityWrapper> getEntityWrapperSet() {
+    ImmutableSet.Builder<EntityWrapper> builder = new ImmutableSet.Builder<>();
     for (byte[] rawRecord : records) {
       // Parse the entity proto and create an Entity object from it.
       EntityProto proto = new EntityProto();
       proto.parseFrom(rawRecord);
-      ComparableEntity entity = new ComparableEntity(EntityTranslator.createFromPb(proto));
+      EntityWrapper entity = new EntityWrapper(EntityTranslator.createFromPb(proto));
 
       builder.add(entity);
     }

@@ -28,7 +28,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public final class ComparableEntityTest {
+public final class EntityWrapperTest {
 
   private static final String TEST_ENTITY_KIND = "TestEntity";
   private static final int ARBITRARY_KEY_ID = 1001;
@@ -63,13 +63,13 @@ public final class ComparableEntityTest {
     Entity e2 = EntityTranslator.createFromPb(proto2);
 
     // Ensure that we have a normalized representation.
-    ComparableEntity ce1 = new ComparableEntity(e1);
-    ComparableEntity ce2 = new ComparableEntity(e2);
+    EntityWrapper ce1 = new EntityWrapper(e1);
+    EntityWrapper ce2 = new EntityWrapper(e2);
     assertThat(ce1).isEqualTo(ce2);
     assertThat(ce1.hashCode()).isEqualTo(ce2.hashCode());
 
     // Ensure that the original entity is equal.
-    assertThat(new ComparableEntity(entity)).isEqualTo(ce1);
+    assertThat(new EntityWrapper(entity)).isEqualTo(ce1);
   }
 
   @Test
@@ -90,8 +90,8 @@ public final class ComparableEntityTest {
     Entity e1 = EntityTranslator.createFromPb(proto1);
     Entity e2 = EntityTranslator.createFromPb(proto2);
 
-    ComparableEntity ce1 = new ComparableEntity(e1);
-    ComparableEntity ce2 = new ComparableEntity(e2);
+    EntityWrapper ce1 = new EntityWrapper(e1);
+    EntityWrapper ce2 = new EntityWrapper(e2);
     assertThat(e1).isEqualTo(e2); // The keys should still be the same.
     assertThat(ce1).isNotEqualTo(ce2);
     assertThat(ce1.hashCode()).isNotEqualTo(ce2.hashCode());
@@ -108,15 +108,15 @@ public final class ComparableEntityTest {
     Entity e1 = EntityTranslator.createFromPb(proto1);
     Entity e2 = EntityTranslator.createFromPb(proto2);
 
-    ComparableEntity ce1 = new ComparableEntity(e1);
-    ComparableEntity ce2 = new ComparableEntity(e2);
+    EntityWrapper ce1 = new EntityWrapper(e1);
+    EntityWrapper ce2 = new EntityWrapper(e2);
     assertThat(ce1).isNotEqualTo(ce2);
     assertThat(ce1.hashCode()).isNotEqualTo(ce2.hashCode());
   }
 
   @Test
   public void testComparisonAgainstNonComparableEntities() {
-    ComparableEntity ce = new ComparableEntity(new Entity(TEST_ENTITY_KIND, ARBITRARY_KEY_ID));
+    EntityWrapper ce = new EntityWrapper(new Entity(TEST_ENTITY_KIND, ARBITRARY_KEY_ID));
     // Note: this has to be "isNotEqualTo()" and not isNotNull() because we want to test the
     // equals() method and isNotNull() just checks for "ce != null".
     assertThat(ce).isNotEqualTo(null);
