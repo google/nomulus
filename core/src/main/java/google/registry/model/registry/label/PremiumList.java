@@ -248,7 +248,7 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
   }
 
   /**
-   * A premium list entry entity, persisted to Datastore.  Each instance represents the price of a
+   * A premium list entry entity, persisted to Datastore. Each instance represents the price of a
    * single label on a given TLD.
    */
   @ReportedOn

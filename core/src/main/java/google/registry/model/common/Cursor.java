@@ -35,9 +35,9 @@ import java.util.List;
 import org.joda.time.DateTime;
 
 /**
- * Shared entity for date cursors. This type supports both "scoped" cursors (i.e. per resource
- * of a given type, such as a TLD) and global (i.e. one per environment) cursors, defined internally
- * as scoped on {@link EntityGroupRoot}.
+ * Shared entity for date cursors. This type supports both "scoped" cursors (i.e. per resource of a
+ * given type, such as a TLD) and global (i.e. one per environment) cursors, defined internally as
+ * scoped on {@link EntityGroupRoot}.
  */
 @Entity
 public class Cursor extends ImmutableObject implements DatastoreEntity {

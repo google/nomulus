@@ -28,9 +28,7 @@ import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
 import org.joda.time.DateTime;
 
-/**
- * Singleton parent entity for all commit log checkpoints.
- */
+/** Singleton parent entity for all commit log checkpoints. */
 @Entity
 @NotBackedUp(reason = Reason.COMMIT_LOGS)
 public class CommitLogCheckpointRoot extends ImmutableObject implements DatastoreEntity {
