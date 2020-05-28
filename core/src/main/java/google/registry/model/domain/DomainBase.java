@@ -438,8 +438,9 @@ public class DomainBase extends EppResource
               .setRegistrationExpirationTime(expirationDate)
               // Set the speculatively-written new autorenew events as the domain's autorenew
               // events.
-              .setAutorenewBillingEvent(transferData.getServerApproveAutorenewEvent())
-              .setAutorenewPollMessage(transferData.getServerApproveAutorenewPollMessage());
+              .setAutorenewBillingEvent(transferData.getServerApproveAutorenewEvent().getOfyKey())
+              .setAutorenewPollMessage(
+                  transferData.getServerApproveAutorenewPollMessage().getOfyKey());
       if (transferData.getTransferPeriod().getValue() == 1) {
         // Set the grace period using a key to the prescheduled transfer billing event.  Not using
         // GracePeriod.forBillingEvent() here in order to avoid the actual Datastore fetch.
@@ -450,7 +451,7 @@ public class DomainBase extends EppResource
                     transferExpirationTime.plus(
                         Registry.get(getTld()).getTransferGracePeriodLength()),
                     transferData.getGainingClientId(),
-                    transferData.getServerApproveBillingEvent())));
+                    transferData.getServerApproveBillingEvent().getOfyKey())));
       } else {
         // There won't be a billing event, so we don't need a grace period
         builder.setGracePeriods(ImmutableSet.of());

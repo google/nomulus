@@ -14,6 +14,7 @@
 
 package google.registry.flows.contact;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyHasPendingTransfer;
@@ -40,6 +41,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -90,7 +92,12 @@ public final class ContactTransferRejectFlow implements TransactionalFlow {
     ofy().save().<Object>entities(newContact, historyEntry, gainingPollMessage);
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.
-    ofy().delete().keys(existingContact.getTransferData().getServerApproveEntities());
+    ofy()
+        .delete()
+        .keys(
+            existingContact.getTransferData().getServerApproveEntities().stream()
+                .map(VKey::getOfyKey)
+                .collect(toImmutableSet()));
     return responseBuilder
         .setResData(createTransferResponse(targetId, newContact.getTransferData()))
         .build();

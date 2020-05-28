@@ -290,13 +290,19 @@ public class DomainTransferRequestFlowTest
     // Assert that the domain's TransferData server-approve billing events match the above.
     if (expectTransferBillingEvent) {
       assertBillingEventsEqual(
-          ofy().load().key(domain.getTransferData().getServerApproveBillingEvent()).now(),
+          ofy()
+              .load()
+              .key(domain.getTransferData().getServerApproveBillingEvent().getOfyKey())
+              .now(),
           optionalTransferBillingEvent.get());
     } else {
       assertThat(domain.getTransferData().getServerApproveBillingEvent()).isNull();
     }
     assertBillingEventsEqual(
-        ofy().load().key(domain.getTransferData().getServerApproveAutorenewEvent()).now(),
+        ofy()
+            .load()
+            .key(domain.getTransferData().getServerApproveAutorenewEvent().getOfyKey())
+            .now(),
         gainingClientAutorenew);
     // Assert that the full set of server-approve billing events is exactly the extra ones plus
     // the transfer billing event (if present) and the gaining client autorenew.
@@ -309,7 +315,10 @@ public class DomainTransferRequestFlowTest
             ofy()
                 .load()
                 // Use toArray() to coerce the type to something keys() will accept.
-                .keys(domain.getTransferData().getServerApproveEntities().toArray(new Key<?>[] {}))
+                .keys(
+                    domain.getTransferData().getServerApproveEntities().stream()
+                        .map(VKey::getOfyKey)
+                        .toArray(Key[]::new))
                 .values(),
             BillingEvent.class),
         Sets.union(expectedServeApproveBillingEvents, extraBillingEvents));
@@ -410,7 +419,10 @@ public class DomainTransferRequestFlowTest
 
     // Assert that the poll messages show up in the TransferData server approve entities.
     assertPollMessagesEqual(
-        ofy().load().key(domain.getTransferData().getServerApproveAutorenewPollMessage()).now(),
+        ofy()
+            .load()
+            .key(domain.getTransferData().getServerApproveAutorenewPollMessage().getOfyKey())
+            .now(),
         autorenewPollMessage);
     // Assert that the full set of server-approve poll messages is exactly the server approve
     // OneTime messages to gaining and losing registrars plus the gaining client autorenew.
@@ -419,7 +431,10 @@ public class DomainTransferRequestFlowTest
             ofy()
                 .load()
                 // Use toArray() to coerce the type to something keys() will accept.
-                .keys(domain.getTransferData().getServerApproveEntities().toArray(new Key<?>[] {}))
+                .keys(
+                    domain.getTransferData().getServerApproveEntities().stream()
+                        .map(VKey::getOfyKey)
+                        .toArray(Key[]::new))
                 .values(),
             PollMessage.class),
         ImmutableList.of(

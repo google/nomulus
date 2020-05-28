@@ -20,7 +20,7 @@ import java.util.Set;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
-/** {@link AttributeConverter} for {@link Set <VKey<? extends TransferServerApproveEntity>>}. */
+/** {@link AttributeConverter} for {@link Set}. */
 @Converter(autoApply = true)
 public class TransferServerApproveEntitySetConverter
     extends StringSetConverterBase<VKey<? extends TransferServerApproveEntity>> {

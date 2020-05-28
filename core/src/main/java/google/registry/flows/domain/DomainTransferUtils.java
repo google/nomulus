@@ -20,7 +20,6 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -37,6 +36,7 @@ import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
@@ -52,37 +52,34 @@ public final class DomainTransferUtils {
       TransferData.Builder transferDataBuilder,
       ImmutableSet<TransferServerApproveEntity> serverApproveEntities,
       Period transferPeriod) {
-    ImmutableSet.Builder<Key<? extends TransferServerApproveEntity>> serverApproveEntityKeys =
+    ImmutableSet.Builder<VKey<? extends TransferServerApproveEntity>> serverApproveEntityKeys =
         new ImmutableSet.Builder<>();
     for (TransferServerApproveEntity entity : serverApproveEntities) {
-      serverApproveEntityKeys.add(Key.create(entity));
+      serverApproveEntityKeys.add(TransferServerApproveEntity.createVKey(entity));
     }
     if (transferPeriod.getValue() != 0) {
       // Unless superuser sets period to 0, add a transfer billing event.
       transferDataBuilder.setServerApproveBillingEvent(
-          Key.create(
-              serverApproveEntities
-                  .stream()
-                  .filter(BillingEvent.OneTime.class::isInstance)
-                  .map(BillingEvent.OneTime.class::cast)
-                  .collect(onlyElement())));
+          serverApproveEntities.stream()
+              .filter(BillingEvent.OneTime.class::isInstance)
+              .map(BillingEvent.OneTime.class::cast)
+              .collect(onlyElement())
+              .createVKey());
     }
     return transferDataBuilder
         .setTransferStatus(TransferStatus.PENDING)
         .setServerApproveAutorenewEvent(
-            Key.create(
-                serverApproveEntities
-                    .stream()
-                    .filter(BillingEvent.Recurring.class::isInstance)
-                    .map(BillingEvent.Recurring.class::cast)
-                    .collect(onlyElement())))
+            serverApproveEntities.stream()
+                .filter(BillingEvent.Recurring.class::isInstance)
+                .map(BillingEvent.Recurring.class::cast)
+                .collect(onlyElement())
+                .createVKey())
         .setServerApproveAutorenewPollMessage(
-            Key.create(
-                serverApproveEntities
-                    .stream()
-                    .filter(PollMessage.Autorenew.class::isInstance)
-                    .map(PollMessage.Autorenew.class::cast)
-                    .collect(onlyElement())))
+            serverApproveEntities.stream()
+                .filter(PollMessage.Autorenew.class::isInstance)
+                .map(PollMessage.Autorenew.class::cast)
+                .collect(onlyElement())
+                .createVKey())
         .setServerApproveEntities(serverApproveEntityKeys.build())
         .setTransferPeriod(transferPeriod)
         .build();

@@ -47,6 +47,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferStatus;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -126,13 +127,15 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
     // If the transfer is server approved, this message will be sent to the gaining registrar. */
     PollMessage serverApproveGainingPollMessage =
         createGainingTransferPollMessage(targetId, serverApproveTransferData, historyEntry);
-    TransferData pendingTransferData = serverApproveTransferData.asBuilder()
-        .setTransferStatus(TransferStatus.PENDING)
-        .setServerApproveEntities(
-            ImmutableSet.of(
-                Key.create(serverApproveGainingPollMessage),
-                Key.create(serverApproveLosingPollMessage)))
-        .build();
+    TransferData pendingTransferData =
+        serverApproveTransferData
+            .asBuilder()
+            .setTransferStatus(TransferStatus.PENDING)
+            .setServerApproveEntities(
+                ImmutableSet.of(
+                    TransferServerApproveEntity.createVKey(serverApproveGainingPollMessage),
+                    TransferServerApproveEntity.createVKey(serverApproveLosingPollMessage)))
+            .build();
     // When a transfer is requested, a poll message is created to notify the losing registrar.
     PollMessage requestPollMessage =
         createLosingTransferPollMessage(targetId, pendingTransferData, historyEntry).asBuilder()

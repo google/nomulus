@@ -66,7 +66,6 @@
     <class>google.registry.model.contact.VKeyConverter_ContactResource</class>
     <class>google.registry.model.domain.token.VKeyConverter_AllocationToken</class>
     <class>google.registry.model.host.VKeyConverter_HostResource</class>
-    <class>google.registry.model.host.VKeyConverter_HostResource</class>
     <class>google.registry.model.poll.VKeyConverter_PollMessage</class>
 
     <!-- TODO(weiminyu): check out application-layer validation. -->

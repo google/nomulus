@@ -14,6 +14,7 @@
 
 package google.registry.model.transfer;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableSet;
@@ -31,13 +32,13 @@ import google.registry.model.domain.Period.Unit;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
 import google.registry.persistence.VKey;
+import java.util.Arrays;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
-import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /**
@@ -56,10 +57,10 @@ public class TransferData extends BaseTransferObject implements Buildable {
   @AttributeOverrides({
     @AttributeOverride(
         name = "serverTransactionId",
-        column = @Column(name = "transfer_txn_server_id")),
+        column = @Column(name = "transfer_txn_id_server")),
     @AttributeOverride(
         name = "clientTransactionId",
-        column = @Column(name = "transfer_txn_client_id"))
+        column = @Column(name = "transfer_txn_id_client"))
   })
   Trid transferRequestTrid;
 
@@ -107,6 +108,14 @@ public class TransferData extends BaseTransferObject implements Buildable {
   @Column(name = "transfer_server_approve_entity_ids")
   Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities;
 
+  @Ignore
+  @Column(name = "transfer_server_approve_gaining_poll_message_id")
+  Long gainingTransferPollMessageId;
+
+  @Ignore
+  @Column(name = "transfer_server_approve_losing_poll_message_id")
+  Long losingTransferPollMessageId;
+
   /**
    * The regular one-time billing event that will be charged for a server-approved transfer.
    *
@@ -124,14 +133,10 @@ public class TransferData extends BaseTransferObject implements Buildable {
    * <p>This field should be null if there is not currently a pending transfer or if the object
    * being transferred is not a domain.
    */
-  @Transient
-  @IgnoreSave(IfNull.class)
-  Key<BillingEvent.Recurring> serverApproveAutorenewEvent;
-
   // TODO(shicong): Add foreign key constraints after #565 is checked in
-  @Ignore
-  @Column(name = "transfer_server_approve_autorenew_event_id")
-  VKey<BillingEvent.Recurring> serverApproveAutorenewEventId;
+  @IgnoreSave(IfNull.class)
+  @Column(name = "transfer_server_approve_billing_recurrence_id")
+  VKey<BillingEvent.Recurring> serverApproveAutorenewEvent;
 
   /**
    * The autorenew poll message that should be associated with this resource after the transfer.
@@ -139,14 +144,9 @@ public class TransferData extends BaseTransferObject implements Buildable {
    * <p>This field should be null if there is not currently a pending transfer or if the object
    * being transferred is not a domain.
    */
-  @Transient
   @IgnoreSave(IfNull.class)
-  Key<PollMessage.Autorenew> serverApproveAutorenewPollMessage;
-
-  // TODO(shicong): Add foreign key constraints when PollMessage schema is generated
-  @Ignore
   @Column(name = "transfer_server_approve_autorenew_poll_message_id")
-  VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessageId;
+  VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessage;
 
   @Nullable
   public Trid getTransferRequestTrid() {
@@ -162,22 +162,22 @@ public class TransferData extends BaseTransferObject implements Buildable {
     return transferredRegistrationExpirationTime;
   }
 
-  public ImmutableSet<Key<? extends TransferServerApproveEntity>> getServerApproveEntities() {
+  public ImmutableSet<VKey<? extends TransferServerApproveEntity>> getServerApproveEntities() {
     return nullToEmptyImmutableCopy(serverApproveEntities);
   }
 
   @Nullable
-  public Key<BillingEvent.OneTime> getServerApproveBillingEvent() {
+  public VKey<BillingEvent.OneTime> getServerApproveBillingEvent() {
     return serverApproveBillingEvent;
   }
 
   @Nullable
-  public Key<BillingEvent.Recurring> getServerApproveAutorenewEvent() {
+  public VKey<BillingEvent.Recurring> getServerApproveAutorenewEvent() {
     return serverApproveAutorenewEvent;
   }
 
   @Nullable
-  public Key<PollMessage.Autorenew> getServerApproveAutorenewPollMessage() {
+  public VKey<PollMessage.Autorenew> getServerApproveAutorenewPollMessage() {
     return serverApproveAutorenewPollMessage;
   }
 
@@ -236,25 +236,25 @@ public class TransferData extends BaseTransferObject implements Buildable {
     }
 
     public Builder setServerApproveEntities(
-        ImmutableSet<Key<? extends TransferServerApproveEntity>> serverApproveEntities) {
+        ImmutableSet<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
       getInstance().serverApproveEntities = serverApproveEntities;
       return this;
     }
 
     public Builder setServerApproveBillingEvent(
-        Key<BillingEvent.OneTime> serverApproveBillingEvent) {
+        VKey<BillingEvent.OneTime> serverApproveBillingEvent) {
       getInstance().serverApproveBillingEvent = serverApproveBillingEvent;
       return this;
     }
 
     public Builder setServerApproveAutorenewEvent(
-        Key<BillingEvent.Recurring> serverApproveAutorenewEvent) {
+        VKey<BillingEvent.Recurring> serverApproveAutorenewEvent) {
       getInstance().serverApproveAutorenewEvent = serverApproveAutorenewEvent;
       return this;
     }
 
     public Builder setServerApproveAutorenewPollMessage(
-        Key<PollMessage.Autorenew> serverApproveAutorenewPollMessage) {
+        VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessage) {
       getInstance().serverApproveAutorenewPollMessage = serverApproveAutorenewPollMessage;
       return this;
     }
@@ -264,5 +264,22 @@ public class TransferData extends BaseTransferObject implements Buildable {
    * Marker interface for objects that are written in anticipation of a server approval, and
    * therefore need to be deleted under any other outcome.
    */
-  public interface TransferServerApproveEntity {}
+  public interface TransferServerApproveEntity {
+    static VKey<? extends TransferServerApproveEntity> createVKey(
+        TransferServerApproveEntity entity) {
+      return VKey.createOfy(TransferServerApproveEntity.class, Key.create(entity));
+    }
+
+    static VKey<? extends TransferServerApproveEntity> createVKey(
+        Key<? extends TransferServerApproveEntity> key) {
+      return VKey.createOfy(TransferServerApproveEntity.class, key);
+    }
+
+    static ImmutableSet<VKey<? extends TransferServerApproveEntity>> createVKeySet(
+        Key<? extends TransferServerApproveEntity>... keys) {
+      return Arrays.stream(keys)
+          .map(TransferServerApproveEntity::createVKey)
+          .collect(toImmutableSet());
+    }
+  }
 }

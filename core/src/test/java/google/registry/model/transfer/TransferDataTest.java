@@ -14,6 +14,7 @@
 
 package google.registry.model.transfer;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
 
@@ -23,6 +24,8 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
+import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
+import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineRule;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -67,19 +70,26 @@ public class TransferDataTest {
             .setTransferPeriod(Period.create(5, Period.Unit.YEARS))
             .build();
     TransferData fullTransferData =
-        constantTransferData.asBuilder()
+        constantTransferData
+            .asBuilder()
             .setPendingTransferExpirationTime(now)
             .setTransferStatus(TransferStatus.PENDING)
             .setServerApproveEntities(
                 ImmutableSet.of(
-                    transferBillingEventKey,
-                    otherServerApproveBillingEventKey,
-                    recurringBillingEventKey,
-                    autorenewPollMessageKey,
-                    otherServerApprovePollMessageKey))
-            .setServerApproveBillingEvent(transferBillingEventKey)
-            .setServerApproveAutorenewEvent(recurringBillingEventKey)
-            .setServerApproveAutorenewPollMessage(autorenewPollMessageKey)
+                        transferBillingEventKey,
+                        otherServerApproveBillingEventKey,
+                        recurringBillingEventKey,
+                        autorenewPollMessageKey,
+                        otherServerApprovePollMessageKey)
+                    .stream()
+                    .map(TransferServerApproveEntity::createVKey)
+                    .collect(toImmutableSet()))
+            .setServerApproveBillingEvent(
+                VKey.createOfy(BillingEvent.OneTime.class, transferBillingEventKey))
+            .setServerApproveAutorenewEvent(
+                VKey.createOfy(BillingEvent.Recurring.class, recurringBillingEventKey))
+            .setServerApproveAutorenewPollMessage(
+                VKey.createOfy(PollMessage.Autorenew.class, autorenewPollMessageKey))
             .build();
     // asBuilder() copies over all fields
     assertThat(fullTransferData.asBuilder().build()).isEqualTo(fullTransferData);
