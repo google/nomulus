@@ -39,7 +39,7 @@ public final class LevelDbFileBuilder {
   }
 
   /** Adds an {@link Entity Datastore Entity object} to the leveldb log file. */
-  LevelDbFileBuilder addEntity(Entity entity) throws IOException {
+  public LevelDbFileBuilder addEntity(Entity entity) throws IOException {
     EntityProto proto = EntityTranslator.convertToPb(entity);
     byte[] protoBytes = proto.toByteArray();
     if (protoBytes.length > BLOCK_SIZE - (currentPos + HEADER_SIZE)) {
@@ -53,7 +53,7 @@ public final class LevelDbFileBuilder {
   }
 
   /** Writes all remaining data and closes the block. */
-  void build() throws IOException {
+  public void build() throws IOException {
     out.write(currentBlock);
     out.close();
   }
