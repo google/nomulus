@@ -127,9 +127,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
             ImmutableMap.of(
                 "DOMAIN", "example.tld",
                 "CRDATE", "2000-06-01T00:02:00Z",
-                // TODO(mcilwain): The exp. date should be restored back to 2002-06-01T00:02:00Z,
-                // but this is old behavior of being 1 year after the moment of the restore.
-                "EXDATE", "2001-07-01T00:03:00Z",
+                "EXDATE", "2002-06-01T00:02:00Z",
                 "UPDATE", "2000-07-01T00:03:00Z"));
 
     assertThatLogoutSucceeds();
@@ -203,11 +201,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
             ImmutableMap.of(
                 "DOMAIN", "example.tld",
                 "CRDATE", "2000-06-01T00:02:00Z",
-                // TODO(mcilwain): The exp. date should be 2003-06-01T00:02:00Z, the same as its
-                // value prior to the deletion, because the year that was taken off when the
-                // autorenew was canceled will be re-added in renewal during the restore.
-                // For now though, the current behavior is 1 year after restore.
-                "EXDATE", "2003-07-05T00:03:00Z",
+                "EXDATE", "2003-06-01T00:02:00Z",
                 "UPDATE", "2002-07-05T00:03:00Z"));
 
     assertThatLogoutSucceeds();
@@ -289,10 +283,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
             ImmutableMap.of(
                 "DOMAIN", "example.tld",
                 "CRDATE", "2000-06-01T00:02:00Z",
-                // TODO(mcilwain): The exp. date should be 2002-06-01T00:02:00Z, which is the
-                // current registration expiration time on the (deleted) domain, but for now is
-                // 1 year after restore.
-                "EXDATE", "2001-06-20T00:00:00Z",
+                "EXDATE", "2002-06-01T00:02:00Z",
                 "UPDATE", "2000-06-20T00:00:00Z"));
 
     assertThatLogoutSucceeds();

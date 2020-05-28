@@ -72,6 +72,7 @@ import google.registry.model.reporting.DomainTransactionRecord.TransactionReport
 import google.registry.model.reporting.HistoryEntry;
 import java.util.Map;
 import org.joda.money.Money;
+import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -93,6 +94,10 @@ public class DomainRestoreRequestFlowTest
   }
 
   void persistPendingDeleteDomain() throws Exception {
+    persistPendingDeleteDomain(clock.nowUtc().plusYears(5).plusDays(45));
+  }
+
+  void persistPendingDeleteDomain(DateTime expirationTime) throws Exception {
     DomainBase domain = newDomainBase(getUniqueIdFromCommand());
     HistoryEntry historyEntry =
         persistResource(
@@ -103,7 +108,7 @@ public class DomainRestoreRequestFlowTest
     persistResource(
         domain
             .asBuilder()
-            .setRegistrationExpirationTime(clock.nowUtc().plusYears(5).plusDays(45))
+            .setRegistrationExpirationTime(expirationTime)
             .setDeletionTime(clock.nowUtc().plusDays(35))
             .addGracePeriod(
                 GracePeriod.create(
@@ -129,9 +134,10 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  public void testSuccess_expiryStillInFuture_notExtended() throws Exception {
     setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "example.tld"));
-    persistPendingDeleteDomain();
+    DateTime expirationTime = clock.nowUtc().plusYears(5).plusDays(45);
+    persistPendingDeleteDomain(expirationTime);
     assertTransactionalFlow(true);
     // Double check that we see a poll message in the future for when the delete happens.
     assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
@@ -140,11 +146,79 @@ public class DomainRestoreRequestFlowTest
     HistoryEntry historyEntryDomainRestore =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE);
     assertThat(ofy().load().key(domain.getAutorenewBillingEvent()).now().getEventTime())
-        .isEqualTo(clock.nowUtc().plusYears(1));
+        .isEqualTo(expirationTime);
     assertAboutDomains()
         .that(domain)
         // New expiration time should be exactly a year from now.
-        .hasRegistrationExpirationTime(clock.nowUtc().plusYears(1))
+        .hasRegistrationExpirationTime(expirationTime)
+        .and()
+        .doesNotHaveStatusValue(StatusValue.PENDING_DELETE)
+        .and()
+        .hasDeletionTime(END_OF_TIME)
+        .and()
+        .hasOneHistoryEntryEachOfTypes(
+            HistoryEntry.Type.DOMAIN_DELETE, HistoryEntry.Type.DOMAIN_RESTORE)
+        .and()
+        .hasLastEppUpdateTime(clock.nowUtc())
+        .and()
+        .hasLastEppUpdateClientId("TheRegistrar");
+    assertThat(domain.getGracePeriods()).isEmpty();
+    assertDnsTasksEnqueued("example.tld");
+    // The poll message for the delete should now be gone. The only poll message should be the new
+    // autorenew poll message.
+    assertPollMessages(
+        "TheRegistrar",
+        new PollMessage.Autorenew.Builder()
+            .setTargetId("example.tld")
+            .setClientId("TheRegistrar")
+            .setEventTime(domain.getRegistrationExpirationTime())
+            .setAutorenewEndTime(END_OF_TIME)
+            .setMsg("Domain was auto-renewed.")
+            .setParent(historyEntryDomainRestore)
+            .build());
+    // There should be a onetime for the restore and a new recurring billing event, but no renew
+    // onetime.
+    assertBillingEvents(
+        new BillingEvent.Recurring.Builder()
+            .setReason(Reason.RENEW)
+            .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+            .setTargetId("example.tld")
+            .setClientId("TheRegistrar")
+            .setEventTime(expirationTime)
+            .setRecurrenceEndTime(END_OF_TIME)
+            .setParent(historyEntryDomainRestore)
+            .build(),
+        new BillingEvent.OneTime.Builder()
+            .setReason(Reason.RESTORE)
+            .setTargetId("example.tld")
+            .setClientId("TheRegistrar")
+            .setCost(Money.of(USD, 17))
+            .setPeriodYears(1)
+            .setEventTime(clock.nowUtc())
+            .setBillingTime(clock.nowUtc())
+            .setParent(historyEntryDomainRestore)
+            .build());
+  }
+
+  @Test
+  public void testSuccess_expiryInPast_extendedByOneYear() throws Exception {
+    setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    DateTime expirationTime = clock.nowUtc().minusDays(20);
+    DateTime newExpirationTime = expirationTime.plusYears(1);
+    persistPendingDeleteDomain(expirationTime);
+    assertTransactionalFlow(true);
+    // Double check that we see a poll message in the future for when the delete happens.
+    assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
+    runFlowAssertResponse(loadFile("generic_success_response.xml"));
+    DomainBase domain = reloadResourceByForeignKey();
+    HistoryEntry historyEntryDomainRestore =
+        getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE);
+    assertThat(ofy().load().key(domain.getAutorenewBillingEvent()).now().getEventTime())
+        .isEqualTo(newExpirationTime);
+    assertAboutDomains()
+        .that(domain)
+        // New expiration time should be the same as from before the deletion.
+        .hasRegistrationExpirationTime(newExpirationTime)
         .and()
         .doesNotHaveStatusValue(StatusValue.PENDING_DELETE)
         .and()
@@ -178,7 +252,7 @@ public class DomainRestoreRequestFlowTest
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId("example.tld")
             .setClientId("TheRegistrar")
-            .setEventTime(domain.getRegistrationExpirationTime())
+            .setEventTime(newExpirationTime)
             .setRecurrenceEndTime(END_OF_TIME)
             .setParent(historyEntryDomainRestore)
             .build(),
