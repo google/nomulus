@@ -294,7 +294,7 @@ public class CloudDnsWriterTest {
 
     ImmutableSet.Builder<VKey<HostResource>> hostResourceRefBuilder = new ImmutableSet.Builder<>();
     for (HostResource nameserver : nameservers) {
-      hostResourceRefBuilder.add(nameserver.createKey());
+      hostResourceRefBuilder.add(nameserver.createVKey());
     }
 
     return newDomainBase(domainName)

@@ -376,10 +376,10 @@ public final class FullFieldsTestEntityHelper {
     if ((ns1 != null) || (ns2 != null)) {
       ImmutableSet.Builder<VKey<HostResource>> nsBuilder = new ImmutableSet.Builder<>();
       if (ns1 != null) {
-        nsBuilder.add(ns1.createKey());
+        nsBuilder.add(ns1.createVKey());
       }
       if (ns2 != null) {
-        nsBuilder.add(ns2.createKey());
+        nsBuilder.add(ns2.createVKey());
       }
       builder.setNameservers(nsBuilder.build());
     }

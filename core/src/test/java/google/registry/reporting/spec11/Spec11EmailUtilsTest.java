@@ -376,7 +376,7 @@ public class Spec11EmailUtilsTest {
     return persistResource(
         newDomainBase(domainName)
             .asBuilder()
-            .setNameservers(ImmutableSet.of(host.createKey()))
+            .setNameservers(ImmutableSet.of(host.createVKey()))
             .build());
   }
 }

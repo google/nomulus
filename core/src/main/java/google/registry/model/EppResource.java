@@ -44,6 +44,7 @@ import google.registry.config.RegistryConfig;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.transfer.TransferData;
+import google.registry.persistence.VKey;
 import google.registry.util.NonFinalForTesting;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -182,6 +183,9 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
 
   /** Get the foreign key string for this resource. */
   public abstract String getForeignKey();
+
+  /** Create the VKey for the specified EPP resource. */
+  public abstract VKey<? extends EppResource> createVKey();
 
   /** Override of {@link Buildable#asBuilder} so that the extra methods are visible. */
   @Override
