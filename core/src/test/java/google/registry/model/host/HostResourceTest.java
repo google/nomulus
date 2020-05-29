@@ -33,8 +33,8 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.transfer.TransferData;
-import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,8 +64,7 @@ public class HostResourceTest extends EntityTestCase {
                         .setLosingClientId("losing")
                         .setPendingTransferExpirationTime(fakeClock.nowUtc())
                         .setServerApproveEntities(
-                            TransferServerApproveEntity.createVKeySet(
-                                Key.create(BillingEvent.OneTime.class, 1)))
+                            ImmutableSet.of(VKey.createOfy(BillingEvent.OneTime.class, 1)))
                         .setTransferRequestTime(fakeClock.nowUtc())
                         .setTransferStatus(TransferStatus.SERVER_APPROVED)
                         .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))

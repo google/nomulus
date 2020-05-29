@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
@@ -93,7 +92,6 @@ import google.registry.model.registry.label.PremiumList.PremiumListRevision;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
-import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.tmch.LordnTaskUtils;
@@ -455,24 +453,24 @@ public class DatastoreHelper {
                     .setServerApproveEntities(
                         ImmutableSet.of(
                             // Pretend it's 3 days since the request
-                            TransferServerApproveEntity.createVKey(
-                                persistResource(
+                            persistResource(
                                     createPollMessageForImplicitTransfer(
                                         contact,
                                         historyEntryContactTransfer,
                                         "NewRegistrar",
                                         requestTime,
                                         expirationTime,
-                                        null))),
-                            TransferServerApproveEntity.createVKey(
-                                persistResource(
+                                        null))
+                                .createVKey(),
+                            persistResource(
                                     createPollMessageForImplicitTransfer(
                                         contact,
                                         historyEntryContactTransfer,
                                         "TheRegistrar",
                                         requestTime,
                                         expirationTime,
-                                        null)))))
+                                        null))
+                                .createVKey()))
                     .setTransferRequestTrid(
                         Trid.create("transferClient-trid", "transferServer-trid"))
                     .build())
@@ -607,30 +605,27 @@ public class DatastoreHelper {
                         gainingClientAutorenewPollMessage.createVKey())
                     .setServerApproveEntities(
                         ImmutableSet.of(
-                                Key.create(transferBillingEvent),
-                                Key.create(gainingClientAutorenewEvent),
-                                Key.create(gainingClientAutorenewPollMessage),
-                                Key.create(
-                                    persistResource(
-                                        createPollMessageForImplicitTransfer(
-                                            domain,
-                                            historyEntryDomainTransfer,
-                                            "NewRegistrar",
-                                            requestTime,
-                                            expirationTime,
-                                            extendedRegistrationExpirationTime))),
-                                Key.create(
-                                    persistResource(
-                                        createPollMessageForImplicitTransfer(
-                                            domain,
-                                            historyEntryDomainTransfer,
-                                            "TheRegistrar",
-                                            requestTime,
-                                            expirationTime,
-                                            extendedRegistrationExpirationTime))))
-                            .stream()
-                            .map(TransferServerApproveEntity::createVKey)
-                            .collect(toImmutableSet()))
+                            transferBillingEvent.createVKey(),
+                            gainingClientAutorenewEvent.createVKey(),
+                            gainingClientAutorenewPollMessage.createVKey(),
+                            persistResource(
+                                    createPollMessageForImplicitTransfer(
+                                        domain,
+                                        historyEntryDomainTransfer,
+                                        "NewRegistrar",
+                                        requestTime,
+                                        expirationTime,
+                                        extendedRegistrationExpirationTime))
+                                .createVKey(),
+                            persistResource(
+                                    createPollMessageForImplicitTransfer(
+                                        domain,
+                                        historyEntryDomainTransfer,
+                                        "TheRegistrar",
+                                        requestTime,
+                                        expirationTime,
+                                        extendedRegistrationExpirationTime))
+                                .createVKey()))
                     .setTransferRequestTrid(
                         Trid.create("transferClient-trid", "transferServer-trid"))
                     .build())

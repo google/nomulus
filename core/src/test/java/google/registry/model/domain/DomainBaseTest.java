@@ -53,7 +53,6 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
-import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import org.joda.money.Money;
@@ -139,8 +138,10 @@ public class DomainBaseTest extends EntityTestCase {
                             .setLosingClientId("losing")
                             .setPendingTransferExpirationTime(fakeClock.nowUtc())
                             .setServerApproveEntities(
-                                TransferServerApproveEntity.createVKeySet(
-                                    oneTimeBillKey, recurringBillKey, autorenewPollKey))
+                                ImmutableSet.of(
+                                    VKey.createOfy(BillingEvent.OneTime.class, oneTimeBillKey),
+                                    VKey.createOfy(BillingEvent.Recurring.class, recurringBillKey),
+                                    VKey.createOfy(PollMessage.Autorenew.class, autorenewPollKey)))
                             .setServerApproveBillingEvent(
                                 VKey.createOfy(BillingEvent.OneTime.class, oneTimeBillKey))
                             .setServerApproveAutorenewEvent(

@@ -151,6 +151,9 @@ public abstract class PollMessage extends ImmutableObject
 
   public abstract ImmutableList<ResponseData> getResponseData();
 
+  @Override
+  public abstract VKey<? extends PollMessage> createVKey();
+
   /** Override Buildable.asBuilder() to give this method stronger typing. */
   @Override
   public abstract Builder<?, ?> asBuilder();
@@ -293,6 +296,11 @@ public abstract class PollMessage extends ImmutableObject
     String contactId;
 
     @Override
+    public VKey<OneTime> createVKey() {
+      return VKey.createOfy(this.getClass(), Key.create(this));
+    }
+
+    @Override
     public Builder asBuilder() {
       return new Builder(clone(this));
     }
@@ -388,8 +396,9 @@ public abstract class PollMessage extends ImmutableObject
       return autorenewEndTime;
     }
 
+    @Override
     public VKey<Autorenew> createVKey() {
-      return VKey.createOfy(Autorenew.class, Key.create(this));
+      return VKey.createOfy(this.getClass(), Key.create(this));
     }
 
     @Override

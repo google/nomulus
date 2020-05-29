@@ -14,11 +14,9 @@
 
 package google.registry.model.transfer;
 
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
@@ -32,7 +30,6 @@ import google.registry.model.domain.Period.Unit;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
 import google.registry.persistence.VKey;
-import java.util.Arrays;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
@@ -268,21 +265,6 @@ public class TransferData extends BaseTransferObject implements Buildable {
    * therefore need to be deleted under any other outcome.
    */
   public interface TransferServerApproveEntity {
-    static VKey<? extends TransferServerApproveEntity> createVKey(
-        TransferServerApproveEntity entity) {
-      return VKey.createOfy(TransferServerApproveEntity.class, Key.create(entity));
-    }
-
-    static VKey<? extends TransferServerApproveEntity> createVKey(
-        Key<? extends TransferServerApproveEntity> key) {
-      return VKey.createOfy(TransferServerApproveEntity.class, key);
-    }
-
-    static ImmutableSet<VKey<? extends TransferServerApproveEntity>> createVKeySet(
-        Key<? extends TransferServerApproveEntity>... keys) {
-      return Arrays.stream(keys)
-          .map(TransferServerApproveEntity::createVKey)
-          .collect(toImmutableSet());
-    }
+    VKey<? extends TransferServerApproveEntity> createVKey();
   }
 }

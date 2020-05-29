@@ -29,7 +29,6 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.contact.Disclose.PostalInfoChoice;
@@ -39,7 +38,6 @@ import google.registry.model.eppcommon.PresenceMarker;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.transfer.TransferData;
-import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import org.junit.jupiter.api.BeforeEach;
@@ -115,8 +113,7 @@ public class ContactResourceTest extends EntityTestCase {
                     .setLosingClientId("losing")
                     .setPendingTransferExpirationTime(fakeClock.nowUtc())
                     .setServerApproveEntities(
-                        TransferServerApproveEntity.createVKeySet(
-                            Key.create(BillingEvent.OneTime.class, 1)))
+                        ImmutableSet.of(VKey.createOfy(BillingEvent.OneTime.class, 1)))
                     .setTransferRequestTime(fakeClock.nowUtc())
                     .setTransferStatus(TransferStatus.SERVER_APPROVED)
                     .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))

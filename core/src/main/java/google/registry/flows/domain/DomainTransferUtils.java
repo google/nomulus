@@ -55,7 +55,7 @@ public final class DomainTransferUtils {
     ImmutableSet.Builder<VKey<? extends TransferServerApproveEntity>> serverApproveEntityKeys =
         new ImmutableSet.Builder<>();
     for (TransferServerApproveEntity entity : serverApproveEntities) {
-      serverApproveEntityKeys.add(TransferServerApproveEntity.createVKey(entity));
+      serverApproveEntityKeys.add(entity.createVKey());
     }
     if (transferPeriod.getValue() != 0) {
       // Unless superuser sets period to 0, add a transfer billing event.
