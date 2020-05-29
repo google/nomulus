@@ -28,7 +28,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import org.junit.jupiter.api.Test;
 
-/** Tests for {@link google.registry.model.host.HostHistory}. */
+/** Tests for {@link HostHistory}. */
 public class HostHistoryTest extends EntityTestCase {
 
   public HostHistoryTest() {

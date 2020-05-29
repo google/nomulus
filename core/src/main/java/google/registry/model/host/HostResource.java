@@ -19,7 +19,6 @@ import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
-import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
@@ -29,10 +28,7 @@ import javax.persistence.AccessType;
 /**
  * A persistable Host resource including mutable and non-mutable fields.
  *
- * <p>A host's {@link TransferData} is stored on the superordinate domain. Non-subordinate hosts
- * don't carry a full set of TransferData; all they have is lastTransferTime.
- *
- * @see <a href="https://tools.ietf.org/html/rfc5732">RFC 5732</a>
+ * <p>The {@link javax.persistence.Id} of the HostResource is the repoId.
  */
 @ReportedOn
 @Entity

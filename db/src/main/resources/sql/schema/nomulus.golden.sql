@@ -305,7 +305,7 @@ CREATE TABLE public."DomainHost" (
 --
 
 CREATE TABLE public."HostHistory" (
-    revision_id bigint NOT NULL,
+    id bigint NOT NULL,
     by_superuser boolean NOT NULL,
     registrar_id text NOT NULL,
     modification_time timestamp with time zone NOT NULL,
@@ -331,11 +331,30 @@ CREATE TABLE public."HostHistory" (
 
 
 --
+-- Name: HostHistory_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."HostHistory_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: HostHistory_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."HostHistory_id_seq" OWNED BY public."HostHistory".id;
+
+
+--
 -- Name: HostHistory_inetAddresses; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public."HostHistory_inetAddresses" (
-    host_history_revision_id bigint NOT NULL,
+    host_history_id bigint NOT NULL,
     inet_addresses bytea
 );
 
@@ -613,6 +632,13 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 
 
 --
+-- Name: HostHistory id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory" ALTER COLUMN id SET DEFAULT nextval('public."HostHistory_id_seq"'::regclass);
+
+
+--
 -- Name: PremiumList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -702,7 +728,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."HostHistory"
-    ADD CONSTRAINT "HostHistory_pkey" PRIMARY KEY (revision_id);
+    ADD CONSTRAINT "HostHistory_pkey" PRIMARY KEY (id);
 
 
 --
@@ -1079,7 +1105,7 @@ ALTER TABLE ONLY public."Contact"
 --
 
 ALTER TABLE ONLY public."HostHistory_inetAddresses"
-    ADD CONSTRAINT fk9svsf0mplnb9d7tdpl44lssvp FOREIGN KEY (host_history_revision_id) REFERENCES public."HostHistory"(revision_id);
+    ADD CONSTRAINT fk9svsf0mplnb9d7tdpl44lssvp FOREIGN KEY (host_history_id) REFERENCES public."HostHistory"(id);
 
 
 --

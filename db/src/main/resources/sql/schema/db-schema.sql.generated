@@ -184,7 +184,7 @@
     );
 
     create table "HostHistory" (
-       revision_id int8 not null,
+       id  bigserial not null,
         by_superuser boolean not null,
         registrar_id text,
         modification_time timestamptz not null,
@@ -206,11 +206,11 @@
         last_epp_update_time timestamptz,
         statuses text[],
         host_resource text not null,
-        primary key (revision_id)
+        primary key (id)
     );
 
     create table "HostHistory_inetAddresses" (
-       host_history_revision_id int8 not null,
+       host_history_id int8 not null,
         inet_addresses bytea
     );
 
@@ -407,8 +407,8 @@ create index reservedlist_name_idx on "ReservedList" (name);
        references "Domain";
 
     alter table if exists "HostHistory_inetAddresses" 
-       add constraint FKdxdtvupo2b6xlqsq4og4nlo7k 
-       foreign key (host_history_revision_id) 
+       add constraint FK9svsf0mplnb9d7tdpl44lssvp 
+       foreign key (host_history_id) 
        references "HostHistory";
 
     alter table if exists "HostResource_inetAddresses" 

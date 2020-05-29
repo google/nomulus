@@ -21,6 +21,13 @@ import google.registry.persistence.VKey;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 
+/**
+ * A persisted history entry representing an EPP modification to a host.
+ *
+ * <p>In addition to the general history fields (e.g. action time, registrar ID) we also persist a
+ * copy of the host entity at this point in time. We persist a raw {@link HostBase} so that the
+ * foreign-keyed fields in that class can refer to this object.
+ */
 @Entity
 @javax.persistence.Table(
     indexes = {
@@ -73,8 +80,7 @@ public class HostHistory extends HistoryEntry {
     @Override
     public Builder setParent(Key<? extends EppResource> parent) {
       super.setParent(parent);
-      getInstance().hostResource =
-          VKey.createOfy(HostResource.class, (Key<HostResource>) parent);
+      getInstance().hostResource = VKey.createOfy(HostResource.class, (Key<HostResource>) parent);
       return this;
     }
   }

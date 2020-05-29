@@ -28,6 +28,7 @@ import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.EppResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.transfer.TransferData;
 import java.net.InetAddress;
 import java.util.Optional;
 import java.util.Set;
@@ -39,6 +40,18 @@ import javax.persistence.Embeddable;
 import javax.persistence.MappedSuperclass;
 import org.joda.time.DateTime;
 
+/**
+ * A persistable Host resource including mutable and non-mutable fields.
+ *
+ * <p>A host's {@link TransferData} is stored on the superordinate domain. Non-subordinate hosts
+ * don't carry a full set of TransferData; all they have is lastTransferTime.
+ *
+ * <p>This class deliberately does not include an {@link javax.persistence.Id} so that any
+ * foreign-keyed fields can refer to the proper parent entity's ID, whether we're storing this in
+ * the DB itself or as part of another entity
+ *
+ * @see <a href="https://tools.ietf.org/html/rfc5732">RFC 5732</a>
+ */
 @MappedSuperclass
 @Embeddable
 @Access(AccessType.FIELD)
