@@ -39,6 +39,7 @@ import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
+import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /**
@@ -104,17 +105,21 @@ public class TransferData extends BaseTransferObject implements Buildable {
    * pending transfer is explicitly approved, rejected or cancelled, the referenced entities should
    * be deleted.
    */
+  @Transient
   @IgnoreSave(IfNull.class)
-  @Column(name = "transfer_server_approve_entity_ids")
   Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities;
 
   @Ignore
-  @Column(name = "transfer_server_approve_gaining_poll_message_id")
+  @Column(name = "transfer_gaining_poll_message_id")
   Long gainingTransferPollMessageId;
 
   @Ignore
-  @Column(name = "transfer_server_approve_losing_poll_message_id")
+  @Column(name = "transfer_losing_poll_message_id")
   Long losingTransferPollMessageId;
+
+  @Ignore
+  @Column(name = "transfer_billing_cancellation_id")
+  Long billingCancellationId;
 
   /**
    * The regular one-time billing event that will be charged for a server-approved transfer.
@@ -122,9 +127,8 @@ public class TransferData extends BaseTransferObject implements Buildable {
    * <p>This field should be null if there is not currently a pending transfer or if the object
    * being transferred is not a domain.
    */
-  // TODO(shicong): Add foreign key constraints after #565 is checked in
   @IgnoreSave(IfNull.class)
-  @Column(name = "transfer_server_approve_billing_event_id")
+  @Column(name = "transfer_billing_event_id")
   VKey<BillingEvent.OneTime> serverApproveBillingEvent;
 
   /**
@@ -133,9 +137,8 @@ public class TransferData extends BaseTransferObject implements Buildable {
    * <p>This field should be null if there is not currently a pending transfer or if the object
    * being transferred is not a domain.
    */
-  // TODO(shicong): Add foreign key constraints after #565 is checked in
   @IgnoreSave(IfNull.class)
-  @Column(name = "transfer_server_approve_billing_recurrence_id")
+  @Column(name = "transfer_billing_recurrence_id")
   VKey<BillingEvent.Recurring> serverApproveAutorenewEvent;
 
   /**
@@ -145,7 +148,7 @@ public class TransferData extends BaseTransferObject implements Buildable {
    * being transferred is not a domain.
    */
   @IgnoreSave(IfNull.class)
-  @Column(name = "transfer_server_approve_autorenew_poll_message_id")
+  @Column(name = "transfer_autorenew_poll_message_id")
   VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessage;
 
   @Nullable

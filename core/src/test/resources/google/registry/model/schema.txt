@@ -716,15 +716,15 @@ class google.registry.model.tmch.TmchCrl {
   org.joda.time.DateTime updated;
 }
 class google.registry.model.transfer.TransferData {
-  com.googlecode.objectify.Key<google.registry.model.billing.BillingEvent$OneTime> serverApproveBillingEvent;
-  com.googlecode.objectify.Key<google.registry.model.billing.BillingEvent$Recurring> serverApproveAutorenewEvent;
-  com.googlecode.objectify.Key<google.registry.model.poll.PollMessage$Autorenew> serverApproveAutorenewPollMessage;
   google.registry.model.domain.Period transferPeriod;
   google.registry.model.eppcommon.Trid transferRequestTrid;
   google.registry.model.transfer.TransferStatus transferStatus;
+  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$OneTime> serverApproveBillingEvent;
+  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$Recurring> serverApproveAutorenewEvent;
+  google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> serverApproveAutorenewPollMessage;
   java.lang.String gainingClientId;
   java.lang.String losingClientId;
-  java.util.Set<com.googlecode.objectify.Key<? extends google.registry.model.transfer.TransferData$TransferServerApproveEntity>> serverApproveEntities;
+  java.util.Set<google.registry.persistence.VKey<? extends google.registry.model.transfer.TransferData$TransferServerApproveEntity>> serverApproveEntities;
   org.joda.time.DateTime pendingTransferExpirationTime;
   org.joda.time.DateTime transferRequestTime;
   org.joda.time.DateTime transferredRegistrationExpirationTime;

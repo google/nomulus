@@ -13,14 +13,16 @@
 -- limitations under the License.
 
 alter table "Contact"
-    add column transfer_server_approve_autorenew_event_id int8,
-    add column transfer_server_approve_autorenew_poll_message_id int8,
-    add column transfer_server_approve_billing_event_id int8,
-    add column transfer_server_approve_entity_ids text[],
+    add column transfer_gaining_poll_message_id int8,
+    add column transfer_losing_poll_message_id int8,
+    add column transfer_billing_cancellation_id int8,
+    add column transfer_billing_event_id int8,
+    add column transfer_billing_recurrence_id int8,
+    add column transfer_autorenew_poll_message_id int8,
     add column transfer_period_unit text,
     add column transfer_period_value int4,
-    add column transfer_txn_client_id text,
-    add column transfer_txn_server_id text,
+    add column transfer_txn_id_client text,
+    add column transfer_txn_id_server text,
     add column transfer_registration_expiration_time timestamptz,
     add column transfer_gaining_client_id text,
     add column transfer_losing_client_id text,
@@ -29,14 +31,16 @@ alter table "Contact"
     add column transfer_status text;
 
 alter table "Domain"
-    add column transfer_server_approve_autorenew_event_id int8,
-    add column transfer_server_approve_autorenew_poll_message_id int8,
-    add column transfer_server_approve_billing_event_id int8,
-    add column transfer_server_approve_entity_ids text[],
+    add column transfer_gaining_poll_message_id int8,
+    add column transfer_losing_poll_message_id int8,
+    add column transfer_billing_cancellation_id int8,
+    add column transfer_billing_event_id int8,
+    add column transfer_billing_recurrence_id int8,
+    add column transfer_autorenew_poll_message_id int8,
     add column transfer_period_unit text,
     add column transfer_period_value int4,
-    add column transfer_txn_client_id text,
-    add column transfer_txn_server_id text,
+    add column transfer_txn_id_client text,
+    add column transfer_txn_id_server text,
     add column transfer_registration_expiration_time timestamptz,
     add column transfer_gaining_client_id text,
     add column transfer_losing_client_id text,
@@ -63,3 +67,18 @@ alter table if exists "Domain"
    add constraint fk_domain_transfer_losing_client_id
    foreign key (transfer_losing_client_id)
    references "Registrar";
+
+alter table if exists "Domain"
+   add constraint fk_domain_transfer_billing_cancellation_id
+   foreign key (transfer_billing_cancellation_id)
+   references "BillingCancellation";
+
+alter table if exists "Domain"
+   add constraint fk_domain_transfer_billing_event_id
+   foreign key (transfer_billing_event_id)
+   references "BillingEvent";
+
+alter table if exists "Domain"
+   add constraint fk_domain_transfer_billing_recurrence_id
+   foreign key (transfer_billing_recurrence_id)
+   references "BillingRecurrence";
