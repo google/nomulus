@@ -693,7 +693,7 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
         loadByForeignKey(DomainBase.class, getUniqueIdFromCommand(), clock.nowUtc())
             .get()
             .asBuilder()
-            .setNameservers(ImmutableSet.of(host.createKey()))
+            .setNameservers(ImmutableSet.of(host.createVKey()))
             .build());
     // Persist another domain that's already been deleted and references this contact and host.
     persistResource(
@@ -703,7 +703,7 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
                 loadByForeignKey(ContactResource.class, "sh8013", clock.nowUtc())
                     .get()
                     .createVKey())
-            .setNameservers(ImmutableSet.of(host.createKey()))
+            .setNameservers(ImmutableSet.of(host.createVKey()))
             .setDeletionTime(START_OF_TIME)
             .build());
     clock.advanceOneMilli();

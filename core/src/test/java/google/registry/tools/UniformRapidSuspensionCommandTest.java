@@ -55,7 +55,7 @@ public class UniformRapidSuspensionCommandTest
   private void persistDomainWithHosts(HostResource... hosts) {
     ImmutableSet.Builder<VKey<HostResource>> hostRefs = new ImmutableSet.Builder<>();
     for (HostResource host : hosts) {
-      hostRefs.add(host.createKey());
+      hostRefs.add(host.createVKey());
     }
     persistResource(newDomainBase("evil.tld").asBuilder()
         .setNameservers(hostRefs.build())

@@ -418,7 +418,7 @@ public class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDom
       subordinateHostnamesBuilder.add(hostName);
       HostResource host = makeAndPersistHostResource(
           hostName, String.format("5.5.%d.%d", 5 + i / 250, i % 250), clock.nowUtc().minusYears(1));
-      hostKeysBuilder.add(host.createKey());
+      hostKeysBuilder.add(host.createVKey());
     }
     ImmutableSet<VKey<HostResource>> hostKeys = hostKeysBuilder.build();
     // Create all the domains at once, then persist them in parallel, for increased efficiency.

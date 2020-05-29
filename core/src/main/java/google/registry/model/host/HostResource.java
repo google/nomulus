@@ -123,7 +123,9 @@ public class HostResource extends EppResource
     return fullyQualifiedHostName;
   }
 
-  public VKey<HostResource> createKey() {
+  @Override
+  public VKey<HostResource> createVKey() {
+    // TODO(mmuller): create symmetric keys if we can ever reload both sides.
     return VKey.createOfy(HostResource.class, Key.create(this));
   }
 
