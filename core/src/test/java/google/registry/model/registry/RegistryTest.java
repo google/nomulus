@@ -68,13 +68,10 @@ public class RegistryTest extends EntityTestCase {
 
   @Test
   public void testCloudSqlPersistence() {
-    Registry sqlRegistry =
-        newRegistry(
-            "tld", registry.roidSuffix, registry.getTldStateTransitions(), registry.tldType);
-    jpaTm().transact(() -> jpaTm().saveNew(sqlRegistry));
+    jpaTm().transact(() -> jpaTm().saveNew(registry));
     Registry persisted =
-        jpaTm().transact(() -> jpaTm().load(VKey.createSql(Registry.class, sqlRegistry.tldStrId)));
-    assertThat(persisted).isNotNull();
+        jpaTm().transact(() -> jpaTm().load(VKey.createSql(Registry.class, registry.tldStrId)));
+    assertThat(persisted).isEqualTo(registry);
   }
 
   @Test

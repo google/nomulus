@@ -46,7 +46,6 @@ import com.googlecode.objectify.mapper.Mapper;
 import google.registry.model.Buildable;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.DomainLabelMetrics.MetricsReservedListMatch;
-import google.registry.persistence.WithLongVKey;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
 import google.registry.schema.tld.ReservedList.ReservedEntry;
@@ -62,10 +61,9 @@ import org.joda.time.DateTime;
  * A reserved list entity, persisted to Datastore, that is used to check domain label reservations.
  */
 @Entity
-@WithLongVKey
 public final class ReservedList
-    extends BaseDomainLabelList<ReservationType, ReservedList.ReservedListEntry>
-    implements DatastoreEntity {
+    extends BaseDomainLabelList<ReservationType, ReservedList.ReservedListEntry> implements
+    DatastoreEntity {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
