@@ -48,7 +48,6 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Mapify;
 import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.annotation.Parent;
@@ -77,7 +76,6 @@ import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.JoinTable;
 import javax.persistence.Transient;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
@@ -370,19 +368,16 @@ public class Registry extends ImmutableObject implements Buildable {
   @Column(nullable = false)
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
+  // TODO: add VKeys for ReservedLists
   /** The set of reserved lists that are applicable to this registry. */
   @ElementCollection @Transient Set<Key<ReservedList>> reservedLists;
-
-  @Ignore
-  @ElementCollection
-  @JoinTable(name = "ReservedLists")
-  Set<google.registry.schema.tld.ReservedList> reservedListsVKeys;
 
   /** Retrieves an ImmutableSet of all ReservedLists associated with this tld. */
   public ImmutableSet<Key<ReservedList>> getReservedLists() {
     return nullToEmptyImmutableCopy(reservedLists);
   }
 
+  // TODO: add VKey for PremiumList
   /** The static {@link PremiumList} for this TLD, if there is one. */
   @Nullable Key<PremiumList> premiumList;
 

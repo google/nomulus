@@ -545,36 +545,6 @@ ALTER SEQUENCE public."ReservedList_revision_id_seq" OWNED BY public."ReservedLi
 
 
 --
-<<<<<<< HEAD
--- Name: BillingCancellation billing_cancellation_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BillingCancellation" ALTER COLUMN billing_cancellation_id SET DEFAULT nextval('public."BillingCancellation_billing_cancellation_id_seq"'::regclass);
-
-
---
--- Name: BillingEvent billing_event_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BillingEvent" ALTER COLUMN billing_event_id SET DEFAULT nextval('public."BillingEvent_billing_event_id_seq"'::regclass);
-
-
---
--- Name: BillingRecurrence billing_recurrence_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BillingRecurrence" ALTER COLUMN billing_recurrence_id SET DEFAULT nextval('public."BillingRecurrence_billing_recurrence_id_seq"'::regclass);
-=======
--- Name: ReservedLists; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."ReservedLists" (
-    tld_tld_id text NOT NULL,
-    reserved_lists_v_keys_revision_id bigint NOT NULL
-);
-
-
---
 -- Name: Tld; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -615,7 +585,27 @@ CREATE TABLE public."Tld" (
     tld_unicode text NOT NULL,
     transfer_grace_period_length bigint NOT NULL
 );
->>>>>>> 1737cdf06... Add JPA annotations to Registry.java
+
+
+--
+-- Name: BillingCancellation billing_cancellation_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingCancellation" ALTER COLUMN billing_cancellation_id SET DEFAULT nextval('public."BillingCancellation_billing_cancellation_id_seq"'::regclass);
+
+
+--
+-- Name: BillingEvent billing_event_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingEvent" ALTER COLUMN billing_event_id SET DEFAULT nextval('public."BillingEvent_billing_event_id_seq"'::regclass);
+
+
+--
+-- Name: BillingRecurrence billing_recurrence_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingRecurrence" ALTER COLUMN billing_recurrence_id SET DEFAULT nextval('public."BillingRecurrence_billing_recurrence_id_seq"'::regclass);
 
 
 --
@@ -783,14 +773,6 @@ ALTER TABLE ONLY public."ReservedList"
 
 
 --
--- Name: ReservedLists ReservedLists_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."ReservedLists"
-    ADD CONSTRAINT "ReservedLists_pkey" PRIMARY KEY (tld_tld_id, reserved_lists_v_keys_revision_id);
-
-
---
 -- Name: Tld Tld_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -804,14 +786,6 @@ ALTER TABLE ONLY public."Tld"
 
 ALTER TABLE ONLY public."RegistryLock"
     ADD CONSTRAINT idx_registry_lock_repo_id_revision_id UNIQUE (repo_id, revision_id);
-
-
---
--- Name: ReservedLists uk_odhn7pgtpcdi295pjchv2n4xs; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."ReservedLists"
-    ADD CONSTRAINT uk_odhn7pgtpcdi295pjchv2n4xs UNIQUE (reserved_lists_v_keys_revision_id);
 
 
 --
@@ -1163,14 +1137,6 @@ ALTER TABLE ONLY public."DomainHost"
 
 
 --
--- Name: ReservedLists fkc6qbbn47pr8wa1eerdsgrqbht; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."ReservedLists"
-    ADD CONSTRAINT fkc6qbbn47pr8wa1eerdsgrqbht FOREIGN KEY (reserved_lists_v_keys_revision_id) REFERENCES public."ReservedList"(revision_id);
-
-
---
 -- Name: DomainHost fkfmi7bdink53swivs390m2btxg; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1192,14 +1158,6 @@ ALTER TABLE ONLY public."ReservedEntry"
 
 ALTER TABLE ONLY public."Domain"
     ADD CONSTRAINT fkjc0r9r5y1lfbt4gpbqw4wsuvq FOREIGN KEY (last_epp_update_client_id) REFERENCES public."Registrar"(client_id);
-
-
---
--- Name: ReservedLists fkm3apblvy4jv12v0gn3o7y4pb0; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."ReservedLists"
-    ADD CONSTRAINT fkm3apblvy4jv12v0gn3o7y4pb0 FOREIGN KEY (tld_tld_id) REFERENCES public."Tld"(tld_id);
 
 
 --
