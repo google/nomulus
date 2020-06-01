@@ -52,7 +52,6 @@ public class HostHistoryTest extends EntityTestCase {
     HostResource hostFromDb = jpaTm().transact(() -> jpaTm().load(hostVKey));
     HostHistory hostHistory =
         new HostHistory.Builder()
-            .setId(1L)
             .setType(HistoryEntry.Type.HOST_CREATE)
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
             .setModificationTime(fakeClock.nowUtc())
