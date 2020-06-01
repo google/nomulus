@@ -16,12 +16,11 @@ package google.registry.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.union;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
@@ -32,11 +31,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
@@ -47,10 +44,10 @@ import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
 import google.registry.util.NonFinalForTesting;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.StreamSupport;
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
@@ -333,18 +330,18 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     }
   }
 
-  static final CacheLoader<Key<? extends EppResource>, EppResource> CACHE_LOADER =
-      new CacheLoader<Key<? extends EppResource>, EppResource>() {
+  static final CacheLoader<VKey<? extends EppResource>, EppResource> CACHE_LOADER =
+      new CacheLoader<VKey<? extends EppResource>, EppResource>() {
 
         @Override
-        public EppResource load(Key<? extends EppResource> key) {
-          return tm().doTransactionless(() -> ofy().load().key(key).now());
+        public EppResource load(VKey<? extends EppResource> key) {
+          return tm().doTransactionless(() -> tm().load(key));
         }
 
         @Override
-        public Map<Key<? extends EppResource>, EppResource> loadAll(
-            Iterable<? extends Key<? extends EppResource>> keys) {
-          return tm().doTransactionless(() -> loadMultiple(keys));
+        public Map<VKey<? extends EppResource>, EppResource> loadAll(
+            Iterable<? extends VKey<? extends EppResource>> keys) {
+          return tm().doTransactionless(() -> loadAsMap(keys));
         }
       };
 
@@ -356,10 +353,10 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
    * directly should of course never use the cache.
    */
   @NonFinalForTesting
-  private static LoadingCache<Key<? extends EppResource>, EppResource> cacheEppResources =
+  private static LoadingCache<VKey<? extends EppResource>, EppResource> cacheEppResources =
       createEppResourcesCache(getEppResourceCachingDuration());
 
-  private static LoadingCache<Key<? extends EppResource>, EppResource> createEppResourcesCache(
+  private static LoadingCache<VKey<? extends EppResource>, EppResource> createEppResourcesCache(
       Duration expiry) {
     return CacheBuilder.newBuilder()
         .expireAfterWrite(expiry.getMillis(), MILLISECONDS)
@@ -373,29 +370,16 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     cacheEppResources = createEppResourcesCache(effectiveExpiry);
   }
 
-  private static ImmutableMap<Key<? extends EppResource>, EppResource> loadMultiple(
-      Iterable<? extends Key<? extends EppResource>> keys) {
-    // This cast is safe because, in Objectify, Key<? extends EppResource> can also be
-    // treated as a Key<EppResource>.
-    @SuppressWarnings("unchecked")
-    ImmutableList<Key<EppResource>> typedKeys =
-        Streams.stream(keys).map(key -> (Key<EppResource>) key).collect(toImmutableList());
-
-    // Typing shenanigans are required to return the map with the correct required generic type.
-    return ofy().load().keys(typedKeys).entrySet().stream()
-        .collect(ImmutableMap.toImmutableMap(Entry::getKey, Entry::getValue));
-  }
-
   /**
    * Loads the given EppResources by their keys using the cache (if enabled).
    *
    * <p>Don't use this unless you really need it for performance reasons, and be sure that you are
    * OK with the trade-offs in loss of transactional consistency.
    */
-  public static ImmutableMap<Key<? extends EppResource>, EppResource> loadCached(
-      Iterable<Key<? extends EppResource>> keys) {
+  public static ImmutableMap<VKey<? extends EppResource>, EppResource> loadCached(
+      Iterable<VKey<? extends EppResource>> keys) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
-      return loadMultiple(keys);
+      return loadAsMap(keys);
     }
     try {
       return cacheEppResources.getAll(keys);
@@ -410,9 +394,9 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
    * <p>Don't use this unless you really need it for performance reasons, and be sure that you are
    * OK with the trade-offs in loss of transactional consistency.
    */
-  public static <T extends EppResource> T loadCached(Key<T> key) {
+  public static <T extends EppResource> T loadCached(VKey<T> key) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
-      return ofy().load().key(key).now();
+      return tm().load(key);
     }
     try {
       // Safe to cast because loading a Key<T> returns an entity of type T.
@@ -422,5 +406,19 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     } catch (ExecutionException e) {
       throw new RuntimeException("Error loading cached EppResources", e.getCause());
     }
+  }
+
+  private static ImmutableMap<VKey<? extends EppResource>, EppResource> loadAsMap(
+      Iterable<? extends VKey<? extends EppResource>> keys) {
+    return StreamSupport.stream(keys.spliterator(), false)
+        // It's possible for us to receive the same key more than once which causes
+        // the immutable map build to break with a duplicate key, so we have to ensure key
+        // uniqueness.
+        .distinct()
+
+        // We have to use "key -> key" here instead of the identity() function, because
+        // the latter breaks the fairly complicated generic type checking required by the
+        // caching interface.
+        .collect(toImmutableMap(key -> key, key -> tm().load(key)));
   }
 }

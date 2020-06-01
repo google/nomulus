@@ -18,12 +18,12 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Strings;
-import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex;
+import google.registry.persistence.VKey;
 import org.joda.time.DateTime;
 
 /** Container class for static utility methods. */
@@ -41,7 +41,7 @@ class CommandUtilities {
       this.clazz = clazz;
     }
 
-    public Key<? extends EppResource> getKey(String uniqueId, DateTime now) {
+    public VKey<? extends EppResource> getKey(String uniqueId, DateTime now) {
       return ForeignKeyIndex.loadAndGetKey(clazz, uniqueId, now);
     }
   }

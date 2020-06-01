@@ -30,7 +30,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactResource;
@@ -82,8 +81,7 @@ public class DomainCommand {
     String registrantContactId;
 
     /** A resolved key to the registrant who registered this domain. */
-    @XmlTransient
-    Key<ContactResource> registrant;
+    @XmlTransient VKey<ContactResource> registrant;
 
     /** Authorization info (aka transfer secret) of the domain. */
     DomainAuthInfo authInfo;
@@ -93,7 +91,7 @@ public class DomainCommand {
     }
 
     @Nullable
-    public Key<ContactResource> getRegistrant() {
+    public VKey<ContactResource> getRegistrant() {
       return registrant;
     }
 
@@ -129,8 +127,7 @@ public class DomainCommand {
     Set<String> nameserverFullyQualifiedHostNames;
 
     /** Resolved keys to hosts that are the nameservers for the domain. */
-    @XmlTransient
-    Set<Key<HostResource>> nameservers;
+    @XmlTransient Set<VKey<HostResource>> nameservers;
 
     /** Foreign keyed associated contacts for the domain (other than registrant). */
     @XmlElement(name = "contact")
@@ -160,7 +157,7 @@ public class DomainCommand {
       return nullToEmptyImmutableCopy(nameserverFullyQualifiedHostNames);
     }
 
-    public ImmutableSet<Key<HostResource>> getNameservers() {
+    public ImmutableSet<VKey<HostResource>> getNameservers() {
       return nullToEmptyImmutableCopy(nameservers);
     }
 
@@ -190,7 +187,7 @@ public class DomainCommand {
             now);
         for (DesignatedContact contact : contacts) {
           if (DesignatedContact.Type.REGISTRANT.equals(contact.getType())) {
-            clone.registrant = contact.getContactKey().getOfyKey();
+            clone.registrant = contact.getContactKey();
             clone.contacts = forceEmptyToNull(difference(contacts, contact));
             break;
           }
@@ -354,8 +351,7 @@ public class DomainCommand {
       Set<String> nameserverFullyQualifiedHostNames;
 
       /** Resolved keys to hosts that are the nameservers for the domain. */
-      @XmlTransient
-      Set<Key<HostResource>> nameservers;
+      @XmlTransient Set<VKey<HostResource>> nameservers;
 
       /** Foreign keyed associated contacts for the domain (other than registrant). */
       @XmlElement(name = "contact")
@@ -369,7 +365,7 @@ public class DomainCommand {
         return nullSafeImmutableCopy(nameserverFullyQualifiedHostNames);
       }
 
-      public ImmutableSet<Key<HostResource>> getNameservers() {
+      public ImmutableSet<VKey<HostResource>> getNameservers() {
         return nullToEmptyImmutableCopy(nameservers);
       }
 
@@ -419,7 +415,7 @@ public class DomainCommand {
     }
   }
 
-  private static Set<Key<HostResource>> linkHosts(
+  private static Set<VKey<HostResource>> linkHosts(
       Set<String> fullyQualifiedHostNames, DateTime now) throws InvalidReferencesException {
     if (fullyQualifiedHostNames == null) {
       return null;
@@ -437,20 +433,18 @@ public class DomainCommand {
     for (ForeignKeyedDesignatedContact contact : contacts) {
       foreignKeys.add(contact.contactId);
     }
-    ImmutableMap<String, Key<ContactResource>> loadedContacts =
+    ImmutableMap<String, VKey<ContactResource>> loadedContacts =
         loadByForeignKeysCached(foreignKeys.build(), ContactResource.class, now);
     ImmutableSet.Builder<DesignatedContact> linkedContacts = new ImmutableSet.Builder<>();
     for (ForeignKeyedDesignatedContact contact : contacts) {
       linkedContacts.add(
-          DesignatedContact.create(
-              contact.type,
-              VKey.createOfy(ContactResource.class, loadedContacts.get(contact.contactId))));
+          DesignatedContact.create(contact.type, loadedContacts.get(contact.contactId)));
     }
     return linkedContacts.build();
   }
 
   /** Loads keys to cached EPP resources by their foreign keys. */
-  private static <T extends EppResource> ImmutableMap<String, Key<T>> loadByForeignKeysCached(
+  private static <T extends EppResource> ImmutableMap<String, VKey<T>> loadByForeignKeysCached(
       final Set<String> foreignKeys, final Class<T> clazz, final DateTime now)
       throws InvalidReferencesException {
     Map<String, ForeignKeyIndex<T>> fkis = ForeignKeyIndex.loadCached(clazz, foreignKeys, now);

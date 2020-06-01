@@ -156,7 +156,7 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
       // If we refer to a contact that doesn't exist, that's a bug. It means referential integrity
       // has somehow been broken. We skip the rest of this contact, but log it to hopefully bring it
       // someone's attention.
-      ContactResource contactResource = EppResource.loadCached(contact.get().getOfyKey());
+      ContactResource contactResource = EppResource.loadCached(contact.get());
       if (contactResource == null) {
         logger.atSevere().log(
             "(BUG) Broken reference found from domain %s to contact %s",

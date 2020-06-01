@@ -23,9 +23,9 @@ import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import google.registry.tools.CommandUtilities.ResourceType;
 import google.registry.xml.XmlTransformer;
 import org.joda.time.DateTime;
@@ -57,7 +57,7 @@ final class GetHistoryEntriesCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() {
-    Key<? extends EppResource> parentKey = null;
+    VKey<? extends EppResource> parentKey = null;
     if (type != null || uniqueId != null) {
       checkArgument(
           type != null && uniqueId != null,
@@ -66,12 +66,12 @@ final class GetHistoryEntriesCommand implements CommandWithRemoteApi {
       checkArgumentNotNull(parentKey, "Invalid resource ID");
     }
     for (HistoryEntry entry :
-            (parentKey == null
+        (parentKey == null
                 ? ofy().load().type(HistoryEntry.class)
-                : ofy().load().type(HistoryEntry.class).ancestor(parentKey))
-        .order("modificationTime")
-        .filter("modificationTime >=", after)
-        .filter("modificationTime <=", before)) {
+                : ofy().load().type(HistoryEntry.class).ancestor(parentKey.getOfyKey()))
+            .order("modificationTime")
+            .filter("modificationTime >=", after)
+            .filter("modificationTime <=", before)) {
       System.out.printf(
           "Client: %s\nTime: %s\nClient TRID: %s\nServer TRID: %s\n%s\n",
           entry.getClientId(),
