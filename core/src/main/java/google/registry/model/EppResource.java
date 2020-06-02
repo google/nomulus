@@ -415,7 +415,6 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
         // the immutable map build to break with a duplicate key, so we have to ensure key
         // uniqueness.
         .distinct()
-
         // We have to use "key -> key" here instead of the identity() function, because
         // the latter breaks the fairly complicated generic type checking required by the
         // caching interface.
