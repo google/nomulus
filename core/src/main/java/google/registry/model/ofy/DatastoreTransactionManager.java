@@ -176,7 +176,7 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
-  public void deleteAll(Iterable<? extends VKey<?>> vKeys) {
+  public void delete(Iterable<? extends VKey<?>> vKeys) {
     // We have to create a list to work around the wildcard capture issue here.
     // See https://docs.oracle.com/javase/tutorial/java/generics/capture.html
     ImmutableList<Key<?>> list =

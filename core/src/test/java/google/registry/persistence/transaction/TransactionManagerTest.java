@@ -220,24 +220,26 @@ public class TransactionManagerTest {
   }
 
   @TestTemplate
-  void deleteAll_succeeds() {
+  void delete_succeedsForEntitySet() {
     assertAllEntitiesNotExist(moreEntities);
     tm().transact(() -> tm().saveAllNew(moreEntities));
-    Set<VKey<?>> keys = moreEntities.stream().map(TestEntity::key).collect(toImmutableSet());
+    Set<VKey<TestEntity>> keys =
+        moreEntities.stream().map(TestEntity::key).collect(toImmutableSet());
     assertAllEntitiesExist(moreEntities);
-    tm().transact(() -> tm().deleteAll(keys));
+    tm().transact(() -> tm().delete(keys));
     assertAllEntitiesNotExist(moreEntities);
   }
 
   @TestTemplate
-  void deleteAll_ignoreNonExistentEntity() {
+  void delete_ignoreNonExistentEntity() {
     assertAllEntitiesNotExist(moreEntities);
     tm().transact(() -> tm().saveAllNew(moreEntities));
-    List<VKey<?>> keys = moreEntities.stream().map(TestEntity::key).collect(toImmutableList());
+    List<VKey<TestEntity>> keys =
+        moreEntities.stream().map(TestEntity::key).collect(toImmutableList());
     assertAllEntitiesExist(moreEntities);
     tm().transact(() -> tm().delete(keys.get(0)));
     assertEntityNotExist(moreEntities.get(0));
-    tm().transact(() -> tm().deleteAll(keys));
+    tm().transact(() -> tm().delete(keys));
     assertAllEntitiesNotExist(moreEntities);
   }
 

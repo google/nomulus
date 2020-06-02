@@ -128,5 +128,5 @@ public interface TransactionManager {
   void delete(VKey<?> key);
 
   /** Deletes the set of entities by their key id. */
-  void deleteAll(Iterable<? extends VKey<?>> keys);
+  void delete(Iterable<? extends VKey<?>> keys);
 }

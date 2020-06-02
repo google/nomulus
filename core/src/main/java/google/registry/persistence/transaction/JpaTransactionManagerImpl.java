@@ -296,7 +296,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void deleteAll(Iterable<? extends VKey<?>> vKeys) {
+  public void delete(Iterable<? extends VKey<?>> vKeys) {
     checkArgumentNotNull(vKeys, "vKeys must be specified");
     vKeys.forEach(this::internalDelete);
   }
