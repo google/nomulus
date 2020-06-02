@@ -314,20 +314,20 @@ class google.registry.model.index.EppResourceIndexBucket {
 }
 class google.registry.model.index.ForeignKeyIndex$ForeignKeyContactIndex {
   @Id java.lang.String foreignKey;
-  com.googlecode.objectify.Key<E> topReference;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
+  google.registry.persistence.VKey<E> topReference;
   org.joda.time.DateTime deletionTime;
 }
 class google.registry.model.index.ForeignKeyIndex$ForeignKeyDomainIndex {
   @Id java.lang.String foreignKey;
-  com.googlecode.objectify.Key<E> topReference;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
+  google.registry.persistence.VKey<E> topReference;
   org.joda.time.DateTime deletionTime;
 }
 class google.registry.model.index.ForeignKeyIndex$ForeignKeyHostIndex {
   @Id java.lang.String foreignKey;
-  com.googlecode.objectify.Key<E> topReference;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
+  google.registry.persistence.VKey<E> topReference;
   org.joda.time.DateTime deletionTime;
 }
 class google.registry.model.ofy.CommitLogBucket {

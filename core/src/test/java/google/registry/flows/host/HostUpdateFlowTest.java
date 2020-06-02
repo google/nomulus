@@ -178,7 +178,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
     // The old ForeignKeyIndex is invalidated at the time we did the rename.
     ForeignKeyIndex<HostResource> oldFkiBeforeRename =
         ForeignKeyIndex.load(HostResource.class, oldHostName(), clock.nowUtc().minusMillis(1));
-    assertThat(oldFkiBeforeRename.getResourceKey()).isEqualTo(Key.create(renamedHost));
+    assertThat(oldFkiBeforeRename.getResourceKey()).isEqualTo(renamedHost.createVKey());
     assertThat(oldFkiBeforeRename.getDeletionTime()).isEqualTo(clock.nowUtc());
     ForeignKeyIndex<HostResource> oldFkiAfterRename =
         ForeignKeyIndex.load(HostResource.class, oldHostName(), clock.nowUtc());

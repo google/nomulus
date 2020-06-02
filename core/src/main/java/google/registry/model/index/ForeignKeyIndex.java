@@ -43,6 +43,7 @@ import google.registry.model.annotations.ReportedOn;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
+import google.registry.persistence.VKey;
 import google.registry.util.NonFinalForTesting;
 import java.util.Map;
 import java.util.Optional;
@@ -99,7 +100,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
    * <p>This field holds a key to the only referenced resource. It is named "topReference" for
    * historical reasons.
    */
-  Key<E> topReference;
+  VKey<E> topReference;
 
   public String getForeignKey() {
     return foreignKey;
@@ -109,7 +110,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
     return deletionTime;
   }
 
-  public Key<E> getResourceKey() {
+  public VKey<E> getResourceKey() {
     return topReference;
   }
 
@@ -125,7 +126,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
     @SuppressWarnings("unchecked")
     Class<E> resourceClass = (Class<E>) resource.getClass();
     ForeignKeyIndex<E> instance = instantiate(mapToFkiClass(resourceClass));
-    instance.topReference = Key.create(resource);
+    instance.topReference = (VKey<E>) resource.createVKey();
     instance.foreignKey = resource.getForeignKey();
     instance.deletionTime = deletionTime;
     return instance;
@@ -141,18 +142,18 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
   /**
    * Loads a {@link Key} to an {@link EppResource} from Datastore by foreign key.
    *
-   * <p>Returns null if no foreign key index with this foreign key was ever created, or if the
-   * most recently created foreign key index was deleted before time "now". This method does not
-   * actually check that the referenced resource actually exists. However, for normal epp resources,
-   * it is safe to assume that the referenced resource exists if the foreign key index does.
+   * <p>Returns null if no foreign key index with this foreign key was ever created, or if the most
+   * recently created foreign key index was deleted before time "now". This method does not actually
+   * check that the referenced resource actually exists. However, for normal epp resources, it is
+   * safe to assume that the referenced resource exists if the foreign key index does.
    *
    * @param clazz the resource type to load
    * @param foreignKey id to match
    * @param now the current logical time to use when checking for soft deletion of the foreign key
-   *        index
+   *     index
    */
   @Nullable
-  public static <E extends EppResource> Key<E> loadAndGetKey(
+  public static <E extends EppResource> VKey<E> loadAndGetKey(
       Class<E> clazz, String foreignKey, DateTime now) {
     ForeignKeyIndex<E> index = load(clazz, foreignKey, now);
     return (index == null) ? null : index.getResourceKey();

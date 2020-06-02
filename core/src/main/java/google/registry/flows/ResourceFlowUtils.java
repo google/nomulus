@@ -94,10 +94,10 @@ public final class ResourceFlowUtils {
                    * trust the query and need to do the full mapreduce.
                    */
                   Iterable<Key<DomainBase>> keys =
-                      queryForLinkedDomains(fki.getResourceKey(), now)
+                      queryForLinkedDomains(fki.getResourceKey().getOfyKey(), now)
                           .limit(FAILFAST_CHECK_COUNT)
                           .keys();
-                  VKey<R> resourceVKey = VKey.createOfy(resourceClass, fki.getResourceKey());
+                  VKey<R> resourceVKey = fki.getResourceKey();
                   Predicate<DomainBase> predicate =
                       domain -> getPotentialReferences.apply(domain).contains(resourceVKey);
                   return ofy().load().keys(keys).values().stream().anyMatch(predicate)
@@ -136,9 +136,9 @@ public final class ResourceFlowUtils {
 
   public static <R extends EppResource> void verifyResourceDoesNotExist(
       Class<R> clazz, String targetId, DateTime now, String clientId) throws EppException {
-    Key<R> key = loadAndGetKey(clazz, targetId, now);
+    VKey<R> key = loadAndGetKey(clazz, targetId, now);
     if (key != null) {
-      R resource = ofy().load().key(key).now();
+      R resource = tm().load(key);
       // These are similar exceptions, but we can track them internally as log-based metrics.
       if (Objects.equals(clientId, resource.getPersistedCurrentSponsorClientId())) {
         throw new ResourceAlreadyExistsForThisClientException(targetId);

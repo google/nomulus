@@ -14,14 +14,14 @@
 
 package google.registry.tools;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
+import google.registry.persistence.VKey;
 import google.registry.tools.CommandUtilities.ResourceType;
 import org.joda.time.DateTime;
 
@@ -48,12 +48,15 @@ public final class ResaveEppResourceCommand extends MutatingCommand {
 
   @Override
   protected void init() {
-    Key<? extends EppResource> resourceKey = checkArgumentNotNull(
-        type.getKey(uniqueId, DateTime.now(UTC)),
-        "Could not find active resource of type %s: %s", type, uniqueId);
+    VKey<? extends EppResource> resourceKey =
+        checkArgumentNotNull(
+            type.getKey(uniqueId, DateTime.now(UTC)),
+            "Could not find active resource of type %s: %s",
+            type,
+            uniqueId);
     // Load the resource directly to bypass running cloneProjectedAtTime() automatically, which can
     // cause stageEntityChange() to fail due to implicit projection changes.
-    EppResource resource = ofy().load().key(resourceKey).now();
+    EppResource resource = tm().load(resourceKey);
     stageEntityChange(resource, resource);
   }
 }

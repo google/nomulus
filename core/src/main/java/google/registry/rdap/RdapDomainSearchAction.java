@@ -14,6 +14,7 @@
 
 package google.registry.rdap;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
@@ -28,10 +29,10 @@ import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Booleans;
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.cmd.Query;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
+import google.registry.persistence.VKey;
 import google.registry.rdap.RdapJsonFormatter.OutputDataType;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
@@ -50,6 +51,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import javax.inject.Inject;
 
 /**
@@ -243,7 +245,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
    */
   private DomainSearchResponse searchByNameserverLdhName(
       final RdapSearchPattern partialStringQuery) {
-    Iterable<Key<HostResource>> hostKeys = getNameserverRefsByLdhName(partialStringQuery);
+    Iterable<VKey<HostResource>> hostKeys = getNameserverRefsByLdhName(partialStringQuery);
     if (Iterables.isEmpty(hostKeys)) {
       metricInformationBuilder.setNumHostsRetrieved(0);
       throw new NotFoundException("No matching nameservers found");
@@ -261,7 +263,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
    * initial string is not required (e.g. "*.example.tld" is valid), because we can look up the
    * domain and just list all of its subordinate hosts.
    */
-  private Iterable<Key<HostResource>> getNameserverRefsByLdhName(
+  private Iterable<VKey<HostResource>> getNameserverRefsByLdhName(
       final RdapSearchPattern partialStringQuery) {
     // Handle queries without a wildcard.
     if (!partialStringQuery.getHasWildcard()) {
@@ -292,11 +294,13 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     if (desiredRegistrar.isPresent()) {
       query = query.filter("currentSponsorClientId", desiredRegistrar.get());
     }
-    return query.keys();
+    return StreamSupport.stream(query.keys().spliterator(), false)
+        .map(key -> VKey.createOfy(HostResource.class, key))
+        .collect(toImmutableSet());
   }
 
   /** Assembles a list of {@link HostResource} keys by name when the pattern has no wildcard. */
-  private Iterable<Key<HostResource>> getNameserverRefsByLdhNameWithoutWildcard(
+  private Iterable<VKey<HostResource>> getNameserverRefsByLdhNameWithoutWildcard(
       final RdapSearchPattern partialStringQuery) {
     // If we need to check the sponsoring registrar, we need to load the resource rather than just
     // the key.
@@ -310,9 +314,9 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
       return (!host.isPresent()
               || !desiredRegistrar.get().equals(host.get().getPersistedCurrentSponsorClientId()))
           ? ImmutableList.of()
-          : ImmutableList.of(Key.create(host.get()));
+          : ImmutableList.of(host.get().createVKey());
     } else {
-      Key<HostResource> hostKey =
+      VKey<HostResource> hostKey =
           loadAndGetKey(
               HostResource.class,
               partialStringQuery.getInitialString(),
@@ -322,7 +326,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
   }
 
   /** Assembles a list of {@link HostResource} keys by name using a superordinate domain suffix. */
-  private Iterable<Key<HostResource>> getNameserverRefsByLdhNameWithSuffix(
+  private Iterable<VKey<HostResource>> getNameserverRefsByLdhNameWithSuffix(
       final RdapSearchPattern partialStringQuery) {
     // The suffix must be a domain that we manage. That way, we can look up the domain and search
     // through the subordinate hosts. This is more efficient, and lets us permit wildcard searches
@@ -338,7 +342,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
                         "A suffix in a lookup by nameserver name "
                             + "must be a domain defined in the system"));
     Optional<String> desiredRegistrar = getDesiredRegistrar();
-    ImmutableList.Builder<Key<HostResource>> builder = new ImmutableList.Builder<>();
+    ImmutableList.Builder<VKey<HostResource>> builder = new ImmutableList.Builder<>();
     for (String fqhn : ImmutableSortedSet.copyOf(domainBase.getSubordinateHosts())) {
       // We can't just check that the host name starts with the initial query string, because
       // then the query ns.exam*.example.com would match against nameserver ns.example.com.
@@ -351,10 +355,10 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
                   shouldIncludeDeleted() ? START_OF_TIME : getRequestTime());
           if (host.isPresent()
               && desiredRegistrar.get().equals(host.get().getPersistedCurrentSponsorClientId())) {
-            builder.add(Key.create(host.get()));
+            builder.add(host.get().createVKey());
           }
         } else {
-          Key<HostResource> hostKey =
+          VKey<HostResource> hostKey =
               loadAndGetKey(
                   HostResource.class,
                   fqhn,
@@ -400,7 +404,10 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     if (desiredRegistrar.isPresent()) {
       query = query.filter("currentSponsorClientId", desiredRegistrar.get());
     }
-    return searchByNameserverRefs(query.keys());
+    return searchByNameserverRefs(
+        StreamSupport.stream(query.keys().spliterator(), false)
+            .map(key -> VKey.createOfy(HostResource.class, key))
+            .collect(toImmutableSet()));
   }
 
   /**
@@ -409,7 +416,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
    * <p>This method is called by {@link #searchByNameserverLdhName} and {@link
    * #searchByNameserverIp} after they assemble the relevant host keys.
    */
-  private DomainSearchResponse searchByNameserverRefs(final Iterable<Key<HostResource>> hostKeys) {
+  private DomainSearchResponse searchByNameserverRefs(final Iterable<VKey<HostResource>> hostKeys) {
     // We must break the query up into chunks, because the in operator is limited to 30 subqueries.
     // Since it is possible for the same domain to show up more than once in our result list (if
     // we do a wildcard nameserver search that returns multiple nameservers used by the same
@@ -420,11 +427,13 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
         ImmutableSortedSet.orderedBy(
             Comparator.comparing(DomainBase::getFullyQualifiedDomainName));
     int numHostKeysSearched = 0;
-    for (List<Key<HostResource>> chunk : Iterables.partition(hostKeys, 30)) {
+    for (List<VKey<HostResource>> chunk : Iterables.partition(hostKeys, 30)) {
       numHostKeysSearched += chunk.size();
-      Query<DomainBase> query = ofy().load()
-          .type(DomainBase.class)
-          .filter("nsHosts in", chunk);
+      Query<DomainBase> query =
+          ofy()
+              .load()
+              .type(DomainBase.class)
+              .filter("nsHosts in", chunk.stream().map(VKey::getOfyKey).collect(toImmutableSet()));
       if (!shouldIncludeDeleted()) {
         query = query.filter("deletionTime >", getRequestTime());
       // If we are not performing an inequality query, we can filter on the cursor in the query.

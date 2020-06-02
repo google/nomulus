@@ -307,14 +307,11 @@ public class DomainFlowUtils {
   /** Verify that no linked resources have disallowed statuses. */
   static void verifyNotInPendingDelete(
       Set<DesignatedContact> contacts,
-      Key<ContactResource> registrant,
-      Set<Key<HostResource>> nameservers)
+      VKey<ContactResource> registrant,
+      Set<VKey<HostResource>> nameservers)
       throws EppException {
-    ImmutableList.Builder<Key<? extends EppResource>> keysToLoad = new ImmutableList.Builder<>();
-    contacts.stream()
-        .map(DesignatedContact::getContactKey)
-        .map(VKey::getOfyKey)
-        .forEach(keysToLoad::add);
+    ImmutableList.Builder<VKey<? extends EppResource>> keysToLoad = new ImmutableList.Builder<>();
+    contacts.stream().map(DesignatedContact::getContactKey).forEach(keysToLoad::add);
     Optional.ofNullable(registrant).ifPresent(keysToLoad::add);
     keysToLoad.addAll(nameservers);
     verifyNotInPendingDelete(EppResource.loadCached(keysToLoad.build()).values());
@@ -381,7 +378,7 @@ public class DomainFlowUtils {
   }
 
   static void validateRequiredContactsPresent(
-      @Nullable Key<ContactResource> registrant, Set<DesignatedContact> contacts)
+      @Nullable VKey<ContactResource> registrant, Set<DesignatedContact> contacts)
       throws RequiredParameterMissingException {
     if (registrant == null) {
       throw new MissingRegistrantException();
