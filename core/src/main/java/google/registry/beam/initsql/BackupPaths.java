@@ -30,7 +30,12 @@ public final class BackupPaths {
 
   private static final String WILDCARD_CHAR = "*";
   private static final String EXPORT_PATTERN_TEMPLATE = "%s/all_namespaces/kind_%s/input-%s";
+  /**
+   * Regex pattern that captures the kind string in a file name. Datastore places no restrictions on
+   * what characters may be used in a kind string.
+   */
   private static final String FILENAME_TO_KIND_REGEX = ".+/all_namespaces/kind_(.+)/input-.+";
+
   private static final Pattern FILENAME_TO_KIND_PATTERN = Pattern.compile(FILENAME_TO_KIND_REGEX);
 
   /**
@@ -46,7 +51,7 @@ public final class BackupPaths {
   }
 
   /**
-   * Returns the fully qualified path of an Datastore export file with the given {@code kind} and
+   * Returns the fully qualified path of a Datastore export file with the given {@code kind} and
    * {@code shard}.
    *
    * @param exportDir path to the top directory of a Datastore export

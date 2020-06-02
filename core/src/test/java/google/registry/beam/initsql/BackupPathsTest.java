@@ -40,4 +40,11 @@ public class BackupPathsTest {
     assertThat(getKindFromFileName("scheme:/somepath/all_namespaces/kind_mykind/input-something"))
         .isEqualTo("mykind");
   }
+
+  @Test
+  void getKindFromFileName_specialChar_success() {
+    assertThat(
+            getKindFromFileName("scheme:/somepath/all_namespaces/kind_.*+? /(a)/input-something"))
+        .isEqualTo(".*+? /(a)");
+  }
 }

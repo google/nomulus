@@ -44,8 +44,8 @@ import org.apache.beam.sdk.values.TypeDescriptor;
  * of a transformation that loads raw records from a Datastore export, and are broken apart for
  * testing.
  *
- * <p>We drop the 'kind' information in {@link #getDatastoreExportFilePatterns} and recovers it
- * later using the file paths. Although we could have kept it by passing around {@link KV key-value
+ * <p>We drop the 'kind' information in {@link #getDatastoreExportFilePatterns} and recover it later
+ * using the file paths. Although we could have kept it by passing around {@link KV key-value
  * pairs}, the code would be more complicated, especially in {@link #loadDataFromFiles()}.
  */
 public class ExportLoadingTransforms {
