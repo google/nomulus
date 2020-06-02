@@ -100,7 +100,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Id
   @javax.persistence.Id
-  long id;
+  Long id;
 
   /** The resource this event mutated. */
   @Parent @Transient protected Key<? extends EppResource> parent;
@@ -233,11 +233,6 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
     @Override
     public T build() {
       return super.build();
-    }
-
-    public B setId(long id) {
-      getInstance().id = id;
-      return thisCastToDerived();
     }
 
     public B setParent(EppResource parent) {
