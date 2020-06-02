@@ -123,7 +123,9 @@ public final class AppEngineRule extends ExternalResource
 
   JpaUnitTestRule jpaUnitTestRule;
 
-  private boolean withDatastoreAndCloudSql;
+  private boolean withDatastore;
+  private boolean withoutCannedData;
+  private boolean withCloudSql;
   private boolean enableJpaEntityCoverageCheck;
   private boolean withJpaUnitTest;
   private boolean withLocalModules;
@@ -148,9 +150,22 @@ public final class AppEngineRule extends ExternalResource
 
     /** Turn on the Datastore service and the Cloud SQL service. */
     public Builder withDatastoreAndCloudSql() {
-      rule.withDatastoreAndCloudSql = true;
+      rule.withDatastore = rule.withCloudSql = true;
       return this;
     }
+
+    /** Turns on Datastore only, for use by test data generators. */
+    public Builder withDatastore() {
+      rule.withDatastore = true;
+      return this;
+    }
+
+    /** Disables insertion of canned data. */
+    public Builder withoutCannedData() {
+      rule.withoutCannedData = true;
+      return this;
+    }
+
     /**
      * Enables JPA entity coverage check if {@code enabled} is true. This should only be enabled for
      * members of SqlIntegrationTestSuite.
@@ -221,10 +236,10 @@ public final class AppEngineRule extends ExternalResource
 
     public AppEngineRule build() {
       checkState(
-          !rule.enableJpaEntityCoverageCheck || rule.withDatastoreAndCloudSql,
+          !rule.enableJpaEntityCoverageCheck || rule.withCloudSql,
           "withJpaEntityCoverageCheck enabled without Cloud SQL");
       checkState(
-          !rule.withJpaUnitTest || rule.withDatastoreAndCloudSql,
+          !rule.withJpaUnitTest || rule.withCloudSql,
           "withJpaUnitTestEntities enabled without Cloud SQL");
       checkState(
           !rule.withJpaUnitTest || !rule.enableJpaEntityCoverageCheck,
@@ -341,7 +356,7 @@ public final class AppEngineRule extends ExternalResource
   @Override
   public void beforeEach(ExtensionContext context) throws Exception {
     before();
-    if (withDatastoreAndCloudSql) {
+    if (withCloudSql) {
       JpaTestRules.Builder builder = new JpaTestRules.Builder();
       if (clock != null) {
         builder.withClock(clock);
@@ -360,13 +375,15 @@ public final class AppEngineRule extends ExternalResource
         jpaIntegrationTestRule.before();
       }
     }
-    injectTmForDualDatabaseTest(context);
+    if (isWithDatastoreAndCloudSql()) {
+      injectTmForDualDatabaseTest(context);
+    }
   }
 
   /** Called after each test method. JUnit 5 only. */
   @Override
   public void afterEach(ExtensionContext context) throws Exception {
-    if (withDatastoreAndCloudSql) {
+    if (withCloudSql) {
       if (enableJpaEntityCoverageCheck) {
         jpaIntegrationWithCoverageExtension.afterEach(context);
       } else if (withJpaUnitTest) {
@@ -376,7 +393,9 @@ public final class AppEngineRule extends ExternalResource
       }
     }
     after();
-    restoreTmAfterDualDatabaseTest(context);
+    if (isWithDatastoreAndCloudSql()) {
+      restoreTmAfterDualDatabaseTest(context);
+    }
   }
 
   /**
@@ -389,7 +408,7 @@ public final class AppEngineRule extends ExternalResource
   @Override
   public Statement apply(Statement base, Description description) {
     Statement statement = base;
-    if (withDatastoreAndCloudSql) {
+    if (withCloudSql) {
       JpaTestRules.Builder builder = new JpaTestRules.Builder();
       if (clock != null) {
         builder.withClock(clock);
@@ -410,7 +429,7 @@ public final class AppEngineRule extends ExternalResource
     if (withUrlFetch) {
       configs.add(new LocalURLFetchServiceTestConfig());
     }
-    if (withDatastoreAndCloudSql) {
+    if (withDatastore) {
       configs.add(new LocalDatastoreServiceTestConfig()
           // We need to set this to allow cross entity group transactions.
           .setApplyAllHighRepJobPolicy()
@@ -462,11 +481,13 @@ public final class AppEngineRule extends ExternalResource
 
     helper.setUp();
 
-    if (withDatastoreAndCloudSql) {
+    if (withDatastore) {
       ObjectifyService.initOfy();
       // Reset id allocation in ObjectifyService so that ids are deterministic in tests.
       ObjectifyService.resetNextTestId();
-      loadInitialData();
+      if (!withoutCannedData) {
+        loadInitialData();
+      }
       this.ofyTestEntities.forEach(AppEngineRule::register);
     }
   }
@@ -593,6 +614,6 @@ public final class AppEngineRule extends ExternalResource
   }
 
   boolean isWithDatastoreAndCloudSql() {
-    return withDatastoreAndCloudSql;
+    return withDatastore && withCloudSql;
   }
 }
