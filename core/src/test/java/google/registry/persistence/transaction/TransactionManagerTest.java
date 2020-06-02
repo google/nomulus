@@ -146,6 +146,7 @@ public class TransactionManagerTest {
     TestEntity persisted = tm().transact(() -> tm().load(theEntity.key()));
     assertThat(persisted.data).isEqualTo("foo");
     theEntity.data = "bar";
+    fakeClock.advanceOneMilli();
     tm().transact(() -> tm().saveNewOrUpdate(theEntity));
     persisted = tm().transact(() -> tm().load(theEntity.key()));
     assertThat(persisted.data).isEqualTo("bar");
@@ -168,6 +169,7 @@ public class TransactionManagerTest {
                             VKey.create(TestEntity.class, theEntity.name, Key.create(theEntity))));
     assertThat(persisted.data).isEqualTo("foo");
     theEntity.data = "bar";
+    fakeClock.advanceOneMilli();
     tm().transact(() -> tm().update(theEntity));
     persisted = tm().transact(() -> tm().load(theEntity.key()));
     assertThat(persisted.data).isEqualTo("bar");
@@ -208,6 +210,7 @@ public class TransactionManagerTest {
   void delete_succeeds() {
     tm().transact(() -> tm().saveNew(theEntity));
     assertEntityExists(theEntity);
+    fakeClock.advanceOneMilli();
     tm().transact(() -> tm().delete(theEntity.key()));
     assertEntityNotExist(theEntity);
   }
@@ -226,6 +229,7 @@ public class TransactionManagerTest {
     Set<VKey<TestEntity>> keys =
         moreEntities.stream().map(TestEntity::key).collect(toImmutableSet());
     assertAllEntitiesExist(moreEntities);
+    fakeClock.advanceOneMilli();
     tm().transact(() -> tm().delete(keys));
     assertAllEntitiesNotExist(moreEntities);
   }
@@ -237,8 +241,10 @@ public class TransactionManagerTest {
     List<VKey<TestEntity>> keys =
         moreEntities.stream().map(TestEntity::key).collect(toImmutableList());
     assertAllEntitiesExist(moreEntities);
+    fakeClock.advanceOneMilli();
     tm().transact(() -> tm().delete(keys.get(0)));
     assertEntityNotExist(moreEntities.get(0));
+    fakeClock.advanceOneMilli();
     tm().transact(() -> tm().delete(keys));
     assertAllEntitiesNotExist(moreEntities);
   }
