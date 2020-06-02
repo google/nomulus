@@ -14,6 +14,7 @@
 
 package google.registry.model.ofy;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -157,7 +158,7 @@ public class DatastoreTransactionManager implements TransactionManager {
   @Override
   public <T> ImmutableList<T> load(Iterable<VKey<T>> keys) {
     Iterator<Key<T>> iter =
-        StreamSupport.stream(keys.spliterator(), false).map(key -> key.getOfyKey()).iterator();
+        StreamSupport.stream(keys.spliterator(), false).map(VKey::getOfyKey).iterator();
 
     // The lambda argument to keys() effectively converts Iterator -> Iterable.
     return ImmutableList.copyOf(getOfy().load().keys(() -> iter).values());
@@ -170,7 +171,18 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
-  public <T> void delete(VKey<T> key) {
+  public void delete(VKey<?> key) {
     getOfy().delete().key(key.getOfyKey()).now();
+  }
+
+  @Override
+  public void deleteAll(Iterable<? extends VKey<?>> vKeys) {
+    // We have to create a list to work around the wildcard capture issue here.
+    // See https://docs.oracle.com/javase/tutorial/java/generics/capture.html
+    ImmutableList<Key<?>> list =
+        StreamSupport.stream(vKeys.spliterator(), false)
+            .map(VKey::getOfyKey)
+            .collect(toImmutableList());
+    getOfy().delete().keys(list).now();
   }
 }

@@ -14,6 +14,8 @@
 
 package google.registry.persistence.transaction;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.junit.Assert.assertThrows;
@@ -30,7 +32,9 @@ import google.registry.testing.AppEngineRule;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -62,39 +66,38 @@ public class TransactionManagerTest {
           .withJpaUnitTestEntities(TestEntity.class)
           .build();
 
-  public TransactionManagerTest() {}
+  TransactionManagerTest() {}
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     inject.setStaticField(Ofy.class, "clock", fakeClock);
+    fakeClock.advanceOneMilli();
   }
 
   @TestTemplate
-  public void inTransaction_returnsCorrespondingResult() {
+  void inTransaction_returnsCorrespondingResult() {
     assertThat(tm().inTransaction()).isFalse();
     tm().transact(() -> assertThat(tm().inTransaction()).isTrue());
     assertThat(tm().inTransaction()).isFalse();
   }
 
   @TestTemplate
-  public void assertInTransaction_throwsExceptionWhenNotInTransaction() {
+  void assertInTransaction_throwsExceptionWhenNotInTransaction() {
     assertThrows(IllegalStateException.class, () -> tm().assertInTransaction());
     tm().transact(() -> tm().assertInTransaction());
     assertThrows(IllegalStateException.class, () -> tm().assertInTransaction());
   }
 
   @TestTemplate
-  public void getTransactionTime_throwsExceptionWhenNotInTransaction() {
-    FakeClock txnClock = fakeClock;
-    txnClock.advanceOneMilli();
+  void getTransactionTime_throwsExceptionWhenNotInTransaction() {
     assertThrows(IllegalStateException.class, () -> tm().getTransactionTime());
-    tm().transact(() -> assertThat(tm().getTransactionTime()).isEqualTo(txnClock.nowUtc()));
+    tm().transact(() -> assertThat(tm().getTransactionTime()).isEqualTo(fakeClock.nowUtc()));
     assertThrows(IllegalStateException.class, () -> tm().getTransactionTime());
   }
 
   @TestTemplate
-  public void transact_hasNoEffectWithPartialSuccess() {
-    assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
+  void transact_hasNoEffectWithPartialSuccess() {
+    assertEntityNotExist(theEntity);
     assertThrows(
         RuntimeException.class,
         () ->
@@ -104,152 +107,154 @@ public class TransactionManagerTest {
                       tm().saveNew(theEntity);
                       throw new RuntimeException();
                     }));
-    assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
+    assertEntityNotExist(theEntity);
   }
 
   @TestTemplate
-  public void transact_reusesExistingTransaction() {
-    assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
-    fakeClock.advanceOneMilli();
+  void transact_reusesExistingTransaction() {
+    assertEntityNotExist(theEntity);
     tm().transact(() -> tm().transact(() -> tm().saveNew(theEntity)));
-    fakeClock.advanceOneMilli();
-    assertThat(tm().transact(() -> tm().checkExists(theEntity))).isTrue();
+    assertEntityExists(theEntity);
   }
 
   @TestTemplate
-  public void saveNew_succeeds() {
-    assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
-    fakeClock.advanceOneMilli();
+  void saveNew_succeeds() {
+    assertEntityNotExist(theEntity);
     tm().transact(() -> tm().saveNew(theEntity));
-    fakeClock.advanceOneMilli();
-    assertThat(tm().transact(() -> tm().checkExists(theEntity))).isTrue();
-    fakeClock.advanceOneMilli();
+    assertEntityExists(theEntity);
     assertThat(tm().transact(() -> tm().load(theEntity.key()))).isEqualTo(theEntity);
   }
 
   @TestTemplate
-  public void saveAllNew_succeeds() {
-    moreEntities.forEach(
-        entity -> assertThat(tm().transact(() -> tm().checkExists(entity))).isFalse());
-    fakeClock.advanceOneMilli();
+  void saveAllNew_succeeds() {
+    assertAllEntitiesNotExist(moreEntities);
     tm().transact(() -> tm().saveAllNew(moreEntities));
-    fakeClock.advanceOneMilli();
-    moreEntities.forEach(
-        entity -> assertThat(tm().transact(() -> tm().checkExists(entity))).isTrue());
+    assertAllEntitiesExist(moreEntities);
   }
 
   @TestTemplate
-  public void saveNewOrUpdate_persistsNewEntity() {
-    assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
-    fakeClock.advanceOneMilli();
+  void saveNewOrUpdate_persistsNewEntity() {
+    assertEntityNotExist(theEntity);
     tm().transact(() -> tm().saveNewOrUpdate(theEntity));
-    fakeClock.advanceOneMilli();
-    assertThat(tm().transact(() -> tm().checkExists(theEntity))).isTrue();
-    fakeClock.advanceOneMilli();
+    assertEntityExists(theEntity);
     assertThat(tm().transact(() -> tm().load(theEntity.key()))).isEqualTo(theEntity);
   }
 
   @TestTemplate
-  public void saveNewOrUpdate_updatesExistingEntity() {
-    fakeClock.advanceOneMilli();
+  void saveNewOrUpdate_updatesExistingEntity() {
     tm().transact(() -> tm().saveNew(theEntity));
-    fakeClock.advanceOneMilli();
     TestEntity persisted = tm().transact(() -> tm().load(theEntity.key()));
     assertThat(persisted.data).isEqualTo("foo");
     theEntity.data = "bar";
     tm().transact(() -> tm().saveNewOrUpdate(theEntity));
-    fakeClock.advanceOneMilli();
     persisted = tm().transact(() -> tm().load(theEntity.key()));
-    fakeClock.advanceOneMilli();
     assertThat(persisted.data).isEqualTo("bar");
   }
 
   @TestTemplate
-  public void saveNewOrUpdateAll_succeeds() {
-    moreEntities.forEach(
-        entity -> assertThat(tm().transact(() -> tm().checkExists(entity))).isFalse());
-    fakeClock.advanceOneMilli();
+  void saveNewOrUpdateAll_succeeds() {
+    assertAllEntitiesNotExist(moreEntities);
     tm().transact(() -> tm().saveNewOrUpdateAll(moreEntities));
-    fakeClock.advanceOneMilli();
-    moreEntities.forEach(
-        entity -> assertThat(tm().transact(() -> tm().checkExists(entity))).isTrue());
+    assertAllEntitiesExist(moreEntities);
   }
 
   @TestTemplate
-  public void update_succeeds() {
-    fakeClock.advanceOneMilli();
+  void update_succeeds() {
     tm().transact(() -> tm().saveNew(theEntity));
-    fakeClock.advanceOneMilli();
     TestEntity persisted =
         tm().transact(
                 () ->
                     tm().load(
                             VKey.create(TestEntity.class, theEntity.name, Key.create(theEntity))));
-    fakeClock.advanceOneMilli();
     assertThat(persisted.data).isEqualTo("foo");
     theEntity.data = "bar";
     tm().transact(() -> tm().update(theEntity));
-    fakeClock.advanceOneMilli();
     persisted = tm().transact(() -> tm().load(theEntity.key()));
     assertThat(persisted.data).isEqualTo("bar");
   }
 
   @TestTemplate
-  public void load_succeeds() {
-    assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
-    fakeClock.advanceOneMilli();
+  void load_succeeds() {
+    assertEntityNotExist(theEntity);
     tm().transact(() -> tm().saveNew(theEntity));
-    fakeClock.advanceOneMilli();
     TestEntity persisted = tm().transact(() -> tm().load(theEntity.key()));
     assertThat(persisted.name).isEqualTo("theEntity");
     assertThat(persisted.data).isEqualTo("foo");
   }
 
   @TestTemplate
-  public void load_throwsOnMissingElement() {
-    assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
-    fakeClock.advanceOneMilli();
+  void load_throwsOnMissingElement() {
+    assertEntityNotExist(theEntity);
     assertThrows(
         NoSuchElementException.class, () -> tm().transact(() -> tm().load(theEntity.key())));
   }
 
   @TestTemplate
-  public void maybeLoad_succeeds() {
-    assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
-    fakeClock.advanceOneMilli();
+  void maybeLoad_succeeds() {
+    assertEntityNotExist(theEntity);
     tm().transact(() -> tm().saveNew(theEntity));
-    fakeClock.advanceOneMilli();
     TestEntity persisted = tm().transact(() -> tm().maybeLoad(theEntity.key()).get());
     assertThat(persisted.name).isEqualTo("theEntity");
     assertThat(persisted.data).isEqualTo("foo");
   }
 
   @TestTemplate
-  public void maybeLoad_nonExistentObject() {
-    assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
-    fakeClock.advanceOneMilli();
+  void maybeLoad_nonExistentObject() {
+    assertEntityNotExist(theEntity);
     assertThat(tm().transact(() -> tm().maybeLoad(theEntity.key())).isPresent()).isFalse();
   }
 
   @TestTemplate
-  public void delete_succeeds() {
-    fakeClock.advanceOneMilli();
+  void delete_succeeds() {
     tm().transact(() -> tm().saveNew(theEntity));
-    fakeClock.advanceOneMilli();
-    assertThat(tm().transact(() -> tm().checkExists(theEntity))).isTrue();
-    fakeClock.advanceOneMilli();
+    assertEntityExists(theEntity);
     tm().transact(() -> tm().delete(theEntity.key()));
-    fakeClock.advanceOneMilli();
-    assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
+    assertEntityNotExist(theEntity);
   }
 
   @TestTemplate
-  public void delete_returnsZeroWhenNoEntity() {
-    assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
-    fakeClock.advanceOneMilli();
+  void delete_doNothingWhenEntityNotExist() {
+    assertEntityNotExist(theEntity);
     tm().transact(() -> tm().delete(theEntity.key()));
-    fakeClock.advanceOneMilli();
-    assertThat(tm().transact(() -> tm().checkExists(theEntity))).isFalse();
+    assertEntityNotExist(theEntity);
+  }
+
+  @TestTemplate
+  void deleteAll_succeeds() {
+    assertAllEntitiesNotExist(moreEntities);
+    tm().transact(() -> tm().saveAllNew(moreEntities));
+    Set<VKey<?>> keys = moreEntities.stream().map(TestEntity::key).collect(toImmutableSet());
+    assertAllEntitiesExist(moreEntities);
+    tm().transact(() -> tm().deleteAll(keys));
+    assertAllEntitiesNotExist(moreEntities);
+  }
+
+  @TestTemplate
+  void deleteAll_ignoreNonExistentEntity() {
+    assertAllEntitiesNotExist(moreEntities);
+    tm().transact(() -> tm().saveAllNew(moreEntities));
+    List<VKey<?>> keys = moreEntities.stream().map(TestEntity::key).collect(toImmutableList());
+    assertAllEntitiesExist(moreEntities);
+    tm().transact(() -> tm().delete(keys.get(0)));
+    assertEntityNotExist(moreEntities.get(0));
+    tm().transact(() -> tm().deleteAll(keys));
+    assertAllEntitiesNotExist(moreEntities);
+  }
+
+  private static void assertEntityExists(TestEntity entity) {
+    assertThat(tm().transact(() -> tm().checkExists(entity))).isTrue();
+  }
+
+  private static void assertEntityNotExist(TestEntity entity) {
+    assertThat(tm().transact(() -> tm().checkExists(entity))).isFalse();
+  }
+
+  private static void assertAllEntitiesExist(ImmutableList<TestEntity> entities) {
+    entities.forEach(TransactionManagerTest::assertEntityExists);
+  }
+
+  private static void assertAllEntitiesNotExist(ImmutableList<TestEntity> entities) {
+    entities.forEach(TransactionManagerTest::assertEntityNotExist);
   }
 
   @Entity(name = "TestEntity")
