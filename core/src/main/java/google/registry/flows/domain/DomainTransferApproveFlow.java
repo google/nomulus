@@ -14,7 +14,6 @@
 
 package google.registry.flows.domain;
 
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.computeExDateForApprovalTime;
@@ -61,7 +60,6 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.persistence.VKey;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -216,12 +214,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     ofy().save().entities(entitiesToSave.build());
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.
-    ofy()
-        .delete()
-        .keys(
-            existingDomain.getTransferData().getServerApproveEntities().stream()
-                .map(VKey::getOfyKey)
-                .collect(toImmutableSet()));
+    tm().delete(existingDomain.getTransferData().getServerApproveEntities());
     return responseBuilder
         .setResData(createTransferResponse(
             targetId, newDomain.getTransferData(), newDomain.getRegistrationExpirationTime()))

@@ -17,8 +17,8 @@ package google.registry.model;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -41,7 +41,6 @@ import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.persistence.VKey;
 import org.joda.time.DateTime;
 
 /** Static utility functions for resource transfers. */
@@ -116,12 +115,7 @@ public final class ResourceTransferUtils {
             R resource, R newResource, DateTime now, HistoryEntry historyEntry) {
     if (resource.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
       TransferData oldTransferData = resource.getTransferData();
-      ofy()
-          .delete()
-          .keys(
-              oldTransferData.getServerApproveEntities().stream()
-                  .map(VKey::getOfyKey)
-                  .collect(toImmutableSet()));
+      tm().delete(oldTransferData.getServerApproveEntities());
       ofy()
           .save()
           .entity(
