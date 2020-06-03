@@ -618,7 +618,7 @@ enum google.registry.model.reporting.DomainTransactionRecord$TransactionReportFi
   TRANSFER_SUCCESSFUL;
 }
 class google.registry.model.reporting.HistoryEntry {
-  @Id long id;
+  @Id java.lang.Long id;
   @Parent com.googlecode.objectify.Key<? extends google.registry.model.EppResource> parent;
   boolean bySuperuser;
   byte[] xmlBytes;
