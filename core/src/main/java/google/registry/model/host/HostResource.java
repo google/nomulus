@@ -35,13 +35,13 @@ import javax.persistence.AccessType;
 @javax.persistence.Entity
 @ExternalMessagingName("host")
 @WithStringVKey
-@Access(AccessType.FIELD)
+@Access(AccessType.FIELD) // otherwise it'll use the default if the repoId (property)
 public class HostResource extends HostBase
     implements DatastoreAndSqlEntity, ForeignKeyedEppResource {
 
   @Override
   @javax.persistence.Id
-  @Access(AccessType.PROPERTY)
+  @Access(AccessType.PROPERTY) // to tell it to use the non-default property-as-ID
   public String getRepoId() {
     return super.getRepoId();
   }

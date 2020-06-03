@@ -13,7 +13,7 @@
 -- limitations under the License.
 
 CREATE TABLE "HostHistory" (
-   id bigserial NOT NULL,
+   revision_id bigserial NOT NULL,
     by_superuser boolean NOT NULL,
     registrar_id text NOT NULL,
     modification_time timestamptz NOT NULL,
@@ -34,22 +34,22 @@ CREATE TABLE "HostHistory" (
     last_epp_update_client_id text,
     last_epp_update_time timestamptz,
     statuses text[],
-    host_resource text NOT NULL,
-    primary key (id)
+    host_resource_id text NOT NULL,
+    primary key (revision_id)
 );
 
 CREATE TABLE "HostHistory_inetAddresses" (
-   host_history_id int8 NOT NULL,
+   host_history_revision_id int8 NOT NULL,
     inet_addresses bytea
 );
 
 CREATE INDEX IDXfg2nnjlujxo6cb9fha971bq2n ON "HostHistory" (creation_time);
 CREATE INDEX IDXnxei34hfrt20dyxtphh6j25mo ON "HostHistory" (registrar_id);
-CREATE INDEX IDXhancbub2w7c2rirfaeu4j9uh2 ON "HostHistory" (host_resource);
+CREATE INDEX IDXhancbub2w7c2rirfaeu4j9uh2 ON "HostHistory" (host_resource_id);
 
 ALTER TABLE IF EXISTS "HostHistory_inetAddresses"
    ADD CONSTRAINT FK9svsf0mplnb9d7tdpl44lssvp
-   FOREIGN KEY (host_history_id)
+   FOREIGN KEY (host_history_revision_id)
    REFERENCES "HostHistory";
 
 ALTER TABLE IF EXISTS "HostHistory"
@@ -59,5 +59,5 @@ ALTER TABLE IF EXISTS "HostHistory"
 
 ALTER TABLE IF EXISTS "HostHistory"
    ADD CONSTRAINT FK_HostHistory_HostResource
-   FOREIGN KEY (host_resource)
+   FOREIGN KEY (host_resource_id)
    REFERENCES "HostResource";

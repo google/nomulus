@@ -305,7 +305,7 @@ CREATE TABLE public."DomainHost" (
 --
 
 CREATE TABLE public."HostHistory" (
-    id bigint NOT NULL,
+    revision_id bigint NOT NULL,
     by_superuser boolean NOT NULL,
     registrar_id text NOT NULL,
     modification_time timestamp with time zone NOT NULL,
@@ -326,15 +326,25 @@ CREATE TABLE public."HostHistory" (
     last_epp_update_client_id text,
     last_epp_update_time timestamp with time zone,
     statuses text[],
-    host_resource text NOT NULL
+    host_resource_id text NOT NULL
 );
 
 
 --
--- Name: HostHistory_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: HostHistory_inetAddresses; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public."HostHistory_id_seq"
+CREATE TABLE public."HostHistory_inetAddresses" (
+    host_history_revision_id bigint NOT NULL,
+    inet_addresses bytea
+);
+
+
+--
+-- Name: HostHistory_revision_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."HostHistory_revision_id_seq"
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -343,20 +353,10 @@ CREATE SEQUENCE public."HostHistory_id_seq"
 
 
 --
--- Name: HostHistory_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: HostHistory_revision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public."HostHistory_id_seq" OWNED BY public."HostHistory".id;
-
-
---
--- Name: HostHistory_inetAddresses; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."HostHistory_inetAddresses" (
-    host_history_id bigint NOT NULL,
-    inet_addresses bytea
-);
+ALTER SEQUENCE public."HostHistory_revision_id_seq" OWNED BY public."HostHistory".revision_id;
 
 
 --
@@ -632,10 +632,10 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 
 
 --
--- Name: HostHistory id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: HostHistory revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public."HostHistory" ALTER COLUMN id SET DEFAULT nextval('public."HostHistory_id_seq"'::regclass);
+ALTER TABLE ONLY public."HostHistory" ALTER COLUMN revision_id SET DEFAULT nextval('public."HostHistory_revision_id_seq"'::regclass);
 
 
 --
@@ -728,7 +728,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."HostHistory"
-    ADD CONSTRAINT "HostHistory_pkey" PRIMARY KEY (id);
+    ADD CONSTRAINT "HostHistory_pkey" PRIMARY KEY (revision_id);
 
 
 --
@@ -928,7 +928,7 @@ CREATE INDEX idxfg2nnjlujxo6cb9fha971bq2n ON public."HostHistory" USING btree (c
 -- Name: idxhancbub2w7c2rirfaeu4j9uh2; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idxhancbub2w7c2rirfaeu4j9uh2 ON public."HostHistory" USING btree (host_resource);
+CREATE INDEX idxhancbub2w7c2rirfaeu4j9uh2 ON public."HostHistory" USING btree (host_resource_id);
 
 
 --
@@ -1105,7 +1105,7 @@ ALTER TABLE ONLY public."Contact"
 --
 
 ALTER TABLE ONLY public."HostHistory_inetAddresses"
-    ADD CONSTRAINT fk9svsf0mplnb9d7tdpl44lssvp FOREIGN KEY (host_history_id) REFERENCES public."HostHistory"(id);
+    ADD CONSTRAINT fk9svsf0mplnb9d7tdpl44lssvp FOREIGN KEY (host_history_revision_id) REFERENCES public."HostHistory"(revision_id);
 
 
 --
@@ -1201,7 +1201,7 @@ ALTER TABLE ONLY public."DomainHost"
 --
 
 ALTER TABLE ONLY public."HostHistory"
-    ADD CONSTRAINT fk_hosthistory_hostresource FOREIGN KEY (host_resource) REFERENCES public."HostResource"(repo_id);
+    ADD CONSTRAINT fk_hosthistory_hostresource FOREIGN KEY (host_resource_id) REFERENCES public."HostResource"(repo_id);
 
 
 --

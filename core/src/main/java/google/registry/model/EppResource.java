@@ -60,7 +60,7 @@ import org.joda.time.Duration;
 
 /** An EPP entity object (i.e. a domain, contact, or host). */
 @MappedSuperclass
-@Access(AccessType.FIELD)
+@Access(AccessType.FIELD) // otherwise it'll use the default if the repoId (property)
 public abstract class EppResource extends BackupGroupRoot implements Buildable {
 
   /**
@@ -71,7 +71,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
    * @see <a href="https://tools.ietf.org/html/rfc5730">RFC 5730</a>
    */
   @Id
-  @Transient
+  @Transient // not persisted so that we can store these in references to other objects
   String repoId;
 
   /** The ID of the registrar that is currently sponsoring this resource. */
