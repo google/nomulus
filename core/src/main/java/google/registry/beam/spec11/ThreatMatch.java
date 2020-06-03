@@ -40,8 +40,7 @@ public abstract class ThreatMatch implements Serializable {
   static ThreatMatch create(JSONObject threatMatchJSON, String fullyQualifiedDomainName)
       throws JSONException {
     return new AutoValue_ThreatMatch(
-        threatMatchJSON.getString(THREAT_TYPE_FIELD),
-        fullyQualifiedDomainName);
+        threatMatchJSON.getString(THREAT_TYPE_FIELD), fullyQualifiedDomainName);
   }
 
   /** Returns a {@link JSONObject} representing a subset of this object's data. */
@@ -54,7 +53,6 @@ public abstract class ThreatMatch implements Serializable {
   /** Parses a {@link JSONObject} and returns an equivalent {@link ThreatMatch}. */
   public static ThreatMatch fromJSON(JSONObject threatMatch) throws JSONException {
     return new AutoValue_ThreatMatch(
-        threatMatch.getString(THREAT_TYPE_FIELD),
-        threatMatch.getString(DOMAIN_NAME_FIELD));
+        threatMatch.getString(THREAT_TYPE_FIELD), threatMatch.getString(DOMAIN_NAME_FIELD));
   }
 }
