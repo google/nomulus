@@ -29,6 +29,7 @@ import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.EppResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.transfer.TransferData;
+import google.registry.persistence.VKey;
 import java.net.InetAddress;
 import java.util.Optional;
 import java.util.Set;
@@ -118,6 +119,11 @@ public class HostBase extends EppResource {
   @Override
   public String getForeignKey() {
     return fullyQualifiedHostName;
+  }
+
+  @Override
+  public VKey<? extends EppResource> createVKey() {
+    return VKey.createOfy(HostBase.class, Key.create(this));
   }
 
   @Deprecated
