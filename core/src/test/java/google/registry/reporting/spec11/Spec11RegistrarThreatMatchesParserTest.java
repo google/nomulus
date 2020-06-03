@@ -90,8 +90,6 @@ public class Spec11RegistrarThreatMatchesParserTest {
                 new JSONObject(
                     ImmutableMap.of(
                         "threatType", "MALWARE",
-                        "platformType", "ANY_PLATFORM",
-                        "threatEntryMetadata", "NONE",
                         "fullyQualifiedDomainName", "a.com")))));
   }
 
@@ -103,15 +101,11 @@ public class Spec11RegistrarThreatMatchesParserTest {
                 new JSONObject(
                     ImmutableMap.of(
                         "threatType", "MALWARE",
-                        "platformType", "ANY_PLATFORM",
-                        "threatEntryMetadata", "NONE",
                         "fullyQualifiedDomainName", "b.com"))),
             ThreatMatch.fromJSON(
                 new JSONObject(
                     ImmutableMap.of(
                         "threatType", "MALWARE",
-                        "platformType", "ANY_PLATFORM",
-                        "threatEntryMetadata", "NONE",
                         "fullyQualifiedDomainName", "c.com")))));
   }
 
