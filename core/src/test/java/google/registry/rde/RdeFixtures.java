@@ -116,8 +116,8 @@ final class RdeFixtures {
             .setIdnTableName("extended_latin")
             .setNameservers(
                 ImmutableSet.of(
-                    makeHostResource(clock, "bird.or.devil.みんな", "1.2.3.4").createKey(),
-                    makeHostResource(clock, "ns2.cat.みんな", "bad:f00d:cafe::15:beef").createKey()))
+                    makeHostResource(clock, "bird.or.devil.みんな", "1.2.3.4").createVKey(),
+                    makeHostResource(clock, "ns2.cat.みんな", "bad:f00d:cafe::15:beef").createVKey()))
             .setRegistrationExpirationTime(DateTime.parse("1994-01-01T00:00:00Z"))
             .setGracePeriods(
                 ImmutableSet.of(

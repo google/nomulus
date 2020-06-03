@@ -269,9 +269,9 @@ public class DomainBaseToXjcConverterTest {
             .setNameservers(
                 ImmutableSet.of(
                     makeHostResource(clock, "3-Q9JYB4C", "bird.or.devil.みんな", "1.2.3.4")
-                        .createKey(),
+                        .createVKey(),
                     makeHostResource(clock, "4-Q9JYB4C", "ns2.cat.みんな", "bad:f00d:cafe::15:beef")
-                        .createKey()))
+                        .createVKey()))
             .setRegistrant(
                 makeContactResource(
                         clock, "12-Q9JYB4C", "5372808-ERL", "(◕‿◕) nevermore", "prophet@evil.みんな")

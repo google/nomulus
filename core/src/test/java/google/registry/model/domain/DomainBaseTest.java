@@ -79,7 +79,7 @@ public class DomainBaseTest extends EntityTestCase {
                     .setSuperordinateDomain(domainKey)
                     .setRepoId("1-COM")
                     .build())
-            .createKey();
+            .createVKey();
     VKey<ContactResource> contact1Key =
         persistResource(
                 new ContactResource.Builder()
@@ -221,7 +221,7 @@ public class DomainBaseTest extends EntityTestCase {
     assertThat(
             newDomainBase("example.com")
                 .asBuilder()
-                .setNameservers(ImmutableSet.of(newHostResource("foo.example.tld").createKey()))
+                .setNameservers(ImmutableSet.of(newHostResource("foo.example.tld").createVKey()))
                 .build()
                 .nsHosts)
         .isNotNull();
@@ -269,7 +269,7 @@ public class DomainBaseTest extends EntityTestCase {
   @Test
   public void testImplicitStatusValues() {
     ImmutableSet<VKey<HostResource>> nameservers =
-        ImmutableSet.of(newHostResource("foo.example.tld").createKey());
+        ImmutableSet.of(newHostResource("foo.example.tld").createVKey());
     StatusValue[] statuses = {StatusValue.OK};
     // OK is implicit if there's no other statuses but there are nameservers.
     assertAboutDomains()

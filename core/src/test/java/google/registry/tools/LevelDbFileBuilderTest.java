@@ -15,13 +15,17 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityTranslator;
 import com.google.common.collect.ImmutableList;
 import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
+import google.registry.model.contact.ContactResource;
 import google.registry.testing.AppEngineRule;
-import google.registry.tools.LevelDbFileBuilder.Property;
+import google.registry.testing.DatastoreHelper;
+import google.registry.tools.EntityWrapper.Property;
 import java.io.File;
 import java.io.IOException;
 import org.junit.Rule;
@@ -45,19 +49,18 @@ public class LevelDbFileBuilderTest {
     File subdir = tempFs.newFolder("folder");
     File logFile = new File(subdir, "testfile");
     LevelDbFileBuilder builder = new LevelDbFileBuilder(logFile);
-    ComparableEntity entity =
-        builder.addEntityProto(
+    EntityWrapper entity =
+        EntityWrapper.from(
             BASE_ID, Property.create("first", 100L), Property.create("second", 200L));
+    builder.addEntity(entity.getEntity());
     builder.build();
 
     ImmutableList<byte[]> records = ImmutableList.copyOf(LevelDbLogReader.from(logFile.getPath()));
     assertThat(records).hasSize(1);
 
     // Reconstitute an entity, make sure that what we've got is the same as what we started with.
-    EntityProto proto = new EntityProto();
-    proto.parseFrom(records.get(0));
-    Entity materializedEntity = EntityTranslator.createFromPb(proto);
-    assertThat(new ComparableEntity(materializedEntity)).isEqualTo(entity);
+    Entity materializedEntity = rawRecordToEntity(records.get(0));
+    assertThat(new EntityWrapper(materializedEntity)).isEqualTo(entity);
   }
 
   @Test
@@ -68,25 +71,50 @@ public class LevelDbFileBuilderTest {
 
     // Generate enough records to cross a block boundary.  These records end up being around 80
     // bytes, so 1000 works.
-    ImmutableList.Builder<ComparableEntity> originalEntitiesBuilder = new ImmutableList.Builder<>();
+    ImmutableList.Builder<EntityWrapper> originalEntitiesBuilder = new ImmutableList.Builder<>();
     for (int i = 0; i < 1000; ++i) {
-      ComparableEntity entity =
-          builder.addEntityProto(
+      EntityWrapper entity =
+          EntityWrapper.from(
               BASE_ID + i, Property.create("first", 100L), Property.create("second", 200L));
+      builder.addEntity(entity.getEntity());
       originalEntitiesBuilder.add(entity);
     }
     builder.build();
-    ImmutableList<ComparableEntity> originalEntities = originalEntitiesBuilder.build();
+    ImmutableList<EntityWrapper> originalEntities = originalEntitiesBuilder.build();
 
     ImmutableList<byte[]> records = ImmutableList.copyOf(LevelDbLogReader.from(logFile.getPath()));
     assertThat(records).hasSize(1000);
     int index = 0;
     for (byte[] record : records) {
-      EntityProto proto = new EntityProto();
-      proto.parseFrom(record);
-      Entity materializedEntity = EntityTranslator.createFromPb(proto);
-      assertThat(new ComparableEntity(materializedEntity)).isEqualTo(originalEntities.get(index));
+      Entity materializedEntity = rawRecordToEntity(record);
+      assertThat(new EntityWrapper(materializedEntity)).isEqualTo(originalEntities.get(index));
       ++index;
     }
+  }
+
+  @Test
+  public void testOfyEntityWrite() throws Exception {
+    File subdir = tempFs.newFolder("folder");
+    File logFile = new File(subdir, "testfile");
+    LevelDbFileBuilder builder = new LevelDbFileBuilder(logFile);
+
+    ContactResource contact = DatastoreHelper.newContactResource("contact");
+    builder.addEntity(tm().transact(() -> ofy().save().toEntity(contact)));
+    builder.build();
+
+    ImmutableList<byte[]> records = ImmutableList.copyOf(LevelDbLogReader.from(logFile.getPath()));
+    assertThat(records).hasSize(1);
+    ContactResource ofyEntity = rawRecordToOfyEntity(records.get(0), ContactResource.class);
+    assertThat(ofyEntity.getContactId()).isEqualTo(contact.getContactId());
+  }
+
+  private static Entity rawRecordToEntity(byte[] record) {
+    EntityProto proto = new EntityProto();
+    proto.parseFrom(record);
+    return EntityTranslator.createFromPb(proto);
+  }
+
+  private static <T> T rawRecordToOfyEntity(byte[] record, Class<T> expectedType) {
+    return expectedType.cast(ofy().load().fromEntity(rawRecordToEntity(record)));
   }
 }

@@ -200,7 +200,9 @@ public class ContactResource extends EppResource
   })
   Disclose disclose;
 
+  @Override
   public VKey<ContactResource> createVKey() {
+    // TODO(mmuller): create symmetric keys if we can ever reload both sides.
     return VKey.createOfy(ContactResource.class, Key.create(this));
   }
 

@@ -105,7 +105,7 @@ public class DnsUpdateWriterTest {
     DomainBase domain =
         persistActiveDomain("example.tld")
             .asBuilder()
-            .setNameservers(ImmutableSet.of(host1.createKey(), host2.createKey()))
+            .setNameservers(ImmutableSet.of(host1.createVKey(), host2.createVKey()))
             .build();
     persistResource(domain);
 
@@ -126,7 +126,7 @@ public class DnsUpdateWriterTest {
     DomainBase domain1 =
         persistActiveDomain("example1.tld")
             .asBuilder()
-            .setNameservers(ImmutableSet.of(host1.createKey()))
+            .setNameservers(ImmutableSet.of(host1.createVKey()))
             .build();
     persistResource(domain1);
 
@@ -134,7 +134,7 @@ public class DnsUpdateWriterTest {
     DomainBase domain2 =
         persistActiveDomain("example2.tld")
             .asBuilder()
-            .setNameservers(ImmutableSet.of(host2.createKey()))
+            .setNameservers(ImmutableSet.of(host2.createVKey()))
             .build();
     persistResource(domain2);
 
@@ -150,7 +150,7 @@ public class DnsUpdateWriterTest {
     DomainBase domain1 =
         persistActiveDomain("example1.tld")
             .asBuilder()
-            .setNameservers(ImmutableSet.of(host1.createKey()))
+            .setNameservers(ImmutableSet.of(host1.createVKey()))
             .build();
     persistResource(domain1);
 
@@ -158,7 +158,7 @@ public class DnsUpdateWriterTest {
     DomainBase domain2 =
         persistActiveDomain("example2.tld")
             .asBuilder()
-            .setNameservers(ImmutableSet.of(host2.createKey()))
+            .setNameservers(ImmutableSet.of(host2.createVKey()))
             .build();
     persistResource(domain2);
 
@@ -181,7 +181,7 @@ public class DnsUpdateWriterTest {
     DomainBase domain =
         persistActiveDomain("example.tld")
             .asBuilder()
-            .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createKey()))
+            .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createVKey()))
             .setDsData(
                 ImmutableSet.of(
                     DelegationSignerData.create(1, 3, 1, base16().decode("0123456789ABCDEF"))))
@@ -206,7 +206,7 @@ public class DnsUpdateWriterTest {
         persistActiveDomain("example.tld")
             .asBuilder()
             .addStatusValue(StatusValue.SERVER_HOLD)
-            .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createKey()))
+            .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createVKey()))
             .build();
     persistResource(domain);
 
@@ -250,7 +250,7 @@ public class DnsUpdateWriterTest {
         newDomainBase("example.tld")
             .asBuilder()
             .addSubordinateHost("ns1.example.tld")
-            .addNameserver(host.createKey())
+            .addNameserver(host.createVKey())
             .build());
 
     writer.publishHost("ns1.example.tld");
@@ -289,7 +289,7 @@ public class DnsUpdateWriterTest {
     persistResource(
         persistActiveDomain("example.tld")
             .asBuilder()
-            .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.com").createKey()))
+            .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.com").createVKey()))
             .build());
 
     writer.publishHost("ns1.example.tld");
@@ -323,7 +323,8 @@ public class DnsUpdateWriterTest {
             .asBuilder()
             .addSubordinateHost("ns1.example.tld")
             .addNameservers(
-                ImmutableSet.of(externalNameserver.createKey(), inBailiwickNameserver.createKey()))
+                ImmutableSet.of(
+                    externalNameserver.createVKey(), inBailiwickNameserver.createVKey()))
             .build());
 
     writer.publishDomain("example.tld");
@@ -358,7 +359,7 @@ public class DnsUpdateWriterTest {
             .asBuilder()
             .addSubordinateHost("ns1.example.tld")
             .addSubordinateHost("foo.example.tld")
-            .addNameserver(inBailiwickNameserver.createKey())
+            .addNameserver(inBailiwickNameserver.createVKey())
             .build());
 
     writer.publishDomain("example.tld");
@@ -382,7 +383,7 @@ public class DnsUpdateWriterTest {
     DomainBase domain =
         persistActiveDomain("example.tld")
             .asBuilder()
-            .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createKey()))
+            .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createVKey()))
             .build();
     persistResource(domain);
     when(mockResolver.send(any(Message.class))).thenReturn(messageWithResponseCode(Rcode.SERVFAIL));

@@ -15,20 +15,32 @@
 package google.registry.tools;
 
 import com.google.appengine.api.datastore.Entity;
+import com.google.auto.value.AutoValue;
 import com.google.common.base.Objects;
 
-/** Wraps {@link Entity} to do hashCode/equals based on both the entity's key and its properties. */
-final class ComparableEntity {
+/**
+ * Wraps {@link Entity} for ease of processing in collections.
+ *
+ * <p>Note that the {@link #hashCode}/{@link #equals} methods are based on both the entity's key and
+ * its properties.
+ */
+final class EntityWrapper {
+  private static final String TEST_ENTITY_KIND = "TestEntity";
+
   private final Entity entity;
 
-  ComparableEntity(Entity entity) {
+  EntityWrapper(Entity entity) {
     this.entity = entity;
+  }
+
+  public Entity getEntity() {
+    return entity;
   }
 
   @Override
   public boolean equals(Object that) {
-    if (that instanceof ComparableEntity) {
-      ComparableEntity thatEntity = (ComparableEntity) that;
+    if (that instanceof EntityWrapper) {
+      EntityWrapper thatEntity = (EntityWrapper) that;
       return entity.equals(thatEntity.entity)
           && entity.getProperties().equals(thatEntity.entity.getProperties());
     }
@@ -43,6 +55,26 @@ final class ComparableEntity {
 
   @Override
   public String toString() {
-    return "ComparableEntity(" + entity + ")";
+    return "EntityWrapper(" + entity + ")";
+  }
+
+  public static EntityWrapper from(int id, Property... properties) {
+    Entity entity = new Entity(TEST_ENTITY_KIND, id);
+    for (Property prop : properties) {
+      entity.setProperty(prop.name(), prop.value());
+    }
+    return new EntityWrapper(entity);
+  }
+
+  @AutoValue
+  abstract static class Property {
+
+    static Property create(String name, Object value) {
+      return new AutoValue_EntityWrapper_Property(name, value);
+    }
+
+    abstract String name();
+
+    abstract Object value();
   }
 }

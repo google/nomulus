@@ -220,8 +220,8 @@ public class DomainWhoisResponseTest {
         .setEmailAddress("EMAIL@EXAMPLE.tld")
         .build());
 
-    VKey<HostResource> hostResource1Key = hostResource1.createKey();
-    VKey<HostResource> hostResource2Key = hostResource2.createKey();
+    VKey<HostResource> hostResource1Key = hostResource1.createVKey();
+    VKey<HostResource> hostResource2Key = hostResource2.createVKey();
     VKey<ContactResource> registrantResourceKey = registrant.createVKey();
     VKey<ContactResource> adminResourceKey = adminContact.createVKey();
     VKey<ContactResource> techResourceKey = techContact.createVKey();

@@ -278,7 +278,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
             .getResultList());
   }
 
-  private <T> int internalDelete(VKey<T> key) {
+  private int internalDelete(VKey<?> key) {
     checkArgumentNotNull(key, "key must be specified");
     assertInTransaction();
     EntityType<?> entityType = getEntityType(key.getKind());
@@ -291,8 +291,14 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public <T> void delete(VKey<T> key) {
+  public void delete(VKey<?> key) {
     internalDelete(key);
+  }
+
+  @Override
+  public void delete(Iterable<? extends VKey<?>> vKeys) {
+    checkArgumentNotNull(vKeys, "vKeys must be specified");
+    vKeys.forEach(this::internalDelete);
   }
 
   @Override

@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.testing.AppEngineRule;
-import google.registry.tools.LevelDbFileBuilder.Property;
+import google.registry.tools.EntityWrapper.Property;
 import java.io.File;
 import java.io.IOException;
 import org.junit.Rule;
@@ -44,39 +44,44 @@ public class RecordAccumulatorTest {
 
     // Note that we need to specify property values as "Long" for property comparisons to work
     // correctly because that's how they are deserialized from protos.
-    ComparableEntity e1 =
-        builder.addEntityProto(
+    EntityWrapper e1 =
+        EntityWrapper.from(
             BASE_ID,
             Property.create("eeny", 100L),
             Property.create("meeny", 200L),
             Property.create("miney", 300L));
-    ComparableEntity e2 =
-        builder.addEntityProto(
+    builder.addEntity(e1.getEntity());
+    EntityWrapper e2 =
+        EntityWrapper.from(
             BASE_ID + 1,
             Property.create("eeny", 100L),
             Property.create("meeny", 200L),
             Property.create("miney", 300L));
+    builder.addEntity(e2.getEntity());
     builder.build();
 
     builder = new LevelDbFileBuilder(new File(subdir, "data2"));
 
     // Duplicate of the record in the other file.
-    builder.addEntityProto(
-        BASE_ID,
-        Property.create("eeny", 100L),
-        Property.create("meeny", 200L),
-        Property.create("miney", 300L));
+    builder.addEntity(
+        EntityWrapper.from(
+                BASE_ID,
+                Property.create("eeny", 100L),
+                Property.create("meeny", 200L),
+                Property.create("miney", 300L))
+            .getEntity());
 
-    ComparableEntity e3 =
-        builder.addEntityProto(
+    EntityWrapper e3 =
+        EntityWrapper.from(
             BASE_ID + 2,
             Property.create("moxy", 100L),
             Property.create("fruvis", 200L),
             Property.create("cortex", 300L));
+    builder.addEntity(e3.getEntity());
     builder.build();
 
-    ImmutableSet<ComparableEntity> entities =
-        RecordAccumulator.readDirectory(subdir, any -> true).getComparableEntitySet();
+    ImmutableSet<EntityWrapper> entities =
+        RecordAccumulator.readDirectory(subdir, any -> true).getEntityWrapperSet();
     assertThat(entities).containsExactly(e1, e2, e3);
   }
 }

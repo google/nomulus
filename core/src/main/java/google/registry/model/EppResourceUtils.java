@@ -17,6 +17,7 @@ package google.registry.model;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.latestOf;
@@ -141,7 +142,7 @@ public final class EppResourceUtils {
     T resource =
         useCache
             ? EppResource.loadCached(fki.getResourceKey())
-            : ofy().load().key(fki.getResourceKey()).now();
+            : tm().maybeLoad(fki.getResourceKey()).orElse(null);
     if (resource == null || isAtOrAfter(now, resource.getDeletionTime())) {
       return Optional.empty();
     }

@@ -131,8 +131,8 @@ public enum Fixture {
                       DesignatedContact.create(TECH, justine.createVKey())))
               .setNameservers(
                   ImmutableSet.of(
-                      persistActiveHost("ns1.love.xn--q9jyb4c").createKey(),
-                      persistActiveHost("ns2.love.xn--q9jyb4c").createKey()))
+                      persistActiveHost("ns1.love.xn--q9jyb4c").createVKey(),
+                      persistActiveHost("ns2.love.xn--q9jyb4c").createVKey()))
               .build());
 
       persistResource(
@@ -145,11 +145,11 @@ public enum Fixture {
                       DesignatedContact.create(TECH, justine.createVKey())))
               .setNameservers(
                   ImmutableSet.of(
-                      persistActiveHost("ns1.linode.com").createKey(),
-                      persistActiveHost("ns2.linode.com").createKey(),
-                      persistActiveHost("ns3.linode.com").createKey(),
-                      persistActiveHost("ns4.linode.com").createKey(),
-                      persistActiveHost("ns5.linode.com").createKey()))
+                      persistActiveHost("ns1.linode.com").createVKey(),
+                      persistActiveHost("ns2.linode.com").createVKey(),
+                      persistActiveHost("ns3.linode.com").createVKey(),
+                      persistActiveHost("ns4.linode.com").createVKey(),
+                      persistActiveHost("ns5.linode.com").createVKey()))
               .build());
 
       persistResource(

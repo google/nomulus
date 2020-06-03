@@ -17,7 +17,7 @@ package google.registry.model.index;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.deleteResource;
 import static google.registry.testing.DatastoreHelper.persistActiveContact;
@@ -27,7 +27,6 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.collect.ImmutableList;
-import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.host.HostResource;
@@ -56,7 +55,7 @@ public class ForeignKeyIndexTest extends EntityTestCase {
     HostResource host = persistActiveHost("ns1.example.com");
     ForeignKeyIndex<HostResource> fki =
         ForeignKeyIndex.load(HostResource.class, "ns1.example.com", fakeClock.nowUtc());
-    assertThat(ofy().load().key(fki.getResourceKey()).now()).isEqualTo(host);
+    assertThat(tm().load(fki.getResourceKey())).isEqualTo(host);
     assertThat(fki.getDeletionTime()).isEqualTo(END_OF_TIME);
   }
 
@@ -89,7 +88,7 @@ public class ForeignKeyIndexTest extends EntityTestCase {
     fakeClock.advanceOneMilli();
     ForeignKeyHostIndex fki = new ForeignKeyHostIndex();
     fki.foreignKey = "ns1.example.com";
-    fki.topReference = Key.create(host1);
+    fki.topReference = host1.createVKey();
     fki.deletionTime = fakeClock.nowUtc();
     persistResource(fki);
     assertThat(ForeignKeyIndex.load(HostResource.class, "ns1.example.com", fakeClock.nowUtc()))

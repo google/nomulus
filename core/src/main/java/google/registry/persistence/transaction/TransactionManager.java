@@ -115,7 +115,7 @@ public interface TransactionManager {
   <T> T load(VKey<T> key);
 
   /**
-   * Leads the set of entities by their key id.
+   * Loads the set of entities by their key id.
    *
    * @throws NoSuchElementException if any of the keys are not found.
    */
@@ -125,5 +125,8 @@ public interface TransactionManager {
   <T> ImmutableList<T> loadAll(Class<T> clazz);
 
   /** Deletes the entity by its id. */
-  <T> void delete(VKey<T> key);
+  void delete(VKey<?> key);
+
+  /** Deletes the set of entities by their key id. */
+  void delete(Iterable<? extends VKey<?>> keys);
 }
