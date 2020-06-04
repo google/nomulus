@@ -70,8 +70,8 @@ public class TransferData extends BaseTransferObject implements Buildable {
    */
   @Embedded
   @AttributeOverrides({
-    @AttributeOverride(name = "unit", column = @Column(name = "transfer_period_unit")),
-    @AttributeOverride(name = "value", column = @Column(name = "transfer_period_value"))
+    @AttributeOverride(name = "unit", column = @Column(name = "transfer_renew_period_unit")),
+    @AttributeOverride(name = "value", column = @Column(name = "transfer_renew_period_value"))
   })
   Period transferPeriod = Period.create(1, Unit.YEARS);
 
