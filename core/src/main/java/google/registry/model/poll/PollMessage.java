@@ -25,6 +25,7 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
@@ -39,10 +40,23 @@ import google.registry.model.poll.PendingActionNotificationResponse.DomainPendin
 import google.registry.model.poll.PendingActionNotificationResponse.HostPendingActionNotificationResponse;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
+import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
+import google.registry.persistence.WithLongVKey;
 import java.util.List;
 import java.util.Optional;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
+import javax.persistence.Column;
+import javax.persistence.DiscriminatorColumn;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Embedded;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /**
@@ -68,27 +82,51 @@ import org.joda.time.DateTime;
 @Entity
 @ReportedOn
 @ExternalMessagingName("message")
+@javax.persistence.Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "type")
+@javax.persistence.Table(
+    indexes = {
+      @javax.persistence.Index(columnList = "registrar_id"),
+      @javax.persistence.Index(columnList = "eventTime")
+    })
 public abstract class PollMessage extends ImmutableObject
     implements Buildable, TransferServerApproveEntity {
 
   /** Entity id. */
   @Id
-  long id;
+  @javax.persistence.Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "poll_message_id")
+  Long id;
 
-  @Parent
-  @DoNotHydrate
-  Key<HistoryEntry> parent;
+  @Parent @DoNotHydrate @Transient Key<HistoryEntry> parent;
 
   /** The registrar that this poll message will be delivered to. */
   @Index
+  @Column(name = "registrar_id", nullable = false)
   String clientId;
 
   /** The time when the poll message should be delivered. May be in the future. */
   @Index
+  @Column(nullable = false)
   DateTime eventTime;
 
   /** Human readable message that will be returned with this poll message. */
+  @Column(name = "message")
   String msg;
+
+  @Ignore String domainRepoId;
+
+  @Ignore String contactRepoId;
+
+  @Ignore String hostRepoId;
+
+  @Ignore Long domainRevisionId;
+
+  @Ignore Long contactRevisionId;
+
+  @Ignore Long hostRevisionId;
 
   public Key<HistoryEntry> getParentKey() {
     return parent;
@@ -180,15 +218,78 @@ public abstract class PollMessage extends ImmutableObject
    * <p>One-time poll messages are deleted from Datastore once they have been delivered and ACKed.
    */
   @EntitySubclass(index = false)
+  @javax.persistence.Entity
+  @DiscriminatorValue("ONE_TIME")
+  @WithLongVKey
   public static class OneTime extends PollMessage {
 
     // Response data. Objectify cannot persist a base class type, so we must have a separate field
     // to hold every possible derived type of ResponseData that we might store.
+    @Transient
     List<ContactPendingActionNotificationResponse> contactPendingActionNotificationResponses;
-    List<ContactTransferResponse> contactTransferResponses;
+
+    @Transient List<ContactTransferResponse> contactTransferResponses;
+
+    @Transient
     List<DomainPendingActionNotificationResponse> domainPendingActionNotificationResponses;
-    List<DomainTransferResponse> domainTransferResponses;
-    List<HostPendingActionNotificationResponse> hostPendingActionNotificationResponses;
+
+    @Transient List<DomainTransferResponse> domainTransferResponses;
+
+    @Transient List<HostPendingActionNotificationResponse> hostPendingActionNotificationResponses;
+
+    @Ignore
+    @Embedded
+    @AttributeOverrides({
+      @AttributeOverride(
+          name = "nameOrId.value",
+          column = @Column(name = "pending_action_response_name_or_id")),
+      @AttributeOverride(
+          name = "nameOrId.actionResult",
+          column = @Column(name = "pending_action_response_action_result")),
+      @AttributeOverride(
+          name = "trid.serverTransactionId",
+          column = @Column(name = "pending_action_response_server_txn_id")),
+      @AttributeOverride(
+          name = "trid.clientTransactionId",
+          column = @Column(name = "pending_action_response_client_txn_id")),
+      @AttributeOverride(
+          name = "processedDate",
+          column = @Column(name = "pending_action_response_processed_date"))
+    })
+    PendingActionNotificationResponse pendingActionNotificationResponse;
+
+    @Ignore
+    @Embedded
+    @AttributeOverrides({
+      @AttributeOverride(
+          name = "transferStatus",
+          column = @Column(name = "transfer_response_transfer_status")),
+      @AttributeOverride(
+          name = "gainingClientId",
+          column = @Column(name = "transfer_response_gaining_registrar_id")),
+      @AttributeOverride(
+          name = "transferRequestTime",
+          column = @Column(name = "transfer_response_transfer_request_time")),
+      @AttributeOverride(
+          name = "losingClientId",
+          column = @Column(name = "transfer_response_losing_registrar_id")),
+      @AttributeOverride(
+          name = "pendingTransferExpirationTime",
+          column = @Column(name = "transfer_response_pending_transfer_expiration_time"))
+    })
+    TransferResponse transferResponse;
+
+    @Ignore
+    @Column(name = "transfer_response_domain_name")
+    String fullyQualifiedDomainName;
+
+    @Ignore
+    @Column(name = "transfer_response_domain_expiration_time")
+    DateTime extendedRegistrationExpirationTime;
+
+    @Ignore
+    @Column(name = "transfer_response_contact_id")
+    String contactId;
 
     @Override
     public Builder asBuilder() {
@@ -265,9 +366,13 @@ public abstract class PollMessage extends ImmutableObject
    * happens.
    */
   @EntitySubclass(index = false)
+  @javax.persistence.Entity
+  @DiscriminatorValue("AUTORENEW")
+  @WithLongVKey
   public static class Autorenew extends PollMessage {
 
     /** The target id of the autorenew event. */
+    @Column(name = "autorenew_domain_name")
     String targetId;
 
     /** The autorenew recurs annually between {@link #eventTime} and this time. */

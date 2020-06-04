@@ -344,6 +344,59 @@ CREATE TABLE public."Lock" (
 
 
 --
+-- Name: PollMessage; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."PollMessage" (
+    type text NOT NULL,
+    poll_message_id bigint NOT NULL,
+    registrar_id text NOT NULL,
+    contact_repo_id text,
+    contact_revision_id bigint,
+    domain_repo_id text,
+    domain_revision_id bigint,
+    event_time timestamp with time zone NOT NULL,
+    host_repo_id text,
+    host_revision_id bigint,
+    message text,
+    transfer_response_contact_id text,
+    transfer_response_domain_expiration_time timestamp with time zone,
+    transfer_response_domain_name text,
+    pending_action_response_action_result boolean,
+    pending_action_response_name_or_id text,
+    pending_action_response_processed_date timestamp with time zone,
+    pending_action_response_client_txn_id text,
+    pending_action_response_server_txn_id text,
+    transfer_response_gaining_registrar_id text,
+    transfer_response_losing_registrar_id text,
+    transfer_response_pending_transfer_expiration_time timestamp with time zone,
+    transfer_response_transfer_request_time timestamp with time zone,
+    transfer_response_transfer_status text,
+    autorenew_end_time timestamp with time zone,
+    autorenew_domain_name text
+);
+
+
+--
+-- Name: PollMessage_poll_message_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."PollMessage_poll_message_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: PollMessage_poll_message_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."PollMessage_poll_message_id_seq" OWNED BY public."PollMessage".poll_message_id;
+
+
+--
 -- Name: PremiumEntry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -573,6 +626,13 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 
 
 --
+-- Name: PollMessage poll_message_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage" ALTER COLUMN poll_message_id SET DEFAULT nextval('public."PollMessage_poll_message_id_seq"'::regclass);
+
+
+--
 -- Name: PremiumList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -671,6 +731,14 @@ ALTER TABLE ONLY public."HostResource"
 
 ALTER TABLE ONLY public."Lock"
     ADD CONSTRAINT "Lock_pkey" PRIMARY KEY (resource_name, tld);
+
+
+--
+-- Name: PollMessage PollMessage_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT "PollMessage_pkey" PRIMARY KEY (poll_message_id);
 
 
 --
@@ -830,10 +898,24 @@ CREATE INDEX idx_registry_lock_verification_code ON public."RegistryLock" USING 
 
 
 --
+-- Name: idxaydgox62uno9qx8cjlj5lauye; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxaydgox62uno9qx8cjlj5lauye ON public."PollMessage" USING btree (event_time);
+
+
+--
 -- Name: idxbn8t4wp85fgxjl8q4ctlscx55; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idxbn8t4wp85fgxjl8q4ctlscx55 ON public."Contact" USING btree (current_sponsor_client_id);
+
+
+--
+-- Name: idxe7wu46c7wpvfmfnj4565abibp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxe7wu46c7wpvfmfnj4565abibp ON public."PollMessage" USING btree (registrar_id);
 
 
 --
@@ -1083,6 +1165,54 @@ ALTER TABLE ONLY public."Domain"
 
 ALTER TABLE ONLY public."DomainHost"
     ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (ns_hosts) REFERENCES public."HostResource"(repo_id);
+
+
+--
+-- Name: PollMessage fk_poll_message_contact_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT fk_poll_message_contact_repo_id FOREIGN KEY (contact_repo_id) REFERENCES public."Contact"(repo_id);
+
+
+--
+-- Name: PollMessage fk_poll_message_domain_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT fk_poll_message_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
+
+
+--
+-- Name: PollMessage fk_poll_message_host_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT fk_poll_message_host_repo_id FOREIGN KEY (host_repo_id) REFERENCES public."HostResource"(repo_id);
+
+
+--
+-- Name: PollMessage fk_poll_message_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT fk_poll_message_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(client_id);
+
+
+--
+-- Name: PollMessage fk_poll_message_transfer_response_gaining_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT fk_poll_message_transfer_response_gaining_registrar_id FOREIGN KEY (transfer_response_gaining_registrar_id) REFERENCES public."Registrar"(client_id);
+
+
+--
+-- Name: PollMessage fk_poll_message_transfer_response_losing_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT fk_poll_message_transfer_response_losing_registrar_id FOREIGN KEY (transfer_response_losing_registrar_id) REFERENCES public."Registrar"(client_id);
 
 
 --

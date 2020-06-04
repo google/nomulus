@@ -36,6 +36,9 @@
     <class>google.registry.schema.tld.ReservedList</class>
     <class>google.registry.model.domain.secdns.DelegationSignerData</class>
     <class>google.registry.model.domain.GracePeriod</class>
+    <class>google.registry.model.poll.PollMessage</class>
+    <class>google.registry.model.poll.PollMessage$OneTime</class>
+    <class>google.registry.model.poll.PollMessage$Autorenew</class>
 
     <!-- Customized type converters -->
     <class>google.registry.persistence.converter.BillingCostTransitionConverter</class>
