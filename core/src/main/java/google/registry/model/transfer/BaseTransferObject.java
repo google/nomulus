@@ -16,8 +16,6 @@ package google.registry.model.transfer;
 
 import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.Column;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -35,7 +33,6 @@ public abstract class BaseTransferObject extends ImmutableObject {
    * leave IgnoreSave off this field so that we can ensure that TransferData loaded from Objectify
    * will always be non-null.
    */
-  @Enumerated(EnumType.STRING)
   @XmlElement(name = "trStatus")
   @Enumerated(EnumType.STRING)
   TransferStatus transferStatus;
