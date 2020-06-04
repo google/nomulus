@@ -42,7 +42,7 @@ public abstract class BaseTransferObject extends ImmutableObject {
 
   /** The gaining registrar of the current or last transfer. Can be null if never transferred. */
   @XmlElement(name = "reID")
-  @Column(name = "transfer_gaining_client_id")
+  @Column(name = "transfer_gaining_registrar_id")
   String gainingClientId;
 
   /** The time that the last transfer was requested. Can be null if never transferred. */
@@ -51,7 +51,7 @@ public abstract class BaseTransferObject extends ImmutableObject {
 
   /** The losing registrar of the current or last transfer. Can be null if never transferred. */
   @XmlElement(name = "acID")
-  @Column(name = "transfer_losing_client_id")
+  @Column(name = "transfer_losing_registrar_id")
   String losingClientId;
 
   /**
