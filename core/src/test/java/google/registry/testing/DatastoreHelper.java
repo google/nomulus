@@ -239,7 +239,7 @@ public class DatastoreHelper {
     return persistResource(
         newHostResource(hostName)
             .asBuilder()
-            .setSuperordinateDomain(Key.create(superordinateDomain))
+            .setSuperordinateDomain(superordinateDomain.createVKey())
             .setInetAddresses(
                 ImmutableSet.of(InetAddresses.forString("1080:0:0:0:8:800:200C:417A")))
             .build());

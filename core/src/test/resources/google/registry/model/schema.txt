@@ -288,9 +288,9 @@ class google.registry.model.eppcommon.Trid {
 class google.registry.model.host.HostResource {
   @Id java.lang.String repoId;
   com.google.common.collect.ImmutableSortedMap<org.joda.time.DateTime, com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest>> revisions;
-  com.googlecode.objectify.Key<google.registry.model.domain.DomainBase> superordinateDomain;
   google.registry.model.CreateAutoTimestamp creationTime;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
+  google.registry.persistence.VKey<google.registry.model.domain.DomainBase> superordinateDomain;
   java.lang.String creationClientId;
   java.lang.String currentSponsorClientId;
   java.lang.String fullyQualifiedHostName;

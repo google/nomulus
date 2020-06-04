@@ -25,7 +25,6 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
@@ -118,7 +117,7 @@ public class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostRes
         persistHostResource()
             .asBuilder()
             .setRepoId("CEEF-FOOBAR")
-            .setSuperordinateDomain(Key.create(domain))
+            .setSuperordinateDomain(domain.createVKey())
             .setLastSuperordinateChange(lastSuperordinateChange)
             .build());
     assertTransactionalFlow(false);

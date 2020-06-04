@@ -29,7 +29,6 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.flows.Flow;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.model.EppResource;
@@ -116,7 +115,7 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
             .setPersistedCurrentSponsorClientId("TheRegistrar")
             .setCreationClientId("TheRegistrar")
             .setCreationTimeForTest(DateTime.parse("1999-04-03T22:00:00.0Z"))
-            .setSuperordinateDomain(Key.create(domain))
+            .setSuperordinateDomain(domain.createVKey())
             .build());
     domain =
         persistResource(

@@ -81,7 +81,7 @@ public class HostResourceTest extends EntityTestCase {
                     .setLastTransferTime(fakeClock.nowUtc())
                     .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
                     .setStatusValues(ImmutableSet.of(StatusValue.OK))
-                    .setSuperordinateDomain(Key.create(domain))
+                    .setSuperordinateDomain(domain.createVKey())
                     .build()));
   }
 
@@ -228,7 +228,7 @@ public class HostResourceTest extends EntityTestCase {
                     .setLastEppUpdateClientId("another registrar")
                     .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
                     .setStatusValues(ImmutableSet.of(StatusValue.OK))
-                    .setSuperordinateDomain(Key.create(domain))
+                    .setSuperordinateDomain(domain.createVKey())
                     .build()));
     assertThat(host.computeLastTransferTime(domain)).isNull();
   }

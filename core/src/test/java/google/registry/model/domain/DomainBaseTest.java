@@ -76,7 +76,7 @@ public class DomainBaseTest extends EntityTestCase {
         persistResource(
                 new HostResource.Builder()
                     .setFullyQualifiedHostName("ns1.example.com")
-                    .setSuperordinateDomain(domainKey)
+                    .setSuperordinateDomain(VKey.createOfy(DomainBase.class, domainKey))
                     .setRepoId("1-COM")
                     .build())
             .createVKey();
