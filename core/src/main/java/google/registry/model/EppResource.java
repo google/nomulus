@@ -69,7 +69,9 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
    * @see <a href="https://tools.ietf.org/html/rfc5730">RFC 5730</a>
    */
   @Id
-  @Transient // not persisted so that we can store these in references to other objects
+  // not persisted so that we can store these in references to other objects. Subclasses that wish
+  // to use this as the primary key should create a getter method annotated with @Id
+  @Transient
   String repoId;
 
   /** The ID of the registrar that is currently sponsoring this resource. */

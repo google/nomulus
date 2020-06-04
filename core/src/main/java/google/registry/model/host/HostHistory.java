@@ -32,7 +32,7 @@ import javax.persistence.Entity;
 @javax.persistence.Table(
     indexes = {
       @javax.persistence.Index(columnList = "creationTime"),
-      @javax.persistence.Index(columnList = "registrarId"),
+      @javax.persistence.Index(columnList = "historyRegistrarId"),
     })
 public class HostHistory extends HistoryEntry {
 
@@ -40,7 +40,7 @@ public class HostHistory extends HistoryEntry {
   HostBase hostBase;
 
   @Column(nullable = false)
-  VKey<HostResource> hostResourceId;
+  VKey<HostResource> hostRepoId;
 
   /** The state of the {@link HostBase} object at this point in time. */
   public HostBase getHostBase() {
@@ -48,8 +48,8 @@ public class HostHistory extends HistoryEntry {
   }
 
   /** The key to the {@link google.registry.model.host.HostResource} this is based off of. */
-  public VKey<HostResource> getHostResourceId() {
-    return hostResourceId;
+  public VKey<HostResource> getHostRepoId() {
+    return hostRepoId;
   }
 
   @Override
@@ -70,9 +70,9 @@ public class HostHistory extends HistoryEntry {
       return this;
     }
 
-    public Builder setHostResourceId(VKey<HostResource> hostResourceId) {
-      getInstance().hostResourceId = hostResourceId;
-      hostResourceId.maybeGetOfyKey().ifPresent(parent -> getInstance().parent = parent);
+    public Builder setHostResourceId(VKey<HostResource> hostRepoId) {
+      getInstance().hostRepoId = hostRepoId;
+      hostRepoId.maybeGetOfyKey().ifPresent(parent -> getInstance().parent = parent);
       return this;
     }
 
@@ -80,7 +80,7 @@ public class HostHistory extends HistoryEntry {
     @Override
     public Builder setParent(Key<? extends EppResource> parent) {
       super.setParent(parent);
-      getInstance().hostResourceId = VKey.createOfy(HostResource.class, (Key<HostResource>) parent);
+      getInstance().hostRepoId = VKey.createOfy(HostResource.class, (Key<HostResource>) parent);
       return this;
     }
   }

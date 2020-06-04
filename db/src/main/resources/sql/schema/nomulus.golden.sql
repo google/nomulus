@@ -305,16 +305,16 @@ CREATE TABLE public."DomainHost" (
 --
 
 CREATE TABLE public."HostHistory" (
-    revision_id bigint NOT NULL,
-    by_superuser boolean NOT NULL,
-    registrar_id text NOT NULL,
-    modification_time timestamp with time zone NOT NULL,
-    reason text NOT NULL,
-    requested_by_registrar boolean NOT NULL,
-    client_transaction_id text,
-    server_transaction_id text,
-    type text NOT NULL,
-    xml_bytes bytea NOT NULL,
+    history_revision_id bigint NOT NULL,
+    history_by_superuser boolean NOT NULL,
+    history_registrar_id text NOT NULL,
+    history_modification_time timestamp with time zone NOT NULL,
+    history_reason text NOT NULL,
+    history_requested_by_registrar boolean NOT NULL,
+    history_client_transaction_id text,
+    history_server_transaction_id text,
+    history_type text NOT NULL,
+    history_xml_bytes bytea NOT NULL,
     fully_qualified_host_name text,
     last_superordinate_change timestamp with time zone,
     last_transfer_time timestamp with time zone,
@@ -326,25 +326,15 @@ CREATE TABLE public."HostHistory" (
     last_epp_update_client_id text,
     last_epp_update_time timestamp with time zone,
     statuses text[],
-    host_resource_id text NOT NULL
+    host_repo_id text NOT NULL
 );
 
 
 --
--- Name: HostHistory_inetAddresses; Type: TABLE; Schema: public; Owner: -
+-- Name: HostHistory_history_revision_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE TABLE public."HostHistory_inetAddresses" (
-    host_history_revision_id bigint NOT NULL,
-    inet_addresses bytea
-);
-
-
---
--- Name: HostHistory_revision_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public."HostHistory_revision_id_seq"
+CREATE SEQUENCE public."HostHistory_history_revision_id_seq"
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -353,10 +343,20 @@ CREATE SEQUENCE public."HostHistory_revision_id_seq"
 
 
 --
--- Name: HostHistory_revision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: HostHistory_history_revision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public."HostHistory_revision_id_seq" OWNED BY public."HostHistory".revision_id;
+ALTER SEQUENCE public."HostHistory_history_revision_id_seq" OWNED BY public."HostHistory".history_revision_id;
+
+
+--
+-- Name: HostHistory_inetAddresses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."HostHistory_inetAddresses" (
+    host_history_history_revision_id bigint NOT NULL,
+    inet_addresses bytea
+);
 
 
 --
@@ -632,10 +632,10 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 
 
 --
--- Name: HostHistory revision_id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: HostHistory history_revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public."HostHistory" ALTER COLUMN revision_id SET DEFAULT nextval('public."HostHistory_revision_id_seq"'::regclass);
+ALTER TABLE ONLY public."HostHistory" ALTER COLUMN history_revision_id SET DEFAULT nextval('public."HostHistory_history_revision_id_seq"'::regclass);
 
 
 --
@@ -728,7 +728,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."HostHistory"
-    ADD CONSTRAINT "HostHistory_pkey" PRIMARY KEY (revision_id);
+    ADD CONSTRAINT "HostHistory_pkey" PRIMARY KEY (history_revision_id);
 
 
 --
@@ -928,7 +928,7 @@ CREATE INDEX idxfg2nnjlujxo6cb9fha971bq2n ON public."HostHistory" USING btree (c
 -- Name: idxhancbub2w7c2rirfaeu4j9uh2; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idxhancbub2w7c2rirfaeu4j9uh2 ON public."HostHistory" USING btree (host_resource_id);
+CREATE INDEX idxhancbub2w7c2rirfaeu4j9uh2 ON public."HostHistory" USING btree (host_repo_id);
 
 
 --
@@ -970,7 +970,7 @@ CREATE INDEX idxn898pb9mwcg359cdwvolb11ck ON public."BillingRecurrence" USING bt
 -- Name: idxnxei34hfrt20dyxtphh6j25mo; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idxnxei34hfrt20dyxtphh6j25mo ON public."HostHistory" USING btree (registrar_id);
+CREATE INDEX idxnxei34hfrt20dyxtphh6j25mo ON public."HostHistory" USING btree (history_registrar_id);
 
 
 --
@@ -1073,7 +1073,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."HostHistory"
-    ADD CONSTRAINT fk3d09knnmxrt6iniwnp8j2ykga FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(client_id);
+    ADD CONSTRAINT fk3d09knnmxrt6iniwnp8j2ykga FOREIGN KEY (history_registrar_id) REFERENCES public."Registrar"(client_id);
 
 
 --
@@ -1105,7 +1105,7 @@ ALTER TABLE ONLY public."Contact"
 --
 
 ALTER TABLE ONLY public."HostHistory_inetAddresses"
-    ADD CONSTRAINT fk9svsf0mplnb9d7tdpl44lssvp FOREIGN KEY (host_history_revision_id) REFERENCES public."HostHistory"(revision_id);
+    ADD CONSTRAINT fk9svsf0mplnb9d7tdpl44lssvp FOREIGN KEY (host_history_history_revision_id) REFERENCES public."HostHistory"(history_revision_id);
 
 
 --
@@ -1201,7 +1201,7 @@ ALTER TABLE ONLY public."DomainHost"
 --
 
 ALTER TABLE ONLY public."HostHistory"
-    ADD CONSTRAINT fk_hosthistory_hostresource FOREIGN KEY (host_resource_id) REFERENCES public."HostResource"(repo_id);
+    ADD CONSTRAINT fk_hosthistory_hostresource FOREIGN KEY (host_repo_id) REFERENCES public."HostResource"(repo_id);
 
 
 --

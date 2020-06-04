@@ -32,6 +32,8 @@ import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import java.util.Set;
 import javax.annotation.Nullable;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -68,8 +70,8 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
     @Deprecated
     DOMAIN_ALLOCATE,
     /**
-     * Used for domain registration autorenews explicitly logged by
-     * {@link google.registry.batch.ExpandRecurringBillingEventsAction}.
+     * Used for domain registration autorenews explicitly logged by {@link
+     * google.registry.batch.ExpandRecurringBillingEventsAction}.
      */
     DOMAIN_AUTORENEW,
     DOMAIN_CREATE,
@@ -100,14 +102,14 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Id
   @javax.persistence.Id
-  @Column(name = "revisionId")
+  @Column(name = "historyRevisionId")
   Long id;
 
   /** The resource this event mutated. */
   @Parent @Transient protected Key<? extends EppResource> parent;
 
   /** The type of history entry. */
-  @Column(nullable = false)
+  @Column(nullable = false, name = "historyType")
   @Enumerated(EnumType.STRING)
   Type type;
 
@@ -120,17 +122,17 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
   Period period;
 
   /** The actual EPP xml of the command, stored as bytes to be agnostic of encoding. */
-  @Column(nullable = false)
+  @Column(nullable = false, name = "historyXmlBytes")
   byte[] xmlBytes;
 
   /** The time the command occurred, represented by the ofy transaction time. */
   @Index
-  @Column(nullable = false)
+  @Column(nullable = false, name = "historyModificationTime")
   DateTime modificationTime;
 
   /** The id of the registrar that sent the command. */
   @Index
-  @Column(name = "registrarId")
+  @Column(name = "historyRegistrarId")
   String clientId;
 
   /**
@@ -144,18 +146,27 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
   String otherClientId;
 
   /** Transaction id that made this change, or null if the entry was not created by a flow. */
-  @Nullable Trid trid;
+  @Nullable
+  @AttributeOverrides({
+    @AttributeOverride(
+        name = "clientTransactionId",
+        column = @Column(name = "historyClientTransactionId")),
+    @AttributeOverride(
+        name = "serverTransactionId",
+        column = @Column(name = "historyServerTransactionId"))
+  })
+  Trid trid;
 
   /** Whether this change was created by a superuser. */
-  @Column(nullable = false)
+  @Column(nullable = false, name = "historyBySuperuser")
   boolean bySuperuser;
 
   /** Reason for the change. */
-  @Column(nullable = false)
+  @Column(nullable = false, name = "historyReason")
   String reason;
 
   /** Whether this change was requested by a registrar. */
-  @Column(nullable = false)
+  @Column(nullable = false, name = "historyRequestedByRegistrar")
   Boolean requestedByRegistrar;
 
   /**
@@ -197,7 +208,8 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
   }
 
   /** Returns the TRID, which may be null if the entry was not created by a normal flow. */
-  @Nullable public Trid getTrid() {
+  @Nullable
+  public Trid getTrid() {
     return trid;
   }
 

@@ -184,16 +184,16 @@
     );
 
     create table "HostHistory" (
-       revision_id  bigserial not null,
-        by_superuser boolean not null,
-        registrar_id text,
-        modification_time timestamptz not null,
-        reason text not null,
-        requested_by_registrar boolean not null,
-        client_transaction_id text,
-        server_transaction_id text,
-        type text not null,
-        xml_bytes bytea not null,
+       history_revision_id  bigserial not null,
+        history_by_superuser boolean not null,
+        history_registrar_id text,
+        history_modification_time timestamptz not null,
+        history_reason text not null,
+        history_requested_by_registrar boolean not null,
+        history_client_transaction_id text,
+        history_server_transaction_id text,
+        history_type text not null,
+        history_xml_bytes bytea not null,
         fully_qualified_host_name text,
         last_superordinate_change timestamptz,
         last_transfer_time timestamptz,
@@ -205,12 +205,12 @@
         last_epp_update_client_id text,
         last_epp_update_time timestamptz,
         statuses text[],
-        host_resource_id text not null,
-        primary key (revision_id)
+        host_repo_id text not null,
+        primary key (history_revision_id)
     );
 
     create table "HostHistory_inetAddresses" (
-       host_history_revision_id int8 not null,
+       host_history_history_revision_id int8 not null,
         inet_addresses bytea
     );
 
@@ -384,7 +384,7 @@ create index IDX5mnf0wn20tno4b9do88j61klr on "Domain" (deletion_time);
 create index IDX1rcgkdd777bpvj0r94sltwd5y on "Domain" (fully_qualified_domain_name);
 create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
 create index IDXfg2nnjlujxo6cb9fha971bq2n on "HostHistory" (creation_time);
-create index IDXnxei34hfrt20dyxtphh6j25mo on "HostHistory" (registrar_id);
+create index IDX1iy7njgb7wjmj9piml4l2g0qi on "HostHistory" (history_registrar_id);
 create index premiumlist_name_idx on "PremiumList" (name);
 create index registrar_name_idx on "Registrar" (registrar_name);
 create index registrar_iana_identifier_idx on "Registrar" (iana_identifier);
@@ -407,8 +407,8 @@ create index reservedlist_name_idx on "ReservedList" (name);
        references "Domain";
 
     alter table if exists "HostHistory_inetAddresses" 
-       add constraint FKdxdtvupo2b6xlqsq4og4nlo7k 
-       foreign key (host_history_revision_id) 
+       add constraint FKdf5m7yyqw0w57ln2xu8hm9xth 
+       foreign key (host_history_history_revision_id) 
        references "HostHistory";
 
     alter table if exists "HostResource_inetAddresses" 
