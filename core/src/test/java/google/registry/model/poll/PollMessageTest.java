@@ -20,6 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.SqlHelper.saveRegistrar;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import google.registry.model.EntityTestCase;
@@ -60,6 +61,7 @@ public class PollMessageTest extends EntityTestCase {
 
   @Test
   void testCloudSqlPersistenceOneTime() {
+    saveRegistrar("TheRegistrar");
     PollMessage.OneTime pollMessage =
         new PollMessage.OneTime.Builder()
             .setClientId("TheRegistrar")
@@ -67,11 +69,12 @@ public class PollMessageTest extends EntityTestCase {
             .setMsg("Test poll message")
             .setParent(historyEntry)
             .build();
+    pollMessage.id = null;
     jpaTm().transact(() -> jpaTm().saveNew(pollMessage));
     PollMessage.OneTime persisted =
         jpaTm()
             .transact(
-                () -> jpaTm().load(VKey.createSql(PollMessage.OneTime.class, pollMessage.sqlId)));
+                () -> jpaTm().load(VKey.createSql(PollMessage.OneTime.class, pollMessage.id)));
     persisted.id = pollMessage.id;
     persisted.parent = pollMessage.parent;
     assertThat(persisted).isEqualTo(pollMessage);
@@ -79,6 +82,7 @@ public class PollMessageTest extends EntityTestCase {
 
   @Test
   void testCloudSqlPersistenceAutorenew() {
+    saveRegistrar("TheRegistrar");
     PollMessage.Autorenew pollMessage =
         new PollMessage.Autorenew.Builder()
             .setClientId("TheRegistrar")
@@ -88,11 +92,12 @@ public class PollMessageTest extends EntityTestCase {
             .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
             .setTargetId("foobar.foo")
             .build();
+    pollMessage.id = null;
     jpaTm().transact(() -> jpaTm().saveNew(pollMessage));
     PollMessage.Autorenew persisted =
         jpaTm()
             .transact(
-                () -> jpaTm().load(VKey.createSql(PollMessage.Autorenew.class, pollMessage.sqlId)));
+                () -> jpaTm().load(VKey.createSql(PollMessage.Autorenew.class, pollMessage.id)));
     persisted.id = pollMessage.id;
     persisted.parent = pollMessage.parent;
     assertThat(persisted).isEqualTo(pollMessage);

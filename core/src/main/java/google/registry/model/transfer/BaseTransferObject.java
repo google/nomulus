@@ -16,6 +16,8 @@ package google.registry.model.transfer;
 
 import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.MappedSuperclass;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
@@ -31,6 +33,7 @@ public abstract class BaseTransferObject extends ImmutableObject {
    * will always be non-null.
    */
   @XmlElement(name = "trStatus")
+  @Enumerated(EnumType.STRING)
   TransferStatus transferStatus;
 
   /** The gaining registrar of the current or last transfer. Can be null if never transferred. */
