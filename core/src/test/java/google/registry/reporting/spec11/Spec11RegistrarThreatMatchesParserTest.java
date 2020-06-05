@@ -78,7 +78,7 @@ public class Spec11RegistrarThreatMatchesParserTest {
   }
 
   @Test
-  public void testSuccess_ignoreUnnecessaryFields() throws Exception {
+  public void testSuccess_ignoreExtraFields() throws Exception {
     ThreatMatch objectWithExtraFields =
         ThreatMatch.fromJSON(
             new JSONObject(
