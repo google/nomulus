@@ -50,6 +50,7 @@
     <class>google.registry.persistence.converter.CurrencyUnitConverter</class>
     <class>google.registry.persistence.converter.DateTimeConverter</class>
     <class>google.registry.persistence.converter.DurationConverter</class>
+    <class>google.registry.persistence.converter.InetAddressSetConverter</class>
     <class>google.registry.persistence.converter.PostalInfoChoiceListConverter</class>
     <class>google.registry.persistence.converter.RegistrarPocSetConverter</class>
     <class>google.registry.persistence.converter.StatusValueSetConverter</class>
