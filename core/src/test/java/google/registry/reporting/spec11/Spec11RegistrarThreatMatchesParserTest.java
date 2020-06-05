@@ -78,19 +78,21 @@ public class Spec11RegistrarThreatMatchesParserTest {
   }
 
   @Test
-  public void testSuccess_ignoreUnnecessaryFields() throws Exception{
-    ThreatMatch objectWithExtraFields = ThreatMatch.fromJSON(
+  public void testSuccess_ignoreUnnecessaryFields() throws Exception {
+    ThreatMatch objectWithExtraFields =
+        ThreatMatch.fromJSON(
             new JSONObject(
-                    ImmutableMap.of(
-                            "threatType", "MALWARE",
-                            "platformType", "ANY_PLATFORM",
-                            "threatEntryMetaData", "NONE",
-                            "fullyQualifiedDomainName", "c.com")));
-    ThreatMatch objectWithoutExtraFields = ThreatMatch.fromJSON(
+                ImmutableMap.of(
+                    "threatType", "MALWARE",
+                    "platformType", "ANY_PLATFORM",
+                    "threatEntryMetaData", "NONE",
+                    "fullyQualifiedDomainName", "c.com")));
+    ThreatMatch objectWithoutExtraFields =
+        ThreatMatch.fromJSON(
             new JSONObject(
-                    ImmutableMap.of(
-                            "threatType", "MALWARE",
-                            "fullyQualifiedDomainName", "c.com")));
+                ImmutableMap.of(
+                    "threatType", "MALWARE",
+                    "fullyQualifiedDomainName", "c.com")));
 
     assertThat(objectWithExtraFields).isEqualTo(objectWithoutExtraFields);
   }
