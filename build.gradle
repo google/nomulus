@@ -458,6 +458,7 @@ task javadoc(type: Javadoc) {
   source javadocSource
   classpath = files(javadocClasspath)
   destinationDir = file("${buildDir}/docs/javadoc")
+  options.encoding = "UTF-8"
   // In a lot of places we don't write @return so suppress warnings about that.
   options.addBooleanOption('Xdoclint:all,-missing', true)
   options.addBooleanOption("-allow-script-in-comments",true)
@@ -467,4 +468,4 @@ task javadoc(type: Javadoc) {
 
 tasks.build.dependsOn(tasks.javadoc)
 
-javadocDependentTasks.each { tasks.javadoc.shouldRunAfter(it) }
+javadocDependentTasks.each { tasks.javadoc.dependsOn(it) }
