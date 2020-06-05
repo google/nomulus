@@ -77,6 +77,24 @@ public class Spec11RegistrarThreatMatchesParserTest {
         .hasValue(LocalDate.parse("2018-07-14"));
   }
 
+  @Test
+  public void testSuccess_ignoreUnnecessaryFields() throws Exception{
+    ThreatMatch objectWithExtraFields = ThreatMatch.fromJSON(
+            new JSONObject(
+                    ImmutableMap.of(
+                            "threatType", "MALWARE",
+                            "platformType", "ANY_PLATFORM",
+                            "threatEntryMetaData", "NONE",
+                            "fullyQualifiedDomainName", "c.com")));
+    ThreatMatch objectWithoutExtraFields = ThreatMatch.fromJSON(
+            new JSONObject(
+                    ImmutableMap.of(
+                            "threatType", "MALWARE",
+                            "fullyQualifiedDomainName", "c.com")));
+
+    assertThat(objectWithExtraFields).isEqualTo(objectWithoutExtraFields);
+  }
+
   /** The expected contents of the sample spec11 report file */
   static ImmutableSet<RegistrarThreatMatches> sampleThreatMatches() throws Exception {
     return ImmutableSet.of(getMatchA(), getMatchB());
