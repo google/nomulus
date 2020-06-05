@@ -24,22 +24,10 @@ import org.json.JSONObject;
 public abstract class ThreatMatch implements Serializable {
 
   private static final String THREAT_TYPE_FIELD = "threatType";
-  private static final String PLATFORM_TYPE_FIELD = "platformType";
-  private static final String METADATA_FIELD = "threatEntryMetadata";
   private static final String DOMAIN_NAME_FIELD = "fullyQualifiedDomainName";
 
   /** Returns what kind of threat it is (malware, phishing etc.) */
   public abstract String threatType();
-  /** Returns what platforms it affects (Windows, Linux etc.) */
-  abstract String platformType();
-  /**
-   * Returns a String representing a JSON Object containing arbitrary metadata associated with this
-   * threat, or "NONE" if there is no metadata to retrieve.
-   *
-   * <p>This ideally would be a {@link JSONObject} type, but can't be due to serialization
-   * requirements.
-   */
-  abstract String metadata();
   /** Returns the fully qualified domain name [SLD].[TLD] of the matched threat. */
   public abstract String fullyQualifiedDomainName();
 
@@ -52,29 +40,19 @@ public abstract class ThreatMatch implements Serializable {
   static ThreatMatch create(JSONObject threatMatchJSON, String fullyQualifiedDomainName)
       throws JSONException {
     return new AutoValue_ThreatMatch(
-        threatMatchJSON.getString(THREAT_TYPE_FIELD),
-        threatMatchJSON.getString(PLATFORM_TYPE_FIELD),
-        threatMatchJSON.has(METADATA_FIELD)
-            ? threatMatchJSON.getJSONObject(METADATA_FIELD).toString()
-            : "NONE",
-        fullyQualifiedDomainName);
+        threatMatchJSON.getString(THREAT_TYPE_FIELD), fullyQualifiedDomainName);
   }
 
   /** Returns a {@link JSONObject} representing a subset of this object's data. */
   JSONObject toJSON() throws JSONException {
     return new JSONObject()
         .put(THREAT_TYPE_FIELD, threatType())
-        .put(PLATFORM_TYPE_FIELD, platformType())
-        .put(METADATA_FIELD, metadata())
         .put(DOMAIN_NAME_FIELD, fullyQualifiedDomainName());
   }
 
   /** Parses a {@link JSONObject} and returns an equivalent {@link ThreatMatch}. */
   public static ThreatMatch fromJSON(JSONObject threatMatch) throws JSONException {
     return new AutoValue_ThreatMatch(
-        threatMatch.getString(THREAT_TYPE_FIELD),
-        threatMatch.getString(PLATFORM_TYPE_FIELD),
-        threatMatch.getString(METADATA_FIELD),
-        threatMatch.getString(DOMAIN_NAME_FIELD));
+        threatMatch.getString(THREAT_TYPE_FIELD), threatMatch.getString(DOMAIN_NAME_FIELD));
   }
 }
