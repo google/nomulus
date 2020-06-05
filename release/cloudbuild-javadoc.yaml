@@ -16,7 +16,7 @@ steps:
 # Compile javadoc
 - name: 'gcr.io/${PROJECT_ID}/builder'
   entrypoint: /bin/bash
-  args: ['./gradlew,', ':javadoc']
+  args: ['./gradlew', ':javadoc']
 # Upload the files to GCS
 # We don't use GCB's built-in artifacts uploader because we want to delete
 # the existing files in the bucket first, and we want to parallelize the
