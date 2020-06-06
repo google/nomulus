@@ -71,7 +71,7 @@ public class JpaTestRules {
         Optional<String> initScriptPath,
         ImmutableList<Class> extraEntityClasses,
         ImmutableMap<String, String> userProperties) {
-      super(clock, initScriptPath, extraEntityClasses, userProperties);
+      super(clock, initScriptPath, false, extraEntityClasses, userProperties);
     }
 
     @Override
