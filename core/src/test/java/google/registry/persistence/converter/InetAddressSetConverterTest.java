@@ -34,23 +34,42 @@ import org.junit.runners.JUnit4;
 
 /** Unit tests for {@link google.registry.persistence.converter.InetAddressSetConverter}. */
 @RunWith(JUnit4.class)
-public class InetAddressSetCoverterTest {
+public class InetAddressSetConverterTest {
   @Rule
   public final JpaUnitTestRule jpaRule =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
-  public void roundTripConversion_returnsSameCidrAddressBlock() {
+  public void roundTripConversion_returnsSameAddresses() {
     Set<InetAddress> addresses =
         ImmutableSet.of(
             InetAddresses.forString("0.0.0.0"),
             InetAddresses.forString("192.168.0.1"),
-            InetAddresses.forString("2001:41d0:1:a41e:0:0:0:1"));
+            InetAddresses.forString("2001:41d0:1:a41e:0:0:0:1"),
+            InetAddresses.forString("2041:0:140F::875B:131B"));
     TestEntity testEntity = new TestEntity(addresses);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.addresses).isEqualTo(addresses);
+  }
+
+  @Test
+  public void roundTrip_emptySet() {
+    TestEntity testEntity = new TestEntity(ImmutableSet.of());
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    TestEntity persisted =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+    assertThat(persisted.addresses).isEmpty();
+  }
+
+  @Test
+  public void roundTrip_null() {
+    TestEntity testEntity = new TestEntity(null);
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    TestEntity persisted =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+    assertThat(persisted.addresses).isNull();
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
