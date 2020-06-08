@@ -26,7 +26,6 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
-import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.DomainBase;
