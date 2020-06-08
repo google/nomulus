@@ -106,6 +106,8 @@ public class TransferData extends BaseTransferObject implements Buildable {
   @IgnoreSave(IfNull.class)
   Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities;
 
+  // The following 3 fields are the replacement for serverApproveEntities in Cloud SQL.
+  // TODO(shicong): Add getter/setter for these 3 fields and use them in the application code.
   @Ignore
   @Column(name = "transfer_gaining_poll_message_id")
   Long gainingTransferPollMessageId;
