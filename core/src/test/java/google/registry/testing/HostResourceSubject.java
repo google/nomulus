@@ -19,10 +19,11 @@ import static com.google.common.truth.Truth.assertAbout;
 
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.SimpleSubjectBuilder;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
+import google.registry.persistence.VKey;
 import google.registry.testing.TruthChainer.And;
+import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
 /** Truth subject for asserting things about {@link HostResource} instances. */
@@ -55,7 +56,8 @@ public final class HostResourceSubject
         "has lastSuperordinateChange");
   }
 
-  public And<HostResourceSubject> hasSuperordinateDomain(Key<DomainBase> superordinateDomain) {
+  public And<HostResourceSubject> hasSuperordinateDomain(
+      @Nullable VKey<DomainBase> superordinateDomain) {
     return hasValue(
         superordinateDomain, actual.getSuperordinateDomain(), "has superordinateDomain");
   }

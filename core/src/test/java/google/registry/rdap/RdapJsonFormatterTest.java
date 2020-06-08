@@ -31,7 +31,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
@@ -159,8 +158,7 @@ public class RdapJsonFormatterTest {
                     "ns1.dog.みんな", null, null, clock.nowUtc().minusYears(6), "unicoderegistrar")
                 .asBuilder()
                 .setSuperordinateDomain(
-                    Key.create(
-                        persistResource(
+                    persistResource(
                             makeDomainBase(
                                     "dog.みんな",
                                     contactResourceRegistrant,
@@ -182,7 +180,8 @@ public class RdapJsonFormatterTest {
                                         .setTransferredRegistrationExpirationTime(
                                             DateTime.parse("2111-10-08T00:44:59Z"))
                                         .build())
-                                .build())))
+                                .build())
+                        .createVKey())
                 .build());
     domainBaseFull =
         persistResource(

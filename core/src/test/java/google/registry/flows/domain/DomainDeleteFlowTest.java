@@ -719,7 +719,7 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
     persistResource(
         newHostResource("ns1." + getUniqueIdFromCommand())
             .asBuilder()
-            .setSuperordinateDomain(Key.create(reloadResourceByForeignKey()))
+            .setSuperordinateDomain(reloadResourceByForeignKey().createVKey())
             .setDeletionTime(clock.nowUtc().minusDays(1))
             .build());
     clock.advanceOneMilli();
@@ -767,7 +767,7 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
         persistResource(
             newHostResource("ns1." + getUniqueIdFromCommand())
                 .asBuilder()
-                .setSuperordinateDomain(Key.create(reloadResourceByForeignKey()))
+                .setSuperordinateDomain(reloadResourceByForeignKey().createVKey())
                 .build());
     persistResource(
         domain.asBuilder().addSubordinateHost(subordinateHost.getFullyQualifiedHostName()).build());

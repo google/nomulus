@@ -60,6 +60,7 @@ import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
+import google.registry.persistence.VKey;
 import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -136,9 +137,10 @@ public final class HostUpdateFlow implements TransactionalFlow {
     boolean isHostRename = suppliedNewHostName != null;
     String oldHostName = targetId;
     String newHostName = firstNonNull(suppliedNewHostName, oldHostName);
-    DomainBase oldSuperordinateDomain = existingHost.isSubordinate()
-        ? ofy().load().key(existingHost.getSuperordinateDomain()).now().cloneProjectedAtTime(now)
-        : null;
+    DomainBase oldSuperordinateDomain =
+        existingHost.isSubordinate()
+            ? tm().load(existingHost.getSuperordinateDomain()).cloneProjectedAtTime(now)
+            : null;
     // Note that lookupSuperordinateDomain calls cloneProjectedAtTime on the domain for us.
     Optional<DomainBase> newSuperordinateDomain =
         lookupSuperordinateDomain(validateHostName(newHostName), now);
@@ -153,8 +155,8 @@ public final class HostUpdateFlow implements TransactionalFlow {
     AddRemove remove = command.getInnerRemove();
     checkSameValuesNotAddedAndRemoved(add.getStatusValues(), remove.getStatusValues());
     checkSameValuesNotAddedAndRemoved(add.getInetAddresses(), remove.getInetAddresses());
-    Key<DomainBase> newSuperordinateDomainKey =
-        newSuperordinateDomain.map(Key::create).orElse(null);
+    VKey<DomainBase> newSuperordinateDomainKey =
+        newSuperordinateDomain.map(DomainBase::createVKey).orElse(null);
     // If the superordinateDomain field is changing, set the lastSuperordinateChange to now.
     DateTime lastSuperordinateChange =
         Objects.equals(newSuperordinateDomainKey, existingHost.getSuperordinateDomain())
@@ -280,28 +282,28 @@ public final class HostUpdateFlow implements TransactionalFlow {
     if (existingHost.isSubordinate()
         && newHost.isSubordinate()
         && Objects.equals(
-            existingHost.getSuperordinateDomain(),
-            newHost.getSuperordinateDomain())) {
-      ofy().save().entity(
-          ofy().load().key(existingHost.getSuperordinateDomain()).now().asBuilder()
-              .removeSubordinateHost(existingHost.getFullyQualifiedHostName())
-              .addSubordinateHost(newHost.getFullyQualifiedHostName())
-              .build());
+            existingHost.getSuperordinateDomain(), newHost.getSuperordinateDomain())) {
+      tm().saveNewOrUpdate(
+              tm().load(existingHost.getSuperordinateDomain())
+                  .asBuilder()
+                  .removeSubordinateHost(existingHost.getFullyQualifiedHostName())
+                  .addSubordinateHost(newHost.getFullyQualifiedHostName())
+                  .build());
       return;
     }
     if (existingHost.isSubordinate()) {
-      ofy().save().entity(
-          ofy().load().key(existingHost.getSuperordinateDomain()).now()
-              .asBuilder()
-              .removeSubordinateHost(existingHost.getFullyQualifiedHostName())
-              .build());
+      tm().saveNewOrUpdate(
+              tm().load(existingHost.getSuperordinateDomain())
+                  .asBuilder()
+                  .removeSubordinateHost(existingHost.getFullyQualifiedHostName())
+                  .build());
     }
     if (newHost.isSubordinate()) {
-      ofy().save().entity(
-          ofy().load().key(newHost.getSuperordinateDomain()).now()
-              .asBuilder()
-              .addSubordinateHost(newHost.getFullyQualifiedHostName())
-              .build());
+      tm().saveNewOrUpdate(
+              tm().load(newHost.getSuperordinateDomain())
+                  .asBuilder()
+                  .addSubordinateHost(newHost.getFullyQualifiedHostName())
+                  .build());
     }
   }
 

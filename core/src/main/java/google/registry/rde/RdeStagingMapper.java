@@ -18,6 +18,7 @@ import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.EppResourceUtils.loadAtPointInTime;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.appengine.tools.mapreduce.Mapper;
 import com.google.auto.value.AutoValue;
@@ -186,13 +187,16 @@ public final class RdeStagingMapper extends Mapper<EppResource, PendingDeposit, 
         return result;
       } else if (resource instanceof HostResource) {
         HostResource host = (HostResource) resource;
-        result = Optional.of(host.isSubordinate()
-            ? marshaller.marshalSubordinateHost(
-                host,
-                // Note that loadAtPointInTime() does cloneProjectedAtTime(watermark) for us.
-                loadAtPointInTime(
-                    ofy().load().key(host.getSuperordinateDomain()).now(), watermark).now())
-            : marshaller.marshalExternalHost(host));
+        result =
+            Optional.of(
+                host.isSubordinate()
+                    ? marshaller.marshalSubordinateHost(
+                        host,
+                        // Note that loadAtPointInTime() does cloneProjectedAtTime(watermark) for
+                        // us.
+                        loadAtPointInTime(tm().load(host.getSuperordinateDomain()), watermark)
+                            .now())
+                    : marshaller.marshalExternalHost(host));
         cache.put(WatermarkModePair.create(watermark, RdeMode.FULL), result);
         cache.put(WatermarkModePair.create(watermark, RdeMode.THIN), result);
         return result;

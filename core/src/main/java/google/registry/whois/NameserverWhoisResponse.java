@@ -16,7 +16,7 @@ package google.registry.whois;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InetAddresses;
@@ -49,7 +49,7 @@ final class NameserverWhoisResponse extends WhoisResponseImpl {
       HostResource host = hosts.get(i);
       String clientId =
           host.isSubordinate()
-              ? ofy().load().key(host.getSuperordinateDomain()).now()
+              ? tm().load(host.getSuperordinateDomain())
                   .cloneProjectedAtTime(getTimestamp())
                   .getCurrentSponsorClientId()
               : host.getPersistedCurrentSponsorClientId();

@@ -389,8 +389,8 @@ public class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow,
     HostResource existingHost =
         loadByForeignKey(HostResource.class, "ns1.example.tld", clock.nowUtc()).get();
     addedHost = loadByForeignKey(HostResource.class, "ns2.example.tld", clock.nowUtc()).get();
-    assertThat(existingHost.getSuperordinateDomain()).isEqualTo(Key.create(domain));
-    assertThat(addedHost.getSuperordinateDomain()).isEqualTo(Key.create(domain));
+    assertThat(existingHost.getSuperordinateDomain()).isEqualTo(domain.createVKey());
+    assertThat(addedHost.getSuperordinateDomain()).isEqualTo(domain.createVKey());
   }
 
   @Test
