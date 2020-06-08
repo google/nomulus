@@ -19,6 +19,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
+import java.io.Serializable;
 import java.util.Optional;
 
 /**
@@ -27,7 +28,7 @@ import java.util.Optional;
  * <p>A VKey instance must contain both the JPA primary key for the referenced entity class and the
  * objectify key for the object.
  */
-public class VKey<T> extends ImmutableObject {
+public class VKey<T> extends ImmutableObject implements Serializable {
 
   // The primary key for the referenced entity.
   private final Object primaryKey;
