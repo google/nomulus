@@ -316,34 +316,8 @@ CREATE TABLE public."HostResource" (
     fully_qualified_host_name text,
     last_superordinate_change timestamp with time zone,
     last_transfer_time timestamp with time zone,
-<<<<<<< HEAD
-    superordinate_domain bytea,
+    superordinate_domain text,
     inet_addresses text[]
-||||||| d27fe8ead
-    superordinate_domain bytea
-);
-
-
---
--- Name: HostResource_inetAddresses; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."HostResource_inetAddresses" (
-    host_resource_repo_id text NOT NULL,
-    inet_addresses bytea
-=======
-    superordinate_domain text
-);
-
-
---
--- Name: HostResource_inetAddresses; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."HostResource_inetAddresses" (
-    host_resource_repo_id text NOT NULL,
-    inet_addresses bytea
->>>>>>> origin/master
 );
 
 
