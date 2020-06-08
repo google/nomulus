@@ -23,7 +23,6 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
@@ -43,8 +42,8 @@ import org.junit.runners.JUnit4;
 /**
  * Unit tests for {@link HostResourceToXjcConverter}.
  *
- * <p>This tests the mapping between {@link HostResource} and {@link XjcRdeHost} as well as
- * some exceptional conditions.
+ * <p>This tests the mapping between {@link HostResource} and {@link XjcRdeHost} as well as some
+ * exceptional conditions.
  */
 @RunWith(JUnit4.class)
 public class HostResourceToXjcConverterTest {
@@ -59,26 +58,29 @@ public class HostResourceToXjcConverterTest {
 
   @Test
   public void testConvertSubordinateHost() {
-    DomainBase domain = newDomainBase("love.foobar").asBuilder()
-        .setPersistedCurrentSponsorClientId("LeisureDog")
-        .setLastTransferTime(DateTime.parse("2010-01-01T00:00:00Z"))
-        .addStatusValue(StatusValue.PENDING_TRANSFER)
-        .build();
-    XjcRdeHost bean = HostResourceToXjcConverter.convertSubordinateHost(
-        new HostResource.Builder()
-            .setCreationClientId("LawyerCat")
-            .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
-            .setPersistedCurrentSponsorClientId("BusinessCat")
-            .setFullyQualifiedHostName("ns1.love.foobar")
-            .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
-            .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
-            .setLastEppUpdateClientId("CeilingCat")
-            .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
-            .setRepoId("2-roid")
-            .setStatusValues(ImmutableSet.of(StatusValue.OK))
-            .setSuperordinateDomain(Key.create(domain))
-            .build(),
-        domain);
+    DomainBase domain =
+        newDomainBase("love.foobar")
+            .asBuilder()
+            .setPersistedCurrentSponsorClientId("LeisureDog")
+            .setLastTransferTime(DateTime.parse("2010-01-01T00:00:00Z"))
+            .addStatusValue(StatusValue.PENDING_TRANSFER)
+            .build();
+    XjcRdeHost bean =
+        HostResourceToXjcConverter.convertSubordinateHost(
+            new HostResource.Builder()
+                .setCreationClientId("LawyerCat")
+                .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
+                .setPersistedCurrentSponsorClientId("BusinessCat")
+                .setFullyQualifiedHostName("ns1.love.foobar")
+                .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
+                .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                .setLastEppUpdateClientId("CeilingCat")
+                .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
+                .setRepoId("2-roid")
+                .setStatusValues(ImmutableSet.of(StatusValue.OK))
+                .setSuperordinateDomain(domain.createVKey())
+                .build(),
+            domain);
 
     assertThat(bean.getAddrs()).hasSize(1);
     assertThat(bean.getAddrs().get(0).getIp().value()).isEqualTo("v4");
@@ -119,19 +121,20 @@ public class HostResourceToXjcConverterTest {
 
   @Test
   public void testConvertExternalHost() {
-    XjcRdeHost bean = HostResourceToXjcConverter.convertExternalHost(
-        new HostResource.Builder()
-            .setCreationClientId("LawyerCat")
-            .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
-            .setPersistedCurrentSponsorClientId("BusinessCat")
-            .setFullyQualifiedHostName("ns1.love.lol")
-            .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
-            .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
-            .setLastEppUpdateClientId("CeilingCat")
-            .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
-            .setRepoId("2-roid")
-            .setStatusValues(ImmutableSet.of(StatusValue.OK))
-            .build());
+    XjcRdeHost bean =
+        HostResourceToXjcConverter.convertExternalHost(
+            new HostResource.Builder()
+                .setCreationClientId("LawyerCat")
+                .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
+                .setPersistedCurrentSponsorClientId("BusinessCat")
+                .setFullyQualifiedHostName("ns1.love.lol")
+                .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
+                .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                .setLastEppUpdateClientId("CeilingCat")
+                .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
+                .setRepoId("2-roid")
+                .setStatusValues(ImmutableSet.of(StatusValue.OK))
+                .build());
 
     assertThat(bean.getAddrs()).hasSize(1);
     assertThat(bean.getAddrs().get(0).getIp().value()).isEqualTo("v4");
@@ -167,19 +170,20 @@ public class HostResourceToXjcConverterTest {
 
   @Test
   public void testConvertExternalHost_ipv6() {
-    XjcRdeHost bean = HostResourceToXjcConverter.convertExternalHost(
-        new HostResource.Builder()
-            .setCreationClientId("LawyerCat")
-            .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
-            .setPersistedCurrentSponsorClientId("BusinessCat")
-            .setFullyQualifiedHostName("ns1.love.lol")
-            .setInetAddresses(ImmutableSet.of(InetAddresses.forString("cafe::abba")))
-            .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
-            .setLastEppUpdateClientId("CeilingCat")
-            .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
-            .setRepoId("2-LOL")
-            .setStatusValues(ImmutableSet.of(StatusValue.OK))
-            .build());
+    XjcRdeHost bean =
+        HostResourceToXjcConverter.convertExternalHost(
+            new HostResource.Builder()
+                .setCreationClientId("LawyerCat")
+                .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
+                .setPersistedCurrentSponsorClientId("BusinessCat")
+                .setFullyQualifiedHostName("ns1.love.lol")
+                .setInetAddresses(ImmutableSet.of(InetAddresses.forString("cafe::abba")))
+                .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                .setLastEppUpdateClientId("CeilingCat")
+                .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
+                .setRepoId("2-LOL")
+                .setStatusValues(ImmutableSet.of(StatusValue.OK))
+                .build());
     assertThat(bean.getAddrs()).hasSize(1);
     assertThat(bean.getAddrs().get(0).getIp().value()).isEqualTo("v6");
     assertThat(bean.getAddrs().get(0).getValue()).isEqualTo("cafe::abba");
@@ -208,19 +212,20 @@ public class HostResourceToXjcConverterTest {
   @Test
   public void testMarshal() throws Exception {
     // Bean! Bean! Bean!
-    XjcRdeHostElement bean = HostResourceToXjcConverter.convertExternal(
-        new HostResource.Builder()
-            .setCreationClientId("LawyerCat")
-            .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
-            .setPersistedCurrentSponsorClientId("BusinessCat")
-            .setFullyQualifiedHostName("ns1.love.lol")
-            .setInetAddresses(ImmutableSet.of(InetAddresses.forString("cafe::abba")))
-            .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
-            .setLastEppUpdateClientId("CeilingCat")
-            .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
-            .setRepoId("2-LOL")
-            .setStatusValues(ImmutableSet.of(StatusValue.OK))
-            .build());
+    XjcRdeHostElement bean =
+        HostResourceToXjcConverter.convertExternal(
+            new HostResource.Builder()
+                .setCreationClientId("LawyerCat")
+                .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
+                .setPersistedCurrentSponsorClientId("BusinessCat")
+                .setFullyQualifiedHostName("ns1.love.lol")
+                .setInetAddresses(ImmutableSet.of(InetAddresses.forString("cafe::abba")))
+                .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
+                .setLastEppUpdateClientId("CeilingCat")
+                .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
+                .setRepoId("2-LOL")
+                .setStatusValues(ImmutableSet.of(StatusValue.OK))
+                .build());
     marshalStrict(bean, new ByteArrayOutputStream(), UTF_8);
   }
 }

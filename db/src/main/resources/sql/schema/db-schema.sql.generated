@@ -196,7 +196,7 @@
         inet_addresses text[],
         last_superordinate_change timestamptz,
         last_transfer_time timestamptz,
-        superordinate_domain bytea,
+        superordinate_domain text,
         primary key (repo_id)
     );
 

@@ -316,8 +316,34 @@ CREATE TABLE public."HostResource" (
     fully_qualified_host_name text,
     last_superordinate_change timestamp with time zone,
     last_transfer_time timestamp with time zone,
+<<<<<<< HEAD
     superordinate_domain bytea,
     inet_addresses text[]
+||||||| d27fe8ead
+    superordinate_domain bytea
+);
+
+
+--
+-- Name: HostResource_inetAddresses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."HostResource_inetAddresses" (
+    host_resource_repo_id text NOT NULL,
+    inet_addresses bytea
+=======
+    superordinate_domain text
+);
+
+
+--
+-- Name: HostResource_inetAddresses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."HostResource_inetAddresses" (
+    host_resource_repo_id text NOT NULL,
+    inet_addresses bytea
+>>>>>>> origin/master
 );
 
 
@@ -1148,6 +1174,14 @@ ALTER TABLE ONLY public."Domain"
 
 ALTER TABLE ONLY public."DomainHost"
     ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (ns_hosts) REFERENCES public."HostResource"(repo_id);
+
+
+--
+-- Name: HostResource fk_host_resource_superordinate_domain; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostResource"
+    ADD CONSTRAINT fk_host_resource_superordinate_domain FOREIGN KEY (superordinate_domain) REFERENCES public."Domain"(repo_id);
 
 
 --

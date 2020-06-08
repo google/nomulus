@@ -17,7 +17,6 @@ package google.registry.rde;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.net.InetAddresses;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
@@ -35,9 +34,8 @@ import org.joda.time.DateTime;
 final class HostResourceToXjcConverter {
 
   /** Converts a subordinate {@link HostResource} to {@link XjcRdeHostElement}. */
-  static XjcRdeHostElement convertSubordinate(
-      HostResource host, DomainBase superordinateDomain) {
-    checkArgument(Key.create(superordinateDomain).equals(host.getSuperordinateDomain()));
+  static XjcRdeHostElement convertSubordinate(HostResource host, DomainBase superordinateDomain) {
+    checkArgument(superordinateDomain.createVKey().equals(host.getSuperordinateDomain()));
     return new XjcRdeHostElement(convertSubordinateHost(host, superordinateDomain));
   }
 

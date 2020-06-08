@@ -725,7 +725,7 @@ public class DeleteContactsAndHostsActionTest
         persistResource(
             persistHostPendingDelete("ns2.example.tld")
                 .asBuilder()
-                .setSuperordinateDomain(Key.create(domain))
+                .setSuperordinateDomain(domain.createVKey())
                 .build());
     enqueuer.enqueueAsyncDelete(
         host,

@@ -128,7 +128,7 @@ public final class HostCreateFlow implements TransactionalFlow {
             .setFullyQualifiedHostName(targetId)
             .setInetAddresses(command.getInetAddresses())
             .setRepoId(createRepoId(ObjectifyService.allocateId(), roidSuffix))
-            .setSuperordinateDomain(superordinateDomain.map(Key::create).orElse(null))
+            .setSuperordinateDomain(superordinateDomain.map(DomainBase::createVKey).orElse(null))
             .build();
     historyBuilder
         .setType(HistoryEntry.Type.HOST_CREATE)
