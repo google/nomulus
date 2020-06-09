@@ -15,6 +15,7 @@
 package google.registry.persistence.transaction;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
@@ -41,12 +42,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.persistence.Entity;
 import javax.persistence.EntityManagerFactory;
 import org.hibernate.cfg.Environment;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
@@ -94,7 +97,25 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
   // Hash of the ORM entity names requested by this rule instance.
   private int entityHash;
 
-  protected JpaTransactionManagerRule(
+  // Whether to create nomulus tables in the test db. Right now, only the JpaTestRules set this to
+  // false.
+  private boolean includeNomulusSchema = true;
+
+  JpaTransactionManagerRule(
+      Clock clock,
+      Optional<String> initScriptPath,
+      boolean includeNomulusSchema,
+      ImmutableList<Class> extraEntityClasses,
+      ImmutableMap<String, String> userProperties) {
+    this.clock = clock;
+    this.initScriptPath = initScriptPath;
+    this.includeNomulusSchema = includeNomulusSchema;
+    this.extraEntityClasses = extraEntityClasses;
+    this.userProperties = userProperties;
+    this.entityHash = getOrmEntityHash(initScriptPath, extraEntityClasses);
+  }
+
+  JpaTransactionManagerRule(
       Clock clock,
       Optional<String> initScriptPath,
       ImmutableList<Class> extraEntityClasses,
@@ -277,7 +298,7 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
   }
 
   /** Constructs the {@link EntityManagerFactory} instance. */
-  private static EntityManagerFactory createEntityManagerFactory(
+  private EntityManagerFactory createEntityManagerFactory(
       String jdbcUrl,
       String username,
       String password,
@@ -292,6 +313,24 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
 
     ParsedPersistenceXmlDescriptor descriptor =
         PersistenceXmlUtility.getParsedPersistenceXmlDescriptor();
+
+    // If we don't include the nomulus schema, remove all entity classes in the descriptor but keep
+    // other settings like the converter classes.
+    if (!includeNomulusSchema) {
+      List<String> nonEntityClasses =
+          descriptor.getManagedClassNames().stream()
+              .filter(
+                  classString -> {
+                    try {
+                      return !Class.forName(classString).isAnnotationPresent(Entity.class);
+                    } catch (ClassNotFoundException e) {
+                      throw new IllegalArgumentException(e);
+                    }
+                  })
+              .collect(toImmutableList());
+      descriptor.getManagedClassNames().clear();
+      descriptor.getManagedClassNames().addAll(nonEntityClasses);
+    }
 
     extraEntityClasses.stream().map(Class::getName).forEach(descriptor::addClasses);
     return Bootstrap.getEntityManagerFactoryBuilder(descriptor, properties).build();
