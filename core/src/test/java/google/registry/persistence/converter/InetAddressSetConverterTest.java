@@ -21,26 +21,25 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import google.registry.schema.replay.EntityTest.EntityForTesting;
+import google.registry.testing.AppEngineRule;
 import java.net.InetAddress;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link google.registry.persistence.converter.InetAddressSetConverter}. */
-@RunWith(JUnit4.class)
 public class InetAddressSetConverterTest {
 
-  @Rule
-  public final JpaUnitTestRule jpaRule =
-      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
+  @RegisterExtension
+  public final AppEngineRule appEngine =
+      AppEngineRule.builder()
+          .withDatastoreAndCloudSql()
+          .withJpaUnitTestEntities(TestEntity.class)
+          .build();
 
   @Test
   public void roundTripConversion_returnsSameAddresses() {
