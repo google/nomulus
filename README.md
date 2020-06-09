@@ -33,7 +33,7 @@ running system:
 *   View the source code for the [GAE app](https://github.com/google/nomulus/tree/master/core/src/main/java/google/registry)
     and for the [GKE proxy](https://github.com/google/nomulus/tree/master/proxy/src/main/java/google/registry)
 *   [Other docs](https://github.com/google/nomulus/tree/master/docs)
-*   [Javadoc](https://nomulus.foo/javadoc/latest/)
+*   [Javadoc](https://javadoc.nomulus.foo/)
 *   [Nomulus discussion
     group](https://groups.google.com/forum/#!forum/nomulus-discuss), for any
     other questions
