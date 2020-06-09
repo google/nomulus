@@ -345,8 +345,8 @@
 
     create table "ReservedEntry" (
        revision_id int8 not null,
-        comment text,
         reservation_type int4 not null,
+        comment text,
         domain_label text not null,
         primary key (revision_id, domain_label)
     );

@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.registry.Registries.assertTldExists;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
@@ -27,7 +26,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import google.registry.model.registry.label.ReservedList;
-import google.registry.schema.tld.ReservedListDao;
 import java.nio.file.Files;
 import java.util.List;
 import org.joda.time.DateTime;
@@ -50,15 +48,14 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
   protected void init() throws Exception {
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(input) : name;
     checkArgument(
-        !ReservedList.get(name).isPresent(),
-        "A reserved list already exists by this name");
+        !ReservedList.get(name).isPresent(), "A reserved list already exists by this name");
     if (!override) {
       validateListName(name);
     }
     DateTime now = DateTime.now(UTC);
     List<String> allLines = Files.readAllLines(input, UTF_8);
     boolean shouldPublish = this.shouldPublish == null || this.shouldPublish;
-    ReservedList reservedList =
+    reservedList =
         new ReservedList.Builder()
             .setName(name)
             .setReservedListMapFromLines(allLines)
@@ -66,23 +63,6 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
             .setCreationTime(now)
             .setLastUpdateTime(now)
             .build();
-    stageEntityChange(null, reservedList);
-    cloudSqlReservedList =
-        google.registry.schema.tld.ReservedList.create(
-            name, shouldPublish, parseToReservationsByLabels(allLines));
-  }
-
-  @Override
-  void saveToCloudSql() {
-    jpaTm()
-        .transact(
-            () -> {
-              checkArgument(
-                  !ReservedListDao.checkExists(cloudSqlReservedList.getName()),
-                  "A reserved list of this name already exists: %s.",
-                  cloudSqlReservedList.getName());
-              ReservedListDao.save(cloudSqlReservedList);
-            });
   }
 
   private static void validateListName(String name) {
