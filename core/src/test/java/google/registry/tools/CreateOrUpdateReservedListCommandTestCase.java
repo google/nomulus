@@ -22,15 +22,16 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import com.google.common.truth.Truth8;
 import google.registry.model.registry.label.ReservedList;
-import google.registry.schema.tld.ReservedList.ReservedEntry;
-import google.registry.schema.tld.ReservedListDao;
+import google.registry.model.registry.label.ReservedList.ReservedListEntry;
+import google.registry.model.registry.label.ReservedListSqlDao;
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 import javax.persistence.EntityManager;
+import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -100,12 +101,20 @@ public abstract class CreateOrUpdateReservedListCommandTestCase<
         .isEqualTo("Label example.tld must not be a multi-level domain name");
   }
 
-  google.registry.schema.tld.ReservedList createCloudSqlReservedList(
-      String name, boolean shouldPublish, Map<String, ReservedEntry> labelsToEntries) {
-    return google.registry.schema.tld.ReservedList.create(name, shouldPublish, labelsToEntries);
+  ReservedList createCloudSqlReservedList(
+      String name,
+      DateTime creationTime,
+      boolean shouldPublish,
+      ImmutableMap<String, ReservedListEntry> labelsToEntries) {
+    return new ReservedList.Builder()
+        .setName(name)
+        .setLastUpdateTime(creationTime)
+        .setShouldPublish(shouldPublish)
+        .setReservedListMap(labelsToEntries)
+        .build();
   }
 
-  google.registry.schema.tld.ReservedList getCloudSqlReservedList(String name) {
+  ReservedList getCloudSqlReservedList(String name) {
     return jpaTm()
         .transact(
             () -> {
@@ -117,27 +126,25 @@ public abstract class CreateOrUpdateReservedListCommandTestCase<
                       .setParameter("name", name)
                       .getSingleResult();
               return em.createQuery(
-                      "FROM ReservedList rl LEFT JOIN FETCH rl.labelsToReservations WHERE"
+                      "FROM ReservedList rl LEFT JOIN FETCH rl.reservedListMap WHERE"
                           + " rl.revisionId = :revisionId",
-                      google.registry.schema.tld.ReservedList.class)
+                      ReservedList.class)
                   .setParameter("revisionId", revisionId)
                   .getSingleResult();
             });
   }
 
   void verifyXnq9jyb4cInCloudSql() {
-    assertThat(ReservedListDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();
-    google.registry.schema.tld.ReservedList persistedList =
-        getCloudSqlReservedList("xn--q9jyb4c_common-reserved");
+    assertThat(ReservedListSqlDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();
+    ReservedList persistedList = getCloudSqlReservedList("xn--q9jyb4c_common-reserved");
     assertThat(persistedList.getName()).isEqualTo("xn--q9jyb4c_common-reserved");
     assertThat(persistedList.getShouldPublish()).isTrue();
-    assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
-    assertThat(persistedList.getLabelsToReservations())
+    assertThat(persistedList.getReservedListEntries())
         .containsExactly(
             "baddies",
-            ReservedEntry.create(FULLY_BLOCKED, ""),
+            ReservedListEntry.create("baddies", FULLY_BLOCKED, ""),
             "ford",
-            ReservedEntry.create(FULLY_BLOCKED, "random comment"));
+            ReservedListEntry.create("ford", FULLY_BLOCKED, "random comment"));
   }
 
   void verifyXnq9jyb4cInDatastore() {

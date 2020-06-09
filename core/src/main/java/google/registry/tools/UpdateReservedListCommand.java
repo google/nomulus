@@ -15,18 +15,17 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Strings;
 import google.registry.model.registry.label.ReservedList;
-import google.registry.schema.tld.ReservedListDao;
 import google.registry.util.SystemClock;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
+import org.joda.time.DateTime;
 
 /** Command to safely update {@link ReservedList} on Datastore. */
 @Parameters(separators = " =", commandDescription = "Update a ReservedList in Datastore.")
@@ -35,42 +34,20 @@ final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand 
   @Override
   protected void init() throws Exception {
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(input) : name;
-    // TODO(shicong): Read existing entry from Cloud SQL
     Optional<ReservedList> existing = ReservedList.get(name);
     checkArgument(
         existing.isPresent(), "Could not update reserved list %s because it doesn't exist.", name);
     boolean shouldPublish =
         this.shouldPublish == null ? existing.get().getShouldPublish() : this.shouldPublish;
     List<String> allLines = Files.readAllLines(input, UTF_8);
+    DateTime now = new SystemClock().nowUtc();
     ReservedList.Builder updated =
         existing
             .get()
             .asBuilder()
             .setReservedListMapFromLines(allLines)
-            .setLastUpdateTime(new SystemClock().nowUtc())
+            .setLastUpdateTime(now)
             .setShouldPublish(shouldPublish);
-    stageEntityChange(existing.get(), updated.build());
-    cloudSqlReservedList =
-        google.registry.schema.tld.ReservedList.create(
-            name, shouldPublish, parseToReservationsByLabels(allLines));
-  }
-
-  @Override
-  void saveToCloudSql() {
-    jpaTm()
-        .transact(
-            () -> {
-              // This check is currently disabled because, during the Cloud SQL migration, we need
-              // to be able to update reserved lists in Datastore while simultaneously creating
-              // their first revision in Cloud SQL (i.e. if they haven't been migrated over yet).
-              // TODO(shicong): Re-instate this once all reserved lists are migrated to Cloud SQL,
-              //                 and add a unit test to verity that an exception will be thrown if
-              //                 the reserved list doesn't exist.
-              // checkArgument(
-              //     ReservedListDao.checkExists(cloudSqlReservedList.getName()),
-              //     "A reserved list of this name doesn't exist: %s.",
-              //     cloudSqlReservedList.getName());
-              ReservedListDao.save(cloudSqlReservedList);
-            });
+    reservedList = updated.build();
   }
 }

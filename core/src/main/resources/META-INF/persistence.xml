@@ -36,12 +36,12 @@
     <class>google.registry.schema.server.Lock</class>
     <class>google.registry.schema.tld.PremiumList</class>
     <class>google.registry.schema.tld.PremiumEntry</class>
-    <class>google.registry.schema.tld.ReservedList</class>
     <class>google.registry.model.domain.secdns.DelegationSignerData</class>
     <class>google.registry.model.domain.GracePeriod</class>
     <class>google.registry.model.poll.PollMessage</class>
     <class>google.registry.model.poll.PollMessage$OneTime</class>
     <class>google.registry.model.poll.PollMessage$Autorenew</class>
+    <class>google.registry.model.registry.label.ReservedList</class>
 
     <!-- Customized type converters -->
     <class>google.registry.persistence.converter.BillingCostTransitionConverter</class>

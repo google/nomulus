@@ -27,8 +27,8 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
-import google.registry.schema.tld.ReservedList.ReservedEntry;
-import google.registry.schema.tld.ReservedListDao;
+import google.registry.model.registry.label.ReservedList.ReservedListEntry;
+import google.registry.model.registry.label.ReservedListSqlDao;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -187,11 +187,13 @@ public class CreateReservedListCommandTest extends
   public void testSaveToCloudSql_noExceptionThrownWhenSaveFail() throws Exception {
     // Note that, during the dual-write phase, we want to make sure that no exception will be
     // thrown if saving reserved list to Cloud SQL fails.
-    ReservedListDao.save(
+    ReservedListSqlDao.INSTANCE.save(
         createCloudSqlReservedList(
             "xn--q9jyb4c_common-reserved",
+            fakeClock.nowUtc(),
             true,
-            ImmutableMap.of("testdomain", ReservedEntry.create(FULLY_BLOCKED, ""))));
+            ImmutableMap.of(
+                "testdomain", ReservedListEntry.create("testdomain", FULLY_BLOCKED, ""))));
     runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
     verifyXnq9jyb4cInDatastore();
   }

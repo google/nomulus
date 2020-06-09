@@ -15,6 +15,7 @@
 package google.registry.model.registry.label;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
@@ -30,6 +31,7 @@ import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
@@ -42,6 +44,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.MappedSuperclass;
+import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /**
@@ -49,25 +56,46 @@ import org.joda.time.DateTime;
  *
  * @param <T> The type of the root value being listed, e.g. {@link ReservationType}.
  * @param <R> The type of domain label entry being listed, e.g. {@link ReservedListEntry} (note,
- *            must subclass {@link DomainLabelEntry}.
+ *     must subclass {@link DomainLabelEntry}.
  */
+@MappedSuperclass
 public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends DomainLabelEntry<T, ?>>
     extends ImmutableObject implements Buildable {
 
+  @Ignore
+  @javax.persistence.Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  Long revisionId;
+
   @Id
+  @Column(nullable = false)
   String name;
 
-  @Parent
-  Key<EntityGroupRoot> parent = getCrossTldKey();
+  @Parent @Transient Key<EntityGroupRoot> parent = getCrossTldKey();
 
-  DateTime creationTime;
+  @Transient DateTime creationTime;
 
+  // The list in Cloud SQL is immutable, we only have a creation_timestamp field and it should be
+  // set to the timestamp when the list is created. In Datastore, we have two fields and the
+  // lastUpdateTime is set to the current timestamp when creating and updating a list. So, we use
+  // lastUpdateTime as the creation_timestamp column during the dual-write phase for compatibility.
+  @Column(name = "creation_timestamp", nullable = false)
   DateTime lastUpdateTime;
 
+  /** Returns the ID of this revision, or throws if null. */
+  public long getRevisionId() {
+    checkState(
+        revisionId != null,
+        "revisionId is null because this object has not been persisted to the database yet");
+    return revisionId;
+  }
+
+  /** Returns the name of the reserved list. */
   public String getName() {
     return name;
   }
 
+  /** Returns the creation time of this revision of the reserved list. */
   public DateTime getCreationTime() {
     return creationTime;
   }
@@ -183,6 +211,9 @@ public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends Dom
     @Override
     public T build() {
       checkArgument(!isNullOrEmpty(getInstance().name), "List must have a name");
+      // The list is immutable in Cloud SQL, so make sure the revision id is not set when the
+      // builder object is created from a list object
+      getInstance().revisionId = null;
       return super.build();
     }
   }
