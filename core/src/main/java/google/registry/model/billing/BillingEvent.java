@@ -345,6 +345,7 @@ public abstract class BillingEvent extends ImmutableObject
       return Optional.ofNullable(allocationToken);
     }
 
+    @Override
     public VKey<OneTime> createVKey() {
       return VKey.createOfy(getClass(), Key.create(this));
     }
@@ -482,6 +483,7 @@ public abstract class BillingEvent extends ImmutableObject
       return recurrenceTimeOfYear;
     }
 
+    @Override
     public VKey<Recurring> createVKey() {
       return VKey.createOfy(getClass(), Key.create(this));
     }
@@ -603,6 +605,7 @@ public abstract class BillingEvent extends ImmutableObject
       return builder.build();
     }
 
+    @Override
     public VKey<Cancellation> createVKey() {
       return VKey.createOfy(getClass(), Key.create(this));
     }
@@ -680,6 +683,11 @@ public abstract class BillingEvent extends ImmutableObject
     @Override
     public Builder asBuilder() {
       return new Builder(clone(this));
+    }
+
+    @Override
+    public VKey<Modification> createVKey() {
+      return VKey.createOfy(this.getClass(), Key.create(this));
     }
 
     /**

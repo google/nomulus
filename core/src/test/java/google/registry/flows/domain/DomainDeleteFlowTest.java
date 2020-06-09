@@ -93,6 +93,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.util.Map;
 import org.joda.money.Money;
@@ -668,13 +669,24 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
                 .setPendingTransferExpirationTime(clock.nowUtc())
                 .build());
     // The server-approve entities should all be deleted.
-    assertThat(ofy().load().key(oldTransferData.getServerApproveBillingEvent()).now()).isNull();
-    assertThat(ofy().load().key(oldTransferData.getServerApproveAutorenewEvent()).now()).isNull();
-    assertThat(ofy().load().key(oldTransferData.getServerApproveAutorenewPollMessage()).now())
+    assertThat(ofy().load().key(oldTransferData.getServerApproveBillingEvent().getOfyKey()).now())
+        .isNull();
+    assertThat(ofy().load().key(oldTransferData.getServerApproveAutorenewEvent().getOfyKey()).now())
+        .isNull();
+    assertThat(
+            ofy()
+                .load()
+                .key(oldTransferData.getServerApproveAutorenewPollMessage().getOfyKey())
+                .now())
         .isNull();
     assertThat(oldTransferData.getServerApproveEntities()).isNotEmpty(); // Just a sanity check.
     assertThat(
-            ofy().load().keys(oldTransferData.getServerApproveEntities().toArray(new Key<?>[] {})))
+            ofy()
+                .load()
+                .keys(
+                    oldTransferData.getServerApproveEntities().stream()
+                        .map(VKey::getOfyKey)
+                        .toArray(Key[]::new)))
         .isEmpty();
   }
 

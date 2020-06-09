@@ -16,6 +16,8 @@ package google.registry.model.domain;
 
 import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlValue;
@@ -25,6 +27,7 @@ import javax.xml.bind.annotation.XmlValue;
 @javax.persistence.Embeddable
 public class Period extends ImmutableObject {
 
+  @Enumerated(EnumType.STRING)
   @XmlAttribute
   Unit unit;
 

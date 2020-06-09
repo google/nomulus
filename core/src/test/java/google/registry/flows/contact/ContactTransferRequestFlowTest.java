@@ -52,6 +52,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -129,9 +130,13 @@ public class ContactTransferRequestFlowTest
     // poll messages, the approval notice ones for gaining and losing registrars.
     assertPollMessagesEqual(
         Iterables.filter(
-            ofy().load()
+            ofy()
+                .load()
                 // Use toArray() to coerce the type to something keys() will accept.
-                .keys(contact.getTransferData().getServerApproveEntities().toArray(new Key<?>[]{}))
+                .keys(
+                    contact.getTransferData().getServerApproveEntities().stream()
+                        .map(VKey::getOfyKey)
+                        .toArray(Key[]::new))
                 .values(),
             PollMessage.class),
         ImmutableList.of(gainingApproveMessage, losingApproveMessage));

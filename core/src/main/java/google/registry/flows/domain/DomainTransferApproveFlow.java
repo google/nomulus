@@ -214,7 +214,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     ofy().save().entities(entitiesToSave.build());
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.
-    ofy().delete().keys(existingDomain.getTransferData().getServerApproveEntities());
+    tm().delete(existingDomain.getTransferData().getServerApproveEntities());
     return responseBuilder
         .setResData(createTransferResponse(
             targetId, newDomain.getTransferData(), newDomain.getRegistrationExpirationTime()))

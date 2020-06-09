@@ -27,6 +27,7 @@ import static google.registry.model.registry.Registry.TldState.QUIET_PERIOD;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_SUCCESSFUL;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.assertBillingEvents;
 import static google.registry.testing.DatastoreHelper.assertBillingEventsEqual;
 import static google.registry.testing.DatastoreHelper.assertPollMessagesEqual;
@@ -290,13 +291,13 @@ public class DomainTransferRequestFlowTest
     // Assert that the domain's TransferData server-approve billing events match the above.
     if (expectTransferBillingEvent) {
       assertBillingEventsEqual(
-          ofy().load().key(domain.getTransferData().getServerApproveBillingEvent()).now(),
+          tm().load(domain.getTransferData().getServerApproveBillingEvent()),
           optionalTransferBillingEvent.get());
     } else {
       assertThat(domain.getTransferData().getServerApproveBillingEvent()).isNull();
     }
     assertBillingEventsEqual(
-        ofy().load().key(domain.getTransferData().getServerApproveAutorenewEvent()).now(),
+        tm().load(domain.getTransferData().getServerApproveAutorenewEvent()),
         gainingClientAutorenew);
     // Assert that the full set of server-approve billing events is exactly the extra ones plus
     // the transfer billing event (if present) and the gaining client autorenew.
@@ -309,7 +310,10 @@ public class DomainTransferRequestFlowTest
             ofy()
                 .load()
                 // Use toArray() to coerce the type to something keys() will accept.
-                .keys(domain.getTransferData().getServerApproveEntities().toArray(new Key<?>[] {}))
+                .keys(
+                    domain.getTransferData().getServerApproveEntities().stream()
+                        .map(VKey::getOfyKey)
+                        .toArray(Key[]::new))
                 .values(),
             BillingEvent.class),
         Sets.union(expectedServeApproveBillingEvents, extraBillingEvents));
@@ -410,7 +414,7 @@ public class DomainTransferRequestFlowTest
 
     // Assert that the poll messages show up in the TransferData server approve entities.
     assertPollMessagesEqual(
-        ofy().load().key(domain.getTransferData().getServerApproveAutorenewPollMessage()).now(),
+        tm().load(domain.getTransferData().getServerApproveAutorenewPollMessage()),
         autorenewPollMessage);
     // Assert that the full set of server-approve poll messages is exactly the server approve
     // OneTime messages to gaining and losing registrars plus the gaining client autorenew.
@@ -419,7 +423,10 @@ public class DomainTransferRequestFlowTest
             ofy()
                 .load()
                 // Use toArray() to coerce the type to something keys() will accept.
-                .keys(domain.getTransferData().getServerApproveEntities().toArray(new Key<?>[] {}))
+                .keys(
+                    domain.getTransferData().getServerApproveEntities().stream()
+                        .map(VKey::getOfyKey)
+                        .toArray(Key[]::new))
                 .values(),
             PollMessage.class),
         ImmutableList.of(
