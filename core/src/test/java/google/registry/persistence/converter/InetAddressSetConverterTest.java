@@ -38,7 +38,7 @@ public class InetAddressSetConverterTest {
   public final AppEngineRule appEngine =
       AppEngineRule.builder()
           .withDatastoreAndCloudSql()
-          .withJpaUnitTestEntities(TestEntity.class)
+          .withJpaUnitTestEntities(InetAddressSetTestEntity.class)
           .build();
 
   @Test
@@ -62,24 +62,24 @@ public class InetAddressSetConverterTest {
   }
 
   private void verifySaveAndLoad(@Nullable Set<InetAddress> inetAddresses) {
-    TestEntity testEntity = new TestEntity(inetAddresses);
+    InetAddressSetTestEntity testEntity = new InetAddressSetTestEntity(inetAddresses);
     jpaTm().transact(() -> jpaTm().saveNew(testEntity));
-    TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().load(VKey.createSql(TestEntity.class, "id")));
+    InetAddressSetTestEntity persisted =
+        jpaTm().transact(() -> jpaTm().load(VKey.createSql(InetAddressSetTestEntity.class, "id")));
     assertThat(persisted.addresses).isEqualTo(inetAddresses);
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
   @EntityForTesting
-  private static class TestEntity extends ImmutableObject {
+  private static class InetAddressSetTestEntity extends ImmutableObject {
 
     @Id String name = "id";
 
     Set<InetAddress> addresses;
 
-    private TestEntity() {}
+    private InetAddressSetTestEntity() {}
 
-    private TestEntity(Set<InetAddress> addresses) {
+    private InetAddressSetTestEntity(Set<InetAddress> addresses) {
       this.addresses = addresses;
     }
   }
