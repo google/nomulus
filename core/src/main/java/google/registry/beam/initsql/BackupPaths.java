@@ -29,7 +29,9 @@ public final class BackupPaths {
 
   private static final String WILDCARD_CHAR = "*";
   private static final String EXPORT_PATTERN_TEMPLATE = "%s/all_namespaces/kind_%s/input-%s";
-  private static final String COMMIT_LOG_PATTERN_TEMPLATE = "%s/commit_diff_until_*";
+
+  public static final String COMMIT_LOG_NAME_PREFIX = "commit_diff_until_";
+  private static final String COMMIT_LOG_PATTERN_TEMPLATE = "%s/" + COMMIT_LOG_NAME_PREFIX + "*";
 
   /**
    * Returns a regex pattern that matches all Datastore export files of a given {@code kind}.
@@ -65,9 +67,8 @@ public final class BackupPaths {
   /** Gets the Commit timestamp from a CommitLog file name. */
   public static DateTime getCommitLogTimestamp(String fileName) {
     checkArgument(!isNullOrEmpty(fileName), "Null or empty fileName.");
-    String herald = "commit_diff_until_";
-    int start = fileName.lastIndexOf(herald);
+    int start = fileName.lastIndexOf(COMMIT_LOG_NAME_PREFIX);
     checkArgument(start >= 0, "Illegal file name %s.", fileName);
-    return DateTime.parse(fileName.substring(start + herald.length()));
+    return DateTime.parse(fileName.substring(start + COMMIT_LOG_NAME_PREFIX.length()));
   }
 }

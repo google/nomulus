@@ -129,7 +129,7 @@ class BackupTestStore implements AutoCloseable {
   }
 
   File saveCommitLogs(String commitLogDir) {
-    CommitLogCheckpoint checkpoint = CommitLogExports.computeCheckpoint(ofy(), fakeClock);
+    CommitLogCheckpoint checkpoint = CommitLogExports.computeCheckpoint(fakeClock);
     File commitLogFile =
         CommitLogExports.saveCommitLogs(commitLogDir, prevCommitLogCheckpoint, checkpoint);
     prevCommitLogCheckpoint = checkpoint;

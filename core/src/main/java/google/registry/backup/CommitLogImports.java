@@ -44,11 +44,17 @@ public final class CommitLogImports {
   private CommitLogImports() {}
 
   /**
-   * Returns entities in an {@code inputStream} as an {@link ImmutableList} of {@link
-   * VersionedEntity} records. Upon completion the {@code inputStream} is closed.
+   * Returns entities in an {@code inputStream} (from a single CommitLog file) as an {@link
+   * ImmutableList} of {@link VersionedEntity} records. Upon completion the {@code inputStream} is
+   * closed.
    *
    * <p>The returned list may be empty, since CommitLogs are written at fixed intervals regardless
    * if actual changes exist.
+   *
+   * <p>A CommitLog file starts with a {@link CommitLogCheckpoint}, followed by (repeated)
+   * subsequences of [{@link CommitLogManifest}, [{@link CommitLogMutation}] ...]. Each subsequence
+   * represents the changes in one transaction. The {@code CommitLogManifest} contains deleted
+   * entity keys, whereas each {@code CommitLogMutation} contains one whole entity.
    */
   public static ImmutableList<VersionedEntity> loadEntities(InputStream inputStream) {
     try (AppEngineEnvironment appEngineEnvironment = new AppEngineEnvironment();

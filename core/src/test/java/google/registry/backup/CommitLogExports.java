@@ -38,7 +38,6 @@ import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogCheckpointRoot;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
-import google.registry.model.ofy.Ofy;
 import google.registry.util.Clock;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -48,14 +47,23 @@ import java.io.OutputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
 /**
  * Helpers for exporting the diff between two commit log checkpoints to a local file.
  *
- * <p>This class is adapted from {@link ExportCommitLogDiffAction} to support Cloud SQL migration
- * tests.
+ * <p>In production, CommitLogs are saved periodically by cron jobs. During each job, the {@link
+ * CommitLogCheckpointAction} is invoked first to compute a {@link CommitLogCheckpoint} and persist
+ * it in Datastore. Then the {@link ExportCommitLogDiffAction} is invoked to export the diffs
+ * accumulated between the previous and current checkpoints to a file.
+ *
+ * <p>The {@link #computeCheckpoint(Clock)} method is copied with simplification from {@link
+ * CommitLogCheckpointAction}, and the {@link #saveCommitLogs(String, CommitLogCheckpoint,
+ * CommitLogCheckpoint)} method is copied with simplification from {@link
+ * ExportCommitLogDiffAction}. We opted for copying instead of refactoring to reduce risk to
+ * production code.
  */
 public final class CommitLogExports {
 
@@ -65,11 +73,14 @@ public final class CommitLogExports {
 
   private CommitLogExports() {}
 
-  /** Returns the next {@link CommitLogCheckpoint} for Commit logs. */
-  public static CommitLogCheckpoint computeCheckpoint(Ofy ofy, Clock clock) {
+  /**
+   * Returns the next {@link CommitLogCheckpoint} for Commit logs. Please refer to the class javadoc
+   * for background.
+   */
+  public static CommitLogCheckpoint computeCheckpoint(Clock clock) {
     CommitLogCheckpointStrategy strategy = new CommitLogCheckpointStrategy();
     strategy.clock = clock;
-    strategy.ofy = ofy;
+    strategy.ofy = ofy();
 
     CommitLogCheckpoint checkpoint = strategy.computeCheckpoint();
     tm().transact(
@@ -89,19 +100,22 @@ public final class CommitLogExports {
 
   /**
    * Saves the incremental changes between {@code prevCheckpoint} and {@code checkpoint} and returns
-   * the {@link File}.
+   * the {@link File}. Please refer to class javadoc for background.
    */
   public static File saveCommitLogs(
       String commitLogDir,
       @Nullable CommitLogCheckpoint prevCheckpoint,
       CommitLogCheckpoint checkpoint) {
     checkArgument(
-        prevCheckpoint == null || isAtOrAfter(prevCheckpoint.getCheckpointTime(), START_OF_TIME),
-        "");
-    checkArgument(
         prevCheckpoint == null
+            || isAtOrAfter(prevCheckpoint.getCheckpointTime(), START_OF_TIME)
             || prevCheckpoint.getCheckpointTime().isBefore(checkpoint.getCheckpointTime()),
-        "");
+        "Inversed checkpoint: prev is %s, current is %s.",
+        Optional.ofNullable(prevCheckpoint)
+            .map(CommitLogCheckpoint::getCheckpointTime)
+            .map(DateTime::toString)
+            .orElse("null"),
+        checkpoint.getCheckpointTime().toString());
 
     // Load the keys of all the manifests to include in this diff.
     List<Key<CommitLogManifest>> sortedKeys = loadAllDiffKeys(prevCheckpoint, checkpoint);

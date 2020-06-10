@@ -40,6 +40,8 @@ import javax.annotation.Nullable;
 @AutoValue
 public abstract class VersionedEntity implements Serializable {
 
+  private static final long serialVersionUID = 1L;
+
   public abstract long commitTimeMills();
 
   /** The {@link Key} of the {@link Entity}. */
@@ -60,6 +62,12 @@ public abstract class VersionedEntity implements Serializable {
     return entityProtoBytes() == null;
   }
 
+  /**
+   * Converts deleted entity keys in {@code manifest} into a {@link Stream} of {@link
+   * VersionedEntity VersionedEntities}.
+   *
+   * @see {@link CommitLogImports#loadEntities(InputStream)}
+   */
   public static Stream<VersionedEntity> fromManifest(CommitLogManifest manifest) {
     long commitTimeMillis = manifest.getCommitTime().getMillis();
     return manifest.getDeletions().stream()
@@ -67,6 +75,7 @@ public abstract class VersionedEntity implements Serializable {
         .map(key -> builder().commitTimeMills(commitTimeMillis).key(key).build());
   }
 
+  /* Converts a {@link CommitLogMutation} to a {@link VersionedEntity}. */
   public static VersionedEntity fromMutation(CommitLogMutation mutation) {
     return from(
         com.googlecode.objectify.Key.create(mutation).getParent().getId(),
@@ -101,8 +110,21 @@ public abstract class VersionedEntity implements Serializable {
     }
   }
 
-  /** Wraps a byte array and prevents it from being modified by its original owner. */
+  /**
+   * Wraps a byte array and prevents it from being modified by its original owner.
+   *
+   * <p>While this class seems an overkill, it exists for two reasons:
+   *
+   * <ul>
+   *   <li>It is easier to override the {@link #equals} method here (for value-equivalence check)
+   *       than to override the AutoValue-generated {@code equals} method.
+   *   <li>To appease the style checker, which forbids arrays as AutoValue property.
+   * </ul>
+   */
   static final class ImmutableBytes implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private final byte[] bytes;
 
     ImmutableBytes(byte[] bytes) {
