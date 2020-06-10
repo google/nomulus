@@ -708,7 +708,6 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 
 
 --
-<<<<<<< HEAD
 -- Name: HostHistory history_revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -716,8 +715,6 @@ ALTER TABLE ONLY public."HostHistory" ALTER COLUMN history_revision_id SET DEFAU
 
 
 --
-||||||| 472503541
-=======
 -- Name: PollMessage poll_message_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -725,7 +722,6 @@ ALTER TABLE ONLY public."PollMessage" ALTER COLUMN poll_message_id SET DEFAULT n
 
 
 --
->>>>>>> origin/master
 -- Name: PremiumList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1354,22 +1350,19 @@ ALTER TABLE ONLY public."DomainHost"
 
 
 --
-<<<<<<< HEAD
--- Name: HostHistory fk_hosthistory_hostresource; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."HostHistory"
-    ADD CONSTRAINT fk_hosthistory_hostresource FOREIGN KEY (host_repo_id) REFERENCES public."HostResource"(repo_id);
-
-
---
-||||||| 472503541
-=======
 -- Name: HostResource fk_host_resource_superordinate_domain; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."HostResource"
     ADD CONSTRAINT fk_host_resource_superordinate_domain FOREIGN KEY (superordinate_domain) REFERENCES public."Domain"(repo_id);
+
+
+--
+-- Name: HostHistory fk_hosthistory_hostresource; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory"
+    ADD CONSTRAINT fk_hosthistory_hostresource FOREIGN KEY (host_repo_id) REFERENCES public."HostResource"(repo_id);
 
 
 --
@@ -1421,7 +1414,6 @@ ALTER TABLE ONLY public."PollMessage"
 
 
 --
->>>>>>> origin/master
 -- Name: DomainHost fkfmi7bdink53swivs390m2btxg; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
