@@ -433,10 +433,7 @@ public class RdapJsonFormatter {
         statuses.add(StatusValue.LINKED);
       }
       if (hostResource.isSubordinate()
-          && ofy()
-              .load()
-              .key(hostResource.getSuperordinateDomain())
-              .now()
+          && tm().load(hostResource.getSuperordinateDomain())
               .cloneProjectedAtTime(getRequestTime())
               .getStatusValues()
               .contains(StatusValue.PENDING_TRANSFER)) {

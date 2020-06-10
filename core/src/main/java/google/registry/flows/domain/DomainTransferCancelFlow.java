@@ -110,7 +110,7 @@ public final class DomainTransferCancelFlow implements TransactionalFlow {
     updateAutorenewRecurrenceEndTime(existingDomain, END_OF_TIME);
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.
-    ofy().delete().keys(existingDomain.getTransferData().getServerApproveEntities());
+    tm().delete(existingDomain.getTransferData().getServerApproveEntities());
     return responseBuilder
         .setResData(createTransferResponse(targetId, newDomain.getTransferData(), null))
         .build();

@@ -288,9 +288,9 @@ class google.registry.model.eppcommon.Trid {
 class google.registry.model.host.HostResource {
   @Id java.lang.String repoId;
   com.google.common.collect.ImmutableSortedMap<org.joda.time.DateTime, com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest>> revisions;
-  com.googlecode.objectify.Key<google.registry.model.domain.DomainBase> superordinateDomain;
   google.registry.model.CreateAutoTimestamp creationTime;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
+  google.registry.persistence.VKey<google.registry.model.domain.DomainBase> superordinateDomain;
   java.lang.String creationClientId;
   java.lang.String currentSponsorClientId;
   java.lang.String fullyQualifiedHostName;
@@ -373,14 +373,14 @@ class google.registry.model.poll.PendingActionNotificationResponse$NameOrId {
   java.lang.String value;
 }
 class google.registry.model.poll.PollMessage {
-  @Id long id;
+  @Id java.lang.Long id;
   @Parent com.googlecode.objectify.Key<google.registry.model.reporting.HistoryEntry> parent;
   java.lang.String clientId;
   java.lang.String msg;
   org.joda.time.DateTime eventTime;
 }
 class google.registry.model.poll.PollMessage$Autorenew {
-  @Id long id;
+  @Id java.lang.Long id;
   @Parent com.googlecode.objectify.Key<google.registry.model.reporting.HistoryEntry> parent;
   java.lang.String clientId;
   java.lang.String msg;
@@ -389,7 +389,7 @@ class google.registry.model.poll.PollMessage$Autorenew {
   org.joda.time.DateTime eventTime;
 }
 class google.registry.model.poll.PollMessage$OneTime {
-  @Id long id;
+  @Id java.lang.Long id;
   @Parent com.googlecode.objectify.Key<google.registry.model.reporting.HistoryEntry> parent;
   java.lang.String clientId;
   java.lang.String msg;
@@ -716,15 +716,15 @@ class google.registry.model.tmch.TmchCrl {
   org.joda.time.DateTime updated;
 }
 class google.registry.model.transfer.TransferData {
-  com.googlecode.objectify.Key<google.registry.model.billing.BillingEvent$OneTime> serverApproveBillingEvent;
-  com.googlecode.objectify.Key<google.registry.model.billing.BillingEvent$Recurring> serverApproveAutorenewEvent;
-  com.googlecode.objectify.Key<google.registry.model.poll.PollMessage$Autorenew> serverApproveAutorenewPollMessage;
   google.registry.model.domain.Period transferPeriod;
   google.registry.model.eppcommon.Trid transferRequestTrid;
   google.registry.model.transfer.TransferStatus transferStatus;
+  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$OneTime> serverApproveBillingEvent;
+  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$Recurring> serverApproveAutorenewEvent;
+  google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> serverApproveAutorenewPollMessage;
   java.lang.String gainingClientId;
   java.lang.String losingClientId;
-  java.util.Set<com.googlecode.objectify.Key<? extends google.registry.model.transfer.TransferData$TransferServerApproveEntity>> serverApproveEntities;
+  java.util.Set<google.registry.persistence.VKey<? extends google.registry.model.transfer.TransferData$TransferServerApproveEntity>> serverApproveEntities;
   org.joda.time.DateTime pendingTransferExpirationTime;
   org.joda.time.DateTime transferRequestTime;
   org.joda.time.DateTime transferredRegistrationExpirationTime;

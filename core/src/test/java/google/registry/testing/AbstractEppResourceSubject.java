@@ -185,7 +185,7 @@ abstract class AbstractEppResourceSubject<
     return andChainer();
   }
 
-  protected <E> And<S> hasValue(E expected, E actual, String name) {
+  protected <E> And<S> hasValue(@Nullable E expected, @Nullable E actual, String name) {
     check(name).that(actual).isEqualTo(expected);
     return andChainer();
   }

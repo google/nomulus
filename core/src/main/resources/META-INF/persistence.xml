@@ -37,6 +37,9 @@
     <class>google.registry.schema.tld.ReservedList</class>
     <class>google.registry.model.domain.secdns.DelegationSignerData</class>
     <class>google.registry.model.domain.GracePeriod</class>
+    <class>google.registry.model.poll.PollMessage</class>
+    <class>google.registry.model.poll.PollMessage$OneTime</class>
+    <class>google.registry.model.poll.PollMessage$Autorenew</class>
 
     <!-- Customized type converters -->
     <class>google.registry.persistence.converter.BillingCostTransitionConverter</class>
@@ -48,21 +51,25 @@
     <class>google.registry.persistence.converter.CurrencyUnitConverter</class>
     <class>google.registry.persistence.converter.DateTimeConverter</class>
     <class>google.registry.persistence.converter.DurationConverter</class>
+    <class>google.registry.persistence.converter.InetAddressSetConverter</class>
     <class>google.registry.persistence.converter.PostalInfoChoiceListConverter</class>
     <class>google.registry.persistence.converter.RegistrarPocSetConverter</class>
     <class>google.registry.persistence.converter.StatusValueSetConverter</class>
     <class>google.registry.persistence.converter.StringListConverter</class>
     <class>google.registry.persistence.converter.StringSetConverter</class>
     <class>google.registry.persistence.converter.TldStateTransitionConverter</class>
+    <class>google.registry.persistence.converter.TransferServerApproveEntitySetConverter</class>
     <class>google.registry.persistence.converter.UpdateAutoTimestampConverter</class>
     <class>google.registry.persistence.converter.ZonedDateTimeConverter</class>
 
     <!-- Generated converters for VKey -->
     <class>google.registry.model.billing.VKeyConverter_BillingEvent</class>
     <class>google.registry.model.contact.VKeyConverter_ContactResource</class>
-    <class>google.registry.model.domain.token.VKeyConverter_AllocationToken</class>
     <class>google.registry.model.domain.VKeyConverter_DomainBase</class>
+    <class>google.registry.model.domain.token.VKeyConverter_AllocationToken</class>
     <class>google.registry.model.host.VKeyConverter_HostResource</class>
+    <class>google.registry.model.poll.VKeyConverter_Autorenew</class>
+    <class>google.registry.model.poll.VKeyConverter_OneTime</class>
 
     <!-- TODO(weiminyu): check out application-layer validation. -->
     <validation-mode>NONE</validation-mode>

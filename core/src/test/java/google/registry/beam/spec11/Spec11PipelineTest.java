@@ -195,14 +195,10 @@ public class Spec11PipelineTest {
             new JSONObject()
                 .put("fullyQualifiedDomainName", "111.com")
                 .put("threatType", "MALWARE")
-                .put("threatEntryMetadata", "NONE")
-                .put("platformType", "WINDOWS")
                 .toString(),
             new JSONObject()
                 .put("fullyQualifiedDomainName", "222.com")
                 .put("threatType", "MALWARE")
-                .put("threatEntryMetadata", "NONE")
-                .put("platformType", "WINDOWS")
                 .toString());
   }
 

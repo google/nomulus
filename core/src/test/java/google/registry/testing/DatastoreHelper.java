@@ -239,7 +239,7 @@ public class DatastoreHelper {
     return persistResource(
         newHostResource(hostName)
             .asBuilder()
-            .setSuperordinateDomain(Key.create(superordinateDomain))
+            .setSuperordinateDomain(superordinateDomain.createVKey())
             .setInetAddresses(
                 ImmutableSet.of(InetAddresses.forString("1080:0:0:0:8:800:200C:417A")))
             .build());
@@ -443,32 +443,37 @@ public class DatastoreHelper {
             .setParent(contact)
             .build());
     return persistResource(
-        contact.asBuilder()
+        contact
+            .asBuilder()
             .setPersistedCurrentSponsorClientId("TheRegistrar")
             .addStatusValue(StatusValue.PENDING_TRANSFER)
-            .setTransferData(createTransferDataBuilder(requestTime, expirationTime)
+            .setTransferData(
+                createTransferDataBuilder(requestTime, expirationTime)
                     .setPendingTransferExpirationTime(now.plus(getContactAutomaticTransferLength()))
-                .setServerApproveEntities(
-                    ImmutableSet.of(
-                    // Pretend it's 3 days since the request
-                    Key.create(persistResource(
-                        createPollMessageForImplicitTransfer(
-                            contact,
-                            historyEntryContactTransfer,
-                            "NewRegistrar",
-                            requestTime,
-                            expirationTime,
-                            null))),
-                    Key.create(persistResource(
-                        createPollMessageForImplicitTransfer(
-                            contact,
-                            historyEntryContactTransfer,
-                            "TheRegistrar",
-                            requestTime,
-                            expirationTime,
-                            null)))))
-                .setTransferRequestTrid(Trid.create("transferClient-trid", "transferServer-trid"))
-                .build())
+                    .setServerApproveEntities(
+                        ImmutableSet.of(
+                            // Pretend it's 3 days since the request
+                            persistResource(
+                                    createPollMessageForImplicitTransfer(
+                                        contact,
+                                        historyEntryContactTransfer,
+                                        "NewRegistrar",
+                                        requestTime,
+                                        expirationTime,
+                                        null))
+                                .createVKey(),
+                            persistResource(
+                                    createPollMessageForImplicitTransfer(
+                                        contact,
+                                        historyEntryContactTransfer,
+                                        "TheRegistrar",
+                                        requestTime,
+                                        expirationTime,
+                                        null))
+                                .createVKey()))
+                    .setTransferRequestTrid(
+                        Trid.create("transferClient-trid", "transferServer-trid"))
+                    .build())
             .build());
   }
 
@@ -585,38 +590,46 @@ public class DatastoreHelper {
     }
     TransferData.Builder transferDataBuilder =
         createTransferDataBuilder(requestTime, expirationTime);
-    return persistResource(domain.asBuilder()
-        .setPersistedCurrentSponsorClientId("TheRegistrar")
-        .addStatusValue(StatusValue.PENDING_TRANSFER)
-        .setTransferData(transferDataBuilder
-            .setPendingTransferExpirationTime(expirationTime)
-            .setTransferredRegistrationExpirationTime(extendedRegistrationExpirationTime)
-            .setServerApproveBillingEvent(Key.create(transferBillingEvent))
-            .setServerApproveAutorenewEvent(Key.create(gainingClientAutorenewEvent))
-            .setServerApproveAutorenewPollMessage(Key.create(gainingClientAutorenewPollMessage))
-            .setServerApproveEntities(ImmutableSet.of(
-                Key.create(transferBillingEvent),
-                Key.create(gainingClientAutorenewEvent),
-                Key.create(gainingClientAutorenewPollMessage),
-                Key.create(persistResource(
-                    createPollMessageForImplicitTransfer(
-                        domain,
-                        historyEntryDomainTransfer,
-                        "NewRegistrar",
-                        requestTime,
-                        expirationTime,
-                        extendedRegistrationExpirationTime))),
-                Key.create(persistResource(
-                    createPollMessageForImplicitTransfer(
-                        domain,
-                        historyEntryDomainTransfer,
-                        "TheRegistrar",
-                        requestTime,
-                        expirationTime,
-                        extendedRegistrationExpirationTime)))))
-            .setTransferRequestTrid(Trid.create("transferClient-trid", "transferServer-trid"))
-            .build())
-        .build());
+    return persistResource(
+        domain
+            .asBuilder()
+            .setPersistedCurrentSponsorClientId("TheRegistrar")
+            .addStatusValue(StatusValue.PENDING_TRANSFER)
+            .setTransferData(
+                transferDataBuilder
+                    .setPendingTransferExpirationTime(expirationTime)
+                    .setTransferredRegistrationExpirationTime(extendedRegistrationExpirationTime)
+                    .setServerApproveBillingEvent(transferBillingEvent.createVKey())
+                    .setServerApproveAutorenewEvent(gainingClientAutorenewEvent.createVKey())
+                    .setServerApproveAutorenewPollMessage(
+                        gainingClientAutorenewPollMessage.createVKey())
+                    .setServerApproveEntities(
+                        ImmutableSet.of(
+                            transferBillingEvent.createVKey(),
+                            gainingClientAutorenewEvent.createVKey(),
+                            gainingClientAutorenewPollMessage.createVKey(),
+                            persistResource(
+                                    createPollMessageForImplicitTransfer(
+                                        domain,
+                                        historyEntryDomainTransfer,
+                                        "NewRegistrar",
+                                        requestTime,
+                                        expirationTime,
+                                        extendedRegistrationExpirationTime))
+                                .createVKey(),
+                            persistResource(
+                                    createPollMessageForImplicitTransfer(
+                                        domain,
+                                        historyEntryDomainTransfer,
+                                        "TheRegistrar",
+                                        requestTime,
+                                        expirationTime,
+                                        extendedRegistrationExpirationTime))
+                                .createVKey()))
+                    .setTransferRequestTrid(
+                        Trid.create("transferClient-trid", "transferServer-trid"))
+                    .build())
+            .build());
   }
 
   /** Persists and returns a {@link Registrar} with the specified attributes. */

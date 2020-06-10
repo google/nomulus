@@ -126,13 +126,15 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
     // If the transfer is server approved, this message will be sent to the gaining registrar. */
     PollMessage serverApproveGainingPollMessage =
         createGainingTransferPollMessage(targetId, serverApproveTransferData, historyEntry);
-    TransferData pendingTransferData = serverApproveTransferData.asBuilder()
-        .setTransferStatus(TransferStatus.PENDING)
-        .setServerApproveEntities(
-            ImmutableSet.of(
-                Key.create(serverApproveGainingPollMessage),
-                Key.create(serverApproveLosingPollMessage)))
-        .build();
+    TransferData pendingTransferData =
+        serverApproveTransferData
+            .asBuilder()
+            .setTransferStatus(TransferStatus.PENDING)
+            .setServerApproveEntities(
+                ImmutableSet.of(
+                    serverApproveGainingPollMessage.createVKey(),
+                    serverApproveLosingPollMessage.createVKey()))
+            .build();
     // When a transfer is requested, a poll message is created to notify the losing registrar.
     PollMessage requestPollMessage =
         createLosingTransferPollMessage(targetId, pendingTransferData, historyEntry).asBuilder()

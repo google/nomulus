@@ -34,7 +34,6 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowUtils.IpAddressVersionMismatchException;
 import google.registry.flows.ResourceFlowTestCase;
@@ -119,7 +118,7 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
     HostResource host = reloadResourceByForeignKey();
     DomainBase superordinateDomain =
         loadByForeignKey(DomainBase.class, "example.tld", clock.nowUtc()).get();
-    assertAboutHosts().that(host).hasSuperordinateDomain(Key.create(superordinateDomain));
+    assertAboutHosts().that(host).hasSuperordinateDomain(superordinateDomain.createVKey());
     assertThat(superordinateDomain.getSubordinateHosts()).containsExactly("ns1.example.tld");
     assertDnsTasksEnqueued("ns1.example.tld");
   }
@@ -148,7 +147,7 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
     HostResource host = reloadResourceByForeignKey();
     DomainBase superordinateDomain =
         loadByForeignKey(DomainBase.class, "example.tld", clock.nowUtc()).get();
-    assertAboutHosts().that(host).hasSuperordinateDomain(Key.create(superordinateDomain));
+    assertAboutHosts().that(host).hasSuperordinateDomain(superordinateDomain.createVKey());
     assertThat(superordinateDomain.getSubordinateHosts()).containsExactly("ns1.example.tld");
     assertDnsTasksEnqueued("ns1.example.tld");
   }

@@ -118,6 +118,22 @@
         addr_local_org text,
         addr_local_type text,
         search_name text,
+        transfer_billing_cancellation_id int8,
+        transfer_gaining_poll_message_id int8,
+        transfer_losing_poll_message_id int8,
+        transfer_billing_recurrence_id int8,
+        transfer_autorenew_poll_message_id int8,
+        transfer_billing_event_id int8,
+        transfer_renew_period_unit text,
+        transfer_renew_period_value int4,
+        transfer_client_txn_id text,
+        transfer_server_txn_id text,
+        transfer_registration_expiration_time timestamptz,
+        transfer_gaining_registrar_id text,
+        transfer_losing_registrar_id text,
+        transfer_pending_expiration_time timestamptz,
+        transfer_request_time timestamptz,
+        transfer_status text,
         voice_phone_extension text,
         voice_phone_number text,
         primary key (repo_id)
@@ -165,6 +181,22 @@
         subordinate_hosts text[],
         tech_contact text,
         tld text,
+        transfer_billing_cancellation_id int8,
+        transfer_gaining_poll_message_id int8,
+        transfer_losing_poll_message_id int8,
+        transfer_billing_recurrence_id int8,
+        transfer_autorenew_poll_message_id int8,
+        transfer_billing_event_id int8,
+        transfer_renew_period_unit text,
+        transfer_renew_period_value int4,
+        transfer_client_txn_id text,
+        transfer_server_txn_id text,
+        transfer_registration_expiration_time timestamptz,
+        transfer_gaining_registrar_id text,
+        transfer_losing_registrar_id text,
+        transfer_pending_expiration_time timestamptz,
+        transfer_request_time timestamptz,
+        transfer_status text,
         primary key (repo_id)
     );
 
@@ -195,9 +227,10 @@
         history_type text not null,
         history_xml_bytes bytea not null,
         fully_qualified_host_name text,
+        inet_addresses text[],
         last_superordinate_change timestamptz,
         last_transfer_time timestamptz,
-        superordinate_domain bytea,
+        superordinate_domain text,
         creation_client_id text not null,
         creation_time timestamptz not null,
         current_sponsor_client_id text not null,
@@ -207,11 +240,6 @@
         statuses text[],
         host_repo_id text not null,
         primary key (history_revision_id)
-    );
-
-    create table "HostHistory_inetAddresses" (
-       host_history_history_revision_id int8 not null,
-        inet_addresses bytea
     );
 
     create table "HostResource" (
@@ -224,15 +252,11 @@
         last_epp_update_time timestamptz,
         statuses text[],
         fully_qualified_host_name text,
+        inet_addresses text[],
         last_superordinate_change timestamptz,
         last_transfer_time timestamptz,
-        superordinate_domain bytea,
+        superordinate_domain text,
         primary key (repo_id)
-    );
-
-    create table "HostResource_inetAddresses" (
-       host_resource_repo_id text not null,
-        inet_addresses bytea
     );
 
     create table "Lock" (
@@ -242,6 +266,36 @@
         expiration_time timestamptz not null,
         request_log_id text not null,
         primary key (resource_name, tld)
+    );
+
+    create table "PollMessage" (
+       type text not null,
+        poll_message_id  bigserial not null,
+        registrar_id text not null,
+        contact_repo_id text,
+        contact_revision_id int8,
+        domain_repo_id text,
+        domain_revision_id int8,
+        event_time timestamptz not null,
+        host_repo_id text,
+        host_revision_id int8,
+        message text,
+        transfer_response_contact_id text,
+        transfer_response_domain_expiration_time timestamptz,
+        transfer_response_domain_name text,
+        pending_action_response_action_result boolean,
+        pending_action_response_name_or_id text,
+        pending_action_response_processed_date timestamptz,
+        pending_action_response_client_txn_id text,
+        pending_action_response_server_txn_id text,
+        transfer_response_gaining_registrar_id text,
+        transfer_response_losing_registrar_id text,
+        transfer_response_pending_transfer_expiration_time timestamptz,
+        transfer_response_transfer_request_time timestamptz,
+        transfer_response_transfer_status text,
+        autorenew_end_time timestamptz,
+        autorenew_domain_name text,
+        primary key (poll_message_id)
     );
 
     create table "PremiumEntry" (
@@ -385,6 +439,8 @@ create index IDX1rcgkdd777bpvj0r94sltwd5y on "Domain" (fully_qualified_domain_na
 create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
 create index IDXfg2nnjlujxo6cb9fha971bq2n on "HostHistory" (creation_time);
 create index IDX1iy7njgb7wjmj9piml4l2g0qi on "HostHistory" (history_registrar_id);
+create index IDXe7wu46c7wpvfmfnj4565abibp on "PollMessage" (registrar_id);
+create index IDXaydgox62uno9qx8cjlj5lauye on "PollMessage" (event_time);
 create index premiumlist_name_idx on "PremiumList" (name);
 create index registrar_name_idx on "Registrar" (registrar_name);
 create index registrar_iana_identifier_idx on "Registrar" (iana_identifier);
@@ -405,16 +461,6 @@ create index reservedlist_name_idx on "ReservedList" (name);
        add constraint FKeq1guccbre1yk3oosgp2io554 
        foreign key (domain_repo_id) 
        references "Domain";
-
-    alter table if exists "HostHistory_inetAddresses" 
-       add constraint FKdf5m7yyqw0w57ln2xu8hm9xth 
-       foreign key (host_history_history_revision_id) 
-       references "HostHistory";
-
-    alter table if exists "HostResource_inetAddresses" 
-       add constraint FK6unwhfkcu3oq6q347fxvpagv 
-       foreign key (host_resource_repo_id) 
-       references "HostResource";
 
     alter table if exists "PremiumEntry" 
        add constraint FKo0gw90lpo1tuee56l0nb6y6g5 

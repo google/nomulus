@@ -26,7 +26,6 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
-import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.DomainBase;
@@ -34,6 +33,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,7 +63,7 @@ public class HostResourceTest extends EntityTestCase {
                         .setLosingClientId("losing")
                         .setPendingTransferExpirationTime(fakeClock.nowUtc())
                         .setServerApproveEntities(
-                            ImmutableSet.of(Key.create(BillingEvent.OneTime.class, 1)))
+                            ImmutableSet.of(VKey.createOfy(BillingEvent.OneTime.class, 1)))
                         .setTransferRequestTime(fakeClock.nowUtc())
                         .setTransferStatus(TransferStatus.SERVER_APPROVED)
                         .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
@@ -81,7 +81,7 @@ public class HostResourceTest extends EntityTestCase {
                     .setLastTransferTime(fakeClock.nowUtc())
                     .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
                     .setStatusValues(ImmutableSet.of(StatusValue.OK))
-                    .setSuperordinateDomain(Key.create(domain))
+                    .setSuperordinateDomain(domain.createVKey())
                     .build()));
   }
 
@@ -228,7 +228,7 @@ public class HostResourceTest extends EntityTestCase {
                     .setLastEppUpdateClientId("another registrar")
                     .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
                     .setStatusValues(ImmutableSet.of(StatusValue.OK))
-                    .setSuperordinateDomain(Key.create(domain))
+                    .setSuperordinateDomain(domain.createVKey())
                     .build()));
     assertThat(host.computeLastTransferTime(domain)).isNull();
   }

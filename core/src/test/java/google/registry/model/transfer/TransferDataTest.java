@@ -18,11 +18,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
+import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineRule;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -40,19 +40,19 @@ public class TransferDataTest {
 
   private final DateTime now = DateTime.now(UTC);
 
-  private Key<BillingEvent.OneTime> transferBillingEventKey;
-  private Key<BillingEvent.Cancellation> otherServerApproveBillingEventKey;
-  private Key<BillingEvent.Recurring> recurringBillingEventKey;
-  private Key<PollMessage.Autorenew> autorenewPollMessageKey;
-  private Key<PollMessage.OneTime> otherServerApprovePollMessageKey;
+  private VKey<BillingEvent.OneTime> transferBillingEventKey;
+  private VKey<BillingEvent.Cancellation> otherServerApproveBillingEventKey;
+  private VKey<BillingEvent.Recurring> recurringBillingEventKey;
+  private VKey<PollMessage.Autorenew> autorenewPollMessageKey;
+  private VKey<PollMessage.OneTime> otherServerApprovePollMessageKey;
 
   @Before
   public void setUp() {
-    transferBillingEventKey = Key.create(BillingEvent.OneTime.class, 12345);
-    otherServerApproveBillingEventKey = Key.create(BillingEvent.Cancellation.class, 2468);
-    recurringBillingEventKey = Key.create(BillingEvent.Recurring.class, 13579);
-    autorenewPollMessageKey = Key.create(PollMessage.Autorenew.class, 67890);
-    otherServerApprovePollMessageKey = Key.create(PollMessage.OneTime.class, 314159);
+    transferBillingEventKey = VKey.createOfy(BillingEvent.OneTime.class, 12345);
+    otherServerApproveBillingEventKey = VKey.createOfy(BillingEvent.Cancellation.class, 2468);
+    recurringBillingEventKey = VKey.createOfy(BillingEvent.Recurring.class, 13579);
+    autorenewPollMessageKey = VKey.createOfy(PollMessage.Autorenew.class, 67890);
+    otherServerApprovePollMessageKey = VKey.createOfy(PollMessage.OneTime.class, 314159);
   }
 
   @Test
@@ -67,7 +67,8 @@ public class TransferDataTest {
             .setTransferPeriod(Period.create(5, Period.Unit.YEARS))
             .build();
     TransferData fullTransferData =
-        constantTransferData.asBuilder()
+        constantTransferData
+            .asBuilder()
             .setPendingTransferExpirationTime(now)
             .setTransferStatus(TransferStatus.PENDING)
             .setServerApproveEntities(

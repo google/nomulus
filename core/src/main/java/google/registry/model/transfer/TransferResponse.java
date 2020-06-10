@@ -17,6 +17,7 @@ package google.registry.model.transfer;
 import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.EppResource;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
+import javax.persistence.Embeddable;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
@@ -28,7 +29,8 @@ import org.joda.time.DateTime;
  * are common to all transfer responses; derived classes add resource specific fields.
  */
 @XmlTransient
-public abstract class TransferResponse extends BaseTransferObject implements ResponseData {
+@Embeddable
+public class TransferResponse extends BaseTransferObject implements ResponseData {
 
   /** An adapter to output the XML in response to a transfer command on a domain. */
   @Embed

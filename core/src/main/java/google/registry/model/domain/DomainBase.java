@@ -256,7 +256,7 @@ public class DomainBase extends EppResource
   String smdId;
 
   /** Data about any pending or past transfers on this domain. */
-  @Transient TransferData transferData;
+  TransferData transferData;
 
   /**
    * The time that this resource was last transferred.
@@ -448,8 +448,14 @@ public class DomainBase extends EppResource
               .setRegistrationExpirationTime(expirationDate)
               // Set the speculatively-written new autorenew events as the domain's autorenew
               // events.
-              .setAutorenewBillingEvent(transferData.getServerApproveAutorenewEvent())
-              .setAutorenewPollMessage(transferData.getServerApproveAutorenewPollMessage());
+              .setAutorenewBillingEvent(
+                  transferData.getServerApproveAutorenewEvent() == null
+                      ? null
+                      : transferData.getServerApproveAutorenewEvent().getOfyKey())
+              .setAutorenewPollMessage(
+                  transferData.getServerApproveAutorenewPollMessage() == null
+                      ? null
+                      : transferData.getServerApproveAutorenewPollMessage().getOfyKey());
       if (transferData.getTransferPeriod().getValue() == 1) {
         // Set the grace period using a key to the prescheduled transfer billing event.  Not using
         // GracePeriod.forBillingEvent() here in order to avoid the actual Datastore fetch.
@@ -460,7 +466,9 @@ public class DomainBase extends EppResource
                     transferExpirationTime.plus(
                         Registry.get(getTld()).getTransferGracePeriodLength()),
                     transferData.getGainingClientId(),
-                    transferData.getServerApproveBillingEvent())));
+                    transferData.getServerApproveBillingEvent() == null
+                        ? null
+                        : transferData.getServerApproveBillingEvent().getOfyKey())));
       } else {
         // There won't be a billing event, so we don't need a grace period
         builder.setGracePeriods(ImmutableSet.of());
@@ -627,7 +635,8 @@ public class DomainBase extends EppResource
 
   @Override
   public VKey<DomainBase> createVKey() {
-    return VKey.create(DomainBase.class, getRepoId(), Key.create(this));
+    // TODO(mmuller): create symmetric keys if we can ever reload both sides.
+    return VKey.createOfy(DomainBase.class, Key.create(this));
   }
 
   /** Predicate to determine if a given {@link DesignatedContact} is the registrant. */

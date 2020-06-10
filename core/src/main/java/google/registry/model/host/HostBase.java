@@ -36,7 +36,6 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
-import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
 import javax.persistence.MappedSuperclass;
 import org.joda.time.DateTime;
@@ -68,13 +67,13 @@ public class HostBase extends EppResource {
   @Index String fullyQualifiedHostName;
 
   /** IP Addresses for this host. Can be null if this is an external host. */
-  @Index @ElementCollection Set<InetAddress> inetAddresses;
+  @Index Set<InetAddress> inetAddresses;
 
   /** The superordinate domain of this host, or null if this is an external host. */
   @Index
   @IgnoreSave(IfNull.class)
   @DoNotHydrate
-  Key<DomainBase> superordinateDomain;
+  VKey<DomainBase> superordinateDomain;
 
   /**
    * The time that this resource was last transferred.
@@ -96,7 +95,7 @@ public class HostBase extends EppResource {
     return fullyQualifiedHostName;
   }
 
-  public Key<DomainBase> getSuperordinateDomain() {
+  public VKey<DomainBase> getSuperordinateDomain() {
     return superordinateDomain;
   }
 
@@ -158,7 +157,7 @@ public class HostBase extends EppResource {
     }
     checkArgument(
         superordinateDomain != null
-            && Key.create(superordinateDomain).equals(getSuperordinateDomain()));
+            && superordinateDomain.createVKey().equals(getSuperordinateDomain()));
     DateTime lastSuperordinateChange =
         Optional.ofNullable(getLastSuperordinateChange()).orElse(getCreationTime());
     DateTime lastTransferOfCurrentSuperordinate =
@@ -217,7 +216,7 @@ public class HostBase extends EppResource {
           ImmutableSet.copyOf(difference(getInstance().getInetAddresses(), inetAddresses)));
     }
 
-    public B setSuperordinateDomain(Key<DomainBase> superordinateDomain) {
+    public B setSuperordinateDomain(VKey<DomainBase> superordinateDomain) {
       getInstance().superordinateDomain = superordinateDomain;
       return thisCastToDerived();
     }

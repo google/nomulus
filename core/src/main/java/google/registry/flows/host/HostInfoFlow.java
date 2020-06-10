@@ -18,7 +18,7 @@ import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.model.EppResourceUtils.isLinked;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
@@ -77,7 +77,7 @@ public final class HostInfoFlow implements Flow {
     // there is no superordinate domain, the host's own values for these fields will be correct.
     if (host.isSubordinate()) {
       DomainBase superordinateDomain =
-          ofy().load().key(host.getSuperordinateDomain()).now().cloneProjectedAtTime(now);
+          tm().load(host.getSuperordinateDomain()).cloneProjectedAtTime(now);
       hostInfoDataBuilder
           .setCurrentSponsorClientId(superordinateDomain.getCurrentSponsorClientId())
           .setLastTransferTime(host.computeLastTransferTime(superordinateDomain));
