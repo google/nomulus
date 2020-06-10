@@ -40,7 +40,6 @@ import java.net.InetAddress;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
-import javax.persistence.ElementCollection;
 import org.joda.time.DateTime;
 
 /**
@@ -70,7 +69,7 @@ public class HostResource extends EppResource
   String fullyQualifiedHostName;
 
   /** IP Addresses for this host. Can be null if this is an external host. */
-  @Index @ElementCollection Set<InetAddress> inetAddresses;
+  @Index Set<InetAddress> inetAddresses;
 
   /** The superordinate domain of this host, or null if this is an external host. */
   @Index

@@ -348,17 +348,8 @@ CREATE TABLE public."HostResource" (
     fully_qualified_host_name text,
     last_superordinate_change timestamp with time zone,
     last_transfer_time timestamp with time zone,
-    superordinate_domain text
-);
-
-
---
--- Name: HostResource_inetAddresses; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."HostResource_inetAddresses" (
-    host_resource_repo_id text NOT NULL,
-    inet_addresses bytea
+    superordinate_domain text,
+    inet_addresses text[]
 );
 
 
@@ -1093,14 +1084,6 @@ ALTER TABLE ONLY public."Domain"
 
 ALTER TABLE ONLY public."ClaimsEntry"
     ADD CONSTRAINT fk6sc6at5hedffc0nhdcab6ivuq FOREIGN KEY (revision_id) REFERENCES public."ClaimsList"(revision_id);
-
-
---
--- Name: HostResource_inetAddresses fk6unwhfkcu3oq6q347fxvpagv; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."HostResource_inetAddresses"
-    ADD CONSTRAINT fk6unwhfkcu3oq6q347fxvpagv FOREIGN KEY (host_resource_repo_id) REFERENCES public."HostResource"(repo_id);
 
 
 --
