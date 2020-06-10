@@ -368,12 +368,12 @@ public class Ofy {
 
   /** Convert an entity POJO to a datastore Entity. */
   public Entity toEntity(Object pojo) {
-    return ofy().toEntity(pojo);
+    return ofy().save().toEntity(pojo);
   }
 
   /** Convert a datastore entity to a POJO. */
   public Object toPojo(Entity entity) {
-    return ofy().toPojo(entity);
+    return ofy().load().fromEntity(entity);
   }
 
   /**
