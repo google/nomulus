@@ -19,7 +19,7 @@ import google.registry.util.NonFinalForTesting;
 /** Factory class for {@link ReservedListDao}. */
 public class ReservedListDaoFactory {
 
-  private static ReservedListDao dao = ReservedListDualDao.INSTANCE;
+  private static ReservedListDao dao = ReservedListDualDao.getInstance();
 
   private ReservedListDaoFactory() {}
 

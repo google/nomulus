@@ -36,16 +36,20 @@ public class ReservedListDualDao implements ReservedListDao {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  static final ReservedListDualDao INSTANCE = new ReservedListDualDao();
+  private static final ReservedListDualDao instance = new ReservedListDualDao();
 
   private ReservedListDualDao() {}
+
+  public static ReservedListDualDao getInstance() {
+    return instance;
+  }
 
   @Override
   public void save(ReservedList reservedList) {
     ofyTm().transact(() -> ofyTm().saveNewOrUpdate(reservedList));
     try {
       logger.atInfo().log("Saving reserved list %s to Cloud SQL", reservedList.getName());
-      ReservedListSqlDao.INSTANCE.save(reservedList);
+      ReservedListSqlDao.getInstance().save(reservedList);
       logger.atInfo().log(
           "Saved reserved list %s with %d entries to Cloud SQL",
           reservedList.getName(), reservedList.getReservedListEntries().size());
@@ -73,7 +77,7 @@ public class ReservedListDualDao implements ReservedListDao {
 
   private static void loadAndCompareCloudSqlList(ReservedList datastoreList) {
     Optional<ReservedList> maybeCloudSqlList =
-        ReservedListSqlDao.INSTANCE.getLatestRevision(datastoreList.getName());
+        ReservedListSqlDao.getInstance().getLatestRevision(datastoreList.getName());
     if (maybeCloudSqlList.isPresent()) {
       Map<String, ReservedListEntry> datastoreLabelsToReservations =
           datastoreList.reservedListMap.entrySet().parallelStream()

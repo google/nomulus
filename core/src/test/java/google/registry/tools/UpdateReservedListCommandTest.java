@@ -50,13 +50,14 @@ public class UpdateReservedListCommandTest extends
   }
 
   private void populateInitialReservedListInCloudSql(boolean shouldPublish) {
-    ReservedListSqlDao.INSTANCE.save(
-        createCloudSqlReservedList(
-            "xn--q9jyb4c_common-reserved",
-            fakeClock.nowUtc(),
-            shouldPublish,
-            ImmutableMap.of(
-                "helicopter", ReservedListEntry.create("helicopter", FULLY_BLOCKED, ""))));
+    ReservedListSqlDao.getInstance()
+        .save(
+            createCloudSqlReservedList(
+                "xn--q9jyb4c_common-reserved",
+                fakeClock.nowUtc(),
+                shouldPublish,
+                ImmutableMap.of(
+                    "helicopter", ReservedListEntry.create("helicopter", FULLY_BLOCKED, ""))));
   }
 
   @Test

@@ -22,9 +22,13 @@ import java.util.Optional;
 /** Implementation of {@link ReservedListDao} for Cloud SQL. */
 public class ReservedListSqlDao implements ReservedListDao {
 
-  public static final ReservedListDao INSTANCE = new ReservedListSqlDao();
+  private static final ReservedListSqlDao instance = new ReservedListSqlDao();
 
   private ReservedListSqlDao() {}
+
+  public static ReservedListSqlDao getInstance() {
+    return instance;
+  }
 
   @Override
   public void save(ReservedList reservedList) {

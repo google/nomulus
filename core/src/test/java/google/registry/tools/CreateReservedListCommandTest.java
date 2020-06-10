@@ -187,13 +187,14 @@ public class CreateReservedListCommandTest extends
   public void testSaveToCloudSql_noExceptionThrownWhenSaveFail() throws Exception {
     // Note that, during the dual-write phase, we want to make sure that no exception will be
     // thrown if saving reserved list to Cloud SQL fails.
-    ReservedListSqlDao.INSTANCE.save(
-        createCloudSqlReservedList(
-            "xn--q9jyb4c_common-reserved",
-            fakeClock.nowUtc(),
-            true,
-            ImmutableMap.of(
-                "testdomain", ReservedListEntry.create("testdomain", FULLY_BLOCKED, ""))));
+    ReservedListSqlDao.getInstance()
+        .save(
+            createCloudSqlReservedList(
+                "xn--q9jyb4c_common-reserved",
+                fakeClock.nowUtc(),
+                true,
+                ImmutableMap.of(
+                    "testdomain", ReservedListEntry.create("testdomain", FULLY_BLOCKED, ""))));
     runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
     verifyXnq9jyb4cInDatastore();
   }

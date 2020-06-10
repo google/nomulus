@@ -65,7 +65,7 @@ public class ReservedListSqlDaoTest {
 
   @Test
   public void save_worksSuccessfully() {
-    ReservedListSqlDao.INSTANCE.save(test_reserved_list);
+    ReservedListSqlDao.getInstance().save(test_reserved_list);
     jpaTm()
         .transact(
             () -> {
@@ -84,15 +84,17 @@ public class ReservedListSqlDaoTest {
   @Test
   public void checkExists_worksSuccessfully() {
     assertThat(ReservedListSqlDao.checkExists("testlist")).isFalse();
-    ReservedListSqlDao.INSTANCE.save(test_reserved_list);
+    ReservedListSqlDao.getInstance().save(test_reserved_list);
     assertThat(ReservedListSqlDao.checkExists("testlist")).isTrue();
   }
 
   @Test
   public void getLatestRevision_worksSuccessfully() {
-    assertThat(ReservedListSqlDao.INSTANCE.getLatestRevision("testlist").isPresent()).isFalse();
-    ReservedListSqlDao.INSTANCE.save(test_reserved_list);
-    ReservedList persistedList = ReservedListSqlDao.INSTANCE.getLatestRevision("testlist").get();
+    assertThat(ReservedListSqlDao.getInstance().getLatestRevision("testlist").isPresent())
+        .isFalse();
+    ReservedListSqlDao.getInstance().save(test_reserved_list);
+    ReservedList persistedList =
+        ReservedListSqlDao.getInstance().getLatestRevision("testlist").get();
     assertThat(persistedList.getRevisionId()).isNotNull();
     assertThat(persistedList.getLastUpdateTime()).isEqualTo(fakeClock.nowUtc());
     assertThat(persistedList.getName()).isEqualTo("testlist");
@@ -102,19 +104,21 @@ public class ReservedListSqlDaoTest {
 
   @Test
   public void getLatestRevision_returnsLatestRevision() {
-    ReservedListSqlDao.INSTANCE.save(
-        new ReservedList.Builder()
-            .setName("testlist")
-            .setLastUpdateTime(fakeClock.nowUtc())
-            .setShouldPublish(false)
-            .setReservedListMap(
-                ImmutableMap.of(
-                    "old",
-                    ReservedListEntry.create(
-                        "old", ReservationType.RESERVED_FOR_SPECIFIC_USE, null)))
-            .build());
-    ReservedListSqlDao.INSTANCE.save(test_reserved_list);
-    ReservedList persistedList = ReservedListSqlDao.INSTANCE.getLatestRevision("testlist").get();
+    ReservedListSqlDao.getInstance()
+        .save(
+            new ReservedList.Builder()
+                .setName("testlist")
+                .setLastUpdateTime(fakeClock.nowUtc())
+                .setShouldPublish(false)
+                .setReservedListMap(
+                    ImmutableMap.of(
+                        "old",
+                        ReservedListEntry.create(
+                            "old", ReservationType.RESERVED_FOR_SPECIFIC_USE, null)))
+                .build());
+    ReservedListSqlDao.getInstance().save(test_reserved_list);
+    ReservedList persistedList =
+        ReservedListSqlDao.getInstance().getLatestRevision("testlist").get();
     assertThat(persistedList.getRevisionId()).isNotNull();
     assertThat(persistedList.getLastUpdateTime()).isEqualTo(fakeClock.nowUtc());
     assertThat(persistedList.getName()).isEqualTo("testlist");
