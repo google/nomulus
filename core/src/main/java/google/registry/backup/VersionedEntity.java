@@ -64,9 +64,8 @@ public abstract class VersionedEntity implements Serializable {
 
   /**
    * Converts deleted entity keys in {@code manifest} into a {@link Stream} of {@link
-   * VersionedEntity VersionedEntities}.
-   *
-   * @see {@link CommitLogImports#loadEntities(InputStream)}
+   * VersionedEntity VersionedEntities}. See {@link CommitLogImports#loadEntities} for more
+   * information.
    */
   public static Stream<VersionedEntity> fromManifest(CommitLogManifest manifest) {
     long commitTimeMillis = manifest.getCommitTime().getMillis();
