@@ -236,7 +236,7 @@ public class Registrar extends ImmutableObject
    */
   @Id
   @javax.persistence.Id
-  @Column(name = "client_id", nullable = false)
+  @Column(name = "registrarId", nullable = false)
   String clientIdentifier;
 
   /**
