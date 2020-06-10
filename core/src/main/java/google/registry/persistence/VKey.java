@@ -30,6 +30,8 @@ import java.util.Optional;
  */
 public class VKey<T> extends ImmutableObject implements Serializable {
 
+  private static final long serialVersionUID = -5291472863840231240L;
+
   // The primary key for the referenced entity.
   private final Object primaryKey;
 

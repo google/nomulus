@@ -14,6 +14,7 @@
 
 package google.registry.persistence.transaction;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -34,11 +35,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 /**
- * A persistable SQL transaction.
+ * An SQL transaction that can be serialized and stored in its own table.
  *
  * <p>Transaction is used to store transactions committed to Cloud SQL in a Transaction table during
  * the second phase of our migration, during which time we will be asynchronously replaying Cloud
  * SQL transactions to datastore.
+ *
+ * <p>TODO(mmuller): Use these from {@link TransactionManager} to store the contents of an SQL
+ * transaction for asynchronous propagation to datastore. Implement a cron endpoint that reads them
+ * from the Transaction table and calls writeToDatastore().
  */
 public class Transaction extends ImmutableObject implements Buildable {
 
@@ -85,10 +90,8 @@ public class Transaction extends ImmutableObject implements Buildable {
 
     // Verify that the data is what we expect.
     int version = in.readInt();
-    if (version != VERSION_ID) {
-      throw new IllegalArgumentException(
-          "Invalid version id.  Expected " + VERSION_ID + " but got " + version);
-    }
+    checkArgument(
+        version == VERSION_ID, "Invalid version id.  Expected %s but got %s", VERSION_ID, version);
 
     Transaction.Builder builder = new Transaction.Builder();
     while (true) {
