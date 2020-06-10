@@ -58,7 +58,7 @@ import org.joda.time.DateTime;
     name = "Contact",
     indexes = {
       @javax.persistence.Index(columnList = "creationTime"),
-      @javax.persistence.Index(columnList = "currentSponsorClientId"),
+      @javax.persistence.Index(columnList = "currentSponsorRegistrarId"),
       @javax.persistence.Index(columnList = "deletionTime"),
       @javax.persistence.Index(columnList = "contactId", unique = true),
       @javax.persistence.Index(columnList = "searchName")

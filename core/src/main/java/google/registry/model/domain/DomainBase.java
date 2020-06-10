@@ -104,7 +104,7 @@ import org.joda.time.Interval;
     name = "Domain",
     indexes = {
       @javax.persistence.Index(columnList = "creationTime"),
-      @javax.persistence.Index(columnList = "currentSponsorClientId"),
+      @javax.persistence.Index(columnList = "currentSponsorRegistrarId"),
       @javax.persistence.Index(columnList = "deletionTime"),
       @javax.persistence.Index(columnList = "fullyQualifiedDomainName"),
       @javax.persistence.Index(columnList = "tld")

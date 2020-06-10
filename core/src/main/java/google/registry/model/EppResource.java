@@ -76,11 +76,11 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
 
   /** The ID of the registrar that is currently sponsoring this resource. */
   @Index
-  @Column(nullable = false)
+  @Column(name = "currentSponsorRegistrarId", nullable = false)
   String currentSponsorClientId;
 
   /** The ID of the registrar that created this resource. */
-  @Column(nullable = false)
+  @Column(name = "creationRegistrarId", nullable = false)
   String creationClientId;
 
   /**
@@ -90,6 +90,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
    * edits; it only includes EPP-visible modifications such as {@literal <update>}. Can be null if
    * the resource has never been modified.
    */
+  @Column(name = "lastEppUpdateRegistrarId")
   String lastEppUpdateClientId;
 
   /** The time when this resource was created. */
