@@ -348,9 +348,10 @@ CREATE TABLE public."HostHistory" (
     history_type text NOT NULL,
     history_xml_bytes bytea NOT NULL,
     fully_qualified_host_name text,
+    inet_addresses text[],
     last_superordinate_change timestamp with time zone,
     last_transfer_time timestamp with time zone,
-    superordinate_domain bytea,
+    superordinate_domain text,
     creation_client_id text NOT NULL,
     creation_time timestamp with time zone NOT NULL,
     current_sponsor_client_id text NOT NULL,
@@ -379,16 +380,6 @@ CREATE SEQUENCE public."HostHistory_history_revision_id_seq"
 --
 
 ALTER SEQUENCE public."HostHistory_history_revision_id_seq" OWNED BY public."HostHistory".history_revision_id;
-
-
---
--- Name: HostHistory_inetAddresses; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."HostHistory_inetAddresses" (
-    host_history_history_revision_id bigint NOT NULL,
-    inet_addresses bytea
-);
 
 
 --
@@ -1195,14 +1186,6 @@ ALTER TABLE ONLY public."ClaimsEntry"
 
 ALTER TABLE ONLY public."Contact"
     ADD CONSTRAINT fk93c185fx7chn68uv7nl6uv2s0 FOREIGN KEY (current_sponsor_client_id) REFERENCES public."Registrar"(client_id);
-
-
---
--- Name: HostHistory_inetAddresses fk9svsf0mplnb9d7tdpl44lssvp; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."HostHistory_inetAddresses"
-    ADD CONSTRAINT fk9svsf0mplnb9d7tdpl44lssvp FOREIGN KEY (host_history_history_revision_id) REFERENCES public."HostHistory"(history_revision_id);
 
 
 --

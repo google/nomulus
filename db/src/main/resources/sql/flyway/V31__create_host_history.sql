@@ -24,9 +24,10 @@ CREATE TABLE "HostHistory" (
     history_type text NOT NULL,
     history_xml_bytes bytea NOT NULL,
     fully_qualified_host_name text,
+    inet_addresses text[],
     last_superordinate_change timestamptz,
     last_transfer_time timestamptz,
-    superordinate_domain bytea,
+    superordinate_domain text,
     creation_client_id text NOT NULL,
     creation_time timestamptz NOT NULL,
     current_sponsor_client_id text NOT NULL,
@@ -38,20 +39,9 @@ CREATE TABLE "HostHistory" (
     primary key (history_revision_id)
 );
 
-CREATE TABLE "HostHistory_inetAddresses" (
-   host_history_history_revision_id int8 NOT NULL,
-    inet_addresses bytea
-);
-
 CREATE INDEX IDXfg2nnjlujxo6cb9fha971bq2n ON "HostHistory" (creation_time);
-CREATE INDEX IDXnxei34hfrt20dyxtphh6j25mo
-   ON "HostHistory" (history_registrar_id);
+CREATE INDEX IDXnxei34hfrt20dyxtphh6j25mo ON "HostHistory" (history_registrar_id);
 CREATE INDEX IDXhancbub2w7c2rirfaeu4j9uh2 ON "HostHistory" (host_repo_id);
-
-ALTER TABLE IF EXISTS "HostHistory_inetAddresses"
-   ADD CONSTRAINT FK9svsf0mplnb9d7tdpl44lssvp
-   FOREIGN KEY (host_history_history_revision_id)
-   REFERENCES "HostHistory";
 
 ALTER TABLE IF EXISTS "HostHistory"
    ADD CONSTRAINT FK3d09knnmxrt6iniwnp8j2ykga
