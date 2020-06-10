@@ -93,7 +93,7 @@ public final class ContactTransferCancelFlow implements TransactionalFlow {
     ofy().save().<Object>entities(newContact, historyEntry, losingPollMessage);
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.
-    ofy().delete().keys(existingContact.getTransferData().getServerApproveEntities());
+    tm().delete(existingContact.getTransferData().getServerApproveEntities());
     return responseBuilder
         .setResData(createTransferResponse(targetId, newContact.getTransferData()))
         .build();

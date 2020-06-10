@@ -138,10 +138,16 @@ public class DomainBaseTest extends EntityTestCase {
                             .setLosingClientId("losing")
                             .setPendingTransferExpirationTime(fakeClock.nowUtc())
                             .setServerApproveEntities(
-                                ImmutableSet.of(oneTimeBillKey, recurringBillKey, autorenewPollKey))
-                            .setServerApproveBillingEvent(oneTimeBillKey)
-                            .setServerApproveAutorenewEvent(recurringBillKey)
-                            .setServerApproveAutorenewPollMessage(autorenewPollKey)
+                                ImmutableSet.of(
+                                    VKey.createOfy(BillingEvent.OneTime.class, oneTimeBillKey),
+                                    VKey.createOfy(BillingEvent.Recurring.class, recurringBillKey),
+                                    VKey.createOfy(PollMessage.Autorenew.class, autorenewPollKey)))
+                            .setServerApproveBillingEvent(
+                                VKey.createOfy(BillingEvent.OneTime.class, oneTimeBillKey))
+                            .setServerApproveAutorenewEvent(
+                                VKey.createOfy(BillingEvent.Recurring.class, recurringBillKey))
+                            .setServerApproveAutorenewPollMessage(
+                                VKey.createOfy(PollMessage.Autorenew.class, autorenewPollKey))
                             .setTransferRequestTime(fakeClock.nowUtc().plusDays(1))
                             .setTransferStatus(TransferStatus.SERVER_APPROVED)
                             .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
@@ -363,8 +369,8 @@ public class DomainBaseTest extends EntityTestCase {
                     .setTransferRequestTime(fakeClock.nowUtc().minusDays(4))
                     .setPendingTransferExpirationTime(fakeClock.nowUtc().plusDays(1))
                     .setGainingClientId("winner")
-                    .setServerApproveBillingEvent(Key.create(transferBillingEvent))
-                    .setServerApproveEntities(ImmutableSet.of(Key.create(transferBillingEvent)))
+                    .setServerApproveBillingEvent(transferBillingEvent.createVKey())
+                    .setServerApproveEntities(ImmutableSet.of(transferBillingEvent.createVKey()))
                     .build())
             .addGracePeriod(
                 // Okay for billing event to be null since the point of this grace period is just
@@ -375,7 +381,7 @@ public class DomainBaseTest extends EntityTestCase {
     DomainBase afterTransfer = domain.cloneProjectedAtTime(fakeClock.nowUtc().plusDays(1));
     DateTime newExpirationTime = oldExpirationTime.plusYears(1);
     Key<BillingEvent.Recurring> serverApproveAutorenewEvent =
-        domain.getTransferData().getServerApproveAutorenewEvent();
+        domain.getTransferData().getServerApproveAutorenewEvent().getOfyKey();
     assertTransferred(afterTransfer, newExpirationTime, serverApproveAutorenewEvent);
     assertThat(afterTransfer.getGracePeriods())
         .containsExactly(
@@ -746,8 +752,10 @@ public class DomainBaseTest extends EntityTestCase {
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingClientId("TheRegistrar")
-            .setServerApproveAutorenewEvent(recurringBillKey)
-            .setServerApproveBillingEvent(oneTimeBillKey)
+            .setServerApproveAutorenewEvent(
+                VKey.createOfy(BillingEvent.Recurring.class, recurringBillKey))
+            .setServerApproveBillingEvent(
+                VKey.createOfy(BillingEvent.OneTime.class, oneTimeBillKey))
             .build();
     domain =
         persistResource(

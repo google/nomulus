@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -114,7 +115,7 @@ public final class ResourceTransferUtils {
             R resource, R newResource, DateTime now, HistoryEntry historyEntry) {
     if (resource.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
       TransferData oldTransferData = resource.getTransferData();
-      ofy().delete().keys(oldTransferData.getServerApproveEntities());
+      tm().delete(oldTransferData.getServerApproveEntities());
       ofy()
           .save()
           .entity(

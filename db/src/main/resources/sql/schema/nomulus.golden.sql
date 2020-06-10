@@ -241,7 +241,23 @@ CREATE TABLE public."Contact" (
     addr_local_type text,
     search_name text,
     voice_phone_extension text,
-    voice_phone_number text
+    voice_phone_number text,
+    transfer_gaining_poll_message_id bigint,
+    transfer_losing_poll_message_id bigint,
+    transfer_billing_cancellation_id bigint,
+    transfer_billing_event_id bigint,
+    transfer_billing_recurrence_id bigint,
+    transfer_autorenew_poll_message_id bigint,
+    transfer_renew_period_unit text,
+    transfer_renew_period_value integer,
+    transfer_client_txn_id text,
+    transfer_server_txn_id text,
+    transfer_registration_expiration_time timestamp with time zone,
+    transfer_gaining_registrar_id text,
+    transfer_losing_registrar_id text,
+    transfer_pending_expiration_time timestamp with time zone,
+    transfer_request_time timestamp with time zone,
+    transfer_status text
 );
 
 
@@ -286,7 +302,23 @@ CREATE TABLE public."Domain" (
     admin_contact text,
     billing_contact text,
     registrant_contact text,
-    tech_contact text
+    tech_contact text,
+    transfer_gaining_poll_message_id bigint,
+    transfer_losing_poll_message_id bigint,
+    transfer_billing_cancellation_id bigint,
+    transfer_billing_event_id bigint,
+    transfer_billing_recurrence_id bigint,
+    transfer_autorenew_poll_message_id bigint,
+    transfer_renew_period_unit text,
+    transfer_renew_period_value integer,
+    transfer_client_txn_id text,
+    transfer_server_txn_id text,
+    transfer_registration_expiration_time timestamp with time zone,
+    transfer_gaining_registrar_id text,
+    transfer_losing_registrar_id text,
+    transfer_pending_expiration_time timestamp with time zone,
+    transfer_request_time timestamp with time zone,
+    transfer_status text
 );
 
 
@@ -1111,6 +1143,22 @@ ALTER TABLE ONLY public."BillingRecurrence"
 
 
 --
+-- Name: Contact fk_contact_transfer_gaining_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Contact"
+    ADD CONSTRAINT fk_contact_transfer_gaining_registrar_id FOREIGN KEY (transfer_gaining_registrar_id) REFERENCES public."Registrar"(client_id);
+
+
+--
+-- Name: Contact fk_contact_transfer_losing_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Contact"
+    ADD CONSTRAINT fk_contact_transfer_losing_registrar_id FOREIGN KEY (transfer_losing_registrar_id) REFERENCES public."Registrar"(client_id);
+
+
+--
 -- Name: Domain fk_domain_admin_contact; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1140,6 +1188,46 @@ ALTER TABLE ONLY public."Domain"
 
 ALTER TABLE ONLY public."Domain"
     ADD CONSTRAINT fk_domain_tech_contact FOREIGN KEY (tech_contact) REFERENCES public."Contact"(repo_id);
+
+
+--
+-- Name: Domain fk_domain_transfer_billing_cancellation_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_transfer_billing_cancellation_id FOREIGN KEY (transfer_billing_cancellation_id) REFERENCES public."BillingCancellation"(billing_cancellation_id);
+
+
+--
+-- Name: Domain fk_domain_transfer_billing_event_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_transfer_billing_event_id FOREIGN KEY (transfer_billing_event_id) REFERENCES public."BillingEvent"(billing_event_id);
+
+
+--
+-- Name: Domain fk_domain_transfer_billing_recurrence_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_transfer_billing_recurrence_id FOREIGN KEY (transfer_billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id);
+
+
+--
+-- Name: Domain fk_domain_transfer_gaining_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_transfer_gaining_registrar_id FOREIGN KEY (transfer_gaining_registrar_id) REFERENCES public."Registrar"(client_id);
+
+
+--
+-- Name: Domain fk_domain_transfer_losing_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_transfer_losing_registrar_id FOREIGN KEY (transfer_losing_registrar_id) REFERENCES public."Registrar"(client_id);
 
 
 --

@@ -43,6 +43,7 @@ import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
+import google.registry.persistence.VKey;
 import google.registry.persistence.WithLongVKey;
 import java.util.List;
 import java.util.Optional;
@@ -149,6 +150,9 @@ public abstract class PollMessage extends ImmutableObject
   }
 
   public abstract ImmutableList<ResponseData> getResponseData();
+
+  @Override
+  public abstract VKey<? extends PollMessage> createVKey();
 
   /** Override Buildable.asBuilder() to give this method stronger typing. */
   @Override
@@ -292,6 +296,11 @@ public abstract class PollMessage extends ImmutableObject
     String contactId;
 
     @Override
+    public VKey<OneTime> createVKey() {
+      return VKey.createOfy(this.getClass(), Key.create(this));
+    }
+
+    @Override
     public Builder asBuilder() {
       return new Builder(clone(this));
     }
@@ -385,6 +394,11 @@ public abstract class PollMessage extends ImmutableObject
 
     public DateTime getAutorenewEndTime() {
       return autorenewEndTime;
+    }
+
+    @Override
+    public VKey<Autorenew> createVKey() {
+      return VKey.createOfy(this.getClass(), Key.create(this));
     }
 
     @Override
