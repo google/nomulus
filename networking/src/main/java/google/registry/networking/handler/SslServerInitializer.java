@@ -25,6 +25,7 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.ssl.ClientAuth;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
@@ -33,9 +34,11 @@ import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPublicKey;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLSession;
 
@@ -72,6 +75,7 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
   // change when the artifacts on GCS changes.
   private final Supplier<PrivateKey> privateKeySupplier;
   private final Supplier<ImmutableList<X509Certificate>> certificatesSupplier;
+  private final ImmutableList<String> supportedSslVersions;
 
   public SslServerInitializer(
       boolean requireClientCert,
@@ -88,19 +92,27 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
     this.sslProvider = sslProvider;
     this.privateKeySupplier = privateKeySupplier;
     this.certificatesSupplier = certificatesSupplier;
+    this.supportedSslVersions =
+        sslProvider == SslProvider.OPENSSL
+            ? ImmutableList.of("TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1")
+            // JDK support for TLS 1.3 won't be available until 2020-07-14 at the earliest.
+            // See: https://java.com/en/jre-jdk-cryptoroadmap.html
+            : ImmutableList.of("TLSv1.2", "TLSv1.1", "TLSv1");
   }
 
   @Override
   protected void initChannel(C channel) throws Exception {
-    SslHandler sslHandler =
+    SslContext sslContext =
         SslContextBuilder.forServer(
                 privateKeySupplier.get(),
                 certificatesSupplier.get().toArray(new X509Certificate[0]))
             .sslProvider(sslProvider)
             .trustManager(InsecureTrustManagerFactory.INSTANCE)
             .clientAuth(requireClientCert ? ClientAuth.REQUIRE : ClientAuth.NONE)
-            .build()
-            .newHandler(channel.alloc());
+            .protocols(supportedSslVersions)
+            .build();
+    logger.atInfo().log("Available Cipher Suites: %s", sslContext.cipherSuites());
+    SslHandler sslHandler = sslContext.newHandler(channel.alloc());
     if (requireClientCert) {
       Promise<X509Certificate> clientCertificatePromise = channel.eventLoop().newPromise();
       Future<Channel> unusedFuture =
@@ -112,18 +124,29 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
                       SSLSession sslSession = sslHandler.engine().getSession();
                       X509Certificate clientCertificate =
                           (X509Certificate) sslSession.getPeerCertificates()[0];
+                      PublicKey clientPublicKey = clientCertificate.getPublicKey();
+                      // Note that for non-RSA keys the length would be -1.
+                      int clientCertificateLength = -1;
+                      if (clientPublicKey instanceof RSAPublicKey) {
+                        clientCertificateLength =
+                            ((RSAPublicKey) clientPublicKey).getModulus().bitLength();
+                      }
                       logger.atInfo().log(
                           "--SSL Information--\n"
                               + "Client Certificate Hash: %s\n"
                               + "SSL Protocol: %s\n"
                               + "Cipher Suite: %s\n"
                               + "Not Before: %s\n"
-                              + "Not After: %s\n",
+                              + "Not After: %s\n"
+                              + "Client Certificate Type: %s\n"
+                              + "Client Certificate Length: %s\n",
                           getCertificateHash(clientCertificate),
                           sslSession.getProtocol(),
                           sslSession.getCipherSuite(),
                           clientCertificate.getNotBefore(),
-                          clientCertificate.getNotAfter());
+                          clientCertificate.getNotAfter(),
+                          clientPublicKey.getClass().getName(),
+                          clientCertificateLength);
                       try {
                         clientCertificate.checkValidity();
                       } catch (CertificateNotYetValidException | CertificateExpiredException e) {
