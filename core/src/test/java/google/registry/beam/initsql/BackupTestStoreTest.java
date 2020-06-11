@@ -18,19 +18,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.newContactResource;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.newRegistry;
 
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.EntityTranslator;
-import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
-import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
 import com.googlecode.objectify.Key;
 import google.registry.backup.CommitLogImports;
 import google.registry.backup.VersionedEntity;
@@ -48,10 +42,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Stream;
+import org.apache.beam.sdk.values.KV;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,16 +56,17 @@ import org.junit.jupiter.api.io.TempDir;
 public class BackupTestStoreTest {
   private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
 
-  private FakeClock fakeClock;
-  private BackupTestStore store;
-
-  private Registry registry;
-  private ContactResource contact;
-  private DomainBase domain;
-
   @TempDir File tempDir;
 
   @RegisterExtension InjectRule injectRule = new InjectRule();
+
+  private FakeClock fakeClock;
+  private BackupTestStore store;
+
+  // Test data:
+  private Registry registry;
+  private ContactResource contact;
+  private DomainBase domain;
 
   @BeforeEach
   void beforeEach() throws Exception {
@@ -82,9 +76,15 @@ public class BackupTestStoreTest {
 
     registry = newRegistry("tld1", "TLD1");
     store.insertOrUpdate(registry);
+
     contact = newContactResource("contact_1");
     domain = newDomainBase("domain1.tld1", contact);
     store.insertOrUpdate(contact, domain);
+
+    // Save persisted data for assertions.
+    registry = (Registry) store.loadAsOfyEntity(registry);
+    contact = (ContactResource) store.loadAsOfyEntity(contact);
+    domain = (DomainBase) store.loadAsOfyEntity(domain);
   }
 
   @AfterEach
@@ -131,39 +131,33 @@ public class BackupTestStoreTest {
   void export_dataReadBack() throws IOException {
     String exportRootPath = tempDir.getAbsolutePath();
     File exportFolder = export(exportRootPath, Collections.EMPTY_SET);
-    ImmutableList<String> tldStrings =
-        loadPropertyFromExportedEntities(
-            new File(exportFolder, "/all_namespaces/kind_Registry/input-0"),
-            Registry.class,
-            Registry::getTldStr);
-    assertThat(tldStrings).containsExactly("tld1");
-    ImmutableList<String> domainStrings =
-        loadPropertyFromExportedEntities(
-            new File(exportFolder, "/all_namespaces/kind_DomainBase/input-0"),
-            DomainBase.class,
-            DomainBase::getDomainName);
-    assertThat(domainStrings).containsExactly("domain1.tld1");
-    ImmutableList<String> contactIds =
-        loadPropertyFromExportedEntities(
-            new File(exportFolder, "/all_namespaces/kind_ContactResource/input-0"),
-            ContactResource.class,
-            ContactResource::getContactId);
-    assertThat(contactIds).containsExactly("contact_1");
+    ImmutableList<Object> loadedRegistries =
+        loadExportedEntities(new File(exportFolder, "/all_namespaces/kind_Registry/input-0"));
+    assertThat(loadedRegistries).containsExactly(registry);
+
+    ImmutableList<Object> loadedDomains =
+        loadExportedEntities(new File(exportFolder, "/all_namespaces/kind_DomainBase/input-0"));
+    assertThat(loadedDomains).containsExactly(domain);
+
+    ImmutableList<Object> loadedContacts =
+        loadExportedEntities(
+            new File(exportFolder, "/all_namespaces/kind_ContactResource/input-0"));
+    assertThat(loadedContacts).containsExactly(contact);
   }
 
   @Test
   void export_excludeSomeEntity() throws IOException {
-    store.insertOrUpdate(newRegistry("tld2", "TLD2"));
+    Registry newRegistry = newRegistry("tld2", "TLD2");
+    store.insertOrUpdate(newRegistry);
+    newRegistry = (Registry) store.loadAsOfyEntity(newRegistry);
+
     String exportRootPath = tempDir.getAbsolutePath();
     File exportFolder =
         export(
             exportRootPath, ImmutableSet.of(Key.create(getCrossTldKey(), Registry.class, "tld1")));
-    ImmutableList<String> tlds =
-        loadPropertyFromExportedEntities(
-            new File(exportFolder, "/all_namespaces/kind_Registry/input-0"),
-            Registry.class,
-            Registry::getTldStr);
-    assertThat(tlds).containsExactly("tld2");
+    ImmutableList<Object> loadedRegistries =
+        loadExportedEntities(new File(exportFolder, "/all_namespaces/kind_Registry/input-0"));
+    assertThat(loadedRegistries).containsExactly(newRegistry);
   }
 
   @Test
@@ -178,14 +172,11 @@ public class BackupTestStoreTest {
     File commitLogFile = store.saveCommitLogs(tempDir.getAbsolutePath());
     assertThat(commitLogFile.exists()).isTrue();
     ImmutableList<VersionedEntity> mutations = CommitLogImports.loadEntities(commitLogFile);
-    assertThat(mutations.stream().map(VersionedEntity::getEntity).map(Optional::get))
-        .containsExactlyElementsIn(toDatastoreEntities(registry, contact, domain));
-    // Registry created at -2, contract and domain created at -1.
-    assertThat(mutations.stream().map(VersionedEntity::commitTimeMills))
-        .containsExactly(
-            fakeClock.nowUtc().getMillis() - 2,
-            fakeClock.nowUtc().getMillis() - 1,
-            fakeClock.nowUtc().getMillis() - 1);
+    InitSqlTestUtils.assertContainsExactlyElementsIn(
+        mutations,
+        KV.of(fakeClock.nowUtc().getMillis() - 2, store.loadAsDatastoreEntity(registry)),
+        KV.of(fakeClock.nowUtc().getMillis() - 1, store.loadAsDatastoreEntity(contact)),
+        KV.of(fakeClock.nowUtc().getMillis() - 1, store.loadAsDatastoreEntity(domain)));
   }
 
   @Test
@@ -205,18 +196,13 @@ public class BackupTestStoreTest {
             .build();
     store.insertOrUpdate(domain, newContact);
     store.delete(contact);
-    fakeClock.advanceOneMilli();
     File commitLogFile = store.saveCommitLogs(tempDir.getAbsolutePath());
     ImmutableList<VersionedEntity> mutations = CommitLogImports.loadEntities(commitLogFile);
-    assertThat(mutations.stream().filter(VersionedEntity::isDelete).map(VersionedEntity::key))
-        .containsExactly(Key.create(contact).getRaw());
-
-    assertThat(
-            mutations.stream()
-                .filter(Predicates.not(VersionedEntity::isDelete))
-                .map(VersionedEntity::getEntity)
-                .map(Optional::get))
-        .containsExactlyElementsIn(toDatastoreEntities(domain, newContact));
+    InitSqlTestUtils.assertContainsExactlyElementsIn(
+        mutations,
+        KV.of(fakeClock.nowUtc().getMillis() - 1, Key.create(contact).getRaw()),
+        KV.of(fakeClock.nowUtc().getMillis() - 2, store.loadAsDatastoreEntity(domain)),
+        KV.of(fakeClock.nowUtc().getMillis() - 2, store.loadAsDatastoreEntity(newContact)));
   }
 
   @Test
@@ -236,27 +222,10 @@ public class BackupTestStoreTest {
         excludes);
   }
 
-  private static <T> ImmutableList<String> loadPropertyFromExportedEntities(
-      File dataFile, Class<T> ofyEntityType, Function<T, String> getter) throws IOException {
+  private static ImmutableList<Object> loadExportedEntities(File dataFile) throws IOException {
     return Streams.stream(LevelDbLogReader.from(dataFile.toPath()))
-        .map(bytes -> toOfyEntity(bytes, ofyEntityType))
-        .map(getter)
+        .map(InitSqlTestUtils::bytesToEntity)
+        .map(InitSqlTestUtils::datastoreToOfyEntity)
         .collect(ImmutableList.toImmutableList());
-  }
-
-  private static <T> T toOfyEntity(byte[] rawRecord, Class<T> ofyEntityType) {
-    EntityProto proto = new EntityProto();
-    proto.parseFrom(rawRecord);
-    Entity entity = EntityTranslator.createFromPb(proto);
-    return ofyEntityType.cast(ofy().load().fromEntity(entity));
-  }
-
-  @SafeVarargs
-  private static ImmutableList<Entity> toDatastoreEntities(Object... ofyEntities) {
-    return tm().transact(
-            () ->
-                Stream.of(ofyEntities)
-                    .map(oe -> ofy().save().toEntity(oe))
-                    .collect(ImmutableList.toImmutableList()));
   }
 }

@@ -15,8 +15,11 @@
 package google.registry.beam.initsql;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Streams;
 import org.joda.time.DateTime;
 
 /**
@@ -46,6 +49,21 @@ public final class BackupPaths {
   }
 
   /**
+   * Returns an {@link ImmutableList} of regex patterns that match all Datastore export files of the
+   * given {@code kinds}.
+   *
+   * @param exportDir path to the top directory of a Datastore export
+   * @param kinds all entity 'kinds' to be matched
+   */
+  public static ImmutableList<String> getExportFilePatterns(
+      String exportDir, Iterable<String> kinds) {
+    checkNotNull(kinds, "kinds");
+    return Streams.stream(kinds)
+        .map(kind -> getExportFileNamePattern(exportDir, kind))
+        .collect(ImmutableList.toImmutableList());
+  }
+
+  /**
    * Returns the fully qualified path of a Datastore export file with the given {@code kind} and
    * {@code shard}.
    *
@@ -60,8 +78,9 @@ public final class BackupPaths {
     return String.format(EXPORT_PATTERN_TEMPLATE, exportDir, kind, Integer.toString(shard));
   }
 
-  public static String getCommitLogFileNamePattern(String commitLogDir) {
-    return String.format(COMMIT_LOG_PATTERN_TEMPLATE, commitLogDir);
+  /** Returns an {@link ImmutableList} of regex patterns that match all CommitLog files. */
+  public static ImmutableList<String> getCommitLogFilePatterns(String commitLogDir) {
+    return ImmutableList.of(String.format(COMMIT_LOG_PATTERN_TEMPLATE, commitLogDir));
   }
 
   /** Gets the Commit timestamp from a CommitLog file name. */
