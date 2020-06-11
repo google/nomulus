@@ -118,6 +118,7 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
                       X509Certificate clientCertificate =
                           (X509Certificate) sslSession.getPeerCertificates()[0];
                       PublicKey clientPublicKey = clientCertificate.getPublicKey();
+                      // Note that for non-RSA keys the length would be zero.
                       int clientCertificateLength = 0;
                       if (clientPublicKey instanceof RSAPublicKey) {
                         clientCertificateLength =
