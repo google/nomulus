@@ -27,14 +27,14 @@ import google.registry.schema.replay.SqlEntity;
  * reasons.
  *
  * <p>This exists as a storage place for common configuration options and global settings that
- * aren't updated too frequently.  Entities in this entity group are usually cached upon load.  The
+ * aren't updated too frequently. Entities in this entity group are usually cached upon load. The
  * reason this common entity group exists is because it enables strongly consistent queries and
- * updates across this seldomly updated data.  This shared entity group also helps cut down on
- * a potential ballooning in the number of entity groups enlisted in transactions.
+ * updates across this seldomly updated data. This shared entity group also helps cut down on a
+ * potential ballooning in the number of entity groups enlisted in transactions.
  *
- * <p>Historically, each TLD used to have a separate namespace, and all entities for a TLD were in
- * a single EntityGroupRoot for that TLD.  Hence why there was a "cross-tld" entity group -- it was
- * the entity group for the single namespace where global data applicable for all TLDs lived.
+ * <p>Historically, each TLD used to have a separate namespace, and all entities for a TLD were in a
+ * single EntityGroupRoot for that TLD. Hence why there was a "cross-tld" entity group -- it was the
+ * entity group for the single namespace where global data applicable for all TLDs lived.
  */
 @Entity
 public class EntityGroupRoot extends BackupGroupRoot implements DatastoreEntity {

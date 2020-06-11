@@ -62,8 +62,8 @@ import org.joda.time.DateTime;
  */
 @Entity
 public final class ReservedList
-    extends BaseDomainLabelList<ReservationType, ReservedList.ReservedListEntry> implements
-    DatastoreEntity {
+    extends BaseDomainLabelList<ReservationType, ReservedList.ReservedListEntry>
+    implements DatastoreEntity {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

@@ -327,8 +327,8 @@ public class ClaimsListShard extends ImmutableObject implements DatastoreEntity 
   }
 
   /**
-   * Serves as the coordinating claims list singleton linking to the {@link ClaimsListRevision}
-   * that is live.
+   * Serves as the coordinating claims list singleton linking to the {@link ClaimsListRevision} that
+   * is live.
    */
   @Entity
   @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)

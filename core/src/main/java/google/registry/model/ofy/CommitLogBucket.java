@@ -44,10 +44,9 @@ import org.joda.time.DateTime;
 /**
  * Root for a random commit log bucket.
  *
- * <p>This is used to shard {@link CommitLogManifest} objects into
- * {@link RegistryConfig#getCommitLogBucketCount() N} entity groups. This increases
- * transaction throughput, while maintaining the ability to perform strongly-consistent ancestor
- * queries.
+ * <p>This is used to shard {@link CommitLogManifest} objects into {@link
+ * RegistryConfig#getCommitLogBucketCount() N} entity groups. This increases transaction throughput,
+ * while maintaining the ability to perform strongly-consistent ancestor queries.
  *
  * @see <a href="https://cloud.google.com/appengine/articles/scaling/contention">Avoiding Datastore
  *     contention</a>

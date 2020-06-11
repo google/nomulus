@@ -56,7 +56,7 @@ public class FeeCheckCommandExtensionV11 extends ImmutableObject
   /** The period to check. */
   Period period;
 
-  /** The class to check. */
+  /** The fee class to check. */
   @XmlElement(name = "class")
   String feeClass;
 

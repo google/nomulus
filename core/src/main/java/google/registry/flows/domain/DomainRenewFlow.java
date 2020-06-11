@@ -211,8 +211,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
             BeforeResponseParameters.newBuilder()
                 .setDomain(newDomain)
                 .setResData(DomainRenewData.create(targetId, newExpirationTime))
-                .setResponseExtensions(
-                    createResponseExtensions(feesAndCredits.getTotalCost(), feeRenew))
+                .setResponseExtensions(createResponseExtensions(feesAndCredits, feeRenew))
                 .build());
     return responseBuilder
         .setResData(responseData.resData())
@@ -270,14 +269,19 @@ public final class DomainRenewFlow implements TransactionalFlow {
   }
 
   private ImmutableList<FeeTransformResponseExtension> createResponseExtensions(
-      Money renewCost, Optional<FeeRenewCommandExtension> feeRenew) {
+      FeesAndCredits feesAndCredits, Optional<FeeRenewCommandExtension> feeRenew) {
     return feeRenew.isPresent()
         ? ImmutableList.of(
             feeRenew
                 .get()
                 .createResponseBuilder()
-                .setCurrency(renewCost.getCurrencyUnit())
-                .setFees(ImmutableList.of(Fee.create(renewCost.getAmount(), FeeType.RENEW)))
+                .setCurrency(feesAndCredits.getCurrency())
+                .setFees(
+                    ImmutableList.of(
+                        Fee.create(
+                            feesAndCredits.getRenewCost().getAmount(),
+                            FeeType.RENEW,
+                            feesAndCredits.hasPremiumFeesOfType(FeeType.RENEW))))
                 .build())
         : ImmutableList.of();
   }

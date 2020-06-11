@@ -31,25 +31,33 @@ import org.joda.time.DateTime;
 public class Fee extends BaseFee {
 
   /** Creates a Fee for the given cost and type with the default description. */
-  public static Fee create(BigDecimal cost, FeeType type, Object... descriptionArgs) {
+  public static Fee create(
+      BigDecimal cost, FeeType type, boolean isPremium, Object... descriptionArgs) {
     checkArgumentNotNull(type, "Must specify the type of the fee");
-    return createWithCustomDescription(cost, type, type.renderDescription(descriptionArgs));
+    return createWithCustomDescription(
+        cost, type, isPremium, type.renderDescription(descriptionArgs));
   }
 
   /** Creates a Fee for the given cost, type, and valid date range with the default description. */
   public static Fee create(
-      BigDecimal cost, FeeType type, Range<DateTime> validDateRange, Object... descriptionArgs) {
-    Fee instance = create(cost, type, descriptionArgs);
+      BigDecimal cost,
+      FeeType type,
+      boolean isPremium,
+      Range<DateTime> validDateRange,
+      Object... descriptionArgs) {
+    Fee instance = create(cost, type, isPremium, descriptionArgs);
     instance.validDateRange = validDateRange;
     return instance;
   }
 
   /** Creates a Fee for the given cost and type with a custom description. */
-  public static Fee createWithCustomDescription(BigDecimal cost, FeeType type, String description) {
+  private static Fee createWithCustomDescription(
+      BigDecimal cost, FeeType type, boolean isPremium, String description) {
     Fee instance = new Fee();
     instance.cost = checkNotNull(cost);
-    checkArgument(instance.cost.signum() >= 0);
+    checkArgument(instance.cost.signum() >= 0, "Cost must be a positive number");
     instance.type = checkNotNull(type);
+    instance.isPremium = isPremium;
     instance.description = description;
     return instance;
   }
