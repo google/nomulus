@@ -31,7 +31,7 @@ import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.PresenceMarker;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.AppEngineRule;
 import google.registry.xjc.contact.XjcContactPostalInfoEnumType;
@@ -297,46 +297,49 @@ public class ContactResourceToXjcConverterTest {
         .setLastTransferTime(DateTime.parse("1925-04-20TZ"))
         .setLastEppUpdateTime(DateTime.parse("1930-04-20TZ"))
         .setEmailAddress("justine@crr.com")
-        .setStatusValues(ImmutableSet.of(
-            StatusValue.CLIENT_DELETE_PROHIBITED,
-            StatusValue.SERVER_UPDATE_PROHIBITED))
-        .setInternationalizedPostalInfo(new PostalInfo.Builder()
-            .setType(PostalInfo.Type.INTERNATIONALIZED)
-            .setName("Dipsy Doodle")
-            .setOrg("Charleston Road Registry Incorporated")
-            .setAddress(new ContactAddress.Builder()
-                .setStreet(ImmutableList.of("123 Charleston Road", "Suite 123"))
-                .setCity("Mountain View")
-                .setState("CA")
-                .setZip("31337")
-                .setCountryCode("US")
+        .setStatusValues(
+            ImmutableSet.of(
+                StatusValue.CLIENT_DELETE_PROHIBITED, StatusValue.SERVER_UPDATE_PROHIBITED))
+        .setInternationalizedPostalInfo(
+            new PostalInfo.Builder()
+                .setType(PostalInfo.Type.INTERNATIONALIZED)
+                .setName("Dipsy Doodle")
+                .setOrg("Charleston Road Registry Incorporated")
+                .setAddress(
+                    new ContactAddress.Builder()
+                        .setStreet(ImmutableList.of("123 Charleston Road", "Suite 123"))
+                        .setCity("Mountain View")
+                        .setState("CA")
+                        .setZip("31337")
+                        .setCountryCode("US")
+                        .build())
                 .build())
-            .build())
         .setVoiceNumber(
             new ContactPhoneNumber.Builder()
                 .setPhoneNumber("+1.2126660000")
                 .setExtension("123")
                 .build())
-        .setFaxNumber(
-            new ContactPhoneNumber.Builder()
-                .setPhoneNumber("+1.2126660001")
+        .setFaxNumber(new ContactPhoneNumber.Builder().setPhoneNumber("+1.2126660001").build())
+        .setTransferData(
+            new ContactTransferData.Builder()
+                .setGainingClientId("TheRegistrar")
+                .setLosingClientId("NewRegistrar")
+                .setTransferRequestTime(DateTime.parse("1925-04-19TZ"))
+                .setPendingTransferExpirationTime(DateTime.parse("1925-04-21TZ"))
+                .setTransferStatus(TransferStatus.SERVER_APPROVED)
+                .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
                 .build())
-        .setTransferData(new TransferData.Builder()
-            .setGainingClientId("TheRegistrar")
-            .setLosingClientId("NewRegistrar")
-            .setTransferRequestTime(DateTime.parse("1925-04-19TZ"))
-            .setPendingTransferExpirationTime(DateTime.parse("1925-04-21TZ"))
-            .setTransferStatus(TransferStatus.SERVER_APPROVED)
-            .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
-            .build())
-        .setDisclose(new Disclose.Builder()
-            .setFlag(true)
-            .setEmail(new PresenceMarker())
-            .setAddrs(ImmutableList.of(
-                Disclose.PostalInfoChoice.create(PostalInfo.Type.INTERNATIONALIZED)))
-            .setNames(ImmutableList.of(
-                Disclose.PostalInfoChoice.create(PostalInfo.Type.INTERNATIONALIZED)))
-            .build())
+        .setDisclose(
+            new Disclose.Builder()
+                .setFlag(true)
+                .setEmail(new PresenceMarker())
+                .setAddrs(
+                    ImmutableList.of(
+                        Disclose.PostalInfoChoice.create(PostalInfo.Type.INTERNATIONALIZED)))
+                .setNames(
+                    ImmutableList.of(
+                        Disclose.PostalInfoChoice.create(PostalInfo.Type.INTERNATIONALIZED)))
+                .build())
         .build();
   }
 }

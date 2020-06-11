@@ -87,6 +87,7 @@ import google.registry.model.poll.PollMessage.OneTime;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.Lock;
+import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
@@ -303,7 +304,7 @@ public class DeleteContactsAndHostsActionTest
         false);
     runMapreduce();
     ContactResource contactAfterDeletion = ofy().load().entity(contact).now();
-    assertThat(contactAfterDeletion.getTransferData()).isEqualTo(TransferData.EMPTY);
+    assertThat(contactAfterDeletion.getTransferData()).isEqualTo(ContactTransferData.EMPTY);
   }
 
   @Test

@@ -51,7 +51,7 @@ import google.registry.model.host.HostResource;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registry.Registry;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
@@ -178,7 +178,7 @@ public class WhoisActionTest {
         makeDomainBaseWithRegistrar(registrar)
             .asBuilder()
             .setTransferData(
-                new TransferData.Builder()
+                new DomainTransferData.Builder()
                     .setGainingClientId("TheRegistrar")
                     .setLosingClientId("NewRegistrar")
                     .setTransferRequestTime(DateTime.parse("2009-05-29T20:13:00Z"))

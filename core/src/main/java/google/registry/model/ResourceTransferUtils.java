@@ -142,23 +142,25 @@ public final class ResourceTransferUtils {
    */
   private static <
           R extends EppResource & ResourceWithTransferData,
-          B extends EppResource.Builder<R, B> & BuilderWithTransferData<B>>
+          B extends EppResource.Builder<R, B> & BuilderWithTransferData<TransferData, B>>
       B resolvePendingTransfer(R resource, TransferStatus transferStatus, DateTime now) {
     checkArgument(
         resource.getStatusValues().contains(StatusValue.PENDING_TRANSFER),
         "Resource is not in pending transfer status.");
-    checkArgument(
-        !TransferData.EMPTY.equals(resource.getTransferData()),
-        "No old transfer data to resolve.");
+    checkArgument(!resource.getTransferData().isEmpty(), "No old transfer data to resolve.");
     @SuppressWarnings("unchecked")
     B builder = (B) resource.asBuilder();
+
     return builder
         .removeStatusValue(StatusValue.PENDING_TRANSFER)
         .setTransferData(
-            resource.getTransferData().copyConstantFieldsToBuilder()
-                .setTransferStatus(transferStatus)
-                .setPendingTransferExpirationTime(checkNotNull(now))
-                .build());
+            (TransferData)
+                resource
+                    .getTransferData()
+                    .copyConstantFieldsToBuilder()
+                    .setTransferStatus(transferStatus)
+                    .setPendingTransferExpirationTime(checkNotNull(now))
+                    .build());
   }
 
   /**
@@ -171,7 +173,7 @@ public final class ResourceTransferUtils {
    */
   public static <
           R extends EppResource & ResourceWithTransferData,
-          B extends EppResource.Builder<R, B> & BuilderWithTransferData<B>>
+          B extends EppResource.Builder<R, B> & BuilderWithTransferData<TransferData, B>>
       R approvePendingTransfer(R resource, TransferStatus transferStatus, DateTime now) {
     checkArgument(transferStatus.isApproved(), "Not an approval transfer status");
     B builder = resolvePendingTransfer(resource, transferStatus, now);

@@ -47,7 +47,7 @@ import google.registry.model.host.HostResource;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.FakeClock;
 import google.registry.util.Idn;
@@ -170,7 +170,7 @@ final class RdeFixtures {
                             .setParent(historyEntry)
                             .build())))
             .setTransferData(
-                new TransferData.Builder()
+                new DomainTransferData.Builder()
                     .setGainingClientId("gaining")
                     .setLosingClientId("losing")
                     .setPendingTransferExpirationTime(DateTime.parse("1993-04-20T00:00:00Z"))
