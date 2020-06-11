@@ -108,8 +108,8 @@ public final class CommitLogExports {
       CommitLogCheckpoint checkpoint) {
     checkArgument(
         prevCheckpoint == null
-            || isAtOrAfter(prevCheckpoint.getCheckpointTime(), START_OF_TIME)
-            || prevCheckpoint.getCheckpointTime().isBefore(checkpoint.getCheckpointTime()),
+            || (isAtOrAfter(prevCheckpoint.getCheckpointTime(), START_OF_TIME)
+                && prevCheckpoint.getCheckpointTime().isBefore(checkpoint.getCheckpointTime())),
         "Inversed checkpoint: prev is %s, current is %s.",
         Optional.ofNullable(prevCheckpoint)
             .map(CommitLogCheckpoint::getCheckpointTime)
