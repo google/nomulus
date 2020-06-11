@@ -75,6 +75,7 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
   // change when the artifacts on GCS changes.
   private final Supplier<PrivateKey> privateKeySupplier;
   private final Supplier<ImmutableList<X509Certificate>> certificatesSupplier;
+  private final ImmutableList<String> supportedSslVersions;
 
   public SslServerInitializer(
       boolean requireClientCert,
@@ -91,6 +92,12 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
     this.sslProvider = sslProvider;
     this.privateKeySupplier = privateKeySupplier;
     this.certificatesSupplier = certificatesSupplier;
+    this.supportedSslVersions =
+        sslProvider == SslProvider.OPENSSL
+            ? ImmutableList.of("TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1")
+            // JDK support for TLS 1.3 won't be available until 2020-07-14 at the earliest.
+            // See: https://java.com/en/jre-jdk-cryptoroadmap.html
+            : ImmutableList.of("TLSv1.2", "TLSv1.1", "TLSv1");
   }
 
   @Override
@@ -102,7 +109,7 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
             .sslProvider(sslProvider)
             .trustManager(InsecureTrustManagerFactory.INSTANCE)
             .clientAuth(requireClientCert ? ClientAuth.REQUIRE : ClientAuth.NONE)
-            .protocols("TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1")
+            .protocols(supportedSslVersions)
             .build();
     logger.atInfo().log("Available Cipher Suites: %s", sslContext.cipherSuites());
     SslHandler sslHandler = sslContext.newHandler(channel.alloc());
