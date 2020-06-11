@@ -617,8 +617,11 @@ public class DomainBase extends EppResource
 
   @Override
   public VKey<DomainBase> createVKey() {
-    // TODO(mmuller): create symmetric keys if we can ever reload both sides.
-    return VKey.createOfy(DomainBase.class, Key.create(this));
+    return VKey.create(DomainBase.class, getRepoId(), Key.create(this));
+  }
+
+  public static VKey<DomainBase> createVKey(Key key) {
+    return VKey.create(DomainBase.class, key.getName(), key);
   }
 
   /** Predicate to determine if a given {@link DesignatedContact} is the registrant. */
