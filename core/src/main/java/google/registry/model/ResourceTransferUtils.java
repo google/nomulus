@@ -36,6 +36,7 @@ import google.registry.model.poll.PendingActionNotificationResponse.ContactPendi
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
@@ -63,12 +64,13 @@ public final class ResourceTransferUtils {
     if (eppResource instanceof ContactResource) {
       builder = new ContactTransferResponse.Builder().setContactId(eppResource.getForeignKey());
     } else {
+      DomainTransferData domainTransferData = (DomainTransferData) transferData;
       builder =
           new DomainTransferResponse.Builder()
               .setFullyQualifiedDomainName(eppResource.getForeignKey())
               .setExtendedRegistrationExpirationTime(
-                  ADD_EXDATE_STATUSES.contains(transferData.getTransferStatus())
-                      ? transferData.getTransferredRegistrationExpirationTime()
+                  ADD_EXDATE_STATUSES.contains(domainTransferData.getTransferStatus())
+                      ? domainTransferData.getTransferredRegistrationExpirationTime()
                       : null);
     }
     builder.setGainingClientId(transferData.getGainingClientId())

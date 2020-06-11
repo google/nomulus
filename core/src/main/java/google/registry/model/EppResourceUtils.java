@@ -39,6 +39,7 @@ import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
 import google.registry.model.registry.Registry;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import java.util.List;
@@ -225,17 +226,17 @@ public final class EppResourceUtils {
   public static <
           T extends TransferData,
           B extends EppResource.Builder<?, B> & BuilderWithTransferData<T, B>>
-      void setAutomaticTransferSuccessProperties(B builder, T transferData) {
+      void setAutomaticTransferSuccessProperties(B builder, TransferData transferData) {
     checkArgument(TransferStatus.PENDING.equals(transferData.getTransferStatus()));
-
     TransferData.Builder transferDataBuilder = transferData.asBuilder();
     transferDataBuilder.setTransferStatus(TransferStatus.SERVER_APPROVED);
-    transferDataBuilder
-        .setServerApproveEntities(null)
-        .setServerApproveBillingEvent(null)
-        .setServerApproveAutorenewEvent(null)
-        .setServerApproveAutorenewPollMessage(null);
-
+    transferDataBuilder.setServerApproveEntities(null);
+    if (transferData instanceof DomainTransferData) {
+      ((DomainTransferData.Builder) transferDataBuilder)
+          .setServerApproveBillingEvent(null)
+          .setServerApproveAutorenewEvent(null)
+          .setServerApproveAutorenewPollMessage(null);
+    }
     builder
         .removeStatusValue(StatusValue.PENDING_TRANSFER)
         .setTransferData((T) transferDataBuilder.build())

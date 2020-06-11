@@ -58,7 +58,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -112,7 +112,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     if (!isSuperuser) {
       checkAllowedAccessToTld(clientId, tld);
     }
-    TransferData transferData = existingDomain.getTransferData();
+    DomainTransferData transferData = existingDomain.getTransferData();
     String gainingClientId = transferData.getGainingClientId();
     Registry registry = Registry.get(existingDomain.getTld());
     HistoryEntry historyEntry = buildHistoryEntry(existingDomain, registry, now, gainingClientId);

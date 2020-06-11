@@ -28,6 +28,7 @@ import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.rde.RdeMode;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
 import google.registry.util.Idn;
@@ -258,7 +259,7 @@ final class DomainBaseToXjcConverter {
   }
 
   /** Converts {@link TransferData} to {@link XjcRdeDomainTransferDataType}. */
-  private static XjcRdeDomainTransferDataType convertTransferData(TransferData model) {
+  private static XjcRdeDomainTransferDataType convertTransferData(DomainTransferData model) {
     XjcRdeDomainTransferDataType bean = new XjcRdeDomainTransferDataType();
     bean.setTrStatus(
         XjcEppcomTrStatusType.fromValue(model.getTransferStatus().getXmlName()));
