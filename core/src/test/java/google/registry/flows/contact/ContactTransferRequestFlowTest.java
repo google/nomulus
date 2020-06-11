@@ -43,8 +43,6 @@ import google.registry.flows.exceptions.ObjectAlreadySponsoredException;
 import google.registry.flows.exceptions.ResourceStatusProhibitsOperationException;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.Period;
-import google.registry.model.domain.Period.Unit;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
@@ -100,8 +98,6 @@ public class ContactTransferRequestFlowTest
                 .setTransferRequestTime(clock.nowUtc())
                 .setGainingClientId("NewRegistrar")
                 .setLosingClientId("TheRegistrar")
-                // Period is meaningless for contact transfers, but this is the default.
-                .setTransferPeriod(Period.create(1, Unit.YEARS))
                 .setTransferStatus(TransferStatus.PENDING)
                 .setPendingTransferExpirationTime(afterTransfer)
                 // Make the server-approve entities field a no-op comparison; it's easier to
