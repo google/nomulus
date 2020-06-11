@@ -53,7 +53,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
@@ -328,7 +328,7 @@ public class DomainBaseToXjcConverterTest {
                             .setParent(historyEntry)
                             .build())))
             .setTransferData(
-                new TransferData.Builder()
+                new DomainTransferData.Builder()
                     .setGainingClientId("gaining")
                     .setLosingClientId("losing")
                     .setPendingTransferExpirationTime(DateTime.parse("1925-04-20T00:00:00Z"))

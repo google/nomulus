@@ -121,5 +121,10 @@ public abstract class BaseTransferObject extends ImmutableObject {
       getInstance().pendingTransferExpirationTime = pendingTransferExpirationTime;
       return thisCastToDerived();
     }
+
+    @Override
+    public T build() {
+      return super.build();
+    }
   }
 }

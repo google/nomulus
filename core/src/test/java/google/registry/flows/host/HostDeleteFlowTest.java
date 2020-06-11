@@ -44,7 +44,7 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -226,7 +226,7 @@ public class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Hos
                 .setPersistedCurrentSponsorClientId("NewRegistrar") // Shouldn't hurt.
                 .addStatusValue(StatusValue.PENDING_TRANSFER)
                 .setTransferData(
-                    new TransferData.Builder()
+                    new DomainTransferData.Builder()
                         .setTransferStatus(TransferStatus.PENDING)
                         .setGainingClientId("NewRegistrar")
                         .setTransferRequestTime(requestTime)
@@ -259,7 +259,7 @@ public class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Hos
                 .setPersistedCurrentSponsorClientId("NewRegistrar") // Shouldn't help.
                 .addStatusValue(StatusValue.PENDING_TRANSFER)
                 .setTransferData(
-                    new TransferData.Builder()
+                    new DomainTransferData.Builder()
                         .setTransferStatus(TransferStatus.PENDING)
                         .setGainingClientId("TheRegistrar")
                         .setTransferRequestTime(requestTime)

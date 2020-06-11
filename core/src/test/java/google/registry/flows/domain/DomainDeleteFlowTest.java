@@ -90,7 +90,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
@@ -595,7 +595,7 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
     DomainBase domain = reloadResourceByForeignKey();
-    assertThat(domain.getTransferData()).isEqualTo(TransferData.EMPTY);
+    assertThat(domain.getTransferData()).isEqualTo(DomainTransferData.EMPTY);
   }
 
   @Test
@@ -603,7 +603,7 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
     setClientIdForFlow("TheRegistrar");
     setUpSuccessfulTest();
     // Modify the domain we are testing to include a pending transfer.
-    TransferData oldTransferData =
+    DomainTransferData oldTransferData =
         persistWithPendingTransfer(reloadResourceByForeignKey()).getTransferData();
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));

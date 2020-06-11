@@ -46,7 +46,7 @@ import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.TransferStatus;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -112,21 +112,22 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
         .setParent(Key.create(existingContact))
         .build();
     DateTime transferExpirationTime = now.plus(automaticTransferLength);
-    TransferData serverApproveTransferData = new TransferData.Builder()
-        .setTransferRequestTime(now)
-        .setTransferRequestTrid(trid)
-        .setGainingClientId(gainingClientId)
-        .setLosingClientId(losingClientId)
-        .setPendingTransferExpirationTime(transferExpirationTime)
-        .setTransferStatus(TransferStatus.SERVER_APPROVED)
-        .build();
+    ContactTransferData serverApproveTransferData =
+        new ContactTransferData.Builder()
+            .setTransferRequestTime(now)
+            .setTransferRequestTrid(trid)
+            .setGainingClientId(gainingClientId)
+            .setLosingClientId(losingClientId)
+            .setPendingTransferExpirationTime(transferExpirationTime)
+            .setTransferStatus(TransferStatus.SERVER_APPROVED)
+            .build();
     // If the transfer is server approved, this message will be sent to the losing registrar. */
     PollMessage serverApproveLosingPollMessage =
         createLosingTransferPollMessage(targetId, serverApproveTransferData, historyEntry);
     // If the transfer is server approved, this message will be sent to the gaining registrar. */
     PollMessage serverApproveGainingPollMessage =
         createGainingTransferPollMessage(targetId, serverApproveTransferData, historyEntry);
-    TransferData pendingTransferData =
+    ContactTransferData pendingTransferData =
         serverApproveTransferData
             .asBuilder()
             .setTransferStatus(TransferStatus.PENDING)

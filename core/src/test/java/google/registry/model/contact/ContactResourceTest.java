@@ -37,7 +37,7 @@ import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.PresenceMarker;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import org.junit.jupiter.api.BeforeEach;
@@ -108,7 +108,7 @@ public class ContactResourceTest extends EntityTestCase {
                     .build())
             .setStatusValues(ImmutableSet.of(StatusValue.OK))
             .setTransferData(
-                new TransferData.Builder()
+                new ContactTransferData.Builder()
                     .setGainingClientId("gaining")
                     .setLosingClientId("losing")
                     .setPendingTransferExpirationTime(fakeClock.nowUtc())
@@ -205,7 +205,8 @@ public class ContactResourceTest extends EntityTestCase {
   @Test
   public void testEmptyTransferDataBecomesNull() {
     ContactResource withNull = new ContactResource.Builder().setTransferData(null).build();
-    ContactResource withEmpty = withNull.asBuilder().setTransferData(TransferData.EMPTY).build();
+    ContactResource withEmpty =
+        withNull.asBuilder().setTransferData(ContactTransferData.EMPTY).build();
     assertThat(withNull).isEqualTo(withEmpty);
     assertThat(withEmpty.transferData).isNull();
   }

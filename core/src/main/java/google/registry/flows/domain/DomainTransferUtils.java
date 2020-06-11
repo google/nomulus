@@ -32,6 +32,7 @@ import google.registry.model.poll.PendingActionNotificationResponse.DomainPendin
 import google.registry.model.poll.PollMessage;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
@@ -48,8 +49,8 @@ import org.joda.time.DateTime;
 public final class DomainTransferUtils {
 
   /** Sets up {@link TransferData} for a domain with links to entities for server approval. */
-  public static TransferData createPendingTransferData(
-      TransferData.Builder transferDataBuilder,
+  public static DomainTransferData createPendingTransferData(
+      DomainTransferData.Builder transferDataBuilder,
       ImmutableSet<TransferServerApproveEntity> serverApproveEntities,
       Period transferPeriod) {
     ImmutableSet.Builder<VKey<? extends TransferServerApproveEntity>> serverApproveEntityKeys =
@@ -110,8 +111,8 @@ public final class DomainTransferUtils {
       DateTime now) {
     String targetId = existingDomain.getFullyQualifiedDomainName();
     // Create a TransferData for the server-approve case to use for the speculative poll messages.
-    TransferData serverApproveTransferData =
-        new TransferData.Builder()
+    DomainTransferData serverApproveTransferData =
+        new DomainTransferData.Builder()
             .setTransferRequestTrid(trid)
             .setTransferRequestTime(now)
             .setGainingClientId(gainingClientId)

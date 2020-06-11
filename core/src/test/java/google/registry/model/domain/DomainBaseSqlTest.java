@@ -29,7 +29,7 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
@@ -191,7 +191,7 @@ public class DomainBaseSqlTest {
     return new ContactResource.Builder()
         .setRepoId(repoId)
         .setCreationClientId("registrar1")
-        .setTransferData(new TransferData.Builder().build())
+        .setTransferData(new ContactTransferData.Builder().build())
         .setPersistedCurrentSponsorClientId("registrar1")
         .build();
   }

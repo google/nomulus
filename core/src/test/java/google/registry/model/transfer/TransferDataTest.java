@@ -57,8 +57,8 @@ public class TransferDataTest {
 
   @Test
   public void test_copyConstantFieldsToBuilder() {
-    TransferData constantTransferData =
-        new TransferData.Builder()
+    DomainTransferData constantTransferData =
+        new DomainTransferData.Builder()
             .setTransferRequestTrid(Trid.create("server-trid", "client-trid"))
             .setTransferRequestTime(now)
             .setGainingClientId("NewRegistrar")
@@ -66,7 +66,7 @@ public class TransferDataTest {
             // Test must use a non-1-year period, since that's the default value.
             .setTransferPeriod(Period.create(5, Period.Unit.YEARS))
             .build();
-    TransferData fullTransferData =
+    DomainTransferData fullTransferData =
         constantTransferData
             .asBuilder()
             .setPendingTransferExpirationTime(now)

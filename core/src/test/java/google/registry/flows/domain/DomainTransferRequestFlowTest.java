@@ -98,7 +98,7 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
@@ -213,7 +213,7 @@ public class DomainTransferRequestFlowTest
             domain.getTransferData().getTransferRequestTrid().getServerTransactionId());
     assertThat(domain.getTransferData())
         .isEqualTo(
-            new TransferData.Builder()
+            new DomainTransferData.Builder()
                 .setGainingClientId("NewRegistrar")
                 .setLosingClientId("TheRegistrar")
                 .setTransferRequestTrid(expectedTrid)

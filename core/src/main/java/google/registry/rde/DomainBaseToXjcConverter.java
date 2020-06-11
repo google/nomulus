@@ -234,7 +234,7 @@ final class DomainBaseToXjcConverter {
         //    *  An OPTIONAL <exDate> element that contains the end of the
         //       domain name object's validity period (expiry date) if the
         //       transfer caused or causes a change in the validity period.
-        if (!model.getTransferData().equals(TransferData.EMPTY)) {
+        if (!model.getTransferData().isEmpty()) {
           // Temporary check to make sure that there really was a transfer. A bug caused spurious
           // empty transfer records to get generated for deleted domains.
           // TODO(b/33289763): remove the hasGainingAndLosingRegistrars check in February 2017

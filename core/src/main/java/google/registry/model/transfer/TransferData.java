@@ -17,10 +17,8 @@ package google.registry.model.transfer;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
-import com.googlecode.objectify.annotation.Unindex;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
@@ -30,12 +28,14 @@ import google.registry.model.domain.Period.Unit;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
 import google.registry.persistence.VKey;
+import google.registry.util.TypeUtils.TypeInstantiator;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
+import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
@@ -43,12 +43,11 @@ import org.joda.time.DateTime;
  * Common transfer data for {@link EppResource} types. Only applies to domains and contacts; hosts
  * are implicitly transferred with their superordinate domain.
  */
-@Embed
-@Unindex
-@javax.persistence.Embeddable
-public class TransferData extends BaseTransferObject implements Buildable {
+@MappedSuperclass
+public abstract class TransferData<B extends TransferData.Builder<?, ?>> extends BaseTransferObject
+    implements Buildable {
 
-  public static final TransferData EMPTY = new TransferData();
+  // public static final TransferData EMPTY = new TransferData();
 
   /** The transaction id of the most recent transfer request (or null if there never was one). */
   @Embedded
@@ -152,6 +151,8 @@ public class TransferData extends BaseTransferObject implements Buildable {
   @Column(name = "transfer_autorenew_poll_message_id")
   VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessage;
 
+  public abstract boolean isEmpty();
+
   @Nullable
   public Trid getTransferRequestTrid() {
     return transferRequestTrid;
@@ -186,15 +187,14 @@ public class TransferData extends BaseTransferObject implements Buildable {
   }
 
   @Override
-  public Builder asBuilder() {
-    return new Builder(clone(this));
-  }
+  public abstract Builder asBuilder();
 
   /**
    * Returns a fresh Builder populated only with the constant fields of this TransferData, i.e.
    * those that are fixed and unchanging throughout the transfer process.
    *
    * <p>These fields are:
+   *
    * <ul>
    *   <li>transferRequestTrid
    *   <li>transferRequestTime
@@ -203,64 +203,72 @@ public class TransferData extends BaseTransferObject implements Buildable {
    *   <li>transferPeriod
    * </ul>
    */
-  public Builder copyConstantFieldsToBuilder() {
-    return new Builder()
+  public B copyConstantFieldsToBuilder() {
+    B newBuilder = new TypeInstantiator<B>(getClass()) {}.instantiate();
+    ;
+    newBuilder
+        .setTransferPeriod(this.transferPeriod)
         .setTransferRequestTrid(this.transferRequestTrid)
         .setTransferRequestTime(this.transferRequestTime)
         .setGainingClientId(this.gainingClientId)
-        .setLosingClientId(this.losingClientId)
-        .setTransferPeriod(this.transferPeriod);
+        .setLosingClientId(this.losingClientId);
+    return newBuilder;
   }
 
   /** Builder for {@link TransferData} because it is immutable. */
-  public static class Builder extends BaseTransferObject.Builder<TransferData, Builder> {
+  public abstract static class Builder<T extends TransferData, B extends Builder<T, B>>
+      extends BaseTransferObject.Builder<T, B> {
 
     /** Create a {@link Builder} wrapping a new instance. */
     public Builder() {}
 
     /** Create a {@link Builder} wrapping the given instance. */
-    private Builder(TransferData instance) {
+    protected Builder(T instance) {
       super(instance);
     }
 
-    public Builder setTransferRequestTrid(Trid transferRequestTrid) {
+    public B setTransferRequestTrid(Trid transferRequestTrid) {
       getInstance().transferRequestTrid = transferRequestTrid;
-      return this;
+      return thisCastToDerived();
     }
 
-    public Builder setTransferPeriod(Period transferPeriod) {
+    public B setTransferPeriod(Period transferPeriod) {
       getInstance().transferPeriod = transferPeriod;
-      return this;
+      return thisCastToDerived();
     }
 
-    public Builder setTransferredRegistrationExpirationTime(
+    public B setTransferredRegistrationExpirationTime(
         DateTime transferredRegistrationExpirationTime) {
       getInstance().transferredRegistrationExpirationTime = transferredRegistrationExpirationTime;
-      return this;
+      return thisCastToDerived();
     }
 
-    public Builder setServerApproveEntities(
+    public B setServerApproveEntities(
         ImmutableSet<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
       getInstance().serverApproveEntities = serverApproveEntities;
-      return this;
+      return thisCastToDerived();
     }
 
-    public Builder setServerApproveBillingEvent(
-        VKey<BillingEvent.OneTime> serverApproveBillingEvent) {
+    public B setServerApproveBillingEvent(VKey<BillingEvent.OneTime> serverApproveBillingEvent) {
       getInstance().serverApproveBillingEvent = serverApproveBillingEvent;
-      return this;
+      return thisCastToDerived();
     }
 
-    public Builder setServerApproveAutorenewEvent(
+    public B setServerApproveAutorenewEvent(
         VKey<BillingEvent.Recurring> serverApproveAutorenewEvent) {
       getInstance().serverApproveAutorenewEvent = serverApproveAutorenewEvent;
-      return this;
+      return thisCastToDerived();
     }
 
-    public Builder setServerApproveAutorenewPollMessage(
+    public B setServerApproveAutorenewPollMessage(
         VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessage) {
       getInstance().serverApproveAutorenewPollMessage = serverApproveAutorenewPollMessage;
-      return this;
+      return thisCastToDerived();
+    }
+
+    @Override
+    public T build() {
+      return super.build();
     }
   }
 

@@ -36,7 +36,6 @@ import google.registry.xjc.eppcom.XjcEppcomTrStatusType;
 import google.registry.xjc.rdecontact.XjcRdeContact;
 import google.registry.xjc.rdecontact.XjcRdeContactElement;
 import google.registry.xjc.rdecontact.XjcRdeContactTransferDataType;
-import java.util.Objects;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 
@@ -102,7 +101,7 @@ final class ContactResourceToXjcConverter {
     //       required before an automated response action will be taken by
     //       the registry.  For all other status types, the value identifies
     //       the date and time when the request was completed.
-    if (!Objects.equals(model.getTransferData(), TransferData.EMPTY)) {
+    if (!model.getTransferData().isEmpty()) {
       bean.setTrnData(convertTransferData(model.getTransferData()));
     }
 

@@ -114,7 +114,7 @@ class google.registry.model.contact.ContactResource {
   google.registry.model.contact.Disclose disclose;
   google.registry.model.contact.PostalInfo internationalizedPostalInfo;
   google.registry.model.contact.PostalInfo localizedPostalInfo;
-  google.registry.model.transfer.TransferData transferData;
+  google.registry.model.transfer.ContactTransferData transferData;
   java.lang.String contactId;
   java.lang.String creationClientId;
   java.lang.String currentSponsorClientId;
@@ -171,7 +171,7 @@ class google.registry.model.domain.DomainBase {
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.domain.DomainAuthInfo authInfo;
   google.registry.model.domain.launch.LaunchNotice launchNotice;
-  google.registry.model.transfer.TransferData transferData;
+  google.registry.model.transfer.DomainTransferData transferData;
   java.lang.String creationClientId;
   java.lang.String currentSponsorClientId;
   java.lang.String fullyQualifiedDomainName;
@@ -715,7 +715,21 @@ class google.registry.model.tmch.TmchCrl {
   java.lang.String url;
   org.joda.time.DateTime updated;
 }
-class google.registry.model.transfer.TransferData {
+class google.registry.model.transfer.ContactTransferData {
+  google.registry.model.domain.Period transferPeriod;
+  google.registry.model.eppcommon.Trid transferRequestTrid;
+  google.registry.model.transfer.TransferStatus transferStatus;
+  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$OneTime> serverApproveBillingEvent;
+  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$Recurring> serverApproveAutorenewEvent;
+  google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> serverApproveAutorenewPollMessage;
+  java.lang.String gainingClientId;
+  java.lang.String losingClientId;
+  java.util.Set<google.registry.persistence.VKey<? extends google.registry.model.transfer.TransferData$TransferServerApproveEntity>> serverApproveEntities;
+  org.joda.time.DateTime pendingTransferExpirationTime;
+  org.joda.time.DateTime transferRequestTime;
+  org.joda.time.DateTime transferredRegistrationExpirationTime;
+}
+class google.registry.model.transfer.DomainTransferData {
   google.registry.model.domain.Period transferPeriod;
   google.registry.model.eppcommon.Trid transferRequestTrid;
   google.registry.model.transfer.TransferStatus transferStatus;

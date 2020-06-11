@@ -69,7 +69,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
@@ -198,9 +198,9 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
             feesAndCredits.map(FeesAndCredits::getTotalCost),
             now);
     // Create the transfer data that represents the pending transfer.
-    TransferData pendingTransferData =
+    DomainTransferData pendingTransferData =
         createPendingTransferData(
-            new TransferData.Builder()
+            new DomainTransferData.Builder()
                 .setTransferRequestTrid(trid)
                 .setTransferRequestTime(now)
                 .setGainingClientId(gainingClientId)

@@ -50,7 +50,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import org.joda.time.DateTime;
@@ -95,7 +95,7 @@ public class ContactTransferRequestFlowTest
             contact.getTransferData().getTransferRequestTrid().getServerTransactionId());
     assertThat(contact.getTransferData())
         .isEqualTo(
-            new TransferData.Builder()
+            new ContactTransferData.Builder()
                 .setTransferRequestTrid(expectedTrid)
                 .setTransferRequestTime(clock.nowUtc())
                 .setGainingClientId("NewRegistrar")

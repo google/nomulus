@@ -193,8 +193,8 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   public interface ForeignKeyedEppResource {}
 
   /** An interface for resources that have transfer data. */
-  public interface ResourceWithTransferData {
-    TransferData getTransferData();
+  public interface ResourceWithTransferData<T extends TransferData> {
+    T getTransferData();
 
     /**
      * The time that this resource was last transferred.
@@ -205,8 +205,9 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   }
 
   /** An interface for builders of resources that have transfer data. */
-  public interface BuilderWithTransferData<B extends BuilderWithTransferData<B>> {
-    B setTransferData(TransferData transferData);
+  public interface BuilderWithTransferData<
+      T extends TransferData, B extends BuilderWithTransferData<T, B>> {
+    B setTransferData(T transferData);
 
     /** Set the time when this resource was transferred. */
     B setLastTransferTime(DateTime lastTransferTime);

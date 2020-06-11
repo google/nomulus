@@ -91,6 +91,8 @@ import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.model.registry.label.PremiumList.PremiumListRevision;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.transfer.ContactTransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
@@ -384,9 +386,19 @@ public class DatastoreHelper {
         registrar.asBuilder().setAllowedTlds(difference(registrar.getAllowedTlds(), tld)).build());
   }
 
-  private static TransferData.Builder createTransferDataBuilder(
+  private static DomainTransferData.Builder createDomainTransferDataBuilder(
       DateTime requestTime, DateTime expirationTime) {
-    return new TransferData.Builder()
+    return new DomainTransferData.Builder()
+        .setTransferStatus(TransferStatus.PENDING)
+        .setGainingClientId("NewRegistrar")
+        .setTransferRequestTime(requestTime)
+        .setLosingClientId("TheRegistrar")
+        .setPendingTransferExpirationTime(expirationTime);
+  }
+
+  private static ContactTransferData.Builder createContactTransferDataBuilder(
+      DateTime requestTime, DateTime expirationTime) {
+    return new ContactTransferData.Builder()
         .setTransferStatus(TransferStatus.PENDING)
         .setGainingClientId("NewRegistrar")
         .setTransferRequestTime(requestTime)
@@ -402,7 +414,7 @@ public class DatastoreHelper {
       DateTime expirationTime,
       @Nullable DateTime extendedRegistrationExpirationTime) {
     TransferData transferData =
-        createTransferDataBuilder(requestTime, expirationTime)
+        createDomainTransferDataBuilder(requestTime, expirationTime)
             .setTransferredRegistrationExpirationTime(extendedRegistrationExpirationTime)
             .build();
     return new PollMessage.OneTime.Builder()
@@ -448,7 +460,7 @@ public class DatastoreHelper {
             .setPersistedCurrentSponsorClientId("TheRegistrar")
             .addStatusValue(StatusValue.PENDING_TRANSFER)
             .setTransferData(
-                createTransferDataBuilder(requestTime, expirationTime)
+                createContactTransferDataBuilder(requestTime, expirationTime)
                     .setPendingTransferExpirationTime(now.plus(getContactAutomaticTransferLength()))
                     .setServerApproveEntities(
                         ImmutableSet.of(
@@ -588,8 +600,8 @@ public class DatastoreHelper {
     } else {
       deleteResource(autorenewPollMessage);
     }
-    TransferData.Builder transferDataBuilder =
-        createTransferDataBuilder(requestTime, expirationTime);
+    DomainTransferData.Builder transferDataBuilder =
+        createDomainTransferDataBuilder(requestTime, expirationTime);
     return persistResource(
         domain
             .asBuilder()
