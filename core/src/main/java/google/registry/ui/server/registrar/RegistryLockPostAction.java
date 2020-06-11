@@ -30,7 +30,6 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
-import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
@@ -49,12 +48,12 @@ import google.registry.tools.DomainLockUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.Map;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.http.client.utils.URIBuilder;
 import org.joda.time.Duration;
 
@@ -76,11 +75,11 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Gson GSON = new Gson();
 
-  private static final URL URL_BASE = RegistryConfig.getDefaultServer();
   private static final String VERIFICATION_EMAIL_TEMPLATE =
       "Please click the link below to perform the lock / unlock action on domain %s. Note: "
           + "this code will expire in one hour.\n\n%s";
 
+  private final HttpServletRequest req;
   private final JsonActionRunner jsonActionRunner;
   private final AuthResult authResult;
   private final AuthenticatedRegistrarAccessor registrarAccessor;
@@ -90,12 +89,14 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
 
   @Inject
   RegistryLockPostAction(
+      HttpServletRequest req,
       JsonActionRunner jsonActionRunner,
       AuthResult authResult,
       AuthenticatedRegistrarAccessor registrarAccessor,
       SendEmailService sendEmailService,
       DomainLockUtils domainLockUtils,
       @Config("gSuiteOutgoingEmailAddress") InternetAddress gSuiteOutgoingEmailAddress) {
+    this.req = req;
     this.jsonActionRunner = jsonActionRunner;
     this.authResult = authResult;
     this.registrarAccessor = registrarAccessor;
@@ -161,7 +162,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       String url =
           new URIBuilder()
               .setScheme("https")
-              .setHost(URL_BASE.getHost())
+              .setHost(req.getServerName())
               .setPath("registry-lock-verify")
               .setParameter("lockVerificationCode", lock.getVerificationCode())
               .setParameter("isLock", String.valueOf(isLock))
