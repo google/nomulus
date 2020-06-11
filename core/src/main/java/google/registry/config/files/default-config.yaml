@@ -377,6 +377,10 @@ registrarConsole:
     # Google Analytics account where data on console use is sent, optional
     googleAnalyticsId: null
 
+  # The front door URL of the service, e.g. "https://frontdoor" if it's
+  # different from the standard default service URL
+  frontDoorServiceUrl: null
+
 monitoring:
   # Max queries per second for the Google Cloud Monitoring V3 (aka Stackdriver)
   # API. The limit can be adjusted by contacting Cloud Support.

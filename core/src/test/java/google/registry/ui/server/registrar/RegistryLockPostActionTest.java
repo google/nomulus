@@ -52,6 +52,7 @@ import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
 import google.registry.util.StringGenerator.Alphabets;
+import java.net.URL;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -74,7 +75,7 @@ public final class RegistryLockPostActionTest {
   private static final String EMAIL_MESSAGE_TEMPLATE =
       "Please click the link below to perform the lock \\/ unlock action on domain example.tld. "
           + "Note: this code will expire in one hour.\n\n"
-          + "https:\\/\\/localhost\\/registry-lock-verify\\?lockVerificationCode="
+          + "https:\\/\\/frontdoor\\/registry-lock-verify\\?lockVerificationCode="
           + "[0-9a-zA-Z_\\-]+&isLock=(true|false)";
 
   private final FakeClock clock = new FakeClock();
@@ -282,7 +283,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testFailure_notEnabledForRegistrarContact() {
+  public void testFailure_notEnabledForRegistrarContact() throws Exception {
     action =
         createAction(
             AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, false)));
@@ -419,7 +420,7 @@ public final class RegistryLockPostActionTest {
     assertThat(sentMessage.recipients()).containsExactly(new InternetAddress(recipient));
   }
 
-  private RegistryLockPostAction createAction(AuthResult authResult) {
+  private RegistryLockPostAction createAction(AuthResult authResult) throws Exception {
     Role role = authResult.userAuthInfo().get().isUserAdmin() ? Role.ADMIN : Role.OWNER;
     AuthenticatedRegistrarAccessor registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(
@@ -431,12 +432,14 @@ public final class RegistryLockPostActionTest {
             new DeterministicStringGenerator(Alphabets.BASE_58),
             AsyncTaskEnqueuerTest.createForTesting(
                 mock(AppEngineServiceUtils.class), clock, Duration.ZERO));
+    URL urlBase = new URL("https://frontdoor");
     return new RegistryLockPostAction(
         jsonActionRunner,
         authResult,
         registrarAccessor,
         emailService,
         domainLockUtils,
-        outgoingAddress);
+        outgoingAddress,
+        urlBase);
   }
 }

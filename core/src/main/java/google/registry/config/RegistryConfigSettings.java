@@ -174,6 +174,7 @@ public class RegistryConfigSettings {
     public String integrationEmailAddress;
     public String technicalDocsUrl;
     public AnalyticsConfig analyticsConfig;
+    public String frontDoorServiceUrl;
   }
 
   /** Configuration for analytics services installed in the registrar console */

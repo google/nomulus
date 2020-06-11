@@ -1,6 +1,9 @@
 # This is the configuration file used by unit tests. These values ARE NOT
 # SUITABLE for use in a real deployed environment.
 
+registrarConsole:
+  frontDoorServiceUrl: https://frontdoor
+
 registryPolicy:
   registrarChangesNotificationEmailAddresses:
     - notification@test.example

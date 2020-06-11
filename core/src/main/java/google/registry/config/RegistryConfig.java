@@ -101,6 +101,19 @@ public final class RegistryConfig {
     }
 
     /**
+     * The front-door address used for Nomulus, if different from {@link #getDefaultServer()}.
+     *
+     * <p>This is the address that users generally use for the app, and it wil lbe {@link
+     * #getDefaultServer()} if not specified in the config.
+     */
+    @Provides
+    @Config("frontDoorServiceUrl")
+    public static URL provideFrontDoorServiceUrl(RegistryConfigSettings config) {
+      String frontDoor = config.registrarConsole.frontDoorServiceUrl;
+      return frontDoor != null ? makeUrl(frontDoor) : getDefaultServer();
+    }
+
+    /**
      * The filename of the logo to be displayed in the header of the registrar console.
      *
      * @see google.registry.ui.server.registrar.ConsoleUiAction

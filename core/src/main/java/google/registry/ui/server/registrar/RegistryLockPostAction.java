@@ -30,7 +30,6 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
-import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
@@ -76,7 +75,6 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Gson GSON = new Gson();
 
-  private static final URL URL_BASE = RegistryConfig.getDefaultServer();
   private static final String VERIFICATION_EMAIL_TEMPLATE =
       "Please click the link below to perform the lock / unlock action on domain %s. Note: "
           + "this code will expire in one hour.\n\n%s";
@@ -87,6 +85,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
   private final SendEmailService sendEmailService;
   private final DomainLockUtils domainLockUtils;
   private final InternetAddress gSuiteOutgoingEmailAddress;
+  private final URL urlBase;
 
   @Inject
   RegistryLockPostAction(
@@ -95,13 +94,15 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       AuthenticatedRegistrarAccessor registrarAccessor,
       SendEmailService sendEmailService,
       DomainLockUtils domainLockUtils,
-      @Config("gSuiteOutgoingEmailAddress") InternetAddress gSuiteOutgoingEmailAddress) {
+      @Config("gSuiteOutgoingEmailAddress") InternetAddress gSuiteOutgoingEmailAddress,
+      @Config("frontDoorServiceUrl") URL urlBase) {
     this.jsonActionRunner = jsonActionRunner;
     this.authResult = authResult;
     this.registrarAccessor = registrarAccessor;
     this.sendEmailService = sendEmailService;
     this.domainLockUtils = domainLockUtils;
     this.gSuiteOutgoingEmailAddress = gSuiteOutgoingEmailAddress;
+    this.urlBase = urlBase;
   }
 
   @Override
@@ -161,7 +162,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       String url =
           new URIBuilder()
               .setScheme("https")
-              .setHost(URL_BASE.getHost())
+              .setHost(urlBase.getHost())
               .setPath("registry-lock-verify")
               .setParameter("lockVerificationCode", lock.getVerificationCode())
               .setParameter("isLock", String.valueOf(isLock))
