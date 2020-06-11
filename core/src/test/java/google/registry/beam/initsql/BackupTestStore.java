@@ -20,6 +20,8 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.appengine.api.datastore.Entity;
 import com.googlecode.objectify.Key;
+import google.registry.backup.CommitLogExports;
+import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.tools.LevelDbFileBuilder;
@@ -35,6 +37,10 @@ import org.joda.time.format.DateTimeFormatter;
  * <p>A Datastore backup consists of an unsynchronized data export and a sequence of incremental
  * Commit Logs that overlap with the export process. Together they can be used to recreate a
  * consistent snapshot of the Datastore.
+ *
+ * <p>For convenience of test-writing, the {@link #fakeClock} is advanced by 1 millisecond after
+ * every transaction is invoked on this store, ensuring strictly increasing timestamps on causally
+ * dependent transactions. In production, the same ordering is ensured by sleep and retry.
  */
 class BackupTestStore implements AutoCloseable {
 
@@ -43,6 +49,8 @@ class BackupTestStore implements AutoCloseable {
 
   private final FakeClock fakeClock;
   private AppEngineRule appEngine;
+
+  private CommitLogCheckpoint prevCommitLogCheckpoint;
 
   BackupTestStore(FakeClock fakeClock) throws Exception {
     this.fakeClock = fakeClock;
@@ -55,16 +63,27 @@ class BackupTestStore implements AutoCloseable {
     this.appEngine.beforeEach(null);
   }
 
+  void transact(Iterable<Object> deletes, Iterable<Object> newOrUpdated) {
+    tm().transact(
+            () -> {
+              ofy().delete().entities(deletes);
+              ofy().save().entities(newOrUpdated);
+            });
+    fakeClock.advanceOneMilli();
+  }
+
   /** Inserts or updates {@code entities} in the Datastore. */
   @SafeVarargs
   final void insertOrUpdate(Object... entities) {
     tm().transact(() -> ofy().save().entities(entities).now());
+    fakeClock.advanceOneMilli();
   }
 
   /** Deletes {@code entities} from the Datastore. */
   @SafeVarargs
   final void delete(Object... entities) {
     tm().transact(() -> ofy().delete().entities(entities).now());
+    fakeClock.advanceOneMilli();
   }
 
   /**
@@ -109,8 +128,12 @@ class BackupTestStore implements AutoCloseable {
     builder.build();
   }
 
-  void saveCommitLog() {
-    throw new UnsupportedOperationException("Not implemented yet");
+  File saveCommitLogs(String commitLogDir) {
+    CommitLogCheckpoint checkpoint = CommitLogExports.computeCheckpoint(fakeClock);
+    File commitLogFile =
+        CommitLogExports.saveCommitLogs(commitLogDir, prevCommitLogCheckpoint, checkpoint);
+    prevCommitLogCheckpoint = checkpoint;
+    return commitLogFile;
   }
 
   @Override

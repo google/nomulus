@@ -22,7 +22,6 @@ import static google.registry.testing.DatastoreHelper.newRegistry;
 
 import com.google.appengine.api.datastore.Entity;
 import com.google.common.collect.ImmutableList;
-import com.googlecode.objectify.Key;
 import google.registry.backup.VersionedEntity;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
@@ -32,7 +31,6 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import java.io.File;
 import java.io.Serializable;
-import java.util.Collections;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.fs.MatchResult.Metadata;
 import org.apache.beam.sdk.testing.NeedsRunner;
@@ -52,23 +50,14 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/**
- * Unit tests for {@link ExportLoadingTransforms}.
- *
- * <p>This class implements {@link Serializable} so that test {@link DoFn} classes may be inlined.
- */
+/** Unit tests for {@link CommitLogTransforms}. */
 // TODO(weiminyu): Upgrade to JUnit5 when TestPipeline is upgraded. It is also easy to adapt with
 // a wrapper.
 @RunWith(JUnit4.class)
-public class ExportloadingTransformsTest implements Serializable {
+public class CommitLogTransformsTest implements Serializable {
   private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
 
-  private static final ImmutableList<Class<?>> ALL_KINDS =
-      ImmutableList.of(Registry.class, ContactResource.class, DomainBase.class);
-  private static final ImmutableList<String> ALL_KIND_STRS =
-      ALL_KINDS.stream().map(Key::getKind).collect(ImmutableList.toImmutableList());
-
-  @Rule public final transient TemporaryFolder exportRootDir = new TemporaryFolder();
+  @Rule public final transient TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @Rule public final transient InjectRule injectRule = new InjectRule();
 
@@ -78,7 +67,8 @@ public class ExportloadingTransformsTest implements Serializable {
 
   private FakeClock fakeClock;
   private transient BackupTestStore store;
-  private File exportDir;
+  private File commitLogsDir;
+  private File firstCommitLogFile;
   // Canned data that are persisted to Datastore, used by assertions in tests.
   // TODO(weiminyu): use Ofy entity pojos directly.
   private transient ImmutableList<Entity> persistedEntities;
@@ -98,9 +88,8 @@ public class ExportloadingTransformsTest implements Serializable {
         ImmutableList.of(registry, contact1, domain1).stream()
             .map(ofyEntity -> tm().transact(() -> ofy().save().toEntity(ofyEntity)))
             .collect(ImmutableList.toImmutableList());
-
-    exportDir =
-        store.export(exportRootDir.getRoot().getAbsolutePath(), ALL_KINDS, Collections.EMPTY_SET);
+    commitLogsDir = temporaryFolder.newFolder();
+    firstCommitLogFile = store.saveCommitLogs(commitLogsDir.getAbsolutePath());
   }
 
   @After
@@ -113,18 +102,14 @@ public class ExportloadingTransformsTest implements Serializable {
 
   @Test
   @Category(NeedsRunner.class)
-  public void getExportFilePatterns() {
+  public void getCommitLogFilePatterns() {
     PCollection<String> patterns =
         pipeline.apply(
-            "Get Datastore file patterns",
-            ExportLoadingTransforms.getDatastoreExportFilePatterns(
-                exportDir.getAbsolutePath(), ALL_KIND_STRS));
+            "Get CommitLog file patterns",
+            CommitLogTransforms.getCommitLogFilePatterns(commitLogsDir.getAbsolutePath()));
 
     ImmutableList<String> expectedPatterns =
-        ImmutableList.of(
-            exportDir.getAbsolutePath() + "/all_namespaces/kind_Registry/input-*",
-            exportDir.getAbsolutePath() + "/all_namespaces/kind_DomainBase/input-*",
-            exportDir.getAbsolutePath() + "/all_namespaces/kind_ContactResource/input-*");
+        ImmutableList.of(commitLogsDir.getAbsolutePath() + "/commit_diff_until_*");
 
     PAssert.that(patterns).containsInAnyOrder(expectedPatterns);
 
@@ -138,11 +123,7 @@ public class ExportloadingTransformsTest implements Serializable {
         pipeline
             .apply(
                 "File patterns to metadata",
-                Create.of(
-                        exportDir.getAbsolutePath() + "/all_namespaces/kind_Registry/input-*",
-                        exportDir.getAbsolutePath() + "/all_namespaces/kind_DomainBase/input-*",
-                        exportDir.getAbsolutePath()
-                            + "/all_namespaces/kind_ContactResource/input-*")
+                Create.of(commitLogsDir.getAbsolutePath() + "/commit_diff_until_*")
                     .withCoder(StringUtf8Coder.of()))
             .apply(Transforms.getFilesByPatterns());
 
@@ -160,10 +141,7 @@ public class ExportloadingTransformsTest implements Serializable {
                 }));
 
     ImmutableList<String> expectedFilenames =
-        ImmutableList.of(
-            exportDir.getAbsolutePath() + "/all_namespaces/kind_Registry/input-0",
-            exportDir.getAbsolutePath() + "/all_namespaces/kind_DomainBase/input-0",
-            exportDir.getAbsolutePath() + "/all_namespaces/kind_ContactResource/input-0");
+        ImmutableList.of(firstCommitLogFile.getAbsolutePath());
 
     PAssert.that(fileNames).containsInAnyOrder(expectedFilenames);
 
@@ -171,30 +149,74 @@ public class ExportloadingTransformsTest implements Serializable {
   }
 
   @Test
-  public void loadDataFromFiles() {
-    PCollection<VersionedEntity> taggedRecords =
+  @Category(NeedsRunner.class)
+  public void filterCommitLogsByTime() {
+    ImmutableList<String> commitLogFilenames =
+        ImmutableList.of(
+            "/commit_diff_until_2000-01-01T00:00:00.000Z",
+            "/commit_diff_until_2000-01-01T00:00:00.001Z",
+            "/commit_diff_until_2000-01-01T00:00:00.002Z",
+            "/commit_diff_until_2000-01-01T00:00:00.003Z",
+            "/commit_diff_until_2000-01-01T00:00:00.004Z");
+    PCollection<String> filteredFilenames =
         pipeline
             .apply(
-                "Get Datastore file patterns",
-                ExportLoadingTransforms.getDatastoreExportFilePatterns(
-                    exportDir.getAbsolutePath(), ALL_KIND_STRS))
-            .apply("Find Datastore files", Transforms.getFilesByPatterns())
-            .apply("Load from Datastore files", ExportLoadingTransforms.loadExportDataFromFiles());
+                "Generate All Filenames",
+                Create.of(commitLogFilenames).withCoder(StringUtf8Coder.of()))
+            .apply(
+                "Filtered by Time",
+                CommitLogTransforms.filterCommitLogsByTime(
+                    DateTime.parse("2000-01-01T00:00:00.001Z"),
+                    DateTime.parse("2000-01-01T00:00:00.003Z")));
+    PAssert.that(filteredFilenames)
+        .containsInAnyOrder(
+            "/commit_diff_until_2000-01-01T00:00:00.001Z",
+            "/commit_diff_until_2000-01-01T00:00:00.002Z");
 
-    // Transform bytes to pojo for analysis
-    PCollection<Entity> entities =
-        taggedRecords.apply(
-            "Raw records to Entity",
+    pipeline.run();
+  }
+
+  @Test
+  @Category(NeedsRunner.class)
+  public void loadOneCommitLogFile() {
+    PCollection<VersionedEntity> entities =
+        pipeline
+            .apply(
+                "Get CommitLog file patterns",
+                CommitLogTransforms.getCommitLogFilePatterns(commitLogsDir.getAbsolutePath()))
+            .apply("Find CommitLogs", Transforms.getFilesByPatterns())
+            .apply(CommitLogTransforms.loadCommitLogsFromFiles());
+
+    PCollection<Long> timestamps =
+        entities.apply(
+            "Extract commitTimeMillis",
+            ParDo.of(
+                new DoFn<VersionedEntity, Long>() {
+                  @ProcessElement
+                  public void processElement(
+                      @Element VersionedEntity entity, OutputReceiver<Long> out) {
+                    out.output(entity.commitTimeMills());
+                  }
+                }));
+    PAssert.that(timestamps)
+        .containsInAnyOrder(
+            fakeClock.nowUtc().getMillis() - 2,
+            fakeClock.nowUtc().getMillis() - 1,
+            fakeClock.nowUtc().getMillis() - 1);
+
+    PCollection<Entity> datastoreEntities =
+        entities.apply(
+            "To Datastore Entities",
             ParDo.of(
                 new DoFn<VersionedEntity, Entity>() {
                   @ProcessElement
                   public void processElement(
-                      @Element VersionedEntity versionedEntity, OutputReceiver<Entity> out) {
-                    out.output(versionedEntity.getEntity().get());
+                      @Element VersionedEntity entity, OutputReceiver<Entity> out) {
+                    entity.getEntity().ifPresent(out::output);
                   }
                 }));
 
-    PAssert.that(entities).containsInAnyOrder(persistedEntities);
+    PAssert.that(datastoreEntities).containsInAnyOrder(persistedEntities);
 
     pipeline.run();
   }
