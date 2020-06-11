@@ -352,11 +352,11 @@ CREATE TABLE public."HostHistory" (
     last_superordinate_change timestamp with time zone,
     last_transfer_time timestamp with time zone,
     superordinate_domain text,
-    creation_client_id text NOT NULL,
+    creation_registrar_id text NOT NULL,
     creation_time timestamp with time zone NOT NULL,
-    current_sponsor_client_id text NOT NULL,
+    current_sponsor_registrar_id text NOT NULL,
     deletion_time timestamp with time zone,
-    last_epp_update_client_id text,
+    last_epp_update_registrar_id text,
     last_epp_update_time timestamp with time zone,
     statuses text[],
     host_repo_id text NOT NULL
@@ -1169,7 +1169,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."HostHistory"
-    ADD CONSTRAINT fk3d09knnmxrt6iniwnp8j2ykga FOREIGN KEY (history_registrar_id) REFERENCES public."Registrar"(client_id);
+    ADD CONSTRAINT fk3d09knnmxrt6iniwnp8j2ykga FOREIGN KEY (history_registrar_id) REFERENCES public."Registrar"(registrar_id);
 
 
 --
