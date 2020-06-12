@@ -106,11 +106,7 @@ public final class DomainPricingLogic {
   /** Returns a new renew price for the pricer. */
   @SuppressWarnings("unused")
   public FeesAndCredits getRenewPrice(
-      Registry registry,
-      String domainName,
-      DateTime dateTime,
-      int years)
-      throws EppException {
+      Registry registry, String domainName, DateTime dateTime, int years) throws EppException {
     DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
     BigDecimal renewCost = domainPrices.getRenewCost().multipliedBy(years).getAmount();
     return customLogic.customizeRenewPrice(
