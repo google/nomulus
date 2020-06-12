@@ -40,7 +40,7 @@ public class TestDomainPricingCustomLogic extends DomainPricingCustomLogic {
   public FeesAndCredits customizeRenewPrice(RenewPriceParameters priceParameters) {
     return priceParameters.domainName().toString().startsWith("costly-renew")
         ? addCustomFee(
-            priceParameters.feesAndCredits(), Fee.create(ONE_HUNDRED_BUCKS, FeeType.RENEW))
+            priceParameters.feesAndCredits(), Fee.create(ONE_HUNDRED_BUCKS, FeeType.RENEW, true))
         : priceParameters.feesAndCredits();
   }
 
@@ -48,7 +48,7 @@ public class TestDomainPricingCustomLogic extends DomainPricingCustomLogic {
   public FeesAndCredits customizeTransferPrice(TransferPriceParameters priceParameters) {
     return priceParameters.domainName().toString().startsWith("expensive")
         ? addCustomFee(
-            priceParameters.feesAndCredits(), Fee.create(ONE_HUNDRED_BUCKS, FeeType.TRANSFER))
+            priceParameters.feesAndCredits(), Fee.create(ONE_HUNDRED_BUCKS, FeeType.TRANSFER, true))
         : priceParameters.feesAndCredits();
   }
 
@@ -56,7 +56,7 @@ public class TestDomainPricingCustomLogic extends DomainPricingCustomLogic {
   public FeesAndCredits customizeUpdatePrice(UpdatePriceParameters priceParameters) {
     return priceParameters.domainName().toString().startsWith("non-free-update")
         ? addCustomFee(
-            priceParameters.feesAndCredits(), Fee.create(ONE_HUNDRED_BUCKS, FeeType.UPDATE))
+            priceParameters.feesAndCredits(), Fee.create(ONE_HUNDRED_BUCKS, FeeType.UPDATE, true))
         : priceParameters.feesAndCredits();
   }
 

@@ -176,9 +176,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
     ofy().delete().key(existingDomain.getDeletePollMessage());
     dnsQueue.addDomainRefreshTask(existingDomain.getFullyQualifiedDomainName());
     return responseBuilder
-        .setExtensions(
-            createResponseExtensions(
-                feesAndCredits.getRestoreCost(), feesAndCredits.getRenewCost(), feeUpdate))
+        .setExtensions(createResponseExtensions(feesAndCredits, feeUpdate))
         .build();
   }
 
@@ -265,17 +263,23 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
   }
 
   private static ImmutableList<FeeTransformResponseExtension> createResponseExtensions(
-      Money restoreCost, Money renewCost, Optional<FeeUpdateCommandExtension> feeUpdate) {
+      FeesAndCredits feesAndCredits, Optional<FeeUpdateCommandExtension> feeUpdate) {
     return feeUpdate.isPresent()
         ? ImmutableList.of(
             feeUpdate
                 .get()
                 .createResponseBuilder()
-                .setCurrency(restoreCost.getCurrencyUnit())
+                .setCurrency(feesAndCredits.getCurrency())
                 .setFees(
                     ImmutableList.of(
-                        Fee.create(restoreCost.getAmount(), FeeType.RESTORE),
-                        Fee.create(renewCost.getAmount(), FeeType.RENEW)))
+                        Fee.create(
+                            feesAndCredits.getRestoreCost().getAmount(),
+                            FeeType.RESTORE,
+                            feesAndCredits.hasPremiumFeesOfType(FeeType.RESTORE)),
+                        Fee.create(
+                            feesAndCredits.getRenewCost().getAmount(),
+                            FeeType.RENEW,
+                            feesAndCredits.hasPremiumFeesOfType(FeeType.RENEW))))
                 .build())
         : ImmutableList.of();
   }

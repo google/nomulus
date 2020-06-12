@@ -104,6 +104,8 @@ public abstract class BaseFee extends ImmutableObject {
 
   @XmlTransient Range<DateTime> validDateRange;
 
+  @XmlTransient boolean isPremium;
+
   public String getDescription() {
     return description;
   }
@@ -118,6 +120,11 @@ public abstract class BaseFee extends ImmutableObject {
 
   public Boolean getRefundable() {
     return firstNonNull(refundable, true);
+  }
+
+  /** Returns whether the fee in question is a premium price. */
+  public boolean isPremium() {
+    return isPremium;
   }
 
   /**

@@ -690,7 +690,7 @@ public class DomainFlowUtils {
     List<Fee> fees = feeCommand.get().getFees();
     // The schema guarantees that at least one fee will be present.
     checkState(!fees.isEmpty());
-    BigDecimal total = BigDecimal.ZERO;
+    BigDecimal total = zeroInCurrency(feeCommand.get().getCurrency());
     for (Fee fee : fees) {
       if (!fee.hasDefaultAttributes()) {
         throw new UnsupportedFeeAttributeException();
@@ -936,6 +936,16 @@ public class DomainFlowUtils {
     if (isAtOrAfter(now, registry.getClaimsPeriodEnd())) {
       throw new ClaimsPeriodEndedException(registry.getTldStr());
     }
+  }
+
+  /**
+   * Returns zero for a specific currency.
+   *
+   * <p>{@link BigDecimal} has a concept of significant figures, so zero is not always zero. E.g.
+   * zero in USD is 0.00, whereas zero in Yen is 0, and zero in Dinars is 0.000 (!).
+   */
+  static BigDecimal zeroInCurrency(CurrencyUnit currencyUnit) {
+    return Money.of(currencyUnit, BigDecimal.ZERO).getAmount();
   }
 
   /**

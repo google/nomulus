@@ -108,15 +108,16 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
             clock.nowUtc(),
             DateTime.parse("1999-04-03T22:00:00.0Z"),
             REGISTRATION_EXPIRATION_TIME);
-    subordinateHost = persistResource(
-        new HostResource.Builder()
-            .setRepoId("2-".concat(Ascii.toUpperCase(tld)))
-            .setFullyQualifiedHostName("ns1." + label + "." + tld)
-            .setPersistedCurrentSponsorClientId("TheRegistrar")
-            .setCreationClientId("TheRegistrar")
-            .setCreationTimeForTest(DateTime.parse("1999-04-03T22:00:00.0Z"))
-            .setSuperordinateDomain(domain.createVKey())
-            .build());
+    subordinateHost =
+        persistResource(
+            new HostResource.Builder()
+                .setRepoId("2-".concat(Ascii.toUpperCase(tld)))
+                .setFullyQualifiedHostName("ns1." + label + "." + tld)
+                .setPersistedCurrentSponsorClientId("TheRegistrar")
+                .setCreationClientId("TheRegistrar")
+                .setCreationTimeForTest(DateTime.parse("1999-04-03T22:00:00.0Z"))
+                .setSuperordinateDomain(domain.createVKey())
+                .build());
     domain =
         persistResource(
             domain

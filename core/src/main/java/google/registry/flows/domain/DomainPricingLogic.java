@@ -14,8 +14,9 @@
 
 package google.registry.flows.domain;
 
+import static google.registry.flows.domain.DomainFlowUtils.zeroInCurrency;
 import static google.registry.pricing.PricingEngineProxy.getDomainFeeClass;
-import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
+import static google.registry.pricing.PricingEngineProxy.getPricesForDomainName;
 
 import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
@@ -33,7 +34,6 @@ import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.pricing.PremiumPricingEngine.DomainPrices;
 import google.registry.model.registry.Registry;
-import google.registry.pricing.PricingEngineProxy;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Optional;
@@ -64,21 +64,27 @@ public final class DomainPricingLogic {
   public FeesAndCredits getCreatePrice(
       Registry registry,
       String domainName,
-      DateTime date,
+      DateTime dateTime,
       int years,
       boolean isAnchorTenant,
       Optional<AllocationToken> allocationToken)
       throws EppException {
     CurrencyUnit currency = registry.getCurrency();
+
+    BaseFee createFeeOrCredit;
     // Domain create cost is always zero for anchor tenants
-    Money domainCreateCost =
-        isAnchorTenant
-            ? Money.of(currency, BigDecimal.ZERO)
-            : getDomainCreateCostWithDiscount(domainName, date, years, allocationToken);
-    BaseFee createFeeOrCredit = Fee.create(domainCreateCost.getAmount(), FeeType.CREATE);
+    if (isAnchorTenant) {
+      createFeeOrCredit = Fee.create(zeroInCurrency(currency), FeeType.CREATE, false);
+    } else {
+      DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
+      Money domainCreateCost =
+          getDomainCreateCostWithDiscount(domainPrices, years, allocationToken);
+      createFeeOrCredit =
+          Fee.create(domainCreateCost.getAmount(), FeeType.CREATE, domainPrices.isPremium());
+    }
 
     // Create fees for the cost and the EAP fee, if any.
-    Fee eapFee = registry.getEapFeeFor(date);
+    Fee eapFee = registry.getEapFeeFor(dateTime);
     FeesAndCredits.Builder feesBuilder =
         new FeesAndCredits.Builder().setCurrency(currency).addFeeOrCredit(createFeeOrCredit);
     // Don't charge anchor tenants EAP fees.
@@ -92,7 +98,7 @@ public final class DomainPricingLogic {
             .setFeesAndCredits(feesBuilder.build())
             .setRegistry(registry)
             .setDomainName(InternetDomainName.from(domainName))
-            .setAsOfDate(date)
+            .setAsOfDate(dateTime)
             .setYears(years)
             .build());
   }
@@ -100,69 +106,73 @@ public final class DomainPricingLogic {
   /** Returns a new renew price for the pricer. */
   @SuppressWarnings("unused")
   public FeesAndCredits getRenewPrice(
-      Registry registry,
-      String domainName,
-      DateTime date,
-      int years)
-      throws EppException {
-    Money renewCost = getDomainRenewCost(domainName, date, years);
+      Registry registry, String domainName, DateTime dateTime, int years) throws EppException {
+    DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
+    BigDecimal renewCost = domainPrices.getRenewCost().multipliedBy(years).getAmount();
     return customLogic.customizeRenewPrice(
         RenewPriceParameters.newBuilder()
             .setFeesAndCredits(
                 new FeesAndCredits.Builder()
                     .setCurrency(registry.getCurrency())
-                    .addFeeOrCredit(Fee.create(renewCost.getAmount(), FeeType.RENEW))
+                    .addFeeOrCredit(Fee.create(renewCost, FeeType.RENEW, domainPrices.isPremium()))
                     .build())
             .setRegistry(registry)
             .setDomainName(InternetDomainName.from(domainName))
-            .setAsOfDate(date)
+            .setAsOfDate(dateTime)
             .setYears(years)
             .build());
   }
 
   /** Returns a new restore price for the pricer. */
-  public FeesAndCredits getRestorePrice(Registry registry, String domainName, DateTime date)
+  public FeesAndCredits getRestorePrice(Registry registry, String domainName, DateTime dateTime)
       throws EppException {
+    DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
     FeesAndCredits feesAndCredits =
         new FeesAndCredits.Builder()
             .setCurrency(registry.getCurrency())
             .addFeeOrCredit(
-                Fee.create(getDomainRenewCost(domainName, date, 1).getAmount(), FeeType.RENEW))
+                Fee.create(
+                    domainPrices.getRenewCost().getAmount(),
+                    FeeType.RENEW,
+                    domainPrices.isPremium()))
             .addFeeOrCredit(
-                Fee.create(registry.getStandardRestoreCost().getAmount(), FeeType.RESTORE))
+                Fee.create(registry.getStandardRestoreCost().getAmount(), FeeType.RESTORE, false))
             .build();
     return customLogic.customizeRestorePrice(
         RestorePriceParameters.newBuilder()
             .setFeesAndCredits(feesAndCredits)
             .setRegistry(registry)
             .setDomainName(InternetDomainName.from(domainName))
-            .setAsOfDate(date)
+            .setAsOfDate(dateTime)
             .build());
   }
 
   /** Returns a new transfer price for the pricer. */
-  public FeesAndCredits getTransferPrice(Registry registry, String domainName, DateTime date)
+  public FeesAndCredits getTransferPrice(Registry registry, String domainName, DateTime dateTime)
       throws EppException {
-    Money renewCost = getDomainRenewCost(domainName, date, 1);
+    DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
     return customLogic.customizeTransferPrice(
         TransferPriceParameters.newBuilder()
             .setFeesAndCredits(
                 new FeesAndCredits.Builder()
                     .setCurrency(registry.getCurrency())
-                    .addFeeOrCredit(Fee.create(renewCost.getAmount(), FeeType.RENEW))
+                    .addFeeOrCredit(
+                        Fee.create(
+                            domainPrices.getRenewCost().getAmount(),
+                            FeeType.RENEW,
+                            domainPrices.isPremium()))
                     .build())
             .setRegistry(registry)
             .setDomainName(InternetDomainName.from(domainName))
-            .setAsOfDate(date)
+            .setAsOfDate(dateTime)
             .build());
   }
 
   /** Returns a new update price for the pricer. */
-  public FeesAndCredits getUpdatePrice(Registry registry, String domainName, DateTime date)
+  public FeesAndCredits getUpdatePrice(Registry registry, String domainName, DateTime dateTime)
       throws EppException {
     CurrencyUnit currency = registry.getCurrency();
-    BaseFee feeOrCredit =
-        Fee.create(Money.zero(registry.getCurrency()).getAmount(), FeeType.UPDATE);
+    BaseFee feeOrCredit = Fee.create(zeroInCurrency(currency), FeeType.UPDATE, false);
     return customLogic.customizeUpdatePrice(
         UpdatePriceParameters.newBuilder()
             .setFeesAndCredits(
@@ -172,19 +182,19 @@ public final class DomainPricingLogic {
                     .build())
             .setRegistry(registry)
             .setDomainName(InternetDomainName.from(domainName))
-            .setAsOfDate(date)
+            .setAsOfDate(dateTime)
             .build());
   }
 
   /** Returns the fee class for a given domain and date. */
-  public Optional<String> getFeeClass(String domainName, DateTime date) {
-    return getDomainFeeClass(domainName, date);
+  public Optional<String> getFeeClass(String domainName, DateTime dateTime) {
+    return getDomainFeeClass(domainName, dateTime);
   }
 
+  /** Returns the domain create cost with allocation-token-related discounts applied. */
   private Money getDomainCreateCostWithDiscount(
-      String domainName, DateTime date, int years, Optional<AllocationToken> allocationToken)
+      DomainPrices domainPrices, int years, Optional<AllocationToken> allocationToken)
       throws EppException {
-    DomainPrices domainPrices = PricingEngineProxy.getPricesForDomainName(domainName, date);
     if (allocationToken.isPresent()
         && allocationToken.get().getDiscountFraction() != 0.0
         && domainPrices.isPremium()) {
