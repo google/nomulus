@@ -22,7 +22,6 @@ import static google.registry.testing.DatastoreHelper.persistActiveHost;
 import static google.registry.testing.DatastoreHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
-import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.host.HostResource;
 import google.registry.testing.TestCacheRule;
@@ -40,12 +39,12 @@ public class EppResourceTest extends EntityTestCase {
   @Test
   public void test_loadCached_ignoresContactChange() {
     ContactResource originalContact = persistActiveContact("contact123");
-    assertThat(EppResource.loadCached(ImmutableList.of(Key.create(originalContact))))
-        .containsExactly(Key.create(originalContact), originalContact);
+    assertThat(EppResource.loadCached(ImmutableList.of(originalContact.createVKey())))
+        .containsExactly(originalContact.createVKey(), originalContact);
     ContactResource modifiedContact =
         persistResource(originalContact.asBuilder().setEmailAddress("different@fake.lol").build());
-    assertThat(EppResource.loadCached(ImmutableList.of(Key.create(originalContact))))
-        .containsExactly(Key.create(originalContact), originalContact);
+    assertThat(EppResource.loadCached(ImmutableList.of(originalContact.createVKey())))
+        .containsExactly(originalContact.createVKey(), originalContact);
     assertThat(loadByForeignKey(ContactResource.class, "contact123", fakeClock.nowUtc()))
         .hasValue(modifiedContact);
   }
@@ -53,13 +52,13 @@ public class EppResourceTest extends EntityTestCase {
   @Test
   public void test_loadCached_ignoresHostChange() {
     HostResource originalHost = persistActiveHost("ns1.example.com");
-    assertThat(EppResource.loadCached(ImmutableList.of(Key.create(originalHost))))
-        .containsExactly(Key.create(originalHost), originalHost);
+    assertThat(EppResource.loadCached(ImmutableList.of(originalHost.createVKey())))
+        .containsExactly(originalHost.createVKey(), originalHost);
     HostResource modifiedHost =
         persistResource(
             originalHost.asBuilder().setLastTransferTime(fakeClock.nowUtc().minusDays(60)).build());
-    assertThat(EppResource.loadCached(ImmutableList.of(Key.create(originalHost))))
-        .containsExactly(Key.create(originalHost), originalHost);
+    assertThat(EppResource.loadCached(ImmutableList.of(originalHost.createVKey())))
+        .containsExactly(originalHost.createVKey(), originalHost);
     assertThat(loadByForeignKey(HostResource.class, "ns1.example.com", fakeClock.nowUtc()))
         .hasValue(modifiedHost);
   }

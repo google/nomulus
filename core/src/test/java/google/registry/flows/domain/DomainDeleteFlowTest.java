@@ -93,6 +93,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.util.Map;
 import org.joda.money.Money;
@@ -668,13 +669,24 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
                 .setPendingTransferExpirationTime(clock.nowUtc())
                 .build());
     // The server-approve entities should all be deleted.
-    assertThat(ofy().load().key(oldTransferData.getServerApproveBillingEvent()).now()).isNull();
-    assertThat(ofy().load().key(oldTransferData.getServerApproveAutorenewEvent()).now()).isNull();
-    assertThat(ofy().load().key(oldTransferData.getServerApproveAutorenewPollMessage()).now())
+    assertThat(ofy().load().key(oldTransferData.getServerApproveBillingEvent().getOfyKey()).now())
+        .isNull();
+    assertThat(ofy().load().key(oldTransferData.getServerApproveAutorenewEvent().getOfyKey()).now())
+        .isNull();
+    assertThat(
+            ofy()
+                .load()
+                .key(oldTransferData.getServerApproveAutorenewPollMessage().getOfyKey())
+                .now())
         .isNull();
     assertThat(oldTransferData.getServerApproveEntities()).isNotEmpty(); // Just a sanity check.
     assertThat(
-            ofy().load().keys(oldTransferData.getServerApproveEntities().toArray(new Key<?>[] {})))
+            ofy()
+                .load()
+                .keys(
+                    oldTransferData.getServerApproveEntities().stream()
+                        .map(VKey::getOfyKey)
+                        .toArray(Key[]::new)))
         .isEmpty();
   }
 
@@ -693,7 +705,7 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
         loadByForeignKey(DomainBase.class, getUniqueIdFromCommand(), clock.nowUtc())
             .get()
             .asBuilder()
-            .setNameservers(ImmutableSet.of(host.createKey()))
+            .setNameservers(ImmutableSet.of(host.createVKey()))
             .build());
     // Persist another domain that's already been deleted and references this contact and host.
     persistResource(
@@ -703,7 +715,7 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
                 loadByForeignKey(ContactResource.class, "sh8013", clock.nowUtc())
                     .get()
                     .createVKey())
-            .setNameservers(ImmutableSet.of(host.createKey()))
+            .setNameservers(ImmutableSet.of(host.createVKey()))
             .setDeletionTime(START_OF_TIME)
             .build());
     clock.advanceOneMilli();
@@ -719,7 +731,7 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
     persistResource(
         newHostResource("ns1." + getUniqueIdFromCommand())
             .asBuilder()
-            .setSuperordinateDomain(Key.create(reloadResourceByForeignKey()))
+            .setSuperordinateDomain(reloadResourceByForeignKey().createVKey())
             .setDeletionTime(clock.nowUtc().minusDays(1))
             .build());
     clock.advanceOneMilli();
@@ -767,7 +779,7 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
         persistResource(
             newHostResource("ns1." + getUniqueIdFromCommand())
                 .asBuilder()
-                .setSuperordinateDomain(Key.create(reloadResourceByForeignKey()))
+                .setSuperordinateDomain(reloadResourceByForeignKey().createVKey())
                 .build());
     persistResource(
         domain.asBuilder().addSubordinateHost(subordinateHost.getFullyQualifiedHostName()).build());

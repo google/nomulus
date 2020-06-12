@@ -150,7 +150,7 @@ public final class AsyncTaskEnqueuer {
 
   /** Enqueues a task to asynchronously refresh DNS for a renamed host. */
   public void enqueueAsyncDnsRefresh(HostResource host, DateTime now) {
-    VKey<HostResource> hostKey = host.createKey();
+    VKey<HostResource> hostKey = host.createVKey();
     logger.atInfo().log("Enqueuing async DNS refresh for renamed host %s.", hostKey);
     addTaskToQueueWithRetry(
         asyncDnsRefreshPullQueue,

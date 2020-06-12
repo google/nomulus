@@ -147,7 +147,7 @@ public class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsRep
         persistResource(
             newDomainBase("example.xn--q9jyb4c")
                 .asBuilder()
-                .setNameservers(ImmutableSet.of(nameserver1.createKey(), nameserver2.createKey()))
+                .setNameservers(ImmutableSet.of(nameserver1.createVKey(), nameserver2.createVKey()))
                 .setDsData(
                     ImmutableSet.of(
                         DelegationSignerData.create(
@@ -158,7 +158,7 @@ public class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsRep
     persistResource(
         newDomainBase("foobar.xn--q9jyb4c")
             .asBuilder()
-            .setNameservers(ImmutableSet.of(nameserver3.createKey(), nameserver4.createKey()))
+            .setNameservers(ImmutableSet.of(nameserver3.createVKey(), nameserver4.createVKey()))
             .build());
     // Persist a domain in a different tld that should be ignored.
     persistActiveDomain("should-be-ignored.example");

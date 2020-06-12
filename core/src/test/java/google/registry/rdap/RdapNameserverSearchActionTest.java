@@ -36,7 +36,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
@@ -111,10 +110,11 @@ public class RdapNameserverSearchActionTest
         persistResource(
             makeRegistrar("evilregistrar", "Yes Virginia <script>", Registrar.State.ACTIVE));
     persistSimpleResources(makeRegistrarContacts(registrar));
-    hostNs1CatLol = makeAndPersistHostResource(
-        "ns1.cat.lol", "1.2.3.4", clock.nowUtc().minusYears(1));
-    hostNs2CatLol = makeAndPersistHostResource(
-        "ns2.cat.lol", "bad:f00d:cafe::15:beef", clock.nowUtc().minusYears(1));
+    hostNs1CatLol =
+        makeAndPersistHostResource("ns1.cat.lol", "1.2.3.4", clock.nowUtc().minusYears(1));
+    hostNs2CatLol =
+        makeAndPersistHostResource(
+            "ns2.cat.lol", "bad:f00d:cafe::15:beef", clock.nowUtc().minusYears(1));
     makeAndPersistHostResource(
         "ns1.cat2.lol", "1.2.3.3", "bad:f00d:cafe::15:beef", clock.nowUtc().minusYears(1));
     makeAndPersistHostResource("ns1.cat.external", null, null, clock.nowUtc().minusYears(1));
@@ -132,25 +132,28 @@ public class RdapNameserverSearchActionTest
     makeAndPersistHostResource("ns1.cat.1.test", "1.2.3.6", clock.nowUtc().minusYears(1));
 
     // create a domain so that we can use it as a test nameserver search string suffix
-    domainCatLol = persistResource(
-        makeDomainBase(
-                "cat.lol",
-                persistResource(
-                    makeContactResource("5372808-ERL", "Goblin Market", "lol@cat.lol", registrar)),
-                persistResource(
-                    makeContactResource("5372808-IRL", "Santa Claus", "BOFH@cat.lol", registrar)),
-                persistResource(
-                    makeContactResource("5372808-TRL", "The Raven", "bog@cat.lol", registrar)),
-                hostNs1CatLol,
-                hostNs2CatLol,
-                registrar)
-            .asBuilder()
-            .setSubordinateHosts(ImmutableSet.of("ns1.cat.lol", "ns2.cat.lol"))
-            .build());
+    domainCatLol =
+        persistResource(
+            makeDomainBase(
+                    "cat.lol",
+                    persistResource(
+                        makeContactResource(
+                            "5372808-ERL", "Goblin Market", "lol@cat.lol", registrar)),
+                    persistResource(
+                        makeContactResource(
+                            "5372808-IRL", "Santa Claus", "BOFH@cat.lol", registrar)),
+                    persistResource(
+                        makeContactResource("5372808-TRL", "The Raven", "bog@cat.lol", registrar)),
+                    hostNs1CatLol,
+                    hostNs2CatLol,
+                    registrar)
+                .asBuilder()
+                .setSubordinateHosts(ImmutableSet.of("ns1.cat.lol", "ns2.cat.lol"))
+                .build());
     persistResource(
-        hostNs1CatLol.asBuilder().setSuperordinateDomain(Key.create(domainCatLol)).build());
+        hostNs1CatLol.asBuilder().setSuperordinateDomain(domainCatLol.createVKey()).build());
     persistResource(
-        hostNs2CatLol.asBuilder().setSuperordinateDomain(Key.create(domainCatLol)).build());
+        hostNs2CatLol.asBuilder().setSuperordinateDomain(domainCatLol.createVKey()).build());
 
     action.ipParam = Optional.empty();
     action.nameParam = Optional.empty();
@@ -187,10 +190,9 @@ public class RdapNameserverSearchActionTest
       hostsBuilder.add(makeHostResource(hostName, "5.5.5.1", "5.5.5.2"));
     }
     persistResources(hostsBuilder.build());
-    domainCatLol = persistResource(
-        domainCatLol.asBuilder()
-            .setSubordinateHosts(subordinateHostsBuilder.build())
-            .build());
+    domainCatLol =
+        persistResource(
+            domainCatLol.asBuilder().setSubordinateHosts(subordinateHostsBuilder.build()).build());
   }
 
   private void createDeletedHost() {
@@ -245,10 +247,7 @@ public class RdapNameserverSearchActionTest
   public void testInvalidRequest_rejected() {
     action.run();
     assertThat(parseJsonObject(response.getPayload()))
-        .isEqualTo(
-            generateExpectedJsonError(
-                "You must specify either name=XXXX or ip=YYYY",
-                400));
+        .isEqualTo(generateExpectedJsonError("You must specify either name=XXXX or ip=YYYY", 400));
     assertThat(response.getStatus()).isEqualTo(400);
     verifyErrorMetrics(Optional.empty(), 400);
   }
@@ -294,8 +293,7 @@ public class RdapNameserverSearchActionTest
   public void testNoCharactersToMatch_rejected() {
     assertThat(generateActualJsonWithName("*"))
         .isEqualTo(
-            generateExpectedJsonError(
-                "Initial search string must be at least 2 characters", 422));
+            generateExpectedJsonError("Initial search string must be at least 2 characters", 422));
     assertThat(response.getStatus()).isEqualTo(422);
     verifyErrorMetrics(Optional.empty(), 422);
   }
@@ -304,8 +302,7 @@ public class RdapNameserverSearchActionTest
   public void testFewerThanTwoCharactersToMatch_rejected() {
     assertThat(generateActualJsonWithName("a*"))
         .isEqualTo(
-            generateExpectedJsonError(
-                "Initial search string must be at least 2 characters", 422));
+            generateExpectedJsonError("Initial search string must be at least 2 characters", 422));
     assertThat(response.getStatus()).isEqualTo(422);
     verifyErrorMetrics(Optional.empty(), 422);
   }
@@ -349,7 +346,8 @@ public class RdapNameserverSearchActionTest
   @Test
   public void testNameMatch_ns2_cat_lol_found() {
     assertThat(generateActualJsonWithName("ns2.cat.lol"))
-        .isEqualTo(generateExpectedJsonForNameserver(
+        .isEqualTo(
+            generateExpectedJsonForNameserver(
                 "ns2.cat.lol",
                 null,
                 "4-ROID",
@@ -505,7 +503,7 @@ public class RdapNameserverSearchActionTest
   public void testNameMatch_nontruncatedResultSet() {
     createManyHosts(4);
     assertThat(generateActualJsonWithName("nsx*.cat.lol"))
-      .isEqualTo(loadJsonFile("rdap_nontruncated_hosts.json"));
+        .isEqualTo(loadJsonFile("rdap_nontruncated_hosts.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(4);
   }
@@ -535,8 +533,7 @@ public class RdapNameserverSearchActionTest
 
   @Test
   public void testNameMatchDeletedHost_foundTheOtherHost() {
-    persistResource(
-        hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     assertThat(generateActualJsonWithName("ns*.cat.lol"))
         .isEqualTo(
             generateExpectedJsonForNameserver(
@@ -648,8 +645,7 @@ public class RdapNameserverSearchActionTest
    * @param expectedNames an immutable list of the host names we expect to retrieve
    */
   private void checkCursorNavigation(
-      boolean byName, String paramValue, ImmutableList<String> expectedNames)
-      throws Exception {
+      boolean byName, String paramValue, ImmutableList<String> expectedNames) throws Exception {
     String cursor = null;
     int expectedNameOffset = 0;
     int expectedPageCount =
@@ -792,9 +788,9 @@ public class RdapNameserverSearchActionTest
   public void testAddressMatch_truncatedResultSet() {
     createManyHosts(5);
     assertThat(generateActualJsonWithIp("5.5.5.1"))
-    .isEqualTo(
-        loadJsonFile(
-            "rdap_truncated_hosts.json", "QUERY", "ip=5.5.5.1&cursor=MTctUk9JRA%3D%3D"));
+        .isEqualTo(
+            loadJsonFile(
+                "rdap_truncated_hosts.json", "QUERY", "ip=5.5.5.1&cursor=MTctUk9JRA%3D%3D"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(5, IncompletenessWarningType.TRUNCATED);
   }

@@ -116,7 +116,7 @@ public abstract class BillingEvent extends ImmutableObject
 
   /** The registrar to bill. */
   @Index
-  @Column(nullable = false)
+  @Column(name = "registrarId", nullable = false)
   String clientId;
 
   /** Revision id of the entry in DomainHistory table that ths bill belongs to. */
@@ -267,7 +267,7 @@ public abstract class BillingEvent extends ImmutableObject
   @javax.persistence.Entity(name = "BillingEvent")
   @javax.persistence.Table(
       indexes = {
-        @javax.persistence.Index(columnList = "clientId"),
+        @javax.persistence.Index(columnList = "registrarId"),
         @javax.persistence.Index(columnList = "eventTime"),
         @javax.persistence.Index(columnList = "billingTime"),
         @javax.persistence.Index(columnList = "syntheticCreationTime"),
@@ -345,6 +345,7 @@ public abstract class BillingEvent extends ImmutableObject
       return Optional.ofNullable(allocationToken);
     }
 
+    @Override
     public VKey<OneTime> createVKey() {
       return VKey.createOfy(getClass(), Key.create(this));
     }
@@ -439,7 +440,7 @@ public abstract class BillingEvent extends ImmutableObject
   @javax.persistence.Entity(name = "BillingRecurrence")
   @javax.persistence.Table(
       indexes = {
-        @javax.persistence.Index(columnList = "clientId"),
+        @javax.persistence.Index(columnList = "registrarId"),
         @javax.persistence.Index(columnList = "eventTime"),
         @javax.persistence.Index(columnList = "recurrenceEndTime"),
         @javax.persistence.Index(columnList = "recurrence_time_of_year")
@@ -482,6 +483,7 @@ public abstract class BillingEvent extends ImmutableObject
       return recurrenceTimeOfYear;
     }
 
+    @Override
     public VKey<Recurring> createVKey() {
       return VKey.createOfy(getClass(), Key.create(this));
     }
@@ -529,7 +531,7 @@ public abstract class BillingEvent extends ImmutableObject
   @javax.persistence.Entity(name = "BillingCancellation")
   @javax.persistence.Table(
       indexes = {
-        @javax.persistence.Index(columnList = "clientId"),
+        @javax.persistence.Index(columnList = "registrarId"),
         @javax.persistence.Index(columnList = "eventTime"),
         @javax.persistence.Index(columnList = "billingTime")
       })
@@ -603,6 +605,7 @@ public abstract class BillingEvent extends ImmutableObject
       return builder.build();
     }
 
+    @Override
     public VKey<Cancellation> createVKey() {
       return VKey.createOfy(getClass(), Key.create(this));
     }
@@ -680,6 +683,11 @@ public abstract class BillingEvent extends ImmutableObject
     @Override
     public Builder asBuilder() {
       return new Builder(clone(this));
+    }
+
+    @Override
+    public VKey<Modification> createVKey() {
+      return VKey.createOfy(this.getClass(), Key.create(this));
     }
 
     /**

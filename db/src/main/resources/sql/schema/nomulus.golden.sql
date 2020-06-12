@@ -40,7 +40,7 @@ SET default_with_oids = false;
 
 CREATE TABLE public."BillingCancellation" (
     billing_cancellation_id bigint NOT NULL,
-    client_id text NOT NULL,
+    registrar_id text NOT NULL,
     domain_history_revision_id bigint NOT NULL,
     domain_repo_id text NOT NULL,
     event_time timestamp with time zone NOT NULL,
@@ -78,7 +78,7 @@ ALTER SEQUENCE public."BillingCancellation_billing_cancellation_id_seq" OWNED BY
 
 CREATE TABLE public."BillingEvent" (
     billing_event_id bigint NOT NULL,
-    client_id text NOT NULL,
+    registrar_id text NOT NULL,
     domain_history_revision_id bigint NOT NULL,
     domain_repo_id text NOT NULL,
     event_time timestamp with time zone NOT NULL,
@@ -120,7 +120,7 @@ ALTER SEQUENCE public."BillingEvent_billing_event_id_seq" OWNED BY public."Billi
 
 CREATE TABLE public."BillingRecurrence" (
     billing_recurrence_id bigint NOT NULL,
-    client_id text NOT NULL,
+    registrar_id text NOT NULL,
     domain_history_revision_id bigint NOT NULL,
     domain_repo_id text NOT NULL,
     event_time timestamp with time zone NOT NULL,
@@ -198,11 +198,11 @@ ALTER SEQUENCE public."ClaimsList_revision_id_seq" OWNED BY public."ClaimsList".
 
 CREATE TABLE public."Contact" (
     repo_id text NOT NULL,
-    creation_client_id text NOT NULL,
+    creation_registrar_id text NOT NULL,
     creation_time timestamp with time zone NOT NULL,
-    current_sponsor_client_id text NOT NULL,
+    current_sponsor_registrar_id text NOT NULL,
     deletion_time timestamp with time zone,
-    last_epp_update_client_id text,
+    last_epp_update_registrar_id text,
     last_epp_update_time timestamp with time zone,
     statuses text[],
     auth_info_repo_id text,
@@ -241,7 +241,23 @@ CREATE TABLE public."Contact" (
     addr_local_type text,
     search_name text,
     voice_phone_extension text,
-    voice_phone_number text
+    voice_phone_number text,
+    transfer_gaining_poll_message_id bigint,
+    transfer_losing_poll_message_id bigint,
+    transfer_billing_cancellation_id bigint,
+    transfer_billing_event_id bigint,
+    transfer_billing_recurrence_id bigint,
+    transfer_autorenew_poll_message_id bigint,
+    transfer_renew_period_unit text,
+    transfer_renew_period_value integer,
+    transfer_client_txn_id text,
+    transfer_server_txn_id text,
+    transfer_registration_expiration_time timestamp with time zone,
+    transfer_gaining_registrar_id text,
+    transfer_losing_registrar_id text,
+    transfer_pending_expiration_time timestamp with time zone,
+    transfer_request_time timestamp with time zone,
+    transfer_status text
 );
 
 
@@ -263,11 +279,11 @@ CREATE TABLE public."Cursor" (
 
 CREATE TABLE public."Domain" (
     repo_id text NOT NULL,
-    creation_client_id text NOT NULL,
+    creation_registrar_id text NOT NULL,
     creation_time timestamp with time zone NOT NULL,
-    current_sponsor_client_id text NOT NULL,
+    current_sponsor_registrar_id text NOT NULL,
     deletion_time timestamp with time zone,
-    last_epp_update_client_id text,
+    last_epp_update_registrar_id text,
     last_epp_update_time timestamp with time zone,
     statuses text[],
     auth_info_repo_id text,
@@ -286,7 +302,23 @@ CREATE TABLE public."Domain" (
     admin_contact text,
     billing_contact text,
     registrant_contact text,
-    tech_contact text
+    tech_contact text,
+    transfer_gaining_poll_message_id bigint,
+    transfer_losing_poll_message_id bigint,
+    transfer_billing_cancellation_id bigint,
+    transfer_billing_event_id bigint,
+    transfer_billing_recurrence_id bigint,
+    transfer_autorenew_poll_message_id bigint,
+    transfer_renew_period_unit text,
+    transfer_renew_period_value integer,
+    transfer_client_txn_id text,
+    transfer_server_txn_id text,
+    transfer_registration_expiration_time timestamp with time zone,
+    transfer_gaining_registrar_id text,
+    transfer_losing_registrar_id text,
+    transfer_pending_expiration_time timestamp with time zone,
+    transfer_request_time timestamp with time zone,
+    transfer_status text
 );
 
 
@@ -306,27 +338,18 @@ CREATE TABLE public."DomainHost" (
 
 CREATE TABLE public."HostResource" (
     repo_id text NOT NULL,
-    creation_client_id text,
+    creation_registrar_id text,
     creation_time timestamp with time zone,
-    current_sponsor_client_id text,
+    current_sponsor_registrar_id text,
     deletion_time timestamp with time zone,
-    last_epp_update_client_id text,
+    last_epp_update_registrar_id text,
     last_epp_update_time timestamp with time zone,
     statuses text[],
     fully_qualified_host_name text,
     last_superordinate_change timestamp with time zone,
     last_transfer_time timestamp with time zone,
-    superordinate_domain bytea
-);
-
-
---
--- Name: HostResource_inetAddresses; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."HostResource_inetAddresses" (
-    host_resource_repo_id text NOT NULL,
-    inet_addresses bytea
+    superordinate_domain text,
+    inet_addresses text[]
 );
 
 
@@ -341,6 +364,59 @@ CREATE TABLE public."Lock" (
     expiration_time timestamp with time zone NOT NULL,
     request_log_id text NOT NULL
 );
+
+
+--
+-- Name: PollMessage; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."PollMessage" (
+    type text NOT NULL,
+    poll_message_id bigint NOT NULL,
+    registrar_id text NOT NULL,
+    contact_repo_id text,
+    contact_revision_id bigint,
+    domain_repo_id text,
+    domain_revision_id bigint,
+    event_time timestamp with time zone NOT NULL,
+    host_repo_id text,
+    host_revision_id bigint,
+    message text,
+    transfer_response_contact_id text,
+    transfer_response_domain_expiration_time timestamp with time zone,
+    transfer_response_domain_name text,
+    pending_action_response_action_result boolean,
+    pending_action_response_name_or_id text,
+    pending_action_response_processed_date timestamp with time zone,
+    pending_action_response_client_txn_id text,
+    pending_action_response_server_txn_id text,
+    transfer_response_gaining_registrar_id text,
+    transfer_response_losing_registrar_id text,
+    transfer_response_pending_transfer_expiration_time timestamp with time zone,
+    transfer_response_transfer_request_time timestamp with time zone,
+    transfer_response_transfer_status text,
+    autorenew_end_time timestamp with time zone,
+    autorenew_domain_name text
+);
+
+
+--
+-- Name: PollMessage_poll_message_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."PollMessage_poll_message_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: PollMessage_poll_message_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."PollMessage_poll_message_id_seq" OWNED BY public."PollMessage".poll_message_id;
 
 
 --
@@ -391,7 +467,7 @@ ALTER SEQUENCE public."PremiumList_revision_id_seq" OWNED BY public."PremiumList
 --
 
 CREATE TABLE public."Registrar" (
-    client_id text NOT NULL,
+    registrar_id text NOT NULL,
     allowed_tlds text[],
     billing_account_map public.hstore,
     billing_identifier bigint,
@@ -573,6 +649,13 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 
 
 --
+-- Name: PollMessage poll_message_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage" ALTER COLUMN poll_message_id SET DEFAULT nextval('public."PollMessage_poll_message_id_seq"'::regclass);
+
+
+--
 -- Name: PremiumList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -674,6 +757,14 @@ ALTER TABLE ONLY public."Lock"
 
 
 --
+-- Name: PollMessage PollMessage_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT "PollMessage_pkey" PRIMARY KEY (poll_message_id);
+
+
+--
 -- Name: PremiumEntry PremiumEntry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -702,7 +793,7 @@ ALTER TABLE ONLY public."RegistrarPoc"
 --
 
 ALTER TABLE ONLY public."Registrar"
-    ADD CONSTRAINT "Registrar_pkey" PRIMARY KEY (client_id);
+    ADD CONSTRAINT "Registrar_pkey" PRIMARY KEY (registrar_id);
 
 
 --
@@ -805,7 +896,7 @@ CREATE INDEX idx6syykou4nkc7hqa5p8r92cpch ON public."BillingRecurrence" USING bt
 -- Name: idx73l103vc5900ig3p4odf0cngt; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx73l103vc5900ig3p4odf0cngt ON public."BillingEvent" USING btree (client_id);
+CREATE INDEX idx73l103vc5900ig3p4odf0cngt ON public."BillingEvent" USING btree (registrar_id);
 
 
 --
@@ -830,17 +921,31 @@ CREATE INDEX idx_registry_lock_verification_code ON public."RegistryLock" USING 
 
 
 --
+-- Name: idxaydgox62uno9qx8cjlj5lauye; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxaydgox62uno9qx8cjlj5lauye ON public."PollMessage" USING btree (event_time);
+
+
+--
 -- Name: idxbn8t4wp85fgxjl8q4ctlscx55; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idxbn8t4wp85fgxjl8q4ctlscx55 ON public."Contact" USING btree (current_sponsor_client_id);
+CREATE INDEX idxbn8t4wp85fgxjl8q4ctlscx55 ON public."Contact" USING btree (current_sponsor_registrar_id);
+
+
+--
+-- Name: idxe7wu46c7wpvfmfnj4565abibp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxe7wu46c7wpvfmfnj4565abibp ON public."PollMessage" USING btree (registrar_id);
 
 
 --
 -- Name: idxeokttmxtpq2hohcioe5t2242b; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idxeokttmxtpq2hohcioe5t2242b ON public."BillingCancellation" USING btree (client_id);
+CREATE INDEX idxeokttmxtpq2hohcioe5t2242b ON public."BillingCancellation" USING btree (registrar_id);
 
 
 --
@@ -861,7 +966,7 @@ CREATE INDEX idxjny8wuot75b5e6p38r47wdawu ON public."BillingRecurrence" USING bt
 -- Name: idxkjt9yaq92876dstimd93hwckh; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idxkjt9yaq92876dstimd93hwckh ON public."Domain" USING btree (current_sponsor_client_id);
+CREATE INDEX idxkjt9yaq92876dstimd93hwckh ON public."Domain" USING btree (current_sponsor_registrar_id);
 
 
 --
@@ -875,7 +980,7 @@ CREATE INDEX idxn1f711wicdnooa2mqb7g1m55o ON public."Contact" USING btree (delet
 -- Name: idxn898pb9mwcg359cdwvolb11ck; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idxn898pb9mwcg359cdwvolb11ck ON public."BillingRecurrence" USING btree (client_id);
+CREATE INDEX idxn898pb9mwcg359cdwvolb11ck ON public."BillingRecurrence" USING btree (registrar_id);
 
 
 --
@@ -946,7 +1051,7 @@ CREATE INDEX reservedlist_name_idx ON public."ReservedList" USING btree (name);
 --
 
 ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT fk1sfyj7o7954prbn1exk7lpnoe FOREIGN KEY (creation_client_id) REFERENCES public."Registrar"(client_id);
+    ADD CONSTRAINT fk1sfyj7o7954prbn1exk7lpnoe FOREIGN KEY (creation_registrar_id) REFERENCES public."Registrar"(registrar_id);
 
 
 --
@@ -954,7 +1059,7 @@ ALTER TABLE ONLY public."Contact"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk2jc69qyg2tv9hhnmif6oa1cx1 FOREIGN KEY (creation_client_id) REFERENCES public."Registrar"(client_id);
+    ADD CONSTRAINT fk2jc69qyg2tv9hhnmif6oa1cx1 FOREIGN KEY (creation_registrar_id) REFERENCES public."Registrar"(registrar_id);
 
 
 --
@@ -970,7 +1075,7 @@ ALTER TABLE ONLY public."RegistryLock"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk2u3srsfbei272093m3b3xwj23 FOREIGN KEY (current_sponsor_client_id) REFERENCES public."Registrar"(client_id);
+    ADD CONSTRAINT fk2u3srsfbei272093m3b3xwj23 FOREIGN KEY (current_sponsor_registrar_id) REFERENCES public."Registrar"(registrar_id);
 
 
 --
@@ -982,19 +1087,11 @@ ALTER TABLE ONLY public."ClaimsEntry"
 
 
 --
--- Name: HostResource_inetAddresses fk6unwhfkcu3oq6q347fxvpagv; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."HostResource_inetAddresses"
-    ADD CONSTRAINT fk6unwhfkcu3oq6q347fxvpagv FOREIGN KEY (host_resource_repo_id) REFERENCES public."HostResource"(repo_id);
-
-
---
 -- Name: Contact fk93c185fx7chn68uv7nl6uv2s0; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT fk93c185fx7chn68uv7nl6uv2s0 FOREIGN KEY (current_sponsor_client_id) REFERENCES public."Registrar"(client_id);
+    ADD CONSTRAINT fk93c185fx7chn68uv7nl6uv2s0 FOREIGN KEY (current_sponsor_registrar_id) REFERENCES public."Registrar"(registrar_id);
 
 
 --
@@ -1014,11 +1111,11 @@ ALTER TABLE ONLY public."BillingCancellation"
 
 
 --
--- Name: BillingCancellation fk_billing_cancellation_client_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: BillingCancellation fk_billing_cancellation_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."BillingCancellation"
-    ADD CONSTRAINT fk_billing_cancellation_client_id FOREIGN KEY (client_id) REFERENCES public."Registrar"(client_id);
+    ADD CONSTRAINT fk_billing_cancellation_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
 
 
 --
@@ -1030,19 +1127,35 @@ ALTER TABLE ONLY public."BillingEvent"
 
 
 --
--- Name: BillingEvent fk_billing_event_client_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: BillingEvent fk_billing_event_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."BillingEvent"
-    ADD CONSTRAINT fk_billing_event_client_id FOREIGN KEY (client_id) REFERENCES public."Registrar"(client_id);
+    ADD CONSTRAINT fk_billing_event_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
 
 
 --
--- Name: BillingRecurrence fk_billing_recurrence_client_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: BillingRecurrence fk_billing_recurrence_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."BillingRecurrence"
-    ADD CONSTRAINT fk_billing_recurrence_client_id FOREIGN KEY (client_id) REFERENCES public."Registrar"(client_id);
+    ADD CONSTRAINT fk_billing_recurrence_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: Contact fk_contact_transfer_gaining_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Contact"
+    ADD CONSTRAINT fk_contact_transfer_gaining_registrar_id FOREIGN KEY (transfer_gaining_registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: Contact fk_contact_transfer_losing_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Contact"
+    ADD CONSTRAINT fk_contact_transfer_losing_registrar_id FOREIGN KEY (transfer_losing_registrar_id) REFERENCES public."Registrar"(registrar_id);
 
 
 --
@@ -1078,11 +1191,107 @@ ALTER TABLE ONLY public."Domain"
 
 
 --
+-- Name: Domain fk_domain_transfer_billing_cancellation_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_transfer_billing_cancellation_id FOREIGN KEY (transfer_billing_cancellation_id) REFERENCES public."BillingCancellation"(billing_cancellation_id);
+
+
+--
+-- Name: Domain fk_domain_transfer_billing_event_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_transfer_billing_event_id FOREIGN KEY (transfer_billing_event_id) REFERENCES public."BillingEvent"(billing_event_id);
+
+
+--
+-- Name: Domain fk_domain_transfer_billing_recurrence_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_transfer_billing_recurrence_id FOREIGN KEY (transfer_billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id);
+
+
+--
+-- Name: Domain fk_domain_transfer_gaining_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_transfer_gaining_registrar_id FOREIGN KEY (transfer_gaining_registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: Domain fk_domain_transfer_losing_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_transfer_losing_registrar_id FOREIGN KEY (transfer_losing_registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
 -- Name: DomainHost fk_domainhost_host_valid; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."DomainHost"
     ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (ns_hosts) REFERENCES public."HostResource"(repo_id);
+
+
+--
+-- Name: HostResource fk_host_resource_superordinate_domain; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostResource"
+    ADD CONSTRAINT fk_host_resource_superordinate_domain FOREIGN KEY (superordinate_domain) REFERENCES public."Domain"(repo_id);
+
+
+--
+-- Name: PollMessage fk_poll_message_contact_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT fk_poll_message_contact_repo_id FOREIGN KEY (contact_repo_id) REFERENCES public."Contact"(repo_id);
+
+
+--
+-- Name: PollMessage fk_poll_message_domain_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT fk_poll_message_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
+
+
+--
+-- Name: PollMessage fk_poll_message_host_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT fk_poll_message_host_repo_id FOREIGN KEY (host_repo_id) REFERENCES public."HostResource"(repo_id);
+
+
+--
+-- Name: PollMessage fk_poll_message_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT fk_poll_message_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: PollMessage fk_poll_message_transfer_response_gaining_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT fk_poll_message_transfer_response_gaining_registrar_id FOREIGN KEY (transfer_response_gaining_registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: PollMessage fk_poll_message_transfer_response_losing_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT fk_poll_message_transfer_response_losing_registrar_id FOREIGN KEY (transfer_response_losing_registrar_id) REFERENCES public."Registrar"(registrar_id);
 
 
 --
@@ -1106,7 +1315,7 @@ ALTER TABLE ONLY public."ReservedEntry"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fkjc0r9r5y1lfbt4gpbqw4wsuvq FOREIGN KEY (last_epp_update_client_id) REFERENCES public."Registrar"(client_id);
+    ADD CONSTRAINT fkjc0r9r5y1lfbt4gpbqw4wsuvq FOREIGN KEY (last_epp_update_registrar_id) REFERENCES public."Registrar"(registrar_id);
 
 
 --
@@ -1114,7 +1323,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT fkmb7tdiv85863134w1wogtxrb2 FOREIGN KEY (last_epp_update_client_id) REFERENCES public."Registrar"(client_id);
+    ADD CONSTRAINT fkmb7tdiv85863134w1wogtxrb2 FOREIGN KEY (last_epp_update_registrar_id) REFERENCES public."Registrar"(registrar_id);
 
 
 --

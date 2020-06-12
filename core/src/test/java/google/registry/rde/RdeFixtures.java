@@ -116,8 +116,8 @@ final class RdeFixtures {
             .setIdnTableName("extended_latin")
             .setNameservers(
                 ImmutableSet.of(
-                    makeHostResource(clock, "bird.or.devil.みんな", "1.2.3.4").createKey(),
-                    makeHostResource(clock, "ns2.cat.みんな", "bad:f00d:cafe::15:beef").createKey()))
+                    makeHostResource(clock, "bird.or.devil.みんな", "1.2.3.4").createVKey(),
+                    makeHostResource(clock, "ns2.cat.みんな", "bad:f00d:cafe::15:beef").createVKey()))
             .setRegistrationExpirationTime(DateTime.parse("1994-01-01T00:00:00Z"))
             .setGracePeriods(
                 ImmutableSet.of(
@@ -174,10 +174,9 @@ final class RdeFixtures {
                     .setGainingClientId("gaining")
                     .setLosingClientId("losing")
                     .setPendingTransferExpirationTime(DateTime.parse("1993-04-20T00:00:00Z"))
-                    .setServerApproveBillingEvent(Key.create(billingEvent))
+                    .setServerApproveBillingEvent(billingEvent.createVKey())
                     .setServerApproveAutorenewEvent(
-                        Key.create(
-                            persistResource(
+                        persistResource(
                                 new BillingEvent.Recurring.Builder()
                                     .setReason(Reason.RENEW)
                                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
@@ -186,10 +185,10 @@ final class RdeFixtures {
                                     .setEventTime(END_OF_TIME)
                                     .setRecurrenceEndTime(END_OF_TIME)
                                     .setParent(historyEntry)
-                                    .build())))
+                                    .build())
+                            .createVKey())
                     .setServerApproveAutorenewPollMessage(
-                        Key.create(
-                            persistResource(
+                        persistResource(
                                 new Autorenew.Builder()
                                     .setTargetId("example." + tld)
                                     .setClientId("TheRegistrar")
@@ -197,8 +196,9 @@ final class RdeFixtures {
                                     .setAutorenewEndTime(END_OF_TIME)
                                     .setMsg("Domain was auto-renewed.")
                                     .setParent(historyEntry)
-                                    .build())))
-                    .setServerApproveEntities(ImmutableSet.of(Key.create(billingEvent)))
+                                    .build())
+                            .createVKey())
+                    .setServerApproveEntities(ImmutableSet.of(billingEvent.createVKey()))
                     .setTransferRequestTime(DateTime.parse("1991-01-01T00:00:00Z"))
                     .setTransferStatus(TransferStatus.PENDING)
                     .setTransferredRegistrationExpirationTime(

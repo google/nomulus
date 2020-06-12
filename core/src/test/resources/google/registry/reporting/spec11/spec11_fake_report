@@ -1,3 +1,3 @@
 Map from registrar email / name to detected subdomain threats:
-{"threatMatches":[{"threatEntryMetadata":"NONE","threatType":"MALWARE","fullyQualifiedDomainName":"a.com","platformType":"ANY_PLATFORM"}],"registrarClientId":"TheRegistrar","registrarEmailAddress":"the.registrar@example.com"}
-{"threatMatches":[{"threatEntryMetadata":"NONE","threatType":"MALWARE","fullyQualifiedDomainName":"b.com","platformType":"ANY_PLATFORM"},{"threatEntryMetadata":"NONE","threatType":"MALWARE","fullyQualifiedDomainName":"c.com","platformType":"ANY_PLATFORM"}],"registrarClientId":"NewRegistrar","registrarEmailAddress":"new.registrar@example.com"}
+{"threatMatches":[{"threatType":"MALWARE","fullyQualifiedDomainName":"a.com"}],"registrarClientId":"TheRegistrar","registrarEmailAddress":"the.registrar@example.com"}
+{"threatMatches":[{"threatType":"MALWARE","fullyQualifiedDomainName":"b.com"},{"threatType":"MALWARE","fullyQualifiedDomainName":"c.com"}],"registrarClientId":"NewRegistrar","registrarEmailAddress":"new.registrar@example.com"}

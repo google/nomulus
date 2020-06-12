@@ -37,7 +37,6 @@ import com.google.common.collect.Range;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.Period;
@@ -81,14 +80,18 @@ public class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDom
   private HostResource hostNs2CatLol;
   private HashMap<String, HostResource> hostNameToHostMap = new HashMap<>();
 
-  enum RequestType { NONE, NAME, NS_LDH_NAME, NS_IP }
+  enum RequestType {
+    NONE,
+    NAME,
+    NS_LDH_NAME,
+    NS_IP
+  }
 
   private JsonObject generateActualJson(RequestType requestType, String paramValue) {
     return generateActualJson(requestType, paramValue, null);
   }
 
-  private JsonObject generateActualJson(
-      RequestType requestType, String paramValue, String cursor) {
+  private JsonObject generateActualJson(RequestType requestType, String paramValue, String cursor) {
     action.requestPath = actionPath;
     action.requestMethod = POST;
     String requestTypeParam = null;
@@ -179,9 +182,9 @@ public class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDom
                 .setCreationClientId("foo")
                 .build());
     persistResource(
-        hostNs1CatLol.asBuilder().setSuperordinateDomain(Key.create(domainCatLol)).build());
+        hostNs1CatLol.asBuilder().setSuperordinateDomain(domainCatLol.createVKey()).build());
     persistResource(
-        hostNs2CatLol.asBuilder().setSuperordinateDomain(Key.create(domainCatLol)).build());
+        hostNs2CatLol.asBuilder().setSuperordinateDomain(domainCatLol.createVKey()).build());
 
     domainCatLol2 =
         persistResource(
@@ -220,8 +223,9 @@ public class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDom
                 .build());
     // cat.example
     createTld("example");
-    registrar = persistResource(
-        makeRegistrar("goodregistrar", "St. John Chrysostom", Registrar.State.ACTIVE));
+    registrar =
+        persistResource(
+            makeRegistrar("goodregistrar", "St. John Chrysostom", Registrar.State.ACTIVE));
     persistSimpleResources(makeRegistrarContacts(registrar));
     domainCatExample =
         persistResource(
@@ -297,8 +301,7 @@ public class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDom
                 .build());
     // cat.1.test
     createTld("1.test");
-    registrar =
-        persistResource(makeRegistrar("multiregistrar", "1.test", Registrar.State.ACTIVE));
+    registrar = persistResource(makeRegistrar("multiregistrar", "1.test", Registrar.State.ACTIVE));
     persistSimpleResources(makeRegistrarContacts(registrar));
     domainMultipart =
         persistResource(
@@ -395,10 +398,7 @@ public class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDom
 
   private void deleteCatLol() {
     persistResource(
-        domainCatLol
-            .asBuilder()
-            .setDeletionTime(clock.nowUtc().minusMonths(6))
-            .build());
+        domainCatLol.asBuilder().setDeletionTime(clock.nowUtc().minusMonths(6)).build());
     persistResource(
         makeHistoryEntry(
             domainCatLol,
@@ -416,9 +416,12 @@ public class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDom
     for (int i = numHosts; i >= 1; i--) {
       String hostName = String.format("ns%d.%s", i, mainDomainName);
       subordinateHostnamesBuilder.add(hostName);
-      HostResource host = makeAndPersistHostResource(
-          hostName, String.format("5.5.%d.%d", 5 + i / 250, i % 250), clock.nowUtc().minusYears(1));
-      hostKeysBuilder.add(host.createKey());
+      HostResource host =
+          makeAndPersistHostResource(
+              hostName,
+              String.format("5.5.%d.%d", 5 + i / 250, i % 250),
+              clock.nowUtc().minusYears(1));
+      hostKeysBuilder.add(host.createVKey());
     }
     ImmutableSet<VKey<HostResource>> hostKeys = hostKeysBuilder.build();
     // Create all the domains at once, then persist them in parallel, for increased efficiency.
@@ -533,8 +536,7 @@ public class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDom
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
-  private void runNotFoundTest(
-      RequestType requestType, String queryString, String errorMessage) {
+  private void runNotFoundTest(RequestType requestType, String queryString, String errorMessage) {
     rememberWildcardType(queryString);
     assertThat(generateActualJson(requestType, queryString))
         .isEqualTo(generateExpectedJsonError(errorMessage, 404));
@@ -654,9 +656,9 @@ public class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDom
   @Test
   public void testInvalidRequest_rejected() {
     assertThat(generateActualJson(RequestType.NONE, null))
-        .isEqualTo(generateExpectedJsonError(
-            "You must specify either name=XXXX, nsLdhName=YYYY or nsIp=ZZZZ",
-            400));
+        .isEqualTo(
+            generateExpectedJsonError(
+                "You must specify either name=XXXX, nsLdhName=YYYY or nsIp=ZZZZ", 400));
     assertThat(response.getStatus()).isEqualTo(400);
     verifyErrorMetrics(SearchType.NONE, Optional.empty(), 400);
   }
@@ -1233,7 +1235,7 @@ public class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDom
     login("evilregistrar");
     runSuccessfulTestWithCatLol(RequestType.NS_LDH_NAME, "ns2.cat.l*", "rdap_domain.json");
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, 1, 1);
- }
+  }
 
   @Test
   public void testNameserverMatchWithWildcard_found_sameRegistrarRequested() {
@@ -1458,24 +1460,21 @@ public class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDom
 
   @Test
   public void testNameserverMatchDeletedNameserver_notFound() {
-    persistResource(
-        hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns1.cat.lol", "No matching nameservers found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), Optional.of(0L), 404);
   }
 
   @Test
   public void testNameserverMatchDeletedNameserverWithWildcard_notFound() {
-    persistResource(
-        hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns1.cat.l*", "No matching nameservers found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), Optional.of(0L), 404);
   }
 
   @Test
   public void testNameserverMatchDeletedNameserverWithWildcardAndSuffix_notFound() {
-    persistResource(
-        hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
+    persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     runNotFoundTest(RequestType.NS_LDH_NAME, "ns1*.cat.lol", "No matching nameservers found");
     verifyErrorMetrics(SearchType.BY_NAMESERVER_NAME, Optional.empty(), Optional.of(0L), 404);
   }

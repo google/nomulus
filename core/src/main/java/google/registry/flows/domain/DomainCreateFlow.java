@@ -77,7 +77,6 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.DomainCommand.Create;
@@ -353,14 +352,12 @@ public class DomainCreateFlow implements TransactionalFlow {
             .setLaunchNotice(hasClaimsNotice ? launchCreate.get().getNotice() : null)
             .setSmdId(signedMarkId)
             .setDsData(secDnsCreate.isPresent() ? secDnsCreate.get().getDsData() : null)
-            .setRegistrant(VKey.createOfy(ContactResource.class, command.getRegistrant()))
+            .setRegistrant(command.getRegistrant())
             .setAuthInfo(command.getAuthInfo())
             .setFullyQualifiedDomainName(targetId)
             .setNameservers(
                 (ImmutableSet<VKey<HostResource>>)
-                    command.getNameservers().stream()
-                        .map(key -> VKey.createOfy(HostResource.class, key))
-                        .collect(toImmutableSet()))
+                    command.getNameservers().stream().collect(toImmutableSet()))
             .setStatusValues(statuses.build())
             .setContacts(command.getContacts())
             .addGracePeriod(GracePeriod.forBillingEvent(GracePeriodStatus.ADD, createBillingEvent))

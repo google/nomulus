@@ -41,7 +41,6 @@ import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
-import javax.persistence.Transient;
 import javax.xml.bind.annotation.XmlElement;
 import org.joda.time.DateTime;
 
@@ -57,7 +56,7 @@ import org.joda.time.DateTime;
     name = "Contact",
     indexes = {
       @javax.persistence.Index(columnList = "creationTime"),
-      @javax.persistence.Index(columnList = "currentSponsorClientId"),
+      @javax.persistence.Index(columnList = "currentSponsorRegistrarId"),
       @javax.persistence.Index(columnList = "deletionTime"),
       @javax.persistence.Index(columnList = "contactId", unique = true),
       @javax.persistence.Index(columnList = "searchName")
@@ -171,8 +170,7 @@ public class ContactResource extends EppResource
   ContactAuthInfo authInfo;
 
   /** Data about any pending or past transfers on this contact. */
-  // TODO(b/153363295): Figure out how to persist transfer data
-  @Transient TransferData transferData;
+  TransferData transferData;
 
   /**
    * The time that this resource was last transferred.
@@ -197,7 +195,9 @@ public class ContactResource extends EppResource
   })
   Disclose disclose;
 
+  @Override
   public VKey<ContactResource> createVKey() {
+    // TODO(mmuller): create symmetric keys if we can ever reload both sides.
     return VKey.createOfy(ContactResource.class, Key.create(this));
   }
 

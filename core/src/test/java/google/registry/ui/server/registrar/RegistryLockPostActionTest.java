@@ -28,6 +28,7 @@ import static google.registry.ui.server.registrar.RegistryLockGetActionTest.user
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import com.google.appengine.api.users.User;
 import com.google.common.collect.ImmutableList;
@@ -56,6 +57,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import javax.mail.internet.InternetAddress;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.joda.time.Duration;
 import org.junit.Before;
@@ -74,7 +76,7 @@ public final class RegistryLockPostActionTest {
   private static final String EMAIL_MESSAGE_TEMPLATE =
       "Please click the link below to perform the lock \\/ unlock action on domain example.tld. "
           + "Note: this code will expire in one hour.\n\n"
-          + "https:\\/\\/localhost\\/registry-lock-verify\\?lockVerificationCode="
+          + "https:\\/\\/registrarconsole.tld\\/registry-lock-verify\\?lockVerificationCode="
           + "[0-9a-zA-Z_\\-]+&isLock=(true|false)";
 
   private final FakeClock clock = new FakeClock();
@@ -93,6 +95,7 @@ public final class RegistryLockPostActionTest {
   private RegistryLockPostAction action;
 
   @Mock SendEmailService emailService;
+  @Mock HttpServletRequest mockRequest;
   @Mock HttpServletResponse mockResponse;
 
   @Before
@@ -102,6 +105,8 @@ public final class RegistryLockPostActionTest {
     createTld("tld");
     domain = persistResource(newDomainBase("example.tld"));
     outgoingAddress = new InternetAddress("domain-registry@example.com");
+
+    when(mockRequest.getServerName()).thenReturn("registrarconsole.tld");
 
     action =
         createAction(
@@ -432,6 +437,7 @@ public final class RegistryLockPostActionTest {
             AsyncTaskEnqueuerTest.createForTesting(
                 mock(AppEngineServiceUtils.class), clock, Duration.ZERO));
     return new RegistryLockPostAction(
+        mockRequest,
         jsonActionRunner,
         authResult,
         registrarAccessor,

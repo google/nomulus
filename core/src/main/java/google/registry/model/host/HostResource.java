@@ -40,7 +40,6 @@ import java.net.InetAddress;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
-import javax.persistence.ElementCollection;
 import org.joda.time.DateTime;
 
 /**
@@ -70,13 +69,13 @@ public class HostResource extends EppResource
   String fullyQualifiedHostName;
 
   /** IP Addresses for this host. Can be null if this is an external host. */
-  @Index @ElementCollection Set<InetAddress> inetAddresses;
+  @Index Set<InetAddress> inetAddresses;
 
   /** The superordinate domain of this host, or null if this is an external host. */
   @Index
   @IgnoreSave(IfNull.class)
   @DoNotHydrate
-  Key<DomainBase> superordinateDomain;
+  VKey<DomainBase> superordinateDomain;
 
   /**
    * The time that this resource was last transferred.
@@ -98,7 +97,7 @@ public class HostResource extends EppResource
     return fullyQualifiedHostName;
   }
 
-  public Key<DomainBase> getSuperordinateDomain() {
+  public VKey<DomainBase> getSuperordinateDomain() {
     return superordinateDomain;
   }
 
@@ -123,7 +122,9 @@ public class HostResource extends EppResource
     return fullyQualifiedHostName;
   }
 
-  public VKey<HostResource> createKey() {
+  @Override
+  public VKey<HostResource> createVKey() {
+    // TODO(mmuller): create symmetric keys if we can ever reload both sides.
     return VKey.createOfy(HostResource.class, Key.create(this));
   }
 
@@ -143,18 +144,18 @@ public class HostResource extends EppResource
    *
    * <p>If the host is not subordinate the domain can be null and we just return last transfer time.
    *
-   * @param superordinateDomain the loaded superordinate domain, which must match the key in
-   *     the {@link #superordinateDomain} field. Passing it as a parameter allows the caller to
-   *     control the degree of consistency used to load it.
+   * @param superordinateDomain the loaded superordinate domain, which must match the key in the
+   *     {@link #superordinateDomain} field. Passing it as a parameter allows the caller to control
+   *     the degree of consistency used to load it.
    */
-   public DateTime computeLastTransferTime(@Nullable DomainBase superordinateDomain) {
+  public DateTime computeLastTransferTime(@Nullable DomainBase superordinateDomain) {
     if (!isSubordinate()) {
       checkArgument(superordinateDomain == null);
       return getLastTransferTime();
     }
     checkArgument(
         superordinateDomain != null
-            && Key.create(superordinateDomain).equals(getSuperordinateDomain()));
+            && superordinateDomain.createVKey().equals(getSuperordinateDomain()));
     DateTime lastSuperordinateChange =
         Optional.ofNullable(getLastSuperordinateChange()).orElse(getCreationTime());
     DateTime lastTransferOfCurrentSuperordinate =
@@ -205,7 +206,7 @@ public class HostResource extends EppResource
           difference(getInstance().getInetAddresses(), inetAddresses)));
     }
 
-    public Builder setSuperordinateDomain(Key<DomainBase> superordinateDomain) {
+    public Builder setSuperordinateDomain(VKey<DomainBase> superordinateDomain) {
       getInstance().superordinateDomain = superordinateDomain;
       return this;
     }

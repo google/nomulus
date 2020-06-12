@@ -24,7 +24,6 @@ import static google.registry.testing.EppMetricSubject.assertThat;
 import static google.registry.testing.HostResourceSubject.assertAboutHosts;
 
 import com.google.common.collect.ImmutableMap;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.testing.AppEngineRule;
@@ -221,7 +220,7 @@ public class EppLifecycleHostTest extends EppTestCase {
         loadByForeignKey(DomainBase.class, "example.bar.foo.tld", timeAfterCreates).get();
     assertAboutHosts()
         .that(exampleBarFooTldHost)
-        .hasSuperordinateDomain(Key.create(exampleBarFooTldDomain));
+        .hasSuperordinateDomain(exampleBarFooTldDomain.createVKey());
     assertThat(exampleBarFooTldDomain.getSubordinateHosts())
         .containsExactly("ns1.example.bar.foo.tld");
 
@@ -231,14 +230,14 @@ public class EppLifecycleHostTest extends EppTestCase {
         loadByForeignKey(DomainBase.class, "example.foo.tld", timeAfterCreates).get();
     assertAboutHosts()
         .that(exampleFooTldHost)
-        .hasSuperordinateDomain(Key.create(exampleFooTldDomain));
+        .hasSuperordinateDomain(exampleFooTldDomain.createVKey());
     assertThat(exampleFooTldDomain.getSubordinateHosts()).containsExactly("ns1.example.foo.tld");
 
     HostResource exampleTldHost =
         loadByForeignKey(HostResource.class, "ns1.example.tld", timeAfterCreates).get();
     DomainBase exampleTldDomain =
         loadByForeignKey(DomainBase.class, "example.tld", timeAfterCreates).get();
-    assertAboutHosts().that(exampleTldHost).hasSuperordinateDomain(Key.create(exampleTldDomain));
+    assertAboutHosts().that(exampleTldHost).hasSuperordinateDomain(exampleTldDomain.createVKey());
     assertThat(exampleTldDomain.getSubordinateHosts()).containsExactly("ns1.example.tld");
 
     assertThatLogoutSucceeds();

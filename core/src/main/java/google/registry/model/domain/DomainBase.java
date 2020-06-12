@@ -66,6 +66,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import google.registry.persistence.WithStringVKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
 import google.registry.util.CollectionUtils;
 import java.util.HashSet;
@@ -101,11 +102,12 @@ import org.joda.time.Interval;
     name = "Domain",
     indexes = {
       @javax.persistence.Index(columnList = "creationTime"),
-      @javax.persistence.Index(columnList = "currentSponsorClientId"),
+      @javax.persistence.Index(columnList = "currentSponsorRegistrarId"),
       @javax.persistence.Index(columnList = "deletionTime"),
       @javax.persistence.Index(columnList = "fullyQualifiedDomainName"),
       @javax.persistence.Index(columnList = "tld")
     })
+@WithStringVKey
 @ExternalMessagingName("domain")
 public class DomainBase extends EppResource
     implements DatastoreAndSqlEntity, ForeignKeyedEppResource, ResourceWithTransferData {
@@ -251,7 +253,7 @@ public class DomainBase extends EppResource
   String smdId;
 
   /** Data about any pending or past transfers on this domain. */
-  @Transient TransferData transferData;
+  TransferData transferData;
 
   /**
    * The time that this resource was last transferred.
@@ -436,8 +438,14 @@ public class DomainBase extends EppResource
               .setRegistrationExpirationTime(expirationDate)
               // Set the speculatively-written new autorenew events as the domain's autorenew
               // events.
-              .setAutorenewBillingEvent(transferData.getServerApproveAutorenewEvent())
-              .setAutorenewPollMessage(transferData.getServerApproveAutorenewPollMessage());
+              .setAutorenewBillingEvent(
+                  transferData.getServerApproveAutorenewEvent() == null
+                      ? null
+                      : transferData.getServerApproveAutorenewEvent().getOfyKey())
+              .setAutorenewPollMessage(
+                  transferData.getServerApproveAutorenewPollMessage() == null
+                      ? null
+                      : transferData.getServerApproveAutorenewPollMessage().getOfyKey());
       if (transferData.getTransferPeriod().getValue() == 1) {
         // Set the grace period using a key to the prescheduled transfer billing event.  Not using
         // GracePeriod.forBillingEvent() here in order to avoid the actual Datastore fetch.
@@ -448,7 +456,9 @@ public class DomainBase extends EppResource
                     transferExpirationTime.plus(
                         Registry.get(getTld()).getTransferGracePeriodLength()),
                     transferData.getGainingClientId(),
-                    transferData.getServerApproveBillingEvent())));
+                    transferData.getServerApproveBillingEvent() == null
+                        ? null
+                        : transferData.getServerApproveBillingEvent().getOfyKey())));
       } else {
         // There won't be a billing event, so we don't need a grace period
         builder.setGracePeriods(ImmutableSet.of());
@@ -611,6 +621,12 @@ public class DomainBase extends EppResource
           throw new IllegalArgumentException("Unknown contact resource type: " + contact.getType());
       }
     }
+  }
+
+  @Override
+  public VKey<DomainBase> createVKey() {
+    // TODO(mmuller): create symmetric keys if we can ever reload both sides.
+    return VKey.createOfy(DomainBase.class, Key.create(this));
   }
 
   /** Predicate to determine if a given {@link DesignatedContact} is the registrant. */

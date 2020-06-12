@@ -60,7 +60,6 @@ import google.registry.flows.domain.DomainFlowUtils.MissingRegistrantException;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
-import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.DomainCommand.Update.AddRemove;
@@ -73,11 +72,9 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.EppResponse;
-import google.registry.model.host.HostResource;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.persistence.VKey;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -247,22 +244,11 @@ public final class DomainUpdateFlow implements TransactionalFlow {
             .setLastEppUpdateClientId(clientId)
             .addStatusValues(add.getStatusValues())
             .removeStatusValues(remove.getStatusValues())
-            .addNameservers(
-                add.getNameservers().stream()
-                    .map(key -> VKey.createOfy(HostResource.class, key))
-                    .collect(toImmutableSet()))
-            .removeNameservers(
-                remove.getNameservers().stream()
-                    .map(key -> VKey.createOfy(HostResource.class, key))
-                    .collect(toImmutableSet()))
+            .addNameservers(add.getNameservers().stream().collect(toImmutableSet()))
+            .removeNameservers(remove.getNameservers().stream().collect(toImmutableSet()))
             .addContacts(add.getContacts())
             .removeContacts(remove.getContacts())
-            .setRegistrant(
-                firstNonNull(
-                    change.getRegistrant() != null
-                        ? VKey.createOfy(ContactResource.class, change.getRegistrant())
-                        : null,
-                    domain.getRegistrant()))
+            .setRegistrant(firstNonNull(change.getRegistrant(), domain.getRegistrant()))
             .setAuthInfo(firstNonNull(change.getAuthInfo(), domain.getAuthInfo()));
     return domainBuilder.build();
   }
@@ -275,7 +261,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
 
   private void validateNewState(DomainBase newDomain) throws EppException {
     validateNoDuplicateContacts(newDomain.getContacts());
-    validateRequiredContactsPresent(newDomain.getRegistrant().getOfyKey(), newDomain.getContacts());
+    validateRequiredContactsPresent(newDomain.getRegistrant(), newDomain.getContacts());
     validateDsData(newDomain.getDsData());
     validateNameserversCountForTld(
         newDomain.getTld(),

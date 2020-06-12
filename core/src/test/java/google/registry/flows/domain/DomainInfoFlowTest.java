@@ -118,19 +118,19 @@ public class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Dom
                         DesignatedContact.create(Type.ADMIN, contact.createVKey()),
                         DesignatedContact.create(Type.TECH, contact.createVKey())))
                 .setNameservers(
-                    inactive ? null : ImmutableSet.of(host1.createKey(), host2.createKey()))
+                    inactive ? null : ImmutableSet.of(host1.createVKey(), host2.createVKey()))
                 .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("2fooBAR")))
                 .build());
     // Set the superordinate domain of ns1.example.com to example.com. In reality, this would have
     // happened in the flow that created it, but here we just overwrite it in Datastore.
-    host1 = persistResource(host1.asBuilder().setSuperordinateDomain(Key.create(domain)).build());
+    host1 = persistResource(host1.asBuilder().setSuperordinateDomain(domain.createVKey()).build());
     // Create a subordinate host that is not delegated to by anyone.
     host3 =
         persistResource(
             new HostResource.Builder()
                 .setFullyQualifiedHostName("ns2.example.tld")
                 .setRepoId("3FF-TLD")
-                .setSuperordinateDomain(Key.create(domain))
+                .setSuperordinateDomain(domain.createVKey())
                 .build());
     // Add the subordinate host keys to the existing domain.
     domain =
@@ -294,7 +294,7 @@ public class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Dom
                 ImmutableSet.of(
                     DelegationSignerData.create(
                         12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC"))))
-            .setNameservers(ImmutableSet.of(host1.createKey(), host3.createKey()))
+            .setNameservers(ImmutableSet.of(host1.createVKey(), host3.createVKey()))
             .build());
     doSuccessfulTest("domain_info_response_dsdata.xml", false);
   }

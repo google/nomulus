@@ -24,6 +24,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import javax.annotation.Nullable;
+import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import org.joda.time.DateTime;
@@ -51,6 +52,7 @@ public class GracePeriod extends ImmutableObject {
   DateTime expirationTime;
 
   /** The registrar to bill. */
+  @Column(name = "registrarId")
   String clientId;
 
   /**

@@ -19,6 +19,7 @@ import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
+import javax.persistence.Embeddable;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -29,11 +30,12 @@ import org.joda.time.DateTime;
 
 /** The {@link ResponseData} returned when completing a pending action on a domain. */
 @XmlTransient
-public abstract class PendingActionNotificationResponse
-    extends ImmutableObject implements ResponseData {
+@Embeddable
+public class PendingActionNotificationResponse extends ImmutableObject implements ResponseData {
 
   /** The inner name type that contains a name and the result boolean. */
   @Embed
+  @Embeddable
   static class NameOrId extends ImmutableObject {
     @XmlValue
     String value;

@@ -29,7 +29,6 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
@@ -186,7 +185,7 @@ public class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Hos
         newHostResource("ns1.example.tld")
             .asBuilder()
             .setPersistedCurrentSponsorClientId("NewRegistrar") // Shouldn't hurt.
-            .setSuperordinateDomain(Key.create(domain))
+            .setSuperordinateDomain(domain.createVKey())
             .build());
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile("host_delete_response.xml"));
@@ -206,7 +205,7 @@ public class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Hos
         newHostResource("ns1.example.tld")
             .asBuilder()
             .setPersistedCurrentSponsorClientId("TheRegistrar") // Shouldn't help.
-            .setSuperordinateDomain(Key.create(domain))
+            .setSuperordinateDomain(domain.createVKey())
             .build());
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -239,7 +238,7 @@ public class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Hos
         newHostResource("ns1.example.tld")
             .asBuilder()
             .setPersistedCurrentSponsorClientId("TheRegistrar") // Shouldn't hurt.
-            .setSuperordinateDomain(Key.create(domain))
+            .setSuperordinateDomain(domain.createVKey())
             .build());
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile("host_delete_response.xml"));
@@ -272,7 +271,7 @@ public class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Hos
         newHostResource("ns1.example.tld")
             .asBuilder()
             .setPersistedCurrentSponsorClientId("NewRegistrar") // Shouldn't help.
-            .setSuperordinateDomain(Key.create(domain))
+            .setSuperordinateDomain(domain.createVKey())
             .build());
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -284,7 +283,7 @@ public class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, Hos
     persistResource(
         newDomainBase("example.tld")
             .asBuilder()
-            .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createKey()))
+            .setNameservers(ImmutableSet.of(persistActiveHost("ns1.example.tld").createVKey()))
             .build());
     EppException thrown = assertThrows(ResourceToDeleteIsReferencedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
