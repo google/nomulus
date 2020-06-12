@@ -88,8 +88,8 @@ public final class LevelDbLogReader implements Iterator<byte[]> {
   }
 
   /**
-   * Returns the next {@link #BLOCK_SIZE} bytes from the input channel, or {@link
-   * Optional#empty()} if there is no more data.
+   * Returns the next {@link #BLOCK_SIZE} bytes from the input channel, or {@link Optional#empty()}
+   * if there is no more data.
    */
   // TODO(weiminyu): use ByteBuffer directly.
   private Optional<byte[]> readFromChannel() throws IOException {
