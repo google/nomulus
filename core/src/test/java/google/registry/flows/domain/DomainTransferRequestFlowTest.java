@@ -1144,8 +1144,7 @@ public class DomainTransferRequestFlowTest
             .setEventTime(clock.nowUtc().plus(Registry.get("tld").getAutomaticTransferLength()))
             .setBillingTime(autorenewTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()))
             // The cancellation should refer to the old autorenew billing event.
-            .setRecurringEventKey(
-                VKey.createOfy(BillingEvent.Recurring.class, existingAutorenewEvent)));
+            .setRecurringEventKey(BillingEvent.Recurring.createVKey(existingAutorenewEvent)));
   }
 
   @Test
@@ -1173,8 +1172,7 @@ public class DomainTransferRequestFlowTest
             .setBillingTime(
                 expirationTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()))
             // The cancellation should refer to the old autorenew billing event.
-            .setRecurringEventKey(
-                VKey.createOfy(BillingEvent.Recurring.class, existingAutorenewEvent)));
+            .setRecurringEventKey(BillingEvent.Recurring.createVKey(existingAutorenewEvent)));
   }
 
   @Test

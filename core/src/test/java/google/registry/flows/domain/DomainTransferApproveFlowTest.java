@@ -71,7 +71,6 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.persistence.VKey;
 import java.util.Arrays;
 import java.util.stream.Stream;
 import org.joda.money.Money;
@@ -404,7 +403,7 @@ public class DomainTransferApproveFlowTest
             .setBillingTime(
                 oldExpirationTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()))
             .setRecurringEventKey(
-                VKey.createOfy(BillingEvent.Recurring.class, domain.getAutorenewBillingEvent())));
+                BillingEvent.Recurring.createVKey(domain.getAutorenewBillingEvent())));
   }
 
   @Test

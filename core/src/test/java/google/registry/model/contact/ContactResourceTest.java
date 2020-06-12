@@ -113,7 +113,7 @@ public class ContactResourceTest extends EntityTestCase {
                     .setLosingClientId("losing")
                     .setPendingTransferExpirationTime(fakeClock.nowUtc())
                     .setServerApproveEntities(
-                        ImmutableSet.of(VKey.createOfy(BillingEvent.OneTime.class, 1)))
+                        ImmutableSet.of(VKey.create(BillingEvent.OneTime.class, 1)))
                     .setTransferRequestTime(fakeClock.nowUtc())
                     .setTransferStatus(TransferStatus.SERVER_APPROVED)
                     .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))

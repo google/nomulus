@@ -347,7 +347,11 @@ public abstract class BillingEvent extends ImmutableObject
 
     @Override
     public VKey<OneTime> createVKey() {
-      return VKey.createOfy(getClass(), Key.create(this));
+      return VKey.create(getClass(), getId(), Key.create(this));
+    }
+
+    public static VKey<OneTime> createVKey(Key<OneTime> key) {
+      return VKey.create(OneTime.class, key.getId(), key);
     }
 
     @Override
@@ -485,7 +489,11 @@ public abstract class BillingEvent extends ImmutableObject
 
     @Override
     public VKey<Recurring> createVKey() {
-      return VKey.createOfy(getClass(), Key.create(this));
+      return VKey.create(getClass(), getId(), Key.create(this));
+    }
+
+    public static VKey<Recurring> createVKey(Key<Recurring> key) {
+      return VKey.create(Recurring.class, key.getId(), key);
     }
 
     @Override
@@ -597,17 +605,21 @@ public abstract class BillingEvent extends ImmutableObject
       // Set the grace period's billing event using the appropriate Cancellation builder method.
       if (gracePeriod.getOneTimeBillingEvent() != null) {
         builder.setOneTimeEventKey(
-            VKey.createOfy(BillingEvent.OneTime.class, gracePeriod.getOneTimeBillingEvent()));
+            BillingEvent.OneTime.createVKey(gracePeriod.getOneTimeBillingEvent()));
       } else if (gracePeriod.getRecurringBillingEvent() != null) {
         builder.setRecurringEventKey(
-            VKey.createOfy(BillingEvent.Recurring.class, gracePeriod.getRecurringBillingEvent()));
+            BillingEvent.Recurring.createVKey(gracePeriod.getRecurringBillingEvent()));
       }
       return builder.build();
     }
 
     @Override
     public VKey<Cancellation> createVKey() {
-      return VKey.createOfy(getClass(), Key.create(this));
+      return VKey.create(getClass(), getId(), Key.create(this));
+    }
+
+    public static VKey<Cancellation> createVKey(Key<Cancellation> key) {
+      return VKey.create(Cancellation.class, key.getId(), key);
     }
 
     @Override
@@ -687,7 +699,11 @@ public abstract class BillingEvent extends ImmutableObject
 
     @Override
     public VKey<Modification> createVKey() {
-      return VKey.createOfy(this.getClass(), Key.create(this));
+      return VKey.create(getClass(), getId(), Key.create(this));
+    }
+
+    public static VKey<Modification> createVKey(Key<Modification> key) {
+      return VKey.create(Modification.class, key.getId(), key);
     }
 
     /**

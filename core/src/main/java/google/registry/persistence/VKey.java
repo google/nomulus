@@ -87,6 +87,11 @@ public class VKey<T> extends ImmutableObject implements Serializable {
     return new VKey(kind, ofyKey, sqlKey);
   }
 
+  /** Creates a symmetric {@link VKey} in which both sql and ofy keys are {@code id}. */
+  public static <T> VKey<T> create(Class<? extends T> kind, long id) {
+    return new VKey(kind, Key.create(kind, id), id);
+  }
+
   /** Returns the type of the entity. */
   public Class<? extends T> getKind() {
     return this.kind;
