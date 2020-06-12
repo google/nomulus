@@ -11,6 +11,7 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
+create sequence history_id_sequence start 1 increment 1;
 
     create table "BillingCancellation" (
        billing_cancellation_id  bigserial not null,
@@ -216,7 +217,7 @@
     );
 
     create table "HostHistory" (
-       history_revision_id  bigserial not null,
+       history_revision_id int8 not null,
         history_by_superuser boolean not null,
         history_registrar_id text,
         history_modification_time timestamptz not null,

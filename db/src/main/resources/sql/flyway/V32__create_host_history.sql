@@ -13,7 +13,7 @@
 -- limitations under the License.
 
 CREATE TABLE "HostHistory" (
-   history_revision_id bigserial NOT NULL,
+   history_revision_id int8 NOT NULL,
     history_by_superuser boolean NOT NULL,
     history_registrar_id text NOT NULL,
     history_modification_time timestamptz NOT NULL,
@@ -52,3 +52,13 @@ ALTER TABLE IF EXISTS "HostHistory"
    ADD CONSTRAINT FK_HostHistory_HostResource
    FOREIGN KEY (host_repo_id)
    REFERENCES "HostResource";
+
+CREATE SEQUENCE public."history_id_sequence"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER TABLE ONLY public."HostHistory" ALTER COLUMN history_revision_id
+   SET DEFAULT nextval('public."history_id_sequence"'::regclass);

@@ -333,11 +333,23 @@ CREATE TABLE public."DomainHost" (
 
 
 --
+-- Name: history_id_sequence; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.history_id_sequence
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
 -- Name: HostHistory; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public."HostHistory" (
-    history_revision_id bigint NOT NULL,
+    history_revision_id bigint DEFAULT nextval('public.history_id_sequence'::regclass) NOT NULL,
     history_by_superuser boolean NOT NULL,
     history_registrar_id text NOT NULL,
     history_modification_time timestamp with time zone NOT NULL,
@@ -361,25 +373,6 @@ CREATE TABLE public."HostHistory" (
     statuses text[],
     host_repo_id text NOT NULL
 );
-
-
---
--- Name: HostHistory_history_revision_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public."HostHistory_history_revision_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: HostHistory_history_revision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public."HostHistory_history_revision_id_seq" OWNED BY public."HostHistory".history_revision_id;
 
 
 --
@@ -696,13 +689,6 @@ ALTER TABLE ONLY public."BillingRecurrence" ALTER COLUMN billing_recurrence_id S
 --
 
 ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextval('public."ClaimsList_revision_id_seq"'::regclass);
-
-
---
--- Name: HostHistory history_revision_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."HostHistory" ALTER COLUMN history_revision_id SET DEFAULT nextval('public."HostHistory_history_revision_id_seq"'::regclass);
 
 
 --
