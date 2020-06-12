@@ -295,7 +295,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
       query = query.filter("currentSponsorClientId", desiredRegistrar.get());
     }
     return StreamSupport.stream(query.keys().spliterator(), false)
-        .map(key -> VKey.createOfy(HostResource.class, key))
+        .map(key -> HostResource.createVKey(key))
         .collect(toImmutableSet());
   }
 
@@ -406,7 +406,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     }
     return searchByNameserverRefs(
         StreamSupport.stream(query.keys().spliterator(), false)
-            .map(key -> VKey.createOfy(HostResource.class, key))
+            .map(key -> HostResource.createVKey(key))
             .collect(toImmutableSet()));
   }
 
