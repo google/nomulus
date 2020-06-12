@@ -17,8 +17,7 @@ package google.registry.beam.initsql;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.joda.time.DateTime;
 
 /**
  * Helpers for determining the fully qualified paths to Nomulus backup files. A backup consists of a
@@ -30,13 +29,9 @@ public final class BackupPaths {
 
   private static final String WILDCARD_CHAR = "*";
   private static final String EXPORT_PATTERN_TEMPLATE = "%s/all_namespaces/kind_%s/input-%s";
-  /**
-   * Regex pattern that captures the kind string in a file name. Datastore places no restrictions on
-   * what characters may be used in a kind string.
-   */
-  private static final String FILENAME_TO_KIND_REGEX = ".+/all_namespaces/kind_(.+)/input-.+";
 
-  private static final Pattern FILENAME_TO_KIND_PATTERN = Pattern.compile(FILENAME_TO_KIND_REGEX);
+  public static final String COMMIT_LOG_NAME_PREFIX = "commit_diff_until_";
+  private static final String COMMIT_LOG_PATTERN_TEMPLATE = "%s/" + COMMIT_LOG_NAME_PREFIX + "*";
 
   /**
    * Returns a regex pattern that matches all Datastore export files of a given {@code kind}.
@@ -65,22 +60,15 @@ public final class BackupPaths {
     return String.format(EXPORT_PATTERN_TEMPLATE, exportDir, kind, Integer.toString(shard));
   }
 
-  /**
-   * Returns the 'kind' of entity stored in a file based on the file name.
-   *
-   * <p>This method poses low risk and greatly simplifies the implementation of some transforms in
-   * {@link ExportLoadingTransforms}.
-   *
-   * @see ExportLoadingTransforms
-   */
-  public static String getKindFromFileName(String fileName) {
+  public static String getCommitLogFileNamePattern(String commitLogDir) {
+    return String.format(COMMIT_LOG_PATTERN_TEMPLATE, commitLogDir);
+  }
+
+  /** Gets the Commit timestamp from a CommitLog file name. */
+  public static DateTime getCommitLogTimestamp(String fileName) {
     checkArgument(!isNullOrEmpty(fileName), "Null or empty fileName.");
-    Matcher matcher = FILENAME_TO_KIND_PATTERN.matcher(fileName);
-    checkArgument(
-        matcher.matches(),
-        "Illegal file name %s, should match %s.",
-        fileName,
-        FILENAME_TO_KIND_REGEX);
-    return matcher.group(1);
+    int start = fileName.lastIndexOf(COMMIT_LOG_NAME_PREFIX);
+    checkArgument(start >= 0, "Illegal file name %s.", fileName);
+    return DateTime.parse(fileName.substring(start + COMMIT_LOG_NAME_PREFIX.length()));
   }
 }
