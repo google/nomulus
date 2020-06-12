@@ -21,7 +21,7 @@
         <domain:crDate>2000-06-01T00:04:00Z</domain:crDate>
         <domain:upID>NewRegistrar</domain:upID>
         <domain:upDate>2002-05-30T01:03:00Z</domain:upDate>
-        <domain:exDate>2003-05-30T01:03:00Z</domain:exDate>
+        <domain:exDate>2002-06-01T00:04:00Z</domain:exDate>
         <domain:authInfo>
           <domain:pw>2fooBAR</domain:pw>
         </domain:authInfo>

@@ -143,24 +143,30 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
     verifyRestoreAllowed(command, existingDomain, feeUpdate, feesAndCredits, now);
     HistoryEntry historyEntry = buildHistoryEntry(existingDomain, now);
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
-    entitiesToSave.addAll(
-        createRestoreAndRenewBillingEvents(
-            historyEntry, feesAndCredits.getRestoreCost(), feesAndCredits.getRenewCost(), now));
-    // We don't preserve the original expiration time of the domain when we restore, since doing so
-    // would require us to know if they received a grace period refund when they deleted the domain,
-    // and to charge them for that again. Instead, we just say that all restores get a fresh year of
-    // registration and bill them for that accordingly.
-    DateTime newExpirationTime = now.plusYears(1);
-    BillingEvent.Recurring autorenewEvent = newAutorenewBillingEvent(existingDomain)
-        .setEventTime(newExpirationTime)
-        .setRecurrenceEndTime(END_OF_TIME)
-        .setParent(historyEntry)
-        .build();
-    PollMessage.Autorenew autorenewPollMessage = newAutorenewPollMessage(existingDomain)
-        .setEventTime(newExpirationTime)
-        .setAutorenewEndTime(END_OF_TIME)
-        .setParent(historyEntry)
-        .build();
+
+    // Restore the expiration time on the deleted domain, except if that's already passed, then add
+    // a year and bill for it immediately, with no grace period.
+    DateTime newExpirationTime = existingDomain.getRegistrationExpirationTime();
+    if (newExpirationTime.isBefore(now)) {
+      entitiesToSave.add(createRenewBillingEvent(historyEntry, feesAndCredits.getRenewCost(), now));
+      newExpirationTime = newExpirationTime.plusYears(1);
+    }
+    // Always bill for the restore itself.
+    entitiesToSave.add(
+        createRestoreBillingEvent(historyEntry, feesAndCredits.getRestoreCost(), now));
+
+    BillingEvent.Recurring autorenewEvent =
+        newAutorenewBillingEvent(existingDomain)
+            .setEventTime(newExpirationTime)
+            .setRecurrenceEndTime(END_OF_TIME)
+            .setParent(historyEntry)
+            .build();
+    PollMessage.Autorenew autorenewPollMessage =
+        newAutorenewPollMessage(existingDomain)
+            .setEventTime(newExpirationTime)
+            .setAutorenewEndTime(END_OF_TIME)
+            .setParent(historyEntry)
+            .build();
     DomainBase newDomain =
         performRestore(
             existingDomain, newExpirationTime, autorenewEvent, autorenewPollMessage, now, clientId);
@@ -208,18 +214,6 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
       throw new DomainNotEligibleForRestoreException();
     }
     validateFeeChallenge(targetId, now, feeUpdate, feesAndCredits);
-  }
-
-  private ImmutableSet<BillingEvent.OneTime> createRestoreAndRenewBillingEvents(
-      HistoryEntry historyEntry, Money restoreCost, Money renewCost, DateTime now) {
-    // Bill for the restore.
-    BillingEvent.OneTime restoreEvent = createRestoreBillingEvent(historyEntry, restoreCost, now);
-    // Create a new autorenew billing event and poll message starting at the new expiration time.
-    // Also bill for the 1 year cost of a domain renew. This is to avoid registrants being able to
-    // game the system for premium names by renewing, deleting, and then restoring to get a free
-    // year. Note that this billing event has no grace period; it is effective immediately.
-    BillingEvent.OneTime renewEvent = createRenewBillingEvent(historyEntry, renewCost, now);
-    return ImmutableSet.of(restoreEvent, renewEvent);
   }
 
   private static DomainBase performRestore(
