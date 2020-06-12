@@ -149,7 +149,7 @@ public class DomainRestoreRequestFlowTest
         .isEqualTo(expirationTime);
     assertAboutDomains()
         .that(domain)
-        // New expiration time should be exactly a year from now.
+        // New expiration time should be the same as from before the deletion.
         .hasRegistrationExpirationTime(expirationTime)
         .and()
         .doesNotHaveStatusValue(StatusValue.PENDING_DELETE)
@@ -217,7 +217,7 @@ public class DomainRestoreRequestFlowTest
         .isEqualTo(newExpirationTime);
     assertAboutDomains()
         .that(domain)
-        // New expiration time should be the same as from before the deletion.
+        // New expiration time should be exactly a year from now.
         .hasRegistrationExpirationTime(newExpirationTime)
         .and()
         .doesNotHaveStatusValue(StatusValue.PENDING_DELETE)
