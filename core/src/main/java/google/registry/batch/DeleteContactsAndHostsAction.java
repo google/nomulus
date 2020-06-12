@@ -85,7 +85,6 @@ import google.registry.model.poll.PendingActionNotificationResponse.HostPendingA
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.Lock;
-import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -285,7 +284,7 @@ public class DeleteContactsAndHostsAction implements Runnable {
       if (resourceKey.getKind().equals(KIND_CONTACT)) {
         return domain
             .getReferencedContacts()
-            .contains(VKey.createOfy(ContactResource.class, (Key<ContactResource>) resourceKey));
+            .contains(ContactResource.createVKey((Key<ContactResource>) resourceKey));
       } else if (resourceKey.getKind().equals(KIND_HOST)) {
         return domain
             .getNameservers()
