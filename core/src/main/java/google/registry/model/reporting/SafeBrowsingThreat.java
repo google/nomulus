@@ -43,10 +43,11 @@ public class SafeBrowsingThreat extends ImmutableObject implements Buildable, Sq
 
   /** The type of threat detected. */
   public enum ThreatType {
-    PHISHING,
+    THREAT_TYPE_UNSPECIFIED,
     MALWARE,
     SOCIAL_ENGINEERING,
-    UNWANTED_SOFTWARE
+    UNWANTED_SOFTWARE,
+    POTENTIALLY_HARMFUL_APPLICATION
   }
 
   /** An auto-generated identifier and unique primary key for this entity. */
@@ -67,11 +68,11 @@ public class SafeBrowsingThreat extends ImmutableObject implements Buildable, Sq
   @Column(nullable = false)
   String repoId;
 
-  /** ID of the registrar. */
+  /** ID of the registrar at the moment of the scan. Domains may change registrars over time */
   @Column(nullable = false)
   String registrarId;
 
-  /** Date of run. */
+  /** Date on which the check was run, on which the domain was flagged as abusive.  */
   @Column(nullable = false)
   LocalDate checkDate;
 
