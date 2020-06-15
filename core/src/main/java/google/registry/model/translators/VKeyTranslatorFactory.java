@@ -15,6 +15,7 @@
 package google.registry.model.translators;
 
 import static com.google.common.base.Functions.identity;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.model.EntityClasses.ALL_CLASSES;
 
@@ -22,6 +23,8 @@ import com.google.appengine.api.datastore.Key;
 import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.persistence.VKey;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * Translator factory for VKey.
@@ -45,17 +48,46 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
     super(VKey.class);
   }
 
+  /** Create a VKey from a raw datastore key. */
+  public static VKey<?> createVKey(Key datastoreKey) {
+    return createVKey(com.googlecode.objectify.Key.create(datastoreKey));
+  }
+
+  /** Create a VKey from an objectify Key. */
+  public static <T> VKey<T> createVKey(com.googlecode.objectify.Key<T> key) {
+    if (key == null) {
+      return null;
+    }
+
+    // Try to create the VKey from its reference type.
+    Class clazz = CLASS_REGISTRY.get(key.getKind());
+    checkArgument(clazz != null, "Unknown Key type: %s", key.getKind());
+    try {
+      Method createVKeyMethod =
+          clazz.getDeclaredMethod("createVKey", com.googlecode.objectify.Key.class);
+      return (VKey<T>) createVKeyMethod.invoke(null, new Object[] {key});
+    } catch (NoSuchMethodException e) {
+      // Revert to an ofy vkey for now.  TODO(mmuller): remove this when all classes with VKeys have
+      // converters.
+      return VKey.createOfy(clazz, key);
+    } catch (IllegalAccessException | InvocationTargetException e) {
+      // If we have a createVKey(Key) method with incorrect permissions or that is non-static, this
+      // is probably an error so let's reported.
+      throw new RuntimeException(e);
+    }
+  }
+
+  /** Create a VKey from a URL-safe string representation. */
+  public static VKey<?> createVKey(String urlSafe) {
+    return createVKey(com.googlecode.objectify.Key.create(urlSafe));
+  }
+
   @Override
   public SimpleTranslator<VKey, Key> createTranslator() {
     return new SimpleTranslator<VKey, Key>() {
       @Override
       public VKey loadValue(Key datastoreValue) {
-        // TODO(mmuller): we need to call a method on refClass to also reconstitute the SQL key.
-        return datastoreValue == null
-            ? null
-            : VKey.createOfy(
-                CLASS_REGISTRY.get(datastoreValue.getKind()),
-                com.googlecode.objectify.Key.create(datastoreValue));
+        return createVKey(datastoreValue);
       }
 
       @Override
