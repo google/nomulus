@@ -39,8 +39,9 @@ import javax.persistence.Transient;
  * are implicitly transferred with their superordinate domain.
  */
 @MappedSuperclass
-public abstract class TransferData<B extends TransferData.Builder<?, ?>> extends BaseTransferObject
-    implements Buildable {
+public abstract class TransferData<
+        B extends TransferData.Builder<? extends TransferData, ? extends TransferData.Builder>>
+    extends BaseTransferObject implements Buildable {
 
   /** The transaction id of the most recent transfer request (or null if there never was one). */
   @Embedded
