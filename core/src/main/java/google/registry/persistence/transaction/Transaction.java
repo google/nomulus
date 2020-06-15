@@ -35,7 +35,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 /**
- * An SQL transaction that can be serialized and stored in its own table.
+ * A SQL transaction that can be serialized and stored in its own table.
  *
  * <p>Transaction is used to store transactions committed to Cloud SQL in a Transaction table during
  * the second phase of our migration, during which time we will be asynchronously replaying Cloud
@@ -73,7 +73,8 @@ public class Transaction extends ImmutableObject implements Buildable {
       // protect us against trying to deserialize some random byte array.
       out.writeInt(VERSION_ID);
 
-      // Write all of the mutations.
+      // Write all of the mutations, preceded by their count.
+      out.writeInt(mutations.size());
       for (Mutation mutation : mutations) {
         mutation.serializeTo(out);
       }
@@ -94,12 +95,16 @@ public class Transaction extends ImmutableObject implements Buildable {
         version == VERSION_ID, "Invalid version id.  Expected %s but got %s", VERSION_ID, version);
 
     Transaction.Builder builder = new Transaction.Builder();
-    while (true) {
+    int mutationCount = in.readInt();
+    for (int i = 0; i < mutationCount; ++i) {
       try {
         builder.add(Mutation.deserializeFrom(in));
       } catch (EOFException e) {
-        break;
+        throw new RuntimeException("Serialized transaction terminated prematurely", e);
       }
+    }
+    if (in.read() != -1) {
+      throw new RuntimeException("Unread data at the end of a serialized transaction.");
     }
     return builder.build();
   }
