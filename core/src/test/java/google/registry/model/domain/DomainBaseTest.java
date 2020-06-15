@@ -141,13 +141,13 @@ public class DomainBaseTest extends EntityTestCase {
                                 ImmutableSet.of(
                                     BillingEvent.OneTime.createVKey(oneTimeBillKey),
                                     BillingEvent.Recurring.createVKey(recurringBillKey),
-                                    VKey.createOfy(PollMessage.Autorenew.class, autorenewPollKey)))
+                                    PollMessage.Autorenew.createVKey(autorenewPollKey)))
                             .setServerApproveBillingEvent(
                                 BillingEvent.OneTime.createVKey(oneTimeBillKey))
                             .setServerApproveAutorenewEvent(
                                 BillingEvent.Recurring.createVKey(recurringBillKey))
                             .setServerApproveAutorenewPollMessage(
-                                VKey.createOfy(PollMessage.Autorenew.class, autorenewPollKey))
+                                PollMessage.Autorenew.createVKey(autorenewPollKey))
                             .setTransferRequestTime(fakeClock.nowUtc().plusDays(1))
                             .setTransferStatus(TransferStatus.SERVER_APPROVED)
                             .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
