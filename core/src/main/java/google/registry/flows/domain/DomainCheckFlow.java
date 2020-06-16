@@ -163,7 +163,8 @@ public final class DomainCheckFlow implements Flow {
                     clientId,
                     now));
 
-    ImmutableList.Builder<DomainCheck> checks = new ImmutableList.Builder<>();
+    ImmutableList.Builder<DomainCheck> checksBuilder = new ImmutableList.Builder<>();
+    ImmutableSet.Builder<String> availableDomains = new ImmutableSet.Builder<>();
     ImmutableMap<String, TldState> tldStates =
         Maps.toMap(seenTlds, tld -> Registry.get(tld).getTldState(now));
     ImmutableMap<InternetDomainName, String> domainCheckResults =
@@ -180,13 +181,19 @@ public final class DomainCheckFlow implements Flow {
               domainCheckResults,
               tldStates,
               allocationToken);
-      checks.add(DomainCheck.create(!message.isPresent(), targetId, message.orElse(null)));
+      boolean isAvailable = !message.isPresent();
+      checksBuilder.add(DomainCheck.create(isAvailable, targetId, message.orElse(null)));
+      if (isAvailable) {
+        availableDomains.add(targetId);
+      }
     }
     BeforeResponseReturnData responseData =
         flowCustomLogic.beforeResponse(
             BeforeResponseParameters.newBuilder()
-                .setDomainChecks(checks.build())
-                .setResponseExtensions(getResponseExtensions(domainNames, now, allocationToken))
+                .setDomainChecks(checksBuilder.build())
+                .setResponseExtensions(
+                    getResponseExtensions(
+                        domainNames, availableDomains.build(), now, allocationToken))
                 .setAsOfDate(now)
                 .build());
     return responseBuilder
@@ -221,6 +228,7 @@ public final class DomainCheckFlow implements Flow {
   /** Handle the fee check extension. */
   private ImmutableList<? extends ResponseExtension> getResponseExtensions(
       ImmutableMap<String, InternetDomainName> domainNames,
+      ImmutableSet<String> availableDomains,
       DateTime now,
       Optional<AllocationToken> allocationToken)
       throws EppException {
@@ -242,7 +250,8 @@ public final class DomainCheckFlow implements Flow {
             feeCheck.getCurrency(),
             now,
             pricingLogic,
-            allocationToken);
+            allocationToken,
+            availableDomains.contains(domainName));
         responseItems.add(builder.setDomainNameIfSupported(domainName).build());
       }
     }
