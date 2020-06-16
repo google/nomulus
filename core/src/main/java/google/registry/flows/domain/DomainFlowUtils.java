@@ -489,7 +489,7 @@ public class DomainFlowUtils {
     return new BillingEvent.Recurring.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-        .setTargetId(domain.getFullyQualifiedDomainName())
+        .setTargetId(domain.getDomainName())
         .setClientId(domain.getCurrentSponsorClientId())
         .setEventTime(domain.getRegistrationExpirationTime());
   }
@@ -500,7 +500,7 @@ public class DomainFlowUtils {
    */
   public static PollMessage.Autorenew.Builder newAutorenewPollMessage(DomainBase domain) {
     return new PollMessage.Autorenew.Builder()
-        .setTargetId(domain.getFullyQualifiedDomainName())
+        .setTargetId(domain.getDomainName())
         .setClientId(domain.getCurrentSponsorClientId())
         .setEventTime(domain.getRegistrationExpirationTime())
         .setMsg("Domain was auto-renewed.");

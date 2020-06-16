@@ -54,7 +54,7 @@ public class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostRes
   private HostResource persistHostResource() throws Exception {
     return persistResource(
         new HostResource.Builder()
-            .setFullyQualifiedHostName(getUniqueIdFromCommand())
+            .setHostName(getUniqueIdFromCommand())
             .setRepoId("1FF-FOOBAR")
             .setPersistedCurrentSponsorClientId("my sponsor")
             .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_UPDATE_PROHIBITED))

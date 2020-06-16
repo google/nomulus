@@ -53,6 +53,6 @@ public final class ListHostsAction extends ListObjectsAction<HostResource> {
     final DateTime now = clock.nowUtc();
     return Streams.stream(ofy().load().type(HostResource.class))
         .filter(host -> EppResourceUtils.isActive(host, now))
-        .collect(toImmutableSortedSet(comparing(HostResource::getFullyQualifiedHostName)));
+        .collect(toImmutableSortedSet(comparing(HostResource::getHostName)));
   }
 }

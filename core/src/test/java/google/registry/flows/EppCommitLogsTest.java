@@ -104,7 +104,7 @@ public class EppCommitLogsTest extends ShardableTestCase {
     ofy().clearSessionCache();
     Key<DomainBase> key = Key.create(ofy().load().type(DomainBase.class).first().now());
     DomainBase domainAfterCreate = ofy().load().key(key).now();
-    assertThat(domainAfterCreate.getFullyQualifiedDomainName()).isEqualTo("example.tld");
+    assertThat(domainAfterCreate.getDomainName()).isEqualTo("example.tld");
 
     clock.advanceBy(standardDays(2));
     DateTime timeAtFirstUpdate = clock.nowUtc();

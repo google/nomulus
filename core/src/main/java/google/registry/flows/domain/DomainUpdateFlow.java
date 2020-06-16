@@ -265,7 +265,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     validateDsData(newDomain.getDsData());
     validateNameserversCountForTld(
         newDomain.getTld(),
-        InternetDomainName.from(newDomain.getFullyQualifiedDomainName()),
+        InternetDomainName.from(newDomain.getDomainName()),
         newDomain.getNameservers().size());
   }
 

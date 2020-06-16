@@ -60,7 +60,7 @@ final class RdeFixtures {
   static DomainBase makeDomainBase(FakeClock clock, String tld) {
     DomainBase domain =
         new DomainBase.Builder()
-            .setFullyQualifiedDomainName("example." + tld)
+            .setDomainName("example." + tld)
             .setRepoId(generateNewDomainRoid(tld))
             .setRegistrant(
                 makeContactResource(clock, "5372808-ERL", "(◕‿◕) nevermore", "prophet@evil.みんな")
@@ -109,7 +109,7 @@ final class RdeFixtures {
             .setDsData(
                 ImmutableSet.of(
                     DelegationSignerData.create(123, 200, 230, base16().decode("1234567890"))))
-            .setFullyQualifiedDomainName(Idn.toASCII("love." + tld))
+            .setDomainName(Idn.toASCII("love." + tld))
             .setLastTransferTime(DateTime.parse("1990-01-01T00:00:00Z"))
             .setLastEppUpdateClientId("IntoTheTempest")
             .setLastEppUpdateTime(clock.nowUtc())
@@ -250,7 +250,7 @@ final class RdeFixtures {
             .setCreationClientId("LawyerCat")
             .setCreationTimeForTest(clock.nowUtc())
             .setPersistedCurrentSponsorClientId("BusinessCat")
-            .setFullyQualifiedHostName(Idn.toASCII(fqhn))
+            .setHostName(Idn.toASCII(fqhn))
             .setInetAddresses(ImmutableSet.of(InetAddresses.forString(ip)))
             .setLastTransferTime(DateTime.parse("1990-01-01T00:00:00Z"))
             .setLastEppUpdateClientId("CeilingCat")

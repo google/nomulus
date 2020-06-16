@@ -216,11 +216,11 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
       }
       if (referencingHostKey != null) {
         retrier.callWithRetry(
-            () -> dnsQueue.addDomainRefreshTask(domain.getFullyQualifiedDomainName()),
+            () -> dnsQueue.addDomainRefreshTask(domain.getDomainName()),
             TransientFailureException.class);
         logger.atInfo().log(
             "Enqueued DNS refresh for domain %s referenced by host %s.",
-            domain.getFullyQualifiedDomainName(), referencingHostKey);
+            domain.getDomainName(), referencingHostKey);
         getContext().incrementCounter("domains refreshed");
       } else {
         getContext().incrementCounter("domains not refreshed");

@@ -125,7 +125,7 @@ public final class HostCreateFlow implements TransactionalFlow {
         new HostResource.Builder()
             .setCreationClientId(clientId)
             .setPersistedCurrentSponsorClientId(clientId)
-            .setFullyQualifiedHostName(targetId)
+            .setHostName(targetId)
             .setInetAddresses(command.getInetAddresses())
             .setRepoId(createRepoId(ObjectifyService.allocateId(), roidSuffix))
             .setSuperordinateDomain(superordinateDomain.map(DomainBase::createVKey).orElse(null))

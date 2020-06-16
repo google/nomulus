@@ -111,7 +111,7 @@ public class BackfillRegistryLocksCommandTest
                 .isSuperuser(true)
                 .setRegistrarId("adminreg")
                 .setRepoId(domain.getRepoId())
-                .setDomainName(domain.getFullyQualifiedDomainName())
+                .setDomainName(domain.getDomainName())
                 .setLockCompletionTimestamp(fakeClock.nowUtc())
                 .setVerificationCode(command.stringGenerator.createString(32))
                 .build());

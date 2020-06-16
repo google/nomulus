@@ -107,7 +107,7 @@ public class ExportDomainListsAction implements Runnable {
     @Override
     public void map(DomainBase domain) {
       if (realTlds.contains(domain.getTld()) && isActive(domain, exportTime)) {
-        emit(domain.getTld(), domain.getFullyQualifiedDomainName());
+        emit(domain.getTld(), domain.getDomainName());
         getContext().incrementCounter(String.format("domains in tld %s", domain.getTld()));
       }
     }

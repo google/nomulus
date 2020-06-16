@@ -36,6 +36,7 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
+import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.MappedSuperclass;
 import org.joda.time.DateTime;
@@ -64,7 +65,9 @@ public class HostBase extends EppResource {
    * from (creationTime, deletionTime) there can only be one host in Datastore with this name.
    * However, there can be many hosts with the same name and non-overlapping lifetimes.
    */
-  @Index String fullyQualifiedHostName;
+  @Index
+  @Column(name = "hostName")
+  String fullyQualifiedHostName;
 
   /** IP Addresses for this host. Can be null if this is an external host. */
   @Index Set<InetAddress> inetAddresses;
@@ -91,7 +94,7 @@ public class HostBase extends EppResource {
    */
   DateTime lastSuperordinateChange;
 
-  public String getFullyQualifiedHostName() {
+  public String getHostName() {
     return fullyQualifiedHostName;
   }
 
@@ -188,11 +191,11 @@ public class HostBase extends EppResource {
       return super.build();
     }
 
-    public B setFullyQualifiedHostName(String fullyQualifiedHostName) {
+    public B setHostName(String hostName) {
       checkArgument(
-          fullyQualifiedHostName.equals(canonicalizeDomainName(fullyQualifiedHostName)),
+          hostName.equals(canonicalizeDomainName(hostName)),
           "Host name must be in puny-coded, lower-case form");
-      getInstance().fullyQualifiedHostName = fullyQualifiedHostName;
+      getInstance().fullyQualifiedHostName = hostName;
       return thisCastToDerived();
     }
 

@@ -354,7 +354,7 @@ public class DomainCreateFlow implements TransactionalFlow {
             .setDsData(secDnsCreate.isPresent() ? secDnsCreate.get().getDsData() : null)
             .setRegistrant(command.getRegistrant())
             .setAuthInfo(command.getAuthInfo())
-            .setFullyQualifiedDomainName(targetId)
+            .setDomainName(targetId)
             .setNameservers(
                 (ImmutableSet<VKey<HostResource>>)
                     command.getNameservers().stream().collect(toImmutableSet()))
@@ -598,7 +598,7 @@ public class DomainCreateFlow implements TransactionalFlow {
   private void enqueueTasks(
       DomainBase newDomain, boolean hasSignedMarks, boolean hasClaimsNotice) {
     if (newDomain.shouldPublishToDns()) {
-      dnsQueue.addDomainRefreshTask(newDomain.getFullyQualifiedDomainName());
+      dnsQueue.addDomainRefreshTask(newDomain.getDomainName());
     }
     if (hasClaimsNotice || hasSignedMarks) {
       LordnTaskUtils.enqueueDomainBaseTask(newDomain);

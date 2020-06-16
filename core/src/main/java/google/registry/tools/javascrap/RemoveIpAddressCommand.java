@@ -74,7 +74,7 @@ public class RemoveIpAddressCommand extends MutatingEppToolCommand {
       setSoyTemplate(
           RemoveIpAddressSoyInfo.getInstance(), RemoveIpAddressSoyInfo.REMOVE_IP_ADDRESS);
       addSoyRecord(registrarId, new SoyMapData(
-          "name", host.getFullyQualifiedHostName(),
+          "name", host.getHostName(),
           "ipAddresses", ipAddresses,
           "requestedByRegistrar", registrarId));
     }

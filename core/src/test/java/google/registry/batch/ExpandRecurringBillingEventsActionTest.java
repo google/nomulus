@@ -98,7 +98,7 @@ public class ExpandRecurringBillingEventsActionTest
         .setId(2L)
         .setReason(Reason.RENEW)
         .setRecurrenceEndTime(END_OF_TIME)
-        .setTargetId(domain.getFullyQualifiedDomainName())
+        .setTargetId(domain.getDomainName())
         .build();
   }
 
@@ -156,7 +156,7 @@ public class ExpandRecurringBillingEventsActionTest
         .setReason(Reason.RENEW)
         .setSyntheticCreationTime(beginningOfTest)
         .setCancellationMatchingBillingEvent(recurring.createVKey())
-        .setTargetId(domain.getFullyQualifiedDomainName());
+        .setTargetId(domain.getDomainName());
   }
 
   @Test
@@ -187,7 +187,7 @@ public class ExpandRecurringBillingEventsActionTest
         .setId(2L)
         .setReason(Reason.RENEW)
         .setRecurrenceEndTime(deletionTime)
-        .setTargetId(deletedDomain.getFullyQualifiedDomainName())
+        .setTargetId(deletedDomain.getDomainName())
         .build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
@@ -197,7 +197,7 @@ public class ExpandRecurringBillingEventsActionTest
         true);
     BillingEvent.OneTime expected = defaultOneTimeBuilder()
         .setParent(persistedEntry)
-        .setTargetId(deletedDomain.getFullyQualifiedDomainName())
+        .setTargetId(deletedDomain.getDomainName())
         .build();
     assertBillingEventsForResource(deletedDomain, expected, recurring);
     assertCursorAt(beginningOfTest);

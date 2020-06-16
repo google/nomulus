@@ -69,7 +69,7 @@ public final class LordnTaskUtils {
     return Joiner.on(',')
         .join(
             domain.getRepoId(),
-            domain.getFullyQualifiedDomainName(),
+            domain.getDomainName(),
             domain.getSmdId(),
             getIanaIdentifier(domain.getCreationClientId()),
             transactionTime); // Used as creation time.
@@ -80,7 +80,7 @@ public final class LordnTaskUtils {
     return Joiner.on(',')
         .join(
             domain.getRepoId(),
-            domain.getFullyQualifiedDomainName(),
+            domain.getDomainName(),
             domain.getLaunchNotice().getNoticeId().getTcnId(),
             getIanaIdentifier(domain.getCreationClientId()),
             transactionTime, // Used as creation time.

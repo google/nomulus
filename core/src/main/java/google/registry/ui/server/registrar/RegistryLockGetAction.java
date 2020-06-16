@@ -65,7 +65,7 @@ public final class RegistryLockGetAction implements JsonGetAction {
   private static final String LOCK_ENABLED_FOR_CONTACT_PARAM = "lockEnabledForContact";
   private static final String EMAIL_PARAM = "email";
   private static final String LOCKS_PARAM = "locks";
-  private static final String FULLY_QUALIFIED_DOMAIN_NAME_PARAM = "fullyQualifiedDomainName";
+  private static final String DOMAIN_NAME_PARAM = "domainName";
   private static final String LOCKED_TIME_PARAM = "lockedTime";
   private static final String LOCKED_BY_PARAM = "lockedBy";
   private static final String IS_LOCK_PENDING_PARAM = "isLockPending";
@@ -190,7 +190,7 @@ public final class RegistryLockGetAction implements JsonGetAction {
   private ImmutableMap<String, ?> lockToMap(RegistryLock lock, boolean isAdmin) {
     DateTime now = jpaTm().getTransactionTime();
     return new ImmutableMap.Builder<String, Object>()
-        .put(FULLY_QUALIFIED_DOMAIN_NAME_PARAM, lock.getDomainName())
+        .put(DOMAIN_NAME_PARAM, lock.getDomainName())
         .put(
             LOCKED_TIME_PARAM, lock.getLockCompletionTimestamp().map(DateTime::toString).orElse(""))
         .put(LOCKED_BY_PARAM, lock.isSuperuser() ? "admin" : lock.getRegistrarPocId())

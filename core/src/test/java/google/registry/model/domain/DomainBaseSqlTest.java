@@ -75,7 +75,7 @@ public class DomainBaseSqlTest {
 
     domain =
         new DomainBase.Builder()
-            .setFullyQualifiedDomainName("example.com")
+            .setDomainName("example.com")
             .setRepoId("4-COM")
             .setCreationClientId("registrar1")
             .setLastEppUpdateTime(fakeClock.nowUtc())
@@ -105,7 +105,7 @@ public class DomainBaseSqlTest {
     host =
         new HostResource.Builder()
             .setRepoId("host1")
-            .setFullyQualifiedHostName("ns1.example.com")
+            .setHostName("ns1.example.com")
             .setCreationClientId("registrar1")
             .setPersistedCurrentSponsorClientId("registrar2")
             .build();

@@ -90,7 +90,7 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
         new DomainEmitter()
             .emitField(
                 "Domain Name",
-                maybeFormatHostname(domain.getFullyQualifiedDomainName(), preferUnicode))
+                maybeFormatHostname(domain.getDomainName(), preferUnicode))
             .emitField("Registry Domain ID", domain.getRepoId())
             .emitField("Registrar WHOIS Server", registrar.getWhoisServer())
             .emitField("Registrar URL", registrar.getUrl())
@@ -115,7 +115,7 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
             .emitContact("Billing", getContactReference(Type.BILLING), preferUnicode)
             .emitSet(
                 "Name Server",
-                domain.loadNameserverFullyQualifiedHostNames(),
+                domain.loadNameserverHostNames(),
                 hostName -> maybeFormatHostname(hostName, preferUnicode))
             .emitField(
                 "DNSSEC", isNullOrEmpty(domain.getDsData()) ? "unsigned" : "signedDelegation")
@@ -160,7 +160,7 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
       if (contactResource == null) {
         logger.atSevere().log(
             "(BUG) Broken reference found from domain %s to contact %s",
-            domain.getFullyQualifiedDomainName(), contact);
+            domain.getDomainName(), contact);
         return this;
       }
       PostalInfo postalInfo =

@@ -184,7 +184,7 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
             domain);
         if (!nameservers.isEmpty()) {
           ImmutableSortedSet<String> existingNameservers =
-              domainBase.loadNameserverFullyQualifiedHostNames();
+              domainBase.loadNameserverHostNames();
           populateAddRemoveLists(
               ImmutableSet.copyOf(nameservers),
               existingNameservers,

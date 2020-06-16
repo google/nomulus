@@ -106,7 +106,7 @@ import org.joda.time.Interval;
       @javax.persistence.Index(columnList = "creationTime"),
       @javax.persistence.Index(columnList = "currentSponsorRegistrarId"),
       @javax.persistence.Index(columnList = "deletionTime"),
-      @javax.persistence.Index(columnList = "fullyQualifiedDomainName"),
+      @javax.persistence.Index(columnList = "domainName"),
       @javax.persistence.Index(columnList = "tld")
     })
 @WithStringVKey
@@ -137,6 +137,7 @@ public class DomainBase extends EppResource
    *
    * @invariant fullyQualifiedDomainName == fullyQualifiedDomainName.toLowerCase(Locale.ENGLISH)
    */
+  @Column(name = "domainName")
   @Index String fullyQualifiedDomainName;
 
   /** The top level domain this is under, dernormalized from {@link #fullyQualifiedDomainName}. */
@@ -348,7 +349,7 @@ public class DomainBase extends EppResource
     return fullyQualifiedDomainName;
   }
 
-  public String getFullyQualifiedDomainName() {
+  public String getDomainName() {
     return fullyQualifiedDomainName;
   }
 
@@ -552,13 +553,13 @@ public class DomainBase extends EppResource
   }
 
   /** Loads and returns the fully qualified host names of all linked nameservers. */
-  public ImmutableSortedSet<String> loadNameserverFullyQualifiedHostNames() {
+  public ImmutableSortedSet<String> loadNameserverHostNames() {
     return ofy()
         .load()
         .keys(getNameservers().stream().map(VKey::getOfyKey).collect(toImmutableSet()))
         .values()
         .stream()
-        .map(HostResource::getFullyQualifiedHostName)
+        .map(HostResource::getHostName)
         .collect(toImmutableSortedSet(Ordering.natural()));
   }
 
@@ -679,7 +680,7 @@ public class DomainBase extends EppResource
       }
 
       checkArgumentNotNull(
-          emptyToNull(instance.fullyQualifiedDomainName), "Missing fullyQualifiedDomainName");
+          emptyToNull(instance.fullyQualifiedDomainName), "Missing domainName");
       if (instance.getRegistrant() == null
           && instance.allContacts.stream().anyMatch(IS_REGISTRANT)) {
         throw new IllegalArgumentException("registrant is null but is in allContacts");
@@ -689,11 +690,11 @@ public class DomainBase extends EppResource
       return super.build();
     }
 
-    public Builder setFullyQualifiedDomainName(String fullyQualifiedDomainName) {
+    public Builder setDomainName(String domainName) {
       checkArgument(
-          fullyQualifiedDomainName.equals(canonicalizeDomainName(fullyQualifiedDomainName)),
+          domainName.equals(canonicalizeDomainName(domainName)),
           "Domain name must be in puny-coded, lower-case form");
-      getInstance().fullyQualifiedDomainName = fullyQualifiedDomainName;
+      getInstance().fullyQualifiedDomainName = domainName;
       return thisCastToDerived();
     }
 

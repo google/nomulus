@@ -91,7 +91,7 @@ public final class HostInfoFlow implements Flow {
     }
     return responseBuilder
         .setResData(hostInfoDataBuilder
-            .setFullyQualifiedHostName(host.getFullyQualifiedHostName())
+            .setFullyQualifiedHostName(host.getHostName())
             .setRepoId(host.getRepoId())
             .setStatusValues(statusValues.build())
             .setInetAddresses(host.getInetAddresses())

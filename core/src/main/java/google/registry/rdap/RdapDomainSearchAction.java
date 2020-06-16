@@ -425,7 +425,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     // order.
     ImmutableSortedSet.Builder<DomainBase> domainSetBuilder =
         ImmutableSortedSet.orderedBy(
-            Comparator.comparing(DomainBase::getFullyQualifiedDomainName));
+            Comparator.comparing(DomainBase::getDomainName));
     int numHostKeysSearched = 0;
     for (List<VKey<HostResource>> chunk : Iterables.partition(hostKeys, 30)) {
       numHostKeysSearched += chunk.size();
@@ -445,7 +445,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
       if (cursorString.isPresent()) {
         stream =
             stream.filter(
-                domain -> (domain.getFullyQualifiedDomainName().compareTo(cursorString.get()) > 0));
+                domain -> (domain.getDomainName().compareTo(cursorString.get()) > 0));
       }
       stream.forEach(domainSetBuilder::add);
     }
@@ -495,7 +495,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
             .setIncompletenessWarningType(incompletenessWarningType);
     Optional<String> newCursor = Optional.empty();
     for (DomainBase domain : Iterables.limit(domains, rdapResultSetMaxSize)) {
-      newCursor = Optional.of(domain.getFullyQualifiedDomainName());
+      newCursor = Optional.of(domain.getDomainName());
       builder
           .domainSearchResultsBuilder()
           .add(rdapJsonFormatter.createRdapDomain(domain, outputDataType));

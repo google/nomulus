@@ -67,7 +67,7 @@ final class GenerateLordnCommand implements CommandWithRemoteApi {
         claimsCsv.add(LordnTaskUtils.getCsvLineForClaimsDomain(domain, domain.getCreationTime()));
         status = "C";
       }
-      System.out.printf("%s[%s] ", domain.getFullyQualifiedDomainName(), status);
+      System.out.printf("%s[%s] ", domain.getDomainName(), status);
     }
     ImmutableList<String> claimsRows = claimsCsv.build();
     ImmutableList<String> claimsAll =

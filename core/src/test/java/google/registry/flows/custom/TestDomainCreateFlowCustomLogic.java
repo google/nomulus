@@ -31,7 +31,7 @@ public class TestDomainCreateFlowCustomLogic extends DomainCreateFlowCustomLogic
 
   @Override
   public EntityChanges beforeSave(BeforeSaveParameters parameters) {
-    if (parameters.newDomain().getFullyQualifiedDomainName().startsWith("custom-logic-test")) {
+    if (parameters.newDomain().getDomainName().startsWith("custom-logic-test")) {
       PollMessage extraPollMessage =
           new PollMessage.OneTime.Builder()
               .setParent(parameters.historyEntry())

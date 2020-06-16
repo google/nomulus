@@ -252,7 +252,7 @@ public class DomainTransferRequestFlowTest
           Optional.of(
               new BillingEvent.OneTime.Builder()
                   .setReason(Reason.TRANSFER)
-                  .setTargetId(domain.getFullyQualifiedDomainName())
+                  .setTargetId(domain.getDomainName())
                   .setEventTime(implicitTransferTime)
                   .setBillingTime(
                       implicitTransferTime.plus(registry.getTransferGracePeriodLength()))
@@ -594,7 +594,7 @@ public class DomainTransferRequestFlowTest
       // The transfer is going to happen immediately. To observe the domain in the pending transfer
       // state, grab it directly from the database.
       domain = Iterables.getOnlyElement(ofy().load().type(DomainBase.class).list());
-      assertThat(domain.getFullyQualifiedDomainName()).isEqualTo("example.tld");
+      assertThat(domain.getDomainName()).isEqualTo("example.tld");
     } else {
       // Transfer should have been requested.
       domain = reloadResourceByForeignKey();
