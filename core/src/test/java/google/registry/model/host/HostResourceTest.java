@@ -31,7 +31,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import org.joda.time.DateTime;
@@ -58,7 +58,7 @@ public class HostResourceTest extends EntityTestCase {
                 .asBuilder()
                 .setRepoId("1-COM")
                 .setTransferData(
-                    new TransferData.Builder()
+                    new DomainTransferData.Builder()
                         .setGainingClientId("gaining")
                         .setLosingClientId("losing")
                         .setPendingTransferExpirationTime(fakeClock.nowUtc())

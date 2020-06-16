@@ -39,6 +39,7 @@ import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
 import google.registry.model.registry.Registry;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import java.util.List;
@@ -222,17 +223,23 @@ public final class EppResourceUtils {
   }
 
   /** Process an automatic transfer on a resource. */
-  public static <B extends EppResource.Builder<?, B> & BuilderWithTransferData<B>>
+  public static <
+          T extends TransferData,
+          B extends EppResource.Builder<?, B> & BuilderWithTransferData<T, B>>
       void setAutomaticTransferSuccessProperties(B builder, TransferData transferData) {
     checkArgument(TransferStatus.PENDING.equals(transferData.getTransferStatus()));
-    builder.removeStatusValue(StatusValue.PENDING_TRANSFER)
-        .setTransferData(transferData.asBuilder()
-            .setTransferStatus(TransferStatus.SERVER_APPROVED)
-            .setServerApproveEntities(null)
-            .setServerApproveBillingEvent(null)
-            .setServerApproveAutorenewEvent(null)
-            .setServerApproveAutorenewPollMessage(null)
-            .build())
+    TransferData.Builder transferDataBuilder = transferData.asBuilder();
+    transferDataBuilder.setTransferStatus(TransferStatus.SERVER_APPROVED);
+    transferDataBuilder.setServerApproveEntities(null);
+    if (transferData instanceof DomainTransferData) {
+      ((DomainTransferData.Builder) transferDataBuilder)
+          .setServerApproveBillingEvent(null)
+          .setServerApproveAutorenewEvent(null)
+          .setServerApproveAutorenewPollMessage(null);
+    }
+    builder
+        .removeStatusValue(StatusValue.PENDING_TRANSFER)
+        .setTransferData((T) transferDataBuilder.build())
         .setLastTransferTime(transferData.getPendingTransferExpirationTime())
         .setPersistedCurrentSponsorClientId(transferData.getGainingClientId());
   }
@@ -245,10 +252,11 @@ public final class EppResourceUtils {
    * </ul>
    */
   public static <
-          T extends EppResource & ResourceWithTransferData,
-          B extends EppResource.Builder<?, B> & BuilderWithTransferData<B>>
-      void projectResourceOntoBuilderAtTime(T resource, B builder, DateTime now) {
-    TransferData transferData = resource.getTransferData();
+          T extends TransferData,
+          E extends EppResource & ResourceWithTransferData<T>,
+          B extends EppResource.Builder<?, B> & BuilderWithTransferData<T, B>>
+      void projectResourceOntoBuilderAtTime(E resource, B builder, DateTime now) {
+    T transferData = resource.getTransferData();
     // If there's a pending transfer that has expired, process it.
     DateTime expirationTime = transferData.getPendingTransferExpirationTime();
     if (TransferStatus.PENDING.equals(transferData.getTransferStatus())

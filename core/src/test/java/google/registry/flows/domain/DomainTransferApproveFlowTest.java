@@ -68,7 +68,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
@@ -109,7 +109,7 @@ public class DomainTransferApproveFlowTest
     clock.advanceOneMilli();
   }
 
-  private void assertTransferApproved(DomainBase domain, TransferData oldTransferData) {
+  private void assertTransferApproved(DomainBase domain, DomainTransferData oldTransferData) {
     assertAboutDomains()
         .that(domain)
         .hasCurrentSponsorClientId("NewRegistrar")
@@ -178,7 +178,7 @@ public class DomainTransferApproveFlowTest
     assertThat(getPollMessages(domain, "NewRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
     assertThat(getPollMessages(domain, "TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
     // Setup done; run the test.
-    TransferData originalTransferData = domain.getTransferData();
+    DomainTransferData originalTransferData = domain.getTransferData();
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile(expectedXmlFilename));
     // Transfer should have succeeded. Verify correct fields were set.
@@ -616,7 +616,7 @@ public class DomainTransferApproveFlowTest
   @Test
   public void testSuccess_superuserExtension_transferPeriodZero() throws Exception {
     domain = reloadResourceByForeignKey();
-    TransferData.Builder transferDataBuilder = domain.getTransferData().asBuilder();
+    DomainTransferData.Builder transferDataBuilder = domain.getTransferData().asBuilder();
     persistResource(
         domain
             .asBuilder()
@@ -641,7 +641,7 @@ public class DomainTransferApproveFlowTest
     // active autorenew grace period spanning the entire transfer window.
     DateTime autorenewTime = clock.nowUtc().minusDays(1);
     DateTime expirationTime = autorenewTime.plusYears(1);
-    TransferData.Builder transferDataBuilder = domain.getTransferData().asBuilder();
+    DomainTransferData.Builder transferDataBuilder = domain.getTransferData().asBuilder();
     domain =
         persistResource(
             domain

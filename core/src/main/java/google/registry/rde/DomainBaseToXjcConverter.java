@@ -28,6 +28,7 @@ import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.rde.RdeMode;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
 import google.registry.util.Idn;
@@ -234,7 +235,7 @@ final class DomainBaseToXjcConverter {
         //    *  An OPTIONAL <exDate> element that contains the end of the
         //       domain name object's validity period (expiry date) if the
         //       transfer caused or causes a change in the validity period.
-        if (!model.getTransferData().equals(TransferData.EMPTY)) {
+        if (!model.getTransferData().isEmpty()) {
           // Temporary check to make sure that there really was a transfer. A bug caused spurious
           // empty transfer records to get generated for deleted domains.
           // TODO(b/33289763): remove the hasGainingAndLosingRegistrars check in February 2017
@@ -258,7 +259,7 @@ final class DomainBaseToXjcConverter {
   }
 
   /** Converts {@link TransferData} to {@link XjcRdeDomainTransferDataType}. */
-  private static XjcRdeDomainTransferDataType convertTransferData(TransferData model) {
+  private static XjcRdeDomainTransferDataType convertTransferData(DomainTransferData model) {
     XjcRdeDomainTransferDataType bean = new XjcRdeDomainTransferDataType();
     bean.setTrStatus(
         XjcEppcomTrStatusType.fromValue(model.getTransferStatus().getXmlName()));

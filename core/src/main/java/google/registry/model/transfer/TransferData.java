@@ -17,38 +17,31 @@ package google.registry.model.transfer;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
-import com.googlecode.objectify.annotation.Unindex;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
-import google.registry.model.billing.BillingEvent;
-import google.registry.model.domain.Period;
-import google.registry.model.domain.Period.Unit;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.poll.PollMessage;
 import google.registry.persistence.VKey;
+import google.registry.util.TypeUtils.TypeInstantiator;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
+import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
-import org.joda.time.DateTime;
 
 /**
  * Common transfer data for {@link EppResource} types. Only applies to domains and contacts; hosts
  * are implicitly transferred with their superordinate domain.
  */
-@Embed
-@Unindex
-@javax.persistence.Embeddable
-public class TransferData extends BaseTransferObject implements Buildable {
-
-  public static final TransferData EMPTY = new TransferData();
+@MappedSuperclass
+public abstract class TransferData<
+        B extends TransferData.Builder<? extends TransferData, ? extends TransferData.Builder>>
+    extends BaseTransferObject implements Buildable {
 
   /** The transaction id of the most recent transfer request (or null if there never was one). */
   @Embedded
@@ -61,37 +54,6 @@ public class TransferData extends BaseTransferObject implements Buildable {
         column = @Column(name = "transfer_client_txn_id"))
   })
   Trid transferRequestTrid;
-
-  /**
-   * The period to extend the registration upon completion of the transfer.
-   *
-   * <p>By default, domain transfers are for one year. This can be changed to zero by using the
-   * superuser EPP extension.
-   */
-  @Embedded
-  @AttributeOverrides({
-    @AttributeOverride(name = "unit", column = @Column(name = "transfer_renew_period_unit")),
-    @AttributeOverride(name = "value", column = @Column(name = "transfer_renew_period_value"))
-  })
-  Period transferPeriod = Period.create(1, Unit.YEARS);
-
-  /**
-   * The registration expiration time resulting from the approval - speculative or actual - of the
-   * most recent transfer request, applicable for domains only.
-   *
-   * <p>For pending transfers, this is the expiration time that will take effect under a projected
-   * server approval. For approved transfers, this is the actual expiration time of the domain as of
-   * the moment of transfer completion. For rejected or cancelled transfers, this field will be
-   * reset to null.
-   *
-   * <p>Note that even when this field is set, it does not necessarily mean that the post-transfer
-   * domain has a new expiration time. Superuser transfers may not include a bundled 1 year renewal
-   * at all, or even when a renewal is bundled, for a transfer during the autorenew grace period the
-   * bundled renewal simply subsumes the recent autorenewal, resulting in the same expiration time.
-   */
-  // TODO(b/36405140): backfill this field for existing domains to which it should apply.
-  @Column(name = "transfer_registration_expiration_time")
-  DateTime transferredRegistrationExpirationTime;
 
   /**
    * The billing event and poll messages associated with a server-approved transfer.
@@ -116,85 +78,26 @@ public class TransferData extends BaseTransferObject implements Buildable {
   @Column(name = "transfer_losing_poll_message_id")
   Long losingTransferPollMessageId;
 
-  @Ignore
-  @Column(name = "transfer_billing_cancellation_id")
-  Long billingCancellationId;
-
-  /**
-   * The regular one-time billing event that will be charged for a server-approved transfer.
-   *
-   * <p>This field should be null if there is not currently a pending transfer or if the object
-   * being transferred is not a domain.
-   *
-   * <p>TODO(b/158230654) Remove unused columns for TransferData in Contact table.
-   */
-  @IgnoreSave(IfNull.class)
-  @Column(name = "transfer_billing_event_id")
-  VKey<BillingEvent.OneTime> serverApproveBillingEvent;
-
-  /**
-   * The autorenew billing event that should be associated with this resource after the transfer.
-   *
-   * <p>This field should be null if there is not currently a pending transfer or if the object
-   * being transferred is not a domain.
-   */
-  @IgnoreSave(IfNull.class)
-  @Column(name = "transfer_billing_recurrence_id")
-  VKey<BillingEvent.Recurring> serverApproveAutorenewEvent;
-
-  /**
-   * The autorenew poll message that should be associated with this resource after the transfer.
-   *
-   * <p>This field should be null if there is not currently a pending transfer or if the object
-   * being transferred is not a domain.
-   */
-  @IgnoreSave(IfNull.class)
-  @Column(name = "transfer_autorenew_poll_message_id")
-  VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessage;
+  public abstract boolean isEmpty();
 
   @Nullable
   public Trid getTransferRequestTrid() {
     return transferRequestTrid;
   }
 
-  public Period getTransferPeriod() {
-    return transferPeriod;
-  }
-
-  @Nullable
-  public DateTime getTransferredRegistrationExpirationTime() {
-    return transferredRegistrationExpirationTime;
-  }
-
   public ImmutableSet<VKey<? extends TransferServerApproveEntity>> getServerApproveEntities() {
     return nullToEmptyImmutableCopy(serverApproveEntities);
   }
 
-  @Nullable
-  public VKey<BillingEvent.OneTime> getServerApproveBillingEvent() {
-    return serverApproveBillingEvent;
-  }
-
-  @Nullable
-  public VKey<BillingEvent.Recurring> getServerApproveAutorenewEvent() {
-    return serverApproveAutorenewEvent;
-  }
-
-  @Nullable
-  public VKey<PollMessage.Autorenew> getServerApproveAutorenewPollMessage() {
-    return serverApproveAutorenewPollMessage;
-  }
-
   @Override
-  public Builder asBuilder() {
-    return new Builder(clone(this));
-  }
+  public abstract Builder asBuilder();
 
   /**
    * Returns a fresh Builder populated only with the constant fields of this TransferData, i.e.
    * those that are fixed and unchanging throughout the transfer process.
    *
    * <p>These fields are:
+   *
    * <ul>
    *   <li>transferRequestTrid
    *   <li>transferRequestTime
@@ -203,64 +106,43 @@ public class TransferData extends BaseTransferObject implements Buildable {
    *   <li>transferPeriod
    * </ul>
    */
-  public Builder copyConstantFieldsToBuilder() {
-    return new Builder()
+  public B copyConstantFieldsToBuilder() {
+    B newBuilder = new TypeInstantiator<B>(getClass()) {}.instantiate();
+    newBuilder
+        // .setTransferPeriod(this.transferPeriod)
         .setTransferRequestTrid(this.transferRequestTrid)
         .setTransferRequestTime(this.transferRequestTime)
         .setGainingClientId(this.gainingClientId)
-        .setLosingClientId(this.losingClientId)
-        .setTransferPeriod(this.transferPeriod);
+        .setLosingClientId(this.losingClientId);
+    return newBuilder;
   }
 
   /** Builder for {@link TransferData} because it is immutable. */
-  public static class Builder extends BaseTransferObject.Builder<TransferData, Builder> {
+  public abstract static class Builder<T extends TransferData, B extends Builder<T, B>>
+      extends BaseTransferObject.Builder<T, B> {
 
     /** Create a {@link Builder} wrapping a new instance. */
     public Builder() {}
 
     /** Create a {@link Builder} wrapping the given instance. */
-    private Builder(TransferData instance) {
+    protected Builder(T instance) {
       super(instance);
     }
 
-    public Builder setTransferRequestTrid(Trid transferRequestTrid) {
+    public B setTransferRequestTrid(Trid transferRequestTrid) {
       getInstance().transferRequestTrid = transferRequestTrid;
-      return this;
+      return thisCastToDerived();
     }
 
-    public Builder setTransferPeriod(Period transferPeriod) {
-      getInstance().transferPeriod = transferPeriod;
-      return this;
-    }
-
-    public Builder setTransferredRegistrationExpirationTime(
-        DateTime transferredRegistrationExpirationTime) {
-      getInstance().transferredRegistrationExpirationTime = transferredRegistrationExpirationTime;
-      return this;
-    }
-
-    public Builder setServerApproveEntities(
+    public B setServerApproveEntities(
         ImmutableSet<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
       getInstance().serverApproveEntities = serverApproveEntities;
-      return this;
+      return thisCastToDerived();
     }
 
-    public Builder setServerApproveBillingEvent(
-        VKey<BillingEvent.OneTime> serverApproveBillingEvent) {
-      getInstance().serverApproveBillingEvent = serverApproveBillingEvent;
-      return this;
-    }
-
-    public Builder setServerApproveAutorenewEvent(
-        VKey<BillingEvent.Recurring> serverApproveAutorenewEvent) {
-      getInstance().serverApproveAutorenewEvent = serverApproveAutorenewEvent;
-      return this;
-    }
-
-    public Builder setServerApproveAutorenewPollMessage(
-        VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessage) {
-      getInstance().serverApproveAutorenewPollMessage = serverApproveAutorenewPollMessage;
-      return this;
+    @Override
+    public T build() {
+      return super.build();
     }
   }
 

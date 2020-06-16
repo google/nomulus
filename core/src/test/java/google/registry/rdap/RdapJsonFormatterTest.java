@@ -39,7 +39,7 @@ import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.rdap.RdapJsonFormatter.OutputDataType;
 import google.registry.rdap.RdapObjectClasses.BoilerplateType;
@@ -170,7 +170,7 @@ public class RdapJsonFormatterTest {
                                 .asBuilder()
                                 .addStatusValue(StatusValue.PENDING_TRANSFER)
                                 .setTransferData(
-                                    new TransferData.Builder()
+                                    new DomainTransferData.Builder()
                                         .setTransferStatus(TransferStatus.PENDING)
                                         .setGainingClientId("NewRegistrar")
                                         .setTransferRequestTime(clock.nowUtc().minusDays(1))

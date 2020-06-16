@@ -63,7 +63,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.registry.Registry;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
@@ -110,7 +110,9 @@ import org.joda.time.Interval;
 @WithStringVKey
 @ExternalMessagingName("domain")
 public class DomainBase extends EppResource
-    implements DatastoreAndSqlEntity, ForeignKeyedEppResource, ResourceWithTransferData {
+    implements DatastoreAndSqlEntity,
+        ForeignKeyedEppResource,
+        ResourceWithTransferData<DomainTransferData> {
 
   /** The max number of years that a domain can be registered for, as set by ICANN policy. */
   public static final int MAX_REGISTRATION_YEARS = 10;
@@ -253,7 +255,7 @@ public class DomainBase extends EppResource
   String smdId;
 
   /** Data about any pending or past transfers on this domain. */
-  TransferData transferData;
+  DomainTransferData transferData;
 
   /**
    * The time that this resource was last transferred.
@@ -322,8 +324,8 @@ public class DomainBase extends EppResource
   }
 
   @Override
-  public TransferData getTransferData() {
-    return Optional.ofNullable(transferData).orElse(TransferData.EMPTY);
+  public DomainTransferData getTransferData() {
+    return Optional.ofNullable(transferData).orElse(DomainTransferData.EMPTY);
   }
 
   @Override
@@ -402,7 +404,7 @@ public class DomainBase extends EppResource
   @Override
   public DomainBase cloneProjectedAtTime(final DateTime now) {
 
-    TransferData transferData = getTransferData();
+    DomainTransferData transferData = getTransferData();
     DateTime transferExpirationTime = transferData.getPendingTransferExpirationTime();
 
     // If there's a pending transfer that has expired, handle it.
@@ -644,7 +646,7 @@ public class DomainBase extends EppResource
 
   /** A builder for constructing {@link DomainBase}, since it is immutable. */
   public static class Builder extends EppResource.Builder<DomainBase, Builder>
-      implements BuilderWithTransferData<Builder> {
+      implements BuilderWithTransferData<DomainTransferData, Builder> {
 
     public Builder() {}
 
@@ -656,7 +658,7 @@ public class DomainBase extends EppResource
     public DomainBase build() {
       DomainBase instance = getInstance();
       // If TransferData is totally empty, set it to null.
-      if (TransferData.EMPTY.equals(getInstance().transferData)) {
+      if (DomainTransferData.EMPTY.equals(getInstance().transferData)) {
         setTransferData(null);
       }
       // A DomainBase has status INACTIVE if there are no nameservers.
@@ -830,7 +832,7 @@ public class DomainBase extends EppResource
     }
 
     @Override
-    public Builder setTransferData(TransferData transferData) {
+    public Builder setTransferData(DomainTransferData transferData) {
       getInstance().transferData = transferData;
       return thisCastToDerived();
     }

@@ -32,7 +32,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.util.Clock;
 import java.util.Optional;
@@ -74,7 +74,7 @@ public final class DomainTransferQueryFlow implements Flow {
     verifyOptionalAuthInfo(authInfo, domain);
     // Most of the fields on the transfer response are required, so there's no way to return valid
     // XML if the object has never been transferred (and hence the fields aren't populated).
-    TransferData transferData = domain.getTransferData();
+    DomainTransferData transferData = domain.getTransferData();
     if (transferData.getTransferStatus() == null) {
       throw new NoTransferHistoryToQueryException();
     }

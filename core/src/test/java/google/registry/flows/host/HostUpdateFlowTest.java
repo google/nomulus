@@ -74,7 +74,7 @@ import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import javax.annotation.Nullable;
@@ -117,7 +117,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
         .setPersistedCurrentSponsorClientId("TheRegistrar")
         .addStatusValue(StatusValue.PENDING_TRANSFER)
         .setTransferData(
-            new TransferData.Builder()
+            new DomainTransferData.Builder()
                 .setTransferStatus(TransferStatus.PENDING)
                 .setGainingClientId("NewRegistrar")
                 .setTransferRequestTime(requestTime)
