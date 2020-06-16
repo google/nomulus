@@ -11,6 +11,7 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
+create sequence history_id_sequence start 1 increment 1;
 
     create table "BillingCancellation" (
        billing_cancellation_id  bigserial not null,
@@ -208,6 +209,33 @@
         primary key (id)
     );
 
+    create table "HostHistory" (
+       history_revision_id int8 not null,
+        history_by_superuser boolean not null,
+        history_registrar_id text,
+        history_modification_time timestamptz not null,
+        history_reason text not null,
+        history_requested_by_registrar boolean not null,
+        history_client_transaction_id text,
+        history_server_transaction_id text,
+        history_type text not null,
+        history_xml_bytes bytea not null,
+        fully_qualified_host_name text,
+        inet_addresses text[],
+        last_superordinate_change timestamptz,
+        last_transfer_time timestamptz,
+        superordinate_domain text,
+        creation_registrar_id text not null,
+        creation_time timestamptz not null,
+        current_sponsor_registrar_id text not null,
+        deletion_time timestamptz,
+        last_epp_update_registrar_id text,
+        last_epp_update_time timestamptz,
+        statuses text[],
+        host_repo_id text not null,
+        primary key (history_revision_id)
+    );
+
     create table "HostResource" (
        repo_id text not null,
         creation_registrar_id text not null,
@@ -403,6 +431,11 @@ create index IDXhsjqiy2lyobfymplb28nm74lm on "Domain" (current_sponsor_registrar
 create index IDX5mnf0wn20tno4b9do88j61klr on "Domain" (deletion_time);
 create index IDX1rcgkdd777bpvj0r94sltwd5y on "Domain" (fully_qualified_domain_name);
 create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
+create index IDXfg2nnjlujxo6cb9fha971bq2n on "HostHistory" (creation_time);
+create index IDX1iy7njgb7wjmj9piml4l2g0qi on "HostHistory" (history_registrar_id);
+create index IDXj77pfwhui9f0i7wjq6lmibovj on "HostHistory" (fully_qualified_host_name);
+create index IDXknk8gmj7s47q56cwpa6rmpt5l on "HostHistory" (history_type);
+create index IDX67qwkjtlq5q8dv6egtrtnhqi7 on "HostHistory" (history_modification_time);
 create index IDXe7wu46c7wpvfmfnj4565abibp on "PollMessage" (registrar_id);
 create index IDXaydgox62uno9qx8cjlj5lauye on "PollMessage" (event_time);
 create index premiumlist_name_idx on "PremiumList" (name);

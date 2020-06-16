@@ -37,6 +37,8 @@ import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
@@ -63,6 +65,7 @@ import org.joda.time.DateTime;
     })
 @ExternalMessagingName("contact")
 @WithStringVKey
+@Access(AccessType.FIELD)
 public class ContactResource extends EppResource
     implements DatastoreAndSqlEntity, ForeignKeyedEppResource, ResourceWithTransferData {
 
@@ -199,6 +202,13 @@ public class ContactResource extends EppResource
   public VKey<ContactResource> createVKey() {
     // TODO(mmuller): create symmetric keys if we can ever reload both sides.
     return VKey.createOfy(ContactResource.class, Key.create(this));
+  }
+
+  @Override
+  @javax.persistence.Id
+  @Access(AccessType.PROPERTY)
+  public String getRepoId() {
+    return super.getRepoId();
   }
 
   public String getContactId() {

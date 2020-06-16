@@ -326,6 +326,49 @@ CREATE TABLE public."DomainHost" (
 
 
 --
+-- Name: history_id_sequence; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.history_id_sequence
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: HostHistory; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."HostHistory" (
+    history_revision_id bigint DEFAULT nextval('public.history_id_sequence'::regclass) NOT NULL,
+    history_by_superuser boolean NOT NULL,
+    history_registrar_id text NOT NULL,
+    history_modification_time timestamp with time zone NOT NULL,
+    history_reason text NOT NULL,
+    history_requested_by_registrar boolean NOT NULL,
+    history_client_transaction_id text,
+    history_server_transaction_id text,
+    history_type text NOT NULL,
+    history_xml_bytes bytea NOT NULL,
+    fully_qualified_host_name text,
+    inet_addresses text[],
+    last_superordinate_change timestamp with time zone,
+    last_transfer_time timestamp with time zone,
+    superordinate_domain text,
+    creation_registrar_id text NOT NULL,
+    creation_time timestamp with time zone NOT NULL,
+    current_sponsor_registrar_id text NOT NULL,
+    deletion_time timestamp with time zone,
+    last_epp_update_registrar_id text,
+    last_epp_update_time timestamp with time zone,
+    statuses text[],
+    host_repo_id text NOT NULL
+);
+
+
+--
 -- Name: HostResource; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -734,6 +777,14 @@ ALTER TABLE ONLY public."Domain"
 
 
 --
+-- Name: HostHistory HostHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory"
+    ADD CONSTRAINT "HostHistory_pkey" PRIMARY KEY (history_revision_id);
+
+
+--
 -- Name: HostResource HostResource_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -830,6 +881,13 @@ ALTER TABLE ONLY public."Contact"
 
 
 --
+-- Name: idx1iy7njgb7wjmj9piml4l2g0qi; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx1iy7njgb7wjmj9piml4l2g0qi ON public."HostHistory" USING btree (history_registrar_id);
+
+
+--
 -- Name: idx1p3esngcwwu6hstyua6itn6ff; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -869,6 +927,13 @@ CREATE INDEX idx5mnf0wn20tno4b9do88j61klr ON public."Domain" USING btree (deleti
 --
 
 CREATE INDEX idx5yfbr88439pxw0v3j86c74fp8 ON public."BillingEvent" USING btree (event_time);
+
+
+--
+-- Name: idx67qwkjtlq5q8dv6egtrtnhqi7; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx67qwkjtlq5q8dv6egtrtnhqi7 ON public."HostHistory" USING btree (history_modification_time);
 
 
 --
@@ -942,10 +1007,24 @@ CREATE INDEX idxeokttmxtpq2hohcioe5t2242b ON public."BillingCancellation" USING 
 
 
 --
+-- Name: idxfg2nnjlujxo6cb9fha971bq2n; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxfg2nnjlujxo6cb9fha971bq2n ON public."HostHistory" USING btree (creation_time);
+
+
+--
 -- Name: idxhmv411mdqo5ibn4vy7ykxpmlv; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idxhmv411mdqo5ibn4vy7ykxpmlv ON public."BillingEvent" USING btree (allocation_token_id);
+
+
+--
+-- Name: idxj77pfwhui9f0i7wjq6lmibovj; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxj77pfwhui9f0i7wjq6lmibovj ON public."HostHistory" USING btree (fully_qualified_host_name);
 
 
 --
@@ -960,6 +1039,13 @@ CREATE INDEX idxjny8wuot75b5e6p38r47wdawu ON public."BillingRecurrence" USING bt
 --
 
 CREATE INDEX idxkjt9yaq92876dstimd93hwckh ON public."Domain" USING btree (current_sponsor_registrar_id);
+
+
+--
+-- Name: idxknk8gmj7s47q56cwpa6rmpt5l; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxknk8gmj7s47q56cwpa6rmpt5l ON public."HostHistory" USING btree (history_type);
 
 
 --
@@ -1069,6 +1155,14 @@ ALTER TABLE ONLY public."RegistryLock"
 
 ALTER TABLE ONLY public."Domain"
     ADD CONSTRAINT fk2u3srsfbei272093m3b3xwj23 FOREIGN KEY (current_sponsor_registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: HostHistory fk3d09knnmxrt6iniwnp8j2ykga; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory"
+    ADD CONSTRAINT fk3d09knnmxrt6iniwnp8j2ykga FOREIGN KEY (history_registrar_id) REFERENCES public."Registrar"(registrar_id);
 
 
 --
@@ -1237,6 +1331,14 @@ ALTER TABLE ONLY public."DomainHost"
 
 ALTER TABLE ONLY public."HostResource"
     ADD CONSTRAINT fk_host_resource_superordinate_domain FOREIGN KEY (superordinate_domain) REFERENCES public."Domain"(repo_id);
+
+
+--
+-- Name: HostHistory fk_hosthistory_hostresource; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory"
+    ADD CONSTRAINT fk_hosthistory_hostresource FOREIGN KEY (host_repo_id) REFERENCES public."HostResource"(repo_id);
 
 
 --

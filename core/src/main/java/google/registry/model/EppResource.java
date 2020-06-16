@@ -48,6 +48,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.StreamSupport;
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
@@ -56,15 +58,21 @@ import org.joda.time.Duration;
 
 /** An EPP entity object (i.e. a domain, contact, or host). */
 @MappedSuperclass
+@Access(AccessType.FIELD) // otherwise it'll use the default if the repoId (property)
 public abstract class EppResource extends BackupGroupRoot implements Buildable {
 
   /**
    * Unique identifier in the registry for this resource.
    *
    * <p>This is in the (\w|_){1,80}-\w{1,8} format specified by RFC 5730 for roidType.
+   *
    * @see <a href="https://tools.ietf.org/html/rfc5730">RFC 5730</a>
    */
-  @Id @javax.persistence.Id String repoId;
+  @Id
+  // not persisted so that we can store these in references to other objects. Subclasses that wish
+  // to use this as the primary key should create a getter method annotated with @Id
+  @Transient
+  String repoId;
 
   /** The ID of the registrar that is currently sponsoring this resource. */
   @Index
@@ -136,6 +144,12 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
 
   public String getRepoId() {
     return repoId;
+  }
+
+  // Hibernate needs this to populate the repo ID, but no one else should ever use it
+  @SuppressWarnings("UnusedMethod")
+  private void setRepoId(String repoId) {
+    this.repoId = repoId;
   }
 
   public final DateTime getCreationTime() {
@@ -214,7 +228,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   }
 
   /** Abstract builder for {@link EppResource} types. */
-  public abstract static class Builder<T extends EppResource, B extends Builder<?, ?>>
+  public abstract static class Builder<T extends EppResource, B extends Builder<T, B>>
       extends GenericBuilder<T, B> {
 
     /** Create a {@link Builder} wrapping a new instance. */

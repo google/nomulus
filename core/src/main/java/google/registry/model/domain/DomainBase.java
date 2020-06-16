@@ -75,6 +75,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
@@ -109,6 +111,7 @@ import org.joda.time.Interval;
     })
 @WithStringVKey
 @ExternalMessagingName("domain")
+@Access(AccessType.FIELD)
 public class DomainBase extends EppResource
     implements DatastoreAndSqlEntity,
         ForeignKeyedEppResource,
@@ -293,6 +296,13 @@ public class DomainBase extends EppResource
     }
 
     allContacts = contactsBuilder.build();
+  }
+
+  @Override
+  @javax.persistence.Id
+  @Access(AccessType.PROPERTY)
+  public String getRepoId() {
+    return super.getRepoId();
   }
 
   public ImmutableSet<String> getSubordinateHosts() {
