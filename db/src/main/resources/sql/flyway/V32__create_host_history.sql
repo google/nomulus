@@ -40,8 +40,10 @@ CREATE TABLE "HostHistory" (
 );
 
 CREATE INDEX IDXfg2nnjlujxo6cb9fha971bq2n ON "HostHistory" (creation_time);
-CREATE INDEX IDXnxei34hfrt20dyxtphh6j25mo ON "HostHistory" (history_registrar_id);
-CREATE INDEX IDXhancbub2w7c2rirfaeu4j9uh2 ON "HostHistory" (host_repo_id);
+CREATE INDEX IDX1iy7njgb7wjmj9piml4l2g0qi ON "HostHistory" (history_registrar_id);
+CREATE INDEX IDXj77pfwhui9f0i7wjq6lmibovj ON "HostHistory" (fully_qualified_host_name);
+CREATE INDEX IDXknk8gmj7s47q56cwpa6rmpt5l ON "HostHistory" (history_type);
+CREATE INDEX IDX67qwkjtlq5q8dv6egtrtnhqi7 ON "HostHistory" (history_modification_time);
 
 ALTER TABLE IF EXISTS "HostHistory"
    ADD CONSTRAINT FK3d09knnmxrt6iniwnp8j2ykga

@@ -440,6 +440,9 @@ create index IDX1rcgkdd777bpvj0r94sltwd5y on "Domain" (fully_qualified_domain_na
 create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
 create index IDXfg2nnjlujxo6cb9fha971bq2n on "HostHistory" (creation_time);
 create index IDX1iy7njgb7wjmj9piml4l2g0qi on "HostHistory" (history_registrar_id);
+create index IDXj77pfwhui9f0i7wjq6lmibovj on "HostHistory" (fully_qualified_host_name);
+create index IDXknk8gmj7s47q56cwpa6rmpt5l on "HostHistory" (history_type);
+create index IDX67qwkjtlq5q8dv6egtrtnhqi7 on "HostHistory" (history_modification_time);
 create index IDXe7wu46c7wpvfmfnj4565abibp on "PollMessage" (registrar_id);
 create index IDXaydgox62uno9qx8cjlj5lauye on "PollMessage" (event_time);
 create index premiumlist_name_idx on "PremiumList" (name);

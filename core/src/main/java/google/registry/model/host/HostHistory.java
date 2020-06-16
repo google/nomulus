@@ -33,6 +33,9 @@ import javax.persistence.Entity;
     indexes = {
       @javax.persistence.Index(columnList = "creationTime"),
       @javax.persistence.Index(columnList = "historyRegistrarId"),
+      @javax.persistence.Index(columnList = "fullyQualifiedHostName"),
+      @javax.persistence.Index(columnList = "historyType"),
+      @javax.persistence.Index(columnList = "historyModificationTime")
     })
 public class HostHistory extends HistoryEntry {
 

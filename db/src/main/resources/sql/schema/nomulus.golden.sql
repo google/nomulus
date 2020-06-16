@@ -888,6 +888,13 @@ ALTER TABLE ONLY public."Contact"
 
 
 --
+-- Name: idx1iy7njgb7wjmj9piml4l2g0qi; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx1iy7njgb7wjmj9piml4l2g0qi ON public."HostHistory" USING btree (history_registrar_id);
+
+
+--
 -- Name: idx1p3esngcwwu6hstyua6itn6ff; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -927,6 +934,13 @@ CREATE INDEX idx5mnf0wn20tno4b9do88j61klr ON public."Domain" USING btree (deleti
 --
 
 CREATE INDEX idx5yfbr88439pxw0v3j86c74fp8 ON public."BillingEvent" USING btree (event_time);
+
+
+--
+-- Name: idx67qwkjtlq5q8dv6egtrtnhqi7; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx67qwkjtlq5q8dv6egtrtnhqi7 ON public."HostHistory" USING btree (history_modification_time);
 
 
 --
@@ -1007,17 +1021,17 @@ CREATE INDEX idxfg2nnjlujxo6cb9fha971bq2n ON public."HostHistory" USING btree (c
 
 
 --
--- Name: idxhancbub2w7c2rirfaeu4j9uh2; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idxhancbub2w7c2rirfaeu4j9uh2 ON public."HostHistory" USING btree (host_repo_id);
-
-
---
 -- Name: idxhmv411mdqo5ibn4vy7ykxpmlv; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idxhmv411mdqo5ibn4vy7ykxpmlv ON public."BillingEvent" USING btree (allocation_token_id);
+
+
+--
+-- Name: idxj77pfwhui9f0i7wjq6lmibovj; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxj77pfwhui9f0i7wjq6lmibovj ON public."HostHistory" USING btree (fully_qualified_host_name);
 
 
 --
@@ -1035,6 +1049,13 @@ CREATE INDEX idxkjt9yaq92876dstimd93hwckh ON public."Domain" USING btree (curren
 
 
 --
+-- Name: idxknk8gmj7s47q56cwpa6rmpt5l; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxknk8gmj7s47q56cwpa6rmpt5l ON public."HostHistory" USING btree (history_type);
+
+
+--
 -- Name: idxn1f711wicdnooa2mqb7g1m55o; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1046,13 +1067,6 @@ CREATE INDEX idxn1f711wicdnooa2mqb7g1m55o ON public."Contact" USING btree (delet
 --
 
 CREATE INDEX idxn898pb9mwcg359cdwvolb11ck ON public."BillingRecurrence" USING btree (registrar_id);
-
-
---
--- Name: idxnxei34hfrt20dyxtphh6j25mo; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idxnxei34hfrt20dyxtphh6j25mo ON public."HostHistory" USING btree (history_registrar_id);
 
 
 --
