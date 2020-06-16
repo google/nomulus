@@ -321,6 +321,10 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest extends ShardableTestCa
     MockLowLevelHttpResponse loginResponse = new MockLowLevelHttpResponse();
     loginResponse.addHeader(
         "Set-Cookie",
+        "JSESSIONID=bogusid; "
+            + "Expires=Tue, 11-Jun-2019 16:34:21 GMT; Path=/; Secure; HttpOnly");
+    loginResponse.addHeader(
+        "Set-Cookie",
         "id=myAuthenticationId; "
             + "Expires=Tue, 11-Jun-2019 16:34:21 GMT; Path=/mosapi/v1/app; Secure; HttpOnly");
 

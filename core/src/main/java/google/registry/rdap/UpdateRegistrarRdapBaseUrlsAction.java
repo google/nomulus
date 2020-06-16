@@ -101,7 +101,8 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
     HttpResponse response = request.execute();
 
     Optional<HttpCookie> idCookie =
-        HttpCookie.parse(response.getHeaders().getFirstHeaderStringValue("Set-Cookie")).stream()
+        response.getHeaders().getHeaderStringValues("Set-Cookie").stream()
+            .flatMap(value -> HttpCookie.parse(value).stream())
             .filter(cookie -> cookie.getName().equals(COOKIE_ID))
             .findAny();
     checkState(
