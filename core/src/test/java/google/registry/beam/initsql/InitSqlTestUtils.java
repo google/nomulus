@@ -16,7 +16,6 @@ package google.registry.beam.initsql;
 
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.apache.beam.sdk.values.TypeDescriptors.kvs;
 import static org.apache.beam.sdk.values.TypeDescriptors.strings;
 
@@ -46,7 +45,7 @@ public final class InitSqlTestUtils {
 
   /** Converts a Datastore {@link Entity} to an Objectify entity. */
   public static Object datastoreToOfyEntity(Entity entity) {
-    return tm().transactNew(() -> ofy().load().fromEntity(entity));
+    return ofy().load().fromEntity(entity);
   }
 
   /** Serializes a Datastore {@link Entity} to byte array. */
