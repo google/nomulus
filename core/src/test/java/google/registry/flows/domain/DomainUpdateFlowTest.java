@@ -67,7 +67,7 @@ import google.registry.flows.domain.DomainFlowUtils.MissingContactTypeException;
 import google.registry.flows.domain.DomainFlowUtils.MissingRegistrantException;
 import google.registry.flows.domain.DomainFlowUtils.MissingTechnicalContactException;
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotAllowedForTldException;
-import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverWhitelistException;
+import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
 import google.registry.flows.domain.DomainFlowUtils.RegistrantNotAllowedException;
 import google.registry.flows.domain.DomainFlowUtils.SecDnsAllUsageException;
@@ -1156,7 +1156,7 @@ public class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow,
   }
 
   @Test
-  public void testFailure_newRegistrantNotWhitelisted() throws Exception {
+  public void testFailure_newRegistrantNotAllowListed() throws Exception {
     persistReferencedEntities();
     persistDomain();
     persistResource(
@@ -1186,11 +1186,11 @@ public class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow,
   }
 
   @Test
-  public void testSuccess_newNameserverWhitelisted() throws Exception {
+  public void testSuccess_newNameserverAllowListed() throws Exception {
     setEppInput("domain_update_add_nameserver.xml");
     persistReferencedEntities();
     persistDomain();
-    // No registrant is given but both nameserver and registrant whitelist exist.
+    // No registrant is given but both nameserver and registrant allow list exist.
     persistResource(
         Registry.get("tld")
             .asBuilder()
@@ -1212,11 +1212,11 @@ public class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow,
   }
 
   @Test
-  public void testSuccess_changeRegistrantWhitelisted() throws Exception {
+  public void testSuccess_changeRegistrantAllowListed() throws Exception {
     setEppInput("domain_update_registrant.xml");
     persistReferencedEntities();
     persistDomain();
-    // Only changes registrant, with both nameserver and registrant whitelist on the TLD.
+    // Only changes registrant, with both nameserver and registrant allow list on the TLD.
     persistResource(
         Registry.get("tld")
             .asBuilder()
@@ -1256,7 +1256,7 @@ public class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow,
   }
 
   @Test
-  public void testSuccess_nameserverAndRegistrantWhitelisted() throws Exception {
+  public void testSuccess_nameserverAndRegistrantAllowListed() throws Exception {
     persistReferencedEntities();
     persistDomain();
     persistResource(
@@ -1269,7 +1269,7 @@ public class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow,
   }
 
   @Test
-  public void testSuccess_tldWithNameserverWhitelist_removeNameserver() throws Exception {
+  public void testSuccess_tldWithNameserverAllowList_removeNameserver() throws Exception {
     setEppInput("domain_update_remove_nameserver.xml");
     persistReferencedEntities();
     persistDomain();
@@ -1301,7 +1301,7 @@ public class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow,
   }
 
   @Test
-  public void testFailure_tldWithNameserverWhitelist_removeLastNameserver() throws Exception {
+  public void testFailure_tldWithNameserverAllowList_removeLastNameserver() throws Exception {
     persistReferencedEntities();
     persistDomain();
     setEppInput("domain_update_remove_nameserver.xml");
@@ -1312,7 +1312,7 @@ public class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow,
             .build());
     EppException thrown =
         assertThrows(
-            NameserversNotSpecifiedForTldWithNameserverWhitelistException.class, this::runFlow);
+            NameserversNotSpecifiedForTldWithNameserverAllowListException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 

@@ -256,7 +256,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testFailure_quicklySkipsOverIpWhitelistException() throws Exception {
+  public void testFailure_quicklySkipsOverIpAllowListException() throws Exception {
     runTest_nonRetryableException(
         new IOException("Your IP address 25.147.130.158 is not allowed to connect"));
   }

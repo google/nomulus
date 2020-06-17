@@ -42,9 +42,7 @@ public final class DomainBaseSubject
 
   public And<DomainBaseSubject> hasFullyQualifiedDomainName(String fullyQualifiedDomainName) {
     return hasValue(
-        fullyQualifiedDomainName,
-        actual.getDomainName(),
-        "has fullyQualifiedDomainName");
+        fullyQualifiedDomainName, actual.getDomainName(), "has fullyQualifiedDomainName");
   }
 
   public And<DomainBaseSubject> hasExactlyDsData(DelegationSignerData... dsData) {

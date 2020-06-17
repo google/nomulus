@@ -28,7 +28,7 @@ describe('security settings test', function() {
   const stubs = new goog.testing.PropertyReplacer();
 
   const expectedRegistrar = {
-    ipAddressWhitelist: [],
+    ipAddressAllowList: [],
     phonePasscode: '12345',
     clientCertificate: null,
     clientCertificateHash: null,
@@ -105,7 +105,7 @@ describe('security settings test', function() {
           clientCertificate: exampleCert,
           clientCertificateHash: null,
           failoverClientCertificate: 'bourgeois blues',
-          ipAddressWhitelist: ['1.1.1.1', '2.2.2.2'],
+          ipAddressAllowList: ['1.1.1.1', '2.2.2.2'],
           phonePasscode: expectedRegistrar.phonePasscode,
           readonly: false }},
         {status: 'SUCCESS',
@@ -118,7 +118,7 @@ describe('security settings test', function() {
     expectedRegistrar.clientCertificate = exampleCert;
     expectedRegistrar.clientCertificateHash = exampleCertHash;
     expectedRegistrar.failoverClientCertificate = 'bourgeois blues';
-    expectedRegistrar.ipAddressWhitelist = ['1.1.1.1/32', '2.2.2.2/32'];
+    expectedRegistrar.ipAddressAllowList = ['1.1.1.1/32', '2.2.2.2/32'];
     registry.testing.assertReqMockRsp(
         test.testXsrfToken,
         '/registrar-settings',

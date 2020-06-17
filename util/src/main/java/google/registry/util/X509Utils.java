@@ -52,7 +52,7 @@ public final class X509Utils {
    * SHA-256 digest of the certificate.
    *
    * <p>Note that this must match the method used by the GFE to generate the client certificate hash
-   * so that the two will match when we check against the whitelist.
+   * so that the two will match when we check against the allow list.
    */
   public static String getCertificateHash(X509Certificate cert) {
     try {

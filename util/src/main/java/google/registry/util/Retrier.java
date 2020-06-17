@@ -78,9 +78,9 @@ public class Retrier implements Serializable {
    * Retries a unit of work in the face of transient errors and returns the result.
    *
    * <p>Retrying is done a fixed number of times, with exponential backoff, if the exception that is
-   * thrown is on a whitelist of retryable errors. If the error is not on the whitelist, or if the
-   * thread is interrupted, or if the allowable number of attempts has been exhausted, the original
-   * exception is propagated through to the caller. Checked exceptions are wrapped in a
+   * thrown is on an allow list of retryable errors. If the error is not on the allow list, or if
+   * the thread is interrupted, or if the allowable number of attempts has been exhausted, the
+   * original exception is propagated through to the caller. Checked exceptions are wrapped in a
    * RuntimeException, while unchecked exceptions are propagated as-is.
    *
    * <p>Uses a default FailureReporter that logs before each retry.
@@ -112,9 +112,9 @@ public class Retrier implements Serializable {
    * Retries a unit of work in the face of transient errors and returns the result.
    *
    * <p>Retrying is done a fixed number of times, with exponential backoff, if the exception that is
-   * thrown is on a whitelist of retryable errors. If the error is not on the whitelist, or if the
-   * thread is interrupted, or if the allowable number of attempts has been exhausted, the original
-   * exception is propagated through to the caller. Checked exceptions are wrapped in a
+   * thrown is on an allow list of retryable errors. If the error is not on the allow list, or if
+   * the thread is interrupted, or if the allowable number of attempts has been exhausted, the
+   * original exception is propagated through to the caller. Checked exceptions are wrapped in a
    * RuntimeException, while unchecked exceptions are propagated as-is.
    *
    * @return the value returned by the {@link Callable}.

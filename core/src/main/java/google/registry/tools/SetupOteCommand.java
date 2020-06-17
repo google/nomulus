@@ -46,10 +46,10 @@ final class SetupOteCommand extends ConfirmingCommand implements CommandWithRemo
   private String registrar;
 
   @Parameter(
-      names = {"-w", "--ip_whitelist"},
+      names = {"-a", "--ip_allow_list"},
       description = "Comma-separated list of IP addreses or CIDR ranges.",
       required = true)
-  private List<String> ipWhitelist = new ArrayList<>();
+  private List<String> ipAllowList = new ArrayList<>();
 
   @Parameter(
       names = {"--email"},
@@ -98,7 +98,7 @@ final class SetupOteCommand extends ConfirmingCommand implements CommandWithRemo
         OteAccountBuilder.forClientId(registrar)
             .addContact(email)
             .setPassword(password)
-            .setIpWhitelist(ipWhitelist)
+            .setIpAllowList(ipAllowList)
             .setReplaceExisting(overwrite);
 
     if (certFile != null) {

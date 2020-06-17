@@ -338,11 +338,11 @@ public class DomainFlowUtils {
 
   static void validateNameserversCountForTld(String tld, InternetDomainName domainName, int count)
       throws EppException {
-    // For TLDs with a nameserver whitelist, all domains must have at least 1 nameserver.
-    ImmutableSet<String> tldNameserversWhitelist =
+    // For TLDs with a nameserver allow list, all domains must have at least 1 nameserver.
+    ImmutableSet<String> tldNameserversAllowList =
         Registry.get(tld).getAllowedFullyQualifiedHostNames();
-    if (!tldNameserversWhitelist.isEmpty() && count == 0) {
-      throw new NameserversNotSpecifiedForTldWithNameserverWhitelistException(
+    if (!tldNameserversAllowList.isEmpty() && count == 0) {
+      throw new NameserversNotSpecifiedForTldWithNameserverAllowListException(
           domainName.toString());
     }
     if (count > MAX_NAMESERVERS_PER_DOMAIN) {
@@ -398,21 +398,21 @@ public class DomainFlowUtils {
 
   static void validateRegistrantAllowedOnTld(String tld, String registrantContactId)
       throws RegistrantNotAllowedException {
-    ImmutableSet<String> whitelist = Registry.get(tld).getAllowedRegistrantContactIds();
-    // Empty whitelist or null registrantContactId are ignored.
+    ImmutableSet<String> allowedRegistrants = Registry.get(tld).getAllowedRegistrantContactIds();
+    // Empty allow list or null registrantContactId are ignored.
     if (registrantContactId != null
-        && !whitelist.isEmpty()
-        && !whitelist.contains(registrantContactId)) {
+        && !allowedRegistrants.isEmpty()
+        && !allowedRegistrants.contains(registrantContactId)) {
       throw new RegistrantNotAllowedException(registrantContactId);
     }
   }
 
   static void validateNameserversAllowedOnTld(String tld, Set<String> fullyQualifiedHostNames)
       throws EppException {
-    ImmutableSet<String> whitelist = Registry.get(tld).getAllowedFullyQualifiedHostNames();
+    ImmutableSet<String> allowedHostNames = Registry.get(tld).getAllowedFullyQualifiedHostNames();
     Set<String> hostnames = nullToEmpty(fullyQualifiedHostNames);
-    if (!whitelist.isEmpty()) { // Empty whitelist is ignored.
-      Set<String> disallowedNameservers = difference(hostnames, whitelist);
+    if (!allowedHostNames.isEmpty()) { // Empty allow list is ignored.
+      Set<String> disallowedNameservers = difference(hostnames, allowedHostNames);
       if (!disallowedNameservers.isEmpty()) {
         throw new NameserversNotAllowedForTldException(disallowedNameservers);
       }
@@ -1381,32 +1381,32 @@ public class DomainFlowUtils {
     }
   }
 
-  /** Registrant is not whitelisted for this TLD. */
+  /** Registrant is not allow-listed for this TLD. */
   public static class RegistrantNotAllowedException extends StatusProhibitsOperationException {
     public RegistrantNotAllowedException(String contactId) {
-      super(String.format("Registrant with id %s is not whitelisted for this TLD", contactId));
+      super(String.format("Registrant with id %s is not allow-listed for this TLD", contactId));
     }
   }
 
-  /** Nameservers are not whitelisted for this TLD. */
+  /** Nameservers are not allow-listed for this TLD. */
   public static class NameserversNotAllowedForTldException
       extends StatusProhibitsOperationException {
     public NameserversNotAllowedForTldException(Set<String> fullyQualifiedHostNames) {
       super(
           String.format(
-              "Nameservers '%s' are not whitelisted for this TLD",
+              "Nameservers '%s' are not allow-listed for this TLD",
               Joiner.on(',').join(fullyQualifiedHostNames)));
     }
   }
 
-  /** Nameservers not specified for domain on TLD with nameserver whitelist. */
-  public static class NameserversNotSpecifiedForTldWithNameserverWhitelistException
+  /** Nameservers not specified for domain on TLD with nameserver allow list. */
+  public static class NameserversNotSpecifiedForTldWithNameserverAllowListException
       extends StatusProhibitsOperationException {
-    public NameserversNotSpecifiedForTldWithNameserverWhitelistException(String domain) {
+    public NameserversNotSpecifiedForTldWithNameserverAllowListException(String domain) {
       super(
           String.format(
               "At least one nameserver must be specified for domain %s"
-                  + " on a TLD with nameserver whitelist",
+                  + " on a TLD with nameserver allow list",
               domain));
     }
   }

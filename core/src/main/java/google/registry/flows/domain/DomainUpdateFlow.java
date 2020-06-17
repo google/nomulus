@@ -57,6 +57,7 @@ import google.registry.flows.custom.DomainUpdateFlowCustomLogic.AfterValidationP
 import google.registry.flows.custom.DomainUpdateFlowCustomLogic.BeforeSaveParameters;
 import google.registry.flows.custom.EntityChanges;
 import google.registry.flows.domain.DomainFlowUtils.MissingRegistrantException;
+import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -109,7 +110,7 @@ import org.joda.time.DateTime;
  * @error {@link DomainFlowUtils.MissingTechnicalContactException}
  * @error {@link DomainFlowUtils.MissingRegistrantException}
  * @error {@link DomainFlowUtils.NameserversNotAllowedForTldException}
- * @error {@link DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverWhitelistException}
+ * @error {@link NameserversNotSpecifiedForTldWithNameserverAllowListException}
  * @error {@link DomainFlowUtils.NotAuthorizedForTldException}
  * @error {@link DomainFlowUtils.RegistrantNotAllowedException}
  * @error {@link DomainFlowUtils.SecDnsAllUsageException}

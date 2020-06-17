@@ -137,7 +137,7 @@ used extensively throughout the codebase:
         a loop.
     *   With the `of` method: used when constructing the collection with a
         handful of elements. Most commonly used when creating collections
-        representing constants, like lookup tables or whitelists.
+        representing constants, like lookup tables or allow lists.
     *   With the `copyOf` method: used when constructing the method from a
         reference to another collection. Used to defensively copy a mutable
         collection (like a return value from an external library) to an

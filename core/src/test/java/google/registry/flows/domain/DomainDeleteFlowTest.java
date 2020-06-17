@@ -781,8 +781,7 @@ public class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow,
                 .asBuilder()
                 .setSuperordinateDomain(reloadResourceByForeignKey().createVKey())
                 .build());
-    persistResource(
-        domain.asBuilder().addSubordinateHost(subordinateHost.getHostName()).build());
+    persistResource(domain.asBuilder().addSubordinateHost(subordinateHost.getHostName()).build());
     EppException thrown = assertThrows(DomainToDeleteHasHostsException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }

@@ -48,12 +48,12 @@ public final class SqlTemplate {
   /**
    * Adds a key/value that should be substituted an individual variable in the template.
    *
-   * <p>Your template variables should appear as follows: {@code WHERE foo = '%BAR%'} and you
-   * would call {@code .put("BAR", "some value"} to safely substitute it with a value. Only
-   * whitelisted characters (as defined by {@link #LEGAL_SUBSTITUTIONS}) are allowed in values.
+   * <p>Your template variables should appear as follows: {@code WHERE foo = '%BAR%'} and you would
+   * call {@code .put("BAR", "some value"} to safely substitute it with a value. Only allow-listed
+   * characters (as defined by {@link #LEGAL_SUBSTITUTIONS}) are allowed in values.
    *
    * @param key uppercase string that can have digits and underscores
-   * @param value substitution value, comprised of whitelisted characters
+   * @param value substitution value, composed of allow-listed characters
    * @throws IllegalArgumentException if key or value has bad chars or duplicate keys were added
    */
   public SqlTemplate put(String key, String value) {

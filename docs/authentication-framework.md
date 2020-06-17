@@ -119,7 +119,7 @@ make sense. A master enumeration lists all the valid triplets. They are:
 
 *  `AUTH_PUBLIC_OR_INTERNAL`: Allows anyone access, as long as they use OAuth to
     authenticate. Also allows access from App Engine task-queue. Note that OAuth
-    client ID still needs to be whitelisted in the config file for OAuth-based
+    client ID still needs to be allow-listed in the config file for OAuth-based
     authentication to succeed. This is mainly used by the proxy.
 
 ### Action setting golden files

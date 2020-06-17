@@ -37,7 +37,7 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * Container and validation for TLS certificate and ip-whitelisting.
+ * Container and validation for TLS certificate and IP-allow-listing.
  *
  * <p>Credentials are based on the following headers:
  *
@@ -48,7 +48,7 @@ import javax.servlet.http.HttpServletRequest;
  *       band.
  *   <dt>X-Forwarded-For
  *   <dd>This field should contain the host and port of the connecting client. It is validated
- *       during an EPP login command against an IP whitelist that is transmitted out of band.
+ *       during an EPP login command against an IP allow list that is transmitted out of band.
  * </dl>
  */
 public class TlsCredentials implements TransportCredentials {
@@ -85,27 +85,28 @@ public class TlsCredentials implements TransportCredentials {
   }
 
   /**
-   * Verifies {@link #clientInetAddr} is in CIDR whitelist associated with {@code registrar}.
+   * Verifies {@link #clientInetAddr} is in CIDR allow list associated with {@code registrar}.
    *
-   * @throws BadRegistrarIpAddressException If IP address is not in the whitelist provided
+   * @throws BadRegistrarIpAddressException If IP address is not in the allow list provided
    */
   private void validateIp(Registrar registrar) throws AuthenticationErrorException {
-    ImmutableList<CidrAddressBlock> ipWhitelist = registrar.getIpAddressWhitelist();
-    if (ipWhitelist.isEmpty()) {
+    ImmutableList<CidrAddressBlock> ipAddressAllowList = registrar.getIpAddressAllowList();
+    if (ipAddressAllowList.isEmpty()) {
       logger.atInfo().log(
-          "Skipping IP whitelist check because %s doesn't have an IP whitelist",
+          "Skipping IP allow list check because %s doesn't have an IP allow list",
           registrar.getClientId());
       return;
     }
-    for (CidrAddressBlock cidrAddressBlock : ipWhitelist) {
+    for (CidrAddressBlock cidrAddressBlock : ipAddressAllowList) {
       if (cidrAddressBlock.contains(clientInetAddr)) {
-        // IP address is in whitelist; return early.
+        // IP address is in allow list; return early.
         return;
       }
     }
     logger.atInfo().log(
-        "Authentication error: IP address %s is not whitelisted for registrar %s; whitelist is: %s",
-        clientInetAddr, registrar.getClientId(), ipWhitelist);
+        "Authentication error: IP address %s is not allow-listed for registrar %s; allow list is:"
+            + " %s",
+        clientInetAddr, registrar.getClientId(), ipAddressAllowList);
     throw new BadRegistrarIpAddressException();
   }
 
@@ -180,10 +181,10 @@ public class TlsCredentials implements TransportCredentials {
     }
   }
 
-  /** Registrar IP address is not in stored whitelist. */
+  /** Registrar IP address is not in stored allow list. */
   public static class BadRegistrarIpAddressException extends AuthenticationErrorException {
     public BadRegistrarIpAddressException() {
-      super("Registrar IP address is not in stored whitelist");
+      super("Registrar IP address is not in stored allow list");
     }
   }
 

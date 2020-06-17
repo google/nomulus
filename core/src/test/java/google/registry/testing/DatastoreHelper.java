@@ -156,9 +156,10 @@ public class DatastoreHelper {
         .setCreationTimeForTest(START_OF_TIME)
         .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("2fooBAR")))
         .setRegistrant(contactKey)
-        .setContacts(ImmutableSet.of(
-            DesignatedContact.create(Type.ADMIN, contactKey),
-            DesignatedContact.create(Type.TECH, contactKey)))
+        .setContacts(
+            ImmutableSet.of(
+                DesignatedContact.create(Type.ADMIN, contactKey),
+                DesignatedContact.create(Type.TECH, contactKey)))
         .setRegistrationExpirationTime(END_OF_TIME)
         .build();
   }
@@ -564,25 +565,27 @@ public class DatastoreHelper {
             historyEntryDomainTransfer,
             requestTime,
             expirationTime));
-    BillingEvent.Recurring gainingClientAutorenewEvent = persistResource(
-        new BillingEvent.Recurring.Builder()
-            .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-            .setReason(Reason.RENEW)
-            .setTargetId(domain.getDomainName())
-            .setClientId("NewRegistrar")
-            .setEventTime(extendedRegistrationExpirationTime)
-            .setRecurrenceEndTime(END_OF_TIME)
-            .setParent(historyEntryDomainTransfer)
-            .build());
-    PollMessage.Autorenew gainingClientAutorenewPollMessage = persistResource(
-        new PollMessage.Autorenew.Builder()
-            .setTargetId(domain.getDomainName())
-            .setClientId("NewRegistrar")
-            .setEventTime(extendedRegistrationExpirationTime)
-            .setAutorenewEndTime(END_OF_TIME)
-            .setMsg("Domain was auto-renewed.")
-            .setParent(historyEntryDomainTransfer)
-            .build());
+    BillingEvent.Recurring gainingClientAutorenewEvent =
+        persistResource(
+            new BillingEvent.Recurring.Builder()
+                .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+                .setReason(Reason.RENEW)
+                .setTargetId(domain.getDomainName())
+                .setClientId("NewRegistrar")
+                .setEventTime(extendedRegistrationExpirationTime)
+                .setRecurrenceEndTime(END_OF_TIME)
+                .setParent(historyEntryDomainTransfer)
+                .build());
+    PollMessage.Autorenew gainingClientAutorenewPollMessage =
+        persistResource(
+            new PollMessage.Autorenew.Builder()
+                .setTargetId(domain.getDomainName())
+                .setClientId("NewRegistrar")
+                .setEventTime(extendedRegistrationExpirationTime)
+                .setAutorenewEndTime(END_OF_TIME)
+                .setMsg("Domain was auto-renewed.")
+                .setParent(historyEntryDomainTransfer)
+                .build());
     // Modify the existing autorenew event to reflect the pending transfer.
     persistResource(
         ofy().load().key(domain.getAutorenewBillingEvent()).now().asBuilder()

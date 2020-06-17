@@ -215,8 +215,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
 
   private void addInBailiwickNameServerSet(DomainBase domain, Update update) {
     for (String hostName :
-        intersection(
-            domain.loadNameserverHostNames(), domain.getSubordinateHosts())) {
+        intersection(domain.loadNameserverHostNames(), domain.getSubordinateHosts())) {
       Optional<HostResource> host = loadByForeignKey(HostResource.class, hostName, clock.nowUtc());
       checkState(host.isPresent(), "Host %s cannot be loaded", hostName);
       update.add(makeAddressSet(host.get()));

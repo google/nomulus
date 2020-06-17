@@ -64,8 +64,8 @@ registry.registrar.SecuritySettings.prototype.setupEditor =
                        goog.events.EventType.CLICK,
                        goog.bind(this.onIpRemove_, this, remBtn));
   }, this);
-  this.typeCounts['reg-ips'] = objArgs.ipAddressWhitelist ?
-      objArgs.ipAddressWhitelist.length : 0;
+  this.typeCounts['reg-ips'] = objArgs.ipAddressAllowList ?
+      objArgs.ipAddressAllowList.length : 0;
 
   goog.events.listen(goog.dom.getRequiredElement('btn-add-ip'),
                      goog.events.EventType.CLICK,
@@ -82,7 +82,7 @@ registry.registrar.SecuritySettings.prototype.setupEditor =
 registry.registrar.SecuritySettings.prototype.onIpAdd_ = function() {
   var ipInputElt = goog.dom.getRequiredElement('newIp');
   var ipElt = goog.soy.renderAsFragment(registry.soy.registrar.security.ip, {
-    name: 'ipAddressWhitelist[' + this.typeCounts['reg-ips'] + ']',
+    name: 'ipAddressAllowList[' + this.typeCounts['reg-ips'] + ']',
     ip: ipInputElt.value
   });
   goog.dom.appendChild(goog.dom.getRequiredElement('ips'), ipElt);

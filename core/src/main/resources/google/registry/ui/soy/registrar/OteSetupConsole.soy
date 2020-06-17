@@ -89,7 +89,7 @@
           </td>
       </table>
       Gave <label>{$contactEmail}</label> web-console access to these registrars.
-      <h1>Don't forget to set the <label>Certificate</label> and <label>IP-whitelist</label> for these Registrars!</h1>
+      <h1>Don't forget to set the <label>Certificate</label> and <label>IP allow list</label> for these Registrars!</h1>
       Links to the security page for your convenience:<br>
       {for $clientId in mapKeys($clientIdToTld)}
         <a href="/registrar?clientId={$clientId}#security-settings" target="_blank">{$clientId}</a><br>

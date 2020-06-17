@@ -56,8 +56,7 @@ final class NameserverWhoisResponse extends WhoisResponseImpl {
       Optional<Registrar> registrar = Registrar.loadByClientIdCached(clientId);
       checkState(registrar.isPresent(), "Could not load registrar %s", clientId);
       emitter
-          .emitField(
-              "Server Name", maybeFormatHostname(host.getHostName(), preferUnicode))
+          .emitField("Server Name", maybeFormatHostname(host.getHostName(), preferUnicode))
           .emitSet("IP Address", host.getInetAddresses(), InetAddresses::toAddrString)
           .emitField("Registrar", registrar.get().getRegistrarName())
           .emitField("Registrar WHOIS Server", registrar.get().getWhoisServer())

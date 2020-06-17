@@ -117,7 +117,7 @@ import google.registry.flows.domain.DomainFlowUtils.MissingContactTypeException;
 import google.registry.flows.domain.DomainFlowUtils.MissingRegistrantException;
 import google.registry.flows.domain.DomainFlowUtils.MissingTechnicalContactException;
 import google.registry.flows.domain.DomainFlowUtils.NameserversNotAllowedForTldException;
-import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverWhitelistException;
+import google.registry.flows.domain.DomainFlowUtils.NameserversNotSpecifiedForTldWithNameserverAllowListException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
 import google.registry.flows.domain.DomainFlowUtils.PremiumNameBlockedException;
 import google.registry.flows.domain.DomainFlowUtils.RegistrantNotAllowedException;
@@ -1445,10 +1445,7 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
             .setResponseData(
                 ImmutableList.of(
                     DomainPendingActionNotificationResponse.create(
-                        domain.getDomainName(),
-                        true,
-                        historyEntry.getTrid(),
-                        clock.nowUtc())))
+                        domain.getDomainName(), true, historyEntry.getTrid(), clock.nowUtc())))
             .setId(1L)
             .build());
   }
@@ -2019,7 +2016,7 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
   }
 
   @Test
-  public void testFailure_registrantNotWhitelisted() {
+  public void testFailure_registrantNotAllowListed() {
     persistActiveContact("someone");
     persistContactsAndHosts();
     persistResource(
@@ -2033,7 +2030,7 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
   }
 
   @Test
-  public void testFailure_nameserverNotWhitelisted() {
+  public void testFailure_nameserverNotAllowListed() {
     persistContactsAndHosts();
     persistResource(
         Registry.get("tld")
@@ -2046,7 +2043,7 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
   }
 
   @Test
-  public void testFailure_emptyNameserverFailsWhitelist() {
+  public void testFailure_emptyNameserverFailsAllowList() {
     setEppInput("domain_create_no_hosts_or_dsdata.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     persistResource(
         Registry.get("tld")
@@ -2056,12 +2053,12 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
     persistContactsAndHosts();
     EppException thrown =
         assertThrows(
-            NameserversNotSpecifiedForTldWithNameserverWhitelistException.class, this::runFlow);
+            NameserversNotSpecifiedForTldWithNameserverAllowListException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  public void testSuccess_nameserverAndRegistrantWhitelisted() throws Exception {
+  public void testSuccess_nameserverAndRegistrantAllowListed() throws Exception {
     persistResource(
         Registry.get("tld")
             .asBuilder()

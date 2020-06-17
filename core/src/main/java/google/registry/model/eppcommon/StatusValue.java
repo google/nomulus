@@ -128,7 +128,7 @@ public enum StatusValue implements EppEnum {
 
   /** Enum to help clearly list which resource types a status value is allowed to be present on. */
   private enum AllowedOn {
-    ALL(ContactResource.class, DomainBase.class, HostBase.class,  HostResource.class),
+    ALL(ContactResource.class, DomainBase.class, HostBase.class, HostResource.class),
     NONE,
     DOMAINS(DomainBase.class);
 

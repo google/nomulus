@@ -81,7 +81,6 @@ public class HostHistoryTest extends EntityTestCase {
     assertThat(one.getReason()).isEqualTo(two.getReason());
     assertThat(one.getTrid()).isEqualTo(two.getTrid());
     assertThat(one.getType()).isEqualTo(two.getType());
-    assertThat(one.getHostBase().getHostName())
-        .isEqualTo(two.getHostBase().getHostName());
+    assertThat(one.getHostBase().getHostName()).isEqualTo(two.getHostBase().getHostName());
   }
 }

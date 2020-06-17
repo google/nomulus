@@ -849,7 +849,7 @@ soy.$$escapeHtml = function(value) {
  *
  * @param {?} value The string-like value to be escaped. May not be a string,
  *     but the value will be coerced to a string.
- * @param {Array<string>=} opt_safeTags Additional tag names to whitelist.
+ * @param {Array<string>=} opt_safeTags Additional tag names to allow-list.
  * @return {!goog.soy.data.SanitizedHtml} A sanitized and normalized version of
  *     value.
  */
@@ -858,15 +858,15 @@ soy.$$cleanHtml = function(value, opt_safeTags) {
     goog.asserts.assert(value.constructor === goog.soy.data.SanitizedHtml);
     return /** @type {!goog.soy.data.SanitizedHtml} */ (value);
   }
-  var tagWhitelist;
+  var tagAllowList;
   if (opt_safeTags) {
-    tagWhitelist = goog.object.createSet(opt_safeTags);
-    goog.object.extend(tagWhitelist, soy.esc.$$SAFE_TAG_WHITELIST_);
+    tagAllowList = goog.object.createSet(opt_safeTags);
+    goog.object.extend(tagAllowList, soy.esc.$$SAFE_TAG_ALLOW_LIST_);
   } else {
-    tagWhitelist = soy.esc.$$SAFE_TAG_WHITELIST_;
+    tagAllowList = soy.esc.$$SAFE_TAG_ALLOW_LIST_;
   }
   return soydata.VERY_UNSAFE.ordainSanitizedHtml(
-      soy.$$stripHtmlTags(value, tagWhitelist), soydata.getContentDir(value));
+      soy.$$stripHtmlTags(value, tagAllowList), soydata.getContentDir(value));
 };
 
 
@@ -925,19 +925,19 @@ soy.$$HTML5_VOID_ELEMENTS_ = new RegExp(
 
 /**
  * Removes HTML tags from a string of known safe HTML.
- * If opt_tagWhitelist is not specified or is empty, then
+ * If opt_tagAllowList is not specified or is empty, then
  * the result can be used as an attribute value.
  *
  * @param {*} value The HTML to be escaped. May not be a string, but the
  *     value will be coerced to a string.
- * @param {Object<string, boolean>=} opt_tagWhitelist Has an own property whose
+ * @param {Object<string, boolean>=} opt_tagAllowList Has an own property whose
  *     name is a lower-case tag name and whose value is `1` for
  *     each element that is allowed in the output.
  * @return {string} A representation of value without disallowed tags,
  *     HTML comments, or other non-text content.
  */
-soy.$$stripHtmlTags = function(value, opt_tagWhitelist) {
-  if (!opt_tagWhitelist) {
+soy.$$stripHtmlTags = function(value, opt_tagAllowList) {
+  if (!opt_tagAllowList) {
     // If we have no white-list, then use a fast track which elides all tags.
     return String(value)
         .replace(soy.esc.$$HTML_TAG_REGEX_, '')
@@ -952,7 +952,7 @@ soy.$$stripHtmlTags = function(value, opt_tagWhitelist) {
   // have been removed.
   var html = String(value).replace(/\[/g, '&#91;');
 
-  // Consider all uses of '<' and replace whitelisted tags with markers like
+  // Consider all uses of '<' and replace allow-listed tags with markers like
   // [1] which are indices into a list of approved tag names.
   // Replace all other uses of < and > with entities.
   var tags = [];
@@ -960,8 +960,8 @@ soy.$$stripHtmlTags = function(value, opt_tagWhitelist) {
   html = html.replace(soy.esc.$$HTML_TAG_REGEX_, function(tok, tagName) {
     if (tagName) {
       tagName = tagName.toLowerCase();
-      if (opt_tagWhitelist.hasOwnProperty(tagName) &&
-          opt_tagWhitelist[tagName]) {
+      if (opt_tagAllowList.hasOwnProperty(tagName) &&
+          opt_tagAllowList[tagName]) {
         var isClose = tok.charAt(1) == '/';
         var index = tags.length;
         var start = '</';
@@ -2433,7 +2433,7 @@ soy.esc.$$LT_REGEX_ = /</g;
  *
  * @private {!Object<string, boolean>}
  */
-soy.esc.$$SAFE_TAG_WHITELIST_ = {
+soy.esc.$$SAFE_TAG_ALLOW_LIST_ = {
   'b': true,
   'br': true,
   'em': true,

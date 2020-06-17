@@ -33,7 +33,7 @@ import javax.inject.Inject;
  * <p>When an EPP client connects to the registry (through the proxy), the registry performs two
  * validations to ensure that only known registrars are allowed. First it checks the sha265 hash of
  * the client SSL certificate and match it to the hash stored in datastore for the registrar. It
- * then checks if the connection is from an whitelisted IP address that belongs to that registrar.
+ * then checks if the connection is from an allow-listed IP address that belongs to that registrar.
  *
  * <p>The proxy receives client connects via the GCP load balancer, which results in the loss of
  * original client IP from the channel. Luckily, the load balancer supports the PROXY protocol v1,

@@ -51,8 +51,7 @@ final class NameserverLookupByIpCommand implements WhoisCommand {
         Streams.stream(queryNotDeleted(HostResource.class, now, "inetAddresses", ipAddress))
             .filter(
                 host ->
-                    Registries.findTldForName(
-                            InternetDomainName.from(host.getHostName()))
+                    Registries.findTldForName(InternetDomainName.from(host.getHostName()))
                         .isPresent())
             .collect(toImmutableList());
     if (hosts.isEmpty()) {

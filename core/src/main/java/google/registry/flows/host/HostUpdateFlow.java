@@ -175,19 +175,21 @@ public final class HostUpdateFlow implements TransactionalFlow {
         newSuperordinateDomain.isPresent()
             ? newSuperordinateDomain.get().getCurrentSponsorClientId()
             : owningResource.getPersistedCurrentSponsorClientId();
-    HostResource newHost = existingHost.asBuilder()
-        .setHostName(newHostName)
-        .addStatusValues(add.getStatusValues())
-        .removeStatusValues(remove.getStatusValues())
-        .addInetAddresses(add.getInetAddresses())
-        .removeInetAddresses(remove.getInetAddresses())
-        .setLastEppUpdateTime(now)
-        .setLastEppUpdateClientId(clientId)
-        .setSuperordinateDomain(newSuperordinateDomainKey)
-        .setLastSuperordinateChange(lastSuperordinateChange)
-        .setLastTransferTime(lastTransferTime)
-        .setPersistedCurrentSponsorClientId(newPersistedClientId)
-        .build();
+    HostResource newHost =
+        existingHost
+            .asBuilder()
+            .setHostName(newHostName)
+            .addStatusValues(add.getStatusValues())
+            .removeStatusValues(remove.getStatusValues())
+            .addInetAddresses(add.getInetAddresses())
+            .removeInetAddresses(remove.getInetAddresses())
+            .setLastEppUpdateTime(now)
+            .setLastEppUpdateClientId(clientId)
+            .setSuperordinateDomain(newSuperordinateDomainKey)
+            .setLastSuperordinateChange(lastSuperordinateChange)
+            .setLastTransferTime(lastTransferTime)
+            .setPersistedCurrentSponsorClientId(newPersistedClientId)
+            .build();
     verifyHasIpsIffIsExternal(command, existingHost, newHost);
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
     entitiesToSave.add(newHost);

@@ -526,7 +526,7 @@ CREATE TABLE public."Registrar" (
     i18n_address_street_line2 text,
     i18n_address_street_line3 text,
     i18n_address_zip text,
-    ip_address_whitelist text[],
+    ip_address_allow_list text[],
     last_certificate_update_time timestamp with time zone,
     last_update_time timestamp with time zone,
     localized_address_city text,

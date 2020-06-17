@@ -360,12 +360,12 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_ipAddressWhitelist() {
+  public void testUpdate_ipAddressAllowList() {
     doTestUpdate(
         Role.OWNER,
-        Registrar::getIpAddressWhitelist,
+        Registrar::getIpAddressAllowList,
         ImmutableList.of(CidrAddressBlock.create("1.1.1.0/24")),
-        Registrar.Builder::setIpAddressWhitelist);
+        Registrar.Builder::setIpAddressAllowList);
   }
 
   @Test

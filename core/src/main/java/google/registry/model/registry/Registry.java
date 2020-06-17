@@ -431,10 +431,10 @@ public class Registry extends ImmutableObject implements Buildable {
   /** The end of the claims period (at or after this time, claims no longer applies). */
   DateTime claimsPeriodEnd = END_OF_TIME;
 
-  /** A whitelist of clients allowed to be used on domains on this TLD (ignored if empty). */
+  /** An allow list of clients allowed to be used on domains on this TLD (ignored if empty). */
   Set<String> allowedRegistrantContactIds;
 
-  /** A whitelist of hosts allowed to be used on domains on this TLD (ignored if empty). */
+  /** An allow list of hosts allowed to be used on domains on this TLD (ignored if empty). */
   Set<String> allowedFullyQualifiedHostNames;
 
   public String getTldStr() {

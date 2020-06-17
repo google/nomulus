@@ -67,7 +67,7 @@ public class RegistrarTest extends EntityTestCase {
                 .setWhoisServer("whois.example.com")
                 .setBlockPremiumNames(true)
                 .setClientCertificate(SAMPLE_CERT, fakeClock.nowUtc())
-                .setIpAddressWhitelist(
+                .setIpAddressAllowList(
                     ImmutableList.of(
                         CidrAddressBlock.create("192.168.1.1/31"),
                         CidrAddressBlock.create("10.0.0.1/8")))

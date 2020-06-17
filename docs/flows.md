@@ -350,11 +350,11 @@ An EPP flow that creates a new domain resource.
     *   Requested domain is reserved.
     *   Linked resource in pending delete prohibits operation.
     *   Requested domain requires a claims notice.
-    *   Nameservers are not whitelisted for this TLD.
-    *   Nameservers not specified for domain on TLD with nameserver whitelist.
+    *   Nameservers are not allow-listed for this TLD.
+    *   Nameservers not specified for domain on TLD with nameserver allow list.
     *   The requested domain name is on the premium price list, and this
         registrar has blocked premium registrations.
-    *   Registrant is not whitelisted for this TLD.
+    *   Registrant is not allow-listed for this TLD.
     *   Requested domain does not require a claims notice.
 *   2305
     *   The allocation token is not valid for this domain.
@@ -760,9 +760,9 @@ statuses are updated at once.
         clear that status.
     *   Resource status prohibits this operation.
     *   Linked resource in pending delete prohibits operation.
-    *   Nameservers are not whitelisted for this TLD.
-    *   Nameservers not specified for domain on TLD with nameserver whitelist.
-    *   Registrant is not whitelisted for this TLD.
+    *   Nameservers are not allow-listed for this TLD.
+    *   Nameservers not specified for domain on TLD with nameserver allow list.
+    *   Registrant is not allow-listed for this TLD.
 *   2306
     *   Cannot add and remove the same value.
     *   More than one contact for a given role is not allowed.
@@ -950,7 +950,7 @@ An EPP flow for login.
     *   Specified extension is not implemented.
 *   2200
     *   Registrar certificate does not match stored certificate.
-    *   Registrar IP address is not in stored whitelist.
+    *   Registrar IP address is not in stored allow list.
     *   Registrar certificate not present.
     *   Registrar password is incorrect.
     *   Registrar with this client ID could not be found.

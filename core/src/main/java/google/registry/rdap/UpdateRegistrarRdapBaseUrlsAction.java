@@ -60,7 +60,7 @@ import javax.inject.Inject;
  * <p>It is a "login/query/logout" system where you login using the ICANN Reporting credentials, get
  * a cookie you then send to get the list and finally logout.
  *
- * <p>For clarity, this is how one would contact this endpoint "manually", from a whitelisted IP
+ * <p>For clarity, this is how one would contact this endpoint "manually", from an allow-listed IP
  * server:
  *
  * <p>$ curl [base]/login -I --user [tld]_ry:[password]

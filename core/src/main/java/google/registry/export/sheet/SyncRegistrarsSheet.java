@@ -84,8 +84,7 @@ class SyncRegistrarsSheet {
           public int compare(Registrar left, Registrar right) {
             return left.getClientId().compareTo(right.getClientId());
           }
-        }.immutableSortedCopy(Registrar.loadAllCached())
-            .stream()
+        }.immutableSortedCopy(Registrar.loadAllCached()).stream()
             .filter(
                 registrar ->
                     registrar.getType() == Registrar.Type.REAL
@@ -149,7 +148,7 @@ class SyncRegistrarsSheet {
                   builder.put("allowedTlds", convert(registrar.getAllowedTlds()));
                   builder.put("whoisServer", convert(registrar.getWhoisServer()));
                   builder.put("blockPremiumNames", convert(registrar.getBlockPremiumNames()));
-                  builder.put("ipAddressWhitelist", convert(registrar.getIpAddressWhitelist()));
+                  builder.put("ipAddressAllowList", convert(registrar.getIpAddressAllowList()));
                   builder.put("url", convert(registrar.getUrl()));
                   builder.put("referralUrl", convert(registrar.getUrl()));
                   builder.put("icannReferralEmail", convert(registrar.getIcannReferralEmail()));

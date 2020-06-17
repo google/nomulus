@@ -88,10 +88,7 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
     runCommandForced(
         ImmutableList.<String>builder()
             .add("--client=NewRegistrar")
-            .addAll(
-                domains.stream()
-                    .map(DomainBase::getDomainName)
-                    .collect(Collectors.toList()))
+            .addAll(domains.stream().map(DomainBase::getDomainName).collect(Collectors.toList()))
             .build());
     for (DomainBase domain : domains) {
       assertThat(reloadResource(domain).getStatusValues())

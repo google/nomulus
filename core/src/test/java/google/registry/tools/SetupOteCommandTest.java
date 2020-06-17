@@ -98,7 +98,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
       String registrarName,
       String allowedTld,
       String password,
-      ImmutableList<CidrAddressBlock> ipWhitelist,
+      ImmutableList<CidrAddressBlock> ipAllowList,
       boolean hashOnly) {
     Registrar registrar = loadRegistrar(registrarName);
     assertThat(registrar).isNotNull();
@@ -106,7 +106,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
     assertThat(registrar.getRegistrarName()).isEqualTo(registrarName);
     assertThat(registrar.getState()).isEqualTo(ACTIVE);
     assertThat(registrar.verifyPassword(password)).isTrue();
-    assertThat(registrar.getIpAddressWhitelist()).isEqualTo(ipWhitelist);
+    assertThat(registrar.getIpAddressAllowList()).isEqualTo(ipAllowList);
     assertThat(registrar.getClientCertificateHash()).isEqualTo(SAMPLE_CERT_HASH);
     // If certificate hash is provided, there's no certificate file stored with the registrar.
     if (!hashOnly) {
@@ -118,8 +118,8 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
       String registrarName,
       String allowedTld,
       String password,
-      ImmutableList<CidrAddressBlock> ipWhitelist) {
-    verifyRegistrarCreation(registrarName, allowedTld, password, ipWhitelist, false);
+      ImmutableList<CidrAddressBlock> ipAllowList) {
+    verifyRegistrarCreation(registrarName, allowedTld, password, ipAllowList, false);
   }
 
   private void verifyRegistrarContactCreation(String registrarName, String email) {
@@ -135,7 +135,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   @Test
   public void testSuccess() throws Exception {
     runCommandForced(
-        "--ip_whitelist=1.1.1.1",
+        "--ip_allow_list=1.1.1.1",
         "--registrar=blobio",
         "--email=contact@email.com",
         "--certfile=" + getCertFilename());
@@ -161,7 +161,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   @Test
   public void testSuccess_shortRegistrarName() throws Exception {
     runCommandForced(
-        "--ip_whitelist=1.1.1.1",
+        "--ip_allow_list=1.1.1.1",
         "--registrar=abc",
         "--email=abc@email.com",
         "--certfile=" + getCertFilename());
@@ -187,7 +187,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   @Test
   public void testSuccess_certificateHash() throws Exception {
     runCommandForced(
-        "--ip_whitelist=1.1.1.1",
+        "--ip_allow_list=1.1.1.1",
         "--registrar=blobio",
         "--email=contact@email.com",
         "--certhash=" + SAMPLE_CERT_HASH);
@@ -205,7 +205,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   @Test
   public void testSuccess_multipleIps() throws Exception {
     runCommandForced(
-        "--ip_whitelist=1.1.1.1,2.2.2.2",
+        "--ip_allow_list=1.1.1.1,2.2.2.2",
         "--registrar=blobio",
         "--email=contact@email.com",
         "--certfile=" + getCertFilename());
@@ -230,7 +230,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testFailure_missingIpWhitelist() {
+  public void testFailure_missingIpAllowList() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -239,7 +239,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--registrar=blobio",
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
-    assertThat(thrown).hasMessageThat().contains("option is required: -w, --ip_whitelist");
+    assertThat(thrown).hasMessageThat().contains("option is required: -a, --ip_allow_list");
   }
 
   @Test
@@ -249,7 +249,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
             ParameterException.class,
             () ->
                 runCommandForced(
-                    "--ip_whitelist=1.1.1.1",
+                    "--ip_allow_list=1.1.1.1",
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
     assertThat(thrown).hasMessageThat().contains("option is required: -r, --registrar");
@@ -262,9 +262,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
             IllegalArgumentException.class,
             () ->
                 runCommandForced(
-                    "--ip_whitelist=1.1.1.1",
-                    "--email=contact@email.com",
-                    "--registrar=blobio"));
+                    "--ip_allow_list=1.1.1.1", "--email=contact@email.com", "--registrar=blobio"));
     assertThat(thrown)
         .hasMessageThat()
         .contains(
@@ -278,7 +276,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
             IllegalArgumentException.class,
             () ->
                 runCommandForced(
-                    "--ip_whitelist=1.1.1.1",
+                    "--ip_allow_list=1.1.1.1",
                     "--email=contact@email.com",
                     "--registrar=blobio",
                     "--certfile=" + getCertFilename(),
@@ -296,7 +294,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
             ParameterException.class,
             () ->
                 runCommandForced(
-                    "--ip_whitelist=1.1.1.1",
+                    "--ip_allow_list=1.1.1.1",
                     "--certfile=" + getCertFilename(),
                     "--registrar=blobio"));
     assertThat(thrown).hasMessageThat().contains("option is required: --email");
@@ -309,7 +307,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
             CertificateParsingException.class,
             () ->
                 runCommandForced(
-                    "--ip_whitelist=1.1.1.1",
+                    "--ip_allow_list=1.1.1.1",
                     "--registrar=blobio",
                     "--email=contact@email.com",
                     "--certfile=/dev/null"));
@@ -323,7 +321,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
             IllegalArgumentException.class,
             () ->
                 runCommandForced(
-                    "--ip_whitelist=1.1.1.1",
+                    "--ip_allow_list=1.1.1.1",
                     "--registrar=3blo-bio",
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
@@ -337,7 +335,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
             IllegalArgumentException.class,
             () ->
                 runCommandForced(
-                    "--ip_whitelist=1.1.1.1",
+                    "--ip_allow_list=1.1.1.1",
                     "--registrar=bl",
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
@@ -351,7 +349,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
             IllegalArgumentException.class,
             () ->
                 runCommandForced(
-                    "--ip_whitelist=1.1.1.1",
+                    "--ip_allow_list=1.1.1.1",
                     "--registrar=blobiotoooolong",
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
@@ -365,7 +363,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
             IllegalArgumentException.class,
             () ->
                 runCommandForced(
-                    "--ip_whitelist=1.1.1.1",
+                    "--ip_allow_list=1.1.1.1",
                     "--registrar=blo#bio",
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
@@ -380,7 +378,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
             IllegalStateException.class,
             () ->
                 runCommandForced(
-                    "--ip_whitelist=1.1.1.1",
+                    "--ip_allow_list=1.1.1.1",
                     "--registrar=blobio",
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
@@ -393,7 +391,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
 
     runCommandForced(
         "--overwrite",
-        "--ip_whitelist=1.1.1.1",
+        "--ip_allow_list=1.1.1.1",
         "--registrar=blobio",
         "--email=contact@email.com",
         "--certfile=" + getCertFilename());
@@ -414,7 +412,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
             IllegalStateException.class,
             () ->
                 runCommandForced(
-                    "--ip_whitelist=1.1.1.1",
+                    "--ip_allow_list=1.1.1.1",
                     "--registrar=blobio",
                     "--email=contact@email.com",
                     "--certfile=" + getCertFilename()));
@@ -431,7 +429,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
 
     runCommandForced(
         "--overwrite",
-        "--ip_whitelist=1.1.1.1",
+        "--ip_allow_list=1.1.1.1",
         "--registrar=blobio",
         "--email=contact@email.com",
         "--certfile=" + getCertFilename());
