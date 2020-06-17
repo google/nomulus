@@ -75,6 +75,11 @@ public final class Transforms {
     return toStringPCollection(getExportFilePatterns(exportDir, kinds));
   }
 
+  public static PTransform<PBegin, PCollection<String>> getCloudSqlConnectionInfoFilePatterns(
+      String gcpProjectName) {
+    return toStringPCollection(BackupPaths.getCloudSQLCredentialFilePatterns(gcpProjectName));
+  }
+
   /**
    * Returns a {@link PTransform} from file name patterns to file {@link Metadata Metadata records}.
    */

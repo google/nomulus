@@ -166,7 +166,7 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
           new String(Files.readAllBytes(tempSqlFile.toPath()), StandardCharsets.UTF_8));
     }
 
-    ImmutableMap properties = PersistenceModule.providesDefaultDatabaseConfigs();
+    ImmutableMap properties = PersistenceModule.provideDefaultDatabaseConfigs();
     if (!userProperties.isEmpty()) {
       // If there are user properties, create a new properties object with these added.
       Map<String, String> mergedProperties = Maps.newHashMap();

@@ -76,6 +76,27 @@ test {
   useJUnitPlatform()
 }
 
+// Sets up integration test with a non-prod GCP project. The target project's name is
+// passed by the 'test.gcp_integration.project' property. Test runner must have been
+// authorized to access the target project, e.g., by running 'gcloud auth' or placing
+// a credential file at a well known place.
+//
+// A typical use case is to run tests from desktop that accesses Cloud resources. See
+// core/src/test/java/google/registry/beam/initsql/JpaModuleTest.java for an example.
+tasks.withType(Test).configureEach {
+  def gcp_integration_project_property = 'test.gcp_integration.project'
+
+  if (project.hasProperty(gcp_integration_project_property)) {
+    def targetProject = project.property(gcp_integration_project_property)
+
+    if (targetProject in [ 'domain-registry', 'domain-registry-sandbox']) {
+      throw new RuntimeException("Integration test with production or sandbox not allowed.")
+    }
+    systemProperty gcp_integration_project_property, targetProject
+
+  }
+}
+
 tasks.withType(JavaCompile).configureEach {
     // The -Werror flag causes Intellij to fail on deprecated api use.
     // Allow IDE user to turn off this flag by specifying a Gradle VM
