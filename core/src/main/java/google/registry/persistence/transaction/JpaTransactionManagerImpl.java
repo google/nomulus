@@ -122,32 +122,35 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> T transactNew(Supplier<T> work) {
-    // TODO(shicong): Implements the functionality to start a new transaction.
-    throw new UnsupportedOperationException();
+    return transact(work);
   }
 
   @Override
   public void transactNew(Runnable work) {
-    // TODO(shicong): Implements the functionality to start a new transaction.
-    throw new UnsupportedOperationException();
+    transact(work);
   }
 
   @Override
   public <T> T transactNewReadOnly(Supplier<T> work) {
-    // TODO(shicong): Implements read only transaction.
-    throw new UnsupportedOperationException();
+    return transact(
+        () -> {
+          getEntityManager().createNativeQuery("SET TRANSACTION READ ONLY").executeUpdate();
+          return work.get();
+        });
   }
 
   @Override
   public void transactNewReadOnly(Runnable work) {
-    // TODO(shicong): Implements read only transaction.
-    throw new UnsupportedOperationException();
+    transactNewReadOnly(
+        () -> {
+          work.run();
+          return null;
+        });
   }
 
   @Override
   public <T> T doTransactionless(Supplier<T> work) {
-    // TODO(shicong): Implements doTransactionless.
-    throw new UnsupportedOperationException();
+    return transact(work);
   }
 
   @Override
