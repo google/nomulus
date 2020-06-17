@@ -23,6 +23,7 @@ import static google.registry.util.CollectionUtils.union;
 
 import com.google.appengine.api.datastore.DatastoreFailureException;
 import com.google.appengine.api.datastore.DatastoreTimeoutException;
+import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.taskqueue.TransientFailureException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -363,6 +364,16 @@ public class Ofy {
     assertInTransaction();
     TransactionInfo info = TRANSACTION_INFO.get();
     return Key.create(info.bucketKey, CommitLogManifest.class, info.transactionTime.getMillis());
+  }
+
+  /** Convert an entity POJO to a datastore Entity. */
+  public Entity toEntity(Object pojo) {
+    return ofy().save().toEntity(pojo);
+  }
+
+  /** Convert a datastore entity to a POJO. */
+  public Object toPojo(Entity entity) {
+    return ofy().load().fromEntity(entity);
   }
 
   /**
