@@ -24,7 +24,7 @@
   {@param success: bool}
   {@param? errorMessage: string}
   {@param? isLock: bool}
-  {@param? fullyQualifiedDomainName: string}
+  {@param? domainName: string}
   {call registry.soy.console.header}
     {param app: 'registrar' /}
     {param subtitle: 'Verify Registry Lock' /}
@@ -63,9 +63,9 @@
  */
 {template .success}
   {@param? isLock: bool}
-  {@param? fullyQualifiedDomainName: string}
+  {@param? domainName: string}
   <h3>
-    Success: {if $isLock}lock{else}unlock{/if} has been applied to {$fullyQualifiedDomainName}
+    Success: {if $isLock}lock{else}unlock{/if} has been applied to {$domainName}
   </h3>
 {/template}
 

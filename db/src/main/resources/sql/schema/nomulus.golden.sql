@@ -281,7 +281,7 @@ CREATE TABLE public."Domain" (
     statuses text[],
     auth_info_repo_id text,
     auth_info_value text,
-    fully_qualified_domain_name text,
+    domain_name text,
     idn_table_name text,
     last_transfer_time timestamp with time zone,
     launch_notice_accepted_time timestamp with time zone,
@@ -352,7 +352,7 @@ CREATE TABLE public."HostHistory" (
     history_server_transaction_id text,
     history_type text NOT NULL,
     history_xml_bytes bytea NOT NULL,
-    fully_qualified_host_name text,
+    host_name text,
     inet_addresses text[],
     last_superordinate_change timestamp with time zone,
     last_transfer_time timestamp with time zone,
@@ -381,7 +381,7 @@ CREATE TABLE public."HostResource" (
     last_epp_update_registrar_id text,
     last_epp_update_time timestamp with time zone,
     statuses text[],
-    fully_qualified_host_name text,
+    host_name text,
     last_superordinate_change timestamp with time zone,
     last_transfer_time timestamp with time zone,
     superordinate_domain text,
@@ -898,7 +898,7 @@ CREATE INDEX idx1p3esngcwwu6hstyua6itn6ff ON public."Contact" USING btree (searc
 -- Name: idx1rcgkdd777bpvj0r94sltwd5y; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx1rcgkdd777bpvj0r94sltwd5y ON public."Domain" USING btree (fully_qualified_domain_name);
+CREATE INDEX idx1rcgkdd777bpvj0r94sltwd5y ON public."Domain" USING btree (domain_name);
 
 
 --
@@ -1024,7 +1024,7 @@ CREATE INDEX idxhmv411mdqo5ibn4vy7ykxpmlv ON public."BillingEvent" USING btree (
 -- Name: idxj77pfwhui9f0i7wjq6lmibovj; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idxj77pfwhui9f0i7wjq6lmibovj ON public."HostHistory" USING btree (fully_qualified_host_name);
+CREATE INDEX idxj77pfwhui9f0i7wjq6lmibovj ON public."HostHistory" USING btree (host_name);
 
 
 --

@@ -177,7 +177,7 @@ public class DeleteProberDataAction implements Runnable {
         return;
       }
 
-      String domainName = domain.getFullyQualifiedDomainName();
+      String domainName = domain.getDomainName();
       if (domainName.equals("nic." + domain.getTld())) {
         getContext().incrementCounter("skipped, NIC domain");
         return;
@@ -265,7 +265,7 @@ public class DeleteProberDataAction implements Runnable {
           // mapreduce runs anyway.
           ofy().save().entities(deletedDomain, historyEntry);
           updateForeignKeyIndexDeletionTime(deletedDomain);
-          dnsQueue.addDomainRefreshTask(deletedDomain.getFullyQualifiedDomainName());
+          dnsQueue.addDomainRefreshTask(deletedDomain.getDomainName());
         }
       );
     }

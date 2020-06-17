@@ -120,9 +120,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
           !Strings.isNullOrEmpty(postInput.clientId),
           "Missing key for client: %s",
           PARAM_CLIENT_ID);
-      checkArgument(
-          !Strings.isNullOrEmpty(postInput.fullyQualifiedDomainName),
-          "Missing key for fullyQualifiedDomainName");
+      checkArgument(!Strings.isNullOrEmpty(postInput.domainName), "Missing key for domainName");
       checkNotNull(postInput.isLock, "Missing key for isLock");
       UserAuthInfo userAuthInfo =
           authResult
@@ -136,12 +134,12 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
                 RegistryLock registryLock =
                     postInput.isLock
                         ? domainLockUtils.saveNewRegistryLockRequest(
-                            postInput.fullyQualifiedDomainName,
+                            postInput.domainName,
                             postInput.clientId,
                             userEmail,
                             registrarAccessor.isAdmin())
                         : domainLockUtils.saveNewRegistryUnlockRequest(
-                            postInput.fullyQualifiedDomainName,
+                            postInput.domainName,
                             postInput.clientId,
                             registrarAccessor.isAdmin(),
                             Optional.ofNullable(postInput.relockDurationMillis).map(Duration::new));
@@ -218,7 +216,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
   /** Value class that represents the expected input body from the UI request. */
   private static class RegistryLockPostInput {
     private String clientId;
-    private String fullyQualifiedDomainName;
+    private String domainName;
     private Boolean isLock;
     private String password;
     private Long relockDurationMillis;

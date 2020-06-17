@@ -114,7 +114,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
 
     @Override
     public void map(final DomainBase domain) {
-      String domainName = domain.getFullyQualifiedDomainName();
+      String domainName = domain.getDomainName();
       if (tlds.contains(domain.getTld())) {
         if (isActive(domain, DateTime.now(DateTimeZone.UTC))) {
           try {

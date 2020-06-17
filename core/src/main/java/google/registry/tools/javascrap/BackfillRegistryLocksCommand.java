@@ -84,7 +84,7 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
         jpaTm().transact(() -> getLockedDomainsWithoutLocks(jpaTm().getTransactionTime()));
     ImmutableList<String> lockedDomainNames =
         lockedDomains.stream()
-            .map(DomainBase::getFullyQualifiedDomainName)
+            .map(DomainBase::getDomainName)
             .collect(toImmutableList());
     return String.format(
         "Locked domains for which there does not exist a RegistryLock object: %s",
@@ -104,7 +104,7 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
                           .isSuperuser(true)
                           .setRegistrarId(registryAdminClientId)
                           .setRepoId(domainBase.getRepoId())
-                          .setDomainName(domainBase.getFullyQualifiedDomainName())
+                          .setDomainName(domainBase.getDomainName())
                           .setLockCompletionTimestamp(
                               getLockCompletionTimestamp(domainBase, jpaTm().getTransactionTime()))
                           .setVerificationCode(
@@ -113,7 +113,7 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
                 } catch (Throwable t) {
                   logger.atSevere().withCause(t).log(
                       "Error when creating lock object for domain %s.",
-                      domainBase.getFullyQualifiedDomainName());
+                      domainBase.getDomainName());
                   failedDomainsBuilder.add(domainBase);
                 }
               }

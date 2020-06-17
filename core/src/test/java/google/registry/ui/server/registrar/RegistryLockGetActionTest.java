@@ -189,7 +189,7 @@ public final class RegistryLockGetActionTest {
                         "locks",
                         ImmutableList.of(
                             new ImmutableMap.Builder<>()
-                                .put("fullyQualifiedDomainName", "adminexample.test")
+                                .put("domainName", "adminexample.test")
                                 .put("lockedTime", "2000-06-09T22:00:00.001Z")
                                 .put("lockedBy", "admin")
                                 .put("userCanUnlock", false)
@@ -197,7 +197,7 @@ public final class RegistryLockGetActionTest {
                                 .put("isUnlockPending", false)
                                 .build(),
                             new ImmutableMap.Builder<>()
-                                .put("fullyQualifiedDomainName", "example.test")
+                                .put("domainName", "example.test")
                                 .put("lockedTime", "2000-06-09T22:00:00.000Z")
                                 .put("lockedBy", "johndoe@theregistrar.com")
                                 .put("userCanUnlock", true)
@@ -205,7 +205,7 @@ public final class RegistryLockGetActionTest {
                                 .put("isUnlockPending", false)
                                 .build(),
                             new ImmutableMap.Builder<>()
-                                .put("fullyQualifiedDomainName", "expiredunlock.test")
+                                .put("domainName", "expiredunlock.test")
                                 .put("lockedTime", "2000-06-08T22:00:00.000Z")
                                 .put("lockedBy", "johndoe@theregistrar.com")
                                 .put("userCanUnlock", true)
@@ -213,7 +213,7 @@ public final class RegistryLockGetActionTest {
                                 .put("isUnlockPending", false)
                                 .build(),
                             new ImmutableMap.Builder<>()
-                                .put("fullyQualifiedDomainName", "incompleteunlock.test")
+                                .put("domainName", "incompleteunlock.test")
                                 .put("lockedTime", "2000-06-09T22:00:00.001Z")
                                 .put("lockedBy", "johndoe@theregistrar.com")
                                 .put("userCanUnlock", true)
@@ -221,7 +221,7 @@ public final class RegistryLockGetActionTest {
                                 .put("isUnlockPending", true)
                                 .build(),
                             new ImmutableMap.Builder<>()
-                                .put("fullyQualifiedDomainName", "pending.test")
+                                .put("domainName", "pending.test")
                                 .put("lockedTime", "")
                                 .put("lockedBy", "johndoe@theregistrar.com")
                                 .put("userCanUnlock", true)

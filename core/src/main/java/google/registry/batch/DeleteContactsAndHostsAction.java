@@ -426,7 +426,7 @@ public class DeleteContactsAndHostsAction implements Runnable {
       if (resource instanceof HostResource) {
         return ImmutableList.of(
             HostPendingActionNotificationResponse.create(
-                ((HostResource) resource).getFullyQualifiedHostName(), deleteAllowed, trid, now));
+                ((HostResource) resource).getHostName(), deleteAllowed, trid, now));
       } else if (resource instanceof ContactResource) {
         return ImmutableList.of(
             ContactPendingActionNotificationResponse.create(
@@ -465,11 +465,11 @@ public class DeleteContactsAndHostsAction implements Runnable {
       } else if (existingResource instanceof HostResource) {
         HostResource host = (HostResource) existingResource;
         if (host.isSubordinate()) {
-          dnsQueue.addHostRefreshTask(host.getFullyQualifiedHostName());
+          dnsQueue.addHostRefreshTask(host.getHostName());
           tm().saveNewOrUpdate(
                   tm().load(host.getSuperordinateDomain())
                       .asBuilder()
-                      .removeSubordinateHost(host.getFullyQualifiedHostName())
+                      .removeSubordinateHost(host.getHostName())
                       .build());
         }
       } else {

@@ -280,7 +280,7 @@ public class EppTestCase extends ShardableTestCase {
       DomainBase domain, DateTime createTime) {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.CREATE)
-        .setTargetId(domain.getFullyQualifiedDomainName())
+        .setTargetId(domain.getDomainName())
         .setClientId(domain.getCurrentSponsorClientId())
         .setCost(Money.parse("USD 26.00"))
         .setPeriodYears(2)
@@ -295,7 +295,7 @@ public class EppTestCase extends ShardableTestCase {
       DomainBase domain, DateTime renewTime) {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.RENEW)
-        .setTargetId(domain.getFullyQualifiedDomainName())
+        .setTargetId(domain.getDomainName())
         .setClientId(domain.getCurrentSponsorClientId())
         .setCost(Money.parse("USD 33.00"))
         .setPeriodYears(3)
@@ -325,7 +325,7 @@ public class EppTestCase extends ShardableTestCase {
     return new BillingEvent.Recurring.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-        .setTargetId(domain.getFullyQualifiedDomainName())
+        .setTargetId(domain.getDomainName())
         .setClientId(domain.getCurrentSponsorClientId())
         .setEventTime(eventTime)
         .setRecurrenceEndTime(endTime)
@@ -337,7 +337,7 @@ public class EppTestCase extends ShardableTestCase {
   protected static BillingEvent.Cancellation makeCancellationBillingEventForCreate(
       DomainBase domain, OneTime billingEventToCancel, DateTime createTime, DateTime deleteTime) {
     return new BillingEvent.Cancellation.Builder()
-        .setTargetId(domain.getFullyQualifiedDomainName())
+        .setTargetId(domain.getDomainName())
         .setClientId(domain.getCurrentSponsorClientId())
         .setEventTime(deleteTime)
         .setOneTimeEventKey(
@@ -352,7 +352,7 @@ public class EppTestCase extends ShardableTestCase {
   protected static BillingEvent.Cancellation makeCancellationBillingEventForRenew(
       DomainBase domain, OneTime billingEventToCancel, DateTime renewTime, DateTime deleteTime) {
     return new BillingEvent.Cancellation.Builder()
-        .setTargetId(domain.getFullyQualifiedDomainName())
+        .setTargetId(domain.getDomainName())
         .setClientId(domain.getCurrentSponsorClientId())
         .setEventTime(deleteTime)
         .setOneTimeEventKey(

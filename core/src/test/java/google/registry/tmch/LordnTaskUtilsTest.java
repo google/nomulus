@@ -61,7 +61,7 @@ public class LordnTaskUtilsTest {
 
   private DomainBase.Builder newDomainBuilder() {
     return new DomainBase.Builder()
-        .setFullyQualifiedDomainName("fleece.example")
+        .setDomainName("fleece.example")
         .setRegistrant(persistActiveContact("jd1234").createVKey())
         .setSmdId("smdzzzz")
         .setCreationClientId("TheRegistrar");

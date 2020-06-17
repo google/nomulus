@@ -314,7 +314,7 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
     assertPollMessagesForResource(
         domain,
         new PollMessage.Autorenew.Builder()
-            .setTargetId(domain.getFullyQualifiedDomainName())
+            .setTargetId(domain.getDomainName())
             .setClientId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
             .setMsg("Domain was auto-renewed.")
@@ -1431,7 +1431,7 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
     assertPollMessagesForResource(
         domain,
         new PollMessage.Autorenew.Builder()
-            .setTargetId(domain.getFullyQualifiedDomainName())
+            .setTargetId(domain.getDomainName())
             .setClientId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
             .setMsg("Domain was auto-renewed.")
@@ -1445,7 +1445,7 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
             .setResponseData(
                 ImmutableList.of(
                     DomainPendingActionNotificationResponse.create(
-                        domain.getFullyQualifiedDomainName(),
+                        domain.getDomainName(),
                         true,
                         historyEntry.getTrid(),
                         clock.nowUtc())))
@@ -1585,7 +1585,7 @@ public class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow,
     assertPollMessagesForResource(
         domain,
         new PollMessage.Autorenew.Builder()
-            .setTargetId(domain.getFullyQualifiedDomainName())
+            .setTargetId(domain.getDomainName())
             .setClientId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
             .setMsg("Domain was auto-renewed.")

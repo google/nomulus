@@ -42,7 +42,7 @@ public class HostHistoryTest extends EntityTestCase {
     HostResource host =
         new HostResource.Builder()
             .setRepoId("host1")
-            .setFullyQualifiedHostName("ns1.example.com")
+            .setHostName("ns1.example.com")
             .setCreationClientId("TheRegistrar")
             .setPersistedCurrentSponsorClientId("TheRegistrar")
             .setInetAddresses(ImmutableSet.of())
@@ -81,7 +81,7 @@ public class HostHistoryTest extends EntityTestCase {
     assertThat(one.getReason()).isEqualTo(two.getReason());
     assertThat(one.getTrid()).isEqualTo(two.getTrid());
     assertThat(one.getType()).isEqualTo(two.getType());
-    assertThat(one.getHostBase().getFullyQualifiedHostName())
-        .isEqualTo(two.getHostBase().getFullyQualifiedHostName());
+    assertThat(one.getHostBase().getHostName())
+        .isEqualTo(two.getHostBase().getHostName());
   }
 }

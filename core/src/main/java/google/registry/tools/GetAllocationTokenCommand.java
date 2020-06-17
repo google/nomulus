@@ -65,7 +65,7 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
           } else {
             System.out.printf(
                 "Token %s was redeemed to create domain %s at %s.\n",
-                token, domain.getFullyQualifiedDomainName(), domain.getCreationTime());
+                token, domain.getDomainName(), domain.getCreationTime());
           }
         }
       } else {

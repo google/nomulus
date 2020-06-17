@@ -86,12 +86,12 @@ public class DomainWhoisResponseTest {
     createTld("tld");
 
     hostResource1 = persistResource(new HostResource.Builder()
-        .setFullyQualifiedHostName("ns01.exampleregistrar.tld")
+        .setHostName("ns01.exampleregistrar.tld")
         .setRepoId("1-ROID")
         .build());
 
     hostResource2 = persistResource(new HostResource.Builder()
-        .setFullyQualifiedHostName("ns02.exampleregistrar.tld")
+        .setHostName("ns02.exampleregistrar.tld")
         .setRepoId("2-ROID")
         .build());
 
@@ -229,7 +229,7 @@ public class DomainWhoisResponseTest {
     domainBase =
         persistResource(
             new DomainBase.Builder()
-                .setFullyQualifiedDomainName("example.tld")
+                .setDomainName("example.tld")
                 .setRepoId("3-TLD")
                 .setLastEppUpdateTime(DateTime.parse("2009-05-29T20:13:00Z"))
                 .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))

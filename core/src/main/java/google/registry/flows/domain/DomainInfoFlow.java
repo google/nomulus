@@ -107,7 +107,7 @@ public final class DomainInfoFlow implements Flow {
     // This is a policy decision that is left up to us by the rfcs.
     DomainInfoData.Builder infoBuilder =
         DomainInfoData.newBuilder()
-            .setFullyQualifiedDomainName(domain.getFullyQualifiedDomainName())
+            .setFullyQualifiedDomainName(domain.getDomainName())
             .setRepoId(domain.getRepoId())
             .setCurrentSponsorClientId(domain.getCurrentSponsorClientId())
             .setRegistrant(tm().load(domain.getRegistrant()).getContactId());
@@ -119,7 +119,7 @@ public final class DomainInfoFlow implements Flow {
           .setStatusValues(domain.getStatusValues())
           .setContacts(loadForeignKeyedDesignatedContacts(domain.getContacts()))
           .setNameservers(hostsRequest.requestDelegated()
-              ? domain.loadNameserverFullyQualifiedHostNames()
+              ? domain.loadNameserverHostNames()
               : null)
           .setSubordinateHosts(hostsRequest.requestSubordinate()
               ? domain.getSubordinateHosts()

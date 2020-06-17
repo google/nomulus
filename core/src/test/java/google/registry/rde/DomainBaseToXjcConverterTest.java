@@ -262,7 +262,7 @@ public class DomainBaseToXjcConverterTest {
             .setDsData(
                 ImmutableSet.of(
                     DelegationSignerData.create(123, 200, 230, base16().decode("1234567890"))))
-            .setFullyQualifiedDomainName(Idn.toASCII("love.みんな"))
+            .setDomainName(Idn.toASCII("love.みんな"))
             .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
             .setLastEppUpdateClientId("IntoTheTempest")
             .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
@@ -407,7 +407,7 @@ public class DomainBaseToXjcConverterTest {
             .setCreationClientId("LawyerCat")
             .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
             .setPersistedCurrentSponsorClientId("BusinessCat")
-            .setFullyQualifiedHostName(Idn.toASCII(fqhn))
+            .setHostName(Idn.toASCII(fqhn))
             .setInetAddresses(ImmutableSet.of(InetAddresses.forString(ip)))
             .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
             .setLastEppUpdateClientId("CeilingCat")

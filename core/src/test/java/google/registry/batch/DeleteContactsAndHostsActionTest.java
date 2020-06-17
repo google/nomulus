@@ -910,7 +910,7 @@ public class DeleteContactsAndHostsActionTest
     String expectedResourceName;
     if (resource instanceof HostResource) {
       assertThat(responseData).isInstanceOf(HostPendingActionNotificationResponse.class);
-      expectedResourceName = ((HostResource) resource).getFullyQualifiedHostName();
+      expectedResourceName = ((HostResource) resource).getHostName();
     } else {
       assertThat(responseData).isInstanceOf(ContactPendingActionNotificationResponse.class);
       expectedResourceName = ((ContactResource) resource).getContactId();

@@ -136,7 +136,7 @@ public class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDom
   }
 
   private HostResource addHostToMap(HostResource host) {
-    hostNameToHostMap.put(host.getFullyQualifiedHostName(), host);
+    hostNameToHostMap.put(host.getHostName(), host);
     return host;
   }
 

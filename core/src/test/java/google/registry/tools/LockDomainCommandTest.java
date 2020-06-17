@@ -90,7 +90,7 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
             .add("--client=NewRegistrar")
             .addAll(
                 domains.stream()
-                    .map(DomainBase::getFullyQualifiedDomainName)
+                    .map(DomainBase::getDomainName)
                     .collect(Collectors.toList()))
             .build());
     for (DomainBase domain : domains) {

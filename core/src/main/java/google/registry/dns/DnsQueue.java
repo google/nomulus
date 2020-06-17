@@ -119,35 +119,31 @@ public class DnsQueue {
             .param(PARAM_TLD, tld));
   }
 
-  /**
-   * Adds a task to the queue to refresh the DNS information for the specified subordinate host.
-   */
-  public TaskHandle addHostRefreshTask(String fullyQualifiedHostName) {
-    Optional<InternetDomainName> tld =
-        Registries.findTldForName(InternetDomainName.from(fullyQualifiedHostName));
-    checkArgument(tld.isPresent(),
-        String.format("%s is not a subordinate host to a known tld", fullyQualifiedHostName));
-    return addToQueue(TargetType.HOST, fullyQualifiedHostName, tld.get().toString(), Duration.ZERO);
+  /** Adds a task to the queue to refresh the DNS information for the specified subordinate host. */
+  public TaskHandle addHostRefreshTask(String hostName) {
+    Optional<InternetDomainName> tld = Registries.findTldForName(InternetDomainName.from(hostName));
+    checkArgument(
+        tld.isPresent(), String.format("%s is not a subordinate host to a known tld", hostName));
+    return addToQueue(TargetType.HOST, hostName, tld.get().toString(), Duration.ZERO);
   }
 
   /** Enqueues a task to refresh DNS for the specified domain now. */
-  public TaskHandle addDomainRefreshTask(String fullyQualifiedDomainName) {
-    return addDomainRefreshTask(fullyQualifiedDomainName, Duration.ZERO);
+  public TaskHandle addDomainRefreshTask(String domainName) {
+    return addDomainRefreshTask(domainName, Duration.ZERO);
   }
 
   /** Enqueues a task to refresh DNS for the specified domain at some point in the future. */
-  public TaskHandle addDomainRefreshTask(String fullyQualifiedDomainName, Duration countdown) {
+  public TaskHandle addDomainRefreshTask(String domainName, Duration countdown) {
     return addToQueue(
         TargetType.DOMAIN,
-        fullyQualifiedDomainName,
-        assertTldExists(getTldFromDomainName(fullyQualifiedDomainName)),
+        domainName,
+        assertTldExists(getTldFromDomainName(domainName)),
         countdown);
   }
 
   /** Adds a task to the queue to refresh the DNS information for the specified zone. */
-  public TaskHandle addZoneRefreshTask(String fullyQualifiedZoneName) {
-    return addToQueue(
-        TargetType.ZONE, fullyQualifiedZoneName, fullyQualifiedZoneName, Duration.ZERO);
+  public TaskHandle addZoneRefreshTask(String zoneName) {
+    return addToQueue(TargetType.ZONE, zoneName, zoneName, Duration.ZERO);
   }
 
   /**

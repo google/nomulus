@@ -136,7 +136,7 @@ public final class FullFieldsTestEntityHelper {
     HostResource.Builder builder =
         new HostResource.Builder()
             .setRepoId(generateNewContactHostRoid())
-            .setFullyQualifiedHostName(Idn.toASCII(fqhn))
+            .setHostName(Idn.toASCII(fqhn))
             .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))
             .setPersistedCurrentSponsorClientId(registrarClientId);
     if ((ip1 != null) || (ip2 != null)) {
@@ -344,7 +344,7 @@ public final class FullFieldsTestEntityHelper {
       Registrar registrar) {
     DomainBase.Builder builder =
         new DomainBase.Builder()
-            .setFullyQualifiedDomainName(Idn.toASCII(domain))
+            .setDomainName(Idn.toASCII(domain))
             .setRepoId(generateNewDomainRoid(getTldFromDomainName(Idn.toASCII(domain))))
             .setLastEppUpdateTime(DateTime.parse("2009-05-29T20:13:00Z"))
             .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))

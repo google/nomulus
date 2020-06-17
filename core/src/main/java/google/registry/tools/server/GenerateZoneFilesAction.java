@@ -217,7 +217,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
         for (HostResource unprojectedHost : tm().load(domain.getNameservers())) {
           HostResource host = loadAtPointInTime(unprojectedHost, exportTime).now();
           // A null means the host was deleted (or not created) at this time.
-          if ((host != null) && subordinateHosts.contains(host.getFullyQualifiedHostName())) {
+          if ((host != null) && subordinateHosts.contains(host.getHostName())) {
             String stanza = hostStanza(host, dnsDefaultATtl, domain.getTld());
             if (!stanza.isEmpty()) {
               emit(domain.getTld(), stanza);
@@ -282,14 +282,14 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
       Duration dnsDefaultNsTtl,
       Duration dnsDefaultDsTtl) {
     StringBuilder result = new StringBuilder();
-    String domainLabel = stripTld(domain.getFullyQualifiedDomainName(), domain.getTld());
+    String domainLabel = stripTld(domain.getDomainName(), domain.getTld());
     for (HostResource nameserver : tm().load(domain.getNameservers())) {
       result.append(String.format(
           NS_FORMAT,
           domainLabel,
           dnsDefaultNsTtl.getStandardSeconds(),
           // Load the nameservers at the export time in case they've been renamed or deleted.
-          loadAtPointInTime(nameserver, exportTime).now().getFullyQualifiedHostName()));
+          loadAtPointInTime(nameserver, exportTime).now().getHostName()));
     }
     for (DelegationSignerData dsData : domain.getDsData()) {
       result.append(
@@ -321,7 +321,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
       String rrSetClass = (addr instanceof Inet4Address) ? "A" : "AAAA";
       result.append(String.format(
           A_FORMAT,
-          stripTld(host.getFullyQualifiedHostName(), tld),
+          stripTld(host.getHostName(), tld),
           dnsDefaultATtl.getStandardSeconds(),
           rrSetClass,
           addr.getHostAddress()));

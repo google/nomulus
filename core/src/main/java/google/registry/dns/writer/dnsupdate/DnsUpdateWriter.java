@@ -189,7 +189,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
     for (DelegationSignerData signerData : domain.getDsData()) {
       DSRecord dsRecord =
           new DSRecord(
-              toAbsoluteName(domain.getFullyQualifiedDomainName()),
+              toAbsoluteName(domain.getDomainName()),
               DClass.IN,
               dnsDefaultDsTtl.getStandardSeconds(),
               signerData.getKeyTag(),
@@ -216,7 +216,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
   private void addInBailiwickNameServerSet(DomainBase domain, Update update) {
     for (String hostName :
         intersection(
-            domain.loadNameserverFullyQualifiedHostNames(), domain.getSubordinateHosts())) {
+            domain.loadNameserverHostNames(), domain.getSubordinateHosts())) {
       Optional<HostResource> host = loadByForeignKey(HostResource.class, hostName, clock.nowUtc());
       checkState(host.isPresent(), "Host %s cannot be loaded", hostName);
       update.add(makeAddressSet(host.get()));
@@ -226,10 +226,10 @@ public class DnsUpdateWriter extends BaseDnsWriter {
 
   private RRset makeNameServerSet(DomainBase domain) {
     RRset nameServerSet = new RRset();
-    for (String hostName : domain.loadNameserverFullyQualifiedHostNames()) {
+    for (String hostName : domain.loadNameserverHostNames()) {
       NSRecord record =
           new NSRecord(
-              toAbsoluteName(domain.getFullyQualifiedDomainName()),
+              toAbsoluteName(domain.getDomainName()),
               DClass.IN,
               dnsDefaultNsTtl.getStandardSeconds(),
               toAbsoluteName(hostName));
@@ -244,7 +244,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
       if (address instanceof Inet4Address) {
         ARecord record =
             new ARecord(
-                toAbsoluteName(host.getFullyQualifiedHostName()),
+                toAbsoluteName(host.getHostName()),
                 DClass.IN,
                 dnsDefaultATtl.getStandardSeconds(),
                 address);
@@ -260,7 +260,7 @@ public class DnsUpdateWriter extends BaseDnsWriter {
       if (address instanceof Inet6Address) {
         AAAARecord record =
             new AAAARecord(
-                toAbsoluteName(host.getFullyQualifiedHostName()),
+                toAbsoluteName(host.getHostName()),
                 DClass.IN,
                 dnsDefaultATtl.getStandardSeconds(),
                 address);

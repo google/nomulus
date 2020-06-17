@@ -73,7 +73,7 @@ public final class RegistryLockVerifyAction extends HtmlAction {
       }
       data.put("isLock", isLock);
       data.put("success", true);
-      data.put("fullyQualifiedDomainName", resultLock.getDomainName());
+      data.put("domainName", resultLock.getDomainName());
     } catch (Throwable t) {
       logger.atWarning().withCause(t).log(
           "Error when verifying verification code %s", lockVerificationCode);

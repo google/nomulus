@@ -112,7 +112,7 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         persistResource(
             new HostResource.Builder()
                 .setRepoId("2-".concat(Ascii.toUpperCase(tld)))
-                .setFullyQualifiedHostName("ns1." + label + "." + tld)
+                .setHostName("ns1." + label + "." + tld)
                 .setPersistedCurrentSponsorClientId("TheRegistrar")
                 .setCreationClientId("TheRegistrar")
                 .setCreationTimeForTest(DateTime.parse("1999-04-03T22:00:00.0Z"))
@@ -122,7 +122,7 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         persistResource(
             domain
                 .asBuilder()
-                .addSubordinateHost(subordinateHost.getFullyQualifiedHostName())
+                .addSubordinateHost(subordinateHost.getHostName())
                 .build());
     historyEntryDomainCreate = getOnlyHistoryEntryOfType(domain, DOMAIN_CREATE);
   }
@@ -142,7 +142,7 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
     return new BillingEvent.Recurring.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-        .setTargetId(domain.getFullyQualifiedDomainName())
+        .setTargetId(domain.getDomainName())
         .setClientId("TheRegistrar")
         .setEventTime(REGISTRATION_EXPIRATION_TIME)
         .setRecurrenceEndTime(TRANSFER_EXPIRATION_TIME)
@@ -155,7 +155,7 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
     return new BillingEvent.Recurring.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-        .setTargetId(domain.getFullyQualifiedDomainName())
+        .setTargetId(domain.getDomainName())
         .setClientId("NewRegistrar")
         .setEventTime(EXTENDED_REGISTRATION_EXPIRATION_TIME)
         .setRecurrenceEndTime(END_OF_TIME)

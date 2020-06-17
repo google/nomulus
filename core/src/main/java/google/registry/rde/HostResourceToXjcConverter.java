@@ -68,7 +68,7 @@ final class HostResourceToXjcConverter {
   private static XjcRdeHost convertHostCommon(
       HostResource model, String clientId, DateTime lastTransferTime) {
     XjcRdeHost bean = new XjcRdeHost();
-    bean.setName(model.getFullyQualifiedHostName());
+    bean.setName(model.getHostName());
     bean.setRoid(model.getRepoId());
     bean.setCrDate(model.getCreationTime());
     bean.setUpDate(model.getLastEppUpdateTime());

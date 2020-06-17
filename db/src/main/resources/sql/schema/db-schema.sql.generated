@@ -162,7 +162,7 @@ create sequence history_id_sequence start 1 increment 1;
         auth_info_repo_id text,
         auth_info_value text,
         billing_contact text,
-        fully_qualified_domain_name text,
+        domain_name text,
         idn_table_name text,
         last_transfer_time timestamptz,
         launch_notice_accepted_time timestamptz,
@@ -220,7 +220,7 @@ create sequence history_id_sequence start 1 increment 1;
         history_server_transaction_id text,
         history_type text not null,
         history_xml_bytes bytea not null,
-        fully_qualified_host_name text,
+        host_name text,
         inet_addresses text[],
         last_superordinate_change timestamptz,
         last_transfer_time timestamptz,
@@ -245,7 +245,7 @@ create sequence history_id_sequence start 1 increment 1;
         last_epp_update_registrar_id text,
         last_epp_update_time timestamptz,
         statuses text[],
-        fully_qualified_host_name text,
+        host_name text,
         inet_addresses text[],
         last_superordinate_change timestamptz,
         last_transfer_time timestamptz,
@@ -429,11 +429,11 @@ create index IDX1p3esngcwwu6hstyua6itn6ff on "Contact" (search_name);
 create index IDX8nr0ke9mrrx4ewj6pd2ag4rmr on "Domain" (creation_time);
 create index IDXhsjqiy2lyobfymplb28nm74lm on "Domain" (current_sponsor_registrar_id);
 create index IDX5mnf0wn20tno4b9do88j61klr on "Domain" (deletion_time);
-create index IDX1rcgkdd777bpvj0r94sltwd5y on "Domain" (fully_qualified_domain_name);
+create index IDXc5aw4pk1vkd6ymhvkpanmoadv on "Domain" (domain_name);
 create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
 create index IDXfg2nnjlujxo6cb9fha971bq2n on "HostHistory" (creation_time);
 create index IDX1iy7njgb7wjmj9piml4l2g0qi on "HostHistory" (history_registrar_id);
-create index IDXj77pfwhui9f0i7wjq6lmibovj on "HostHistory" (fully_qualified_host_name);
+create index IDXkkwbwcwvrdkkqothkiye4jiff on "HostHistory" (host_name);
 create index IDXknk8gmj7s47q56cwpa6rmpt5l on "HostHistory" (history_type);
 create index IDX67qwkjtlq5q8dv6egtrtnhqi7 on "HostHistory" (history_modification_time);
 create index IDXe7wu46c7wpvfmfnj4565abibp on "PollMessage" (registrar_id);

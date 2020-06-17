@@ -154,7 +154,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
     }
 
     // Construct NS records (if any).
-    Set<String> nameserverData = domainBase.get().loadNameserverFullyQualifiedHostNames();
+    Set<String> nameserverData = domainBase.get().loadNameserverHostNames();
     Set<String> subordinateHosts = domainBase.get().getSubordinateHosts();
     if (!nameserverData.isEmpty()) {
       HashSet<String> nsRrData = new HashSet<>();

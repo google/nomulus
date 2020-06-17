@@ -141,7 +141,7 @@ public class BackupTestStoreTest {
         loadPropertyFromExportedEntities(
             new File(exportFolder, "/all_namespaces/kind_DomainBase/input-0"),
             DomainBase.class,
-            DomainBase::getFullyQualifiedDomainName);
+            DomainBase::getDomainName);
     assertThat(domainStrings).containsExactly("domain1.tld1");
     ImmutableList<String> contactIds =
         loadPropertyFromExportedEntities(

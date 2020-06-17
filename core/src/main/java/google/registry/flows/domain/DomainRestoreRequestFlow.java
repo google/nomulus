@@ -174,7 +174,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
     entitiesToSave.add(newDomain, historyEntry, autorenewEvent, autorenewPollMessage);
     ofy().save().entities(entitiesToSave.build());
     ofy().delete().key(existingDomain.getDeletePollMessage());
-    dnsQueue.addDomainRefreshTask(existingDomain.getFullyQualifiedDomainName());
+    dnsQueue.addDomainRefreshTask(existingDomain.getDomainName());
     return responseBuilder
         .setExtensions(createResponseExtensions(feesAndCredits, feeUpdate))
         .build();

@@ -258,7 +258,7 @@ public class DomainTransferApproveFlowTest
     OneTime transferBillingEvent =
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.TRANSFER)
-            .setTargetId(domain.getFullyQualifiedDomainName())
+            .setTargetId(domain.getDomainName())
             .setEventTime(clock.nowUtc())
             .setBillingTime(clock.nowUtc().plus(registry.getTransferGracePeriodLength()))
             .setClientId("NewRegistrar")

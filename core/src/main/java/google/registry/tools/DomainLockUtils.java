@@ -293,14 +293,14 @@ public final class DomainLockUtils {
     checkArgument(
         !domainBase.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES),
         "Domain %s is already locked",
-        domainBase.getFullyQualifiedDomainName());
+        domainBase.getDomainName());
   }
 
   private static void verifyDomainLocked(DomainBase domainBase) {
     checkArgument(
         !Sets.intersection(domainBase.getStatusValues(), REGISTRY_LOCK_STATUSES).isEmpty(),
         "Domain %s is already unlocked",
-        domainBase.getFullyQualifiedDomainName());
+        domainBase.getDomainName());
   }
 
   private static DomainBase getDomain(String domainName, DateTime now) {

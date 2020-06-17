@@ -103,7 +103,7 @@ public class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Dom
     domain =
         persistResource(
             new DomainBase.Builder()
-                .setFullyQualifiedDomainName(domainName)
+                .setDomainName(domainName)
                 .setRepoId("2FF-TLD")
                 .setPersistedCurrentSponsorClientId("NewRegistrar")
                 .setCreationClientId("TheRegistrar")
@@ -128,7 +128,7 @@ public class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Dom
     host3 =
         persistResource(
             new HostResource.Builder()
-                .setFullyQualifiedHostName("ns2.example.tld")
+                .setHostName("ns2.example.tld")
                 .setRepoId("3FF-TLD")
                 .setSuperordinateDomain(domain.createVKey())
                 .build());
@@ -139,7 +139,7 @@ public class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Dom
                 .asBuilder()
                 .setSubordinateHosts(
                     ImmutableSet.of(
-                        host1.getFullyQualifiedHostName(), host3.getFullyQualifiedHostName()))
+                        host1.getHostName(), host3.getHostName()))
                 .build());
   }
 

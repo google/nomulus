@@ -52,7 +52,7 @@ final class NameserverLookupByIpCommand implements WhoisCommand {
             .filter(
                 host ->
                     Registries.findTldForName(
-                            InternetDomainName.from(host.getFullyQualifiedHostName()))
+                            InternetDomainName.from(host.getHostName()))
                         .isPresent())
             .collect(toImmutableList());
     if (hosts.isEmpty()) {

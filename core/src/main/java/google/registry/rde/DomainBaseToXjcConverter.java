@@ -62,7 +62,7 @@ final class DomainBaseToXjcConverter {
 
     // o  A <name> element that contains the fully qualified name of the
     //    domain name object.
-    bean.setName(model.getFullyQualifiedDomainName());
+    bean.setName(model.getDomainName());
 
     // o  A <roid> element that contains the repository object identifier
     //    assigned to the domain name object when it was created.
@@ -70,7 +70,7 @@ final class DomainBaseToXjcConverter {
 
     // o  An OPTIONAL <uName> element that contains the name of the domain
     //    name in Unicode character set.  It MUST be provided if available.
-    bean.setUName(Idn.toUnicode(model.getFullyQualifiedDomainName()));
+    bean.setUName(Idn.toUnicode(model.getDomainName()));
 
     // o  An OPTIONAL <idnTableId> element that references the IDN Table
     //    used for the IDN.  This corresponds to the "id" attribute of the
@@ -143,7 +143,7 @@ final class DomainBaseToXjcConverter {
     //    it is that with host attributes, you inline the nameserver data
     //    on each domain; with host objects, you normalize the nameserver
     //    data to a separate EPP object.
-    ImmutableSet<String> linkedNameserverHostNames = model.loadNameserverFullyQualifiedHostNames();
+    ImmutableSet<String> linkedNameserverHostNames = model.loadNameserverHostNames();
     if (!linkedNameserverHostNames.isEmpty()) {
       XjcDomainNsType nameservers = new XjcDomainNsType();
       for (String hostName : linkedNameserverHostNames) {
@@ -154,7 +154,7 @@ final class DomainBaseToXjcConverter {
 
     switch (mode) {
       case FULL:
-        String domainName = model.getFullyQualifiedDomainName();
+        String domainName = model.getDomainName();
 
         // o  Zero or more OPTIONAL <rgpStatus> element to represent
         //    "pendingDelete" sub-statuses, including "redemptionPeriod",

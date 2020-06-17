@@ -124,7 +124,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
             .setParent(synthetic)
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-            .setTargetId(domain.getFullyQualifiedDomainName())
+            .setTargetId(domain.getDomainName())
             .setClientId("TheRegistrar")
             .setEventTime(newExpirationTime)
             .build());

@@ -225,7 +225,7 @@ public final class RegistryLockPostActionTest {
         action.handleJsonRequest(
             ImmutableMap.of(
                 "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
+                "domainName", "example.tld",
                 "isLock", true));
     assertSuccess(response, "lock", "johndoe@theregistrar.com");
   }
@@ -253,7 +253,7 @@ public final class RegistryLockPostActionTest {
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of("clientId", "TheRegistrar", "password", "hi", "isLock", true));
-    assertFailureWithMessage(response, "Missing key for fullyQualifiedDomainName");
+    assertFailureWithMessage(response, "Missing key for domainName");
   }
 
   @Test
@@ -262,7 +262,7 @@ public final class RegistryLockPostActionTest {
         action.handleJsonRequest(
             ImmutableMap.of(
                 "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
+                "domainName", "example.tld",
                 "password", "hi"));
     assertFailureWithMessage(response, "Missing key for isLock");
   }
@@ -281,7 +281,7 @@ public final class RegistryLockPostActionTest {
         action.handleJsonRequest(
             ImmutableMap.of(
                 "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
+                "domainName", "example.tld",
                 "isLock", true));
     assertFailureWithMessage(response, "Incorrect registry lock password for contact");
   }
@@ -295,7 +295,7 @@ public final class RegistryLockPostActionTest {
         action.handleJsonRequest(
             ImmutableMap.of(
                 "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
+                "domainName", "example.tld",
                 "isLock", true,
                 "password", "hi"));
     assertFailureWithMessage(response, "Incorrect registry lock password for contact");
@@ -307,7 +307,7 @@ public final class RegistryLockPostActionTest {
         action.handleJsonRequest(
             ImmutableMap.of(
                 "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "example.tld",
+                "domainName", "example.tld",
                 "isLock", true,
                 "password", "badPassword"));
     assertFailureWithMessage(response, "Incorrect registry lock password for contact");
@@ -319,7 +319,7 @@ public final class RegistryLockPostActionTest {
         action.handleJsonRequest(
             ImmutableMap.of(
                 "clientId", "TheRegistrar",
-                "fullyQualifiedDomainName", "bad.tld",
+                "domainName", "bad.tld",
                 "isLock", true,
                 "password", "hi"));
     assertFailureWithMessage(response, "Unknown domain bad.tld");
@@ -382,7 +382,7 @@ public final class RegistryLockPostActionTest {
     return ImmutableMap.of(
         "isLock", lock,
         "clientId", "TheRegistrar",
-        "fullyQualifiedDomainName", "example.tld",
+        "domainName", "example.tld",
         "password", "hi");
   }
 

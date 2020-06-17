@@ -95,7 +95,7 @@ final class GenerateDnsReportCommand implements CommandWithRemoteApi {
 
     private void write(DomainBase domain) {
       ImmutableList<String> nameservers =
-          ImmutableList.sortedCopyOf(domain.loadNameserverFullyQualifiedHostNames());
+          ImmutableList.sortedCopyOf(domain.loadNameserverHostNames());
       ImmutableList<Map<String, ?>> dsData =
           domain
               .getDsData()
@@ -109,7 +109,7 @@ final class GenerateDnsReportCommand implements CommandWithRemoteApi {
                           "digest", base16().encode(dsData1.getDigest())))
               .collect(toImmutableList());
       ImmutableMap.Builder<String, Object> mapBuilder = new ImmutableMap.Builder<>();
-      mapBuilder.put("domain", domain.getFullyQualifiedDomainName());
+      mapBuilder.put("domain", domain.getDomainName());
       if (!nameservers.isEmpty()) {
         mapBuilder.put("nameservers", nameservers);
       }
@@ -128,7 +128,7 @@ final class GenerateDnsReportCommand implements CommandWithRemoteApi {
               .sorted()
               .collect(toImmutableList());
       ImmutableMap<String, ?> map  = ImmutableMap.of(
-          "host", nameserver.getFullyQualifiedHostName(),
+          "host", nameserver.getHostName(),
           "ips", ipAddresses);
       writeJson(map);
     }

@@ -96,7 +96,7 @@ public class RelockDomainAction implements Runnable {
         String message =
             String.format(
                 "Domain %s is already manually relocked, skipping automated relock.",
-                domain.getFullyQualifiedDomainName());
+                domain.getDomainName());
         logger.atInfo().log(message);
         // SC_NO_CONTENT (204) skips retry -- see the comment below
         response.setStatus(SC_NO_CONTENT);
@@ -144,7 +144,7 @@ public class RelockDomainAction implements Runnable {
 
   private void verifyDomainAndLockState(RegistryLock oldLock, DomainBase domain) {
     // Domain shouldn't be deleted or have a pending transfer/delete
-    String domainName = domain.getFullyQualifiedDomainName();
+    String domainName = domain.getDomainName();
     checkArgument(
         !DateTimeUtils.isAtOrAfter(jpaTm().getTransactionTime(), domain.getDeletionTime()),
         "Domain %s has been deleted",

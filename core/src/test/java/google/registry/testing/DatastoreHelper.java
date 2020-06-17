@@ -120,7 +120,7 @@ public class DatastoreHelper {
 
   public static HostResource newHostResource(String hostName) {
     return new HostResource.Builder()
-        .setFullyQualifiedHostName(hostName)
+        .setHostName(hostName)
         .setCreationClientId("TheRegistrar")
         .setPersistedCurrentSponsorClientId("TheRegistrar")
         .setCreationTimeForTest(START_OF_TIME)
@@ -150,7 +150,7 @@ public class DatastoreHelper {
     VKey<ContactResource> contactKey = contact.createVKey();
     return new DomainBase.Builder()
         .setRepoId(repoId)
-        .setFullyQualifiedDomainName(domainName)
+        .setDomainName(domainName)
         .setCreationClientId("TheRegistrar")
         .setPersistedCurrentSponsorClientId("TheRegistrar")
         .setCreationTimeForTest(START_OF_TIME)
@@ -433,13 +433,13 @@ public class DatastoreHelper {
       DateTime eventTime) {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.TRANSFER)
-        .setTargetId(domain.getFullyQualifiedDomainName())
+        .setTargetId(domain.getDomainName())
         .setEventTime(eventTime)
         .setBillingTime(
             eventTime.plus(Registry.get(domain.getTld()).getTransferGracePeriodLength()))
         .setClientId("NewRegistrar")
         .setPeriodYears(1)
-        .setCost(getDomainRenewCost(domain.getFullyQualifiedDomainName(), costLookupTime, 1))
+        .setCost(getDomainRenewCost(domain.getDomainName(), costLookupTime, 1))
         .setParent(historyEntry)
         .build();
   }
@@ -500,7 +500,7 @@ public class DatastoreHelper {
     DomainBase domain =
         new DomainBase.Builder()
             .setRepoId(generateNewDomainRoid(tld))
-            .setFullyQualifiedDomainName(domainName)
+            .setDomainName(domainName)
             .setPersistedCurrentSponsorClientId("TheRegistrar")
             .setCreationClientId("TheRegistrar")
             .setCreationTimeForTest(creationTime)
@@ -568,7 +568,7 @@ public class DatastoreHelper {
         new BillingEvent.Recurring.Builder()
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setReason(Reason.RENEW)
-            .setTargetId(domain.getFullyQualifiedDomainName())
+            .setTargetId(domain.getDomainName())
             .setClientId("NewRegistrar")
             .setEventTime(extendedRegistrationExpirationTime)
             .setRecurrenceEndTime(END_OF_TIME)
@@ -576,7 +576,7 @@ public class DatastoreHelper {
             .build());
     PollMessage.Autorenew gainingClientAutorenewPollMessage = persistResource(
         new PollMessage.Autorenew.Builder()
-            .setTargetId(domain.getFullyQualifiedDomainName())
+            .setTargetId(domain.getDomainName())
             .setClientId("NewRegistrar")
             .setEventTime(extendedRegistrationExpirationTime)
             .setAutorenewEndTime(END_OF_TIME)

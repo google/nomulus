@@ -242,7 +242,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     // If there's a pending transfer, the gaining client's autorenew billing
     // event and poll message will already have been deleted in
     // ResourceDeleteFlow since it's listed in serverApproveEntities.
-    dnsQueue.addDomainRefreshTask(existingDomain.getFullyQualifiedDomainName());
+    dnsQueue.addDomainRefreshTask(existingDomain.getDomainName());
 
     entitiesToSave.add(newDomain, historyEntry);
     EntityChanges entityChanges = flowCustomLogic.beforeSave(
@@ -339,7 +339,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
         .setResponseData(
             ImmutableList.of(
                 DomainPendingActionNotificationResponse.create(
-                    existingDomain.getFullyQualifiedDomainName(), true, trid, deletionTime)))
+                    existingDomain.getDomainName(), true, trid, deletionTime)))
         .setParent(historyEntry)
         .build();
   }

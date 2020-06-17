@@ -89,7 +89,7 @@ public final class RefreshDnsAction implements Runnable {
   private static void verifyHostIsSubordinate(HostResource host) {
     if (!host.isSubordinate()) {
       throw new BadRequestException(
-          String.format("%s isn't a subordinate hostname", host.getFullyQualifiedHostName()));
+          String.format("%s isn't a subordinate hostname", host.getHostName()));
     }
   }
 }

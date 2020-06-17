@@ -109,7 +109,7 @@ public final class DomainTransferUtils {
       String gainingClientId,
       Optional<Money> transferCost,
       DateTime now) {
-    String targetId = existingDomain.getFullyQualifiedDomainName();
+    String targetId = existingDomain.getDomainName();
     // Create a TransferData for the server-approve case to use for the speculative poll messages.
     DomainTransferData serverApproveTransferData =
         new DomainTransferData.Builder()

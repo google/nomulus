@@ -488,7 +488,7 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
                   .isSuperuser(false)
                   .setRegistrarId("TheRegistrar")
                   .setRegistrarPocId("Marla.Singer@crr.com")
-                  .setDomainName(pendingUnlockDomain.getFullyQualifiedDomainName())
+                  .setDomainName(pendingUnlockDomain.getDomainName())
                   .setRepoId(pendingUnlockDomain.getRepoId())
                   .setLockCompletionTimestamp(START_OF_TIME)
                   .setUnlockRequestTimestamp(START_OF_TIME)
@@ -561,7 +561,7 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         .setRegistrarId("TheRegistrar")
         .setRegistrarPocId("Marla.Singer@crr.com")
         .setLockCompletionTimestamp(START_OF_TIME)
-        .setDomainName(domainBase.getFullyQualifiedDomainName())
+        .setDomainName(domainBase.getDomainName())
         .setRepoId(domainBase.getRepoId())
         .build();
   }

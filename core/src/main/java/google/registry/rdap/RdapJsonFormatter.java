@@ -221,7 +221,7 @@ public class RdapJsonFormatter {
 
   /** Sets the ordering for hosts; just use the fully qualified host name. */
   private static final Ordering<HostResource> HOST_RESOURCE_ORDERING =
-      Ordering.natural().onResultOf(HostResource::getFullyQualifiedHostName);
+      Ordering.natural().onResultOf(HostResource::getHostName);
 
   /** Sets the ordering for designated contacts; order them in a fixed order by contact type. */
   private static final Ordering<DesignatedContact> DESIGNATED_CONTACT_ORDERING =
@@ -266,12 +266,12 @@ public class RdapJsonFormatter {
    */
   RdapDomain createRdapDomain(DomainBase domainBase, OutputDataType outputDataType) {
     RdapDomain.Builder builder = RdapDomain.builder();
-    builder.linksBuilder().add(makeSelfLink("domain", domainBase.getFullyQualifiedDomainName()));
+    builder.linksBuilder().add(makeSelfLink("domain", domainBase.getDomainName()));
     if (outputDataType != OutputDataType.FULL) {
       builder.remarksBuilder().add(RdapIcannStandardInformation.SUMMARY_DATA_REMARK);
     }
     // RDAP Response Profile 15feb19 section 2.1 discusses the domain name.
-    builder.setLdhName(domainBase.getFullyQualifiedDomainName());
+    builder.setLdhName(domainBase.getDomainName());
     // RDAP Response Profile 15feb19 section 2.2:
     // The domain handle MUST be the ROID
     builder.setHandle(domainBase.getRepoId());
@@ -315,7 +315,7 @@ public class RdapJsonFormatter {
     for (String registrarRdapBase : registrar.getRdapBaseUrls()) {
       String href =
           makeServerRelativeUrl(
-              registrarRdapBase, "domain", domainBase.getFullyQualifiedDomainName());
+              registrarRdapBase, "domain", domainBase.getDomainName());
       builder
           .linksBuilder()
           .add(
@@ -336,7 +336,7 @@ public class RdapJsonFormatter {
     if (status.isEmpty()) {
       logger.atWarning().log(
           "Domain %s (ROID %s) doesn't have any status",
-          domainBase.getFullyQualifiedDomainName(), domainBase.getRepoId());
+          domainBase.getDomainName(), domainBase.getRepoId());
     }
     // RDAP Response Profile 2.6.3, must have a notice about statuses. That is in {@link
     // RdapIcannStandardInformation#domainBoilerplateNotices}
@@ -411,13 +411,13 @@ public class RdapJsonFormatter {
     RdapNameserver.Builder builder = RdapNameserver.builder();
     builder
         .linksBuilder()
-        .add(makeSelfLink("nameserver", hostResource.getFullyQualifiedHostName()));
+        .add(makeSelfLink("nameserver", hostResource.getHostName()));
     if (outputDataType != OutputDataType.FULL) {
       builder.remarksBuilder().add(RdapIcannStandardInformation.SUMMARY_DATA_REMARK);
     }
 
     // We need the ldhName: RDAP Response Profile 2.9.1, 4.1
-    builder.setLdhName(hostResource.getFullyQualifiedHostName());
+    builder.setLdhName(hostResource.getHostName());
     // Handle is optional, but if given it MUST be the ROID.
     // We will set it always as it's important as a "self link"
     builder.setHandle(hostResource.getRepoId());

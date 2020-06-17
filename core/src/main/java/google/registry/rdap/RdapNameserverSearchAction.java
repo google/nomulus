@@ -271,7 +271,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
       newCursor =
           Optional.of(
               (cursorType == CursorType.NAME)
-                  ? host.getFullyQualifiedHostName()
+                  ? host.getHostName()
                   : host.getRepoId());
       builder
           .nameserverSearchResultsBuilder()
