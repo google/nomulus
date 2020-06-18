@@ -18,15 +18,20 @@ import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.google.appengine.api.datastore.DatastoreService;
+import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.googlecode.objectify.Key;
 import google.registry.backup.CommitLogExports;
+import google.registry.backup.VersionedEntity;
 import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.tools.LevelDbFileBuilder;
 import java.io.File;
 import java.io.IOException;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -49,6 +54,8 @@ class BackupTestStore implements AutoCloseable {
 
   private final FakeClock fakeClock;
   private AppEngineRule appEngine;
+  /** For fetching the persisted Datastore Entity directly. */
+  private DatastoreService datastoreService;
 
   private CommitLogCheckpoint prevCommitLogCheckpoint;
 
@@ -61,31 +68,69 @@ class BackupTestStore implements AutoCloseable {
             .withClock(fakeClock)
             .build();
     this.appEngine.beforeEach(null);
+    datastoreService = DatastoreServiceFactory.getDatastoreService();
   }
 
-  void transact(Iterable<Object> deletes, Iterable<Object> newOrUpdated) {
+  /** Returns the timestamp of the transaction. */
+  long transact(Iterable<Object> deletes, Iterable<Object> newOrUpdated) {
+    long timestamp = fakeClock.nowUtc().getMillis();
     tm().transact(
             () -> {
               ofy().delete().entities(deletes);
               ofy().save().entities(newOrUpdated);
             });
     fakeClock.advanceOneMilli();
+    return timestamp;
   }
 
-  /** Inserts or updates {@code entities} in the Datastore. */
+  /**
+   * Inserts or updates {@code entities} in the Datastore and returns the timestamp of this
+   * transaction.
+   */
   @SafeVarargs
-  final void insertOrUpdate(Object... entities) {
+  final long insertOrUpdate(Object... entities) {
+    long timestamp = fakeClock.nowUtc().getMillis();
     tm().transact(() -> ofy().save().entities(entities).now());
     fakeClock.advanceOneMilli();
+    return timestamp;
   }
 
-  /** Deletes {@code entities} from the Datastore. */
+  /** Deletes {@code entities} from the Datastore and returns the timestamp of this transaction. */
   @SafeVarargs
-  final void delete(Object... entities) {
+  final long delete(Object... entities) {
+    long timestamp = fakeClock.nowUtc().getMillis();
     tm().transact(() -> ofy().delete().entities(entities).now());
     fakeClock.advanceOneMilli();
+    return timestamp;
   }
 
+  /**
+   * Returns the persisted data that corresponds to {@code ofyEntity} as a Datastore {@link Entity}.
+   *
+   * <p>A typical use case for this method is in a test, when the caller has persisted newly created
+   * Objectify entity and want to find out the values of certain assign-on-persist properties. See
+   * {@link VersionedEntity} for more information.
+   */
+  Entity loadAsDatastoreEntity(Object ofyEntity) {
+    try {
+      return datastoreService.get(Key.create(ofyEntity).getRaw());
+    } catch (EntityNotFoundException e) {
+      throw new NoSuchElementException(e.getMessage());
+    }
+  }
+
+  /**
+   * Returns the persisted data that corresponds to {@code ofyEntity} as an Objectify entity.
+   *
+   * <p>See {@link #loadAsDatastoreEntity} and {@link VersionedEntity} for more information.
+   */
+  Object loadAsOfyEntity(Object ofyEntity) {
+    try {
+      return ofy().load().fromEntity(datastoreService.get(Key.create(ofyEntity).getRaw()));
+    } catch (EntityNotFoundException e) {
+      throw new NoSuchElementException(e.getMessage());
+    }
+  }
   /**
    * Exports entities of the caller provided types and returns the directory where data is exported.
    *
@@ -96,7 +141,8 @@ class BackupTestStore implements AutoCloseable {
    *     to simulate an inconsistent export
    * @return directory where data is exported
    */
-  File export(String exportRootPath, Iterable<Class<?>> pojoTypes, Set<Key<?>> excludes)
+  File export(
+      String exportRootPath, Iterable<Class<?>> pojoTypes, Set<Key<? extends Object>> excludes)
       throws IOException {
     File exportDirectory = getExportDirectory(exportRootPath);
     for (Class<?> pojoType : pojoTypes) {
@@ -119,8 +165,9 @@ class BackupTestStore implements AutoCloseable {
     for (Object pojo : ofy().load().type(pojoType).iterable()) {
       if (!excludes.contains(Key.create(pojo))) {
         try {
-          builder.addEntity(toEntity(pojo));
-        } catch (IOException e) {
+          // Must preserve UpdateTimestamp. Do not use ofy().save().toEntity(pojo)!
+          builder.addEntity(datastoreService.get(Key.create(pojo).getRaw()));
+        } catch (Exception e) {
           throw new RuntimeException(e);
         }
       }
@@ -142,10 +189,6 @@ class BackupTestStore implements AutoCloseable {
       appEngine.afterEach(null);
       appEngine = null;
     }
-  }
-
-  private Entity toEntity(Object pojo) {
-    return tm().transactNew(() -> ofy().save().toEntity(pojo));
   }
 
   private File getExportDirectory(String exportRootPath) {

@@ -99,7 +99,7 @@ public class TransactionTest {
         StreamCorruptedException.class, () -> Transaction.deserialize(new byte[] {1, 2, 3, 4}));
   }
 
-  @Entity(name = "TestEntity")
+  @Entity(name = "TxnTestEntity")
   @javax.persistence.Entity(name = "TestEntity")
   private static class TestEntity extends ImmutableObject {
     @Id @javax.persistence.Id private String name;

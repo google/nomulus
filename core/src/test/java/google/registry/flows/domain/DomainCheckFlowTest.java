@@ -192,6 +192,21 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
   }
 
   @Test
+  public void testSuccess_allocationTokenForReservedDomain_showsFee() throws Exception {
+    setEppInput("domain_check_allocationtoken_fee_specificuse.xml");
+    createTld("example");
+    persistResource(
+        new AllocationToken.Builder()
+            .setDomainName("specificuse.tld")
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .build());
+    // Fees are shown for all non-reserved domains and the reserved domain matching this
+    // allocation token.
+    runFlowAssertResponse(loadFile("domain_check_allocationtoken_fee_specificuse_response.xml"));
+  }
+
+  @Test
   public void testSuccess_oneExists_allocationTokenForWrongDomain() throws Exception {
     setEppInput("domain_check_allocationtoken.xml");
     persistActiveDomain("example1.tld");
@@ -440,7 +455,10 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
   @Test
   public void testSuccess_duplicatesAllowed() throws Exception {
     setEppInput("domain_check_duplicates.xml");
-    doCheckTest(create(true, "example1.tld", null), create(true, "example1.tld", null));
+    doCheckTest(
+        create(true, "example1.tld", null),
+        create(true, "example2.tld", null),
+        create(true, "example1.tld", null));
   }
 
   @Test

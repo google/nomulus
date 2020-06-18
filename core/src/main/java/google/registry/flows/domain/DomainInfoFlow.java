@@ -161,7 +161,8 @@ public final class DomainInfoFlow implements Flow {
           null,
           now,
           pricingLogic,
-          Optional.empty());
+          Optional.empty(),
+          false);
       extensions.add(builder.build());
     }
     return extensions.build();

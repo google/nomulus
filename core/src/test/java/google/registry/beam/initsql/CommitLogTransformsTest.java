@@ -14,13 +14,10 @@
 
 package google.registry.beam.initsql;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.newContactResource;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.newRegistry;
 
-import com.google.appengine.api.datastore.Entity;
 import com.google.common.collect.ImmutableList;
 import google.registry.backup.VersionedEntity;
 import google.registry.model.contact.ContactResource;
@@ -39,6 +36,7 @@ import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.joda.time.DateTime;
 import org.junit.After;
@@ -50,7 +48,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit tests for {@link CommitLogTransforms}. */
+/** Unit tests for {@link Transforms} related to loading CommitLogs. */
 // TODO(weiminyu): Upgrade to JUnit5 when TestPipeline is upgraded. It is also easy to adapt with
 // a wrapper.
 @RunWith(JUnit4.class)
@@ -69,9 +67,11 @@ public class CommitLogTransformsTest implements Serializable {
   private transient BackupTestStore store;
   private File commitLogsDir;
   private File firstCommitLogFile;
-  // Canned data that are persisted to Datastore, used by assertions in tests.
-  // TODO(weiminyu): use Ofy entity pojos directly.
-  private transient ImmutableList<Entity> persistedEntities;
+
+  // Canned data:
+  private transient Registry registry;
+  private transient ContactResource contact;
+  private transient DomainBase domain;
 
   @Before
   public void beforeEach() throws Exception {
@@ -79,15 +79,17 @@ public class CommitLogTransformsTest implements Serializable {
     store = new BackupTestStore(fakeClock);
     injectRule.setStaticField(Ofy.class, "clock", fakeClock);
 
-    Registry registry = newRegistry("tld1", "TLD1");
+    registry = newRegistry("tld1", "TLD1");
     store.insertOrUpdate(registry);
-    ContactResource contact1 = newContactResource("contact_1");
-    DomainBase domain1 = newDomainBase("domain1.tld1", contact1);
-    store.insertOrUpdate(contact1, domain1);
-    persistedEntities =
-        ImmutableList.of(registry, contact1, domain1).stream()
-            .map(ofyEntity -> tm().transact(() -> ofy().save().toEntity(ofyEntity)))
-            .collect(ImmutableList.toImmutableList());
+    contact = newContactResource("contact_1");
+    domain = newDomainBase("domain1.tld1", contact);
+    store.insertOrUpdate(contact, domain);
+
+    // Save persisted data for assertions.
+    registry = (Registry) store.loadAsOfyEntity(registry);
+    contact = (ContactResource) store.loadAsOfyEntity(contact);
+    domain = (DomainBase) store.loadAsOfyEntity(domain);
+
     commitLogsDir = temporaryFolder.newFolder();
     firstCommitLogFile = store.saveCommitLogs(commitLogsDir.getAbsolutePath());
   }
@@ -106,7 +108,7 @@ public class CommitLogTransformsTest implements Serializable {
     PCollection<String> patterns =
         pipeline.apply(
             "Get CommitLog file patterns",
-            CommitLogTransforms.getCommitLogFilePatterns(commitLogsDir.getAbsolutePath()));
+            Transforms.getCommitLogFilePatterns(commitLogsDir.getAbsolutePath()));
 
     ImmutableList<String> expectedPatterns =
         ImmutableList.of(commitLogsDir.getAbsolutePath() + "/commit_diff_until_*");
@@ -165,7 +167,7 @@ public class CommitLogTransformsTest implements Serializable {
                 Create.of(commitLogFilenames).withCoder(StringUtf8Coder.of()))
             .apply(
                 "Filtered by Time",
-                CommitLogTransforms.filterCommitLogsByTime(
+                Transforms.filterCommitLogsByTime(
                     DateTime.parse("2000-01-01T00:00:00.001Z"),
                     DateTime.parse("2000-01-01T00:00:00.003Z")));
     PAssert.that(filteredFilenames)
@@ -183,40 +185,15 @@ public class CommitLogTransformsTest implements Serializable {
         pipeline
             .apply(
                 "Get CommitLog file patterns",
-                CommitLogTransforms.getCommitLogFilePatterns(commitLogsDir.getAbsolutePath()))
+                Transforms.getCommitLogFilePatterns(commitLogsDir.getAbsolutePath()))
             .apply("Find CommitLogs", Transforms.getFilesByPatterns())
-            .apply(CommitLogTransforms.loadCommitLogsFromFiles());
+            .apply(Transforms.loadCommitLogsFromFiles());
 
-    PCollection<Long> timestamps =
-        entities.apply(
-            "Extract commitTimeMillis",
-            ParDo.of(
-                new DoFn<VersionedEntity, Long>() {
-                  @ProcessElement
-                  public void processElement(
-                      @Element VersionedEntity entity, OutputReceiver<Long> out) {
-                    out.output(entity.commitTimeMills());
-                  }
-                }));
-    PAssert.that(timestamps)
-        .containsInAnyOrder(
-            fakeClock.nowUtc().getMillis() - 2,
-            fakeClock.nowUtc().getMillis() - 1,
-            fakeClock.nowUtc().getMillis() - 1);
-
-    PCollection<Entity> datastoreEntities =
-        entities.apply(
-            "To Datastore Entities",
-            ParDo.of(
-                new DoFn<VersionedEntity, Entity>() {
-                  @ProcessElement
-                  public void processElement(
-                      @Element VersionedEntity entity, OutputReceiver<Entity> out) {
-                    entity.getEntity().ifPresent(out::output);
-                  }
-                }));
-
-    PAssert.that(datastoreEntities).containsInAnyOrder(persistedEntities);
+    InitSqlTestUtils.assertContainsExactlyElementsIn(
+        entities,
+        KV.of(fakeClock.nowUtc().getMillis() - 2, store.loadAsDatastoreEntity(registry)),
+        KV.of(fakeClock.nowUtc().getMillis() - 1, store.loadAsDatastoreEntity(contact)),
+        KV.of(fakeClock.nowUtc().getMillis() - 1, store.loadAsDatastoreEntity(domain)));
 
     pipeline.run();
   }
