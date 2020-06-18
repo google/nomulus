@@ -288,7 +288,7 @@ public class TransactionManagerTest {
     entities.forEach(TransactionManagerTest::assertEntityNotExist);
   }
 
-  @Entity(name = "TestEntity")
+  @Entity(name = "TxnMgrTestEntity")
   @javax.persistence.Entity(name = "TestEntity")
   private static class TestEntity extends ImmutableObject {
     @Id @javax.persistence.Id private String name;
