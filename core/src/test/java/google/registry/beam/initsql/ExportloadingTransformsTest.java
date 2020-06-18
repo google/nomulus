@@ -14,13 +14,10 @@
 
 package google.registry.beam.initsql;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.newContactResource;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.newRegistry;
 
-import com.google.appengine.api.datastore.Entity;
 import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import google.registry.backup.VersionedEntity;
@@ -41,6 +38,7 @@ import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.joda.time.DateTime;
 import org.junit.After;
@@ -53,7 +51,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 /**
- * Unit tests for {@link ExportLoadingTransforms}.
+ * Unit tests for {@link Transforms} related to loading Datastore exports.
  *
  * <p>This class implements {@link Serializable} so that test {@link DoFn} classes may be inlined.
  */
@@ -79,9 +77,11 @@ public class ExportloadingTransformsTest implements Serializable {
   private FakeClock fakeClock;
   private transient BackupTestStore store;
   private File exportDir;
-  // Canned data that are persisted to Datastore, used by assertions in tests.
-  // TODO(weiminyu): use Ofy entity pojos directly.
-  private transient ImmutableList<Entity> persistedEntities;
+
+  // Canned data:
+  private transient Registry registry;
+  private transient ContactResource contact;
+  private transient DomainBase domain;
 
   @Before
   public void beforeEach() throws Exception {
@@ -89,15 +89,17 @@ public class ExportloadingTransformsTest implements Serializable {
     store = new BackupTestStore(fakeClock);
     injectRule.setStaticField(Ofy.class, "clock", fakeClock);
 
-    Registry registry = newRegistry("tld1", "TLD1");
+    registry = newRegistry("tld1", "TLD1");
     store.insertOrUpdate(registry);
-    ContactResource contact1 = newContactResource("contact_1");
-    DomainBase domain1 = newDomainBase("domain1.tld1", contact1);
-    store.insertOrUpdate(contact1, domain1);
-    persistedEntities =
-        ImmutableList.of(registry, contact1, domain1).stream()
-            .map(ofyEntity -> tm().transact(() -> ofy().save().toEntity(ofyEntity)))
-            .collect(ImmutableList.toImmutableList());
+
+    contact = newContactResource("contact_1");
+    domain = newDomainBase("domain1.tld1", contact);
+    store.insertOrUpdate(contact, domain);
+
+    // Save persisted data for assertions.
+    registry = (Registry) store.loadAsOfyEntity(registry);
+    contact = (ContactResource) store.loadAsOfyEntity(contact);
+    domain = (DomainBase) store.loadAsOfyEntity(domain);
 
     exportDir =
         store.export(exportRootDir.getRoot().getAbsolutePath(), ALL_KINDS, Collections.EMPTY_SET);
@@ -117,8 +119,7 @@ public class ExportloadingTransformsTest implements Serializable {
     PCollection<String> patterns =
         pipeline.apply(
             "Get Datastore file patterns",
-            ExportLoadingTransforms.getDatastoreExportFilePatterns(
-                exportDir.getAbsolutePath(), ALL_KIND_STRS));
+            Transforms.getDatastoreExportFilePatterns(exportDir.getAbsolutePath(), ALL_KIND_STRS));
 
     ImmutableList<String> expectedPatterns =
         ImmutableList.of(
@@ -172,29 +173,20 @@ public class ExportloadingTransformsTest implements Serializable {
 
   @Test
   public void loadDataFromFiles() {
-    PCollection<VersionedEntity> taggedRecords =
+    PCollection<VersionedEntity> entities =
         pipeline
             .apply(
                 "Get Datastore file patterns",
-                ExportLoadingTransforms.getDatastoreExportFilePatterns(
+                Transforms.getDatastoreExportFilePatterns(
                     exportDir.getAbsolutePath(), ALL_KIND_STRS))
             .apply("Find Datastore files", Transforms.getFilesByPatterns())
-            .apply("Load from Datastore files", ExportLoadingTransforms.loadExportDataFromFiles());
+            .apply("Load from Datastore files", Transforms.loadExportDataFromFiles());
 
-    // Transform bytes to pojo for analysis
-    PCollection<Entity> entities =
-        taggedRecords.apply(
-            "Raw records to Entity",
-            ParDo.of(
-                new DoFn<VersionedEntity, Entity>() {
-                  @ProcessElement
-                  public void processElement(
-                      @Element VersionedEntity versionedEntity, OutputReceiver<Entity> out) {
-                    out.output(versionedEntity.getEntity().get());
-                  }
-                }));
-
-    PAssert.that(entities).containsInAnyOrder(persistedEntities);
+    InitSqlTestUtils.assertContainsExactlyElementsIn(
+        entities,
+        KV.of(Transforms.EXPORT_ENTITY_TIME_STAMP, store.loadAsDatastoreEntity(registry)),
+        KV.of(Transforms.EXPORT_ENTITY_TIME_STAMP, store.loadAsDatastoreEntity(contact)),
+        KV.of(Transforms.EXPORT_ENTITY_TIME_STAMP, store.loadAsDatastoreEntity(domain)));
 
     pipeline.run();
   }
