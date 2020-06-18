@@ -139,7 +139,7 @@ public class AppEngineRuleTest {
               .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
       assertWithMessage(
               "Conflicting Ofy kinds found. Tests will break if they are registered with "
-                  + " AppEngineRule in the same text executor.")
+                  + " AppEngineRule in the same test executor.")
           .that(conflictingKinds)
           .isEmpty();
     }
