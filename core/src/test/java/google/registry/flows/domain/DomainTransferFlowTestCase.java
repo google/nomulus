@@ -120,10 +120,7 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
                 .build());
     domain =
         persistResource(
-            domain
-                .asBuilder()
-                .addSubordinateHost(subordinateHost.getHostName())
-                .build());
+            domain.asBuilder().addSubordinateHost(subordinateHost.getHostName()).build());
     historyEntryDomainCreate = getOnlyHistoryEntryOfType(domain, DOMAIN_CREATE);
   }
 

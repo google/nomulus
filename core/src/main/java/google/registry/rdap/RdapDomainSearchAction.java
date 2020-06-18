@@ -424,8 +424,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     // and fetch all domains, to make sure that we can return the first domains in alphabetical
     // order.
     ImmutableSortedSet.Builder<DomainBase> domainSetBuilder =
-        ImmutableSortedSet.orderedBy(
-            Comparator.comparing(DomainBase::getDomainName));
+        ImmutableSortedSet.orderedBy(Comparator.comparing(DomainBase::getDomainName));
     int numHostKeysSearched = 0;
     for (List<VKey<HostResource>> chunk : Iterables.partition(hostKeys, 30)) {
       numHostKeysSearched += chunk.size();
@@ -444,8 +443,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
       Stream<DomainBase> stream = Streams.stream(query).filter(domain -> isAuthorized(domain));
       if (cursorString.isPresent()) {
         stream =
-            stream.filter(
-                domain -> (domain.getDomainName().compareTo(cursorString.get()) > 0));
+            stream.filter(domain -> (domain.getDomainName().compareTo(cursorString.get()) > 0));
       }
       stream.forEach(domainSetBuilder::add);
     }

@@ -90,16 +90,17 @@ public class ExpandRecurringBillingEventsActionTest
     domain = persistResource(newDomainBase("example.tld").asBuilder()
         .setCreationTimeForTest(DateTime.parse("1999-01-05T00:00:00Z")).build());
     historyEntry = persistResource(new HistoryEntry.Builder().setParent(domain).build());
-    recurring = new BillingEvent.Recurring.Builder()
-        .setParent(historyEntry)
-        .setClientId(domain.getCreationClientId())
-        .setEventTime(DateTime.parse("2000-01-05T00:00:00Z"))
-        .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-        .setId(2L)
-        .setReason(Reason.RENEW)
-        .setRecurrenceEndTime(END_OF_TIME)
-        .setTargetId(domain.getDomainName())
-        .build();
+    recurring =
+        new BillingEvent.Recurring.Builder()
+            .setParent(historyEntry)
+            .setClientId(domain.getCreationClientId())
+            .setEventTime(DateTime.parse("2000-01-05T00:00:00Z"))
+            .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+            .setId(2L)
+            .setReason(Reason.RENEW)
+            .setRecurrenceEndTime(END_OF_TIME)
+            .setTargetId(domain.getDomainName())
+            .build();
   }
 
   private void saveCursor(final DateTime cursorTime) {
@@ -179,26 +180,29 @@ public class ExpandRecurringBillingEventsActionTest
     DateTime deletionTime = DateTime.parse("2000-08-01T00:00:00Z");
     DomainBase deletedDomain = persistDeletedDomain("deleted.tld", deletionTime);
     historyEntry = persistResource(new HistoryEntry.Builder().setParent(deletedDomain).build());
-    recurring = persistResource(new BillingEvent.Recurring.Builder()
-        .setParent(historyEntry)
-        .setClientId(deletedDomain.getCreationClientId())
-        .setEventTime(DateTime.parse("2000-01-05T00:00:00Z"))
-        .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-        .setId(2L)
-        .setReason(Reason.RENEW)
-        .setRecurrenceEndTime(deletionTime)
-        .setTargetId(deletedDomain.getDomainName())
-        .build());
+    recurring =
+        persistResource(
+            new BillingEvent.Recurring.Builder()
+                .setParent(historyEntry)
+                .setClientId(deletedDomain.getCreationClientId())
+                .setEventTime(DateTime.parse("2000-01-05T00:00:00Z"))
+                .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+                .setId(2L)
+                .setReason(Reason.RENEW)
+                .setRecurrenceEndTime(deletionTime)
+                .setTargetId(deletedDomain.getDomainName())
+                .build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
     HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(deletedDomain, DOMAIN_AUTORENEW);
     assertHistoryEntryMatches(
         deletedDomain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"),
         true);
-    BillingEvent.OneTime expected = defaultOneTimeBuilder()
-        .setParent(persistedEntry)
-        .setTargetId(deletedDomain.getDomainName())
-        .build();
+    BillingEvent.OneTime expected =
+        defaultOneTimeBuilder()
+            .setParent(persistedEntry)
+            .setTargetId(deletedDomain.getDomainName())
+            .build();
     assertBillingEventsForResource(deletedDomain, expected, recurring);
     assertCursorAt(beginningOfTest);
   }

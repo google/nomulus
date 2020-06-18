@@ -90,16 +90,17 @@ public final class HostInfoFlow implements Flow {
           .setLastTransferTime(host.getLastTransferTime());
     }
     return responseBuilder
-        .setResData(hostInfoDataBuilder
-            .setFullyQualifiedHostName(host.getHostName())
-            .setRepoId(host.getRepoId())
-            .setStatusValues(statusValues.build())
-            .setInetAddresses(host.getInetAddresses())
-            .setCreationClientId(host.getCreationClientId())
-            .setCreationTime(host.getCreationTime())
-            .setLastEppUpdateClientId(host.getLastEppUpdateClientId())
-            .setLastEppUpdateTime(host.getLastEppUpdateTime())
-            .build())
+        .setResData(
+            hostInfoDataBuilder
+                .setFullyQualifiedHostName(host.getHostName())
+                .setRepoId(host.getRepoId())
+                .setStatusValues(statusValues.build())
+                .setInetAddresses(host.getInetAddresses())
+                .setCreationClientId(host.getCreationClientId())
+                .setCreationTime(host.getCreationTime())
+                .setLastEppUpdateClientId(host.getLastEppUpdateClientId())
+                .setLastEppUpdateTime(host.getLastEppUpdateTime())
+                .build())
         .build();
   }
 }

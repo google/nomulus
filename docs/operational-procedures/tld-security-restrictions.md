@@ -71,9 +71,9 @@ label.
 ## Domain create restriction on closed TLDs
 
 Nomulus offers the ability to "lock-down" a TLD so that domain registration is
-forbidden except for whitelisted domain names. This is achieved by setting the
+forbidden except for allow-listed domain names. This is achieved by setting the
 "domain create restricted" option on the TLD using the `nomulus` tool. Domains
-are whitelisted for registration by adding them to reserved lists with entries
+are allow-listed for registration by adding them to reserved lists with entries
 of type `NAMESERVER_RESTRICTED`. Each domain will thus also need to have
 explicitly allowed nameservers configured in its reserved list entry, per the
 previous section.
@@ -90,7 +90,7 @@ Note that you do **not** have to set a TLD-wide allowed nameservers list with
 this option, because it operates independently from the per-domain nameservers
 restriction that `NAMESERVER_RESTRICTED` reservation imposes.
 
-In addition to disabling registration of non-whitelisted domains, setting a TLD
+In addition to disabling registration of non-allow-listed domains, setting a TLD
 as domain create restricted also applies the `SERVER_UPDATE_PROHIBITED` and
 `SERVER_TRANSFER_PROHIBITED` statuses to domains upon creation. Any domains on a
 domain create restricted TLD are therefore virtually immutable, and must be

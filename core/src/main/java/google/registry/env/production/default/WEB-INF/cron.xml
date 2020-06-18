@@ -284,7 +284,7 @@
     <description>
       Checks if the monthly ICANN reports have been successfully uploaded. If they have not, attempts to upload them again.
       Most of the time, this job should not do anything since the uploads are triggered when the reports are staged.
-      However, in the event that an upload failed for any reason (e.g. ICANN server is down, IP whitelist issues),
+      However, in the event that an upload failed for any reason (e.g. ICANN server is down, IP allow list issues),
       this cron job will continue to retry uploads daily until they succeed.
     </description>
     <schedule>every day 15:00</schedule>

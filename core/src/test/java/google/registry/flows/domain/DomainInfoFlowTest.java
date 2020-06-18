@@ -137,9 +137,7 @@ public class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Dom
         persistResource(
             domain
                 .asBuilder()
-                .setSubordinateHosts(
-                    ImmutableSet.of(
-                        host1.getHostName(), host3.getHostName()))
+                .setSubordinateHosts(ImmutableSet.of(host1.getHostName(), host3.getHostName()))
                 .build());
   }
 

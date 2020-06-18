@@ -181,12 +181,12 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateOteEntities_setIpWhitelist() {
+  public void testCreateOteEntities_setIpAllowList() {
     OteAccountBuilder.forClientId("myclientid")
-        .setIpWhitelist(ImmutableList.of("1.1.1.0/24"))
+        .setIpAllowList(ImmutableList.of("1.1.1.0/24"))
         .buildAndPersist();
 
-    assertThat(Registrar.loadByClientId("myclientid-3").get().getIpAddressWhitelist())
+    assertThat(Registrar.loadByClientId("myclientid-3").get().getIpAddressAllowList())
         .containsExactly(CidrAddressBlock.create("1.1.1.0/24"));
   }
 

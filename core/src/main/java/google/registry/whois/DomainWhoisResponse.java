@@ -88,9 +88,7 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
             .findFirst();
     return WhoisResponseResults.create(
         new DomainEmitter()
-            .emitField(
-                "Domain Name",
-                maybeFormatHostname(domain.getDomainName(), preferUnicode))
+            .emitField("Domain Name", maybeFormatHostname(domain.getDomainName(), preferUnicode))
             .emitField("Registry Domain ID", domain.getRepoId())
             .emitField("Registrar WHOIS Server", registrar.getWhoisServer())
             .emitField("Registrar URL", registrar.getUrl())

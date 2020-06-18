@@ -246,28 +246,32 @@ public class DeleteProberDataAction implements Runnable {
     }
 
     private void softDeleteDomain(final DomainBase domain) {
-      tm().transactNew(() -> {
-          DomainBase deletedDomain = domain
-              .asBuilder()
-              .setDeletionTime(tm().getTransactionTime())
-              .setStatusValues(null)
-              .build();
-          HistoryEntry historyEntry = new HistoryEntry.Builder()
-              .setParent(domain)
-              .setType(DOMAIN_DELETE)
-              .setModificationTime(tm().getTransactionTime())
-              .setBySuperuser(true)
-              .setReason("Deletion of prober data")
-              .setClientId(registryAdminClientId)
-              .build();
-          // Note that we don't bother handling grace periods, billing events, pending transfers,
-          // poll messages, or auto-renews because these will all be hard-deleted the next time the
-          // mapreduce runs anyway.
-          ofy().save().entities(deletedDomain, historyEntry);
-          updateForeignKeyIndexDeletionTime(deletedDomain);
-          dnsQueue.addDomainRefreshTask(deletedDomain.getDomainName());
-        }
-      );
+      tm().transactNew(
+              () -> {
+                DomainBase deletedDomain =
+                    domain
+                        .asBuilder()
+                        .setDeletionTime(tm().getTransactionTime())
+                        .setStatusValues(null)
+                        .build();
+                HistoryEntry historyEntry =
+                    new HistoryEntry.Builder()
+                        .setParent(domain)
+                        .setType(DOMAIN_DELETE)
+                        .setModificationTime(tm().getTransactionTime())
+                        .setBySuperuser(true)
+                        .setReason("Deletion of prober data")
+                        .setClientId(registryAdminClientId)
+                        .build();
+                // Note that we don't bother handling grace periods, billing events, pending
+                // transfers,
+                // poll messages, or auto-renews because these will all be hard-deleted the next
+                // time the
+                // mapreduce runs anyway.
+                ofy().save().entities(deletedDomain, historyEntry);
+                updateForeignKeyIndexDeletionTime(deletedDomain);
+                dnsQueue.addDomainRefreshTask(deletedDomain.getDomainName());
+              });
     }
   }
 }

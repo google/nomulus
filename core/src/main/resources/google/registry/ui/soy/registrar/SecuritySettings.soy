@@ -17,7 +17,7 @@
 
 /** Registrar security settings page for view and edit. */
 {template .settings}
-  {@param ipAddressWhitelist: list<string>}
+  {@param ipAddressAllowList: list<string>}
   {@param? phonePasscode: string}
   {@param? clientCertificate: string}
   {@param? clientCertificateHash: string}
@@ -36,7 +36,7 @@
 
       <tr class="{css('kd-settings-pane-section')}">
         <td>
-          <label class="{css('setting-label')}">IP whitelist</label>
+          <label class="{css('setting-label')}">IP allow list</label>
           <span class="{css('description')}">Restrict access to EPP
             production servers to the following IP/IPv6 addresses, or
             ranges like 1.1.1.0/24</span>
@@ -44,9 +44,9 @@
         <td class="{css('setting')}">
           <div class="{css('info')} {css('summary')}">
             <div id="ips">
-              {for $ip in $ipAddressWhitelist}
+              {for $ip in $ipAddressAllowList}
                 {call .ip}
-                  {param name: 'ipAddressWhitelist[' + index($ip) + ']' /}
+                  {param name: 'ipAddressAllowList[' + index($ip) + ']' /}
                   {param ip: $ip /}
                 {/call}
               {/for}

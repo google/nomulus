@@ -28,10 +28,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class VKeyTranslatorFactoryTest {
 
-  @RegisterExtension public final AppEngineRule appEngine =
-      AppEngineRule.builder()
-          .withDatastore()
-          .build();
+  @RegisterExtension
+  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
 
   public VKeyTranslatorFactoryTest() {}
 

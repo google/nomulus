@@ -171,8 +171,7 @@ public class HostResourceTest extends EntityTestCase {
   public void testFailure_uppercaseHostName() {
     IllegalArgumentException thrown =
         assertThrows(
-            IllegalArgumentException.class,
-            () -> host.asBuilder().setHostName("AAA.BBB.CCC"));
+            IllegalArgumentException.class, () -> host.asBuilder().setHostName("AAA.BBB.CCC"));
     assertThat(thrown)
         .hasMessageThat()
         .contains("Host name must be in puny-coded, lower-case form");
@@ -182,8 +181,7 @@ public class HostResourceTest extends EntityTestCase {
   public void testFailure_utf8HostName() {
     IllegalArgumentException thrown =
         assertThrows(
-            IllegalArgumentException.class,
-            () -> host.asBuilder().setHostName("みんな.みんな.みんな"));
+            IllegalArgumentException.class, () -> host.asBuilder().setHostName("みんな.みんな.みんな"));
     assertThat(thrown)
         .hasMessageThat()
         .contains("Host name must be in puny-coded, lower-case form");

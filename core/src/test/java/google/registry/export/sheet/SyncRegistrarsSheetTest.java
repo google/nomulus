@@ -282,7 +282,7 @@ public class SyncRegistrarsSheetTest {
     assertThat(row.get("lastUpdateTime")).isEqualTo(beforeExecution.toString());
     assertThat(row).containsEntry("allowedTlds", "example");
     assertThat(row).containsEntry("blockPremiumNames", "false");
-    assertThat(row).containsEntry("ipAddressWhitelist", "");
+    assertThat(row).containsEntry("ipAddressAllowList", "");
     assertThat(row).containsEntry("url", "http://www.example.org/aaa_registrar");
     assertThat(row).containsEntry("icannReferralEmail", "");
     assertThat(row).containsEntry("whoisServer", getDefaultRegistrarWhoisServer());
@@ -317,7 +317,7 @@ public class SyncRegistrarsSheetTest {
     assertThat(row).containsEntry("allowedTlds", "");
     assertThat(row).containsEntry("whoisServer", "whois.example.com");
     assertThat(row).containsEntry("blockPremiumNames", "false");
-    assertThat(row).containsEntry("ipAddressWhitelist", "");
+    assertThat(row).containsEntry("ipAddressAllowList", "");
     assertThat(row).containsEntry("url", "http://www.example.org/another_registrar");
     assertThat(row).containsEntry("referralUrl", "http://www.example.org/another_registrar");
     assertThat(row).containsEntry("icannReferralEmail", "jim@example.net");
@@ -361,7 +361,7 @@ public class SyncRegistrarsSheetTest {
     assertThat(row).containsEntry("allowedTlds", "");
     assertThat(row).containsEntry("whoisServer", getDefaultRegistrarWhoisServer());
     assertThat(row).containsEntry("blockPremiumNames", "false");
-    assertThat(row).containsEntry("ipAddressWhitelist", "");
+    assertThat(row).containsEntry("ipAddressAllowList", "");
     assertThat(row).containsEntry("url", "");
     assertThat(row).containsEntry("referralUrl", "");
     assertThat(row).containsEntry("icannReferralEmail", "");

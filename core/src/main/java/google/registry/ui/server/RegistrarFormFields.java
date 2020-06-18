@@ -158,8 +158,8 @@ public final class RegistrarFormFields {
       FormFields.MIN_TOKEN.asBuilderNamed("url")
           .build();
 
-  public static final FormField<List<String>, List<CidrAddressBlock>> IP_ADDRESS_WHITELIST_FIELD =
-      FormField.named("ipAddressWhitelist")
+  public static final FormField<List<String>, List<CidrAddressBlock>> IP_ADDRESS_ALLOW_LIST_FIELD =
+      FormField.named("ipAddressAllowList")
           .emptyToNull()
           .transform(CidrAddressBlock.class, RegistrarFormFields::parseCidr)
           .asList()

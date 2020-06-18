@@ -153,9 +153,9 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
   Path failoverClientCertificateFilename;
 
   @Parameter(
-      names = "--ip_whitelist",
-      description = "Comma-delimited list of IP ranges. An empty string clears the whitelist.")
-  List<String> ipWhitelist = new ArrayList<>();
+      names = "--ip_allow_list",
+      description = "Comma-delimited list of IP ranges. An empty string clears the allow list.")
+  List<String> ipAllowList = new ArrayList<>();
 
   @Nullable
   @Parameter(
@@ -343,16 +343,16 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
         }
         builder.setAllowedTlds(allowedTldsBuilder.build());
       }
-      if (!ipWhitelist.isEmpty()) {
-        ImmutableList.Builder<CidrAddressBlock> ipWhitelistBuilder = new ImmutableList.Builder<>();
-        if (!(ipWhitelist.size() == 1 && ipWhitelist.get(0).contains("null"))) {
-          for (String ipRange : ipWhitelist) {
+      if (!ipAllowList.isEmpty()) {
+        ImmutableList.Builder<CidrAddressBlock> ipAllowListBuilder = new ImmutableList.Builder<>();
+        if (!(ipAllowList.size() == 1 && ipAllowList.get(0).contains("null"))) {
+          for (String ipRange : ipAllowList) {
             if (!ipRange.isEmpty()) {
-              ipWhitelistBuilder.add(CidrAddressBlock.create(ipRange));
+              ipAllowListBuilder.add(CidrAddressBlock.create(ipRange));
             }
           }
         }
-        builder.setIpAddressWhitelist(ipWhitelistBuilder.build());
+        builder.setIpAddressAllowList(ipAllowListBuilder.build());
       }
       if (clientCertificateFilename != null) {
         String asciiCert = new String(Files.readAllBytes(clientCertificateFilename), US_ASCII);

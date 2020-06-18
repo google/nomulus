@@ -191,43 +191,43 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_ipWhitelist() throws Exception {
-    assertThat(loadRegistrar("NewRegistrar").getIpAddressWhitelist()).isEmpty();
-    runCommand("--ip_whitelist=192.168.1.1,192.168.0.2/16", "--force", "NewRegistrar");
-    assertThat(loadRegistrar("NewRegistrar").getIpAddressWhitelist())
+  public void testSuccess_ipAllowList() throws Exception {
+    assertThat(loadRegistrar("NewRegistrar").getIpAddressAllowList()).isEmpty();
+    runCommand("--ip_allow_list=192.168.1.1,192.168.0.2/16", "--force", "NewRegistrar");
+    assertThat(loadRegistrar("NewRegistrar").getIpAddressAllowList())
         .containsExactly(
             CidrAddressBlock.create("192.168.1.1"), CidrAddressBlock.create("192.168.0.2/16"))
         .inOrder();
   }
 
   @Test
-  public void testSuccess_clearIpWhitelist_useNull() throws Exception {
+  public void testSuccess_clearIpAllowList_useNull() throws Exception {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setIpAddressWhitelist(
+            .setIpAddressAllowList(
                 ImmutableList.of(
                     CidrAddressBlock.create("192.168.1.1"),
                     CidrAddressBlock.create("192.168.0.2/16")))
             .build());
-    assertThat(loadRegistrar("NewRegistrar").getIpAddressWhitelist()).isNotEmpty();
-    runCommand("--ip_whitelist=null", "--force", "NewRegistrar");
-    assertThat(loadRegistrar("NewRegistrar").getIpAddressWhitelist()).isEmpty();
+    assertThat(loadRegistrar("NewRegistrar").getIpAddressAllowList()).isNotEmpty();
+    runCommand("--ip_allow_list=null", "--force", "NewRegistrar");
+    assertThat(loadRegistrar("NewRegistrar").getIpAddressAllowList()).isEmpty();
   }
 
   @Test
-  public void testSuccess_clearIpWhitelist_useEmpty() throws Exception {
+  public void testSuccess_clearIpAllowList_useEmpty() throws Exception {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setIpAddressWhitelist(
+            .setIpAddressAllowList(
                 ImmutableList.of(
                     CidrAddressBlock.create("192.168.1.1"),
                     CidrAddressBlock.create("192.168.0.2/16")))
             .build());
-    assertThat(loadRegistrar("NewRegistrar").getIpAddressWhitelist()).isNotEmpty();
-    runCommand("--ip_whitelist=", "--force", "NewRegistrar");
-    assertThat(loadRegistrar("NewRegistrar").getIpAddressWhitelist()).isEmpty();
+    assertThat(loadRegistrar("NewRegistrar").getIpAddressAllowList()).isNotEmpty();
+    runCommand("--ip_allow_list=", "--force", "NewRegistrar");
+    assertThat(loadRegistrar("NewRegistrar").getIpAddressAllowList()).isEmpty();
   }
 
   @Test
@@ -653,10 +653,10 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_invalidIpWhitelist() {
+  public void testFailure_invalidIpAllowList() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> runCommand("--ip_whitelist=foobarbaz", "--force", "NewRegistrar"));
+        () -> runCommand("--ip_allow_list=foobarbaz", "--force", "NewRegistrar"));
   }
 
   @Test

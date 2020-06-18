@@ -139,7 +139,8 @@ public class DomainBase extends EppResource
    */
   // TODO(b/158858642): Rename this to domainName when we are off Datastore
   @Column(name = "domainName")
-  @Index String fullyQualifiedDomainName;
+  @Index
+  String fullyQualifiedDomainName;
 
   /** The top level domain this is under, dernormalized from {@link #fullyQualifiedDomainName}. */
   @Index
@@ -680,8 +681,7 @@ public class DomainBase extends EppResource
         removeStatusValue(StatusValue.INACTIVE);
       }
 
-      checkArgumentNotNull(
-          emptyToNull(instance.fullyQualifiedDomainName), "Missing domainName");
+      checkArgumentNotNull(emptyToNull(instance.fullyQualifiedDomainName), "Missing domainName");
       if (instance.getRegistrant() == null
           && instance.allContacts.stream().anyMatch(IS_REGISTRANT)) {
         throw new IllegalArgumentException("registrant is null but is in allContacts");

@@ -57,17 +57,17 @@ import org.joda.time.Duration;
  * <p>This includes the TLDs (Registries), Registrars, and the RegistrarContacts that can access the
  * web console.
  *
- * This class is basically a "builder" for the parameters needed to generate the OT&amp;E entities.
- * Nothing is created until you call {@link #buildAndPersist}.
+ * <p>This class is basically a "builder" for the parameters needed to generate the OT&amp;E
+ * entities. Nothing is created until you call {@link #buildAndPersist}.
  *
- * Usage example:
+ * <p>Usage example:
  *
- * <pre>   {@code
+ * <pre>{@code
  * OteAccountBuilder.forClientId("example")
  *     .addContact("contact@email.com") // OPTIONAL
  *     .setPassword("password") // OPTIONAL
  *     .setCertificateHash(certificateHash) // OPTIONAL
- *     .setIpWhitelist(ImmutableList.of("1.1.1.1", "2.2.2.0/24")) // OPTIONAL
+ *     .setIpAllowList(ImmutableList.of("1.1.1.1", "2.2.2.0/24")) // OPTIONAL
  *     .buildAndPersist();
  * }</pre>
  */
@@ -221,11 +221,11 @@ public final class OteAccountBuilder {
     return transformRegistrars(builder -> builder.setClientCertificate(asciiCert, now));
   }
 
-  /** Sets the IP whitelist to all the OT&amp;E Registrars. */
-  public OteAccountBuilder setIpWhitelist(Collection<String> ipWhitelist) {
-    ImmutableList<CidrAddressBlock> ipAddressWhitelist =
-        ipWhitelist.stream().map(CidrAddressBlock::create).collect(toImmutableList());
-    return transformRegistrars(builder -> builder.setIpAddressWhitelist(ipAddressWhitelist));
+  /** Sets the IP allow list to all the OT&amp;E Registrars. */
+  public OteAccountBuilder setIpAllowList(Collection<String> ipAllowList) {
+    ImmutableList<CidrAddressBlock> ipAddressAllowList =
+        ipAllowList.stream().map(CidrAddressBlock::create).collect(toImmutableList());
+    return transformRegistrars(builder -> builder.setIpAddressAllowList(ipAddressAllowList));
   }
 
   /**

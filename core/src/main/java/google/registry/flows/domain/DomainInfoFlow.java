@@ -118,12 +118,9 @@ public final class DomainInfoFlow implements Flow {
       infoBuilder
           .setStatusValues(domain.getStatusValues())
           .setContacts(loadForeignKeyedDesignatedContacts(domain.getContacts()))
-          .setNameservers(hostsRequest.requestDelegated()
-              ? domain.loadNameserverHostNames()
-              : null)
-          .setSubordinateHosts(hostsRequest.requestSubordinate()
-              ? domain.getSubordinateHosts()
-              : null)
+          .setNameservers(hostsRequest.requestDelegated() ? domain.loadNameserverHostNames() : null)
+          .setSubordinateHosts(
+              hostsRequest.requestSubordinate() ? domain.getSubordinateHosts() : null)
           .setCreationClientId(domain.getCreationClientId())
           .setCreationTime(domain.getCreationTime())
           .setLastEppUpdateClientId(domain.getLastEppUpdateClientId())

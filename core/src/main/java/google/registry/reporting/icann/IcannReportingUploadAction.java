@@ -266,15 +266,15 @@ public final class IcannReportingUploadAction implements Runnable {
   private static final String ICANN_UPLOAD_PERMANENT_ERROR_MESSAGE =
       "A report for that month already exists, the cut-off date already passed";
 
-  /** Don't retry when the IP address isn't whitelisted, as retries go through the same IP. */
-  private static final Pattern ICANN_UPLOAD_WHITELIST_ERROR =
+  /** Don't retry when the IP address isn't allow-listed, as retries go through the same IP. */
+  private static final Pattern ICANN_UPLOAD_ALLOW_LIST_ERROR =
       Pattern.compile("Your IP address .+ is not allowed to connect");
 
   /** Predicate to retry uploads on IOException, so long as they aren't non-retryable errors. */
   private static boolean isUploadFailureRetryable(Throwable e) {
     return (e instanceof IOException)
         && !e.getMessage().contains(ICANN_UPLOAD_PERMANENT_ERROR_MESSAGE)
-        && !ICANN_UPLOAD_WHITELIST_ERROR.matcher(e.getMessage()).matches();
+        && !ICANN_UPLOAD_ALLOW_LIST_ERROR.matcher(e.getMessage()).matches();
   }
 
   private void emailUploadResults(ImmutableMap<String, Boolean> reportSummary) {

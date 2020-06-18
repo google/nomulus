@@ -42,8 +42,8 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   protected Registrar.Builder getRegistrarBuilder() {
     return super.getRegistrarBuilder()
         .setClientCertificateHash(GOOD_CERT)
-        .setIpAddressWhitelist(ImmutableList.of(
-            CidrAddressBlock.create(InetAddresses.forString(GOOD_IP.get()), 32)));
+        .setIpAddressAllowList(
+            ImmutableList.of(CidrAddressBlock.create(InetAddresses.forString(GOOD_IP.get()), 32)));
   }
 
   @Test
@@ -57,8 +57,8 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   public void testSuccess_withGoodCredentialsIpv6() throws Exception {
     persistResource(
         getRegistrarBuilder()
-            .setIpAddressWhitelist(ImmutableList.of(
-                CidrAddressBlock.create("2001:db8:0:0:0:0:1:1/32")))
+            .setIpAddressAllowList(
+                ImmutableList.of(CidrAddressBlock.create("2001:db8:0:0:0:0:1:1/32")))
             .build());
     credentials = new TlsCredentials(true, GOOD_CERT, GOOD_IPV6);
     doSuccessfulTest("login_valid.xml");
@@ -68,8 +68,8 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   public void testSuccess_withIpv6AddressInSubnet() throws Exception {
     persistResource(
         getRegistrarBuilder()
-            .setIpAddressWhitelist(ImmutableList.of(
-                CidrAddressBlock.create("2001:db8:0:0:0:0:1:1/32")))
+            .setIpAddressAllowList(
+                ImmutableList.of(CidrAddressBlock.create("2001:db8:0:0:0:0:1:1/32")))
             .build());
     credentials = new TlsCredentials(true, GOOD_CERT, GOOD_IPV6);
     doSuccessfulTest("login_valid.xml");
@@ -79,8 +79,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   public void testSuccess_withIpv4AddressInSubnet() throws Exception {
     persistResource(
         getRegistrarBuilder()
-            .setIpAddressWhitelist(ImmutableList.of(
-                CidrAddressBlock.create("192.168.1.255/24")))
+            .setIpAddressAllowList(ImmutableList.of(CidrAddressBlock.create("192.168.1.255/24")))
             .build());
     credentials = new TlsCredentials(true, GOOD_CERT, GOOD_IP);
     doSuccessfulTest("login_valid.xml");
@@ -104,9 +103,10 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   public void testFailure_missingClientIpAddress() {
     persistResource(
         getRegistrarBuilder()
-            .setIpAddressWhitelist(ImmutableList.of(
-                CidrAddressBlock.create(InetAddresses.forString("192.168.1.1"), 32),
-                CidrAddressBlock.create(InetAddresses.forString("2001:db8::1"), 128)))
+            .setIpAddressAllowList(
+                ImmutableList.of(
+                    CidrAddressBlock.create(InetAddresses.forString("192.168.1.1"), 32),
+                    CidrAddressBlock.create(InetAddresses.forString("2001:db8::1"), 128)))
             .build());
     credentials = new TlsCredentials(true, GOOD_CERT, Optional.empty());
     doFailingTest("login_valid.xml", BadRegistrarIpAddressException.class);
@@ -116,9 +116,10 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   public void testFailure_incorrectClientIpv4Address() {
     persistResource(
         getRegistrarBuilder()
-            .setIpAddressWhitelist(ImmutableList.of(
-                CidrAddressBlock.create(InetAddresses.forString("192.168.1.1"), 32),
-                CidrAddressBlock.create(InetAddresses.forString("2001:db8::1"), 128)))
+            .setIpAddressAllowList(
+                ImmutableList.of(
+                    CidrAddressBlock.create(InetAddresses.forString("192.168.1.1"), 32),
+                    CidrAddressBlock.create(InetAddresses.forString("2001:db8::1"), 128)))
             .build());
     credentials = new TlsCredentials(true, GOOD_CERT, BAD_IP);
     doFailingTest("login_valid.xml", BadRegistrarIpAddressException.class);
@@ -128,9 +129,10 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   public void testFailure_incorrectClientIpv6Address() {
     persistResource(
         getRegistrarBuilder()
-            .setIpAddressWhitelist(ImmutableList.of(
-                CidrAddressBlock.create(InetAddresses.forString("192.168.1.1"), 32),
-                CidrAddressBlock.create(InetAddresses.forString("2001:db8::1"), 128)))
+            .setIpAddressAllowList(
+                ImmutableList.of(
+                    CidrAddressBlock.create(InetAddresses.forString("192.168.1.1"), 32),
+                    CidrAddressBlock.create(InetAddresses.forString("2001:db8::1"), 128)))
             .build());
     credentials = new TlsCredentials(true, GOOD_CERT, BAD_IPV6);
     doFailingTest("login_valid.xml", BadRegistrarIpAddressException.class);

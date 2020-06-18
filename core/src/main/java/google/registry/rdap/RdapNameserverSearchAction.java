@@ -269,10 +269,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
     Optional<String> newCursor = Optional.empty();
     for (HostResource host : Iterables.limit(hosts, rdapResultSetMaxSize)) {
       newCursor =
-          Optional.of(
-              (cursorType == CursorType.NAME)
-                  ? host.getHostName()
-                  : host.getRepoId());
+          Optional.of((cursorType == CursorType.NAME) ? host.getHostName() : host.getRepoId());
       builder
           .nameserverSearchResultsBuilder()
           .add(rdapJsonFormatter.createRdapNameserver(host, outputDataType));

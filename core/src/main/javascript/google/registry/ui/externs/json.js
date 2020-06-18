@@ -140,7 +140,7 @@ registry.json.Response.prototype.results;
  *   driveFolderId: string?,
  *   ianaIdentifier: (number?|undefined),
  *   icannReferralEmail: string,
- *   ipAddressWhitelist: !Array<string>,
+ *   ipAddressAllowList: !Array<string>,
  *   emailAddress: (string?|undefined),
  *   lastUpdateTime: string,
  *   url: (string?|undefined),

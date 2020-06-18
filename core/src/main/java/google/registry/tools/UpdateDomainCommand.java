@@ -183,8 +183,7 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
                 + "to make updates, and if so, use the domain_unlock command to enable updates.",
             domain);
         if (!nameservers.isEmpty()) {
-          ImmutableSortedSet<String> existingNameservers =
-              domainBase.loadNameserverHostNames();
+          ImmutableSortedSet<String> existingNameservers = domainBase.loadNameserverHostNames();
           populateAddRemoveLists(
               ImmutableSet.copyOf(nameservers),
               existingNameservers,

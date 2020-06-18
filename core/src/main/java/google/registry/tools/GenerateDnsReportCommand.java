@@ -127,9 +127,8 @@ final class GenerateDnsReportCommand implements CommandWithRemoteApi {
               .map(InetAddress::getHostAddress)
               .sorted()
               .collect(toImmutableList());
-      ImmutableMap<String, ?> map  = ImmutableMap.of(
-          "host", nameserver.getHostName(),
-          "ips", ipAddresses);
+      ImmutableMap<String, ?> map =
+          ImmutableMap.of("host", nameserver.getHostName(), "ips", ipAddresses);
       writeJson(map);
     }
 

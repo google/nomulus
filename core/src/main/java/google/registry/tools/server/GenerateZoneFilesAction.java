@@ -284,12 +284,13 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
     StringBuilder result = new StringBuilder();
     String domainLabel = stripTld(domain.getDomainName(), domain.getTld());
     for (HostResource nameserver : tm().load(domain.getNameservers())) {
-      result.append(String.format(
-          NS_FORMAT,
-          domainLabel,
-          dnsDefaultNsTtl.getStandardSeconds(),
-          // Load the nameservers at the export time in case they've been renamed or deleted.
-          loadAtPointInTime(nameserver, exportTime).now().getHostName()));
+      result.append(
+          String.format(
+              NS_FORMAT,
+              domainLabel,
+              dnsDefaultNsTtl.getStandardSeconds(),
+              // Load the nameservers at the export time in case they've been renamed or deleted.
+              loadAtPointInTime(nameserver, exportTime).now().getHostName()));
     }
     for (DelegationSignerData dsData : domain.getDsData()) {
       result.append(
@@ -319,12 +320,13 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
     for (InetAddress addr : host.getInetAddresses()) {
       // must be either IPv4 or IPv6
       String rrSetClass = (addr instanceof Inet4Address) ? "A" : "AAAA";
-      result.append(String.format(
-          A_FORMAT,
-          stripTld(host.getHostName(), tld),
-          dnsDefaultATtl.getStandardSeconds(),
-          rrSetClass,
-          addr.getHostAddress()));
+      result.append(
+          String.format(
+              A_FORMAT,
+              stripTld(host.getHostName(), tld),
+              dnsDefaultATtl.getStandardSeconds(),
+              rrSetClass,
+              addr.getHostAddress()));
     }
     return result.toString();
   }

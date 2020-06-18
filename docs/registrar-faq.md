@@ -28,7 +28,7 @@ certifications required across gTLDs?**
 implementation. Here is how we answer it: ]*
 
 The registry does not provide a secure certificate. Registrars must provide
-their own certificate during onboarding, which will be whitelisted for the
+their own certificate during onboarding, which will be allow-listed for the
 connection. A single certificate can be used for multiple TLDs.
 
 **1.4 Locks and statuses: do lock and status rules follow RFC specifications?**
@@ -277,7 +277,7 @@ We have a shared registry system for EPP, with a shared namespace across all
 supported TLDs. Contacts and hosts are shared across all TLDs; for instance, the
 same contact can be used for all of a registrar's domains in the system.
 
-**7.11 If using a DRS, are login credentials, IP whitelisting, etc. configured
+**7.11 If using a DRS, are login credentials, IP allow listing, etc. configured
 separately or will these be the same for all TLDs in your system?**
 
 These will be the same for all TLDs, because we are a shared registry system.
@@ -477,20 +477,20 @@ commands.
 ## Security
 
 *[ The answers in this section depend on your EPP proxy implementation. These
-are the answers that we give, because our EPP proxy has IP whitelists, and
+are the answers that we give, because our EPP proxy has IP allow lists, and
 requires SSL certificates and SNI. We recommend that other proxy implementations
 do likewise. ]*
 
 **9.1 How do I specify the IP addresses that can access your EPP system?**
 
-You will be asked to submit your whitelisted IPs (in CIDR notation) during the
+You will be asked to submit your allow-listed IPs (in CIDR notation) during the
 onboarding process. After completion of the onboarding process, you can use the
-support console to manage the IP whitelist for your production account.
+support console to manage the IP allow list for your production account.
 
 **9.2 What SSL certificates will you accept for EPP connections?**
 
 We will accept any SSL certificate. You will be asked to submit your certificate
-for whitelisting during the onboarding process. After completion of the
+for allow-listing during the onboarding process. After completion of the
 onboarding process, you can use the support console to manage the certificate
 for your production account.
 

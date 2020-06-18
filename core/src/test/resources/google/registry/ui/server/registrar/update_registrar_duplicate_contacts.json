@@ -42,7 +42,7 @@
     "creationTime": "2014-04-15T21:57:54.765Z",
     "clientCertificate": null,
     "emailAddress": "thase@the.registrar",
-    "ipAddressWhitelist": [
+    "ipAddressAllowList": [
       "1.1.1.1\/32",
       "2.2.2.2\/32",
       "4.4.4.4\/32"

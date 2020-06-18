@@ -83,7 +83,7 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
     assertThat(registrar.getIanaIdentifier()).isEqualTo(8);
     assertThat(registrar.getState()).isEqualTo(Registrar.State.ACTIVE);
     assertThat(registrar.getAllowedTlds()).isEmpty();
-    assertThat(registrar.getIpAddressWhitelist()).isEmpty();
+    assertThat(registrar.getIpAddressAllowList()).isEmpty();
     assertThat(registrar.getClientCertificateHash()).isNull();
     assertThat(registrar.getPhonePasscode()).isEqualTo("01234");
     assertThat(registrar.getCreationTime()).isIn(Range.closed(before, after));
@@ -307,13 +307,13 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
   }
 
   @Test
-  public void testSuccess_ipWhitelistFlag() throws Exception {
+  public void testSuccess_ipAllowListFlag() throws Exception {
     runCommandForced(
         "--name=blobio",
         "--password=some_password",
         "--registrar_type=REAL",
         "--iana_id=8",
-        "--ip_whitelist=192.168.1.1,192.168.0.2/16",
+        "--ip_allow_list=192.168.1.1,192.168.0.2/16",
         "--passcode=01234",
         "--icann_referral_email=foo@bar.test",
         "--street=\"123 Fake St\"",
@@ -325,19 +325,19 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
 
     Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
     assertThat(registrar).isPresent();
-    assertThat(registrar.get().getIpAddressWhitelist())
-        .containsExactlyElementsIn(registrar.get().getIpAddressWhitelist())
+    assertThat(registrar.get().getIpAddressAllowList())
+        .containsExactlyElementsIn(registrar.get().getIpAddressAllowList())
         .inOrder();
   }
 
   @Test
-  public void testSuccess_ipWhitelistFlagNull() throws Exception {
+  public void testSuccess_ipAllowListFlagNull() throws Exception {
     runCommandForced(
         "--name=blobio",
         "--password=some_password",
         "--registrar_type=REAL",
         "--iana_id=8",
-        "--ip_whitelist=null",
+        "--ip_allow_list=null",
         "--passcode=01234",
         "--icann_referral_email=foo@bar.test",
         "--street=\"123 Fake St\"",
@@ -349,7 +349,7 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
 
     Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
     assertThat(registrar).isPresent();
-    assertThat(registrar.get().getIpAddressWhitelist()).isEmpty();
+    assertThat(registrar.get().getIpAddressAllowList()).isEmpty();
   }
 
   @Test
@@ -1008,7 +1008,7 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
   }
 
   @Test
-  public void testFailure_invalidIpWhitelistFlag() {
+  public void testFailure_invalidIpAllowListFlag() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -1017,7 +1017,7 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
                 "--password=some_password",
                 "--registrar_type=REAL",
                 "--iana_id=8",
-                "--ip_whitelist=foobarbaz",
+                "--ip_allow_list=foobarbaz",
                 "--passcode=01234",
                 "--icann_referral_email=foo@bar.test",
                 "--street=\"123 Fake St\"",
@@ -1029,7 +1029,7 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
   }
 
   @Test
-  public void testSuccess_ipWhitelistFlagWithNull() {
+  public void testSuccess_ipAllowListFlagWithNull() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -1038,7 +1038,7 @@ public class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarC
                 "--password=some_password",
                 "--registrar_type=REAL",
                 "--iana_id=8",
-                "--ip_whitelist=192.168.1.1,192.168.0.2/16,null",
+                "--ip_allow_list=192.168.1.1,192.168.0.2/16,null",
                 "--passcode=01234",
                 "--icann_referral_email=foo@bar.test",
                 "--street=\"123 Fake St\"",

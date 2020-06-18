@@ -302,8 +302,8 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
         RegistrarFormFields.L10N_ADDRESS_FIELD.extractUntyped(args).orElse(null));
 
     // Security
-    builder.setIpAddressWhitelist(
-        RegistrarFormFields.IP_ADDRESS_WHITELIST_FIELD
+    builder.setIpAddressAllowList(
+        RegistrarFormFields.IP_ADDRESS_ALLOW_LIST_FIELD
             .extractUntyped(args)
             .orElse(ImmutableList.of()));
     RegistrarFormFields.CLIENT_CERTIFICATE_FIELD

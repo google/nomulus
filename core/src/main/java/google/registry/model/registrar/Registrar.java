@@ -296,7 +296,9 @@ public class Registrar extends ImmutableObject
   /** Base64 encoded SHA256 hash of {@link #failoverClientCertificate}. */
   String failoverClientCertificateHash;
 
-  /** A whitelist of netmasks (in CIDR notation) which the client is allowed to connect from. */
+  /** An allow list of netmasks (in CIDR notation) which the client is allowed to connect from. */
+  // TODO: Rename to ipAddressAllowList once Cloud SQL migration is complete.
+  @Column(name = "ip_address_allow_list")
   List<CidrAddressBlock> ipAddressWhitelist;
 
   /** A hashed password for EPP access. The hash is a base64 encoded SHA256 string. */
@@ -553,7 +555,7 @@ public class Registrar extends ImmutableObject
     return failoverClientCertificateHash;
   }
 
-  public ImmutableList<CidrAddressBlock> getIpAddressWhitelist() {
+  public ImmutableList<CidrAddressBlock> getIpAddressAllowList() {
     return nullToEmptyImmutableCopy(ipAddressWhitelist);
   }
 
@@ -674,7 +676,7 @@ public class Registrar extends ImmutableObject
         .put("phoneNumber", phoneNumber)
         .put("phonePasscode", phonePasscode)
         .putListOfStrings("allowedTlds", getAllowedTlds())
-        .putListOfStrings("ipAddressWhitelist", ipAddressWhitelist)
+        .putListOfStrings("ipAddressAllowList", getIpAddressAllowList())
         .putListOfJsonObjects("contacts", getContacts())
         .put("registryLockAllowed", registryLockAllowed)
         .build();
@@ -853,8 +855,8 @@ public class Registrar extends ImmutableObject
       return this;
     }
 
-    public Builder setIpAddressWhitelist(Iterable<CidrAddressBlock> ipAddressWhitelist) {
-      getInstance().ipAddressWhitelist = ImmutableList.copyOf(ipAddressWhitelist);
+    public Builder setIpAddressAllowList(Iterable<CidrAddressBlock> ipAddressAllowList) {
+      getInstance().ipAddressWhitelist = ImmutableList.copyOf(ipAddressAllowList);
       return this;
     }
 

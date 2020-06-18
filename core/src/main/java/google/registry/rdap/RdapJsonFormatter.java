@@ -313,9 +313,7 @@ public class RdapJsonFormatter {
     // RDAP Technical Implementation Guide 3.2: must have link to the registrar's RDAP URL for this
     // domain, with rel=related.
     for (String registrarRdapBase : registrar.getRdapBaseUrls()) {
-      String href =
-          makeServerRelativeUrl(
-              registrarRdapBase, "domain", domainBase.getDomainName());
+      String href = makeServerRelativeUrl(registrarRdapBase, "domain", domainBase.getDomainName());
       builder
           .linksBuilder()
           .add(
@@ -409,9 +407,7 @@ public class RdapJsonFormatter {
    */
   RdapNameserver createRdapNameserver(HostResource hostResource, OutputDataType outputDataType) {
     RdapNameserver.Builder builder = RdapNameserver.builder();
-    builder
-        .linksBuilder()
-        .add(makeSelfLink("nameserver", hostResource.getHostName()));
+    builder.linksBuilder().add(makeSelfLink("nameserver", hostResource.getHostName()));
     if (outputDataType != OutputDataType.FULL) {
       builder.remarksBuilder().add(RdapIcannStandardInformation.SUMMARY_DATA_REMARK);
     }

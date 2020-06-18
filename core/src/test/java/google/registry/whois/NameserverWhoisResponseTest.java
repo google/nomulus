@@ -54,23 +54,27 @@ public class NameserverWhoisResponseTest {
     persistResource(loadRegistrar("example").asBuilder().setUrl("http://my.fake.url").build());
     createTld("tld");
 
-    hostResource1 = new HostResource.Builder()
-        .setHostName("ns1.example.tld")
-        .setPersistedCurrentSponsorClientId("example")
-        .setInetAddresses(ImmutableSet.of(
-            InetAddresses.forString("192.0.2.123"),
-            InetAddresses.forString("2001:0DB8::1")))
-        .setRepoId("1-EXAMPLE")
-        .build();
+    hostResource1 =
+        new HostResource.Builder()
+            .setHostName("ns1.example.tld")
+            .setPersistedCurrentSponsorClientId("example")
+            .setInetAddresses(
+                ImmutableSet.of(
+                    InetAddresses.forString("192.0.2.123"),
+                    InetAddresses.forString("2001:0DB8::1")))
+            .setRepoId("1-EXAMPLE")
+            .build();
 
-    hostResource2 = new HostResource.Builder()
-        .setHostName("ns2.example.tld")
-        .setPersistedCurrentSponsorClientId("example")
-        .setInetAddresses(ImmutableSet.of(
-            InetAddresses.forString("192.0.2.123"),
-            InetAddresses.forString("2001:0DB8::1")))
-        .setRepoId("2-EXAMPLE")
-        .build();
+    hostResource2 =
+        new HostResource.Builder()
+            .setHostName("ns2.example.tld")
+            .setPersistedCurrentSponsorClientId("example")
+            .setInetAddresses(
+                ImmutableSet.of(
+                    InetAddresses.forString("192.0.2.123"),
+                    InetAddresses.forString("2001:0DB8::1")))
+            .setRepoId("2-EXAMPLE")
+            .build();
   }
 
   @Test

@@ -50,7 +50,7 @@ public class ValidateLoginCredentialsCommandTest
             .asBuilder()
             .setPassword(PASSWORD)
             .setClientCertificateHash(CERT_HASH)
-            .setIpAddressWhitelist(ImmutableList.of(new CidrAddressBlock(CLIENT_IP)))
+            .setIpAddressAllowList(ImmutableList.of(new CidrAddressBlock(CLIENT_IP)))
             .setState(ACTIVE)
             .setAllowedTlds(ImmutableSet.of("tld"))
             .build());

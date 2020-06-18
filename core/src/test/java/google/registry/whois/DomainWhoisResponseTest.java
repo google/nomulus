@@ -85,15 +85,19 @@ public class DomainWhoisResponseTest {
 
     createTld("tld");
 
-    hostResource1 = persistResource(new HostResource.Builder()
-        .setHostName("ns01.exampleregistrar.tld")
-        .setRepoId("1-ROID")
-        .build());
+    hostResource1 =
+        persistResource(
+            new HostResource.Builder()
+                .setHostName("ns01.exampleregistrar.tld")
+                .setRepoId("1-ROID")
+                .build());
 
-    hostResource2 = persistResource(new HostResource.Builder()
-        .setHostName("ns02.exampleregistrar.tld")
-        .setRepoId("2-ROID")
-        .build());
+    hostResource2 =
+        persistResource(
+            new HostResource.Builder()
+                .setHostName("ns02.exampleregistrar.tld")
+                .setRepoId("2-ROID")
+                .build());
 
     registrant = persistResource(new ContactResource.Builder()
         .setContactId("5372808-ERL")
