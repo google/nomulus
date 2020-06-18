@@ -14,13 +14,23 @@
 
 package google.registry.testing;
 
+import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.Multimaps;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -104,6 +114,35 @@ public class AppEngineRuleTest {
             google.registry.testing.TestObject.class.getName());
     assertThrows(expectedErrorMessage, IllegalStateException.class, appEngineRule::before);
     appEngineRule.after();
+  }
+
+  @Test
+  public void testOfyEntities_uniqueKinds() {
+    try (ScanResult scanResult =
+        new ClassGraph()
+            .enableAnnotationInfo()
+            .ignoreClassVisibility()
+            .whitelistPackages("google.registry")
+            .scan()) {
+      Multimap<String, Class<?>> kindToEntityMultiMap =
+          scanResult.getClassesWithAnnotation(Entity.class.getName()).stream()
+              .filter(clazz -> !clazz.getName().equals(TestObject.class.getName()))
+              .map(clazz -> clazz.loadClass())
+              .collect(
+                  Multimaps.toMultimap(
+                      Key::getKind,
+                      clazz -> clazz,
+                      MultimapBuilder.hashKeys().linkedListValues()::build));
+      Map<String, Collection<Class<?>>> conflictingKinds =
+          kindToEntityMultiMap.asMap().entrySet().stream()
+              .filter(e -> e.getValue().size() > 1)
+              .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+      assertWithMessage(
+              "Conflicting Ofy kinds found. Tests will break if they are registered with "
+                  + " AppEngineRule in the same text executor.")
+          .that(conflictingKinds)
+          .isEmpty();
+    }
   }
 
   private void writeAutoIndexFile(String content) throws IOException {
