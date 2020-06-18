@@ -555,7 +555,8 @@ public class DomainFlowUtils {
       @Nullable CurrencyUnit topLevelCurrency,
       DateTime currentDate,
       DomainPricingLogic pricingLogic,
-      Optional<AllocationToken> allocationToken)
+      Optional<AllocationToken> allocationToken,
+      boolean isAvailable)
       throws EppException {
     DateTime now = currentDate;
     // Use the custom effective date specified in the fee check request, if there is one.
@@ -587,7 +588,8 @@ public class DomainFlowUtils {
     ImmutableList<Fee> fees = ImmutableList.of();
     switch (feeRequest.getCommandName()) {
       case CREATE:
-        if (isReserved(domain, isSunrise)) { // Don't return a create price for reserved names.
+        // Don't return a create price for reserved names.
+        if (isReserved(domain, isSunrise) && !isAvailable) {
           builder.setClass("reserved"); // Override whatever class we've set above.
           builder.setAvailIfSupported(false);
           builder.setReasonIfSupported("reserved");
