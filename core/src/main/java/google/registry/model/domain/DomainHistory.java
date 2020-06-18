@@ -12,45 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.contact;
+package google.registry.model.domain;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
+import google.registry.model.contact.ContactResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 
 /**
- * A persisted history entry representing an EPP modification to a contact.
+ * A persisted history entry representing an EPP modification to a domain.
  *
  * <p>In addition to the general history fields (e.g. action time, registrar ID) we also persist a
- * copy of the contact entity at this point in time. We persist a raw {@link ContactBase} so that
+ * copy of the domain entity at this point in time. We persist a raw {@link DomainContent} so that
  * the foreign-keyed fields in that class can refer to this object.
  */
 @Entity
 @javax.persistence.Table(
     indexes = {
-      @javax.persistence.Index(columnList = "creationTime"),
-      @javax.persistence.Index(columnList = "historyRegistrarId"),
-      @javax.persistence.Index(columnList = "historyType"),
-      @javax.persistence.Index(columnList = "historyModificationTime")
+        @javax.persistence.Index(columnList = "creationTime"),
+        @javax.persistence.Index(columnList = "historyRegistrarId"),
+        @javax.persistence.Index(columnList = "historyType"),
+        @javax.persistence.Index(columnList = "historyModificationTime")
     })
-public class ContactHistory extends HistoryEntry {
-  // Store ContactBase instead of ContactResource so we don't pick up its @Id
-  ContactBase contactBase;
+public class DomainHistory extends HistoryEntry {
+  // Store DomainContent instead of DomainBase so we don't pick up its @Id
+  DomainContent domainContent;
 
   @Column(nullable = false)
-  VKey<ContactResource> contactRepoId;
+  VKey<DomainBase> domainRepoId;
 
-  /** The state of the {@link ContactBase} object at this point in time. */
-  public ContactBase getContactBase() {
-    return contactBase;
+  /** The state of the {@link DomainContent} object at this point in time. */
+  public DomainContent getDomainContent() {
+    return domainContent;
   }
 
   /** The key to the {@link ContactResource} this is based off of. */
-  public VKey<ContactResource> getContactRepoId() {
-    return contactRepoId;
+  public VKey<DomainBase> getDomainRepoId() {
+    return domainRepoId;
   }
 
   @Override
@@ -58,22 +59,22 @@ public class ContactHistory extends HistoryEntry {
     return new Builder(clone(this));
   }
 
-  public static class Builder extends HistoryEntry.Builder<ContactHistory, ContactHistory.Builder> {
+  public static class Builder extends HistoryEntry.Builder<DomainHistory, DomainHistory.Builder> {
 
     public Builder() {}
 
-    public Builder(ContactHistory instance) {
+    public Builder(DomainHistory instance) {
       super(instance);
     }
 
-    public Builder setContactBase(ContactBase contactBase) {
-      getInstance().contactBase = contactBase;
+    public Builder setDomainContent(DomainContent domainContent) {
+      getInstance().domainContent = domainContent;
       return this;
     }
 
-    public Builder setContactRepoId(VKey<ContactResource> contactRepoId) {
-      getInstance().contactRepoId = contactRepoId;
-      contactRepoId.maybeGetOfyKey().ifPresent(parent -> getInstance().parent = parent);
+    public Builder setDomainRepoId(VKey<DomainBase> domainRepoId) {
+      getInstance().domainRepoId = domainRepoId;
+      domainRepoId.maybeGetOfyKey().ifPresent(parent -> getInstance().parent = parent);
       return this;
     }
 
@@ -81,7 +82,7 @@ public class ContactHistory extends HistoryEntry {
     @Override
     public Builder setParent(Key<? extends EppResource> parent) {
       super.setParent(parent);
-      getInstance().contactRepoId = VKey.create(ContactResource.class, parent.getName(), parent);
+      getInstance().domainRepoId = VKey.create(DomainBase.class, parent.getName(), parent);
       return this;
     }
   }

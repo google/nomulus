@@ -119,12 +119,16 @@ public class DatastoreHelper {
                   String.class));
 
   public static HostResource newHostResource(String hostName) {
+    return newHostResourceWithRoid(hostName, generateNewContactHostRoid());
+  }
+
+  public static HostResource newHostResourceWithRoid(String hostName, String repoId) {
     return new HostResource.Builder()
         .setHostName(hostName)
         .setCreationClientId("TheRegistrar")
         .setPersistedCurrentSponsorClientId("TheRegistrar")
         .setCreationTimeForTest(START_OF_TIME)
-        .setRepoId(generateNewContactHostRoid())
+        .setRepoId(repoId)
         .build();
   }
 
