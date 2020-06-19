@@ -15,16 +15,21 @@
 package google.registry.model.translators;
 
 import static com.google.common.base.Functions.identity;
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.model.EntityClasses.ALL_CLASSES;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.appengine.api.datastore.Key;
 import com.google.common.collect.ImmutableMap;
+import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.EntitySubclass;
+import com.googlecode.objectify.impl.Property;
 import google.registry.persistence.VKey;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
 /**
  * Translator factory for VKey.
@@ -36,32 +41,50 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
 
   // Class registry allowing us to restore the original class object from the unqualified class
   // name, which is all the datastore key gives us.
-  // Note that entities annotated with @EntitySubclass are removed because they share the same
-  // kind of the key with their parent class.
+  // Note that entities annotated with @EntitySubclass(and its parent abstract entities) are removed
+  // because they share the same kind of the key with their parent class.
   private static final ImmutableMap<String, Class> CLASS_REGISTRY =
       ALL_CLASSES.stream()
+          .filter(
+              clazz ->
+                  !clazz.isAnnotationPresent(Entity.class)
+                      || !Modifier.isAbstract(clazz.getModifiers()))
           .filter(clazz -> !clazz.isAnnotationPresent(EntitySubclass.class))
           .collect(toImmutableMap(com.googlecode.objectify.Key::getKind, identity()));
-  ;
 
   public VKeyTranslatorFactory() {
     super(VKey.class);
   }
 
   /** Create a VKey from a raw datastore key. */
-  public static VKey<?> createVKey(Key datastoreKey) {
-    return createVKey(com.googlecode.objectify.Key.create(datastoreKey));
+  public static VKey<?> createVKey(Key datastoreKey, Property vKeyProperty) {
+    return createVKey(com.googlecode.objectify.Key.create(datastoreKey), vKeyProperty);
   }
 
   /** Create a VKey from an objectify Key. */
-  public static <T> VKey<T> createVKey(com.googlecode.objectify.Key<T> key) {
+  public static <T> VKey<T> createVKey(com.googlecode.objectify.Key<T> key, Property vKeyProperty) {
     if (key == null) {
       return null;
     }
-
+    checkArgumentNotNull(vKeyProperty, "Must specify vKeyProperty");
+    // Try to get the VKey type from CLASS_REGISTRY.
+    Class<T> clazz = CLASS_REGISTRY.get(key.getKind());
+    if (clazz == null) {
+      // Try to get the VKey type from its declared property. Note that this approach is mainly
+      // designed for entities annotated with @EntitySubclass, e.g. PollMessage.OneTime, because
+      // multiple @EntitySubclass entities share the same key kind in Objectify. Also, we only
+      // support the basic use case of VKey, i.e. VKey<Entity>, in this case because we only use
+      // it in the production code.
+      if (vKeyProperty.getType() instanceof ParameterizedType) {
+        ParameterizedType vKeyType = (ParameterizedType) vKeyProperty.getType();
+        Type[] actualTypeArguments = vKeyType.getActualTypeArguments();
+        if (actualTypeArguments.length == 1 && actualTypeArguments[0] instanceof Class) {
+          clazz = (Class<T>) actualTypeArguments[0];
+        }
+      }
+    }
+    checkArgumentNotNull(clazz, "Unknown Key type: %s", key.getKind());
     // Try to create the VKey from its reference type.
-    Class clazz = CLASS_REGISTRY.get(key.getKind());
-    checkArgument(clazz != null, "Unknown Key type: %s", key.getKind());
     try {
       Method createVKeyMethod =
           clazz.getDeclaredMethod("createVKey", com.googlecode.objectify.Key.class);
@@ -78,16 +101,16 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
   }
 
   /** Create a VKey from a URL-safe string representation. */
-  public static VKey<?> createVKey(String urlSafe) {
-    return createVKey(com.googlecode.objectify.Key.create(urlSafe));
+  public static VKey<?> createVKey(String urlSafe, Property vKeyProperty) {
+    return createVKey(com.googlecode.objectify.Key.create(urlSafe), vKeyProperty);
   }
 
   @Override
-  public SimpleTranslator<VKey, Key> createTranslator() {
+  public SimpleTranslator<VKey, Key> createTranslator(Property property) {
     return new SimpleTranslator<VKey, Key>() {
       @Override
       public VKey loadValue(Key datastoreValue) {
-        return createVKey(datastoreValue);
+        return createVKey(datastoreValue, property);
       }
 
       @Override

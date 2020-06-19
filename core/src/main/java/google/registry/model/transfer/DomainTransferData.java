@@ -14,6 +14,11 @@
 
 package google.registry.model.transfer;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
+
+import com.google.common.collect.ImmutableSet;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
@@ -138,6 +143,30 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   @Override
   public boolean isEmpty() {
     return EMPTY.equals(this);
+  }
+
+  @Override
+  public ImmutableSet<VKey<? extends TransferServerApproveEntity>> getServerApproveEntities() {
+    // Domain's serverApproveEntities can contain a BillingEvent.OneTime key, a
+    // BillingEvent.Recurring key and 3 PollMessage keys(1 PollMessage.AutoRenew key and 2
+    // PollMessage.OneTime keys). The PollMessage.AutoRenew key should be the same as
+    // serverApproveAutorenewPollMessage, so we can use that to determine the type of all 3 keys.
+    return nullToEmptyImmutableCopy(serverApproveEntities).stream()
+        .map(
+            ofyKey -> {
+              Class<? extends TransferServerApproveEntity> clazz;
+              if (ofyKey.getKind().equals(Key.getKind(BillingEvent.OneTime.class))) {
+                clazz = BillingEvent.OneTime.class;
+              } else if (ofyKey.getKind().equals(Key.getKind(BillingEvent.Recurring.class))) {
+                clazz = BillingEvent.Recurring.class;
+              } else if (ofyKey.equals(serverApproveAutorenewPollMessage.getOfyKey())) {
+                clazz = PollMessage.Autorenew.class;
+              } else {
+                clazz = PollMessage.OneTime.class;
+              }
+              return VKey.create(clazz, ofyKey.getId(), ofyKey);
+            })
+        .collect(toImmutableSet());
   }
 
   @Override

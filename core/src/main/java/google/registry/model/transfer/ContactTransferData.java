@@ -14,8 +14,16 @@
 
 package google.registry.model.transfer;
 
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
+
+import com.google.common.collect.ImmutableSet;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Unindex;
+import google.registry.model.poll.PollMessage;
+import google.registry.persistence.VKey;
 import javax.persistence.Embeddable;
 
 /** Transfer data for contact. */
@@ -28,6 +36,22 @@ public class ContactTransferData extends TransferData<ContactTransferData.Builde
   @Override
   public boolean isEmpty() {
     return EMPTY.equals(this);
+  }
+
+  @Override
+  public ImmutableSet<VKey<? extends TransferServerApproveEntity>> getServerApproveEntities() {
+    // Contact's serverApproveEntities should only contain a gainingPollMessage and a
+    // losingPollMessage, and they have same type which is VKey<PollMessage.OneTime>
+    return nullToEmptyImmutableCopy(serverApproveEntities).stream()
+        .map(
+            ofyKey -> {
+              checkState(
+                  ofyKey.getKind().equals(Key.getKind(PollMessage.class)),
+                  "Contact serverApproveEntities contain an unknown key: %s",
+                  ofyKey.getKind());
+              return VKey.create(PollMessage.OneTime.class, ofyKey.getId(), ofyKey);
+            })
+        .collect(toImmutableSet());
   }
 
   @Override

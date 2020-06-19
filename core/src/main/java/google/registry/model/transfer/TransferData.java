@@ -14,9 +14,10 @@
 
 package google.registry.model.transfer;
 
-import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 
 import com.google.common.collect.ImmutableSet;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.condition.IfNull;
@@ -63,10 +64,14 @@ public abstract class TransferData<
    * a number of poll messages and billing events for both the gaining and losing registrars. If the
    * pending transfer is explicitly approved, rejected or cancelled, the referenced entities should
    * be deleted.
+   *
+   * <p>Note that we cannot change this field to use VKey because its scoped type parameter is not
+   * supported by the translator. Also, it is not necessary to do that because this field is not
+   * persisted in Cloud SQL anyway.
    */
   @Transient
   @IgnoreSave(IfNull.class)
-  Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities;
+  Set<Key<? extends TransferServerApproveEntity>> serverApproveEntities;
 
   // The following 3 fields are the replacement for serverApproveEntities in Cloud SQL.
   // TODO(shicong): Add getter/setter for these 3 fields and use them in the application code.
@@ -85,9 +90,8 @@ public abstract class TransferData<
     return transferRequestTrid;
   }
 
-  public ImmutableSet<VKey<? extends TransferServerApproveEntity>> getServerApproveEntities() {
-    return nullToEmptyImmutableCopy(serverApproveEntities);
-  }
+  public abstract ImmutableSet<VKey<? extends TransferServerApproveEntity>>
+      getServerApproveEntities();
 
   @Override
   public abstract Builder asBuilder();
@@ -136,7 +140,10 @@ public abstract class TransferData<
 
     public B setServerApproveEntities(
         ImmutableSet<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
-      getInstance().serverApproveEntities = serverApproveEntities;
+      getInstance().serverApproveEntities =
+          serverApproveEntities == null
+              ? null
+              : serverApproveEntities.stream().map(VKey::getOfyKey).collect(toImmutableSet());
       return thisCastToDerived();
     }
 

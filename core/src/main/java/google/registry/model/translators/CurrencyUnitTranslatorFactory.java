@@ -14,6 +14,7 @@
 
 package google.registry.model.translators;
 
+import com.googlecode.objectify.impl.Property;
 import org.joda.money.CurrencyUnit;
 
 /** Stores {@link CurrencyUnit} as a canonicalized string. */
@@ -25,7 +26,7 @@ public class CurrencyUnitTranslatorFactory
   }
 
   @Override
-  SimpleTranslator<CurrencyUnit, String> createTranslator() {
+  SimpleTranslator<CurrencyUnit, String> createTranslator(Property property) {
     return new SimpleTranslator<CurrencyUnit, String>(){
       @Override
       public CurrencyUnit loadValue(String datastoreValue) {

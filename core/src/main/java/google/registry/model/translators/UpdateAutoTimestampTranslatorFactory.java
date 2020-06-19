@@ -17,6 +17,7 @@ package google.registry.model.translators;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.DateTimeZone.UTC;
 
+import com.googlecode.objectify.impl.Property;
 import google.registry.model.UpdateAutoTimestamp;
 import java.util.Date;
 import org.joda.time.DateTime;
@@ -30,7 +31,7 @@ public class UpdateAutoTimestampTranslatorFactory
   }
 
   @Override
-  SimpleTranslator<UpdateAutoTimestamp, Date> createTranslator() {
+  SimpleTranslator<UpdateAutoTimestamp, Date> createTranslator(Property property) {
     return new SimpleTranslator<UpdateAutoTimestamp, Date>() {
 
       /**

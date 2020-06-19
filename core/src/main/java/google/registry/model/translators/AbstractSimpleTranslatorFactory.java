@@ -34,9 +34,9 @@ public abstract class AbstractSimpleTranslatorFactory<P, D> extends ValueTransla
   @Override
   protected final ValueTranslator<P, D> createSafe(
       Path path, Property property, Type type, CreateContext ctx) {
-    return new ValueTranslator<P, D>(path, new TypeInstantiator<D>(getClass()){}.getExactType()) {
+    return new ValueTranslator<P, D>(path, new TypeInstantiator<D>(getClass()) {}.getExactType()) {
 
-      SimpleTranslator<P, D> simpleTranslator = createTranslator();
+      SimpleTranslator<P, D> simpleTranslator = createTranslator(property);
 
       @Override
       protected P loadValue(D datastoreValue, LoadContext ctx) {
@@ -57,5 +57,5 @@ public abstract class AbstractSimpleTranslatorFactory<P, D> extends ValueTransla
     D saveValue(P pojoValue);
   }
 
-  abstract SimpleTranslator<P, D> createTranslator();
+  abstract SimpleTranslator<P, D> createTranslator(Property property);
 }

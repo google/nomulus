@@ -14,6 +14,7 @@
 
 package google.registry.model.translators;
 
+import com.googlecode.objectify.impl.Property;
 import google.registry.util.CidrAddressBlock;
 
 /** Stores {@link CidrAddressBlock} as a canonicalized string. */
@@ -25,7 +26,7 @@ public class CidrAddressBlockTranslatorFactory
   }
 
   @Override
-  SimpleTranslator<CidrAddressBlock, String> createTranslator() {
+  SimpleTranslator<CidrAddressBlock, String> createTranslator(Property property) {
     return new SimpleTranslator<CidrAddressBlock, String>(){
       @Override
       public CidrAddressBlock loadValue(String datastoreValue) {

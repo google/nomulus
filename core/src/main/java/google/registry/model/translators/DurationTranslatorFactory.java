@@ -14,6 +14,7 @@
 
 package google.registry.model.translators;
 
+import com.googlecode.objectify.impl.Property;
 import org.joda.time.Duration;
 
 /** Stores {@link Duration} as a canonicalized string. */
@@ -24,7 +25,7 @@ public class DurationTranslatorFactory extends AbstractSimpleTranslatorFactory<D
   }
 
   @Override
-  protected SimpleTranslator<Duration, String> createTranslator() {
+  protected SimpleTranslator<Duration, String> createTranslator(Property property) {
     return new SimpleTranslator<Duration, String>() {
       @Override
       public Duration loadValue(String datastoreValue) {

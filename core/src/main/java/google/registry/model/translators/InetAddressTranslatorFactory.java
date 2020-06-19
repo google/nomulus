@@ -15,6 +15,7 @@
 package google.registry.model.translators;
 
 import com.google.common.net.InetAddresses;
+import com.googlecode.objectify.impl.Property;
 import java.net.InetAddress;
 
 /** Stores {@link InetAddress} as a canonicalized string. */
@@ -26,7 +27,7 @@ public class InetAddressTranslatorFactory
   }
 
   @Override
-  SimpleTranslator<InetAddress, String> createTranslator() {
+  SimpleTranslator<InetAddress, String> createTranslator(Property property) {
     return new SimpleTranslator<InetAddress, String>() {
       @Override
       public InetAddress loadValue(String datastoreValue) {
