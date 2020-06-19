@@ -1,0 +1,21 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <update>
+      <domain:update
+       xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>example.tld</domain:name>
+        <domain:chg/>
+      </domain:update>
+    </update>
+    <extension>
+      <rgp:update xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0">
+        <rgp:restore op="request"/>
+      </rgp:update>
+      <fee:update xmlns:fee="urn:ietf:params:xml:ns:fee-%FEE_VERSION%">
+        <fee:currency>%CURRENCY%</fee:currency>
+        <fee:fee description="restore">17.00</fee:fee>
+      </fee:update>
+    </extension>
+    <clTRID>ABC-12345</clTRID>
+  </command>
+</epp>

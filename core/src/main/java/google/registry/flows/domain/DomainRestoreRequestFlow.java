@@ -136,20 +136,22 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
     Update command = (Update) resourceCommand;
     DateTime now = tm().getTransactionTime();
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
+    boolean isExpired = existingDomain.getRegistrationExpirationTime().isBefore(now);
     FeesAndCredits feesAndCredits =
-        pricingLogic.getRestorePrice(Registry.get(existingDomain.getTld()), targetId, now);
+        pricingLogic.getRestorePrice(
+            Registry.get(existingDomain.getTld()), targetId, now, isExpired);
     Optional<FeeUpdateCommandExtension> feeUpdate =
         eppInput.getSingleExtension(FeeUpdateCommandExtension.class);
     verifyRestoreAllowed(command, existingDomain, feeUpdate, feesAndCredits, now);
     HistoryEntry historyEntry = buildHistoryEntry(existingDomain, now);
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
 
+    DateTime newExpirationTime =
+        existingDomain.getRegistrationExpirationTime().plusYears(isExpired ? 1 : 0);
     // Restore the expiration time on the deleted domain, except if that's already passed, then add
     // a year and bill for it immediately, with no grace period.
-    DateTime newExpirationTime = existingDomain.getRegistrationExpirationTime();
-    if (newExpirationTime.isBefore(now)) {
+    if (isExpired) {
       entitiesToSave.add(createRenewBillingEvent(historyEntry, feesAndCredits.getRenewCost(), now));
-      newExpirationTime = newExpirationTime.plusYears(1);
     }
     // Always bill for the restore itself.
     entitiesToSave.add(
@@ -176,7 +178,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
     ofy().delete().key(existingDomain.getDeletePollMessage());
     dnsQueue.addDomainRefreshTask(existingDomain.getDomainName());
     return responseBuilder
-        .setExtensions(createResponseExtensions(feesAndCredits, feeUpdate))
+        .setExtensions(createResponseExtensions(feesAndCredits, feeUpdate, isExpired))
         .build();
   }
 
@@ -263,23 +265,29 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
   }
 
   private static ImmutableList<FeeTransformResponseExtension> createResponseExtensions(
-      FeesAndCredits feesAndCredits, Optional<FeeUpdateCommandExtension> feeUpdate) {
+      FeesAndCredits feesAndCredits,
+      Optional<FeeUpdateCommandExtension> feeUpdate,
+      boolean isExpired) {
+    ImmutableList.Builder<Fee> fees = new ImmutableList.Builder<>();
+    fees.add(
+        Fee.create(
+            feesAndCredits.getRestoreCost().getAmount(),
+            FeeType.RESTORE,
+            feesAndCredits.hasPremiumFeesOfType(FeeType.RESTORE)));
+    if (isExpired) {
+      fees.add(
+          Fee.create(
+              feesAndCredits.getRenewCost().getAmount(),
+              FeeType.RENEW,
+              feesAndCredits.hasPremiumFeesOfType(FeeType.RENEW)));
+    }
     return feeUpdate.isPresent()
         ? ImmutableList.of(
             feeUpdate
                 .get()
                 .createResponseBuilder()
                 .setCurrency(feesAndCredits.getCurrency())
-                .setFees(
-                    ImmutableList.of(
-                        Fee.create(
-                            feesAndCredits.getRestoreCost().getAmount(),
-                            FeeType.RESTORE,
-                            feesAndCredits.hasPremiumFeesOfType(FeeType.RESTORE)),
-                        Fee.create(
-                            feesAndCredits.getRenewCost().getAmount(),
-                            FeeType.RENEW,
-                            feesAndCredits.hasPremiumFeesOfType(FeeType.RENEW))))
+                .setFees(fees.build())
                 .build())
         : ImmutableList.of();
   }

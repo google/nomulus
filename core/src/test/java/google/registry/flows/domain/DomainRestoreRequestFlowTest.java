@@ -94,7 +94,8 @@ public class DomainRestoreRequestFlowTest
   }
 
   void persistPendingDeleteDomain() throws Exception {
-    persistPendingDeleteDomain(clock.nowUtc().plusYears(5).plusDays(45));
+    // The domain is now past what had been its expiration date at the time of deletion.
+    persistPendingDeleteDomain(clock.nowUtc().minusDays(5));
   }
 
   void persistPendingDeleteDomain(DateTime expirationTime) throws Exception {
@@ -286,6 +287,14 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
+  public void testSuccess_fee_v06_noRenewal() throws Exception {
+    setEppInput("domain_update_restore_request_fee_no_renewal.xml", FEE_06_MAP);
+    persistPendingDeleteDomain(clock.nowUtc().plusMonths(6));
+    runFlowAssertResponse(
+        loadFile("domain_update_restore_request_response_fee_no_renewal.xml", FEE_06_MAP));
+  }
+
+  @Test
   public void testSuccess_fee_v11() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_11_MAP);
     persistPendingDeleteDomain();
@@ -408,6 +417,15 @@ public class DomainRestoreRequestFlowTest
     setEppInput("domain_update_restore_request_premium.xml");
     persistPendingDeleteDomain();
     runFlowAssertResponse(loadFile("domain_update_restore_request_response_premium.xml"));
+  }
+
+  @Test
+  public void testSuccess_premiumNotBlocked_andNoRenewal() throws Exception {
+    createTld("example");
+    setEppInput("domain_update_restore_request_premium_no_renewal.xml");
+    persistPendingDeleteDomain(clock.nowUtc().plusYears(2));
+    runFlowAssertResponse(
+        loadFile("domain_update_restore_request_response_fee_no_renewal.xml", FEE_12_MAP));
   }
 
   @Test

@@ -158,6 +158,7 @@ public final class DomainInfoFlow implements Flow {
           feeInfo.get(),
           builder,
           InternetDomainName.from(targetId),
+          Optional.of(domain),
           null,
           now,
           pricingLogic,
