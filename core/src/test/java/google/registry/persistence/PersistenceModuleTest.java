@@ -18,24 +18,25 @@ import static com.google.common.truth.Truth.assertThat;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 /** Unit tests for {@link PersistenceModule}. */
-@RunWith(JUnit4.class)
+@Testcontainers
 public class PersistenceModuleTest {
-  @Rule
-  public PostgreSQLContainer database = new PostgreSQLContainer(NomulusPostgreSql.getDockerTag());
+
+  @Container
+  private final PostgreSQLContainer database =
+      new PostgreSQLContainer(NomulusPostgreSql.getDockerTag());
 
   private EntityManagerFactory emf;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void init() {
     emf =
         PersistenceModule.create(
             database.getJdbcUrl(),
@@ -44,8 +45,8 @@ public class PersistenceModuleTest {
             PersistenceModule.providesDefaultDatabaseConfigs());
   }
 
-  @After
-  public void destroy() {
+  @AfterEach
+  void destroy() {
     if (emf != null) {
       emf.close();
     }
@@ -53,7 +54,7 @@ public class PersistenceModuleTest {
   }
 
   @Test
-  public void testConnectToDatabase_success() {
+  void testConnectToDatabase_success() {
     EntityManager em = emf.createEntityManager();
     assertThat(em.isOpen()).isTrue();
     em.close();
