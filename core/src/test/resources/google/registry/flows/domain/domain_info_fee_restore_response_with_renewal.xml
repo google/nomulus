@@ -8,7 +8,7 @@
        xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:name>rich.example</domain:name>
         <domain:roid>%ROID%</domain:roid>
-        <domain:status s="ok"/>
+        <domain:status s="pendingDelete"/>
         <domain:registrant>jd1234</domain:registrant>
         <domain:contact type="admin">sh8013</domain:contact>
         <domain:contact type="tech">sh8013</domain:contact>
@@ -23,7 +23,7 @@
         <domain:crDate>1999-04-03T22:00:00.0Z</domain:crDate>
         <domain:upID>NewRegistrar</domain:upID>
         <domain:upDate>1999-12-03T09:00:00.0Z</domain:upDate>
-        <domain:exDate>2005-04-03T22:00:00.0Z</domain:exDate>
+        <domain:exDate>2005-03-02T22:00:00.000Z</domain:exDate>
         <domain:trDate>2000-04-08T09:00:00.0Z</domain:trDate>
         <domain:authInfo>
           <domain:pw>2fooBAR</domain:pw>
@@ -31,11 +31,15 @@
       </domain:infData>
     </resData>
     <extension>
+      <rgp:infData xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0">
+        <rgp:rgpStatus s="pendingDelete"/>
+      </rgp:infData>
       <fee:infData xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
         <fee:currency>USD</fee:currency>
         <fee:command>restore</fee:command>
         <fee:period unit="y">1</fee:period>
         <fee:fee description="restore">17.00</fee:fee>
+        <fee:fee description="renew">100.00</fee:fee>
         <fee:class>premium</fee:class>
       </fee:infData>
     </extension>

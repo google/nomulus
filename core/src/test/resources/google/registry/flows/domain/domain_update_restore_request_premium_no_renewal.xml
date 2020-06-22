@@ -1,0 +1,23 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <update>
+      <domain:update
+          xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>rich.example</domain:name>
+        <domain:chg/>
+      </domain:update>
+    </update>
+    <extension>
+      <rgp:update xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0">
+        <rgp:restore op="request"/>
+      </rgp:update>
+      <fee:update xmlns:fee="urn:ietf:params:xml:ns:fee-0.12">
+        <fee:currency>USD</fee:currency>
+        <fee:fee description="restore" refundable="true" grace-period="P0D" applied="immediate">
+          17.00
+        </fee:fee>
+      </fee:update>
+    </extension>
+    <clTRID>ABC-12345</clTRID>
+  </command>
+</epp>

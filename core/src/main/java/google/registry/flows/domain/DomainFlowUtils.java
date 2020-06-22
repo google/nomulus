@@ -551,7 +551,8 @@ public class DomainFlowUtils {
   static void handleFeeRequest(
       FeeQueryCommandExtensionItem feeRequest,
       FeeQueryResponseExtensionItem.Builder<?, ?> builder,
-      InternetDomainName domain,
+      InternetDomainName domainName,
+      Optional<DomainBase> domain,
       @Nullable CurrencyUnit topLevelCurrency,
       DateTime currentDate,
       DomainPricingLogic pricingLogic,
@@ -564,8 +565,8 @@ public class DomainFlowUtils {
       now = feeRequest.getEffectiveDate().get();
       builder.setEffectiveDateIfSupported(now);
     }
-    String domainNameString = domain.toString();
-    Registry registry = Registry.get(domain.parent().toString());
+    String domainNameString = domainName.toString();
+    Registry registry = Registry.get(domainName.parent().toString());
     int years = verifyUnitIsYears(feeRequest.getPeriod()).getValue();
     boolean isSunrise = (registry.getTldState(now) == START_DATE_SUNRISE);
 
@@ -589,7 +590,7 @@ public class DomainFlowUtils {
     switch (feeRequest.getCommandName()) {
       case CREATE:
         // Don't return a create price for reserved names.
-        if (isReserved(domain, isSunrise) && !isAvailable) {
+        if (isReserved(domainName, isSunrise) && !isAvailable) {
           builder.setClass("reserved"); // Override whatever class we've set above.
           builder.setAvailIfSupported(false);
           builder.setReasonIfSupported("reserved");
@@ -606,11 +607,25 @@ public class DomainFlowUtils {
         fees = pricingLogic.getRenewPrice(registry, domainNameString, now, years).getFees();
         break;
       case RESTORE:
+        // The minimum allowable period per the EPP spec is 1, so, strangely, 1 year still has to be
+        // passed in as the period for a restore even if the domain would *not* be renewed as part
+        // of a restore. This is fixed in RFC 8748 (which is a more recent version of the fee
+        // extension than we currently support), which does not allow the period to be passed at all
+        // on a restore fee check.
         if (years != 1) {
           throw new RestoresAreAlwaysForOneYearException();
         }
         builder.setAvailIfSupported(true);
-        fees = pricingLogic.getRestorePrice(registry, domainNameString, now).getFees();
+        // The domain object is present only on domain info commands, not on domain check commands,
+        // because check commands can query up to 50 domains and it isn't performant to load them
+        // all. So, only on info commands can we actually determine if we should include the renewal
+        // fee because the domain needs to have been loaded in order to know its expiration time. We
+        // default to including the renewal fee on domain checks because typically most domains are
+        // deleted during the autorenew grace period and thus if restored will require a renewal,
+        // but this is just a best guess.
+        boolean isExpired =
+            !domain.isPresent() || domain.get().getRegistrationExpirationTime().isBefore(now);
+        fees = pricingLogic.getRestorePrice(registry, domainNameString, now, isExpired).getFees();
         break;
       case TRANSFER:
         if (years != 1) {

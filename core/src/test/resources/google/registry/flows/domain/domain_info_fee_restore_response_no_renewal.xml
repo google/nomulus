@@ -6,9 +6,9 @@
     <resData>
       <domain:infData
        xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
-        <domain:name>rich.example</domain:name>
+        <domain:name>example.tld</domain:name>
         <domain:roid>%ROID%</domain:roid>
-        <domain:status s="ok"/>
+        <domain:status s="pendingDelete"/>
         <domain:registrant>jd1234</domain:registrant>
         <domain:contact type="admin">sh8013</domain:contact>
         <domain:contact type="tech">sh8013</domain:contact>
@@ -31,12 +31,14 @@
       </domain:infData>
     </resData>
     <extension>
+      <rgp:infData xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0">
+        <rgp:rgpStatus s="pendingDelete"/>
+      </rgp:infData>
       <fee:infData xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
         <fee:currency>USD</fee:currency>
         <fee:command>restore</fee:command>
         <fee:period unit="y">1</fee:period>
         <fee:fee description="restore">17.00</fee:fee>
-        <fee:class>premium</fee:class>
       </fee:infData>
     </extension>
     <trID>

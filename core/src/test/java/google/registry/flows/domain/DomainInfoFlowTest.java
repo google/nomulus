@@ -659,6 +659,39 @@ public class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, Dom
     doSuccessfulTest("domain_info_fee_restore_response.xml", false);
   }
 
+  @Test
+  public void testFeeExtension_restoreCommand_pendingDelete_noRenewal() throws Exception {
+    setEppInput(
+        "domain_info_fee.xml",
+        updateSubstitutions(SUBSTITUTION_BASE, "COMMAND", "restore", "PERIOD", "1"));
+    persistTestEntities(false);
+    persistResource(
+        domain
+            .asBuilder()
+            .setDeletionTime(clock.nowUtc().plusDays(25))
+            .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
+            .build());
+    doSuccessfulTest("domain_info_fee_restore_response_no_renewal.xml", false);
+  }
+
+  @Test
+  public void testFeeExtension_restoreCommand_pendingDelete_withRenewal() throws Exception {
+    createTld("example");
+    setEppInput(
+        "domain_info_fee.xml",
+        updateSubstitutions(
+            SUBSTITUTION_BASE, "NAME", "rich.example", "COMMAND", "restore", "PERIOD", "1"));
+    persistTestEntities("rich.example", false);
+    persistResource(
+        domain
+            .asBuilder()
+            .setDeletionTime(clock.nowUtc().plusDays(25))
+            .setRegistrationExpirationTime(clock.nowUtc().minusDays(1))
+            .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
+            .build());
+    doSuccessfulTest("domain_info_fee_restore_response_with_renewal.xml", false);
+  }
+
   /** Test create command on a premium label. */
   @Test
   public void testFeeExtension_createCommandPremium() throws Exception {

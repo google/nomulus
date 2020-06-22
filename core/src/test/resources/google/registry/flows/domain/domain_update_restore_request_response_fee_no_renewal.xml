@@ -1,0 +1,17 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <extension>
+      <%FEE_NS%:updData xmlns:%FEE_NS%="urn:ietf:params:xml:ns:fee-%FEE_VERSION%">
+        <%FEE_NS%:currency>USD</%FEE_NS%:currency>
+        <%FEE_NS%:fee description="restore">17.00</%FEE_NS%:fee>
+      </%FEE_NS%:updData>
+    </extension>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>

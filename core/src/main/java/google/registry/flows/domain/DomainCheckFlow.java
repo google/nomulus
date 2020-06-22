@@ -247,6 +247,7 @@ public final class DomainCheckFlow implements Flow {
             feeCheckItem,
             builder,
             domainNames.get(domainName),
+            Optional.empty(),
             feeCheck.getCurrency(),
             now,
             pricingLogic,

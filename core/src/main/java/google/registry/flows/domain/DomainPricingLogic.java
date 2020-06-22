@@ -124,23 +124,23 @@ public final class DomainPricingLogic {
   }
 
   /** Returns a new restore price for the pricer. */
-  public FeesAndCredits getRestorePrice(Registry registry, String domainName, DateTime dateTime)
+  public FeesAndCredits getRestorePrice(
+      Registry registry, String domainName, DateTime dateTime, boolean isExpired)
       throws EppException {
     DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
-    FeesAndCredits feesAndCredits =
+    FeesAndCredits.Builder feesAndCredits =
         new FeesAndCredits.Builder()
             .setCurrency(registry.getCurrency())
             .addFeeOrCredit(
-                Fee.create(
-                    domainPrices.getRenewCost().getAmount(),
-                    FeeType.RENEW,
-                    domainPrices.isPremium()))
-            .addFeeOrCredit(
-                Fee.create(registry.getStandardRestoreCost().getAmount(), FeeType.RESTORE, false))
-            .build();
+                Fee.create(registry.getStandardRestoreCost().getAmount(), FeeType.RESTORE, false));
+    if (isExpired) {
+      feesAndCredits.addFeeOrCredit(
+          Fee.create(
+              domainPrices.getRenewCost().getAmount(), FeeType.RENEW, domainPrices.isPremium()));
+    }
     return customLogic.customizeRestorePrice(
         RestorePriceParameters.newBuilder()
-            .setFeesAndCredits(feesAndCredits)
+            .setFeesAndCredits(feesAndCredits.build())
             .setRegistry(registry)
             .setDomainName(InternetDomainName.from(domainName))
             .setAsOfDate(dateTime)
