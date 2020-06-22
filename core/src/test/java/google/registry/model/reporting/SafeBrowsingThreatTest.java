@@ -29,7 +29,6 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.VKey;
-import javax.persistence.PersistenceException;
 import org.joda.time.LocalDate;
 import org.joda.time.format.ISODateTimeFormat;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,14 +38,10 @@ import org.junit.jupiter.api.Test;
 public class SafeBrowsingThreatTest extends EntityTestCase {
 
   private SafeBrowsingThreat threat;
-  DomainBase domain;
-  HostResource host;
-  ContactResource registrantContact;
-  /**
-   * Create the client ID a registrar for the purpose of testing a foreign key reference in the
-   * Threat table. The registrar will be persisted in individual unit tests.
-   */
-  String registrarClientId = "registrar";
+  private DomainBase domain;
+  private HostResource host;
+  private ContactResource registrantContact;
+  private static final String REGISTRAR_ID = "registrar";
 
   private static final LocalDate DATE = LocalDate.parse("2020-06-10", ISODateTimeFormat.date());
 
@@ -66,8 +61,8 @@ public class SafeBrowsingThreatTest extends EntityTestCase {
     domain =
         new DomainBase()
             .asBuilder()
-            .setCreationClientId(registrarClientId)
-            .setPersistedCurrentSponsorClientId(registrarClientId)
+            .setCreationClientId(REGISTRAR_ID)
+            .setPersistedCurrentSponsorClientId(REGISTRAR_ID)
             .setDomainName("foo.tld")
             .setRepoId(domainRepoId)
             .setNameservers(hostVKey)
@@ -79,9 +74,9 @@ public class SafeBrowsingThreatTest extends EntityTestCase {
     registrantContact =
         new ContactResource.Builder()
             .setRepoId("contact_id")
-            .setCreationClientId(registrarClientId)
+            .setCreationClientId(REGISTRAR_ID)
             .setTransferData(new ContactTransferData.Builder().build())
-            .setPersistedCurrentSponsorClientId(registrarClientId)
+            .setPersistedCurrentSponsorClientId(REGISTRAR_ID)
             .build();
 
     /** Create a host for the purpose of testing a foreign key reference in the Domain table. */
@@ -89,8 +84,8 @@ public class SafeBrowsingThreatTest extends EntityTestCase {
         new HostResource.Builder()
             .setRepoId("host")
             .setHostName("ns1.example.com")
-            .setCreationClientId(registrarClientId)
-            .setPersistedCurrentSponsorClientId(registrarClientId)
+            .setCreationClientId(REGISTRAR_ID)
+            .setPersistedCurrentSponsorClientId(REGISTRAR_ID)
             .build();
 
     threat =
@@ -99,13 +94,13 @@ public class SafeBrowsingThreatTest extends EntityTestCase {
             .setCheckDate(DATE)
             .setDomainName("foo.tld")
             .setDomainRepoId(domainRepoId)
-            .setRegistrarId(registrarClientId)
+            .setRegistrarId(REGISTRAR_ID)
             .build();
   }
 
   @Test
   public void testPersistence() {
-    saveRegistrar(registrarClientId);
+    saveRegistrar(REGISTRAR_ID);
 
     jpaTm()
         .transact(
@@ -123,26 +118,23 @@ public class SafeBrowsingThreatTest extends EntityTestCase {
   }
 
   @Test
-  public void testDomainForeignKeyConstraints() {
-    saveRegistrar(registrarClientId);
-
+  public void testThreatForeignKeyConstraints() {
     assertThrowForeignKeyViolation(
         () -> {
           jpaTm()
               .transact(
                   () -> {
-                    // Persist the domain without the associated host object.
+                    // Persist the threat without the associated registrar.
+                    jpaTm().saveNew(host);
                     jpaTm().saveNew(registrantContact);
                     jpaTm().saveNew(domain);
+                    jpaTm().saveNew(threat);
                   });
         });
-  }
 
-  @Test
-  public void testThreatForeignKeyConstraints() {
-    saveRegistrar(registrarClientId);
-    assertThrows(
-        PersistenceException.class,
+    saveRegistrar(REGISTRAR_ID);
+
+    assertThrowForeignKeyViolation(
         () -> {
           jpaTm()
               .transact(
