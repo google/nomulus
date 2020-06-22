@@ -30,6 +30,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
+import google.registry.persistence.VKey;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
@@ -232,6 +233,19 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
 
   public ImmutableSet<DomainTransactionRecord> getDomainTransactionRecords() {
     return nullToEmptyImmutableCopy(domainTransactionRecords);
+  }
+
+  public static VKey<HistoryEntry> createVKey(Key<HistoryEntry> key) {
+    // TODO(b/158837942): This will likely need some revision.  As it stands, this method was
+    // introduced purely to facilitate testing of VKey specialization in VKeyTranslatorFactory.
+    // This class will likely require that functionality, though perhaps not this implementation of
+    // it.
+    // For now, just assume that the primary key of a history entry is comprised of the parent
+    // type, key and the object identifer.
+    return VKey.create(
+        HistoryEntry.class,
+        key.getParent().getKind() + "/" + key.getParent().getName() + "/" + key.getId(),
+        key);
   }
 
   @Override

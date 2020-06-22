@@ -85,6 +85,6 @@ public class DesignatedContact extends ImmutableObject {
   }
 
   public DesignatedContact reconstitute() {
-    return create(type, ContactResource.createVKey(contact));
+    return create(type, VKey.from(contact));
   }
 }

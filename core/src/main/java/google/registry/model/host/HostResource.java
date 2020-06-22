@@ -51,10 +51,6 @@ public class HostResource extends HostBase
     return VKey.create(HostResource.class, getRepoId(), Key.create(this));
   }
 
-  public static VKey<HostResource> createVKey(Key<HostResource> key) {
-    return VKey.create(HostResource.class, key.getName(), key);
-  }
-
   @Override
   public Builder asBuilder() {
     return new Builder(clone(this));

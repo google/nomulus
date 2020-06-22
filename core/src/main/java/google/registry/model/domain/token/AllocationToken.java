@@ -186,10 +186,6 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
     return VKey.create(getClass(), getToken(), Key.create(this));
   }
 
-  public static VKey<AllocationToken> createVKey(Key<AllocationToken> key) {
-    return VKey.create(AllocationToken.class, key.getName(), key);
-  }
-
   @Override
   public Builder asBuilder() {
     return new Builder(clone(this));

@@ -203,10 +203,6 @@ public class ContactResource extends EppResource
     return VKey.create(ContactResource.class, getRepoId(), Key.create(this));
   }
 
-  public static VKey<ContactResource> createVKey(Key<ContactResource> key) {
-    return VKey.create(ContactResource.class, key.getName(), key);
-  }
-
   @Override
   @javax.persistence.Id
   @Access(AccessType.PROPERTY)
