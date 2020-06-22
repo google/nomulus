@@ -37,13 +37,13 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link SafeBrowsingThreat}. */
 public class SafeBrowsingThreatTest extends EntityTestCase {
 
+  private static final String REGISTRAR_ID = "registrar";
+  private static final LocalDate DATE = LocalDate.parse("2020-06-10", ISODateTimeFormat.date());
+
   private SafeBrowsingThreat threat;
   private DomainBase domain;
   private HostResource host;
   private ContactResource registrantContact;
-  private static final String REGISTRAR_ID = "registrar";
-
-  private static final LocalDate DATE = LocalDate.parse("2020-06-10", ISODateTimeFormat.date());
 
   public SafeBrowsingThreatTest() {
     super(true);
