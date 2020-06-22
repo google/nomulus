@@ -109,7 +109,6 @@ public abstract class TransferData<
   public B copyConstantFieldsToBuilder() {
     B newBuilder = new TypeInstantiator<B>(getClass()) {}.instantiate();
     newBuilder
-        // .setTransferPeriod(this.transferPeriod)
         .setTransferRequestTrid(this.transferRequestTrid)
         .setTransferRequestTime(this.transferRequestTime)
         .setGainingClientId(this.gainingClientId)

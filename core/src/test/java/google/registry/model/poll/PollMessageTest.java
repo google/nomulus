@@ -35,6 +35,8 @@ import org.junit.jupiter.api.Test;
 public class PollMessageTest extends EntityTestCase {
 
   HistoryEntry historyEntry;
+  PollMessage.OneTime oneTime;
+  PollMessage.Autorenew autoRenew;
 
   public PollMessageTest() {
     super(true);
@@ -57,33 +59,14 @@ public class PollMessageTest extends EntityTestCase {
                 .setReason("reason")
                 .setRequestedByRegistrar(false)
                 .build());
-  }
-
-  @Test
-  void testCloudSqlPersistenceOneTime() {
-    saveRegistrar("TheRegistrar");
-    PollMessage.OneTime pollMessage =
+    oneTime =
         new PollMessage.OneTime.Builder()
             .setClientId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
             .setMsg("Test poll message")
             .setParent(historyEntry)
             .build();
-    pollMessage.id = null;
-    jpaTm().transact(() -> jpaTm().saveNew(pollMessage));
-    PollMessage.OneTime persisted =
-        jpaTm()
-            .transact(
-                () -> jpaTm().load(VKey.createSql(PollMessage.OneTime.class, pollMessage.id)));
-    persisted.id = pollMessage.id;
-    persisted.parent = pollMessage.parent;
-    assertThat(persisted).isEqualTo(pollMessage);
-  }
-
-  @Test
-  void testCloudSqlPersistenceAutorenew() {
-    saveRegistrar("TheRegistrar");
-    PollMessage.Autorenew pollMessage =
+    autoRenew =
         new PollMessage.Autorenew.Builder()
             .setClientId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
@@ -92,15 +75,51 @@ public class PollMessageTest extends EntityTestCase {
             .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
             .setTargetId("foobar.foo")
             .build();
-    pollMessage.id = null;
-    jpaTm().transact(() -> jpaTm().saveNew(pollMessage));
+    // TODO(shicong): Remove these two lines after we use symmetric vkey and change the cloud sql
+    //  schema
+    oneTime.id = null;
+    autoRenew.id = null;
+  }
+
+  @Test
+  void testCloudSqlPersistenceOneTime() {
+    saveRegistrar("TheRegistrar");
+    jpaTm().transact(() -> jpaTm().saveNew(oneTime));
+    PollMessage.OneTime persisted =
+        jpaTm().transact(() -> jpaTm().load(VKey.createSql(PollMessage.OneTime.class, oneTime.id)));
+    persisted.parent = oneTime.parent;
+    assertThat(persisted).isEqualTo(oneTime);
+  }
+
+  @Test
+  void testCloudSqlPersistenceAutorenew() {
+    saveRegistrar("TheRegistrar");
+    jpaTm().transact(() -> jpaTm().saveNew(autoRenew));
     PollMessage.Autorenew persisted =
         jpaTm()
             .transact(
-                () -> jpaTm().load(VKey.createSql(PollMessage.Autorenew.class, pollMessage.id)));
-    persisted.id = pollMessage.id;
-    persisted.parent = pollMessage.parent;
-    assertThat(persisted).isEqualTo(pollMessage);
+                () -> jpaTm().load(VKey.createSql(PollMessage.Autorenew.class, autoRenew.id)));
+    persisted.parent = autoRenew.parent;
+    assertThat(persisted).isEqualTo(autoRenew);
+  }
+
+  @Test
+  void testCloudSqlSupportForPolymorphicVKey() {
+    saveRegistrar("TheRegistrar");
+
+    jpaTm().transact(() -> jpaTm().saveNew(oneTime));
+    PollMessage persistedOneTime =
+        jpaTm().transact(() -> jpaTm().load(VKey.createSql(PollMessage.class, oneTime.getId())));
+    assertThat(persistedOneTime).isInstanceOf(PollMessage.OneTime.class);
+    persistedOneTime.parent = oneTime.parent;
+    assertThat(persistedOneTime).isEqualTo(oneTime);
+
+    jpaTm().transact(() -> jpaTm().saveNew(autoRenew));
+    PollMessage persistedAutoRenew =
+        jpaTm().transact(() -> jpaTm().load(VKey.createSql(PollMessage.class, autoRenew.getId())));
+    assertThat(persistedAutoRenew).isInstanceOf(PollMessage.Autorenew.class);
+    persistedAutoRenew.parent = oneTime.parent;
+    assertThat(persistedAutoRenew).isEqualTo(autoRenew);
   }
 
   @Test
