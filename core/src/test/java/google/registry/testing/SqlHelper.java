@@ -25,7 +25,7 @@ import google.registry.model.registry.RegistryLockDao;
 import google.registry.schema.domain.RegistryLock;
 import java.sql.SQLException;
 import java.util.Optional;
-import javax.persistence.RollbackException;
+import javax.persistence.PersistenceException;
 import org.junit.function.ThrowingRunnable;
 
 /** Static utils for setting up and retrieving test resources from the SQL database. */
@@ -66,7 +66,7 @@ public class SqlHelper {
   }
 
   public static void assertThrowForeignKeyViolation(ThrowingRunnable runnable) {
-    RollbackException thrown = assertThrows(RollbackException.class, runnable);
+    PersistenceException thrown = assertThrows(PersistenceException.class, runnable);
     assertThat(Throwables.getRootCause(thrown)).isInstanceOf(SQLException.class);
     assertThat(Throwables.getRootCause(thrown))
         .hasMessageThat()
