@@ -6,7 +6,8 @@
     <resData>
       <domain:chkData xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:cd>
-          <domain:name avail="1">rich.example</domain:name>
+          <domain:name avail="false">rich.example</domain:name>
+          <domain:reason>In use</domain:reason>
         </domain:cd>
       </domain:chkData>
     </resData>
@@ -20,6 +21,7 @@
           <fee:command>restore</fee:command>
           <fee:currency>USD</fee:currency>
           <fee:period unit="y">1</fee:period>
+          <fee:fee description="renew">100.00</fee:fee>
           <fee:fee description="restore">17.00</fee:fee>
           <fee:class>premium</fee:class>
         </fee:cd>

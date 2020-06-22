@@ -616,15 +616,11 @@ public class DomainFlowUtils {
           throw new RestoresAreAlwaysForOneYearException();
         }
         builder.setAvailIfSupported(true);
-        // The domain object is present only on domain info commands, not on domain check commands,
-        // because check commands can query up to 50 domains and it isn't performant to load them
-        // all. So, only on info commands can we actually determine if we should include the renewal
-        // fee because the domain needs to have been loaded in order to know its expiration time. We
-        // default to including the renewal fee on domain checks because typically most domains are
-        // deleted during the autorenew grace period and thus if restored will require a renewal,
-        // but this is just a best guess.
+        // Domains that never existed, or that used to exist but have completed the entire deletion
+        // process, don't count as expired for the purposes of requiring an added year of renewal on
+        // restore because they can't be restored in the first place.
         boolean isExpired =
-            !domain.isPresent() || domain.get().getRegistrationExpirationTime().isBefore(now);
+            domain.isPresent() && domain.get().getRegistrationExpirationTime().isBefore(now);
         fees = pricingLogic.getRestorePrice(registry, domainNameString, now, isExpired).getFees();
         break;
       case TRANSFER:

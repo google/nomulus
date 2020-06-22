@@ -22,6 +22,7 @@ import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRIS
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
+import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistDeletedDomain;
 import static google.registry.testing.DatastoreHelper.persistPremiumList;
@@ -65,6 +66,7 @@ import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
+import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.label.ReservedList;
@@ -728,6 +730,21 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
     createTld("example");
     setEppInput("domain_check_fee_premium_v11_restore.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_premium_response_v11_restore.xml"));
+  }
+
+  @Test
+  public void testFeeExtension_premiumLabels_v11_restore_withRenewal() throws Exception {
+    createTld("example");
+    persistResource(
+        newDomainBase("rich.example")
+            .asBuilder()
+            .setDeletionTime(clock.nowUtc().plusDays(25))
+            .setRegistrationExpirationTime(clock.nowUtc().minusDays(1))
+            .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
+            .build());
+    setEppInput("domain_check_fee_premium_v11_restore.xml");
+    runFlowAssertResponse(
+        loadFile("domain_check_fee_premium_response_v11_restore_with_renewal.xml"));
   }
 
   @Test
