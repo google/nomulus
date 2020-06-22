@@ -25,37 +25,35 @@ public class BackupPathsTest {
 
   @Test
   void getCloudSQLCredentialFilePatterns_alpha() {
-    assertThat(getCloudSQLCredentialFilePatterns("domain-registry-alpha"))
+    assertThat(getCloudSQLCredentialFilePatterns("alpha"))
         .containsExactly(
             "gs://domain-registry-dev-deploy/cloudsql-credentials/alpha/admin_credential.enc");
   }
 
   @Test
   void getCloudSQLCredentialFilePatterns_crash() {
-    assertThat(getCloudSQLCredentialFilePatterns("domain-registry-crash"))
+    assertThat(getCloudSQLCredentialFilePatterns("crash"))
         .containsExactly(
             "gs://domain-registry-dev-deploy/cloudsql-credentials/crash/admin_credential.enc");
   }
 
   @Test
   void getCloudSQLCredentialFilePatterns_sandbox() {
-    assertThat(getCloudSQLCredentialFilePatterns("domain-registry-sandbox"))
+    assertThat(getCloudSQLCredentialFilePatterns("sandbox"))
         .containsExactly(
             "gs://domain-registry-dev-deploy/cloudsql-credentials/sandbox/admin_credential.enc");
   }
 
   @Test
   void getCloudSQLCredentialFilePatterns_production() {
-    assertThat(getCloudSQLCredentialFilePatterns("domain-registry"))
+    assertThat(getCloudSQLCredentialFilePatterns("production"))
         .containsExactly(
             "gs://domain-registry-dev-deploy/cloudsql-credentials/production/admin_credential.enc");
   }
 
   @Test
   void getEnvFromProject_illegal() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> getCloudSQLCredentialFilePatterns("domain-registry-bad"));
+    assertThrows(IllegalArgumentException.class, () -> getCloudSQLCredentialFilePatterns("bad"));
   }
 
   @Test

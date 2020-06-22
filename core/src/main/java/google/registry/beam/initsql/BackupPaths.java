@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import org.joda.time.DateTime;
 
@@ -51,12 +51,8 @@ public final class BackupPaths {
   private static final String SQL_CONN_INFO_FILE_PATTERN =
       "gs://domain-registry-dev-deploy/cloudsql-credentials/%s/admin_credential.enc";
 
-  private static final ImmutableMap<String, String> PROJECT_TO_ENV =
-      ImmutableMap.of(
-          "domain-registry-alpha", "alpha",
-          "domain-registry-crash", "crash",
-          "domain-registry-sandbox", "sandbox",
-          "domain-registry", "production");
+  private static final ImmutableSet<String> ALLOWED_ENV =
+      ImmutableSet.of("alpha", "crash", "sandbox", "production");
 
   /**
    * Returns a regex pattern that matches all Datastore export files of a given {@code kind}.
@@ -113,10 +109,9 @@ public final class BackupPaths {
     return DateTime.parse(fileName.substring(start + COMMIT_LOG_NAME_PREFIX.length()));
   }
 
-  public static ImmutableList<String> getCloudSQLCredentialFilePatterns(String gcpProjectName) {
+  public static ImmutableList<String> getCloudSQLCredentialFilePatterns(String environmentName) {
     checkArgument(
-        PROJECT_TO_ENV.containsKey(gcpProjectName), "Invalid project name %s", gcpProjectName);
-    return ImmutableList.of(
-        String.format(SQL_CONN_INFO_FILE_PATTERN, PROJECT_TO_ENV.get(gcpProjectName)));
+        ALLOWED_ENV.contains(environmentName), "Invalid environment name %s", environmentName);
+    return ImmutableList.of(String.format(SQL_CONN_INFO_FILE_PATTERN, environmentName));
   }
 }

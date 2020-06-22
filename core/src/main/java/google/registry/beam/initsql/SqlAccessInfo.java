@@ -32,37 +32,14 @@ abstract class SqlAccessInfo {
 
   abstract Optional<String> cloudSqlInstanceName();
 
-  public static Builder builder() {
-    return new AutoValue_SqlAccessInfo.Builder();
-  }
-
   public static SqlAccessInfo createCloudSqlAccessInfo(
       String sqlInstanceName, String username, String password) {
-    return builder()
-        .cloudSqlInstanceName(sqlInstanceName)
-        .user(username)
-        .password(password)
-        .jdbcUrl("jdbc:postgresql://google/postgres")
-        .build();
+    return new AutoValue_SqlAccessInfo(
+        "jdbc:postgresql://google/postgres", username, password, Optional.of(sqlInstanceName));
   }
 
   public static SqlAccessInfo createLocalSqlAccessInfo(
       String jdbcUrl, String username, String password) {
-    return builder().user(username).password(password).jdbcUrl(jdbcUrl).build();
-  }
-
-  /** Builder for {@link SqlAccessInfo}. */
-  @AutoValue.Builder
-  abstract static class Builder {
-
-    abstract Builder jdbcUrl(String jdbcUrl);
-
-    abstract Builder user(String user);
-
-    abstract Builder password(String password);
-
-    abstract Builder cloudSqlInstanceName(String cloudSqlInstanceName);
-
-    abstract SqlAccessInfo build();
+    return new AutoValue_SqlAccessInfo(jdbcUrl, username, password, Optional.empty());
   }
 }

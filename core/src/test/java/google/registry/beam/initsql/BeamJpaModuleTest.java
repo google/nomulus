@@ -66,26 +66,26 @@ public class BeamJpaModuleTest {
   }
 
   /**
-   * Integration test with a GCP project, only run when the 'test.gcp_integration.project' property
-   * is defined. Otherwise this test is ignored. This is meant to be run from a developer's desktop,
+   * Integration test with a GCP project, only run when the 'test.gcp_integration.env' property is
+   * defined. Otherwise this test is ignored. This is meant to be run from a developer's desktop,
    * with auth already set up by gcloud.
    *
-   * <p>Example: {@code gradlew test -P test.gcp_integration.project=domain-registry-alpha}.
+   * <p>Example: {@code gradlew test -P test.gcp_integration.env=alpha}.
    *
    * <p>See <a href="../../../../../../../../java_common.gradle">java_common.gradle</a> for more
    * information.
    */
   @Test
   public void getJpaTransactionManager_cloudSql_authRequired() {
-    String gcpProjectName = System.getProperty("test.gcp_integration.project");
-    assumeThat(gcpProjectName, notNullValue());
+    String environmentName = System.getProperty("test.gcp_integration.env");
+    assumeThat(environmentName, notNullValue());
 
     FileSystems.setDefaultPipelineOptions(PipelineOptionsFactory.create());
     JpaTransactionManager jpa =
         DaggerBeamJpaModule_JpaTransactionManagerComponent.builder()
             .beamJpaModule(
                 new BeamJpaModule(
-                    BackupPaths.getCloudSQLCredentialFilePatterns(gcpProjectName).get(0)))
+                    BackupPaths.getCloudSQLCredentialFilePatterns(environmentName).get(0)))
             .build()
             .cloudSqlJpaTransactionManager();
     assertThat(

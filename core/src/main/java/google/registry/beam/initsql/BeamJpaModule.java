@@ -64,11 +64,20 @@ class BeamJpaModule {
 
   private final String credentialFilePath;
 
+  /**
+   * Constructs a new instance of {@link BeamJpaModule}.
+   *
+   * @param credentialFilePath the path to a Cloud SQL credential file. This must refer to either a
+   *     real encrypted file on GCS as returned by {@link
+   *     BackupPaths#getCloudSQLCredentialFilePatterns} or an unencrypted file on local filesystem
+   *     with credentials to a test database.
+   */
   BeamJpaModule(String credentialFilePath) {
     checkArgument(!isNullOrEmpty(credentialFilePath), "Null or empty credentialFilePath");
     this.credentialFilePath = credentialFilePath;
   }
 
+  /** Returns true if the credential file is on GCS (and therefore expected to be encrypted). */
   private boolean isCloudSqlCredential() {
     return credentialFilePath.startsWith(GCS_SCHEME);
   }
