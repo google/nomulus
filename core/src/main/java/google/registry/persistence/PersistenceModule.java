@@ -58,9 +58,10 @@ public class PersistenceModule {
   public static final String HIKARI_DS_CLOUD_SQL_INSTANCE =
       "hibernate.hikari.dataSource.cloudSqlInstance";
 
+  @VisibleForTesting
   @Provides
   @DefaultHibernateConfigs
-  public static ImmutableMap<String, String> providesDefaultDatabaseConfigs() {
+  public static ImmutableMap<String, String> provideDefaultDatabaseConfigs() {
     ImmutableMap.Builder<String, String> properties = ImmutableMap.builder();
 
     properties.put(Environment.DRIVER, "org.postgresql.Driver");
@@ -89,7 +90,7 @@ public class PersistenceModule {
   @Provides
   @Singleton
   @PartialCloudSqlConfigs
-  public static ImmutableMap<String, String> providesPartialCloudSqlConfigs(
+  static ImmutableMap<String, String> providePartialCloudSqlConfigs(
       @Config("cloudSqlJdbcUrl") String jdbcUrl,
       @Config("cloudSqlInstanceConnectionName") String instanceConnectionName,
       @DefaultHibernateConfigs ImmutableMap<String, String> defaultConfigs) {
@@ -103,7 +104,7 @@ public class PersistenceModule {
   @Provides
   @Singleton
   @AppEngineJpaTm
-  public static JpaTransactionManager providesAppEngineJpaTm(
+  static JpaTransactionManager provideAppEngineJpaTm(
       @Config("cloudSqlUsername") String username,
       KmsKeyring kmsKeyring,
       @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
@@ -117,7 +118,7 @@ public class PersistenceModule {
   @Provides
   @Singleton
   @NomulusToolJpaTm
-  public static JpaTransactionManager providesNomulusToolJpaTm(
+  static JpaTransactionManager provideNomulusToolJpaTm(
       @Config("toolsCloudSqlUsername") String username,
       KmsKeyring kmsKeyring,
       @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
@@ -130,9 +131,39 @@ public class PersistenceModule {
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
+  @Provides
+  @Singleton
+  @SocketFactoryJpaTm
+  static JpaTransactionManager provideSocketFactoryJpaTm(
+      @Config("cloudSqlUsername") String username,
+      @Config("cloudSqlPassword") String password,
+      @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
+      Clock clock) {
+    HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
+    overrides.put(Environment.USER, username);
+    overrides.put(Environment.PASS, password);
+    return new JpaTransactionManagerImpl(create(overrides), clock);
+  }
+
+  @Provides
+  @Singleton
+  @JdbcJpaTm
+  static JpaTransactionManager provideLocalJpaTm(
+      @Config("cloudSqlJdbcUrl") String jdbcUrl,
+      @Config("cloudSqlUsername") String username,
+      @Config("cloudSqlPassword") String password,
+      @DefaultHibernateConfigs ImmutableMap<String, String> defaultConfigs,
+      Clock clock) {
+    HashMap<String, String> overrides = Maps.newHashMap(defaultConfigs);
+    overrides.put(Environment.URL, jdbcUrl);
+    overrides.put(Environment.USER, username);
+    overrides.put(Environment.PASS, password);
+    return new JpaTransactionManagerImpl(create(overrides), clock);
+  }
+
   /** Constructs the {@link EntityManagerFactory} instance. */
   @VisibleForTesting
-  public static EntityManagerFactory create(
+  static EntityManagerFactory create(
       String jdbcUrl, String username, String password, ImmutableMap<String, String> configs) {
     HashMap<String, String> properties = Maps.newHashMap(configs);
     properties.put(Environment.URL, jdbcUrl);
@@ -164,6 +195,23 @@ public class PersistenceModule {
   @Qualifier
   @Documented
   public @interface NomulusToolJpaTm {}
+
+  /**
+   * Dagger qualifier for {@link JpaTransactionManager} that accesses Cloud SQL using socket
+   * factory. This is meant for applications not running on AppEngine, therefore without access to a
+   * {@link google.registry.keyring.api.Keyring}.
+   */
+  @Qualifier
+  @Documented
+  public @interface SocketFactoryJpaTm {}
+
+  /**
+   * Dagger qualifier for {@link JpaTransactionManager} backed by plain JDBC connections. This is
+   * mainly used by tests.
+   */
+  @Qualifier
+  @Documented
+  public @interface JdbcJpaTm {}
 
   /** Dagger qualifier for the partial Cloud SQL configs. */
   @Qualifier
