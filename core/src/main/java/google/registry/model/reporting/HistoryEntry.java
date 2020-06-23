@@ -236,7 +236,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
   }
 
   public static VKey<HistoryEntry> createVKey(Key<HistoryEntry> key) {
-    // TODO(b/158837942): This will likely need some revision.  As it stands, this method was
+    // TODO(b/159207551): This will likely need some revision.  As it stands, this method was
     // introduced purely to facilitate testing of VKey specialization in VKeyTranslatorFactory.
     // This class will likely require that functionality, though perhaps not this implementation of
     // it.
