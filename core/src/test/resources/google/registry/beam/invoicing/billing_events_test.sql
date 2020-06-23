@@ -56,7 +56,9 @@ FROM (
       `my-project-id.latest_datastore_export.Registry`
     WHERE
     -- TODO(b/18092292): Add a filter for tldState (not PDT/PREDELEGATION)
-      tldType = 'REAL') ) AS BillingEvent
+      tldType = 'REAL'
+    AND
+      disableInvoicing != true) ) AS BillingEvent
   -- Gather billing ID from registrar table
   -- This is a 'JOIN' as opposed to 'LEFT JOIN' to filter out
   -- non-billable registrars

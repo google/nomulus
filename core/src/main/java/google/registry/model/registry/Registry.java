@@ -340,6 +340,14 @@ public class Registry extends ImmutableObject implements Buildable {
   TldType tldType = TldType.REAL;
 
   /**
+   * Whether to disable invoicing for a {@link TldType#REAL} TLD.
+   *
+   * <p>Note that invoicing is always disabled for {@link TldType#TEST} TLDs. Setting this field has
+   * no effect for {@link TldType#TEST} TLDs.
+   */
+  boolean disableInvoicing = false;
+
+  /**
    * A property that transitions to different TldStates at different times. Stored as a list of
    * TldStateTransition embedded objects using the @Mapify annotation.
    */
@@ -634,6 +642,11 @@ public class Registry extends ImmutableObject implements Buildable {
 
     public Builder setTldType(TldType tldType) {
       getInstance().tldType = tldType;
+      return this;
+    }
+
+    public Builder setDisableInvoicing(boolean disableInvoicing) {
+      getInstance().disableInvoicing = disableInvoicing;
       return this;
     }
 

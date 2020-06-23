@@ -494,6 +494,7 @@ enum google.registry.model.registrar.RegistrarContact$Type {
 class google.registry.model.registry.Registry {
   @Id java.lang.String tldStrId;
   @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
+  boolean disableInvoicing;
   boolean dnsPaused;
   boolean escrowEnabled;
   com.googlecode.objectify.Key<google.registry.model.registry.label.PremiumList> premiumList;
