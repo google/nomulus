@@ -22,7 +22,6 @@ import google.registry.model.pricing.PremiumPricingEngine;
 import google.registry.model.pricing.PremiumPricingEngine.DomainPrices;
 import google.registry.model.registry.Registry;
 import java.util.Map;
-import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 
@@ -50,11 +49,6 @@ public final class PricingEngineProxy {
   /** Returns true if the specified domain name is premium. */
   public static boolean isDomainPremium(String domainName, DateTime priceTime) {
     return getPricesForDomainName(domainName, priceTime).isPremium();
-  }
-
-  /** Returns the fee class of the specified domain name. */
-  public static Optional<String> getDomainFeeClass(String domainName, DateTime priceTime) {
-    return getPricesForDomainName(domainName, priceTime).getFeeClass();
   }
 
   /**

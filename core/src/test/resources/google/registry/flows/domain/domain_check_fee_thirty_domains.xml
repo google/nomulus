@@ -1,0 +1,226 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <check>
+      <domain:check xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>example-00.tld</domain:name>
+        <domain:name>example-01.tld</domain:name>
+        <domain:name>example-02.tld</domain:name>
+        <domain:name>example-03.tld</domain:name>
+        <domain:name>example-04.tld</domain:name>
+        <domain:name>example-05.tld</domain:name>
+        <domain:name>example-06.tld</domain:name>
+        <domain:name>example-07.tld</domain:name>
+        <domain:name>example-08.tld</domain:name>
+        <domain:name>example-09.tld</domain:name>
+        <domain:name>example-10.tld</domain:name>
+        <domain:name>example-11.tld</domain:name>
+        <domain:name>example-12.tld</domain:name>
+        <domain:name>example-13.tld</domain:name>
+        <domain:name>example-14.tld</domain:name>
+        <domain:name>example-15.tld</domain:name>
+        <domain:name>example-16.tld</domain:name>
+        <domain:name>example-17.tld</domain:name>
+        <domain:name>example-18.tld</domain:name>
+        <domain:name>example-19.tld</domain:name>
+        <domain:name>example-20.tld</domain:name>
+        <domain:name>example-21.tld</domain:name>
+        <domain:name>example-22.tld</domain:name>
+        <domain:name>example-23.tld</domain:name>
+        <domain:name>example-24.tld</domain:name>
+        <domain:name>example-25.tld</domain:name>
+        <domain:name>example-26.tld</domain:name>
+        <domain:name>example-27.tld</domain:name>
+        <domain:name>example-28.tld</domain:name>
+        <domain:name>example-29.tld</domain:name>
+      </domain:check>
+    </check>
+   <extension>
+      <launch:check xmlns:launch="urn:ietf:params:xml:ns:launch-1.0" type="avail">
+        <launch:phase name="foo">custom</launch:phase>
+      </launch:check>
+      <fee:check xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+        <fee:domain>
+          <fee:name>example-00.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-01.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-02.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-03.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-04.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-05.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-06.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-07.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-08.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-09.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-10.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-11.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-12.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-13.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-14.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-15.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-16.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-17.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-18.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-19.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-20.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-21.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-22.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-23.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-24.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-25.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-26.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-27.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-28.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>example-29.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+      </fee:check>
+    </extension>
+    <clTRID>ABC-12345</clTRID>
+  </command>
+</epp>

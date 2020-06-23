@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.fee.FeeCheckCommandExtension;
 import google.registry.model.domain.fee.FeeCheckResponseExtensionItem;
-import java.util.Set;
+import java.util.List;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
@@ -43,10 +43,10 @@ public class FeeCheckCommandExtensionV12 extends ImmutableObject
   }
 
   @XmlElement(name = "command")
-  Set<FeeCheckCommandExtensionItemV12> items;
+  List<FeeCheckCommandExtensionItemV12> items;
 
   @Override
-  public ImmutableSet<FeeCheckCommandExtensionItemV12> getItems() {
+  public ImmutableList<FeeCheckCommandExtensionItemV12> getItems() {
     return nullToEmptyImmutableCopy(items);
   }
 

@@ -36,7 +36,6 @@
         <fee:command>restore</fee:command>
         <fee:period unit="y">1</fee:period>
         <fee:fee description="restore">17.00</fee:fee>
-        <fee:class>premium</fee:class>
       </fee:infData>
     </extension>
     <trID>

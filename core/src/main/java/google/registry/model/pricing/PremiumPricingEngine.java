@@ -14,7 +14,6 @@
 
 package google.registry.model.pricing;
 
-import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 
@@ -46,18 +45,12 @@ public interface PremiumPricingEngine {
     // create, renew, restore, and transfer.
     private Money createCost;
     private Money renewCost;
-    private Optional<String> feeClass;
 
-    static DomainPrices create(
-        boolean isPremium,
-        Money createCost,
-        Money renewCost,
-        Optional<String> feeClass) {
+    static DomainPrices create(boolean isPremium, Money createCost, Money renewCost) {
       DomainPrices instance = new DomainPrices();
       instance.isPremium = isPremium;
       instance.createCost = createCost;
       instance.renewCost = renewCost;
-      instance.feeClass = feeClass;
       return instance;
     }
 
@@ -74,11 +67,6 @@ public interface PremiumPricingEngine {
     /** Returns the cost to renew the domain. */
     public Money getRenewCost() {
       return renewCost;
-    }
-
-    /** Returns the fee class of the cost (used for the Fee extension). */
-    public Optional<String> getFeeClass() {
-      return feeClass;
     }
   }
 }

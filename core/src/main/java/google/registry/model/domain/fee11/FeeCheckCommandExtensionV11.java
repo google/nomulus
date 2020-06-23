@@ -17,7 +17,6 @@ package google.registry.model.domain.fee11;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeCheckCommandExtension;
@@ -69,8 +68,8 @@ public class FeeCheckCommandExtensionV11 extends ImmutableObject
   }
 
   @Override
-  public ImmutableSet<FeeCheckCommandExtensionItemV11> getItems() {
-    return ImmutableSet.of(new FeeCheckCommandExtensionItemV11());
+  public ImmutableList<FeeCheckCommandExtensionItemV11> getItems() {
+    return ImmutableList.of(new FeeCheckCommandExtensionItemV11());
   }
 
   @Override

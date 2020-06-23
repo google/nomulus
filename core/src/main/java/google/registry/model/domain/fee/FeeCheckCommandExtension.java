@@ -15,7 +15,6 @@
 package google.registry.model.domain.fee;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import google.registry.model.eppinput.EppInput.CommandExtension;
 import org.joda.money.CurrencyUnit;
 
@@ -40,7 +39,7 @@ public interface FeeCheckCommandExtension<
    */
   CurrencyUnit getCurrency();
 
-  ImmutableSet<C> getItems();
+  ImmutableList<C> getItems();
 
   R createResponse(ImmutableList<? extends FeeCheckResponseExtensionItem> items);
 }

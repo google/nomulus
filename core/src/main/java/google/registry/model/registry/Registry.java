@@ -579,8 +579,9 @@ public class Registry extends ImmutableObject implements Buildable {
     return Fee.create(
         eapFeeSchedule.getValueAtTime(now).getAmount(),
         FeeType.EAP,
-        // An EAP fee counts as premium so the domain's overall Fee doesn't show as standard-priced.
-        true,
+        // An EAP fee does not count as premium -- it's a separate one-time fee, independent of
+        // which the domain is separately considered standard vs premium depending on renewal price.
+        false,
         validPeriod,
         validPeriod.upperEndpoint());
   }

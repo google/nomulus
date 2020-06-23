@@ -326,7 +326,7 @@ public final class DomainCheckFlow implements Flow {
    * extension specify the domain name in the extension item, while others use the list of domain
    * names from the regular check domain availability list.
    */
-  private Set<String> getDomainNamesToCheckForFee(
+  private ImmutableSet<String> getDomainNamesToCheckForFee(
       FeeCheckCommandExtensionItem feeCheckItem, ImmutableSet<String> availabilityCheckDomains)
       throws OnlyCheckedNamesCanBeFeeCheckedException {
     if (feeCheckItem.isDomainNameSupported()) {

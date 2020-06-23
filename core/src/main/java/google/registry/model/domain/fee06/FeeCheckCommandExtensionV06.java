@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.fee.FeeCheckCommandExtension;
 import google.registry.model.domain.fee.FeeCheckResponseExtensionItem;
-import java.util.Set;
+import java.util.List;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import org.joda.money.CurrencyUnit;
@@ -34,7 +34,7 @@ public class FeeCheckCommandExtensionV06 extends ImmutableObject
         FeeCheckResponseExtensionV06> {
 
   @XmlElement(name = "domain")
-  Set<FeeCheckCommandExtensionItemV06> items;
+  List<FeeCheckCommandExtensionItemV06> items;
 
   @Override
   public CurrencyUnit getCurrency() {
@@ -42,7 +42,7 @@ public class FeeCheckCommandExtensionV06 extends ImmutableObject
   }
 
   @Override
-  public ImmutableSet<FeeCheckCommandExtensionItemV06> getItems() {
+  public ImmutableList<FeeCheckCommandExtensionItemV06> getItems() {
     return nullToEmptyImmutableCopy(items);
   }
 
