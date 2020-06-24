@@ -33,7 +33,7 @@ import org.junit.rules.ExternalResource;
  * JUnit Rule for overriding the values Java system properties during tests.
  *
  * <p>In most scenarios this class should be the last rule/extension to apply. In JUnit 5, apply
- * {@code @Order(value = Integer.MAX_VALUE} to the extension.
+ * {@code @Order(value = Integer.MAX_VALUE)} to the extension.
  */
 public final class SystemPropertyRule extends ExternalResource
     implements SystemPropertySetter, BeforeEachCallback, AfterEachCallback {
