@@ -51,25 +51,23 @@ import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 import org.joda.money.CurrencyUnit;
 import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(JUnit4.class)
+@ExtendWith(MockitoExtension.class)
 public final class ConsoleRegistrarCreatorActionTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngineRule =
       AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
-
-  @Rule
+  @RegisterExtension
+  @Order(value = Integer.MAX_VALUE)
   public final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
 
   private final FakeResponse response = new FakeResponse();
