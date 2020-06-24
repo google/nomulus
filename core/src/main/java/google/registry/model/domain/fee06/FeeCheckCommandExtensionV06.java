@@ -17,7 +17,6 @@ package google.registry.model.domain.fee06;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.fee.FeeCheckCommandExtension;
 import google.registry.model.domain.fee.FeeCheckResponseExtensionItem;
