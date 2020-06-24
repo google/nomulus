@@ -251,7 +251,7 @@ public class ContactResource extends EppResource
   }
 
   @Override
-  public final ContactTransferData getTransferData() {
+  public ContactTransferData getTransferData() {
     return Optional.ofNullable(transferData).orElse(ContactTransferData.EMPTY);
   }
 
