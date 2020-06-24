@@ -24,10 +24,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.rules.ExternalResource;
 
-/** JUnit Rule for overriding the values Java system properties during tests. */
-public final class SystemPropertyRule extends ExternalResource implements SystemPropertySetter {
+/**
+ * JUnit Rule for overriding the values Java system properties during tests.
+ *
+ * <p>In most scenarios this class should be the last rule/extension to apply. In JUnit 5, apply
+ * {@code @Order(value = Integer.MAX_VALUE} to the extension.
+ */
+public final class SystemPropertyRule extends ExternalResource
+    implements SystemPropertySetter, BeforeEachCallback, AfterEachCallback {
 
   /** Class representing a system property key value pair. */
   private static class Property {
@@ -89,5 +98,15 @@ public final class SystemPropertyRule extends ExternalResource implements System
     for (Property original : originals.values()) {
       original.set();
     }
+  }
+
+  @Override
+  public void beforeEach(ExtensionContext context) {
+    before();
+  }
+
+  @Override
+  public void afterEach(ExtensionContext context) {
+    after();
   }
 }
