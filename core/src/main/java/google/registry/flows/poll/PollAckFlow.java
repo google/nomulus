@@ -14,8 +14,8 @@
 
 package google.registry.flows.poll;
 
-import static com.google.common.base.Preconditions.checkState;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.poll.PollFlowUtils.ackPollMessage;
 import static google.registry.flows.poll.PollFlowUtils.getPollMessagesQuery;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_NO_MESSAGES;
 import static google.registry.model.ofy.ObjectifyService.ofy;
@@ -100,27 +100,8 @@ public class PollAckFlow implements TransactionalFlow {
     // This keeps track of whether we should include the current acked message in the updated
     // message count that's returned to the user. The only case where we do so is if an autorenew
     // poll message is acked, but its next event is already ready to be delivered.
-    boolean includeAckedMessageInCount = false;
-    if (pollMessage instanceof PollMessage.OneTime) {
-      // One-time poll messages are deleted once acked.
-      ofy().delete().entity(pollMessage);
-    } else {
-      checkState(pollMessage instanceof PollMessage.Autorenew, "Unknown poll message type");
-      PollMessage.Autorenew autorenewPollMessage = (PollMessage.Autorenew) pollMessage;
+    boolean includeAckedMessageInCount = ackPollMessage(pollMessage, now);
 
-      // Move the eventTime of this autorenew poll message forward by a year.
-      DateTime nextEventTime = autorenewPollMessage.getEventTime().plusYears(1);
-
-      // If the next event falls within the bounds of the end time, then just update the eventTime
-      // and re-save it for future autorenew poll messages to be delivered. Otherwise, this
-      // autorenew poll message has no more events to deliver and should be deleted.
-      if (nextEventTime.isBefore(autorenewPollMessage.getAutorenewEndTime())) {
-        ofy().save().entity(autorenewPollMessage.asBuilder().setEventTime(nextEventTime).build());
-        includeAckedMessageInCount = isBeforeOrAt(nextEventTime, now);
-      } else {
-        ofy().delete().entity(autorenewPollMessage);
-      }
-    }
     // We need to return the new queue length. If this was the last message in the queue being
     // acked, then we return a special status code indicating that. Note that the query will
     // include the message being acked.

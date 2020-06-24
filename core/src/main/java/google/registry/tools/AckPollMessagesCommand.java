@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static google.registry.flows.poll.PollFlowUtils.ackPollMessage;
 import static google.registry.flows.poll.PollFlowUtils.getPollMessagesQuery;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.makePollMessageExternalId;
@@ -34,6 +35,7 @@ import google.registry.model.poll.PollMessage.OneTime;
 import google.registry.util.Clock;
 import java.util.List;
 import javax.inject.Inject;
+import org.joda.time.DateTime;
 
 /**
  * Command to acknowledge one-time poll messages for a registrar.
@@ -49,8 +51,7 @@ import javax.inject.Inject;
  * delete confirmations) and it is desired that the registrar be able to ACK the rest of the poll
  * messages in-band.
  *
- * <p>This command only ACKs {@link OneTime} poll messages because that's our only use case so far,
- * but it could be extended to ACK {@link Autorenew} poll messages as well if needed. The main
+ * <p>This command ACKs both {@link OneTime} and {@link Autorenew} poll messages. The main
  * difference is that one-time poll messages are deleted when ACKed whereas Autorenews are sometimes
  * modified and re-saved instead, if the corresponding domain is still active.
  *
@@ -84,19 +85,18 @@ final class AckPollMessagesCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() {
-    QueryKeys<PollMessage> query = getPollMessagesQuery(clientId, clock.nowUtc()).keys();
+    DateTime now = clock.nowUtc();
+    QueryKeys<PollMessage> query = getPollMessagesQuery(clientId, now).keys();
     for (List<Key<PollMessage>> keys : Iterables.partition(query, BATCH_SIZE)) {
-      tm()
-          .transact(
+      tm().transact(
               () -> {
                 // Load poll messages and filter to just those of interest.
                 ImmutableList<PollMessage> pollMessages =
                     ofy().load().keys(keys).values().stream()
-                        .filter(pm -> pm instanceof OneTime)
                         .filter(pm -> isNullOrEmpty(message) || pm.getMsg().contains(message))
                         .collect(toImmutableList());
                 if (!dryRun) {
-                  ofy().delete().entities(pollMessages).now();
+                  pollMessages.forEach(pollMessage -> ackPollMessage(pollMessage, now));
                 }
                 pollMessages.forEach(
                     pm ->
