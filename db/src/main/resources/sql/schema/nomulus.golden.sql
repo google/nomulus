@@ -657,10 +657,10 @@ ALTER SEQUENCE public."ReservedList_revision_id_seq" OWNED BY public."ReservedLi
 
 
 --
--- Name: SafeBrowsingThreat; Type: TABLE; Schema: public; Owner: -
+-- Name: Spec11ThreatMatch; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public."SafeBrowsingThreat" (
+CREATE TABLE public."Spec11ThreatMatch" (
     id bigint NOT NULL,
     check_date text NOT NULL,
     domain_name text NOT NULL,
@@ -687,7 +687,7 @@ CREATE SEQUENCE public."SafeBrowsingThreat_id_seq"
 -- Name: SafeBrowsingThreat_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public."SafeBrowsingThreat_id_seq" OWNED BY public."SafeBrowsingThreat".id;
+ALTER SEQUENCE public."SafeBrowsingThreat_id_seq" OWNED BY public."Spec11ThreatMatch".id;
 
 
 --
@@ -747,10 +747,10 @@ ALTER TABLE ONLY public."ReservedList" ALTER COLUMN revision_id SET DEFAULT next
 
 
 --
--- Name: SafeBrowsingThreat id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: Spec11ThreatMatch id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public."SafeBrowsingThreat" ALTER COLUMN id SET DEFAULT nextval('public."SafeBrowsingThreat_id_seq"'::regclass);
+ALTER TABLE ONLY public."Spec11ThreatMatch" ALTER COLUMN id SET DEFAULT nextval('public."SafeBrowsingThreat_id_seq"'::regclass);
 
 
 --
@@ -906,10 +906,10 @@ ALTER TABLE ONLY public."ReservedList"
 
 
 --
--- Name: SafeBrowsingThreat SafeBrowsingThreat_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: Spec11ThreatMatch SafeBrowsingThreat_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public."SafeBrowsingThreat"
+ALTER TABLE ONLY public."Spec11ThreatMatch"
     ADD CONSTRAINT "SafeBrowsingThreat_pkey" PRIMARY KEY (id);
 
 
@@ -1175,24 +1175,24 @@ CREATE INDEX reservedlist_name_idx ON public."ReservedList" USING btree (name);
 
 
 --
--- Name: safebrowsing_threat_check_date_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: spec11threatmatch_check_date_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX safebrowsing_threat_check_date_idx ON public."SafeBrowsingThreat" USING btree (check_date);
-
-
---
--- Name: safebrowsing_threat_registrar_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX safebrowsing_threat_registrar_id_idx ON public."SafeBrowsingThreat" USING btree (registrar_id);
+CREATE INDEX spec11threatmatch_check_date_idx ON public."Spec11ThreatMatch" USING btree (check_date);
 
 
 --
--- Name: safebrowsing_threat_tld_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: spec11threatmatch_registrar_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX safebrowsing_threat_tld_idx ON public."SafeBrowsingThreat" USING btree (tld);
+CREATE INDEX spec11threatmatch_registrar_id_idx ON public."Spec11ThreatMatch" USING btree (registrar_id);
+
+
+--
+-- Name: spec11threatmatch_tld_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX spec11threatmatch_tld_idx ON public."Spec11ThreatMatch" USING btree (tld);
 
 
 --
@@ -1460,18 +1460,18 @@ ALTER TABLE ONLY public."PollMessage"
 
 
 --
--- Name: SafeBrowsingThreat fk_safebrowsing_threat_domain_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: Spec11ThreatMatch fk_safebrowsing_threat_domain_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public."SafeBrowsingThreat"
+ALTER TABLE ONLY public."Spec11ThreatMatch"
     ADD CONSTRAINT fk_safebrowsing_threat_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
 
 
 --
--- Name: SafeBrowsingThreat fk_safebrowsing_threat_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: Spec11ThreatMatch fk_safebrowsing_threat_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public."SafeBrowsingThreat"
+ALTER TABLE ONLY public."Spec11ThreatMatch"
     ADD CONSTRAINT fk_safebrowsing_threat_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
 
 
