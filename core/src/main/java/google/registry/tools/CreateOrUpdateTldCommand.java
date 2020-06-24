@@ -118,6 +118,13 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
 
   @Nullable
   @Parameter(
+      names = "--disable_invoicing",
+      description = "Whether invoicing is disabled for a REAL tld.",
+      arity = 1)
+  private Boolean disableInvoicing;
+
+  @Nullable
+  @Parameter(
       names = "--create_billing_cost",
       description = "Per-year billing cost for creating a domain")
   Money createBillingCost;
@@ -320,6 +327,7 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
       Optional.ofNullable(serverStatusChangeCost)
           .ifPresent(builder::setServerStatusChangeBillingCost);
       Optional.ofNullable(tldType).ifPresent(builder::setTldType);
+      Optional.ofNullable(disableInvoicing).ifPresent(builder::setDisableInvoicing);
       Optional.ofNullable(lordnUsername).ifPresent(u -> builder.setLordnUsername(u.orElse(null)));
       Optional.ofNullable(claimsPeriodEnd).ifPresent(builder::setClaimsPeriodEnd);
       Optional.ofNullable(numDnsPublishShards).ifPresent(builder::setNumDnsPublishLocks);
