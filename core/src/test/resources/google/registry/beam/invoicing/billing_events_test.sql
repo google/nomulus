@@ -57,8 +57,8 @@ FROM (
     WHERE
     -- TODO(b/18092292): Add a filter for tldState (not PDT/PREDELEGATION)
       tldType = 'REAL'
-    AND
-      disableInvoicing != true) ) AS BillingEvent
+    AND (disableInvoicing is null
+      OR disableInvoicing != true) ) ) AS BillingEvent
   -- Gather billing ID from registrar table
   -- This is a 'JOIN' as opposed to 'LEFT JOIN' to filter out
   -- non-billable registrars

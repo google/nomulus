@@ -119,7 +119,8 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
   @Nullable
   @Parameter(
       names = "--disable_invoicing",
-      description = "Whether invoicing is disabled for a REAL tld.")
+      description = "Whether invoicing is disabled for a REAL tld.",
+      arity = 1)
   private Boolean disableInvoicing;
 
   @Nullable
