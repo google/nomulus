@@ -21,6 +21,7 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -199,12 +200,12 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
     }
     JpaTransactionManagerImpl txnManager = new JpaTransactionManagerImpl(emf, clock);
     cachedTm = TransactionManagerFactory.jpaTm();
-    TransactionManagerFactory.setJpaTm(txnManager);
+    TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(txnManager));
   }
 
   @Override
   public void after() {
-    TransactionManagerFactory.setJpaTm(cachedTm);
+    TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(cachedTm));
     cachedTm = null;
   }
 

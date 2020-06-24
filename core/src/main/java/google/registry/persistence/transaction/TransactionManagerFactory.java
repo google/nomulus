@@ -14,12 +14,17 @@
 
 package google.registry.persistence.transaction;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.appengine.api.utils.SystemProperty;
 import com.google.appengine.api.utils.SystemProperty.Environment.Value;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
+import google.registry.config.RegistryEnvironment;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.persistence.DaggerPersistenceComponent;
+import google.registry.tools.RegistryToolEnvironment;
 import google.registry.util.NonFinalForTesting;
 import java.util.function.Supplier;
 
@@ -82,8 +87,13 @@ public class TransactionManagerFactory {
   }
 
   /** Sets the return of {@link #jpaTm()} to the given instance of {@link JpaTransactionManager}. */
-  public static void setJpaTm(JpaTransactionManager newJpaTm) {
-    jpaTm = Suppliers.ofInstance(newJpaTm);
+  public static void setJpaTm(Supplier<JpaTransactionManager> jpaTmSupplier) {
+    checkNotNull(jpaTmSupplier, "jpaTmSupplier");
+    checkState(
+        RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
+            || RegistryToolEnvironment.get() != null,
+        "setJpamTm() should only be called by tools and tests.");
+    jpaTm = jpaTmSupplier;
   }
 
   /** Sets the return of {@link #tm()} to the given instance of {@link TransactionManager}. */
