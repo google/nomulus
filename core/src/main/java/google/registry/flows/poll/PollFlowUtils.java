@@ -14,7 +14,10 @@
 
 package google.registry.flows.poll;
 
+import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.googlecode.objectify.cmd.Query;
 import google.registry.model.poll.PollMessage;
@@ -32,5 +35,36 @@ public final class PollFlowUtils {
         .filter("clientId", clientId)
         .filter("eventTime <=", now.toDate())
         .order("eventTime");
+  }
+
+  /**
+   * Acknowledges the given {@link PollMessage} and returns whether we should include the current
+   * acked message in the updated message count that's returned to the user. The only case where we
+   * do so is if an autorenew poll message is acked, but its next event is already ready to be
+   * delivered.
+   */
+  public static boolean ackPollMessage(PollMessage pollMessage, DateTime now) {
+    boolean includeAckedMessageInCount = false;
+    if (pollMessage instanceof PollMessage.OneTime) {
+      // One-time poll messages are deleted once acked.
+      tm().delete(pollMessage.createVKey());
+    } else {
+      checkState(pollMessage instanceof PollMessage.Autorenew, "Unknown poll message type");
+      PollMessage.Autorenew autorenewPollMessage = (PollMessage.Autorenew) pollMessage;
+
+      // Move the eventTime of this autorenew poll message forward by a year.
+      DateTime nextEventTime = autorenewPollMessage.getEventTime().plusYears(1);
+
+      // If the next event falls within the bounds of the end time, then just update the eventTime
+      // and re-save it for future autorenew poll messages to be delivered. Otherwise, this
+      // autorenew poll message has no more events to deliver and should be deleted.
+      if (nextEventTime.isBefore(autorenewPollMessage.getAutorenewEndTime())) {
+        tm().saveNewOrUpdate(autorenewPollMessage.asBuilder().setEventTime(nextEventTime).build());
+        includeAckedMessageInCount = isBeforeOrAt(nextEventTime, now);
+      } else {
+        tm().delete(autorenewPollMessage.createVKey());
+      }
+    }
+    return includeAckedMessageInCount;
   }
 }
