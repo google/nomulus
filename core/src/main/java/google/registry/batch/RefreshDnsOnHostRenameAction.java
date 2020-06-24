@@ -207,9 +207,7 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
       Key<HostResource> referencingHostKey = null;
       for (DnsRefreshRequest request : refreshRequests) {
         if (isActive(domain, request.lastUpdateTime())
-            && domain
-                .getNameservers()
-                .contains(VKey.createOfy(HostResource.class, request.hostKey()))) {
+            && domain.getNameservers().contains(VKey.from(request.hostKey()))) {
           referencingHostKey = request.hostKey();
           break;
         }

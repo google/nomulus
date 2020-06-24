@@ -48,8 +48,7 @@ public class HostResource extends HostBase
 
   @Override
   public VKey<HostResource> createVKey() {
-    // TODO(mmuller): create symmetric keys if we can ever reload both sides.
-    return VKey.createOfy(HostResource.class, Key.create(this));
+    return VKey.create(HostResource.class, getRepoId(), Key.create(this));
   }
 
   @Override

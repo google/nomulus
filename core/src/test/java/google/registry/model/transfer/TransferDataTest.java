@@ -48,11 +48,11 @@ public class TransferDataTest {
 
   @Before
   public void setUp() {
-    transferBillingEventKey = VKey.createOfy(BillingEvent.OneTime.class, 12345);
-    otherServerApproveBillingEventKey = VKey.createOfy(BillingEvent.Cancellation.class, 2468);
-    recurringBillingEventKey = VKey.createOfy(BillingEvent.Recurring.class, 13579);
-    autorenewPollMessageKey = VKey.createOfy(PollMessage.Autorenew.class, 67890);
-    otherServerApprovePollMessageKey = VKey.createOfy(PollMessage.OneTime.class, 314159);
+    transferBillingEventKey = VKey.create(BillingEvent.OneTime.class, 12345);
+    otherServerApproveBillingEventKey = VKey.create(BillingEvent.Cancellation.class, 2468);
+    recurringBillingEventKey = VKey.create(BillingEvent.Recurring.class, 13579);
+    autorenewPollMessageKey = VKey.create(PollMessage.Autorenew.class, 67890);
+    otherServerApprovePollMessageKey = VKey.create(PollMessage.OneTime.class, 314159);
   }
 
   @Test

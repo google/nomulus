@@ -643,10 +643,6 @@ public class DomainBase extends EppResource
     return VKey.create(DomainBase.class, getRepoId(), Key.create(this));
   }
 
-  public static VKey<DomainBase> createVKey(Key key) {
-    return VKey.create(DomainBase.class, key.getName(), key);
-  }
-
   /** Predicate to determine if a given {@link DesignatedContact} is the registrant. */
   private static final Predicate<DesignatedContact> IS_REGISTRANT =
       (DesignatedContact contact) -> DesignatedContact.Type.REGISTRANT.equals(contact.type);
