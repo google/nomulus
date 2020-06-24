@@ -23,7 +23,11 @@ import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
+import google.registry.model.contact.ContactHistory;
+import google.registry.model.host.HostHistory;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.TransactionManager;
 import java.util.Map.Entry;
@@ -31,6 +35,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
 /** Datastore implementation of {@link TransactionManager}. */
@@ -99,8 +104,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void saveNew(Object entity) {
-    checkArgumentNotNull(entity, "entity must be specified");
-    getOfy().save().entity(entity);
+    saveEntity(entity);
   }
 
   @Override
@@ -110,8 +114,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void saveNewOrUpdate(Object entity) {
-    checkArgumentNotNull(entity, "entity must be specified");
-    getOfy().save().entity(entity);
+    saveEntity(entity);
   }
 
   @Override
@@ -121,8 +124,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void update(Object entity) {
-    checkArgumentNotNull(entity, "entity must be specified");
-    getOfy().save().entity(entity);
+    saveEntity(entity);
   }
 
   @Override
@@ -137,7 +139,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> boolean checkExists(VKey<T> key) {
-    return getOfy().load().key(key.getOfyKey()).now() != null;
+    return loadNullable(key) != null;
   }
 
   // TODO: add tests for these methods.  They currently have some degree of test coverage because
@@ -146,12 +148,12 @@ public class DatastoreTransactionManager implements TransactionManager {
   // interface tests that are applied to both the datastore and SQL implementations.
   @Override
   public <T> Optional<T> maybeLoad(VKey<T> key) {
-    return Optional.ofNullable(getOfy().load().key(key.getOfyKey()).now());
+    return Optional.ofNullable(loadNullable(key));
   }
 
   @Override
   public <T> T load(VKey<T> key) {
-    T result = getOfy().load().key(key.getOfyKey()).now();
+    T result = loadNullable(key);
     if (result == null) {
       throw new NoSuchElementException(key.toString());
     }
@@ -160,6 +162,9 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> ImmutableMap<VKey<? extends T>, T> load(Iterable<? extends VKey<? extends T>> keys) {
+    if (Streams.stream(keys).anyMatch(key -> HistoryEntry.class.isAssignableFrom(key.getKind()))) {
+      return loadPossibleHistoryEntries(keys);
+    }
     // Keep track of the Key -> VKey mapping so we can translate them back.
     ImmutableMap<Key<T>, VKey<? extends T>> keyMap =
         StreamSupport.stream(keys.spliterator(), false)
@@ -190,5 +195,44 @@ public class DatastoreTransactionManager implements TransactionManager {
             .map(VKey::getOfyKey)
             .collect(toImmutableList());
     getOfy().delete().keys(list).now();
+  }
+
+  /** The following three methods exist due to the migration to Cloud SQL.
+   *
+   * <p>In Cloud SQL, {@link HistoryEntry} objects are represented instead as {@link DomainHistory},
+   * {@link ContactHistory}, and {@link HostHistory} objects. During the migration, we do not wish
+   * to change the Datastore schema so all of these objects are stored in Datastore as HistoryEntry
+   * objects. They are converted to/from the appropriate classes upon retrieval, and converted to
+   * HistoryEntry on save. See go/r3.0-history-objects for more details. */
+  private void saveEntity(Object entity) {
+    checkArgumentNotNull(entity, "entity must be specified");
+    if (entity instanceof HistoryEntry) {
+      entity = ((HistoryEntry) entity).asHistoryEntry();
+    }
+    getOfy().save().entity(entity);
+  }
+
+  private <T> ImmutableMap<VKey<? extends T>, T> loadPossibleHistoryEntries(
+      Iterable<? extends VKey<? extends T>> keys) {
+    // This is significantly slower than a bulk load, but it allows us to convert objects
+    // as appropriate (and we don't bulk-load HistoryEntry objects anyway).
+    ImmutableMap.Builder<VKey<? extends T>, T> builder = new ImmutableMap.Builder<>();
+    for (VKey<? extends T> key : keys) {
+      T object = loadNullable(key);
+      if (object != null) {
+        builder.put(key, object);
+      }
+    }
+    return builder.build();
+  }
+
+  @Nullable
+  @SuppressWarnings("unchecked")
+  private <T> T loadNullable(VKey<T> key) {
+    T nullableEntity = getOfy().load().key(key.getOfyKey()).now();
+    if (nullableEntity != null && HistoryEntry.class.isAssignableFrom(nullableEntity.getClass())) {
+      return (T) ((HistoryEntry) nullableEntity).toChildHistoryEntity();
+    }
+    return nullableEntity;
   }
 }

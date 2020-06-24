@@ -17,15 +17,18 @@ package google.registry.model.history;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.newContactResourceWithRoid;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.newHostResourceWithRoid;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainContent;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
@@ -41,13 +44,18 @@ public class DomainHistoryTest extends EntityTestCase {
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     saveRegistrar("TheRegistrar");
 
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
-    jpaTm().transact(() -> jpaTm().saveNew(host));
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
-    jpaTm().transact(() -> jpaTm().saveNew(contact));
+
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().saveNew(host);
+              jpaTm().saveNew(contact);
+            });
 
     DomainBase domain =
         newDomainBase("example.tld", "domainRepoId", contact)
@@ -56,19 +64,8 @@ public class DomainHistoryTest extends EntityTestCase {
             .build();
     jpaTm().transact(() -> jpaTm().saveNew(domain));
 
-    DomainHistory domainHistory =
-        new DomainHistory.Builder()
-            .setType(HistoryEntry.Type.DOMAIN_CREATE)
-            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-            .setModificationTime(fakeClock.nowUtc())
-            .setClientId("TheRegistrar")
-            .setTrid(Trid.create("ABC-123", "server-trid"))
-            .setBySuperuser(false)
-            .setReason("reason")
-            .setRequestedByRegistrar(true)
-            .setDomainContent(domain)
-            .setDomainRepoId(domain.createVKey())
-            .build();
+    DomainHistory domainHistory = createDomainHistory(domain);
+    domainHistory.id = null;
     jpaTm().transact(() -> jpaTm().saveNew(domainHistory));
 
     jpaTm()
@@ -82,9 +79,60 @@ public class DomainHistoryTest extends EntityTestCase {
             });
   }
 
+  @Test
+  void testOfyPersistence() {
+    saveRegistrar("TheRegistrar");
+
+    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
+    ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
+
+    tm().transact(
+            () -> {
+              tm().saveNew(host);
+              tm().saveNew(contact);
+            });
+    fakeClock.advanceOneMilli();
+
+    DomainBase domain =
+        newDomainBase("example.tld", "domainRepoId", contact)
+            .asBuilder()
+            .setNameservers(host.createVKey())
+            .build();
+    tm().transact(() -> tm().saveNew(domain));
+
+    fakeClock.advanceOneMilli();
+    DomainHistory domainHistory = createDomainHistory(domain);
+    tm().transact(() -> tm().saveNew(domainHistory));
+
+    // retrieving a HistoryEntry or a DomainHistory with the same key should return the same object
+    VKey<DomainHistory> domainHistoryVKey =
+        VKey.createOfy(DomainHistory.class, Key.create(domainHistory));
+    VKey<HistoryEntry> historyEntryVKey =
+        VKey.createOfy(HistoryEntry.class, Key.create(domainHistory.asHistoryEntry()));
+    DomainHistory domainHistoryFromDb = tm().transact(() -> tm().load(domainHistoryVKey));
+    HistoryEntry historyEntryFromDb = tm().transact(() -> tm().load(historyEntryVKey));
+
+    assertThat(domainHistoryFromDb).isEqualTo(historyEntryFromDb);
+  }
+
   static void assertDomainHistoriesEqual(DomainHistory one, DomainHistory two) {
     assertAboutImmutableObjects()
         .that(one)
         .isEqualExceptFields(two, "domainContent", "domainRepoId", "parent");
+  }
+
+  private DomainHistory createDomainHistory(DomainContent domain) {
+    return new DomainHistory.Builder()
+        .setType(HistoryEntry.Type.DOMAIN_CREATE)
+        .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+        .setModificationTime(fakeClock.nowUtc())
+        .setClientId("TheRegistrar")
+        .setTrid(Trid.create("ABC-123", "server-trid"))
+        .setBySuperuser(false)
+        .setReason("reason")
+        .setRequestedByRegistrar(true)
+        .setDomainContent(domain)
+        .setDomainRepoId(domain.createVKey())
+        .build();
   }
 }

@@ -15,6 +15,7 @@
 package google.registry.model.domain;
 
 import com.googlecode.objectify.Key;
+import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.host.HostResource;
@@ -43,6 +44,7 @@ import javax.persistence.JoinTable;
       @javax.persistence.Index(columnList = "historyType"),
       @javax.persistence.Index(columnList = "historyModificationTime")
     })
+@EntitySubclass
 public class DomainHistory extends HistoryEntry {
   // Store DomainContent instead of DomainBase so we don't pick up its @Id
   DomainContent domainContent;

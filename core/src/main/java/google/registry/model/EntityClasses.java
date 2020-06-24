@@ -19,9 +19,12 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.common.GaeUserIdConverter;
+import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
@@ -68,9 +71,11 @@ public final class EntityClasses {
           CommitLogCheckpointRoot.class,
           CommitLogManifest.class,
           CommitLogMutation.class,
+          ContactHistory.class,
           ContactResource.class,
           Cursor.class,
           DomainBase.class,
+          DomainHistory.class,
           EntityGroupRoot.class,
           EppResourceIndex.class,
           EppResourceIndexBucket.class,
@@ -79,6 +84,7 @@ public final class EntityClasses {
           ForeignKeyIndex.ForeignKeyHostIndex.class,
           GaeUserIdConverter.class,
           HistoryEntry.class,
+          HostHistory.class,
           HostResource.class,
           KmsSecret.class,
           KmsSecretRevision.class,
