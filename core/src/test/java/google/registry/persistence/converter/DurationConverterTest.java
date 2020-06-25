@@ -21,7 +21,6 @@ import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
 import google.registry.schema.replay.EntityTest.EntityForTesting;
-import java.math.BigInteger;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.Duration;
@@ -29,6 +28,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.postgresql.util.PGInterval;
 
 /** Unit tests for {@link DurationConverter}. */
 @RunWith(JUnit4.class)
@@ -42,27 +42,17 @@ public class DurationConverterTest {
 
   @Test
   public void testNulls() {
-    assertThat(converter.convertToDatabaseColumn(null)).isNull();
-    assertThat(converter.convertToEntityAttribute(null)).isNull();
+    assertThat(converter.convertToDatabaseColumn(null)).isEqualTo(new PGInterval());
+    assertThat(converter.convertToEntityAttribute(new PGInterval())).isNull();
   }
 
   @Test
   public void testRoundTrip() {
     TestEntity entity = new TestEntity(Duration.standardDays(6));
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
-    assertThat(
-            jpaTm()
-                .transact(
-                    () ->
-                        jpaTm()
-                            .getEntityManager()
-                            .createNativeQuery(
-                                "SELECT duration FROM \"TestEntity\" WHERE name = 'id'")
-                            .getResultList()))
-        .containsExactly(BigInteger.valueOf(Duration.standardDays(6).getMillis()));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(persisted.duration).isEqualTo(Duration.standardDays(6));
+    assertThat(persisted.duration.getMillis()).isEqualTo(Duration.standardDays(6).getMillis());
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.

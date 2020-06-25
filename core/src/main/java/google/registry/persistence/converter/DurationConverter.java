@@ -14,24 +14,57 @@
 
 package google.registry.persistence.converter;
 
+import java.sql.SQLException;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 import org.joda.time.Duration;
+import org.joda.time.Period;
+import org.postgresql.util.PGInterval;
 
-/** JPA converter to for storing/retrieving {@link org.joda.time.DateTime} objects. */
+/**
+ * JPA converter to for storing/retrieving {@link org.joda.time.Duration} objects. Note: this only
+ * converts the values for days, hours, minutes, and seconds
+ */
 @Converter(autoApply = true)
-public class DurationConverter implements AttributeConverter<Duration, Long> {
+public class DurationConverter implements AttributeConverter<Duration, Object> {
 
   @Override
   @Nullable
-  public Long convertToDatabaseColumn(@Nullable Duration duration) {
-    return duration == null ? null : duration.getMillis();
+  public Object convertToDatabaseColumn(@Nullable Duration duration) {
+    if (duration == null) {
+      return new PGInterval();
+    }
+    PGInterval interval = new PGInterval();
+    Period period = new Period(duration);
+    interval.setDays(period.getDays());
+    interval.setHours(period.getHours());
+    interval.setMinutes(period.getMinutes());
+    interval.setSeconds(period.getSeconds());
+    return interval;
   }
 
   @Override
   @Nullable
-  public Duration convertToEntityAttribute(@Nullable Long dbData) {
-    return dbData == null ? null : new Duration(dbData);
+  public Duration convertToEntityAttribute(@Nullable Object dbData) {
+    if (dbData == null) {
+      return null;
+    }
+    PGInterval interval = null;
+    try {
+      interval = new PGInterval(dbData.toString());
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+
+    if (interval.equals(new PGInterval())) {
+      return null;
+    }
+
+    final int days = interval.getDays();
+    final int hours = interval.getHours();
+    final int mins = interval.getMinutes();
+    final double secs = interval.getSeconds();
+    return new Period(0, 0, 0, days, hours, mins, (int) secs, 0).toStandardDuration();
   }
 }
