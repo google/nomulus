@@ -37,8 +37,8 @@ javax.mail:mail:1.4
 javax.xml.bind:jaxb-api:2.3.0
 joda-time:joda-time:2.9.2
 junit:junit:4.13
-net.bytebuddy:byte-buddy-agent:1.9.7
-net.bytebuddy:byte-buddy:1.9.7
+net.bytebuddy:byte-buddy-agent:1.10.5
+net.bytebuddy:byte-buddy:1.10.5
 org.apache.httpcomponents:httpclient:4.5.11
 org.apache.httpcomponents:httpcore:4.4.13
 org.apiguardian:apiguardian-api:1.1.0
@@ -52,7 +52,7 @@ org.junit.platform:junit-platform-commons:1.6.1
 org.junit.platform:junit-platform-engine:1.6.1
 org.junit.vintage:junit-vintage-engine:5.6.1
 org.junit:junit-bom:5.6.1
-org.mockito:mockito-core:2.25.0
+org.mockito:mockito-core:3.3.3
 org.objenesis:objenesis:2.6
 org.opentest4j:opentest4j:1.2.0
 org.yaml:snakeyaml:1.17
