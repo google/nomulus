@@ -50,7 +50,7 @@ import java.util.Optional;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 import org.joda.money.CurrencyUnit;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -77,7 +77,7 @@ public final class ConsoleRegistrarCreatorActionTest {
   @Mock HttpServletRequest request;
   @Mock SendEmailService emailService;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     persistPremiumList("default_sandbox_list", "sandbox,USD 1000");
 
