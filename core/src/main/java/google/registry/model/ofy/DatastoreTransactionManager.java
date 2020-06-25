@@ -166,8 +166,7 @@ public class DatastoreTransactionManager implements TransactionManager {
             .distinct()
             .collect(toImmutableMap(key -> (Key<T>) key.getOfyKey(), Functions.identity()));
 
-    // The lambda argument to keys() effectively converts Iterator -> Iterable.
-    return getOfy().load().keys(() -> keyMap.keySet().iterator()).entrySet().stream()
+    return getOfy().load().keys(keyMap.keySet()).entrySet().stream()
         .collect(ImmutableMap.toImmutableMap(entry -> keyMap.get(entry.getKey()), Entry::getValue));
   }
 
