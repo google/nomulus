@@ -131,6 +131,8 @@ public class EppXmlSanitizerTest {
     // otherwise specified. We don't care about that for this specific test, and since we want to be
     // compatible with both Java 8 and Java 11 (for now), we strip the standalone="no" attribute if
     // it is present prior to doing the string comparison.
+    // TODO(java11): Remove this stripping and do a full assertion once we no longer care about
+    //               maintaining Java 8 build compatibility.
     assertThat(sanitizedXml.replace(" standalone=\"no\"", "")).isEqualTo(inputXml);
   }
 }
