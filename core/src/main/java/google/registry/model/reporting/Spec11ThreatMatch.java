@@ -14,7 +14,6 @@
 
 package google.registry.model.reporting;
 
-import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableList;
@@ -90,7 +89,7 @@ public class Spec11ThreatMatch extends ImmutableObject implements Buildable, Sql
   }
 
   public ImmutableSet<ThreatType> getThreatTypes() {
-    return nullToEmptyImmutableCopy(threatTypes);
+    return ImmutableSet.copyOf(threatTypes);
   }
 
   public String getDomainRepoId() {
@@ -130,7 +129,7 @@ public class Spec11ThreatMatch extends ImmutableObject implements Buildable, Sql
     @Override
     public Spec11ThreatMatch build() {
       checkArgumentNotNull(getInstance().domainName, "Domain name cannot be null");
-      checkArgumentNotNull(getInstance().threatTypes, "Threat type cannot be null");
+      checkArgumentNotNull(getInstance().threatTypes, "Threat types cannot be null");
       checkArgumentNotNull(getInstance().domainRepoId, "Repo ID cannot be null");
       checkArgumentNotNull(getInstance().registrarId, "Registrar ID cannot be null");
       checkArgumentNotNull(getInstance().checkDate, "Check date cannot be null");
@@ -145,9 +144,14 @@ public class Spec11ThreatMatch extends ImmutableObject implements Buildable, Sql
       return this;
     }
 
-    public Builder setThreatTypes(ImmutableSet threatTypes) {
+    public Builder setThreatTypes(ImmutableSet<ThreatType> threatTypes) {
       getInstance().threatTypes = threatTypes;
-      return this;
+
+      if (threatTypes == null || threatTypes.isEmpty()) {
+        throw new IllegalStateException("threatTypes cannot be null of empty.");
+      } else {
+        return this;
+      }
     }
 
     public Builder setDomainRepoId(String domainRepoId) {

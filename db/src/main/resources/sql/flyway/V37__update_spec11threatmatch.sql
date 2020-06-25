@@ -15,6 +15,12 @@
 alter table if exists "SafeBrowsingThreat"
   rename to "Spec11ThreatMatch";
 
+alter table if exists "Spec11ThreatMatch"
+  alter column "threat_type" type text[] using threat_type::text[];
+
+alter table if exists "Spec11ThreatMatch"
+  rename column "threat_type" to "threat_types";
+
 alter index if exists "safebrowsing_threat_registrar_id_idx"
   rename to "spec11threatmatch_registrar_id_idx";
 

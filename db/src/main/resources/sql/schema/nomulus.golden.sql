@@ -666,7 +666,7 @@ CREATE TABLE public."Spec11ThreatMatch" (
     domain_name text NOT NULL,
     domain_repo_id text NOT NULL,
     registrar_id text NOT NULL,
-    threat_type text NOT NULL,
+    threat_types text[] NOT NULL,
     tld text NOT NULL
 );
 

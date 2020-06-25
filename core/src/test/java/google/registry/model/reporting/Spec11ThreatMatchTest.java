@@ -158,9 +158,15 @@ public class Spec11ThreatMatchTest extends EntityTestCase {
         IllegalArgumentException.class, () -> threat.asBuilder().setCheckDate(null).build());
 
     assertThrows(
-        IllegalArgumentException.class, () -> threat.asBuilder().setThreatTypes(null).build());
+        IllegalArgumentException.class, () -> threat.asBuilder().setDomainRepoId(null).build());
+  }
+
+  @Test
+  public void testFailure_threatTypesWithNullAndEmptySet() {
+    assertThrows(
+        IllegalStateException.class, () -> threat.asBuilder().setThreatTypes(ImmutableSet.of()));
 
     assertThrows(
-        IllegalArgumentException.class, () -> threat.asBuilder().setDomainRepoId(null).build());
+        IllegalStateException.class, () -> threat.asBuilder().setThreatTypes(null).build());
   }
 }
