@@ -148,7 +148,7 @@ public class Spec11ThreatMatch extends ImmutableObject implements Buildable, Sql
       getInstance().threatTypes = threatTypes;
 
       if (threatTypes == null || threatTypes.isEmpty()) {
-        throw new IllegalStateException("threatTypes cannot be null of empty.");
+        throw new IllegalStateException("threatTypes cannot be null or empty.");
       } else {
         return this;
       }
