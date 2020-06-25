@@ -1,6 +1,6 @@
 # Instance groups that the load balancer forwards traffic to.
 variable "proxy_instance_groups" {
-  type = "map"
+  type = map
 }
 
 # Suffix (such as "-canary") added to the resource names.
@@ -10,7 +10,7 @@ variable "suffix" {
 
 # Node ports exposed by the proxy.
 variable "proxy_ports" {
-  type = "map"
+  type = map
 }
 
 # DNS zone for the proxy domain.

@@ -1,6 +1,11 @@
 resource "google_dns_managed_zone" "proxy_domain" {
   name     = "proxy-domain"
   dns_name = "${var.proxy_domain_name}."
+
+  # This is a safeguard for the google provider update to 2.8.0.
+  # cl/264641943
+  # If you like, you can remove this line after the update.
+  lifecycle { prevent_destroy = true }
 }
 
 module "proxy_networking" {

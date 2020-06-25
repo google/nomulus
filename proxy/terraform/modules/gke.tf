@@ -17,7 +17,7 @@ module "proxy_gke_apac" {
 }
 
 locals {
-  "proxy_instance_groups" = {
+  proxy_instance_groups = {
     americas = module.proxy_gke_americas.proxy_instance_group
     emea     = module.proxy_gke_emea.proxy_instance_group
     apac     = module.proxy_gke_apac.proxy_instance_group
