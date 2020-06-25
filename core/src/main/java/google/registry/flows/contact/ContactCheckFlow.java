@@ -34,7 +34,6 @@ import google.registry.model.eppoutput.CheckData.ContactCheckData;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.util.Clock;
-import java.util.List;
 import javax.inject.Inject;
 
 /**
@@ -59,7 +58,7 @@ public final class ContactCheckFlow implements Flow {
   public final EppResponse run() throws EppException {
     extensionManager.validate();  // There are no legal extensions for this flow.
     validateClientIsLoggedIn(clientId);
-    List<String> targetIds = ((Check) resourceCommand).getTargetIds();
+    ImmutableList<String> targetIds = ((Check) resourceCommand).getTargetIds();
     verifyTargetIdCount(targetIds, maxChecks);
     ImmutableSet<String> existingIds =
         checkResourcesExist(ContactResource.class, targetIds, clock.nowUtc());

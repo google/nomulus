@@ -48,7 +48,6 @@ import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tmch.ClaimsListShard;
 import google.registry.util.Clock;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.inject.Inject;
@@ -87,14 +86,14 @@ public final class DomainClaimsCheckFlow implements Flow {
     if (eppInput.getSingleExtension(AllocationTokenExtension.class).isPresent()) {
       throw new DomainClaimsCheckNotAllowedWithAllocationTokens();
     }
-    List<String> targetIds = ((Check) resourceCommand).getTargetIds();
-    verifyTargetIdCount(targetIds, maxChecks);
+    ImmutableList<String> domainNames = ((Check) resourceCommand).getTargetIds();
+    verifyTargetIdCount(domainNames, maxChecks);
     Set<String> seenTlds = new HashSet<>();
     ImmutableList.Builder<LaunchCheck> launchChecksBuilder = new ImmutableList.Builder<>();
-    for (String targetId : ImmutableSet.copyOf(targetIds)) {
-      InternetDomainName domainName = validateDomainName(targetId);
-      validateDomainNameWithIdnTables(domainName);
-      String tld = domainName.parent().toString();
+    for (String domainName : ImmutableSet.copyOf(domainNames)) {
+      InternetDomainName parsedDomain = validateDomainName(domainName);
+      validateDomainNameWithIdnTables(parsedDomain);
+      String tld = parsedDomain.parent().toString();
       // Only validate access to a TLD the first time it is encountered.
       if (seenTlds.add(tld)) {
         if (!isSuperuser) {
@@ -105,10 +104,10 @@ public final class DomainClaimsCheckFlow implements Flow {
           verifyClaimsPeriodNotEnded(registry, now);
         }
       }
-      Optional<String> claimKey = ClaimsListShard.get().getClaimKey(domainName.parts().get(0));
+      Optional<String> claimKey = ClaimsListShard.get().getClaimKey(parsedDomain.parts().get(0));
       launchChecksBuilder.add(
           LaunchCheck.create(
-              LaunchCheckName.create(claimKey.isPresent(), targetId), claimKey.orElse(null)));
+              LaunchCheckName.create(claimKey.isPresent(), domainName), claimKey.orElse(null)));
     }
     return responseBuilder
         .setOnlyExtension(LaunchCheckResponseExtension.create(CLAIMS, launchChecksBuilder.build()))

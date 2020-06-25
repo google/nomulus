@@ -74,7 +74,6 @@ import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.inject.Inject;
@@ -221,11 +220,11 @@ public final class DomainCheckFlow implements Flow {
 
   private Optional<String> getMessageForCheck(
       InternetDomainName domainName,
-      Map<String, ForeignKeyIndex<DomainBase>> existingIds,
+      ImmutableMap<String, ForeignKeyIndex<DomainBase>> existingDomains,
       ImmutableMap<InternetDomainName, String> tokenCheckResults,
-      Map<String, TldState> tldStates,
+      ImmutableMap<String, TldState> tldStates,
       Optional<AllocationToken> allocationToken) {
-    if (existingIds.containsKey(domainName.toString())) {
+    if (existingDomains.containsKey(domainName.toString())) {
       return Optional.of("In use");
     }
     TldState tldState = tldStates.get(domainName.parent().toString());
