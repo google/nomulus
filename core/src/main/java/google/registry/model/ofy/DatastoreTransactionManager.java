@@ -15,15 +15,18 @@
 package google.registry.model.ofy;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
+import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.TransactionManager;
-import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -156,12 +159,16 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
-  public <T> ImmutableList<T> load(Iterable<VKey<T>> keys) {
-    Iterator<Key<T>> iter =
-        StreamSupport.stream(keys.spliterator(), false).map(VKey::getOfyKey).iterator();
+  public <T> ImmutableMap<VKey<? extends T>, T> load(Iterable<? extends VKey<? extends T>> keys) {
+    // Keep track of the Key -> VKey mapping so we can translate them back.
+    ImmutableMap<Key<T>, VKey<? extends T>> keyMap =
+        StreamSupport.stream(keys.spliterator(), false)
+            .distinct()
+            .collect(toImmutableMap(key -> (Key<T>) key.getOfyKey(), Functions.identity()));
 
     // The lambda argument to keys() effectively converts Iterator -> Iterable.
-    return ImmutableList.copyOf(getOfy().load().keys(() -> iter).values());
+    return getOfy().load().keys(() -> keyMap.keySet().iterator()).entrySet().stream()
+        .collect(ImmutableMap.toImmutableMap(entry -> keyMap.get(entry.getKey()), Entry::getValue));
   }
 
   @Override

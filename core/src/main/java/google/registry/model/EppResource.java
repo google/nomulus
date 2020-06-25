@@ -16,7 +16,6 @@ package google.registry.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.union;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
@@ -47,7 +46,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.StreamSupport;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
@@ -357,7 +355,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
         @Override
         public Map<VKey<? extends EppResource>, EppResource> loadAll(
             Iterable<? extends VKey<? extends EppResource>> keys) {
-          return tm().doTransactionless(() -> loadAsMap(keys));
+          return tm().doTransactionless(() -> tm().load(keys));
         }
       };
 
@@ -395,7 +393,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   public static ImmutableMap<VKey<? extends EppResource>, EppResource> loadCached(
       Iterable<VKey<? extends EppResource>> keys) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
-      return loadAsMap(keys);
+      return tm().load(keys);
     }
     try {
       return cacheEppResources.getAll(keys);
@@ -422,18 +420,5 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     } catch (ExecutionException e) {
       throw new RuntimeException("Error loading cached EppResources", e.getCause());
     }
-  }
-
-  private static ImmutableMap<VKey<? extends EppResource>, EppResource> loadAsMap(
-      Iterable<? extends VKey<? extends EppResource>> keys) {
-    return StreamSupport.stream(keys.spliterator(), false)
-        // It's possible for us to receive the same key more than once which causes
-        // the immutable map build to break with a duplicate key, so we have to ensure key
-        // uniqueness.
-        .distinct()
-        // We have to use "key -> key" here instead of the identity() function, because
-        // the latter breaks the fairly complicated generic type checking required by the
-        // caching interface.
-        .collect(toImmutableMap(key -> key, key -> tm().load(key)));
   }
 }

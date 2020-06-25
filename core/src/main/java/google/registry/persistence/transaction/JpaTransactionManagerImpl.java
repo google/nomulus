@@ -15,18 +15,21 @@
 package google.registry.persistence.transaction;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
+import static java.util.AbstractMap.SimpleEntry;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
 import java.lang.reflect.Field;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -253,10 +256,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public <T> ImmutableList<T> load(Iterable<VKey<T>> keys) {
+  public <T> ImmutableMap<VKey<? extends T>, T> load(Iterable<? extends VKey<? extends T>> keys) {
     checkArgumentNotNull(keys, "keys must be specified");
     assertInTransaction();
     return StreamSupport.stream(keys.spliterator(), false)
+        // Accept duplicate keys.
+        .distinct()
         .map(
             key -> {
               T entity = getEntityManager().find(key.getKind(), key.getSqlKey());
@@ -264,9 +269,9 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
                 throw new NoSuchElementException(
                     key.getKind().getName() + " with key " + key.getSqlKey() + " not found.");
               }
-              return entity;
+              return new SimpleEntry<VKey<? extends T>, T>(key, entity);
             })
-        .collect(toImmutableList());
+        .collect(toImmutableMap(Entry::getKey, Entry::getValue));
   }
 
   @Override
