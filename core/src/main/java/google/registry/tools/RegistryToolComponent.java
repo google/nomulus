@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import dagger.BindsInstance;
 import dagger.Component;
+import dagger.Lazy;
 import google.registry.batch.BatchModule;
 import google.registry.bigquery.BigqueryModule;
 import google.registry.config.CredentialModule.LocalCredentialJson;
@@ -124,7 +125,7 @@ interface RegistryToolComponent {
   String googleCredentialJson();
 
   @NomulusToolJpaTm
-  JpaTransactionManager nomulusToolJpaTransactionManager();
+  Lazy<JpaTransactionManager> nomulusToolJpaTransactionManager();
 
   @Component.Builder
   interface Builder {

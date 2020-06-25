@@ -285,11 +285,9 @@ public class DeleteContactsAndHostsAction implements Runnable {
       if (resourceKey.getKind().equals(KIND_CONTACT)) {
         return domain
             .getReferencedContacts()
-            .contains(VKey.createOfy(ContactResource.class, (Key<ContactResource>) resourceKey));
+            .contains(VKey.from((Key<ContactResource>) resourceKey));
       } else if (resourceKey.getKind().equals(KIND_HOST)) {
-        return domain
-            .getNameservers()
-            .contains(VKey.createOfy(HostResource.class, (Key<HostResource>) resourceKey));
+        return domain.getNameservers().contains(VKey.from((Key<HostResource>) resourceKey));
       } else {
         throw new IllegalStateException("EPP resource key of unknown type: " + resourceKey);
       }

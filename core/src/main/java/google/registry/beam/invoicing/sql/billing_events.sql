@@ -56,7 +56,8 @@ FROM (
       `%PROJECT_ID%.%DATASTORE_EXPORT_DATA_SET%.%REGISTRY_TABLE%`
     WHERE
     -- TODO(b/18092292): Add a filter for tldState (not PDT/PREDELEGATION)
-      tldType = 'REAL') ) AS BillingEvent
+      tldType = 'REAL'
+    AND disableInvoicing is not TRUE) ) AS BillingEvent
   -- Gather billing ID from registrar table
   -- This is a 'JOIN' as opposed to 'LEFT JOIN' to filter out
   -- non-billable registrars

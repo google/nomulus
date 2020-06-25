@@ -19,6 +19,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
+import google.registry.model.translators.VKeyTranslatorFactory;
 import java.io.Serializable;
 import java.util.Optional;
 
@@ -46,36 +47,15 @@ public class VKey<T> extends ImmutableObject implements Serializable {
     this.primaryKey = primaryKey;
   }
 
-  /** Creates a {@link VKey} which only contains the sql primary key. */
+  /**
+   * Creates a {@link VKey} which only contains the sql primary key.
+   *
+   * <p>Deprecated. Create symmetric keys with create() instead.
+   */
   public static <T> VKey<T> createSql(Class<? extends T> kind, Object sqlKey) {
     checkArgumentNotNull(kind, "kind must not be null");
     checkArgumentNotNull(sqlKey, "sqlKey must not be null");
     return new VKey(kind, null, sqlKey);
-  }
-
-  /** Creates a {@link VKey} which only contains the ofy primary key. */
-  public static <T> VKey<T> createOfy(
-      Class<? extends T> kind, com.googlecode.objectify.Key<? extends T> ofyKey) {
-    checkArgumentNotNull(kind, "kind must not be null");
-    checkArgumentNotNull(ofyKey, "ofyKey must not be null");
-    return new VKey(kind, ofyKey, null);
-  }
-
-  /**
-   * Creates a {@link VKey} which only contains the ofy primary key by specifying the id of the
-   * {@link Key}.
-   */
-  public static <T> VKey<T> createOfy(Class<? extends T> kind, long id) {
-    return createOfy(kind, Key.create(kind, id));
-  }
-
-  /**
-   * Creates a {@link VKey} which only contains the ofy primary key by specifying the name of the
-   * {@link Key}.
-   */
-  public static <T> VKey<T> createOfy(Class<? extends T> kind, String name) {
-    checkArgumentNotNull(kind, "name must not be null");
-    return createOfy(kind, Key.create(kind, name));
   }
 
   /** Creates a {@link VKey} which only contains both sql and ofy primary key. */
@@ -85,6 +65,11 @@ public class VKey<T> extends ImmutableObject implements Serializable {
     checkArgumentNotNull(sqlKey, "sqlKey must not be null");
     checkArgumentNotNull(ofyKey, "ofyKey must not be null");
     return new VKey(kind, ofyKey, sqlKey);
+  }
+
+  /** Creates a symmetric {@link VKey} in which both sql and ofy keys are {@code id}. */
+  public static <T> VKey<T> create(Class<? extends T> kind, long id) {
+    return new VKey(kind, Key.create(kind, id), id);
   }
 
   /** Returns the type of the entity. */
@@ -112,5 +97,10 @@ public class VKey<T> extends ImmutableObject implements Serializable {
   /** Returns the objectify key if it exists. */
   public Optional<com.googlecode.objectify.Key<T>> maybeGetOfyKey() {
     return Optional.ofNullable(this.ofyKey);
+  }
+
+  /** Convenience method to construct a VKey from an objectify Key. */
+  public static <T> VKey<T> from(Key<T> key) {
+    return VKeyTranslatorFactory.createVKey(key);
   }
 }

@@ -41,9 +41,28 @@ import org.json.XML;
 /** Helper class for unit tests that need XML. */
 public class XmlTestUtils {
 
-  public static void assertXmlEquals(
-      String expected, String actual, String... ignoredPaths) throws Exception {
+  /**
+   * Asserts that the two XML strings match.
+   *
+   * <p>Note that the actual XML must start with a UTF-8 standalone XML header, but the expected
+   * XML has no such restriction (and typically lacks the header entirely).
+   */
+  public static void assertXmlEquals(String expected, String actual, String... ignoredPaths)
+      throws Exception {
     assertXmlEqualsWithMessage(expected, actual, "", ignoredPaths);
+  }
+
+  /**
+   * Asserts that the two XML strings match, but ignoring the XML header.
+   *
+   * <p>Do NOT use this for assertions about results of EPP flows, as the XML header is required per
+   * the EPP spec for those. Rather, use this for raw operations on EPP XMLs, in situations where
+   * the header may be absent or incorrect (e.g. because you did operations on raw EPP XML directly
+   * loaded from a file without passing it through an EPP flow).
+   */
+  public static void assertXmlEqualsIgnoreHeader(
+      String expected, String actual, String... ignoredPaths) throws Exception {
+    assertXmlEqualsWithMessageHelper(expected, actual, "", ignoredPaths);
   }
 
   public static void assertXmlEqualsWithMessage(
@@ -51,6 +70,11 @@ public class XmlTestUtils {
     if (!actual.startsWith("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>")) {
       assertWithMessage("XML declaration not found at beginning:\n%s", actual).fail();
     }
+    assertXmlEqualsWithMessageHelper(expected, actual, message, ignoredPaths);
+  }
+
+  private static void assertXmlEqualsWithMessageHelper(
+      String expected, String actual, String message, String... ignoredPaths) throws Exception {
     Map<String, Object> expectedMap = toComparableJson(expected, ignoredPaths);
     Map<String, Object> actualMap = toComparableJson(actual, ignoredPaths);
     if (!expectedMap.equals(actualMap)) {

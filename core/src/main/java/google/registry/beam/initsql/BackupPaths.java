@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import org.joda.time.DateTime;
 
@@ -35,6 +36,23 @@ public final class BackupPaths {
 
   public static final String COMMIT_LOG_NAME_PREFIX = "commit_diff_until_";
   private static final String COMMIT_LOG_PATTERN_TEMPLATE = "%s/" + COMMIT_LOG_NAME_PREFIX + "*";
+
+  /**
+   * Pattern of the per-project file with Cloud SQL connection information. To get a concrete path,
+   * user needs to provide the name of the environment, alpha, crash, sandbox, or production. This
+   * file is meant for applications without access to secrets stored in Datastore.
+   *
+   * <p>In production, this is an base-64 encoded encrypted file with one line, which contains
+   * space-separated values of Cloud SQL instance name, login, and password.
+   *
+   * <p>A plain text may be used for tests to a local database. Replace Cloud SQL instance name with
+   * JDBC URL.
+   */
+  private static final String SQL_CONN_INFO_FILE_PATTERN =
+      "gs://domain-registry-dev-deploy/cloudsql-credentials/%s/admin_credential.enc";
+
+  private static final ImmutableSet<String> ALLOWED_ENV =
+      ImmutableSet.of("alpha", "crash", "sandbox", "production");
 
   /**
    * Returns a regex pattern that matches all Datastore export files of a given {@code kind}.
@@ -89,5 +107,11 @@ public final class BackupPaths {
     int start = fileName.lastIndexOf(COMMIT_LOG_NAME_PREFIX);
     checkArgument(start >= 0, "Illegal file name %s.", fileName);
     return DateTime.parse(fileName.substring(start + COMMIT_LOG_NAME_PREFIX.length()));
+  }
+
+  public static ImmutableList<String> getCloudSQLCredentialFilePatterns(String environmentName) {
+    checkArgument(
+        ALLOWED_ENV.contains(environmentName), "Invalid environment name %s", environmentName);
+    return ImmutableList.of(String.format(SQL_CONN_INFO_FILE_PATTERN, environmentName));
   }
 }

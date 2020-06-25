@@ -17,7 +17,7 @@ package google.registry.keyring.kms;
 import google.registry.keyring.api.KeyringException;
 
 /** An abstraction to simplify Cloud KMS operations. */
-interface KmsConnection {
+public interface KmsConnection {
 
   /**
    * The maximum allowable secret size, as set by Cloud KMS.

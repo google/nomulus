@@ -50,8 +50,8 @@ javax.inject:javax.inject:1
 javax.validation:validation-api:1.0.0.GA
 joda-time:joda-time:2.9.2
 junit:junit:4.13
-net.bytebuddy:byte-buddy-agent:1.9.7
-net.bytebuddy:byte-buddy:1.9.7
+net.bytebuddy:byte-buddy-agent:1.10.5
+net.bytebuddy:byte-buddy:1.10.5
 org.apache.commons:commons-lang3:3.8.1
 org.apache.commons:commons-text:1.6
 org.apache.httpcomponents:httpclient:4.5.8
@@ -67,7 +67,7 @@ org.junit.platform:junit-platform-commons:1.6.1
 org.junit.platform:junit-platform-engine:1.6.1
 org.junit.vintage:junit-vintage-engine:5.6.1
 org.junit:junit-bom:5.6.1
-org.mockito:mockito-core:2.25.0
+org.mockito:mockito-core:3.3.3
 org.objenesis:objenesis:2.6
 org.opentest4j:opentest4j:1.2.0
 org.ow2.asm:asm-analysis:6.0

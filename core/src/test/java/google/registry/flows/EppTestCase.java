@@ -340,8 +340,7 @@ public class EppTestCase extends ShardableTestCase {
         .setTargetId(domain.getDomainName())
         .setClientId(domain.getCurrentSponsorClientId())
         .setEventTime(deleteTime)
-        .setOneTimeEventKey(
-            VKey.createOfy(OneTime.class, findKeyToActualOneTimeBillingEvent(billingEventToCancel)))
+        .setOneTimeEventKey(VKey.from(findKeyToActualOneTimeBillingEvent(billingEventToCancel)))
         .setBillingTime(createTime.plus(Registry.get(domain.getTld()).getAddGracePeriodLength()))
         .setReason(Reason.CREATE)
         .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE))
@@ -355,8 +354,7 @@ public class EppTestCase extends ShardableTestCase {
         .setTargetId(domain.getDomainName())
         .setClientId(domain.getCurrentSponsorClientId())
         .setEventTime(deleteTime)
-        .setOneTimeEventKey(
-            VKey.createOfy(OneTime.class, findKeyToActualOneTimeBillingEvent(billingEventToCancel)))
+        .setOneTimeEventKey(VKey.from(findKeyToActualOneTimeBillingEvent(billingEventToCancel)))
         .setBillingTime(renewTime.plus(Registry.get(domain.getTld()).getRenewGracePeriodLength()))
         .setReason(Reason.RENEW)
         .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE))

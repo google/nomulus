@@ -347,7 +347,27 @@ public abstract class BillingEvent extends ImmutableObject
 
     @Override
     public VKey<OneTime> createVKey() {
-      return VKey.createOfy(getClass(), Key.create(this));
+      return VKey.create(
+          getClass(),
+          parent.getParent().getName() + "/" + parent.getId() + "/" + getId(),
+          Key.create(this));
+    }
+
+    public static VKey<OneTime> createVKey(Key<OneTime> key) {
+      // TODO(b/159207551): As it stands, the SQL key generated here doesn't mesh with the primary
+      // key type for the table, which is a single long integer.
+      if (key == null) {
+        return null;
+      }
+      Key parent = key.getParent();
+      Key grandparent = (parent != null) ? parent.getParent() : null;
+      String path =
+          (grandparent != null ? grandparent.getName() : "")
+              + "/"
+              + (parent != null ? parent.getId() : "")
+              + "/"
+              + key.getId();
+      return VKey.create(OneTime.class, path, key);
     }
 
     @Override
@@ -485,7 +505,21 @@ public abstract class BillingEvent extends ImmutableObject
 
     @Override
     public VKey<Recurring> createVKey() {
-      return VKey.createOfy(getClass(), Key.create(this));
+      return VKey.create(
+          getClass(),
+          parent.getParent().getName() + "/" + parent.getId() + "/" + getId(),
+          Key.create(this));
+    }
+
+    public static VKey<Recurring> createVKey(Key<Recurring> key) {
+      // TODO(b/159207551): As it stands, the SQL key generated here doesn't mesh with the primary
+      // key type for the table, which is a single long integer.
+      if (key == null) {
+        return null;
+      }
+      String path =
+          key.getParent().getParent().getName() + "/" + key.getParent().getId() + "/" + key.getId();
+      return VKey.create(Recurring.class, path, key);
     }
 
     @Override
@@ -596,18 +630,30 @@ public abstract class BillingEvent extends ImmutableObject
           .setParent(historyEntry);
       // Set the grace period's billing event using the appropriate Cancellation builder method.
       if (gracePeriod.getOneTimeBillingEvent() != null) {
-        builder.setOneTimeEventKey(
-            VKey.createOfy(BillingEvent.OneTime.class, gracePeriod.getOneTimeBillingEvent()));
+        builder.setOneTimeEventKey(VKey.from(gracePeriod.getOneTimeBillingEvent()));
       } else if (gracePeriod.getRecurringBillingEvent() != null) {
-        builder.setRecurringEventKey(
-            VKey.createOfy(BillingEvent.Recurring.class, gracePeriod.getRecurringBillingEvent()));
+        builder.setRecurringEventKey(VKey.from(gracePeriod.getRecurringBillingEvent()));
       }
       return builder.build();
     }
 
     @Override
     public VKey<Cancellation> createVKey() {
-      return VKey.createOfy(getClass(), Key.create(this));
+      return VKey.create(
+          getClass(),
+          parent.getParent().getName() + "/" + parent.getId() + "/" + getId(),
+          Key.create(this));
+    }
+
+    public static VKey<Cancellation> createVKey(Key<Cancellation> key) {
+      // TODO(b/159207551): As it stands, the SQL key generated here doesn't mesh with the primary
+      // key type for the table, which is a single long integer.
+      if (key == null) {
+        return null;
+      }
+      String path =
+          key.getParent().getParent().getName() + "/" + key.getParent().getId() + "/" + key.getId();
+      return VKey.create(Cancellation.class, path, key);
     }
 
     @Override
@@ -687,7 +733,21 @@ public abstract class BillingEvent extends ImmutableObject
 
     @Override
     public VKey<Modification> createVKey() {
-      return VKey.createOfy(this.getClass(), Key.create(this));
+      return VKey.create(
+          getClass(),
+          parent.getParent().getName() + "/" + parent.getId() + "/" + getId(),
+          Key.create(this));
+    }
+
+    public static VKey<Modification> createVKey(Key<Modification> key) {
+      // TODO(b/159207551): As it stands, the SQL key generated here doesn't mesh with the primary
+      // key type for the table, which is a single long integer.
+      if (key == null) {
+        return null;
+      }
+      String path =
+          key.getParent().getParent().getName() + "/" + key.getParent().getId() + "/" + key.getId();
+      return VKey.create(Modification.class, path, key);
     }
 
     /**

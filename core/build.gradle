@@ -316,6 +316,7 @@ dependencies {
   testCompile deps['org.junit.platform:junit-platform-suite-api']
   testCompile deps['org.junit.vintage:junit-vintage-engine']
   testCompile deps['org.mockito:mockito-core']
+  testCompile deps['org.mockito:mockito-junit-jupiter']
   runtime deps['org.postgresql:postgresql']
 
   // Indirect dependency found by undeclared-dependency check. Such

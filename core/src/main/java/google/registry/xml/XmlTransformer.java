@@ -297,7 +297,7 @@ public class XmlTransformer {
     return marshaller;
   }
 
-  /** Pretty print xml. */
+  /** Pretty print XML. */
   public static String prettyPrint(String xmlString) {
     StringWriter prettyXml = new StringWriter();
     try {
@@ -308,13 +308,18 @@ public class XmlTransformer {
       transformer.transform(
           new StreamSource(new StringReader(xmlString)),
           new StreamResult(prettyXml));
-      return prettyXml.toString();
+
+      // Remove whitespace-only/blank lines (which the XMLTransformer in Java 9 and up sometimes
+      // adds depending on input format). Surprisingly, this is the least bad solution. See:
+      // https://stackoverflow.com/questions/58478632/how-to-avoid-extra-blank-lines-in-xml-generation-with-java
+      // Note that a simple regex replace is waaaaay more performant than using an XSLT.
+      return prettyXml.toString().replaceAll("\\n\\s*\\n", "\n");
     } catch (TransformerException e) {
       return xmlString;  // We couldn't prettify it, but that's ok; fail gracefully.
     }
   }
 
-  /** Pretty print xml bytes. */
+  /** Pretty print XML bytes. */
   public static String prettyPrint(byte[] xmlBytes) {
     return prettyPrint(new String(xmlBytes, UTF_8));
   }

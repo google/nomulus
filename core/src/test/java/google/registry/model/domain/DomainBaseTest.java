@@ -76,7 +76,7 @@ public class DomainBaseTest extends EntityTestCase {
         persistResource(
                 new HostResource.Builder()
                     .setHostName("ns1.example.com")
-                    .setSuperordinateDomain(VKey.createOfy(DomainBase.class, domainKey))
+                    .setSuperordinateDomain(VKey.from(domainKey))
                     .setRepoId("1-COM")
                     .build())
             .createVKey();
@@ -139,15 +139,12 @@ public class DomainBaseTest extends EntityTestCase {
                             .setPendingTransferExpirationTime(fakeClock.nowUtc())
                             .setServerApproveEntities(
                                 ImmutableSet.of(
-                                    VKey.createOfy(BillingEvent.OneTime.class, oneTimeBillKey),
-                                    VKey.createOfy(BillingEvent.Recurring.class, recurringBillKey),
-                                    VKey.createOfy(PollMessage.Autorenew.class, autorenewPollKey)))
-                            .setServerApproveBillingEvent(
-                                VKey.createOfy(BillingEvent.OneTime.class, oneTimeBillKey))
-                            .setServerApproveAutorenewEvent(
-                                VKey.createOfy(BillingEvent.Recurring.class, recurringBillKey))
-                            .setServerApproveAutorenewPollMessage(
-                                VKey.createOfy(PollMessage.Autorenew.class, autorenewPollKey))
+                                    VKey.from(oneTimeBillKey),
+                                    VKey.from(recurringBillKey),
+                                    VKey.from(autorenewPollKey)))
+                            .setServerApproveBillingEvent(VKey.from(oneTimeBillKey))
+                            .setServerApproveAutorenewEvent(VKey.from(recurringBillKey))
+                            .setServerApproveAutorenewPollMessage(VKey.from(autorenewPollKey))
                             .setTransferRequestTime(fakeClock.nowUtc().plusDays(1))
                             .setTransferStatus(TransferStatus.SERVER_APPROVED)
                             .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
@@ -750,10 +747,8 @@ public class DomainBaseTest extends EntityTestCase {
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingClientId("TheRegistrar")
-            .setServerApproveAutorenewEvent(
-                VKey.createOfy(BillingEvent.Recurring.class, recurringBillKey))
-            .setServerApproveBillingEvent(
-                VKey.createOfy(BillingEvent.OneTime.class, oneTimeBillKey))
+            .setServerApproveAutorenewEvent(VKey.from(recurringBillKey))
+            .setServerApproveBillingEvent(VKey.from(oneTimeBillKey))
             .build();
     domain =
         persistResource(

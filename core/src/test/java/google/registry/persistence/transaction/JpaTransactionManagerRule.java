@@ -21,6 +21,7 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -166,7 +167,7 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
           new String(Files.readAllBytes(tempSqlFile.toPath()), StandardCharsets.UTF_8));
     }
 
-    ImmutableMap properties = PersistenceModule.providesDefaultDatabaseConfigs();
+    ImmutableMap properties = PersistenceModule.provideDefaultDatabaseConfigs();
     if (!userProperties.isEmpty()) {
       // If there are user properties, create a new properties object with these added.
       Map<String, String> mergedProperties = Maps.newHashMap();
@@ -199,12 +200,12 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
     }
     JpaTransactionManagerImpl txnManager = new JpaTransactionManagerImpl(emf, clock);
     cachedTm = TransactionManagerFactory.jpaTm();
-    TransactionManagerFactory.setJpaTm(txnManager);
+    TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(txnManager));
   }
 
   @Override
   public void after() {
-    TransactionManagerFactory.setJpaTm(cachedTm);
+    TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(cachedTm));
     cachedTm = null;
   }
 

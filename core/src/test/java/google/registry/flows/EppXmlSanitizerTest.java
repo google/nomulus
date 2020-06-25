@@ -17,6 +17,7 @@ package google.registry.flows;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.flows.EppXmlSanitizer.sanitizeEppXml;
 import static google.registry.testing.TestDataHelper.loadBytes;
+import static google.registry.xml.XmlTestUtils.assertXmlEqualsIgnoreHeader;
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -37,13 +38,11 @@ public class EppXmlSanitizerTest {
   public void testSanitize_noSensitiveData_noop() throws Exception {
     byte[] inputXmlBytes = loadBytes(getClass(), "host_create.xml").read();
     String expectedXml = UTF8_HEADER + new String(inputXmlBytes, UTF_8);
-
-    String sanitizedXml = sanitizeEppXml(inputXmlBytes);
-    assertThat(sanitizedXml).isEqualTo(expectedXml);
+    assertXmlEqualsIgnoreHeader(expectedXml, sanitizeEppXml(inputXmlBytes));
   }
 
   @Test
-  public void testSanitize_loginPasswords_sanitized() {
+  public void testSanitize_loginPasswords_sanitized() throws Exception {
     String inputXml =
         new EppLoader(
                 this,
@@ -57,13 +56,11 @@ public class EppXmlSanitizerTest {
                     "login_update_password.xml",
                     ImmutableMap.of("PW", "*******", "NEWPW", "*****"))
                 .getEppXml();
-
-    String sanitizedXml = sanitizeEppXml(inputXml.getBytes(UTF_8));
-    assertThat(sanitizedXml).isEqualTo(expectedXml);
+    assertXmlEqualsIgnoreHeader(expectedXml, sanitizeEppXml(inputXml.getBytes(UTF_8)));
   }
 
   @Test
-  public void testSanitize_loginPasswordTagWrongCase_sanitized() {
+  public void testSanitize_loginPasswordTagWrongCase_sanitized() throws Exception {
     String inputXml =
         new EppLoader(
                 this, "login_wrong_case.xml", ImmutableMap.of("PW", "oldpass", "NEWPW", "newPw"))
@@ -75,9 +72,7 @@ public class EppXmlSanitizerTest {
                     "login_wrong_case.xml",
                     ImmutableMap.of("PW", "*******", "NEWPW", "*****"))
                 .getEppXml();
-
-    String sanitizedXml = sanitizeEppXml(inputXml.getBytes(UTF_8));
-    assertThat(sanitizedXml).isEqualTo(expectedXml);
+    assertXmlEqualsIgnoreHeader(expectedXml, sanitizeEppXml(inputXml.getBytes(UTF_8)));
   }
 
   @Test
@@ -86,9 +81,7 @@ public class EppXmlSanitizerTest {
     String expectedXml =
         UTF8_HEADER
             + new EppLoader(this, "contact_info_sanitized.xml", ImmutableMap.of()).getEppXml();
-
-    String sanitizedXml = sanitizeEppXml(inputXmlBytes);
-    assertThat(sanitizedXml).isEqualTo(expectedXml);
+    assertXmlEqualsIgnoreHeader(expectedXml, sanitizeEppXml(inputXmlBytes));
   }
 
   @Test
@@ -99,15 +92,13 @@ public class EppXmlSanitizerTest {
             + new EppLoader(
                     this, "contact_info_from_create_response_sanitized.xml", ImmutableMap.of())
                 .getEppXml();
-
-    String sanitizedXml = sanitizeEppXml(inputXmlBytes);
-    assertThat(sanitizedXml).isEqualTo(expectedXml);
+    assertXmlEqualsIgnoreHeader(expectedXml, sanitizeEppXml(inputXmlBytes));
   }
 
   @Test
-  public void testSanitize_emptyElement_transformedToLongForm() {
+  public void testSanitize_emptyElement_transformedToLongForm() throws Exception {
     byte[] inputXmlBytes = "<pw/>".getBytes(UTF_8);
-    assertThat(sanitizeEppXml(inputXmlBytes)).isEqualTo(UTF8_HEADER + "<pw></pw>\n");
+    assertXmlEqualsIgnoreHeader("<pw></pw>", sanitizeEppXml(inputXmlBytes));
   }
 
   @Test
@@ -118,10 +109,9 @@ public class EppXmlSanitizerTest {
   }
 
   @Test
-  public void testSanitize_unicode_hasCorrectCharCount() {
+  public void testSanitize_unicode_hasCorrectCharCount() throws Exception {
     byte[] inputXmlBytes = "<pw>\u007F\u4E43x</pw>".getBytes(UTF_8);
-    String expectedXml = UTF8_HEADER + "<pw>C**</pw>\n";
-    assertThat(sanitizeEppXml(inputXmlBytes)).isEqualTo(expectedXml);
+    assertXmlEqualsIgnoreHeader("<pw>C**</pw>", sanitizeEppXml(inputXmlBytes));
   }
 
   @Test
@@ -136,6 +126,13 @@ public class EppXmlSanitizerTest {
     // used, the XMLEventReader in sanitizer may resolve it to an endian-specific one.
     String inputXml = "<?xml version=\"1.0\" encoding=\"UTF-16LE\"?><p>\u03bc</p>\n";
     String sanitizedXml = sanitizeEppXml(inputXml.getBytes(UTF_16LE));
-    assertThat(sanitizedXml).isEqualTo(inputXml);
+
+    // As of Java 9, standalone is always written to the XML header and is defaulted to "no" if not
+    // otherwise specified. We don't care about that for this specific test, and since we want to be
+    // compatible with both Java 8 and Java 11 (for now), we strip the standalone="no" attribute if
+    // it is present prior to doing the string comparison.
+    // TODO(java11): Remove this stripping and do a full assertion once we no longer care about
+    //               maintaining Java 8 build compatibility.
+    assertThat(sanitizedXml.replace(" standalone=\"no\"", "")).isEqualTo(inputXml);
   }
 }

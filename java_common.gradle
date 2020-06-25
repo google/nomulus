@@ -76,6 +76,27 @@ test {
   useJUnitPlatform()
 }
 
+// Sets up integration test with a registry environment. The target environment is
+// passed by the 'test.gcp_integration.env' property. Test runner must have been
+// authorized to access the corresponding GCP project, e.g., by running 'gcloud auth'
+// or placing a credential file at a well known place.
+//
+// A typical use case is to run tests from desktop that accesses Cloud resources. See
+// core/src/test/java/google/registry/beam/initsql/BeamJpaModuleTest.java for an example.
+tasks.withType(Test).configureEach {
+  def gcp_integration_env_property = 'test.gcp_integration.env'
+
+  if (project.hasProperty(gcp_integration_env_property)) {
+    String targetEnv = project.property(gcp_integration_env_property)
+
+    if (targetEnv in ['sandbox', 'production']) {
+      throw new RuntimeException("Integration test with production or sandbox not allowed.")
+    }
+    systemProperty gcp_integration_env_property, targetEnv
+
+  }
+}
+
 tasks.withType(JavaCompile).configureEach {
     // The -Werror flag causes Intellij to fail on deprecated api use.
     // Allow IDE user to turn off this flag by specifying a Gradle VM

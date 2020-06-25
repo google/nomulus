@@ -67,9 +67,17 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
           clazz.getDeclaredMethod("createVKey", com.googlecode.objectify.Key.class);
       return (VKey<T>) createVKeyMethod.invoke(null, new Object[] {key});
     } catch (NoSuchMethodException e) {
-      // Revert to an ofy vkey for now.  TODO(mmuller): remove this when all classes with VKeys have
-      // converters.
-      return VKey.createOfy(clazz, key);
+      checkArgument(
+          key.getParent() == null,
+          "Cannot auto-convert key %s of kind %s because it has a parent.  Add a createVKey(Key) "
+              + "method for it.",
+          key,
+          key.getKind());
+      if (key.getName() != null) {
+        return VKey.create(clazz, key.getName(), key);
+      } else {
+        return VKey.create(clazz, key.getId(), key);
+      }
     } catch (IllegalAccessException | InvocationTargetException e) {
       // If we have a createVKey(Key) method with incorrect permissions or that is non-static, this
       // is probably an error so let's reported.

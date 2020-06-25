@@ -42,8 +42,6 @@ public class VKeyTest {
     assertThat(key.maybeGetSqlKey().isPresent()).isTrue();
     assertThat(key.maybeGetOfyKey().isPresent()).isTrue();
 
-    Key<TestObject> ofyKey = Key.create(TestObject.create("foo"));
-    assertThat(VKey.createOfy(TestObject.class, ofyKey).maybeGetOfyKey().get()).isEqualTo(ofyKey);
     assertThat(VKey.createSql(TestObject.class, "foo").maybeGetSqlKey().get()).isEqualTo("foo");
   }
 }
