@@ -15,7 +15,6 @@
 package google.registry.schema.cursor;
 
 import static com.google.appengine.api.search.checkers.Preconditions.checkNotNull;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -23,6 +22,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.schema.cursor.Cursor.CursorId;
@@ -171,11 +171,11 @@ public class CursorDao {
       // Load all the cursors of that type from Cloud SQL
       List<Cursor> cloudSqlCursors = loadByType(type);
 
-      // Create a map of each tld to its cursor if one exists
+      // Create a map of each TLD to its cursor if one exists.
       ImmutableMap<String, Cursor> cloudSqlCursorMap =
-          cloudSqlCursors.stream().collect(toImmutableMap(c -> c.getScope(), c -> c));
+          Maps.uniqueIndex(cloudSqlCursors, Cursor::getScope);
 
-      // Compare each Datastore cursor with its corresponding Cloud SQL cursor
+      // Compare each Datastore cursor with its corresponding Cloud SQL cursor.
       for (google.registry.model.common.Cursor cursor : cursors.keySet()) {
         Cursor cloudSqlCursor = cloudSqlCursorMap.get(cursors.get(cursor));
         compare(cursor, cloudSqlCursor, cursors.get(cursor));

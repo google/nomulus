@@ -15,7 +15,6 @@
 package google.registry.reporting.icann;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.ofy.ObjectifyService.ofy;
@@ -27,6 +26,7 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
 import com.googlecode.objectify.Key;
@@ -209,9 +209,9 @@ public final class IcannReportingUploadAction implements Runnable {
 
     ImmutableSet<Registry> registries = Registries.getTldEntitiesOfType(TldType.REAL);
 
-    Map<Key<Cursor>, Registry> activityKeyMap =
+    ImmutableMap<Key<Cursor>, Registry> activityKeyMap =
         loadKeyMap(registries, CursorType.ICANN_UPLOAD_ACTIVITY);
-    Map<Key<Cursor>, Registry> transactionKeyMap =
+    ImmutableMap<Key<Cursor>, Registry> transactionKeyMap =
         loadKeyMap(registries, CursorType.ICANN_UPLOAD_TX);
 
     ImmutableSet.Builder<Key<Cursor>> keys = new ImmutableSet.Builder<>();
@@ -229,9 +229,9 @@ public final class IcannReportingUploadAction implements Runnable {
     return cursors.build();
   }
 
-  private Map<Key<Cursor>, Registry> loadKeyMap(
+  private ImmutableMap<Key<Cursor>, Registry> loadKeyMap(
       ImmutableSet<Registry> registries, CursorType type) {
-    return registries.stream().collect(toImmutableMap(r -> Cursor.createKey(type, r), r -> r));
+    return Maps.uniqueIndex(registries, r -> Cursor.createKey(type, r));
   }
 
   /**

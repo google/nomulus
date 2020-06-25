@@ -86,10 +86,7 @@ public enum GracePeriodStatus implements EppEnum {
   /** Provide a quick lookup of GracePeriodStatus from XML name. */
   private static final ImmutableMap<String, GracePeriodStatus> XML_NAME_TO_GRACE_PERIOD_STATUS =
       Stream.of(GracePeriodStatus.values())
-          .collect(
-              toImmutableMap(
-                  (GracePeriodStatus gracePeriodStatus) -> gracePeriodStatus.xmlName,
-                  value -> value));
+          .collect(toImmutableMap(GracePeriodStatus::getXmlName, value -> value));
 
   @XmlAttribute(name = "s")
   private final String xmlName;

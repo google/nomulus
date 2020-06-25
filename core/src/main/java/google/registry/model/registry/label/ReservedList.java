@@ -34,7 +34,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.MapDifference;
-import com.google.common.collect.MapDifference.ValueDifference;
 import com.google.common.collect.Maps;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -265,7 +264,7 @@ public final class ReservedList
           datastoreList.reservedListMap.entrySet().parallelStream()
               .collect(
                   toImmutableMap(
-                      entry -> entry.getKey(),
+                      Map.Entry::getKey,
                       entry ->
                           ReservedEntry.create(
                               entry.getValue().reservationType, entry.getValue().comment)));
@@ -283,17 +282,14 @@ public final class ReservedList
                   cloudSqlList.getRevisionId(), diff.entriesDiffering().size()));
         } else {
           StringBuilder diffMessage = new StringBuilder("Unequal reserved lists detected:\n");
-          diff.entriesDiffering().entrySet().stream()
+          diff.entriesDiffering()
               .forEach(
-                  entry -> {
-                    String label = entry.getKey();
-                    ValueDifference<ReservedEntry> valueDiff = entry.getValue();
-                    diffMessage.append(
-                        String.format(
-                            "Domain label %s has entry %s in Datastore and entry"
-                                + " %s in Cloud SQL.\n",
-                            label, valueDiff.leftValue(), valueDiff.rightValue()));
-                  });
+                  (label, valueDiff) ->
+                      diffMessage.append(
+                          String.format(
+                              "Domain label %s has entry %s in Datastore and entry"
+                                  + " %s in Cloud SQL.\n",
+                              label, valueDiff.leftValue(), valueDiff.rightValue())));
           logger.atWarning().log(diffMessage.toString());
         }
       }

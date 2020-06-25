@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.stream.Collector;
 import javax.annotation.Nullable;
 
 /** Utility methods related to collections. */
@@ -147,5 +148,12 @@ public class CollectionUtils {
       shards.add(ImmutableMap.copyOf(entriesShard));
     }
     return shards.build();
+  }
+
+  /**
+   * Returns a {@link Collector} that accumulates {@link Map.Entry}s into an {@code ImmutableMap}.
+   */
+  public static <K, V> Collector<Map.Entry<K, V>, ?, ImmutableMap<K, V>> entriesToImmutableMap() {
+    return ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue);
   }
 }

@@ -14,8 +14,9 @@
 
 package google.registry.persistence.converter;
 
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static google.registry.util.CollectionUtils.entriesToImmutableMap;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
@@ -45,7 +46,7 @@ public abstract class TimedTransitionPropertyConverterBase<K, V extends TimedTra
         : StringMap.create(
             attribute.entrySet().stream()
                 .map(this::convertToDatabaseMapEntry)
-                .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue)));
+                .collect(entriesToImmutableMap()));
   }
 
   @Override
@@ -53,10 +54,10 @@ public abstract class TimedTransitionPropertyConverterBase<K, V extends TimedTra
     if (dbData == null) {
       return null;
     }
-    Map<DateTime, K> map =
+    ImmutableMap<DateTime, K> map =
         dbData.getMap().entrySet().stream()
             .map(this::convertToEntityMapEntry)
-            .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+            .collect(entriesToImmutableMap());
     return TimedTransitionProperty.fromValueMap(
         ImmutableSortedMap.copyOf(map), getTimedTransitionSubclass());
   }

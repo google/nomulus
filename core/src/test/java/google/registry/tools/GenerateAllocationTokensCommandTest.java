@@ -34,6 +34,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.googlecode.objectify.Key;
 import google.registry.model.domain.token.AllocationToken;
@@ -47,7 +48,6 @@ import google.registry.util.Retrier;
 import google.registry.util.StringGenerator.Alphabets;
 import java.io.File;
 import java.util.Collection;
-import java.util.function.Function;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -311,8 +311,7 @@ public class GenerateAllocationTokensCommandTest
     // Using ImmutableObject comparison here is tricky because the creation/updated timestamps are
     // neither easy nor valuable to test here.
     ImmutableMap<String, AllocationToken> actualTokens =
-        ofy().load().type(AllocationToken.class).list().stream()
-            .collect(ImmutableMap.toImmutableMap(AllocationToken::getToken, Function.identity()));
+        Maps.uniqueIndex(ofy().load().type(AllocationToken.class), AllocationToken::getToken);
     assertThat(actualTokens).hasSize(expectedTokens.length);
     for (AllocationToken expectedToken : expectedTokens) {
       AllocationToken match = actualTokens.get(expectedToken.getToken());
