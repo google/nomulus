@@ -22,7 +22,7 @@ variable "proxy_key" {
 
 # Node ports exposed by the proxy.
 variable "proxy_ports" {
-  type = "map"
+  type = map
 
   default = {
     health_check = 30000
@@ -35,7 +35,7 @@ variable "proxy_ports" {
 
 # Node ports exposed by the canary proxy.
 variable "proxy_ports_canary" {
-  type = "map"
+  type = map
 
   default = {
     health_check = 31000

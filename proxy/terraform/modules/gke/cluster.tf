@@ -1,10 +1,10 @@
 locals {
-  proxy_cluster_zone = "${lookup(var.proxy_cluster_zones, var.proxy_cluster_region)}"
+  proxy_cluster_zone = lookup(var.proxy_cluster_zones, var.proxy_cluster_region)
 }
 
 resource "google_container_cluster" "proxy_cluster" {
-  name = "proxy-cluster-${var.proxy_cluster_region}"
-  zone = local.proxy_cluster_zone
+  name     = "proxy-cluster-${var.proxy_cluster_region}"
+  location = local.proxy_cluster_zone
 
   timeouts {
     update = "30m"

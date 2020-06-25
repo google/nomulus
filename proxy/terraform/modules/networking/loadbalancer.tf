@@ -16,11 +16,11 @@ resource "google_compute_firewall" "proxy_firewall" {
     protocol = "tcp"
 
     ports = [
-      "${var.proxy_ports["epp"]}",
-      "${var.proxy_ports["whois"]}",
-      "${var.proxy_ports["health_check"]}",
-      "${var.proxy_ports["http-whois"]}",
-      "${var.proxy_ports["https-whois"]}",
+      var.proxy_ports["epp"],
+      var.proxy_ports["whois"],
+      var.proxy_ports["health_check"],
+      var.proxy_ports["http-whois"],
+      var.proxy_ports["https-whois"],
     ]
   }
 
@@ -38,7 +38,7 @@ resource "google_compute_health_check" "proxy_health_check" {
   name = "proxy-health-check${var.suffix}"
 
   tcp_health_check {
-    port     = "${var.proxy_ports["health_check"]}"
+    port     = var.proxy_ports["health_check"]
     request  = "HEALTH_CHECK_REQUEST"
     response = "HEALTH_CHECK_RESPONSE"
   }
@@ -49,7 +49,7 @@ resource "google_compute_health_check" "proxy_http_health_check" {
 
   http_health_check {
     host         = "health-check.invalid"
-    port         = "${var.proxy_ports["http-whois"]}"
+    port         = var.proxy_ports["http-whois"]
     request_path = "/"
   }
 }
@@ -66,15 +66,15 @@ resource "google_compute_backend_service" "epp_backend_service" {
   port_name   = "epp${var.suffix}"
 
   backend {
-    group = "${var.proxy_instance_groups["americas"]}"
+    group = var.proxy_instance_groups["americas"]
   }
 
   backend {
-    group = "${var.proxy_instance_groups["emea"]}"
+    group = var.proxy_instance_groups["emea"]
   }
 
   backend {
-    group = "${var.proxy_instance_groups["apac"]}"
+    group = var.proxy_instance_groups["apac"]
   }
 
   health_checks = [
@@ -89,15 +89,15 @@ resource "google_compute_backend_service" "whois_backend_service" {
   port_name   = "whois${var.suffix}"
 
   backend {
-    group = "${var.proxy_instance_groups["americas"]}"
+    group = var.proxy_instance_groups["americas"]
   }
 
   backend {
-    group = "${var.proxy_instance_groups["emea"]}"
+    group = var.proxy_instance_groups["emea"]
   }
 
   backend {
-    group = "${var.proxy_instance_groups["apac"]}"
+    group = var.proxy_instance_groups["apac"]
   }
 
   health_checks = [
@@ -112,15 +112,15 @@ resource "google_compute_backend_service" "https_whois_backend_service" {
   port_name   = "https-whois${var.suffix}"
 
   backend {
-    group = "${var.proxy_instance_groups["americas"]}"
+    group = var.proxy_instance_groups["americas"]
   }
 
   backend {
-    group = "${var.proxy_instance_groups["emea"]}"
+    group = var.proxy_instance_groups["emea"]
   }
 
   backend {
-    group = "${var.proxy_instance_groups["apac"]}"
+    group = var.proxy_instance_groups["apac"]
   }
 
   health_checks = [
@@ -135,15 +135,15 @@ resource "google_compute_backend_service" "http_whois_backend_service" {
   port_name   = "http-whois${var.suffix}"
 
   backend {
-    group = "${var.proxy_instance_groups["americas"]}"
+    group = var.proxy_instance_groups["americas"]
   }
 
   backend {
-    group = "${var.proxy_instance_groups["emea"]}"
+    group = var.proxy_instance_groups["emea"]
   }
 
   backend {
-    group = "${var.proxy_instance_groups["apac"]}"
+    group = var.proxy_instance_groups["apac"]
   }
 
   health_checks = [
