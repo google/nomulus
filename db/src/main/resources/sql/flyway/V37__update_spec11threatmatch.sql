@@ -12,14 +12,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-alter table if exists SafeBrowsingThreat
+alter table if exists "SafeBrowsingThreat"
   rename to "Spec11ThreatMatch";
 
-alter index if exists safebrowsing_threat_registrar_id_idx
+alter index if exists "safebrowsing_threat_registrar_id_idx"
   rename to "spec11threatmatch_registrar_id_idx";
 
-alter index if exists safebrowsing_threat_tld_idx
+alter index if exists "safebrowsing_threat_tld_idx"
   rename to "spec11threatmatch_tld_idx";
 
-alter index if exists safebrowsing_threat_check_date_idx
+alter index if exists "safebrowsing_threat_check_date_idx"
   rename to "spec11threatmatch_check_date_idx";
