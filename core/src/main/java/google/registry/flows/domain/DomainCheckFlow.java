@@ -16,6 +16,7 @@ package google.registry.flows.domain;
 
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyTargetIdCount;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
@@ -73,11 +74,9 @@ import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
@@ -138,40 +137,41 @@ public final class DomainCheckFlow implements Flow {
     flowCustomLogic.beforeValidation();
     extensionManager.validate();
     validateClientIsLoggedIn(clientId);
-    List<String> targetIds = ((Check) resourceCommand).getTargetIds();
-    verifyTargetIdCount(targetIds, maxChecks);
+    ImmutableList<String> domainNames = ((Check) resourceCommand).getTargetIds();
+    verifyTargetIdCount(domainNames, maxChecks);
     DateTime now = clock.nowUtc();
-    ImmutableMap.Builder<String, InternetDomainName> domains = new ImmutableMap.Builder<>();
+    ImmutableMap.Builder<String, InternetDomainName> parsedDomainsBuilder =
+        new ImmutableMap.Builder<>();
     // Only check that the registrar has access to a TLD the first time it is encountered
     Set<String> seenTlds = new HashSet<>();
-    for (String targetId : ImmutableSet.copyOf(targetIds)) {
-      InternetDomainName domainName = validateDomainName(targetId);
-      validateDomainNameWithIdnTables(domainName);
+    for (String domainName : ImmutableSet.copyOf(domainNames)) {
+      InternetDomainName parsedDomain = validateDomainName(domainName);
+      validateDomainNameWithIdnTables(parsedDomain);
       // This validation is moderately expensive, so cache the results.
-      domains.put(targetId, domainName);
-      String tld = domainName.parent().toString();
+      parsedDomainsBuilder.put(domainName, parsedDomain);
+      String tld = parsedDomain.parent().toString();
       boolean tldFirstTimeSeen = seenTlds.add(tld);
       if (tldFirstTimeSeen && !isSuperuser) {
         checkAllowedAccessToTld(clientId, tld);
         verifyNotInPredelegation(Registry.get(tld), now);
       }
     }
-    ImmutableMap<String, InternetDomainName> domainNames = domains.build();
+    ImmutableMap<String, InternetDomainName> parsedDomains = parsedDomainsBuilder.build();
     flowCustomLogic.afterValidation(
         DomainCheckFlowCustomLogic.AfterValidationParameters.newBuilder()
-            .setDomainNames(domainNames)
+            .setDomainNames(parsedDomains)
             // TODO: Use as of date from fee extension v0.12 instead of now, if specified.
             .setAsOfDate(now)
             .build());
-    Map<String, ForeignKeyIndex<DomainBase>> existingIds =
-        ForeignKeyIndex.load(DomainBase.class, targetIds, now);
+    ImmutableMap<String, ForeignKeyIndex<DomainBase>> existingDomains =
+        ForeignKeyIndex.load(DomainBase.class, domainNames, now);
     Optional<AllocationTokenExtension> allocationTokenExtension =
         eppInput.getSingleExtension(AllocationTokenExtension.class);
     Optional<AllocationTokenDomainCheckResults> tokenDomainCheckResults =
         allocationTokenExtension.map(
             tokenExtension ->
                 allocationTokenFlowUtils.checkDomainsWithToken(
-                    ImmutableList.copyOf(domainNames.values()),
+                    ImmutableList.copyOf(parsedDomains.values()),
                     tokenExtension.getAllocationToken(),
                     clientId,
                     now));
@@ -186,18 +186,18 @@ public final class DomainCheckFlow implements Flow {
             .orElse(ImmutableMap.of());
     Optional<AllocationToken> allocationToken =
         tokenDomainCheckResults.flatMap(AllocationTokenDomainCheckResults::token);
-    for (String targetId : targetIds) {
+    for (String domainName : domainNames) {
       Optional<String> message =
           getMessageForCheck(
-              domainNames.get(targetId),
-              existingIds,
+              parsedDomains.get(domainName),
+              existingDomains,
               domainCheckResults,
               tldStates,
               allocationToken);
       boolean isAvailable = !message.isPresent();
-      checksBuilder.add(DomainCheck.create(isAvailable, targetId, message.orElse(null)));
+      checksBuilder.add(DomainCheck.create(isAvailable, domainName, message.orElse(null)));
       if (isAvailable) {
-        availableDomains.add(targetId);
+        availableDomains.add(domainName);
       }
     }
     BeforeResponseReturnData responseData =
@@ -206,7 +206,11 @@ public final class DomainCheckFlow implements Flow {
                 .setDomainChecks(checksBuilder.build())
                 .setResponseExtensions(
                     getResponseExtensions(
-                        domainNames, existingIds, availableDomains.build(), now, allocationToken))
+                        parsedDomains,
+                        existingDomains,
+                        availableDomains.build(),
+                        now,
+                        allocationToken))
                 .setAsOfDate(now)
                 .build());
     return responseBuilder
@@ -241,7 +245,7 @@ public final class DomainCheckFlow implements Flow {
   /** Handle the fee check extension. */
   private ImmutableList<? extends ResponseExtension> getResponseExtensions(
       ImmutableMap<String, InternetDomainName> domainNames,
-      Map<String, ForeignKeyIndex<DomainBase>> existingIds,
+      ImmutableMap<String, ForeignKeyIndex<DomainBase>> existingDomains,
       ImmutableSet<String> availableDomains,
       DateTime now,
       Optional<AllocationToken> allocationToken)
@@ -255,7 +259,7 @@ public final class DomainCheckFlow implements Flow {
     ImmutableList.Builder<FeeCheckResponseExtensionItem> responseItems =
         new ImmutableList.Builder<>();
     ImmutableMap<String, EppResource> domainObjs =
-        loadDomainsForRestoreChecks(feeCheck, domainNames, existingIds);
+        loadDomainsForRestoreChecks(feeCheck, domainNames, existingDomains);
 
     for (FeeCheckCommandExtensionItem feeCheckItem : feeCheck.getItems()) {
       for (String domainName : getDomainNamesToCheckForFee(feeCheckItem, domainNames.keySet())) {
@@ -284,13 +288,13 @@ public final class DomainCheckFlow implements Flow {
    *
    * <p>This may be resource-intensive for large checks of many restore fees, but those are
    * comparatively rare, and we are at least using an in-memory cache. Also this will get a lot
-   * nicer in Cloud SQL when we can SELECT just the fields we want rather than have to load the
+   * nicer in Cloud SQL when we can SELECT just the fields we want rather than having to load the
    * entire entity.
    */
   private ImmutableMap<String, EppResource> loadDomainsForRestoreChecks(
       FeeCheckCommandExtension<?, ?> feeCheck,
       ImmutableMap<String, InternetDomainName> domainNames,
-      Map<String, ForeignKeyIndex<DomainBase>> existingIds) {
+      ImmutableMap<String, ForeignKeyIndex<DomainBase>> existingDomains) {
     ImmutableList<String> restoreCheckDomains;
     if (feeCheck instanceof FeeCheckCommandExtensionV06) {
       // The V06 fee extension supports specifying the command fees to check on a per-domain basis.
@@ -311,10 +315,10 @@ public final class DomainCheckFlow implements Flow {
     }
 
     // Filter down to just domains we know exist and then use the EppResource cache to load them.
-    Map<String, VKey<DomainBase>> existingDomainsToLoad =
+    ImmutableMap<String, VKey<DomainBase>> existingDomainsToLoad =
         restoreCheckDomains.stream()
-            .filter(existingIds::containsKey)
-            .collect(Collectors.toMap(d -> d, d -> existingIds.get(d).getResourceKey()));
+            .filter(existingDomains::containsKey)
+            .collect(toImmutableMap(d -> d, d -> existingDomains.get(d).getResourceKey()));
     ImmutableMap<VKey<? extends EppResource>, EppResource> loadedDomains =
         EppResource.loadCached(ImmutableList.copyOf(existingDomainsToLoad.values()));
     return ImmutableMap.copyOf(

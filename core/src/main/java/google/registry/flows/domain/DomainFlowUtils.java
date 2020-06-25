@@ -624,10 +624,6 @@ public class DomainFlowUtils {
         boolean isExpired =
             domain.isPresent() && domain.get().getRegistrationExpirationTime().isBefore(now);
         fees = pricingLogic.getRestorePrice(registry, domainNameString, now, isExpired).getFees();
-        if (isExpired) {
-          // The fee class can only be premium if the domain is expired and thus if there is a renew
-          // fee (the restore fee itself is considered standard-priced).
-        }
         break;
       case TRANSFER:
         if (years != 1) {

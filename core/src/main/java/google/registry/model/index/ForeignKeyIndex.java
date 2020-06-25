@@ -15,7 +15,6 @@
 package google.registry.model.index;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.Maps.filterValues;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
 import static google.registry.model.ofy.ObjectifyService.ofy;
@@ -178,11 +177,11 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
    * <p>The returned map will omit any keys for which the {@link ForeignKeyIndex} doesn't exist or
    * has been soft deleted.
    */
-  public static <E extends EppResource> Map<String, ForeignKeyIndex<E>> load(
+  public static <E extends EppResource> ImmutableMap<String, ForeignKeyIndex<E>> load(
       Class<E> clazz, Iterable<String> foreignKeys, final DateTime now) {
-    return filterValues(
-        ofy().load().type(mapToFkiClass(clazz)).ids(foreignKeys),
-        (ForeignKeyIndex<?> fki) -> now.isBefore(fki.deletionTime));
+    return ofy().load().type(mapToFkiClass(clazz)).ids(foreignKeys).entrySet().stream()
+        .filter(e -> now.isBefore(e.getValue().deletionTime))
+        .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   static final CacheLoader<Key<ForeignKeyIndex<?>>, Optional<ForeignKeyIndex<?>>> CACHE_LOADER =
@@ -249,7 +248,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
    * <p>Don't use the cached version of this method unless you really need it for performance
    * reasons, and are OK with the trade-offs in loss of transactional consistency.
    */
-  public static <E extends EppResource> Map<String, ForeignKeyIndex<E>> loadCached(
+  public static <E extends EppResource> ImmutableMap<String, ForeignKeyIndex<E>> loadCached(
       Class<E> clazz, Iterable<String> foreignKeys, final DateTime now) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
       return tm().doTransactionless(() -> load(clazz, foreignKeys, now));
@@ -262,16 +261,14 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
       // This cast is safe because when we loaded ForeignKeyIndexes above we used type clazz, which
       // is scoped to E.
       @SuppressWarnings("unchecked")
-      Map<String, ForeignKeyIndex<E>> fkisFromCache = cacheForeignKeyIndexes
-          .getAll(fkiKeys)
-          .entrySet()
-          .stream()
-          .filter(entry -> entry.getValue().isPresent())
-          .filter(entry -> now.isBefore(entry.getValue().get().getDeletionTime()))
-          .collect(
-              ImmutableMap.toImmutableMap(
-                  entry -> entry.getKey().getName(),
-                  entry -> (ForeignKeyIndex<E>) entry.getValue().get()));
+      ImmutableMap<String, ForeignKeyIndex<E>> fkisFromCache =
+          cacheForeignKeyIndexes.getAll(fkiKeys).entrySet().stream()
+              .filter(entry -> entry.getValue().isPresent())
+              .filter(entry -> now.isBefore(entry.getValue().get().getDeletionTime()))
+              .collect(
+                  ImmutableMap.toImmutableMap(
+                      entry -> entry.getKey().getName(),
+                      entry -> (ForeignKeyIndex<E>) entry.getValue().get()));
       return fkisFromCache;
     } catch (ExecutionException e) {
       throw new RuntimeException("Error loading cached ForeignKeyIndexes", e.getCause());
