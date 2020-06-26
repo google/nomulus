@@ -147,7 +147,7 @@ public class Spec11ThreatMatchTest extends EntityTestCase {
   }
 
   @Test
-  public void testFailure_threatsWithNullFields() {
+  public void testFailure_threatsWithInvalidFields() {
     assertThrows(
         IllegalArgumentException.class, () -> threat.asBuilder().setRegistrarId(null).build());
 
@@ -159,14 +159,11 @@ public class Spec11ThreatMatchTest extends EntityTestCase {
 
     assertThrows(
         IllegalArgumentException.class, () -> threat.asBuilder().setDomainRepoId(null).build());
-  }
-
-  @Test
-  public void testFailure_threatTypesWithNullAndEmptySet() {
-    assertThrows(
-        IllegalStateException.class, () -> threat.asBuilder().setThreatTypes(ImmutableSet.of()));
 
     assertThrows(
-        IllegalStateException.class, () -> threat.asBuilder().setThreatTypes(null).build());
+        IllegalArgumentException.class, () -> threat.asBuilder().setThreatTypes(ImmutableSet.of()));
+
+    assertThrows(
+        IllegalArgumentException.class, () -> threat.asBuilder().setThreatTypes(null).build());
   }
 }

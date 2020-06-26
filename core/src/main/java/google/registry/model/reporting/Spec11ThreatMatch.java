@@ -14,6 +14,8 @@
 
 package google.registry.model.reporting;
 
+import static com.google.appengine.repackaged.com.google.common.base.Preconditions.checkArgument;
+import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableList;
@@ -145,13 +147,10 @@ public class Spec11ThreatMatch extends ImmutableObject implements Buildable, Sql
     }
 
     public Builder setThreatTypes(ImmutableSet<ThreatType> threatTypes) {
-      getInstance().threatTypes = threatTypes;
+      checkArgument(!isNullOrEmpty(threatTypes), "threatTypes cannot be null or empty.");
 
-      if (threatTypes == null || threatTypes.isEmpty()) {
-        throw new IllegalStateException("threatTypes cannot be null or empty.");
-      } else {
-        return this;
-      }
+      getInstance().threatTypes = threatTypes;
+      return this;
     }
 
     public Builder setDomainRepoId(String domainRepoId) {
