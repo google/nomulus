@@ -60,7 +60,8 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         persistPollMessage(123L, DateTime.parse("2015-09-01T22:33:44Z"), "notme");
     VKey<OneTime> pm4 = futurePollMessage.createVKey();
     runCommand("-c", "TheRegistrar");
-    assertThat(tm().load(ImmutableList.of(pm1, pm2, pm3, pm4))).containsExactly(futurePollMessage);
+    assertThat(tm().load(ImmutableList.of(pm1, pm2, pm3, pm4)).values())
+        .containsExactly(futurePollMessage);
     assertInStdout(
         "1-FSDGS-TLD-2406-624-2013,2013-05-01T22:33:44.000Z,ninelives",
         "1-FSDGS-TLD-2406-316-2014,2014-01-01T22:33:44.000Z,foobar",
@@ -89,7 +90,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         autorenew.asBuilder().setEventTime(DateTime.parse("2012-04-15T22:33:44Z")).build();
     VKey<Autorenew> pm3 = autorenew.createVKey();
     runCommand("-c", "TheRegistrar");
-    assertThat(tm().load(ImmutableList.of(pm1, pm2, pm3))).containsExactly(resaved);
+    assertThat(tm().load(ImmutableList.of(pm1, pm2, pm3)).values()).containsExactly(resaved);
     assertInStdout(
         "1-AAFSGS-TLD-99406-624-2011,2011-04-15T22:33:44.000Z,autorenew",
         "1-FSDGS-TLD-2406-624-2013,2013-05-01T22:33:44.000Z,ninelives",
@@ -137,7 +138,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
         persistPollMessage(123L, DateTime.parse("2015-09-01T22:33:44Z"), "time flies");
     VKey<OneTime> pm4 = notMatched2.createVKey();
     runCommand("-c", "TheRegistrar", "-m", "food");
-    assertThat(tm().load(ImmutableList.of(pm1, pm2, pm3, pm4)))
+    assertThat(tm().load(ImmutableList.of(pm1, pm2, pm3, pm4)).values())
         .containsExactly(notMatched1, notMatched2);
   }
 
@@ -162,7 +163,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
                 .build());
     VKey<OneTime> pm3 = notMatched.createVKey();
     runCommand("-c", "TheRegistrar");
-    assertThat(tm().load(ImmutableList.of(pm1, pm2, pm3))).containsExactly(notMatched);
+    assertThat(tm().load(ImmutableList.of(pm1, pm2, pm3)).values()).containsExactly(notMatched);
   }
 
   @Test
@@ -176,7 +177,8 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
             tm().load(
                     ImmutableList.of(pm1, pm2, pm3, pm4).stream()
                         .map(OneTime::createVKey)
-                        .collect(toImmutableList())))
+                        .collect(toImmutableList()))
+                .values())
         .containsExactly(pm1, pm2, pm3, pm4);
   }
 
