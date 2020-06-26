@@ -14,7 +14,7 @@
 
 package google.registry.persistence.converter;
 
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static google.registry.util.CollectionUtils.entriesToImmutableMap;
 
 import google.registry.persistence.converter.StringMapDescriptor.StringMap;
 import java.util.Map;
@@ -38,7 +38,7 @@ public abstract class StringMapConverterBase<K, V>
         : StringMap.create(
             attribute.entrySet().stream()
                 .map(this::convertToDatabaseMapEntry)
-                .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue)));
+                .collect(entriesToImmutableMap()));
   }
 
   @Override
@@ -47,6 +47,6 @@ public abstract class StringMapConverterBase<K, V>
         ? null
         : dbData.getMap().entrySet().stream()
             .map(this::convertToEntityMapEntry)
-            .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+            .collect(entriesToImmutableMap());
   }
 }

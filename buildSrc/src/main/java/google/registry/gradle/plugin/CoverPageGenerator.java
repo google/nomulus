@@ -29,6 +29,7 @@ import google.registry.gradle.plugin.ProjectData.TaskData;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -162,7 +163,7 @@ final class CoverPageGenerator {
             task.reports().entrySet().stream()
                 .collect(
                     toImmutableMap(
-                        entry -> entry.getKey(),
+                        Map.Entry::getKey,
                         entry ->
                             entry.getValue().files().isEmpty()
                                 ? ""

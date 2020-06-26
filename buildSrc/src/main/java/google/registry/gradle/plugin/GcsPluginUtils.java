@@ -168,7 +168,7 @@ final class GcsPluginUtils {
             .collect(
                 toImmutableMap(
                     file -> rootDir.relativize(toNormalizedPath(file)),
-                    file -> toByteArraySupplier(file)));
+                    GcsPluginUtils::toByteArraySupplier));
 
     if (files.isEmpty()) {
       // The directory exists, but is empty. Return empty FilesWithEntryPoint

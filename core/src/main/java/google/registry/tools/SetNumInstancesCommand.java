@@ -15,7 +15,6 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSetMultimap.flatteningToImmutableSetMultimap;
 import static google.registry.util.CollectionUtils.nullToEmpty;
@@ -29,6 +28,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.collect.Maps;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action.Service;
@@ -53,8 +53,7 @@ final class SetNumInstancesCommand implements CommandWithRemoteApi {
       ImmutableSet.copyOf(Service.values());
 
   private static final ImmutableMap<String, Service> SERVICE_ID_TO_SERVICE =
-      ALL_DEPLOYED_SERVICES.stream()
-          .collect(toImmutableMap(service -> service.getServiceId(), service -> service));
+      Maps.uniqueIndex(ALL_DEPLOYED_SERVICES, Service::getServiceId);
 
   // TODO(b/119629679): Use List<Service> after upgrading jcommander to latest version.
   @Parameter(

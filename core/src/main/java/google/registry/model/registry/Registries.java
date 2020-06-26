@@ -19,13 +19,13 @@ import static com.google.common.base.Predicates.equalTo;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.base.Strings.emptyToNull;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.filterValues;
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.CollectionUtils.entriesToImmutableMap;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.base.Joiner;
@@ -37,7 +37,6 @@ import com.google.common.collect.Streams;
 import com.google.common.net.InternetDomainName;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry.TldType;
-import java.util.Map;
 import java.util.Optional;
 
 /** Utilities for finding and listing {@link Registry} entities. */
@@ -71,7 +70,7 @@ public final class Registries {
                               .collect(toImmutableSet());
                       return Registry.getAll(tlds).stream()
                           .map(e -> Maps.immutableEntry(e.getTldStr(), e.getTldType()))
-                          .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+                          .collect(entriesToImmutableMap());
                     }));
   }
 

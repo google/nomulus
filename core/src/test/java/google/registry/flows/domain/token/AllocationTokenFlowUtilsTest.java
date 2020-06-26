@@ -34,6 +34,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Maps;
 import com.google.common.net.InternetDomainName;
 import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
@@ -48,7 +49,6 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.ShardableTestCase;
-import java.util.function.Function;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Rule;
@@ -324,11 +324,7 @@ public class AllocationTokenFlowUtilsTest extends ShardableTestCase {
         AllocationToken tokenEntity,
         String clientId,
         DateTime now) {
-      return domainNames.stream()
-          .collect(
-              ImmutableMap.toImmutableMap(
-                  Function.identity(),
-                  domainName -> domainName.toString().contains("bunny") ? "fufu" : ""));
+      return Maps.toMap(domainNames, domain -> domain.toString().contains("bunny") ? "fufu" : "");
     }
   }
 }

@@ -15,11 +15,11 @@
 package google.registry.testing;
 
 import static com.google.common.truth.Truth.assertWithMessage;
+import static google.registry.util.CollectionUtils.entriesToImmutableMap;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.Multimaps;
@@ -136,7 +136,7 @@ public class AppEngineRuleTest {
       Map<String, Collection<Class<?>>> conflictingKinds =
           kindToEntityMultiMap.asMap().entrySet().stream()
               .filter(e -> e.getValue().size() > 1)
-              .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+              .collect(entriesToImmutableMap());
       assertWithMessage(
               "Conflicting Ofy kinds found. Tests will break if they are registered with "
                   + " AppEngineRule in the same test executor.")
