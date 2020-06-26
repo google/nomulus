@@ -61,7 +61,7 @@ public class RdeStagingMapperTest {
   @BeforeEach
   void beforeEach() {
     // Two real registrars have been created by AppEngineRule, named "New Registrar" and "The
-    // Registrar". Create one included registrar (externa_monitoring) and two excluded ones.
+    // Registrar". Create one included registrar (external_monitoring) and two excluded ones.
     Registrar monitoringRegistrar =
         persistNewRegistrar("monitoring", "monitoring", Registrar.Type.MONITORING, null);
     Registrar testRegistrar = persistNewRegistrar("test", "test", Registrar.Type.TEST, null);
