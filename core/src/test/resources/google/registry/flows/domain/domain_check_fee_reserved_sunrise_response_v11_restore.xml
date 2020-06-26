@@ -30,7 +30,6 @@
           <fee:command>restore</fee:command>
           <fee:currency>USD</fee:currency>
           <fee:period unit="y">1</fee:period>
-          <fee:fee description="renew">11.00</fee:fee>
           <fee:fee description="restore">17.00</fee:fee>
         </fee:cd>
         <fee:cd avail="1">
@@ -40,7 +39,6 @@
           <fee:command>restore</fee:command>
           <fee:currency>USD</fee:currency>
           <fee:period unit="y">1</fee:period>
-          <fee:fee description="renew">11.00</fee:fee>
           <fee:fee description="restore">17.00</fee:fee>
         </fee:cd>
         <fee:cd avail="1">
@@ -50,7 +48,6 @@
           <fee:command>restore</fee:command>
           <fee:currency>USD</fee:currency>
           <fee:period unit="y">1</fee:period>
-          <fee:fee description="renew">11.00</fee:fee>
           <fee:fee description="restore">17.00</fee:fee>
           <fee:class>collision</fee:class>
         </fee:cd>
@@ -61,9 +58,8 @@
           <fee:command>restore</fee:command>
           <fee:currency>USD</fee:currency>
           <fee:period unit="y">1</fee:period>
-          <fee:fee description="renew">70.00</fee:fee>
           <fee:fee description="restore">17.00</fee:fee>
-          <fee:class>premium-collision</fee:class>
+          <fee:class>collision</fee:class>
         </fee:cd>
       </fee:chkData>
     </extension>

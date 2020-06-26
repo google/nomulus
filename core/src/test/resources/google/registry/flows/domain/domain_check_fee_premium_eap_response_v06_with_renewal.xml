@@ -6,46 +6,47 @@
     <resData>
       <domain:chkData xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:cd>
-          <domain:name avail="1">example1.tld</domain:name>
+          <domain:name avail="false">rich.example</domain:name>
+          <domain:reason>In use</domain:reason>
         </domain:cd>
       </domain:chkData>
     </resData>
     <extension>
       <fee:chkData xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
         <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
-          <fee:name>example1.tld</fee:name>
+          <fee:name>rich.example</fee:name>
           <fee:currency>USD</fee:currency>
           <fee:command>create</fee:command>
           <fee:period unit="y">1</fee:period>
-          <fee:fee description="create">13.00</fee:fee>
+          <fee:fee description="create">100.00</fee:fee>
+          <fee:fee description="Early Access Period, fee expires: 2010-01-02T10:00:00.000Z">100.00
+          </fee:fee>
+          <fee:class>premium</fee:class>
         </fee:cd>
         <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
-          <fee:name>example1.tld</fee:name>
+          <fee:name>rich.example</fee:name>
           <fee:currency>USD</fee:currency>
           <fee:command>renew</fee:command>
           <fee:period unit="y">1</fee:period>
-          <fee:fee description="renew">11.00</fee:fee>
+          <fee:fee description="renew">100.00</fee:fee>
+          <fee:class>premium</fee:class>
         </fee:cd>
         <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
-          <fee:name>example1.tld</fee:name>
+          <fee:name>rich.example</fee:name>
           <fee:currency>USD</fee:currency>
           <fee:command>transfer</fee:command>
           <fee:period unit="y">1</fee:period>
-          <fee:fee description="renew">11.00</fee:fee>
+          <fee:fee description="renew">100.00</fee:fee>
+          <fee:class>premium</fee:class>
         </fee:cd>
         <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
-          <fee:name>example1.tld</fee:name>
+          <fee:name>rich.example</fee:name>
           <fee:currency>USD</fee:currency>
           <fee:command>restore</fee:command>
           <fee:period unit="y">1</fee:period>
+          <fee:fee description="renew">100.00</fee:fee>
           <fee:fee description="restore">17.00</fee:fee>
-        </fee:cd>
-        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
-          <fee:name>example1.tld</fee:name>
-          <fee:currency>USD</fee:currency>
-          <fee:command>update</fee:command>
-          <fee:period unit="y">1</fee:period>
-          <fee:fee description="update">0.00</fee:fee>
+          <fee:class>premium</fee:class>
         </fee:cd>
       </fee:chkData>
     </extension>

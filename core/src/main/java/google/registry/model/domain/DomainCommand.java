@@ -41,7 +41,6 @@ import google.registry.model.eppinput.ResourceCommand.SingleResourceCommand;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.persistence.VKey;
-import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -447,7 +446,8 @@ public class DomainCommand {
   private static <T extends EppResource> ImmutableMap<String, VKey<T>> loadByForeignKeysCached(
       final Set<String> foreignKeys, final Class<T> clazz, final DateTime now)
       throws InvalidReferencesException {
-    Map<String, ForeignKeyIndex<T>> fkis = ForeignKeyIndex.loadCached(clazz, foreignKeys, now);
+    ImmutableMap<String, ForeignKeyIndex<T>> fkis =
+        ForeignKeyIndex.loadCached(clazz, foreignKeys, now);
     if (!fkis.keySet().equals(foreignKeys)) {
       throw new InvalidReferencesException(
           clazz, ImmutableSet.copyOf(difference(foreignKeys, fkis.keySet())));

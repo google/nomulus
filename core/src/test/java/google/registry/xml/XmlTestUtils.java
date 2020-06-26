@@ -44,8 +44,8 @@ public class XmlTestUtils {
   /**
    * Asserts that the two XML strings match.
    *
-   * <p>Note that the actual XML must start with a UTF-8 standalone XML header, but the expected
-   * XML has no such restriction (and typically lacks the header entirely).
+   * <p>Note that the actual XML must start with a UTF-8 standalone XML header, but the expected XML
+   * has no such restriction (and typically lacks the header entirely).
    */
   public static void assertXmlEquals(String expected, String actual, String... ignoredPaths)
       throws Exception {

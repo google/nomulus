@@ -22,6 +22,7 @@ import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRIS
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
+import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistDeletedDomain;
 import static google.registry.testing.DatastoreHelper.persistPremiumList;
@@ -65,6 +66,7 @@ import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
+import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.label.ReservedList;
@@ -656,6 +658,19 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
     runFlowAssertResponse(loadFile("domain_check_fee_response_v12.xml"));
   }
 
+  @Test
+  public void testSuccess_thirtyDomains_restoreFees() throws Exception {
+    // Note that 30 is more than 25, which is the maximum # of entity groups you can enlist in a
+    // single Datastore transaction (each DomainBase entity is in a separate entity group).
+    // It's also pretty common for registrars to send large domain checks.
+    setEppInput("domain_check_fee_thirty_domains.xml");
+    // example-00.tld won't exist and thus will not have a renew fee like the others.
+    for (int i = 1; i < 30; i++) {
+      persistPendingDeleteDomain(String.format("example-%02d.tld", i));
+    }
+    runFlowAssertResponse(loadFile("domain_check_fee_response_thirty_domains.xml"));
+  }
+
   /**
    * Test commands for create, renew, transfer, restore and update with implicit period and
    * currency.
@@ -703,6 +718,27 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
   }
 
   @Test
+  public void testFeeExtension_premium_eap_v06_withRenewalOnRestore() throws Exception {
+    createTld("example");
+    setEppInput("domain_check_fee_premium_v06.xml");
+    clock.setTo(DateTime.parse("2010-01-01T10:00:00Z"));
+    persistPendingDeleteDomain("rich.example");
+    persistResource(
+        Registry.get("example")
+            .asBuilder()
+            .setEapFeeSchedule(
+                new ImmutableSortedMap.Builder<DateTime, Money>(Ordering.natural())
+                    .put(START_OF_TIME, Money.of(USD, 0))
+                    .put(clock.nowUtc().minusDays(1), Money.of(USD, 100))
+                    .put(clock.nowUtc().plusDays(1), Money.of(USD, 50))
+                    .put(clock.nowUtc().plusDays(2), Money.of(USD, 0))
+                    .build())
+            .build());
+
+    runFlowAssertResponse(loadFile("domain_check_fee_premium_eap_response_v06_with_renewal.xml"));
+  }
+
+  @Test
   public void testFeeExtension_premiumLabels_v11_create() throws Exception {
     createTld("example");
     setEppInput("domain_check_fee_premium_v11_create.xml");
@@ -731,6 +767,15 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
   }
 
   @Test
+  public void testFeeExtension_premiumLabels_v11_restore_withRenewal() throws Exception {
+    setEppInput("domain_check_fee_premium_v11_restore.xml");
+    createTld("example");
+    persistPendingDeleteDomain("rich.example");
+    runFlowAssertResponse(
+        loadFile("domain_check_fee_premium_response_v11_restore_with_renewal.xml"));
+  }
+
+  @Test
   public void testFeeExtension_premiumLabels_v11_update() throws Exception {
     createTld("example");
     setEppInput("domain_check_fee_premium_v11_update.xml");
@@ -742,6 +787,14 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
     createTld("example");
     setEppInput("domain_check_fee_premium_v12.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_premium_response_v12.xml"));
+  }
+
+  @Test
+  public void testFeeExtension_premiumLabels_v12_withRenewalOnRestore() throws Exception {
+    createTld("example");
+    setEppInput("domain_check_fee_premium_v12.xml");
+    persistPendingDeleteDomain("rich.example");
+    runFlowAssertResponse(loadFile("domain_check_fee_premium_response_v12_with_renewal.xml"));
   }
 
   @Test
@@ -821,6 +874,23 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
   }
 
   @Test
+  public void testFeeExtension_reservedName_v11_restore_withRenewals() throws Exception {
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setReservedLists(createReservedList())
+            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .build());
+    persistPendingDeleteDomain("reserved.tld");
+    persistPendingDeleteDomain("allowedinsunrise.tld");
+    persistPendingDeleteDomain("collision.tld");
+    persistPendingDeleteDomain("premiumcollision.tld");
+    setEppInput("domain_check_fee_reserved_v11_restore.xml");
+    runFlowAssertResponse(
+        loadFile("domain_check_fee_reserved_response_v11_restore_with_renewals.xml"));
+  }
+
+  @Test
   public void testFeeExtension_reservedName_v12() throws Exception {
     persistResource(
         Registry.get("tld")
@@ -843,6 +913,25 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
             .build());
     setEppInput("domain_check_fee_reserved_v06.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_sunrise_response_v06.xml"));
+  }
+
+  @Test
+  public void testFeeExtension_feesNotOmittedOnReservedNamesInSunrise_v06_withRestoreRenewals()
+      throws Exception {
+    createTld("tld", START_DATE_SUNRISE);
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setReservedLists(createReservedList())
+            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .build());
+    persistPendingDeleteDomain("reserved.tld");
+    persistPendingDeleteDomain("allowedinsunrise.tld");
+    persistPendingDeleteDomain("collision.tld");
+    persistPendingDeleteDomain("premiumcollision.tld");
+    setEppInput("domain_check_fee_reserved_v06.xml");
+    runFlowAssertResponse(
+        loadFile("domain_check_fee_reserved_sunrise_response_v06_with_renewals.xml"));
   }
 
   @Test
@@ -1150,5 +1239,15 @@ public class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFl
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-dom-check");
     assertTldsFieldLogged("com", "net", "org");
+  }
+
+  private void persistPendingDeleteDomain(String domainName) {
+    persistResource(
+        newDomainBase(domainName)
+            .asBuilder()
+            .setDeletionTime(clock.nowUtc().plusDays(25))
+            .setRegistrationExpirationTime(clock.nowUtc().minusDays(1))
+            .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
+            .build());
   }
 }

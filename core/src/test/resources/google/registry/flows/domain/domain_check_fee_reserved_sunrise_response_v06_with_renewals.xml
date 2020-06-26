@@ -6,17 +6,20 @@
     <resData>
       <domain:chkData xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:cd>
-          <domain:name avail="0">reserved.tld</domain:name>
-          <domain:reason>Reserved</domain:reason>
+          <domain:name avail="false">reserved.tld</domain:name>
+          <domain:reason>In use</domain:reason>
         </domain:cd>
         <domain:cd>
-          <domain:name avail="1">allowedinsunrise.tld</domain:name>
+          <domain:name avail="false">allowedinsunrise.tld</domain:name>
+          <domain:reason>In use</domain:reason>
         </domain:cd>
         <domain:cd>
-          <domain:name avail="1">collision.tld</domain:name>
+          <domain:name avail="false">collision.tld</domain:name>
+          <domain:reason>In use</domain:reason>
         </domain:cd>
         <domain:cd>
-          <domain:name avail="1">premiumcollision.tld</domain:name>
+          <domain:name avail="false">premiumcollision.tld</domain:name>
+          <domain:reason>In use</domain:reason>
         </domain:cd>
       </domain:chkData>
     </resData>
@@ -48,6 +51,7 @@
           <fee:currency>USD</fee:currency>
           <fee:command>restore</fee:command>
           <fee:period unit="y">1</fee:period>
+          <fee:fee description="renew">11.00</fee:fee>
           <fee:fee description="restore">17.00</fee:fee>
         </fee:cd>
         <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
@@ -76,6 +80,7 @@
           <fee:currency>USD</fee:currency>
           <fee:command>restore</fee:command>
           <fee:period unit="y">1</fee:period>
+          <fee:fee description="renew">11.00</fee:fee>
           <fee:fee description="restore">17.00</fee:fee>
         </fee:cd>
         <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
@@ -107,6 +112,7 @@
           <fee:currency>USD</fee:currency>
           <fee:command>restore</fee:command>
           <fee:period unit="y">1</fee:period>
+          <fee:fee description="renew">11.00</fee:fee>
           <fee:fee description="restore">17.00</fee:fee>
           <fee:class>collision</fee:class>
         </fee:cd>
@@ -139,8 +145,9 @@
           <fee:currency>USD</fee:currency>
           <fee:command>restore</fee:command>
           <fee:period unit="y">1</fee:period>
+          <fee:fee description="renew">70.00</fee:fee>
           <fee:fee description="restore">17.00</fee:fee>
-          <fee:class>collision</fee:class>
+          <fee:class>premium-collision</fee:class>
         </fee:cd>
       </fee:chkData>
     </extension>

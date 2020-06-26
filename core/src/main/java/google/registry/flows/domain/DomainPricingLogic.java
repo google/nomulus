@@ -15,7 +15,6 @@
 package google.registry.flows.domain;
 
 import static google.registry.flows.domain.DomainFlowUtils.zeroInCurrency;
-import static google.registry.pricing.PricingEngineProxy.getDomainFeeClass;
 import static google.registry.pricing.PricingEngineProxy.getPricesForDomainName;
 
 import com.google.common.net.InternetDomainName;
@@ -184,11 +183,6 @@ public final class DomainPricingLogic {
             .setDomainName(InternetDomainName.from(domainName))
             .setAsOfDate(dateTime)
             .build());
-  }
-
-  /** Returns the fee class for a given domain and date. */
-  public Optional<String> getFeeClass(String domainName, DateTime dateTime) {
-    return getDomainFeeClass(domainName, dateTime);
   }
 
   /** Returns the domain create cost with allocation-token-related discounts applied. */

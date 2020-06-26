@@ -15,14 +15,9 @@
 package google.registry.model.pricing;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Strings.emptyToNull;
-import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
 import static google.registry.model.registry.label.PremiumListUtils.getPremiumPrice;
-import static google.registry.model.registry.label.ReservationType.NAME_COLLISION;
-import static google.registry.model.registry.label.ReservedList.getReservationTypes;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 
-import com.google.common.base.Joiner;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.registry.Registry;
 import java.util.Optional;
@@ -44,16 +39,9 @@ public final class StaticPremiumListPricingEngine implements PremiumPricingEngin
     String label = InternetDomainName.from(fullyQualifiedDomainName).parts().get(0);
     Registry registry = Registry.get(checkNotNull(tld, "tld"));
     Optional<Money> premiumPrice = getPremiumPrice(label, registry);
-    boolean isNameCollisionInSunrise =
-        registry.getTldState(priceTime).equals(START_DATE_SUNRISE)
-            && getReservationTypes(label, tld).contains(NAME_COLLISION);
-    String feeClass = emptyToNull(Joiner.on('-').skipNulls().join(
-            premiumPrice.isPresent() ? "premium" : null,
-            isNameCollisionInSunrise ? "collision" : null));
     return DomainPrices.create(
         premiumPrice.isPresent(),
         premiumPrice.orElse(registry.getStandardCreateCost()),
-        premiumPrice.orElse(registry.getStandardRenewCost(priceTime)),
-        Optional.ofNullable(feeClass));
+        premiumPrice.orElse(registry.getStandardRenewCost(priceTime)));
   }
 }

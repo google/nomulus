@@ -17,6 +17,7 @@ package google.registry.flows.domain;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Predicates.equalTo;
+import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
@@ -32,7 +33,9 @@ import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABIL
 import static google.registry.model.registry.Registry.TldState.PREDELEGATION;
 import static google.registry.model.registry.Registry.TldState.QUIET_PERIOD;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
+import static google.registry.model.registry.label.ReservationType.ALLOWED_IN_SUNRISE;
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
+import static google.registry.model.registry.label.ReservationType.NAME_COLLISION;
 import static google.registry.model.registry.label.ReservationType.RESERVED_FOR_ANCHOR_TENANT;
 import static google.registry.model.registry.label.ReservationType.RESERVED_FOR_SPECIFIC_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -87,6 +90,7 @@ import google.registry.model.domain.DomainCommand.InvalidReferencesException;
 import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.ForeignKeyedDesignatedContact;
 import google.registry.model.domain.Period;
+import google.registry.model.domain.fee.BaseFee;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Credit;
 import google.registry.model.domain.fee.Fee;
@@ -152,9 +156,7 @@ public class DomainFlowUtils {
 
   /** Reservation types that are only allowed in sunrise by policy. */
   public static final ImmutableSet<ReservationType> TYPES_ALLOWED_FOR_CREATE_ONLY_IN_SUNRISE =
-      Sets.immutableEnumSet(
-          ReservationType.ALLOWED_IN_SUNRISE,
-          ReservationType.NAME_COLLISION);
+      Sets.immutableEnumSet(ALLOWED_IN_SUNRISE, NAME_COLLISION);
 
   /** Warning message for allocation of collision domains in sunrise. */
   public static final String COLLISION_MESSAGE =
@@ -583,15 +585,15 @@ public class DomainFlowUtils {
     builder
         .setCommand(feeRequest.getCommandName(), feeRequest.getPhase(), feeRequest.getSubphase())
         .setCurrencyIfSupported(registry.getCurrency())
-        .setPeriod(feeRequest.getPeriod())
-        .setClass(pricingLogic.getFeeClass(domainNameString, now).orElse(null));
+        .setPeriod(feeRequest.getPeriod());
 
+    String feeClass = null;
     ImmutableList<Fee> fees = ImmutableList.of();
     switch (feeRequest.getCommandName()) {
       case CREATE:
         // Don't return a create price for reserved names.
         if (isReserved(domainName, isSunrise) && !isAvailable) {
-          builder.setClass("reserved"); // Override whatever class we've set above.
+          feeClass = "reserved";
           builder.setAvailIfSupported(false);
           builder.setReasonIfSupported("reserved");
         } else {
@@ -616,15 +618,11 @@ public class DomainFlowUtils {
           throw new RestoresAreAlwaysForOneYearException();
         }
         builder.setAvailIfSupported(true);
-        // The domain object is present only on domain info commands, not on domain check commands,
-        // because check commands can query up to 50 domains and it isn't performant to load them
-        // all. So, only on info commands can we actually determine if we should include the renewal
-        // fee because the domain needs to have been loaded in order to know its expiration time. We
-        // default to including the renewal fee on domain checks because typically most domains are
-        // deleted during the autorenew grace period and thus if restored will require a renewal,
-        // but this is just a best guess.
+        // Domains that never existed, or that used to exist but have completed the entire deletion
+        // process, don't count as expired for the purposes of requiring an added year of renewal on
+        // restore because they can't be restored in the first place.
         boolean isExpired =
-            !domain.isPresent() || domain.get().getRegistrationExpirationTime().isBefore(now);
+            domain.isPresent() && domain.get().getRegistrationExpirationTime().isBefore(now);
         fees = pricingLogic.getRestorePrice(registry, domainNameString, now, isExpired).getFees();
         break;
       case TRANSFER:
@@ -641,6 +639,23 @@ public class DomainFlowUtils {
       default:
         throw new UnknownFeeCommandException(feeRequest.getUnparsedCommandName());
     }
+
+    if (feeClass == null) {
+      // Calculate and set the correct fee class based on whether the name is a collision name or we
+      // are returning any premium fees, but only if the fee class isn't already set (i.e. because
+      // the domain is reserved, which overrides any other classes).
+      boolean isNameCollisionInSunrise =
+          registry.getTldState(now).equals(START_DATE_SUNRISE)
+              && getReservationTypes(domainName).contains(NAME_COLLISION);
+      boolean isPremium = fees.stream().anyMatch(BaseFee::isPremium);
+      feeClass =
+          emptyToNull(
+              Joiner.on('-')
+                  .skipNulls()
+                  .join(
+                      isPremium ? "premium" : null, isNameCollisionInSunrise ? "collision" : null));
+    }
+    builder.setClass(feeClass);
 
     // Set the fees, and based on the validDateRange of the fees, set the notAfterDate.
     if (!fees.isEmpty()) {

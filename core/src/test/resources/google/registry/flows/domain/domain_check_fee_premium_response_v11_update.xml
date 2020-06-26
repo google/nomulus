@@ -21,7 +21,6 @@
           <fee:currency>USD</fee:currency>
           <fee:period unit="y">1</fee:period>
           <fee:fee description="update">0.00</fee:fee>
-          <fee:class>premium</fee:class>
         </fee:cd>
       </fee:chkData>
     </extension>

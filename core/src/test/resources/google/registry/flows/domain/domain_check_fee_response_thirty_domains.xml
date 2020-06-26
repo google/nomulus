@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<epp xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xmlns:contact="urn:ietf:params:xml:ns:contact-1.0" xmlns:fee="urn:ietf:params:xml:ns:fee-0.6" xmlns="urn:ietf:params:xml:ns:epp-1.0" xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0" xmlns:fee11="urn:ietf:params:xml:ns:fee-0.11" xmlns:fee12="urn:ietf:params:xml:ns:fee-0.12" xmlns:launch="urn:ietf:params:xml:ns:launch-1.0" xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1" xmlns:host="urn:ietf:params:xml:ns:host-1.0">
+  <response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <resData>
+      <domain:chkData xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:cd>
+          <domain:name avail="true">example-00.tld</domain:name>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-01.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-02.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-03.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-04.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-05.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-06.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-07.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-08.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-09.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-10.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-11.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-12.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-13.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-14.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-15.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-16.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-17.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-18.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-19.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-20.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-21.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-22.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-23.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-24.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-25.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-26.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-27.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-28.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="false">example-29.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+      </domain:chkData>
+    </resData>
+    <extension>
+      <fee:chkData>
+        <fee:cd>
+          <fee:name>example-00.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-01.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-02.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-03.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-04.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-05.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-06.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-07.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-08.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-09.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-10.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-11.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-12.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-13.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-14.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-15.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-16.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-17.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-18.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-19.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-20.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-21.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-22.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-23.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-24.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-25.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-26.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-27.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-28.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd>
+          <fee:name>example-29.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+      </fee:chkData>
+    </extension>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>
