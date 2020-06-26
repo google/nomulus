@@ -14,7 +14,7 @@
 
 package google.registry.model.reporting;
 
-import static com.google.appengine.repackaged.com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
