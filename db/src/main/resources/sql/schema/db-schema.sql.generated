@@ -408,13 +408,13 @@ create sequence history_id_sequence start 1 increment 1;
         primary key (revision_id)
     );
 
-    create table "SafeBrowsingThreat" (
+    create table "Spec11ThreatMatch" (
        id  bigserial not null,
         check_date text not null,
         domain_name text not null,
         domain_repo_id text not null,
         registrar_id text not null,
-        threat_type text not null,
+        threat_types text[] not null,
         tld text not null,
         primary key (id)
     );
@@ -459,9 +459,9 @@ create index idx_registry_lock_registrar_id on "RegistryLock" (registrar_id);
     alter table if exists "RegistryLock" 
        add constraint idx_registry_lock_repo_id_revision_id unique (repo_id, revision_id);
 create index reservedlist_name_idx on "ReservedList" (name);
-create index safebrowsing_threat_registrar_id_idx on "SafeBrowsingThreat" (registrar_id);
-create index safebrowsing_threat_tld_idx on "SafeBrowsingThreat" (tld);
-create index safebrowsing_threat_check_date_idx on "SafeBrowsingThreat" (check_date);
+create index spec11threatmatch_registrar_id_idx on "Spec11ThreatMatch" (registrar_id);
+create index spec11threatmatch_tld_idx on "Spec11ThreatMatch" (tld);
+create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date);
 
     alter table if exists "ClaimsEntry" 
        add constraint FK6sc6at5hedffc0nhdcab6ivuq 

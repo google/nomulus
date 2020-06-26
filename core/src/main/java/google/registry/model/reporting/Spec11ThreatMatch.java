@@ -14,18 +14,20 @@
 
 package google.registry.model.reporting;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
 import google.registry.util.DomainNameUtils;
+import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -36,11 +38,11 @@ import org.joda.time.LocalDate;
 @Entity
 @Table(
     indexes = {
-      @Index(name = "safebrowsing_threat_registrar_id_idx", columnList = "registrarId"),
-      @Index(name = "safebrowsing_threat_tld_idx", columnList = "tld"),
-      @Index(name = "safebrowsing_threat_check_date_idx", columnList = "checkDate")
+      @Index(name = "spec11threatmatch_registrar_id_idx", columnList = "registrarId"),
+      @Index(name = "spec11threatmatch_tld_idx", columnList = "tld"),
+      @Index(name = "spec11threatmatch_check_date_idx", columnList = "checkDate")
     })
-public class SafeBrowsingThreat extends ImmutableObject implements Buildable, SqlEntity {
+public class Spec11ThreatMatch extends ImmutableObject implements Buildable, SqlEntity {
 
   /** The type of threat detected. */
   public enum ThreatType {
@@ -60,10 +62,9 @@ public class SafeBrowsingThreat extends ImmutableObject implements Buildable, Sq
   @Column(nullable = false)
   String domainName;
 
-  /** The type of threat detected. */
+  /** The types of threat detected. */
   @Column(nullable = false)
-  @Enumerated(EnumType.STRING)
-  ThreatType threatType;
+  Set<ThreatType> threatTypes;
 
   /** Primary key of the domain table and unique identifier for all EPP resources. */
   @Column(nullable = false)
@@ -89,8 +90,8 @@ public class SafeBrowsingThreat extends ImmutableObject implements Buildable, Sq
     return domainName;
   }
 
-  public ThreatType getThreatType() {
-    return threatType;
+  public ImmutableSet<ThreatType> getThreatTypes() {
+    return ImmutableSet.copyOf(threatTypes);
   }
 
   public String getDomainRepoId() {
@@ -119,18 +120,18 @@ public class SafeBrowsingThreat extends ImmutableObject implements Buildable, Sq
     return new Builder(clone(this));
   }
 
-  /** A builder for constructing {@link SafeBrowsingThreat}, since it is immutable. */
-  public static class Builder extends Buildable.Builder<SafeBrowsingThreat> {
+  /** A builder for constructing {@link Spec11ThreatMatch}, since it is immutable. */
+  public static class Builder extends Buildable.Builder<Spec11ThreatMatch> {
     public Builder() {}
 
-    private Builder(SafeBrowsingThreat instance) {
+    private Builder(Spec11ThreatMatch instance) {
       super(instance);
     }
 
     @Override
-    public SafeBrowsingThreat build() {
+    public Spec11ThreatMatch build() {
       checkArgumentNotNull(getInstance().domainName, "Domain name cannot be null");
-      checkArgumentNotNull(getInstance().threatType, "Threat type cannot be null");
+      checkArgumentNotNull(getInstance().threatTypes, "Threat types cannot be null");
       checkArgumentNotNull(getInstance().domainRepoId, "Repo ID cannot be null");
       checkArgumentNotNull(getInstance().registrarId, "Registrar ID cannot be null");
       checkArgumentNotNull(getInstance().checkDate, "Check date cannot be null");
@@ -145,8 +146,10 @@ public class SafeBrowsingThreat extends ImmutableObject implements Buildable, Sq
       return this;
     }
 
-    public Builder setThreatType(ThreatType threatType) {
-      getInstance().threatType = threatType;
+    public Builder setThreatTypes(ImmutableSet<ThreatType> threatTypes) {
+      checkArgument(!isNullOrEmpty(threatTypes), "threatTypes cannot be null or empty.");
+
+      getInstance().threatTypes = threatTypes;
       return this;
     }
 

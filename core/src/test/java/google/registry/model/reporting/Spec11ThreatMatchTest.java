@@ -15,7 +15,8 @@
 package google.registry.model.reporting;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.reporting.SafeBrowsingThreat.ThreatType.MALWARE;
+import static google.registry.model.reporting.Spec11ThreatMatch.ThreatType.MALWARE;
+import static google.registry.model.reporting.Spec11ThreatMatch.ThreatType.UNWANTED_SOFTWARE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
@@ -34,18 +35,18 @@ import org.joda.time.format.ISODateTimeFormat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link SafeBrowsingThreat}. */
-public class SafeBrowsingThreatTest extends EntityTestCase {
+/** Unit tests for {@link Spec11ThreatMatch}. */
+public class Spec11ThreatMatchTest extends EntityTestCase {
 
   private static final String REGISTRAR_ID = "registrar";
   private static final LocalDate DATE = LocalDate.parse("2020-06-10", ISODateTimeFormat.date());
 
-  private SafeBrowsingThreat threat;
+  private Spec11ThreatMatch threat;
   private DomainBase domain;
   private HostResource host;
   private ContactResource registrantContact;
 
-  public SafeBrowsingThreatTest() {
+  public Spec11ThreatMatchTest() {
     super(true);
   }
 
@@ -89,8 +90,8 @@ public class SafeBrowsingThreatTest extends EntityTestCase {
             .build();
 
     threat =
-        new SafeBrowsingThreat.Builder()
-            .setThreatType(MALWARE)
+        new Spec11ThreatMatch.Builder()
+            .setThreatTypes(ImmutableSet.of(MALWARE, UNWANTED_SOFTWARE))
             .setCheckDate(DATE)
             .setDomainName("foo.tld")
             .setDomainRepoId(domainRepoId)
@@ -111,8 +112,8 @@ public class SafeBrowsingThreatTest extends EntityTestCase {
               jpaTm().saveNew(threat);
             });
 
-    VKey<SafeBrowsingThreat> threatVKey = VKey.createSql(SafeBrowsingThreat.class, threat.getId());
-    SafeBrowsingThreat persistedThreat = jpaTm().transact(() -> jpaTm().load(threatVKey));
+    VKey<Spec11ThreatMatch> threatVKey = VKey.createSql(Spec11ThreatMatch.class, threat.getId());
+    Spec11ThreatMatch persistedThreat = jpaTm().transact(() -> jpaTm().load(threatVKey));
     threat.id = persistedThreat.id;
     assertThat(threat).isEqualTo(persistedThreat);
   }
@@ -148,7 +149,7 @@ public class SafeBrowsingThreatTest extends EntityTestCase {
   }
 
   @Test
-  public void testFailure_threatsWithNullFields() {
+  public void testFailure_threatsWithInvalidFields() {
     assertThrows(
         IllegalArgumentException.class, () -> threat.asBuilder().setRegistrarId(null).build());
 
@@ -159,9 +160,12 @@ public class SafeBrowsingThreatTest extends EntityTestCase {
         IllegalArgumentException.class, () -> threat.asBuilder().setCheckDate(null).build());
 
     assertThrows(
-        IllegalArgumentException.class, () -> threat.asBuilder().setThreatType(null).build());
+        IllegalArgumentException.class, () -> threat.asBuilder().setDomainRepoId(null).build());
 
     assertThrows(
-        IllegalArgumentException.class, () -> threat.asBuilder().setDomainRepoId(null).build());
+        IllegalArgumentException.class, () -> threat.asBuilder().setThreatTypes(ImmutableSet.of()));
+
+    assertThrows(
+        IllegalArgumentException.class, () -> threat.asBuilder().setThreatTypes(null).build());
   }
 }

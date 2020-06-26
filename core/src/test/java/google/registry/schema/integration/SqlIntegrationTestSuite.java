@@ -22,7 +22,7 @@ import google.registry.model.domain.DomainBaseSqlTest;
 import google.registry.model.history.HostHistoryTest;
 import google.registry.model.poll.PollMessageTest;
 import google.registry.model.registry.RegistryLockDaoTest;
-import google.registry.model.reporting.SafeBrowsingThreatTest;
+import google.registry.model.reporting.Spec11ThreatMatchTest;
 import google.registry.persistence.transaction.JpaEntityCoverage;
 import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.integration.SqlIntegrationTestSuite.AfterSuiteTest;
@@ -84,7 +84,7 @@ import org.junit.runner.RunWith;
   RegistrarDaoTest.class,
   RegistryLockDaoTest.class,
   ReservedListDaoTest.class,
-  SafeBrowsingThreatTest.class,
+  Spec11ThreatMatchTest.class,
   // AfterSuiteTest must be the last entry. See class javadoc for details.
   AfterSuiteTest.class
 })
