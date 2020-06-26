@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.googlecode.objectify.Result;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
@@ -43,6 +44,11 @@ import org.joda.time.DateTime;
 public final class RdeStagingMapper extends Mapper<EppResource, PendingDeposit, DepositFragment> {
 
   private static final long serialVersionUID = -1518185703789372524L;
+
+  // Registrars to be excluded from data escrow. Not including the sandbox-only OTE type so that
+  // if sneaks into production we would get an extra signal.
+  private static final ImmutableSet<Registrar.Type> IGNORED_REGISTRAR_TYPES =
+      Sets.immutableEnumSet(Registrar.Type.MONITORING, Registrar.Type.TEST);
 
   private final RdeMarshaller marshaller;
   private final ImmutableSetMultimap<String, PendingDeposit> pendings;
@@ -64,6 +70,9 @@ public final class RdeStagingMapper extends Mapper<EppResource, PendingDeposit, 
     if (resource == null) {
       long registrarsEmitted = 0;
       for (Registrar registrar : Registrar.loadAllCached()) {
+        if (IGNORED_REGISTRAR_TYPES.contains(registrar.getType())) {
+          continue;
+        }
         DepositFragment fragment = marshaller.marshalRegistrar(registrar);
         for (PendingDeposit pending : pendings.values()) {
           emit(pending, fragment);
