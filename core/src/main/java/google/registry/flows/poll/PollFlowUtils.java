@@ -43,7 +43,7 @@ public final class PollFlowUtils {
    * do so is if an autorenew poll message is acked, but its next event is already ready to be
    * delivered.
    */
-  public static boolean ackPollMessage(PollMessage pollMessage, DateTime now) {
+  public static boolean ackPollMessage(PollMessage pollMessage) {
     boolean includeAckedMessageInCount = false;
     if (pollMessage instanceof PollMessage.OneTime) {
       // One-time poll messages are deleted once acked.
@@ -60,7 +60,7 @@ public final class PollFlowUtils {
       // autorenew poll message has no more events to deliver and should be deleted.
       if (nextEventTime.isBefore(autorenewPollMessage.getAutorenewEndTime())) {
         tm().saveNewOrUpdate(autorenewPollMessage.asBuilder().setEventTime(nextEventTime).build());
-        includeAckedMessageInCount = isBeforeOrAt(nextEventTime, now);
+        includeAckedMessageInCount = isBeforeOrAt(nextEventTime, tm().getTransactionTime());
       } else {
         tm().delete(autorenewPollMessage.createVKey());
       }

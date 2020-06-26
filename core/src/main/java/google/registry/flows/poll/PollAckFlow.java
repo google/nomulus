@@ -100,7 +100,7 @@ public class PollAckFlow implements TransactionalFlow {
     // This keeps track of whether we should include the current acked message in the updated
     // message count that's returned to the user. The only case where we do so is if an autorenew
     // poll message is acked, but its next event is already ready to be delivered.
-    boolean includeAckedMessageInCount = ackPollMessage(pollMessage, now);
+    boolean includeAckedMessageInCount = ackPollMessage(pollMessage);
 
     // We need to return the new queue length. If this was the last message in the queue being
     // acked, then we return a special status code indicating that. Note that the query will

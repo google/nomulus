@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.flows.poll.PollFlowUtils.ackPollMessage;
 import static google.registry.flows.poll.PollFlowUtils.getPollMessagesQuery;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.makePollMessageExternalId;
@@ -29,6 +28,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.cmd.QueryKeys;
+import google.registry.flows.poll.PollFlowUtils;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.poll.PollMessage.OneTime;
@@ -96,7 +96,7 @@ final class AckPollMessagesCommand implements CommandWithRemoteApi {
                         .filter(pm -> isNullOrEmpty(message) || pm.getMsg().contains(message))
                         .collect(toImmutableList());
                 if (!dryRun) {
-                  pollMessages.forEach(pollMessage -> ackPollMessage(pollMessage, now));
+                  pollMessages.forEach(PollFlowUtils::ackPollMessage);
                 }
                 pollMessages.forEach(
                     pm ->
