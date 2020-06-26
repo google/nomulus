@@ -50,6 +50,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.inject.Inject;
+import javax.inject.Named;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -64,7 +65,7 @@ public final class KmsUpdater {
   private final HashMap<String, byte[]> secretValues;
 
   @Inject
-  public KmsUpdater(KmsConnection kmsConnection) {
+  public KmsUpdater(@Named("defaultKmsConnection") KmsConnection kmsConnection) {
     this.kmsConnection = kmsConnection;
 
     // Use LinkedHashMap to preserve insertion order on update() to simplify testing and debugging

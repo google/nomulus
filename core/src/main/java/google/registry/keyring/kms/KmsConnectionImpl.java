@@ -25,11 +25,9 @@ import com.google.api.services.cloudkms.v1.model.DecryptRequest;
 import com.google.api.services.cloudkms.v1.model.EncryptRequest;
 import com.google.api.services.cloudkms.v1.model.KeyRing;
 import com.google.api.services.cloudkms.v1.model.UpdateCryptoKeyPrimaryVersionRequest;
-import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.KeyringException;
 import google.registry.util.Retrier;
 import java.io.IOException;
-import javax.inject.Inject;
 
 /** The {@link KmsConnection} which talks to Cloud KMS. */
 class KmsConnectionImpl implements KmsConnection {
@@ -44,12 +42,7 @@ class KmsConnectionImpl implements KmsConnection {
   private final String projectId;
   private final Retrier retrier;
 
-  @Inject
-  KmsConnectionImpl(
-      @Config("cloudKmsProjectId") String projectId,
-      @Config("cloudKmsKeyRing") String kmsKeyRingName,
-      Retrier retrier,
-      CloudKMS kms) {
+  KmsConnectionImpl(String projectId, String kmsKeyRingName, Retrier retrier, CloudKMS kms) {
     this.projectId = projectId;
     this.kmsKeyRingName = kmsKeyRingName;
     this.retrier = retrier;

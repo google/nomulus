@@ -18,6 +18,7 @@ import dagger.BindsInstance;
 import dagger.Component;
 import dagger.Lazy;
 import google.registry.batch.BatchModule;
+import google.registry.beam.initsql.BeamJpaModule;
 import google.registry.bigquery.BigqueryModule;
 import google.registry.config.CredentialModule.LocalCredentialJson;
 import google.registry.config.RegistryConfig.ConfigModule;
@@ -57,6 +58,7 @@ import javax.inject.Singleton;
       AppEngineAdminApiModule.class,
       AuthModule.class,
       BatchModule.class,
+      BeamJpaModule.class,
       BigqueryModule.class,
       ConfigModule.class,
       CloudDnsWriterModule.class,
@@ -130,7 +132,9 @@ interface RegistryToolComponent {
   @Component.Builder
   interface Builder {
     @BindsInstance
-    Builder credentialFilename(@Nullable @Named("credentialFileName") String credentialFilename);
+    Builder credentialFilePath(@Nullable @Named("credentialFilePath") String credentialFilePath);
+
+    Builder beamJpaModule(BeamJpaModule beamJpaModule);
 
     RegistryToolComponent build();
   }

@@ -27,6 +27,7 @@ import google.registry.keyring.api.KeyringException;
 import google.registry.model.server.KmsSecret;
 import java.io.IOException;
 import javax.inject.Inject;
+import javax.inject.Named;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
@@ -86,7 +87,7 @@ public class KmsKeyring implements Keyring {
   private final KmsConnection kmsConnection;
 
   @Inject
-  KmsKeyring(KmsConnection kmsConnection) {
+  KmsKeyring(@Named("defaultKmsConnection") KmsConnection kmsConnection) {
     this.kmsConnection = kmsConnection;
   }
 

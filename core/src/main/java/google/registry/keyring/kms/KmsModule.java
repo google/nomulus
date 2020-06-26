@@ -24,6 +24,8 @@ import google.registry.config.CredentialModule.DefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.Keyring;
 import google.registry.util.GoogleCredentialsBundle;
+import google.registry.util.Retrier;
+import javax.inject.Named;
 
 /** Dagger module for Cloud KMS. */
 @Module
@@ -32,9 +34,22 @@ public abstract class KmsModule {
   public static final String NAME = "KMS";
 
   @Provides
+  @Named("defaultKms")
   static CloudKMS provideKms(
       @DefaultCredential GoogleCredentialsBundle credentialsBundle,
       @Config("cloudKmsProjectId") String projectId) {
+    return createKms(credentialsBundle, projectId);
+  }
+
+  @Provides
+  @Named("beamKms")
+  static CloudKMS provideBeamKms(
+      @DefaultCredential GoogleCredentialsBundle credentialsBundle,
+      @Config("beamCloudKmsProjectId") String projectId) {
+    return createKms(credentialsBundle, projectId);
+  }
+
+  private static CloudKMS createKms(GoogleCredentialsBundle credentialsBundle, String projectId) {
     return new CloudKMS.Builder(
             credentialsBundle.getHttpTransport(),
             credentialsBundle.getJsonFactory(),
@@ -43,11 +58,28 @@ public abstract class KmsModule {
         .build();
   }
 
+  @Provides
+  @Named("defaultKmsConnection")
+  static KmsConnection provideKmsConnection(
+      @Config("cloudKmsProjectId") String projectId,
+      @Config("cloudKmsKeyRing") String keyringName,
+      Retrier retrier,
+      @Named("defaultKms") CloudKMS defaultKms) {
+    return new KmsConnectionImpl(projectId, keyringName, retrier, defaultKms);
+  }
+
+  @Provides
+  @Named("beamKmsConnection")
+  static KmsConnection provideBeamKmsConnection(
+      @Config("beamCloudKmsProjectId") String projectId,
+      @Config("beamCloudKmsKeyRing") String keyringName,
+      Retrier retrier,
+      @Named("beamKms") CloudKMS defaultKms) {
+    return new KmsConnectionImpl(projectId, keyringName, retrier, defaultKms);
+  }
+
   @Binds
   @IntoMap
   @StringKey(NAME)
   abstract Keyring provideKeyring(KmsKeyring keyring);
-
-  @Binds
-  abstract KmsConnection provideKmsConnection(KmsConnectionImpl kmsConnectionImpl);
 }

@@ -25,9 +25,9 @@ import dagger.Component;
 import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.beam.initsql.BeamJpaModule.BindModule;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.keyring.kms.KmsModule;
 import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceModule.JdbcJpaTm;
@@ -37,12 +37,14 @@ import google.registry.util.Clock;
 import google.registry.util.Sleeper;
 import google.registry.util.SystemClock;
 import google.registry.util.SystemSleeper;
+import google.registry.util.UtilsModule;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.channels.Channels;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.apache.beam.sdk.io.FileSystems;
@@ -53,27 +55,31 @@ import org.apache.beam.sdk.io.fs.ResourceId;
  *
  * <p>This module is intended for use in BEAM pipelines, and uses a BEAM utility to access GCS like
  * a regular file system.
- *
- * <p>Note that {@link google.registry.config.RegistryConfig.ConfigModule} cannot be used here,
- * since many bindings, especially KMS-related ones, are different.
  */
-@Module(includes = {BindModule.class})
-class BeamJpaModule {
+@Module
+public class BeamJpaModule {
 
   private static final String GCS_SCHEME = "gs://";
 
-  private final String credentialFilePath;
+  @Nullable private final String credentialFilePath;
 
   /**
    * Constructs a new instance of {@link BeamJpaModule}.
+   *
+   * <p>Note: it is an unfortunately necessary antipattern to check for the validity of
+   * credentialFilePath in {@link #provideCloudSqlAccessInfo} rather than in the constructor.
+   * Unfortunately, this is a restriction imposed upon us by Dagger. Specifically, because we use
+   * this in at least one 1 {@link google.registry.tools.RegistryTool} command(s), it must be
+   * instantiated in {@link google.registry.tools.RegistryToolComponent} for all possible commands;
+   * Dagger doesn't permit it to ever be null. For the vast majority of commands, it will never be
+   * used (so a null credential file path is fine in those cases).
    *
    * @param credentialFilePath the path to a Cloud SQL credential file. This must refer to either a
    *     real encrypted file on GCS as returned by {@link
    *     BackupPaths#getCloudSQLCredentialFilePatterns} or an unencrypted file on local filesystem
    *     with credentials to a test database.
    */
-  BeamJpaModule(String credentialFilePath) {
-    checkArgument(!isNullOrEmpty(credentialFilePath), "Null or empty credentialFilePath");
+  public BeamJpaModule(@Nullable String credentialFilePath) {
     this.credentialFilePath = credentialFilePath;
   }
 
@@ -85,6 +91,7 @@ class BeamJpaModule {
   @Provides
   @Singleton
   SqlAccessInfo provideCloudSqlAccessInfo(Lazy<CloudSqlCredentialDecryptor> lazyDecryptor) {
+    checkArgument(!isNullOrEmpty(credentialFilePath), "Null or empty credentialFilePath");
     String line = readOnlyLineFromCredentialFile();
     if (isCloudSqlCredential()) {
       line = lazyDecryptor.get().decrypt(line);
@@ -114,13 +121,13 @@ class BeamJpaModule {
   }
 
   @Provides
-  @Config("cloudSqlJdbcUrl")
+  @Config("beamCloudSqlJdbcUrl")
   String provideJdbcUrl(SqlAccessInfo sqlAccessInfo) {
     return sqlAccessInfo.jdbcUrl();
   }
 
   @Provides
-  @Config("cloudSqlInstanceConnectionName")
+  @Config("beamCloudSqlInstanceConnectionName")
   String provideSqlInstanceName(SqlAccessInfo sqlAccessInfo) {
     return sqlAccessInfo
         .cloudSqlInstanceName()
@@ -128,37 +135,37 @@ class BeamJpaModule {
   }
 
   @Provides
-  @Config("cloudSqlUsername")
+  @Config("beamCloudSqlUsername")
   String provideSqlUsername(SqlAccessInfo sqlAccessInfo) {
     return sqlAccessInfo.user();
   }
 
   @Provides
-  @Config("cloudSqlPassword")
+  @Config("beamCloudSqlPassword")
   String provideSqlPassword(SqlAccessInfo sqlAccessInfo) {
     return sqlAccessInfo.password();
   }
 
   @Provides
-  @Config("cloudKmsProjectId")
+  @Config("beamCloudKmsProjectId")
   static String kmsProjectId() {
     return "domain-registry-dev";
   }
 
   @Provides
-  @Config("cloudKmsKeyRing")
+  @Config("beamCloudKmsKeyRing")
   static String keyRingName() {
     return "nomulus-tool-keyring";
   }
 
   @Provides
-  @Config("defaultCredentialOauthScopes")
+  @Config("beamDefaultCredentialOauthScopes")
   static ImmutableList<String> defaultCredentialOauthScopes() {
     return ImmutableList.of("https://www.googleapis.com/auth/cloud-platform");
   }
 
   @Provides
-  @Named("transientFailureRetries")
+  @Named("beamTransientFailureRetries")
   static int transientFailureRetries() {
     return 12;
   }
@@ -176,10 +183,12 @@ class BeamJpaModule {
   @Singleton
   @Component(
       modules = {
+        ConfigModule.class,
         CredentialModule.class,
         BeamJpaModule.class,
         KmsModule.class,
-        PersistenceModule.class
+        PersistenceModule.class,
+        UtilsModule.class
       })
   public interface JpaTransactionManagerComponent {
     @SocketFactoryJpaTm

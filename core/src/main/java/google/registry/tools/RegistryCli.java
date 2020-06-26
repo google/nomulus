@@ -29,6 +29,7 @@ import com.google.appengine.tools.remoteapi.RemoteApiOptions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
+import google.registry.beam.initsql.BeamJpaModule;
 import google.registry.config.RegistryConfig;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.persistence.transaction.TransactionManagerFactory;
@@ -153,11 +154,15 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
       return;
     }
 
-    checkState(RegistryToolEnvironment.get() == environment,
+    checkState(
+        RegistryToolEnvironment.get() == environment,
         "RegistryToolEnvironment argument pre-processing kludge failed.");
 
     component =
-        DaggerRegistryToolComponent.builder().credentialFilename(credentialJson).build();
+        DaggerRegistryToolComponent.builder()
+            .credentialFilePath(credentialJson)
+            .beamJpaModule(new BeamJpaModule(credentialJson))
+            .build();
 
     // JCommander stores sub-commands as nested JCommander objects containing a list of user objects
     // to be populated.  Extract the subcommand by getting the JCommander wrapper and then
