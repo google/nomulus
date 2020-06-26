@@ -364,9 +364,11 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   /**
    * A limited size, limited time cache for EPP resource entities.
    *
-   * <p>This is only used to cache contacts and hosts for the purposes of checking whether they are
-   * deleted or in pending delete during a few domain flows. Any operations on contacts and hosts
-   * directly should of course never use the cache.
+   * <p>This is used to cache contacts and hosts for the purposes of checking whether they are
+   * deleted or in pending delete during a few domain flows, and also to cache domains for the
+   * purpose of determining restore fees in domain checks. Any mutating operations directly on EPP
+   * resources should of course never use the cache as they always need perfectly up-to-date
+   * information.
    */
   @NonFinalForTesting
   private static LoadingCache<VKey<? extends EppResource>, EppResource> cacheEppResources =

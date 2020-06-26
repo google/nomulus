@@ -60,7 +60,6 @@
           </fee:object>
           <fee:command name="restore">
             <fee:period unit="y">1</fee:period>
-            <fee:fee description="renew">11.00</fee:fee>
             <fee:fee description="restore">17.00</fee:fee>
           </fee:command>
         </fee:cd>
@@ -97,7 +96,6 @@
           </fee:object>
           <fee:command name="restore">
             <fee:period unit="y">1</fee:period>
-            <fee:fee description="renew">11.00</fee:fee>
             <fee:fee description="restore">17.00</fee:fee>
           </fee:command>
         </fee:cd>
@@ -134,7 +132,6 @@
           </fee:object>
           <fee:command name="restore">
             <fee:period unit="y">1</fee:period>
-            <fee:fee description="renew">11.00</fee:fee>
             <fee:fee description="restore">17.00</fee:fee>
           </fee:command>
         </fee:cd>
@@ -173,9 +170,7 @@
           </fee:object>
           <fee:command name="restore">
             <fee:period unit="y">1</fee:period>
-            <fee:fee description="renew">70.00</fee:fee>
             <fee:fee description="restore">17.00</fee:fee>
-            <fee:class>premium</fee:class>
           </fee:command>
         </fee:cd>
       </fee:chkData>

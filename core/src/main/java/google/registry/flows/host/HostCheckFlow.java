@@ -19,6 +19,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyTargetIdCount;
 import static google.registry.model.EppResourceUtils.checkResourcesExist;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
@@ -33,8 +34,6 @@ import google.registry.model.host.HostCommand.Check;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.util.Clock;
-import java.util.List;
-import java.util.Set;
 import javax.inject.Inject;
 
 /**
@@ -59,13 +58,14 @@ public final class HostCheckFlow implements Flow {
   public final EppResponse run() throws EppException {
     extensionManager.validate();  // There are no legal extensions for this flow.
     validateClientIsLoggedIn(clientId);
-    List<String> targetIds = ((Check) resourceCommand).getTargetIds();
-    verifyTargetIdCount(targetIds, maxChecks);
-    Set<String> existingIds = checkResourcesExist(HostResource.class, targetIds, clock.nowUtc());
+    ImmutableList<String> hostnames = ((Check) resourceCommand).getTargetIds();
+    verifyTargetIdCount(hostnames, maxChecks);
+    ImmutableSet<String> existingIds =
+        checkResourcesExist(HostResource.class, hostnames, clock.nowUtc());
     ImmutableList.Builder<HostCheck> checks = new ImmutableList.Builder<>();
-    for (String id : targetIds) {
-      boolean unused = !existingIds.contains(id);
-      checks.add(HostCheck.create(unused, id, unused ? null : "In use"));
+    for (String hostname : hostnames) {
+      boolean unused = !existingIds.contains(hostname);
+      checks.add(HostCheck.create(unused, hostname, unused ? null : "In use"));
     }
     return responseBuilder.setResData(HostCheckData.create(checks.build())).build();
   }

@@ -19,6 +19,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyTargetIdCount;
 import static google.registry.model.EppResourceUtils.checkResourcesExist;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
@@ -33,8 +34,6 @@ import google.registry.model.eppoutput.CheckData.ContactCheckData;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.util.Clock;
-import java.util.List;
-import java.util.Set;
 import javax.inject.Inject;
 
 /**
@@ -59,9 +58,10 @@ public final class ContactCheckFlow implements Flow {
   public final EppResponse run() throws EppException {
     extensionManager.validate();  // There are no legal extensions for this flow.
     validateClientIsLoggedIn(clientId);
-    List<String> targetIds = ((Check) resourceCommand).getTargetIds();
+    ImmutableList<String> targetIds = ((Check) resourceCommand).getTargetIds();
     verifyTargetIdCount(targetIds, maxChecks);
-    Set<String> existingIds = checkResourcesExist(ContactResource.class, targetIds, clock.nowUtc());
+    ImmutableSet<String> existingIds =
+        checkResourcesExist(ContactResource.class, targetIds, clock.nowUtc());
     ImmutableList.Builder<ContactCheck> checks = new ImmutableList.Builder<>();
     for (String id : targetIds) {
       boolean unused = !existingIds.contains(id);

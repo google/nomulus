@@ -23,6 +23,7 @@ import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.latestOf;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Result;
@@ -45,7 +46,6 @@ import google.registry.model.transfer.TransferStatus;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
@@ -169,7 +169,7 @@ public final class EppResourceUtils {
    * @param uniqueIds a list of ids to match
    * @param now the logical time of the check
    */
-  public static <T extends EppResource> Set<String> checkResourcesExist(
+  public static <T extends EppResource> ImmutableSet<String> checkResourcesExist(
       Class<T> clazz, List<String> uniqueIds, final DateTime now) {
     return ForeignKeyIndex.load(clazz, uniqueIds, now).keySet();
   }
