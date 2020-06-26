@@ -15,6 +15,8 @@
 package google.registry.model.reporting;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.reporting.Spec11ThreatMatch.ThreatType.MALWARE;
+import static google.registry.model.reporting.Spec11ThreatMatch.ThreatType.UNWANTED_SOFTWARE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
@@ -89,7 +91,7 @@ public class Spec11ThreatMatchTest extends EntityTestCase {
 
     threat =
         new Spec11ThreatMatch.Builder()
-            .setThreatTypes(ImmutableSet.of(Spec11ThreatMatch.ThreatType.MALWARE))
+            .setThreatTypes(ImmutableSet.of(MALWARE, UNWANTED_SOFTWARE))
             .setCheckDate(DATE)
             .setDomainName("foo.tld")
             .setDomainRepoId(domainRepoId)
