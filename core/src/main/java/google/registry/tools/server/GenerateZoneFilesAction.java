@@ -214,7 +214,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
     private void emitForSubordinateHosts(DomainBase domain) {
       ImmutableSet<String> subordinateHosts = domain.getSubordinateHosts();
       if (!subordinateHosts.isEmpty()) {
-        for (HostResource unprojectedHost : tm().load(domain.getNameservers())) {
+        for (HostResource unprojectedHost : tm().load(domain.getNameservers()).values()) {
           HostResource host = loadAtPointInTime(unprojectedHost, exportTime).now();
           // A null means the host was deleted (or not created) at this time.
           if ((host != null) && subordinateHosts.contains(host.getHostName())) {
@@ -283,7 +283,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
       Duration dnsDefaultDsTtl) {
     StringBuilder result = new StringBuilder();
     String domainLabel = stripTld(domain.getDomainName(), domain.getTld());
-    for (HostResource nameserver : tm().load(domain.getNameservers())) {
+    for (HostResource nameserver : tm().load(domain.getNameservers()).values()) {
       result.append(
           String.format(
               NS_FORMAT,

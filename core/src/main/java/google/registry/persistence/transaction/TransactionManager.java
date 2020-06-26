@@ -16,6 +16,7 @@ package google.registry.persistence.transaction;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import google.registry.persistence.VKey;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -119,7 +120,7 @@ public interface TransactionManager {
    *
    * @throws NoSuchElementException if any of the keys are not found.
    */
-  <T> ImmutableList<T> load(Iterable<VKey<T>> keys);
+  <T> ImmutableMap<VKey<? extends T>, T> load(Iterable<? extends VKey<? extends T>> keys);
 
   /** Loads all entities of the given type, returns empty if there is no such entity. */
   <T> ImmutableList<T> loadAll(Class<T> clazz);

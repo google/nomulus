@@ -21,6 +21,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -35,6 +36,7 @@ import google.registry.testing.InjectRule;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -270,6 +272,40 @@ public class TransactionManagerTest {
     fakeClock.advanceOneMilli();
     tm().transact(() -> tm().delete(keys));
     assertAllEntitiesNotExist(moreEntities);
+  }
+
+  @TestTemplate
+  void load_multi() {
+    assertAllEntitiesNotExist(moreEntities);
+    tm().transact(() -> tm().saveAllNew(moreEntities));
+    List<VKey<TestEntity>> keys =
+        moreEntities.stream().map(TestEntity::key).collect(toImmutableList());
+    assertThat(tm().transact(() -> tm().load(keys)))
+        .isEqualTo(Maps.uniqueIndex(moreEntities, TestEntity::key));
+  }
+
+  @TestTemplate
+  void load_multiWithDuplicateKeys() {
+    assertAllEntitiesNotExist(moreEntities);
+    tm().transact(() -> tm().saveAllNew(moreEntities));
+    ImmutableList<VKey<TestEntity>> keys =
+        moreEntities.stream().map(TestEntity::key).collect(toImmutableList());
+    ImmutableList<VKey<TestEntity>> doubleKeys =
+        Stream.concat(keys.stream(), keys.stream()).collect(toImmutableList());
+    assertThat(tm().transact(() -> tm().load(doubleKeys)))
+        .isEqualTo(Maps.uniqueIndex(moreEntities, TestEntity::key));
+  }
+
+  @TestTemplate
+  void load_multiMissingKeys() {
+    assertAllEntitiesNotExist(moreEntities);
+    tm().transact(() -> tm().saveAllNew(moreEntities));
+    List<VKey<TestEntity>> keys =
+        Stream.concat(moreEntities.stream(), Stream.of(new TestEntity("dark", "matter")))
+            .map(TestEntity::key)
+            .collect(toImmutableList());
+    assertThat(tm().transact(() -> tm().load(keys)))
+        .isEqualTo(Maps.uniqueIndex(moreEntities, TestEntity::key));
   }
 
   private static void assertEntityExists(TestEntity entity) {
