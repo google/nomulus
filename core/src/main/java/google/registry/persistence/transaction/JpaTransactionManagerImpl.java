@@ -263,14 +263,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         // Accept duplicate keys.
         .distinct()
         .map(
-            key -> {
-              T entity = getEntityManager().find(key.getKind(), key.getSqlKey());
-              if (entity == null) {
-                throw new NoSuchElementException(
-                    key.getKind().getName() + " with key " + key.getSqlKey() + " not found.");
-              }
-              return new SimpleEntry<VKey<? extends T>, T>(key, entity);
-            })
+            key ->
+                new SimpleEntry<VKey<? extends T>, T>(
+                    key, getEntityManager().find(key.getKind(), key.getSqlKey())))
+        .filter(entry -> entry.getValue() != null)
         .collect(toImmutableMap(Entry::getKey, Entry::getValue));
   }
 
