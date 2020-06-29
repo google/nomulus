@@ -455,6 +455,12 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
                     () ->
                         new FormException(
                             "Not allowed to set registry lock password directly on new contact"));
+        // Can't modify registry lock email address
+        if (!Objects.equals(
+            updatedContact.getRegistryLockEmailAddress(),
+            existingContact.getRegistryLockEmailAddress())) {
+          throw new FormException("Cannot modify registry lock email address through the UI");
+        }
         if (updatedContact.isRegistryLockAllowed()) {
           // the password must have been set before or the user was allowed to set it now
           if (!existingContact.isAllowedToSetRegistryLockPassword()

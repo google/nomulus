@@ -176,6 +176,10 @@
     {if isNonnull($item['gaeUserId'])}
       <input type="hidden" name="{$namePrefix}gaeUserId" value="{$item['gaeUserId']}">
     {/if}
+    {if isNonnull($item['registryLockEmailAddress'])}
+      <input type="hidden" name="{$namePrefix}registryLockEmailAddress"
+             value="{$item['registryLockEmailAddress']}">
+    {/if}
   </div>
 {/template}
 
