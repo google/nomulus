@@ -29,27 +29,24 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Implementation of {@link ReservedListDao} for the dual-write with Datastore as the primary
- * storage.
+ * A {@link ReservedList} DAO that does dual-write and dual-read against Datastore and Cloud SQL. It
+ * still uses Datastore as the primary storage and suppresses any exception thrown by Cloud SQL.
+ *
+ * <p>TODO(b/160993806): Delete this DAO and switch to use the SQL only DAO after migrating to Cloud
+ * SQL.
  */
-public class ReservedListDualDao implements ReservedListDao {
+public class ReservedListDualWriteDao {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private static final ReservedListDualDao instance = new ReservedListDualDao();
+  private ReservedListDualWriteDao() {}
 
-  private ReservedListDualDao() {}
-
-  public static ReservedListDualDao getInstance() {
-    return instance;
-  }
-
-  @Override
-  public void save(ReservedList reservedList) {
+  /** Persist a new reserved list to Cloud SQL. */
+  public static void save(ReservedList reservedList) {
     ofyTm().transact(() -> ofyTm().saveNewOrUpdate(reservedList));
     try {
       logger.atInfo().log("Saving reserved list %s to Cloud SQL", reservedList.getName());
-      ReservedListSqlDao.getInstance().save(reservedList);
+      ReservedListSqlDao.save(reservedList);
       logger.atInfo().log(
           "Saved reserved list %s with %d entries to Cloud SQL",
           reservedList.getName(), reservedList.getReservedListEntries().size());
@@ -58,8 +55,11 @@ public class ReservedListDualDao implements ReservedListDao {
     }
   }
 
-  @Override
-  public Optional<ReservedList> getLatestRevision(String reservedListName) {
+  /**
+   * Returns the most recent revision of the {@link ReservedList} with the specified name, if it
+   * exists.
+   */
+  public static Optional<ReservedList> getLatestRevision(String reservedListName) {
     Optional<ReservedList> maybeDatastoreList =
         ofyTm()
             .maybeLoad(
@@ -68,7 +68,7 @@ public class ReservedListDualDao implements ReservedListDao {
                     Key.create(getCrossTldKey(), ReservedList.class, reservedListName)));
     try {
       // Also load the list from Cloud SQL, compare the two lists, and log if different.
-      maybeDatastoreList.ifPresent(ReservedListDualDao::loadAndCompareCloudSqlList);
+      maybeDatastoreList.ifPresent(ReservedListDualWriteDao::loadAndCompareCloudSqlList);
     } catch (Throwable t) {
       logger.atSevere().withCause(t).log("Error comparing reserved lists.");
     }
@@ -77,7 +77,7 @@ public class ReservedListDualDao implements ReservedListDao {
 
   private static void loadAndCompareCloudSqlList(ReservedList datastoreList) {
     Optional<ReservedList> maybeCloudSqlList =
-        ReservedListSqlDao.getInstance().getLatestRevision(datastoreList.getName());
+        ReservedListSqlDao.getLatestRevision(datastoreList.getName());
     if (maybeCloudSqlList.isPresent()) {
       Map<String, ReservedListEntry> datastoreLabelsToReservations =
           datastoreList.reservedListMap.entrySet().parallelStream()

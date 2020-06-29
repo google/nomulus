@@ -19,25 +19,26 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import java.util.Optional;
 
-/** Implementation of {@link ReservedListDao} for Cloud SQL. */
-public class ReservedListSqlDao implements ReservedListDao {
-
-  private static final ReservedListSqlDao instance = new ReservedListSqlDao();
+/**
+ * A {@link ReservedList} DAO for Cloud SQL.
+ *
+ * <p>TODO(b/160993806): Rename this class to ReservedListDao after migrating to Cloud SQL.
+ */
+public class ReservedListSqlDao {
 
   private ReservedListSqlDao() {}
 
-  public static ReservedListSqlDao getInstance() {
-    return instance;
-  }
-
-  @Override
-  public void save(ReservedList reservedList) {
+  /** Persist a new reserved list to Cloud SQL. */
+  public static void save(ReservedList reservedList) {
     checkArgumentNotNull(reservedList, "Must specify reservedList");
     jpaTm().transact(() -> jpaTm().saveNew(reservedList));
   }
 
-  @Override
-  public Optional<ReservedList> getLatestRevision(String reservedListName) {
+  /**
+   * Returns the most recent revision of the {@link ReservedList} with the specified name, if it
+   * exists.
+   */
+  public static Optional<ReservedList> getLatestRevision(String reservedListName) {
     return jpaTm()
         .transact(
             () ->

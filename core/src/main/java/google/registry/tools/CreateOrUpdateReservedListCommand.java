@@ -14,11 +14,10 @@
 
 package google.registry.tools;
 
-import static google.registry.model.registry.label.ReservedListDaoFactory.reservedListDao;
-
 import com.beust.jcommander.Parameter;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.registry.label.ReservedList;
+import google.registry.model.registry.label.ReservedListDualWriteDao;
 import google.registry.tools.params.PathParameter;
 import java.nio.file.Path;
 import javax.annotation.Nullable;
@@ -62,7 +61,7 @@ public abstract class CreateOrUpdateReservedListCommand extends MutatingCommand 
             name, reservedList.getReservedListEntries().size());
     try {
       logger.atInfo().log("Saving reserved list for TLD %s", name);
-      reservedListDao().save(reservedList);
+      ReservedListDualWriteDao.save(reservedList);
       logger.atInfo().log(message);
     } catch (Throwable e) {
       message = "Unexpected error saving reserved list from nomulus tool command";

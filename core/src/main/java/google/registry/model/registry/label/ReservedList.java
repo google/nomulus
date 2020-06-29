@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
-import static google.registry.model.registry.label.ReservedListDaoFactory.reservedListDao;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.joda.time.DateTimeZone.UTC;
@@ -247,7 +246,7 @@ public final class ReservedList
               new CacheLoader<String, ReservedList>() {
                 @Override
                 public ReservedList load(String listName) {
-                  return reservedListDao().getLatestRevision(listName).orElse(null);
+                  return ReservedListDualWriteDao.getLatestRevision(listName).orElse(null);
                 }
               });
 
