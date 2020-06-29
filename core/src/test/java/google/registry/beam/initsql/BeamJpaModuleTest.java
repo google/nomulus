@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import google.registry.persistence.NomulusPostgreSql;
 import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.testing.DatastoreEntityExtension;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -26,6 +27,7 @@ import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -37,6 +39,9 @@ public class BeamJpaModuleTest {
 
   @Container
   public PostgreSQLContainer database = new PostgreSQLContainer(NomulusPostgreSql.getDockerTag());
+
+  @RegisterExtension
+  public DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
   @TempDir File tempFolder;
 
@@ -51,7 +56,7 @@ public class BeamJpaModuleTest {
   }
 
   @Test
-  public void getJpaTransactionManager_local() {
+  void getJpaTransactionManager_local() {
     JpaTransactionManager jpa =
         DaggerBeamJpaModule_JpaTransactionManagerComponent.builder()
             .beamJpaModule(new BeamJpaModule(credentialFile.getAbsolutePath()))
