@@ -21,6 +21,7 @@ import google.registry.batch.BatchModule;
 import google.registry.beam.initsql.BeamJpaModule;
 import google.registry.bigquery.BigqueryModule;
 import google.registry.config.CredentialModule.LocalCredentialJson;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.dns.writer.VoidDnsWriterModule;
 import google.registry.dns.writer.clouddns.CloudDnsWriterModule;
@@ -43,7 +44,6 @@ import google.registry.tools.AuthModule.LocalCredentialModule;
 import google.registry.util.UtilsModule;
 import google.registry.whois.WhoisModule;
 import javax.annotation.Nullable;
-import javax.inject.Named;
 import javax.inject.Singleton;
 
 /**
@@ -132,7 +132,7 @@ interface RegistryToolComponent {
   @Component.Builder
   interface Builder {
     @BindsInstance
-    Builder credentialFilePath(@Nullable @Named("credentialFilePath") String credentialFilePath);
+    Builder credentialFilePath(@Nullable @Config("credentialFilePath") String credentialFilePath);
 
     Builder beamJpaModule(BeamJpaModule beamJpaModule);
 

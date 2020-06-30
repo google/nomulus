@@ -18,11 +18,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.api.services.cloudkms.v1.model.DecryptRequest;
 import com.google.common.base.Strings;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.kms.KmsConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import javax.inject.Inject;
-import javax.inject.Named;
 
 /**
  * Decrypts data using Cloud KMS, with the same crypto key with which Cloud SQL credential files on
@@ -35,7 +35,7 @@ public class CloudSqlCredentialDecryptor {
   private final KmsConnection kmsConnection;
 
   @Inject
-  CloudSqlCredentialDecryptor(@Named("beamKmsConnection") KmsConnection kmsConnection) {
+  CloudSqlCredentialDecryptor(@Config("beamKmsConnection") KmsConnection kmsConnection) {
     this.kmsConnection = kmsConnection;
   }
 

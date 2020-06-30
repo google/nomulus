@@ -156,6 +156,12 @@ public class BeamJpaModule {
     return "nomulus-tool-keyring";
   }
 
+  @Provides
+  @Config("beamHibernateHikariMaximumPoolSize")
+  static int getBeamHibernateHikariMaximumPoolSize() {
+    return 4;
+  }
+
   @Module
   interface BindModule {
 

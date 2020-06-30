@@ -21,13 +21,13 @@ import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 
 import com.googlecode.objectify.Key;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.KeySerializer;
 import google.registry.keyring.api.Keyring;
 import google.registry.keyring.api.KeyringException;
 import google.registry.model.server.KmsSecret;
 import java.io.IOException;
 import javax.inject.Inject;
-import javax.inject.Named;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
@@ -87,7 +87,7 @@ public class KmsKeyring implements Keyring {
   private final KmsConnection kmsConnection;
 
   @Inject
-  KmsKeyring(@Named("defaultKmsConnection") KmsConnection kmsConnection) {
+  KmsKeyring(@Config("defaultKmsConnection") KmsConnection kmsConnection) {
     this.kmsConnection = kmsConnection;
   }
 

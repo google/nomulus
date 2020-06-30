@@ -152,11 +152,13 @@ public class PersistenceModule {
   static JpaTransactionManager provideSocketFactoryJpaTm(
       @Config("beamCloudSqlUsername") String username,
       @Config("beamCloudSqlPassword") String password,
+      @Config("beamHibernateHikariMaximumPoolSize") int hikariMaximumPoolSize,
       @BeamPipelineCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
       Clock clock) {
     HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
     overrides.put(Environment.USER, username);
     overrides.put(Environment.PASS, password);
+    overrides.put(HIKARI_MAXIMUM_POOL_SIZE, String.valueOf(hikariMaximumPoolSize));
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
