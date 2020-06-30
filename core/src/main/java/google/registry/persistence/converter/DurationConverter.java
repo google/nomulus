@@ -28,11 +28,11 @@ import org.postgresql.util.PGInterval;
  * <p>Note: this only converts the values for days, hours, minutes, and seconds
  */
 @Converter(autoApply = true)
-public class DurationConverter implements AttributeConverter<Duration, Object> {
+public class DurationConverter implements AttributeConverter<Duration, PGInterval> {
 
   @Override
   @Nullable
-  public Object convertToDatabaseColumn(@Nullable Duration duration) {
+  public PGInterval convertToDatabaseColumn(@Nullable Duration duration) {
     if (duration == null) {
       return new PGInterval();
     }
@@ -48,7 +48,7 @@ public class DurationConverter implements AttributeConverter<Duration, Object> {
 
   @Override
   @Nullable
-  public Duration convertToEntityAttribute(@Nullable Object dbData) {
+  public Duration convertToEntityAttribute(@Nullable PGInterval dbData) {
     if (dbData == null) {
       return null;
     }

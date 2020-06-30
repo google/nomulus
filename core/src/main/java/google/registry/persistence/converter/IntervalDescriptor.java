@@ -18,6 +18,7 @@ import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import org.hibernate.type.descriptor.ValueBinder;
 import org.hibernate.type.descriptor.ValueExtractor;
 import org.hibernate.type.descriptor.WrapperOptions;
@@ -38,7 +39,7 @@ import org.postgresql.util.PGInterval;
  */
 public class IntervalDescriptor extends AbstractTypeDescriptor<PGInterval>
     implements SqlTypeDescriptor {
-  public static final int COLUMN_TYPE = 1426407511;
+  public static final int COLUMN_TYPE = Types.JAVA_OBJECT;
   public static final String COLUMN_NAME = "interval";
   private static final IntervalDescriptor INSTANCE = new IntervalDescriptor();
 
