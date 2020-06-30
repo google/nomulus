@@ -35,7 +35,7 @@ public class CloudSqlCredentialDecryptor {
   private final KmsConnection kmsConnection;
 
   @Inject
-  CloudSqlCredentialDecryptor(@Named("defaultKmsConnection") KmsConnection kmsConnection) {
+  CloudSqlCredentialDecryptor(@Named("beamKmsConnection") KmsConnection kmsConnection) {
     this.kmsConnection = kmsConnection;
   }
 
