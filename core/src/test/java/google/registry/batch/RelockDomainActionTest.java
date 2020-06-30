@@ -63,6 +63,7 @@ public class RelockDomainActionTest {
   private final DomainLockUtils domainLockUtils =
       new DomainLockUtils(
           new DeterministicStringGenerator(Alphabets.BASE_58),
+          "adminreg",
           AsyncTaskEnqueuerTest.createForTesting(
               mock(AppEngineServiceUtils.class), clock, Duration.ZERO));
 

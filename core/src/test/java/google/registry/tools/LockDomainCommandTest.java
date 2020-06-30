@@ -51,6 +51,7 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
     command.domainLockUtils =
         new DomainLockUtils(
             new DeterministicStringGenerator(Alphabets.BASE_58),
+            "adminreg",
             AsyncTaskEnqueuerTest.createForTesting(
                 mock(AppEngineServiceUtils.class), fakeClock, Duration.ZERO));
   }
@@ -58,7 +59,7 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
   @Test
   public void testSuccess_locksDomain() throws Exception {
     DomainBase domain = persistActiveDomain("example.tld");
-    runCommandForced("--client=NewRegistrar", "example.tld");
+    runCommandForced("--client=TheRegistrar", "example.tld");
     assertThat(reloadResource(domain).getStatusValues())
         .containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
   }
@@ -71,7 +72,7 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
                 .asBuilder()
                 .addStatusValue(SERVER_TRANSFER_PROHIBITED)
                 .build());
-    runCommandForced("--client=NewRegistrar", "example.tld");
+    runCommandForced("--client=TheRegistrar", "example.tld");
     assertThat(reloadResource(domain).getStatusValues())
         .containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
   }
@@ -87,7 +88,7 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
     }
     runCommandForced(
         ImmutableList.<String>builder()
-            .add("--client=NewRegistrar")
+            .add("--client=TheRegistrar")
             .addAll(domains.stream().map(DomainBase::getDomainName).collect(Collectors.toList()))
             .build());
     for (DomainBase domain : domains) {
