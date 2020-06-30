@@ -48,11 +48,12 @@ public class DurationConverterTest {
 
   @Test
   public void testRoundTrip() {
-    TestEntity entity = new TestEntity(Duration.standardDays(6));
+    TestEntity entity = new TestEntity(Duration.standardDays(6).plus(Duration.millis(7)));
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(persisted.duration.getMillis()).isEqualTo(Duration.standardDays(6).getMillis());
+    assertThat(persisted.duration.getMillis())
+        .isEqualTo(Duration.standardDays(6).plus(Duration.millis(7)).getMillis());
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
