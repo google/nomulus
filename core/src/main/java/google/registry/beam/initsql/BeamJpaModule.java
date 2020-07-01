@@ -68,7 +68,7 @@ public class BeamJpaModule {
    * credentialFilePath in {@link #provideCloudSqlAccessInfo} rather than in the constructor.
    * Unfortunately, this is a restriction imposed upon us by Dagger. Specifically, because we use
    * this in at least one 1 {@link google.registry.tools.RegistryTool} command(s), it must be
-   * instantiated in {@link google.registry.tools.RegistryToolComponent} for all possible commands;
+   * instantiated in {@code google.registry.tools.RegistryToolComponent} for all possible commands;
    * Dagger doesn't permit it to ever be null. For the vast majority of commands, it will never be
    * used (so a null credential file path is fine in those cases).
    *
