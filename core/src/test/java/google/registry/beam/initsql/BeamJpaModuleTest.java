@@ -15,8 +15,6 @@
 package google.registry.beam.initsql;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assume.assumeThat;
 
 import google.registry.persistence.NomulusPostgreSql;
 import google.registry.persistence.transaction.JpaTransactionManager;
@@ -25,28 +23,28 @@ import java.io.IOException;
 import java.io.PrintStream;
 import org.apache.beam.sdk.io.FileSystems;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 /** Unit tests for {@link BeamJpaModule}. */
-@RunWith(JUnit4.class) // TODO(weiminyu): upgrade to JUnit 5.
+@Testcontainers
 public class BeamJpaModuleTest {
 
-  @Rule
+  @Container
   public PostgreSQLContainer database = new PostgreSQLContainer(NomulusPostgreSql.getDockerTag());
 
-  @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
+  @TempDir File tempFolder;
 
   private File credentialFile;
 
-  @Before
+  @BeforeEach
   public void beforeEach() throws IOException {
-    credentialFile = temporaryFolder.newFile();
+    credentialFile = new File(tempFolder, "credential");
     new PrintStream(credentialFile)
         .printf("%s %s %s", database.getJdbcUrl(), database.getUsername(), database.getPassword())
         .close();
@@ -76,10 +74,9 @@ public class BeamJpaModuleTest {
    * information.
    */
   @Test
+  @EnabledIfSystemProperty(named = "test.gcp_integration.env", matches = "\\S+")
   public void getJpaTransactionManager_cloudSql_authRequired() {
     String environmentName = System.getProperty("test.gcp_integration.env");
-    assumeThat(environmentName, notNullValue());
-
     FileSystems.setDefaultPipelineOptions(PipelineOptionsFactory.create());
     JpaTransactionManager jpa =
         DaggerBeamJpaModule_JpaTransactionManagerComponent.builder()

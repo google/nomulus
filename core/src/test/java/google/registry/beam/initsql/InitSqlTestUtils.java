@@ -30,6 +30,7 @@ import google.registry.backup.AppEngineEnvironment;
 import google.registry.backup.VersionedEntity;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import org.apache.beam.sdk.testing.PAssert;
 import org.apache.beam.sdk.transforms.DoFn;
@@ -42,6 +43,9 @@ import org.apache.beam.sdk.values.TypeDescriptor;
 
 /** Test helpers for populating SQL with Datastore backups. */
 public final class InitSqlTestUtils {
+
+  // Generates unique ids to distinguish reused transforms.
+  private static final AtomicInteger TRANSFORM_ID_GEN = new AtomicInteger(0);
 
   /** Converts a Datastore {@link Entity} to an Objectify entity. */
   public static Object datastoreToOfyEntity(Entity entity) {
@@ -114,11 +118,12 @@ public final class InitSqlTestUtils {
     PCollection<String> errMsgs =
         actual
             .apply(
+                "MapElements_" + TRANSFORM_ID_GEN.getAndIncrement(),
                 MapElements.into(kvs(strings(), TypeDescriptor.of(VersionedEntity.class)))
                     .via(rawEntity -> KV.of("The One Key", rawEntity)))
-            .apply(GroupByKey.create())
+            .apply("GroupByKey_" + TRANSFORM_ID_GEN.getAndIncrement(), GroupByKey.create())
             .apply(
-                "assertContainsExactlyElementsIn",
+                "assertContainsExactlyElementsIn_" + TRANSFORM_ID_GEN.getAndIncrement(),
                 ParDo.of(
                     new DoFn<KV<String, Iterable<VersionedEntity>>, String>() {
                       @ProcessElement
