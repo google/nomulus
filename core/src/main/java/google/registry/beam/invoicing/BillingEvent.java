@@ -235,6 +235,7 @@ public abstract class BillingEvent implements Serializable {
                 DATE_TIME_FORMATTER.format(eventTime()),
                 registrarId(),
                 billingId(),
+                poNumber(),
                 tld(),
                 action(),
                 domain(),

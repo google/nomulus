@@ -157,21 +157,21 @@ public class InvoicingPipelineTest {
     return ImmutableMap.of(
         "invoice_details_2017-10_theRegistrar_test.csv",
         ImmutableList.of(
-            "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,"
+            "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
                 + "test,RENEW,mydomain2.test,REPO-ID,3,USD,20.50,",
-            "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,"
+            "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
                 + "test,RENEW,mydomain.test,REPO-ID,3,USD,20.50,"),
         "invoice_details_2017-10_theRegistrar_hello.csv",
         ImmutableList.of(
-            "1,2017-10-02 00:00:00 UTC,2017-09-29 00:00:00 UTC,theRegistrar,234,"
+            "1,2017-10-02 00:00:00 UTC,2017-09-29 00:00:00 UTC,theRegistrar,234,,"
                 + "hello,CREATE,mydomain3.hello,REPO-ID,5,JPY,70.75,"),
         "invoice_details_2017-10_bestdomains_test.csv",
         ImmutableList.of(
-            "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,bestdomains,456,"
+            "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,bestdomains,456,116688,"
                 + "test,RENEW,mydomain4.test,REPO-ID,1,USD,20.50,"),
         "invoice_details_2017-10_anotherRegistrar_test.csv",
         ImmutableList.of(
-            "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,anotherRegistrar,789,"
+            "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,anotherRegistrar,789,,"
                 + "test,CREATE,mydomain5.test,REPO-ID,1,USD,0.00,SUNRISE ANCHOR_TENANT"));
   }
 
