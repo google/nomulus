@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.api.services.cloudkms.v1.model.DecryptRequest;
 import com.google.common.base.Strings;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.kms.KmsConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -34,7 +35,7 @@ public class CloudSqlCredentialDecryptor {
   private final KmsConnection kmsConnection;
 
   @Inject
-  CloudSqlCredentialDecryptor(KmsConnection kmsConnection) {
+  CloudSqlCredentialDecryptor(@Config("beamKmsConnection") KmsConnection kmsConnection) {
     this.kmsConnection = kmsConnection;
   }
 

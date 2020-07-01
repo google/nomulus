@@ -94,8 +94,7 @@ public class Spec11Pipeline implements Serializable {
       @Config("spec11TemplateUrl") String spec11TemplateUrl,
       @Config("reportingBucketUrl") String reportingBucketUrl,
       @LocalCredential GoogleCredentialsBundle googleCredentialsBundle,
-      Retrier retrier
-  ) {
+      Retrier retrier) {
     this.projectId = projectId;
     this.beamStagingUrl = beamStagingUrl;
     this.spec11TemplateUrl = spec11TemplateUrl;

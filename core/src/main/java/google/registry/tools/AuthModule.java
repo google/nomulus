@@ -50,7 +50,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import javax.annotation.Nullable;
-import javax.inject.Named;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
 
@@ -151,10 +150,10 @@ public class AuthModule {
   public static String provideLocalCredentialJson(
       Lazy<GoogleClientSecrets> clientSecrets,
       @StoredCredential Lazy<Credential> credential,
-      @Nullable @Named("credentialFileName") String credentialFilename) {
+      @Nullable @Config("credentialFilePath") String credentialFilePath) {
     try {
-      if (credentialFilename != null) {
-        return new String(Files.readAllBytes(Paths.get(credentialFilename)), UTF_8);
+      if (credentialFilePath != null) {
+        return new String(Files.readAllBytes(Paths.get(credentialFilePath)), UTF_8);
       } else {
         return new Gson()
             .toJson(

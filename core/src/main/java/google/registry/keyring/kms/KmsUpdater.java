@@ -39,6 +39,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableMap;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.KeySerializer;
 import google.registry.keyring.kms.KmsKeyring.PrivateKeyLabel;
 import google.registry.keyring.kms.KmsKeyring.PublicKeyLabel;
@@ -64,7 +65,7 @@ public final class KmsUpdater {
   private final HashMap<String, byte[]> secretValues;
 
   @Inject
-  public KmsUpdater(KmsConnection kmsConnection) {
+  public KmsUpdater(@Config("defaultKmsConnection") KmsConnection kmsConnection) {
     this.kmsConnection = kmsConnection;
 
     // Use LinkedHashMap to preserve insertion order on update() to simplify testing and debugging
