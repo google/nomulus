@@ -71,7 +71,8 @@ public class ContactSettingsTest extends RegistrarSettingsActionTestCase {
         loadRegistrar(CLIENT_ID).getContacts().stream()
             .filter(rc -> rc.getEmailAddress().equals("Marla.Singer@crr.com"))
             .findFirst()
-            .get().toJsonMap();
+            .get()
+            .toJsonMap();
 
     // Keep an admin to avoid superfluous issues
     adminContact.put("types", "ADMIN,TECH");
@@ -273,7 +274,7 @@ public class ContactSettingsTest extends RegistrarSettingsActionTestCase {
             "results",
             ImmutableList.of(),
             "message",
-            "Not allowed to set registry lock password directly on new contact");
+            "Cannot set registry lock password directly on new contact");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: FormException");
   }
 
@@ -324,7 +325,7 @@ public class ContactSettingsTest extends RegistrarSettingsActionTestCase {
             "results",
             ImmutableList.of(),
             "message",
-            "Cannot set isAllowedToSetRegistryLockPassword through UI");
+            "Cannot modify isAllowedToSetRegistryLockPassword through the UI");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: FormException");
   }
 
@@ -356,7 +357,7 @@ public class ContactSettingsTest extends RegistrarSettingsActionTestCase {
             "results",
             ImmutableList.of(),
             "message",
-            "Cannot modify registry lock email address through the UI");
+            "Cannot modify registryLockEmailAddress through the UI");
     assertMetric(CLIENT_ID, "update", "[OWNER]", "ERROR: FormException");
   }
 
