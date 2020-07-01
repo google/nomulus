@@ -270,7 +270,7 @@ public final class RegistryLockPostActionTest {
     persistResource(domain.asBuilder().setPersistedCurrentSponsorClientId("NewRegistrar").build());
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertFailureWithMessage(
-        response, "Domain example.tld does not have current sponsor ID TheRegistrar");
+        response, "Domain example.tld is not owned by registrar TheRegistrar");
   }
 
   @Test

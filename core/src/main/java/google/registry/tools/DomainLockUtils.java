@@ -316,7 +316,7 @@ public final class DomainLockUtils {
     checkArgument(
         registryAdminRegistrarId.equals(registrarId)
             || domain.getCurrentSponsorClientId().equals(registrarId),
-        "Domain %s does not have current sponsor ID %s",
+        "Domain %s is not owned by registrar %s",
         domainName,
         registrarId);
     return domain;
