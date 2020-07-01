@@ -35,7 +35,6 @@ import google.registry.model.poll.PollMessage.OneTime;
 import google.registry.util.Clock;
 import java.util.List;
 import javax.inject.Inject;
-import org.joda.time.DateTime;
 
 /**
  * Command to acknowledge one-time poll messages for a registrar.
@@ -85,8 +84,8 @@ final class AckPollMessagesCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() {
-    DateTime now = clock.nowUtc();
-    QueryKeys<PollMessage> query = getPollMessagesQuery(clientId, now).keys();
+    QueryKeys<PollMessage> query = getPollMessagesQuery(clientId, clock.nowUtc()).keys();
+    // TODO(b/160325686): Remove the batch logic after db migration.
     for (List<Key<PollMessage>> keys : Iterables.partition(query, BATCH_SIZE)) {
       tm().transact(
               () -> {

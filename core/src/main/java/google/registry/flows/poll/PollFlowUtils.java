@@ -14,7 +14,7 @@
 
 package google.registry.flows.poll;
 
-import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
@@ -39,17 +39,22 @@ public final class PollFlowUtils {
 
   /**
    * Acknowledges the given {@link PollMessage} and returns whether we should include the current
-   * acked message in the updated message count that's returned to the user. The only case where we
-   * do so is if an autorenew poll message is acked, but its next event is already ready to be
-   * delivered.
+   * acked message in the updated message count that's returned to the user.
+   *
+   * <p>The only case where we do so is if an autorenew poll message is acked, but its next event is
+   * already ready to be delivered.
    */
   public static boolean ackPollMessage(PollMessage pollMessage) {
+    checkArgument(
+        isBeforeOrAt(pollMessage.getEventTime(), tm().getTransactionTime()),
+        "Cannot ACK poll message with ID %s because its event time is in the future: %s",
+        pollMessage.getId(),
+        pollMessage.getEventTime());
     boolean includeAckedMessageInCount = false;
     if (pollMessage instanceof PollMessage.OneTime) {
       // One-time poll messages are deleted once acked.
       tm().delete(pollMessage.createVKey());
-    } else {
-      checkState(pollMessage instanceof PollMessage.Autorenew, "Unknown poll message type");
+    } else if (pollMessage instanceof PollMessage.Autorenew) {
       PollMessage.Autorenew autorenewPollMessage = (PollMessage.Autorenew) pollMessage;
 
       // Move the eventTime of this autorenew poll message forward by a year.
@@ -64,6 +69,8 @@ public final class PollFlowUtils {
       } else {
         tm().delete(autorenewPollMessage.createVKey());
       }
+    } else {
+      throw new IllegalArgumentException("Unknown poll message type: " + pollMessage.getClass());
     }
     return includeAckedMessageInCount;
   }
