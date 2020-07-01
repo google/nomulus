@@ -14,6 +14,7 @@
 
 package google.registry.webdriver;
 
+import static com.google.common.truth.Truth.assertThat;
 import static google.registry.server.Fixture.BASIC;
 import static google.registry.server.Route.route;
 import static google.registry.testing.AppEngineRule.makeRegistrar2;
@@ -32,11 +33,13 @@ import com.googlecode.objectify.ObjectifyFilter;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.OfyFilter;
 import google.registry.model.registrar.Registrar.State;
+import google.registry.model.registrar.RegistrarContact;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.server.RegistryTestServer;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.CertificateSamples;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.Rule;
 import org.junit.Test;
@@ -150,13 +153,13 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   public void settingsContactEdit_setRegistryLockPassword() throws Throwable {
     server.runInAppEngineEnvironment(
         () -> {
+          persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build());
           persistResource(
               makeRegistrarContact2()
                   .asBuilder()
                   .setRegistryLockEmailAddress("johndoe.registrylock@example.com")
                   .setAllowedToSetRegistryLockPassword(true)
                   .build());
-          persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build());
           return null;
         });
     driver.manage().window().setSize(new Dimension(1050, 2000));
@@ -165,6 +168,25 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.waitForElement(By.tagName("h1"));
     driver.waitForElement(By.id("reg-app-btn-edit")).click();
     driver.diffPage("page");
+
+    // now actually set the password
+    driver.findElement(By.id("contacts[1].registryLockPassword")).sendKeys("password");
+    driver.waitForElement(By.id("reg-app-btn-save")).click();
+    Thread.sleep(500);
+    driver.diffPage("contactview");
+
+    server.runInAppEngineEnvironment(
+        () -> {
+          RegistrarContact contact =
+              loadRegistrar("TheRegistrar").getContacts().stream()
+                  .filter(c -> c.getEmailAddress().equals("johndoe@theregistrar.com"))
+                  .findFirst()
+                  .get();
+          assertThat(contact.verifyRegistryLockPassword("password")).isTrue();
+          assertThat(contact.getRegistryLockEmailAddress())
+              .isEqualTo(Optional.of("johndoe.registrylock@example.com"));
+          return null;
+        });
   }
 
   @Test
