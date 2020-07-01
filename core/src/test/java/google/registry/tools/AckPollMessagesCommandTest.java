@@ -14,10 +14,12 @@
 
 package google.registry.tools;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.persistResource;
 
+import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.Ofy;
@@ -25,6 +27,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.poll.PollMessage.OneTime;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import org.joda.time.DateTime;
@@ -47,12 +50,18 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
 
   @Test
   public void testSuccess_doesntDeletePollMessagesInFuture() throws Exception {
-    OneTime pm1 = persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar");
-    OneTime pm2 = persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "ninelives");
-    OneTime pm3 = persistPollMessage(791L, DateTime.parse("2015-01-08T22:33:44Z"), "ginger");
-    OneTime pm4 = persistPollMessage(123L, DateTime.parse("2015-09-01T22:33:44Z"), "notme");
+    VKey<OneTime> pm1 =
+        persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
+    VKey<OneTime> pm2 =
+        persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "ninelives").createVKey();
+    VKey<OneTime> pm3 =
+        persistPollMessage(791L, DateTime.parse("2015-01-08T22:33:44Z"), "ginger").createVKey();
+    OneTime futurePollMessage =
+        persistPollMessage(123L, DateTime.parse("2015-09-01T22:33:44Z"), "notme");
+    VKey<OneTime> pm4 = futurePollMessage.createVKey();
     runCommand("-c", "TheRegistrar");
-    assertThat(ofy().load().entities(pm1, pm2, pm3, pm4).values()).containsExactly(pm4);
+    assertThat(tm().load(ImmutableList.of(pm1, pm2, pm3, pm4)).values())
+        .containsExactly(futurePollMessage);
     assertInStdout(
         "1-FSDGS-TLD-2406-624-2013,2013-05-01T22:33:44.000Z,ninelives",
         "1-FSDGS-TLD-2406-316-2014,2014-01-01T22:33:44.000Z,foobar",
@@ -61,10 +70,12 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
   }
 
   @Test
-  public void testSuccess_doesntDeleteAutorenewPollMessages() throws Exception {
-    OneTime pm1 = persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar");
-    OneTime pm2 = persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "ninelives");
-    Autorenew pm3 =
+  public void testSuccess_resavesAutorenewPollMessages() throws Exception {
+    VKey<OneTime> pm1 =
+        persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
+    VKey<OneTime> pm2 =
+        persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "ninelives").createVKey();
+    Autorenew autorenew =
         persistResource(
             new PollMessage.Autorenew.Builder()
                 .setId(624L)
@@ -73,26 +84,73 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
                         Key.create(DomainBase.class, "AAFSGS-TLD"), HistoryEntry.class, 99406L))
                 .setEventTime(DateTime.parse("2011-04-15T22:33:44Z"))
                 .setClientId("TheRegistrar")
+                .setMsg("autorenew")
                 .build());
+    Autorenew resaved =
+        autorenew.asBuilder().setEventTime(DateTime.parse("2012-04-15T22:33:44Z")).build();
+    VKey<Autorenew> pm3 = autorenew.createVKey();
     runCommand("-c", "TheRegistrar");
-    assertThat(ofy().load().entities(pm1, pm2, pm3).values()).containsExactly(pm3);
+    assertThat(tm().load(ImmutableList.of(pm1, pm2, pm3)).values()).containsExactly(resaved);
+    assertInStdout(
+        "1-AAFSGS-TLD-99406-624-2011,2011-04-15T22:33:44.000Z,autorenew",
+        "1-FSDGS-TLD-2406-624-2013,2013-05-01T22:33:44.000Z,ninelives",
+        "1-FSDGS-TLD-2406-316-2014,2014-01-01T22:33:44.000Z,foobar");
+  }
+
+  @Test
+  public void testSuccess_deletesExpiredAutorenewPollMessages() throws Exception {
+    VKey<OneTime> pm1 =
+        persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
+    VKey<OneTime> pm2 =
+        persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "ninelives").createVKey();
+    Autorenew autorenew =
+        persistResource(
+            new PollMessage.Autorenew.Builder()
+                .setId(624L)
+                .setParentKey(
+                    Key.create(
+                        Key.create(DomainBase.class, "AAFSGS-TLD"), HistoryEntry.class, 99406L))
+                .setEventTime(DateTime.parse("2011-04-15T22:33:44Z"))
+                .setAutorenewEndTime(DateTime.parse("2012-01-01T22:33:44Z"))
+                .setClientId("TheRegistrar")
+                .setMsg("autorenew")
+                .build());
+    VKey<Autorenew> pm3 = autorenew.createVKey();
+    runCommand("-c", "TheRegistrar");
+    assertThat(tm().load(ImmutableList.of(pm1, pm2, pm3))).isEmpty();
+    assertInStdout(
+        "1-AAFSGS-TLD-99406-624-2011,2011-04-15T22:33:44.000Z,autorenew",
+        "1-FSDGS-TLD-2406-624-2013,2013-05-01T22:33:44.000Z,ninelives",
+        "1-FSDGS-TLD-2406-316-2014,2014-01-01T22:33:44.000Z,foobar");
   }
 
   @Test
   public void testSuccess_onlyDeletesPollMessagesMatchingMessage() throws Exception {
-    OneTime pm1 = persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "food is good");
-    OneTime pm2 = persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "theft is bad");
-    OneTime pm3 = persistPollMessage(791L, DateTime.parse("2015-01-08T22:33:44Z"), "mmmmmfood");
-    OneTime pm4 = persistPollMessage(123L, DateTime.parse("2015-09-01T22:33:44Z"), "time flies");
+    VKey<OneTime> pm1 =
+        persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "food is good")
+            .createVKey();
+    OneTime notMatched1 =
+        persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "theft is bad");
+    VKey<OneTime> pm2 = notMatched1.createVKey();
+    VKey<OneTime> pm3 =
+        persistPollMessage(791L, DateTime.parse("2015-01-08T22:33:44Z"), "mmmmmfood").createVKey();
+    OneTime notMatched2 =
+        persistPollMessage(123L, DateTime.parse("2015-09-01T22:33:44Z"), "time flies");
+    VKey<OneTime> pm4 = notMatched2.createVKey();
     runCommand("-c", "TheRegistrar", "-m", "food");
-    assertThat(ofy().load().entities(pm1, pm2, pm3, pm4).values()).containsExactly(pm2, pm4);
+    assertThat(tm().load(ImmutableList.of(pm1, pm2, pm3, pm4)).values())
+        .containsExactly(notMatched1, notMatched2);
   }
 
   @Test
   public void testSuccess_onlyDeletesPollMessagesMatchingClientId() throws Exception {
-    OneTime pm1 = persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "food is good");
-    OneTime pm2 = persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "theft is bad");
-    OneTime pm3 =
+    VKey<OneTime> pm1 =
+        persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "food is good")
+            .createVKey();
+    VKey<OneTime> pm2 =
+        persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "theft is bad")
+            .createVKey();
+    OneTime notMatched =
         persistResource(
             new PollMessage.OneTime.Builder()
                 .setId(2474L)
@@ -103,8 +161,9 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
                 .setEventTime(DateTime.parse("2013-06-01T22:33:44Z"))
                 .setMsg("baaaahh")
                 .build());
+    VKey<OneTime> pm3 = notMatched.createVKey();
     runCommand("-c", "TheRegistrar");
-    assertThat(ofy().load().entities(pm1, pm2, pm3).values()).containsExactly(pm3);
+    assertThat(tm().load(ImmutableList.of(pm1, pm2, pm3)).values()).containsExactly(notMatched);
   }
 
   @Test
@@ -114,7 +173,12 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
     OneTime pm3 = persistPollMessage(791L, DateTime.parse("2015-01-08T22:33:44Z"), "ginger");
     OneTime pm4 = persistPollMessage(123L, DateTime.parse("2015-09-01T22:33:44Z"), "notme");
     runCommand("-c", "TheRegistrar", "-d");
-    assertThat(ofy().load().entities(pm1, pm2, pm3, pm4).values())
+    assertThat(
+            tm().load(
+                    ImmutableList.of(pm1, pm2, pm3, pm4).stream()
+                        .map(OneTime::createVKey)
+                        .collect(toImmutableList()))
+                .values())
         .containsExactly(pm1, pm2, pm3, pm4);
   }
 
