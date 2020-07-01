@@ -104,7 +104,9 @@ rootProject.ext.projects = ['production': 'your-production-project',
                             'crash'     : 'your-crash-project']
 </pre>
 
-Next follow the steps in
+Next follow the steps in [configuration](./configuration.md) to configure the
+complete system or, alternately, read on for an initial deploy in which case
+you'll need to deploy again after configuration.
 
 ## Deploy the code to App Engine
 
