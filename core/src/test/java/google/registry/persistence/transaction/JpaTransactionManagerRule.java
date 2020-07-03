@@ -209,6 +209,18 @@ abstract class JpaTransactionManagerRule extends ExternalResource {
     cachedTm = null;
   }
 
+  public String getDatabaseUrl() {
+    return database.getJdbcUrl();
+  }
+
+  public String getDatabaseUsername() {
+    return database.getUsername();
+  }
+
+  public String getDatabasePassword() {
+    return database.getPassword();
+  }
+
   private void resetTablesAndSequences() {
     try (Connection conn = createConnection();
         Statement statement = conn.createStatement()) {
