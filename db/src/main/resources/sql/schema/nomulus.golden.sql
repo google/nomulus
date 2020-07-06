@@ -250,7 +250,8 @@ CREATE TABLE public."Contact" (
     transfer_losing_registrar_id text,
     transfer_pending_expiration_time timestamp with time zone,
     transfer_request_time timestamp with time zone,
-    transfer_status text
+    transfer_status text,
+    update_timestamp timestamp with time zone
 );
 
 
@@ -334,7 +335,8 @@ CREATE TABLE public."ContactHistory" (
     last_epp_update_registrar_id text,
     last_epp_update_time timestamp with time zone,
     statuses text[],
-    contact_repo_id text NOT NULL
+    contact_repo_id text NOT NULL,
+    update_timestamp timestamp with time zone
 );
 
 
@@ -395,7 +397,8 @@ CREATE TABLE public."Domain" (
     transfer_losing_registrar_id text,
     transfer_pending_expiration_time timestamp with time zone,
     transfer_request_time timestamp with time zone,
-    transfer_status text
+    transfer_status text,
+    update_timestamp timestamp with time zone
 );
 
 
@@ -436,7 +439,8 @@ CREATE TABLE public."HostHistory" (
     last_epp_update_registrar_id text,
     last_epp_update_time timestamp with time zone,
     statuses text[],
-    host_repo_id text NOT NULL
+    host_repo_id text NOT NULL,
+    update_timestamp timestamp with time zone
 );
 
 
@@ -457,7 +461,8 @@ CREATE TABLE public."HostResource" (
     last_superordinate_change timestamp with time zone,
     last_transfer_time timestamp with time zone,
     superordinate_domain text,
-    inet_addresses text[]
+    inet_addresses text[],
+    update_timestamp timestamp with time zone
 );
 
 

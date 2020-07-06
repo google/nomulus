@@ -319,13 +319,13 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
       HostResource host =
           checkNotNull(ofy().load().key(hostKey).now(), "Host to refresh doesn't exist");
       boolean isHostDeleted =
-          isDeleted(host, latestOf(now, host.getUpdateAutoTimestamp().getTimestamp()));
+          isDeleted(host, latestOf(now, host.getUpdateTimestamp().getTimestamp()));
       if (isHostDeleted) {
         logger.atInfo().log("Host %s is already deleted, not refreshing DNS.", hostKey);
       }
       return new AutoValue_RefreshDnsOnHostRenameAction_DnsRefreshRequest.Builder()
           .setHostKey(hostKey)
-          .setLastUpdateTime(host.getUpdateAutoTimestamp().getTimestamp())
+          .setLastUpdateTime(host.getUpdateTimestamp().getTimestamp())
           .setRequestedTime(
               DateTime.parse(
                   checkNotNull(params.get(PARAM_REQUESTED_TIME), "Requested time not specified")))

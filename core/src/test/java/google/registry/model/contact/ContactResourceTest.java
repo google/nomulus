@@ -16,6 +16,7 @@ package google.registry.model.contact;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.model.EppResourceTestUtils.assertEqualsIgnoreLastUpdateTime;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
@@ -154,7 +155,7 @@ public class ContactResourceTest extends EntityTestCase {
                     .setServerApproveEntities(null)
                     .build())
             .build();
-    assertThat(persisted).isEqualTo(fixed);
+    assertEqualsIgnoreLastUpdateTime(persisted, fixed);
   }
 
   @Test

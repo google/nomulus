@@ -50,12 +50,12 @@ public class ResaveAllEppResourcesActionTest
   @Test
   public void test_mapreduceSuccessfullyResavesEntity() throws Exception {
     ContactResource contact = persistActiveContact("test123");
-    DateTime creationTime = contact.getUpdateAutoTimestamp().getTimestamp();
-    assertThat(ofy().load().entity(contact).now().getUpdateAutoTimestamp().getTimestamp())
+    DateTime creationTime = contact.getUpdateTimestamp().getTimestamp();
+    assertThat(ofy().load().entity(contact).now().getUpdateTimestamp().getTimestamp())
         .isEqualTo(creationTime);
     ofy().clearSessionCache();
     runMapreduce();
-    assertThat(ofy().load().entity(contact).now().getUpdateAutoTimestamp().getTimestamp())
+    assertThat(ofy().load().entity(contact).now().getUpdateTimestamp().getTimestamp())
         .isGreaterThan(creationTime);
   }
 
