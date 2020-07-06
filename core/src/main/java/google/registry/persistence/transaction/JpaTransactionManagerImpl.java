@@ -101,7 +101,8 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       T result = work.get();
       txn.commit();
       return result;
-    } catch (RuntimeException e) {
+    } catch (RuntimeException | Error e) {
+      // Error is unchecked!
       try {
         txn.rollback();
         logger.atWarning().log("Error during transaction; transaction rolled back");
