@@ -176,6 +176,10 @@
     {if isNonnull($item['gaeUserId'])}
       <input type="hidden" name="{$namePrefix}gaeUserId" value="{$item['gaeUserId']}">
     {/if}
+    {if isNonnull($item['registryLockEmailAddress'])}
+      <input type="hidden" name="{$namePrefix}registryLockEmailAddress"
+             value="{$item['registryLockEmailAddress']}">
+    {/if}
   </div>
 {/template}
 
@@ -256,6 +260,15 @@
       {param isPassword: true /}
       {param placeholder: $placeholder /}
     {/call}
+    {if $item['allowedToSetRegistryLockPassword']}
+      <tr>
+        <td></td>
+        <td>
+          <a id="showOrHideRegistryLockPassword">Show password</a>
+        </td>
+      </tr>
+    {/if}
+
   {/if}
   <input type="hidden" name="{$namePrefix}allowedToSetRegistryLockPassword"
       {if isNonnull($item['allowedToSetRegistryLockPassword'])}

@@ -19,6 +19,7 @@ import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.newRegistry;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.backup.VersionedEntity;
 import google.registry.model.contact.ContactResource;
@@ -63,8 +64,8 @@ public class ExportloadingTransformsTest implements Serializable {
 
   private static final ImmutableList<Class<?>> ALL_KINDS =
       ImmutableList.of(Registry.class, ContactResource.class, DomainBase.class);
-  private static final ImmutableList<String> ALL_KIND_STRS =
-      ALL_KINDS.stream().map(Key::getKind).collect(ImmutableList.toImmutableList());
+  private static final ImmutableSet<String> ALL_KIND_STRS =
+      ALL_KINDS.stream().map(Key::getKind).collect(ImmutableSet.toImmutableSet());
 
   @Rule public final transient TemporaryFolder exportRootDir = new TemporaryFolder();
 

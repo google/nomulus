@@ -23,7 +23,8 @@ import java.lang.reflect.Proxy;
 
 /**
  * Sets up a placeholder {@link Environment} on a non-AppEngine platform so that Datastore Entities
- * can be deserialized. See {@code DatastoreEntityExtension} in test source for more information.
+ * can be converted from/to Objectify entities. See {@code DatastoreEntityExtension} in test source
+ * for more information.
  */
 public class AppEngineEnvironment implements Closeable {
 

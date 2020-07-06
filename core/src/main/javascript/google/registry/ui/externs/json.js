@@ -180,7 +180,8 @@ registry.json.RegistrarAddress;
  *   faxNumber: (string?|undefined),
  *   types: (string?|undefined),
  *   allowedToSetRegistryLockPassword: boolean,
- *   registryLockAllowed: boolean
+ *   registryLockAllowed: boolean,
+ *   registryLockEmailAddress: (string?|undefined)
  * }}
  */
 registry.json.RegistrarContact;

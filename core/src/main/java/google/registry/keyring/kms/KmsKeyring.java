@@ -21,6 +21,7 @@ import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 
 import com.googlecode.objectify.Key;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.KeySerializer;
 import google.registry.keyring.api.Keyring;
 import google.registry.keyring.api.KeyringException;
@@ -86,7 +87,7 @@ public class KmsKeyring implements Keyring {
   private final KmsConnection kmsConnection;
 
   @Inject
-  KmsKeyring(KmsConnection kmsConnection) {
+  KmsKeyring(@Config("defaultKmsConnection") KmsConnection kmsConnection) {
     this.kmsConnection = kmsConnection;
   }
 

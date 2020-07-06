@@ -19,6 +19,7 @@ import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.newRegistry;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import google.registry.backup.VersionedEntity;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
@@ -27,6 +28,7 @@ import google.registry.model.registry.Registry;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.fs.MatchResult.Metadata;
@@ -152,28 +154,45 @@ public class CommitLogTransformsTest implements Serializable {
 
   @Test
   @Category(NeedsRunner.class)
-  public void filterCommitLogsByTime() {
+  public void filterCommitLogsByTime() throws IOException {
     ImmutableList<String> commitLogFilenames =
         ImmutableList.of(
-            "/commit_diff_until_2000-01-01T00:00:00.000Z",
-            "/commit_diff_until_2000-01-01T00:00:00.001Z",
-            "/commit_diff_until_2000-01-01T00:00:00.002Z",
-            "/commit_diff_until_2000-01-01T00:00:00.003Z",
-            "/commit_diff_until_2000-01-01T00:00:00.004Z");
+            "commit_diff_until_2000-01-01T00:00:00.000Z",
+            "commit_diff_until_2000-01-01T00:00:00.001Z",
+            "commit_diff_until_2000-01-01T00:00:00.002Z",
+            "commit_diff_until_2000-01-01T00:00:00.003Z",
+            "commit_diff_until_2000-01-01T00:00:00.004Z");
+
+    File commitLogDir = temporaryFolder.newFolder();
+    for (String name : commitLogFilenames) {
+      new File(commitLogDir, name).createNewFile();
+    }
+
     PCollection<String> filteredFilenames =
         pipeline
             .apply(
-                "Generate All Filenames",
-                Create.of(commitLogFilenames).withCoder(StringUtf8Coder.of()))
+                "Get commitlog file patterns",
+                Transforms.getCommitLogFilePatterns(commitLogDir.getAbsolutePath()))
+            .apply("Find commitlog files", Transforms.getFilesByPatterns())
             .apply(
                 "Filtered by Time",
                 Transforms.filterCommitLogsByTime(
                     DateTime.parse("2000-01-01T00:00:00.001Z"),
-                    DateTime.parse("2000-01-01T00:00:00.003Z")));
+                    DateTime.parse("2000-01-01T00:00:00.003Z")))
+            .apply(
+                "Extract path strings",
+                ParDo.of(
+                    new DoFn<Metadata, String>() {
+                      @ProcessElement
+                      public void processElement(
+                          @Element Metadata fileMeta, OutputReceiver<String> out) {
+                        out.output(fileMeta.resourceId().getFilename());
+                      }
+                    }));
     PAssert.that(filteredFilenames)
         .containsInAnyOrder(
-            "/commit_diff_until_2000-01-01T00:00:00.001Z",
-            "/commit_diff_until_2000-01-01T00:00:00.002Z");
+            "commit_diff_until_2000-01-01T00:00:00.001Z",
+            "commit_diff_until_2000-01-01T00:00:00.002Z");
 
     pipeline.run();
   }
@@ -187,13 +206,35 @@ public class CommitLogTransformsTest implements Serializable {
                 "Get CommitLog file patterns",
                 Transforms.getCommitLogFilePatterns(commitLogsDir.getAbsolutePath()))
             .apply("Find CommitLogs", Transforms.getFilesByPatterns())
-            .apply(Transforms.loadCommitLogsFromFiles());
+            .apply(
+                Transforms.loadCommitLogsFromFiles(
+                    ImmutableSet.of("Registry", "ContactResource", "DomainBase")));
 
     InitSqlTestUtils.assertContainsExactlyElementsIn(
         entities,
         KV.of(fakeClock.nowUtc().getMillis() - 2, store.loadAsDatastoreEntity(registry)),
         KV.of(fakeClock.nowUtc().getMillis() - 1, store.loadAsDatastoreEntity(contact)),
         KV.of(fakeClock.nowUtc().getMillis() - 1, store.loadAsDatastoreEntity(domain)));
+
+    pipeline.run();
+  }
+
+  @Test
+  @Category(NeedsRunner.class)
+  public void loadOneCommitLogFile_filterByKind() {
+    PCollection<VersionedEntity> entities =
+        pipeline
+            .apply(
+                "Get CommitLog file patterns",
+                Transforms.getCommitLogFilePatterns(commitLogsDir.getAbsolutePath()))
+            .apply("Find CommitLogs", Transforms.getFilesByPatterns())
+            .apply(
+                Transforms.loadCommitLogsFromFiles(ImmutableSet.of("Registry", "ContactResource")));
+
+    InitSqlTestUtils.assertContainsExactlyElementsIn(
+        entities,
+        KV.of(fakeClock.nowUtc().getMillis() - 2, store.loadAsDatastoreEntity(registry)),
+        KV.of(fakeClock.nowUtc().getMillis() - 1, store.loadAsDatastoreEntity(contact)));
 
     pipeline.run();
   }
