@@ -54,6 +54,7 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
     command.domainLockUtils =
         new DomainLockUtils(
             new DeterministicStringGenerator(Alphabets.BASE_58),
+            "adminreg",
             AsyncTaskEnqueuerTest.createForTesting(
                 mock(AppEngineServiceUtils.class), fakeClock, Duration.ZERO));
   }
@@ -68,14 +69,14 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
 
   @Test
   public void testSuccess_unlocksDomain() throws Exception {
-    DomainBase domain = persistLockedDomain("example.tld", "NewRegistrar");
-    runCommandForced("--client=NewRegistrar", "example.tld");
+    DomainBase domain = persistLockedDomain("example.tld", "TheRegistrar");
+    runCommandForced("--client=TheRegistrar", "example.tld");
     assertThat(reloadResource(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
   }
 
   @Test
   public void testSuccess_partiallyUpdatesStatuses() throws Exception {
-    DomainBase domain = persistLockedDomain("example.tld", "NewRegistrar");
+    DomainBase domain = persistLockedDomain("example.tld", "TheRegistrar");
     domain =
         persistResource(
             domain
@@ -83,7 +84,7 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
                 .setStatusValues(
                     ImmutableSet.of(SERVER_DELETE_PROHIBITED, SERVER_UPDATE_PROHIBITED))
                 .build());
-    runCommandForced("--client=NewRegistrar", "example.tld");
+    runCommandForced("--client=TheRegistrar", "example.tld");
     assertThat(reloadResource(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
   }
 
@@ -94,11 +95,11 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
     List<DomainBase> domains = new ArrayList<>();
     for (int n = 0; n < 26; n++) {
       String domain = String.format("domain%d.tld", n);
-      domains.add(persistLockedDomain(domain, "NewRegistrar"));
+      domains.add(persistLockedDomain(domain, "TheRegistrar"));
     }
     runCommandForced(
         ImmutableList.<String>builder()
-            .add("--client=NewRegistrar")
+            .add("--client=TheRegistrar")
             .addAll(domains.stream().map(DomainBase::getDomainName).collect(Collectors.toList()))
             .build());
     for (DomainBase domain : domains) {
@@ -111,20 +112,20 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
     IllegalArgumentException e =
         assertThrows(
             IllegalArgumentException.class,
-            () -> runCommandForced("--client=NewRegistrar", "missing.tld"));
+            () -> runCommandForced("--client=TheRegistrar", "missing.tld"));
     assertThat(e).hasMessageThat().isEqualTo("Domain 'missing.tld' does not exist or is deleted");
   }
 
   @Test
   public void testSuccess_alreadyUnlockedDomain_performsNoAction() throws Exception {
     DomainBase domain = persistActiveDomain("example.tld");
-    runCommandForced("--client=NewRegistrar", "example.tld");
+    runCommandForced("--client=TheRegistrar", "example.tld");
     assertThat(reloadResource(domain)).isEqualTo(domain);
   }
 
   @Test
   public void testSuccess_defaultsToAdminRegistrar_ifUnspecified() throws Exception {
-    DomainBase domain = persistLockedDomain("example.tld", "NewRegistrar");
+    DomainBase domain = persistLockedDomain("example.tld", "TheRegistrar");
     runCommandForced("example.tld");
     assertThat(getMostRecentRegistryLockByRepoId(domain.getRepoId()).get().getRegistrarId())
         .isEqualTo("adminreg");
@@ -135,7 +136,7 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
     IllegalArgumentException e =
         assertThrows(
             IllegalArgumentException.class,
-            () -> runCommandForced("--client=NewRegistrar", "dupe.tld", "dupe.tld"));
+            () -> runCommandForced("--client=TheRegistrar", "dupe.tld", "dupe.tld"));
     assertThat(e).hasMessageThat().isEqualTo("Duplicate domain arguments found: 'dupe.tld'");
   }
 }

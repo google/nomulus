@@ -172,7 +172,7 @@ registry.registrar.RegistryLock.prototype.lockOrUnlockDomain_ = function(isLock,
       e => this.fillLocksPage_(e),
       'POST',
       goog.json.serialize({
-        'clientId': this.clientId,
+        'registrarId': this.clientId,
         'domainName': domain,
         'isLock': isLock,
         'password': password,

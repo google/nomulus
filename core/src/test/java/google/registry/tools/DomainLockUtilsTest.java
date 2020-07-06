@@ -74,6 +74,7 @@ public final class DomainLockUtilsTest {
   private final DomainLockUtils domainLockUtils =
       new DomainLockUtils(
           new DeterministicStringGenerator(Alphabets.BASE_58),
+          "adminreg",
           AsyncTaskEnqueuerTest.createForTesting(
               mock(AppEngineServiceUtils.class), clock, standardSeconds(90)));
 

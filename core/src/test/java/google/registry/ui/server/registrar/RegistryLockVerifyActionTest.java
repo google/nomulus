@@ -332,6 +332,7 @@ public final class RegistryLockVerifyActionTest {
         new RegistryLockVerifyAction(
             new DomainLockUtils(
                 stringGenerator,
+                "adminreg",
                 AsyncTaskEnqueuerTest.createForTesting(
                     mock(AppEngineServiceUtils.class), fakeClock, Duration.ZERO)),
             lockVerificationCode,

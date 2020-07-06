@@ -14,6 +14,7 @@
 
 package google.registry.ui.server.registrar;
 
+import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.testing.DatastoreHelper.createTld;
@@ -33,7 +34,7 @@ import static org.mockito.Mockito.when;
 import com.google.appengine.api.users.User;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.collect.ImmutableSet;
 import google.registry.batch.AsyncTaskEnqueuerTest;
 import google.registry.model.domain.DomainBase;
 import google.registry.request.JsonActionRunner;
@@ -104,6 +105,7 @@ public final class RegistryLockPostActionTest {
     userWithoutPermission = userFromRegistrarContact(AppEngineRule.makeRegistrarContact2());
     createTld("tld");
     domain = persistResource(newDomainBase("example.tld"));
+
     outgoingAddress = new InternetAddress("domain-registry@example.com");
 
     when(mockRequest.getServerName()).thenReturn("registrarconsole.tld");
@@ -224,7 +226,7 @@ public final class RegistryLockPostActionTest {
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of(
-                "clientId", "TheRegistrar",
+                "registrarId", "TheRegistrar",
                 "domainName", "example.tld",
                 "isLock", true));
     assertSuccess(response, "lock", "johndoe@theregistrar.com");
@@ -237,22 +239,45 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testFailure_noClientId() {
+  public void testFailure_noRegistrarId() {
     Map<String, ?> response = action.handleJsonRequest(ImmutableMap.of());
-    assertFailureWithMessage(response, "Missing key for client: clientId");
+    assertFailureWithMessage(response, "Missing key for registrarId");
   }
 
   @Test
-  public void testFailure_emptyClientId() {
-    Map<String, ?> response = action.handleJsonRequest(ImmutableMap.of("clientId", ""));
-    assertFailureWithMessage(response, "Missing key for client: clientId");
+  public void testFailure_emptyRegistrarId() {
+    Map<String, ?> response = action.handleJsonRequest(ImmutableMap.of("registrarId", ""));
+    assertFailureWithMessage(response, "Missing key for registrarId");
+  }
+
+  @Test
+  public void testFailure_unauthorizedRegistrarId() {
+    AuthResult authResult =
+        AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithLockPermission, false));
+    action = createAction(authResult, ImmutableSet.of("TheRegistrar"));
+    Map<String, ?> response =
+        action.handleJsonRequest(
+            ImmutableMap.of(
+                "isLock", true,
+                "registrarId", "NewRegistrar",
+                "domainName", "example.tld",
+                "password", "hi"));
+    assertFailureWithMessage(response, "TestUserId doesn't have access to registrar NewRegistrar");
+  }
+
+  @Test
+  public void testFailure_incorrectRegistrarIdForDomain() {
+    persistResource(domain.asBuilder().setPersistedCurrentSponsorClientId("NewRegistrar").build());
+    Map<String, ?> response = action.handleJsonRequest(lockRequest());
+    assertFailureWithMessage(
+        response, "Domain example.tld is not owned by registrar TheRegistrar");
   }
 
   @Test
   public void testFailure_noDomainName() {
     Map<String, ?> response =
         action.handleJsonRequest(
-            ImmutableMap.of("clientId", "TheRegistrar", "password", "hi", "isLock", true));
+            ImmutableMap.of("registrarId", "TheRegistrar", "password", "hi", "isLock", true));
     assertFailureWithMessage(response, "Missing key for domainName");
   }
 
@@ -261,7 +286,7 @@ public final class RegistryLockPostActionTest {
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of(
-                "clientId", "TheRegistrar",
+                "registrarId", "TheRegistrar",
                 "domainName", "example.tld",
                 "password", "hi"));
     assertFailureWithMessage(response, "Missing key for isLock");
@@ -280,7 +305,7 @@ public final class RegistryLockPostActionTest {
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of(
-                "clientId", "TheRegistrar",
+                "registrarId", "TheRegistrar",
                 "domainName", "example.tld",
                 "isLock", true));
     assertFailureWithMessage(response, "Incorrect registry lock password for contact");
@@ -294,7 +319,7 @@ public final class RegistryLockPostActionTest {
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of(
-                "clientId", "TheRegistrar",
+                "registrarId", "TheRegistrar",
                 "domainName", "example.tld",
                 "isLock", true,
                 "password", "hi"));
@@ -306,7 +331,7 @@ public final class RegistryLockPostActionTest {
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of(
-                "clientId", "TheRegistrar",
+                "registrarId", "TheRegistrar",
                 "domainName", "example.tld",
                 "isLock", true,
                 "password", "badPassword"));
@@ -318,7 +343,7 @@ public final class RegistryLockPostActionTest {
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of(
-                "clientId", "TheRegistrar",
+                "registrarId", "TheRegistrar",
                 "domainName", "bad.tld",
                 "isLock", true,
                 "password", "hi"));
@@ -381,7 +406,7 @@ public final class RegistryLockPostActionTest {
   private ImmutableMap<String, Object> fullRequest(boolean lock) {
     return ImmutableMap.of(
         "isLock", lock,
-        "clientId", "TheRegistrar",
+        "registrarId", "TheRegistrar",
         "domainName", "example.tld",
         "password", "hi");
   }
@@ -425,15 +450,21 @@ public final class RegistryLockPostActionTest {
   }
 
   private RegistryLockPostAction createAction(AuthResult authResult) {
+    return createAction(authResult, ImmutableSet.of("TheRegistrar", "NewRegistrar"));
+  }
+
+  private RegistryLockPostAction createAction(
+      AuthResult authResult, ImmutableSet<String> accessibleRegistrars) {
     Role role = authResult.userAuthInfo().get().isUserAdmin() ? Role.ADMIN : Role.OWNER;
     AuthenticatedRegistrarAccessor registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(
-            ImmutableSetMultimap.of("TheRegistrar", role, "NewRegistrar", role));
+            accessibleRegistrars.stream().collect(toImmutableSetMultimap(r -> r, r -> role)));
     JsonActionRunner jsonActionRunner =
         new JsonActionRunner(ImmutableMap.of(), new JsonResponse(new ResponseImpl(mockResponse)));
     DomainLockUtils domainLockUtils =
         new DomainLockUtils(
             new DeterministicStringGenerator(Alphabets.BASE_58),
+            "adminreg",
             AsyncTaskEnqueuerTest.createForTesting(
                 mock(AppEngineServiceUtils.class), clock, Duration.ZERO));
     return new RegistryLockPostAction(
