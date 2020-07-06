@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2020 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,20 +20,13 @@ import static google.registry.model.EppResourceUtils.projectResourceOntoBuilderA
 
 import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.EppResource;
-import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
-import google.registry.model.annotations.ExternalMessagingName;
-import google.registry.model.annotations.ReportedOn;
-import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.VKey;
-import google.registry.persistence.WithStringVKey;
-import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -42,7 +35,9 @@ import javax.persistence.AccessType;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
+import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
+import javax.persistence.MappedSuperclass;
 import javax.xml.bind.annotation.XmlElement;
 import org.joda.time.DateTime;
 
@@ -50,24 +45,14 @@ import org.joda.time.DateTime;
  * A persistable contact resource including mutable and non-mutable fields.
  *
  * @see <a href="https://tools.ietf.org/html/rfc5733">RFC 5733</a>
+ *     <p>This class deliberately does not include an {@link javax.persistence.Id} so that any
+ *     foreign-keyed fields can refer to the proper parent entity's ID, whether we're storing this
+ *     in the DB itself or as part of another entity
  */
-@ReportedOn
-@Entity
-@javax.persistence.Entity(name = "Contact")
-@javax.persistence.Table(
-    name = "Contact",
-    indexes = {
-      @javax.persistence.Index(columnList = "creationTime"),
-      @javax.persistence.Index(columnList = "currentSponsorRegistrarId"),
-      @javax.persistence.Index(columnList = "deletionTime"),
-      @javax.persistence.Index(columnList = "contactId", unique = true),
-      @javax.persistence.Index(columnList = "searchName")
-    })
-@ExternalMessagingName("contact")
-@WithStringVKey
+@MappedSuperclass
+@Embeddable
 @Access(AccessType.FIELD)
-public class ContactResource extends EppResource
-    implements DatastoreAndSqlEntity, ForeignKeyedEppResource, ResourceWithTransferData {
+public class ContactBase extends EppResource implements ResourceWithTransferData {
 
   /**
    * Unique identifier for this contact.
@@ -80,95 +65,94 @@ public class ContactResource extends EppResource
 
   /**
    * Localized postal info for the contact. All contained values must be representable in the 7-bit
-   * US-ASCII character set. Personal info; cleared by {@link Builder#wipeOut}.
+   * US-ASCII character set. Personal info; cleared by {@link ContactResource.Builder#wipeOut}.
    */
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
-    @AttributeOverride(name = "name", column = @Column(name = "addr_local_name")),
-    @AttributeOverride(name = "org", column = @Column(name = "addr_local_org")),
-    @AttributeOverride(name = "type", column = @Column(name = "addr_local_type")),
-    @AttributeOverride(
-        name = "address.streetLine1",
-        column = @Column(name = "addr_local_street_line1")),
-    @AttributeOverride(
-        name = "address.streetLine2",
-        column = @Column(name = "addr_local_street_line2")),
-    @AttributeOverride(
-        name = "address.streetLine3",
-        column = @Column(name = "addr_local_street_line3")),
-    @AttributeOverride(name = "address.city", column = @Column(name = "addr_local_city")),
-    @AttributeOverride(name = "address.state", column = @Column(name = "addr_local_state")),
-    @AttributeOverride(name = "address.zip", column = @Column(name = "addr_local_zip")),
-    @AttributeOverride(
-        name = "address.countryCode",
-        column = @Column(name = "addr_local_country_code"))
+      @AttributeOverride(name = "name", column = @Column(name = "addr_local_name")),
+      @AttributeOverride(name = "org", column = @Column(name = "addr_local_org")),
+      @AttributeOverride(name = "type", column = @Column(name = "addr_local_type")),
+      @AttributeOverride(
+          name = "address.streetLine1",
+          column = @Column(name = "addr_local_street_line1")),
+      @AttributeOverride(
+          name = "address.streetLine2",
+          column = @Column(name = "addr_local_street_line2")),
+      @AttributeOverride(
+          name = "address.streetLine3",
+          column = @Column(name = "addr_local_street_line3")),
+      @AttributeOverride(name = "address.city", column = @Column(name = "addr_local_city")),
+      @AttributeOverride(name = "address.state", column = @Column(name = "addr_local_state")),
+      @AttributeOverride(name = "address.zip", column = @Column(name = "addr_local_zip")),
+      @AttributeOverride(
+          name = "address.countryCode",
+          column = @Column(name = "addr_local_country_code"))
   })
   PostalInfo localizedPostalInfo;
 
   /**
    * Internationalized postal info for the contact. Personal info; cleared by {@link
-   * Builder#wipeOut}.
+   * ContactResource.Builder#wipeOut}.
    */
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
-    @AttributeOverride(name = "name", column = @Column(name = "addr_i18n_name")),
-    @AttributeOverride(name = "org", column = @Column(name = "addr_i18n_org")),
-    @AttributeOverride(name = "type", column = @Column(name = "addr_i18n_type")),
-    @AttributeOverride(
-        name = "address.streetLine1",
-        column = @Column(name = "addr_i18n_street_line1")),
-    @AttributeOverride(
-        name = "address.streetLine2",
-        column = @Column(name = "addr_i18n_street_line2")),
-    @AttributeOverride(
-        name = "address.streetLine3",
-        column = @Column(name = "addr_i18n_street_line3")),
-    @AttributeOverride(name = "address.city", column = @Column(name = "addr_i18n_city")),
-    @AttributeOverride(name = "address.state", column = @Column(name = "addr_i18n_state")),
-    @AttributeOverride(name = "address.zip", column = @Column(name = "addr_i18n_zip")),
-    @AttributeOverride(
-        name = "address.countryCode",
-        column = @Column(name = "addr_i18n_country_code"))
+      @AttributeOverride(name = "name", column = @Column(name = "addr_i18n_name")),
+      @AttributeOverride(name = "org", column = @Column(name = "addr_i18n_org")),
+      @AttributeOverride(name = "type", column = @Column(name = "addr_i18n_type")),
+      @AttributeOverride(
+          name = "address.streetLine1",
+          column = @Column(name = "addr_i18n_street_line1")),
+      @AttributeOverride(
+          name = "address.streetLine2",
+          column = @Column(name = "addr_i18n_street_line2")),
+      @AttributeOverride(
+          name = "address.streetLine3",
+          column = @Column(name = "addr_i18n_street_line3")),
+      @AttributeOverride(name = "address.city", column = @Column(name = "addr_i18n_city")),
+      @AttributeOverride(name = "address.state", column = @Column(name = "addr_i18n_state")),
+      @AttributeOverride(name = "address.zip", column = @Column(name = "addr_i18n_zip")),
+      @AttributeOverride(
+          name = "address.countryCode",
+          column = @Column(name = "addr_i18n_country_code"))
   })
   PostalInfo internationalizedPostalInfo;
 
   /**
    * Contact name used for name searches. This is set automatically to be the internationalized
    * postal name, or if null, the localized postal name, or if that is null as well, null. Personal
-   * info; cleared by {@link Builder#wipeOut}.
+   * info; cleared by {@link ContactResource.Builder#wipeOut}.
    */
-  @Index
-  String searchName;
+  @Index String searchName;
 
-  /** Contact’s voice number. Personal info; cleared by {@link Builder#wipeOut}. */
+  /** Contact’s voice number. Personal info; cleared by {@link ContactResource.Builder#wipeOut}. */
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
-    @AttributeOverride(name = "phoneNumber", column = @Column(name = "voice_phone_number")),
-    @AttributeOverride(name = "extension", column = @Column(name = "voice_phone_extension")),
+      @AttributeOverride(name = "phoneNumber", column = @Column(name = "voice_phone_number")),
+      @AttributeOverride(name = "extension", column = @Column(name = "voice_phone_extension")),
   })
   ContactPhoneNumber voice;
 
-  /** Contact’s fax number. Personal info; cleared by {@link Builder#wipeOut}. */
+  /** Contact’s fax number. Personal info; cleared by {@link ContactResource.Builder#wipeOut}. */
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
-    @AttributeOverride(name = "phoneNumber", column = @Column(name = "fax_phone_number")),
-    @AttributeOverride(name = "extension", column = @Column(name = "fax_phone_extension")),
+      @AttributeOverride(name = "phoneNumber", column = @Column(name = "fax_phone_number")),
+      @AttributeOverride(name = "extension", column = @Column(name = "fax_phone_extension")),
   })
   ContactPhoneNumber fax;
 
-  /** Contact’s email address. Personal info; cleared by {@link Builder#wipeOut}. */
+  /** Contact’s email address. Personal info; cleared by {@link ContactResource.Builder#wipeOut}. */
   @IgnoreSave(IfNull.class)
   String email;
 
   /** Authorization info (aka transfer secret) of the contact. */
   @Embedded
   @AttributeOverrides({
-    @AttributeOverride(name = "pw.value", column = @Column(name = "auth_info_value")),
-    @AttributeOverride(name = "pw.repoId", column = @Column(name = "auth_info_repo_id")),
+      @AttributeOverride(name = "pw.value", column = @Column(name = "auth_info_value")),
+      @AttributeOverride(name = "pw.repoId", column = @Column(name = "auth_info_repo_id")),
   })
   ContactAuthInfo authInfo;
 
@@ -188,26 +172,20 @@ public class ContactResource extends EppResource
   /** Disclosure policy. */
   @Embedded
   @AttributeOverrides({
-    @AttributeOverride(name = "name", column = @Column(name = "disclose_types_name")),
-    @AttributeOverride(name = "org", column = @Column(name = "disclose_types_org")),
-    @AttributeOverride(name = "addr", column = @Column(name = "disclose_types_addr")),
-    @AttributeOverride(name = "flag", column = @Column(name = "disclose_mode_flag")),
-    @AttributeOverride(name = "voice.marked", column = @Column(name = "disclose_show_voice")),
-    @AttributeOverride(name = "fax.marked", column = @Column(name = "disclose_show_fax")),
-    @AttributeOverride(name = "email.marked", column = @Column(name = "disclose_show_email"))
+      @AttributeOverride(name = "name", column = @Column(name = "disclose_types_name")),
+      @AttributeOverride(name = "org", column = @Column(name = "disclose_types_org")),
+      @AttributeOverride(name = "addr", column = @Column(name = "disclose_types_addr")),
+      @AttributeOverride(name = "flag", column = @Column(name = "disclose_mode_flag")),
+      @AttributeOverride(name = "voice.marked", column = @Column(name = "disclose_show_voice")),
+      @AttributeOverride(name = "fax.marked", column = @Column(name = "disclose_show_fax")),
+      @AttributeOverride(name = "email.marked", column = @Column(name = "disclose_show_email"))
   })
   Disclose disclose;
 
   @Override
-  public VKey<ContactResource> createVKey() {
-    return VKey.create(ContactResource.class, getRepoId(), Key.create(this));
-  }
-
-  @Override
-  @javax.persistence.Id
-  @Access(AccessType.PROPERTY)
-  public String getRepoId() {
-    return super.getRepoId();
+  public VKey<? extends ContactBase> createVKey() {
+    // TODO(mmuller): create symmetric keys if we can ever reload both sides.
+    return VKey.create(ContactBase.class, getRepoId(), Key.create(this));
   }
 
   public String getContactId() {
@@ -251,7 +229,7 @@ public class ContactResource extends EppResource
   }
 
   @Override
-  public ContactTransferData getTransferData() {
+  public final ContactTransferData getTransferData() {
     return Optional.ofNullable(transferData).orElse(ContactTransferData.EMPTY);
   }
 
@@ -281,91 +259,103 @@ public class ContactResource extends EppResource
   }
 
   @Override
-  public ContactResource cloneProjectedAtTime(DateTime now) {
-    Builder builder = this.asBuilder();
-    projectResourceOntoBuilderAtTime(this, builder, now);
-    return builder.build();
+  public ContactBase cloneProjectedAtTime(DateTime now) {
+    return cloneContactProjectedAtTime(this, now);
+  }
+
+  /**
+   * Clones the contact (or subclass). A separate static method so that we can pass in and return a
+   * T without the compiler complaining.
+   */
+  protected static <T extends ContactBase> T cloneContactProjectedAtTime(T contact, DateTime now) {
+    Builder builder = contact.asBuilder();
+    projectResourceOntoBuilderAtTime(contact, builder, now);
+    return (T) builder.build();
   }
 
   @Override
   public Builder asBuilder() {
-    return new Builder(clone(this));
+    return new Builder<>(clone(this));
   }
 
   /** A builder for constructing {@link ContactResource}, since it is immutable. */
-  public static class Builder extends EppResource.Builder<ContactResource, Builder>
-      implements BuilderWithTransferData<ContactTransferData, Builder> {
+  public static class Builder<T extends ContactBase, B extends Builder<T, B>>
+      extends EppResource.Builder<T, B> implements BuilderWithTransferData<ContactTransferData, B> {
 
     public Builder() {}
 
-    private Builder(ContactResource instance) {
+    protected Builder(T instance) {
       super(instance);
     }
 
-    public Builder setContactId(String contactId) {
+    public B setContactId(String contactId) {
       getInstance().contactId = contactId;
-      return this;
+      return thisCastToDerived();
     }
 
-    public Builder setLocalizedPostalInfo(PostalInfo localizedPostalInfo) {
-      checkArgument(localizedPostalInfo == null
-          || Type.LOCALIZED.equals(localizedPostalInfo.getType()));
+    public B setLocalizedPostalInfo(PostalInfo localizedPostalInfo) {
+      checkArgument(
+          localizedPostalInfo == null
+              || PostalInfo.Type.LOCALIZED.equals(localizedPostalInfo.getType()));
       getInstance().localizedPostalInfo = localizedPostalInfo;
-      return this;
+      return thisCastToDerived();
     }
 
-    public Builder setInternationalizedPostalInfo(PostalInfo internationalizedPostalInfo) {
-      checkArgument(internationalizedPostalInfo == null
-          || Type.INTERNATIONALIZED.equals(internationalizedPostalInfo.getType()));
+    public B setInternationalizedPostalInfo(PostalInfo internationalizedPostalInfo) {
+      checkArgument(
+          internationalizedPostalInfo == null
+              || PostalInfo.Type.INTERNATIONALIZED.equals(internationalizedPostalInfo.getType()));
       getInstance().internationalizedPostalInfo = internationalizedPostalInfo;
-      return this;
+      return thisCastToDerived();
     }
 
-    public Builder overlayLocalizedPostalInfo(PostalInfo localizedPostalInfo) {
-      return setLocalizedPostalInfo(getInstance().localizedPostalInfo == null
-          ? localizedPostalInfo
-          : getInstance().localizedPostalInfo.overlay(localizedPostalInfo));
+    public B overlayLocalizedPostalInfo(PostalInfo localizedPostalInfo) {
+      return setLocalizedPostalInfo(
+          getInstance().localizedPostalInfo == null
+              ? localizedPostalInfo
+              : getInstance().localizedPostalInfo.overlay(localizedPostalInfo));
     }
 
-    public Builder overlayInternationalizedPostalInfo(PostalInfo internationalizedPostalInfo) {
-      return setInternationalizedPostalInfo(getInstance().internationalizedPostalInfo == null
-          ? internationalizedPostalInfo
-          : getInstance().internationalizedPostalInfo.overlay(internationalizedPostalInfo));
+    public B overlayInternationalizedPostalInfo(PostalInfo internationalizedPostalInfo) {
+      return setInternationalizedPostalInfo(
+          getInstance().internationalizedPostalInfo == null
+              ? internationalizedPostalInfo
+              : getInstance().internationalizedPostalInfo.overlay(internationalizedPostalInfo));
     }
 
-    public Builder setVoiceNumber(ContactPhoneNumber voiceNumber) {
+    public B setVoiceNumber(ContactPhoneNumber voiceNumber) {
       getInstance().voice = voiceNumber;
-      return this;
+      return thisCastToDerived();
     }
 
-    public Builder setFaxNumber(ContactPhoneNumber faxNumber) {
+    public B setFaxNumber(ContactPhoneNumber faxNumber) {
       getInstance().fax = faxNumber;
-      return this;
+      return thisCastToDerived();
     }
 
-    public Builder setEmailAddress(String emailAddress) {
+    public B setEmailAddress(String emailAddress) {
       getInstance().email = emailAddress;
-      return this;
+      return thisCastToDerived();
     }
 
-    public Builder setAuthInfo(ContactAuthInfo authInfo) {
+    public B setAuthInfo(ContactAuthInfo authInfo) {
       getInstance().authInfo = authInfo;
-      return this;
+      return thisCastToDerived();
     }
 
-    public Builder setDisclose(Disclose disclose) {
+    public B setDisclose(Disclose disclose) {
       getInstance().disclose = disclose;
-      return this;
+      return thisCastToDerived();
     }
 
     @Override
-    public Builder setTransferData(ContactTransferData transferData) {
+    public B setTransferData(ContactTransferData transferData) {
       getInstance().transferData = transferData;
-      return this;
+      return thisCastToDerived();
     }
 
     @Override
-    public Builder setLastTransferTime(DateTime lastTransferTime) {
+    public B setLastTransferTime(DateTime lastTransferTime) {
       getInstance().lastTransferTime = lastTransferTime;
       return thisCastToDerived();
     }
@@ -376,18 +366,18 @@ public class ContactResource extends EppResource
      * <p>This should be used when deleting a contact so that the soft-deleted entity doesn't
      * contain information that the registrant requested to be deleted.
      */
-    public Builder wipeOut() {
+    public B wipeOut() {
       setEmailAddress(null);
       setFaxNumber(null);
       setInternationalizedPostalInfo(null);
       setLocalizedPostalInfo(null);
       setVoiceNumber(null);
-      return this;
+      return thisCastToDerived();
     }
 
     @Override
-    public ContactResource build() {
-      ContactResource instance = getInstance();
+    public T build() {
+      T instance = getInstance();
       // If TransferData is totally empty, set it to null.
       if (ContactTransferData.EMPTY.equals(instance.transferData)) {
         setTransferData(null);
