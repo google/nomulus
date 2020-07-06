@@ -19,19 +19,19 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
+import google.registry.model.contact.ContactHistory;
+import google.registry.model.contact.ContactResource;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostHistory;
-import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.VKey;
 import org.junit.jupiter.api.Test;
 
-/** Tests for {@link HostHistory}. */
-public class HostHistoryTest extends EntityTestCase {
+/** Tests for {@link ContactHistory}. */
+public class ContactHistoryTest extends EntityTestCase {
 
-  public HostHistoryTest() {
+  public ContactHistoryTest() {
     super(true);
   }
 
@@ -39,19 +39,20 @@ public class HostHistoryTest extends EntityTestCase {
   public void testPersistence() {
     saveRegistrar("registrar1");
 
-    HostResource host =
-        new HostResource.Builder()
-            .setRepoId("host1")
-            .setHostName("ns1.example.com")
-            .setCreationClientId("TheRegistrar")
-            .setPersistedCurrentSponsorClientId("TheRegistrar")
-            .setInetAddresses(ImmutableSet.of())
+    ContactResource contact =
+        new ContactResource.Builder()
+            .setRepoId("contact1")
+            .setContactId("contactId")
+            .setCreationClientId("registrar1")
+            .setPersistedCurrentSponsorClientId("registrar1")
+            .setTransferData(new ContactTransferData.Builder().build())
             .build();
-    jpaTm().transact(() -> jpaTm().saveNew(host));
-    VKey<HostResource> hostVKey = VKey.createSql(HostResource.class, "host1");
-    HostResource hostFromDb = jpaTm().transact(() -> jpaTm().load(hostVKey));
-    HostHistory hostHistory =
-        new HostHistory.Builder()
+
+    jpaTm().transact(() -> jpaTm().saveNew(contact));
+    VKey<ContactResource> contactVKey = VKey.createSql(ContactResource.class, "contact1");
+    ContactResource contactFromDb = jpaTm().transact(() -> jpaTm().load(contactVKey));
+    ContactHistory contactHistory =
+        new ContactHistory.Builder()
             .setType(HistoryEntry.Type.HOST_CREATE)
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
             .setModificationTime(fakeClock.nowUtc())
@@ -60,28 +61,27 @@ public class HostHistoryTest extends EntityTestCase {
             .setBySuperuser(false)
             .setReason("reason")
             .setRequestedByRegistrar(true)
-            .setHostBase(hostFromDb)
-            .setHostRepoId(hostVKey)
+            .setContactBase(contactFromDb)
+            .setContactRepoId(contactVKey)
             .build();
-    jpaTm().transact(() -> jpaTm().saveNew(hostHistory));
+    jpaTm().transact(() -> jpaTm().saveNew(contactHistory));
     jpaTm()
         .transact(
             () -> {
-              HostHistory fromDatabase =
-                  jpaTm().load(VKey.createSql(HostHistory.class, hostHistory.getId()));
-              assertHostHistoriesEqual(fromDatabase, hostHistory);
+              ContactHistory fromDatabase = jpaTm().load(VKey.createSql(ContactHistory.class, 1L));
+              assertContactHistoriesEqual(fromDatabase, contactHistory);
             });
   }
 
-  private void assertHostHistoriesEqual(HostHistory one, HostHistory two) {
+  private void assertContactHistoriesEqual(ContactHistory one, ContactHistory two) {
     // enough of the fields get changed during serialization that we can't depend on .equals()
     assertThat(one.getClientId()).isEqualTo(two.getClientId());
-    assertThat(one.getHostRepoId()).isEqualTo(two.getHostRepoId());
+    assertThat(one.getContactRepoId()).isEqualTo(two.getContactRepoId());
     assertThat(one.getBySuperuser()).isEqualTo(two.getBySuperuser());
     assertThat(one.getRequestedByRegistrar()).isEqualTo(two.getRequestedByRegistrar());
     assertThat(one.getReason()).isEqualTo(two.getReason());
     assertThat(one.getTrid()).isEqualTo(two.getTrid());
     assertThat(one.getType()).isEqualTo(two.getType());
-    assertThat(one.getHostBase().getHostName()).isEqualTo(two.getHostBase().getHostName());
+    assertThat(one.getContactBase().getContactId()).isEqualTo(two.getContactBase().getContactId());
   }
 }

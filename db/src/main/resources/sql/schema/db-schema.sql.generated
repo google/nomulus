@@ -133,6 +133,74 @@ create sequence history_id_sequence start 1 increment 1;
         primary key (repo_id)
     );
 
+    create table "ContactHistory" (
+       history_revision_id int8 not null,
+        history_by_superuser boolean not null,
+        history_registrar_id text,
+        history_modification_time timestamptz not null,
+        history_reason text not null,
+        history_requested_by_registrar boolean not null,
+        history_client_transaction_id text,
+        history_server_transaction_id text,
+        history_type text not null,
+        history_xml_bytes bytea not null,
+        auth_info_repo_id text,
+        auth_info_value text,
+        contact_id text,
+        disclose_types_addr text[],
+        disclose_show_email boolean,
+        disclose_show_fax boolean,
+        disclose_mode_flag boolean,
+        disclose_types_name text[],
+        disclose_types_org text[],
+        disclose_show_voice boolean,
+        email text,
+        fax_phone_extension text,
+        fax_phone_number text,
+        addr_i18n_city text,
+        addr_i18n_country_code text,
+        addr_i18n_state text,
+        addr_i18n_street_line1 text,
+        addr_i18n_street_line2 text,
+        addr_i18n_street_line3 text,
+        addr_i18n_zip text,
+        addr_i18n_name text,
+        addr_i18n_org text,
+        addr_i18n_type text,
+        last_transfer_time timestamptz,
+        addr_local_city text,
+        addr_local_country_code text,
+        addr_local_state text,
+        addr_local_street_line1 text,
+        addr_local_street_line2 text,
+        addr_local_street_line3 text,
+        addr_local_zip text,
+        addr_local_name text,
+        addr_local_org text,
+        addr_local_type text,
+        search_name text,
+        transfer_gaining_poll_message_id int8,
+        transfer_losing_poll_message_id int8,
+        transfer_client_txn_id text,
+        transfer_server_txn_id text,
+        transfer_gaining_registrar_id text,
+        transfer_losing_registrar_id text,
+        transfer_pending_expiration_time timestamptz,
+        transfer_request_time timestamptz,
+        transfer_status text,
+        voice_phone_extension text,
+        voice_phone_number text,
+        creation_registrar_id text not null,
+        creation_time timestamptz not null,
+        current_sponsor_registrar_id text not null,
+        deletion_time timestamptz,
+        last_epp_update_registrar_id text,
+        last_epp_update_time timestamptz,
+        statuses text[],
+        contact_repo_id text not null,
+        primary key (history_revision_id)
+    );
+
     create table "Cursor" (
        scope text not null,
         type text not null,
@@ -437,6 +505,10 @@ create index IDX1p3esngcwwu6hstyua6itn6ff on "Contact" (search_name);
 
     alter table if exists "Contact" 
        add constraint UKoqd7n4hbx86hvlgkilq75olas unique (contact_id);
+create index IDXo1xdtpij2yryh0skxe9v91sep on "ContactHistory" (creation_time);
+create index IDXhp33wybmb6tbpr1bq7ttwk8je on "ContactHistory" (history_registrar_id);
+create index IDX9q53px6r302ftgisqifmc6put on "ContactHistory" (history_type);
+create index IDXsudwswtwqnfnx2o1hx4s0k0g5 on "ContactHistory" (history_modification_time);
 create index IDX8nr0ke9mrrx4ewj6pd2ag4rmr on "Domain" (creation_time);
 create index IDXhsjqiy2lyobfymplb28nm74lm on "Domain" (current_sponsor_registrar_id);
 create index IDX5mnf0wn20tno4b9do88j61klr on "Domain" (deletion_time);
