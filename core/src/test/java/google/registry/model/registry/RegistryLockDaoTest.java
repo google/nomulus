@@ -26,26 +26,18 @@ import static google.registry.testing.SqlHelper.getRegistryLocksByRegistrarId;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static org.junit.Assert.assertThrows;
 
+import google.registry.model.EntityTestCase;
 import google.registry.schema.domain.RegistryLock;
-import google.registry.testing.AppEngineRule;
-import google.registry.testing.FakeClock;
 import java.util.Optional;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RegistryLockDao}. */
-public final class RegistryLockDaoTest {
+public final class RegistryLockDaoTest extends EntityTestCase {
 
-  private final FakeClock fakeClock = new FakeClock();
-
-  @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
-          .withDatastoreAndCloudSql()
-          .enableJpaEntityCoverageCheck(true)
-          .withClock(fakeClock)
-          .build();
+  public RegistryLockDaoTest() {
+    super(true);
+  }
 
   @Test
   public void testSaveAndLoad_success() {

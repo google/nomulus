@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.host;
+package google.registry.model.contact;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
@@ -22,10 +22,10 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 
 /**
- * A persisted history entry representing an EPP modification to a host.
+ * A persisted history entry representing an EPP modification to a contact.
  *
  * <p>In addition to the general history fields (e.g. action time, registrar ID) we also persist a
- * copy of the host entity at this point in time. We persist a raw {@link HostBase} so that the
+ * copy of the host entity at this point in time. We persist a raw {@link ContactBase} so that the
  * foreign-keyed fields in that class can refer to this object.
  */
 @Entity
@@ -33,26 +33,24 @@ import javax.persistence.Entity;
     indexes = {
       @javax.persistence.Index(columnList = "creationTime"),
       @javax.persistence.Index(columnList = "historyRegistrarId"),
-      @javax.persistence.Index(columnList = "hostName"),
       @javax.persistence.Index(columnList = "historyType"),
       @javax.persistence.Index(columnList = "historyModificationTime")
     })
-public class HostHistory extends HistoryEntry {
-
-  // Store HostBase instead of HostResource so we don't pick up its @Id
-  HostBase hostBase;
+public class ContactHistory extends HistoryEntry {
+  // Store ContactBase instead of ContactResource so we don't pick up its @Id
+  ContactBase contactBase;
 
   @Column(nullable = false)
-  VKey<HostResource> hostRepoId;
+  VKey<ContactResource> contactRepoId;
 
-  /** The state of the {@link HostBase} object at this point in time. */
-  public HostBase getHostBase() {
-    return hostBase;
+  /** The state of the {@link ContactBase} object at this point in time. */
+  public ContactBase getContactBase() {
+    return contactBase;
   }
 
-  /** The key to the {@link google.registry.model.host.HostResource} this is based off of. */
-  public VKey<HostResource> getHostRepoId() {
-    return hostRepoId;
+  /** The key to the {@link ContactResource} this is based off of. */
+  public VKey<ContactResource> getContactRepoId() {
+    return contactRepoId;
   }
 
   @Override
@@ -60,22 +58,22 @@ public class HostHistory extends HistoryEntry {
     return new Builder(clone(this));
   }
 
-  public static class Builder extends HistoryEntry.Builder<HostHistory, Builder> {
+  public static class Builder extends HistoryEntry.Builder<ContactHistory, ContactHistory.Builder> {
 
     public Builder() {}
 
-    public Builder(HostHistory instance) {
+    public Builder(ContactHistory instance) {
       super(instance);
     }
 
-    public Builder setHostBase(HostBase hostBase) {
-      getInstance().hostBase = hostBase;
+    public Builder setContactBase(ContactBase contactBase) {
+      getInstance().contactBase = contactBase;
       return this;
     }
 
-    public Builder setHostRepoId(VKey<HostResource> hostRepoId) {
-      getInstance().hostRepoId = hostRepoId;
-      hostRepoId.maybeGetOfyKey().ifPresent(parent -> getInstance().parent = parent);
+    public Builder setContactRepoId(VKey<ContactResource> contactRepoId) {
+      getInstance().contactRepoId = contactRepoId;
+      contactRepoId.maybeGetOfyKey().ifPresent(parent -> getInstance().parent = parent);
       return this;
     }
 
@@ -83,7 +81,7 @@ public class HostHistory extends HistoryEntry {
     @Override
     public Builder setParent(Key<? extends EppResource> parent) {
       super.setParent(parent);
-      getInstance().hostRepoId = VKey.create(HostResource.class, parent.getName(), parent);
+      getInstance().contactRepoId = VKey.create(ContactResource.class, parent.getName(), parent);
       return this;
     }
   }
