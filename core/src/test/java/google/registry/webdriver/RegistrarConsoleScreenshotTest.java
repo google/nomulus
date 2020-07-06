@@ -167,13 +167,24 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     Thread.sleep(1000);
     driver.waitForElement(By.tagName("h1"));
     driver.waitForElement(By.id("reg-app-btn-edit")).click();
-    driver.diffPage("page");
+    // The password should show as dots when the user types it in
+    driver.findElement(By.id("contacts[1].registryLockPassword")).sendKeys("password");
+    driver.diffPage("page_with_password");
+
+    // Show the password if the user clicks the button
+    driver.findElement(By.id("showOrHideRegistryLockPassword")).click();
+    Thread.sleep(5);
+    driver.diffPage("page_with_shown_password");
+
+    // Hide it again
+    driver.findElement(By.id("showOrHideRegistryLockPassword")).click();
+    Thread.sleep(5);
+    driver.diffPage("page_with_password_after_hide");
 
     // now actually set the password
-    driver.findElement(By.id("contacts[1].registryLockPassword")).sendKeys("password");
     driver.waitForElement(By.id("reg-app-btn-save")).click();
     Thread.sleep(500);
-    driver.diffPage("contactview");
+    driver.diffPage("contact_view");
 
     server.runInAppEngineEnvironment(
         () -> {
