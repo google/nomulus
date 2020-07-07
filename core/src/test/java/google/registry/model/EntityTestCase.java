@@ -49,6 +49,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Base class of all unit tests for entities which are persisted to Datastore via Objectify. */
 public abstract class EntityTestCase {
 
+  protected enum JpaEntityCheck {
+    ENABLED, DISABLED;
+  }
+
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
   @Rule @RegisterExtension public final AppEngineRule appEngine;
@@ -56,14 +60,14 @@ public abstract class EntityTestCase {
   @Rule @RegisterExtension public InjectRule inject = new InjectRule();
 
   protected EntityTestCase() {
-    this(false);
+    this(JpaEntityCheck.DISABLED);
   }
 
-  protected EntityTestCase(boolean enableJpaEntityCheck) {
+  protected EntityTestCase(JpaEntityCheck jpaEntityCheck) {
     appEngine =
         AppEngineRule.builder()
             .withDatastoreAndCloudSql()
-            .enableJpaEntityCoverageCheck(enableJpaEntityCheck)
+            .enableJpaEntityCoverageCheck(jpaEntityCheck == JpaEntityCheck.ENABLED)
             .withClock(fakeClock)
             .build();
   }
