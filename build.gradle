@@ -477,10 +477,6 @@ task buildFmt {
   tasks.findByName('javadoc').mustRunAfter 'javaIncrementalFormatApply'
   tasks.findByName('checkDependenciesDotGradle').mustRunAfter 'javaIncrementalFormatApply'
   tasks.findByName('checkLicense').mustRunAfter 'javaIncrementalFormatApply'
-  tasks.findByName('check').mustRunAfter 'javadoc'
-  tasks.findByName('check').mustRunAfter 'checkDependenciesDotGradle'
-  tasks.findByName('check').mustRunAfter 'checkLicense'
-  tasks.findByName('assemble').mustRunAfter 'check'
 }
 
 javadocDependentTasks.each { tasks.javadoc.dependsOn(it) }
