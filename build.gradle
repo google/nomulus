@@ -443,6 +443,7 @@ task javaIncrementalFormatDryRun {
     println("${invokeJavaDiffFormatScript("show")}")
   }
 }
+tasks.build.dependsOn(tasks.javaIncrementalFormatCheck)
 
 // Checks if modified lines in Java source files need reformatting.
 // Note that this task processes modified Java files in the entire repository.
@@ -451,8 +452,6 @@ task javaIncrementalFormatApply {
     invokeJavaDiffFormatScript("format")
   }
 }
-
-tasks.build.dependsOn(tasks.javaIncrementalFormatCheck)
 
 task javadoc(type: Javadoc) {
   source javadocSource
@@ -467,5 +466,21 @@ task javadoc(type: Javadoc) {
 }
 
 tasks.build.dependsOn(tasks.javadoc)
+
+task buildFmt {
+  dependsOn 'javaIncrementalFormatApply'
+  dependsOn 'javadoc'
+  dependsOn 'checkDependenciesDotGradle'
+  dependsOn 'checkLicense'
+  dependsOn 'check'
+  dependsOn 'assemble'
+  tasks.findByName('javadoc').mustRunAfter 'javaIncrementalFormatApply'
+  tasks.findByName('checkDependenciesDotGradle').mustRunAfter 'javaIncrementalFormatApply'
+  tasks.findByName('checkLicense').mustRunAfter 'javaIncrementalFormatApply'
+  tasks.findByName('check').mustRunAfter 'javadoc'
+  tasks.findByName('check').mustRunAfter 'checkDependenciesDotGradle'
+  tasks.findByName('check').mustRunAfter 'checkLicense'
+  tasks.findByName('assemble').mustRunAfter 'check'
+}
 
 javadocDependentTasks.each { tasks.javadoc.dependsOn(it) }
