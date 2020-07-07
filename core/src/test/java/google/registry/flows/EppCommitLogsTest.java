@@ -35,7 +35,6 @@ import google.registry.testing.EppLoader;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.testing.InjectRule;
-import google.registry.testing.ShardableTestCase;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Rule;
@@ -45,7 +44,7 @@ import org.junit.runners.JUnit4;
 
 /** Test that domain flows create the commit logs needed to reload at points in the past. */
 @RunWith(JUnit4.class)
-public class EppCommitLogsTest extends ShardableTestCase {
+public class EppCommitLogsTest {
 
   @Rule
   public final AppEngineRule appEngine =

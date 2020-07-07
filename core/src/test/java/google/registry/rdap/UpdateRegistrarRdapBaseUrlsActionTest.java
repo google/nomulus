@@ -35,7 +35,6 @@ import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
 import google.registry.testing.AppEngineRule;
-import google.registry.testing.ShardableTestCase;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
@@ -46,7 +45,7 @@ import org.junit.runners.JUnit4;
 
 /** Unit tests for {@link UpdateRegistrarRdapBaseUrlsAction}. */
 @RunWith(JUnit4.class)
-public final class UpdateRegistrarRdapBaseUrlsActionTest extends ShardableTestCase {
+public final class UpdateRegistrarRdapBaseUrlsActionTest {
 
   /**
    * Example reply from the MoSAPI server.

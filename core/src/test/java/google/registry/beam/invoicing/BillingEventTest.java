@@ -132,8 +132,9 @@ public class BillingEventTest {
   public void testConvertBillingEvent_toCsv() {
     BillingEvent event = BillingEvent.parseFromRecord(schemaAndRecord);
     assertThat(event.toCsv())
-        .isEqualTo("1,2017-10-24 09:06:03 UTC,2017-01-19 23:59:43 UTC,myRegistrar,"
-            + "12345-CRRHELLO,,test,RENEW,example.test,123456,5,USD,20.50,AUTO_RENEW");
+        .isEqualTo(
+            "1,2017-10-24 09:06:03 UTC,2017-01-19 23:59:43 UTC,myRegistrar,"
+                + "12345-CRRHELLO,,test,RENEW,example.test,123456,5,USD,20.50,AUTO_RENEW");
   }
 
   @Test
@@ -142,8 +143,9 @@ public class BillingEventTest {
     record.put("poNumber", "905610");
     BillingEvent event = BillingEvent.parseFromRecord(new SchemaAndRecord(record, null));
     assertThat(event.toCsv())
-        .isEqualTo("1,2017-10-24 09:06:03 UTC,2017-01-19 23:59:43 UTC,myRegistrar,"
-            + "12345-CRRHELLO,905610,test,RENEW,example.test,123456,5,USD,20.50,AUTO_RENEW");
+        .isEqualTo(
+            "1,2017-10-24 09:06:03 UTC,2017-01-19 23:59:43 UTC,myRegistrar,"
+                + "12345-CRRHELLO,905610,test,RENEW,example.test,123456,5,USD,20.50,AUTO_RENEW");
   }
 
   @Test

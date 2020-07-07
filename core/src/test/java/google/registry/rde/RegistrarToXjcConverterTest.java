@@ -28,7 +28,6 @@ import google.registry.model.registrar.RegistrarAddress;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
-import google.registry.testing.ShardableTestCase;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrar;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrarAddrType;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrarPostalInfoEnumType;
@@ -45,11 +44,11 @@ import org.junit.runners.JUnit4;
 /**
  * Unit tests for {@link RegistrarToXjcConverter}.
  *
- * <p>This tests the mapping between {@link Registrar} and {@link XjcRdeRegistrar} as well as
- * some exceptional conditions.
+ * <p>This tests the mapping between {@link Registrar} and {@link XjcRdeRegistrar} as well as some
+ * exceptional conditions.
  */
 @RunWith(JUnit4.class)
-public class RegistrarToXjcConverterTest extends ShardableTestCase {
+public class RegistrarToXjcConverterTest {
 
   @Rule
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();

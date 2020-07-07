@@ -26,7 +26,6 @@ import google.registry.keyring.api.Keyring;
 import google.registry.testing.BouncyCastleProviderRule;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.GpgSystemCommandRule;
-import google.registry.testing.ShardableTestCase;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -43,7 +42,7 @@ import org.junit.runner.RunWith;
 /** GnuPG integration tests for {@link Ghostryde}. */
 @RunWith(Theories.class)
 @SuppressWarnings("resource")
-public class GhostrydeGpgIntegrationTest extends ShardableTestCase {
+public class GhostrydeGpgIntegrationTest {
 
   @Rule
   public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();

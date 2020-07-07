@@ -21,30 +21,30 @@ import static org.junit.Assert.assertThrows;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowTestCase;
 import google.registry.flows.FlowUtils.NotLoggedInException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link LogoutFlow}. */
-public class LogoutFlowTest extends FlowTestCase<LogoutFlow> {
+class LogoutFlowTest extends FlowTestCase<LogoutFlow> {
 
-  public LogoutFlowTest() {
+  LogoutFlowTest() {
     setEppInput("logout.xml");
   }
 
-  @Before
-  public void setupTld() {
+  @BeforeEach
+  void setupTld() {
     createTld("example");
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     assertTransactionalFlow(false);
     // All flow tests are implicitly logged in, so logout should work.
     runFlowAssertResponse(loadFile("logout_response.xml"));
   }
 
   @Test
-  public void testFailure() {
+  void testFailure() {
     sessionMetadata.setClientId(null);  // Turn off the implicit login
     EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();

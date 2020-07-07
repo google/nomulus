@@ -48,7 +48,6 @@ import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.AppEngineRule;
-import google.registry.testing.ShardableTestCase;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Rule;
@@ -58,7 +57,7 @@ import org.junit.runners.JUnit4;
 
 /** Unit tests for {@link AllocationTokenFlowUtils}. */
 @RunWith(JUnit4.class)
-public class AllocationTokenFlowUtilsTest extends ShardableTestCase {
+public class AllocationTokenFlowUtilsTest {
 
   private final AllocationTokenFlowUtils flowUtils =
       new AllocationTokenFlowUtils(new AllocationTokenCustomLogic());

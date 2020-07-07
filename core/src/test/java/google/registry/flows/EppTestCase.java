@@ -46,7 +46,6 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectRule;
-import google.registry.testing.ShardableTestCase;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,7 +55,7 @@ import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Rule;
 
-public class EppTestCase extends ShardableTestCase {
+public class EppTestCase {
 
   private static final MediaType APPLICATION_EPP_XML_UTF8 =
       MediaType.create("application", "epp+xml").withCharset(UTF_8);

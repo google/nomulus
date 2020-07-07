@@ -27,7 +27,6 @@ import google.registry.keyring.api.Keyring;
 import google.registry.testing.BouncyCastleProviderRule;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.GpgSystemCommandRule;
-import google.registry.testing.ShardableTestCase;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -47,7 +46,7 @@ import org.junit.runner.RunWith;
 /** GPG combinatorial integration tests for the Ryde classes. */
 @RunWith(Theories.class)
 @SuppressWarnings("resource")
-public class RydeGpgIntegrationTest extends ShardableTestCase {
+public class RydeGpgIntegrationTest {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

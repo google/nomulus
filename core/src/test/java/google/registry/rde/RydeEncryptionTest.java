@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import google.registry.testing.BouncyCastleProviderRule;
 import google.registry.testing.FakeKeyringModule;
-import google.registry.testing.ShardableTestCase;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -37,7 +36,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public final class RydeEncryptionTest extends ShardableTestCase {
+public final class RydeEncryptionTest {
 
   @Rule public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
 

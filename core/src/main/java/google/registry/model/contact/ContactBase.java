@@ -70,24 +70,24 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
-      @AttributeOverride(name = "name", column = @Column(name = "addr_local_name")),
-      @AttributeOverride(name = "org", column = @Column(name = "addr_local_org")),
-      @AttributeOverride(name = "type", column = @Column(name = "addr_local_type")),
-      @AttributeOverride(
-          name = "address.streetLine1",
-          column = @Column(name = "addr_local_street_line1")),
-      @AttributeOverride(
-          name = "address.streetLine2",
-          column = @Column(name = "addr_local_street_line2")),
-      @AttributeOverride(
-          name = "address.streetLine3",
-          column = @Column(name = "addr_local_street_line3")),
-      @AttributeOverride(name = "address.city", column = @Column(name = "addr_local_city")),
-      @AttributeOverride(name = "address.state", column = @Column(name = "addr_local_state")),
-      @AttributeOverride(name = "address.zip", column = @Column(name = "addr_local_zip")),
-      @AttributeOverride(
-          name = "address.countryCode",
-          column = @Column(name = "addr_local_country_code"))
+    @AttributeOverride(name = "name", column = @Column(name = "addr_local_name")),
+    @AttributeOverride(name = "org", column = @Column(name = "addr_local_org")),
+    @AttributeOverride(name = "type", column = @Column(name = "addr_local_type")),
+    @AttributeOverride(
+        name = "address.streetLine1",
+        column = @Column(name = "addr_local_street_line1")),
+    @AttributeOverride(
+        name = "address.streetLine2",
+        column = @Column(name = "addr_local_street_line2")),
+    @AttributeOverride(
+        name = "address.streetLine3",
+        column = @Column(name = "addr_local_street_line3")),
+    @AttributeOverride(name = "address.city", column = @Column(name = "addr_local_city")),
+    @AttributeOverride(name = "address.state", column = @Column(name = "addr_local_state")),
+    @AttributeOverride(name = "address.zip", column = @Column(name = "addr_local_zip")),
+    @AttributeOverride(
+        name = "address.countryCode",
+        column = @Column(name = "addr_local_country_code"))
   })
   PostalInfo localizedPostalInfo;
 
@@ -98,24 +98,24 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
-      @AttributeOverride(name = "name", column = @Column(name = "addr_i18n_name")),
-      @AttributeOverride(name = "org", column = @Column(name = "addr_i18n_org")),
-      @AttributeOverride(name = "type", column = @Column(name = "addr_i18n_type")),
-      @AttributeOverride(
-          name = "address.streetLine1",
-          column = @Column(name = "addr_i18n_street_line1")),
-      @AttributeOverride(
-          name = "address.streetLine2",
-          column = @Column(name = "addr_i18n_street_line2")),
-      @AttributeOverride(
-          name = "address.streetLine3",
-          column = @Column(name = "addr_i18n_street_line3")),
-      @AttributeOverride(name = "address.city", column = @Column(name = "addr_i18n_city")),
-      @AttributeOverride(name = "address.state", column = @Column(name = "addr_i18n_state")),
-      @AttributeOverride(name = "address.zip", column = @Column(name = "addr_i18n_zip")),
-      @AttributeOverride(
-          name = "address.countryCode",
-          column = @Column(name = "addr_i18n_country_code"))
+    @AttributeOverride(name = "name", column = @Column(name = "addr_i18n_name")),
+    @AttributeOverride(name = "org", column = @Column(name = "addr_i18n_org")),
+    @AttributeOverride(name = "type", column = @Column(name = "addr_i18n_type")),
+    @AttributeOverride(
+        name = "address.streetLine1",
+        column = @Column(name = "addr_i18n_street_line1")),
+    @AttributeOverride(
+        name = "address.streetLine2",
+        column = @Column(name = "addr_i18n_street_line2")),
+    @AttributeOverride(
+        name = "address.streetLine3",
+        column = @Column(name = "addr_i18n_street_line3")),
+    @AttributeOverride(name = "address.city", column = @Column(name = "addr_i18n_city")),
+    @AttributeOverride(name = "address.state", column = @Column(name = "addr_i18n_state")),
+    @AttributeOverride(name = "address.zip", column = @Column(name = "addr_i18n_zip")),
+    @AttributeOverride(
+        name = "address.countryCode",
+        column = @Column(name = "addr_i18n_country_code"))
   })
   PostalInfo internationalizedPostalInfo;
 
@@ -130,8 +130,8 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
-      @AttributeOverride(name = "phoneNumber", column = @Column(name = "voice_phone_number")),
-      @AttributeOverride(name = "extension", column = @Column(name = "voice_phone_extension")),
+    @AttributeOverride(name = "phoneNumber", column = @Column(name = "voice_phone_number")),
+    @AttributeOverride(name = "extension", column = @Column(name = "voice_phone_extension")),
   })
   ContactPhoneNumber voice;
 
@@ -139,8 +139,8 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   @IgnoreSave(IfNull.class)
   @Embedded
   @AttributeOverrides({
-      @AttributeOverride(name = "phoneNumber", column = @Column(name = "fax_phone_number")),
-      @AttributeOverride(name = "extension", column = @Column(name = "fax_phone_extension")),
+    @AttributeOverride(name = "phoneNumber", column = @Column(name = "fax_phone_number")),
+    @AttributeOverride(name = "extension", column = @Column(name = "fax_phone_extension")),
   })
   ContactPhoneNumber fax;
 
@@ -151,8 +151,8 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   /** Authorization info (aka transfer secret) of the contact. */
   @Embedded
   @AttributeOverrides({
-      @AttributeOverride(name = "pw.value", column = @Column(name = "auth_info_value")),
-      @AttributeOverride(name = "pw.repoId", column = @Column(name = "auth_info_repo_id")),
+    @AttributeOverride(name = "pw.value", column = @Column(name = "auth_info_value")),
+    @AttributeOverride(name = "pw.repoId", column = @Column(name = "auth_info_repo_id")),
   })
   ContactAuthInfo authInfo;
 
@@ -172,13 +172,13 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   /** Disclosure policy. */
   @Embedded
   @AttributeOverrides({
-      @AttributeOverride(name = "name", column = @Column(name = "disclose_types_name")),
-      @AttributeOverride(name = "org", column = @Column(name = "disclose_types_org")),
-      @AttributeOverride(name = "addr", column = @Column(name = "disclose_types_addr")),
-      @AttributeOverride(name = "flag", column = @Column(name = "disclose_mode_flag")),
-      @AttributeOverride(name = "voice.marked", column = @Column(name = "disclose_show_voice")),
-      @AttributeOverride(name = "fax.marked", column = @Column(name = "disclose_show_fax")),
-      @AttributeOverride(name = "email.marked", column = @Column(name = "disclose_show_email"))
+    @AttributeOverride(name = "name", column = @Column(name = "disclose_types_name")),
+    @AttributeOverride(name = "org", column = @Column(name = "disclose_types_org")),
+    @AttributeOverride(name = "addr", column = @Column(name = "disclose_types_addr")),
+    @AttributeOverride(name = "flag", column = @Column(name = "disclose_mode_flag")),
+    @AttributeOverride(name = "voice.marked", column = @Column(name = "disclose_show_voice")),
+    @AttributeOverride(name = "fax.marked", column = @Column(name = "disclose_show_fax")),
+    @AttributeOverride(name = "email.marked", column = @Column(name = "disclose_show_email"))
   })
   Disclose disclose;
 

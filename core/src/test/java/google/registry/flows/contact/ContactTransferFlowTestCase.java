@@ -28,7 +28,7 @@ import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.AppEngineRule;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Base class for contact transfer flow unit tests.
@@ -49,13 +49,13 @@ public class ContactTransferFlowTestCase<F extends Flow, R extends EppResource>
 
   protected ContactResource contact;
 
-  public ContactTransferFlowTestCase() {
+  ContactTransferFlowTestCase() {
     checkState(!Registry.DEFAULT_TRANSFER_GRACE_PERIOD.isShorterThan(TIME_SINCE_REQUEST));
     clock.setTo(TRANSFER_REQUEST_TIME.plus(TIME_SINCE_REQUEST));
   }
 
-  @Before
-  public void initContactTest() {
+  @BeforeEach
+  void initContactTest() {
     // Registrar ClientZ is used in tests that need another registrar that definitely doesn't own
     // the resources in question.
     persistResource(
@@ -63,7 +63,7 @@ public class ContactTransferFlowTestCase<F extends Flow, R extends EppResource>
   }
 
   /** Adds a contact that has a pending transfer on it from TheRegistrar to NewRegistrar. */
-  protected void setupContactWithPendingTransfer() {
+  void setupContactWithPendingTransfer() {
     contact = persistContactWithPendingTransfer(
         newContactResource("sh8013"),
         TRANSFER_REQUEST_TIME,

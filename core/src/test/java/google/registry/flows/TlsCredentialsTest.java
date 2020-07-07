@@ -25,7 +25,6 @@ import static org.mockito.Mockito.when;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.testing.AppEngineRule;
-import google.registry.testing.ShardableTestCase;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;
@@ -36,7 +35,7 @@ import org.junit.runners.JUnit4;
 
 /** Unit tests for {@link TlsCredentials}. */
 @RunWith(JUnit4.class)
-public final class TlsCredentialsTest extends ShardableTestCase {
+public final class TlsCredentialsTest {
 
   @Rule
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();

@@ -19,7 +19,6 @@ import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.xml.ValidationMode.STRICT;
 
 import google.registry.testing.AppEngineRule;
-import google.registry.testing.ShardableTestCase;
 import google.registry.xml.XmlTestUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,7 +27,7 @@ import org.junit.runners.JUnit4;
 
 /** Unit tests for {@link RdeMarshaller}. */
 @RunWith(JUnit4.class)
-public class RdeMarshallerTest extends ShardableTestCase {
+public class RdeMarshallerTest {
 
   private static final String DECLARATION =
       "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n";

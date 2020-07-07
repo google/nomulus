@@ -43,7 +43,6 @@ import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.testing.InjectRule;
-import google.registry.testing.ShardableTestCase;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.CapturingLogHandler;
@@ -62,7 +61,7 @@ import org.mockito.junit.MockitoRule;
 
 /** Unit tests for {@link AsyncTaskEnqueuer}. */
 @RunWith(JUnit4.class)
-public class AsyncTaskEnqueuerTest extends ShardableTestCase {
+public class AsyncTaskEnqueuerTest {
 
   @Rule
   public final AppEngineRule appEngine =
