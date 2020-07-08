@@ -468,16 +468,16 @@ task javadoc(type: Javadoc) {
 
 tasks.build.dependsOn(tasks.javadoc)
 
-task buildFmt {
+// Task for doing development on core Nomulus.
+// This fixes code formatting automatically as necessary, builds and tests the
+// core Nomulus codebase, and runs all presubmits.
+task coreDev {
   dependsOn 'javaIncrementalFormatApply'
   dependsOn 'javadoc'
   dependsOn 'checkDependenciesDotGradle'
   dependsOn 'checkLicense'
   dependsOn ':core:check'
   dependsOn 'assemble'
-  tasks.javadoc.mustRunAfter 'javaIncrementalFormatApply'
-  tasks.checkDependenciesDotGradle.mustRunAfter 'javaIncrementalFormatApply'
-  tasks.checkLicense.mustRunAfter 'javaIncrementalFormatApply'
 }
 
 javadocDependentTasks.each { tasks.javadoc.dependsOn(it) }
