@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 public class ContactHistoryTest extends EntityTestCase {
 
   public ContactHistoryTest() {
-    super(JpaEntityCheck.ENABLED);
+    super(JpaEntityCoverageCheck.ENABLED);
   }
 
   @Test

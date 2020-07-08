@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 public class HostHistoryTest extends EntityTestCase {
 
   public HostHistoryTest() {
-    super(JpaEntityCheck.ENABLED);
+    super(JpaEntityCoverageCheck.ENABLED);
   }
 
   @Test

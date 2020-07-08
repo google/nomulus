@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 public final class RegistryLockDaoTest extends EntityTestCase {
 
   public RegistryLockDaoTest() {
-    super(JpaEntityCheck.ENABLED);
+    super(JpaEntityCoverageCheck.ENABLED);
   }
 
   @Test

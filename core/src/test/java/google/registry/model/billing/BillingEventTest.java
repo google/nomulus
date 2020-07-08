@@ -51,7 +51,7 @@ public class BillingEventTest extends EntityTestCase {
   private final DateTime now = DateTime.now(UTC);
 
   public BillingEventTest() {
-    super(JpaEntityCheck.ENABLED);
+    super(JpaEntityCoverageCheck.ENABLED);
   }
 
   HistoryEntry historyEntry;

@@ -47,7 +47,7 @@ public class Spec11ThreatMatchTest extends EntityTestCase {
   private ContactResource registrantContact;
 
   public Spec11ThreatMatchTest() {
-    super(JpaEntityCheck.ENABLED);
+    super(JpaEntityCoverageCheck.ENABLED);
   }
 
   @BeforeEach
