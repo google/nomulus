@@ -52,7 +52,6 @@ import google.registry.testing.EppLoader;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.testing.InjectRule;
-import google.registry.testing.ShardableTestCase;
 import google.registry.testing.TestDataHelper;
 import google.registry.tmch.TmchCertificateAuthority;
 import google.registry.tmch.TmchXmlSignature;
@@ -63,18 +62,15 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Base class for resource flow unit tests.
  *
  * @param <F> the flow type
  */
-@RunWith(JUnit4.class)
-public abstract class FlowTestCase<F extends Flow> extends ShardableTestCase {
+public abstract class FlowTestCase<F extends Flow> {
 
   /** Whether to actually write to Datastore or just simulate. */
   public enum CommitMode { LIVE, DRY_RUN }
@@ -82,23 +78,22 @@ public abstract class FlowTestCase<F extends Flow> extends ShardableTestCase {
   /** Whether to run in normal or superuser mode. */
   public enum UserPrivileges { NORMAL, SUPERUSER }
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
   protected EppLoader eppLoader;
   protected SessionMetadata sessionMetadata;
   protected FakeClock clock = new FakeClock(DateTime.now(UTC));
   protected TransportCredentials credentials = new PasswordOnlyTransportCredentials();
   protected EppRequestSource eppRequestSource = EppRequestSource.UNIT_TEST;
-  protected TmchXmlSignature testTmchXmlSignature = null;
+  private TmchXmlSignature testTmchXmlSignature = null;
 
   private EppMetric.Builder eppMetricBuilder;
 
-  @Before
+  @BeforeEach
   public void init() {
     sessionMetadata = new HttpSessionMetadata(new FakeHttpSession());
     sessionMetadata.setClientId("TheRegistrar");
@@ -204,29 +199,26 @@ public abstract class FlowTestCase<F extends Flow> extends ShardableTestCase {
   }
 
   /**
-   * Assert that the actual grace periods and the corresponding billing events referenced from
-   * their keys match the expected map of grace periods to billing events.  For the expected map,
-   * the keys on the grace periods and IDs on the billing events are ignored.
+   * Assert that the actual grace periods and the corresponding billing events referenced from their
+   * keys match the expected map of grace periods to billing events. For the expected map, the keys
+   * on the grace periods and IDs on the billing events are ignored.
    */
-  public void assertGracePeriods(
-      Iterable<GracePeriod> actual,
-      ImmutableMap<GracePeriod, ? extends BillingEvent> expected) {
+  protected void assertGracePeriods(
+      Iterable<GracePeriod> actual, ImmutableMap<GracePeriod, ? extends BillingEvent> expected) {
     assertThat(canonicalizeGracePeriods(Maps.toMap(actual, FlowTestCase::expandGracePeriod)))
         .isEqualTo(canonicalizeGracePeriods(expected));
   }
 
-  public void assertPollMessages(
-      String clientId,
-      PollMessage... expected) {
+  protected void assertPollMessages(String clientId, PollMessage... expected) {
     assertPollMessagesHelper(getPollMessages(clientId), expected);
   }
 
-  public void assertPollMessages(PollMessage... expected) {
+  protected void assertPollMessages(PollMessage... expected) {
     assertPollMessagesHelper(getPollMessages(), expected);
   }
 
   /** Assert that the list matches all the poll messages in the fake Datastore. */
-  public void assertPollMessagesHelper(
+  private void assertPollMessagesHelper(
       Iterable<PollMessage> pollMessages, PollMessage... expected) {
     // Ordering is irrelevant but duplicates should be considered independently.
     assertThat(
@@ -279,7 +271,7 @@ public abstract class FlowTestCase<F extends Flow> extends ShardableTestCase {
   }
 
   /** Shortcut to call {@link #runFlow(CommitMode, UserPrivileges)} as super user and live run. */
-  public EppOutput runFlowAsSuperuser() throws Exception {
+  protected EppOutput runFlowAsSuperuser() throws Exception {
     return runFlow(CommitMode.LIVE, UserPrivileges.SUPERUSER);
   }
 

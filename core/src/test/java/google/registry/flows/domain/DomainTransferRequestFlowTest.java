@@ -109,11 +109,11 @@ import java.util.stream.Stream;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainTransferRequestFlow}. */
-public class DomainTransferRequestFlowTest
+class DomainTransferRequestFlowTest
     extends DomainTransferFlowTestCase<DomainTransferRequestFlow, DomainBase> {
 
   private static final ImmutableMap<String, String> BASE_FEE_MAP =
@@ -151,8 +151,8 @@ public class DomainTransferRequestFlowTest
           .put("FEE_NS", "fee12")
           .build();
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void setUp() {
     setEppInput("domain_transfer_request.xml");
     setClientIdForFlow("NewRegistrar");
   }
@@ -655,7 +655,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testDryRun() throws Exception {
+  void testDryRun() throws Exception {
     setupDomain("example", "tld");
     setEppInput("domain_transfer_request.xml");
     eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
@@ -663,34 +663,34 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     setupDomain("example", "tld");
     doSuccessfulTest("domain_transfer_request.xml", "domain_transfer_request_response.xml");
   }
 
   @Test
-  public void testSuccess_fee_v06() throws Exception {
+  void testSuccess_fee_v06() throws Exception {
     setupDomain("example", "tld");
     doSuccessfulTest(
         "domain_transfer_request_fee.xml", "domain_transfer_request_response_fee.xml", FEE_06_MAP);
   }
 
   @Test
-  public void testSuccess_fee_v11() throws Exception {
+  void testSuccess_fee_v11() throws Exception {
     setupDomain("example", "tld");
     doSuccessfulTest(
         "domain_transfer_request_fee.xml", "domain_transfer_request_response_fee.xml", FEE_11_MAP);
   }
 
   @Test
-  public void testSuccess_fee_v12() throws Exception {
+  void testSuccess_fee_v12() throws Exception {
     setupDomain("example", "tld");
     doSuccessfulTest(
         "domain_transfer_request_fee.xml", "domain_transfer_request_response_fee.xml", FEE_12_MAP);
   }
 
   @Test
-  public void testSuccess_fee_withDefaultAttributes_v06() throws Exception {
+  void testSuccess_fee_withDefaultAttributes_v06() throws Exception {
     setupDomain("example", "tld");
     doSuccessfulTest(
         "domain_transfer_request_fee_defaults.xml",
@@ -699,7 +699,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_fee_withDefaultAttributes_v11() throws Exception {
+  void testSuccess_fee_withDefaultAttributes_v11() throws Exception {
     setupDomain("example", "tld");
     doSuccessfulTest(
         "domain_transfer_request_fee_defaults.xml",
@@ -708,7 +708,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_fee_withDefaultAttributes_v12() throws Exception {
+  void testSuccess_fee_withDefaultAttributes_v12() throws Exception {
     setupDomain("example", "tld");
     doSuccessfulTest(
         "domain_transfer_request_fee_defaults.xml",
@@ -717,7 +717,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_refundableFee_v06() {
+  void testFailure_refundableFee_v06() {
     setupDomain("example", "tld");
     EppException thrown =
         assertThrows(
@@ -727,7 +727,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_refundableFee_v11() {
+  void testFailure_refundableFee_v11() {
     setupDomain("example", "tld");
     EppException thrown =
         assertThrows(
@@ -737,7 +737,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_refundableFee_v12() {
+  void testFailure_refundableFee_v12() {
     setupDomain("example", "tld");
     EppException thrown =
         assertThrows(
@@ -747,7 +747,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_gracePeriodFee_v06() {
+  void testFailure_gracePeriodFee_v06() {
     setupDomain("example", "tld");
     EppException thrown =
         assertThrows(
@@ -757,7 +757,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_gracePeriodFee_v11() {
+  void testFailure_gracePeriodFee_v11() {
     setupDomain("example", "tld");
     EppException thrown =
         assertThrows(
@@ -767,7 +767,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_gracePeriodFee_v12() {
+  void testFailure_gracePeriodFee_v12() {
     setupDomain("example", "tld");
     EppException thrown =
         assertThrows(
@@ -777,7 +777,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_appliedFee_v06() {
+  void testFailure_appliedFee_v06() {
     setupDomain("example", "tld");
     EppException thrown =
         assertThrows(
@@ -787,7 +787,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_appliedFee_v11() {
+  void testFailure_appliedFee_v11() {
     setupDomain("example", "tld");
     EppException thrown =
         assertThrows(
@@ -797,7 +797,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_appliedFee_v12() {
+  void testFailure_appliedFee_v12() {
     setupDomain("example", "tld");
     EppException thrown =
         assertThrows(
@@ -807,7 +807,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_suspendedRegistrarCantTransferDomain() {
+  void testFailure_suspendedRegistrarCantTransferDomain() {
     setupDomain("example", "tld");
     clock.advanceOneMilli();
     persistResource(
@@ -824,7 +824,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_pendingRegistrarCantTransferDomain() {
+  void testFailure_pendingRegistrarCantTransferDomain() {
     setupDomain("example", "tld");
     clock.advanceOneMilli();
     persistResource(
@@ -841,7 +841,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_nonDefaultAutomaticTransferLength() throws Exception {
+  void testSuccess_nonDefaultAutomaticTransferLength() throws Exception {
     setupDomain("example", "tld");
     persistResource(
         Registry.get("tld")
@@ -853,7 +853,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_nonDefaultTransferGracePeriod() throws Exception {
+  void testSuccess_nonDefaultTransferGracePeriod() throws Exception {
     setupDomain("example", "tld");
     persistResource(
         Registry.get("tld")
@@ -864,14 +864,14 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_missingPeriod_defaultsToOneYear() throws Exception {
+  void testSuccess_missingPeriod_defaultsToOneYear() throws Exception {
     setupDomain("example", "tld");
     doSuccessfulTest(
         "domain_transfer_request_missing_period.xml", "domain_transfer_request_response.xml");
   }
 
   @Test
-  public void testSuccess_canTransferAwayFromSuspendedRegistrar() throws Exception {
+  void testSuccess_canTransferAwayFromSuspendedRegistrar() throws Exception {
     setupDomain("example", "tld");
     clock.advanceOneMilli();
     persistResource(
@@ -884,7 +884,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_inQuietPeriod() throws Exception {
+  void testSuccess_inQuietPeriod() throws Exception {
     setupDomain("example", "tld");
     persistResource(
         Registry.get("tld")
@@ -895,7 +895,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_multiYearPeriod() {
+  void testFailure_multiYearPeriod() {
     setupDomain("example", "tld");
     clock.advanceOneMilli();
     EppException thrown =
@@ -906,8 +906,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_superuserExtension_zeroPeriod_nonZeroAutomaticTransferLength()
-      throws Exception {
+  void testSuccess_superuserExtension_zeroPeriod_nonZeroAutomaticTransferLength() throws Exception {
     setupDomain("example", "tld");
     eppRequestSource = EppRequestSource.TOOL;
     clock.advanceOneMilli();
@@ -922,8 +921,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_superuserExtension_zeroPeriod_zeroAutomaticTransferLength()
-      throws Exception {
+  void testSuccess_superuserExtension_zeroPeriod_zeroAutomaticTransferLength() throws Exception {
     setupDomain("example", "tld");
     eppRequestSource = EppRequestSource.TOOL;
     clock.advanceOneMilli();
@@ -938,7 +936,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_superuserExtension_nonZeroPeriod_nonZeroAutomaticTransferLength()
+  void testSuccess_superuserExtension_nonZeroPeriod_nonZeroAutomaticTransferLength()
       throws Exception {
     setupDomain("example", "tld");
     eppRequestSource = EppRequestSource.TOOL;
@@ -954,7 +952,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_superuserExtension_zeroPeriod_autorenewGraceActive() throws Exception {
+  void testSuccess_superuserExtension_zeroPeriod_autorenewGraceActive() throws Exception {
     eppRequestSource = EppRequestSource.TOOL;
     setupDomain("example", "tld");
     Key<BillingEvent.Recurring> existingAutorenewEvent = domain.getAutorenewBillingEvent();
@@ -986,7 +984,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_superuserExtension_twoYearPeriod() {
+  void testFailure_superuserExtension_twoYearPeriod() {
     setupDomain("example", "tld");
     eppRequestSource = EppRequestSource.TOOL;
     clock.advanceOneMilli();
@@ -1000,7 +998,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_superuserExtension_zeroPeriod_feeTransferExtension() {
+  void testFailure_superuserExtension_zeroPeriod_feeTransferExtension() {
     setupDomain("example", "tld");
     eppRequestSource = EppRequestSource.TOOL;
     clock.advanceOneMilli();
@@ -1014,7 +1012,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_cappedExpiration() throws Exception {
+  void testSuccess_cappedExpiration() throws Exception {
     setupDomain("example", "tld");
     // Set the domain to expire 10 years from now (as if it were just created with a 10-year term).
     domain =
@@ -1031,14 +1029,14 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_domainAuthInfo() throws Exception {
+  void testSuccess_domainAuthInfo() throws Exception {
     setupDomain("example", "tld");
     doSuccessfulTest(
         "domain_transfer_request_domain_authinfo.xml", "domain_transfer_request_response.xml");
   }
 
   @Test
-  public void testSuccess_customLogicFee() throws Exception {
+  void testSuccess_customLogicFee() throws Exception {
     setupDomain("expensive-domain", "foo");
     clock.advanceOneMilli();
     doSuccessfulTest(
@@ -1057,7 +1055,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_notAuthorizedForTld() {
+  void testFailure_notAuthorizedForTld() {
     setupDomain("example", "tld");
     persistResource(
         loadRegistrar("NewRegistrar").asBuilder().setAllowedTlds(ImmutableSet.of()).build());
@@ -1071,7 +1069,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_superuserNotAuthorizedForTld() throws Exception {
+  void testSuccess_superuserNotAuthorizedForTld() throws Exception {
     setupDomain("example", "tld");
     persistResource(
         loadRegistrar("NewRegistrar").asBuilder().setAllowedTlds(ImmutableSet.of()).build());
@@ -1081,7 +1079,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_autorenewGraceActive_onlyAtTransferRequestTime() throws Exception {
+  void testSuccess_autorenewGraceActive_onlyAtTransferRequestTime() throws Exception {
     setupDomain("example", "tld");
     // Set the domain to have auto-renewed long enough ago that it is still in the autorenew grace
     // period at the transfer request time, but will have exited it by the automatic transfer time.
@@ -1110,7 +1108,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_autorenewGraceActive_throughoutTransferWindow() throws Exception {
+  void testSuccess_autorenewGraceActive_throughoutTransferWindow() throws Exception {
     setupDomain("example", "tld");
     Key<BillingEvent.Recurring> existingAutorenewEvent = domain.getAutorenewBillingEvent();
     // Set domain to have auto-renewed just before the transfer request, so that it will have an
@@ -1148,7 +1146,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_autorenewGraceActive_onlyAtAutomaticTransferTime() throws Exception {
+  void testSuccess_autorenewGraceActive_onlyAtAutomaticTransferTime() throws Exception {
     setupDomain("example", "tld");
     Key<BillingEvent.Recurring> existingAutorenewEvent = domain.getAutorenewBillingEvent();
     // Set domain to expire in 1 day, so that it will be in the autorenew grace period by the
@@ -1176,7 +1174,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_premiumNotBlocked() throws Exception {
+  void testSuccess_premiumNotBlocked() throws Exception {
     setupDomain("rich", "example");
     clock.advanceOneMilli();
     // We don't verify the results; just check that the flow doesn't fail.
@@ -1184,7 +1182,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_premiumNotBlockedInSuperuserMode() throws Exception {
+  void testSuccess_premiumNotBlockedInSuperuserMode() throws Exception {
     setupDomain("rich", "example");
     clock.advanceOneMilli();
     // Modify the Registrar to block premium names.
@@ -1206,22 +1204,22 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_wrongCurrency_v06() {
+  void testFailure_wrongCurrency_v06() {
     runWrongCurrencyTest(FEE_06_MAP);
   }
 
   @Test
-  public void testFailure_wrongCurrency_v11() {
+  void testFailure_wrongCurrency_v11() {
     runWrongCurrencyTest(FEE_11_MAP);
   }
 
   @Test
-  public void testFailure_wrongCurrency_v12() {
+  void testFailure_wrongCurrency_v12() {
     runWrongCurrencyTest(FEE_12_MAP);
   }
 
   @Test
-  public void testFailure_unknownCurrency() {
+  void testFailure_unknownCurrency() {
     Map<String, String> substitutions = Maps.newHashMap();
     substitutions.putAll(FEE_06_MAP);
     substitutions.put("CURRENCY", "BAD");
@@ -1232,7 +1230,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_feeGivenInWrongScale_v06() {
+  void testFailure_feeGivenInWrongScale_v06() {
     setupDomain("example", "tld");
     EppException thrown =
         assertThrows(
@@ -1242,7 +1240,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_feeGivenInWrongScale_v11() {
+  void testFailure_feeGivenInWrongScale_v11() {
     setupDomain("example", "tld");
     EppException thrown =
         assertThrows(
@@ -1252,7 +1250,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_feeGivenInWrongScale_v12() {
+  void testFailure_feeGivenInWrongScale_v12() {
     setupDomain("example", "tld");
     EppException thrown =
         assertThrows(
@@ -1275,25 +1273,25 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_wrongFeeAmount_v06() {
+  void testFailure_wrongFeeAmount_v06() {
     setupDomain("example", "tld");
     runWrongFeeAmountTest(FEE_06_MAP);
   }
 
   @Test
-  public void testFailure_wrongFeeAmount_v11() {
+  void testFailure_wrongFeeAmount_v11() {
     setupDomain("example", "tld");
     runWrongFeeAmountTest(FEE_11_MAP);
   }
 
   @Test
-  public void testFailure_wrongFeeAmount_v12() {
+  void testFailure_wrongFeeAmount_v12() {
     setupDomain("example", "tld");
     runWrongFeeAmountTest(FEE_12_MAP);
   }
 
   @Test
-  public void testFailure_premiumBlocked() {
+  void testFailure_premiumBlocked() {
     setupDomain("rich", "example");
     // Modify the Registrar to block premium names.
     persistResource(loadRegistrar("NewRegistrar").asBuilder().setBlockPremiumNames(true).build());
@@ -1305,7 +1303,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_feeNotProvidedOnPremiumName() {
+  void testFailure_feeNotProvidedOnPremiumName() {
     setupDomain("rich", "example");
     EppException thrown =
         assertThrows(
@@ -1315,7 +1313,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_noAuthInfo() {
+  void testFailure_noAuthInfo() {
     setupDomain("example", "tld");
     EppException thrown =
         assertThrows(
@@ -1325,7 +1323,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_badContactPassword() {
+  void testFailure_badContactPassword() {
     setupDomain("example", "tld");
     // Change the contact's password so it does not match the password in the file.
     contact =
@@ -1342,7 +1340,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_badContactRepoId() {
+  void testFailure_badContactRepoId() {
     setupDomain("example", "tld");
     // Set the contact to a different ROID, but don't persist it; this is just so the substitution
     // code above will write the wrong ROID into the file.
@@ -1355,42 +1353,42 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testSuccess_clientApproved() throws Exception {
+  void testSuccess_clientApproved() throws Exception {
     setupDomain("example", "tld");
     changeTransferStatus(TransferStatus.CLIENT_APPROVED);
     doSuccessfulTest("domain_transfer_request.xml", "domain_transfer_request_response.xml");
   }
 
   @Test
-  public void testSuccess_clientRejected() throws Exception {
+  void testSuccess_clientRejected() throws Exception {
     setupDomain("example", "tld");
     changeTransferStatus(TransferStatus.CLIENT_REJECTED);
     doSuccessfulTest("domain_transfer_request.xml", "domain_transfer_request_response.xml");
   }
 
   @Test
-  public void testSuccess_clientCancelled() throws Exception {
+  void testSuccess_clientCancelled() throws Exception {
     setupDomain("example", "tld");
     changeTransferStatus(TransferStatus.CLIENT_CANCELLED);
     doSuccessfulTest("domain_transfer_request.xml", "domain_transfer_request_response.xml");
   }
 
   @Test
-  public void testSuccess_serverApproved() throws Exception {
+  void testSuccess_serverApproved() throws Exception {
     setupDomain("example", "tld");
     changeTransferStatus(TransferStatus.SERVER_APPROVED);
     doSuccessfulTest("domain_transfer_request.xml", "domain_transfer_request_response.xml");
   }
 
   @Test
-  public void testSuccess_serverCancelled() throws Exception {
+  void testSuccess_serverCancelled() throws Exception {
     setupDomain("example", "tld");
     changeTransferStatus(TransferStatus.SERVER_CANCELLED);
     doSuccessfulTest("domain_transfer_request.xml", "domain_transfer_request_response.xml");
   }
 
   @Test
-  public void testFailure_pending() {
+  void testFailure_pending() {
     setupDomain("example", "tld");
     domain =
         persistResource(
@@ -1412,7 +1410,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_badDomainPassword() {
+  void testFailure_badDomainPassword() {
     setupDomain("example", "tld");
     // Change the domain's password so it does not match the password in the file.
     domain =
@@ -1429,7 +1427,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_sponsoringClient() {
+  void testFailure_sponsoringClient() {
     setupDomain("example", "tld");
     setClientIdForFlow("TheRegistrar");
     EppException thrown =
@@ -1440,7 +1438,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_deletedDomain() throws Exception {
+  void testFailure_deletedDomain() throws Exception {
     setupDomain("example", "tld");
     domain =
         persistResource(domain.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
@@ -1452,7 +1450,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_invalidDomain() throws Exception {
+  void testFailure_invalidDomain() throws Exception {
     setupDomain("example", "tld");
     setEppInput(
         "domain_transfer_request_wildcard.xml",
@@ -1467,7 +1465,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_nonexistentDomain() {
+  void testFailure_nonexistentDomain() {
     createTld("tld");
     contact = persistActiveContact("jd1234");
     ResourceDoesNotExistException thrown =
@@ -1478,7 +1476,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_periodInMonths() {
+  void testFailure_periodInMonths() {
     setupDomain("example", "tld");
     EppException thrown =
         assertThrows(
@@ -1488,7 +1486,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_clientTransferProhibited() {
+  void testFailure_clientTransferProhibited() {
     setupDomain("example", "tld");
     domain =
         persistResource(
@@ -1501,7 +1499,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_serverTransferProhibited() {
+  void testFailure_serverTransferProhibited() {
     setupDomain("example", "tld");
     domain =
         persistResource(
@@ -1514,7 +1512,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testFailure_pendingDelete() {
+  void testFailure_pendingDelete() {
     setupDomain("example", "tld");
     domain = persistResource(domain.asBuilder().addStatusValue(StatusValue.PENDING_DELETE).build());
     ResourceStatusProhibitsOperationException thrown =
@@ -1525,7 +1523,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testIcannActivityReportField_getsLogged() throws Exception {
+  void testIcannActivityReportField_getsLogged() throws Exception {
     setupDomain("example", "tld");
     clock.advanceOneMilli();
     runTest("domain_transfer_request.xml", UserPrivileges.NORMAL);
@@ -1534,7 +1532,7 @@ public class DomainTransferRequestFlowTest
   }
 
   @Test
-  public void testIcannTransactionRecord_getsStored() throws Exception {
+  void testIcannTransactionRecord_getsStored() throws Exception {
     setupDomain("example", "tld");
     persistResource(
         Registry.get("tld")

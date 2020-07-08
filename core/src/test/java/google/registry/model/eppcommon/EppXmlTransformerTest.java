@@ -21,14 +21,13 @@ import static org.junit.Assert.assertThrows;
 
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput;
-import google.registry.testing.ShardableTestCase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 /** Tests for {@link EppXmlTransformer}. */
 @RunWith(JUnit4.class)
-public class EppXmlTransformerTest extends ShardableTestCase {
+public class EppXmlTransformerTest {
 
   @Test
   public void testUnmarshalingEppInput() throws Exception {

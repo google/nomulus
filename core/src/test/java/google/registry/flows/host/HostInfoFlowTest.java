@@ -36,18 +36,18 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostInfoFlow}. */
-public class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> {
+class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> {
 
-  public HostInfoFlowTest() {
+  HostInfoFlowTest() {
     setEppInput("host_info.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld"));
   }
 
-  @Before
-  public void initHostTest() {
+  @BeforeEach
+  void initHostTest() {
     createTld("foobar");
   }
 
@@ -73,7 +73,7 @@ public class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostRes
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     persistHostResource();
     assertTransactionalFlow(false);
     // Check that the persisted host info was returned.
@@ -86,7 +86,7 @@ public class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostRes
   }
 
   @Test
-  public void testSuccess_linked() throws Exception {
+  void testSuccess_linked() throws Exception {
     persistHostResource();
     persistResource(
         newDomainBase("example.foobar")
@@ -130,31 +130,31 @@ public class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostRes
   }
 
   @Test
-  public void testSuccess_withSuperordinateDomain_hostMovedAfterDomainTransfer() throws Exception {
+  void testSuccess_withSuperordinateDomain_hostMovedAfterDomainTransfer() throws Exception {
     runTest_superordinateDomain(
         DateTime.parse("2000-01-08T09:00:00.0Z"), DateTime.parse("2000-03-01T01:00:00.0Z"));
   }
 
   @Test
-  public void testSuccess_withSuperordinateDomain_hostMovedBeforeDomainTransfer() throws Exception {
+  void testSuccess_withSuperordinateDomain_hostMovedBeforeDomainTransfer() throws Exception {
     runTest_superordinateDomain(
         DateTime.parse("2000-04-08T09:00:00.0Z"), DateTime.parse("2000-02-08T09:00:00.0Z"));
   }
 
   @Test
-  public void testSuccess_withSuperordinateDomain() throws Exception {
+  void testSuccess_withSuperordinateDomain() throws Exception {
     runTest_superordinateDomain(DateTime.parse("2000-04-08T09:00:00.0Z"), null);
   }
 
   @Test
-  public void testFailure_neverExisted() throws Exception {
+  void testFailure_neverExisted() throws Exception {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
   }
 
   @Test
-  public void testFailure_existedButWasDeleted() throws Exception {
+  void testFailure_existedButWasDeleted() throws Exception {
     persistResource(
         persistHostResource().asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     ResourceDoesNotExistException thrown =
@@ -163,14 +163,14 @@ public class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostRes
   }
 
   @Test
-  public void testFailure_nonLowerCaseHostname() {
+  void testFailure_nonLowerCaseHostname() {
     setEppInput("host_info.xml", ImmutableMap.of("HOSTNAME", "NS1.EXAMPLE.NET"));
     EppException thrown = assertThrows(HostNameNotLowerCaseException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  public void testFailure_nonPunyCodedHostname() {
+  void testFailure_nonPunyCodedHostname() {
     setEppInput("host_info.xml", ImmutableMap.of("HOSTNAME", "ns1.çauçalito.tld"));
     HostNameNotPunyCodedException thrown =
         assertThrows(HostNameNotPunyCodedException.class, this::runFlow);
@@ -178,14 +178,14 @@ public class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostRes
   }
 
   @Test
-  public void testFailure_nonCanonicalHostname() {
+  void testFailure_nonCanonicalHostname() {
     setEppInput("host_info.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld."));
     EppException thrown = assertThrows(HostNameNotNormalizedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  public void testIcannActivityReportField_getsLogged() throws Exception {
+  void testIcannActivityReportField_getsLogged() throws Exception {
     persistHostResource();
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-host-info");

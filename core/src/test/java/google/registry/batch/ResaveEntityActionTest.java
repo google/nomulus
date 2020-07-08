@@ -45,7 +45,6 @@ import google.registry.request.Response;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
-import google.registry.testing.ShardableTestCase;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.AppEngineServiceUtils;
 import org.joda.time.DateTime;
@@ -61,7 +60,7 @@ import org.mockito.junit.MockitoRule;
 
 /** Unit tests for {@link ResaveEntityAction}. */
 @RunWith(JUnit4.class)
-public class ResaveEntityActionTest extends ShardableTestCase {
+public class ResaveEntityActionTest {
 
   @Rule
   public final AppEngineRule appEngine =

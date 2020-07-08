@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.io.ByteStreams;
-import google.registry.testing.ShardableTestCase;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -28,7 +27,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public final class RydeCompressionTest extends ShardableTestCase {
+public final class RydeCompressionTest {
 
   @Test
   public void testCompression_decompression() throws Exception {

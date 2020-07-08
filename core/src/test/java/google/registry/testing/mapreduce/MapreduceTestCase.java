@@ -36,7 +36,6 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.mapreduce.MapreduceRunner;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
-import google.registry.testing.ShardableTestCase;
 import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.AppEngineServiceUtilsImpl;
 import java.io.ByteArrayInputStream;
@@ -68,7 +67,7 @@ import org.mockito.junit.MockitoRule;
  *
  * @param <T> The type of the Action class that implements the mapreduce.
  */
-public abstract class MapreduceTestCase<T> extends ShardableTestCase {
+public abstract class MapreduceTestCase<T> {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

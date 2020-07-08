@@ -79,10 +79,10 @@ import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostUpdateFlow}. */
-public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResource> {
+class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResource> {
 
   private void setEppHostUpdateInput(
       String oldHostName, String newHostName, String ipOrStatusToAdd, String ipOrStatusToRem) {
@@ -99,7 +99,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
             nullToEmpty(ipOrStatusToRem)));
   }
 
-  public HostUpdateFlowTest() {
+  HostUpdateFlowTest() {
     setEppHostUpdateInput("ns1.example.tld", "ns2.example.tld", null, null);
   }
 
@@ -133,7 +133,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testDryRun() throws Exception {
+  void testDryRun() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
     dryRunFlowAssertResponse(loadFile("generic_success_response.xml"));
@@ -169,7 +169,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_rename_noOtherHostEverUsedTheOldName() throws Exception {
+  void testSuccess_rename_noOtherHostEverUsedTheOldName() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
     HostResource renamedHost = doSuccessfulTest();
@@ -186,7 +186,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_withReferencingDomain() throws Exception {
+  void testSuccess_withReferencingDomain() throws Exception {
     createTld("tld");
     createTld("xn--q9jyb4c");
     HostResource host =
@@ -208,7 +208,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_nameUnchanged_superordinateDomainNeverTransferred() throws Exception {
+  void testSuccess_nameUnchanged_superordinateDomainNeverTransferred() throws Exception {
     setEppInput("host_update_name_unchanged.xml");
     createTld("tld");
     DomainBase domain = persistActiveDomain("example.tld");
@@ -232,7 +232,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_nameUnchanged_superordinateDomainWasTransferred() throws Exception {
+  void testSuccess_nameUnchanged_superordinateDomainWasTransferred() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     setEppInput("host_update_name_unchanged.xml");
     createTld("tld");
@@ -258,7 +258,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_internalToInternalOnSameDomain() throws Exception {
+  void testSuccess_internalToInternalOnSameDomain() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.tld",
         "ns2.example.tld",
@@ -292,7 +292,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_internalToInternalOnSameTld() throws Exception {
+  void testSuccess_internalToInternalOnSameTld() throws Exception {
     setEppHostUpdateInput(
         "ns2.foo.tld",
         "ns2.example.tld",
@@ -328,7 +328,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_internalToInternalOnDifferentTld() throws Exception {
+  void testSuccess_internalToInternalOnDifferentTld() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo",
         "ns2.example.tld",
@@ -367,7 +367,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_internalToExternal() throws Exception {
+  void testSuccess_internalToExternal() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo",
         "ns2.example.tld",
@@ -409,7 +409,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_externalToInternal() throws Exception {
+  void testFailure_externalToInternal() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo", "ns2.example.tld", "<host:addr ip=\"v4\">192.0.2.22</host:addr>", null);
     createTld("tld");
@@ -421,7 +421,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_superuserExternalToInternal() throws Exception {
+  void testSuccess_superuserExternalToInternal() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo", "ns2.example.tld", "<host:addr ip=\"v4\">192.0.2.22</host:addr>", null);
     createTld("tld");
@@ -445,7 +445,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_externalToExternal() throws Exception {
+  void testFailure_externalToExternal() throws Exception {
     setEppHostUpdateInput("ns1.example.foo", "ns2.example.tld", null, null);
     persistActiveHost(oldHostName());
     EppException thrown = assertThrows(CannotRenameExternalHostException.class, this::runFlow);
@@ -453,7 +453,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_superuserExternalToExternal() throws Exception {
+  void testSuccess_superuserExternalToExternal() throws Exception {
     setEppHostUpdateInput("ns1.example.foo", "ns2.example.tld", null, null);
     persistActiveHost(oldHostName());
     HostResource renamedHost = doSuccessfulTestAsSuperuser();
@@ -470,7 +470,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_superuserClientUpdateProhibited() throws Exception {
+  void testSuccess_superuserClientUpdateProhibited() throws Exception {
     setEppInput("host_update_add_status.xml");
     persistResource(
         newHostResource(oldHostName())
@@ -492,7 +492,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_subordToSubord_lastTransferTimeFromPreviousSuperordinateWinsOut()
+  void testSuccess_subordToSubord_lastTransferTimeFromPreviousSuperordinateWinsOut()
       throws Exception {
     setEppHostUpdateInput(
         "ns2.foo.tld",
@@ -528,7 +528,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_subordToSubord_lastTransferTimeOnExistingHostWinsOut() throws Exception {
+  void testSuccess_subordToSubord_lastTransferTimeOnExistingHostWinsOut() throws Exception {
     setEppHostUpdateInput(
         "ns2.foo.tld",
         "ns2.example.tld",
@@ -566,7 +566,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_subordToSubord_lastTransferTimeOnExistingHostWinsOut_whenNullOnNewDomain()
+  void testSuccess_subordToSubord_lastTransferTimeOnExistingHostWinsOut_whenNullOnNewDomain()
       throws Exception {
     setEppHostUpdateInput(
         "ns2.foo.tld",
@@ -601,7 +601,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_subordToSubord_lastTransferTimeOnExistingHostWins_whenNullOnBothDomains()
+  void testSuccess_subordToSubord_lastTransferTimeOnExistingHostWins_whenNullOnBothDomains()
       throws Exception {
     setEppHostUpdateInput(
         "ns2.foo.tld",
@@ -632,7 +632,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_subordToSubord_lastTransferTimeIsNull_whenNullOnBoth() throws Exception {
+  void testSuccess_subordToSubord_lastTransferTimeIsNull_whenNullOnBoth() throws Exception {
     setEppHostUpdateInput(
         "ns2.foo.tld",
         "ns2.example.tld",
@@ -663,7 +663,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_internalToExternal_lastTransferTimeFrozenWhenComingFromSuperordinate()
+  void testSuccess_internalToExternal_lastTransferTimeFrozenWhenComingFromSuperordinate()
       throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo",
@@ -699,8 +699,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_internalToExternal_lastTransferTimeFrozenWhenComingFromHost()
-      throws Exception {
+  void testSuccess_internalToExternal_lastTransferTimeFrozenWhenComingFromHost() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo",
         "ns2.example.tld",
@@ -735,7 +734,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_internalToExternal_lastTransferTimeFrozenWhenDomainOverridesHost()
+  void testSuccess_internalToExternal_lastTransferTimeFrozenWhenDomainOverridesHost()
       throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo",
@@ -789,14 +788,14 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_externalToSubord_lastTransferTimeNotOverridden_whenLessRecent()
+  void testSuccess_externalToSubord_lastTransferTimeNotOverridden_whenLessRecent()
       throws Exception {
     doExternalToInternalLastTransferTimeTest(
         clock.nowUtc().minusDays(2), clock.nowUtc().minusDays(1));
   }
 
   @Test
-  public void testSuccess_externalToSubord_lastTransferTimeNotOverridden_whenMoreRecent()
+  void testSuccess_externalToSubord_lastTransferTimeNotOverridden_whenMoreRecent()
       throws Exception {
     doExternalToInternalLastTransferTimeTest(
         clock.nowUtc().minusDays(2), clock.nowUtc().minusDays(3));
@@ -804,13 +803,12 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
 
   /** Test when the new superdordinate domain has never been transferred before. */
   @Test
-  public void testSuccess_externalToSubord_lastTransferTimeNotOverridden_whenNull()
-      throws Exception {
+  void testSuccess_externalToSubord_lastTransferTimeNotOverridden_whenNull() throws Exception {
     doExternalToInternalLastTransferTimeTest(clock.nowUtc().minusDays(2), null);
   }
 
   @Test
-  public void testFailure_superordinateMissing() throws Exception {
+  void testFailure_superordinateMissing() throws Exception {
     createTld("tld");
     persistActiveHost(oldHostName());
     SuperordinateDomainDoesNotExistException thrown =
@@ -819,7 +817,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_superordinateInPendingDelete() throws Exception {
+  void testFailure_superordinateInPendingDelete() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.tld",
         "ns2.example.tld",
@@ -844,14 +842,14 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_neverExisted() throws Exception {
+  void testFailure_neverExisted() throws Exception {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
   }
 
   @Test
-  public void testFailure_neverExisted_updateWithoutNameChange() throws Exception {
+  void testFailure_neverExisted_updateWithoutNameChange() throws Exception {
     setEppInput("host_update_name_unchanged.xml");
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
@@ -859,7 +857,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_existedButWasDeleted() throws Exception {
+  void testFailure_existedButWasDeleted() throws Exception {
     persistDeletedHost(oldHostName(), clock.nowUtc().minusDays(1));
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
@@ -867,7 +865,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_renameToCurrentName() throws Exception {
+  void testFailure_renameToCurrentName() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
     clock.advanceOneMilli();
@@ -878,7 +876,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_renameToNameOfExistingOtherHost() throws Exception {
+  void testFailure_renameToNameOfExistingOtherHost() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
     persistActiveHost("ns2.example.tld");
@@ -888,14 +886,14 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_referToNonLowerCaseHostname() {
+  void testFailure_referToNonLowerCaseHostname() {
     setEppHostUpdateInput("ns1.EXAMPLE.tld", "ns2.example.tld", null, null);
     EppException thrown = assertThrows(HostNameNotLowerCaseException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  public void testFailure_renameToNonLowerCaseHostname() {
+  void testFailure_renameToNonLowerCaseHostname() {
     persistActiveHost("ns1.example.tld");
     setEppHostUpdateInput("ns1.example.tld", "ns2.EXAMPLE.tld", null, null);
     EppException thrown = assertThrows(HostNameNotLowerCaseException.class, this::runFlow);
@@ -903,7 +901,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_referToNonPunyCodedHostname() {
+  void testFailure_referToNonPunyCodedHostname() {
     setEppHostUpdateInput("ns1.çauçalito.tld", "ns1.sausalito.tld", null, null);
     HostNameNotPunyCodedException thrown =
         assertThrows(HostNameNotPunyCodedException.class, this::runFlow);
@@ -911,7 +909,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_renameToNonPunyCodedHostname() {
+  void testFailure_renameToNonPunyCodedHostname() {
     persistActiveHost("ns1.sausalito.tld");
     setEppHostUpdateInput("ns1.sausalito.tld", "ns1.çauçalito.tld", null, null);
     HostNameNotPunyCodedException thrown =
@@ -920,7 +918,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_referToNonCanonicalHostname() {
+  void testFailure_referToNonCanonicalHostname() {
     persistActiveHost("ns1.example.tld.");
     setEppHostUpdateInput("ns1.example.tld.", "ns2.example.tld", null, null);
     EppException thrown = assertThrows(HostNameNotNormalizedException.class, this::runFlow);
@@ -928,7 +926,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_renameToNonCanonicalHostname() {
+  void testFailure_renameToNonCanonicalHostname() {
     persistActiveHost("ns1.example.tld");
     setEppHostUpdateInput("ns1.example.tld", "ns2.example.tld.", null, null);
     EppException thrown = assertThrows(HostNameNotNormalizedException.class, this::runFlow);
@@ -936,7 +934,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_subordinateNeedsIps() throws Exception {
+  void testFailure_subordinateNeedsIps() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.tld",
         "ns2.example.tld",
@@ -950,7 +948,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_subordinateToExternal_mustRemoveAllIps() throws Exception {
+  void testFailure_subordinateToExternal_mustRemoveAllIps() throws Exception {
     setEppHostUpdateInput("ns1.example.tld", "ns2.example.com", null, null);
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
@@ -959,7 +957,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_subordinateToExternal_cantAddAnIp() throws Exception {
+  void testFailure_subordinateToExternal_cantAddAnIp() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.tld", "ns2.example.com", "<host:addr ip=\"v4\">192.0.2.22</host:addr>", null);
     createTld("tld");
@@ -969,7 +967,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_addRemoveSameStatusValues() throws Exception {
+  void testFailure_addRemoveSameStatusValues() throws Exception {
     createTld("tld");
     persistActiveDomain("example.tld");
     setEppHostUpdateInput(
@@ -983,7 +981,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_addRemoveSameInetAddresses() throws Exception {
+  void testFailure_addRemoveSameInetAddresses() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
     setEppHostUpdateInput(
@@ -996,7 +994,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_clientUpdateProhibited_removed() throws Exception {
+  void testSuccess_clientUpdateProhibited_removed() throws Exception {
     setEppInput("host_update_remove_client_update_prohibited.xml");
     persistResource(
         newHostResource(oldHostName())
@@ -1011,7 +1009,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_clientUpdateProhibited() throws Exception {
+  void testFailure_clientUpdateProhibited() throws Exception {
     createTld("tld");
     persistResource(
         newHostResource(oldHostName())
@@ -1025,7 +1023,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_serverUpdateProhibited() throws Exception {
+  void testFailure_serverUpdateProhibited() throws Exception {
     createTld("tld");
     persistResource(
         newHostResource(oldHostName())
@@ -1039,7 +1037,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_pendingDelete() throws Exception {
+  void testFailure_pendingDelete() throws Exception {
     createTld("tld");
     persistResource(
         newHostResource(oldHostName())
@@ -1053,7 +1051,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_statusValueNotClientSettable() throws Exception {
+  void testFailure_statusValueNotClientSettable() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
     setEppInput("host_update_prohibited_status.xml");
@@ -1062,7 +1060,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_superuserStatusValueNotClientSettable() throws Exception {
+  void testSuccess_superuserStatusValueNotClientSettable() throws Exception {
     setEppInput("host_update_prohibited_status.xml");
     createTld("tld");
     persistActiveDomain("example.tld");
@@ -1074,7 +1072,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_unauthorizedClient() {
+  void testFailure_unauthorizedClient() {
     sessionMetadata.setClientId("NewRegistrar");
     persistActiveHost("ns1.example.tld");
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
@@ -1082,7 +1080,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_superuserUnauthorizedClient() throws Exception {
+  void testSuccess_superuserUnauthorizedClient() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     persistActiveHost(oldHostName());
 
@@ -1092,7 +1090,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_authorizedClientReadFromSuperordinate() throws Exception {
+  void testSuccess_authorizedClientReadFromSuperordinate() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     createTld("tld");
     DomainBase domain =
@@ -1114,7 +1112,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_unauthorizedClientReadFromSuperordinate() {
+  void testFailure_unauthorizedClientReadFromSuperordinate() {
     sessionMetadata.setClientId("NewRegistrar");
     createTld("tld");
     DomainBase domain =
@@ -1136,7 +1134,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_authorizedClientReadFromTransferredSuperordinate() throws Exception {
+  void testSuccess_authorizedClientReadFromTransferredSuperordinate() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     createTld("tld");
     // Create a domain that will belong to NewRegistrar after cloneProjectedAtTime is called.
@@ -1154,7 +1152,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_unauthorizedClientReadFromTransferredSuperordinate() {
+  void testFailure_unauthorizedClientReadFromTransferredSuperordinate() {
     sessionMetadata.setClientId("TheRegistrar");
     createTld("tld");
     // Create a domain that will belong to NewRegistrar after cloneProjectedAtTime is called.
@@ -1172,7 +1170,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_newSuperordinateOwnedByDifferentRegistrar() throws Exception {
+  void testFailure_newSuperordinateOwnedByDifferentRegistrar() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo", "ns2.example.tld", "<host:addr ip=\"v4\">192.0.2.22</host:addr>", null);
     sessionMetadata.setClientId("TheRegistrar");
@@ -1192,7 +1190,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_newSuperordinateWasTransferredToDifferentRegistrar() throws Exception {
+  void testFailure_newSuperordinateWasTransferredToDifferentRegistrar() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo", "ns2.example.tld", "<host:addr ip=\"v4\">192.0.2.22</host:addr>", null);
     sessionMetadata.setClientId("TheRegistrar");
@@ -1210,7 +1208,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testSuccess_newSuperordinateWasTransferredToCorrectRegistrar() throws Exception {
+  void testSuccess_newSuperordinateWasTransferredToCorrectRegistrar() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo", "ns2.example.tld", "<host:addr ip=\"v4\">192.0.2.22</host:addr>", null);
     sessionMetadata.setClientId("NewRegistrar");
@@ -1249,17 +1247,17 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_renameToBadCharacter() throws Exception {
+  void testFailure_renameToBadCharacter() throws Exception {
     doFailingHostNameTest("foo bar", InvalidHostNameException.class);
   }
 
   @Test
-  public void testFailure_renameToNotPunyCoded() throws Exception {
+  void testFailure_renameToNotPunyCoded() throws Exception {
     doFailingHostNameTest("みんな", HostNameNotPunyCodedException.class);
   }
 
   @Test
-  public void testFailure_renameToTooLong() throws Exception {
+  void testFailure_renameToTooLong() throws Exception {
     // Host names can be max 253 chars.
     String suffix = ".example.tld";
     String tooLong = Strings.repeat("a", 254 - suffix.length()) + suffix;
@@ -1267,38 +1265,38 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testFailure_renameToTooShallowPublicSuffix() throws Exception {
+  void testFailure_renameToTooShallowPublicSuffix() throws Exception {
     doFailingHostNameTest("example.com", HostNameTooShallowException.class);
   }
 
   @Test
-  public void testFailure_renameToTooShallowCcTld() throws Exception {
+  void testFailure_renameToTooShallowCcTld() throws Exception {
     doFailingHostNameTest("foo.co.uk", HostNameTooShallowException.class);
   }
 
   @Test
-  public void testFailure_renameToBarePublicSuffix() throws Exception {
+  void testFailure_renameToBarePublicSuffix() throws Exception {
     doFailingHostNameTest("com", HostNameTooShallowException.class);
   }
 
   @Test
-  public void testFailure_renameToBareCcTld() throws Exception {
+  void testFailure_renameToBareCcTld() throws Exception {
     doFailingHostNameTest("co.uk", HostNameTooShallowException.class);
   }
 
   @Test
-  public void testFailure_renameToTooShallowNewTld() throws Exception {
+  void testFailure_renameToTooShallowNewTld() throws Exception {
     doFailingHostNameTest("example.lol", HostNameTooShallowException.class);
   }
 
   @Test
-  public void testFailure_ccTldInBailiwick() throws Exception {
+  void testFailure_ccTldInBailiwick() throws Exception {
     createTld("co.uk");
     doFailingHostNameTest("foo.co.uk", HostNameTooShallowException.class);
   }
 
   @Test
-  public void testSuccess_metadata() throws Exception {
+  void testSuccess_metadata() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
     clock.advanceOneMilli();
@@ -1314,7 +1312,7 @@ public class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, Hos
   }
 
   @Test
-  public void testIcannActivityReportField_getsLogged() throws Exception {
+  void testIcannActivityReportField_getsLogged() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
     clock.advanceOneMilli();

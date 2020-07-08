@@ -34,7 +34,6 @@ import google.registry.testing.BouncyCastleProviderRule;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.GcsTestingUtils;
 import google.registry.testing.GpgSystemCommandRule;
-import google.registry.testing.ShardableTestCase;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,7 +51,7 @@ import org.junit.runners.JUnit4;
 
 /** Unit tests for {@link BrdaCopyAction}. */
 @RunWith(JUnit4.class)
-public class BrdaCopyActionTest extends ShardableTestCase {
+public class BrdaCopyActionTest {
 
   private static final ByteSource DEPOSIT_XML = RdeTestData.loadBytes("deposit_full.xml");
 

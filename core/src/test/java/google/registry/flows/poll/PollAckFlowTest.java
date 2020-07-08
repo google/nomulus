@@ -33,11 +33,11 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.poll.PollMessage;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link PollAckFlow}. */
-public class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
+class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
 
   /** This is the message id being sent in the ACK request. */
   private static final long MESSAGE_ID = 3;
@@ -45,8 +45,8 @@ public class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   private DomainBase domain;
   private ContactResource contact;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void setUp() {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "1-3-EXAMPLE-4-3-2011"));
     setClientIdForFlow("NewRegistrar");
     clock.setTo(DateTime.parse("2011-01-02T01:01:01Z"));
@@ -83,13 +83,13 @@ public class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   }
 
   @Test
-  public void testDryRun() throws Exception {
+  void testDryRun() throws Exception {
     persistOneTimePollMessage(MESSAGE_ID);
     dryRunFlowAssertResponse(loadFile("poll_ack_response_empty.xml"));
   }
 
   @Test
-  public void testSuccess_contactPollMessage() throws Exception {
+  void testSuccess_contactPollMessage() throws Exception {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "2-2-ROID-4-3-2011"));
     persistResource(
         new PollMessage.OneTime.Builder()
@@ -104,7 +104,7 @@ public class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   }
 
   @Test
-  public void testFailure_contactPollMessage_withIncorrectYearField() throws Exception {
+  void testFailure_contactPollMessage_withIncorrectYearField() throws Exception {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "2-2-ROID-4-3-1999"));
     persistResource(
         new PollMessage.OneTime.Builder()
@@ -119,14 +119,14 @@ public class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   }
 
   @Test
-  public void testSuccess_messageOnContactResource() throws Exception {
+  void testSuccess_messageOnContactResource() throws Exception {
     persistOneTimePollMessage(MESSAGE_ID);
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("poll_ack_response_empty.xml"));
   }
 
   @Test
-  public void testSuccess_recentActiveAutorenew() throws Exception {
+  void testSuccess_recentActiveAutorenew() throws Exception {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "1-3-EXAMPLE-4-3-2010"));
     persistAutorenewPollMessage(clock.nowUtc().minusMonths(6), END_OF_TIME);
     assertTransactionalFlow(true);
@@ -134,7 +134,7 @@ public class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   }
 
   @Test
-  public void testSuccess_oldActiveAutorenew() throws Exception {
+  void testSuccess_oldActiveAutorenew() throws Exception {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "1-3-EXAMPLE-4-3-2009"));
     persistAutorenewPollMessage(clock.nowUtc().minusYears(2), END_OF_TIME);
     // Create three other messages to be queued for retrieval to get our count right, since the poll
@@ -150,7 +150,7 @@ public class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   }
 
   @Test
-  public void testSuccess_oldInactiveAutorenew() throws Exception {
+  void testSuccess_oldInactiveAutorenew() throws Exception {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "1-3-EXAMPLE-4-3-2010"));
     persistAutorenewPollMessage(clock.nowUtc().minusMonths(6), clock.nowUtc());
     assertTransactionalFlow(true);
@@ -158,7 +158,7 @@ public class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   }
 
   @Test
-  public void testSuccess_moreMessages() throws Exception {
+  void testSuccess_moreMessages() throws Exception {
     // Create five messages to be queued for retrieval, one of which will be acked.
     for (int i = 0; i < 5; i++) {
       persistOneTimePollMessage(MESSAGE_ID + i);
@@ -171,7 +171,7 @@ public class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   }
 
   @Test
-  public void testFailure_noSuchMessage() throws Exception {
+  void testFailure_noSuchMessage() throws Exception {
     assertTransactionalFlow(true);
     Exception e = assertThrows(MessageDoesNotExistException.class, this::runFlow);
     assertThat(e)
@@ -180,21 +180,21 @@ public class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   }
 
   @Test
-  public void testFailure_invalidId_tooFewComponents() throws Exception {
+  void testFailure_invalidId_tooFewComponents() throws Exception {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "1-2-3"));
     assertTransactionalFlow(true);
     assertThrows(InvalidMessageIdException.class, this::runFlow);
   }
 
   @Test
-  public void testFailure_invalidId_tooManyComponents() throws Exception {
+  void testFailure_invalidId_tooManyComponents() throws Exception {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "2-2-ROID-4-3-1999-2007"));
     assertTransactionalFlow(true);
     assertThrows(InvalidMessageIdException.class, this::runFlow);
   }
 
   @Test
-  public void testFailure_contactPollMessage_withMissingYearField() throws Exception {
+  void testFailure_contactPollMessage_withMissingYearField() throws Exception {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "2-2-ROID-4-3"));
     persistResource(
         new PollMessage.OneTime.Builder()
@@ -209,28 +209,28 @@ public class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   }
 
   @Test
-  public void testFailure_invalidId_stringInsteadOfNumeric() throws Exception {
+  void testFailure_invalidId_stringInsteadOfNumeric() throws Exception {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "ABC-12345"));
     assertTransactionalFlow(true);
     assertThrows(InvalidMessageIdException.class, this::runFlow);
   }
 
   @Test
-  public void testFailure_invalidEppResourceClassId() throws Exception {
+  void testFailure_invalidEppResourceClassId() throws Exception {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "999-1-1-1"));
     assertTransactionalFlow(true);
     assertThrows(InvalidMessageIdException.class, this::runFlow);
   }
 
   @Test
-  public void testFailure_missingId() throws Exception {
+  void testFailure_missingId() throws Exception {
     setEppInput("poll_ack_missing_id.xml");
     assertTransactionalFlow(true);
     assertThrows(MissingMessageIdException.class, this::runFlow);
   }
 
   @Test
-  public void testFailure_differentRegistrar() throws Exception {
+  void testFailure_differentRegistrar() throws Exception {
     persistResource(
         new PollMessage.OneTime.Builder()
             .setId(MESSAGE_ID)
@@ -244,7 +244,7 @@ public class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   }
 
   @Test
-  public void testFailure_messageInFuture() throws Exception {
+  void testFailure_messageInFuture() throws Exception {
     persistResource(
         new PollMessage.OneTime.Builder()
             .setId(MESSAGE_ID)

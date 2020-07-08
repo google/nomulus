@@ -42,7 +42,6 @@ import google.registry.model.eppoutput.Result.Code;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
-import google.registry.testing.ShardableTestCase;
 import google.registry.util.Clock;
 import google.registry.xml.ValidationMode;
 import java.util.List;
@@ -64,7 +63,7 @@ import org.mockito.junit.MockitoRule;
 
 /** Unit tests for {@link EppController}. */
 @RunWith(JUnit4.class)
-public class EppControllerTest extends ShardableTestCase {
+public class EppControllerTest {
 
   @Rule
   public AppEngineRule appEngineRule =

@@ -33,25 +33,25 @@ import google.registry.flows.domain.DomainFlowUtils.TldDoesNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.model.domain.DomainBase;
 import google.registry.testing.AppEngineRule;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase> {
+class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase> {
 
-  @Before
-  public void setup() {
+  @BeforeEach
+  void setup() {
     setEppInput("domain_info.xml");
     createTld("tld");
     persistResource(AppEngineRule.makeRegistrar1().asBuilder().build());
   }
 
   @Test
-  public void testValidateDomainNameAcceptsValidName() throws EppException {
+  void testValidateDomainNameAcceptsValidName() throws EppException {
     assertThat(DomainFlowUtils.validateDomainName("example.tld")).isNotNull();
   }
 
   @Test
-  public void testValidateDomainName_IllegalCharacters() {
+  void testValidateDomainName_IllegalCharacters() {
     BadDomainNameCharacterException thrown =
         assertThrows(
             BadDomainNameCharacterException.class,
@@ -63,7 +63,7 @@ public class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Do
   }
 
   @Test
-  public void testValidateDomainName_DomainNameWithEmptyParts() {
+  void testValidateDomainName_DomainNameWithEmptyParts() {
     EmptyDomainNamePartException thrown =
         assertThrows(
             EmptyDomainNamePartException.class,
@@ -73,7 +73,7 @@ public class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Do
   }
 
   @Test
-  public void testValidateDomainName_DomainNameWithLessThanTwoParts() {
+  void testValidateDomainName_DomainNameWithLessThanTwoParts() {
     BadDomainNamePartsCountException thrown =
         assertThrows(
             BadDomainNamePartsCountException.class,
@@ -85,7 +85,7 @@ public class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Do
   }
 
   @Test
-  public void testValidateDomainName_invalidTLD() {
+  void testValidateDomainName_invalidTLD() {
     TldDoesNotExistException thrown =
         assertThrows(
             TldDoesNotExistException.class,
@@ -97,7 +97,7 @@ public class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Do
   }
 
   @Test
-  public void testValidateDomainName_DomainNameIsTooLong() {
+  void testValidateDomainName_DomainNameIsTooLong() {
     DomainLabelTooLongException thrown =
         assertThrows(
             DomainLabelTooLongException.class,
@@ -111,7 +111,7 @@ public class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Do
   }
 
   @Test
-  public void testValidateDomainName_leadingDash() {
+  void testValidateDomainName_leadingDash() {
     LeadingDashException thrown =
         assertThrows(
             LeadingDashException.class, () -> DomainFlowUtils.validateDomainName("-example.foo"));
@@ -120,7 +120,7 @@ public class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Do
   }
 
   @Test
-  public void testValidateDomainName_trailingDash() {
+  void testValidateDomainName_trailingDash() {
     TrailingDashException thrown =
         assertThrows(
             TrailingDashException.class, () -> DomainFlowUtils.validateDomainName("example-.foo"));
@@ -129,7 +129,7 @@ public class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Do
   }
 
   @Test
-  public void testValidateDomainName_invalidIDN() {
+  void testValidateDomainName_invalidIDN() {
     InvalidPunycodeException thrown =
         assertThrows(
             InvalidPunycodeException.class,
@@ -141,7 +141,7 @@ public class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, Do
   }
 
   @Test
-  public void testValidateDomainName_containsInvalidDashes() {
+  void testValidateDomainName_containsInvalidDashes() {
     DashesInThirdAndFourthException thrown =
         assertThrows(
             DashesInThirdAndFourthException.class,

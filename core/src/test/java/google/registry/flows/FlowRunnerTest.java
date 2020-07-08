@@ -36,7 +36,6 @@ import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
-import google.registry.testing.ShardableTestCase;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
@@ -48,7 +47,7 @@ import org.mockito.Mockito;
 
 /** Unit tests for {@link FlowRunner}. */
 @RunWith(JUnit4.class)
-public class FlowRunnerTest extends ShardableTestCase {
+public class FlowRunnerTest {
 
   @Rule
   public final AppEngineRule appEngineRule = new AppEngineRule.Builder().build();

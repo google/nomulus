@@ -34,17 +34,17 @@ import google.registry.flows.session.LoginFlow.TooManyFailedLoginsException;
 import google.registry.flows.session.LoginFlow.UnsupportedLanguageException;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link LoginFlow}. */
 public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
 
-  Registrar registrar;
-  Registrar.Builder registrarBuilder;
+  private Registrar registrar;
+  private Registrar.Builder registrarBuilder;
 
-  @Before
-  public void initRegistrar() {
+  @BeforeEach
+  void initRegistrar() {
     sessionMetadata.setClientId(null); // Don't implicitly log in (all other flows need to).
     registrar = loadRegistrar("NewRegistrar");
     registrarBuilder = registrar.asBuilder();
@@ -70,73 +70,73 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     doSuccessfulTest("login_valid.xml");
   }
 
   @Test
-  public void testSuccess_suspendedRegistrar() throws Exception {
+  void testSuccess_suspendedRegistrar() throws Exception {
     persistResource(getRegistrarBuilder().setState(State.SUSPENDED).build());
     doSuccessfulTest("login_valid.xml");
   }
 
   @Test
-  public void testSuccess_missingTypes() throws Exception {
+  void testSuccess_missingTypes() throws Exception {
     // We don't actually care if you list all the right types, as long as you don't add wrong ones.
     doSuccessfulTest("login_valid_missing_types.xml");
   }
 
   @Test
-  public void testFailure_invalidVersion() {
+  void testFailure_invalidVersion() {
     doFailingTest("login_invalid_version.xml", UnimplementedProtocolVersionException.class);
   }
 
   @Test
-  public void testFailure_invalidLanguage() {
+  void testFailure_invalidLanguage() {
     doFailingTest("login_invalid_language.xml", UnsupportedLanguageException.class);
   }
 
   @Test
-  public void testFailure_invalidExtension() {
+  void testFailure_invalidExtension() {
     doFailingTest("login_invalid_extension.xml", UnimplementedExtensionException.class);
   }
 
   @Test
-  public void testFailure_invalidTypes() {
+  void testFailure_invalidTypes() {
     doFailingTest("login_invalid_types.xml", UnimplementedObjectServiceException.class);
   }
 
   @Test
-  public void testFailure_newPassword() {
+  void testFailure_newPassword() {
     doFailingTest("login_invalid_newpw.xml", PasswordChangesNotSupportedException.class);
   }
 
   @Test
-  public void testFailure_unknownRegistrar() {
+  void testFailure_unknownRegistrar() {
     deleteResource(getRegistrarBuilder().build());
     doFailingTest("login_valid.xml", BadRegistrarClientIdException.class);
   }
 
   @Test
-  public void testFailure_pendingRegistrar() {
+  void testFailure_pendingRegistrar() {
     persistResource(getRegistrarBuilder().setState(State.PENDING).build());
     doFailingTest("login_valid.xml", RegistrarAccountNotActiveException.class);
   }
 
   @Test
-  public void testFailure_disabledRegistrar() {
+  void testFailure_disabledRegistrar() {
     persistResource(getRegistrarBuilder().setState(State.DISABLED).build());
     doFailingTest("login_valid.xml", RegistrarAccountNotActiveException.class);
   }
 
   @Test
-  public void testFailure_incorrectPassword() {
+  void testFailure_incorrectPassword() {
     persistResource(getRegistrarBuilder().setPassword("diff password").build());
     doFailingTest("login_valid.xml", BadRegistrarPasswordException.class);
   }
 
   @Test
-  public void testFailure_tooManyFailedLogins() {
+  void testFailure_tooManyFailedLogins() {
     persistResource(getRegistrarBuilder().setPassword("diff password").build());
     doFailingTest("login_valid.xml", BadRegistrarPasswordException.class);
     doFailingTest("login_valid.xml", BadRegistrarPasswordException.class);
@@ -145,7 +145,7 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
   }
 
   @Test
-  public void testFailure_alreadyLoggedIn() {
+  void testFailure_alreadyLoggedIn() {
     sessionMetadata.setClientId("something");
     doFailingTest("login_valid.xml", AlreadyLoggedInException.class);
   }

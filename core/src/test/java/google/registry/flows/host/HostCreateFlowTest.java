@@ -54,10 +54,10 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostCreateFlow}. */
-public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResource> {
+class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResource> {
 
   private void setEppHostCreateInput(String hostName, String hostAddrs) {
     setEppInput(
@@ -73,7 +73,7 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
             + "<host:addr ip=\"v6\">1080:0:0:0:8:800:200C:417A</host:addr>");
   }
 
-  public HostCreateFlowTest() {
+  HostCreateFlowTest() {
     setEppHostCreateInput("ns1.example.tld", null);
     clock.setTo(DateTime.parse("1999-04-03T22:00:00.0Z"));
   }
@@ -101,19 +101,19 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
   }
 
   @Test
-  public void testDryRun() throws Exception {
+  void testDryRun() throws Exception {
     dryRunFlowAssertResponse(loadFile("host_create_response.xml"));
   }
 
   @Test
-  public void testSuccess_externalNeverExisted() throws Exception {
+  void testSuccess_externalNeverExisted() throws Exception {
     doSuccessfulTest();
     assertAboutHosts().that(reloadResourceByForeignKey()).hasSuperordinateDomain(null);
     assertNoDnsTasksEnqueued();
   }
 
   @Test
-  public void testSuccess_internalNeverExisted() throws Exception {
+  void testSuccess_internalNeverExisted() throws Exception {
     doSuccessfulInternalTest("tld");
     HostResource host = reloadResourceByForeignKey();
     DomainBase superordinateDomain =
@@ -124,7 +124,7 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
   }
 
   @Test
-  public void testFailure_multipartTLDsAndInvalidHost() {
+  void testFailure_multipartTLDsAndInvalidHost() {
     createTlds("bar.tld", "tld");
 
     setEppHostCreateInputWithIps("ns1.bar.tld");
@@ -133,7 +133,7 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
   }
 
   @Test
-  public void testSuccess_externalExistedButWasDeleted() throws Exception {
+  void testSuccess_externalExistedButWasDeleted() throws Exception {
     persistDeletedHost(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     doSuccessfulTest();
     assertAboutHosts().that(reloadResourceByForeignKey()).hasSuperordinateDomain(null);
@@ -141,7 +141,7 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
   }
 
   @Test
-  public void testSuccess_internalExistedButWasDeleted() throws Exception {
+  void testSuccess_internalExistedButWasDeleted() throws Exception {
     persistDeletedHost(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     doSuccessfulInternalTest("tld");
     HostResource host = reloadResourceByForeignKey();
@@ -153,7 +153,7 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
   }
 
   @Test
-  public void testFailure_subordinateNeedsIps() {
+  void testFailure_subordinateNeedsIps() {
     setEppHostCreateInput("ns1.example.tld", null);
     createTld("tld");
     persistActiveDomain("example.tld");
@@ -162,7 +162,7 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
   }
 
   @Test
-  public void testFailure_externalMustNotHaveIps() {
+  void testFailure_externalMustNotHaveIps() {
     setEppHostCreateInputWithIps("ns1.example.external");
     createTld("tld");
     persistActiveDomain("example.tld");
@@ -171,7 +171,7 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
   }
 
   @Test
-  public void testFailure_superordinateMissing() {
+  void testFailure_superordinateMissing() {
     setEppHostCreateInput("ns1.example.tld", null);
     createTld("tld");
     SuperordinateDomainDoesNotExistException thrown =
@@ -180,7 +180,7 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
   }
 
   @Test
-  public void testFailure_superordinateInPendingDelete() {
+  void testFailure_superordinateInPendingDelete() {
     setEppHostCreateInputWithIps("ns1.example.tld");
     createTld("tld");
     persistResource(
@@ -198,7 +198,7 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
   }
 
   @Test
-  public void testFailure_alreadyExists() throws Exception {
+  void testFailure_alreadyExists() throws Exception {
     setEppHostCreateInput("ns1.example.tld", null);
     persistActiveHost(getUniqueIdFromCommand());
     ResourceAlreadyExistsForThisClientException thrown =
@@ -210,7 +210,7 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
   }
 
   @Test
-  public void testFailure_resourceContention() throws Exception {
+  void testFailure_resourceContention() throws Exception {
     setEppHostCreateInput("ns1.example.tld", null);
     String targetId = getUniqueIdFromCommand();
     persistResource(
@@ -227,14 +227,14 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
   }
 
   @Test
-  public void testFailure_nonLowerCaseHostname() {
+  void testFailure_nonLowerCaseHostname() {
     setEppHostCreateInput("ns1.EXAMPLE.tld", null);
     EppException thrown = assertThrows(HostNameNotLowerCaseException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  public void testFailure_nonPunyCodedHostname() {
+  void testFailure_nonPunyCodedHostname() {
     setEppHostCreateInput("ns1.çauçalito.みんな", null);
     HostNameNotPunyCodedException thrown =
         assertThrows(HostNameNotPunyCodedException.class, this::runFlow);
@@ -242,21 +242,21 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
   }
 
   @Test
-  public void testFailure_nonCanonicalHostname() {
+  void testFailure_nonCanonicalHostname() {
     setEppHostCreateInput("ns1.example.tld.", null);
     EppException thrown = assertThrows(HostNameNotNormalizedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  public void testFailure_longHostName() {
+  void testFailure_longHostName() {
     setEppHostCreateInputWithIps("a" + Strings.repeat(".labelpart", 25) + ".tld");
     EppException thrown = assertThrows(HostNameTooLongException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  public void testFailure_ip4AddressWithIp6Declaration() {
+  void testFailure_ip4AddressWithIp6Declaration() {
     setEppHostCreateInput(
         "ns1.example.tld",
         "<host:addr ip=\"v4\">192.0.2.2</host:addr>\n"
@@ -273,37 +273,37 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
   }
 
   @Test
-  public void testFailure_badCharacter() {
+  void testFailure_badCharacter() {
     doFailingHostNameTest("foo bar", InvalidHostNameException.class);
   }
 
   @Test
-  public void testFailure_tooShallowPublicSuffix() {
+  void testFailure_tooShallowPublicSuffix() {
     doFailingHostNameTest("example.tld", HostNameTooShallowException.class);
   }
 
   @Test
-  public void testFailure_tooShallowCcTld() {
+  void testFailure_tooShallowCcTld() {
     doFailingHostNameTest("foo.co.uk", HostNameTooShallowException.class);
   }
 
   @Test
-  public void testFailure_barePublicSuffix() {
+  void testFailure_barePublicSuffix() {
     doFailingHostNameTest("com", HostNameTooShallowException.class);
   }
 
   @Test
-  public void testFailure_bareCcTld() {
+  void testFailure_bareCcTld() {
     doFailingHostNameTest("co.uk", HostNameTooShallowException.class);
   }
 
   @Test
-  public void testFailure_tooShallowNewTld() {
+  void testFailure_tooShallowNewTld() {
     doFailingHostNameTest("example.lol", HostNameTooShallowException.class);
   }
 
   @Test
-  public void testFailure_ccTldInBailiwick() {
+  void testFailure_ccTldInBailiwick() {
     createTld("co.uk");
     setEppHostCreateInputWithIps("foo.co.uk");
     EppException thrown = assertThrows(HostNameTooShallowException.class, this::runFlow);
@@ -311,7 +311,7 @@ public class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, Hos
   }
 
   @Test
-  public void testIcannActivityReportField_getsLogged() throws Exception {
+  void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-host-create");
   }

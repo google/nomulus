@@ -23,7 +23,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import google.registry.testing.FakeHttpSession;
-import google.registry.testing.ShardableTestCase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -31,7 +30,7 @@ import org.mockito.ArgumentCaptor;
 
 /** Tests for {@link EppTlsAction}. */
 @RunWith(JUnit4.class)
-public class EppTlsActionTest extends ShardableTestCase {
+public class EppTlsActionTest {
 
   private static final byte[] INPUT_XML_BYTES = "<xml>".getBytes(UTF_8);
 

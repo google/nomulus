@@ -29,7 +29,6 @@ import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput.ResponseOrGreeting;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.testing.ShardableTestCase;
 import java.util.Map;
 import java.util.Optional;
 import org.json.simple.JSONValue;
@@ -40,7 +39,7 @@ import org.junit.runners.JUnit4;
 
 /** Unit tests for {@link FlowReporter}. */
 @RunWith(JUnit4.class)
-public class FlowReporterTest extends ShardableTestCase {
+public class FlowReporterTest {
 
   static class TestCommandFlow implements Flow {
     @Override

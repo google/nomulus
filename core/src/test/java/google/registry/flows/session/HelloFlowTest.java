@@ -22,13 +22,13 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowTestCase;
 import google.registry.flows.FlowUtils.GenericXmlSyntaxErrorException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HelloFlow}. */
-public class HelloFlowTest extends FlowTestCase<HelloFlow> {
+class HelloFlowTest extends FlowTestCase<HelloFlow> {
 
   @Test
-  public void testHello() throws Exception {
+  void testHello() throws Exception {
     setEppInput("hello.xml");
     assertTransactionalFlow(false);
     runFlowAssertResponse(
@@ -37,7 +37,7 @@ public class HelloFlowTest extends FlowTestCase<HelloFlow> {
   }
 
   @Test
-  public void testGenericSyntaxException() {
+  void testGenericSyntaxException() {
     // This is a generic syntax test--we don't have a generic flow test case so this simple
     // test class will do. Note: the logic this tests is common to all flows.
     setEppInput("generic_syntax_exception.xml");
