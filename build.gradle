@@ -49,6 +49,7 @@ plugins {
   id 'com.diffplug.gradle.spotless' version '3.25.0'
 
   id 'jacoco'
+  id 'com.dorongold.task-tree' version '1.5'
 }
 
 wrapper {
@@ -472,11 +473,11 @@ task buildFmt {
   dependsOn 'javadoc'
   dependsOn 'checkDependenciesDotGradle'
   dependsOn 'checkLicense'
-  dependsOn 'check'
+  dependsOn ':core:check'
   dependsOn 'assemble'
-  tasks.findByName('javadoc').mustRunAfter 'javaIncrementalFormatApply'
-  tasks.findByName('checkDependenciesDotGradle').mustRunAfter 'javaIncrementalFormatApply'
-  tasks.findByName('checkLicense').mustRunAfter 'javaIncrementalFormatApply'
+  tasks.javadoc.mustRunAfter 'javaIncrementalFormatApply'
+  tasks.checkDependenciesDotGradle.mustRunAfter 'javaIncrementalFormatApply'
+  tasks.checkLicense.mustRunAfter 'javaIncrementalFormatApply'
 }
 
 javadocDependentTasks.each { tasks.javadoc.dependsOn(it) }
