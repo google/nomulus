@@ -42,7 +42,7 @@ public abstract class Subdomain implements Serializable {
   abstract String domainName();
   /** Returns the domain repo ID (the primary key of the domain table). */
   abstract String domainRepoId();
-  /** Returns the registrar client ID of the associated registrar for this domain. */
+  /** Returns the registrar ID of the associated registrar for this domain. */
   abstract String registrarId();
   /** Returns the email address of the registrar associated with this domain. */
   abstract String registrarEmailAddress();
