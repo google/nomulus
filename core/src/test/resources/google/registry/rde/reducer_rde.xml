@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<rde:deposit xmlns:contact="urn:ietf:params:xml:ns:contact-1.0" xmlns:rdeContact="urn:ietf:params:xml:ns:rdeContact-1.0" xmlns:launch="urn:ietf:params:xml:ns:launch-1.0" xmlns:rdeEppParams="urn:ietf:params:xml:ns:rdeEppParams-1.0" xmlns:rdeNotification="urn:ietf:params:xml:ns:rdeNotification-1.0" xmlns:host="urn:ietf:params:xml:ns:host-1.0" xmlns:rdeIDN="urn:ietf:params:xml:ns:rdeIDN-1.0" xmlns:eppcom="urn:ietf:params:xml:ns:eppcom-1.0" xmlns:smd="urn:ietf:params:xml:ns:signedMark-1.0" xmlns:rdeHost="urn:ietf:params:xml:ns:rdeHost-1.0" xmlns:rdeReport="urn:ietf:params:xml:ns:rdeReport-1.0" xmlns:fee11="urn:ietf:params:xml:ns:fee-0.11" xmlns:fee12="urn:ietf:params:xml:ns:fee-0.12" xmlns:iirdea="urn:ietf:params:xml:ns:iirdea-1.0" xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0" xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xmlns:rdeDomain="urn:ietf:params:xml:ns:rdeDomain-1.0" xmlns:epp="urn:ietf:params:xml:ns:epp-1.0" xmlns:rdeNNDN="urn:ietf:params:xml:ns:rdeNNDN-1.0" xmlns:rdeRegistrar="urn:ietf:params:xml:ns:rdeRegistrar-1.0" xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0" xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" xmlns:rde="urn:ietf:params:xml:ns:rde-1.0" xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1" xmlns:mark="urn:ietf:params:xml:ns:mark-1.0" xmlns:rdePolicy="urn:ietf:params:xml:ns:rdePolicy-1.0" xmlns:fee06="urn:ietf:params:xml:ns:fee-0.6" type="FULL" id="AAAABXDKZ6WAA"%RESEND%>
+    <rde:watermark>2000-01-01T00:00:00Z</rde:watermark>
+    <rde:rdeMenu>
+        <rde:version>1.0</rde:version>
+        <rde:objURI>urn:ietf:params:xml:ns:rdeContact-1.0</rde:objURI>
+        <rde:objURI>urn:ietf:params:xml:ns:rdeDomain-1.0</rde:objURI>
+        <rde:objURI>urn:ietf:params:xml:ns:rdeHeader-1.0</rde:objURI>
+        <rde:objURI>urn:ietf:params:xml:ns:rdeHost-1.0</rde:objURI>
+        <rde:objURI>urn:ietf:params:xml:ns:rdeIDN-1.0</rde:objURI>
+        <rde:objURI>urn:ietf:params:xml:ns:rdeRegistrar-1.0</rde:objURI>
+    </rde:rdeMenu>
+    <rde:contents>
+<rdeDomain:domain/>
+<rdeRegistrar:registrar/>
+<rdeContact:contact/>
+<rdeHost:host/>
+
+<rdeIDN:idnTableRef id="extended_latin">
+    <rdeIDN:url>https://www.iana.org/domains/idn-tables/tables/google_latn_1.0.txt</rdeIDN:url>
+    <rdeIDN:urlPolicy>https://www.registry.google/about/policies/domainabuse/</rdeIDN:urlPolicy>
+</rdeIDN:idnTableRef>
+
+<rdeIDN:idnTableRef id="ja">
+    <rdeIDN:url>https://www.iana.org/domains/idn-tables/tables/google_ja_1.0.txt</rdeIDN:url>
+    <rdeIDN:urlPolicy>https://www.registry.google/about/policies/domainabuse/</rdeIDN:urlPolicy>
+</rdeIDN:idnTableRef>
+
+<rdeHeader:header>
+    <rdeHeader:tld>soy</rdeHeader:tld>
+    <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeContact-1.0">1</rdeHeader:count>
+    <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeDomain-1.0">1</rdeHeader:count>
+    <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeHost-1.0">1</rdeHeader:count>
+    <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeRegistrar-1.0">1</rdeHeader:count>
+    <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeIDN-1.0">2</rdeHeader:count>
+</rdeHeader:header>
+
+</rde:contents>
+</rde:deposit>

@@ -77,7 +77,7 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
   private final byte[] stagingKeyBytes;
   private final RdeMarshaller marshaller;
 
-  private RdeStagingReducer(
+  RdeStagingReducer(
       TaskQueueUtils taskQueueUtils,
       LockHandler lockHandler,
       int gcsBufferSize,
@@ -125,7 +125,7 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
     final DateTime watermark = key.watermark();
     final int revision =
         Optional.ofNullable(key.revision())
-            .orElse(RdeRevision.getNextRevision(tld, watermark, mode));
+            .orElseGet(() -> RdeRevision.getNextRevision(tld, watermark, mode));
     String id = RdeUtil.timestampToId(watermark);
     String prefix = RdeNamingUtils.makeRydeFilename(tld, watermark, mode, 1, revision);
     if (key.manual()) {
@@ -168,9 +168,13 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
           logger.atSevere().log("Fragment error: %s", fragment.error());
         }
       }
-      for (IdnTableEnum idn : IdnTableEnum.values()) {
-        output.write(marshaller.marshalIdn(idn.getTable()));
-        counter.increment(RdeResourceType.IDN);
+
+      // Don't write the IDN elements for BRDA.
+      if (mode == RdeMode.FULL) {
+        for (IdnTableEnum idn : IdnTableEnum.values()) {
+          output.write(marshaller.marshalIdn(idn.getTable()));
+          counter.increment(RdeResourceType.IDN);
+        }
       }
 
       // Output XML that says how many resources were emitted.
