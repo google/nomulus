@@ -36,14 +36,14 @@ import org.apache.beam.sdk.io.gcp.bigquery.SchemaAndRecord;
 public abstract class Subdomain implements Serializable {
 
   private static final ImmutableList<String> FIELD_NAMES =
-      ImmutableList.of("domainName", "domainRepoId", "clientId", "registrarEmailAddress");
+      ImmutableList.of("domainName", "domainRepoId", "registrarId", "registrarEmailAddress");
 
   /** Returns the fully qualified domain name. */
   abstract String domainName();
   /** Returns the domain repo ID (the primary key of the domain table). */
   abstract String domainRepoId();
-  /** Returns the client ID of the associated registrar for this domain. */
-  abstract String clientId();
+  /** Returns the registrar client ID of the associated registrar for this domain. */
+  abstract String registrarId();
   /** Returns the email address of the registrar associated with this domain. */
   abstract String registrarEmailAddress();
 
@@ -60,7 +60,7 @@ public abstract class Subdomain implements Serializable {
     return create(
         extractField(record, "domainName"),
         extractField(record, "domainRepoId"),
-        extractField(record, "clientId"),
+        extractField(record, "registrarId"),
         extractField(record, "registrarEmailAddress"));
   }
 
@@ -74,9 +74,9 @@ public abstract class Subdomain implements Serializable {
   static Subdomain create(
       String domainName,
       String domainRepoId,
-      String clientId,
+      String registrarId,
       String registrarEmailAddress) {
     return new AutoValue_Subdomain(
-        domainName, domainRepoId, clientId, registrarEmailAddress);
+        domainName, domainRepoId, registrarId, registrarEmailAddress);
   }
 }

@@ -15,7 +15,6 @@
 package google.registry.beam.spec11;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -26,7 +25,6 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
-import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.util.GoogleCredentialsBundle;
@@ -90,14 +88,12 @@ public class Spec11PipelineTest {
   @Before
   public void initializePipeline() throws IOException {
     File beamTempFolder = tempFolder.newFolder();
-    JpaTransactionManager jpaTm = jpaTm();
     spec11Pipeline =
         new Spec11Pipeline(
             "test-project",
             beamTempFolder.getAbsolutePath() + "/staging",
             beamTempFolder.getAbsolutePath() + "/templates/invoicing",
             tempFolder.getRoot().getAbsolutePath(),
-            jpaTm,
             GoogleCredentialsBundle.create(GoogleCredentials.create(null)),
             retrier);
   }
@@ -147,8 +143,7 @@ public class Spec11PipelineTest {
 
     // Apply input and evaluation transforms
     PCollection<Subdomain> input = p.apply(Create.of(inputRows));
-    JpaTransactionManager jpaTm = jpaTm();
-    spec11Pipeline.evaluateUrlHealth(input, evalFn, StaticValueProvider.of("2018-06-01"), jpaTm);
+    spec11Pipeline.evaluateUrlHealth(input, evalFn, StaticValueProvider.of("2018-06-01"));
     p.run();
 
     // Verify header and 4 threat matches for 3 registrars are found
