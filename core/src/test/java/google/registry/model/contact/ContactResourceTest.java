@@ -49,7 +49,7 @@ public class ContactResourceTest extends EntityTestCase {
   ContactResource contactResource;
 
   public ContactResourceTest() {
-    super(true);
+    super(JpaEntityCoverageCheck.ENABLED);
   }
 
   @BeforeEach

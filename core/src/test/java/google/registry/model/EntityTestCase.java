@@ -49,6 +49,16 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Base class of all unit tests for entities which are persisted to Datastore via Objectify. */
 public abstract class EntityTestCase {
 
+  protected enum JpaEntityCoverageCheck {
+    /**
+     * The test will contribute to the coverage checks in {@link
+     * google.registry.schema.integration.SqlIntegrationTestSuite}.
+     */
+    ENABLED,
+    /** The test is not relevant for JPA coverage checks. */
+    DISABLED;
+  }
+
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
   @Rule @RegisterExtension public final AppEngineRule appEngine;
@@ -56,14 +66,14 @@ public abstract class EntityTestCase {
   @Rule @RegisterExtension public InjectRule inject = new InjectRule();
 
   protected EntityTestCase() {
-    this(false);
+    this(JpaEntityCoverageCheck.DISABLED);
   }
 
-  protected EntityTestCase(boolean enableJpaEntityCheck) {
+  protected EntityTestCase(JpaEntityCoverageCheck jpaEntityCoverageCheck) {
     appEngine =
         AppEngineRule.builder()
             .withDatastoreAndCloudSql()
-            .enableJpaEntityCoverageCheck(enableJpaEntityCheck)
+            .enableJpaEntityCoverageCheck(jpaEntityCoverageCheck == JpaEntityCoverageCheck.ENABLED)
             .withClock(fakeClock)
             .build();
   }

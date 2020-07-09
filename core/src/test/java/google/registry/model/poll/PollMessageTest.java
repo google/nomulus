@@ -39,7 +39,7 @@ public class PollMessageTest extends EntityTestCase {
   PollMessage.Autorenew autoRenew;
 
   public PollMessageTest() {
-    super(true);
+    super(JpaEntityCoverageCheck.ENABLED);
   }
 
   @BeforeEach
