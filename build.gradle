@@ -25,7 +25,6 @@ buildscript {
 
   dependencies {
     classpath 'com.google.cloud.tools:appengine-gradle-plugin:2.0.1'
-    classpath 'gradle.plugin.com.dorongold.plugins:task-tree:1.5'
     classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.6.1'
     classpath 'org.sonatype.aether:aether-api:1.13.1'
     classpath 'org.sonatype.aether:aether-impl:1.13.1'
