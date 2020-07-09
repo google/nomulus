@@ -22,8 +22,6 @@ import com.google.auto.value.AutoValue;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.config.CredentialModule.LocalCredential;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.persistence.PersistenceModule.SocketFactoryJpaTm;
-import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.Retrier;
 import google.registry.util.SqlTemplate;
