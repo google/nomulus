@@ -77,7 +77,7 @@ public class Spec11Pipeline implements Serializable {
   public static final String REGISTRAR_EMAIL_FIELD = "registrarEmailAddress";
   /** The JSON object field into which we put the registrar's name for Spec11 reports. */
   public static final String REGISTRAR_CLIENT_ID_FIELD = "registrarClientId";
-  /** The JSON object field we put the threat match array for Spec11 reports. */
+  /** The JSON object field into which we put the threat match array for Spec11 reports. */
   public static final String THREAT_MATCHES_FIELD = "threatMatches";
 
   private final String projectId;
@@ -176,9 +176,11 @@ public class Spec11Pipeline implements Serializable {
       PCollection<Subdomain> domains,
       EvaluateSafeBrowsingFn evaluateSafeBrowsingFn,
       ValueProvider<String> dateProvider) {
-    PCollection<KV<Subdomain, ThreatMatch>> subdomains =
+
+    /* Store ThreatMatch objects in JSON. */
+    PCollection<KV<Subdomain, ThreatMatch>> subdomainsJson =
         domains.apply("Run through SafeBrowsingAPI", ParDo.of(evaluateSafeBrowsingFn));
-    subdomains
+    subdomainsJson
         .apply(
             "Map registrar client ID to email/ThreatMatch pair",
             MapElements.into(
@@ -187,7 +189,7 @@ public class Spec11Pipeline implements Serializable {
                 .via(
                     (KV<Subdomain, ThreatMatch> kv) ->
                         KV.of(
-                            kv.getKey().registrarClientId(),
+                            kv.getKey().registrarId(),
                             EmailAndThreatMatch.create(
                                 kv.getKey().registrarEmailAddress(), kv.getValue()))))
         .apply("Group by registrar client ID", GroupByKey.create())

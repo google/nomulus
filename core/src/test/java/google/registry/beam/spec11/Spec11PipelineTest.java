@@ -81,21 +81,21 @@ public class Spec11PipelineTest {
   @Rule public final transient TestPipeline p = TestPipeline.fromOptions(pipelineOptions);
   @Rule public final TemporaryFolder tempFolder = new TemporaryFolder();
 
-  private final Retrier retrier = new Retrier(
-      new FakeSleeper(new FakeClock(DateTime.parse("2019-07-15TZ"))), 1);
+  private final Retrier retrier =
+      new Retrier(new FakeSleeper(new FakeClock(DateTime.parse("2019-07-15TZ"))), 1);
   private Spec11Pipeline spec11Pipeline;
 
   @Before
   public void initializePipeline() throws IOException {
     File beamTempFolder = tempFolder.newFolder();
-    spec11Pipeline = new Spec11Pipeline(
-        "test-project",
-        beamTempFolder.getAbsolutePath() + "/staging",
-        beamTempFolder.getAbsolutePath() + "/templates/invoicing",
-        tempFolder.getRoot().getAbsolutePath(),
-        GoogleCredentialsBundle.create(GoogleCredentials.create(null)),
-        retrier
-    );
+    spec11Pipeline =
+        new Spec11Pipeline(
+            "test-project",
+            beamTempFolder.getAbsolutePath() + "/staging",
+            beamTempFolder.getAbsolutePath() + "/templates/invoicing",
+            tempFolder.getRoot().getAbsolutePath(),
+            GoogleCredentialsBundle.create(GoogleCredentials.create(null)),
+            retrier);
   }
 
   private static final ImmutableList<String> BAD_DOMAINS =
@@ -107,13 +107,15 @@ public class Spec11PipelineTest {
     // Put in half for theRegistrar and half for someRegistrar
     for (int i = 0; i < 255; i++) {
       subdomainsBuilder.add(
-          Subdomain.create(String.format("%s.com", i), "theRegistrar", "fake@theRegistrar.com"));
+          Subdomain.create(
+              String.format("%s.com", i), "theDomain", "theRegistrar", "fake@theRegistrar.com"));
     }
     for (int i = 255; i < 510; i++) {
       subdomainsBuilder.add(
-          Subdomain.create(String.format("%s.com", i), "someRegistrar", "fake@someRegistrar.com"));
+          Subdomain.create(
+              String.format("%s.com", i), "someDomain", "someRegistrar", "fake@someRegistrar.com"));
     }
-    subdomainsBuilder.add(Subdomain.create("no-email.com", "noEmailRegistrar", ""));
+    subdomainsBuilder.add(Subdomain.create("no-email.com", "fakeDomain", "noEmailRegistrar", ""));
     return subdomainsBuilder.build();
   }
 
@@ -165,8 +167,7 @@ public class Spec11PipelineTest {
     assertThat(noEmailThreatMatch.length()).isEqualTo(1);
     assertThat(noEmailThreatMatch.getJSONObject(0).get("fullyQualifiedDomainName"))
         .isEqualTo("no-email.com");
-    assertThat(noEmailThreatMatch.getJSONObject(0).get("threatType"))
-        .isEqualTo("MALWARE");
+    assertThat(noEmailThreatMatch.getJSONObject(0).get("threatType")).isEqualTo("MALWARE");
 
     JSONObject someRegistrarJSON = new JSONObject(sortedLines.get(1));
     assertThat(someRegistrarJSON.get("registrarEmailAddress")).isEqualTo("fake@someRegistrar.com");
@@ -176,8 +177,7 @@ public class Spec11PipelineTest {
     assertThat(someThreatMatch.length()).isEqualTo(1);
     assertThat(someThreatMatch.getJSONObject(0).get("fullyQualifiedDomainName"))
         .isEqualTo("444.com");
-    assertThat(someThreatMatch.getJSONObject(0).get("threatType"))
-        .isEqualTo("MALWARE");
+    assertThat(someThreatMatch.getJSONObject(0).get("threatType")).isEqualTo("MALWARE");
 
     // theRegistrar has two ThreatMatches, we have to parse it explicitly
     JSONObject theRegistrarJSON = new JSONObject(sortedLines.get(2));
@@ -228,10 +228,8 @@ public class Spec11PipelineTest {
     CloseableHttpResponse httpResponse =
         mock(CloseableHttpResponse.class, withSettings().serializable());
     when(httpResponse.getStatusLine())
-        .thenReturn(
-            new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 200, "Done"));
-    when(httpResponse.getEntity())
-        .thenReturn(new FakeHttpEntity(getAPIResponse(badUrls)));
+        .thenReturn(new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 200, "Done"));
+    when(httpResponse.getEntity()).thenReturn(new FakeHttpEntity(getAPIResponse(badUrls)));
     return httpResponse;
   }
 
@@ -298,5 +296,4 @@ public class Spec11PipelineTest {
     return ImmutableList.copyOf(
         ResourceUtils.readResourceUtf8(resultFile.toURI().toURL()).split("\n"));
   }
-
 }
