@@ -141,7 +141,7 @@ public class SafeBrowsingTransforms {
     @ProcessElement
     public void processElement(ProcessContext context) {
       Subdomain subdomain = context.element();
-      subdomainBuffer.put(subdomain.fullyQualifiedDomainName(), subdomain);
+      subdomainBuffer.put(subdomain.domainName(), subdomain);
       if (subdomainBuffer.size() >= BATCH_SIZE) {
         ImmutableSet<KV<Subdomain, ThreatMatch>> results = evaluateAndFlush();
         results.forEach(context::output);
@@ -239,7 +239,7 @@ public class SafeBrowsingTransforms {
             String url = match.getJSONObject("threat").getString("url");
             Subdomain subdomain = subdomainBuffer.get(url);
             resultBuilder.add(
-                KV.of(subdomain, ThreatMatch.create(match, subdomain.fullyQualifiedDomainName())));
+                KV.of(subdomain, ThreatMatch.create(match, subdomain.domainName())));
           }
         }
       }
