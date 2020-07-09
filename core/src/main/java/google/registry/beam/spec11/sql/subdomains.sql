@@ -19,11 +19,13 @@
   -- email address.
 
 SELECT
-  domain.fullyQualifiedDomainName AS fullyQualifiedDomainName,
-  registrar.clientId AS registrarClientId,
+  domain.fullyQualifiedDomainName AS domainName,
+  domain.__key__.name AS domainRepoId,
+  registrar.clientId AS clientId,
   COALESCE(registrar.emailAddress, '') AS registrarEmailAddress
 FROM ( (
     SELECT
+      __key__,
       fullyQualifiedDomainName,
       currentSponsorClientId,
       creationTime

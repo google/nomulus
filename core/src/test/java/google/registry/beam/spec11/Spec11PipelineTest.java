@@ -15,6 +15,7 @@
 package google.registry.beam.spec11;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -25,6 +26,7 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
+import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.util.GoogleCredentialsBundle;
@@ -81,21 +83,23 @@ public class Spec11PipelineTest {
   @Rule public final transient TestPipeline p = TestPipeline.fromOptions(pipelineOptions);
   @Rule public final TemporaryFolder tempFolder = new TemporaryFolder();
 
-  private final Retrier retrier = new Retrier(
-      new FakeSleeper(new FakeClock(DateTime.parse("2019-07-15TZ"))), 1);
+  private final Retrier retrier =
+      new Retrier(new FakeSleeper(new FakeClock(DateTime.parse("2019-07-15TZ"))), 1);
   private Spec11Pipeline spec11Pipeline;
 
   @Before
   public void initializePipeline() throws IOException {
     File beamTempFolder = tempFolder.newFolder();
-    spec11Pipeline = new Spec11Pipeline(
-        "test-project",
-        beamTempFolder.getAbsolutePath() + "/staging",
-        beamTempFolder.getAbsolutePath() + "/templates/invoicing",
-        tempFolder.getRoot().getAbsolutePath(),
-        GoogleCredentialsBundle.create(GoogleCredentials.create(null)),
-        retrier
-    );
+    JpaTransactionManager jpaTm = jpaTm();
+    spec11Pipeline =
+        new Spec11Pipeline(
+            "test-project",
+            beamTempFolder.getAbsolutePath() + "/staging",
+            beamTempFolder.getAbsolutePath() + "/templates/invoicing",
+            tempFolder.getRoot().getAbsolutePath(),
+            jpaTm,
+            GoogleCredentialsBundle.create(GoogleCredentials.create(null)),
+            retrier);
   }
 
   private static final ImmutableList<String> BAD_DOMAINS =
@@ -107,13 +111,15 @@ public class Spec11PipelineTest {
     // Put in half for theRegistrar and half for someRegistrar
     for (int i = 0; i < 255; i++) {
       subdomainsBuilder.add(
-          Subdomain.create(String.format("%s.com", i), "theRegistrar", "fake@theRegistrar.com"));
+          Subdomain.create(
+              String.format("%s.com", i), "theDomain", "theRegistrar", "fake@theRegistrar.com"));
     }
     for (int i = 255; i < 510; i++) {
       subdomainsBuilder.add(
-          Subdomain.create(String.format("%s.com", i), "someRegistrar", "fake@someRegistrar.com"));
+          Subdomain.create(
+              String.format("%s.com", i), "someDomain", "someRegistrar", "fake@someRegistrar.com"));
     }
-    subdomainsBuilder.add(Subdomain.create("no-email.com", "noEmailRegistrar", ""));
+    subdomainsBuilder.add(Subdomain.create("no-email.com", "fakeDomain", "noEmailRegistrar", ""));
     return subdomainsBuilder.build();
   }
 
@@ -141,7 +147,8 @@ public class Spec11PipelineTest {
 
     // Apply input and evaluation transforms
     PCollection<Subdomain> input = p.apply(Create.of(inputRows));
-    spec11Pipeline.evaluateUrlHealth(input, evalFn, StaticValueProvider.of("2018-06-01"));
+    JpaTransactionManager jpaTm = jpaTm();
+    spec11Pipeline.evaluateUrlHealth(input, evalFn, StaticValueProvider.of("2018-06-01"), jpaTm);
     p.run();
 
     // Verify header and 4 threat matches for 3 registrars are found
@@ -165,8 +172,7 @@ public class Spec11PipelineTest {
     assertThat(noEmailThreatMatch.length()).isEqualTo(1);
     assertThat(noEmailThreatMatch.getJSONObject(0).get("fullyQualifiedDomainName"))
         .isEqualTo("no-email.com");
-    assertThat(noEmailThreatMatch.getJSONObject(0).get("threatType"))
-        .isEqualTo("MALWARE");
+    assertThat(noEmailThreatMatch.getJSONObject(0).get("threatType")).isEqualTo("MALWARE");
 
     JSONObject someRegistrarJSON = new JSONObject(sortedLines.get(1));
     assertThat(someRegistrarJSON.get("registrarEmailAddress")).isEqualTo("fake@someRegistrar.com");
@@ -176,8 +182,7 @@ public class Spec11PipelineTest {
     assertThat(someThreatMatch.length()).isEqualTo(1);
     assertThat(someThreatMatch.getJSONObject(0).get("fullyQualifiedDomainName"))
         .isEqualTo("444.com");
-    assertThat(someThreatMatch.getJSONObject(0).get("threatType"))
-        .isEqualTo("MALWARE");
+    assertThat(someThreatMatch.getJSONObject(0).get("threatType")).isEqualTo("MALWARE");
 
     // theRegistrar has two ThreatMatches, we have to parse it explicitly
     JSONObject theRegistrarJSON = new JSONObject(sortedLines.get(2));
@@ -228,10 +233,8 @@ public class Spec11PipelineTest {
     CloseableHttpResponse httpResponse =
         mock(CloseableHttpResponse.class, withSettings().serializable());
     when(httpResponse.getStatusLine())
-        .thenReturn(
-            new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 200, "Done"));
-    when(httpResponse.getEntity())
-        .thenReturn(new FakeHttpEntity(getAPIResponse(badUrls)));
+        .thenReturn(new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 200, "Done"));
+    when(httpResponse.getEntity()).thenReturn(new FakeHttpEntity(getAPIResponse(badUrls)));
     return httpResponse;
   }
 
@@ -298,5 +301,4 @@ public class Spec11PipelineTest {
     return ImmutableList.copyOf(
         ResourceUtils.readResourceUtf8(resultFile.toURI().toURL()).split("\n"));
   }
-
 }
