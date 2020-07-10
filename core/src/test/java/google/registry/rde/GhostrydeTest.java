@@ -60,7 +60,7 @@ public class GhostrydeTest {
           "\0yolo",
           "");
 
-  private static Stream<Arguments> provideTestCombinations() {
+  static Stream<Arguments> provideTestCombinations() {
     return CONTENTS.stream().map(Arguments::of);
   }
 

@@ -67,7 +67,7 @@ public class RydeGpgIntegrationTest {
           "\0yolo",
           "");
 
-  private static Stream<Arguments> provideTestCombinations() {
+  static Stream<Arguments> provideTestCombinations() {
     Stream.Builder<Arguments> stream = Stream.builder();
     for (String command : COMMANDS) {
       for (String content : CONTENTS) {
