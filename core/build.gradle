@@ -312,6 +312,7 @@ dependencies {
   testCompile deps['org.junit.jupiter:junit-jupiter-api']
   testCompile deps['org.junit.jupiter:junit-jupiter-engine']
   testCompile deps['org.junit.jupiter:junit-jupiter-migrationsupport']
+  testCompile deps['org.junit.jupiter:junit-jupiter-params']
   testCompile deps['org.junit.platform:junit-platform-runner']
   testCompile deps['org.junit.platform:junit-platform-suite-api']
   testCompile deps['org.junit.vintage:junit-vintage-engine']

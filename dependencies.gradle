@@ -107,6 +107,7 @@ ext {
       'org.junit.jupiter:junit-jupiter-api:5.6.1',
       'org.junit.jupiter:junit-jupiter-engine:5.6.1',
       'org.junit.jupiter:junit-jupiter-migrationsupport:5.6.1',
+      'org.junit.jupiter:junit-jupiter-params:5.6.1',
       'org.junit.platform:junit-platform-runner:1.6.1',
       'org.junit.platform:junit-platform-suite-api:1.6.1',
       'org.junit.vintage:junit-vintage-engine:5.6.1',

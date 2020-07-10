@@ -37,26 +37,23 @@ import java.io.OutputStream;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
-import org.junit.Rule;
 import org.junit.experimental.theories.DataPoints;
-import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** GPG combinatorial integration tests for the Ryde classes. */
-@RunWith(Theories.class)
 @SuppressWarnings("resource")
 public class RydeGpgIntegrationTest {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  @Rule
-  public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
 
-  @Rule
-  public final GpgSystemCommandRule gpg = new GpgSystemCommandRule(
-      RdeTestData.loadBytes("pgp-public-keyring.asc"),
-      RdeTestData.loadBytes("pgp-private-keyring-escrow.asc"));
+  @RegisterExtension
+  public final GpgSystemCommandRule gpg =
+      new GpgSystemCommandRule(
+          RdeTestData.loadBytes("pgp-public-keyring.asc"),
+          RdeTestData.loadBytes("pgp-private-keyring-escrow.asc"));
 
   private final FakeKeyringModule keyringFactory = new FakeKeyringModule();
 
@@ -79,9 +76,9 @@ public class RydeGpgIntegrationTest {
     new Content(""),
   };
 
+  // TODO: Parameterize this
   @Theory
-  public void test(GpgCommand cmd, Filename name, Content content)
-      throws Exception {
+  public void test(GpgCommand cmd, Filename name, Content content) throws Exception {
     assumeTrue(hasCommand("tar"));
     assumeTrue(hasCommand(cmd.get() + " --version"));
 
