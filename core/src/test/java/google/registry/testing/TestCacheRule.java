@@ -22,6 +22,9 @@ import google.registry.model.registry.label.PremiumList;
 import java.util.Map;
 import java.util.Optional;
 import org.joda.time.Duration;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.rules.ExternalResource;
 
 /**
@@ -31,7 +34,8 @@ import org.junit.rules.ExternalResource;
  * <p>This rule is necessary because many caches in the system are singleton and referenced through
  * static fields.
  */
-public class TestCacheRule extends ExternalResource {
+public class TestCacheRule extends ExternalResource implements BeforeEachCallback,
+    AfterEachCallback {
 
   private final ImmutableList<TestCacheHandler> cacheHandlers;
 
@@ -40,8 +44,18 @@ public class TestCacheRule extends ExternalResource {
   }
 
   @Override
+  public void beforeEach(ExtensionContext context) {
+    before();
+  }
+
+  @Override
   protected void before() {
     cacheHandlers.forEach(TestCacheHandler::before);
+  }
+
+  @Override
+  public void afterEach(ExtensionContext context) {
+    after();
   }
 
   @Override

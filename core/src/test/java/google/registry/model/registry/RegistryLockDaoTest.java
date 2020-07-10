@@ -35,12 +35,12 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link RegistryLockDao}. */
 public final class RegistryLockDaoTest extends EntityTestCase {
 
-  public RegistryLockDaoTest() {
+  RegistryLockDaoTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
   @Test
-  public void testSaveAndLoad_success() {
+  void testSaveAndLoad_success() {
     RegistryLock lock = createLock();
     saveRegistryLock(lock);
     RegistryLock fromDatabase = getRegistryLockByVerificationCode(lock.getVerificationCode()).get();
@@ -50,7 +50,7 @@ public final class RegistryLockDaoTest extends EntityTestCase {
   }
 
   @Test
-  public void testSaveTwiceAndLoad_returnsLatest() {
+  void testSaveTwiceAndLoad_returnsLatest() {
     RegistryLock lock = createLock();
     saveRegistryLock(lock);
     fakeClock.advanceOneMilli();
@@ -74,7 +74,7 @@ public final class RegistryLockDaoTest extends EntityTestCase {
   }
 
   @Test
-  public void testSave_load_withUnlock() {
+  void testSave_load_withUnlock() {
     RegistryLock lock =
         saveRegistryLock(
             createLock()
@@ -93,7 +93,7 @@ public final class RegistryLockDaoTest extends EntityTestCase {
   }
 
   @Test
-  public void testUpdateLock_usingSamePrimaryKey() {
+  void testUpdateLock_usingSamePrimaryKey() {
     RegistryLock lock = saveRegistryLock(createLock());
     fakeClock.advanceOneMilli();
     RegistryLock updatedLock =
@@ -110,17 +110,17 @@ public final class RegistryLockDaoTest extends EntityTestCase {
   }
 
   @Test
-  public void testFailure_saveNull() {
+  void testFailure_saveNull() {
     assertThrows(NullPointerException.class, () -> saveRegistryLock(null));
   }
 
   @Test
-  public void getLock_unknownCode() {
+  void getLock_unknownCode() {
     assertThat(getRegistryLockByVerificationCode("hi").isPresent()).isFalse();
   }
 
   @Test
-  public void testByRevisionId_valid() {
+  void testByRevisionId_valid() {
     RegistryLock lock = saveRegistryLock(createLock());
     RegistryLock otherLock = getRegistryLockByRevisionId(lock.getRevisionId()).get();
     // can't do direct comparison due to update time
@@ -129,12 +129,12 @@ public final class RegistryLockDaoTest extends EntityTestCase {
   }
 
   @Test
-  public void testByRevisionId_invalid() {
+  void testByRevisionId_invalid() {
     assertThat(getRegistryLockByRevisionId(8675309L).isPresent()).isFalse();
   }
 
   @Test
-  public void testLoad_lockedDomains_byRegistrarId() {
+  void testLoad_lockedDomains_byRegistrarId() {
     RegistryLock lock = createLock();
     RegistryLock secondLock =
         createLock()
@@ -163,7 +163,7 @@ public final class RegistryLockDaoTest extends EntityTestCase {
   }
 
   @Test
-  public void testLoad_byRepoId() {
+  void testLoad_byRepoId() {
     RegistryLock completedLock =
         createLock().asBuilder().setLockCompletionTimestamp(fakeClock.nowUtc()).build();
     saveRegistryLock(completedLock);
@@ -178,12 +178,12 @@ public final class RegistryLockDaoTest extends EntityTestCase {
   }
 
   @Test
-  public void testLoad_byRepoId_empty() {
+  void testLoad_byRepoId_empty() {
     assertThat(getMostRecentRegistryLockByRepoId("nonexistent").isPresent()).isFalse();
   }
 
   @Test
-  public void testLoad_verified_byRepoId() {
+  void testLoad_verified_byRepoId() {
     RegistryLock completedLock =
         createLock().asBuilder().setLockCompletionTimestamp(fakeClock.nowUtc()).build();
     saveRegistryLock(completedLock);
@@ -198,14 +198,14 @@ public final class RegistryLockDaoTest extends EntityTestCase {
   }
 
   @Test
-  public void testLoad_verified_byRepoId_empty() {
+  void testLoad_verified_byRepoId_empty() {
     saveRegistryLock(createLock());
     Optional<RegistryLock> mostRecent = getMostRecentVerifiedRegistryLockByRepoId("repoId");
     assertThat(mostRecent.isPresent()).isFalse();
   }
 
   @Test
-  public void testLoad_verifiedUnlock_byRepoId() {
+  void testLoad_verifiedUnlock_byRepoId() {
     RegistryLock lock =
         saveRegistryLock(
             createLock()
@@ -220,7 +220,7 @@ public final class RegistryLockDaoTest extends EntityTestCase {
   }
 
   @Test
-  public void testLoad_verifiedUnlock_empty() {
+  void testLoad_verifiedUnlock_empty() {
     RegistryLock completedLock =
         createLock().asBuilder().setLockCompletionTimestamp(fakeClock.nowUtc()).build();
     saveRegistryLock(completedLock);
