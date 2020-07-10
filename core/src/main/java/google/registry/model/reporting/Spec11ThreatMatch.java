@@ -20,11 +20,13 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import google.registry.beam.spec11.ThreatMatch;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
 import google.registry.util.DomainNameUtils;
+import java.io.Serializable;
 import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -42,7 +44,8 @@ import org.joda.time.LocalDate;
       @Index(name = "spec11threatmatch_tld_idx", columnList = "tld"),
       @Index(name = "spec11threatmatch_check_date_idx", columnList = "checkDate")
     })
-public class Spec11ThreatMatch extends ImmutableObject implements Buildable, SqlEntity {
+public class Spec11ThreatMatch extends ImmutableObject
+    implements Buildable, SqlEntity, Serializable {
 
   /** The type of threat detected. */
   public enum ThreatType {

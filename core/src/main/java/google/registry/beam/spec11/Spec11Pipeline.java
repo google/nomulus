@@ -19,9 +19,14 @@ import static google.registry.beam.BeamUtils.getQueryFromFile;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableSet;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.config.CredentialModule.LocalCredential;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.reporting.Spec11ThreatMatch;
+import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
+import google.registry.persistence.PersistenceModule.SocketFactoryJpaTm;
+import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.Retrier;
 import google.registry.util.SqlTemplate;
@@ -37,6 +42,7 @@ import org.apache.beam.sdk.options.Description;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.options.ValueProvider;
 import org.apache.beam.sdk.options.ValueProvider.NestedValueProvider;
+import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.ParDo;
@@ -46,6 +52,7 @@ import org.apache.beam.sdk.values.TypeDescriptor;
 import org.apache.beam.sdk.values.TypeDescriptors;
 import org.joda.time.LocalDate;
 import org.joda.time.YearMonth;
+import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -84,6 +91,7 @@ public class Spec11Pipeline implements Serializable {
   private final String beamStagingUrl;
   private final String spec11TemplateUrl;
   private final String reportingBucketUrl;
+  private final JpaTransactionManager jpaTm;
   private final GoogleCredentials googleCredentials;
   private final Retrier retrier;
 
@@ -93,12 +101,14 @@ public class Spec11Pipeline implements Serializable {
       @Config("beamStagingUrl") String beamStagingUrl,
       @Config("spec11TemplateUrl") String spec11TemplateUrl,
       @Config("reportingBucketUrl") String reportingBucketUrl,
+      @SocketFactoryJpaTm JpaTransactionManager jpaTm,
       @LocalCredential GoogleCredentialsBundle googleCredentialsBundle,
       Retrier retrier) {
     this.projectId = projectId;
     this.beamStagingUrl = beamStagingUrl;
     this.spec11TemplateUrl = spec11TemplateUrl;
     this.reportingBucketUrl = reportingBucketUrl;
+    this.jpaTm = jpaTm;
     this.googleCredentials = googleCredentialsBundle.getGoogleCredentials();
     this.retrier = retrier;
   }
@@ -163,7 +173,8 @@ public class Spec11Pipeline implements Serializable {
     evaluateUrlHealth(
         domains,
         new EvaluateSafeBrowsingFn(options.getSafeBrowsingApiKey(), retrier),
-        options.getDate());
+        options.getDate(),
+        jpaTm);
     p.run();
   }
 
@@ -175,14 +186,39 @@ public class Spec11Pipeline implements Serializable {
   void evaluateUrlHealth(
       PCollection<Subdomain> domains,
       EvaluateSafeBrowsingFn evaluateSafeBrowsingFn,
-      ValueProvider<String> dateProvider) {
+      ValueProvider<String> dateProvider,
+      JpaTransactionManager jpaTm) {
+
+    /* Store ThreatMatch objects in SQL. */
+    PCollection<KV<Subdomain, ThreatMatch>> subdomainsSql =
+        domains.apply("Run through SafeBrowsingAPI", ParDo.of(evaluateSafeBrowsingFn));
+    subdomainsSql.apply(
+        ParDo.of(
+            new DoFn<KV<Subdomain, ThreatMatch>, Void>() {
+              @ProcessElement
+              Void processElement(KV<Subdomain, ThreatMatch> elem) {
+                // create the Spec11ThreatMatch from Subdomain and ThreatMatch
+                Spec11ThreatMatch threatMatch =
+                    new Spec11ThreatMatch.Builder()
+                        .setThreatTypes(
+                            ImmutableSet.of(ThreatType.valueOf(elem.getValue().threatType())))
+                        .setCheckDate(LocalDate.parse(dateProvider.get(), ISODateTimeFormat.date()))
+                        .setDomainName(elem.getKey().domainName())
+                        .setDomainRepoId(elem.getKey().domainRepoId())
+                        .setRegistrarId(elem.getKey().registrarId())
+                        .build();
+                //persist the ThreatMatch
+                jpaTm.saveNew(threatMatch);
+                return null;
+              }
+            }));
 
     /* Store ThreatMatch objects in JSON. */
     PCollection<KV<Subdomain, ThreatMatch>> subdomainsJson =
         domains.apply("Run through SafeBrowsingAPI", ParDo.of(evaluateSafeBrowsingFn));
     subdomainsJson
         .apply(
-            "Map registrar client ID to email/ThreatMatch pair",
+            "Map registrar ID to email/ThreatMatch pair",
             MapElements.into(
                     TypeDescriptors.kvs(
                         TypeDescriptors.strings(), TypeDescriptor.of(EmailAndThreatMatch.class)))
