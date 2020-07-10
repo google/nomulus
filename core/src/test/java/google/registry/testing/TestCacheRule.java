@@ -25,7 +25,6 @@ import org.joda.time.Duration;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.rules.ExternalResource;
 
 /**
  * Sets up caches with desired data expiry for testing and restores their default configurations
@@ -34,8 +33,7 @@ import org.junit.rules.ExternalResource;
  * <p>This rule is necessary because many caches in the system are singleton and referenced through
  * static fields.
  */
-public class TestCacheRule extends ExternalResource implements BeforeEachCallback,
-    AfterEachCallback {
+public class TestCacheRule implements BeforeEachCallback, AfterEachCallback {
 
   private final ImmutableList<TestCacheHandler> cacheHandlers;
 
@@ -45,21 +43,11 @@ public class TestCacheRule extends ExternalResource implements BeforeEachCallbac
 
   @Override
   public void beforeEach(ExtensionContext context) {
-    before();
-  }
-
-  @Override
-  protected void before() {
     cacheHandlers.forEach(TestCacheHandler::before);
   }
 
   @Override
   public void afterEach(ExtensionContext context) {
-    after();
-  }
-
-  @Override
-  protected void after() {
     cacheHandlers.forEach(TestCacheHandler::after);
   }
 

@@ -19,23 +19,20 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatastoreHelper.persistResource;
 
 import google.registry.testing.AppEngineRule;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@RunWith(JUnit4.class)
 public class KmsSecretTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private KmsSecret secret;
   private KmsSecretRevision secretRevision;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void setUp() {
     secretRevision =
         persistResource(
             new KmsSecretRevision.Builder()
@@ -48,7 +45,7 @@ public class KmsSecretTest {
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     assertThat(ofy().load().entity(secret).now()).isEqualTo(secret);
   }
 }

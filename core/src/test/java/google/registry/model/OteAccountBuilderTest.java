@@ -40,20 +40,17 @@ import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@RunWith(JUnit4.class)
 public final class OteAccountBuilderTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testGetRegistrarToTldMap() {
+  void testGetRegistrarToTldMap() {
     assertThat(OteAccountBuilder.forClientId("myclientid").getClientIdToTldMap())
         .containsExactly(
             "myclientid-1", "myclientid-sunrise",
@@ -62,8 +59,8 @@ public final class OteAccountBuilderTest {
             "myclientid-5", "myclientid-eap");
   }
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     persistPremiumList("default_sandbox_list", "sandbox,USD 1000");
   }
 
@@ -105,7 +102,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateOteEntities_success() {
+  void testCreateOteEntities_success() {
     OteAccountBuilder.forClientId("myclientid").addContact("email@example.com").buildAndPersist();
 
     assertTldExists("myclientid-sunrise", START_DATE_SUNRISE, Money.zero(USD));
@@ -122,7 +119,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateOteEntities_multipleContacts_success() {
+  void testCreateOteEntities_multipleContacts_success() {
     OteAccountBuilder.forClientId("myclientid")
         .addContact("email@example.com")
         .addContact("other@example.com")
@@ -151,7 +148,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateOteEntities_setPassword() {
+  void testCreateOteEntities_setPassword() {
     OteAccountBuilder.forClientId("myclientid").setPassword("myPassword").buildAndPersist();
 
     assertThat(Registrar.loadByClientId("myclientid-3").get().verifyPassword("myPassword"))
@@ -159,7 +156,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateOteEntities_setCertificateHash() {
+  void testCreateOteEntities_setCertificateHash() {
     OteAccountBuilder.forClientId("myclientid")
         .setCertificateHash(SAMPLE_CERT_HASH)
         .buildAndPersist();
@@ -169,7 +166,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateOteEntities_setCertificate() {
+  void testCreateOteEntities_setCertificate() {
     OteAccountBuilder.forClientId("myclientid")
         .setCertificate(SAMPLE_CERT, new SystemClock().nowUtc())
         .buildAndPersist();
@@ -181,7 +178,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateOteEntities_setIpAllowList() {
+  void testCreateOteEntities_setIpAllowList() {
     OteAccountBuilder.forClientId("myclientid")
         .setIpAllowList(ImmutableList.of("1.1.1.0/24"))
         .buildAndPersist();
@@ -191,7 +188,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateOteEntities_invalidClientId_fails() {
+  void testCreateOteEntities_invalidClientId_fails() {
     assertThat(
             assertThrows(
                 IllegalArgumentException.class, () -> OteAccountBuilder.forClientId("3blo-bio")))
@@ -200,7 +197,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateOteEntities_clientIdTooShort_fails() {
+  void testCreateOteEntities_clientIdTooShort_fails() {
     assertThat(
             assertThrows(IllegalArgumentException.class, () -> OteAccountBuilder.forClientId("bl")))
         .hasMessageThat()
@@ -208,7 +205,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateOteEntities_clientIdTooLong_fails() {
+  void testCreateOteEntities_clientIdTooLong_fails() {
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
@@ -218,7 +215,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateOteEntities_clientIdBadCharacter_fails() {
+  void testCreateOteEntities_clientIdBadCharacter_fails() {
     assertThat(
             assertThrows(
                 IllegalArgumentException.class, () -> OteAccountBuilder.forClientId("blo#bio")))
@@ -227,7 +224,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateOteEntities_registrarExists_failsWhenNotReplaceExisting() {
+  void testCreateOteEntities_registrarExists_failsWhenNotReplaceExisting() {
     persistSimpleResource(makeRegistrar1().asBuilder().setClientId("myclientid-1").build());
 
     OteAccountBuilder oteSetupHelper = OteAccountBuilder.forClientId("myclientid");
@@ -238,7 +235,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateOteEntities_tldExists_failsWhenNotReplaceExisting() {
+  void testCreateOteEntities_tldExists_failsWhenNotReplaceExisting() {
     createTld("myclientid-ga", START_DATE_SUNRISE);
 
     OteAccountBuilder oteSetupHelper = OteAccountBuilder.forClientId("myclientid");
@@ -249,7 +246,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateOteEntities_entitiesExist_succeedsWhenReplaceExisting() {
+  void testCreateOteEntities_entitiesExist_succeedsWhenReplaceExisting() {
     persistSimpleResource(makeRegistrar1().asBuilder().setClientId("myclientid-1").build());
     // we intentionally create the -ga TLD with the wrong state, to make sure it's overwritten.
     createTld("myclientid-ga", START_DATE_SUNRISE);
@@ -264,7 +261,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateOteEntities_doubleCreation_actuallyReplaces() {
+  void testCreateOteEntities_doubleCreation_actuallyReplaces() {
     OteAccountBuilder.forClientId("myclientid")
         .setPassword("oldPassword")
         .addContact("email@example.com")
@@ -286,7 +283,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateOteEntities_doubleCreation_keepsOldContacts() {
+  void testCreateOteEntities_doubleCreation_keepsOldContacts() {
     OteAccountBuilder.forClientId("myclientid").addContact("email@example.com").buildAndPersist();
 
     assertContactExists("myclientid-3", "email@example.com");
@@ -301,7 +298,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateClientIdToTldMap_validEntries() {
+  void testCreateClientIdToTldMap_validEntries() {
     assertThat(OteAccountBuilder.createClientIdToTldMap("myclientid"))
         .containsExactly(
             "myclientid-1", "myclientid-sunrise",
@@ -311,7 +308,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testCreateClientIdToTldMap_invalidId() {
+  void testCreateClientIdToTldMap_invalidId() {
     IllegalArgumentException exception =
         assertThrows(
             IllegalArgumentException.class, () -> OteAccountBuilder.createClientIdToTldMap("a"));
@@ -319,12 +316,12 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testGetBaseClientId_validOteId() {
+  void testGetBaseClientId_validOteId() {
     assertThat(OteAccountBuilder.getBaseClientId("myclientid-4")).isEqualTo("myclientid");
   }
 
   @Test
-  public void testGetBaseClientId_invalidInput_malformed() {
+  void testGetBaseClientId_invalidInput_malformed() {
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
@@ -334,7 +331,7 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  public void testGetBaseClientId_invalidInput_wrongForBase() {
+  void testGetBaseClientId_invalidInput_wrongForBase() {
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,

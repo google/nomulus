@@ -26,22 +26,19 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link SignedMarkRevocationList}. */
-@RunWith(JUnit4.class)
 public class SignedMarkRevocationListTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2013-01-01T00:00:00Z"));
 
   @Test
-  public void testUnshardedSaveFails() {
+  void testUnshardedSaveFails() {
     // Our @Entity's @OnSave method will notice that this shouldn't be saved.
     assertThrows(
         SignedMarkRevocationList.UnshardedSaveException.class,
@@ -59,14 +56,14 @@ public class SignedMarkRevocationListTest {
   }
 
   @Test
-  public void testEmpty() {
+  void testEmpty() {
     // When Datastore is empty, it should give us an empty thing.
     assertThat(SignedMarkRevocationList.get())
         .isEqualTo(SignedMarkRevocationList.create(START_OF_TIME, ImmutableMap.of()));
   }
 
   @Test
-  public void testSharding2() {
+  void testSharding2() {
     final int rows = SHARD_SIZE + 1;
     // Create a SignedMarkRevocationList that will need 2 shards to save.
     ImmutableMap.Builder<String, DateTime> revokes = new ImmutableMap.Builder<>();
@@ -82,7 +79,7 @@ public class SignedMarkRevocationListTest {
   }
 
   @Test
-  public void testSharding4() {
+  void testSharding4() {
     final int rows = SHARD_SIZE * 3 + 1;
     // Create a SignedMarkRevocationList that will need 4 shards to save.
     ImmutableMap.Builder<String, DateTime> revokes = new ImmutableMap.Builder<>();
@@ -109,7 +106,7 @@ public class SignedMarkRevocationListTest {
   }
 
   @Test
-  public void test_isSmdRevoked_null() {
+  void test_isSmdRevoked_null() {
     assertThrows(
         NullPointerException.class,
         () ->
@@ -118,7 +115,7 @@ public class SignedMarkRevocationListTest {
   }
 
   @Test
-  public void test_isSmdRevoked_garbage() {
+  void test_isSmdRevoked_garbage() {
     SignedMarkRevocationList smdrl = createSaveGetHelper(SHARD_SIZE + 1);
     assertThat(smdrl.getCreationTime()).isEqualTo(clock.nowUtc());
     assertThat(smdrl.isSmdRevoked("rofl", clock.nowUtc())).isFalse();
@@ -126,7 +123,7 @@ public class SignedMarkRevocationListTest {
   }
 
   @Test
-  public void test_getCreationTime() {
+  void test_getCreationTime() {
     clock.setTo(DateTime.parse("2000-01-01T00:00:00Z"));
     createSaveGetHelper(5);
     assertThat(SignedMarkRevocationList.get().getCreationTime())
@@ -137,7 +134,7 @@ public class SignedMarkRevocationListTest {
   }
 
   @Test
-  public void test_isSmdRevoked_present() {
+  void test_isSmdRevoked_present() {
     final int rows = SHARD_SIZE + 1;
     SignedMarkRevocationList smdrl = createSaveGetHelper(rows);
     assertThat(smdrl.isSmdRevoked("0", clock.nowUtc())).isTrue();
@@ -146,7 +143,7 @@ public class SignedMarkRevocationListTest {
   }
 
   @Test
-  public void test_isSmdRevoked_future() {
+  void test_isSmdRevoked_future() {
     final int rows = SHARD_SIZE;
     SignedMarkRevocationList smdrl = createSaveGetHelper(rows);
     clock.advanceOneMilli();
@@ -156,7 +153,7 @@ public class SignedMarkRevocationListTest {
   }
 
   @Test
-  public void test_isSmdRevoked_past() {
+  void test_isSmdRevoked_past() {
     final int rows = SHARD_SIZE;
     SignedMarkRevocationList smdrl = createSaveGetHelper(rows);
     clock.setTo(clock.nowUtc().minusMillis(1));

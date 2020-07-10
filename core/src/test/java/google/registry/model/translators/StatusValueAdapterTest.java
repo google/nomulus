@@ -31,20 +31,17 @@ import google.registry.model.host.HostInfoData;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.EppLoader;
 import google.registry.xml.ValidationMode;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@RunWith(JUnit4.class)
 public class StatusValueAdapterTest {
 
   // Needed to create HostResources.
-  @Rule
+  @RegisterExtension
   public AppEngineRule appEngine = new AppEngineRule.Builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testMarshalling() throws Exception {
+  void testMarshalling() throws Exception {
     // Mangle the status value through marshalling by stuffing it in a host info response and then
     // ripping it out of the marshalled xml. Use lenient marshalling so we can omit other fields.
     String marshalled = new String(
@@ -77,19 +74,19 @@ public class StatusValueAdapterTest {
   }
 
   @Test
-  public void testNoOptionalFields_unmarshallsWithoutException() throws Exception {
+  void testNoOptionalFields_unmarshallsWithoutException() throws Exception {
     assertThat(unmarshal("<host:status s=\"clientUpdateProhibited\"/>"))
         .isEqualTo(StatusValue.CLIENT_UPDATE_PROHIBITED);
   }
 
   @Test
-  public void testHasLang_unmarshallsWithoutException() throws Exception {
+  void testHasLang_unmarshallsWithoutException() throws Exception {
     assertThat(unmarshal("<host:status s=\"clientUpdateProhibited\" lang=\"fr\"/>"))
         .isEqualTo(StatusValue.CLIENT_UPDATE_PROHIBITED);
   }
 
   @Test
-  public void testHasMessage_unmarshallsWithoutException() throws Exception {
+  void testHasMessage_unmarshallsWithoutException() throws Exception {
     assertThat(unmarshal("<host:status s=\"clientUpdateProhibited\">my message</host:status>"))
         .isEqualTo(StatusValue.CLIENT_UPDATE_PROHIBITED);
   }

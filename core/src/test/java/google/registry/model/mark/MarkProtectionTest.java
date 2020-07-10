@@ -17,16 +17,13 @@ package google.registry.model.mark;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link MarkProtection}. */
-@RunWith(JUnit4.class)
-public final class MarkProtectionTest {
+final class MarkProtectionTest {
 
   @Test
-  public void testDeadCodeWeDontWantToDelete() {
+  void testDeadCodeWeDontWantToDelete() {
     MarkProtection mp = new MarkProtection();
     mp.countryCode = "US";
     assertThat(mp.getCountryCode()).isEqualTo("US");

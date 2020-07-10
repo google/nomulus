@@ -26,34 +26,34 @@ import com.google.common.collect.Iterables;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactResource;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link EppResourceIndex}. */
-public class EppResourceIndexTest extends EntityTestCase  {
+class EppResourceIndexTest extends EntityTestCase {
 
-  ContactResource contact;
+  private ContactResource contact;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void setUp() {
     createTld("tld");
     // The DatastoreHelper here creates the EppResourceIndex for us.
     contact = persistActiveContact("abcd1357");
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     EppResourceIndex loadedIndex = Iterables.getOnlyElement(getEppResourceIndexObjects());
     assertThat(ofy().load().key(loadedIndex.reference).now()).isEqualTo(contact);
   }
 
   @Test
-  public void testIndexing() throws Exception {
+  void testIndexing() throws Exception {
     verifyIndexing(Iterables.getOnlyElement(getEppResourceIndexObjects()), "kind");
   }
 
   @Test
-  public void testIdempotentOnUpdate() {
+  void testIdempotentOnUpdate() {
     contact = persistResource(contact.asBuilder().setEmailAddress("abc@def.fake").build());
     EppResourceIndex loadedIndex = Iterables.getOnlyElement(getEppResourceIndexObjects());
     assertThat(ofy().load().key(loadedIndex.reference).now()).isEqualTo(contact);

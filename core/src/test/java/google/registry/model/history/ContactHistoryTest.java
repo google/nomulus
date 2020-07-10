@@ -31,12 +31,12 @@ import org.junit.jupiter.api.Test;
 /** Tests for {@link ContactHistory}. */
 public class ContactHistoryTest extends EntityTestCase {
 
-  public ContactHistoryTest() {
+  ContactHistoryTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     saveRegistrar("registrar1");
 
     ContactResource contact =

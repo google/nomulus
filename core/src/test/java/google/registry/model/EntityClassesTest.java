@@ -26,13 +26,10 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import java.util.Set;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link EntityClasses}. */
-@RunWith(JUnit4.class)
-public class EntityClassesTest {
+class EntityClassesTest {
 
   // This implements the manual ordering we've been using for the EntityClasses class lists.
   private static final Ordering<Class<?>> QUALIFIED_CLASS_NAME_ORDERING =
@@ -41,12 +38,12 @@ public class EntityClassesTest {
               clazz -> clazz.getCanonicalName().substring(clazz.getPackage().getName().length()));
 
   @Test
-  public void testEntityClasses_inAlphabeticalOrder() {
+  void testEntityClasses_inAlphabeticalOrder() {
     assertThat(ALL_CLASSES).isInStrictOrder(QUALIFIED_CLASS_NAME_ORDERING);
   }
 
   @Test
-  public void testEntityClasses_baseEntitiesHaveUniqueKinds() {
+  void testEntityClasses_baseEntitiesHaveUniqueKinds() {
     assertWithMessage("base entity kinds")
         .about(streams())
         .that(ALL_CLASSES.stream().filter(hasAnnotation(Entity.class)).map(Key::getKind))
@@ -54,7 +51,7 @@ public class EntityClassesTest {
   }
 
   @Test
-  public void testEntityClasses_entitySubclassesHaveKindsMatchingBaseEntities() {
+  void testEntityClasses_entitySubclassesHaveKindsMatchingBaseEntities() {
     Set<String> baseEntityKinds =
         ALL_CLASSES
             .stream()
@@ -73,7 +70,7 @@ public class EntityClassesTest {
   }
 
   @Test
-  public void testEntityClasses_eitherBaseEntityOrEntitySubclass() {
+  void testEntityClasses_eitherBaseEntityOrEntitySubclass() {
     for (Class<?> clazz : ALL_CLASSES) {
       boolean isEntityXorEntitySubclass =
           clazz.isAnnotationPresent(Entity.class) ^ clazz.isAnnotationPresent(EntitySubclass.class);

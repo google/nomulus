@@ -16,16 +16,13 @@ package google.registry.model.eppoutput;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Result}. */
-@RunWith(JUnit4.class)
-public final class ResultTest {
+final class ResultTest {
 
   @Test
-  public void testDeadCodeWeDontWantToDelete() {
+  void testDeadCodeWeDontWantToDelete() {
     Result result = new Result();
     result.msg = "hello";
     assertThat(result.getMsg()).isEqualTo("hello");

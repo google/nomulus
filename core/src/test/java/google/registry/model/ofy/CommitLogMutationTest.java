@@ -28,17 +28,14 @@ import google.registry.model.registry.Registry;
 import google.registry.testing.AppEngineRule;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link CommitLogMutation}. */
-@RunWith(JUnit4.class)
 public class CommitLogMutationTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private static final DateTime NOW = DateTime.now(DateTimeZone.UTC);
@@ -46,8 +43,8 @@ public class CommitLogMutationTest {
   private Key<CommitLogManifest> manifestKey;
   private ImmutableObject someObject;
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void before() {
     // Initialize this late to avoid dependency on NamespaceManager prior to AppEngineRule.
     manifestKey = CommitLogManifest.createKey(CommitLogBucket.getBucketKey(1), NOW);
     createTld("tld");
@@ -55,7 +52,7 @@ public class CommitLogMutationTest {
   }
 
   @Test
-  public void test_createKey_createsKeyWithWebsafeKeystring() {
+  void test_createKey_createsKeyWithWebsafeKeystring() {
     Key<CommitLogMutation> mutationKey =
         CommitLogMutation.createKey(manifestKey, Key.create(someObject));
     assertThat(mutationKey.getParent()).isEqualTo(manifestKey);
@@ -64,7 +61,7 @@ public class CommitLogMutationTest {
   }
 
   @Test
-  public void test_create_createsExpectedMutation() {
+  void test_create_createsExpectedMutation() {
     Entity rawEntity = convertToEntityInTxn(someObject);
     // Needs to be in a transaction so that registry-saving-to-entity will work.
     CommitLogMutation mutation =
@@ -77,7 +74,7 @@ public class CommitLogMutationTest {
   }
 
   @Test
-  public void test_createRaw_createsExpectedMutation() {
+  void test_createRaw_createsExpectedMutation() {
     Entity rawEntity = convertToEntityInTxn(someObject);
     CommitLogMutation mutation = CommitLogMutation.createFromRaw(manifestKey, rawEntity);
     assertThat(Key.create(mutation))

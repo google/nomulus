@@ -16,16 +16,13 @@ package google.registry.model.smd;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link IssuerInfo}. */
-@RunWith(JUnit4.class)
-public final class IssuerInfoTest {
+final class IssuerInfoTest {
 
   @Test
-  public void testDeadCodeWeDontWantToDelete() {
+  void testDeadCodeWeDontWantToDelete() {
     IssuerInfo mp = new IssuerInfo();
     mp.issuerId = "sloth";
     assertThat(mp.getIssuerId()).isEqualTo("sloth");

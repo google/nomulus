@@ -17,15 +17,13 @@ package google.registry.model.eppcommon;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Tests for {@link Address}. */
-@RunWith(JUnit4.class)
-public class AddressTest {
+class AddressTest {
+
   @Test
-  public void onLoad_setsIndividualStreetLinesSuccessfully() {
+  void onLoad_setsIndividualStreetLinesSuccessfully() {
     Address address = new Address();
     address.onLoad(ImmutableList.of("line1", "line2", "line3"));
     assertThat(address.streetLine1).isEqualTo("line1");
@@ -34,7 +32,7 @@ public class AddressTest {
   }
 
   @Test
-  public void onLoad_setsOnlyNonNullStreetLines() {
+  void onLoad_setsOnlyNonNullStreetLines() {
     Address address = new Address();
     address.onLoad(ImmutableList.of("line1", "line2"));
     assertThat(address.streetLine1).isEqualTo("line1");
@@ -43,7 +41,7 @@ public class AddressTest {
   }
 
   @Test
-  public void onLoad_doNothingIfInputIsNull() {
+  void onLoad_doNothingIfInputIsNull() {
     Address address = new Address();
     address.onLoad(null);
     assertThat(address.streetLine1).isNull();
@@ -52,7 +50,7 @@ public class AddressTest {
   }
 
   @Test
-  public void postLoad_setsStreetListSuccessfully() {
+  void postLoad_setsStreetListSuccessfully() {
     Address address = new Address();
     address.streetLine1 = "line1";
     address.streetLine2 = "line2";
@@ -62,7 +60,7 @@ public class AddressTest {
   }
 
   @Test
-  public void postLoad_setsOnlyNonNullStreetLines() {
+  void postLoad_setsOnlyNonNullStreetLines() {
     Address address = new Address();
     address.streetLine1 = "line1";
     address.streetLine2 = "line2";
@@ -71,7 +69,7 @@ public class AddressTest {
   }
 
   @Test
-  public void postLoad_doNothingIfInputIsNull() {
+  void postLoad_doNothingIfInputIsNull() {
     Address address = new Address();
     address.postLoad();
     assertThat(address.street).isNull();

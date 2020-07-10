@@ -55,16 +55,16 @@ public class DomainBaseSqlTest {
   JpaIntegrationWithCoverageExtension jpa =
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
-  DomainBase domain;
-  VKey<ContactResource> contactKey;
-  VKey<ContactResource> contact2Key;
-  VKey<HostResource> host1VKey;
-  HostResource host;
-  ContactResource contact;
-  ContactResource contact2;
+  private DomainBase domain;
+  private VKey<ContactResource> contactKey;
+  private VKey<ContactResource> contact2Key;
+  private VKey<HostResource> host1VKey;
+  private HostResource host;
+  private ContactResource contact;
+  private ContactResource contact2;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     saveRegistrar("registrar1");
     saveRegistrar("registrar2");
     saveRegistrar("registrar3");
@@ -114,7 +114,7 @@ public class DomainBaseSqlTest {
   }
 
   @Test
-  public void testDomainBasePersistence() {
+  void testDomainBasePersistence() {
     jpaTm()
         .transact(
             () -> {
@@ -159,7 +159,7 @@ public class DomainBaseSqlTest {
   }
 
   @Test
-  public void testHostForeignKeyConstraints() {
+  void testHostForeignKeyConstraints() {
     assertThrowForeignKeyViolation(
         () -> {
           jpaTm()
@@ -174,7 +174,7 @@ public class DomainBaseSqlTest {
   }
 
   @Test
-  public void testContactForeignKeyConstraints() {
+  void testContactForeignKeyConstraints() {
     assertThrowForeignKeyViolation(
         () -> {
           jpaTm()
@@ -187,7 +187,7 @@ public class DomainBaseSqlTest {
         });
   }
 
-  public static ContactResource makeContact(String repoId) {
+  static ContactResource makeContact(String repoId) {
     return new ContactResource.Builder()
         .setRepoId(repoId)
         .setCreationClientId("registrar1")

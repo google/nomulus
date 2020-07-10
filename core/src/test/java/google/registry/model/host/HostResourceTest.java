@@ -35,21 +35,21 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostResource}. */
-public class HostResourceTest extends EntityTestCase {
+class HostResourceTest extends EntityTestCase {
 
-  final DateTime day3 = fakeClock.nowUtc();
-  final DateTime day2 = day3.minusDays(1);
-  final DateTime day1 = day2.minusDays(1);
+  private final DateTime day3 = fakeClock.nowUtc();
+  private final DateTime day2 = day3.minusDays(1);
+  private final DateTime day1 = day2.minusDays(1);
 
-  DomainBase domain;
-  HostResource host;
+  private DomainBase domain;
+  private HostResource host;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void setUp() {
     createTld("com");
     // Set up a new persisted registrar entity.
     domain =
@@ -86,13 +86,13 @@ public class HostResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     assertThat(loadByForeignKey(HostResource.class, host.getForeignKey(), fakeClock.nowUtc()))
         .hasValue(host);
   }
 
   @Test
-  public void testIndexing() throws Exception {
+  void testIndexing() throws Exception {
     // Clone it and save it before running the indexing test so that its transferData fields are
     // populated from the superordinate domain.
     verifyIndexing(
@@ -105,7 +105,7 @@ public class HostResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testEmptyStringsBecomeNull() {
+  void testEmptyStringsBecomeNull() {
     assertThat(
             new HostResource.Builder()
                 .setPersistedCurrentSponsorClientId(null)
@@ -127,7 +127,7 @@ public class HostResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testEmptySetsBecomeNull() {
+  void testEmptySetsBecomeNull() {
     assertThat(new HostResource.Builder().setInetAddresses(null).build().inetAddresses).isNull();
     assertThat(new HostResource.Builder().setInetAddresses(ImmutableSet.of()).build().inetAddresses)
         .isNull();
@@ -140,7 +140,7 @@ public class HostResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testImplicitStatusValues() {
+  void testImplicitStatusValues() {
     // OK is implicit if there's no other statuses.
     assertAboutHosts()
         .that(new HostResource.Builder().build())
@@ -162,13 +162,13 @@ public class HostResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testToHydratedString_notCircular() {
+  void testToHydratedString_notCircular() {
     // If there are circular references, this will overflow the stack.
     host.toHydratedString();
   }
 
   @Test
-  public void testFailure_uppercaseHostName() {
+  void testFailure_uppercaseHostName() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class, () -> host.asBuilder().setHostName("AAA.BBB.CCC"));
@@ -178,7 +178,7 @@ public class HostResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testFailure_utf8HostName() {
+  void testFailure_utf8HostName() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class, () -> host.asBuilder().setHostName("みんな.みんな.みんな"));
@@ -188,14 +188,14 @@ public class HostResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testComputeLastTransferTime_hostNeverSwitchedDomains_domainWasNeverTransferred() {
+  void testComputeLastTransferTime_hostNeverSwitchedDomains_domainWasNeverTransferred() {
     domain = domain.asBuilder().setLastTransferTime(null).build();
     host = host.asBuilder().setLastTransferTime(null).setLastSuperordinateChange(null).build();
     assertThat(host.computeLastTransferTime(domain)).isNull();
   }
 
   @Test
-  public void testComputeLastTransferTime_hostNeverSwitchedDomains_domainWasTransferred() {
+  void testComputeLastTransferTime_hostNeverSwitchedDomains_domainWasTransferred() {
     // Host was created on Day 1.
     // Domain was transferred on Day 2.
     // Host was always subordinate to domain (and was created before the transfer).
@@ -210,7 +210,7 @@ public class HostResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testComputeLastTransferTime_hostCreatedAfterDomainWasTransferred() {
+  void testComputeLastTransferTime_hostCreatedAfterDomainWasTransferred() {
     // Domain was transferred on Day 1.
     // Host was created subordinate to domain on Day 2.
     domain = domain.asBuilder().setLastTransferTime(day1).build();
@@ -232,7 +232,7 @@ public class HostResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testComputeLastTransferTime_hostWasTransferred_domainWasNeverTransferred() {
+  void testComputeLastTransferTime_hostWasTransferred_domainWasNeverTransferred() {
     // Host was transferred on Day 1.
     // Host was made subordinate to domain on Day 2.
     // Domain was never transferred.
@@ -242,7 +242,7 @@ public class HostResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testComputeLastTransferTime_domainWasTransferredBeforeHostBecameSubordinate() {
+  void testComputeLastTransferTime_domainWasTransferredBeforeHostBecameSubordinate() {
     // Host was transferred on Day 1.
     // Domain was transferred on Day 2.
     // Host was made subordinate to domain on Day 3.
@@ -252,7 +252,7 @@ public class HostResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testComputeLastTransferTime_domainWasTransferredAfterHostBecameSubordinate() {
+  void testComputeLastTransferTime_domainWasTransferredAfterHostBecameSubordinate() {
     // Host was transferred on Day 1.
     // Host was made subordinate to domain on Day 2.
     // Domain was transferred on Day 3.

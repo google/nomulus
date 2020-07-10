@@ -22,16 +22,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.EppLoader;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Test xml roundtripping of commands. */
-@RunWith(JUnit4.class)
 public class ContactCommandTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private void doXmlRoundtripTest(String inputFilename) throws Exception {
@@ -49,52 +46,52 @@ public class ContactCommandTest {
   }
 
   @Test
-  public void testCreate() throws Exception {
+  void testCreate() throws Exception {
     doXmlRoundtripTest("contact_create.xml");
   }
 
   @Test
-  public void testDelete() throws Exception {
+  void testDelete() throws Exception {
     doXmlRoundtripTest("contact_delete.xml");
   }
 
   @Test
-  public void testUpdate() throws Exception {
+  void testUpdate() throws Exception {
     doXmlRoundtripTest("contact_update.xml");
   }
 
   @Test
-  public void testInfo() throws Exception {
+  void testInfo() throws Exception {
     doXmlRoundtripTest("contact_info.xml");
   }
 
   @Test
-  public void testCheck() throws Exception {
+  void testCheck() throws Exception {
     doXmlRoundtripTest("contact_check.xml");
   }
 
   @Test
-  public void testTransferApprove() throws Exception {
+  void testTransferApprove() throws Exception {
     doXmlRoundtripTest("contact_transfer_approve.xml");
   }
 
   @Test
-  public void testTransferReject() throws Exception {
+  void testTransferReject() throws Exception {
     doXmlRoundtripTest("contact_transfer_reject.xml");
   }
 
   @Test
-  public void testTransferCancel() throws Exception {
+  void testTransferCancel() throws Exception {
     doXmlRoundtripTest("contact_transfer_cancel.xml");
   }
 
   @Test
-  public void testTransferQuery() throws Exception {
+  void testTransferQuery() throws Exception {
     doXmlRoundtripTest("contact_transfer_query.xml");
   }
 
   @Test
-  public void testTransferRequest() throws Exception {
+  void testTransferRequest() throws Exception {
     doXmlRoundtripTest("contact_transfer_request.xml");
   }
 }
