@@ -52,9 +52,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.Before;
 import org.junit.Rule;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /**
  * Base test class for mapreduces.
@@ -67,6 +74,8 @@ import org.mockito.junit.MockitoRule;
  *
  * @param <T> The type of the Action class that implements the mapreduce.
  */
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public abstract class MapreduceTestCase<T> {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -77,24 +86,25 @@ public abstract class MapreduceTestCase<T> {
   private final PipelineServlet pipelineServlet = new PipelineServlet();
   private LocalTaskQueue taskQueue;
 
-  @Rule
+  @RegisterExtension @Rule
   public final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withLocalModules().withTaskQueue().build();
 
   @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 
-  AppEngineServiceUtils appEngineServiceUtils;
+  private AppEngineServiceUtils appEngineServiceUtils;
 
   @Mock ModulesService modulesService;
 
   @Before
+  @BeforeEach
   public void setUp() {
     taskQueue = LocalTaskQueueTestConfig.getLocalTaskQueue();
     ApiProxyLocal proxy = (ApiProxyLocal) ApiProxy.getDelegate();
     // Creating files is not allowed in some test execution environments, so don't.
     proxy.setProperty(LocalBlobstoreService.NO_STORAGE_PROPERTY, "true");
     appEngineServiceUtils = new AppEngineServiceUtilsImpl(modulesService);
-    when(modulesService.getVersionHostname("backend", null))
+    Mockito.when(modulesService.getVersionHostname("backend", null))
         .thenReturn("version.backend.projectid.appspot.com");
   }
 
@@ -107,7 +117,7 @@ public abstract class MapreduceTestCase<T> {
     return taskQueue.getQueueStateInfo().get(queueName).getTaskInfo();
   }
 
-  protected void executeTask(String queueName, QueueStateInfo.TaskStateInfo taskStateInfo)
+  private void executeTask(String queueName, QueueStateInfo.TaskStateInfo taskStateInfo)
       throws Exception {
     logger.atFine().log(
         "Executing task %s with URL %s", taskStateInfo.getTaskName(), taskStateInfo.getUrl());
@@ -141,9 +151,9 @@ public abstract class MapreduceTestCase<T> {
     when(request.getIntHeader(TaskHandler.TASK_RETRY_COUNT_HEADER)).thenReturn(-1);
     for (HeaderWrapper header : taskStateInfo.getHeaders()) {
       int value = parseAsQuotedInt(header.getValue());
-      when(request.getIntHeader(header.getKey())).thenReturn(value);
+      Mockito.when(request.getIntHeader(header.getKey())).thenReturn(value);
       logger.atFine().log("header: %s=%s", header.getKey(), header.getValue());
-      when(request.getHeader(header.getKey())).thenReturn(header.getValue());
+      Mockito.when(request.getHeader(header.getKey())).thenReturn(header.getValue());
     }
 
     Map<String, String> parameters = decodeParameters(taskStateInfo.getBody());
@@ -201,8 +211,8 @@ public abstract class MapreduceTestCase<T> {
    * <p>The maxTasks parameter determines how many tasks (at most) will be run. If maxTasks is
    * absent(), all tasks are run until the queue is empty. If maxTasks is zero, no tasks are run.
    */
-  protected void executeTasks(
-      String queueName, @Nullable FakeClock clock, Optional<Integer> maxTasks) throws Exception {
+  private void executeTasks(String queueName, @Nullable FakeClock clock, Optional<Integer> maxTasks)
+      throws Exception {
     for (int numTasksDeleted = 0;
         !maxTasks.isPresent() || (numTasksDeleted < maxTasks.get());
         numTasksDeleted++) {

@@ -14,13 +14,15 @@
 
 package google.registry.rde;
 
+import org.junit.platform.runner.JUnitPlatform;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.SuiteDisplayName;
 import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
 
 /** Convenience class to run all RDE tests inside IDE with one keystroke. */
-@RunWith(Suite.class)
-@SuiteClasses({
+@RunWith(JUnitPlatform.class)
+@SuiteDisplayName("RDE tests suite")
+@SelectClasses({
   DomainBaseToXjcConverterTest.class,
   GhostrydeGpgIntegrationTest.class,
   GhostrydeTest.class,

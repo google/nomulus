@@ -30,18 +30,16 @@ import java.io.OutputStream;
 import java.util.Base64;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@RunWith(JUnit4.class)
+/** Unit tests for {@link RydeEncryption} */
 public final class RydeEncryptionTest {
 
-  @Rule public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
 
   @Test
-  public void testSuccess_oneReceiver_decryptWithCorrectKey() throws Exception {
+  void testSuccess_oneReceiver_decryptWithCorrectKey() throws Exception {
     FakeKeyringModule keyringModule = new FakeKeyringModule();
     PGPKeyPair key = keyringModule.get("rde-unittest@registry.test", ENCRYPT);
     byte[] expected = "Testing 1, 2, 3".getBytes(UTF_8);
@@ -60,7 +58,7 @@ public final class RydeEncryptionTest {
   }
 
   @Test
-  public void testFail_oneReceiver_decryptWithWrongKey() throws Exception {
+  void testFail_oneReceiver_decryptWithWrongKey() throws Exception {
     FakeKeyringModule keyringModule = new FakeKeyringModule();
     PGPKeyPair key = keyringModule.get("rde-unittest@registry.test", ENCRYPT);
     PGPKeyPair wrongKey = keyringModule.get("rde-unittest-dsa@registry.test", ENCRYPT);
@@ -86,7 +84,7 @@ public final class RydeEncryptionTest {
   }
 
   @Test
-  public void testSuccess_twoReceivers() throws Exception {
+  void testSuccess_twoReceivers() throws Exception {
     FakeKeyringModule keyringModule = new FakeKeyringModule();
     PGPKeyPair key1 = keyringModule.get("rde-unittest@registry.test", ENCRYPT);
     PGPKeyPair key2 = keyringModule.get("rde-unittest-dsa@registry.test", ENCRYPT);
@@ -113,7 +111,7 @@ public final class RydeEncryptionTest {
   }
 
   @Test
-  public void testSuccess_decryptHasntChanged() throws Exception {
+  void testSuccess_decryptHasntChanged() throws Exception {
     FakeKeyringModule keyringModule = new FakeKeyringModule();
     PGPKeyPair key = keyringModule.get("rde-unittest@registry.test", ENCRYPT);
     byte[] expected = "Testing 1, 2, 3".getBytes(UTF_8);
@@ -134,7 +132,7 @@ public final class RydeEncryptionTest {
   }
 
   @Test
-  public void testSuccess_oneReceiver_withIntegrityPacket() throws Exception {
+  void testSuccess_oneReceiver_withIntegrityPacket() throws Exception {
     FakeKeyringModule keyringModule = new FakeKeyringModule();
     PGPKeyPair key = keyringModule.get("rde-unittest@registry.test", ENCRYPT);
     byte[] expected = "Testing 1, 2, 3".getBytes(UTF_8);

@@ -94,7 +94,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  * using 1.46 so thankfully we're not far enough behind that the Bouncy Castle authors have decided
  * to remove these functions. But a migration effort will be necessary in the future.
  */
-@SuppressWarnings("resource")
 public class BouncyCastleTest {
 
   private static final String FALL_OF_HYPERION_A_DREAM = ""

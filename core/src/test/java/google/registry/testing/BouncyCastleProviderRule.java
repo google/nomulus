@@ -19,6 +19,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.rules.ExternalResource;
 
 /**
  * JUnit Rule for registering {@link BouncyCastleProvider} with Java Security.
@@ -30,15 +31,26 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * @see org.junit.rules.ExternalResource
  * @see java.security.Security#addProvider(java.security.Provider)
  */
-public class BouncyCastleProviderRule implements BeforeEachCallback, AfterEachCallback {
+public class BouncyCastleProviderRule extends ExternalResource
+    implements BeforeEachCallback, AfterEachCallback {
 
   @Override
   public void beforeEach(ExtensionContext context) {
-    Security.addProvider(new BouncyCastleProvider());
+    before();
   }
 
   @Override
   public void afterEach(ExtensionContext context) {
+    after();
+  }
+
+  @Override
+  protected void before() {
+    Security.addProvider(new BouncyCastleProvider());
+  }
+
+  @Override
+  protected void after() {
     Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
   }
 }

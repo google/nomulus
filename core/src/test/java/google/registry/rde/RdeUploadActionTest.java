@@ -83,11 +83,10 @@ import java.net.Socket;
 import java.net.URI;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
-import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.stubbing.OngoingStubbing;
 
 /** Unit tests for {@link RdeUploadAction}. */
@@ -113,8 +112,9 @@ public class RdeUploadActionTest {
 
   @RegisterExtension final SftpServerRule sftpd = new SftpServerRule();
 
-  // TODO: Make JUnit 5 compatible.
-  @Rule public final TemporaryFolder folder = new TemporaryFolder();
+  @SuppressWarnings("WeakerAccess")
+  @TempDir
+  File folder;
 
   @RegisterExtension public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
 
@@ -199,7 +199,7 @@ public class RdeUploadActionTest {
 
   @Test
   void testSocketConnection() throws Exception {
-    int port = sftpd.serve("user", "password", folder.getRoot());
+    int port = sftpd.serve("user", "password", folder);
     try (Socket socket = new Socket("localhost", port)) {
       assertThat(socket.isConnected()).isTrue();
     }
@@ -221,7 +221,7 @@ public class RdeUploadActionTest {
 
   @Test
   void testRunWithLock_succeedsOnThirdTry() throws Exception {
-    int port = sftpd.serve("user", "password", folder.getRoot());
+    int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
@@ -233,15 +233,14 @@ public class RdeUploadActionTest {
     assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
     assertThat(response.getPayload()).isEqualTo("OK tld 2010-10-17T00:00:00.000Z\n");
     assertNoTasksEnqueued("rde-upload");
-    assertThat(folder.getRoot().list()).asList()
-        .containsExactly(
-            "tld_2010-10-17_full_S1_R0.ryde",
-            "tld_2010-10-17_full_S1_R0.sig");
+    assertThat(folder.list())
+        .asList()
+        .containsExactly("tld_2010-10-17_full_S1_R0.ryde", "tld_2010-10-17_full_S1_R0.sig");
   }
 
   @Test
   void testRunWithLock_failsAfterThreeAttempts() throws Exception {
-    int port = sftpd.serve("user", "password", folder.getRoot());
+    int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
@@ -255,7 +254,7 @@ public class RdeUploadActionTest {
 
   @Test
   void testRunWithLock_copiesOnGcs() throws Exception {
-    int port = sftpd.serve("user", "password", folder.getRoot());
+    int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
@@ -268,17 +267,17 @@ public class RdeUploadActionTest {
     // Assert that both files are written to SFTP and GCS, and that the contents are identical.
     String rydeFilename = "tld_2010-10-17_full_S1_R0.ryde";
     String sigFilename = "tld_2010-10-17_full_S1_R0.sig";
-    assertThat(folder.getRoot().list()).asList().containsExactly(rydeFilename, sigFilename);
+    assertThat(folder.list()).asList().containsExactly(rydeFilename, sigFilename);
     assertThat(readGcsFile(gcsService, new GcsFilename("bucket", rydeFilename)))
-        .isEqualTo(Files.toByteArray(new File(folder.getRoot(), rydeFilename)));
+        .isEqualTo(Files.toByteArray(new File(folder, rydeFilename)));
     assertThat(readGcsFile(gcsService, new GcsFilename("bucket", sigFilename)))
-        .isEqualTo(Files.toByteArray(new File(folder.getRoot(), sigFilename)));
+        .isEqualTo(Files.toByteArray(new File(folder, sigFilename)));
   }
 
   @Test
   void testRunWithLock_resend() throws Exception {
     tm().transact(() -> RdeRevision.saveRevision("tld", DateTime.parse("2010-10-17TZ"), FULL, 1));
-    int port = sftpd.serve("user", "password", folder.getRoot());
+    int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
@@ -288,16 +287,15 @@ public class RdeUploadActionTest {
     assertThat(response.getContentType()).isEqualTo(PLAIN_TEXT_UTF_8);
     assertThat(response.getPayload()).isEqualTo("OK tld 2010-10-17T00:00:00.000Z\n");
     assertNoTasksEnqueued("rde-upload");
-    assertThat(folder.getRoot().list()).asList()
-        .containsExactly(
-            "tld_2010-10-17_full_S1_R1.ryde",
-            "tld_2010-10-17_full_S1_R1.sig");
+    assertThat(folder.list())
+        .asList()
+        .containsExactly("tld_2010-10-17_full_S1_R1.ryde", "tld_2010-10-17_full_S1_R1.sig");
   }
 
   @Test
   void testRunWithLock_producesValidSignature() throws Exception {
     assumeTrue(hasCommand("gpg --version"));
-    int port = sftpd.serve("user", "password", folder.getRoot());
+    int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
     DateTime stagingCursor = DateTime.parse("2010-10-18TZ");
     DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
@@ -305,9 +303,12 @@ public class RdeUploadActionTest {
     createAction(uploadUrl).runWithLock(uploadCursor);
     // Only verify signature for SFTP versions, since we check elsewhere that the GCS files are
     // identical to the ones sent over SFTP.
-    Process pid = gpg.exec("gpg", "--verify",
-        new File(folder.getRoot(), "tld_2010-10-17_full_S1_R0.sig").toString(),
-        new File(folder.getRoot(), "tld_2010-10-17_full_S1_R0.ryde").toString());
+    Process pid =
+        gpg.exec(
+            "gpg",
+            "--verify",
+            new File(folder, "tld_2010-10-17_full_S1_R0.sig").toString(),
+            new File(folder, "tld_2010-10-17_full_S1_R0.ryde").toString());
     String stderr = slurp(pid.getErrorStream());
     assertWithMessage(stderr).that(pid.waitFor()).isEqualTo(0);
     assertThat(stderr).contains("Good signature");

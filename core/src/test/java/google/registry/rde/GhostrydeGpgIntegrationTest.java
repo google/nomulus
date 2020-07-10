@@ -14,13 +14,13 @@
 
 package google.registry.rde;
 
-import static com.google.common.base.Strings.repeat;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.SystemInfo.hasCommand;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assume.assumeTrue;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
 import google.registry.keyring.api.Keyring;
@@ -55,7 +55,7 @@ class GhostrydeGpgIntegrationTest {
   private static final ImmutableList<String> CONTENTS =
       ImmutableList.of(
           "(◕‿◕)",
-          repeat("Fanatics have their dreams, wherewith they weave\n", 1000),
+          Strings.repeat("Fanatics have their dreams, wherewith they weave\n", 1000),
           "\0yolo",
           "");
 
@@ -71,7 +71,7 @@ class GhostrydeGpgIntegrationTest {
 
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
-  public void test(String command, String content) throws Exception {
+  void test(String command, String content) throws Exception {
     assumeTrue(hasCommand(command + " --version"));
     Keyring keyring = new FakeKeyringModule().get();
     PGPPublicKey publicKey = keyring.getRdeStagingEncryptionKey();

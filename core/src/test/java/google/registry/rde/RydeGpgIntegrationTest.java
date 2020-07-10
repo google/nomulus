@@ -14,13 +14,14 @@
 
 package google.registry.rde;
 
-import static com.google.common.base.Strings.repeat;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.SystemInfo.hasCommand;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assume.assumeTrue;
 
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.CharStreams;
 import google.registry.keyring.api.Keyring;
@@ -34,15 +35,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.stream.Stream;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
-import org.junit.experimental.theories.DataPoints;
-import org.junit.experimental.theories.Theory;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /** GPG combinatorial integration tests for the Ryde classes. */
-@SuppressWarnings("resource")
 public class RydeGpgIntegrationTest {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -57,49 +59,50 @@ public class RydeGpgIntegrationTest {
 
   private final FakeKeyringModule keyringFactory = new FakeKeyringModule();
 
-  @DataPoints
-  public static GpgCommand[] commands = new GpgCommand[] {
-    new GpgCommand("gpg"),
-    new GpgCommand("gpg2"),
-  };
+  private static final ImmutableList<String> COMMANDS = ImmutableList.of("gpg", "gpg2");
+  private static final ImmutableList<String> CONTENTS =
+      ImmutableList.of(
+          "(◕‿◕)",
+          Strings.repeat("Fanatics have their dreams, wherewith they weave\n", 1000),
+          "\0yolo",
+          "");
 
-  @DataPoints
-  public static Filename[] filenames = new Filename[] {
-    new Filename("sloth"),
-  };
+  private static Stream<Arguments> provideTestCombinations() {
+    Stream.Builder<Arguments> stream = Stream.builder();
+    for (String command : COMMANDS) {
+      for (String content : CONTENTS) {
+        stream.add(Arguments.of(command, content));
+      }
+    }
+    return stream.build();
+  }
 
-  @DataPoints
-  public static Content[] contents = new Content[] {
-    new Content("(◕‿◕)"),
-    new Content(repeat("Fanatics have their dreams, wherewith they weave.\n", 1000)),
-    new Content("\0yolo"),
-    new Content(""),
-  };
-
-  // TODO: Parameterize this
-  @Theory
-  public void test(GpgCommand cmd, Filename name, Content content) throws Exception {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void test(String command, String content) throws Exception {
+    final String filename = "sloth";
     assumeTrue(hasCommand("tar"));
-    assumeTrue(hasCommand(cmd.get() + " --version"));
+    assumeTrue(hasCommand(command + " --version"));
 
     Keyring keyring = keyringFactory.get();
     PGPKeyPair signingKey = keyring.getRdeSigningKey();
     PGPPublicKey receiverKey = keyring.getRdeReceiverKey();
     DateTime modified = DateTime.parse("1984-01-01T00:00:00Z");
     File home = gpg.getCwd();
-    File rydeFile = new File(home, name.get() + ".ryde");
-    File sigFile = new File(home, name.get() + ".sig");
-    File tarFile = new File(home, name.get() + ".tar");
-    File xmlFile = new File(home, name.get() + ".xml");
-    byte[] data = content.get().getBytes(UTF_8);
+    File rydeFile = new File(home, filename + ".ryde");
+    File sigFile = new File(home, filename + ".sig");
+    File tarFile = new File(home, filename + ".tar");
+    File xmlFile = new File(home, filename + ".xml");
+    byte[] data = content.getBytes(UTF_8);
 
     try (OutputStream rydeOut = new FileOutputStream(rydeFile);
         OutputStream sigOut = new FileOutputStream(sigFile);
-        RydeEncoder rydeEncoder = new RydeEncoder.Builder()
-            .setRydeOutput(rydeOut, receiverKey)
-            .setSignatureOutput(sigOut, signingKey)
-            .setFileMetadata(name.get(), data.length, modified)
-            .build()) {
+        RydeEncoder rydeEncoder =
+            new RydeEncoder.Builder()
+                .setRydeOutput(rydeOut, receiverKey)
+                .setSignatureOutput(sigOut, signingKey)
+                .setFileMetadata(filename, data.length, modified)
+                .build()) {
       rydeEncoder.write(data);
     }
 
@@ -120,7 +123,7 @@ public class RydeGpgIntegrationTest {
     {
       Process pid =
           gpg.exec(
-              cmd.get(),
+              command,
               "--list-packets",
               "--ignore-mdc-error",
               "--keyid-format",
@@ -146,7 +149,7 @@ public class RydeGpgIntegrationTest {
           .contains(":literal data packet:");
       assertWithMessage("Literal data packet does not contain correct filename")
           .that(stdout)
-          .contains("name=\"" + name.get() + ".tar\"");
+          .contains("name=\"" + filename + ".tar\"");
       assertWithMessage("Literal data packet should be in BINARY mode")
           .that(stdout)
           .contains("mode b ");
@@ -165,7 +168,7 @@ public class RydeGpgIntegrationTest {
     // gpg: Good signature from <rde-unittest@registry.test>
     logger.atInfo().log("Running GPG to verify signature...");
     {
-      Process pid = gpg.exec(cmd.get(), "--verify", sigFile.toString(), rydeFile.toString());
+      Process pid = gpg.exec(command, "--verify", sigFile.toString(), rydeFile.toString());
       String stderr = slurp(pid.getErrorStream());
       assertWithMessage(stderr).that(pid.waitFor()).isEqualTo(0);
       assertThat(stderr).contains("Good signature");
@@ -184,7 +187,7 @@ public class RydeGpgIntegrationTest {
     logger.atInfo().log("Running GPG to extract tar...");
     {
       Process pid =
-          gpg.exec(cmd.get(), "--use-embedded-filename", "--ignore-mdc-error", rydeFile.toString());
+          gpg.exec(command, "--use-embedded-filename", "--ignore-mdc-error", rydeFile.toString());
       String stderr = slurp(pid.getErrorStream());
       assertWithMessage(stderr).that(pid.waitFor()).isEqualTo(0);
     }
@@ -200,7 +203,7 @@ public class RydeGpgIntegrationTest {
       assertWithMessage(stderr).that(pid.waitFor()).isEqualTo(0);
     }
     assertWithMessage("tar did not produce expected xml file").that(xmlFile.exists()).isTrue();
-    assertThat(slurp(xmlFile)).isEqualTo(content.get());
+    assertThat(slurp(xmlFile)).isEqualTo(content);
   }
 
   private String slurp(File file) throws IOException {
@@ -209,41 +212,5 @@ public class RydeGpgIntegrationTest {
 
   private String slurp(InputStream is) throws IOException {
     return CharStreams.toString(new InputStreamReader(is, UTF_8));
-  }
-
-  private static class GpgCommand {
-    private final String value;
-
-    GpgCommand(String value) {
-      this.value = value;
-    }
-
-    String get() {
-      return value;
-    }
-  }
-
-  private static class Filename {
-    private final String value;
-
-    Filename(String value) {
-      this.value = value;
-    }
-
-    String get() {
-      return value;
-    }
-  }
-
-  private static class Content {
-    private final String value;
-
-    Content(String value) {
-      this.value = value;
-    }
-
-    String get() {
-      return value;
-    }
   }
 }
