@@ -20,6 +20,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import google.registry.beam.spec11.ThreatMatch;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.schema.replay.DatastoreEntity;
