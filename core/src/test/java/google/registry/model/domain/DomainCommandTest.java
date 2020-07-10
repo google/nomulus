@@ -22,60 +22,60 @@ import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.testing.EppLoader;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Tests for DomainCommand. */
-public class DomainCommandTest extends ResourceCommandTestCase {
+class DomainCommandTest extends ResourceCommandTestCase {
 
   @Test
-  public void testCreate() throws Exception {
+  void testCreate() throws Exception {
     doXmlRoundtripTest("domain_create.xml");
   }
 
   @Test
-  public void testCreate_sunriseSignedMark() throws Exception {
+  void testCreate_sunriseSignedMark() throws Exception {
     doXmlRoundtripTest("domain_create_sunrise_signed_mark.xml");
   }
 
   @Test
-  public void testCreate_sunriseCode() throws Exception {
+  void testCreate_sunriseCode() throws Exception {
     doXmlRoundtripTest("domain_create_sunrise_code.xml");
   }
 
   @Test
-  public void testCreate_sunriseMark() throws Exception {
+  void testCreate_sunriseMark() throws Exception {
     doXmlRoundtripTest("domain_create_sunrise_mark.xml");
   }
 
   @Test
-  public void testCreate_sunriseCodeWithMark() throws Exception {
+  void testCreate_sunriseCodeWithMark() throws Exception {
     doXmlRoundtripTest("domain_create_sunrise_code_with_mark.xml");
   }
 
   @Test
-  public void testCreate_sunriseEncodedSignedMark() throws Exception {
+  void testCreate_sunriseEncodedSignedMark() throws Exception {
     doXmlRoundtripTest("domain_create_sunrise_encoded_signed_mark.xml");
   }
 
   @Test
-  public void testCreate_fee() throws Exception {
+  void testCreate_fee() throws Exception {
     doXmlRoundtripTest("domain_create_fee.xml");
   }
 
   @Test
-  public void testCreate_emptyCommand() throws Exception {
+  void testCreate_emptyCommand() throws Exception {
     // This EPP command wouldn't be allowed for policy reasons, but should marshal/unmarshal fine.
     doXmlRoundtripTest("domain_create_empty.xml");
   }
 
   @Test
-  public void testCreate_missingNonRegistrantContacts() throws Exception {
+  void testCreate_missingNonRegistrantContacts() throws Exception {
     // This EPP command wouldn't be allowed for policy reasons, but should marshal/unmarshal fine.
     doXmlRoundtripTest("domain_create_missing_non_registrant_contacts.xml");
   }
 
   @Test
-  public void testCreate_cloneAndLinkReferences() throws Exception {
+  void testCreate_cloneAndLinkReferences() throws Exception {
     persistActiveHost("ns1.example.net");
     persistActiveHost("ns2.example.net");
     persistActiveContact("sh8013");
@@ -86,7 +86,7 @@ public class DomainCommandTest extends ResourceCommandTestCase {
   }
 
   @Test
-  public void testCreate_emptyCommand_cloneAndLinkReferences() throws Exception {
+  void testCreate_emptyCommand_cloneAndLinkReferences() throws Exception {
     // This EPP command wouldn't be allowed for policy reasons, but should clone-and-link fine.
     DomainCommand.Create create =
         (DomainCommand.Create) loadEppResourceCommand("domain_create_empty.xml");
@@ -94,7 +94,7 @@ public class DomainCommandTest extends ResourceCommandTestCase {
   }
 
   @Test
-  public void testCreate_missingNonRegistrantContacts_cloneAndLinkReferences() throws Exception {
+  void testCreate_missingNonRegistrantContacts_cloneAndLinkReferences() throws Exception {
     persistActiveContact("jd1234");
     // This EPP command wouldn't be allowed for policy reasons, but should clone-and-link fine.
     DomainCommand.Create create =
@@ -104,28 +104,28 @@ public class DomainCommandTest extends ResourceCommandTestCase {
   }
 
   @Test
-  public void testDelete() throws Exception {
+  void testDelete() throws Exception {
     doXmlRoundtripTest("domain_delete.xml");
   }
 
   @Test
-  public void testUpdate() throws Exception {
+  void testUpdate() throws Exception {
     doXmlRoundtripTest("domain_update.xml");
   }
 
   @Test
-  public void testUpdate_fee() throws Exception {
+  void testUpdate_fee() throws Exception {
     doXmlRoundtripTest("domain_update_fee.xml");
   }
 
   @Test
-  public void testUpdate_emptyCommand() throws Exception {
+  void testUpdate_emptyCommand() throws Exception {
     // This EPP command wouldn't be allowed for policy reasons, but should marshal/unmarshal fine.
     doXmlRoundtripTest("domain_update_empty.xml");
   }
 
   @Test
-  public void testUpdate_cloneAndLinkReferences() throws Exception {
+  void testUpdate_cloneAndLinkReferences() throws Exception {
     persistActiveHost("ns1.example.com");
     persistActiveHost("ns2.example.com");
     persistActiveContact("mak21");
@@ -136,7 +136,7 @@ public class DomainCommandTest extends ResourceCommandTestCase {
   }
 
   @Test
-  public void testUpdate_emptyCommand_cloneAndLinkReferences() throws Exception {
+  void testUpdate_emptyCommand_cloneAndLinkReferences() throws Exception {
     // This EPP command wouldn't be allowed for policy reasons, but should clone-and-link fine.
     DomainCommand.Update update =
         (DomainCommand.Update) loadEppResourceCommand("domain_update_empty.xml");
@@ -144,77 +144,77 @@ public class DomainCommandTest extends ResourceCommandTestCase {
   }
 
   @Test
-  public void testInfo() throws Exception {
+  void testInfo() throws Exception {
     doXmlRoundtripTest("domain_info.xml");
   }
 
   @Test
-  public void testInfo_sunrise() throws Exception {
+  void testInfo_sunrise() throws Exception {
     doXmlRoundtripTest("domain_info_sunrise.xml");
   }
 
   @Test
-  public void testInfo_feeExtension() throws Exception {
+  void testInfo_feeExtension() throws Exception {
     doXmlRoundtripTest("domain_info_fee.xml");
   }
 
   @Test
-  public void testCheck() throws Exception {
+  void testCheck() throws Exception {
     doXmlRoundtripTest("domain_check.xml");
   }
 
   @Test
-  public void testCheck_avail() throws Exception {
+  void testCheck_avail() throws Exception {
     doXmlRoundtripTest("domain_check_avail.xml");
   }
 
   @Test
-  public void testCheck_claims() throws Exception {
+  void testCheck_claims() throws Exception {
     doXmlRoundtripTest("domain_check_claims.xml");
   }
 
   @Test
-  public void testCheck_fee() throws Exception {
+  void testCheck_fee() throws Exception {
     doXmlRoundtripTest("domain_check_fee.xml");
   }
 
   @Test
-  public void testTransferApprove() throws Exception {
+  void testTransferApprove() throws Exception {
     doXmlRoundtripTest("domain_transfer_approve.xml");
   }
 
   @Test
-  public void testTransferReject() throws Exception {
+  void testTransferReject() throws Exception {
     doXmlRoundtripTest("domain_transfer_reject.xml");
   }
 
   @Test
-  public void testTransferCancel() throws Exception {
+  void testTransferCancel() throws Exception {
     doXmlRoundtripTest("domain_transfer_cancel.xml");
   }
 
   @Test
-  public void testTransferQuery() throws Exception {
+  void testTransferQuery() throws Exception {
     doXmlRoundtripTest("domain_transfer_query.xml");
   }
 
   @Test
-  public void testTransferRequest() throws Exception {
+  void testTransferRequest() throws Exception {
     doXmlRoundtripTest("domain_transfer_request.xml");
   }
 
   @Test
-  public void testTransferRequest_fee() throws Exception {
+  void testTransferRequest_fee() throws Exception {
     doXmlRoundtripTest("domain_transfer_request_fee.xml");
   }
 
   @Test
-  public void testRenew() throws Exception {
+  void testRenew() throws Exception {
     doXmlRoundtripTest("domain_renew.xml");
   }
 
   @Test
-  public void testRenew_fee() throws Exception {
+  void testRenew_fee() throws Exception {
     doXmlRoundtripTest("domain_renew_fee.xml");
   }
 

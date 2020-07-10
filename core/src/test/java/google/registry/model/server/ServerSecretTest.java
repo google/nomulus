@@ -20,32 +20,30 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import google.registry.model.ofy.RequestCapturingAsyncDatastoreService;
 import google.registry.testing.AppEngineRule;
 import java.util.UUID;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ServerSecret}. */
-@RunWith(JUnit4.class)
 public class ServerSecretTest {
-  @Rule
+
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     ServerSecret.resetCache();
   }
 
   @Test
-  public void testGet_bootstrapping_savesSecretToDatastore() {
+  void testGet_bootstrapping_savesSecretToDatastore() {
     ServerSecret secret = ServerSecret.get();
     assertThat(secret).isNotNull();
     assertThat(ofy().load().entity(new ServerSecret()).now()).isEqualTo(secret);
   }
 
   @Test
-  public void testGet_existingSecret_returned() {
+  void testGet_existingSecret_returned() {
     ServerSecret secret = ServerSecret.create(123, 456);
     ofy().saveWithoutBackup().entity(secret).now();
     assertThat(ServerSecret.get()).isEqualTo(secret);
@@ -53,7 +51,7 @@ public class ServerSecretTest {
   }
 
   @Test
-  public void testGet_cachedSecret_returnedWithoutDatastoreRead() {
+  void testGet_cachedSecret_returnedWithoutDatastoreRead() {
     int numInitialReads = RequestCapturingAsyncDatastoreService.getReads().size();
     ServerSecret secret = ServerSecret.get();
     int numReads = RequestCapturingAsyncDatastoreService.getReads().size();
@@ -63,14 +61,14 @@ public class ServerSecretTest {
   }
 
   @Test
-  public void testAsUuid() {
+  void testAsUuid() {
     UUID uuid = ServerSecret.create(123, 456).asUuid();
     assertThat(uuid.getMostSignificantBits()).isEqualTo(123);
     assertThat(uuid.getLeastSignificantBits()).isEqualTo(456);
   }
 
   @Test
-  public void testAsBytes() {
+  void testAsBytes() {
     byte[] bytes = ServerSecret.create(123, 0x456).asBytes();
     assertThat(bytes)
         .isEqualTo(new byte[] {0, 0, 0, 0, 0, 0, 0, 123, 0, 0, 0, 0, 0, 0, 0x4, 0x56});

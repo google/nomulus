@@ -16,24 +16,21 @@ package google.registry.model;
 
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.GoldenFileTestHelper;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Unit tests for {@link SchemaVersion}.
  *
  * <p>If the test breaks, the instructions below will be printed.
  */
-@RunWith(JUnit4.class)
 public class SchemaVersionTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testGoldenSchemaFile() {
+  void testGoldenSchemaFile() {
     GoldenFileTestHelper.assertThat(SchemaVersion.getSchema())
         .describedAs("Datastore schema")
         .createdByNomulusCommand("get_schema")

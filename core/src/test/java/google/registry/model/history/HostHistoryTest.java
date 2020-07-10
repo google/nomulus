@@ -31,12 +31,12 @@ import org.junit.jupiter.api.Test;
 /** Tests for {@link HostHistory}. */
 public class HostHistoryTest extends EntityTestCase {
 
-  public HostHistoryTest() {
+  HostHistoryTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     saveRegistrar("registrar1");
 
     HostResource host =

@@ -57,8 +57,8 @@ import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainBase}. */
 public class DomainBaseTest extends EntityTestCase {
@@ -68,8 +68,8 @@ public class DomainBaseTest extends EntityTestCase {
   private Key<BillingEvent.Recurring> recurringBillKey;
   private Key<DomainBase> domainKey;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void setUp() {
     createTld("com");
     domainKey = Key.create(null, DomainBase.class, "4-COM");
     VKey<HostResource> hostKey =
@@ -163,13 +163,13 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     assertThat(loadByForeignKey(DomainBase.class, domain.getForeignKey(), fakeClock.nowUtc()))
         .hasValue(domain);
   }
 
   @Test
-  public void testIndexing() throws Exception {
+  void testIndexing() throws Exception {
     verifyIndexing(
         domain,
         "allContacts.contact",
@@ -181,7 +181,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testEmptyStringsBecomeNull() {
+  void testEmptyStringsBecomeNull() {
     assertThat(
             newDomainBase("example.com")
                 .asBuilder()
@@ -206,7 +206,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testEmptySetsAndArraysBecomeNull() {
+  void testEmptySetsAndArraysBecomeNull() {
     assertThat(
             newDomainBase("example.com")
                 .asBuilder()
@@ -262,7 +262,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testEmptyTransferDataBecomesNull() {
+  void testEmptyTransferDataBecomesNull() {
     DomainBase withNull = newDomainBase("example.com").asBuilder().setTransferData(null).build();
     DomainBase withEmpty = withNull.asBuilder().setTransferData(DomainTransferData.EMPTY).build();
     assertThat(withNull).isEqualTo(withEmpty);
@@ -270,7 +270,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testImplicitStatusValues() {
+  void testImplicitStatusValues() {
     ImmutableSet<VKey<HostResource>> nameservers =
         ImmutableSet.of(newHostResource("foo.example.tld").createVKey());
     StatusValue[] statuses = {StatusValue.OK};
@@ -402,12 +402,12 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testExpiredTransfer() {
+  void testExpiredTransfer() {
     doExpiredTransferTest(fakeClock.nowUtc().plusMonths(1));
   }
 
   @Test
-  public void testExpiredTransfer_autoRenewBeforeTransfer() {
+  void testExpiredTransfer_autoRenewBeforeTransfer() {
     // Since transfer swallows a preceding autorenew, this should be identical to the regular
     // transfer case (and specifically, the new expiration and grace periods will be the same as if
     // there was no autorenew).
@@ -434,7 +434,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testEppLastUpdateTimeAndClientId_autoRenewBeforeTransferSuccess() {
+  void testEppLastUpdateTimeAndClientId_autoRenewBeforeTransferSuccess() {
     DateTime now = fakeClock.nowUtc();
     DateTime transferRequestDateTime = now.plusDays(1);
     DateTime autorenewDateTime = now.plusDays(3);
@@ -453,7 +453,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testEppLastUpdateTimeAndClientId_autoRenewAfterTransferSuccess() {
+  void testEppLastUpdateTimeAndClientId_autoRenewAfterTransferSuccess() {
     DateTime now = fakeClock.nowUtc();
     DateTime transferRequestDateTime = now.plusDays(1);
     DateTime autorenewDateTime = now.plusDays(3);
@@ -483,7 +483,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testEppLastUpdateTimeAndClientId_isSetCorrectlyWithNullPreviousValue() {
+  void testEppLastUpdateTimeAndClientId_isSetCorrectlyWithNullPreviousValue() {
     DateTime now = fakeClock.nowUtc();
     DateTime autorenewDateTime = now.plusDays(3);
     setupUnmodifiedDomain(autorenewDateTime);
@@ -498,7 +498,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testStackedGracePeriods() {
+  void testStackedGracePeriods() {
     ImmutableList<GracePeriod> gracePeriods =
         ImmutableList.of(
             GracePeriod.create(GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(3), "foo", null),
@@ -512,7 +512,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testGracePeriodsByType() {
+  void testGracePeriodsByType() {
     ImmutableSet<GracePeriod> addGracePeriods =
         ImmutableSet.of(
             GracePeriod.create(GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(3), "foo", null),
@@ -536,7 +536,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testRenewalsHappenAtExpiration() {
+  void testRenewalsHappenAtExpiration() {
     DomainBase renewed = domain.cloneProjectedAtTime(domain.getRegistrationExpirationTime());
     assertThat(renewed.getRegistrationExpirationTime())
         .isEqualTo(domain.getRegistrationExpirationTime().plusYears(1));
@@ -546,14 +546,14 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testTldGetsSet() {
+  void testTldGetsSet() {
     createTld("tld");
     domain = newDomainBase("foo.tld");
     assertThat(domain.getTld()).isEqualTo("tld");
   }
 
   @Test
-  public void testRenewalsDontHappenOnFebruary29() {
+  void testRenewalsDontHappenOnFebruary29() {
     domain =
         domain
             .asBuilder()
@@ -565,7 +565,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testMultipleAutoRenews() {
+  void testMultipleAutoRenews() {
     // Change the registry so that renewal costs change every year to make sure we are using the
     // autorenew time as the lookup time for the cost.
     DateTime oldExpirationTime = domain.getRegistrationExpirationTime();
@@ -599,12 +599,12 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testToHydratedString_notCircular() {
+  void testToHydratedString_notCircular() {
     domain.toHydratedString(); // If there are circular references, this will overflow the stack.
   }
 
   @Test
-  public void testFailure_uppercaseDomainName() {
+  void testFailure_uppercaseDomainName() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class, () -> domain.asBuilder().setDomainName("AAA.BBB"));
@@ -614,7 +614,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testFailure_utf8DomainName() {
+  void testFailure_utf8DomainName() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class, () -> domain.asBuilder().setDomainName("みんな.みんな"));
@@ -624,7 +624,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testClone_doNotExtendExpirationOnDeletedDomain() {
+  void testClone_doNotExtendExpirationOnDeletedDomain() {
     DateTime now = DateTime.now(UTC);
     domain =
         persistResource(
@@ -639,7 +639,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testClone_doNotExtendExpirationOnFutureDeletedDomain() {
+  void testClone_doNotExtendExpirationOnFutureDeletedDomain() {
     // if a domain is in pending deletion (StatusValue.PENDING_DELETE), don't extend expiration
     DateTime now = DateTime.now(UTC);
     domain =
@@ -655,7 +655,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testClone_extendsExpirationForExpiredTransferredDomain() {
+  void testClone_extendsExpirationForExpiredTransferredDomain() {
     // If the transfer implicitly succeeded, the expiration time should be extended
     DateTime now = DateTime.now(UTC);
     DateTime transferExpirationTime = now.minusDays(1);
@@ -682,7 +682,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testClone_extendsExpirationForNonExpiredTransferredDomain() {
+  void testClone_extendsExpirationForNonExpiredTransferredDomain() {
     // If the transfer implicitly succeeded, the expiration time should be extended even if it
     // hadn't already expired
     DateTime now = DateTime.now(UTC);
@@ -710,7 +710,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testClone_doesNotExtendExpirationForPendingTransfer() {
+  void testClone_doesNotExtendExpirationForPendingTransfer() {
     // Pending transfers shouldn't affect the expiration time
     DateTime now = DateTime.now(UTC);
     DateTime transferExpirationTime = now.plusDays(1);
@@ -735,7 +735,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   @Test
-  public void testClone_transferDuringAutorenew() {
+  void testClone_transferDuringAutorenew() {
     // When the domain is an an autorenew grace period, we should not extend the registration
     // expiration by a further year--it should just be whatever the autorenew was
     DateTime now = DateTime.now(UTC);

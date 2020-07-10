@@ -21,22 +21,19 @@ import static org.junit.Assert.assertThrows;
 
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Tests for {@link EppXmlTransformer}. */
-@RunWith(JUnit4.class)
-public class EppXmlTransformerTest {
+class EppXmlTransformerTest {
 
   @Test
-  public void testUnmarshalingEppInput() throws Exception {
+  void testUnmarshalingEppInput() throws Exception {
     EppInput input = unmarshal(EppInput.class, loadBytes(getClass(), "contact_info.xml").read());
     assertThat(input.getCommandType()).isEqualTo("info");
   }
 
   @Test
-  public void testUnmarshalingWrongClassThrows() {
+  void testUnmarshalingWrongClassThrows() {
     assertThrows(
         ClassCastException.class,
         () -> unmarshal(EppOutput.class, loadBytes(getClass(), "contact_info.xml").read()));

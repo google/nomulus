@@ -26,16 +26,16 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HistoryEntry}. */
-public class HistoryEntryTest extends EntityTestCase {
+class HistoryEntryTest extends EntityTestCase {
 
-  HistoryEntry historyEntry;
+  private HistoryEntry historyEntry;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void setUp() {
     createTld("foobar");
     DomainTransactionRecord transactionRecord =
         new DomainTransactionRecord.Builder()
@@ -64,12 +64,12 @@ public class HistoryEntryTest extends EntityTestCase {
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     assertThat(ofy().load().entity(historyEntry).now()).isEqualTo(historyEntry);
   }
 
   @Test
-  public void testIndexing() throws Exception {
+  void testIndexing() throws Exception {
     verifyIndexing(historyEntry, "modificationTime", "clientId");
   }
 }

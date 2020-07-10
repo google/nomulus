@@ -28,17 +28,14 @@ import google.registry.testing.AppEngineRule;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link GracePeriod}. */
-@RunWith(JUnit4.class)
 public class GracePeriodTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
       AppEngineRule.builder()
           .withDatastoreAndCloudSql() // Needed to be able to construct Keys.
@@ -47,8 +44,8 @@ public class GracePeriodTest {
   private final DateTime now = DateTime.now(UTC);
   private BillingEvent.OneTime onetime;
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void before() {
     onetime = new BillingEvent.OneTime.Builder()
       .setEventTime(now)
       .setBillingTime(now.plusDays(1))
@@ -62,7 +59,7 @@ public class GracePeriodTest {
   }
 
   @Test
-  public void testSuccess_forBillingEvent() {
+  void testSuccess_forBillingEvent() {
     GracePeriod gracePeriod = GracePeriod.forBillingEvent(GracePeriodStatus.ADD, onetime);
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.ADD);
     assertThat(gracePeriod.getOneTimeBillingEvent()).isEqualTo(Key.create(onetime));
@@ -73,7 +70,7 @@ public class GracePeriodTest {
   }
 
   @Test
-  public void testSuccess_createWithoutBillingEvent() {
+  void testSuccess_createWithoutBillingEvent() {
     GracePeriod gracePeriod = GracePeriod.createWithoutBillingEvent(
         GracePeriodStatus.REDEMPTION, now, "TheRegistrar");
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.REDEMPTION);
@@ -85,7 +82,7 @@ public class GracePeriodTest {
   }
 
   @Test
-  public void testFailure_forBillingEvent_autoRenew() {
+  void testFailure_forBillingEvent_autoRenew() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -94,7 +91,7 @@ public class GracePeriodTest {
   }
 
   @Test
-  public void testFailure_createForRecurring_notAutoRenew() {
+  void testFailure_createForRecurring_notAutoRenew() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

@@ -34,7 +34,7 @@ public class VKeyTranslatorFactoryTest {
   @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
 
-  public VKeyTranslatorFactoryTest() {}
+  VKeyTranslatorFactoryTest() {}
 
   @Test
   void testEntityWithFlatKey() {

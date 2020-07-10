@@ -15,33 +15,33 @@
 package google.registry.model.host;
 
 import google.registry.model.ResourceCommandTestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Test xml roundtripping of commands. */
-public class HostCommandTest extends ResourceCommandTestCase {
+class HostCommandTest extends ResourceCommandTestCase {
 
   @Test
-  public void testCreate() throws Exception {
+  void testCreate() throws Exception {
     doXmlRoundtripTest("host_create.xml");
   }
 
   @Test
-  public void testDelete() throws Exception {
+  void testDelete() throws Exception {
     doXmlRoundtripTest("host_delete.xml");
   }
 
   @Test
-  public void testUpdate() throws Exception {
+  void testUpdate() throws Exception {
     doXmlRoundtripTest("host_update.xml");
   }
 
   @Test
-  public void testInfo() throws Exception {
+  void testInfo() throws Exception {
     doXmlRoundtripTest("host_info.xml");
   }
 
   @Test
-  public void testCheck() throws Exception {
+  void testCheck() throws Exception {
     doXmlRoundtripTest("host_check.xml");
   }
 }

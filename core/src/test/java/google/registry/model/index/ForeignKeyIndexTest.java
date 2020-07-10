@@ -33,24 +33,24 @@ import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
 import google.registry.testing.TestCacheRule;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ForeignKeyIndex}. */
 public class ForeignKeyIndexTest extends EntityTestCase {
 
-  @Rule
+  @RegisterExtension
   public final TestCacheRule testCacheRule =
       new TestCacheRule.Builder().withForeignIndexKeyCache(Duration.standardDays(1)).build();
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void setUp() {
     createTld("com");
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     // Persist a host and implicitly persist a ForeignKeyIndex for it.
     HostResource host = persistActiveHost("ns1.example.com");
     ForeignKeyIndex<HostResource> fki =
@@ -60,7 +60,7 @@ public class ForeignKeyIndexTest extends EntityTestCase {
   }
 
   @Test
-  public void testIndexing() throws Exception {
+  void testIndexing() throws Exception {
     // Persist a host and implicitly persist a ForeignKeyIndex for it.
     persistActiveHost("ns1.example.com");
     verifyIndexing(
@@ -69,13 +69,13 @@ public class ForeignKeyIndexTest extends EntityTestCase {
   }
 
   @Test
-  public void testLoadForNonexistentForeignKey_returnsNull() {
+  void testLoadForNonexistentForeignKey_returnsNull() {
     assertThat(ForeignKeyIndex.load(HostResource.class, "ns1.example.com", fakeClock.nowUtc()))
         .isNull();
   }
 
   @Test
-  public void testLoadForDeletedForeignKey_returnsNull() {
+  void testLoadForDeletedForeignKey_returnsNull() {
     HostResource host = persistActiveHost("ns1.example.com");
     persistResource(ForeignKeyIndex.create(host, fakeClock.nowUtc().minusDays(1)));
     assertThat(ForeignKeyIndex.load(HostResource.class, "ns1.example.com", fakeClock.nowUtc()))
@@ -83,7 +83,7 @@ public class ForeignKeyIndexTest extends EntityTestCase {
   }
 
   @Test
-  public void testLoad_newerKeyHasBeenSoftDeleted() {
+  void testLoad_newerKeyHasBeenSoftDeleted() {
     HostResource host1 = persistActiveHost("ns1.example.com");
     fakeClock.advanceOneMilli();
     ForeignKeyHostIndex fki = new ForeignKeyHostIndex();
@@ -96,7 +96,7 @@ public class ForeignKeyIndexTest extends EntityTestCase {
   }
 
   @Test
-  public void testBatchLoad_skipsDeletedAndNonexistent() {
+  void testBatchLoad_skipsDeletedAndNonexistent() {
     persistActiveHost("ns1.example.com");
     HostResource host = persistActiveHost("ns2.example.com");
     persistResource(ForeignKeyIndex.create(host, fakeClock.nowUtc().minusDays(1)));
@@ -110,7 +110,7 @@ public class ForeignKeyIndexTest extends EntityTestCase {
   }
 
   @Test
-  public void testDeadCodeThatDeletedScrapCommandsReference() {
+  void testDeadCodeThatDeletedScrapCommandsReference() {
     persistActiveHost("omg");
     assertThat(ForeignKeyIndex.load(HostResource.class, "omg", fakeClock.nowUtc()).getForeignKey())
         .isEqualTo("omg");
@@ -125,7 +125,7 @@ public class ForeignKeyIndexTest extends EntityTestCase {
   }
 
   @Test
-  public void test_loadCached_cachesNonexistenceOfHosts() {
+  void test_loadCached_cachesNonexistenceOfHosts() {
     assertThat(
             ForeignKeyIndex.loadCached(
                 HostResource.class,
@@ -145,7 +145,7 @@ public class ForeignKeyIndexTest extends EntityTestCase {
   }
 
   @Test
-  public void test_loadCached_cachesExistenceOfHosts() {
+  void test_loadCached_cachesExistenceOfHosts() {
     HostResource host1 = persistActiveHost("ns1.example.com");
     HostResource host2 = persistActiveHost("ns2.example.com");
     assertThat(
@@ -173,7 +173,7 @@ public class ForeignKeyIndexTest extends EntityTestCase {
   }
 
   @Test
-  public void test_loadCached_doesntSeeHostChangesWhileCacheIsValid() {
+  void test_loadCached_doesntSeeHostChangesWhileCacheIsValid() {
     HostResource originalHost = persistActiveHost("ns1.example.com");
     ForeignKeyIndex<HostResource> originalFki = loadHostFki("ns1.example.com");
     fakeClock.advanceOneMilli();
@@ -196,7 +196,7 @@ public class ForeignKeyIndexTest extends EntityTestCase {
   }
 
   @Test
-  public void test_loadCached_filtersOutSoftDeletedHosts() {
+  void test_loadCached_filtersOutSoftDeletedHosts() {
     persistActiveHost("ns1.example.com");
     persistDeletedHost("ns2.example.com", fakeClock.nowUtc().minusDays(1));
     assertThat(
@@ -208,7 +208,7 @@ public class ForeignKeyIndexTest extends EntityTestCase {
   }
 
   @Test
-  public void test_loadCached_cachesContactFkis() {
+  void test_loadCached_cachesContactFkis() {
     persistActiveContact("contactid1");
     ForeignKeyIndex<ContactResource> fki1 = loadContactFki("contactid1");
     assertThat(
