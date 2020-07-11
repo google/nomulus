@@ -21,14 +21,15 @@ import java.io.File;
 import javax.annotation.Nullable;
 import org.apache.ftpserver.FtpServer;
 import org.apache.ftpserver.ftplet.FtpException;
-import org.junit.rules.ExternalResource;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
  * JUnit Rule for creating an in-process {@link TestSftpServer SFTP Server}.
  *
  * @see TestSftpServer
  */
-public final class SftpServerRule extends ExternalResource {
+public final class SftpServerRule implements AfterEachCallback {
 
   @Nullable
   private FtpServer server;
@@ -46,7 +47,7 @@ public final class SftpServerRule extends ExternalResource {
   }
 
   @Override
-  protected void after() {
+  public void afterEach(ExtensionContext context) {
     if (server != null) {
       server.stop();
       server = null;

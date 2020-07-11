@@ -35,11 +35,9 @@ import google.registry.xjc.rderegistrar.XjcRdeRegistrarPostalInfoType;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrarStatusType;
 import java.io.ByteArrayOutputStream;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Unit tests for {@link RegistrarToXjcConverter}.
@@ -47,19 +45,17 @@ import org.junit.runners.JUnit4;
  * <p>This tests the mapping between {@link Registrar} and {@link XjcRdeRegistrar} as well as some
  * exceptional conditions.
  */
-@RunWith(JUnit4.class)
 public class RegistrarToXjcConverterTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
-  Registrar registrar;
+  private Registrar registrar;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     registrar = new Registrar.Builder()
         .setClientId("GoblinMarket")
         .setRegistrarName("Maids heard the goblins cry: Come buy, come buy:")
@@ -94,7 +90,7 @@ public class RegistrarToXjcConverterTest {
   }
 
   @Test
-  public void test_convertRegistrar() {
+  void test_convertRegistrar() {
     XjcRdeRegistrar bean = convertRegistrar(registrar);
 
     assertThat(bean.getId()).isEqualTo("GoblinMarket");
@@ -140,13 +136,13 @@ public class RegistrarToXjcConverterTest {
   }
 
   @Test
-  public void test_convertRegistrar_disabledStateMeansTerminated() {
+  void test_convertRegistrar_disabledStateMeansTerminated() {
     XjcRdeRegistrar bean = convertRegistrar(registrar.asBuilder().setState(State.DISABLED).build());
     assertThat(bean.getStatus()).isEqualTo(XjcRdeRegistrarStatusType.TERMINATED);
   }
 
   @Test
-  public void test_convertRegistrar_handlesAllRegistrarStates() {
+  void test_convertRegistrar_handlesAllRegistrarStates() {
     for (State state : Registrar.State.values()) {
       // This will throw an exception if it can't handle the chosen state.
       convertRegistrar(registrar.asBuilder().setState(state).build());
@@ -154,7 +150,7 @@ public class RegistrarToXjcConverterTest {
   }
 
   @Test
-  public void testMarshal() throws Exception {
+  void testMarshal() throws Exception {
     marshalStrict(RegistrarToXjcConverter.convert(registrar), new ByteArrayOutputStream(), UTF_8);
   }
 }

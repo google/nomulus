@@ -65,10 +65,8 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.util.encoders.Base64;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Bouncy Castle &ndash; How does it work?!
@@ -96,8 +94,6 @@ import org.junit.runners.JUnit4;
  * using 1.46 so thankfully we're not far enough behind that the Bouncy Castle authors have decided
  * to remove these functions. But a migration effort will be necessary in the future.
  */
-@RunWith(JUnit4.class)
-@SuppressWarnings("resource")
 public class BouncyCastleTest {
 
   private static final String FALL_OF_HYPERION_A_DREAM = ""
@@ -122,11 +118,10 @@ public class BouncyCastleTest {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  @Rule
-  public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
 
   @Test
-  public void testCompressDecompress() throws Exception {
+  void testCompressDecompress() throws Exception {
     // Compress the data and write out a compressed data OpenPGP message.
     byte[] data;
     try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
@@ -150,7 +145,7 @@ public class BouncyCastleTest {
   }
 
   @Test
-  public void testSignVerify_Detached() throws Exception {
+  void testSignVerify_Detached() throws Exception {
     // Load the keys.
     PGPPublicKeyRing publicKeyRing = new BcPGPPublicKeyRing(PUBLIC_KEY);
     PGPSecretKeyRing privateKeyRing = new BcPGPSecretKeyRing(PRIVATE_KEY);
@@ -190,7 +185,7 @@ public class BouncyCastleTest {
   }
 
   @Test
-  public void testSignVerify_OnePass() throws Exception {
+  void testSignVerify_OnePass() throws Exception {
     // Load the keys.
     PGPPublicKeyRing publicKeyRing = new BcPGPPublicKeyRing(PUBLIC_KEY);
     PGPSecretKeyRing privateKeyRing = new BcPGPSecretKeyRing(PRIVATE_KEY);
@@ -234,7 +229,7 @@ public class BouncyCastleTest {
   }
 
   @Test
-  public void testEncryptDecrypt_ExplicitStyle() throws Exception {
+  void testEncryptDecrypt_ExplicitStyle() throws Exception {
     int bufferSize = 64 * 1024;
 
     // Alice loads Bob's "publicKey" into memory.
@@ -275,7 +270,7 @@ public class BouncyCastleTest {
   }
 
   @Test
-  public void testEncryptDecrypt_KeyRingStyle() throws Exception {
+  void testEncryptDecrypt_KeyRingStyle() throws Exception {
     int bufferSize = 64 * 1024;
 
     // Alice loads Bob's "publicKey" into memory from her public key ring.
@@ -320,7 +315,7 @@ public class BouncyCastleTest {
   }
 
   @Test
-  public void testCompressEncryptDecryptDecompress_KeyRingStyle() throws Exception {
+  void testCompressEncryptDecryptDecompress_KeyRingStyle() throws Exception {
     int bufsz = 64 * 1024;
 
     // Alice loads Bob's "publicKey" into memory from her public key ring.

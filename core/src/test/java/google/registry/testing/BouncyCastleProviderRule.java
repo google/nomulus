@@ -16,6 +16,9 @@ package google.registry.testing;
 
 import java.security.Security;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.rules.ExternalResource;
 
 /**
@@ -28,7 +31,18 @@ import org.junit.rules.ExternalResource;
  * @see org.junit.rules.ExternalResource
  * @see java.security.Security#addProvider(java.security.Provider)
  */
-public class BouncyCastleProviderRule extends ExternalResource {
+public class BouncyCastleProviderRule extends ExternalResource
+    implements BeforeEachCallback, AfterEachCallback {
+
+  @Override
+  public void beforeEach(ExtensionContext context) {
+    before();
+  }
+
+  @Override
+  public void afterEach(ExtensionContext context) {
+    after();
+  }
 
   @Override
   protected void before() {

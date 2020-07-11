@@ -77,9 +77,9 @@ PRESUBMITS = {
     PresubmitCheck(
         r".*Copyright 20\d{2} The Nomulus Authors\. All Rights Reserved\.",
         ("java", "js", "soy", "sql", "py", "sh", "gradle"), {
-            ".git", "/build/", "/generated/", "node_modules/",
-            "JUnitBackports.java", "registrar_bin.", "registrar_dbg.",
-            "google-java-format-diff.py",
+            ".git", "/build/", "/generated/", "/generated_tests/",
+            "node_modules/", "JUnitBackports.java", "registrar_bin.",
+            "registrar_dbg.", "google-java-format-diff.py",
             "nomulus.golden.sql", "soyutils_usegoog.js"
         }, REQUIRED):
         "File did not include the license header.",

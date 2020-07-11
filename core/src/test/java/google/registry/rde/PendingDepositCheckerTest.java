@@ -35,27 +35,23 @@ import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PendingDepositChecker}. */
-@RunWith(JUnit4.class)
 public class PendingDepositCheckerTest {
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private final FakeClock clock = new FakeClock();
   private final PendingDepositChecker checker = new PendingDepositChecker();
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     checker.brdaDayOfWeek = TUESDAY;
     checker.brdaInterval = standardDays(7);
@@ -64,14 +60,14 @@ public class PendingDepositCheckerTest {
   }
 
   @Test
-  public void testMethod_noTldsWithEscrowEnabled_returnsEmpty() {
+  void testMethod_noTldsWithEscrowEnabled_returnsEmpty() {
     createTld("pal");
     createTld("fun");
     assertThat(checker.getTldsAndWatermarksPendingDepositForRdeAndBrda()).isEmpty();
   }
 
   @Test
-  public void testMethod_firstDeposit_depositsRdeTodayAtMidnight() {
+  void testMethod_firstDeposit_depositsRdeTodayAtMidnight() {
     clock.setTo(DateTime.parse("2000-01-01T08:00Z"));  // Saturday
     createTldWithEscrowEnabled("lol");
     clock.advanceOneMilli();
@@ -82,7 +78,7 @@ public class PendingDepositCheckerTest {
   }
 
   @Test
-  public void testMethod_firstDepositOnBrdaDay_depositsBothRdeAndBrda() {
+  void testMethod_firstDepositOnBrdaDay_depositsBothRdeAndBrda() {
     clock.setTo(DateTime.parse("2000-01-04T08:00Z"));  // Tuesday
     createTldWithEscrowEnabled("lol");
     clock.advanceOneMilli();
@@ -95,7 +91,7 @@ public class PendingDepositCheckerTest {
   }
 
   @Test
-  public void testMethod_firstRdeDeposit_initializesCursorToMidnightToday() {
+  void testMethod_firstRdeDeposit_initializesCursorToMidnightToday() {
     clock.setTo(DateTime.parse("2000-01-01TZ"));  // Saturday
     createTldWithEscrowEnabled("lol");
     clock.advanceOneMilli();
@@ -107,7 +103,7 @@ public class PendingDepositCheckerTest {
   }
 
   @Test
-  public void testMethod_subsequentRdeDeposit_doesntMutateCursor() {
+  void testMethod_subsequentRdeDeposit_doesntMutateCursor() {
     clock.setTo(DateTime.parse("2000-01-01TZ"));  // Saturday
     createTldWithEscrowEnabled("lol");
     clock.advanceOneMilli();
@@ -120,7 +116,7 @@ public class PendingDepositCheckerTest {
   }
 
   @Test
-  public void testMethod_firstBrdaDepositButNotOnBrdaDay_doesntInitializeCursor() {
+  void testMethod_firstBrdaDepositButNotOnBrdaDay_doesntInitializeCursor() {
     clock.setTo(DateTime.parse("2000-01-01TZ"));  // Saturday
     createTldWithEscrowEnabled("lol");
     Registry registry = Registry.get("lol");
@@ -133,7 +129,7 @@ public class PendingDepositCheckerTest {
   }
 
   @Test
-  public void testMethod_backloggedTwoDays_onlyWantsLeastRecentDay() {
+  void testMethod_backloggedTwoDays_onlyWantsLeastRecentDay() {
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     createTldWithEscrowEnabled("lol");
     clock.advanceOneMilli();
@@ -146,7 +142,7 @@ public class PendingDepositCheckerTest {
   }
 
   @Test
-  public void testMethod_multipleTldsWithEscrowEnabled_depositsBoth() {
+  void testMethod_multipleTldsWithEscrowEnabled_depositsBoth() {
     clock.setTo(DateTime.parse("2000-01-01TZ"));  // Saturday
     createTldWithEscrowEnabled("pal");
     clock.advanceOneMilli();

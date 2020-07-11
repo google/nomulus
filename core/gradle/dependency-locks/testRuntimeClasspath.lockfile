@@ -249,6 +249,7 @@ org.json:json:20160810
 org.junit.jupiter:junit-jupiter-api:5.6.2
 org.junit.jupiter:junit-jupiter-engine:5.6.2
 org.junit.jupiter:junit-jupiter-migrationsupport:5.6.2
+org.junit.jupiter:junit-jupiter-params:5.6.2
 org.junit.platform:junit-platform-commons:1.6.2
 org.junit.platform:junit-platform-engine:1.6.2
 org.junit.platform:junit-platform-launcher:1.6.2
