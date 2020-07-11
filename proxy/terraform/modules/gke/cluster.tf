@@ -28,7 +28,7 @@ resource "google_container_cluster" "proxy_cluster" {
     }
 
     autoscaling {
-      max_node_count = 5
+      max_node_count = 15
       min_node_count = 1
     }
 
