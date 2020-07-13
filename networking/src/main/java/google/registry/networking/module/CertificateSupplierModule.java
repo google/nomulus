@@ -40,6 +40,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -215,17 +216,29 @@ public final class CertificateSupplierModule {
   @PemFile
   static PrivateKey providePemPrivateKey(@PemFile ImmutableList<Object> pemObjects) {
     JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
-    Function<PEMKeyPair, PrivateKey> privateKeyConverter =
+    Function<PEMKeyPair, PrivateKey> pkcs1PrivateKeyConverter =
         pemKeyPair -> {
           try {
             return converter.getKeyPair(pemKeyPair).getPrivate();
           } catch (PEMException e) {
             throw new RuntimeException(
-                String.format("Error converting private key: %s", pemKeyPair), e);
+                String.format("Error converting PKCS#1 private key: %s", pemKeyPair), e);
+          }
+        };
+    Function<PrivateKeyInfo, PrivateKey> pkcs8PrivateKeyConverter =
+        privateKeyInfo -> {
+          try {
+            return converter.getPrivateKey(privateKeyInfo);
+          } catch (PEMException e) {
+            throw new RuntimeException(
+                String.format("Error converting PKCS#8 private key: %s", privateKeyInfo), e);
           }
         };
     ImmutableList<PrivateKey> privateKeys =
-        filterAndConvert(pemObjects, PEMKeyPair.class, privateKeyConverter);
+        ImmutableList.<PrivateKey>builder()
+            .addAll(filterAndConvert(pemObjects, PEMKeyPair.class, pkcs1PrivateKeyConverter))
+            .addAll(filterAndConvert(pemObjects, PrivateKeyInfo.class, pkcs8PrivateKeyConverter))
+            .build();
     checkState(
         privateKeys.size() == 1,
         "The pem file must contain exactly one private key, but %s keys are found",
