@@ -24,8 +24,8 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.registry.label.ReservedList;
-import google.registry.schema.tld.ReservedList.ReservedEntry;
-import google.registry.schema.tld.ReservedListDao;
+import google.registry.model.registry.label.ReservedList.ReservedListEntry;
+import google.registry.model.registry.label.ReservedListSqlDao;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -50,11 +50,13 @@ public class UpdateReservedListCommandTest extends
   }
 
   private void populateInitialReservedListInCloudSql(boolean shouldPublish) {
-    ReservedListDao.save(
+    ReservedListSqlDao.save(
         createCloudSqlReservedList(
             "xn--q9jyb4c_common-reserved",
+            fakeClock.nowUtc(),
             shouldPublish,
-            ImmutableMap.of("helicopter", ReservedEntry.create(FULLY_BLOCKED, ""))));
+            ImmutableMap.of(
+                "helicopter", ReservedListEntry.create("helicopter", FULLY_BLOCKED, ""))));
   }
 
   @Test
@@ -131,6 +133,6 @@ public class UpdateReservedListCommandTest extends
     // Datastore when we update it.
     runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
     verifyXnq9jyb4cInDatastore();
-    assertThat(ReservedListDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();
+    assertThat(ReservedListSqlDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();
   }
 }
