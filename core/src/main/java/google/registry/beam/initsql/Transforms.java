@@ -264,16 +264,14 @@ public final class Transforms {
   /**
    * Returns a {@link PTransform} that writes a {@link PCollection} of entities to a SQL database.
    *
-   * @param kind a description of the data to be written, which is used to form the name of the
-   *     returned transform. When multiple such transforms are needed, each call to this method
-   *     should use a unique value for this parameter
+   * @param transformId a unique ID for an instance of the returned transform
    * @param maxWriters the max number of concurrent writes to SQL, which also determines the max
    *     number of connection pools created
    * @param batchSize the number of entities to write in each operation
    * @param jpaSupplier supplier of a {@link JpaTransactionManager}
    */
   public static PTransform<PCollection<VersionedEntity>, PDone> writeToSql(
-      String kind,
+      String transformId,
       int maxWriters,
       int batchSize,
       SerializableSupplier<JpaTransactionManager> jpaSupplier) {
@@ -282,11 +280,11 @@ public final class Transforms {
       public PDone expand(PCollection<VersionedEntity> input) {
         input
             .apply(
-                "Shard data for " + kind,
+                "Shard data for " + transformId,
                 MapElements.into(kvs(integers(), TypeDescriptor.of(VersionedEntity.class)))
                     .via(ve -> KV.of(ThreadLocalRandom.current().nextInt(maxWriters), ve)))
-            .apply("Batch output by shard " + kind, GroupIntoBatches.ofSize(batchSize))
-            .apply("Write in batch for " + kind, ParDo.of(new SqlBatchWriter(jpaSupplier)));
+            .apply("Batch output by shard " + transformId, GroupIntoBatches.ofSize(batchSize))
+            .apply("Write in batch for " + transformId, ParDo.of(new SqlBatchWriter(jpaSupplier)));
         return PDone.in(input.getPipeline());
       }
     };
