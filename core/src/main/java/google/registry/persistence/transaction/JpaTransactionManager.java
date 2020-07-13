@@ -25,4 +25,11 @@ public interface JpaTransactionManager extends TransactionManager {
 
   /** Deletes the entity by its id, throws exception if the entity is not deleted. */
   public abstract <T> void assertDelete(VKey<T> key);
+
+  /**
+   * Releases all resources and shuts down.
+   *
+   * <p>The errorprone check forbids injection of {@link java.io.Closeable} resources.
+   */
+  void teardown();
 }

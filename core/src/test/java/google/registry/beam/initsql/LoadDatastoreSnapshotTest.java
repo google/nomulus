@@ -31,6 +31,7 @@ import google.registry.model.registry.Registry;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import java.io.File;
+import org.apache.beam.sdk.testing.NeedsRunner;
 import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollectionTuple;
@@ -38,6 +39,7 @@ import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -152,6 +154,7 @@ public class LoadDatastoreSnapshotTest {
   }
 
   @Test
+  @Category(NeedsRunner.class)
   public void loadDatastoreSnapshot() {
     PCollectionTuple snapshot =
         pipeline.apply(

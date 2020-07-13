@@ -173,6 +173,7 @@ public class ExportloadingTransformsTest implements Serializable {
   }
 
   @Test
+  @Category(NeedsRunner.class)
   public void loadDataFromFiles() {
     PCollection<VersionedEntity> entities =
         pipeline
