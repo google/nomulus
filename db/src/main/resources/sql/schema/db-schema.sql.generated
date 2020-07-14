@@ -77,6 +77,7 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "Contact" (
        repo_id text not null,
+        update_timestamp timestamptz,
         creation_registrar_id text not null,
         creation_time timestamptz not null,
         current_sponsor_registrar_id text not null,
@@ -197,6 +198,7 @@ create sequence history_id_sequence start 1 increment 1;
         last_epp_update_registrar_id text,
         last_epp_update_time timestamptz,
         statuses text[],
+        update_timestamp timestamptz,
         contact_repo_id text not null,
         primary key (history_revision_id)
     );
@@ -219,6 +221,7 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "Domain" (
        repo_id text not null,
+        update_timestamp timestamptz,
         creation_registrar_id text not null,
         creation_time timestamptz not null,
         current_sponsor_registrar_id text not null,
@@ -300,12 +303,14 @@ create sequence history_id_sequence start 1 increment 1;
         last_epp_update_registrar_id text,
         last_epp_update_time timestamptz,
         statuses text[],
+        update_timestamp timestamptz,
         host_repo_id text not null,
         primary key (history_revision_id)
     );
 
     create table "HostResource" (
        repo_id text not null,
+        update_timestamp timestamptz,
         creation_registrar_id text not null,
         creation_time timestamptz not null,
         current_sponsor_registrar_id text not null,

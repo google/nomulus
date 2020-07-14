@@ -165,8 +165,10 @@ public class EppResourceUtilsTest {
     assertThat(host.getRevisions()).hasSize(2);
     // Even though there is no revision, make a best effort guess to use the oldest revision.
     assertThat(
-        loadAtPointInTime(host, clock.nowUtc().minus(Duration.standardDays(32)))
-          .now().getUpdateAutoTimestamp().getTimestamp())
-              .isEqualTo(host.getRevisions().firstKey());
+            loadAtPointInTime(host, clock.nowUtc().minus(Duration.standardDays(32)))
+                .now()
+                .getUpdateTimestamp()
+                .getTimestamp())
+        .isEqualTo(host.getRevisions().firstKey());
   }
 }

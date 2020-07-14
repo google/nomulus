@@ -155,7 +155,7 @@ public final class EppResourceUtils {
     // time for writes.
     return Optional.of(
         cloneProjectedAtTime(
-            resource, latestOf(now, resource.getUpdateAutoTimestamp().getTimestamp())));
+            resource, latestOf(now, resource.getUpdateTimestamp().getTimestamp())));
   }
 
   /**
@@ -298,7 +298,7 @@ public final class EppResourceUtils {
     // and returns it projected forward to exactly the desired timestamp, or null if the resource is
     // deleted at that timestamp.
     final Result<T> loadResult =
-        isAtOrAfter(timestamp, resource.getUpdateAutoTimestamp().getTimestamp())
+        isAtOrAfter(timestamp, resource.getUpdateTimestamp().getTimestamp())
             ? new ResultNow<>(resource)
             : loadMostRecentRevisionAtTime(resource, timestamp);
     return () -> {
