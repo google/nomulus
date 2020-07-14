@@ -41,31 +41,31 @@ public class ReservedListSqlDaoTest {
   JpaIntegrationWithCoverageExtension jpa =
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
-  private ImmutableMap<String, ReservedListEntry> test_reservations;
+  private ImmutableMap<String, ReservedListEntry> testReservations;
 
-  private ReservedList test_reserved_list;
+  private ReservedList testReservedList;
 
   @BeforeEach
   void setUp() {
-    test_reservations =
+    testReservations =
         ImmutableMap.of(
             "food",
             ReservedListEntry.create("food", ReservationType.RESERVED_FOR_SPECIFIC_USE, null),
             "music",
             ReservedListEntry.create("music", ReservationType.FULLY_BLOCKED, "fully blocked"));
 
-    test_reserved_list =
+    testReservedList =
         new ReservedList.Builder()
             .setName("testlist")
             .setLastUpdateTime(fakeClock.nowUtc())
             .setShouldPublish(false)
-            .setReservedListMap(test_reservations)
+            .setReservedListMap(testReservations)
             .build();
   }
 
   @Test
   public void save_worksSuccessfully() {
-    ReservedListSqlDao.save(test_reserved_list);
+    ReservedListSqlDao.save(testReservedList);
     jpaTm()
         .transact(
             () -> {
@@ -76,7 +76,7 @@ public class ReservedListSqlDaoTest {
                       .setParameter("name", "testlist")
                       .getSingleResult();
               assertThat(persistedList.getReservedListEntries())
-                  .containsExactlyEntriesIn(test_reservations);
+                  .containsExactlyEntriesIn(testReservations);
               assertThat(persistedList.getLastUpdateTime()).isEqualTo(fakeClock.nowUtc());
             });
   }
@@ -84,20 +84,20 @@ public class ReservedListSqlDaoTest {
   @Test
   public void checkExists_worksSuccessfully() {
     assertThat(ReservedListSqlDao.checkExists("testlist")).isFalse();
-    ReservedListSqlDao.save(test_reserved_list);
+    ReservedListSqlDao.save(testReservedList);
     assertThat(ReservedListSqlDao.checkExists("testlist")).isTrue();
   }
 
   @Test
   public void getLatestRevision_worksSuccessfully() {
     assertThat(ReservedListSqlDao.getLatestRevision("testlist").isPresent()).isFalse();
-    ReservedListSqlDao.save(test_reserved_list);
+    ReservedListSqlDao.save(testReservedList);
     ReservedList persistedList = ReservedListSqlDao.getLatestRevision("testlist").get();
     assertThat(persistedList.getRevisionId()).isNotNull();
     assertThat(persistedList.getLastUpdateTime()).isEqualTo(fakeClock.nowUtc());
     assertThat(persistedList.getName()).isEqualTo("testlist");
     assertThat(persistedList.getShouldPublish()).isFalse();
-    assertThat(persistedList.getReservedListEntries()).containsExactlyEntriesIn(test_reservations);
+    assertThat(persistedList.getReservedListEntries()).containsExactlyEntriesIn(testReservations);
   }
 
   @Test
@@ -113,12 +113,12 @@ public class ReservedListSqlDaoTest {
                     ReservedListEntry.create(
                         "old", ReservationType.RESERVED_FOR_SPECIFIC_USE, null)))
             .build());
-    ReservedListSqlDao.save(test_reserved_list);
+    ReservedListSqlDao.save(testReservedList);
     ReservedList persistedList = ReservedListSqlDao.getLatestRevision("testlist").get();
     assertThat(persistedList.getRevisionId()).isNotNull();
     assertThat(persistedList.getLastUpdateTime()).isEqualTo(fakeClock.nowUtc());
     assertThat(persistedList.getName()).isEqualTo("testlist");
     assertThat(persistedList.getShouldPublish()).isFalse();
-    assertThat(persistedList.getReservedListEntries()).containsExactlyEntriesIn(test_reservations);
+    assertThat(persistedList.getReservedListEntries()).containsExactlyEntriesIn(testReservations);
   }
 }
