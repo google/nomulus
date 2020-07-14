@@ -29,7 +29,7 @@ public final class EppResourceTestUtils {
       return;
     }
     actual = (E) actual.asBuilder().build();
-    actual.setUpdateTimestamp(expected.updateTimestamp);
+    actual.updateTimestamp = expected.getUpdateTimestamp();
     assertThat(actual).isEqualTo(expected);
   }
 }
