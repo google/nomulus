@@ -98,12 +98,9 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
   }
 
   @Test
-  public void testFailure_domainDoesntExist() {
-    IllegalArgumentException e =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> runCommandForced("--client=NewRegistrar", "missing.tld"));
-    assertThat(e).hasMessageThat().isEqualTo("Domain 'missing.tld' does not exist or is deleted");
+  public void testFailure_domainDoesntExist() throws Exception {
+    runCommandForced("--client=NewRegistrar", "missing.tld");
+    assertInStdout("Failed domains:\n[missing.tld (Unknown domain missing.tld)]");
   }
 
   @Test

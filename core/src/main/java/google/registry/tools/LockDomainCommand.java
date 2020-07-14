@@ -14,15 +14,7 @@
 
 package google.registry.tools;
 
-import static google.registry.model.EppResourceUtils.loadByForeignKey;
-
 import com.beust.jcommander.Parameters;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-import com.google.common.flogger.FluentLogger;
-import google.registry.model.domain.DomainBase;
-import google.registry.model.eppcommon.StatusValue;
-import org.joda.time.DateTime;
 
 /**
  * A command to registry lock domain names.
@@ -31,25 +23,6 @@ import org.joda.time.DateTime;
  */
 @Parameters(separators = " =", commandDescription = "Registry lock a domain via EPP.")
 public class LockDomainCommand extends LockOrUnlockDomainCommand {
-
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
-  @Override
-  protected boolean shouldApplyToDomain(String domain, DateTime now) {
-    DomainBase domainBase =
-        loadByForeignKey(DomainBase.class, domain, now)
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        String.format("Domain '%s' does not exist or is deleted", domain)));
-    ImmutableSet<StatusValue> statusesToAdd =
-        Sets.difference(REGISTRY_LOCK_STATUSES, domainBase.getStatusValues()).immutableCopy();
-    if (statusesToAdd.isEmpty()) {
-      logger.atInfo().log("Domain '%s' is already locked and needs no updates.", domain);
-      return false;
-    }
-    return true;
-  }
 
   @Override
   protected void createAndApplyRequest(String domain) {

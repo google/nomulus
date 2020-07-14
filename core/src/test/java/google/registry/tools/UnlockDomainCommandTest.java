@@ -43,7 +43,9 @@ import org.joda.time.Duration;
 import org.junit.Before;
 import org.junit.Test;
 
-/** Unit tests for {@link UnlockDomainCommand}. */
+/**
+ * Unit tests for {@link UnlockDomainCommand}.
+ */
 public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand> {
 
   @Before
@@ -108,19 +110,16 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
   }
 
   @Test
-  public void testFailure_domainDoesntExist() {
-    IllegalArgumentException e =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> runCommandForced("--client=TheRegistrar", "missing.tld"));
-    assertThat(e).hasMessageThat().isEqualTo("Domain 'missing.tld' does not exist or is deleted");
+  public void testFailure_domainDoesntExist() throws Exception {
+    runCommandForced("--client=NewRegistrar", "missing.tld");
+    assertInStdout("Failed domains:\n[missing.tld (Unknown domain missing.tld)]");
   }
 
   @Test
-  public void testSuccess_alreadyUnlockedDomain_performsNoAction() throws Exception {
+  public void testSuccess_alreadyUnlockedDomain_staysUnlocked() throws Exception {
     DomainBase domain = persistActiveDomain("example.tld");
     runCommandForced("--client=TheRegistrar", "example.tld");
-    assertThat(reloadResource(domain)).isEqualTo(domain);
+    assertThat(reloadResource(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
   }
 
   @Test

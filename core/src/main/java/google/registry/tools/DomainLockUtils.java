@@ -224,13 +224,14 @@ public final class DomainLockUtils {
     DomainBase domainBase = getDomain(domainName, registrarId, now);
     verifyDomainNotLocked(domainBase);
 
-    // Multiple pending actions are not allowed
+    // Multiple pending actions are not allowed for non-admins
     RegistryLockDao.getMostRecentByRepoId(domainBase.getRepoId())
         .ifPresent(
             previousLock ->
                 checkArgument(
                     previousLock.isLockRequestExpired(now)
-                        || previousLock.getUnlockCompletionTimestamp().isPresent(),
+                        || previousLock.getUnlockCompletionTimestamp().isPresent()
+                        || isAdmin,
                     "A pending or completed lock action already exists for %s",
                     previousLock.getDomainName()));
 
