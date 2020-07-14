@@ -26,6 +26,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.testing.AppEngineRule;
+import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
@@ -41,6 +42,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.RuleChain;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -54,9 +56,13 @@ public class WriteToSqlTest implements Serializable {
 
   @Rule public final transient InjectRule injectRule = new InjectRule();
 
-  @Rule
-  public transient JpaIntegrationTestRule jpaRule =
+  // For use in the RuleChain below. Saves a reference to retrieve Database connection config.
+  public final transient JpaIntegrationTestRule database =
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationTestRule();
+
+  @Rule
+  public final transient RuleChain jpaRules =
+      RuleChain.outerRule(new DatastoreEntityExtension()).around(database);
 
   @Rule public transient TemporaryFolder temporaryFolder = new TemporaryFolder();
 
@@ -91,7 +97,9 @@ public class WriteToSqlTest implements Serializable {
     new PrintStream(credentialFile)
         .printf(
             "%s %s %s",
-            jpaRule.getDatabaseUrl(), jpaRule.getDatabaseUsername(), jpaRule.getDatabasePassword())
+            database.getDatabaseUrl(),
+            database.getDatabaseUsername(),
+            database.getDatabasePassword())
         .close();
   }
 
