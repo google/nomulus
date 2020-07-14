@@ -14,6 +14,7 @@
 
 package google.registry.model;
 
+import com.google.common.annotations.VisibleForTesting;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.MappedSuperclass;
@@ -36,7 +37,10 @@ public abstract class BackupGroupRoot extends ImmutableObject {
    * that this is updated on every save, rather than only in response to an {@code <update>} command
    */
   @XmlTransient
-  @Access(AccessType.FIELD) // Otherwise some subclasses access this as property, e.g. HostResource.
+  // Prevents subclasses from unexpectedly accessing as property (e.g., HostResource), which would
+  // require an unnecessary non-private setter method.
+  @Access(AccessType.FIELD)
+  @VisibleForTesting
   UpdateAutoTimestamp updateTimestamp = UpdateAutoTimestamp.create(null);
 
   /** Get the {@link UpdateAutoTimestamp} for this entity. */
