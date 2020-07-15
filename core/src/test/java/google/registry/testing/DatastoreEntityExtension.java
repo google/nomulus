@@ -20,6 +20,7 @@ import java.util.Map;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.rules.ExternalResource;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 /**
@@ -33,7 +34,8 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
  * href="https://junit.org/junit5/docs/current/user-guide/#extensions-registration-programmatic">
  * JUnit 5 User Guide</a> for details of extension ordering.
  */
-public class DatastoreEntityExtension implements BeforeEachCallback, AfterEachCallback {
+public class DatastoreEntityExtension extends ExternalResource
+    implements BeforeEachCallback, AfterEachCallback {
 
   private static final Environment PLACEHOLDER_ENV = new PlaceholderEnvironment();
 
@@ -46,6 +48,16 @@ public class DatastoreEntityExtension implements BeforeEachCallback, AfterEachCa
   public void afterEach(ExtensionContext context) {
     // Clear the cached instance.
     ApiProxy.setEnvironmentForCurrentThread(null);
+  }
+
+  @Override
+  protected void before() {
+    beforeEach(null);
+  }
+
+  @Override
+  protected void after() {
+    afterEach(null);
   }
 
   private static final class PlaceholderEnvironment implements Environment {
