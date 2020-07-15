@@ -82,7 +82,7 @@ public class CreatePremiumListAction extends CreateOrUpdatePremiumListAction {
     logger.atInfo().log("Saving premium list to Cloud SQL for TLD %s", name);
     // TODO(mcilwain): Call logInputData() here once Datastore persistence is removed.
 
-    google.registry.schema.tld.PremiumList premiumList = parseToPremiumList(name, inputData);
+    PremiumList premiumList = parseToPremiumList(name, inputData);
     PremiumListDao.saveNew(premiumList);
 
     String message =

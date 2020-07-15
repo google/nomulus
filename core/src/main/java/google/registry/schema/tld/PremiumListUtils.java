@@ -16,6 +16,7 @@ package google.registry.schema.tld;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
@@ -23,11 +24,13 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import org.joda.money.CurrencyUnit;
+import org.joda.time.DateTime;
 
 /** Static utility methods for {@link PremiumList}. */
 public class PremiumListUtils {
@@ -37,10 +40,7 @@ public class PremiumListUtils {
         Splitter.on('\n').omitEmptyStrings().splitToList(inputData);
 
     ImmutableMap<String, PremiumListEntry> prices =
-        new google.registry.model.registry.label.PremiumList.Builder()
-            .setName(name)
-            .build()
-            .parse(inputDataPreProcessed);
+        new PremiumList.Builder().setName(name).build().parse(inputDataPreProcessed);
     ImmutableSet<CurrencyUnit> currencies =
         prices.values().stream()
             .map(e -> e.getValue().getCurrencyUnit())
@@ -54,7 +54,12 @@ public class PremiumListUtils {
 
     Map<String, BigDecimal> priceAmounts =
         Maps.transformValues(prices, ple -> ple.getValue().getAmount());
-    return PremiumList.create(name, currency, priceAmounts);
+    return new PremiumList.Builder()
+        .setName(name)
+        .setCurrency(currency)
+        .setLabelsToPrices(priceAmounts)
+        .setCreationTime(DateTime.now(UTC))
+        .build();
   }
 
   private PremiumListUtils() {}

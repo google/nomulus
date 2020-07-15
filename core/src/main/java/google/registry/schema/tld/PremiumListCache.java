@@ -25,6 +25,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import google.registry.model.registry.label.PremiumList;
 import google.registry.util.NonFinalForTesting;
 import java.math.BigDecimal;
 import java.util.Optional;
