@@ -21,7 +21,7 @@
 SELECT
   domain.fullyQualifiedDomainName AS domainName,
   domain.__key__.name AS domainRepoId,
-  registrar.clientId AS clientId,
+  registrar.clientId AS registrarId,
   COALESCE(registrar.emailAddress, '') AS registrarEmailAddress
 FROM ( (
     SELECT
