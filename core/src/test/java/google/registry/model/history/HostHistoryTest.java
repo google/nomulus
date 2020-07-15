@@ -14,7 +14,7 @@
 
 package google.registry.model.history;
 
-import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -74,14 +74,9 @@ public class HostHistoryTest extends EntityTestCase {
   }
 
   private void assertHostHistoriesEqual(HostHistory one, HostHistory two) {
-    // enough of the fields get changed during serialization that we can't depend on .equals()
-    assertThat(one.getClientId()).isEqualTo(two.getClientId());
-    assertThat(one.getHostRepoId()).isEqualTo(two.getHostRepoId());
-    assertThat(one.getBySuperuser()).isEqualTo(two.getBySuperuser());
-    assertThat(one.getRequestedByRegistrar()).isEqualTo(two.getRequestedByRegistrar());
-    assertThat(one.getReason()).isEqualTo(two.getReason());
-    assertThat(one.getTrid()).isEqualTo(two.getTrid());
-    assertThat(one.getType()).isEqualTo(two.getType());
-    assertThat(one.getHostBase().getHostName()).isEqualTo(two.getHostBase().getHostName());
+    assertAboutImmutableObjects().that(one).isEqualExceptFields(two, "hostBase");
+    assertAboutImmutableObjects()
+        .that(one.getHostBase())
+        .isEqualExceptFields(two.getHostBase(), "repoId");
   }
 }
