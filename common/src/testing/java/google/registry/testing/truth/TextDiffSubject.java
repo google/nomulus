@@ -16,6 +16,7 @@ package google.registry.testing.truth;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.truth.Truth.assertAbout;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.github.difflib.DiffUtils;
@@ -31,6 +32,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import com.google.common.truth.Fact;
 import com.google.common.truth.FailureMetadata;
+import com.google.common.truth.SimpleSubjectBuilder;
 import com.google.common.truth.Subject;
 import java.io.IOException;
 import java.net.URL;
@@ -68,6 +70,15 @@ public class TextDiffSubject extends Subject {
     this.actual = ImmutableList.copyOf(actual);
   }
 
+  protected TextDiffSubject(FailureMetadata metadata, URL actual) {
+    super(metadata, actual);
+    try {
+      this.actual = ImmutableList.copyOf(Resources.asCharSource(actual, UTF_8).readLines());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public TextDiffSubject withDiffFormat(DiffFormat format) {
     this.diffFormat = format;
     return this;
@@ -100,11 +111,23 @@ public class TextDiffSubject extends Subject {
     return assertThat(Resources.asCharSource(resourceUrl, UTF_8).readLines());
   }
 
+  public static SimpleSubjectBuilder<TextDiffSubject, URL> assertWithMessageAboutUrlSource(
+      String format, Object... params) {
+    return assertWithMessage(format, params).about(urlFactory());
+  }
+
   private static final Subject.Factory<TextDiffSubject, ImmutableList<String>>
       TEXT_DIFF_SUBJECT_TEXT_FACTORY = TextDiffSubject::new;
 
   public static Subject.Factory<TextDiffSubject, ImmutableList<String>> textFactory() {
     return TEXT_DIFF_SUBJECT_TEXT_FACTORY;
+  }
+
+  private static final Subject.Factory<TextDiffSubject, URL> TEXT_DIFF_SUBJECT_URL_FACTORY =
+      TextDiffSubject::new;
+
+  public static Subject.Factory<TextDiffSubject, URL> urlFactory() {
+    return TEXT_DIFF_SUBJECT_URL_FACTORY;
   }
 
   static String generateUnifiedDiff(

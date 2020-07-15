@@ -12,24 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model;
+package google.registry.beam.initsql;
 
-import static com.google.common.truth.Truth.assertThat;
+import org.apache.beam.sdk.options.PipelineOptionsFactory;
+import org.junit.jupiter.api.Test;
 
-import java.util.Objects;
+/** Unit tests for {@link google.registry.beam.initsql.InitSqlPipelineOptions}. * */
+public class InitSqlPipelineOptionsTest {
 
-/** Test helpers for {@link EppResource}. */
-public final class EppResourceTestUtils {
-
-  private EppResourceTestUtils() {}
-
-  public static <E extends EppResource> void assertEqualsIgnoreLastUpdateTime(
-      E actual, E expected) {
-    if (Objects.equals(actual, expected)) {
-      return;
-    }
-    actual = (E) actual.asBuilder().build();
-    actual.updateTimestamp = expected.getUpdateTimestamp();
-    assertThat(actual).isEqualTo(expected);
+  @Test
+  void registerToValidate() {
+    PipelineOptionsFactory.register(InitSqlPipelineOptions.class);
   }
 }

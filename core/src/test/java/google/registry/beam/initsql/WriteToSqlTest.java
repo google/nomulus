@@ -15,12 +15,13 @@
 package google.registry.beam.initsql;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.appengine.api.datastore.Entity;
 import com.google.common.collect.ImmutableList;
 import google.registry.backup.VersionedEntity;
-import google.registry.beam.TestPipelineExtension;
+import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
@@ -31,8 +32,6 @@ import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
-import java.io.File;
-import java.io.PrintStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,9 +69,22 @@ class WriteToSqlTest implements Serializable {
   final transient TestPipelineExtension testPipeline =
       TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
 
-  private ImmutableList<Entity> contacts;
+  // Must not be transient!
+  public final BeamJpaExtension beamJpaExtension =
+      new BeamJpaExtension(temporaryFolder, jpaIntegrationTestRule.getDatabase());
 
-  private File credentialFile;
+  @Rule
+  public final transient RuleChain jpaRules =
+      RuleChain.outerRule(new DatastoreEntityExtension())
+          .around(jpaIntegrationTestRule)
+          .around(temporaryFolder)
+          .around(beamJpaExtension);
+
+  @Rule
+  public final transient TestPipeline pipeline =
+      TestPipeline.create().enableAbandonedNodeEnforcement(true);
+
+  private ImmutableList<Entity> contacts;
 
   @BeforeEach
   void beforeEach() throws Exception {
@@ -93,14 +105,6 @@ class WriteToSqlTest implements Serializable {
       }
       contacts = builder.build();
     }
-    credentialFile = Files.createFile(tmpDir.resolve("credential.dat")).toFile();
-    new PrintStream(credentialFile)
-        .printf(
-            "%s %s %s",
-            database.getDatabaseUrl(),
-            database.getDatabaseUsername(),
-            database.getDatabasePassword())
-        .close();
   }
 
   @Test
@@ -119,14 +123,18 @@ class WriteToSqlTest implements Serializable {
                 4,
                 () ->
                     DaggerBeamJpaModule_JpaTransactionManagerComponent.builder()
-                        .beamJpaModule(new BeamJpaModule(credentialFile.getAbsolutePath()))
+                        .beamJpaModule(beamJpaExtension.getBeamJpaModule())
                         .build()
                         .localDbJpaTransactionManager()));
     testPipeline.run().waitUntilFinish();
 
     ImmutableList<?> sqlContacts = jpaTm().transact(() -> jpaTm().loadAll(ContactResource.class));
-    // TODO(weiminyu): compare load entities with originals. Note: lastUpdateTimes won't match by
-    // design. Need an elegant way to deal with this.bbq
-    assertThat(sqlContacts).hasSize(3);
+    assertThat(sqlContacts)
+        .comparingElementsUsing(immutableObjectCorrespondence("revisions", "updateTimestamp"))
+        .containsExactlyElementsIn(
+            contacts.stream()
+                .map(InitSqlTestUtils::datastoreToOfyEntity)
+                .map(ImmutableObject.class::cast)
+                .collect(ImmutableList.toImmutableList()));
   }
 }

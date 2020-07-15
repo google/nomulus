@@ -112,6 +112,7 @@ ext {
       'org.junit.platform:junit-platform-suite-api:1.6.2',
       'org.junit.vintage:junit-vintage-engine:5.6.2',
       'org.apache.avro:avro:1.8.2',
+      'org.apache.beam:beam-runners-core-construction-java:2.16.0',
       'org.apache.beam:beam-runners-direct-java:2.16.0',
       'org.apache.beam:beam-runners-google-cloud-dataflow-java:2.16.0',
       'org.apache.beam:beam-sdks-java-core:2.16.0',

@@ -17,8 +17,10 @@ package google.registry.beam.initsql;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Throwables.throwIfUnchecked;
 import static google.registry.beam.initsql.BackupPaths.getCommitLogTimestamp;
 import static google.registry.beam.initsql.BackupPaths.getExportFilePatterns;
+import static google.registry.persistence.JpaRetries.isFailedTxnRetriable;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.setJpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -29,14 +31,16 @@ import static org.apache.beam.sdk.values.TypeDescriptors.kvs;
 import static org.apache.beam.sdk.values.TypeDescriptors.strings;
 
 import avro.shaded.com.google.common.collect.Iterators;
+import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.EntityTranslator;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
 import google.registry.backup.AppEngineEnvironment;
 import google.registry.backup.CommitLogImports;
 import google.registry.backup.VersionedEntity;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.ofy.Ofy;
 import google.registry.persistence.transaction.JpaTransactionManager;
@@ -49,7 +53,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
-import javax.persistence.OptimisticLockException;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.Compression;
 import org.apache.beam.sdk.io.FileIO;
@@ -70,7 +73,6 @@ import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionList;
 import org.apache.beam.sdk.values.PCollectionTuple;
-import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.TupleTag;
 import org.apache.beam.sdk.values.TupleTagList;
 import org.apache.beam.sdk.values.TypeDescriptor;
@@ -225,7 +227,7 @@ public final class Transforms {
     return new PTransform<PCollection<String>, PCollection<Metadata>>() {
       @Override
       public PCollection<Metadata> expand(PCollection<String> input) {
-        return input.apply(FileIO.matchAll().withEmptyMatchTreatment(EmptyMatchTreatment.DISALLOW));
+        return input.apply(FileIO.matchAll().withEmptyMatchTreatment(EmptyMatchTreatment.ALLOW));
       }
     };
   }
@@ -263,6 +265,11 @@ public final class Transforms {
 
   /**
    * Returns a {@link PTransform} that writes a {@link PCollection} of entities to a SQL database.
+   * and outputs an empty {@code PCollection<Void>}. This allows other operations to {@link
+   * org.apache.beam.sdk.transforms.Wait wait} for the completion of this transform.
+   *
+   * <p>Errors are handled according to the pipeline runner's default policy. As part of a one-time
+   * job, we will not add features unless proven necessary.
    *
    * @param transformId a unique ID for an instance of the returned transform
    * @param maxWriters the max number of concurrent writes to SQL, which also determines the max
@@ -270,22 +277,21 @@ public final class Transforms {
    * @param batchSize the number of entities to write in each operation
    * @param jpaSupplier supplier of a {@link JpaTransactionManager}
    */
-  public static PTransform<PCollection<VersionedEntity>, PDone> writeToSql(
+  public static PTransform<PCollection<VersionedEntity>, PCollection<Void>> writeToSql(
       String transformId,
       int maxWriters,
       int batchSize,
       SerializableSupplier<JpaTransactionManager> jpaSupplier) {
-    return new PTransform<PCollection<VersionedEntity>, PDone>() {
+    return new PTransform<PCollection<VersionedEntity>, PCollection<Void>>() {
       @Override
-      public PDone expand(PCollection<VersionedEntity> input) {
-        input
+      public PCollection<Void> expand(PCollection<VersionedEntity> input) {
+        return input
             .apply(
                 "Shard data for " + transformId,
                 MapElements.into(kvs(integers(), TypeDescriptor.of(VersionedEntity.class)))
                     .via(ve -> KV.of(ThreadLocalRandom.current().nextInt(maxWriters), ve)))
             .apply("Batch output by shard " + transformId, GroupIntoBatches.ofSize(batchSize))
             .apply("Write in batch for " + transformId, ParDo.of(new SqlBatchWriter(jpaSupplier)));
-        return PDone.in(input.getPipeline());
       }
     };
   }
@@ -397,8 +403,10 @@ public final class Transforms {
     public void setup() {
       sleeper = new SystemSleeper();
 
-      ObjectifyService.initOfy();
-      ofy = ObjectifyService.ofy();
+      try (AppEngineEnvironment env = new AppEngineEnvironment()) {
+        ObjectifyService.initOfy();
+        ofy = ObjectifyService.ofy();
+      }
 
       synchronized (SqlBatchWriter.class) {
         if (instanceCount == 0) {
@@ -444,7 +452,10 @@ public final class Transforms {
           runnable.run();
           return;
         } catch (Throwable throwable) {
-          throwIfNotCausedBy(throwable, OptimisticLockException.class);
+          if (!isFailedTxnRetriable(throwable)) {
+            throwIfUnchecked(throwable);
+            throw new RuntimeException(throwable);
+          }
           int sleepMillis = (1 << attempt) * initialDelayMillis;
           int jitter =
               ThreadLocalRandom.current().nextInt((int) (sleepMillis * jitterRatio))
@@ -453,21 +464,28 @@ public final class Transforms {
         }
       }
     }
+  }
 
-    /**
-     * Rethrows {@code throwable} if it is not (and does not have a cause of) {@code causeType};
-     * otherwise returns with no side effects.
-     */
-    private void throwIfNotCausedBy(Throwable throwable, Class<? extends Throwable> causeType) {
-      Throwable t = throwable;
-      while (t != null) {
-        if (causeType.isInstance(t)) {
-          return;
-        }
-        t = t.getCause();
-      }
-      Throwables.throwIfUnchecked(t);
-      throw new RuntimeException(t);
+  /**
+   * Removes BillingEvents, {@link google.registry.model.poll.PollMessage PollMessages} and {@link
+   * google.registry.model.host.HostResource} from a {@link DomainBase}. These are circular foreign
+   * key constraints that prevent migration of {@code DomainBase} to SQL databases.
+   *
+   * <p>See {@link InitSqlPipeline} for more information.
+   */
+  static class RemoveDomainBaseForeignKeys extends DoFn<VersionedEntity, VersionedEntity> {
+
+    @ProcessElement
+    public void processElement(
+        @Element VersionedEntity domainBase, OutputReceiver<VersionedEntity> out) {
+      checkArgument(
+          domainBase.getEntity().isPresent(), "Unexpected delete entity %s", domainBase.key());
+      Entity outputEntity =
+          DomainBaseUtil.removeBillingAndPollAndHosts(domainBase.getEntity().get());
+      out.output(
+          VersionedEntity.from(
+              domainBase.commitTimeMills(),
+              EntityTranslator.convertToPb(outputEntity).toByteArray()));
     }
   }
 }
