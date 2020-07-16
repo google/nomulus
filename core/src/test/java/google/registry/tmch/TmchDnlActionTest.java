@@ -50,7 +50,8 @@ class TmchDnlActionTest extends TmchActionTestCase {
 
     // Make sure the contents of testdata/dnl-latest.csv got inserted into the database.
     ClaimsListShard claimsList = ClaimsListShard.get();
-    assertThat(claimsList.getCreationTime()).isEqualTo(DateTime.parse("2013-11-24T23:15:37.4Z"));
+    assertThat(claimsList.getTmdbGenerationTime())
+        .isEqualTo(DateTime.parse("2013-11-24T23:15:37.4Z"));
     assertThat(claimsList.getClaimKey("xn----7sbejwbn3axu3d"))
         .hasValue("2013112500/7/4/8/dIHW0DiuybvhdP8kIz");
     assertThat(claimsList.getClaimKey("lolcat")).isEmpty();

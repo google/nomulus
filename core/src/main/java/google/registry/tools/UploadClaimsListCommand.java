@@ -22,8 +22,6 @@ import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import google.registry.model.tmch.ClaimsListShard;
-import google.registry.schema.tmch.ClaimsList;
-import google.registry.schema.tmch.ClaimsListDao;
 import google.registry.tmch.ClaimsListParser;
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +37,7 @@ final class UploadClaimsListCommand extends ConfirmingCommand implements Command
 
   private String claimsListFilename;
 
-  private ClaimsList claimsList;
+  private ClaimsListShard claimsList;
 
   @Override
   protected void init() throws IOException {
@@ -58,8 +56,7 @@ final class UploadClaimsListCommand extends ConfirmingCommand implements Command
 
   @Override
   public String execute() {
-    ClaimsListShard.create(claimsList.getTmdbGenerationTime(), claimsList.getLabelsToKeys()).save();
-    ClaimsListDao.trySave(claimsList);
+    claimsList.save();
     return String.format("Successfully uploaded claims list %s", claimsListFilename);
   }
 }

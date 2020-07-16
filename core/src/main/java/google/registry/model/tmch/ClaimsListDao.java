@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.tmch;
+package google.registry.model.tmch;
 
 import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
 import static google.registry.model.CacheUtils.tryMemoizeWithExpiration;
@@ -24,28 +24,28 @@ import google.registry.util.NonFinalForTesting;
 import java.util.Optional;
 import javax.persistence.EntityManager;
 
-/** Data access object for {@link ClaimsList}. */
+/** Data access object for {@link ClaimsListShard}. */
 public class ClaimsListDao {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /** In-memory cache for claims list. */
   @NonFinalForTesting
-  private static Supplier<Optional<ClaimsList>> cacheClaimsList =
+  private static Supplier<Optional<ClaimsListShard>> cacheClaimsList =
       tryMemoizeWithExpiration(getDomainLabelListCacheDuration(), ClaimsListDao::getLatestRevision);
 
-  private static void save(ClaimsList claimsList) {
+  private static void save(ClaimsListShard claimsList) {
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(claimsList));
   }
 
   /**
-   * Try to save the given {@link ClaimsList} into Cloud SQL. If the save fails, the error will be
-   * logged but no exception will be thrown.
+   * Try to save the given {@link ClaimsListShard} into Cloud SQL. If the save fails, the error will
+   * be logged but no exception will be thrown.
    *
    * <p>This method is used during the dual-write phase of database migration as Datastore is still
    * the authoritative database.
    */
-  public static void trySave(ClaimsList claimsList) {
+  static void trySave(ClaimsListShard claimsList) {
     try {
       ClaimsListDao.save(claimsList);
       logger.atInfo().log(
@@ -57,12 +57,12 @@ public class ClaimsListDao {
   }
 
   /**
-   * Returns the most recent revision of the {@link ClaimsList} in Cloud SQL, if it exists.
+   * Returns the most recent revision of the {@link ClaimsListShard} in Cloud SQL, if it exists.
    * TODO(shicong): Change this method to package level access after dual-read phase.
    * ClaimsListShard uses this method to retrieve claims list in Cloud SQL for the comparison, and
    * ClaimsListShard is not in this package.
    */
-  public static Optional<ClaimsList> getLatestRevision() {
+  public static Optional<ClaimsListShard> getLatestRevision() {
     return jpaTm()
         .transact(
             () -> {
@@ -73,15 +73,15 @@ public class ClaimsListDao {
               return em.createQuery(
                       "FROM ClaimsList cl LEFT JOIN FETCH cl.labelsToKeys WHERE cl.revisionId ="
                           + " :revisionId",
-                      ClaimsList.class)
+                      ClaimsListShard.class)
                   .setParameter("revisionId", revisionId)
                   .getResultStream()
                   .findFirst();
             });
   }
 
-  /** Returns the most recent revision of the {@link ClaimsList}, from cache. */
-  public static Optional<ClaimsList> getLatestRevisionCached() {
+  /** Returns the most recent revision of the {@link ClaimsListShard}, from cache. */
+  public static Optional<ClaimsListShard> getLatestRevisionCached() {
     return cacheClaimsList.get();
   }
 
