@@ -142,11 +142,19 @@
         {param name: 'name' /}
       {/call}
       {call registry.soy.forms.inputFieldRow data="all"}
-        {param label: 'Email' /}
+        {param label: 'Primary Account Email' /}
         {param namePrefix: $namePrefix /}
         {param name: 'emailAddress' /}
         {param disabled: not $readonly and $item['emailAddress'] != null /}
       {/call}
+      {if isNonnull($item['registryLockEmailAddress'])}
+        {call registry.soy.forms.inputFieldRow data="all"}
+          {param label: 'Registry Lock Email Address' /}
+          {param namePrefix: $namePrefix /}
+          {param name: 'registryLockEmailAddress' /}
+          {param disabled: not $readonly /}
+        {/call}
+      {/if}
       {call registry.soy.forms.inputFieldRow data="all"}
         {param label: 'Phone' /}
         {param namePrefix: $namePrefix /}
@@ -175,10 +183,6 @@
     </table>
     {if isNonnull($item['gaeUserId'])}
       <input type="hidden" name="{$namePrefix}gaeUserId" value="{$item['gaeUserId']}">
-    {/if}
-    {if isNonnull($item['registryLockEmailAddress'])}
-      <input type="hidden" name="{$namePrefix}registryLockEmailAddress"
-             value="{$item['registryLockEmailAddress']}">
     {/if}
   </div>
 {/template}
