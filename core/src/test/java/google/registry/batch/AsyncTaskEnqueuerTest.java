@@ -168,6 +168,7 @@ public class AsyncTaskEnqueuerTest {
         new TaskMatcher()
             .url(RelockDomainAction.PATH)
             .method("POST")
+            .header("Host", "backend.hostname.fake")
             .param(
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(lock.getRevisionId()))
