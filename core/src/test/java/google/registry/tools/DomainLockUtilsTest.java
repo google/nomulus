@@ -33,6 +33,7 @@ import static org.joda.time.Duration.standardHours;
 import static org.joda.time.Duration.standardSeconds;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.batch.AsyncTaskEnqueuerTest;
@@ -71,12 +72,7 @@ public final class DomainLockUtilsTest {
   private static final String POC_ID = "marla.singer@example.com";
 
   private final FakeClock clock = new FakeClock(DateTime.now(DateTimeZone.UTC));
-  private final DomainLockUtils domainLockUtils =
-      new DomainLockUtils(
-          new DeterministicStringGenerator(Alphabets.BASE_58),
-          "adminreg",
-          AsyncTaskEnqueuerTest.createForTesting(
-              mock(AppEngineServiceUtils.class), clock, standardSeconds(90)));
+  private DomainLockUtils domainLockUtils;
 
   @Rule
   public final AppEngineRule appEngineRule =
@@ -94,6 +90,14 @@ public final class DomainLockUtilsTest {
     createTlds("tld", "net");
     HostResource host = persistActiveHost("ns1.example.net");
     domain = persistResource(newDomainBase(DOMAIN_NAME, host));
+
+    AppEngineServiceUtils appEngineServiceUtils = mock(AppEngineServiceUtils.class);
+    when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
+    domainLockUtils = new DomainLockUtils(
+        new DeterministicStringGenerator(Alphabets.BASE_58),
+        "adminreg",
+        AsyncTaskEnqueuerTest.createForTesting(
+            appEngineServiceUtils, clock, standardSeconds(90)));
   }
 
   @Test
@@ -264,6 +268,7 @@ public final class DomainLockUtilsTest {
         new TaskMatcher()
             .url(RelockDomainAction.PATH)
             .method("POST")
+            .header("Host", "backend.hostname.fake")
             .param(
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(lock.getRevisionId()))

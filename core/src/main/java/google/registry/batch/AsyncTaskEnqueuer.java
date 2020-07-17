@@ -169,10 +169,12 @@ public final class AsyncTaskEnqueuer {
         lock.getRelockDuration().isPresent(),
         "Lock with ID %s not configured for relock",
         lock.getRevisionId());
+    String backendHostname = appEngineServiceUtils.getServiceHostname("backend");
     addTaskToQueueWithRetry(
         asyncActionsPushQueue,
         TaskOptions.Builder.withUrl(RelockDomainAction.PATH)
             .method(Method.POST)
+            .header("Host", backendHostname)
             .param(
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(lock.getRevisionId()))
