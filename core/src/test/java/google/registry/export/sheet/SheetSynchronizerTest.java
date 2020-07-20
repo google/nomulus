@@ -33,14 +33,12 @@ import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link SheetSynchronizer}. */
-@RunWith(JUnit4.class)
-public class SheetSynchronizerTest {
+class SheetSynchronizerTest {
+
   private final SheetSynchronizer sheetSynchronizer = new SheetSynchronizer();
   private final Sheets sheetsService = mock(Sheets.class);
   private final Sheets.Spreadsheets spreadsheets = mock(Sheets.Spreadsheets.class);
@@ -56,8 +54,8 @@ public class SheetSynchronizerTest {
   private List<List<Object>> existingSheet;
   private ImmutableList<ImmutableMap<String, String>> data;
 
-  @Before
-  public void before() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     sheetSynchronizer.sheetsService = sheetsService;
     when(sheetsService.spreadsheets()).thenReturn(spreadsheets);
     when(spreadsheets.values()).thenReturn(values);
@@ -88,7 +86,7 @@ public class SheetSynchronizerTest {
   }
 
   @Test
-  public void testSynchronize_dataAndSheetEmpty_doNothing() throws Exception {
+  void testSynchronize_dataAndSheetEmpty_doNothing() throws Exception {
     existingSheet.add(createRow("a", "b"));
     sheetSynchronizer.synchronize("aSheetId", data);
     verifyZeroInteractions(appendReq);
@@ -97,7 +95,7 @@ public class SheetSynchronizerTest {
   }
 
   @Test
-  public void testSynchronize_differentValues_updatesValues() throws Exception {
+  void testSynchronize_differentValues_updatesValues() throws Exception {
     existingSheet.add(createRow("a", "b"));
     existingSheet.add(createRow("diffVal1l", "diffVal2"));
     data = ImmutableList.of(ImmutableMap.of("a", "val1", "b", "val2"));
@@ -116,7 +114,7 @@ public class SheetSynchronizerTest {
   }
 
   @Test
-  public void testSynchronize_unknownFields_doesntUpdate() throws Exception {
+  void testSynchronize_unknownFields_doesntUpdate() throws Exception {
     existingSheet.add(createRow("a", "c", "b"));
     existingSheet.add(createRow("diffVal1", "sameVal", "diffVal2"));
     data = ImmutableList.of(ImmutableMap.of("a", "val1", "b", "val2", "d", "val3"));
@@ -135,7 +133,7 @@ public class SheetSynchronizerTest {
   }
 
   @Test
-  public void testSynchronize_notFullRow_getsPadded() throws Exception {
+  void testSynchronize_notFullRow_getsPadded() throws Exception {
     existingSheet.add(createRow("a", "c", "b"));
     existingSheet.add(createRow("diffVal1", "diffVal2"));
     data = ImmutableList.of(ImmutableMap.of("a", "val1", "b", "paddedVal", "d", "val3"));
@@ -154,12 +152,12 @@ public class SheetSynchronizerTest {
   }
 
   @Test
-  public void testSynchronize_moreData_appendsValues() throws Exception {
+  void testSynchronize_moreData_appendsValues() throws Exception {
     existingSheet.add(createRow("a", "b"));
     existingSheet.add(createRow("diffVal1", "diffVal2"));
-    data = ImmutableList.of(
-        ImmutableMap.of("a", "val1", "b", "val2"),
-        ImmutableMap.of("a", "val3", "b", "val4"));
+    data =
+        ImmutableList.of(
+            ImmutableMap.of("a", "val1", "b", "val2"), ImmutableMap.of("a", "val3", "b", "val4"));
     sheetSynchronizer.synchronize("aSheetId", data);
 
     verifyZeroInteractions(clearReq);
@@ -168,8 +166,7 @@ public class SheetSynchronizerTest {
     List<List<Object>> updatedVals = newArrayList();
     updatedVals.add(createRow("val1", "val2"));
     expectedRequest.setData(
-        newArrayList(
-            new ValueRange().setRange("Registrars!A2").setValues(updatedVals)));
+        newArrayList(new ValueRange().setRange("Registrars!A2").setValues(updatedVals)));
     expectedRequest.setValueInputOption("RAW");
     verify(values).batchUpdate("aSheetId", expectedRequest);
 
@@ -180,7 +177,7 @@ public class SheetSynchronizerTest {
   }
 
   @Test
-  public void testSynchronize_lessData_clearsValues() throws Exception {
+  void testSynchronize_lessData_clearsValues() throws Exception {
     existingSheet.add(createRow("a", "b"));
     existingSheet.add(createRow("val1", "val2"));
     existingSheet.add(createRow("diffVal3", "diffVal4"));
