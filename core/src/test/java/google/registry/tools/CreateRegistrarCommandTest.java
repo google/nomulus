@@ -26,7 +26,7 @@ import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.beust.jcommander.ParameterException;
@@ -39,8 +39,8 @@ import java.io.IOException;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 
@@ -256,7 +256,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    verifyZeroInteractions(connection);
+    verifyNoInteractions(connection);
   }
 
   @Test
@@ -303,7 +303,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--force",
         "clientz");
 
-    verifyZeroInteractions(connection);
+    verifyNoInteractions(connection);
   }
 
   @Test

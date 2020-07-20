@@ -18,8 +18,8 @@ import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import google.registry.testing.DeterministicStringGenerator;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CreateContactCommand}. */
 class CreateContactCommandTest extends EppToolCommandTestCase<CreateContactCommand> {

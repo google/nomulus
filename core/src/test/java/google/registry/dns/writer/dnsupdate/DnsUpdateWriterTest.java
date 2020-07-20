@@ -29,7 +29,7 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.base.VerifyException;
@@ -141,7 +141,7 @@ public class DnsUpdateWriterTest {
     writer.publishDomain("example1.tld");
     writer.publishDomain("example2.tld");
 
-    verifyZeroInteractions(mockResolver);
+    verifyNoInteractions(mockResolver);
   }
 
   @Test

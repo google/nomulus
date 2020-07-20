@@ -31,19 +31,18 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.testing.CertificateSamples;
 import google.registry.util.CidrAddressBlock;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ValidateLoginCredentialsCommand}. */
-public class ValidateLoginCredentialsCommandTest
-    extends CommandTestCase<ValidateLoginCredentialsCommand> {
+class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginCredentialsCommand> {
 
   private static final String PASSWORD = "foo-BAR2";
   private static final String CERT_HASH = CertificateSamples.SAMPLE_CERT_HASH;
   private static final String CLIENT_IP = "1.2.3.4";
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     createTld("tld");
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -57,7 +56,7 @@ public class ValidateLoginCredentialsCommandTest
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     runCommand(
         "--client=NewRegistrar",
         "--password=" + PASSWORD,
@@ -66,7 +65,7 @@ public class ValidateLoginCredentialsCommandTest
   }
 
   @Test
-  public void testFailure_registrarIsDisabled() {
+  void testFailure_registrarIsDisabled() {
     persistResource(
         Registrar.loadByClientId("NewRegistrar")
             .get()
@@ -88,7 +87,7 @@ public class ValidateLoginCredentialsCommandTest
   }
 
   @Test
-  public void testFailure_loginWithBadPassword() {
+  void testFailure_loginWithBadPassword() {
     EppException thrown =
         assertThrows(
             BadRegistrarPasswordException.class,
@@ -102,7 +101,7 @@ public class ValidateLoginCredentialsCommandTest
   }
 
   @Test
-  public void testFailure_loginWithBadCertificateHash() {
+  void testFailure_loginWithBadCertificateHash() {
     EppException thrown =
         assertThrows(
             EppException.class,
@@ -116,7 +115,7 @@ public class ValidateLoginCredentialsCommandTest
   }
 
   @Test
-  public void testFailure_loginWithBadIp() {
+  void testFailure_loginWithBadIp() {
     EppException thrown =
         assertThrows(
             EppException.class,
@@ -130,7 +129,7 @@ public class ValidateLoginCredentialsCommandTest
   }
 
   @Test
-  public void testFailure_missingClientId() {
+  void testFailure_missingClientId() {
     assertThrows(
         ParameterException.class,
         () ->
@@ -139,7 +138,7 @@ public class ValidateLoginCredentialsCommandTest
   }
 
   @Test
-  public void testFailure_missingPassword() {
+  void testFailure_missingPassword() {
     assertThrows(
         ParameterException.class,
         () ->
@@ -148,7 +147,7 @@ public class ValidateLoginCredentialsCommandTest
   }
 
   @Test
-  public void testFailure_unknownFlag() {
+  void testFailure_unknownFlag() {
     assertThrows(
         ParameterException.class,
         () ->
@@ -161,7 +160,7 @@ public class ValidateLoginCredentialsCommandTest
   }
 
   @Test
-  public void testFailure_certHashAndCertFile() {
+  void testFailure_certHashAndCertFile() {
     assertThrows(
         IllegalArgumentException.class,
         () ->

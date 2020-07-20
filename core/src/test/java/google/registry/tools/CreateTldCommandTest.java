@@ -38,8 +38,8 @@ import java.math.BigDecimal;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CreateTldCommand}. */
 class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {

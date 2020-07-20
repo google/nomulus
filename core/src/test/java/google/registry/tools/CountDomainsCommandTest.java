@@ -23,8 +23,8 @@ import google.registry.model.ofy.Ofy;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CountDomainsCommand}. */
@@ -32,8 +32,7 @@ public class CountDomainsCommandTest extends CommandTestCase<CountDomainsCommand
 
   protected FakeClock clock = new FakeClock(DateTime.now(UTC));
 
-  @RegisterExtension
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
   @BeforeEach
   final void beforeEach() {

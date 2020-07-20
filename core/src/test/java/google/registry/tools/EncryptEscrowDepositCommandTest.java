@@ -23,16 +23,15 @@ import google.registry.rde.RdeTestData;
 import google.registry.testing.BouncyCastleProviderRule;
 import google.registry.testing.FakeKeyringModule;
 import java.nio.file.Path;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link EncryptEscrowDepositCommand}. */
 public class EncryptEscrowDepositCommandTest
     extends CommandTestCase<EncryptEscrowDepositCommand> {
 
-  @RegisterExtension
-  public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
 
   private final ByteSource depositXml = loadBytes(RdeTestData.class, "deposit_full.xml");
 
@@ -52,14 +51,13 @@ public class EncryptEscrowDepositCommandTest
   void testSuccess() throws Exception {
     Path depositFile = tmpDir.resolve("deposit.xml");
     Files.write(depositXml.read(), depositFile.toFile());
-    runCommand(
-        "--tld=lol",
-        "--input=" + depositFile,
-        "--outdir=" + tmpDir.toString());
-    assertThat(tmpDir.toFile().list()).asList().containsExactly(
-        "deposit.xml",
-        "lol_2010-10-17_full_S1_R0.ryde",
-        "lol_2010-10-17_full_S1_R0.sig",
-        "lol.pub");
+    runCommand("--tld=lol", "--input=" + depositFile, "--outdir=" + tmpDir.toString());
+    assertThat(tmpDir.toFile().list())
+        .asList()
+        .containsExactly(
+            "deposit.xml",
+            "lol_2010-10-17_full_S1_R0.ryde",
+            "lol_2010-10-17_full_S1_R0.sig",
+            "lol.pub");
   }
 }

@@ -76,11 +76,9 @@ public abstract class CommandTestCase<C extends Command> {
           .withTaskQueue()
           .build();
 
-  @RegisterExtension
-  final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
+  @RegisterExtension final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
 
-  @TempDir
-  public Path tmpDir;
+  @TempDir public Path tmpDir;
 
   @BeforeEach
   public final void beforeEachCommandTestCase() throws Exception {

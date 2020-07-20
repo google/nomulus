@@ -32,21 +32,21 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import org.junit.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RegistrarContactCommand}. */
-public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContactCommand> {
+class RegistrarContactCommandTest extends CommandTestCase<RegistrarContactCommand> {
 
   private String output;
 
   @BeforeEach
-  public void beforeEach() throws Exception {
+  void beforeEach() {
     output = tmpDir.resolve("temp.dat").toString();
   }
 
   @Test
-  public void testList() throws Exception {
+  void testList() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     RegistrarContact.updateContacts(
         registrar,
@@ -72,7 +72,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testUpdate() throws Exception {
+  void testUpdate() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     ImmutableList<RegistrarContact> contacts = ImmutableList.of(
         new RegistrarContact.Builder()
@@ -115,7 +115,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testUpdate_enableConsoleAccess() throws Exception {
+  void testUpdate_enableConsoleAccess() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     persistSimpleResource(
         new RegistrarContact.Builder()
@@ -137,7 +137,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testUpdate_disableConsoleAccess() throws Exception {
+  void testUpdate_disableConsoleAccess() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     persistSimpleResource(
         new RegistrarContact.Builder()
@@ -156,7 +156,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testUpdate_unsetOtherWhoisAbuseFlags() throws Exception {
+  void testUpdate_unsetOtherWhoisAbuseFlags() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     persistSimpleResource(
         new RegistrarContact.Builder()
@@ -190,7 +190,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testUpdate_cannotUnsetOnlyWhoisAbuseContact() {
+  void testUpdate_cannotUnsetOnlyWhoisAbuseContact() {
     Registrar registrar = loadRegistrar("NewRegistrar");
     persistSimpleResource(
         new RegistrarContact.Builder()
@@ -217,7 +217,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testUpdate_emptyCommandModifiesNothing() throws Exception {
+  void testUpdate_emptyCommandModifiesNothing() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     RegistrarContact existingContact = persistSimpleResource(
         new RegistrarContact.Builder()
@@ -249,7 +249,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testUpdate_listOfTypesWorks() throws Exception {
+  void testUpdate_listOfTypesWorks() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     persistSimpleResource(
         new RegistrarContact.Builder()
@@ -274,7 +274,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testUpdate_clearAllTypes() throws Exception {
+  void testUpdate_clearAllTypes() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     persistSimpleResource(
         new RegistrarContact.Builder()
@@ -293,7 +293,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testCreate_withAdminType() throws Exception {
+  void testCreate_withAdminType() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     runCommandForced(
         "--mode=CREATE",
@@ -322,7 +322,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testDelete() throws Exception {
+  void testDelete() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").getContacts()).isNotEmpty();
     runCommandForced(
         "--mode=DELETE",
@@ -332,7 +332,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testDelete_failsOnDomainWhoisAbuseContact() {
+  void testDelete_failsOnDomainWhoisAbuseContact() {
     RegistrarContact registrarContact = loadRegistrar("NewRegistrar").getContacts().asList().get(0);
     persistSimpleResource(
         registrarContact.asBuilder().setVisibleInDomainWhoisAsAbuse(true).build());
@@ -347,7 +347,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testCreate_withConsoleAccessEnabled() throws Exception {
+  void testCreate_withConsoleAccessEnabled() throws Exception {
     runCommandForced(
         "--mode=CREATE",
         "--name=Jim Doe",
@@ -360,7 +360,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testCreate_withNoContactTypes() throws Exception {
+  void testCreate_withNoContactTypes() throws Exception {
     runCommandForced(
         "--mode=CREATE", "--name=Jim Doe", "--email=jim.doe@example.com", "NewRegistrar");
     RegistrarContact registrarContact = loadRegistrar("NewRegistrar").getContacts().asList().get(1);
@@ -368,7 +368,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testCreate_syncingRequiredSetToTrue() throws Exception {
+  void testCreate_syncingRequiredSetToTrue() throws Exception {
     persistResource(
         loadRegistrar("NewRegistrar").asBuilder().setContactsRequireSyncing(false).build());
 
@@ -379,7 +379,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testCreate_setAllowedToSetRegistryLockPassword() throws Exception {
+  void testCreate_setAllowedToSetRegistryLockPassword() throws Exception {
     runCommandForced(
         "--mode=CREATE",
         "--name=Jim Doe",
@@ -393,7 +393,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testUpdate_setAllowedToSetRegistryLockPassword() throws Exception {
+  void testUpdate_setAllowedToSetRegistryLockPassword() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     RegistrarContact registrarContact =
         persistSimpleResource(
@@ -436,7 +436,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testUpdate_setAllowedToSetRegistryLockPassword_removesOldPassword() throws Exception {
+  void testUpdate_setAllowedToSetRegistryLockPassword_removesOldPassword() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     RegistrarContact registrarContact =
         persistSimpleResource(
@@ -460,7 +460,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testCreate_failure_badEmail() {
+  void testCreate_failure_badEmail() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -473,7 +473,7 @@ public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContac
   }
 
   @Test
-  public void testCreate_failure_nullEmail() {
+  void testCreate_failure_nullEmail() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

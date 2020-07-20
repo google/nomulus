@@ -21,8 +21,7 @@ import google.registry.tools.server.ListRegistrarsAction;
  *
  * @see ListObjectsCommandTestCase
  */
-public class ListRegistrarsCommandTest
-    extends ListObjectsCommandTestCase<ListRegistrarsCommand> {
+class ListRegistrarsCommandTest extends ListObjectsCommandTestCase<ListRegistrarsCommand> {
 
   @Override
   final String getTaskPath() {

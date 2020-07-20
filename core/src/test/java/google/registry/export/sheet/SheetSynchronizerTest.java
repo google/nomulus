@@ -18,7 +18,7 @@ import static com.google.common.collect.Lists.newArrayList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.api.services.sheets.v4.Sheets;
@@ -91,9 +91,9 @@ public class SheetSynchronizerTest {
   public void testSynchronize_dataAndSheetEmpty_doNothing() throws Exception {
     existingSheet.add(createRow("a", "b"));
     sheetSynchronizer.synchronize("aSheetId", data);
-    verifyZeroInteractions(appendReq);
-    verifyZeroInteractions(clearReq);
-    verifyZeroInteractions(updateReq);
+    verifyNoInteractions(appendReq);
+    verifyNoInteractions(clearReq);
+    verifyNoInteractions(updateReq);
   }
 
   @Test
@@ -103,8 +103,8 @@ public class SheetSynchronizerTest {
     data = ImmutableList.of(ImmutableMap.of("a", "val1", "b", "val2"));
     sheetSynchronizer.synchronize("aSheetId", data);
 
-    verifyZeroInteractions(appendReq);
-    verifyZeroInteractions(clearReq);
+    verifyNoInteractions(appendReq);
+    verifyNoInteractions(clearReq);
 
     BatchUpdateValuesRequest expectedRequest = new BatchUpdateValuesRequest();
     List<List<Object>> expectedVals = newArrayList();
@@ -122,8 +122,8 @@ public class SheetSynchronizerTest {
     data = ImmutableList.of(ImmutableMap.of("a", "val1", "b", "val2", "d", "val3"));
     sheetSynchronizer.synchronize("aSheetId", data);
 
-    verifyZeroInteractions(appendReq);
-    verifyZeroInteractions(clearReq);
+    verifyNoInteractions(appendReq);
+    verifyNoInteractions(clearReq);
 
     BatchUpdateValuesRequest expectedRequest = new BatchUpdateValuesRequest();
     List<List<Object>> expectedVals = newArrayList();
@@ -141,8 +141,8 @@ public class SheetSynchronizerTest {
     data = ImmutableList.of(ImmutableMap.of("a", "val1", "b", "paddedVal", "d", "val3"));
     sheetSynchronizer.synchronize("aSheetId", data);
 
-    verifyZeroInteractions(appendReq);
-    verifyZeroInteractions(clearReq);
+    verifyNoInteractions(appendReq);
+    verifyNoInteractions(clearReq);
 
     BatchUpdateValuesRequest expectedRequest = new BatchUpdateValuesRequest();
     List<List<Object>> expectedVals = newArrayList();
@@ -162,7 +162,7 @@ public class SheetSynchronizerTest {
         ImmutableMap.of("a", "val3", "b", "val4"));
     sheetSynchronizer.synchronize("aSheetId", data);
 
-    verifyZeroInteractions(clearReq);
+    verifyNoInteractions(clearReq);
 
     BatchUpdateValuesRequest expectedRequest = new BatchUpdateValuesRequest();
     List<List<Object>> updatedVals = newArrayList();
@@ -188,6 +188,6 @@ public class SheetSynchronizerTest {
     sheetSynchronizer.synchronize("aSheetId", data);
 
     verify(values).clear("aSheetId", "Registrars!3:4", new ClearValuesRequest());
-    verifyZeroInteractions(updateReq);
+    verifyNoInteractions(updateReq);
   }
 }

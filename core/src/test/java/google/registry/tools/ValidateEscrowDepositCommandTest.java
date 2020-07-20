@@ -19,17 +19,13 @@ import static org.junit.Assert.assertThrows;
 
 import google.registry.rde.RdeTestData;
 import google.registry.xml.XmlException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ValidateEscrowDepositCommand}. */
-@RunWith(JUnit4.class)
-public class ValidateEscrowDepositCommandTest
-    extends CommandTestCase<ValidateEscrowDepositCommand> {
+class ValidateEscrowDepositCommandTest extends CommandTestCase<ValidateEscrowDepositCommand> {
 
   @Test
-  public void testRun_plainXml() throws Exception {
+  void testRun_plainXml() throws Exception {
     String file = writeToTmpFile(RdeTestData.loadBytes("deposit_full.xml").read());
     runCommand("--input=" + file);
     assertThat(getStdoutAsString()).isEqualTo(""
@@ -64,7 +60,7 @@ public class ValidateEscrowDepositCommandTest
   }
 
   @Test
-  public void testRun_plainXml_badReference() throws Exception {
+  void testRun_plainXml_badReference() throws Exception {
     String file = writeToTmpFile(RdeTestData.loadBytes("deposit_full_badref.xml").read());
     runCommand("--input=" + file);
     assertThat(getStdoutAsString()).isEqualTo(""
@@ -100,7 +96,7 @@ public class ValidateEscrowDepositCommandTest
   }
 
   @Test
-  public void testRun_badXml() throws Exception {
+  void testRun_badXml() throws Exception {
     String file = writeToTmpFile(RdeTestData.loadFile("deposit_full.xml").substring(0, 2000));
     XmlException thrown = assertThrows(XmlException.class, () -> runCommand("--input=" + file));
     assertThat(thrown)

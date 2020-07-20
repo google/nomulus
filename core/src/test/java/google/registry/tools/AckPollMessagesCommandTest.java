@@ -31,8 +31,8 @@ import google.registry.persistence.VKey;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link AckPollMessagesCommand}. */
@@ -40,8 +40,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
 
   private FakeClock clock = new FakeClock(DateTime.parse("2015-02-04T08:16:32.064Z"));
 
-  @RegisterExtension
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
   @BeforeEach
   final void beforeEach() {

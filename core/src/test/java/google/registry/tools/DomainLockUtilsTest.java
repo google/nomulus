@@ -90,11 +90,12 @@ public final class DomainLockUtilsTest {
 
     AppEngineServiceUtils appEngineServiceUtils = mock(AppEngineServiceUtils.class);
     when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
-    domainLockUtils = new DomainLockUtils(
-        new DeterministicStringGenerator(Alphabets.BASE_58),
-        "adminreg",
-        AsyncTaskEnqueuerTest.createForTesting(
-            appEngineServiceUtils, clock, standardSeconds(90)));
+    domainLockUtils =
+        new DomainLockUtils(
+            new DeterministicStringGenerator(Alphabets.BASE_58),
+            "adminreg",
+            AsyncTaskEnqueuerTest.createForTesting(
+                appEngineServiceUtils, clock, standardSeconds(90)));
   }
 
   @Test

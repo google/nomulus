@@ -20,8 +20,8 @@ import static org.junit.Assert.assertThrows;
 import com.beust.jcommander.ParameterException;
 import google.registry.tools.server.ToolsTestData;
 import java.io.ByteArrayInputStream;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ExecuteEppCommand}. */
 class ExecuteEppCommandTest extends EppToolCommandTestCase<ExecuteEppCommand> {

@@ -26,8 +26,8 @@ import google.registry.testing.InjectRule;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.AppEngineServiceUtils;
 import java.util.Optional;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -38,8 +38,7 @@ import org.mockito.quality.Strictness;
 public class GenerateEscrowDepositCommandTest
     extends CommandTestCase<GenerateEscrowDepositCommand> {
 
-  @RegisterExtension
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
   @Mock AppEngineServiceUtils appEngineServiceUtils;
 

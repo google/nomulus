@@ -21,7 +21,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.tools.server.ToolsTestData;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link MutatingEppToolCommand}. */
 public class MutatingEppToolCommandTest extends EppToolCommandTestCase<MutatingEppToolCommand> {
@@ -50,7 +50,7 @@ public class MutatingEppToolCommandTest extends EppToolCommandTestCase<MutatingE
   }
 
   @Test
-  public void testSuccess_dryrun() throws Exception {
+  void testSuccess_dryrun() throws Exception {
     // The choice of xml file is arbitrary.
     runCommand(
         "--client=NewRegistrar",
@@ -60,7 +60,7 @@ public class MutatingEppToolCommandTest extends EppToolCommandTestCase<MutatingE
   }
 
   @Test
-  public void testFailure_cantUseForceWithDryRun() {
+  void testFailure_cantUseForceWithDryRun() {
     Exception e =
         assertThrows(
             IllegalArgumentException.class,

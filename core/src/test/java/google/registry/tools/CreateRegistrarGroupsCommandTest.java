@@ -26,8 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 /** Unit tests for {@link CreateRegistrarGroupsCommand}. */
-class CreateRegistrarGroupsCommandTest extends
-    CommandTestCase<CreateRegistrarGroupsCommand> {
+class CreateRegistrarGroupsCommandTest extends CommandTestCase<CreateRegistrarGroupsCommand> {
 
   @Mock private AppEngineConnection connection;
 

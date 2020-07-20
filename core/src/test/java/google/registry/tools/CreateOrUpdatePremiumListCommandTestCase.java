@@ -28,11 +28,9 @@ import java.nio.charset.StandardCharsets;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 
-/**
- * Base class for common testing setup for create and update commands for Premium Lists.
- */
-abstract class CreateOrUpdatePremiumListCommandTestCase<
-        T extends CreateOrUpdatePremiumListCommand> extends CommandTestCase<T> {
+/** Base class for common testing setup for create and update commands for Premium Lists. */
+abstract class CreateOrUpdatePremiumListCommandTestCase<T extends CreateOrUpdatePremiumListCommand>
+    extends CommandTestCase<T> {
 
   @Captor
   ArgumentCaptor<ImmutableMap<String, String>> urlParamCaptor;

@@ -21,7 +21,7 @@ import google.registry.tools.server.ListHostsAction;
  *
  * @see ListObjectsCommandTestCase
  */
-public class ListHostsCommandTest extends ListObjectsCommandTestCase<ListHostsCommand> {
+class ListHostsCommandTest extends ListObjectsCommandTestCase<ListHostsCommand> {
 
   @Override
   final String getTaskPath() {

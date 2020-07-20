@@ -40,8 +40,7 @@ public class CompareDbBackupsTest {
   private final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
   private PrintStream orgStdout;
 
-  @TempDir
-  Path tmpDir;
+  @TempDir Path tmpDir;
 
   @RegisterExtension
   public DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();

@@ -80,8 +80,7 @@ class AuthModuleTest {
           .setClientAuthentication(new ClientParametersAuthentication(CLIENT_ID, CLIENT_SECRET))
           .build();
 
-  @Mock
-  DataStore<StoredCredential> dataStore;
+  @Mock DataStore<StoredCredential> dataStore;
 
   class FakeDataStoreFactory extends AbstractDataStoreFactory {
     @Override

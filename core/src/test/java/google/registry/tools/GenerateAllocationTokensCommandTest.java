@@ -57,8 +57,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 
 /** Unit tests for {@link GenerateAllocationTokensCommand}. */
-class GenerateAllocationTokensCommandTest
-    extends CommandTestCase<GenerateAllocationTokensCommand> {
+class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAllocationTokensCommand> {
 
   @BeforeEach
   void beforeEach() {

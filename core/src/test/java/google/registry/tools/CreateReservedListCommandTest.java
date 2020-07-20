@@ -30,12 +30,12 @@ import google.registry.model.registry.label.ReservedList;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
 import google.registry.model.registry.label.ReservedListSqlDao;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CreateReservedListCommand}. */
-class CreateReservedListCommandTest extends
-    CreateOrUpdateReservedListCommandTestCase<CreateReservedListCommand> {
+class CreateReservedListCommandTest
+    extends CreateOrUpdateReservedListCommandTestCase<CreateReservedListCommand> {
 
   @BeforeEach
   void beforeEach() {

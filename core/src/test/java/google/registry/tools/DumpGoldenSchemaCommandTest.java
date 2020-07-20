@@ -27,8 +27,7 @@ class DumpGoldenSchemaCommandTest extends CommandTestCase<DumpGoldenSchemaComman
   @Test
   void testSchemaGeneration() throws Exception {
     File schemaFile = tmpDir.resolve("golden.sql").toFile();
-    runCommand(
-        "--output=" + schemaFile.toString(), "--start_postgresql");
+    runCommand("--output=" + schemaFile.toString(), "--start_postgresql");
     assertThat(schemaFile.length()).isGreaterThan(1);
   }
 }

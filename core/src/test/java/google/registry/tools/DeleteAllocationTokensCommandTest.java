@@ -27,12 +27,11 @@ import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.reporting.HistoryEntry;
 import java.util.Collection;
 import javax.annotation.Nullable;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DeleteAllocationTokensCommand}. */
-class DeleteAllocationTokensCommandTest
-    extends CommandTestCase<DeleteAllocationTokensCommand> {
+class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocationTokensCommand> {
 
   private AllocationToken preRed1;
   private AllocationToken preRed2;

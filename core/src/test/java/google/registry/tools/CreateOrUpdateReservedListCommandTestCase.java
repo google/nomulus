@@ -32,9 +32,8 @@ import java.io.File;
 import java.io.IOException;
 import javax.persistence.EntityManager;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Base class for common testing setup for create and update commands for Reserved Lists.

@@ -19,8 +19,8 @@ import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import google.registry.model.registrar.Registrar.Type;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CheckDomainCommand}. */
 class CheckDomainCommandTest extends EppToolCommandTestCase<CheckDomainCommand> {

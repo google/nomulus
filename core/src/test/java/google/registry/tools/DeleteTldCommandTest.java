@@ -28,8 +28,8 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.RegistryNotFoundException;
 import google.registry.model.registry.Registry.TldType;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DeleteTldCommand}. */
 class DeleteTldCommandTest extends CommandTestCase<DeleteTldCommand> {

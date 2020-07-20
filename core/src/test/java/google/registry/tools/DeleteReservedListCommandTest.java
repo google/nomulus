@@ -23,8 +23,8 @@ import static org.junit.Assert.assertThrows;
 
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DeleteReservedListCommand}. */
 class DeleteReservedListCommandTest extends CommandTestCase<DeleteReservedListCommand> {
