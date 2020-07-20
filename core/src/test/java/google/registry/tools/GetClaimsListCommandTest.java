@@ -24,13 +24,13 @@ import google.registry.model.tmch.ClaimsListShard;
 import java.io.File;
 import java.nio.file.Files;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetClaimsListCommand}. */
-public class GetClaimsListCommandTest extends CommandTestCase<GetClaimsListCommand> {
+class GetClaimsListCommandTest extends CommandTestCase<GetClaimsListCommand> {
 
   @Test
-  public void testSuccess_getWorks() throws Exception {
+  void testSuccess_getWorks() throws Exception {
     ClaimsListShard.create(DateTime.now(UTC), ImmutableMap.of("a", "1", "b", "2")).save();
     File output = tmpDir.resolve("claims.txt").toFile();
     runCommand("--output=" + output.getAbsolutePath());
@@ -38,7 +38,7 @@ public class GetClaimsListCommandTest extends CommandTestCase<GetClaimsListComma
   }
 
   @Test
-  public void testSuccess_endsWithNewline() throws Exception {
+  void testSuccess_endsWithNewline() throws Exception {
     ClaimsListShard.create(DateTime.now(UTC), ImmutableMap.of("a", "1")).save();
     File output = tmpDir.resolve("claims.txt").toFile();
     runCommand("--output=" + output.getAbsolutePath());

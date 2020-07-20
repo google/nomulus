@@ -31,6 +31,8 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.testing.CertificateSamples;
 import google.registry.util.CidrAddressBlock;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -160,7 +162,8 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
   }
 
   @Test
-  void testFailure_certHashAndCertFile() {
+  void testFailure_certHashAndCertFile() throws Exception {
+    Path certFile = Files.createFile(tmpDir.resolve("temp.crt"));
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -168,7 +171,7 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
                 "--client=NewRegistrar",
                 "--password=" + PASSWORD,
                 "--cert_hash=" + CERT_HASH,
-                "--cert_file=temp.crt",
+                "--cert_file=" + certFile.toString(),
                 "--ip_address=" + CLIENT_IP));
   }
 }
