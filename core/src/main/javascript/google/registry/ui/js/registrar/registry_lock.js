@@ -92,6 +92,7 @@ registry.registrar.RegistryLock.prototype.fillLocksPage_ = function(e) {
             lockEnabledForContact: locksDetails.lockEnabledForContact});
 
     if (locksDetails.lockEnabledForContact) {
+      this.registryLockEmailAddress = locksDetails.email;
       // Listen to the lock-domain 'submit' button click
       var lockButton = goog.dom.getRequiredElement('button-lock-domain');
       goog.events.listen(lockButton, goog.events.EventType.CLICK, this.onLockDomain_, false, this);
@@ -116,7 +117,10 @@ registry.registrar.RegistryLock.prototype.showModal_ = function(targetElement, d
   // attach the modal to the parent element so focus remains correct if the user closes the modal
   var modalElement = goog.soy.renderAsElement(
       registry.soy.registrar.registrylock.confirmModal,
-      {domain: domain, isLock: isLock, isAdmin: this.isAdmin});
+      {domain: domain,
+          isLock: isLock,
+          isAdmin: this.isAdmin,
+          emailAddress: this.registryLockEmailAddress});
   parentElement.prepend(modalElement);
   if (domain == null) {
     goog.dom.getRequiredElement('domain-lock-input-value').focus();
