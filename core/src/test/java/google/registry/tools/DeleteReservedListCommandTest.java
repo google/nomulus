@@ -23,28 +23,28 @@ import static org.junit.Assert.assertThrows;
 
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 /** Unit tests for {@link DeleteReservedListCommand}. */
-public class DeleteReservedListCommandTest extends CommandTestCase<DeleteReservedListCommand> {
+class DeleteReservedListCommandTest extends CommandTestCase<DeleteReservedListCommand> {
 
-  ReservedList reservedList;
+  private ReservedList reservedList;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     reservedList = persistReservedList("common", "blah,FULLY_BLOCKED");
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     assertThat(reservedList.getReservedListEntries()).hasSize(1);
     runCommandForced("--name=common");
     assertThat(ReservedList.get("common")).isEmpty();
   }
 
   @Test
-  public void testFailure_whenReservedListDoesNotExist() {
+  void testFailure_whenReservedListDoesNotExist() {
     String expectedError =
         "Cannot delete the reserved list doesntExistReservedList because it doesn't exist.";
     IllegalArgumentException thrown =
@@ -55,7 +55,7 @@ public class DeleteReservedListCommandTest extends CommandTestCase<DeleteReserve
   }
 
   @Test
-  public void testFailure_whenReservedListIsInUse() {
+  void testFailure_whenReservedListIsInUse() {
     createTld("xn--q9jyb4c");
     persistResource(Registry.get("xn--q9jyb4c").asBuilder().setReservedLists(reservedList).build());
     IllegalArgumentException thrown =

@@ -31,7 +31,7 @@ import org.mockito.Captor;
 /**
  * Base class for common testing setup for create and update commands for Premium Lists.
  */
-public abstract class CreateOrUpdatePremiumListCommandTestCase<
+abstract class CreateOrUpdatePremiumListCommandTestCase<
         T extends CreateOrUpdatePremiumListCommand> extends CommandTestCase<T> {
 
   @Captor

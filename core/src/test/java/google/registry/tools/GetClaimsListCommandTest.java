@@ -32,7 +32,7 @@ public class GetClaimsListCommandTest extends CommandTestCase<GetClaimsListComma
   @Test
   public void testSuccess_getWorks() throws Exception {
     ClaimsListShard.create(DateTime.now(UTC), ImmutableMap.of("a", "1", "b", "2")).save();
-    File output = tmpDir.newFile();
+    File output = tmpDir.resolve("claims.txt").toFile();
     runCommand("--output=" + output.getAbsolutePath());
     assertThat(readAllLines(output.toPath(), UTF_8)).containsExactly("a,1", "b,2");
   }
@@ -40,7 +40,7 @@ public class GetClaimsListCommandTest extends CommandTestCase<GetClaimsListComma
   @Test
   public void testSuccess_endsWithNewline() throws Exception {
     ClaimsListShard.create(DateTime.now(UTC), ImmutableMap.of("a", "1")).save();
-    File output = tmpDir.newFile();
+    File output = tmpDir.resolve("claims.txt").toFile();
     runCommand("--output=" + output.getAbsolutePath());
     assertThat(new String(Files.readAllBytes(output.toPath()), UTF_8)).endsWith("\n");
   }

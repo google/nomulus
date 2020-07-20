@@ -30,20 +30,20 @@ import google.registry.model.registry.label.ReservedList;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
 import google.registry.model.registry.label.ReservedListSqlDao;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 /** Unit tests for {@link CreateReservedListCommand}. */
-public class CreateReservedListCommandTest extends
+class CreateReservedListCommandTest extends
     CreateOrUpdateReservedListCommandTestCase<CreateReservedListCommand> {
 
-  @Before
-  public void initTest() {
+  @BeforeEach
+  void beforeEach() {
     createTlds("xn--q9jyb4c", "soy");
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
     ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();
@@ -53,13 +53,13 @@ public class CreateReservedListCommandTest extends
   }
 
   @Test
-  public void testSuccess_unspecifiedNameDefaultsToFileName() throws Exception {
+  void testSuccess_unspecifiedNameDefaultsToFileName() throws Exception {
     runCommandForced("--input=" + reservedTermsPath);
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
   }
 
   @Test
-  public void testSuccess_timestampsSetCorrectly() throws Exception {
+  void testSuccess_timestampsSetCorrectly() throws Exception {
     DateTime before = DateTime.now(UTC);
     runCommandForced("--input=" + reservedTermsPath);
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
@@ -69,28 +69,28 @@ public class CreateReservedListCommandTest extends
   }
 
   @Test
-  public void testSuccess_shouldPublishDefaultsToTrue() throws Exception {
+  void testSuccess_shouldPublishDefaultsToTrue() throws Exception {
     runCommandForced("--input=" + reservedTermsPath);
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved").get().getShouldPublish()).isTrue();
   }
 
   @Test
-  public void testSuccess_shouldPublishSetToTrue_works() throws Exception {
+  void testSuccess_shouldPublishSetToTrue_works() throws Exception {
     runCommandForced("--input=" + reservedTermsPath, "--should_publish=true");
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved").get().getShouldPublish()).isTrue();
   }
 
   @Test
-  public void testSuccess_shouldPublishSetToFalse_works() throws Exception {
+  void testSuccess_shouldPublishSetToFalse_works() throws Exception {
     runCommandForced("--input=" + reservedTermsPath, "--should_publish=false");
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved").get().getShouldPublish()).isFalse();
   }
 
   @Test
-  public void testFailure_reservedListWithThatNameAlreadyExists() {
+  void testFailure_reservedListWithThatNameAlreadyExists() {
     ReservedList rl = persistReservedList("xn--q9jyb4c_foo", "jones,FULLY_BLOCKED");
     persistResource(Registry.get("xn--q9jyb4c").asBuilder().setReservedLists(rl).build());
     IllegalArgumentException thrown =
@@ -101,90 +101,90 @@ public class CreateReservedListCommandTest extends
   }
 
   @Test
-  public void testNamingRules_commonReservedList() throws Exception {
+  void testNamingRules_commonReservedList() throws Exception {
     runCommandForced("--name=common_abuse-list", "--input=" + reservedTermsPath);
     assertThat(ReservedList.get("common_abuse-list")).isPresent();
   }
 
   @Test
-  public void testNamingRules_tldThatDoesNotExist_succeedsWithOverride() throws Exception {
+  void testNamingRules_tldThatDoesNotExist_succeedsWithOverride() throws Exception {
     runNameTestWithOverride("footld_reserved-list");
   }
 
   @Test
-  public void testNamingRules_tldThatDoesNotExist_failsWithoutOverride() {
+  void testNamingRules_tldThatDoesNotExist_failsWithoutOverride() {
     runNameTestExpectedFailure("footld_reserved-list", "TLD footld does not exist");
   }
 
   @Test
-  public void testNamingRules_underscoreIsMissing_succeedsWithOverride() throws Exception {
+  void testNamingRules_underscoreIsMissing_succeedsWithOverride() throws Exception {
     runNameTestWithOverride("random-reserved-list");
   }
 
   @Test
-  public void testNamingRules_underscoreIsMissing_failsWithoutOverride() {
+  void testNamingRules_underscoreIsMissing_failsWithoutOverride() {
     runNameTestExpectedFailure("random-reserved-list", INVALID_FORMAT_ERROR_MESSAGE);
   }
 
   @Test
-  public void testNamingRules_secondHalfOfNameIsMissing_succeedsWithOverride() throws Exception {
+  void testNamingRules_secondHalfOfNameIsMissing_succeedsWithOverride() throws Exception {
     runNameTestWithOverride("soy_");
   }
 
   @Test
-  public void testNamingRules_secondHalfOfNameIsMissing_failsWithoutOverride() {
+  void testNamingRules_secondHalfOfNameIsMissing_failsWithoutOverride() {
     runNameTestExpectedFailure("soy_", INVALID_FORMAT_ERROR_MESSAGE);
   }
 
   @Test
-  public void testNamingRules_onlyTldIsSpecifiedAsName_succeedsWithOverride() throws Exception {
+  void testNamingRules_onlyTldIsSpecifiedAsName_succeedsWithOverride() throws Exception {
     runNameTestWithOverride("soy");
   }
 
   @Test
-  public void testNamingRules_onlyTldIsSpecifiedAsName_failsWithoutOverride() {
+  void testNamingRules_onlyTldIsSpecifiedAsName_failsWithoutOverride() {
     runNameTestExpectedFailure("soy", INVALID_FORMAT_ERROR_MESSAGE);
   }
 
   @Test
-  public void testNamingRules_commonAsListName_succeedsWithOverride() throws Exception {
+  void testNamingRules_commonAsListName_succeedsWithOverride() throws Exception {
     runNameTestWithOverride("invalidtld_common");
   }
 
   @Test
-  public void testNamingRules_commonAsListName_failsWithoutOverride() {
+  void testNamingRules_commonAsListName_failsWithoutOverride() {
     runNameTestExpectedFailure("invalidtld_common", "TLD invalidtld does not exist");
   }
 
   @Test
-  public void testNamingRules_too_many_underscores_succeedsWithOverride() throws Exception {
+  void testNamingRules_too_many_underscores_succeedsWithOverride() throws Exception {
     runNameTestWithOverride("soy_buffalo_buffalo_buffalo");
   }
 
   @Test
-  public void testNamingRules_too_many_underscores_failsWithoutOverride() {
+  void testNamingRules_too_many_underscores_failsWithoutOverride() {
     runNameTestExpectedFailure("soy_buffalo_buffalo_buffalo", INVALID_FORMAT_ERROR_MESSAGE);
   }
 
   @Test
-  public void testNamingRules_withWeirdCharacters_succeedsWithOverride() throws Exception {
+  void testNamingRules_withWeirdCharacters_succeedsWithOverride() throws Exception {
     runNameTestWithOverride("soy_$oy");
   }
 
   @Test
-  public void testNamingRules_withWeirdCharacters_failsWithoutOverride() {
+  void testNamingRules_withWeirdCharacters_failsWithoutOverride() {
     runNameTestExpectedFailure("soy_$oy", INVALID_FORMAT_ERROR_MESSAGE);
   }
 
   @Test
-  public void testSaveToCloudSql_succeeds() throws Exception {
+  void testSaveToCloudSql_succeeds() throws Exception {
     runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
     verifyXnq9jyb4cInDatastore();
     verifyXnq9jyb4cInCloudSql();
   }
 
   @Test
-  public void testSaveToCloudSql_noExceptionThrownWhenSaveFail() throws Exception {
+  void testSaveToCloudSql_noExceptionThrownWhenSaveFail() throws Exception {
     // Note that, during the dual-write phase, we want to make sure that no exception will be
     // thrown if saving reserved list to Cloud SQL fails.
     ReservedListSqlDao.save(

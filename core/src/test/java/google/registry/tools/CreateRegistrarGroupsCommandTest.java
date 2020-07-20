@@ -21,23 +21,23 @@ import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 /** Unit tests for {@link CreateRegistrarGroupsCommand}. */
-public class CreateRegistrarGroupsCommandTest extends
+class CreateRegistrarGroupsCommandTest extends
     CommandTestCase<CreateRegistrarGroupsCommand> {
 
   @Mock private AppEngineConnection connection;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     command.setConnection(connection);
   }
 
   @Test
-  public void test_createGroupsForTwoRegistrars() throws Exception {
+  void test_createGroupsForTwoRegistrars() throws Exception {
     runCommandForced("NewRegistrar", "TheRegistrar");
     verify(connection)
         .sendPostRequest(
@@ -55,7 +55,7 @@ public class CreateRegistrarGroupsCommandTest extends
   }
 
   @Test
-  public void test_throwsExceptionForNonExistentRegistrar() {
+  void test_throwsExceptionForNonExistentRegistrar() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

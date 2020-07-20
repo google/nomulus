@@ -24,19 +24,19 @@ import com.beust.jcommander.ParameterException;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.testing.DeterministicStringGenerator;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 /** Unit tests for {@link CreateDomainCommand}. */
-public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand> {
+class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand> {
 
-  @Before
-  public void initCommand() {
+  @BeforeEach
+  void beforeEach() {
     command.passwordGenerator = new DeterministicStringGenerator("abcdefghijklmnopqrstuvwxyz");
   }
 
   @Test
-  public void testSuccess_complete() throws Exception {
+  void testSuccess_complete() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
         "--period=1",
@@ -52,7 +52,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testSuccess_completeWithSquareBrackets() throws Exception {
+  void testSuccess_completeWithSquareBrackets() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
         "--period=1",
@@ -68,7 +68,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testSuccess_minimal() throws Exception {
+  void testSuccess_minimal() throws Exception {
     // Test that each optional field can be omitted. Also tests the auto-gen password.
     runCommandForced(
         "--client=NewRegistrar",
@@ -80,7 +80,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testSuccess_multipleDomains() throws Exception {
+  void testSuccess_multipleDomains() throws Exception {
     createTld("abc");
     runCommandForced(
         "--client=NewRegistrar",
@@ -95,7 +95,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testSuccess_premiumJpyDomain() throws Exception {
+  void testSuccess_premiumJpyDomain() throws Exception {
     createTld("baar");
     persistPremiumList("baar", "parajiumu,JPY 96083");
     persistResource(
@@ -118,7 +118,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testSuccess_multipleDomainsWithPremium() throws Exception {
+  void testSuccess_multipleDomainsWithPremium() throws Exception {
     createTld("abc");
     runCommandForced(
         "--client=NewRegistrar",
@@ -139,7 +139,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testFailure_duplicateDomains() {
+  void testFailure_duplicateDomains() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -155,7 +155,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testFailure_missingDomain() {
+  void testFailure_missingDomain() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -169,7 +169,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testFailure_missingClientId() {
+  void testFailure_missingClientId() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -183,7 +183,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testFailure_missingRegistrant() {
+  void testFailure_missingRegistrant() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -197,7 +197,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testFailure_missingAdmins() {
+  void testFailure_missingAdmins() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -211,7 +211,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testFailure_missingTechs() {
+  void testFailure_missingTechs() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -225,7 +225,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testFailure_tooManyNameServers() {
+  void testFailure_tooManyNameServers() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -244,7 +244,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testFailure_tooManyNameServers_usingSquareBracketRange() {
+  void testFailure_tooManyNameServers_usingSquareBracketRange() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -260,7 +260,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testFailure_badPeriod() {
+  void testFailure_badPeriod() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -276,7 +276,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testFailure_dsRecordsNot4Parts() {
+  void testFailure_dsRecordsNot4Parts() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -292,7 +292,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testFailure_keyTagNotNumber() {
+  void testFailure_keyTagNotNumber() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -308,7 +308,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testFailure_algNotNumber() {
+  void testFailure_algNotNumber() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -324,7 +324,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testFailure_digestTypeNotNumber() {
+  void testFailure_digestTypeNotNumber() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -340,7 +340,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testFailure_digestNotHex() {
+  void testFailure_digestNotHex() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -356,7 +356,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testFailure_digestNotEvenLengthed() {
+  void testFailure_digestNotEvenLengthed() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -372,7 +372,7 @@ public class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomain
   }
 
   @Test
-  public void testFailure_cantForceCreatePremiumDomain_withoutForcePremiums() {
+  void testFailure_cantForceCreatePremiumDomain_withoutForcePremiums() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

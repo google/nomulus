@@ -27,11 +27,11 @@ import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.reporting.HistoryEntry;
 import java.util.Collection;
 import javax.annotation.Nullable;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 /** Unit tests for {@link DeleteAllocationTokensCommand}. */
-public class DeleteAllocationTokensCommandTest
+class DeleteAllocationTokensCommandTest
     extends CommandTestCase<DeleteAllocationTokensCommand> {
 
   private AllocationToken preRed1;
@@ -41,8 +41,8 @@ public class DeleteAllocationTokensCommandTest
   private AllocationToken othrRed;
   private AllocationToken othrNot;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     createTlds("foo", "bar");
     preRed1 = persistToken("prefix12345AA", null, true);
     preRed2 = persistToken("prefixgh8907a", null, true);
@@ -53,7 +53,7 @@ public class DeleteAllocationTokensCommandTest
   }
 
   @Test
-  public void test_deleteOnlyUnredeemedTokensWithPrefix() throws Exception {
+  void test_deleteOnlyUnredeemedTokensWithPrefix() throws Exception {
     runCommandForced("--prefix", "prefix");
     assertThat(reloadTokens(preNot1, preNot2)).isEmpty();
     assertThat(reloadTokens(preRed1, preRed2, othrRed, othrNot))
@@ -61,7 +61,7 @@ public class DeleteAllocationTokensCommandTest
   }
 
   @Test
-  public void test_deleteSingleAllocationToken() throws Exception {
+  void test_deleteSingleAllocationToken() throws Exception {
     runCommandForced("--prefix", "asdgfho7HASDS");
     assertThat(reloadTokens(othrNot)).isEmpty();
     assertThat(reloadTokens(preRed1, preRed2, preNot1, preNot2, othrRed))
@@ -69,7 +69,7 @@ public class DeleteAllocationTokensCommandTest
   }
 
   @Test
-  public void test_deleteParticularTokens() throws Exception {
+  void test_deleteParticularTokens() throws Exception {
     runCommandForced("--tokens", "prefix2978204,asdgfho7HASDS");
     assertThat(reloadTokens(preNot1, othrNot)).isEmpty();
     assertThat(reloadTokens(preRed1, preRed2, preNot2, othrRed))
@@ -77,14 +77,14 @@ public class DeleteAllocationTokensCommandTest
   }
 
   @Test
-  public void test_deleteTokensWithNonExistentPrefix_doesNothing() throws Exception {
+  void test_deleteTokensWithNonExistentPrefix_doesNothing() throws Exception {
     runCommandForced("--prefix", "nonexistent");
     assertThat(reloadTokens(preRed1, preRed2, preNot1, preNot2, othrRed, othrNot))
         .containsExactly(preRed1, preRed2, preNot1, preNot2, othrRed, othrNot);
   }
 
   @Test
-  public void test_dryRun_deletesNothing() throws Exception {
+  void test_dryRun_deletesNothing() throws Exception {
     runCommandForced("--prefix", "prefix", "--dry_run");
     assertThat(reloadTokens(preRed1, preRed2, preNot1, preNot2, othrRed, othrNot))
         .containsExactly(preRed1, preRed2, preNot1, preNot2, othrRed, othrNot);
@@ -92,7 +92,7 @@ public class DeleteAllocationTokensCommandTest
   }
 
   @Test
-  public void test_defaultOptions_doesntDeletePerDomainTokens() throws Exception {
+  void test_defaultOptions_doesntDeletePerDomainTokens() throws Exception {
     AllocationToken preDom1 = persistToken("prefixasdfg897as", "foo.bar", false);
     AllocationToken preDom2 = persistToken("prefix98HAZXadbn", "foo.bar", true);
     runCommandForced("--prefix", "prefix");
@@ -102,7 +102,7 @@ public class DeleteAllocationTokensCommandTest
   }
 
   @Test
-  public void test_withDomains_doesDeletePerDomainTokens() throws Exception {
+  void test_withDomains_doesDeletePerDomainTokens() throws Exception {
     AllocationToken preDom1 = persistToken("prefixasdfg897as", "foo.bar", false);
     AllocationToken preDom2 = persistToken("prefix98HAZXadbn", "foo.bar", true);
     runCommandForced("--prefix", "prefix", "--with_domains");
@@ -112,7 +112,7 @@ public class DeleteAllocationTokensCommandTest
   }
 
   @Test
-  public void testSkipUnlimitedUseTokens() throws Exception {
+  void testSkipUnlimitedUseTokens() throws Exception {
     AllocationToken unlimitedUseToken =
         persistResource(
             new AllocationToken.Builder()
@@ -124,7 +124,7 @@ public class DeleteAllocationTokensCommandTest
   }
 
   @Test
-  public void test_batching() throws Exception {
+  void test_batching() throws Exception {
     for (int i = 0; i < 50; i++) {
       persistToken(String.format("batch%2d", i), null, i % 2 == 0);
     }
@@ -134,7 +134,7 @@ public class DeleteAllocationTokensCommandTest
   }
 
   @Test
-  public void test_prefixIsRequired() {
+  void test_prefixIsRequired() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, this::runCommandForced);
     assertThat(thrown)
@@ -143,7 +143,7 @@ public class DeleteAllocationTokensCommandTest
   }
 
   @Test
-  public void testFailure_bothPrefixAndTokens() {
+  void testFailure_bothPrefixAndTokens() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -154,7 +154,7 @@ public class DeleteAllocationTokensCommandTest
   }
 
   @Test
-  public void testFailure_emptyPrefix() {
+  void testFailure_emptyPrefix() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommandForced("--prefix", ""));
     assertThat(thrown).hasMessageThat().isEqualTo("Provided prefix should not be blank");

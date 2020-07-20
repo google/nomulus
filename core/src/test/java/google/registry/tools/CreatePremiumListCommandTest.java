@@ -29,23 +29,25 @@ import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
 import google.registry.tools.server.CreatePremiumListAction;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link CreatePremiumListCommand}. */
-public class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
+class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
     extends CreateOrUpdatePremiumListCommandTestCase<C> {
 
   @Mock AppEngineConnection connection;
 
-  String premiumTermsPath;
+  private String premiumTermsPath;
   String premiumTermsCsv;
-  String servletPath;
+  private String servletPath;
 
-  @Before
-  public void init() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     command.setConnection(connection);
     premiumTermsPath =
         writeToNamedTmpFile(
@@ -61,7 +63,7 @@ public class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
   }
 
   @Test
-  public void testRun() throws Exception {
+  void testRun() throws Exception {
     runCommandForced("-i=" + premiumTermsPath, "-n=foo");
     assertInStdout("Successfully");
     verifySentParams(
@@ -71,7 +73,7 @@ public class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
   }
 
   @Test
-  public void testRun_noProvidedName_usesBasenameOfInputFile() throws Exception {
+  void testRun_noProvidedName_usesBasenameOfInputFile() throws Exception {
     runCommandForced("-i=" + premiumTermsPath);
     assertInStdout("Successfully");
     verifySentParams(
@@ -82,7 +84,7 @@ public class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
   }
 
   @Test
-  public void testRun_errorResponse() throws Exception {
+  void testRun_errorResponse() throws Exception {
     reset(connection);
     command.setConnection(connection);
     when(connection.sendPostRequest(
@@ -95,13 +97,15 @@ public class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
   }
 
   @Test
-  public void testRun_noInputFileSpecified_throwsException() {
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  void testRun_noInputFileSpecified_throwsException() {
     ParameterException thrown = assertThrows(ParameterException.class, this::runCommand);
     assertThat(thrown).hasMessageThat().contains("The following option is required");
   }
 
   @Test
-  public void testRun_invalidInputData() throws Exception {
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  void testRun_invalidInputData() throws Exception {
     premiumTermsPath =
         writeToNamedTmpFile(
             "tmp_file2",

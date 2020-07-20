@@ -22,14 +22,15 @@ import google.registry.testing.DatastoreEntityExtension;
 import google.registry.tools.EntityWrapper.Property;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 public class CompareDbBackupsTest {
 
@@ -39,26 +40,25 @@ public class CompareDbBackupsTest {
   private final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
   private PrintStream orgStdout;
 
-  public final TemporaryFolder tempFs = new TemporaryFolder();
+  @TempDir
+  Path tmpDir;
 
   @RegisterExtension
   public DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
   @BeforeEach
-  public void before() throws IOException {
+  void beforeEach() {
     orgStdout = System.out;
     System.setOut(new PrintStream(stdout));
-    tempFs.create();
   }
 
   @AfterEach
-  public void after() {
+  void afterEach() {
     System.setOut(orgStdout);
-    tempFs.delete();
   }
 
   @Test
-  public void testLoadBackup() {
+  void testLoadBackup() {
     URL backupRootFolder = Resources.getResource("google/registry/tools/datastore-export");
     CompareDbBackups.main(new String[] {backupRootFolder.getPath(), backupRootFolder.getPath()});
     String output = new String(stdout.toByteArray(), UTF_8);
@@ -66,11 +66,12 @@ public class CompareDbBackupsTest {
   }
 
   @Test
-  public void testCompareBackups() throws Exception {
-
+  void testCompareBackups() throws Exception {
     // Create two directories corresponding to data dumps.
-    File dump1 = tempFs.newFolder("dump1");
-    LevelDbFileBuilder builder = new LevelDbFileBuilder(new File(dump1, "output-data1"));
+    Path dump1 = Files.createDirectory(tmpDir.resolve("dump1"));
+    Path dump2 = Files.createDirectory(tmpDir.resolve("dump2"));
+
+    LevelDbFileBuilder builder = new LevelDbFileBuilder(new File(dump1.toFile(), "output-data1"));
     builder.addEntity(
         EntityWrapper.from(
                 BASE_ID,
@@ -87,8 +88,7 @@ public class CompareDbBackupsTest {
             .getEntity());
     builder.build();
 
-    File dump2 = tempFs.newFolder("dump2");
-    builder = new LevelDbFileBuilder(new File(dump2, "output-data2"));
+    builder = new LevelDbFileBuilder(new File(dump2.toFile(), "output-data2"));
     builder.addEntity(
         EntityWrapper.from(
                 BASE_ID + 1,
@@ -105,7 +105,7 @@ public class CompareDbBackupsTest {
             .getEntity());
     builder.build();
 
-    CompareDbBackups.main(new String[] {dump1.getCanonicalPath(), dump2.getCanonicalPath()});
+    CompareDbBackups.main(new String[] {dump1.toString(), dump2.toString()});
     String output = new String(stdout.toByteArray(), UTF_8);
     assertThat(output)
         .containsMatch("(?s)1 records were removed.*eeny.*1 records were added.*blutzy");

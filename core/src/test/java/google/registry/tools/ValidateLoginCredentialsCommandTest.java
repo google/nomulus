@@ -169,7 +169,7 @@ public class ValidateLoginCredentialsCommandTest
                 "--client=NewRegistrar",
                 "--password=" + PASSWORD,
                 "--cert_hash=" + CERT_HASH,
-                "--cert_file=" + tmpDir.newFile(),
+                "--cert_file=temp.crt",
                 "--ip_address=" + CLIENT_IP));
   }
 }

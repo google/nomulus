@@ -32,17 +32,17 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 /** Unit tests for {@link RegistrarContactCommand}. */
 public class RegistrarContactCommandTest extends CommandTestCase<RegistrarContactCommand> {
 
   private String output;
 
-  @Before
-  public void before() throws Exception {
-    output = tmpDir.newFile().toString();
+  @BeforeEach
+  public void beforeEach() throws Exception {
+    output = tmpDir.resolve("temp.dat").toString();
   }
 
   @Test

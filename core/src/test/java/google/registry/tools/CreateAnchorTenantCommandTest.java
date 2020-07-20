@@ -22,34 +22,34 @@ import static org.junit.Assert.assertThrows;
 import com.beust.jcommander.ParameterException;
 import google.registry.model.registry.Registry;
 import google.registry.testing.DeterministicStringGenerator;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 /** Unit tests for {@link CreateAnchorTenantCommand}. */
-public class CreateAnchorTenantCommandTest
+class CreateAnchorTenantCommandTest
     extends EppToolCommandTestCase<CreateAnchorTenantCommand> {
 
-  @Before
-  public void initCommand() {
+  @BeforeEach
+  void beforeEach() {
     command.passwordGenerator = new DeterministicStringGenerator("abcdefghijklmnopqrstuvwxyz");
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     runCommandForced("--client=NewRegistrar", "--superuser",
         "--reason=anchor-tenant-test", "--contact=jd1234", "--domain_name=example.tld");
     eppVerifier.expectSuperuser().verifySent("domain_create_anchor_tenant.xml");
   }
 
   @Test
-  public void testSuccess_suppliedPassword() throws Exception {
+  void testSuccess_suppliedPassword() throws Exception {
     runCommandForced("--client=NewRegistrar", "--superuser", "--password=foo",
         "--reason=anchor-tenant-test", "--contact=jd1234", "--domain_name=example.tld");
     eppVerifier.expectSuperuser().verifySent("domain_create_anchor_tenant_password.xml");
   }
 
   @Test
-  public void testSuccess_multipleWordReason() throws Exception {
+  void testSuccess_multipleWordReason() throws Exception {
     runCommandForced("--client=NewRegistrar", "--superuser",
         "--reason=\"anchor tenant test\"", "--contact=jd1234", "--domain_name=example.tld");
     eppVerifier
@@ -58,21 +58,21 @@ public class CreateAnchorTenantCommandTest
   }
 
   @Test
-  public void testSuccess_noReason() throws Exception {
+  void testSuccess_noReason() throws Exception {
     runCommandForced("--client=NewRegistrar", "--superuser",
         "--contact=jd1234", "--domain_name=example.tld");
     eppVerifier.expectSuperuser().verifySent("domain_create_anchor_tenant_no_reason.xml");
   }
 
   @Test
-  public void testSuccess_feeStandard() throws Exception {
+  void testSuccess_feeStandard() throws Exception {
     runCommandForced("--client=NewRegistrar", "--superuser", "--fee",
         "--reason=anchor-tenant-test", "--contact=jd1234", "--domain_name=example.tld");
     eppVerifier.expectSuperuser().verifySent("domain_create_anchor_tenant_fee_standard.xml");
   }
 
   @Test
-  public void testSuccess_feePremium() throws Exception {
+  void testSuccess_feePremium() throws Exception {
     createTld("tld");
     persistResource(
         Registry.get("tld")
@@ -85,7 +85,7 @@ public class CreateAnchorTenantCommandTest
   }
 
   @Test
-  public void testFailure_mainParameter() {
+  void testFailure_mainParameter() {
     assertThrows(
         ParameterException.class,
         () ->
@@ -100,7 +100,7 @@ public class CreateAnchorTenantCommandTest
   }
 
   @Test
-  public void testFailure_missingClientId() {
+  void testFailure_missingClientId() {
     assertThrows(
         ParameterException.class,
         () ->
@@ -112,7 +112,7 @@ public class CreateAnchorTenantCommandTest
   }
 
   @Test
-  public void testFailure_unknownFlag() {
+  void testFailure_unknownFlag() {
     assertThrows(
         ParameterException.class,
         () ->
@@ -126,7 +126,7 @@ public class CreateAnchorTenantCommandTest
   }
 
   @Test
-  public void testFailure_missingDomainName() {
+  void testFailure_missingDomainName() {
     assertThrows(
         ParameterException.class,
         () ->
@@ -139,7 +139,7 @@ public class CreateAnchorTenantCommandTest
   }
 
   @Test
-  public void testFailure_missingContact() {
+  void testFailure_missingContact() {
     assertThrows(
         ParameterException.class,
         () ->
@@ -152,7 +152,7 @@ public class CreateAnchorTenantCommandTest
   }
 
   @Test
-  public void testFailure_notAsSuperuser() {
+  void testFailure_notAsSuperuser() {
     assertThrows(
         IllegalArgumentException.class,
         () ->

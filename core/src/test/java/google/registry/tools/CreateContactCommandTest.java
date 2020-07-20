@@ -18,19 +18,19 @@ import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import google.registry.testing.DeterministicStringGenerator;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 /** Unit tests for {@link CreateContactCommand}. */
-public class CreateContactCommandTest extends EppToolCommandTestCase<CreateContactCommand> {
+class CreateContactCommandTest extends EppToolCommandTestCase<CreateContactCommand> {
 
-  @Before
-  public void initCommand() {
+  @BeforeEach
+  void beforeEach() {
     command.passwordGenerator = new DeterministicStringGenerator("abcdefghijklmnopqrstuvwxyz");
   }
 
   @Test
-  public void testSuccess_complete() throws Exception {
+  void testSuccess_complete() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
         "--id=sh8013",
@@ -51,7 +51,7 @@ public class CreateContactCommandTest extends EppToolCommandTestCase<CreateConta
   }
 
   @Test
-  public void testSuccess_minimal() throws Exception {
+  void testSuccess_minimal() throws Exception {
     // Will never be the case, but tests that each field can be omitted.
     // Also tests the auto-gen password.
     runCommandForced("--client=NewRegistrar");
@@ -59,12 +59,12 @@ public class CreateContactCommandTest extends EppToolCommandTestCase<CreateConta
   }
 
   @Test
-  public void testFailure_missingClientId() {
+  void testFailure_missingClientId() {
     assertThrows(ParameterException.class, this::runCommandForced);
   }
 
   @Test
-  public void testFailure_tooManyStreetLines() {
+  void testFailure_tooManyStreetLines() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -77,13 +77,13 @@ public class CreateContactCommandTest extends EppToolCommandTestCase<CreateConta
   }
 
   @Test
-  public void testFailure_badPhone() {
+  void testFailure_badPhone() {
     assertThrows(
         ParameterException.class, () -> runCommandForced("--client=NewRegistrar", "--phone=3"));
   }
 
   @Test
-  public void testFailure_badFax() {
+  void testFailure_badFax() {
     assertThrows(
         ParameterException.class, () -> runCommandForced("--client=NewRegistrar", "--fax=3"));
   }

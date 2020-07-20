@@ -23,26 +23,27 @@ import google.registry.model.ofy.Ofy;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CountDomainsCommand}. */
 public class CountDomainsCommandTest extends CommandTestCase<CountDomainsCommand> {
 
   protected FakeClock clock = new FakeClock(DateTime.now(UTC));
 
-  @Rule public final InjectRule inject = new InjectRule();
+  @RegisterExtension
+  public final InjectRule inject = new InjectRule();
 
-  @Before
-  public final void before() {
+  @BeforeEach
+  final void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     command.clock = clock;
     createTlds("foo", "bar", "baz", "qux");
   }
 
   @Test
-  public void testSuccess_singleTld() throws Exception {
+  void testSuccess_singleTld() throws Exception {
     for (int i = 0; i < 51; i++) {
       persistActiveDomain(String.format("test-%d.foo", i));
       if (i > 31) {
@@ -54,7 +55,7 @@ public class CountDomainsCommandTest extends CommandTestCase<CountDomainsCommand
   }
 
   @Test
-  public void testSuccess_multipleTlds() throws Exception {
+  void testSuccess_multipleTlds() throws Exception {
     command.clock = clock;
     for (int i = 0; i < 29; i++) {
       persistActiveDomain(String.format("test-%d.foo", i));
