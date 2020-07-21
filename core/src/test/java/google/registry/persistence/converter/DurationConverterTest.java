@@ -19,35 +19,32 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import google.registry.schema.replay.EntityTest.EntityForTesting;
 import java.math.BigInteger;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.Duration;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DurationConverter}. */
-@RunWith(JUnit4.class)
 public class DurationConverterTest {
 
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   private final DurationConverter converter = new DurationConverter();
 
   @Test
-  public void testNulls() {
+  void testNulls() {
     assertThat(converter.convertToDatabaseColumn(null)).isNull();
     assertThat(converter.convertToEntityAttribute(null)).isNull();
   }
 
   @Test
-  public void testRoundTrip() {
+  void testRoundTrip() {
     TestEntity entity = new TestEntity(Duration.standardDays(6));
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
     assertThat(

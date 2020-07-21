@@ -23,10 +23,10 @@ import static org.mockito.Mockito.when;
 import google.registry.model.smd.SignedMarkRevocationList;
 import java.util.Optional;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link TmchSmdrlAction}. */
-public class TmchSmdrlActionTest extends TmchActionTestCase {
+class TmchSmdrlActionTest extends TmchActionTestCase {
 
   private static final DateTime now = DateTime.parse("2014-01-01T00:00:00Z");
 
@@ -38,7 +38,7 @@ public class TmchSmdrlActionTest extends TmchActionTestCase {
   }
 
   @Test
-  public void testSuccess_smdrl() throws Exception {
+  void testSuccess_smdrl() throws Exception {
     SignedMarkRevocationList smdrl = SignedMarkRevocationList.get();
     assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", now)).isFalse();
     assertThat(smdrl.isSmdRevoked("0000001681375789102250-65536", now)).isFalse();

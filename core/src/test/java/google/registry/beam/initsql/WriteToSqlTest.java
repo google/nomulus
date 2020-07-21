@@ -44,12 +44,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 /** Unit test for {@link Transforms#writeToSql}. */
-@RunWith(JUnit4.class)
 public class WriteToSqlTest implements Serializable {
+
   private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
 
   private final FakeClock fakeClock = new FakeClock(START_TIME);

@@ -20,7 +20,7 @@ import static google.registry.testing.TestDataHelper.loadBytes;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Files;
 import google.registry.rde.RdeTestData;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +31,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class EncryptEscrowDepositCommandTest
     extends CommandTestCase<EncryptEscrowDepositCommand> {
 
-  @RegisterExtension public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   private final ByteSource depositXml = loadBytes(RdeTestData.class, "deposit_full.xml");
 

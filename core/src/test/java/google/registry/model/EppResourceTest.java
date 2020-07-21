@@ -24,7 +24,7 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.host.HostResource;
-import google.registry.testing.TestCacheRule;
+import google.registry.testing.TestCacheExtension;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -33,8 +33,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class EppResourceTest extends EntityTestCase {
 
   @RegisterExtension
-  public final TestCacheRule testCacheRule =
-      new TestCacheRule.Builder().withEppResourceCache(Duration.standardDays(1)).build();
+  public final TestCacheExtension testCacheExtension =
+      new TestCacheExtension.Builder().withEppResourceCache(Duration.standardDays(1)).build();
 
   @Test
   void test_loadCached_ignoresContactChange() {

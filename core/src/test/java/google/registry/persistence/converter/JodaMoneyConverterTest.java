@@ -19,7 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import google.registry.schema.replay.EntityTest.EntityForTesting;
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -38,10 +38,8 @@ import javax.persistence.MapKeyColumn;
 import javax.persistence.PostLoad;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Unit tests for embeddable {@link Money}.
@@ -61,16 +59,16 @@ import org.junit.runners.JUnit4;
  * appropriate for the currency. This is espcially necessary for currencies like JPY where the scale
  * is 0, which is different from the default scale that {@link BigDecimal} is persisted in database.
  */
-@RunWith(JUnit4.class)
 public class JodaMoneyConverterTest {
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder()
           .withEntityClass(TestEntity.class, ComplexTestEntity.class)
           .buildUnitTestRule();
 
   @Test
-  public void roundTripConversion() {
+  void roundTripConversion() {
     Money money = Money.of(CurrencyUnit.USD, 100);
     TestEntity entity = new TestEntity(money);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
@@ -94,7 +92,7 @@ public class JodaMoneyConverterTest {
   }
 
   @Test
-  public void roundTripConversionWithComplexEntity() {
+  void roundTripConversionWithComplexEntity() {
     Money myMoney = Money.of(CurrencyUnit.USD, 100);
     Money yourMoney = Money.of(CurrencyUnit.GBP, 80);
     ImmutableMap<String, Money> moneyMap =
