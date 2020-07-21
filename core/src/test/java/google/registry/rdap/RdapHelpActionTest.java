@@ -23,55 +23,49 @@ import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RdapHelpAction}. */
-@RunWith(JUnit4.class)
-public class RdapHelpActionTest extends RdapActionBaseTestCase<RdapHelpAction> {
+class RdapHelpActionTest extends RdapActionBaseTestCase<RdapHelpAction> {
 
-  public RdapHelpActionTest() {
+  RdapHelpActionTest() {
     super(RdapHelpAction.class);
   }
 
   @Test
-  public void testHelpActionMaliciousPath_notFound() {
+  void testHelpActionMaliciousPath_notFound() {
     assertThat(generateActualJson("../passwd"))
         .isEqualTo(generateExpectedJsonError("no help found for ../passwd", 404));
     assertThat(response.getStatus()).isEqualTo(404);
   }
 
   @Test
-  public void testHelpActionUnknownPath_notFound() {
-    assertThat(generateActualJson("hlarg")).isEqualTo(
-        generateExpectedJsonError("no help found for hlarg", 404));
+  void testHelpActionUnknownPath_notFound() {
+    assertThat(generateActualJson("hlarg"))
+        .isEqualTo(generateExpectedJsonError("no help found for hlarg", 404));
     assertThat(response.getStatus()).isEqualTo(404);
   }
 
   @Test
-  public void testHelpActionDefault_getsIndex() {
-    assertThat(generateActualJson(""))
-        .isEqualTo(loadJsonFile("rdap_help_index.json"));
+  void testHelpActionDefault_getsIndex() {
+    assertThat(generateActualJson("")).isEqualTo(loadJsonFile("rdap_help_index.json"));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @Test
-  public void testHelpActionSlash_getsIndex() {
-    assertThat(generateActualJson("/"))
-        .isEqualTo(loadJsonFile("rdap_help_index.json"));
+  void testHelpActionSlash_getsIndex() {
+    assertThat(generateActualJson("/")).isEqualTo(loadJsonFile("rdap_help_index.json"));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @Test
-  public void testHelpActionTos_works() {
-    assertThat(generateActualJson("/tos"))
-        .isEqualTo(loadJsonFile("rdap_help_tos.json"));
+  void testHelpActionTos_works() {
+    assertThat(generateActualJson("/tos")).isEqualTo(loadJsonFile("rdap_help_tos.json"));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @Test
-  public void testHelpActionMetrics() {
+  void testHelpActionMetrics() {
     generateActualJson("/tos");
     verify(rdapMetrics)
         .updateMetrics(

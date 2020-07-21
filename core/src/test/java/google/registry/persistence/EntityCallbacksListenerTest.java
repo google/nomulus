@@ -21,7 +21,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import java.lang.reflect.Method;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
@@ -36,21 +36,18 @@ import javax.persistence.PrePersist;
 import javax.persistence.PreRemove;
 import javax.persistence.PreUpdate;
 import javax.persistence.Transient;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link EntityCallbacksListener}. */
-@RunWith(JUnit4.class)
-public class EntityCallbacksListenerTest {
+class EntityCallbacksListenerTest {
 
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
-  public void verifyAllCallbacks_executedExpectedTimes() {
+  void verifyAllCallbacks_executedExpectedTimes() {
     TestEntity testPersist = new TestEntity();
     jpaTm().transact(() -> jpaTm().saveNew(testPersist));
     checkAll(testPersist, 1, 0, 0, 0);
@@ -84,7 +81,7 @@ public class EntityCallbacksListenerTest {
   }
 
   @Test
-  public void verifyAllManagedEntities_haveNoMethodWithEmbedded() {
+  void verifyAllManagedEntities_haveNoMethodWithEmbedded() {
     ImmutableSet<Class> violations =
         PersistenceXmlUtility.getManagedClasses().stream()
             .filter(clazz -> clazz.isAnnotationPresent(Entity.class))
@@ -98,7 +95,7 @@ public class EntityCallbacksListenerTest {
   }
 
   @Test
-  public void verifyHasMethodAnnotatedWithEmbedded_work() {
+  void verifyHasMethodAnnotatedWithEmbedded_work() {
     assertThat(hasMethodAnnotatedWithEmbedded(ViolationEntity.class)).isTrue();
   }
 

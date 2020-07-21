@@ -20,25 +20,23 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import google.registry.util.CidrAddressBlock;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CidrAddressBlockListConverter}. */
-@RunWith(JUnit4.class)
 public class CidrAddressBlockListConverterTest {
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
-  public void roundTripConversion_returnsSameCidrAddressBlock() {
+  void roundTripConversion_returnsSameCidrAddressBlock() {
     List<CidrAddressBlock> addresses =
         ImmutableList.of(
             CidrAddressBlock.create("0.0.0.0/32"),

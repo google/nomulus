@@ -27,7 +27,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import google.registry.keyring.api.Keyring;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -50,7 +50,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 @SuppressWarnings("resource")
 public class GhostrydeTest {
 
-  @RegisterExtension public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   private static final ImmutableList<String> CONTENTS =
       ImmutableList.of(
@@ -60,6 +61,7 @@ public class GhostrydeTest {
           "\0yolo",
           "");
 
+  @SuppressWarnings("unused")
   static Stream<Arguments> provideTestCombinations() {
     return CONTENTS.stream().map(Arguments::of);
   }

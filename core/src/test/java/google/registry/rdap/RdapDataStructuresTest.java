@@ -30,12 +30,10 @@ import google.registry.rdap.RdapDataStructures.RdapConformance;
 import google.registry.rdap.RdapDataStructures.RdapStatus;
 import google.registry.rdap.RdapDataStructures.Remark;
 import org.joda.time.DateTime;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
-@RunWith(JUnit4.class)
-public final class RdapDataStructuresTest {
+/** Unit tests for {@link RdapDataStructures}. */
+final class RdapDataStructuresTest {
 
   private void assertRestrictedNames(Object object, String... names) {
     assertThat(AbstractJsonableObject.getNameRestriction(object.getClass()).get())
@@ -43,7 +41,7 @@ public final class RdapDataStructuresTest {
   }
 
   @Test
-  public void testRdapConformance() {
+  void testRdapConformance() {
     assertThat(RdapConformance.INSTANCE.toJson())
         .isEqualTo(createJson(
             "[",
@@ -54,7 +52,7 @@ public final class RdapDataStructuresTest {
   }
 
   @Test
-  public void testLink() {
+  void testLink() {
     Link link =
         Link.builder()
             .setHref("myHref")
@@ -68,7 +66,7 @@ public final class RdapDataStructuresTest {
   }
 
   @Test
-  public void testNotice() {
+  void testNotice() {
     Notice notice = Notice.builder()
         .setDescription("AAA", "BBB")
         .setTitle("myTitle")
@@ -88,7 +86,7 @@ public final class RdapDataStructuresTest {
   }
 
   @Test
-  public void testRemark() {
+  void testRemark() {
     Remark remark = Remark.builder()
         .setDescription("AAA", "BBB")
         .setTitle("myTitle")
@@ -108,13 +106,13 @@ public final class RdapDataStructuresTest {
   }
 
   @Test
-  public void testLanguage() {
+  void testLanguage() {
     assertThat(LanguageIdentifier.EN.toJson()).isEqualTo(createJson("'en'"));
     assertRestrictedNames(LanguageIdentifier.EN, "lang");
   }
 
   @Test
-  public void testEvent() {
+  void testEvent() {
     Event event =
         Event.builder()
             .setEventAction(EventAction.REGISTRATION)
@@ -135,7 +133,7 @@ public final class RdapDataStructuresTest {
   }
 
   @Test
-  public void testEventWithoutActor() {
+  void testEventWithoutActor() {
     EventWithoutActor event =
         EventWithoutActor.builder()
             .setEventAction(EventAction.REGISTRATION)
@@ -154,20 +152,20 @@ public final class RdapDataStructuresTest {
   }
 
   @Test
-  public void testRdapStatus() {
+  void testRdapStatus() {
     assertThat(RdapStatus.ACTIVE.toJson()).isEqualTo(createJson("'active'"));
     assertRestrictedNames(RdapStatus.ACTIVE, "status[]");
   }
 
   @Test
-  public void testPort43() {
+  void testPort43() {
     Port43WhoisServer port43 = Port43WhoisServer.create("myServer");
     assertThat(port43.toJson()).isEqualTo(createJson("'myServer'"));
     assertRestrictedNames(port43, "port43");
   }
 
   @Test
-  public void testPublicId() {
+  void testPublicId() {
     PublicId publicId = PublicId.create(PublicId.Type.IANA_REGISTRAR_ID, "myId");
     assertThat(publicId.toJson())
         .isEqualTo(createJson("{'identifier':'myId','type':'IANA Registrar ID'}"));
@@ -175,7 +173,7 @@ public final class RdapDataStructuresTest {
   }
 
   @Test
-  public void testObjectClassName() {
+  void testObjectClassName() {
     assertThat(ObjectClassName.DOMAIN.toJson()).isEqualTo(createJson("'domain'"));
     assertRestrictedNames(ObjectClassName.DOMAIN, "objectClassName");
   }

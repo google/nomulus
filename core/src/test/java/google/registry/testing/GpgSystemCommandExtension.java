@@ -35,13 +35,13 @@ import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * GnuPG system command JUnit rule.
+ * GnuPG system command JUnit extension.
  *
  * <p>This rule creates a isolated environment for running the {@code gpg} command inside system
  * integration tests. It reduces a lot of the boilerplate of setting up the shell environment and
  * importing your keyrings into a temporary config folder.
  */
-public final class GpgSystemCommandRule implements BeforeEachCallback, AfterEachCallback {
+public final class GpgSystemCommandExtension implements BeforeEachCallback, AfterEachCallback {
 
   private static final File DEV_NULL = new File("/dev/null");
   private static final String TEMP_FILE_PREFIX = "gpgtest";
@@ -53,8 +53,8 @@ public final class GpgSystemCommandRule implements BeforeEachCallback, AfterEach
   private final ByteSource privateKeyring;
   private final Runtime runtime = Runtime.getRuntime();
 
-  /** Constructs a new {@link GpgSystemCommandRule} instance. */
-  public GpgSystemCommandRule(ByteSource publicKeyring, ByteSource privateKeyring) {
+  /** Constructs a new {@link GpgSystemCommandExtension} instance. */
+  public GpgSystemCommandExtension(ByteSource publicKeyring, ByteSource privateKeyring) {
     this.publicKeyring = checkNotNull(publicKeyring, "publicKeyring");
     this.privateKeyring = checkNotNull(privateKeyring, "privateKeyring");
   }

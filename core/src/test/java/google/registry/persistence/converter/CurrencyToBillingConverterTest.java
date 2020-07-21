@@ -21,28 +21,26 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
 import google.registry.model.registrar.Registrar.BillingAccountEntry;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import java.util.Map;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.money.CurrencyUnit;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CurrencyToBillingConverter}. */
-@RunWith(JUnit4.class)
 public class CurrencyToBillingConverterTest {
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder()
           .withInitScript("sql/flyway/V14__load_extension_for_hstore.sql")
           .withEntityClass(TestEntity.class)
           .buildUnitTestRule();
 
   @Test
-  public void roundTripConversion_returnsSameCurrencyToBillingMap() {
+  void roundTripConversion_returnsSameCurrencyToBillingMap() {
     ImmutableMap<CurrencyUnit, BillingAccountEntry> currencyToBilling =
         ImmutableMap.of(
             CurrencyUnit.of("USD"),

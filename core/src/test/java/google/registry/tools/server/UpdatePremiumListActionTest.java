@@ -91,8 +91,7 @@ class UpdatePremiumListActionTest {
     jpaTm()
         .transact(
             () -> {
-              google.registry.schema.tld.PremiumList persistedList =
-                  PremiumListDao.getLatestRevision("foo").get();
+              PremiumList persistedList = PremiumListDao.getLatestRevision("foo").get();
               assertThat(persistedList.getLabelsToPrices())
                   .containsEntry("rich", new BigDecimal("75.00"));
               assertThat(persistedList.getLabelsToPrices())

@@ -19,31 +19,28 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import google.registry.schema.replay.EntityTest.EntityForTesting;
 import google.registry.testing.FakeClock;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UpdateAutoTimestampConverter}. */
-@RunWith(JUnit4.class)
 public class UpdateAutoTimestampConverterTest {
 
   private final FakeClock fakeClock = new FakeClock();
 
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder()
           .withClock(fakeClock)
           .withEntityClass(TestEntity.class)
           .buildUnitTestRule();
 
   @Test
-  public void testTypeConversion() {
+  void testTypeConversion() {
     TestEntity ent = new TestEntity("myinst", null);
 
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent));
@@ -56,7 +53,7 @@ public class UpdateAutoTimestampConverterTest {
   }
 
   @Test
-  public void testTimeChangesOnSubsequentTransactions() {
+  void testTimeChangesOnSubsequentTransactions() {
     TestEntity ent1 = new TestEntity("myinst1", null);
 
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent1));

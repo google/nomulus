@@ -32,7 +32,8 @@ import google.registry.util.Clock;
 import java.util.Map;
 import java.util.Objects;
 
-public class RdapTestHelper {
+/** Test helper methods for RDAP tests. */
+class RdapTestHelper {
 
   private static final Gson GSON =
       new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
