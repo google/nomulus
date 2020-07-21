@@ -20,27 +20,24 @@ import static org.junit.Assert.assertThrows;
 
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import google.registry.schema.replay.EntityTest.EntityForTesting;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.PersistenceException;
 import org.joda.money.CurrencyUnit;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CurrencyUnitConverter}. */
-@RunWith(JUnit4.class)
 public class CurrencyUnitConverterTest {
 
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
-  public void roundTripConversion() {
+  void roundTripConversion() {
     TestEntity entity = new TestEntity(CurrencyUnit.EUR);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
     assertThat(
@@ -59,7 +56,7 @@ public class CurrencyUnitConverterTest {
   }
 
   @Test
-  public void invalidCurrency() {
+  void invalidCurrency() {
     jpaTm()
         .transact(
             () ->

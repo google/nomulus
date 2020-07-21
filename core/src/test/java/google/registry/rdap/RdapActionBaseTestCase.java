@@ -39,17 +39,16 @@ import google.registry.util.TypeUtils;
 import java.util.HashMap;
 import java.util.Optional;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Common unit test code for actions inheriting {@link RdapActionBase}. */
-public abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
+abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
   protected static final AuthResult AUTH_RESULT =
       AuthResult.create(
@@ -63,21 +62,21 @@ public abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
 
   protected FakeResponse response = new FakeResponse();
   protected final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
-  protected final RdapMetrics rdapMetrics = mock(RdapMetrics.class);
+  final RdapMetrics rdapMetrics = mock(RdapMetrics.class);
 
-  protected RdapAuthorization.Role metricRole = PUBLIC;
+  RdapAuthorization.Role metricRole = PUBLIC;
   protected A action;
 
-  protected final String actionPath;
-  protected final Class<A> rdapActionClass;
+  final String actionPath;
+  private final Class<A> rdapActionClass;
 
-  protected RdapActionBaseTestCase(Class<A> rdapActionClass) {
+  RdapActionBaseTestCase(Class<A> rdapActionClass) {
     this.rdapActionClass = rdapActionClass;
     this.actionPath = Actions.getPathForAction(rdapActionClass);
   }
 
-  @Before
-  public void baseSetUp() {
+  @BeforeEach
+  public void beforeEachRdapActionBaseTestCase() {
     inject.setStaticField(Ofy.class, "clock", clock);
     action = TypeUtils.instantiate(rdapActionClass);
     action.includeDeletedParam = Optional.empty();
@@ -101,29 +100,27 @@ public abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
     metricRole = PUBLIC;
   }
 
-  protected void loginAsAdmin() {
+  void loginAsAdmin() {
     action.rdapAuthorization = RdapAuthorization.ADMINISTRATOR_AUTHORIZATION;
     action.rdapJsonFormatter.rdapAuthorization = action.rdapAuthorization;
     metricRole = ADMINISTRATOR;
   }
 
-  protected JsonObject generateActualJson(String domainName) {
+  JsonObject generateActualJson(String domainName) {
     action.requestPath = actionPath + domainName;
     action.requestMethod = GET;
     action.run();
     return RdapTestHelper.parseJsonObject(response.getPayload());
   }
 
-  protected String generateHeadPayload(String domainName) {
+  String generateHeadPayload(String domainName) {
     action.requestPath = actionPath + domainName;
     action.requestMethod = HEAD;
     action.run();
     return response.getPayload();
   }
 
-  protected JsonObject generateExpectedJsonError(
-      String description,
-      int code) {
+  JsonObject generateExpectedJsonError(String description, int code) {
     String title;
     switch (code) {
       case 404:
@@ -147,12 +144,15 @@ public abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
     }
     return RdapTestHelper.loadJsonFile(
         "rdap_error.json",
-        "DESCRIPTION", description,
-        "TITLE", title,
-        "CODE", String.valueOf(code));
+        "DESCRIPTION",
+        description,
+        "TITLE",
+        title,
+        "CODE",
+        String.valueOf(code));
   }
 
-  protected static JsonFileBuilder jsonFileBuilder() {
+  static JsonFileBuilder jsonFileBuilder() {
     return new JsonFileBuilder();
   }
 
@@ -173,7 +173,7 @@ public abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
       return put(String.format("%s%d", key, index), value);
     }
 
-    public JsonFileBuilder putNext(String key, String value, String... moreKeyValues) {
+    JsonFileBuilder putNext(String key, String value, String... moreKeyValues) {
       checkArgument(moreKeyValues.length % 2 == 0);
       int index = putNextAndReturnIndex(key, value);
       for (int i = 0; i < moreKeyValues.length; i += 2) {
@@ -182,29 +182,29 @@ public abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
       return this;
     }
 
-    public JsonFileBuilder addDomain(String name, String handle) {
+    JsonFileBuilder addDomain(String name, String handle) {
       return putNext(
           "DOMAIN_PUNYCODE_NAME_", Idn.toASCII(name),
           "DOMAIN_UNICODE_NAME_", name,
           "DOMAIN_HANDLE_", handle);
     }
 
-    public JsonFileBuilder addNameserver(String name, String handle) {
+    JsonFileBuilder addNameserver(String name, String handle) {
       return putNext(
           "NAMESERVER_NAME_", Idn.toASCII(name),
           "NAMESERVER_UNICODE_NAME_", name,
           "NAMESERVER_HANDLE_", handle);
     }
 
-    public JsonFileBuilder addRegistrar(String fullName) {
+    JsonFileBuilder addRegistrar(String fullName) {
       return putNext("REGISTRAR_FULL_NAME_", fullName);
     }
 
-    public JsonFileBuilder addContact(String handle) {
+    JsonFileBuilder addContact(String handle) {
       return putNext("CONTACT_HANDLE_", handle);
     }
 
-    public JsonFileBuilder setNextQuery(String nextQuery) {
+    JsonFileBuilder setNextQuery(String nextQuery) {
       return put("NEXT_QUERY", nextQuery);
     }
 

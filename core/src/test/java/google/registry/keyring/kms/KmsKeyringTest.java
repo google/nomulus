@@ -22,7 +22,7 @@ import google.registry.keyring.api.KeySerializer;
 import google.registry.model.server.KmsSecret;
 import google.registry.model.server.KmsSecretRevision;
 import google.registry.testing.AppEngineRule;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.BouncyCastleProviderExtension;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -33,7 +33,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link KmsKeyring}. */
 class KmsKeyringTest {
 
-  @RegisterExtension final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   @RegisterExtension
   final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();

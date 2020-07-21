@@ -43,6 +43,7 @@ import org.junit.runners.model.Statement;
  * JpaTransactionManager} instances.
  */
 public class JpaTestRules {
+
   private static final String GOLDEN_SCHEMA_SQL_PATH = "sql/schema/nomulus.golden.sql";
 
   /**
@@ -50,7 +51,6 @@ public class JpaTestRules {
    * with the Nomulus Cloud SQL schema.
    */
   public static class JpaIntegrationTestRule extends JpaTransactionManagerRule {
-
     private JpaIntegrationTestRule(
         Clock clock,
         ImmutableList<Class> extraEntityClasses,
@@ -59,14 +59,15 @@ public class JpaTestRules {
     }
   }
 
+  private static final AssertionError EXCEPTION_OF_DISAPPROVAL =
+      new AssertionError("ಠ_ಠ  Why are you writing new tests in JUnit 4??  ಠ_ಠ");
+
   /**
-   * Junit rule for unit tests with JPA framework, when the underlying database is populated by the
-   * optional init script (which must not be the Nomulus Cloud SQL schema). This rule can also be
-   * used as am extension for JUnit5 tests.
+   * JUnit extension for unit tests with JPA framework, when the underlying database is populated by
+   * the optional init script (which must not be the Nomulus Cloud SQL schema).
    */
-  public static class JpaUnitTestRule extends JpaTransactionManagerRule
-      implements BeforeEachCallback, AfterEachCallback {
-    private JpaUnitTestRule(
+  public static class JpaUnitTestExtension extends JpaTransactionManagerRule {
+    private JpaUnitTestExtension(
         Clock clock,
         Optional<String> initScriptPath,
         ImmutableList<Class> extraEntityClasses,
@@ -75,13 +76,13 @@ public class JpaTestRules {
     }
 
     @Override
-    public void beforeEach(ExtensionContext context) throws Exception {
-      this.before();
+    public void before() {
+      throw EXCEPTION_OF_DISAPPROVAL;
     }
 
     @Override
-    public void afterEach(ExtensionContext context) throws Exception {
-      this.after();
+    public void after() {
+      throw EXCEPTION_OF_DISAPPROVAL;
     }
   }
 
@@ -157,7 +158,7 @@ public class JpaTestRules {
      * Sets the SQL script to be used to initialize the database. If not set,
      * sql/schema/nomulus.golden.sql will be used.
      *
-     * <p>The {@code initScript} is only accepted when building {@link JpaUnitTestRule}.
+     * <p>The {@code initScript} is only accepted when building {@link JpaUnitTestExtension}.
      */
     public Builder withInitScript(String initScript) {
       this.initScript = initScript;
@@ -219,13 +220,14 @@ public class JpaTestRules {
     }
 
     /**
-     * Builds a {@link JpaUnitTestRule} instance that can also be used as an extension for JUnit5.
+     * Builds a {@link JpaUnitTestExtension} instance that can also be used as an extension for
+     * JUnit5.
      */
-    public JpaUnitTestRule buildUnitTestRule() {
+    public JpaUnitTestExtension buildUnitTestRule() {
       checkState(
           !Objects.equals(GOLDEN_SCHEMA_SQL_PATH, initScript),
           "Unit tests must not depend on the Nomulus schema.");
-      return new JpaUnitTestRule(
+      return new JpaUnitTestExtension(
           clock == null ? new FakeClock(DateTime.now(UTC)) : clock,
           Optional.ofNullable(initScript),
           ImmutableList.copyOf(extraEntityClasses),

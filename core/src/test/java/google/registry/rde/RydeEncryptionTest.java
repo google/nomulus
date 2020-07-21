@@ -21,7 +21,7 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -36,7 +36,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link RydeEncryption} */
 public final class RydeEncryptionTest {
 
-  @RegisterExtension public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   @Test
   void testSuccess_oneReceiver_decryptWithCorrectKey() throws Exception {

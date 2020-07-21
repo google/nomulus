@@ -24,9 +24,9 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
 import google.registry.keyring.api.Keyring;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
-import google.registry.testing.GpgSystemCommandRule;
+import google.registry.testing.GpgSystemCommandExtension;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -43,11 +43,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 /** GnuPG integration tests for {@link Ghostryde}. */
 class GhostrydeGpgIntegrationTest {
 
-  @RegisterExtension public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   @RegisterExtension
-  public final GpgSystemCommandRule gpg =
-      new GpgSystemCommandRule(
+  public final GpgSystemCommandExtension gpg =
+      new GpgSystemCommandExtension(
           RdeTestData.loadBytes("pgp-public-keyring.asc"),
           RdeTestData.loadBytes("pgp-private-keyring-registry.asc"));
 
@@ -59,6 +60,7 @@ class GhostrydeGpgIntegrationTest {
           "\0yolo",
           "");
 
+  @SuppressWarnings("unused")
   static Stream<Arguments> provideTestCombinations() {
     Stream.Builder<Arguments> stream = Stream.builder();
     for (String command : COMMANDS) {

@@ -41,7 +41,7 @@ import google.registry.testing.AppEngineRule;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.SystemPropertyRule;
+import google.registry.testing.SystemPropertyExtension;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
@@ -67,7 +67,7 @@ public final class ConsoleOteSetupActionTest {
 
   @RegisterExtension
   @Order(value = Integer.MAX_VALUE)
-  public final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
+  final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   private final FakeResponse response = new FakeResponse();
   private final ConsoleOteSetupAction action = new ConsoleOteSetupAction();
@@ -77,7 +77,7 @@ public final class ConsoleOteSetupActionTest {
   @Mock SendEmailService emailService;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void beforeEach() throws Exception {
     persistPremiumList("default_sandbox_list", "sandbox,USD 1000");
 
     action.req = request;
@@ -106,7 +106,7 @@ public final class ConsoleOteSetupActionTest {
   }
 
   @Test
-  public void testNoUser_redirect() {
+  void testNoUser_redirect() {
     when(request.getRequestURI()).thenReturn("/test");
     action.authResult = AuthResult.NOT_AUTHENTICATED;
     action.run();
@@ -115,20 +115,20 @@ public final class ConsoleOteSetupActionTest {
   }
 
   @Test
-  public void testGet_authorized() {
+  void testGet_authorized() {
     action.run();
     assertThat(response.getPayload()).contains("<h1>Setup OT&E</h1>");
     assertThat(response.getPayload()).contains("gtag('config', 'sampleId')");
   }
 
   @Test
-  public void testGet_authorized_onProduction() {
-    RegistryEnvironment.PRODUCTION.setup(systemPropertyRule);
+  void testGet_authorized_onProduction() {
+    RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
     assertThrows(IllegalStateException.class, action::run);
   }
 
   @Test
-  public void testGet_unauthorized() {
+  void testGet_unauthorized() {
     action.registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(ImmutableSetMultimap.of());
     action.run();
@@ -137,7 +137,7 @@ public final class ConsoleOteSetupActionTest {
   }
 
   @Test
-  public void testPost_authorized() {
+  void testPost_authorized() {
     action.clientId = Optional.of("myclientid");
     action.email = Optional.of("contact@registry.example");
     action.method = Method.POST;
@@ -169,7 +169,7 @@ public final class ConsoleOteSetupActionTest {
   }
 
   @Test
-  public void testPost_authorized_setPassword() {
+  void testPost_authorized_setPassword() {
     action.clientId = Optional.of("myclientid");
     action.email = Optional.of("contact@registry.example");
     action.optionalPassword = Optional.of("SomePassword");
@@ -187,7 +187,7 @@ public final class ConsoleOteSetupActionTest {
   }
 
   @Test
-  public void testPost_unauthorized() {
+  void testPost_unauthorized() {
     action.registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(ImmutableSetMultimap.of());
     action.clientId = Optional.of("myclientid");

@@ -46,7 +46,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.SystemPropertyRule;
+import google.registry.testing.SystemPropertyExtension;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import java.util.Optional;
 import java.util.Set;
@@ -61,7 +61,8 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
 
   private static final DateTime DELETION_TIME = DateTime.parse("2010-01-01T00:00:00.000Z");
 
-  @RegisterExtension final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
+  @RegisterExtension
+  final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   @BeforeEach
   void beforeEach() {
@@ -92,7 +93,7 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
     action.isDryRun = false;
     action.tlds = ImmutableSet.of();
     action.registryAdminClientId = "TheRegistrar";
-    RegistryEnvironment.SANDBOX.setup(systemPropertyRule);
+    RegistryEnvironment.SANDBOX.setup(systemPropertyExtension);
   }
 
   private void runMapreduce() throws Exception {
@@ -154,7 +155,7 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
   @Test
   void testFail_givenNonDotTestTldOnProd() {
     action.tlds = ImmutableSet.of("example");
-    RegistryEnvironment.PRODUCTION.setup(systemPropertyRule);
+    RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, this::runMapreduce);
     assertThat(thrown)

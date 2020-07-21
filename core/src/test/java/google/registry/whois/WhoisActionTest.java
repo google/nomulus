@@ -58,7 +58,7 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
 import google.registry.testing.InjectRule;
-import google.registry.testing.TestCacheRule;
+import google.registry.testing.TestCacheExtension;
 import google.registry.util.Retrier;
 import google.registry.whois.WhoisMetrics.WhoisMetric;
 import java.io.IOException;
@@ -80,8 +80,8 @@ public class WhoisActionTest {
   @RegisterExtension public final InjectRule inject = new InjectRule();
 
   @RegisterExtension
-  public final TestCacheRule testCacheRule =
-      new TestCacheRule.Builder()
+  public final TestCacheExtension testCacheExtension =
+      new TestCacheExtension.Builder()
           .withEppResourceCache(Duration.standardDays(1))
           .withForeignIndexKeyCache(Duration.standardDays(1))
           .build();
