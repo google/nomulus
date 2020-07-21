@@ -28,27 +28,24 @@ import google.registry.testing.AppEngineRule;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link TlsCredentials}. */
-@RunWith(JUnit4.class)
-public final class TlsCredentialsTest {
+final class TlsCredentialsTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testProvideClientCertificateHash() {
+  void testProvideClientCertificateHash() {
     HttpServletRequest req = mock(HttpServletRequest.class);
     when(req.getHeader("X-SSL-Certificate")).thenReturn("data");
     assertThat(TlsCredentials.EppTlsModule.provideClientCertificateHash(req)).isEqualTo("data");
   }
 
   @Test
-  public void testProvideClientCertificateHash_missing() {
+  void testProvideClientCertificateHash_missing() {
     HttpServletRequest req = mock(HttpServletRequest.class);
     BadRequestException thrown =
         assertThrows(
@@ -58,7 +55,7 @@ public final class TlsCredentialsTest {
   }
 
   @Test
-  public void test_validateCertificate_canBeConfiguredToBypassCertHashes() throws Exception {
+  void test_validateCertificate_canBeConfiguredToBypassCertHashes() throws Exception {
     TlsCredentials tls = new TlsCredentials(false, "certHash", Optional.of("192.168.1.1"));
     persistResource(
         loadRegistrar("TheRegistrar")
