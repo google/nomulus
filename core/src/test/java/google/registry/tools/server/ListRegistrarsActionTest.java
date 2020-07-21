@@ -20,21 +20,16 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 
 import com.google.common.collect.ImmutableSet;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-/**
- * Unit tests for {@link ListRegistrarsAction}.
- */
-@RunWith(JUnit4.class)
-public class ListRegistrarsActionTest extends ListActionTestCase {
+/** Unit tests for {@link ListRegistrarsAction}. */
+class ListRegistrarsActionTest extends ListActionTestCase {
 
-  ListRegistrarsAction action;
+  private ListRegistrarsAction action;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     action = new ListRegistrarsAction();
     createTlds("xn--q9jyb4c", "example");
     // Ensure that NewRegistrar only has access to xn--q9jyb4c and that TheRegistrar only has access
@@ -52,7 +47,7 @@ public class ListRegistrarsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_noParameters() {
+  void testRun_noParameters() {
     testRunSuccess(
         action,
         Optional.empty(),
@@ -63,7 +58,7 @@ public class ListRegistrarsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_withParameters() {
+  void testRun_withParameters() {
     testRunSuccess(
         action,
         Optional.of("allowedTlds"),
@@ -76,7 +71,7 @@ public class ListRegistrarsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_withWildcard() {
+  void testRun_withWildcard() {
     testRunSuccess(
         action,
         Optional.of("*"),
@@ -89,7 +84,7 @@ public class ListRegistrarsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_withBadField_returnsError() {
+  void testRun_withBadField_returnsError() {
     testRunError(
         action,
         Optional.of("badfield"),

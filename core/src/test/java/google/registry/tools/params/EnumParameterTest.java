@@ -18,25 +18,22 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import google.registry.model.registry.Registry.TldState;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link EnumParameter}. */
-@RunWith(JUnit4.class)
-public class EnumParameterTest {
+class EnumParameterTest {
 
   // There's no additional functionality exposed by this (or any other) EnumParameter, but using
   // this in the test as EnumParameter is abstract.
   private final TldStateParameter instance = new TldStateParameter();
 
   @Test
-  public void testSuccess_convertEnum() {
+  void testSuccess_convertEnum() {
     assertThat(instance.convert("PREDELEGATION")).isEqualTo(TldState.PREDELEGATION);
   }
 
   @Test
-  public void testFailure_badValue() {
+  void testFailure_badValue() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> instance.convert("FREE_DOMAINS"));
     assertThat(thrown)

@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.networking.handler.SslInitializerTestUtils.getKeyPair;
 import static google.registry.networking.handler.SslInitializerTestUtils.setUpSslChannel;
 import static google.registry.networking.handler.SslInitializerTestUtils.signKeyPair;
-import static google.registry.networking.handler.SslInitializerTestUtils.verifySslExcpetion;
+import static google.registry.networking.handler.SslInitializerTestUtils.verifySslException;
 import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_PROMISE_KEY;
 
 import com.google.common.base.Suppliers;
@@ -181,7 +181,7 @@ public class SslServerInitializerTest {
     nettyRule.setUpClient(
         localAddress, getClientHandler(serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
 
-    verifySslExcpetion(
+    verifySslException(
         nettyRule.getServerChannel(),
         channel -> channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get(),
         CertificateExpiredException.class);
@@ -202,7 +202,7 @@ public class SslServerInitializerTest {
     nettyRule.setUpClient(
         localAddress, getClientHandler(serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
 
-    verifySslExcpetion(
+    verifySslException(
         nettyRule.getServerChannel(),
         channel -> channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get(),
         CertificateNotYetValidException.class);

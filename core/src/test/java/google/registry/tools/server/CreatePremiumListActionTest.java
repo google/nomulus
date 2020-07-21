@@ -27,30 +27,23 @@ import google.registry.model.registry.label.PremiumList;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeJsonResponse;
 import org.joda.money.Money;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Unit tests for {@link CreatePremiumListAction}.
  */
-@RunWith(JUnit4.class)
 public class CreatePremiumListActionTest {
 
-  /*@Rule
-  public final JpaIntegrationWithCoverageRule jpaRule =
-      new JpaTestRules.Builder().buildIntegrationWithCoverageRule();*/
-
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  CreatePremiumListAction action;
-  FakeJsonResponse response;
+  private CreatePremiumListAction action;
+  private FakeJsonResponse response;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     createTlds("foo", "xn--q9jyb4c", "how");
     deletePremiumList(PremiumList.getUncached("foo").get());
     action = new CreatePremiumListAction();
@@ -59,14 +52,14 @@ public class CreatePremiumListActionTest {
   }
 
   @Test
-  public void test_invalidRequest_missingInput_returnsErrorStatus() {
+  void test_invalidRequest_missingInput_returnsErrorStatus() {
     action.name = "foo";
     action.run();
     assertThat(response.getResponseMap().get("status")).isEqualTo("error");
   }
 
   @Test
-  public void test_invalidRequest_listAlreadyExists_returnsErrorStatus() {
+  void test_invalidRequest_listAlreadyExists_returnsErrorStatus() {
     action.name = "how";
     action.inputData = "richer,JPY 5000";
     action.run();
@@ -78,7 +71,7 @@ public class CreatePremiumListActionTest {
   }
 
   @Test
-  public void test_nonExistentTld_successWithOverride() {
+  void test_nonExistentTld_successWithOverride() {
     action.name = "zanzibar";
     action.inputData = "zanzibar,USD 100";
     action.override = true;
@@ -88,7 +81,7 @@ public class CreatePremiumListActionTest {
   }
 
   @Test
-  public void test_success() {
+  void test_success() {
     action.name = "foo";
     action.inputData = "rich,USD 25\nricher,USD 1000\n";
     action.run();

@@ -30,41 +30,37 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Unit tests for {@link PathParameter}. */
-@RunWith(JUnit4.class)
-public class PathParameterTest {
-  @Rule
-  public final TemporaryFolder folder = new TemporaryFolder();
+class PathParameterTest {
+
+  @TempDir Path tmpDir;
 
   // ================================ Test Convert ==============================================
 
   private final PathParameter vanilla = new PathParameter();
 
   @Test
-  public void testConvert_etcPasswd_returnsPath() {
+  void testConvert_etcPasswd_returnsPath() {
     assertThat((Object) vanilla.convert("/etc/passwd")).isEqualTo(Paths.get("/etc/passwd"));
   }
 
   @Test
-  public void testConvert_null_throws() {
+  void testConvert_null_throws() {
     assertThrows(NullPointerException.class, () -> vanilla.convert(null));
   }
 
   @Test
-  public void testConvert_empty_throws() {
+  void testConvert_empty_throws() {
     assertThrows(IllegalArgumentException.class, () -> vanilla.convert(""));
   }
 
   @Test
-  public void testConvert_relativePath_returnsOriginalFile() throws Exception {
+  void testConvert_relativePath_returnsOriginalFile() throws Exception {
     Path currentDirectory = Paths.get("").toAbsolutePath();
-    Path file = Paths.get(folder.newFile().toString());
+    Path file = Paths.get(tmpDir.resolve("tmp.file").toString());
     Path relative = file.relativize(currentDirectory);
     assumeThat(relative, is(not(equalTo(file))));
     assumeThat(relative.toString(), startsWith("../"));
@@ -73,13 +69,13 @@ public class PathParameterTest {
   }
 
   @Test
-  public void testConvert_extraSlash_returnsWithoutSlash() throws Exception {
-    Path file = Paths.get(folder.newFile().toString());
+  void testConvert_extraSlash_returnsWithoutSlash() throws Exception {
+    Path file = Paths.get(tmpDir.resolve("file.new").toString());
     assertThat((Object) vanilla.convert(file + "/")).isEqualTo(file);
   }
 
   @Test
-  public void testConvert_uriNotProvided() {
+  void testConvert_uriNotProvided() {
     assertThrows(FileSystemNotFoundException.class, () -> vanilla.convert("bog://bucket/lolcat"));
   }
 
@@ -88,31 +84,30 @@ public class PathParameterTest {
   private final PathParameter inputFile = new PathParameter.InputFile();
 
   @Test
-  public void testInputFileValidate_normalFile_works() throws Exception {
-    inputFile.validate("input", folder.newFile().toString());
+  void testInputFileValidate_normalFile_works() throws Exception {
+    inputFile.validate("input", Files.createFile(tmpDir.resolve("tmpfile.txt")).toString());
   }
 
   @Test
-  public void testInputFileValidate_missingFile_throws() {
+  void testInputFileValidate_missingFile_throws() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
-            () -> inputFile.validate("input", new File(folder.getRoot(), "foo").toString()));
+            () -> inputFile.validate("input", tmpDir.resolve("foo").toString()));
     assertThat(thrown).hasMessageThat().contains("not found");
   }
 
   @Test
-  public void testInputFileValidate_directory_throws() {
+  void testInputFileValidate_directory_throws() {
     ParameterException thrown =
         assertThrows(
-            ParameterException.class,
-            () -> inputFile.validate("input", folder.getRoot().toString()));
+            ParameterException.class, () -> inputFile.validate("input", tmpDir.toString()));
     assertThat(thrown).hasMessageThat().contains("is a directory");
   }
 
   @Test
-  public void testInputFileValidate_unreadableFile_throws() throws Exception {
-    Path file = Paths.get(folder.newFile().toString());
+  void testInputFileValidate_unreadableFile_throws() throws Exception {
+    Path file = Files.createFile(tmpDir.resolve("tmpfile.txt"));
     Files.setPosixFilePermissions(file, PosixFilePermissions.fromString("-w-------"));
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> inputFile.validate("input", file.toString()));
@@ -124,33 +119,32 @@ public class PathParameterTest {
   private final PathParameter outputFile = new PathParameter.OutputFile();
 
   @Test
-  public void testOutputFileValidate_normalFile_works() throws Exception {
-    outputFile.validate("input", folder.newFile().toString());
+  void testOutputFileValidate_normalFile_works() throws Exception {
+    outputFile.validate("input", tmpDir.resolve("testfile").toString());
   }
 
   @Test
-  public void testInputFileValidate_characterDeviceBehindSymbolicLinks_works() {
+  void testInputFileValidate_characterDeviceBehindSymbolicLinks_works() {
     assumeTrue(Files.exists(Paths.get("/dev/stdin")));
     outputFile.validate("input", "/dev/stdin");
   }
 
   @Test
-  public void testOutputFileValidate_missingFile_works() {
-    outputFile.validate("input", new File(folder.getRoot(), "foo").toString());
+  void testOutputFileValidate_missingFile_works() {
+    outputFile.validate("input", new File(tmpDir.toFile(), "foo").toString());
   }
 
   @Test
-  public void testOutputFileValidate_directory_throws() {
+  void testOutputFileValidate_directory_throws() {
     ParameterException thrown =
         assertThrows(
-            ParameterException.class,
-            () -> outputFile.validate("input", folder.getRoot().toString()));
+            ParameterException.class, () -> outputFile.validate("input", tmpDir.toString()));
     assertThat(thrown).hasMessageThat().contains("is a directory");
   }
 
   @Test
-  public void testOutputFileValidate_notWritable_throws() throws Exception {
-    Path file = Paths.get(folder.newFile().toString());
+  void testOutputFileValidate_notWritable_throws() throws Exception {
+    Path file = Files.createFile(tmpDir.resolve("newFile.dat"));
     Files.setPosixFilePermissions(file, PosixFilePermissions.fromString("r--------"));
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> outputFile.validate("input", file.toString()));
@@ -158,16 +152,16 @@ public class PathParameterTest {
   }
 
   @Test
-  public void testOutputFileValidate_parentDirMissing_throws() {
-    Path file = Paths.get(folder.getRoot().toString(), "MISSINGNO", "foo.txt");
+  void testOutputFileValidate_parentDirMissing_throws() {
+    Path file = Paths.get(tmpDir.toString(), "MISSINGNO", "foo.txt");
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> outputFile.validate("input", file.toString()));
     assertThat(thrown).hasMessageThat().contains("parent dir doesn't exist");
   }
 
   @Test
-  public void testOutputFileValidate_parentDirIsFile_throws() throws Exception {
-    Path file = Paths.get(folder.newFile().toString(), "foo.txt");
+  void testOutputFileValidate_parentDirIsFile_throws() throws Exception {
+    Path file = Paths.get(Files.createFile(tmpDir.resolve("foo.file")).toString(), "foo.txt");
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> outputFile.validate("input", file.toString()));
     assertThat(thrown).hasMessageThat().contains("parent is non-directory");

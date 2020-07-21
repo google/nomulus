@@ -17,32 +17,30 @@ package google.registry.tools.params;
 import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link PhoneNumberParameter}. */
-@RunWith(JUnit4.class)
-public class PhoneNumberParameterTest {
+class PhoneNumberParameterTest {
+
   private final OptionalPhoneNumberParameter instance = new OptionalPhoneNumberParameter();
 
   @Test
-  public void testConvert_e164() {
+  void testConvert_e164() {
     assertThat(instance.convert("+1.2125550777")).hasValue("+1.2125550777");
   }
 
   @Test
-  public void testConvert_sillyString_throws() {
+  void testConvert_sillyString_throws() {
     assertThrows(IllegalArgumentException.class, () -> instance.convert("foo"));
   }
 
   @Test
-  public void testConvert_empty_returnsEmpty() {
+  void testConvert_empty_returnsEmpty() {
     assertThat(instance.convert("")).isEmpty();
   }
 
   @Test
-  public void testConvert_nullString_returnsEmpty() {
+  void testConvert_nullString_returnsEmpty() {
     assertThat(instance.convert("null")).isEmpty();
   }
 }
