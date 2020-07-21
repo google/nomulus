@@ -24,8 +24,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.appengine.api.users.User;
@@ -245,7 +245,7 @@ public final class RequestHandlerTest {
 
     handler.handleRequest(req, rsp);
 
-    verifyZeroInteractions(rsp);
+    verifyNoInteractions(rsp);
     verify(bumblebeeTask).run();
     assertMetric("/bumblebee", GET, AuthLevel.NONE, true);
   }

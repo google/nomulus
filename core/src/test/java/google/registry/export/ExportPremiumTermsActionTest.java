@@ -31,8 +31,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
@@ -132,7 +132,7 @@ public class ExportPremiumTermsActionTest {
     persistResource(Registry.get("tld").asBuilder().setPremiumList(null).build());
     runAction("tld");
 
-    verifyZeroInteractions(driveConnection);
+    verifyNoInteractions(driveConnection);
     verify(response).setStatus(SC_OK);
     verify(response).setPayload("No premium lists configured");
     verify(response).setContentType(PLAIN_TEXT_UTF_8);
@@ -144,7 +144,7 @@ public class ExportPremiumTermsActionTest {
     persistResource(Registry.get("tld").asBuilder().setDriveFolderId(null).build());
     runAction("tld");
 
-    verifyZeroInteractions(driveConnection);
+    verifyNoInteractions(driveConnection);
     verify(response).setStatus(SC_OK);
     verify(response)
         .setPayload("Skipping export because no Drive folder is associated with this TLD");
@@ -157,7 +157,7 @@ public class ExportPremiumTermsActionTest {
     deleteTld("tld");
     assertThrows(RuntimeException.class, () -> runAction("tld"));
 
-    verifyZeroInteractions(driveConnection);
+    verifyNoInteractions(driveConnection);
     verify(response).setStatus(SC_INTERNAL_SERVER_ERROR);
     verify(response).setPayload(anyString());
     verify(response).setContentType(PLAIN_TEXT_UTF_8);
@@ -169,7 +169,7 @@ public class ExportPremiumTermsActionTest {
     deletePremiumList(new PremiumList.Builder().setName("pl-name").build());
     assertThrows(RuntimeException.class, () -> runAction("tld"));
 
-    verifyZeroInteractions(driveConnection);
+    verifyNoInteractions(driveConnection);
     verify(response).setStatus(SC_INTERNAL_SERVER_ERROR);
     verify(response).setPayload("Could not load premium list for " + "tld");
     verify(response).setContentType(PLAIN_TEXT_UTF_8);

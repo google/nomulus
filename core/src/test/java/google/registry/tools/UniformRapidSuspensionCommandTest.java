@@ -29,20 +29,20 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link UniformRapidSuspensionCommand}. */
-public class UniformRapidSuspensionCommandTest
+class UniformRapidSuspensionCommandTest
     extends EppToolCommandTestCase<UniformRapidSuspensionCommand> {
 
-  HostResource ns1;
-  HostResource ns2;
-  HostResource urs1;
-  HostResource urs2;
+  private HostResource ns1;
+  private HostResource ns2;
+  private HostResource urs1;
+  private HostResource urs2;
 
-  @Before
-  public void initResources() {
+  @BeforeEach
+  void beforeEach() {
     // Since the command's history client ID must be CharlestonRoad, resave TheRegistrar that way.
     persistResource(
         loadRegistrar("TheRegistrar").asBuilder().setClientId("CharlestonRoad").build());
@@ -66,7 +66,7 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testCommand_addsLocksReplacesHostsAndDsDataPrintsUndo() throws Exception {
+  void testCommand_addsLocksReplacesHostsAndDsDataPrintsUndo() throws Exception {
     persistDomainWithHosts(ns1, ns2);
     runCommandForced(
         "--domain_name=evil.tld",
@@ -86,7 +86,7 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testCommand_respectsExistingHost() throws Exception {
+  void testCommand_respectsExistingHost() throws Exception {
     persistDomainWithHosts(urs2, ns1);
     runCommandForced("--domain_name=evil.tld", "--hosts=urs1.example.com,urs2.example.com");
     eppVerifier
@@ -100,7 +100,7 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testCommand_generatesUndoForUndelegatedDomain() throws Exception {
+  void testCommand_generatesUndoForUndelegatedDomain() throws Exception {
     persistActiveDomain("evil.tld");
     runCommandForced("--domain_name=evil.tld", "--hosts=urs1.example.com,urs2.example.com");
     eppVerifier.verifySentAny();
@@ -110,7 +110,7 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testCommand_generatesUndoWithLocksToPreserve() throws Exception {
+  void testCommand_generatesUndoWithLocksToPreserve() throws Exception {
     persistResource(
         newDomainBase("evil.tld").asBuilder()
           .addStatusValue(StatusValue.SERVER_DELETE_PROHIBITED)
@@ -123,7 +123,7 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testUndo_removesLocksReplacesHostsAndDsData() throws Exception {
+  void testUndo_removesLocksReplacesHostsAndDsData() throws Exception {
     persistDomainWithHosts(urs1, urs2);
     runCommandForced(
         "--domain_name=evil.tld", "--undo", "--hosts=ns1.example.com,ns2.example.com");
@@ -135,7 +135,7 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testUndo_respectsLocksToPreserveFlag() throws Exception {
+  void testUndo_respectsLocksToPreserveFlag() throws Exception {
     persistDomainWithHosts(urs1, urs2);
     runCommandForced(
         "--domain_name=evil.tld",
@@ -150,7 +150,7 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testFailure_locksToPreserveWithoutUndo() {
+  void testFailure_locksToPreserveWithoutUndo() {
     persistActiveDomain("evil.tld");
     IllegalArgumentException thrown =
         assertThrows(
@@ -162,7 +162,7 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testFailure_domainNameRequired() {
+  void testFailure_domainNameRequired() {
     persistActiveDomain("evil.tld");
     ParameterException thrown =
         assertThrows(
@@ -172,7 +172,7 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testFailure_extraFieldInDsData() {
+  void testFailure_extraFieldInDsData() {
     persistActiveDomain("evil.tld");
     IllegalArgumentException thrown =
         assertThrows(
@@ -185,7 +185,7 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testFailure_missingFieldInDsData() {
+  void testFailure_missingFieldInDsData() {
     persistActiveDomain("evil.tld");
     IllegalArgumentException thrown =
         assertThrows(
@@ -198,7 +198,7 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testFailure_malformedDsData() {
+  void testFailure_malformedDsData() {
     persistActiveDomain("evil.tld");
     IllegalArgumentException thrown =
         assertThrows(

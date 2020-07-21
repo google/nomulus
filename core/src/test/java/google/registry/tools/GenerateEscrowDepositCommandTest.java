@@ -26,21 +26,24 @@ import google.registry.testing.InjectRule;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.AppEngineServiceUtils;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link GenerateEscrowDepositCommand}. */
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class GenerateEscrowDepositCommandTest
     extends CommandTestCase<GenerateEscrowDepositCommand> {
 
-  @Rule public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
   @Mock AppEngineServiceUtils appEngineServiceUtils;
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     createTld("tld");
     createTld("anothertld");
     command = new GenerateEscrowDepositCommand();
@@ -52,7 +55,7 @@ public class GenerateEscrowDepositCommandTest
   }
 
   @Test
-  public void testCommand_missingTld() {
+  void testCommand_missingTld() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -62,7 +65,7 @@ public class GenerateEscrowDepositCommandTest
   }
 
   @Test
-  public void testCommand_emptyTld() {
+  void testCommand_emptyTld() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -77,7 +80,7 @@ public class GenerateEscrowDepositCommandTest
   }
 
   @Test
-  public void testCommand_invalidTld() {
+  void testCommand_invalidTld() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -92,7 +95,7 @@ public class GenerateEscrowDepositCommandTest
   }
 
   @Test
-  public void testCommand_missingWatermark() {
+  void testCommand_missingWatermark() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -103,7 +106,7 @@ public class GenerateEscrowDepositCommandTest
   }
 
   @Test
-  public void testCommand_emptyWatermark() {
+  void testCommand_emptyWatermark() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -112,7 +115,7 @@ public class GenerateEscrowDepositCommandTest
   }
 
   @Test
-  public void testCommand_missingOutdir() {
+  void testCommand_missingOutdir() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -123,7 +126,7 @@ public class GenerateEscrowDepositCommandTest
   }
 
   @Test
-  public void testCommand_emptyOutdir() {
+  void testCommand_emptyOutdir() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -138,7 +141,7 @@ public class GenerateEscrowDepositCommandTest
   }
 
   @Test
-  public void testCommand_invalidWatermark() {
+  void testCommand_invalidWatermark() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -153,7 +156,7 @@ public class GenerateEscrowDepositCommandTest
   }
 
   @Test
-  public void testCommand_invalidMode() {
+  void testCommand_invalidMode() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -170,7 +173,7 @@ public class GenerateEscrowDepositCommandTest
   }
 
   @Test
-  public void testCommand_invalidRevision() {
+  void testCommand_invalidRevision() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -185,7 +188,7 @@ public class GenerateEscrowDepositCommandTest
   }
 
   @Test
-  public void testCommand_success() throws Exception {
+  void testCommand_success() throws Exception {
     runCommand("--tld=tld", "--watermark=2017-01-01T00:00:00Z", "--mode=thin", "-r 42", "-o test");
 
     assertTasksEnqueued(
@@ -202,7 +205,7 @@ public class GenerateEscrowDepositCommandTest
   }
 
   @Test
-  public void testCommand_successWithDefaultRevision() throws Exception {
+  void testCommand_successWithDefaultRevision() throws Exception {
     runCommand("--tld=tld", "--watermark=2017-01-01T00:00:00Z", "--mode=thin", "-o test");
 
     assertTasksEnqueued(
@@ -218,7 +221,7 @@ public class GenerateEscrowDepositCommandTest
   }
 
   @Test
-  public void testCommand_successWithDefaultMode() throws Exception {
+  void testCommand_successWithDefaultMode() throws Exception {
     runCommand("--tld=tld", "--watermark=2017-01-01T00:00:00Z", "-r=42", "-o test");
 
     assertTasksEnqueued(
@@ -235,7 +238,7 @@ public class GenerateEscrowDepositCommandTest
   }
 
   @Test
-  public void testCommand_successWithMultipleArgumentValues() throws Exception {
+  void testCommand_successWithMultipleArgumentValues() throws Exception {
     runCommand(
         "--tld=tld,anothertld",
         "--watermark=2017-01-01T00:00:00Z,2017-01-02T00:00:00Z",

@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.appengine.api.users.User;
@@ -138,7 +138,7 @@ public class RequestAuthenticatorTest {
   public void testNoAuthNeeded_noneFound() {
     Optional<AuthResult> authResult = runTest(mockUserService, AUTH_NONE);
 
-    verifyZeroInteractions(mockUserService);
+    verifyNoInteractions(mockUserService);
     assertThat(authResult).isPresent();
     assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.NONE);
   }
@@ -149,7 +149,7 @@ public class RequestAuthenticatorTest {
 
     Optional<AuthResult> authResult = runTest(mockUserService, AUTH_NONE);
 
-    verifyZeroInteractions(mockUserService);
+    verifyNoInteractions(mockUserService);
     assertThat(authResult).isPresent();
     assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.APP);
     assertThat(authResult.get().userAuthInfo()).isEmpty();
@@ -159,7 +159,7 @@ public class RequestAuthenticatorTest {
   public void testInternalAuth_notInvokedInternally() {
     Optional<AuthResult> authResult = runTest(mockUserService, AUTH_INTERNAL_OR_ADMIN);
 
-    verifyZeroInteractions(mockUserService);
+    verifyNoInteractions(mockUserService);
     assertThat(authResult).isEmpty();
   }
 
@@ -169,7 +169,7 @@ public class RequestAuthenticatorTest {
 
     Optional<AuthResult> authResult = runTest(mockUserService, AUTH_INTERNAL_OR_ADMIN);
 
-    verifyZeroInteractions(mockUserService);
+    verifyNoInteractions(mockUserService);
     assertThat(authResult).isPresent();
     assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.APP);
     assertThat(authResult.get().userAuthInfo()).isEmpty();

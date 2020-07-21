@@ -24,21 +24,21 @@ import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetContactCommand}. */
-public class GetContactCommandTest extends CommandTestCase<GetContactCommand> {
+class GetContactCommandTest extends CommandTestCase<GetContactCommand> {
 
-  DateTime now = DateTime.now(UTC);
+  private DateTime now = DateTime.now(UTC);
 
-  @Before
-  public void initialize() {
+  @BeforeEach
+  void beforeEach() {
     createTld("tld");
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     persistActiveContact("sh8013");
     runCommand("sh8013");
     assertInStdout("contactId=sh8013");
@@ -46,7 +46,7 @@ public class GetContactCommandTest extends CommandTestCase<GetContactCommand> {
   }
 
   @Test
-  public void testSuccess_expand() throws Exception {
+  void testSuccess_expand() throws Exception {
     persistActiveContact("sh8013");
     runCommand("sh8013", "--expand");
     assertInStdout("contactId=sh8013");
@@ -55,7 +55,7 @@ public class GetContactCommandTest extends CommandTestCase<GetContactCommand> {
   }
 
   @Test
-  public void testSuccess_multipleArguments() throws Exception {
+  void testSuccess_multipleArguments() throws Exception {
     persistActiveContact("sh8013");
     persistActiveContact("jd1234");
     runCommand("sh8013", "jd1234");
@@ -66,25 +66,25 @@ public class GetContactCommandTest extends CommandTestCase<GetContactCommand> {
   }
 
   @Test
-  public void testSuccess_deletedContact() throws Exception {
+  void testSuccess_deletedContact() throws Exception {
     persistDeletedContact("sh8013", now.minusDays(1));
     runCommand("sh8013");
     assertInStdout("Contact 'sh8013' does not exist or is deleted");
   }
 
   @Test
-  public void testSuccess_contactDoesNotExist() throws Exception {
+  void testSuccess_contactDoesNotExist() throws Exception {
     runCommand("nope");
     assertInStdout("Contact 'nope' does not exist or is deleted");
   }
 
   @Test
-  public void testFailure_noContact() {
+  void testFailure_noContact() {
     assertThrows(ParameterException.class, this::runCommand);
   }
 
   @Test
-  public void testSuccess_contactDeletedInFuture() throws Exception {
+  void testSuccess_contactDeletedInFuture() throws Exception {
     persistResource(
         newContactResource("sh8013").asBuilder().setDeletionTime(now.plusDays(1)).build());
     runCommand("sh8013", "--read_timestamp=" + now.plusMonths(1));
