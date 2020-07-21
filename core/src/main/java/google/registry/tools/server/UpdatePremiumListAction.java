@@ -74,7 +74,7 @@ public class UpdatePremiumListAction extends CreateOrUpdatePremiumListAction {
   protected void saveToCloudSql() {
     logger.atInfo().log("Updating premium list '%s' in Cloud SQL.", name);
     // TODO(mcilwain): Add logInputData() call here once DB migration is complete.
-    google.registry.schema.tld.PremiumList premiumList = parseToPremiumList(name, inputData);
+    PremiumList premiumList = parseToPremiumList(name, inputData);
     PremiumListDao.update(premiumList);
     String message =
         String.format(

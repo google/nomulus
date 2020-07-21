@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.schema.tld.PremiumListUtils.parseToPremiumList;
 import static org.junit.Assert.assertThrows;
 
+import google.registry.model.registry.label.PremiumList;
 import google.registry.testing.AppEngineRule;
 import java.math.BigDecimal;
 import org.junit.Rule;
