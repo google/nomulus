@@ -19,32 +19,29 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import google.registry.schema.replay.EntityTest.EntityForTesting;
 import google.registry.testing.FakeClock;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CreateAutoTimestampConverter}. */
-@RunWith(JUnit4.class)
 public class CreateAutoTimestampConverterTest {
 
   private final FakeClock fakeClock = new FakeClock();
 
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder()
           .withClock(fakeClock)
           .withEntityClass(TestEntity.class)
           .buildUnitTestRule();
 
   @Test
-  public void testTypeConversion() {
+  void testTypeConversion() {
     CreateAutoTimestamp ts = CreateAutoTimestamp.create(DateTime.parse("2019-09-9T11:39:00Z"));
     TestEntity ent = new TestEntity("myinst", ts);
 
@@ -55,7 +52,7 @@ public class CreateAutoTimestampConverterTest {
   }
 
   @Test
-  public void testAutoInitialization() {
+  void testAutoInitialization() {
     CreateAutoTimestamp ts = CreateAutoTimestamp.create(null);
     TestEntity ent = new TestEntity("autoinit", ts);
 

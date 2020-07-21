@@ -18,16 +18,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import google.registry.request.HttpException.UnprocessableEntityException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RdapSearchPattern}. */
-@RunWith(JUnit4.class)
-public class RdapSearchPatternTest {
+class RdapSearchPatternTest {
 
   @Test
-  public void testNoWildcards_ok() {
+  void testNoWildcards_ok() {
     RdapSearchPattern rdapSearchPattern = RdapSearchPattern.createFromLdhDomainName("example.lol");
     assertThat(rdapSearchPattern.getInitialString()).isEqualTo("example.lol");
     assertThat(rdapSearchPattern.getHasWildcard()).isFalse();
@@ -35,7 +32,7 @@ public class RdapSearchPatternTest {
   }
 
   @Test
-  public void testWildcardNoTld_ok() {
+  void testWildcardNoTld_ok() {
     RdapSearchPattern rdapSearchPattern = RdapSearchPattern.createFromLdhDomainName("exam*");
     assertThat(rdapSearchPattern.getInitialString()).isEqualTo("exam");
     assertThat(rdapSearchPattern.getHasWildcard()).isTrue();
@@ -43,7 +40,7 @@ public class RdapSearchPatternTest {
   }
 
   @Test
-  public void testWildcardTld_ok() {
+  void testWildcardTld_ok() {
     RdapSearchPattern rdapSearchPattern = RdapSearchPattern.createFromLdhDomainName("exam*.lol");
     assertThat(rdapSearchPattern.getInitialString()).isEqualTo("exam");
     assertThat(rdapSearchPattern.getHasWildcard()).isTrue();
@@ -51,7 +48,7 @@ public class RdapSearchPatternTest {
   }
 
   @Test
-  public void testWildcardAtStart_ok() {
+  void testWildcardAtStart_ok() {
     RdapSearchPattern rdapSearchPattern = RdapSearchPattern.createFromLdhDomainName("*.lol");
     assertThat(rdapSearchPattern.getInitialString()).isEmpty();
     assertThat(rdapSearchPattern.getHasWildcard()).isTrue();
@@ -59,7 +56,7 @@ public class RdapSearchPatternTest {
   }
 
   @Test
-  public void testWildcardOnly_ok() {
+  void testWildcardOnly_ok() {
     RdapSearchPattern rdapSearchPattern = RdapSearchPattern.createFromLdhDomainName("*");
     assertThat(rdapSearchPattern.getInitialString()).isEmpty();
     assertThat(rdapSearchPattern.getHasWildcard()).isTrue();
@@ -67,28 +64,28 @@ public class RdapSearchPatternTest {
   }
 
   @Test
-  public void testMultipleWildcards_unprocessable() {
+  void testMultipleWildcards_unprocessable() {
     assertThrows(
         UnprocessableEntityException.class,
         () -> RdapSearchPattern.createFromLdhDomainName("ex*am*.lol"));
   }
 
   @Test
-  public void testWildcardNotAtEnd_unprocessable() {
+  void testWildcardNotAtEnd_unprocessable() {
     assertThrows(
         UnprocessableEntityException.class,
         () -> RdapSearchPattern.createFromLdhDomainName("ex*am"));
   }
 
   @Test
-  public void testWildcardNotAtEndWithTld_unprocessable() {
+  void testWildcardNotAtEndWithTld_unprocessable() {
     assertThrows(
         UnprocessableEntityException.class,
         () -> RdapSearchPattern.createFromLdhDomainName("ex*am.lol"));
   }
 
   @Test
-  public void testShortString_ok() {
+  void testShortString_ok() {
     RdapSearchPattern rdapSearchPattern = RdapSearchPattern.createFromLdhDomainName("e");
     assertThat(rdapSearchPattern.getInitialString()).isEqualTo("e");
     assertThat(rdapSearchPattern.getHasWildcard()).isFalse();
@@ -96,27 +93,27 @@ public class RdapSearchPatternTest {
   }
 
   @Test
-  public void testZeroLengthSuffix_unprocessable() {
+  void testZeroLengthSuffix_unprocessable() {
     assertThrows(
         UnprocessableEntityException.class,
         () -> RdapSearchPattern.createFromLdhDomainName("exam*."));
   }
 
   @Test
-  public void testNextInitialString_alpha() {
+  void testNextInitialString_alpha() {
     RdapSearchPattern rdapSearchPattern = RdapSearchPattern.createFromLdhDomainName("exam*.lol");
     assertThat(rdapSearchPattern.getNextInitialString()).isEqualTo("exan");
   }
 
   @Test
-  public void testNextInitialString_unicode_translatedToPunycode() {
+  void testNextInitialString_unicode_translatedToPunycode() {
     RdapSearchPattern rdapSearchPattern =
         RdapSearchPattern.createFromLdhOrUnicodeDomainName("cat.みんな");
     assertThat(rdapSearchPattern.getNextInitialString()).isEqualTo("cat.xn--q9jyb4d");
   }
 
   @Test
-  public void testUnicodeString_noWildcard() {
+  void testUnicodeString_noWildcard() {
     RdapSearchPattern rdapSearchPattern =
         RdapSearchPattern.createFromUnicodeString("unicode みんに string");
     assertThat(rdapSearchPattern.getInitialString()).isEqualTo("unicode みんに string");
@@ -125,7 +122,7 @@ public class RdapSearchPatternTest {
   }
 
   @Test
-  public void testUnicodeString_withWildcard() {
+  void testUnicodeString_withWildcard() {
     RdapSearchPattern rdapSearchPattern =
         RdapSearchPattern.createFromUnicodeString("unicode みんに string*");
     assertThat(rdapSearchPattern.getInitialString()).isEqualTo("unicode みんに string");
@@ -134,7 +131,7 @@ public class RdapSearchPatternTest {
   }
 
   @Test
-  public void testUnicodeString_middleWildcard() {
+  void testUnicodeString_middleWildcard() {
     assertThrows(
         UnprocessableEntityException.class,
         () -> RdapSearchPattern.createFromLdhDomainName("unicode みんに *string"));

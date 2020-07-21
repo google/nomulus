@@ -27,22 +27,19 @@ import google.registry.util.ResourceUtils;
 import google.registry.util.SystemClock;
 import java.nio.file.Path;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests that the ICANN testing signed mark files are valid and not expired. */
-@RunWith(JUnit4.class)
-public class TmchTestDataExpirationTest {
+class TmchTestDataExpirationTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Test
-  public void testActiveSignedMarkFiles_areValidAndNotExpired() throws Exception {
+  void testActiveSignedMarkFiles_areValidAndNotExpired() throws Exception {
     DomainFlowTmchUtils tmchUtils =
         new DomainFlowTmchUtils(
             new TmchXmlSignature(

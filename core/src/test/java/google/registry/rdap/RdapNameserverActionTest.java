@@ -33,21 +33,18 @@ import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RdapNameserverAction}. */
-@RunWith(JUnit4.class)
-public class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverAction> {
+class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameserverAction> {
 
-  public RdapNameserverActionTest() {
+  RdapNameserverActionTest() {
     super(RdapNameserverAction.class);
   }
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     // normal
     createTld("lol");
     makeAndPersistHostResource(
@@ -105,7 +102,7 @@ public class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameser
   }
 
   @Test
-  public void testInvalidNameserver_returns400() {
+  void testInvalidNameserver_returns400() {
     assertThat(generateActualJson("invalid/host/name"))
         .isEqualTo(
             generateExpectedJsonError(
@@ -115,14 +112,14 @@ public class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameser
   }
 
   @Test
-  public void testUnknownNameserver_returns404() {
+  void testUnknownNameserver_returns404() {
     assertThat(generateActualJson("ns1.missing.com")).isEqualTo(
         generateExpectedJsonError("ns1.missing.com not found", 404));
     assertThat(response.getStatus()).isEqualTo(404);
   }
 
   @Test
-  public void testValidNameserver_works() {
+  void testValidNameserver_works() {
     assertThat(generateActualJson("ns1.cat.lol"))
         .isEqualTo(generateExpectedJsonWithTopLevelEntries(
             "ns1.cat.lol",
@@ -136,7 +133,7 @@ public class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameser
   }
 
   @Test
-  public void testTrailingDot_getsIgnored() {
+  void testTrailingDot_getsIgnored() {
     assertThat(generateActualJson("ns1.cat.lol."))
         .isEqualTo(generateExpectedJsonWithTopLevelEntries(
             "ns1.cat.lol",
@@ -150,7 +147,7 @@ public class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameser
   }
 
   @Test
-  public void testUpperCase_getsCanonicalized() {
+  void testUpperCase_getsCanonicalized() {
     assertThat(generateActualJson("Ns1.CaT.lOl."))
         .isEqualTo(generateExpectedJsonWithTopLevelEntries(
             "ns1.cat.lol",
@@ -164,7 +161,7 @@ public class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameser
   }
 
   @Test
-  public void testQueryParameter_getsIgnored() {
+  void testQueryParameter_getsIgnored() {
     assertThat(generateActualJson("ns1.cat.lol?key=value"))
         .isEqualTo(generateExpectedJsonWithTopLevelEntries(
             "ns1.cat.lol",
@@ -178,7 +175,7 @@ public class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameser
   }
 
   @Test
-  public void testIdnNameserver_works() {
+  void testIdnNameserver_works() {
     assertThat(generateActualJson("ns1.cat.みんな"))
         .isEqualTo(generateExpectedJsonWithTopLevelEntries(
             "ns1.cat.みんな",
@@ -193,7 +190,7 @@ public class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameser
   }
 
   @Test
-  public void testPunycodeNameserver_works() {
+  void testPunycodeNameserver_works() {
     assertThat(generateActualJson("ns1.cat.xn--q9jyb4c"))
         .isEqualTo(generateExpectedJsonWithTopLevelEntries(
             "ns1.cat.みんな",
@@ -208,7 +205,7 @@ public class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameser
   }
 
   @Test
-  public void testMultilevelNameserver_works() {
+  void testMultilevelNameserver_works() {
     assertThat(generateActualJson("ns1.domain.1.tld"))
         .isEqualTo(generateExpectedJsonWithTopLevelEntries(
             "ns1.domain.1.tld",
@@ -222,7 +219,7 @@ public class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameser
   }
 
   @Test
-  public void testExternalNameserver_works() {
+  void testExternalNameserver_works() {
     assertThat(generateActualJson("ns1.domain.external"))
         .isEqualTo(generateExpectedJsonWithTopLevelEntries(
             "ns1.domain.external",
@@ -236,20 +233,20 @@ public class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameser
   }
 
   @Test
-  public void testDeletedNameserver_notFound_includeDeletedNotSpecified() {
+  void testDeletedNameserver_notFound_includeDeletedNotSpecified() {
     generateActualJson("nsdeleted.cat.lol");
     assertThat(response.getStatus()).isEqualTo(404);
   }
 
   @Test
-  public void testDeletedNameserver_notFound_includeDeletedSetFalse() {
+  void testDeletedNameserver_notFound_includeDeletedSetFalse() {
     action.includeDeletedParam = Optional.of(false);
     generateActualJson("nsdeleted.cat.lol");
     assertThat(response.getStatus()).isEqualTo(404);
   }
 
   @Test
-  public void testDeletedNameserver_notFound_notLoggedIn() {
+  void testDeletedNameserver_notFound_notLoggedIn() {
     logout();
     action.includeDeletedParam = Optional.of(true);
     generateActualJson("nsdeleted.cat.lol");
@@ -257,7 +254,7 @@ public class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameser
   }
 
   @Test
-  public void testDeletedNameserver_notFound_loggedInAsDifferentRegistrar() {
+  void testDeletedNameserver_notFound_loggedInAsDifferentRegistrar() {
     login("otherregistrar");
     action.includeDeletedParam = Optional.of(true);
     generateActualJson("nsdeleted.cat.lol");
@@ -265,7 +262,7 @@ public class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameser
   }
 
   @Test
-  public void testDeletedNameserver_found_loggedInAsCorrectRegistrar() {
+  void testDeletedNameserver_found_loggedInAsCorrectRegistrar() {
     login("TheRegistrar");
     action.includeDeletedParam = Optional.of(true);
     assertThat(generateActualJson("nsdeleted.cat.lol"))
@@ -282,7 +279,7 @@ public class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameser
   }
 
   @Test
-  public void testDeletedNameserver_found_loggedInAsAdmin() {
+  void testDeletedNameserver_found_loggedInAsAdmin() {
     loginAsAdmin();
     action.includeDeletedParam = Optional.of(true);
     assertThat(generateActualJson("nsdeleted.cat.lol"))
@@ -299,7 +296,7 @@ public class RdapNameserverActionTest extends RdapActionBaseTestCase<RdapNameser
   }
 
   @Test
-  public void testMetrics() {
+  void testMetrics() {
     generateActualJson("ns1.cat.lol");
     verify(rdapMetrics)
         .updateMetrics(

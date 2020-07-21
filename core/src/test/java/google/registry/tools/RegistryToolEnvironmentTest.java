@@ -17,14 +17,15 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import google.registry.testing.SystemPropertyRule;
+import google.registry.testing.SystemPropertyExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RegistryToolEnvironment}. */
 class RegistryToolEnvironmentTest {
 
-  @RegisterExtension final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
+  @RegisterExtension
+  final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   @Test
   void testGet_withoutSetup_throws() {
@@ -34,10 +35,10 @@ class RegistryToolEnvironmentTest {
 
   @Test
   void testSetup_changesEnvironmentReturnedByGet() {
-    RegistryToolEnvironment.UNITTEST.setup(systemPropertyRule);
+    RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
     assertThat(RegistryToolEnvironment.get()).isEqualTo(RegistryToolEnvironment.UNITTEST);
 
-    RegistryToolEnvironment.ALPHA.setup(systemPropertyRule);
+    RegistryToolEnvironment.ALPHA.setup(systemPropertyExtension);
     assertThat(RegistryToolEnvironment.get()).isEqualTo(RegistryToolEnvironment.ALPHA);
   }
 

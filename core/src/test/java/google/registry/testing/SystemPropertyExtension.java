@@ -27,15 +27,14 @@ import javax.annotation.Nullable;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.rules.ExternalResource;
 
 /**
- * JUnit Rule for overriding the values Java system properties during tests.
+ * JUnit extension for overriding the values Java system properties during tests.
  *
  * <p>In most scenarios this class should be the last rule/extension to apply. In JUnit 5, apply
  * {@code @Order(value = Integer.MAX_VALUE)} to the extension.
  */
-public final class SystemPropertyRule extends ExternalResource
+public final class SystemPropertyExtension
     implements SystemPropertySetter, BeforeEachCallback, AfterEachCallback {
 
   /** Class representing a system property key value pair. */
@@ -72,7 +71,7 @@ public final class SystemPropertyRule extends ExternalResource
    * @see java.lang.System#setProperty(String, String)
    */
   @Override
-  public SystemPropertyRule setProperty(String key, @Nullable String value) {
+  public SystemPropertyExtension setProperty(String key, @Nullable String value) {
     originals.computeIfAbsent(
         key, k -> new Property(k, Optional.ofNullable(System.getProperty(k))));
     Property property = new Property(key, Optional.ofNullable(value));
@@ -85,7 +84,7 @@ public final class SystemPropertyRule extends ExternalResource
   }
 
   @Override
-  protected void before() {
+  public void beforeEach(ExtensionContext context) {
     checkState(!isRunning);
     for (Property pending : pendings) {
       pending.set();
@@ -94,19 +93,9 @@ public final class SystemPropertyRule extends ExternalResource
   }
 
   @Override
-  protected void after() {
+  public void afterEach(ExtensionContext context) {
     for (Property original : originals.values()) {
       original.set();
     }
-  }
-
-  @Override
-  public void beforeEach(ExtensionContext context) {
-    before();
-  }
-
-  @Override
-  public void afterEach(ExtensionContext context) {
-    after();
   }
 }

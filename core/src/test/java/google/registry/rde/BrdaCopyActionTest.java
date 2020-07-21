@@ -30,10 +30,10 @@ import com.google.common.io.Files;
 import google.registry.gcs.GcsUtils;
 import google.registry.keyring.api.Keyring;
 import google.registry.testing.AppEngineRule;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.GcsTestingUtils;
-import google.registry.testing.GpgSystemCommandRule;
+import google.registry.testing.GpgSystemCommandExtension;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -61,14 +61,15 @@ public class BrdaCopyActionTest {
   private static final GcsFilename SIG_FILE =
       new GcsFilename("tub", "lol_2010-10-17_thin_S1_R0.sig");
 
-  @RegisterExtension public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @RegisterExtension
-  public final GpgSystemCommandRule gpg =
-      new GpgSystemCommandRule(
+  public final GpgSystemCommandExtension gpg =
+      new GpgSystemCommandExtension(
           RdeTestData.loadBytes("pgp-public-keyring.asc"),
           RdeTestData.loadBytes("pgp-private-keyring-escrow.asc"));
 

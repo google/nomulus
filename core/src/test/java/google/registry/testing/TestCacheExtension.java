@@ -27,17 +27,16 @@ import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * Sets up caches with desired data expiry for testing and restores their default configurations
- * when tests complete.
+ * A JUnit extension that overloads cache expiry for tests.
  *
  * <p>This rule is necessary because many caches in the system are singleton and referenced through
  * static fields.
  */
-public class TestCacheRule implements BeforeEachCallback, AfterEachCallback {
+public class TestCacheExtension implements BeforeEachCallback, AfterEachCallback {
 
   private final ImmutableList<TestCacheHandler> cacheHandlers;
 
-  private TestCacheRule(ImmutableList<TestCacheHandler> cacheHandlers) {
+  private TestCacheExtension(ImmutableList<TestCacheHandler> cacheHandlers) {
     this.cacheHandlers = cacheHandlers;
   }
 
@@ -51,7 +50,7 @@ public class TestCacheRule implements BeforeEachCallback, AfterEachCallback {
     cacheHandlers.forEach(TestCacheHandler::after);
   }
 
-  /** Builder for {@link TestCacheRule}. */
+  /** Builder for {@link TestCacheExtension}. */
   public static class Builder {
     private final Map<String, TestCacheHandler> cacheHandlerMap = Maps.newHashMap();
 
@@ -83,8 +82,8 @@ public class TestCacheRule implements BeforeEachCallback, AfterEachCallback {
       return this;
     }
 
-    public TestCacheRule build() {
-      return new TestCacheRule(ImmutableList.copyOf(cacheHandlerMap.values()));
+    public TestCacheExtension build() {
+      return new TestCacheExtension(ImmutableList.copyOf(cacheHandlerMap.values()));
     }
   }
 

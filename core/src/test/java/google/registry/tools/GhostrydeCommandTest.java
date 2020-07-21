@@ -20,7 +20,7 @@ import static org.junit.Assert.assertThrows;
 
 import google.registry.keyring.api.Keyring;
 import google.registry.rde.Ghostryde;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.InjectRule;
 import java.nio.file.Files;
@@ -53,7 +53,8 @@ class GhostrydeCommandTest extends CommandTestCase<GhostrydeCommand> {
 
   @RegisterExtension final InjectRule inject = new InjectRule();
 
-  @RegisterExtension final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   private Keyring keyring;
 

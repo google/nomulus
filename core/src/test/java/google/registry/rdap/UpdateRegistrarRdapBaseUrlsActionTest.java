@@ -37,14 +37,11 @@ import google.registry.model.registry.Registry.TldType;
 import google.registry.testing.AppEngineRule;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UpdateRegistrarRdapBaseUrlsAction}. */
-@RunWith(JUnit4.class)
 public final class UpdateRegistrarRdapBaseUrlsActionTest {
 
   /**
@@ -78,7 +75,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
           + "],"
           + "\"version\":\"1.0\"}";
 
-  @Rule
+  @RegisterExtension
   public AppEngineRule appEngineRule =
       new AppEngineRule.Builder().withDatastoreAndCloudSql().build();
 
@@ -89,6 +86,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
     void addNextResponse(MockLowLevelHttpResponse response) {
       simulatedResponses.add(response);
     }
+
     List<MockLowLevelHttpRequest> getRequestsSent() {
       return requestsSent;
     }
@@ -106,8 +104,8 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
   private TestHttpTransport httpTransport;
   private UpdateRegistrarRdapBaseUrlsAction action;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     httpTransport = new TestHttpTransport();
     action = new UpdateRegistrarRdapBaseUrlsAction();
 
@@ -148,22 +146,22 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
       String clientId, Long ianaId, Registrar.Type type, String... rdapBaseUrls) {
     persistSimpleResource(
         new Registrar.Builder()
-        .setClientId(clientId)
-        .setRegistrarName(clientId)
-        .setType(type)
-        .setIanaIdentifier(ianaId)
-        .setRdapBaseUrls(ImmutableSet.copyOf(rdapBaseUrls))
-        .setLocalizedAddress(
-            new RegistrarAddress.Builder()
-            .setStreet(ImmutableList.of("123 fake st"))
-            .setCity("fakeCity")
-            .setCountryCode("XX")
-            .build())
-        .build());
+            .setClientId(clientId)
+            .setRegistrarName(clientId)
+            .setType(type)
+            .setIanaIdentifier(ianaId)
+            .setRdapBaseUrls(ImmutableSet.copyOf(rdapBaseUrls))
+            .setLocalizedAddress(
+                new RegistrarAddress.Builder()
+                    .setStreet(ImmutableList.of("123 fake st"))
+                    .setCity("fakeCity")
+                    .setCountryCode("XX")
+                    .build())
+            .build());
   }
 
   @Test
-  public void testUnknownIana_cleared() {
+  void testUnknownIana_cleared() {
     // The IANA ID isn't in the JSON_LIST_REPLY
     persistRegistrar("someRegistrar", 4123L, Registrar.Type.REAL, "http://rdap.example/blah");
 
@@ -175,7 +173,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
   }
 
   @Test
-  public void testKnownIana_changed() {
+  void testKnownIana_changed() {
     // The IANA ID is in the JSON_LIST_REPLY
     persistRegistrar("someRegistrar", 1448L, Registrar.Type.REAL, "http://rdap.example/blah");
 
@@ -188,7 +186,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
   }
 
   @Test
-  public void testKnownIana_notReal_noChange() {
+  void testKnownIana_notReal_noChange() {
     // The IANA ID is in the JSON_LIST_REPLY
     persistRegistrar("someRegistrar", 9999L, Registrar.Type.INTERNAL, "http://rdap.example/blah");
 
@@ -201,7 +199,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
   }
 
   @Test
-  public void testKnownIana_notReal_nullIANA_noChange() {
+  void testKnownIana_notReal_nullIANA_noChange() {
     persistRegistrar("someRegistrar", null, Registrar.Type.TEST, "http://rdap.example/blah");
 
     action.run();
@@ -213,7 +211,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
   }
 
   @Test
-  public void testKnownIana_multipleValues() {
+  void testKnownIana_multipleValues() {
     // The IANA ID is in the JSON_LIST_REPLY
     persistRegistrar("registrar4000", 4000L, Registrar.Type.REAL, "http://rdap.example/blah");
     persistRegistrar("registrar4001", 4001L, Registrar.Type.REAL, "http://rdap.example/blah");
@@ -230,28 +228,31 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
   }
 
   @Test
-  public void testNoTlds() {
+  void testNoTlds() {
     deleteTld("tld");
-    assertThat(assertThrows(IllegalArgumentException.class, action::run)).hasMessageThat()
+    assertThat(assertThrows(IllegalArgumentException.class, action::run))
+        .hasMessageThat()
         .isEqualTo("There must exist at least one REAL TLD.");
   }
 
   @Test
-  public void testOnlyTestTlds() {
+  void testOnlyTestTlds() {
     persistResource(Registry.get("tld").asBuilder().setTldType(TldType.TEST).build());
-    assertThat(assertThrows(IllegalArgumentException.class, action::run)).hasMessageThat()
+    assertThat(assertThrows(IllegalArgumentException.class, action::run))
+        .hasMessageThat()
         .isEqualTo("There must exist at least one REAL TLD.");
   }
 
   @Test
-  public void testSecondTldSucceeds() {
+  void testSecondTldSucceeds() {
     createTld("secondtld");
     httpTransport = new TestHttpTransport();
     action.httpTransport = httpTransport;
 
     // the first TLD request will return a bad cookie but the second will succeed
     MockLowLevelHttpResponse badLoginResponse = new MockLowLevelHttpResponse();
-    badLoginResponse.addHeader("Set-Cookie",
+    badLoginResponse.addHeader(
+        "Set-Cookie",
         "Expires=Thu, 01-Jan-1970 00:00:10 GMT; Path=/mosapi/v1/app; Secure; HttpOnly");
 
     httpTransport.addNextResponse(badLoginResponse);
@@ -261,25 +262,27 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
   }
 
   @Test
-  public void testBothFail() {
+  void testBothFail() {
     createTld("secondtld");
     httpTransport = new TestHttpTransport();
     action.httpTransport = httpTransport;
 
     MockLowLevelHttpResponse badLoginResponse = new MockLowLevelHttpResponse();
-    badLoginResponse.addHeader("Set-Cookie",
+    badLoginResponse.addHeader(
+        "Set-Cookie",
         "Expires=Thu, 01-Jan-1970 00:00:10 GMT; Path=/mosapi/v1/app; Secure; HttpOnly");
 
     // it should fail for both TLDs
     httpTransport.addNextResponse(badLoginResponse);
     httpTransport.addNextResponse(badLoginResponse);
 
-    assertThat(assertThrows(RuntimeException.class, action::run)).hasMessageThat()
+    assertThat(assertThrows(RuntimeException.class, action::run))
+        .hasMessageThat()
         .isEqualTo("Error contacting MosAPI server. Tried TLDs [secondtld, tld]");
   }
 
   @Test
-  public void testFailureCause_ignoresLoginFailure() {
+  void testFailureCause_ignoresLoginFailure() {
     // Login failures aren't particularly interesting so we should log them, but the final
     // throwable should be some other failure if one existed
     createTld("secondtld");

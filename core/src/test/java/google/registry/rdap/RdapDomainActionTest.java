@@ -41,22 +41,19 @@ import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RdapDomainAction}. */
-@RunWith(JUnit4.class)
-public class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
+class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
 
-  public RdapDomainActionTest() {
+  RdapDomainActionTest() {
     super(RdapDomainAction.class);
   }
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     // lol
     createTld("lol");
     Registrar registrarLol = persistResource(makeRegistrar(
@@ -246,7 +243,7 @@ public class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainActio
   }
 
   @Test
-  public void testInvalidDomain_returns400() {
+  void testInvalidDomain_returns400() {
     assertThat(generateActualJson("invalid/domain/name"))
         .isEqualTo(
             generateExpectedJsonError(
@@ -257,7 +254,7 @@ public class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainActio
   }
 
   @Test
-  public void testUnknownDomain_returns400() {
+  void testUnknownDomain_returns400() {
     assertThat(generateActualJson("missingdomain.com"))
         .isEqualTo(
             generateExpectedJsonError(
@@ -268,45 +265,45 @@ public class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainActio
   }
 
   @Test
-  public void testValidDomain_works() {
+  void testValidDomain_works() {
     login("evilregistrar");
     assertProperResponseForCatLol("cat.lol", "rdap_domain.json");
   }
 
   @Test
-  public void testValidDomain_asAdministrator_works() {
+  void testValidDomain_asAdministrator_works() {
     loginAsAdmin();
     assertProperResponseForCatLol("cat.lol", "rdap_domain.json");
   }
 
   @Test
-  public void testValidDomain_notLoggedIn_noContacts() {
+  void testValidDomain_notLoggedIn_noContacts() {
     assertProperResponseForCatLol("cat.lol", "rdap_domain_no_contacts_with_remark.json");
   }
 
   @Test
-  public void testValidDomain_loggedInAsOtherRegistrar_noContacts() {
+  void testValidDomain_loggedInAsOtherRegistrar_noContacts() {
     login("idnregistrar");
     assertProperResponseForCatLol("cat.lol", "rdap_domain_no_contacts_with_remark.json");
   }
 
   @Test
-  public void testUpperCase_ignored() {
+  void testUpperCase_ignored() {
     assertProperResponseForCatLol("CaT.lOl", "rdap_domain_no_contacts_with_remark.json");
   }
 
   @Test
-  public void testTrailingDot_ignored() {
+  void testTrailingDot_ignored() {
     assertProperResponseForCatLol("cat.lol.", "rdap_domain_no_contacts_with_remark.json");
   }
 
   @Test
-  public void testQueryParameter_ignored() {
+  void testQueryParameter_ignored() {
     assertProperResponseForCatLol("cat.lol?key=value", "rdap_domain_no_contacts_with_remark.json");
   }
 
   @Test
-  public void testIdnDomain_works() {
+  void testIdnDomain_works() {
     login("idnregistrar");
     assertThat(generateActualJson("cat.みんな"))
         .isEqualTo(
@@ -324,7 +321,7 @@ public class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainActio
   }
 
   @Test
-  public void testIdnDomainWithPercentEncoding_works() {
+  void testIdnDomainWithPercentEncoding_works() {
     login("idnregistrar");
     assertThat(generateActualJson("cat.%E3%81%BF%E3%82%93%E3%81%AA"))
         .isEqualTo(
@@ -342,7 +339,7 @@ public class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainActio
   }
 
   @Test
-  public void testPunycodeDomain_works() {
+  void testPunycodeDomain_works() {
     login("idnregistrar");
     assertThat(generateActualJson("cat.xn--q9jyb4c"))
         .isEqualTo(
@@ -360,7 +357,7 @@ public class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainActio
   }
 
   @Test
-  public void testMultilevelDomain_works() {
+  void testMultilevelDomain_works() {
     login("1tldregistrar");
     assertThat(generateActualJson("cat.1.tld"))
         .isEqualTo(
@@ -378,37 +375,37 @@ public class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainActio
   }
 
   // todo (b/27378695): reenable or delete this test
-  @Ignore
+  @Disabled
   @Test
-  public void testDomainInTestTld_notFound() {
+  void testDomainInTestTld_notFound() {
     persistResource(Registry.get("lol").asBuilder().setTldType(Registry.TldType.TEST).build());
     generateActualJson("cat.lol");
     assertThat(response.getStatus()).isEqualTo(404);
   }
 
   @Test
-  public void testDeletedDomain_notFound() {
+  void testDeletedDomain_notFound() {
     assertThat(generateActualJson("dodo.lol"))
         .isEqualTo(generateExpectedJsonError("dodo.lol not found", 404));
     assertThat(response.getStatus()).isEqualTo(404);
   }
 
   @Test
-  public void testDeletedDomain_notFound_includeDeletedSetFalse() {
+  void testDeletedDomain_notFound_includeDeletedSetFalse() {
     action.includeDeletedParam = Optional.of(true);
     generateActualJson("dodo.lol");
     assertThat(response.getStatus()).isEqualTo(404);
   }
 
   @Test
-  public void testDeletedDomain_notFound_notLoggedIn() {
+  void testDeletedDomain_notFound_notLoggedIn() {
     action.includeDeletedParam = Optional.of(true);
     generateActualJson("dodo.lol");
     assertThat(response.getStatus()).isEqualTo(404);
   }
 
   @Test
-  public void testDeletedDomain_notFound_loggedInAsDifferentRegistrar() {
+  void testDeletedDomain_notFound_loggedInAsDifferentRegistrar() {
     login("1tldregistrar");
     action.includeDeletedParam = Optional.of(true);
     generateActualJson("dodo.lol");
@@ -416,7 +413,7 @@ public class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainActio
   }
 
   @Test
-  public void testDeletedDomain_works_loggedInAsCorrectRegistrar() {
+  void testDeletedDomain_works_loggedInAsCorrectRegistrar() {
     login("evilregistrar");
     action.includeDeletedParam = Optional.of(true);
     assertThat(generateActualJson("dodo.lol"))
@@ -435,7 +432,7 @@ public class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainActio
   }
 
   @Test
-  public void testDeletedDomain_works_loggedInAsAdmin() {
+  void testDeletedDomain_works_loggedInAsAdmin() {
     loginAsAdmin();
     action.includeDeletedParam = Optional.of(true);
     assertThat(generateActualJson("dodo.lol"))
@@ -454,7 +451,7 @@ public class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainActio
   }
 
   @Test
-  public void testMetrics() {
+  void testMetrics() {
     generateActualJson("cat.lol");
     verify(rdapMetrics)
         .updateMetrics(

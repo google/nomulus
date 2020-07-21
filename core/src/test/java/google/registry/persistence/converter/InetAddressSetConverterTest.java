@@ -42,7 +42,7 @@ public class InetAddressSetConverterTest {
           .build();
 
   @Test
-  public void roundTripConversion_returnsSameAddresses() {
+  void roundTripConversion_returnsSameAddresses() {
     verifySaveAndLoad(
         ImmutableSet.of(
             InetAddresses.forString("0.0.0.0"),
@@ -52,12 +52,12 @@ public class InetAddressSetConverterTest {
   }
 
   @Test
-  public void roundTrip_emptySet() {
+  void roundTrip_emptySet() {
     verifySaveAndLoad(ImmutableSet.of());
   }
 
   @Test
-  public void roundTrip_null() {
+  void roundTrip_null() {
     verifySaveAndLoad(null);
   }
 

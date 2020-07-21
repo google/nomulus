@@ -64,12 +64,12 @@ import google.registry.rde.JSchSshSession.JSchSshSessionFactory;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.RequestParameters;
 import google.registry.testing.AppEngineRule;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
-import google.registry.testing.GpgSystemCommandRule;
+import google.registry.testing.GpgSystemCommandExtension;
 import google.registry.testing.Lazies;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.sftp.SftpServerRule;
@@ -116,11 +116,12 @@ public class RdeUploadActionTest {
   @TempDir
   File folder;
 
-  @RegisterExtension public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   @RegisterExtension
-  public final GpgSystemCommandRule gpg =
-      new GpgSystemCommandRule(
+  public final GpgSystemCommandExtension gpg =
+      new GpgSystemCommandExtension(
           RdeTestData.loadBytes("pgp-public-keyring.asc"),
           RdeTestData.loadBytes("pgp-private-keyring-escrow.asc"));
 

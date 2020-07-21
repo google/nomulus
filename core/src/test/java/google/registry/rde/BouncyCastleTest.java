@@ -24,7 +24,7 @@ import static org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags.AES_128;
 
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.CharStreams;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.BouncyCastleProviderExtension;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -118,7 +118,8 @@ public class BouncyCastleTest {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  @RegisterExtension public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   @Test
   void testCompressDecompress() throws Exception {

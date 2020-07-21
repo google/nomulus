@@ -47,7 +47,7 @@ import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import google.registry.util.Clock;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -110,18 +110,20 @@ public final class AppEngineRule extends ExternalResource
 
   /** A rule-within-a-rule to provide a temporary folder for AppEngineRule's internal temp files. */
   TemporaryFolder temporaryFolder = new TemporaryFolder();
+
   /**
    * Sets up a SQL database when running on JUnit 5. This is for test classes that are not member of
    * the {@code SqlIntegrationTestSuite}.
    */
-  JpaIntegrationTestRule jpaIntegrationTestRule = null;
+  private JpaIntegrationTestRule jpaIntegrationTestRule = null;
+
   /**
    * Sets up a SQL database when running on JUnit 5 and records the JPA entities tested by each test
    * class. This is for {@code SqlIntegrationTestSuite} members.
    */
-  JpaIntegrationWithCoverageExtension jpaIntegrationWithCoverageExtension = null;
+  private JpaIntegrationWithCoverageExtension jpaIntegrationWithCoverageExtension = null;
 
-  JpaUnitTestRule jpaUnitTestRule;
+  private JpaUnitTestExtension jpaUnitTestRule;
 
   private boolean withDatastore;
   private boolean withoutCannedData;
@@ -369,10 +371,10 @@ public final class AppEngineRule extends ExternalResource
             builder
                 .withEntityClass(jpaTestEntities.toArray(new Class[jpaTestEntities.size()]))
                 .buildUnitTestRule();
-        jpaUnitTestRule.before();
+        jpaUnitTestRule.beforeEach(context);
       } else {
         jpaIntegrationTestRule = builder.buildIntegrationTestRule();
-        jpaIntegrationTestRule.before();
+        jpaIntegrationTestRule.beforeEach(context);
       }
     }
     if (isWithDatastoreAndCloudSql()) {
@@ -387,9 +389,9 @@ public final class AppEngineRule extends ExternalResource
       if (enableJpaEntityCoverageCheck) {
         jpaIntegrationWithCoverageExtension.afterEach(context);
       } else if (withJpaUnitTest) {
-        jpaUnitTestRule.after();
+        jpaUnitTestRule.afterEach(context);
       } else {
-        jpaIntegrationTestRule.after();
+        jpaIntegrationTestRule.afterEach(context);
       }
     }
     after();
@@ -603,7 +605,7 @@ public final class AppEngineRule extends ExternalResource
   }
 
   /** Create some fake registrars. */
-  public static void loadInitialData() {
+  private static void loadInitialData() {
     persistSimpleResources(
         ImmutableList.of(
             makeRegistrar1(),

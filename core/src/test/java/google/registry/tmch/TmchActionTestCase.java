@@ -22,30 +22,28 @@ import com.google.appengine.api.urlfetch.HTTPRequest;
 import com.google.appengine.api.urlfetch.HTTPResponse;
 import com.google.appengine.api.urlfetch.URLFetchService;
 import google.registry.testing.AppEngineRule;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeClock;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Common code for unit tests of classes that extend {@link Marksdb}. */
-@RunWith(JUnit4.class)
-public abstract class TmchActionTestCase {
+@ExtendWith(MockitoExtension.class)
+abstract class TmchActionTestCase {
 
   static final String MARKSDB_LOGIN_AND_PASSWORD = "lolcat:attack";
   static final String MARKSDB_URL = "http://127.0.0.1/love";
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
-  @Rule public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   @Mock URLFetchService fetchService;
   @Mock HTTPResponse httpResponse;
@@ -54,8 +52,8 @@ public abstract class TmchActionTestCase {
   final FakeClock clock = new FakeClock();
   final Marksdb marksdb = new Marksdb();
 
-  @Before
-  public void commonBefore() throws Exception {
+  @BeforeEach
+  public void beforeEachTmchActionTestCase() throws Exception {
     marksdb.fetchService = fetchService;
     marksdb.tmchMarksdbUrl = MARKSDB_URL;
     marksdb.marksdbPublicKey = TmchData.loadPublicKey(TmchTestData.loadBytes("pubkey"));

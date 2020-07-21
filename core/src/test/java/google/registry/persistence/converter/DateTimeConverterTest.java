@@ -19,46 +19,43 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import java.sql.Timestamp;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DateTimeConverter}. */
-@RunWith(JUnit4.class)
 public class DateTimeConverterTest {
 
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   private final DateTimeConverter converter = new DateTimeConverter();
 
   @Test
-  public void convertToDatabaseColumn_returnsNullIfInputIsNull() {
+  void convertToDatabaseColumn_returnsNullIfInputIsNull() {
     assertThat(converter.convertToDatabaseColumn(null)).isNull();
   }
 
   @Test
-  public void convertToDatabaseColumn_convertsCorrectly() {
+  void convertToDatabaseColumn_convertsCorrectly() {
     DateTime dateTime = DateTime.parse("2019-09-01T01:01:01");
     assertThat(converter.convertToDatabaseColumn(dateTime).getTime())
         .isEqualTo(dateTime.getMillis());
   }
 
   @Test
-  public void convertToEntityAttribute_returnsNullIfInputIsNull() {
+  void convertToEntityAttribute_returnsNullIfInputIsNull() {
     assertThat(converter.convertToEntityAttribute(null)).isNull();
   }
 
   @Test
-  public void convertToEntityAttribute_convertsCorrectly() {
+  void convertToEntityAttribute_convertsCorrectly() {
     DateTime dateTime = DateTime.parse("2019-09-01T01:01:01Z");
     long millis = dateTime.getMillis();
     assertThat(converter.convertToEntityAttribute(new Timestamp(millis))).isEqualTo(dateTime);
@@ -69,7 +66,7 @@ public class DateTimeConverterTest {
   }
 
   @Test
-  public void converter_generatesTimestampWithNormalizedZone() {
+  void converter_generatesTimestampWithNormalizedZone() {
     DateTime dt = parseDateTime("2019-09-01T01:01:01Z");
     TestEntity entity = new TestEntity("normalized_utc_time", dt);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
@@ -81,7 +78,7 @@ public class DateTimeConverterTest {
   }
 
   @Test
-  public void converter_convertsNonUtcZoneCorrectly() {
+  void converter_convertsNonUtcZoneCorrectly() {
     DateTime dt = parseDateTime("2019-09-01T01:01:01-05:00");
     TestEntity entity = new TestEntity("new_york_time", dt);
 

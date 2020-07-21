@@ -26,32 +26,28 @@ import google.registry.model.smd.SignedMarkRevocationList;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link SmdrlCsvParser}. */
-@RunWith(JUnit4.class)
-public class SmdrlCsvParserTest {
+class SmdrlCsvParserTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .build();
+  @RegisterExtension public final AppEngineRule appEngine = AppEngineRule.builder().build();
+
   private final FakeClock clock = new FakeClock();
 
   private static final CharSource SMDRL_LATEST_CSV =
       TmchTestData.loadBytes("smdrl-latest.csv").asCharSource(US_ASCII);
 
   @Test
-  public void testParse() throws Exception {
+  void testParse() throws Exception {
     SignedMarkRevocationList smdrl = SmdrlCsvParser.parse(SMDRL_LATEST_CSV.readLines());
     assertThat(smdrl.size()).isEqualTo(150);
     assertThat(smdrl.getCreationTime()).isEqualTo(DateTime.parse("2013-11-24T23:30:04.3Z"));
   }
 
   @Test
-  public void testFirstRow() throws Exception {
+  void testFirstRow() throws Exception {
     SignedMarkRevocationList smdrl = SmdrlCsvParser.parse(SMDRL_LATEST_CSV.readLines());
     clock.setTo(DateTime.parse("2013-08-09T12:00:00.0Z"));
     assertThat(smdrl.isSmdRevoked("0000001681375789102250-65535", clock.nowUtc())).isTrue();
@@ -62,7 +58,7 @@ public class SmdrlCsvParserTest {
   }
 
   @Test
-  public void testLastRow() throws Exception {
+  void testLastRow() throws Exception {
     SignedMarkRevocationList smdrl = SmdrlCsvParser.parse(SMDRL_LATEST_CSV.readLines());
     clock.setTo(DateTime.parse("2013-08-09T12:00:00.0Z"));
     assertThat(smdrl.isSmdRevoked("0000002211373633641407-65535", clock.nowUtc())).isTrue();
@@ -73,7 +69,7 @@ public class SmdrlCsvParserTest {
   }
 
   @Test
-  public void testRowWithDifferentDate() throws Exception {
+  void testRowWithDifferentDate() throws Exception {
     SignedMarkRevocationList smdrl = SmdrlCsvParser.parse(SMDRL_LATEST_CSV.readLines());
     clock.setTo(DateTime.parse("2013-08-09T12:00:00.0Z"));
     assertThat(smdrl.isSmdRevoked("0000002101376042766438-65535", clock.nowUtc())).isFalse();
@@ -82,11 +78,13 @@ public class SmdrlCsvParserTest {
   }
 
   @Test
-  public void testOneRow() {
-    SignedMarkRevocationList smdrl = SmdrlCsvParser.parse(ImmutableList.of(
-        "1,2013-11-24T23:30:04.3Z",
-        "smd-id,insertion-datetime",
-        "0000001681375789102250-65535,2013-08-09T12:00:00.0Z"));
+  void testOneRow() {
+    SignedMarkRevocationList smdrl =
+        SmdrlCsvParser.parse(
+            ImmutableList.of(
+                "1,2013-11-24T23:30:04.3Z",
+                "smd-id,insertion-datetime",
+                "0000001681375789102250-65535,2013-08-09T12:00:00.0Z"));
     assertThat(smdrl.size()).isEqualTo(1);
     assertThat(smdrl.getCreationTime()).isEqualTo(DateTime.parse("2013-11-24T23:30:04.3Z"));
     clock.setTo(DateTime.parse("2020-08-09T12:00:00.0Z"));
@@ -94,10 +92,10 @@ public class SmdrlCsvParserTest {
   }
 
   @Test
-  public void testEmpty() {
-    SignedMarkRevocationList smdrl = SmdrlCsvParser.parse(ImmutableList.of(
-        "1,2014-11-24T23:30:04.3Z",
-        "smd-id,insertion-datetime"));
+  void testEmpty() {
+    SignedMarkRevocationList smdrl =
+        SmdrlCsvParser.parse(
+            ImmutableList.of("1,2014-11-24T23:30:04.3Z", "smd-id,insertion-datetime"));
     assertThat(smdrl.size()).isEqualTo(0);
     assertThat(smdrl.getCreationTime()).isEqualTo(DateTime.parse("2014-11-24T23:30:04.3Z"));
     clock.setTo(DateTime.parse("2020-08-09T12:00:00.0Z"));
@@ -105,7 +103,7 @@ public class SmdrlCsvParserTest {
   }
 
   @Test
-  public void testFail_badVersion() {
+  void testFail_badVersion() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -119,7 +117,7 @@ public class SmdrlCsvParserTest {
   }
 
   @Test
-  public void testFail_badHeader() {
+  void testFail_badHeader() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -133,7 +131,7 @@ public class SmdrlCsvParserTest {
   }
 
   @Test
-  public void testFail_tooManyColumns() {
+  void testFail_tooManyColumns() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

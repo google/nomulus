@@ -50,20 +50,17 @@ import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RdapJsonFormatter}. */
-@RunWith(JUnit4.class)
-public class RdapJsonFormatterTest {
+class RdapJsonFormatterTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  @Rule public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("1999-01-01T00:00:00Z"));
 
@@ -83,9 +80,8 @@ public class RdapJsonFormatterTest {
   private ContactResource contactResourceTech;
   private ContactResource contactResourceNotLinked;
 
-
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
 
     rdapJsonFormatter = RdapTestHelper.getTestRdapJsonFormatter(clock);
@@ -259,7 +255,7 @@ public class RdapJsonFormatterTest {
             clock.nowUtc().minusMonths(3)));
   }
 
-  public static ImmutableList<RegistrarContact> makeMoreRegistrarContacts(Registrar registrar) {
+  static ImmutableList<RegistrarContact> makeMoreRegistrarContacts(Registrar registrar) {
     return ImmutableList.of(
         new RegistrarContact.Builder()
             .setParent(registrar)
@@ -306,41 +302,41 @@ public class RdapJsonFormatterTest {
   }
 
   @Test
-  public void testRegistrar() {
+  void testRegistrar() {
     assertThat(rdapJsonFormatter.createRdapRegistrarEntity(registrar, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_registrar.json"));
   }
 
   @Test
-  public void testRegistrar_summary() {
+  void testRegistrar_summary() {
     assertThat(
             rdapJsonFormatter.createRdapRegistrarEntity(registrar, OutputDataType.SUMMARY).toJson())
         .isEqualTo(loadJson("rdapjson_registrar_summary.json"));
   }
 
   @Test
-  public void testHost_ipv4() {
+  void testHost_ipv4() {
     assertThat(
             rdapJsonFormatter.createRdapNameserver(hostResourceIpv4, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_host_ipv4.json"));
   }
 
   @Test
-  public void testHost_ipv6() {
+  void testHost_ipv6() {
     assertThat(
             rdapJsonFormatter.createRdapNameserver(hostResourceIpv6, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_host_ipv6.json"));
   }
 
   @Test
-  public void testHost_both() {
+  void testHost_both() {
     assertThat(
             rdapJsonFormatter.createRdapNameserver(hostResourceBoth, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_host_both.json"));
   }
 
   @Test
-  public void testHost_both_summary() {
+  void testHost_both_summary() {
     assertThat(
             rdapJsonFormatter
                 .createRdapNameserver(hostResourceBoth, OutputDataType.SUMMARY)
@@ -349,7 +345,7 @@ public class RdapJsonFormatterTest {
   }
 
   @Test
-  public void testHost_noAddresses() {
+  void testHost_noAddresses() {
     assertThat(
             rdapJsonFormatter
                 .createRdapNameserver(hostResourceNoAddresses, OutputDataType.FULL)
@@ -358,7 +354,7 @@ public class RdapJsonFormatterTest {
   }
 
   @Test
-  public void testHost_notLinked() {
+  void testHost_notLinked() {
     assertThat(
             rdapJsonFormatter
                 .createRdapNameserver(hostResourceNotLinked, OutputDataType.FULL)
@@ -367,7 +363,7 @@ public class RdapJsonFormatterTest {
   }
 
   @Test
-  public void testHost_superordinateHasPendingTransfer() {
+  void testHost_superordinateHasPendingTransfer() {
     assertThat(
             rdapJsonFormatter
                 .createRdapNameserver(hostResourceSuperordinatePendingTransfer, OutputDataType.FULL)
@@ -376,7 +372,7 @@ public class RdapJsonFormatterTest {
   }
 
   @Test
-  public void testRegistrant() {
+  void testRegistrant() {
     assertThat(
             rdapJsonFormatter
                 .createRdapContactEntity(
@@ -388,7 +384,7 @@ public class RdapJsonFormatterTest {
   }
 
   @Test
-  public void testRegistrant_summary() {
+  void testRegistrant_summary() {
     assertThat(
             rdapJsonFormatter
                 .createRdapContactEntity(
@@ -400,7 +396,7 @@ public class RdapJsonFormatterTest {
   }
 
   @Test
-  public void testRegistrant_loggedOut() {
+  void testRegistrant_loggedOut() {
     rdapJsonFormatter.rdapAuthorization = RdapAuthorization.PUBLIC_AUTHORIZATION;
     assertThat(
             rdapJsonFormatter
@@ -413,7 +409,7 @@ public class RdapJsonFormatterTest {
   }
 
   @Test
-  public void testRegistrant_baseHasNoTrailingSlash() {
+  void testRegistrant_baseHasNoTrailingSlash() {
     // First, make sure we have a trailing slash at the end by default!
     // This test tries to change the default state, if the default doesn't have a /, then this test
     // doesn't help.
@@ -432,7 +428,7 @@ public class RdapJsonFormatterTest {
   }
 
   @Test
-  public void testAdmin() {
+  void testAdmin() {
     assertThat(
             rdapJsonFormatter
                 .createRdapContactEntity(
@@ -444,7 +440,7 @@ public class RdapJsonFormatterTest {
   }
 
   @Test
-  public void testTech() {
+  void testTech() {
     assertThat(
             rdapJsonFormatter
                 .createRdapContactEntity(
@@ -454,7 +450,7 @@ public class RdapJsonFormatterTest {
   }
 
   @Test
-  public void testRolelessContact() {
+  void testRolelessContact() {
     assertThat(
             rdapJsonFormatter
                 .createRdapContactEntity(
@@ -464,7 +460,7 @@ public class RdapJsonFormatterTest {
   }
 
   @Test
-  public void testUnlinkedContact() {
+  void testUnlinkedContact() {
     assertThat(
             rdapJsonFormatter
                 .createRdapContactEntity(
@@ -474,26 +470,26 @@ public class RdapJsonFormatterTest {
   }
 
   @Test
-  public void testDomain_full() {
+  void testDomain_full() {
     assertThat(rdapJsonFormatter.createRdapDomain(domainBaseFull, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_domain_full.json"));
   }
 
   @Test
-  public void testDomain_summary() {
+  void testDomain_summary() {
     assertThat(rdapJsonFormatter.createRdapDomain(domainBaseFull, OutputDataType.SUMMARY).toJson())
         .isEqualTo(loadJson("rdapjson_domain_summary.json"));
   }
 
   @Test
-  public void testDomain_logged_out() {
+  void testDomain_logged_out() {
     rdapJsonFormatter.rdapAuthorization = RdapAuthorization.PUBLIC_AUTHORIZATION;
     assertThat(rdapJsonFormatter.createRdapDomain(domainBaseFull, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_domain_logged_out.json"));
   }
 
   @Test
-  public void testDomain_noNameserversNoTransfersMultipleRoleContact() {
+  void testDomain_noNameserversNoTransfersMultipleRoleContact() {
     assertThat(
             rdapJsonFormatter
                 .createRdapDomain(domainBaseNoNameserversNoTransfers, OutputDataType.FULL)
@@ -502,7 +498,7 @@ public class RdapJsonFormatterTest {
   }
 
   @Test
-  public void testError() {
+  void testError() {
     assertThat(
             RdapObjectClasses.ErrorResponse.create(
                     SC_BAD_REQUEST, "Invalid Domain Name", "Not a valid domain name")
@@ -511,7 +507,7 @@ public class RdapJsonFormatterTest {
   }
 
   @Test
-  public void testTopLevel() {
+  void testTopLevel() {
     assertThat(
             TopLevelReplyObject.create(
                     new ReplyPayloadBase(BoilerplateType.OTHER) {
@@ -523,7 +519,7 @@ public class RdapJsonFormatterTest {
   }
 
   @Test
-  public void testTopLevel_domain() {
+  void testTopLevel_domain() {
     assertThat(
             TopLevelReplyObject.create(
                     new ReplyPayloadBase(BoilerplateType.DOMAIN) {
