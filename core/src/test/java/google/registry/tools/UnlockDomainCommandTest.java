@@ -43,9 +43,7 @@ import org.joda.time.Duration;
 import org.junit.Before;
 import org.junit.Test;
 
-/**
- * Unit tests for {@link UnlockDomainCommand}.
- */
+/** Unit tests for {@link UnlockDomainCommand}. */
 public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand> {
 
   @Before
@@ -112,7 +110,7 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
   @Test
   public void testFailure_domainDoesntExist() throws Exception {
     runCommandForced("--client=NewRegistrar", "missing.tld");
-    assertInStdout("Failed domains:\n[missing.tld (Unknown domain missing.tld)]");
+    assertInStdout("Failed domains:\n[missing.tld (Domain doesn't exist)]");
   }
 
   @Test

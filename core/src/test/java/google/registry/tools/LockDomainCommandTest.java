@@ -100,7 +100,7 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
   @Test
   public void testFailure_domainDoesntExist() throws Exception {
     runCommandForced("--client=NewRegistrar", "missing.tld");
-    assertInStdout("Failed domains:\n[missing.tld (Unknown domain missing.tld)]");
+    assertInStdout("Failed domains:\n[missing.tld (Domain doesn't exist)]");
   }
 
   @Test
