@@ -24,6 +24,7 @@ import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineRule;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
@@ -46,23 +47,25 @@ public class GracePeriodTest {
 
   @BeforeEach
   void before() {
-    onetime = new BillingEvent.OneTime.Builder()
-      .setEventTime(now)
-      .setBillingTime(now.plusDays(1))
-      .setClientId("TheRegistrar")
-      .setCost(Money.of(CurrencyUnit.USD, 42))
-      .setParent(Key.create(HistoryEntry.class, 12345))
-      .setReason(Reason.CREATE)
-      .setPeriodYears(1)
-      .setTargetId("foo.google")
-      .build();
+    onetime =
+        new BillingEvent.OneTime.Builder()
+            .setEventTime(now)
+            .setBillingTime(now.plusDays(1))
+            .setClientId("TheRegistrar")
+            .setCost(Money.of(CurrencyUnit.USD, 42))
+            .setParent(
+                Key.create(Key.create(DomainBase.class, "domain"), HistoryEntry.class, 12345))
+            .setReason(Reason.CREATE)
+            .setPeriodYears(1)
+            .setTargetId("foo.google")
+            .build();
   }
 
   @Test
   void testSuccess_forBillingEvent() {
     GracePeriod gracePeriod = GracePeriod.forBillingEvent(GracePeriodStatus.ADD, onetime);
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.ADD);
-    assertThat(gracePeriod.getOneTimeBillingEvent()).isEqualTo(Key.create(onetime));
+    assertThat(gracePeriod.getOneTimeBillingEvent()).isEqualTo(onetime.createVKey());
     assertThat(gracePeriod.getRecurringBillingEvent()).isNull();
     assertThat(gracePeriod.getClientId()).isEqualTo("TheRegistrar");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(now.plusDays(1));
@@ -100,7 +103,7 @@ public class GracePeriodTest {
                     GracePeriodStatus.RENEW,
                     now.plusDays(1),
                     "TheRegistrar",
-                    Key.create(Recurring.class, 12345)));
+                    VKey.create(Recurring.class, 12345)));
     assertThat(thrown).hasMessageThat().contains("autorenew");
   }
 }

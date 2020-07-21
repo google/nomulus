@@ -64,19 +64,19 @@ import org.junit.jupiter.api.Test;
 public class DomainBaseTest extends EntityTestCase {
 
   private DomainBase domain;
-  private Key<BillingEvent.OneTime> oneTimeBillKey;
-  private Key<BillingEvent.Recurring> recurringBillKey;
-  private Key<DomainBase> domainKey;
+  private VKey<BillingEvent.OneTime> oneTimeBillKey;
+  private VKey<BillingEvent.Recurring> recurringBillKey;
+  private VKey<DomainBase> domainKey;
 
   @BeforeEach
   void setUp() {
     createTld("com");
-    domainKey = Key.create(null, DomainBase.class, "4-COM");
+    domainKey = VKey.from(Key.create(null, DomainBase.class, "4-COM"));
     VKey<HostResource> hostKey =
         persistResource(
                 new HostResource.Builder()
                     .setHostName("ns1.example.com")
-                    .setSuperordinateDomain(VKey.from(domainKey))
+                    .setSuperordinateDomain(domainKey)
                     .setRepoId("1-COM")
                     .build())
             .createVKey();
@@ -95,13 +95,14 @@ public class DomainBaseTest extends EntityTestCase {
                     .build())
             .createVKey();
     Key<HistoryEntry> historyEntryKey =
-        Key.create(persistResource(new HistoryEntry.Builder().setParent(domainKey).build()));
-    oneTimeBillKey = Key.create(historyEntryKey, BillingEvent.OneTime.class, 1);
-    recurringBillKey = Key.create(historyEntryKey, BillingEvent.Recurring.class, 2);
-    Key<PollMessage.Autorenew> autorenewPollKey =
-        Key.create(historyEntryKey, PollMessage.Autorenew.class, 3);
-    Key<PollMessage.OneTime> onetimePollKey =
-        Key.create(historyEntryKey, PollMessage.OneTime.class, 1);
+        Key.create(
+            persistResource(new HistoryEntry.Builder().setParent(domainKey.getOfyKey()).build()));
+    oneTimeBillKey = VKey.from(Key.create(historyEntryKey, BillingEvent.OneTime.class, 1));
+    recurringBillKey = VKey.from(Key.create(historyEntryKey, BillingEvent.Recurring.class, 2));
+    VKey<PollMessage.Autorenew> autorenewPollKey =
+        VKey.from(Key.create(historyEntryKey, PollMessage.Autorenew.class, 3));
+    VKey<PollMessage.OneTime> onetimePollKey =
+        VKey.from(Key.create(historyEntryKey, PollMessage.OneTime.class, 1));
     // Set up a new persisted domain entity.
     domain =
         persistResource(
@@ -138,13 +139,10 @@ public class DomainBaseTest extends EntityTestCase {
                             .setLosingClientId("losing")
                             .setPendingTransferExpirationTime(fakeClock.nowUtc())
                             .setServerApproveEntities(
-                                ImmutableSet.of(
-                                    VKey.from(oneTimeBillKey),
-                                    VKey.from(recurringBillKey),
-                                    VKey.from(autorenewPollKey)))
-                            .setServerApproveBillingEvent(VKey.from(oneTimeBillKey))
-                            .setServerApproveAutorenewEvent(VKey.from(recurringBillKey))
-                            .setServerApproveAutorenewPollMessage(VKey.from(autorenewPollKey))
+                                ImmutableSet.of(oneTimeBillKey, recurringBillKey, autorenewPollKey))
+                            .setServerApproveBillingEvent(oneTimeBillKey)
+                            .setServerApproveAutorenewEvent(recurringBillKey)
+                            .setServerApproveAutorenewPollMessage(autorenewPollKey)
                             .setTransferRequestTime(fakeClock.nowUtc().plusDays(1))
                             .setTransferStatus(TransferStatus.SERVER_APPROVED)
                             .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
@@ -327,7 +325,7 @@ public class DomainBaseTest extends EntityTestCase {
   private void assertTransferred(
       DomainBase domain,
       DateTime newExpirationTime,
-      Key<BillingEvent.Recurring> newAutorenewEvent) {
+      VKey<BillingEvent.Recurring> newAutorenewEvent) {
     assertThat(domain.getTransferData().getTransferStatus())
         .isEqualTo(TransferStatus.SERVER_APPROVED);
     assertThat(domain.getCurrentSponsorClientId()).isEqualTo("winner");
@@ -377,8 +375,8 @@ public class DomainBaseTest extends EntityTestCase {
             .build();
     DomainBase afterTransfer = domain.cloneProjectedAtTime(fakeClock.nowUtc().plusDays(1));
     DateTime newExpirationTime = oldExpirationTime.plusYears(1);
-    Key<BillingEvent.Recurring> serverApproveAutorenewEvent =
-        domain.getTransferData().getServerApproveAutorenewEvent().getOfyKey();
+    VKey<BillingEvent.Recurring> serverApproveAutorenewEvent =
+        domain.getTransferData().getServerApproveAutorenewEvent();
     assertTransferred(afterTransfer, newExpirationTime, serverApproveAutorenewEvent);
     assertThat(afterTransfer.getGracePeriods())
         .containsExactly(
@@ -389,7 +387,7 @@ public class DomainBaseTest extends EntityTestCase {
                     .plusDays(1)
                     .plus(Registry.get("com").getTransferGracePeriodLength()),
                 "winner",
-                Key.create(transferBillingEvent)));
+                transferBillingEvent.createVKey()));
     // If we project after the grace period expires all should be the same except the grace period.
     DomainBase afterGracePeriod =
         domain.cloneProjectedAtTime(
@@ -747,8 +745,8 @@ public class DomainBaseTest extends EntityTestCase {
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.PENDING)
             .setGainingClientId("TheRegistrar")
-            .setServerApproveAutorenewEvent(VKey.from(recurringBillKey))
-            .setServerApproveBillingEvent(VKey.from(oneTimeBillKey))
+            .setServerApproveAutorenewEvent(recurringBillKey)
+            .setServerApproveBillingEvent(oneTimeBillKey)
             .build();
     domain =
         persistResource(

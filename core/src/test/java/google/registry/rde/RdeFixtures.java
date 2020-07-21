@@ -26,7 +26,6 @@ import static org.joda.money.CurrencyUnit.USD;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
-import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -147,8 +146,7 @@ final class RdeFixtures {
                     StatusValue.CLIENT_TRANSFER_PROHIBITED,
                     StatusValue.SERVER_UPDATE_PROHIBITED))
             .setAutorenewBillingEvent(
-                Key.create(
-                    persistResource(
+                persistResource(
                         new BillingEvent.Recurring.Builder()
                             .setReason(Reason.RENEW)
                             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
@@ -157,10 +155,10 @@ final class RdeFixtures {
                             .setEventTime(END_OF_TIME)
                             .setRecurrenceEndTime(END_OF_TIME)
                             .setParent(historyEntry)
-                            .build())))
+                            .build())
+                    .createVKey())
             .setAutorenewPollMessage(
-                Key.create(
-                    persistSimpleResource(
+                persistSimpleResource(
                         new PollMessage.Autorenew.Builder()
                             .setTargetId(tld)
                             .setClientId("TheRegistrar")
@@ -168,7 +166,8 @@ final class RdeFixtures {
                             .setAutorenewEndTime(END_OF_TIME)
                             .setMsg("Domain was auto-renewed.")
                             .setParent(historyEntry)
-                            .build())))
+                            .build())
+                    .createVKey())
             .setTransferData(
                 new DomainTransferData.Builder()
                     .setGainingClientId("gaining")

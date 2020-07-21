@@ -396,14 +396,15 @@ public class BillingEventTest extends EntityTestCase {
 
   @Test
   void testSuccess_cancellation_forGracePeriod_withRecurring() {
-    BillingEvent.Cancellation newCancellation = BillingEvent.Cancellation.forGracePeriod(
-        GracePeriod.createForRecurring(
-            GracePeriodStatus.AUTO_RENEW,
-            now.plusYears(1).plusDays(45),
-            "a registrar",
-            Key.create(recurring)),
-        historyEntry2,
-        "foo.tld");
+    BillingEvent.Cancellation newCancellation =
+        BillingEvent.Cancellation.forGracePeriod(
+            GracePeriod.createForRecurring(
+                GracePeriodStatus.AUTO_RENEW,
+                now.plusYears(1).plusDays(45),
+                "a registrar",
+                recurring.createVKey()),
+            historyEntry2,
+            "foo.tld");
     // Set ID to be the same to ignore for the purposes of comparison.
     newCancellation = newCancellation.asBuilder().setId(cancellationRecurring.getId()).build();
     assertThat(newCancellation).isEqualTo(cancellationRecurring);
