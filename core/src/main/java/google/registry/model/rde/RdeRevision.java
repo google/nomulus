@@ -48,6 +48,10 @@ public final class RdeRevision extends ImmutableObject {
    */
   int revision;
 
+  public int getRevision() {
+    return revision;
+  }
+
   /**
    * Returns next revision ID to use when staging a new deposit file for the given triplet.
    *
