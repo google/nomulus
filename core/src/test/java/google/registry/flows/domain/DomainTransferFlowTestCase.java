@@ -54,8 +54,8 @@ import org.junit.jupiter.api.BeforeEach;
  * @param <F> the flow type
  * @param <R> the resource type
  */
-public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
-    extends ResourceFlowTestCase<F, R>{
+abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
+    extends ResourceFlowTestCase<F, R> {
 
   // Transfer is requested on the 6th and expires on the 11th.
   // The "now" of this flow is on the 9th, 3 days in.
@@ -81,7 +81,7 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
   }
 
   @BeforeEach
-  void makeClientZ() {
+  void beforeEachDomainTransferFlowTestCase() {
     // Registrar ClientZ is used in tests that need another registrar that definitely doesn't own
     // the resources in question.
     persistResource(

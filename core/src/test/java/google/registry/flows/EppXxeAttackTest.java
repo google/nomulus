@@ -16,20 +16,17 @@ package google.registry.flows;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.testing.AppEngineRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for <a href="https://en.wikipedia.org/wiki/XML_external_entity_attack">XXE</a> attacks. */
-@RunWith(JUnit4.class)
-public class EppXxeAttackTest extends EppTestCase {
+class EppXxeAttackTest extends EppTestCase {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testRemoteXmlExternalEntity() throws Exception {
+  void testRemoteXmlExternalEntity() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatCommand("contact_create_remote_xxe.xml")
         .hasResponse(
@@ -42,7 +39,7 @@ public class EppXxeAttackTest extends EppTestCase {
   }
 
   @Test
-  public void testLocalXmlExtrernalEntity() throws Exception {
+  void testLocalXmlExtrernalEntity() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatCommand("contact_create_local_xxe.xml")
         .hasResponse(
@@ -55,7 +52,7 @@ public class EppXxeAttackTest extends EppTestCase {
   }
 
   @Test
-  public void testBillionLaughsAttack() throws Exception {
+  void testBillionLaughsAttack() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatCommand("contact_create_billion_laughs.xml")
         .hasResponse(

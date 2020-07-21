@@ -23,19 +23,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import google.registry.testing.FakeHttpSession;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 /** Tests for {@link EppTlsAction}. */
-@RunWith(JUnit4.class)
-public class EppTlsActionTest {
+class EppTlsActionTest {
 
   private static final byte[] INPUT_XML_BYTES = "<xml>".getBytes(UTF_8);
 
   @Test
-  public void testPassesArgumentsThrough() {
+  void testPassesArgumentsThrough() {
     EppTlsAction action = new EppTlsAction();
     action.inputXmlBytes = INPUT_XML_BYTES;
     action.tlsCredentials = mock(TlsCredentials.class);

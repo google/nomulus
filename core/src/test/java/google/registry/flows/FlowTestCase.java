@@ -73,16 +73,22 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public abstract class FlowTestCase<F extends Flow> {
 
   /** Whether to actually write to Datastore or just simulate. */
-  public enum CommitMode { LIVE, DRY_RUN }
+  public enum CommitMode {
+    LIVE,
+    DRY_RUN
+  }
 
   /** Whether to run in normal or superuser mode. */
-  public enum UserPrivileges { NORMAL, SUPERUSER }
+  public enum UserPrivileges {
+    NORMAL,
+    SUPERUSER
+  }
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
+  final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension final InjectRule inject = new InjectRule();
 
   protected EppLoader eppLoader;
   protected SessionMetadata sessionMetadata;
@@ -94,7 +100,7 @@ public abstract class FlowTestCase<F extends Flow> {
   private EppMetric.Builder eppMetricBuilder;
 
   @BeforeEach
-  public void init() {
+  public void beforeEachFlowTestCase() {
     sessionMetadata = new HttpSessionMetadata(new FakeHttpSession());
     sessionMetadata.setClientId("TheRegistrar");
     sessionMetadata.setServiceExtensionUris(ProtocolDefinition.getVisibleServiceExtensionUris());

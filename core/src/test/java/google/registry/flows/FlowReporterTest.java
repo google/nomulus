@@ -32,14 +32,11 @@ import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import java.util.Map;
 import java.util.Optional;
 import org.json.simple.JSONValue;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link FlowReporter}. */
-@RunWith(JUnit4.class)
-public class FlowReporterTest {
+class FlowReporterTest {
 
   static class TestCommandFlow implements Flow {
     @Override
@@ -59,8 +56,8 @@ public class FlowReporterTest {
   private final FlowReporter flowReporter = new FlowReporter();
   private final TestLogHandler handler = new TestLogHandler();
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     LoggerConfig.getConfig(FlowReporter.class).addHandler(handler);
     flowReporter.trid = Trid.create("client-123", "server-456");
     flowReporter.clientId = "TheRegistrar";
@@ -74,7 +71,7 @@ public class FlowReporterTest {
   }
 
   @Test
-  public void testRecordToLogs_metadata_basic() throws Exception {
+  void testRecordToLogs_metadata_basic() throws Exception {
     when(flowReporter.eppInput.isDomainType()).thenReturn(true);
     when(flowReporter.eppInput.getResourceType()).thenReturn(Optional.of("domain"));
     flowReporter.recordToLogs();
@@ -93,7 +90,7 @@ public class FlowReporterTest {
   }
 
   @Test
-  public void testRecordToLogs_metadata_withReportingSpec() throws Exception {
+  void testRecordToLogs_metadata_withReportingSpec() throws Exception {
     flowReporter.flowClass = TestReportingSpecCommandFlow.class;
     flowReporter.recordToLogs();
     Map<String, Object> json =
@@ -103,7 +100,7 @@ public class FlowReporterTest {
   }
 
   @Test
-  public void testRecordToLogs_metadata_noClientId() throws Exception {
+  void testRecordToLogs_metadata_noClientId() throws Exception {
     flowReporter.clientId = "";
     flowReporter.recordToLogs();
     Map<String, Object> json =
@@ -112,7 +109,7 @@ public class FlowReporterTest {
   }
 
   @Test
-  public void testRecordToLogs_metadata_notResourceFlow_noResourceTypeOrTld() throws Exception {
+  void testRecordToLogs_metadata_notResourceFlow_noResourceTypeOrTld() throws Exception {
     when(flowReporter.eppInput.isDomainType()).thenReturn(false);
     when(flowReporter.eppInput.getResourceType()).thenReturn(Optional.empty());
     flowReporter.recordToLogs();
@@ -123,9 +120,8 @@ public class FlowReporterTest {
     assertThat(json).containsEntry("tlds", ImmutableList.of());
   }
 
-
   @Test
-  public void testRecordToLogs_metadata_notDomainFlow_noTld() throws Exception {
+  void testRecordToLogs_metadata_notDomainFlow_noTld() throws Exception {
     when(flowReporter.eppInput.isDomainType()).thenReturn(false);
     when(flowReporter.eppInput.getResourceType()).thenReturn(Optional.of("contact"));
     flowReporter.recordToLogs();
@@ -137,7 +133,7 @@ public class FlowReporterTest {
   }
 
   @Test
-  public void testRecordToLogs_metadata_multipartDomainName_multipartTld() throws Exception {
+  void testRecordToLogs_metadata_multipartDomainName_multipartTld() throws Exception {
     when(flowReporter.eppInput.isDomainType()).thenReturn(true);
     when(flowReporter.eppInput.getResourceType()).thenReturn(Optional.of("domain"));
     when(flowReporter.eppInput.getSingleTargetId()).thenReturn(Optional.of("target.co.uk"));
@@ -152,7 +148,7 @@ public class FlowReporterTest {
   }
 
   @Test
-  public void testRecordToLogs_metadata_multipleTargetIds_uniqueTldSet() throws Exception {
+  void testRecordToLogs_metadata_multipleTargetIds_uniqueTldSet() throws Exception {
     when(flowReporter.eppInput.isDomainType()).thenReturn(true);
     when(flowReporter.eppInput.getSingleTargetId()).thenReturn(Optional.empty());
     when(flowReporter.eppInput.getTargetIds())
@@ -168,7 +164,7 @@ public class FlowReporterTest {
   }
 
   @Test
-  public void testRecordToLogs_metadata_uppercaseDomainName_lowercaseTld() throws Exception {
+  void testRecordToLogs_metadata_uppercaseDomainName_lowercaseTld() throws Exception {
     when(flowReporter.eppInput.isDomainType()).thenReturn(true);
     when(flowReporter.eppInput.getSingleTargetId()).thenReturn(Optional.of("TARGET.FOO"));
     when(flowReporter.eppInput.getTargetIds()).thenReturn(ImmutableList.of("TARGET.FOO"));
@@ -182,7 +178,7 @@ public class FlowReporterTest {
   }
 
   @Test
-  public void testRecordToLogs_metadata_invalidDomainName_stillGuessesTld() throws Exception {
+  void testRecordToLogs_metadata_invalidDomainName_stillGuessesTld() throws Exception {
     when(flowReporter.eppInput.isDomainType()).thenReturn(true);
     when(flowReporter.eppInput.getSingleTargetId()).thenReturn(Optional.of("<foo@bar.com>"));
     when(flowReporter.eppInput.getTargetIds()).thenReturn(ImmutableList.of("<foo@bar.com>"));
@@ -196,7 +192,7 @@ public class FlowReporterTest {
   }
 
   @Test
-  public void testRecordToLogs_metadata_domainWithoutPeriod_noTld() throws Exception {
+  void testRecordToLogs_metadata_domainWithoutPeriod_noTld() throws Exception {
     when(flowReporter.eppInput.isDomainType()).thenReturn(true);
     when(flowReporter.eppInput.getSingleTargetId()).thenReturn(Optional.of("target,foo"));
     when(flowReporter.eppInput.getTargetIds()).thenReturn(ImmutableList.of("target,foo"));
