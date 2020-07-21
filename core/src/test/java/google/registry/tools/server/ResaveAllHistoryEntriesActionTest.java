@@ -28,21 +28,17 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.mapreduce.MapreduceTestCase;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ResaveAllHistoryEntriesAction}. */
-@RunWith(JUnit4.class)
-public class ResaveAllHistoryEntriesActionTest
-    extends MapreduceTestCase<ResaveAllHistoryEntriesAction> {
+class ResaveAllHistoryEntriesActionTest extends MapreduceTestCase<ResaveAllHistoryEntriesAction> {
 
   private static final DatastoreService datastoreService =
       DatastoreServiceFactory.getDatastoreService();
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     action = new ResaveAllHistoryEntriesAction();
     action.mrRunner = makeDefaultRunner();
     action.response = new FakeResponse();
@@ -54,7 +50,7 @@ public class ResaveAllHistoryEntriesActionTest
   }
 
   @Test
-  public void test_mapreduceSuccessfullyResavesEntity() throws Exception {
+  void test_mapreduceSuccessfullyResavesEntity() throws Exception {
     createTld("tld");
     DomainBase domain = persistActiveDomain("test.tld");
     ContactResource contact = persistActiveContact("humanBeing");

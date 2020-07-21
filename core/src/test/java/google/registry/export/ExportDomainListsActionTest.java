@@ -42,23 +42,20 @@ import google.registry.testing.FakeResponse;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import java.io.FileNotFoundException;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link ExportDomainListsAction}. */
-@RunWith(JUnit4.class)
-public class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAction> {
+class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAction> {
 
   private GcsService gcsService;
   private DriveConnection driveConnection = mock(DriveConnection.class);
   private ArgumentCaptor<byte[]> bytesExportedToDrive = ArgumentCaptor.forClass(byte[].class);
   private final FakeResponse response = new FakeResponse();
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     createTld("tld");
     createTld("testtld");
     persistResource(Registry.get("tld").asBuilder().setDriveFolderId("brouhaha").build());
@@ -90,7 +87,7 @@ public class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainL
   }
 
   @Test
-  public void test_writesLinkToMapreduceConsoleToResponse() throws Exception {
+  void test_writesLinkToMapreduceConsoleToResponse() throws Exception {
     runMapreduce();
     assertThat(response.getPayload())
         .startsWith(
@@ -99,7 +96,7 @@ public class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainL
   }
 
   @Test
-  public void test_outputsOnlyActiveDomains() throws Exception {
+  void test_outputsOnlyActiveDomains() throws Exception {
     persistActiveDomain("onetwo.tld");
     persistActiveDomain("rudnitzky.tld");
     persistDeletedDomain("mortuary.tld", DateTime.parse("2001-03-14T10:11:12Z"));
@@ -113,7 +110,7 @@ public class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainL
   }
 
   @Test
-  public void test_outputsOnlyDomainsOnRealTlds() throws Exception {
+  void test_outputsOnlyDomainsOnRealTlds() throws Exception {
     persistActiveDomain("onetwo.tld");
     persistActiveDomain("rudnitzky.tld");
     persistActiveDomain("wontgo.testtld");
@@ -134,7 +131,7 @@ public class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainL
   }
 
   @Test
-  public void test_outputsDomainsFromDifferentTldsToMultipleFiles() throws Exception {
+  void test_outputsDomainsFromDifferentTldsToMultipleFiles() throws Exception {
     createTld("tldtwo");
     persistResource(Registry.get("tldtwo").asBuilder().setDriveFolderId("hooray").build());
 

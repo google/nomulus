@@ -39,17 +39,14 @@ import google.registry.testing.GcsTestingUtils;
 import google.registry.testing.TestObject;
 import java.util.List;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ExportCommitLogDiffAction}. */
-@RunWith(JUnit4.class)
 public class ExportCommitLogDiffActionTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
       AppEngineRule.builder()
           .withDatastoreAndCloudSql()
@@ -64,15 +61,15 @@ public class ExportCommitLogDiffActionTest {
 
   private final ExportCommitLogDiffAction task = new ExportCommitLogDiffAction();
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     task.gcsService = gcsService;
     task.gcsBucket = "gcs bucket";
     task.batchSize = 5;
   }
 
   @Test
-  public void testRun_noCommitHistory_onlyUpperCheckpointExported() throws Exception {
+  void testRun_noCommitHistory_onlyUpperCheckpointExported() throws Exception {
     task.lowerCheckpointTime = oneMinuteAgo;
     task.upperCheckpointTime = now;
 
@@ -104,7 +101,7 @@ public class ExportCommitLogDiffActionTest {
   }
 
   @Test
-  public void testRun_regularCommitHistory_exportsCorrectCheckpointDiff() throws Exception {
+  void testRun_regularCommitHistory_exportsCorrectCheckpointDiff() throws Exception {
     task.lowerCheckpointTime = oneMinuteAgo;
     task.upperCheckpointTime = now;
 
@@ -175,7 +172,7 @@ public class ExportCommitLogDiffActionTest {
   }
 
   @Test
-  public void testRun_simultaneousTransactions_bothExported() throws Exception {
+  void testRun_simultaneousTransactions_bothExported() throws Exception {
     task.lowerCheckpointTime = oneMinuteAgo;
     task.upperCheckpointTime = now;
 
@@ -227,7 +224,7 @@ public class ExportCommitLogDiffActionTest {
   }
 
   @Test
-  public void testRun_exportsAcrossMultipleBatches() throws Exception {
+  void testRun_exportsAcrossMultipleBatches() throws Exception {
     task.batchSize = 2;
     task.lowerCheckpointTime = oneMinuteAgo;
     task.upperCheckpointTime = now;
@@ -288,7 +285,7 @@ public class ExportCommitLogDiffActionTest {
   }
 
   @Test
-  public void testRun_checkpointDiffWithNeverTouchedBuckets_exportsCorrectly() throws Exception {
+  void testRun_checkpointDiffWithNeverTouchedBuckets_exportsCorrectly() throws Exception {
     task.lowerCheckpointTime = oneMinuteAgo;
     task.upperCheckpointTime = now;
 
@@ -322,8 +319,7 @@ public class ExportCommitLogDiffActionTest {
   }
 
   @Test
-  public void testRun_checkpointDiffWithNonExistentBucketTimestamps_exportsCorrectly()
-      throws Exception {
+  void testRun_checkpointDiffWithNonExistentBucketTimestamps_exportsCorrectly() throws Exception {
     // Non-existent bucket timestamps can exist when the commit log bucket count was increased
     // recently.
 
@@ -404,7 +400,7 @@ public class ExportCommitLogDiffActionTest {
   }
 
   @Test
-  public void testRun_exportingFromStartOfTime_exportsAllCommits() throws Exception {
+  void testRun_exportingFromStartOfTime_exportsAllCommits() throws Exception {
     task.lowerCheckpointTime = START_OF_TIME;
     task.upperCheckpointTime = now;
 

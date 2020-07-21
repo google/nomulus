@@ -28,17 +28,17 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.RegistryNotFoundException;
 import google.registry.model.registry.Registry.TldType;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DeleteTldCommand}. */
-public class DeleteTldCommandTest extends CommandTestCase<DeleteTldCommand> {
+class DeleteTldCommandTest extends CommandTestCase<DeleteTldCommand> {
 
   private static final String TLD_REAL = "tldreal";
   private static final String TLD_TEST = "tldtest";
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     persistResource(
         newRegistry(
             TLD_REAL,
@@ -54,7 +54,7 @@ public class DeleteTldCommandTest extends CommandTestCase<DeleteTldCommand> {
   }
 
   @Test
-  public void testSuccess_otherTldUnaffected() throws Exception {
+  void testSuccess_otherTldUnaffected() throws Exception {
     runCommandForced("--tld=" + TLD_TEST);
 
     Registry.get(TLD_REAL);
@@ -62,24 +62,24 @@ public class DeleteTldCommandTest extends CommandTestCase<DeleteTldCommand> {
   }
 
   @Test
-  public void testFailure_whenTldDoesNotExist() {
+  void testFailure_whenTldDoesNotExist() {
     assertThrows(RegistryNotFoundException.class, () -> runCommandForced("--tld=nonexistenttld"));
   }
 
   @Test
-  public void testFailure_whenTldIsReal() {
+  void testFailure_whenTldIsReal() {
     assertThrows(IllegalStateException.class, () -> runCommandForced("--tld=" + TLD_REAL));
   }
 
   @Test
-  public void testFailure_whenDomainsArePresent() {
+  void testFailure_whenDomainsArePresent() {
     persistDeletedDomain("domain." + TLD_TEST, DateTime.parse("2000-01-01TZ"));
 
     assertThrows(IllegalStateException.class, () -> runCommandForced("--tld=" + TLD_TEST));
   }
 
   @Test
-  public void testFailure_whenRegistrarLinksToTld() {
+  void testFailure_whenRegistrarLinksToTld() {
     allowRegistrarAccess("TheRegistrar", TLD_TEST);
 
     assertThrows(IllegalStateException.class, () -> runCommandForced("--tld=" + TLD_TEST));

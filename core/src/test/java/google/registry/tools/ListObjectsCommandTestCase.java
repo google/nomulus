@@ -29,8 +29,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 /** Abstract base class for unit tests of commands that list object data using a back-end task. */
@@ -47,16 +47,14 @@ public abstract class ListObjectsCommandTestCase<C extends ListObjectsCommand>
     return ImmutableMap.of();
   }
 
-  ImmutableList<String> otherParams = ImmutableList.of();
+  private ImmutableList<String> otherParams = ImmutableList.of();
 
-  @Before
-  public void init() throws Exception {
+  @BeforeEach
+  void beforeEachListObjectsCommandTestCase() throws Exception {
     ImmutableMap<String, Object> otherParameters = getOtherParameters();
     if (!otherParameters.isEmpty()) {
       otherParams =
-          otherParameters
-              .entrySet()
-              .stream()
+          otherParameters.entrySet().stream()
               .map(entry -> String.format("--%s=%s", entry.getKey(), entry.getValue()))
               .collect(toImmutableList());
     }
@@ -83,26 +81,26 @@ public abstract class ListObjectsCommandTestCase<C extends ListObjectsCommand>
   }
 
   @Test
-  public void testRun_noFields() throws Exception {
+  void testRun_noFields() throws Exception {
     runCommand(otherParams);
     verifySent(null, Optional.empty(), Optional.empty());
   }
 
   @Test
-  public void testRun_oneField() throws Exception {
+  void testRun_oneField() throws Exception {
     runCommand(
         new ImmutableList.Builder<String>().addAll(otherParams).add("--fields=fieldName").build());
     verifySent("fieldName", Optional.empty(), Optional.empty());
   }
 
   @Test
-  public void testRun_wildcardField() throws Exception {
+  void testRun_wildcardField() throws Exception {
     runCommand(new ImmutableList.Builder<String>().addAll(otherParams).add("--fields=*").build());
     verifySent("*", Optional.empty(), Optional.empty());
   }
 
   @Test
-  public void testRun_header() throws Exception {
+  void testRun_header() throws Exception {
     runCommand(
         new ImmutableList.Builder<String>()
             .addAll(otherParams)
@@ -112,7 +110,7 @@ public abstract class ListObjectsCommandTestCase<C extends ListObjectsCommand>
   }
 
   @Test
-  public void testRun_noHeader() throws Exception {
+  void testRun_noHeader() throws Exception {
     runCommand(
         new ImmutableList.Builder<String>()
             .addAll(otherParams)
@@ -122,7 +120,7 @@ public abstract class ListObjectsCommandTestCase<C extends ListObjectsCommand>
   }
 
   @Test
-  public void testRun_fullFieldNames() throws Exception {
+  void testRun_fullFieldNames() throws Exception {
     runCommand(
         new ImmutableList.Builder<String>()
             .addAll(otherParams)
@@ -132,7 +130,7 @@ public abstract class ListObjectsCommandTestCase<C extends ListObjectsCommand>
   }
 
   @Test
-  public void testRun_allParameters() throws Exception {
+  void testRun_allParameters() throws Exception {
     runCommand(
         new ImmutableList.Builder<String>()
             .addAll(otherParams)

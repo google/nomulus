@@ -282,11 +282,13 @@ public final class RegistryLockPostActionTest {
 
   @Test
   public void testFailure_nonPunycodeDomainName() {
-    Map<String, ?> response = action.handleJsonRequest(ImmutableMap.of(
-        "isLock", true,
-        "registrarId", "TheRegistrar",
-        "domainName", "example.みんな",
-        "password", "hi"));
+    Map<String, ?> response =
+        action.handleJsonRequest(
+            ImmutableMap.of(
+                "isLock", true,
+                "registrarId", "TheRegistrar",
+                "domainName", "example.みんな",
+                "password", "hi"));
     assertFailureWithMessage(response, "Domain names can only contain a-z, 0-9, '.' and '-'");
   }
 

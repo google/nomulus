@@ -22,17 +22,16 @@ import com.google.common.io.Files;
 import google.registry.rde.RdeTestData;
 import google.registry.testing.BouncyCastleProviderRule;
 import google.registry.testing.FakeKeyringModule;
-import java.io.File;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import java.nio.file.Path;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link EncryptEscrowDepositCommand}. */
 public class EncryptEscrowDepositCommandTest
     extends CommandTestCase<EncryptEscrowDepositCommand> {
 
-  @Rule
-  public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
 
   private final ByteSource depositXml = loadBytes(RdeTestData.class, "deposit_full.xml");
 
@@ -43,23 +42,22 @@ public class EncryptEscrowDepositCommandTest
     return res;
   }
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     command.encryptor = createEncryptor();
   }
 
   @Test
-  public void testSuccess() throws Exception {
-    File outDir = tmpDir.newFolder();
-    File depositFile = tmpDir.newFile("deposit.xml");
-    Files.write(depositXml.read(), depositFile);
-    runCommand(
-        "--tld=lol",
-        "--input=" + depositFile.getPath(),
-        "--outdir=" + outDir.getPath());
-    assertThat(outDir.list()).asList().containsExactly(
-        "lol_2010-10-17_full_S1_R0.ryde",
-        "lol_2010-10-17_full_S1_R0.sig",
-        "lol.pub");
+  void testSuccess() throws Exception {
+    Path depositFile = tmpDir.resolve("deposit.xml");
+    Files.write(depositXml.read(), depositFile.toFile());
+    runCommand("--tld=lol", "--input=" + depositFile, "--outdir=" + tmpDir.toString());
+    assertThat(tmpDir.toFile().list())
+        .asList()
+        .containsExactly(
+            "deposit.xml",
+            "lol_2010-10-17_full_S1_R0.ryde",
+            "lol_2010-10-17_full_S1_R0.sig",
+            "lol.pub");
   }
 }

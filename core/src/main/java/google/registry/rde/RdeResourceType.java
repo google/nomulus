@@ -29,7 +29,7 @@ public enum RdeResourceType {
   DOMAIN("urn:ietf:params:xml:ns:rdeDomain-1.0", EnumSet.of(FULL, THIN)),
   HOST("urn:ietf:params:xml:ns:rdeHost-1.0", EnumSet.of(FULL)),
   REGISTRAR("urn:ietf:params:xml:ns:rdeRegistrar-1.0", EnumSet.of(FULL, THIN)),
-  IDN("urn:ietf:params:xml:ns:rdeIDN-1.0", EnumSet.of(FULL, THIN)),
+  IDN("urn:ietf:params:xml:ns:rdeIDN-1.0", EnumSet.of(FULL)),
   HEADER("urn:ietf:params:xml:ns:rdeHeader-1.0", EnumSet.of(FULL, THIN));
 
   private final String uri;

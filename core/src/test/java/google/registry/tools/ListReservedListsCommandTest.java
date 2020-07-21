@@ -21,8 +21,7 @@ import google.registry.tools.server.ListReservedListsAction;
  *
  * @see ListObjectsCommandTestCase
  */
-public class ListReservedListsCommandTest
-    extends ListObjectsCommandTestCase<ListReservedListsCommand> {
+class ListReservedListsCommandTest extends ListObjectsCommandTestCase<ListReservedListsCommand> {
 
   @Override
   final String getTaskPath() {

@@ -31,7 +31,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests of {@link LevelDbLogReader}. */
-public final class LevelDbLogReaderTest {
+final class LevelDbLogReaderTest {
 
   // Size of the test record.  Any value < 256 will do.
   private static final int TEST_RECORD_SIZE = 231;
@@ -53,13 +53,13 @@ public final class LevelDbLogReaderTest {
   }
 
   @Test
-  public void testSimpleBlock() throws IOException {
+  void testSimpleBlock() throws IOException {
     TestBlock block = makeBlockOfRepeatingBytes(0);
     assertThat(readIncrementally(block.data)).hasSize(block.recordCount);
   }
 
   @Test
-  public void testLargeRecord() throws IOException {
+  void testLargeRecord() throws IOException {
     byte[] block0 = new byte[LevelDbLogReader.BLOCK_SIZE];
     addRecord(block0, 0, ChunkType.FIRST, MAX_RECORD, (byte) 1);
     assertThat(readIncrementally(block0)).isEmpty();
@@ -88,7 +88,7 @@ public final class LevelDbLogReaderTest {
   }
 
   @Test
-  public void readFromMultiBlockStream() throws IOException {
+  void readFromMultiBlockStream() throws IOException {
     TestBlock block0 = makeBlockOfRepeatingBytes(0);
     TestBlock block1 = makeBlockOfRepeatingBytes(138);
     assertThat(readIncrementally(block0.data, block1.data))
@@ -112,7 +112,7 @@ public final class LevelDbLogReaderTest {
   }
 
   @Test
-  public void testChunkTypesToCode() {
+  void testChunkTypesToCode() {
     // Verify that we're translating chunk types to code values correctly.z
     assertThat(ChunkType.fromCode(ChunkType.END.getCode())).isEqualTo(ChunkType.END);
     assertThat(ChunkType.fromCode(ChunkType.FULL.getCode())).isEqualTo(ChunkType.FULL);

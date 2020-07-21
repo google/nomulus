@@ -29,13 +29,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.re2j.Pattern;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ExportConstants}. */
-@RunWith(JUnit4.class)
-public class ExportConstantsTest {
+class ExportConstantsTest {
 
   private static final String GOLDEN_BACKUP_KINDS_FILENAME = "backup_kinds.txt";
 
@@ -53,17 +50,17 @@ public class ExportConstantsTest {
       "");
 
   @Test
-  public void testBackupKinds_matchGoldenBackupKindsFile() {
+  void testBackupKinds_matchGoldenBackupKindsFile() {
     checkKindsMatchGoldenFile("backed-up", GOLDEN_BACKUP_KINDS_FILENAME, getBackupKinds());
   }
 
   @Test
-  public void testReportingKinds_matchGoldenReportingKindsFile() {
+  void testReportingKinds_matchGoldenReportingKindsFile() {
     checkKindsMatchGoldenFile("reporting", GOLDEN_REPORTING_KINDS_FILENAME, getReportingKinds());
   }
 
   @Test
-  public void testReportingKinds_areSubsetOfBackupKinds() {
+  void testReportingKinds_areSubsetOfBackupKinds() {
     assertThat(getBackupKinds()).containsAtLeastElementsIn(getReportingKinds());
   }
 

@@ -42,26 +42,26 @@ import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.TestDataHelper;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link CheckBackupAction}. */
-@RunWith(JUnit4.class)
+@ExtendWith(MockitoExtension.class)
 public class CheckBackupActionTest {
 
-  static final DateTime START_TIME = DateTime.parse("2014-08-01T01:02:03Z");
-  static final DateTime COMPLETE_TIME = START_TIME.plus(Duration.standardMinutes(30));
+  private static final DateTime START_TIME = DateTime.parse("2014-08-01T01:02:03Z");
+  private static final DateTime COMPLETE_TIME = START_TIME.plus(Duration.standardMinutes(30));
 
-  static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
+  private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withTaskQueue().build();
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
+  @RegisterExtension
+  public final AppEngineRule appEngine = AppEngineRule.builder().withTaskQueue().build();
 
   @Mock private DatastoreAdmin datastoreAdmin;
   @Mock private Get getNotFoundBackupProgressRequest;
@@ -72,8 +72,8 @@ public class CheckBackupActionTest {
   private final FakeClock clock = new FakeClock(COMPLETE_TIME.plusMillis(1000));
   private final CheckBackupAction action = new CheckBackupAction();
 
-  @Before
-  public void before() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     action.requestMethod = Method.POST;
     action.datastoreAdmin = datastoreAdmin;
     action.clock = clock;
@@ -121,8 +121,9 @@ public class CheckBackupActionTest {
             .param("kinds", kinds));
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void testSuccess_enqueuePollTask() {
+  void testSuccess_enqueuePollTask() {
     CheckBackupAction.enqueuePollTask("some_backup_name", ImmutableSet.of("one", "two", "three"));
     assertTasksEnqueued(
         CheckBackupAction.QUEUE,
@@ -134,7 +135,7 @@ public class CheckBackupActionTest {
   }
 
   @Test
-  public void testPost_forPendingBackup_returnsNotModified() throws Exception {
+  void testPost_forPendingBackup_returnsNotModified() throws Exception {
     setPendingBackup();
 
     NotModifiedException thrown = assertThrows(NotModifiedException.class, action::run);
@@ -144,7 +145,7 @@ public class CheckBackupActionTest {
   }
 
   @Test
-  public void testPost_forStalePendingBackupBackup_returnsNoContent() throws Exception {
+  void testPost_forStalePendingBackupBackup_returnsNoContent() throws Exception {
     setPendingBackup();
     clock.setTo(
         START_TIME
@@ -161,7 +162,7 @@ public class CheckBackupActionTest {
   }
 
   @Test
-  public void testPost_forCompleteBackup_enqueuesLoadTask() throws Exception {
+  void testPost_forCompleteBackup_enqueuesLoadTask() throws Exception {
     setCompleteBackup();
     action.run();
     assertLoadTaskEnqueued(
@@ -171,7 +172,7 @@ public class CheckBackupActionTest {
   }
 
   @Test
-  public void testPost_forCompleteBackup_withExtraKindsToLoad_enqueuesLoadTask() throws Exception {
+  void testPost_forCompleteBackup_withExtraKindsToLoad_enqueuesLoadTask() throws Exception {
     setCompleteBackup();
     action.kindsToLoadParam = "one,foo";
 
@@ -183,7 +184,7 @@ public class CheckBackupActionTest {
   }
 
   @Test
-  public void testPost_forCompleteBackup_withEmptyKindsToLoad_skipsLoadTask() throws Exception {
+  void testPost_forCompleteBackup_withEmptyKindsToLoad_skipsLoadTask() throws Exception {
     setCompleteBackup();
     action.kindsToLoadParam = "";
 
@@ -191,8 +192,9 @@ public class CheckBackupActionTest {
     assertNoTasksEnqueued("export-snapshot");
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void testPost_forBadBackup_returnsBadRequest() throws Exception {
+  void testPost_forBadBackup_returnsBadRequest() throws Exception {
     setBackupNotFound();
 
     BadRequestException thrown = assertThrows(BadRequestException.class, action::run);
@@ -200,7 +202,7 @@ public class CheckBackupActionTest {
   }
 
   @Test
-  public void testGet_returnsInformation() throws Exception {
+  void testGet_returnsInformation() throws Exception {
     setCompleteBackup();
     action.requestMethod = Method.GET;
 
@@ -212,8 +214,9 @@ public class CheckBackupActionTest {
                 .trim());
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void testGet_forBadBackup_returnsError() throws Exception {
+  void testGet_forBadBackup_returnsError() throws Exception {
     setBackupNotFound();
     action.requestMethod = Method.GET;
 

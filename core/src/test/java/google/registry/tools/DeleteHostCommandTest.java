@@ -17,26 +17,26 @@ package google.registry.tools;
 import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DeleteHostCommand}. */
-public class DeleteHostCommandTest extends EppToolCommandTestCase<DeleteHostCommand> {
+class DeleteHostCommandTest extends EppToolCommandTestCase<DeleteHostCommand> {
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     runCommand("--client=NewRegistrar", "--host=ns1.example.tld", "--force", "--reason=Test");
     eppVerifier.verifySent("host_delete.xml");
   }
 
   @Test
-  public void testSuccess_multipleWordReason() throws Exception {
+  void testSuccess_multipleWordReason() throws Exception {
     runCommand(
         "--client=NewRegistrar", "--host=ns1.example.tld", "--force", "--reason=\"Test test\"");
     eppVerifier.verifySent("host_delete_multiple_word_reason.xml");
   }
 
   @Test
-  public void testSuccess_requestedByRegistrarFalse() throws Exception {
+  void testSuccess_requestedByRegistrarFalse() throws Exception {
     runCommand(
         "--client=NewRegistrar",
         "--host=ns1.example.tld",
@@ -47,7 +47,7 @@ public class DeleteHostCommandTest extends EppToolCommandTestCase<DeleteHostComm
   }
 
   @Test
-  public void testSuccess_requestedByRegistrarTrue() throws Exception {
+  void testSuccess_requestedByRegistrarTrue() throws Exception {
     runCommand(
         "--client=NewRegistrar",
         "--host=ns1.example.tld",
@@ -58,28 +58,28 @@ public class DeleteHostCommandTest extends EppToolCommandTestCase<DeleteHostComm
   }
 
   @Test
-  public void testFailure_noReason() {
+  void testFailure_noReason() {
     assertThrows(
         ParameterException.class,
         () -> runCommand("--client=NewRegistrar", "--host=ns1.example.tld", "--force"));
   }
 
   @Test
-  public void testFailure_missingClientId() {
+  void testFailure_missingClientId() {
     assertThrows(
         ParameterException.class,
         () -> runCommand("--host=ns1.example.tld", "--force", "--reason=Test"));
   }
 
   @Test
-  public void testFailure_missingHostName() {
+  void testFailure_missingHostName() {
     assertThrows(
         ParameterException.class,
         () -> runCommand("--client=NewRegistrar", "--force", "--reason=Test"));
   }
 
   @Test
-  public void testFailure_unknownFlag() {
+  void testFailure_unknownFlag() {
     assertThrows(
         ParameterException.class,
         () ->
@@ -92,7 +92,7 @@ public class DeleteHostCommandTest extends EppToolCommandTestCase<DeleteHostComm
   }
 
   @Test
-  public void testFailure_mainParameter() {
+  void testFailure_mainParameter() {
     assertThrows(
         ParameterException.class,
         () ->

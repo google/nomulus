@@ -28,26 +28,24 @@ import google.registry.testing.DatastoreHelper;
 import google.registry.tools.EntityWrapper.Property;
 import java.io.File;
 import java.io.IOException;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import java.nio.file.Path;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
 
-@RunWith(JUnit4.class)
+/** Unit tests for {@link LevelDbFileBuilder}. */
 public class LevelDbFileBuilderTest {
 
-  public static final int BASE_ID = 1001;
+  private static final int BASE_ID = 1001;
 
-  @Rule public final TemporaryFolder tempFs = new TemporaryFolder();
+  @TempDir Path tmpDir;
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testSingleRecordWrites() throws IOException {
-    File subdir = tempFs.newFolder("folder");
-    File logFile = new File(subdir, "testfile");
+  void testSingleRecordWrites() throws IOException {
+    File logFile = tmpDir.resolve("testfile").toFile();
     LevelDbFileBuilder builder = new LevelDbFileBuilder(logFile);
     EntityWrapper entity =
         EntityWrapper.from(
@@ -64,9 +62,8 @@ public class LevelDbFileBuilderTest {
   }
 
   @Test
-  public void testMultipleRecordWrites() throws IOException {
-    File subdir = tempFs.newFolder("folder");
-    File logFile = new File(subdir, "testfile");
+  void testMultipleRecordWrites() throws IOException {
+    File logFile = tmpDir.resolve("testfile").toFile();
     LevelDbFileBuilder builder = new LevelDbFileBuilder(logFile);
 
     // Generate enough records to cross a block boundary.  These records end up being around 80
@@ -93,9 +90,8 @@ public class LevelDbFileBuilderTest {
   }
 
   @Test
-  public void testOfyEntityWrite() throws Exception {
-    File subdir = tempFs.newFolder("folder");
-    File logFile = new File(subdir, "testfile");
+  void testOfyEntityWrite() throws Exception {
+    File logFile = tmpDir.resolve("testfile").toFile();
     LevelDbFileBuilder builder = new LevelDbFileBuilder(logFile);
 
     ContactResource contact = DatastoreHelper.newContactResource("contact");

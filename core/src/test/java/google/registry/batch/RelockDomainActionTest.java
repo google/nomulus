@@ -44,14 +44,11 @@ import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.Optional;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RelockDomainAction}. */
-@RunWith(JUnit4.class)
 public class RelockDomainActionTest {
 
   private static final String DOMAIN_NAME = "example.tld";
@@ -67,7 +64,7 @@ public class RelockDomainActionTest {
           AsyncTaskEnqueuerTest.createForTesting(
               mock(AppEngineServiceUtils.class), clock, Duration.ZERO));
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngineRule =
       AppEngineRule.builder()
           .withDatastoreAndCloudSql()
@@ -78,8 +75,8 @@ public class RelockDomainActionTest {
   private RegistryLock oldLock;
   private RelockDomainAction action;
 
-  @Before
-  public void setup() {
+  @BeforeEach
+  void beforeEach() {
     createTlds("tld", "net");
     HostResource host = persistActiveHost("ns1.example.net");
     domain = persistResource(newDomainBase(DOMAIN_NAME, host));
@@ -95,7 +92,7 @@ public class RelockDomainActionTest {
   }
 
   @Test
-  public void testLock() {
+  void testLock() {
     action.run();
     assertThat(reloadDomain(domain).getStatusValues())
         .containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
@@ -107,7 +104,7 @@ public class RelockDomainActionTest {
   }
 
   @Test
-  public void testFailure_unknownCode() {
+  void testFailure_unknownCode() {
     action = createAction(12128675309L);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
@@ -115,7 +112,7 @@ public class RelockDomainActionTest {
   }
 
   @Test
-  public void testFailure_pendingDelete() {
+  void testFailure_pendingDelete() {
     persistResource(domain.asBuilder().setStatusValues(ImmutableSet.of(PENDING_DELETE)).build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
@@ -124,7 +121,7 @@ public class RelockDomainActionTest {
   }
 
   @Test
-  public void testFailure_pendingTransfer() {
+  void testFailure_pendingTransfer() {
     persistResource(domain.asBuilder().setStatusValues(ImmutableSet.of(PENDING_TRANSFER)).build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
@@ -133,7 +130,7 @@ public class RelockDomainActionTest {
   }
 
   @Test
-  public void testFailure_domainAlreadyLocked() {
+  void testFailure_domainAlreadyLocked() {
     domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, CLIENT_ID, null, true);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
@@ -142,7 +139,7 @@ public class RelockDomainActionTest {
   }
 
   @Test
-  public void testFailure_domainDeleted() {
+  void testFailure_domainDeleted() {
     persistDomainAsDeleted(domain, clock.nowUtc());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
@@ -151,7 +148,7 @@ public class RelockDomainActionTest {
   }
 
   @Test
-  public void testFailure_domainTransferred() {
+  void testFailure_domainTransferred() {
     persistResource(domain.asBuilder().setPersistedCurrentSponsorClientId("NewRegistrar").build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
@@ -164,7 +161,7 @@ public class RelockDomainActionTest {
   }
 
   @Test
-  public void testFailure_relockAlreadySet() {
+  void testFailure_relockAlreadySet() {
     RegistryLock newLock =
         domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, CLIENT_ID, null, true);
     saveRegistryLock(oldLock.asBuilder().setRelock(newLock).build());

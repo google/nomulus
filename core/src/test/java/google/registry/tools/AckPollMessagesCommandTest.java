@@ -31,25 +31,25 @@ import google.registry.persistence.VKey;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link AckPollMessagesCommand}. */
 public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesCommand> {
 
   private FakeClock clock = new FakeClock(DateTime.parse("2015-02-04T08:16:32.064Z"));
 
-  @Rule public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
-  @Before
-  public final void before() {
+  @BeforeEach
+  final void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     command.clock = clock;
   }
 
   @Test
-  public void testSuccess_doesntDeletePollMessagesInFuture() throws Exception {
+  void testSuccess_doesntDeletePollMessagesInFuture() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
     VKey<OneTime> pm2 =
@@ -70,7 +70,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
   }
 
   @Test
-  public void testSuccess_resavesAutorenewPollMessages() throws Exception {
+  void testSuccess_resavesAutorenewPollMessages() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
     VKey<OneTime> pm2 =
@@ -98,7 +98,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
   }
 
   @Test
-  public void testSuccess_deletesExpiredAutorenewPollMessages() throws Exception {
+  void testSuccess_deletesExpiredAutorenewPollMessages() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar").createVKey();
     VKey<OneTime> pm2 =
@@ -125,7 +125,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
   }
 
   @Test
-  public void testSuccess_onlyDeletesPollMessagesMatchingMessage() throws Exception {
+  void testSuccess_onlyDeletesPollMessagesMatchingMessage() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "food is good")
             .createVKey();
@@ -143,7 +143,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
   }
 
   @Test
-  public void testSuccess_onlyDeletesPollMessagesMatchingClientId() throws Exception {
+  void testSuccess_onlyDeletesPollMessagesMatchingClientId() throws Exception {
     VKey<OneTime> pm1 =
         persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "food is good")
             .createVKey();
@@ -167,7 +167,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
   }
 
   @Test
-  public void testSuccess_dryRunDoesntDeleteAnything() throws Exception {
+  void testSuccess_dryRunDoesntDeleteAnything() throws Exception {
     OneTime pm1 = persistPollMessage(316L, DateTime.parse("2014-01-01T22:33:44Z"), "foobar");
     OneTime pm2 = persistPollMessage(624L, DateTime.parse("2013-05-01T22:33:44Z"), "ninelives");
     OneTime pm3 = persistPollMessage(791L, DateTime.parse("2015-01-08T22:33:44Z"), "ginger");

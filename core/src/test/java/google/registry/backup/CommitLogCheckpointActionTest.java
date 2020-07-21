@@ -33,29 +33,26 @@ import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.Retrier;
 import google.registry.util.TaskQueueUtils;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CommitLogCheckpointAction}. */
-@RunWith(JUnit4.class)
 public class CommitLogCheckpointActionTest {
 
   private static final String QUEUE_NAME = "export-commits";
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  CommitLogCheckpointStrategy strategy = mock(CommitLogCheckpointStrategy.class);
+  private CommitLogCheckpointStrategy strategy = mock(CommitLogCheckpointStrategy.class);
 
-  DateTime now = DateTime.now(UTC);
-  CommitLogCheckpointAction task = new CommitLogCheckpointAction();
+  private DateTime now = DateTime.now(UTC);
+  private CommitLogCheckpointAction task = new CommitLogCheckpointAction();
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     task.clock = new FakeClock(now);
     task.strategy = strategy;
     task.taskQueueUtils = new TaskQueueUtils(new Retrier(null, 1));
@@ -66,7 +63,7 @@ public class CommitLogCheckpointActionTest {
   }
 
   @Test
-  public void testRun_noCheckpointEverWritten_writesCheckpointAndEnqueuesTask() {
+  void testRun_noCheckpointEverWritten_writesCheckpointAndEnqueuesTask() {
     task.run();
     assertTasksEnqueued(
         QUEUE_NAME,
@@ -78,7 +75,7 @@ public class CommitLogCheckpointActionTest {
   }
 
   @Test
-  public void testRun_checkpointWrittenBeforeNow_writesCheckpointAndEnqueuesTask() {
+  void testRun_checkpointWrittenBeforeNow_writesCheckpointAndEnqueuesTask() {
     DateTime oneMinuteAgo = now.minusMinutes(1);
     persistResource(CommitLogCheckpointRoot.create(oneMinuteAgo));
     task.run();
@@ -92,7 +89,7 @@ public class CommitLogCheckpointActionTest {
   }
 
   @Test
-  public void testRun_checkpointWrittenAfterNow_doesntOverwrite_orEnqueueTask() {
+  void testRun_checkpointWrittenAfterNow_doesntOverwrite_orEnqueueTask() {
     DateTime oneMinuteFromNow = now.plusMinutes(1);
     persistResource(CommitLogCheckpointRoot.create(oneMinuteFromNow));
     task.run();

@@ -38,17 +38,14 @@ import google.registry.request.Response;
 import google.registry.storage.drive.DriveConnection;
 import google.registry.testing.AppEngineRule;
 import java.io.IOException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ExportReservedTermsAction}. */
-@RunWith(JUnit4.class)
 public class ExportReservedTermsActionTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private final DriveConnection driveConnection = mock(DriveConnection.class);
@@ -63,8 +60,8 @@ public class ExportReservedTermsActionTest {
     action.run();
   }
 
-  @Before
-  public void init() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     ReservedList rl = persistReservedList(
         "tld-reserved",
         "lol,FULLY_BLOCKED",
@@ -81,7 +78,7 @@ public class ExportReservedTermsActionTest {
   }
 
   @Test
-  public void test_uploadFileToDrive_succeeds() throws Exception {
+  void test_uploadFileToDrive_succeeds() throws Exception {
     runAction("tld");
     byte[] expected = "# This is a disclaimer.\ncat\nlol\n".getBytes(UTF_8);
     verify(driveConnection)
@@ -91,7 +88,7 @@ public class ExportReservedTermsActionTest {
   }
 
   @Test
-  public void test_uploadFileToDrive_doesNothingIfReservedListsNotConfigured() {
+  void test_uploadFileToDrive_doesNothingIfReservedListsNotConfigured() {
     persistResource(
         Registry.get("tld")
             .asBuilder()
@@ -104,7 +101,7 @@ public class ExportReservedTermsActionTest {
   }
 
   @Test
-  public void test_uploadFileToDrive_doesNothingWhenDriveFolderIdIsNull() {
+  void test_uploadFileToDrive_doesNothingWhenDriveFolderIdIsNull() {
     persistResource(Registry.get("tld").asBuilder().setDriveFolderId(null).build());
     runAction("tld");
     verify(response).setStatus(SC_OK);
@@ -113,7 +110,7 @@ public class ExportReservedTermsActionTest {
   }
 
   @Test
-  public void test_uploadFileToDrive_failsWhenDriveCannotBeReached() throws Exception {
+  void test_uploadFileToDrive_failsWhenDriveCannotBeReached() throws Exception {
     when(driveConnection.createOrUpdateFile(
         anyString(),
         any(MediaType.class),
@@ -125,7 +122,7 @@ public class ExportReservedTermsActionTest {
   }
 
   @Test
-  public void test_uploadFileToDrive_failsWhenTldDoesntExist() {
+  void test_uploadFileToDrive_failsWhenTldDoesntExist() {
     RuntimeException thrown = assertThrows(RuntimeException.class, () -> runAction("fakeTld"));
     verify(response).setStatus(SC_INTERNAL_SERVER_ERROR);
     assertThat(thrown)

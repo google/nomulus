@@ -52,23 +52,19 @@ import java.util.Optional;
 import java.util.Set;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DeleteProberDataAction}. */
-@RunWith(JUnit4.class)
-public class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataAction> {
+class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataAction> {
 
   private static final DateTime DELETION_TIME = DateTime.parse("2010-01-01T00:00:00.000Z");
 
-  @Rule
-  public final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
+  @RegisterExtension final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     // Entities in these two should not be touched.
     createTld("tld", "TLD");
     // Since "example" doesn't end with .test, its entities won't be deleted even though it is of
@@ -105,7 +101,7 @@ public class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDa
   }
 
   @Test
-  public void test_deletesAllAndOnlyProberData() throws Exception {
+  void test_deletesAllAndOnlyProberData() throws Exception {
     Set<ImmutableObject> tldEntities = persistLotsOfDomains("tld");
     Set<ImmutableObject> exampleEntities = persistLotsOfDomains("example");
     Set<ImmutableObject> notTestEntities = persistLotsOfDomains("not-test.test");
@@ -120,7 +116,7 @@ public class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDa
   }
 
   @Test
-  public void testSuccess_deletesAllAndOnlyGivenTlds() throws Exception {
+  void testSuccess_deletesAllAndOnlyGivenTlds() throws Exception {
     Set<ImmutableObject> tldEntities = persistLotsOfDomains("tld");
     Set<ImmutableObject> exampleEntities = persistLotsOfDomains("example");
     Set<ImmutableObject> notTestEntities = persistLotsOfDomains("not-test.test");
@@ -136,7 +132,7 @@ public class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDa
   }
 
   @Test
-  public void testFail_givenNonTestTld() {
+  void testFail_givenNonTestTld() {
     action.tlds = ImmutableSet.of("not-test.test");
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, this::runMapreduce);
@@ -146,7 +142,7 @@ public class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDa
   }
 
   @Test
-  public void testFail_givenNonExistentTld() {
+  void testFail_givenNonExistentTld() {
     action.tlds = ImmutableSet.of("non-existent.test");
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, this::runMapreduce);
@@ -156,7 +152,7 @@ public class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDa
   }
 
   @Test
-  public void testFail_givenNonDotTestTldOnProd() {
+  void testFail_givenNonDotTestTldOnProd() {
     action.tlds = ImmutableSet.of("example");
     RegistryEnvironment.PRODUCTION.setup(systemPropertyRule);
     IllegalArgumentException thrown =
@@ -167,7 +163,7 @@ public class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDa
   }
 
   @Test
-  public void testSuccess_doesntDeleteNicDomainForProbers() throws Exception {
+  void testSuccess_doesntDeleteNicDomainForProbers() throws Exception {
     DomainBase nic = persistActiveDomain("nic.ib-any.test");
     ForeignKeyIndex<DomainBase> fkiNic =
         ForeignKeyIndex.load(DomainBase.class, "nic.ib-any.test", START_OF_TIME);
@@ -178,7 +174,7 @@ public class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDa
   }
 
   @Test
-  public void testDryRun_doesntDeleteData() throws Exception {
+  void testDryRun_doesntDeleteData() throws Exception {
     Set<ImmutableObject> tldEntities = persistLotsOfDomains("tld");
     Set<ImmutableObject> oaEntities = persistLotsOfDomains("oa-canary.test");
     action.isDryRun = true;
@@ -188,7 +184,7 @@ public class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDa
   }
 
   @Test
-  public void testSuccess_activeDomain_isSoftDeleted() throws Exception {
+  void testSuccess_activeDomain_isSoftDeleted() throws Exception {
     DomainBase domain = persistResource(
         newDomainBase("blah.ib-any.test")
             .asBuilder()
@@ -203,7 +199,7 @@ public class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDa
   }
 
   @Test
-  public void testSuccess_activeDomain_doubleMapSoftDeletes() throws Exception {
+  void testSuccess_activeDomain_doubleMapSoftDeletes() throws Exception {
     DomainBase domain = persistResource(
         newDomainBase("blah.ib-any.test")
             .asBuilder()
@@ -220,7 +216,7 @@ public class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDa
   }
 
   @Test
-  public void test_recentlyCreatedDomain_isntDeletedYet() throws Exception {
+  void test_recentlyCreatedDomain_isntDeletedYet() throws Exception {
     persistResource(
         newDomainBase("blah.ib-any.test")
             .asBuilder()
@@ -234,7 +230,7 @@ public class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDa
   }
 
   @Test
-  public void testDryRun_doesntSoftDeleteData() throws Exception {
+  void testDryRun_doesntSoftDeleteData() throws Exception {
     DomainBase domain = persistResource(
         newDomainBase("blah.ib-any.test")
             .asBuilder()
@@ -246,7 +242,7 @@ public class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDa
   }
 
   @Test
-  public void test_domainWithSubordinateHosts_isSkipped() throws Exception {
+  void test_domainWithSubordinateHosts_isSkipped() throws Exception {
     persistActiveHost("ns1.blah.ib-any.test");
     DomainBase nakedDomain =
         persistDeletedDomain("todelete.ib-any.test", DateTime.now(UTC).minusYears(1));
@@ -263,7 +259,7 @@ public class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDa
   }
 
   @Test
-  public void testFailure_registryAdminClientId_isRequiredForSoftDeletion() {
+  void testFailure_registryAdminClientId_isRequiredForSoftDeletion() {
     persistResource(
         newDomainBase("blah.ib-any.test")
             .asBuilder()

@@ -29,14 +29,11 @@ import google.registry.testing.InjectRule;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DeleteOldCommitLogsAction}. */
-@RunWith(JUnit4.class)
 public class DeleteOldCommitLogsActionTest
     extends MapreduceTestCase<DeleteOldCommitLogsAction> {
 
@@ -44,11 +41,10 @@ public class DeleteOldCommitLogsActionTest
   private final FakeResponse response = new FakeResponse();
   private ContactResource contact;
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
-  @Before
-  public void setup() {
+  @BeforeEach
+  void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     action = new DeleteOldCommitLogsAction();
     action.mrRunner = makeDefaultRunner();
@@ -107,11 +103,9 @@ public class DeleteOldCommitLogsActionTest
     return ImmutableList.copyOf(ofy().load().type(clazz).iterable());
   }
 
-  /**
-   * Check that with very short maxAge, only the referenced elements remain.
-   */
+  /** Check that with very short maxAge, only the referenced elements remain. */
   @Test
-  public void test_shortMaxAge() throws Exception {
+  void test_shortMaxAge() throws Exception {
     runMapreduce(Duration.millis(1));
 
     assertThat(ImmutableList.copyOf(ofy().load().type(CommitLogManifest.class).keys().iterable()))
@@ -121,11 +115,9 @@ public class DeleteOldCommitLogsActionTest
     assertThat(ofyLoadType(CommitLogMutation.class)).hasSize(contact.getRevisions().size() * 3);
   }
 
-  /**
-   * Check that with very long maxAge, all the elements remain.
-   */
+  /** Check that with very long maxAge, all the elements remain. */
   @Test
-  public void test_longMaxAge() throws Exception {
+  void test_longMaxAge() throws Exception {
 
     ImmutableList<CommitLogManifest> initialManifests = ofyLoadType(CommitLogManifest.class);
     ImmutableList<CommitLogMutation> initialMutations = ofyLoadType(CommitLogMutation.class);

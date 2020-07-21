@@ -29,24 +29,19 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Unit tests for {@link DatastoreAdmin}. */
-@RunWith(JUnit4.class)
-public class DatastoreAdminTest {
+@ExtendWith(MockitoExtension.class)
+class DatastoreAdminTest {
 
   private static final String AUTH_HEADER_PREFIX = "Bearer ";
   private static final String ACCESS_TOKEN = "MyAccessToken";
   private static final ImmutableList<String> KINDS =
       ImmutableList.of("Registry", "Registrar", "DomainBase");
-
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 
   private DatastoreAdmin datastoreAdmin;
 
@@ -75,8 +70,8 @@ public class DatastoreAdminTest {
     return Optional.of(outputStream.toString(StandardCharsets.UTF_8.name()));
   }
 
-  @Before
-  public void setup() {
+  @BeforeEach
+  void beforeEach() {
     Date oneHourLater = new Date(System.currentTimeMillis() + 3_600_000);
     GoogleCredentials googleCredentials = GoogleCredentials
         .create(new AccessToken(ACCESS_TOKEN, oneHourLater));
@@ -92,7 +87,7 @@ public class DatastoreAdminTest {
   }
 
   @Test
-  public void testExport() throws IOException {
+  void testExport() throws IOException {
     DatastoreAdmin.Export export = datastoreAdmin.export("gs://mybucket/path", KINDS);
     HttpRequest httpRequest = export.buildHttpRequest();
     assertThat(httpRequest.getUrl().toString())
@@ -109,7 +104,7 @@ public class DatastoreAdminTest {
   }
 
   @Test
-  public void testGetOperation() throws IOException {
+  void testGetOperation() throws IOException {
     DatastoreAdmin.Get get =
         datastoreAdmin.get("projects/MyCloudProject/operations/ASAzNjMwOTEyNjUJ");
     HttpRequest httpRequest = get.buildHttpRequest();
@@ -124,7 +119,7 @@ public class DatastoreAdminTest {
   }
 
   @Test
-  public void testListOperations_all() throws IOException {
+  void testListOperations_all() throws IOException {
     DatastoreAdmin.ListOperations listOperations = datastoreAdmin.listAll();
     HttpRequest httpRequest = listOperations.buildHttpRequest();
     assertThat(httpRequest.getUrl().toString())
@@ -137,7 +132,7 @@ public class DatastoreAdminTest {
   }
 
   @Test
-  public void testListOperations_filterByStartTime() throws IOException {
+  void testListOperations_filterByStartTime() throws IOException {
     DatastoreAdmin.ListOperations listOperations =
         datastoreAdmin.list("metadata.common.startTime>\"2018-10-31T00:00:00.0Z\"");
     HttpRequest httpRequest = listOperations.buildHttpRequest();
@@ -153,7 +148,7 @@ public class DatastoreAdminTest {
   }
 
   @Test
-  public void testListOperations_filterByState() throws IOException {
+  void testListOperations_filterByState() throws IOException {
     // TODO(weiminyu): consider adding a method to DatastoreAdmin to support query by state.
     DatastoreAdmin.ListOperations listOperations =
         datastoreAdmin.list("metadata.common.state=PROCESSING");

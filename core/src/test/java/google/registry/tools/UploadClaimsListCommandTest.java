@@ -21,13 +21,13 @@ import static org.junit.Assert.assertThrows;
 import google.registry.model.tmch.ClaimsListShard;
 import java.io.FileNotFoundException;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link UploadClaimsListCommand}. */
-public class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsListCommand> {
+class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsListCommand> {
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     String filename = writeToTmpFile(
       "1,2012-08-16T00:00:00.0Z",
       "DNL,lookup-key,insertion-datetime",
@@ -47,7 +47,7 @@ public class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsLis
   }
 
   @Test
-  public void testFailure_wrongNumberOfFieldsOnFirstLine() throws Exception {
+  void testFailure_wrongNumberOfFieldsOnFirstLine() throws Exception {
     String filename = writeToTmpFile(
       "1,2012-08-16T00:00:00.0Z,random-extra-field",
       "DNL,lookup-key,insertion-datetime",
@@ -58,7 +58,7 @@ public class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsLis
   }
 
   @Test
-  public void testFailure_wrongVersion() throws Exception {
+  void testFailure_wrongVersion() throws Exception {
     String filename = writeToTmpFile(
       "2,2012-08-16T00:00:00.0Z",
       "DNL,lookup-key,insertion-datetime",
@@ -69,7 +69,7 @@ public class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsLis
   }
 
   @Test
-  public void testFailure_badCreationTime() throws Exception {
+  void testFailure_badCreationTime() throws Exception {
     String filename = writeToTmpFile(
       "1,foo",
       "DNL,lookup-key,insertion-datetime",
@@ -80,7 +80,7 @@ public class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsLis
   }
 
   @Test
-  public void testFailure_badFirstHeader() throws Exception {
+  void testFailure_badFirstHeader() throws Exception {
     String filename = writeToTmpFile(
       "1,foo",
       "SNL,lookup-key,insertion-datetime",
@@ -91,7 +91,7 @@ public class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsLis
   }
 
   @Test
-  public void testFailure_badSecondHeader() throws Exception {
+  void testFailure_badSecondHeader() throws Exception {
     String filename = writeToTmpFile(
       "1,foo",
       "DNL,lookup-keys,insertion-datetime",
@@ -102,7 +102,7 @@ public class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsLis
   }
 
   @Test
-  public void testFailure_badThirdHeader() throws Exception {
+  void testFailure_badThirdHeader() throws Exception {
     String filename = writeToTmpFile(
       "1,foo",
       "DNL,lookup-key,insertion-datetimes",
@@ -113,7 +113,7 @@ public class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsLis
   }
 
   @Test
-  public void testFailure_wrongNumberOfHeaders() throws Exception {
+  void testFailure_wrongNumberOfHeaders() throws Exception {
     String filename = writeToTmpFile(
       "1,foo",
       "DNL,lookup-key,insertion-datetime,extra-field",
@@ -124,7 +124,7 @@ public class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsLis
   }
 
   @Test
-  public void testFailure_wrongNumberOfFields() throws Exception {
+  void testFailure_wrongNumberOfFields() throws Exception {
     String filename = writeToTmpFile(
       "1,foo",
       "DNL,lookup-key,insertion-datetime",
@@ -135,7 +135,7 @@ public class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsLis
   }
 
   @Test
-  public void testFailure_badInsertionTime() throws Exception {
+  void testFailure_badInsertionTime() throws Exception {
     String filename = writeToTmpFile(
       "1,foo",
       "DNL,lookup-key,insertion-datetime",
@@ -146,17 +146,17 @@ public class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsLis
   }
 
   @Test
-  public void testFailure_fileDoesNotExist() {
+  void testFailure_fileDoesNotExist() {
     assertThrows(FileNotFoundException.class, () -> runCommand("--force", "nonexistent_file.csv"));
   }
 
   @Test
-  public void testFailure_noFileNamePassed() {
+  void testFailure_noFileNamePassed() {
     assertThrows(IllegalArgumentException.class, () -> runCommand("--force"));
   }
 
   @Test
-  public void testFailure_tooManyArguments() {
+  void testFailure_tooManyArguments() {
     assertThrows(IllegalArgumentException.class, () -> runCommand("--force", "foo", "bar"));
   }
 }

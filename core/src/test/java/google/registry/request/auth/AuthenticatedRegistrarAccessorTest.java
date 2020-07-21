@@ -24,7 +24,7 @@ import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.appengine.api.users.User;
@@ -150,7 +150,7 @@ public class AuthenticatedRegistrarAccessorTest {
             NO_USER, ADMIN_CLIENT_ID, SUPPORT_GROUP, lazyGroupsConnection);
 
     assertThat(registrarAccessor.getAllClientIdWithRoles()).isEmpty();
-    verifyZeroInteractions(lazyGroupsConnection);
+    verifyNoInteractions(lazyGroupsConnection);
   }
 
   /**
@@ -182,7 +182,7 @@ public class AuthenticatedRegistrarAccessorTest {
 
             ADMIN_CLIENT_ID, ADMIN,
             ADMIN_CLIENT_ID, OWNER);
-    verifyZeroInteractions(lazyGroupsConnection);
+    verifyNoInteractions(lazyGroupsConnection);
   }
 
   /**
@@ -228,7 +228,7 @@ public class AuthenticatedRegistrarAccessorTest {
     assertThat(registrarAccessor.getAllClientIdWithRoles())
         .containsExactly(CLIENT_ID_WITH_CONTACT, OWNER);
     // Make sure we didn't instantiate the lazyGroupsConnection
-    verifyZeroInteractions(lazyGroupsConnection);
+    verifyNoInteractions(lazyGroupsConnection);
   }
 
   /** Support group check throws - continue anyway. */
@@ -287,7 +287,7 @@ public class AuthenticatedRegistrarAccessorTest {
         CLIENT_ID_WITH_CONTACT,
         NO_USER,
         "<logged-out user> doesn't have access to registrar TheRegistrar");
-    verifyZeroInteractions(lazyGroupsConnection);
+    verifyNoInteractions(lazyGroupsConnection);
   }
 
   /** Succeed loading registrar if user has access to it. */
@@ -307,7 +307,7 @@ public class AuthenticatedRegistrarAccessorTest {
         CLIENT_ID_WITH_CONTACT,
         GAE_ADMIN,
         "admin admin@gmail.com has [OWNER, ADMIN] access to registrar TheRegistrar");
-    verifyZeroInteractions(lazyGroupsConnection);
+    verifyNoInteractions(lazyGroupsConnection);
   }
 
   /** Succeed loading registrar for admin even if they aren't on the approved contacts list. */
@@ -317,7 +317,7 @@ public class AuthenticatedRegistrarAccessorTest {
         REAL_CLIENT_ID_WITHOUT_CONTACT,
         GAE_ADMIN,
         "admin admin@gmail.com has [ADMIN] access to registrar NewRegistrar.");
-    verifyZeroInteractions(lazyGroupsConnection);
+    verifyNoInteractions(lazyGroupsConnection);
   }
 
   @Test
@@ -332,7 +332,7 @@ public class AuthenticatedRegistrarAccessorTest {
         REAL_CLIENT_ID_WITHOUT_CONTACT,
         GAE_ADMIN,
         "admin admin@gmail.com has [OWNER, ADMIN] access to registrar NewRegistrar.");
-    verifyZeroInteractions(lazyGroupsConnection);
+    verifyNoInteractions(lazyGroupsConnection);
   }
 
   /** Succeed loading non-REAL registrar for admin. */
@@ -342,7 +342,7 @@ public class AuthenticatedRegistrarAccessorTest {
         OTE_CLIENT_ID_WITHOUT_CONTACT,
         GAE_ADMIN,
         "admin admin@gmail.com has [OWNER, ADMIN] access to registrar OteRegistrar.");
-    verifyZeroInteractions(lazyGroupsConnection);
+    verifyNoInteractions(lazyGroupsConnection);
   }
 
   /** Fail loading registrar even if admin, if registrar doesn't exist. */
@@ -352,7 +352,7 @@ public class AuthenticatedRegistrarAccessorTest {
         "BadClientId",
         GAE_ADMIN,
         "Registrar BadClientId does not exist");
-    verifyZeroInteractions(lazyGroupsConnection);
+    verifyNoInteractions(lazyGroupsConnection);
   }
 
   private void expectGetRegistrarSuccess(String clientId, AuthResult authResult, String message)

@@ -31,13 +31,12 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class UpdateAllocationTokensCommandTest
-    extends CommandTestCase<UpdateAllocationTokensCommand> {
+class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocationTokensCommand> {
 
   @Test
-  public void testUpdateTlds_setTlds() throws Exception {
+  void testUpdateTlds_setTlds() throws Exception {
     AllocationToken token =
         persistResource(builderWithPromo().setAllowedTlds(ImmutableSet.of("toRemove")).build());
     runCommandForced("--prefix", "token", "--allowed_tlds", "tld,example");
@@ -45,7 +44,7 @@ public class UpdateAllocationTokensCommandTest
   }
 
   @Test
-  public void testUpdateTlds_clearTlds() throws Exception {
+  void testUpdateTlds_clearTlds() throws Exception {
     AllocationToken token =
         persistResource(builderWithPromo().setAllowedTlds(ImmutableSet.of("toRemove")).build());
     runCommandForced("--prefix", "token", "--allowed_tlds", "");
@@ -53,7 +52,7 @@ public class UpdateAllocationTokensCommandTest
   }
 
   @Test
-  public void testUpdateClientIds_setClientIds() throws Exception {
+  void testUpdateClientIds_setClientIds() throws Exception {
     AllocationToken token =
         persistResource(
             builderWithPromo().setAllowedClientIds(ImmutableSet.of("toRemove")).build());
@@ -63,7 +62,7 @@ public class UpdateAllocationTokensCommandTest
   }
 
   @Test
-  public void testUpdateClientIds_clearClientIds() throws Exception {
+  void testUpdateClientIds_clearClientIds() throws Exception {
     AllocationToken token =
         persistResource(
             builderWithPromo().setAllowedClientIds(ImmutableSet.of("toRemove")).build());
@@ -72,14 +71,14 @@ public class UpdateAllocationTokensCommandTest
   }
 
   @Test
-  public void testUpdateDiscountFraction() throws Exception {
+  void testUpdateDiscountFraction() throws Exception {
     AllocationToken token = persistResource(builderWithPromo().setDiscountFraction(0.5).build());
     runCommandForced("--prefix", "token", "--discount_fraction", "0.15");
     assertThat(reloadResource(token).getDiscountFraction()).isEqualTo(0.15);
   }
 
   @Test
-  public void testUpdateStatusTransitions() throws Exception {
+  void testUpdateStatusTransitions() throws Exception {
     DateTime now = DateTime.now(UTC);
     AllocationToken token = persistResource(builderWithPromo().build());
     runCommandForced(
@@ -94,7 +93,7 @@ public class UpdateAllocationTokensCommandTest
   }
 
   @Test
-  public void testUpdateStatusTransitions_badTransitions() {
+  void testUpdateStatusTransitions_badTransitions() {
     DateTime now = DateTime.now(UTC);
     persistResource(builderWithPromo().build());
     IllegalArgumentException thrown =
@@ -114,7 +113,7 @@ public class UpdateAllocationTokensCommandTest
   }
 
   @Test
-  public void testUpdate_onlyWithPrefix() throws Exception {
+  void testUpdate_onlyWithPrefix() throws Exception {
     AllocationToken token =
         persistResource(builderWithPromo().setAllowedTlds(ImmutableSet.of("tld")).build());
     AllocationToken otherToken =
@@ -130,7 +129,7 @@ public class UpdateAllocationTokensCommandTest
   }
 
   @Test
-  public void testUpdate_onlyTokensProvided() throws Exception {
+  void testUpdate_onlyTokensProvided() throws Exception {
     AllocationToken firstToken =
         persistResource(builderWithPromo().setAllowedTlds(ImmutableSet.of("tld")).build());
     AllocationToken secondToken =
@@ -154,7 +153,7 @@ public class UpdateAllocationTokensCommandTest
   }
 
   @Test
-  public void testDoNothing() throws Exception {
+  void testDoNothing() throws Exception {
     AllocationToken token =
         persistResource(
             builderWithPromo()
@@ -170,7 +169,7 @@ public class UpdateAllocationTokensCommandTest
   }
 
   @Test
-  public void testFailure_bothTokensAndPrefix() {
+  void testFailure_bothTokensAndPrefix() {
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
@@ -180,7 +179,7 @@ public class UpdateAllocationTokensCommandTest
   }
 
   @Test
-  public void testFailure_neitherTokensNorPrefix() {
+  void testFailure_neitherTokensNorPrefix() {
     assertThat(
             assertThrows(
                 IllegalArgumentException.class, () -> runCommandForced("--allowed_tlds", "tld")))
@@ -189,7 +188,7 @@ public class UpdateAllocationTokensCommandTest
   }
 
   @Test
-  public void testFailure_emptyPrefix() {
+  void testFailure_emptyPrefix() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommandForced("--prefix", ""));
     assertThat(thrown).hasMessageThat().isEqualTo("Provided prefix should not be blank");
