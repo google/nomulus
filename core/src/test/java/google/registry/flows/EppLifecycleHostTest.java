@@ -28,21 +28,18 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.testing.AppEngineRule;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for host lifecycle. */
-@RunWith(JUnit4.class)
-public class EppLifecycleHostTest extends EppTestCase {
+class EppLifecycleHostTest extends EppTestCase {
 
-  @Rule
-  public final AppEngineRule appEngine =
+  @RegisterExtension
+  final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @Test
-  public void testLifecycle() throws Exception {
+  void testLifecycle() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatCommand("hello.xml")
         .atTime("2000-06-02T00:00:00Z")
@@ -90,7 +87,7 @@ public class EppLifecycleHostTest extends EppTestCase {
   }
 
   @Test
-  public void testRenamingHostToExistingHost_fails() throws Exception {
+  void testRenamingHostToExistingHost_fails() throws Exception {
     createTld("example");
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     // Create the fakesite domain.
@@ -140,7 +137,7 @@ public class EppLifecycleHostTest extends EppTestCase {
   }
 
   @Test
-  public void testSuccess_multipartTldsWithSharedSuffixes() throws Exception {
+  void testSuccess_multipartTldsWithSharedSuffixes() throws Exception {
     createTlds("bar.foo.tld", "foo.tld", "tld");
 
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
