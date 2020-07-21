@@ -107,7 +107,7 @@
   {@param readonly: bool}
   {@param? registryLockAllowedForRegistrar: bool}
   <form name="item" class="{css('item')} {css('registrar')}">
-    <h1>Contact Details</h1>
+    <h1>Contact details</h1>
     {call .contactInfo data="all"}
       {param namePrefix: $namePrefix /}
       {param item: $item /}
@@ -142,17 +142,19 @@
         {param name: 'name' /}
       {/call}
       {call registry.soy.forms.inputFieldRow data="all"}
-        {param label: 'Primary Account Email' /}
+        {param label: 'Primary account email' /}
         {param namePrefix: $namePrefix /}
         {param name: 'emailAddress' /}
         {param disabled: not $readonly and $item['emailAddress'] != null /}
       {/call}
       {if isNonnull($item['registryLockEmailAddress'])}
         {call registry.soy.forms.inputFieldRow data="all"}
-          {param label: 'Registry Lock Email Address' /}
+          {param label: 'Registry lock email address' /}
           {param namePrefix: $namePrefix /}
           {param name: 'registryLockEmailAddress' /}
           {param disabled: not $readonly /}
+          {param description: 'Address to which registry (un)lock confirmation emails will be ' +
+              'sent. This is not necessarily the account email address that is used for login.' /}
         {/call}
       {/if}
       {call registry.soy.forms.inputFieldRow data="all"}
@@ -286,19 +288,19 @@
       <hr>
   </tr>
   {call .whoisVisibleRadios_}
-    {param description: 'Show in Registrar WHOIS record as Admin contact' /}
+    {param description: 'Show in Registrar WHOIS record as admin contact' /}
     {param fieldName: $namePrefix + 'visibleInWhoisAsAdmin' /}
     {param visible: $item['visibleInWhoisAsAdmin'] == true /}
   {/call}
   {call .whoisVisibleRadios_}
-    {param description: 'Show in Registrar WHOIS record as Technical contact' /}
+    {param description: 'Show in Registrar WHOIS record as technical contact' /}
     {param fieldName: $namePrefix + 'visibleInWhoisAsTech' /}
     {param visible: $item['visibleInWhoisAsTech'] == true /}
   {/call}
   {call .whoisVisibleRadios_}
     {param description:
-        'Show Phone and Email in Domain WHOIS Record as Registrar Abuse Contact' +
-        ' (Per CL&D Requirements)' /}
+        'Show Phone and Email in Domain WHOIS Record as registrar abuse contact' +
+        ' (per CL&D requirements)' /}
     {param note:
         '*Can only apply to one contact. Selecting Yes for this contact will' +
         ' force this setting for all other contacts to be No.' /}
