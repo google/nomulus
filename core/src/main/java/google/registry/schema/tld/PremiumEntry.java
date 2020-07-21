@@ -16,6 +16,7 @@ package google.registry.schema.tld;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
+import google.registry.model.registry.label.PremiumList;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
 import java.io.Serializable;
