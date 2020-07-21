@@ -24,24 +24,24 @@ import google.registry.model.domain.Period;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetClaimsListCommand}. */
-public class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesCommand> {
+class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesCommand> {
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01T00:00:00Z"));
 
   private DomainBase domain;
 
-  @Before
-  public void setup() {
+  @BeforeEach
+  void beforeEach() {
     createTld("tld");
     domain = persistActiveDomain("example.tld");
   }
 
   @Test
-  public void testSuccess_works() throws Exception {
+  void testSuccess_works() throws Exception {
     persistResource(
         makeHistoryEntry(
             domain,
@@ -61,7 +61,7 @@ public class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntr
   }
 
   @Test
-  public void testSuccess_noTrid() throws Exception {
+  void testSuccess_noTrid() throws Exception {
     persistResource(
         makeHistoryEntry(
                 domain,

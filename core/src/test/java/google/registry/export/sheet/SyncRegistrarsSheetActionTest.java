@@ -19,8 +19,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import google.registry.testing.AppEngineRule;
@@ -64,7 +64,7 @@ public class SyncRegistrarsSheetActionTest {
   void testPost_withoutParamsOrSystemProperty_dropsTask() {
     runAction(null, null);
     assertThat(response.getPayload()).startsWith("MISSINGNO");
-    verifyZeroInteractions(syncRegistrarsSheet);
+    verifyNoInteractions(syncRegistrarsSheet);
   }
 
   @Test
@@ -101,6 +101,6 @@ public class SyncRegistrarsSheetActionTest {
     action.lockHandler = new FakeLockHandler(false);
     runAction(null, "foobar");
     assertThat(response.getPayload()).startsWith("LOCKED");
-    verifyZeroInteractions(syncRegistrarsSheet);
+    verifyNoInteractions(syncRegistrarsSheet);
   }
 }

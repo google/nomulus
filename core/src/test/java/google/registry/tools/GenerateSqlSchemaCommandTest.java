@@ -22,60 +22,54 @@ import com.google.common.io.Files;
 import com.google.common.io.Resources;
 import google.registry.persistence.NomulusPostgreSql;
 import java.io.File;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import java.nio.file.Path;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 /** Unit tests for {@link GenerateSqlSchemaCommand}. */
-@RunWith(JUnit4.class)
-public class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSchemaCommand> {
+@Testcontainers
+class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSchemaCommand> {
 
   private String containerHostName;
   private int containerPort;
 
-  @Rule public TemporaryFolder tmp = new TemporaryFolder();
-
-  @ClassRule
-  public static PostgreSQLContainer postgres =
+  @Container
+  private static PostgreSQLContainer postgres =
       new PostgreSQLContainer(NomulusPostgreSql.getDockerTag())
           .withDatabaseName("postgres")
           .withUsername("postgres")
           .withPassword("domain-registry");
 
-  public GenerateSqlSchemaCommandTest() {}
-
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     containerHostName = postgres.getContainerIpAddress();
     containerPort = postgres.getMappedPort(GenerateSqlSchemaCommand.POSTGRESQL_PORT);
   }
 
   @Test
-  public void testSchemaGeneration() throws Exception {
+  void testSchemaGeneration() throws Exception {
     runCommand(
-        "--out_file=" + tmp.getRoot() + File.separatorChar + "schema.sql",
+        "--out_file=" + tmpDir.resolve("schema.sql").toString(),
         "--db_host=" + containerHostName,
         "--db_port=" + containerPort);
 
     // We don't verify the exact contents of the result SQL file because that would be too brittle,
     // but we check to make sure that a couple parts of it are named as we expect them to be
     // TODO: try running the schema against the test database.
-    File sqlFile = new File(tmp.getRoot(), "schema.sql");
-    assertThat(sqlFile.exists()).isTrue();
-    String fileContent = Files.asCharSource(sqlFile, UTF_8).read();
+    File schemaFile = tmpDir.resolve("schema.sql").toFile();
+    assertThat(schemaFile.exists()).isTrue();
+    String fileContent = Files.asCharSource(schemaFile, UTF_8).read();
     assertThat(fileContent).contains("create table \"Domain\" (");
     assertThat(fileContent).contains("repo_id text not null,");
   }
 
   @Test
-  public void testIncompatibleFlags() throws Exception {
+  void testIncompatibleFlags() throws Exception {
     runCommand(
-        "--out_file=" + tmp.getRoot() + File.separatorChar + "schema.sql",
+        "--out_file=" + tmpDir.resolve("schema.sql").toString(),
         "--db_host=" + containerHostName,
         "--db_port=" + containerPort,
         "--start_postgresql");
@@ -83,17 +77,17 @@ public class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSch
   }
 
   @Test
-  public void testDockerPostgresql() throws Exception {
-    runCommand(
-        "--start_postgresql", "--out_file=" + tmp.getRoot() + File.separatorChar + "schema.sql");
-    assertThat(new File(tmp.getRoot(), "schema.sql").exists()).isTrue();
+  void testDockerPostgresql() throws Exception {
+    Path schemaFile = tmpDir.resolve("schema.sql");
+    runCommand("--start_postgresql", "--out_file=" + schemaFile.toString());
+    assertThat(schemaFile.toFile().exists()).isTrue();
   }
 
   @Test
-  public void validateGeneratedSchemaIsSameAsSchemaInFile() throws Exception {
-    runCommand(
-        "--start_postgresql", "--out_file=" + tmp.getRoot() + File.separatorChar + "schema.sql");
-    assertThat(new File(tmp.getRoot(), "schema.sql").toURI().toURL())
+  void validateGeneratedSchemaIsSameAsSchemaInFile() throws Exception {
+    Path schemaFile = tmpDir.resolve("schema.sql");
+    runCommand("--start_postgresql", "--out_file=" + schemaFile.toString());
+    assertThat(schemaFile.toFile().toURI().toURL())
         .hasSameContentAs(Resources.getResource("sql/schema/db-schema.sql.generated"));
   }
 }

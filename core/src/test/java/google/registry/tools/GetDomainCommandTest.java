@@ -24,21 +24,21 @@ import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetDomainCommand}. */
-public class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
+class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
 
-  DateTime now = DateTime.now(UTC);
+  private DateTime now = DateTime.now(UTC);
 
-  @Before
-  public void initialize() {
+  @BeforeEach
+  void beforeEach() {
     createTld("tld");
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     persistActiveDomain("example.tld");
     runCommand("example.tld");
     assertInStdout("fullyQualifiedDomainName=example.tld");
@@ -47,7 +47,7 @@ public class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
   }
 
   @Test
-  public void testSuccess_expand() throws Exception {
+  void testSuccess_expand() throws Exception {
     persistActiveDomain("example.tld");
     runCommand("example.tld", "--expand");
     assertInStdout("fullyQualifiedDomainName=example.tld");
@@ -57,7 +57,7 @@ public class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
   }
 
   @Test
-  public void testSuccess_multipleArguments() throws Exception {
+  void testSuccess_multipleArguments() throws Exception {
     persistActiveDomain("example.tld");
     persistActiveDomain("example2.tld");
     runCommand("example.tld", "example2.tld");
@@ -68,7 +68,7 @@ public class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
   }
 
   @Test
-  public void testSuccess_domainDeletedInFuture() throws Exception {
+  void testSuccess_domainDeletedInFuture() throws Exception {
     persistResource(newDomainBase("example.tld").asBuilder()
         .setDeletionTime(now.plusDays(1)).build());
     runCommand("example.tld", "--read_timestamp=" + now.plusMonths(1));
@@ -76,31 +76,31 @@ public class GetDomainCommandTest extends CommandTestCase<GetDomainCommand> {
   }
 
   @Test
-  public void testSuccess_deletedDomain() throws Exception {
+  void testSuccess_deletedDomain() throws Exception {
     persistDeletedDomain("example.tld", now.minusDays(1));
     runCommand("example.tld");
     assertInStdout("Domain 'example.tld' does not exist or is deleted");
   }
 
   @Test
-  public void testSuccess_domainDoesNotExist() throws Exception {
+  void testSuccess_domainDoesNotExist() throws Exception {
     runCommand("something.tld");
     assertInStdout("Domain 'something.tld' does not exist or is deleted");
   }
 
   @Test
-  public void testFailure_tldDoesNotExist() throws Exception {
+  void testFailure_tldDoesNotExist() throws Exception {
     runCommand("example.foo");
     assertInStdout("Domain 'example.foo' does not exist or is deleted");
   }
 
   @Test
-  public void testFailure_noDomainName() {
+  void testFailure_noDomainName() {
     assertThrows(ParameterException.class, this::runCommand);
   }
 
   @Test
-  public void testSuccess_oneDomainDoesNotExist() throws Exception {
+  void testSuccess_oneDomainDoesNotExist() throws Exception {
     persistActiveDomain("example.tld");
     createTld("com");
     runCommand("example.com", "example.tld");

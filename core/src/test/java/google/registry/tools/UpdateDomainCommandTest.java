@@ -31,13 +31,13 @@ import google.registry.model.domain.DesignatedContact;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link UpdateDomainCommand}. */
-public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand> {
+class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand> {
 
   @Test
-  public void testSuccess_complete() throws Exception {
+  void testSuccess_complete() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
         "--add_nameservers=ns1.zdns.google,ns2.zdns.google",
@@ -57,7 +57,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testSuccess_completeWithSquareBrackets() throws Exception {
+  void testSuccess_completeWithSquareBrackets() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
         "--add_nameservers=ns[1-2].zdns.google",
@@ -77,7 +77,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testSuccess_multipleDomains() throws Exception {
+  void testSuccess_multipleDomains() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
         "--add_nameservers=ns1.zdns.google,ns2.zdns.google",
@@ -100,12 +100,12 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testSuccess_multipleDomains_setNameservers() throws Exception {
+  void testSuccess_multipleDomains_setNameservers() throws Exception {
     runTest_multipleDomains_setNameservers("-n ns1.foo.fake,ns2.foo.fake");
   }
 
   @Test
-  public void testSuccess_multipleDomains_setNameserversWithSquareBrackets() throws Exception {
+  void testSuccess_multipleDomains_setNameserversWithSquareBrackets() throws Exception {
     runTest_multipleDomains_setNameservers("-n ns[1-2].foo.fake");
   }
 
@@ -135,7 +135,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testSuccess_add() throws Exception {
+  void testSuccess_add() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
         "--add_nameservers=ns2.zdns.google,ns3.zdns.google",
@@ -148,7 +148,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testSuccess_remove() throws Exception {
+  void testSuccess_remove() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
         "--remove_nameservers=ns4.zdns.google",
@@ -161,14 +161,14 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testSuccess_change() throws Exception {
+  void testSuccess_change() throws Exception {
     runCommandForced(
         "--client=NewRegistrar", "--registrant=crr-admin", "--password=2fooBAR", "example.tld");
     eppVerifier.verifySent("domain_update_change.xml");
   }
 
   @Test
-  public void testSuccess_setNameservers() throws Exception {
+  void testSuccess_setNameservers() throws Exception {
     HostResource host1 = persistActiveHost("ns1.zdns.google");
     HostResource host2 = persistActiveHost("ns2.zdns.google");
     ImmutableSet<VKey<HostResource>> nameservers =
@@ -181,7 +181,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testSuccess_setContacts() throws Exception {
+  void testSuccess_setContacts() throws Exception {
     ContactResource adminContact1 = persistResource(newContactResource("crr-admin1"));
     ContactResource adminContact2 = persistResource(newContactResource("crr-admin2"));
     ContactResource techContact1 = persistResource(newContactResource("crr-tech1"));
@@ -211,7 +211,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testSuccess_setStatuses() throws Exception {
+  void testSuccess_setStatuses() throws Exception {
     HostResource host = persistActiveHost("ns1.zdns.google");
     ImmutableSet<VKey<HostResource>> nameservers = ImmutableSet.of(host.createVKey());
     persistResource(
@@ -229,14 +229,14 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testSuccess_setDsRecords() throws Exception {
+  void testSuccess_setDsRecords() throws Exception {
     runCommandForced(
         "--client=NewRegistrar", "--ds_records=1 2 3 abcd,4 5 6 EF01", "example.tld");
     eppVerifier.verifySent("domain_update_set_ds_records.xml");
   }
 
   @Test
-  public void testSuccess_setDsRecords_withUnneededClear() throws Exception {
+  void testSuccess_setDsRecords_withUnneededClear() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
         "--ds_records=1 2 3 abcd,4 5 6 EF01",
@@ -246,7 +246,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testSuccess_clearDsRecords() throws Exception {
+  void testSuccess_clearDsRecords() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
         "--clear_ds_records",
@@ -255,7 +255,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_cantUpdateRegistryLockedDomainEvenAsSuperuser() {
+  void testFailure_cantUpdateRegistryLockedDomainEvenAsSuperuser() {
     HostResource host = persistActiveHost("ns1.zdns.google");
     ImmutableSet<VKey<HostResource>> nameservers = ImmutableSet.of(host.createVKey());
     persistResource(
@@ -280,7 +280,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_duplicateDomains() {
+  void testFailure_duplicateDomains() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -295,7 +295,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_missingDomain() {
+  void testFailure_missingDomain() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -306,7 +306,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_missingClientId() {
+  void testFailure_missingClientId() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -315,7 +315,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_addTooManyNameServers() {
+  void testFailure_addTooManyNameServers() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -334,7 +334,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_providedNameserversAndAddNameservers() {
+  void testFailure_providedNameserversAndAddNameservers() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -352,7 +352,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_providedNameserversAndRemoveNameservers() {
+  void testFailure_providedNameserversAndRemoveNameservers() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -370,7 +370,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_providedAdminsAndAddAdmins() {
+  void testFailure_providedAdminsAndAddAdmins() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -388,7 +388,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_providedAdminsAndRemoveAdmins() {
+  void testFailure_providedAdminsAndRemoveAdmins() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -406,7 +406,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_providedTechsAndAddTechs() {
+  void testFailure_providedTechsAndAddTechs() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -423,7 +423,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_providedTechsAndRemoveTechs() {
+  void testFailure_providedTechsAndRemoveTechs() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -440,7 +440,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_providedStatusesAndAddStatuses() {
+  void testFailure_providedStatusesAndAddStatuses() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -458,7 +458,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_providedStatusesAndRemoveStatuses() {
+  void testFailure_providedStatusesAndRemoveStatuses() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -476,7 +476,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_provideDsRecordsAndAddDsRecords() {
+  void testFailure_provideDsRecordsAndAddDsRecords() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -494,7 +494,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_provideDsRecordsAndRemoveDsRecords() {
+  void testFailure_provideDsRecordsAndRemoveDsRecords() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -512,7 +512,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_clearDsRecordsAndAddDsRecords() {
+  void testFailure_clearDsRecordsAndAddDsRecords() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -530,7 +530,7 @@ public class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomain
   }
 
   @Test
-  public void testFailure_clearDsRecordsAndRemoveDsRecords() {
+  void testFailure_clearDsRecordsAndRemoveDsRecords() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

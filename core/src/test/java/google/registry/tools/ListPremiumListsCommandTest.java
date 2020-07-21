@@ -21,8 +21,7 @@ import google.registry.tools.server.ListPremiumListsAction;
  *
  * @see ListObjectsCommandTestCase
  */
-public class ListPremiumListsCommandTest
-    extends ListObjectsCommandTestCase<ListPremiumListsCommand> {
+class ListPremiumListsCommandTest extends ListObjectsCommandTestCase<ListPremiumListsCommand> {
 
   @Override
   final String getTaskPath() {

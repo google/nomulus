@@ -40,14 +40,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link UnlockDomainCommand}. */
-public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand> {
+class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand> {
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     persistNewRegistrar("adminreg", "Admin Registrar", Type.REAL, 693L);
     createTld("tld");
     command.registryAdminClientId = "adminreg";
@@ -68,14 +68,14 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
   }
 
   @Test
-  public void testSuccess_unlocksDomain() throws Exception {
+  void testSuccess_unlocksDomain() throws Exception {
     DomainBase domain = persistLockedDomain("example.tld", "TheRegistrar");
     runCommandForced("--client=TheRegistrar", "example.tld");
     assertThat(reloadResource(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
   }
 
   @Test
-  public void testSuccess_partiallyUpdatesStatuses() throws Exception {
+  void testSuccess_partiallyUpdatesStatuses() throws Exception {
     DomainBase domain = persistLockedDomain("example.tld", "TheRegistrar");
     domain =
         persistResource(
@@ -89,7 +89,7 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
   }
 
   @Test
-  public void testSuccess_manyDomains() throws Exception {
+  void testSuccess_manyDomains() throws Exception {
     // Create 26 domains -- one more than the number of entity groups allowed in a transaction (in
     // case that was going to be the failure point).
     List<DomainBase> domains = new ArrayList<>();
@@ -108,7 +108,7 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
   }
 
   @Test
-  public void testFailure_domainDoesntExist() {
+  void testFailure_domainDoesntExist() {
     IllegalArgumentException e =
         assertThrows(
             IllegalArgumentException.class,
@@ -117,14 +117,14 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
   }
 
   @Test
-  public void testSuccess_alreadyUnlockedDomain_performsNoAction() throws Exception {
+  void testSuccess_alreadyUnlockedDomain_performsNoAction() throws Exception {
     DomainBase domain = persistActiveDomain("example.tld");
     runCommandForced("--client=TheRegistrar", "example.tld");
     assertThat(reloadResource(domain)).isEqualTo(domain);
   }
 
   @Test
-  public void testSuccess_defaultsToAdminRegistrar_ifUnspecified() throws Exception {
+  void testSuccess_defaultsToAdminRegistrar_ifUnspecified() throws Exception {
     DomainBase domain = persistLockedDomain("example.tld", "TheRegistrar");
     runCommandForced("example.tld");
     assertThat(getMostRecentRegistryLockByRepoId(domain.getRepoId()).get().getRegistrarId())
@@ -132,7 +132,7 @@ public class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand
   }
 
   @Test
-  public void testFailure_duplicateDomainsAreSpecified() {
+  void testFailure_duplicateDomainsAreSpecified() {
     IllegalArgumentException e =
         assertThrows(
             IllegalArgumentException.class,

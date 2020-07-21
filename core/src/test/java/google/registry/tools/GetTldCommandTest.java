@@ -19,36 +19,35 @@ import static google.registry.testing.DatastoreHelper.createTlds;
 import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetTldCommand}. */
-public class GetTldCommandTest extends CommandTestCase<GetTldCommand> {
+class GetTldCommandTest extends CommandTestCase<GetTldCommand> {
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     createTld("xn--q9jyb4c");
     runCommand("xn--q9jyb4c");
   }
 
   @Test
-  public void testSuccess_multipleArguments() throws Exception {
+  void testSuccess_multipleArguments() throws Exception {
     createTlds("xn--q9jyb4c", "example");
     runCommand("xn--q9jyb4c", "example");
   }
 
-
   @Test
-  public void testFailure_tldDoesNotExist() {
+  void testFailure_tldDoesNotExist() {
     assertThrows(IllegalArgumentException.class, () -> runCommand("xn--q9jyb4c"));
   }
 
   @Test
-  public void testFailure_noTldName() {
+  void testFailure_noTldName() {
     assertThrows(ParameterException.class, this::runCommand);
   }
 
   @Test
-  public void testFailure_oneTldDoesNotExist() {
+  void testFailure_oneTldDoesNotExist() {
     createTld("xn--q9jyb4c");
     assertThrows(IllegalArgumentException.class, () -> runCommand("xn--q9jyb4c", "example"));
   }

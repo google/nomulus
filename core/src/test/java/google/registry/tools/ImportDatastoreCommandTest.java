@@ -27,17 +27,17 @@ import google.registry.export.datastore.DatastoreAdmin.Get;
 import google.registry.export.datastore.DatastoreAdmin.Import;
 import google.registry.export.datastore.Operation;
 import java.util.Collection;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link ImportDatastoreCommand}. */
-@RunWith(JUnit4.class)
-public class ImportDatastoreCommandTest extends CommandTestCase<ImportDatastoreCommand> {
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ImportDatastoreCommandTest extends CommandTestCase<ImportDatastoreCommand> {
 
   @Captor ArgumentCaptor<String> backupUrl;
   @Captor ArgumentCaptor<Collection<String>> kinds;
@@ -49,8 +49,8 @@ public class ImportDatastoreCommandTest extends CommandTestCase<ImportDatastoreC
   @Mock private Operation importOperation;
   @Mock private Operation getOperation;
 
-  @Before
-  public void setup() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     command.datastoreAdmin = datastoreAdmin;
 
     when(datastoreAdmin.importBackup(backupUrl.capture(), kinds.capture()))
@@ -63,7 +63,7 @@ public class ImportDatastoreCommandTest extends CommandTestCase<ImportDatastoreC
   }
 
   @Test
-  public void test_importAllKinds_immediateSuccess() throws Exception {
+  void test_importAllKinds_immediateSuccess() throws Exception {
     runCommandForced(
         "--poll_interval", "PT0.001S",
         "--backup_url", "gs://bucket/export-id/export-id.overall_export_metadata");
@@ -74,7 +74,7 @@ public class ImportDatastoreCommandTest extends CommandTestCase<ImportDatastoreC
   }
 
   @Test
-  public void test_importSomeKinds_immediateSuccess() throws Exception {
+  void test_importSomeKinds_immediateSuccess() throws Exception {
     runCommandForced(
         "--poll_interval",
         "PT0.001S",
@@ -91,7 +91,7 @@ public class ImportDatastoreCommandTest extends CommandTestCase<ImportDatastoreC
   }
 
   @Test
-  public void test_delayedSuccess_sync() throws Exception {
+  void test_delayedSuccess_sync() throws Exception {
     when(importOperation.isProcessing()).thenReturn(true);
     when(getOperation.isProcessing()).thenReturn(true).thenReturn(false);
     when(getOperation.isSuccessful()).thenReturn(true);
@@ -103,7 +103,7 @@ public class ImportDatastoreCommandTest extends CommandTestCase<ImportDatastoreC
   }
 
   @Test
-  public void test_delayedSuccess_async() throws Exception {
+  void test_delayedSuccess_async() throws Exception {
     when(importOperation.isProcessing()).thenReturn(false);
     when(getOperation.isProcessing()).thenReturn(true).thenReturn(false);
     when(getOperation.isSuccessful()).thenReturn(true);
@@ -118,7 +118,7 @@ public class ImportDatastoreCommandTest extends CommandTestCase<ImportDatastoreC
   }
 
   @Test
-  public void test_failure_notAllowedInProduction() {
+  void test_failure_notAllowedInProduction() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -132,7 +132,7 @@ public class ImportDatastoreCommandTest extends CommandTestCase<ImportDatastoreC
   }
 
   @Test
-  public void test_success_runInProduction() throws Exception {
+  void test_success_runInProduction() throws Exception {
     runCommandInEnvironment(
         RegistryToolEnvironment.PRODUCTION,
         "--force",

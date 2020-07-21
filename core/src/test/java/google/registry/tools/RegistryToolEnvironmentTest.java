@@ -18,25 +18,22 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import google.registry.testing.SystemPropertyRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RegistryToolEnvironment}. */
-@RunWith(JUnit4.class)
-public class RegistryToolEnvironmentTest {
+class RegistryToolEnvironmentTest {
 
-  @Rule public final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
+  @RegisterExtension final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
 
   @Test
-  public void testGet_withoutSetup_throws() {
+  void testGet_withoutSetup_throws() {
     RegistryToolEnvironment.reset();
     assertThrows(IllegalStateException.class, RegistryToolEnvironment::get);
   }
 
   @Test
-  public void testSetup_changesEnvironmentReturnedByGet() {
+  void testSetup_changesEnvironmentReturnedByGet() {
     RegistryToolEnvironment.UNITTEST.setup(systemPropertyRule);
     assertThat(RegistryToolEnvironment.get()).isEqualTo(RegistryToolEnvironment.UNITTEST);
 
@@ -45,33 +42,33 @@ public class RegistryToolEnvironmentTest {
   }
 
   @Test
-  public void testFromArgs_shortNotation_works() {
-    assertThat(RegistryToolEnvironment.parseFromArgs(new String[] { "-e", "alpha" }))
+  void testFromArgs_shortNotation_works() {
+    assertThat(RegistryToolEnvironment.parseFromArgs(new String[] {"-e", "alpha"}))
         .isEqualTo(RegistryToolEnvironment.ALPHA);
   }
 
   @Test
-  public void testFromArgs_longNotation_works() {
-    assertThat(RegistryToolEnvironment.parseFromArgs(new String[] { "--environment", "alpha" }))
+  void testFromArgs_longNotation_works() {
+    assertThat(RegistryToolEnvironment.parseFromArgs(new String[] {"--environment", "alpha"}))
         .isEqualTo(RegistryToolEnvironment.ALPHA);
   }
 
   @Test
-  public void testFromArgs_uppercase_works() {
-    assertThat(RegistryToolEnvironment.parseFromArgs(new String[] { "-e", "QA" }))
+  void testFromArgs_uppercase_works() {
+    assertThat(RegistryToolEnvironment.parseFromArgs(new String[] {"-e", "QA"}))
         .isEqualTo(RegistryToolEnvironment.QA);
   }
 
   @Test
-  public void testFromArgs_equalsNotation_works() {
-    assertThat(RegistryToolEnvironment.parseFromArgs(new String[] { "-e=sandbox" }))
+  void testFromArgs_equalsNotation_works() {
+    assertThat(RegistryToolEnvironment.parseFromArgs(new String[] {"-e=sandbox"}))
         .isEqualTo(RegistryToolEnvironment.SANDBOX);
-    assertThat(RegistryToolEnvironment.parseFromArgs(new String[] { "--environment=sandbox" }))
+    assertThat(RegistryToolEnvironment.parseFromArgs(new String[] {"--environment=sandbox"}))
         .isEqualTo(RegistryToolEnvironment.SANDBOX);
   }
 
   @Test
-  public void testFromArgs_envFlagAfterCommandName_getsIgnored() {
+  void testFromArgs_envFlagAfterCommandName_getsIgnored() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -80,34 +77,33 @@ public class RegistryToolEnvironmentTest {
   }
 
   @Test
-  public void testFromArgs_missingEnvironmentFlag_throwsIae() {
+  void testFromArgs_missingEnvironmentFlag_throwsIae() {
     assertThrows(
         IllegalArgumentException.class,
         () -> RegistryToolEnvironment.parseFromArgs(new String[] {}));
   }
 
   @Test
-  public void testFromArgs_extraEnvFlagAfterCommandName_getsIgnored() {
-    String[] args = new String[] {
-        "-e", "alpha",
-        "registrar_activity_report",
-        "-e", "1406851199"};
+  void testFromArgs_extraEnvFlagAfterCommandName_getsIgnored() {
+    String[] args = new String[] {"-e", "alpha", "registrar_activity_report", "-e", "1406851199"};
     assertThat(RegistryToolEnvironment.parseFromArgs(args))
         .isEqualTo(RegistryToolEnvironment.ALPHA);
   }
 
   @Test
-  public void testFromArgs_loggingFlagWithUnderscores_isntConsideredCommand() {
-    String[] args = new String[] {
-        "--logging_properties_file", "my_file.properties",
-        "-e", "alpha",
-        "list_tlds"};
+  void testFromArgs_loggingFlagWithUnderscores_isntConsideredCommand() {
+    String[] args =
+        new String[] {
+          "--logging_properties_file", "my_file.properties",
+          "-e", "alpha",
+          "list_tlds"
+        };
     assertThat(RegistryToolEnvironment.parseFromArgs(args))
         .isEqualTo(RegistryToolEnvironment.ALPHA);
   }
 
   @Test
-  public void testFromArgs_badName_throwsIae() {
+  void testFromArgs_badName_throwsIae() {
     assertThrows(
         IllegalArgumentException.class,
         () -> RegistryToolEnvironment.parseFromArgs(new String[] {"-e", "alphaville"}));

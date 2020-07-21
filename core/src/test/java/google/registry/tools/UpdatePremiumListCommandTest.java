@@ -24,22 +24,22 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
 import google.registry.tools.server.UpdatePremiumListAction;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 /** Unit tests for {@link UpdatePremiumListCommand}. */
-public class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
+class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     extends CreateOrUpdatePremiumListCommandTestCase<C> {
 
   @Mock AppEngineConnection connection;
 
-  String premiumTermsPath;
+  private String premiumTermsPath;
   String premiumTermsCsv;
-  String servletPath;
+  private String servletPath;
 
-  @Before
-  public void init() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     command.setConnection(connection);
     servletPath = "/_dr/admin/updatePremiumList";
     premiumTermsPath =
@@ -52,7 +52,7 @@ public class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
   }
 
   @Test
-  public void testRun() throws Exception {
+  void testRun() throws Exception {
     runCommandForced("-i=" + premiumTermsPath, "-n=foo");
     verifySentParams(
         connection,
@@ -61,7 +61,7 @@ public class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
   }
 
   @Test
-  public void testRun_noProvidedName_usesBasenameOfInputFile() throws Exception {
+  void testRun_noProvidedName_usesBasenameOfInputFile() throws Exception {
     runCommandForced("-i=" + premiumTermsPath);
     assertInStdout("Successfully");
     verifySentParams(
