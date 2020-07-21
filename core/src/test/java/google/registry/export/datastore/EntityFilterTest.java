@@ -22,23 +22,20 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.common.collect.ImmutableList;
 import google.registry.testing.TestDataHelper;
 import java.io.IOException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for the instantiation, marshalling and unmarshalling of {@link EntityFilter}. */
-@RunWith(JUnit4.class)
-public class EntityFilterTest {
+class EntityFilterTest {
 
   private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
 
   @Test
-  public void testEntityFilter_create_nullKinds() {
+  void testEntityFilter_create_nullKinds() {
     assertThrows(NullPointerException.class, () -> new EntityFilter(null));
   }
 
   @Test
-  public void testEntityFilter_marshall() throws IOException {
+  void testEntityFilter_marshall() throws IOException {
     EntityFilter entityFilter =
         new EntityFilter(ImmutableList.of("Registry", "Registrar", "DomainBase"));
     assertThat(JSON_FACTORY.toString(entityFilter))
@@ -46,7 +43,7 @@ public class EntityFilterTest {
   }
 
   @Test
-  public void testEntityFilter_unmarshall() throws IOException {
+  void testEntityFilter_unmarshall() throws IOException {
     EntityFilter entityFilter = loadJson("entity_filter.json", EntityFilter.class);
     assertThat(entityFilter.getKinds())
         .containsExactly("Registry", "Registrar", "DomainBase")
@@ -54,13 +51,13 @@ public class EntityFilterTest {
   }
 
   @Test
-  public void testEntityFilter_unmarshall_noKinds() throws IOException {
+  void testEntityFilter_unmarshall_noKinds() throws IOException {
     EntityFilter entityFilter = JSON_FACTORY.fromString("{}", EntityFilter.class);
     assertThat(entityFilter.getKinds()).isEmpty();
   }
 
   @Test
-  public void testEntityFilter_unmarshall_emptyKinds() throws IOException {
+  void testEntityFilter_unmarshall_emptyKinds() throws IOException {
     EntityFilter entityFilter = JSON_FACTORY.fromString("{ \"kinds\" : [] }", EntityFilter.class);
     assertThat(entityFilter.getKinds()).isEmpty();
   }

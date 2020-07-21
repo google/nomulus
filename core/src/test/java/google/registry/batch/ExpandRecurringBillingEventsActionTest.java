@@ -59,28 +59,25 @@ import java.util.List;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ExpandRecurringBillingEventsAction}. */
-@RunWith(JUnit4.class)
 public class ExpandRecurringBillingEventsActionTest
     extends MapreduceTestCase<ExpandRecurringBillingEventsAction> {
-  @Rule
-  public final InjectRule inject = new InjectRule();
+
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
   private final DateTime beginningOfTest = DateTime.parse("2000-10-02T00:00:00Z");
   private final FakeClock clock = new FakeClock(beginningOfTest);
 
-  DomainBase domain;
-  HistoryEntry historyEntry;
-  BillingEvent.Recurring recurring;
+  private DomainBase domain;
+  private HistoryEntry historyEntry;
+  private BillingEvent.Recurring recurring;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     action = new ExpandRecurringBillingEventsAction();
     action.mrRunner = makeDefaultRunner();
@@ -161,7 +158,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent() throws Exception {
+  void testSuccess_expandSingleEvent() throws Exception {
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
@@ -176,7 +173,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_deletedDomain() throws Exception {
+  void testSuccess_expandSingleEvent_deletedDomain() throws Exception {
     DateTime deletionTime = DateTime.parse("2000-08-01T00:00:00Z");
     DomainBase deletedDomain = persistDeletedDomain("deleted.tld", deletionTime);
     historyEntry = persistResource(new HistoryEntry.Builder().setParent(deletedDomain).build());
@@ -208,7 +205,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_idempotentForDuplicateRuns() throws Exception {
+  void testSuccess_expandSingleEvent_idempotentForDuplicateRuns() throws Exception {
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
@@ -225,7 +222,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_idempotentForExistingOneTime() throws Exception {
+  void testSuccess_expandSingleEvent_idempotentForExistingOneTime() throws Exception {
     persistResource(recurring);
     BillingEvent.OneTime persisted = persistResource(defaultOneTimeBuilder()
         .setParent(historyEntry)
@@ -240,8 +237,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_notIdempotentForDifferentBillingTime()
-      throws Exception {
+  void testSuccess_expandSingleEvent_notIdempotentForDifferentBillingTime() throws Exception {
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
@@ -259,8 +255,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_notIdempotentForDifferentRecurring()
-      throws Exception {
+  void testSuccess_expandSingleEvent_notIdempotentForDifferentRecurring() throws Exception {
     persistResource(recurring);
     BillingEvent.Recurring recurring2 = persistResource(recurring.asBuilder()
         .setId(3L)
@@ -289,7 +284,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_ignoreRecurringBeforeWindow() throws Exception {
+  void testSuccess_ignoreRecurringBeforeWindow() throws Exception {
     recurring = persistResource(recurring.asBuilder()
         .setEventTime(DateTime.parse("1997-01-05T00:00:00Z"))
         .setRecurrenceEndTime(DateTime.parse("1999-10-05T00:00:00Z"))
@@ -303,7 +298,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_ignoreRecurringAfterWindow() throws Exception {
+  void testSuccess_ignoreRecurringAfterWindow() throws Exception {
     recurring = persistResource(recurring.asBuilder()
         .setEventTime(clock.nowUtc().plusYears(2))
         .build());
@@ -315,7 +310,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_billingTimeAtCursorTime() throws Exception {
+  void testSuccess_expandSingleEvent_billingTimeAtCursorTime() throws Exception {
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(DateTime.parse("2000-02-19T00:00:00Z"));
     runMapreduce();
@@ -328,8 +323,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_cursorTimeBetweenEventAndBillingTime()
-      throws Exception {
+  void testSuccess_expandSingleEvent_cursorTimeBetweenEventAndBillingTime() throws Exception {
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(DateTime.parse("2000-01-12T00:00:00Z"));
     runMapreduce();
@@ -342,7 +336,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_billingTimeAtExecutionTime() throws Exception {
+  void testSuccess_expandSingleEvent_billingTimeAtExecutionTime() throws Exception {
     DateTime testTime = DateTime.parse("2000-02-19T00:00:00Z").minusMillis(1);
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
@@ -359,7 +353,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_multipleYearCreate() throws Exception {
+  void testSuccess_expandSingleEvent_multipleYearCreate() throws Exception {
     DateTime testTime = beginningOfTest.plusYears(2);
     action.cursorTimeParam = Optional.of(recurring.getEventTime());
     recurring =
@@ -381,7 +375,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_withCursor() throws Exception {
+  void testSuccess_expandSingleEvent_withCursor() throws Exception {
     persistResource(recurring);
     saveCursor(START_OF_TIME);
     runMapreduce();
@@ -394,7 +388,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_withCursorPastExpected() throws Exception {
+  void testSuccess_expandSingleEvent_withCursorPastExpected() throws Exception {
     persistResource(recurring);
     // Simulate a quick second run of the mapreduce (this should be a no-op).
     saveCursor(clock.nowUtc().minusSeconds(1));
@@ -406,7 +400,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_recurrenceEndBeforeEvent() throws Exception {
+  void testSuccess_expandSingleEvent_recurrenceEndBeforeEvent() throws Exception {
     // This can occur when a domain is transferred or deleted before a domain comes up for renewal.
     recurring = persistResource(recurring.asBuilder()
         .setRecurrenceEndTime(recurring.getEventTime().minusDays(5))
@@ -420,7 +414,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_dryRun() throws Exception {
+  void testSuccess_expandSingleEvent_dryRun() throws Exception {
     persistResource(recurring);
     action.isDryRun = true;
     saveCursor(START_OF_TIME); // Need a saved cursor to verify that it didn't move.
@@ -432,7 +426,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_multipleYears() throws Exception {
+  void testSuccess_expandSingleEvent_multipleYears() throws Exception {
     DateTime testTime = clock.nowUtc().plusYears(5);
     clock.setTo(testTime);
     List<BillingEvent> expectedEvents = new ArrayList<>();
@@ -463,7 +457,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_multipleYears_cursorInBetweenYears() throws Exception {
+  void testSuccess_expandSingleEvent_multipleYears_cursorInBetweenYears() throws Exception {
     DateTime testTime = clock.nowUtc().plusYears(5);
     clock.setTo(testTime);
     List<BillingEvent> expectedEvents = new ArrayList<>();
@@ -492,7 +486,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_singleEvent_beforeRenewal() throws Exception {
+  void testSuccess_singleEvent_beforeRenewal() throws Exception {
     DateTime testTime = DateTime.parse("2000-01-04T00:00:00Z");
     clock.setTo(testTime);
     persistResource(recurring);
@@ -505,7 +499,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_singleEvent_afterRecurrenceEnd_inAutorenewGracePeriod() throws Exception {
+  void testSuccess_singleEvent_afterRecurrenceEnd_inAutorenewGracePeriod() throws Exception {
     // The domain creation date is 1999-01-05, and the first renewal date is thus 2000-01-05.
     DateTime testTime = DateTime.parse("2001-02-06T00:00:00Z");
     clock.setTo(testTime);
@@ -530,8 +524,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_singleEvent_afterRecurrenceEnd_outsideAutorenewGracePeriod()
-      throws Exception {
+  void testSuccess_singleEvent_afterRecurrenceEnd_outsideAutorenewGracePeriod() throws Exception {
     // The domain creation date is 1999-01-05, and the first renewal date is thus 2000-01-05.
     DateTime testTime = DateTime.parse("2001-02-06T00:00:00Z");
     clock.setTo(testTime);
@@ -556,7 +549,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_billingTimeOnLeapYear() throws Exception {
+  void testSuccess_expandSingleEvent_billingTimeOnLeapYear() throws Exception {
     recurring =
         persistResource(
             recurring.asBuilder().setEventTime(DateTime.parse("2000-01-15T00:00:00Z")).build());
@@ -575,7 +568,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandSingleEvent_billingTimeNotOnLeapYear() throws Exception {
+  void testSuccess_expandSingleEvent_billingTimeNotOnLeapYear() throws Exception {
     DateTime testTime = DateTime.parse("2001-12-01T00:00:00Z");
     recurring =
         persistResource(
@@ -597,7 +590,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_expandMultipleEvents() throws Exception {
+  void testSuccess_expandMultipleEvents() throws Exception {
     persistResource(recurring);
     BillingEvent.Recurring recurring2 = persistResource(recurring.asBuilder()
         .setEventTime(recurring.getEventTime().plusMonths(3))
@@ -630,7 +623,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_premiumDomain() throws Exception {
+  void testSuccess_premiumDomain() throws Exception {
     persistResource(
         Registry.get("tld")
             .asBuilder()
@@ -651,7 +644,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testSuccess_varyingRenewPrices() throws Exception {
+  void testSuccess_varyingRenewPrices() throws Exception {
     DateTime testTime = beginningOfTest.plusYears(1);
     persistResource(
         Registry.get("tld")
@@ -691,7 +684,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testFailure_cursorAfterExecutionTime() {
+  void testFailure_cursorAfterExecutionTime() {
     action.cursorTimeParam = Optional.of(clock.nowUtc().plusYears(1));
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, this::runMapreduce);
@@ -701,7 +694,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testFailure_cursorAtExecutionTime() {
+  void testFailure_cursorAtExecutionTime() {
     // The clock advances one milli on runMapreduce.
     action.cursorTimeParam = Optional.of(clock.nowUtc().plusMillis(1));
     IllegalArgumentException thrown =
@@ -712,7 +705,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   @Test
-  public void testFailure_mapperException_doesNotMoveCursor() throws Exception {
+  void testFailure_mapperException_doesNotMoveCursor() throws Exception {
     saveCursor(START_OF_TIME); // Need a saved cursor to verify that it didn't move.
     // Set target to a TLD that doesn't exist.
     recurring = persistResource(recurring.asBuilder().setTargetId("domain.junk").build());

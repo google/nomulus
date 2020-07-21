@@ -35,22 +35,18 @@ import java.io.StringWriter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for Dagger injection of the DNS package. */
-@RunWith(JUnit4.class)
 public final class DnsInjectionTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
   private final HttpServletRequest req = mock(HttpServletRequest.class);
   private final HttpServletResponse rsp = mock(HttpServletResponse.class);
@@ -59,8 +55,8 @@ public final class DnsInjectionTest {
   private DnsTestComponent component;
   private DnsQueue dnsQueue;
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     inject.setStaticField(Ofy.class, "clock", clock);
     when(rsp.getWriter()).thenReturn(new PrintWriter(httpOutput));
     component = DaggerDnsTestComponent.builder()
@@ -71,7 +67,7 @@ public final class DnsInjectionTest {
   }
 
   @Test
-  public void testReadDnsQueueAction_injectsAndWorks() {
+  void testReadDnsQueueAction_injectsAndWorks() {
     persistActiveSubordinateHost("ns1.example.lol", persistActiveDomain("example.lol"));
     clock.advanceOneMilli();
     dnsQueue.addDomainRefreshTask("example.lol");
@@ -81,7 +77,7 @@ public final class DnsInjectionTest {
   }
 
   @Test
-  public void testRefreshDns_domain_injectsAndWorks() {
+  void testRefreshDns_domain_injectsAndWorks() {
     persistActiveDomain("example.lol");
     when(req.getParameter("type")).thenReturn("domain");
     when(req.getParameter("name")).thenReturn("example.lol");
@@ -90,7 +86,7 @@ public final class DnsInjectionTest {
   }
 
   @Test
-  public void testRefreshDns_missingDomain_throwsNotFound() {
+  void testRefreshDns_missingDomain_throwsNotFound() {
     when(req.getParameter("type")).thenReturn("domain");
     when(req.getParameter("name")).thenReturn("example.lol");
     NotFoundException thrown =
@@ -99,7 +95,7 @@ public final class DnsInjectionTest {
   }
 
   @Test
-  public void testRefreshDns_host_injectsAndWorks() {
+  void testRefreshDns_host_injectsAndWorks() {
     persistActiveSubordinateHost("ns1.example.lol", persistActiveDomain("example.lol"));
     when(req.getParameter("type")).thenReturn("host");
     when(req.getParameter("name")).thenReturn("ns1.example.lol");
@@ -108,7 +104,7 @@ public final class DnsInjectionTest {
   }
 
   @Test
-  public void testRefreshDns_missingHost_throwsNotFound() {
+  void testRefreshDns_missingHost_throwsNotFound() {
     when(req.getParameter("type")).thenReturn("host");
     when(req.getParameter("name")).thenReturn("ns1.example.lol");
     NotFoundException thrown =

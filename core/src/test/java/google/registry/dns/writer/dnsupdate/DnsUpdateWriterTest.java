@@ -49,16 +49,16 @@ import java.util.Collections;
 import java.util.Iterator;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.xbill.DNS.Flags;
 import org.xbill.DNS.Message;
 import org.xbill.DNS.Opcode;
@@ -70,15 +70,14 @@ import org.xbill.DNS.Type;
 import org.xbill.DNS.Update;
 
 /** Unit tests for {@link DnsUpdateWriter}. */
-@RunWith(JUnit4.class)
+@ExtendWith(MockitoExtension.class)
 public class DnsUpdateWriterTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
-  @Rule public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
   @Mock private DnsMessageTransport mockResolver;
   @Captor private ArgumentCaptor<Update> updateCaptor;
@@ -87,8 +86,8 @@ public class DnsUpdateWriterTest {
 
   private DnsUpdateWriter writer;
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     inject.setStaticField(Ofy.class, "clock", clock);
 
     createTld("tld");
@@ -99,7 +98,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void testPublishDomainCreate_publishesNameServers() throws Exception {
+  void testPublishDomainCreate_publishesNameServers() throws Exception {
     HostResource host1 = persistActiveHost("ns1.example.tld");
     HostResource host2 = persistActiveHost("ns2.example.tld");
     DomainBase domain =
@@ -120,8 +119,9 @@ public class DnsUpdateWriterTest {
     assertThatTotalUpdateSetsIs(update, 2); // The delete and NS sets
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void testPublishAtomic_noCommit() {
+  void testPublishAtomic_noCommit() {
     HostResource host1 = persistActiveHost("ns.example1.tld");
     DomainBase domain1 =
         persistActiveDomain("example1.tld")
@@ -145,7 +145,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void testPublishAtomic_oneUpdate() throws Exception {
+  void testPublishAtomic_oneUpdate() throws Exception {
     HostResource host1 = persistActiveHost("ns.example1.tld");
     DomainBase domain1 =
         persistActiveDomain("example1.tld")
@@ -177,7 +177,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void testPublishDomainCreate_publishesDelegationSigner() throws Exception {
+  void testPublishDomainCreate_publishesDelegationSigner() throws Exception {
     DomainBase domain =
         persistActiveDomain("example.tld")
             .asBuilder()
@@ -201,7 +201,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void testPublishDomainWhenNotActive_removesDnsRecords() throws Exception {
+  void testPublishDomainWhenNotActive_removesDnsRecords() throws Exception {
     DomainBase domain =
         persistActiveDomain("example.tld")
             .asBuilder()
@@ -221,7 +221,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void testPublishDomainDelete_removesDnsRecords() throws Exception {
+  void testPublishDomainDelete_removesDnsRecords() throws Exception {
     persistDeletedDomain("example.tld", clock.nowUtc().minusDays(1));
 
     writer.publishDomain("example.tld");
@@ -235,7 +235,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void testPublishHostCreate_publishesAddressRecords() throws Exception {
+  void testPublishHostCreate_publishesAddressRecords() throws Exception {
     HostResource host =
         persistResource(
             newHostResource("ns1.example.tld")
@@ -268,7 +268,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void testPublishHostDelete_removesDnsRecords() throws Exception {
+  void testPublishHostDelete_removesDnsRecords() throws Exception {
     persistDeletedHost("ns1.example.tld", clock.nowUtc().minusDays(1));
     persistActiveDomain("example.tld");
 
@@ -284,7 +284,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void testPublishHostDelete_removesGlueRecords() throws Exception {
+  void testPublishHostDelete_removesGlueRecords() throws Exception {
     persistDeletedHost("ns1.example.tld", clock.nowUtc().minusDays(1));
     persistResource(
         persistActiveDomain("example.tld")
@@ -305,7 +305,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void testPublishDomainExternalAndInBailiwickNameServer() throws Exception {
+  void testPublishDomainExternalAndInBailiwickNameServer() throws Exception {
     HostResource externalNameserver = persistResource(newHostResource("ns1.example.com"));
     HostResource inBailiwickNameserver =
         persistResource(
@@ -342,7 +342,7 @@ public class DnsUpdateWriterTest {
   }
 
   @Test
-  public void testPublishDomainDeleteOrphanGlues() throws Exception {
+  void testPublishDomainDeleteOrphanGlues() throws Exception {
     HostResource inBailiwickNameserver =
         persistResource(
             newHostResource("ns1.example.tld")
@@ -377,9 +377,10 @@ public class DnsUpdateWriterTest {
     assertThatTotalUpdateSetsIs(update, 6);
   }
 
-  @Test
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @SuppressWarnings("AssertThrowsMultipleStatements")
-  public void testPublishDomainFails_whenDnsUpdateReturnsError() throws Exception {
+  @Test
+  void testPublishDomainFails_whenDnsUpdateReturnsError() throws Exception {
     DomainBase domain =
         persistActiveDomain("example.tld")
             .asBuilder()
@@ -397,9 +398,10 @@ public class DnsUpdateWriterTest {
     assertThat(thrown).hasMessageThat().contains("SERVFAIL");
   }
 
-  @Test
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @SuppressWarnings("AssertThrowsMultipleStatements")
-  public void testPublishHostFails_whenDnsUpdateReturnsError() throws Exception {
+  @Test
+  void testPublishHostFails_whenDnsUpdateReturnsError() throws Exception {
     HostResource host =
         persistActiveSubordinateHost("ns1.example.tld", persistActiveDomain("example.tld"))
             .asBuilder()
