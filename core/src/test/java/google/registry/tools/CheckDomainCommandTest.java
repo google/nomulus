@@ -19,26 +19,26 @@ import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import google.registry.model.registrar.Registrar.Type;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CheckDomainCommand}. */
-public class CheckDomainCommandTest extends EppToolCommandTestCase<CheckDomainCommand> {
+class CheckDomainCommandTest extends EppToolCommandTestCase<CheckDomainCommand> {
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     persistNewRegistrar("adminreg", "Admin Registrar", Type.REAL, 693L);
     command.registryAdminClientId = "adminreg";
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     runCommand("--client=NewRegistrar", "example.tld");
     eppVerifier.expectDryRun().verifySent("domain_check_fee.xml");
   }
 
   @Test
-  public void testSuccess_multipleTlds() throws Exception {
+  void testSuccess_multipleTlds() throws Exception {
     runCommand("--client=NewRegistrar", "example.tld", "example.tld2");
     eppVerifier
         .expectDryRun()
@@ -47,7 +47,7 @@ public class CheckDomainCommandTest extends EppToolCommandTestCase<CheckDomainCo
   }
 
   @Test
-  public void testSuccess_multipleDomains() throws Exception {
+  void testSuccess_multipleDomains() throws Exception {
     runCommand(
         "--client=NewRegistrar",
         "example.tld",
@@ -57,7 +57,7 @@ public class CheckDomainCommandTest extends EppToolCommandTestCase<CheckDomainCo
   }
 
   @Test
-  public void testSuccess_multipleDomainsAndTlds() throws Exception {
+  void testSuccess_multipleDomainsAndTlds() throws Exception {
     runCommand(
         "--client=NewRegistrar",
         "example.tld",
@@ -71,24 +71,24 @@ public class CheckDomainCommandTest extends EppToolCommandTestCase<CheckDomainCo
   }
 
   @Test
-  public void testSuccess_unspecifiedClientId_defaultsToRegistryRegistrar() throws Exception {
+  void testSuccess_unspecifiedClientId_defaultsToRegistryRegistrar() throws Exception {
     runCommand("example.tld");
     eppVerifier.expectDryRun().expectClientId("adminreg").verifySent("domain_check_fee.xml");
   }
 
   @Test
-  public void testSuccess_allocationToken_reserved() throws Exception {
+  void testSuccess_allocationToken_reserved() throws Exception {
     runCommand("--client=NewRegistrar", "--token=abc123", "example.tld");
     eppVerifier.expectDryRun().verifySent("domain_check_fee_allocationtoken.xml");
   }
 
   @Test
-  public void testFailure_NoMainParameter() {
+  void testFailure_NoMainParameter() {
     assertThrows(ParameterException.class, () -> runCommand("--client=NewRegistrar"));
   }
 
   @Test
-  public void testFailure_unknownFlag() {
+  void testFailure_unknownFlag() {
     assertThrows(
         ParameterException.class,
         () -> runCommand("--client=NewRegistrar", "--unrecognized=foo", "example.tld"));

@@ -35,26 +35,23 @@ import google.registry.tools.server.RefreshDnsForAllDomainsAction.RefreshDnsForA
 import java.util.Random;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link RefreshDnsForAllDomainsAction}. */
-@RunWith(JUnit4.class)
 public class RefreshDnsForAllDomainsActionTest
     extends MapreduceTestCase<RefreshDnsForAllDomainsAction> {
 
-  @Rule public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
   private DnsQueue origDnsQueue;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     origDnsQueue = RefreshDnsForAllDomainsActionMapper.setDnsQueueForTest(dnsQueue);
 
     action = new RefreshDnsForAllDomainsAction();
@@ -67,8 +64,8 @@ public class RefreshDnsForAllDomainsActionTest
     createTld("bar");
   }
 
-  @After
-  public void restoreDnsQueue() {
+  @AfterEach
+  void afterEach() {
     assertThat(RefreshDnsForAllDomainsActionMapper.setDnsQueueForTest(origDnsQueue))
         .isEqualTo(dnsQueue);
   }
@@ -79,7 +76,7 @@ public class RefreshDnsForAllDomainsActionTest
   }
 
   @Test
-  public void test_runAction_successfullyEnqueuesDnsRefreshes() throws Exception {
+  void test_runAction_successfullyEnqueuesDnsRefreshes() throws Exception {
     persistActiveDomain("foo.bar");
     persistActiveDomain("low.bar");
     action.tlds = ImmutableSet.of("bar");
@@ -89,7 +86,7 @@ public class RefreshDnsForAllDomainsActionTest
   }
 
   @Test
-  public void test_runAction_smearsOutDnsRefreshes() throws Exception {
+  void test_runAction_smearsOutDnsRefreshes() throws Exception {
     persistActiveDomain("foo.bar");
     persistActiveDomain("low.bar");
     action.tlds = ImmutableSet.of("bar");
@@ -102,7 +99,7 @@ public class RefreshDnsForAllDomainsActionTest
   }
 
   @Test
-  public void test_runAction_doesntRefreshDeletedDomain() throws Exception {
+  void test_runAction_doesntRefreshDeletedDomain() throws Exception {
     persistActiveDomain("foo.bar");
     persistDeletedDomain("deleted.bar", DateTime.now(UTC).minusYears(1));
     action.tlds = ImmutableSet.of("bar");
@@ -112,7 +109,7 @@ public class RefreshDnsForAllDomainsActionTest
   }
 
   @Test
-  public void test_runAction_ignoresDomainsOnOtherTlds() throws Exception {
+  void test_runAction_ignoresDomainsOnOtherTlds() throws Exception {
     createTld("baz");
     persistActiveDomain("foo.bar");
     persistActiveDomain("low.bar");
@@ -125,7 +122,7 @@ public class RefreshDnsForAllDomainsActionTest
   }
 
   @Test
-  public void test_smearMinutesMustBeSpecified() {
+  void test_smearMinutesMustBeSpecified() {
     action.tlds = ImmutableSet.of("bar");
     action.smearMinutes = 0;
     IllegalArgumentException thrown =

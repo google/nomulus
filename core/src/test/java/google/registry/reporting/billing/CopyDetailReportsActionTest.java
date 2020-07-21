@@ -25,8 +25,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
@@ -208,7 +208,7 @@ public class CopyDetailReportsActionTest {
         new GcsFilename("test-bucket", "results/invoice_details_2017-10_notExistent_hello.csv"),
         "hola,mundo\n3,4".getBytes(UTF_8));
     action.run();
-    verifyZeroInteractions(driveConnection);
+    verifyNoInteractions(driveConnection);
   }
 
   @Test
@@ -220,6 +220,6 @@ public class CopyDetailReportsActionTest {
             "test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
         "hola,mundo\n3,4".getBytes(UTF_8));
     action.run();
-    verifyZeroInteractions(driveConnection);
+    verifyNoInteractions(driveConnection);
   }
 }

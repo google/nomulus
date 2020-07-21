@@ -50,15 +50,11 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -86,19 +82,16 @@ public abstract class MapreduceTestCase<T> {
   private final PipelineServlet pipelineServlet = new PipelineServlet();
   private LocalTaskQueue taskQueue;
 
-  @RegisterExtension @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withLocalModules().withTaskQueue().build();
-
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
 
   private AppEngineServiceUtils appEngineServiceUtils;
 
   @Mock ModulesService modulesService;
 
-  @Before
   @BeforeEach
-  public void setUp() {
+  public void beforeEachMapreduceTestCase() {
     taskQueue = LocalTaskQueueTestConfig.getLocalTaskQueue();
     ApiProxyLocal proxy = (ApiProxyLocal) ApiProxy.getDelegate();
     // Creating files is not allowed in some test execution environments, so don't.

@@ -19,12 +19,13 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
 import google.registry.model.EntityClasses;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetSchemaTreeCommand}. */
-public class GetSchemaTreeCommandTest extends CommandTestCase<GetSchemaTreeCommand> {
+class GetSchemaTreeCommandTest extends CommandTestCase<GetSchemaTreeCommand> {
+
   @Test
-  public void testAllClassesPrintedExactlyOnce() throws Exception {
+  void testAllClassesPrintedExactlyOnce() throws Exception {
     runCommand();
     String stdout = getStdoutAsString();
     for (Class<?> clazz : EntityClasses.ALL_CLASSES) {

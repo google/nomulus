@@ -27,17 +27,19 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.registrar.Registrar;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link VerifyOteCommand}. */
-public class VerifyOteCommandTest extends CommandTestCase<VerifyOteCommand> {
+class VerifyOteCommandTest extends CommandTestCase<VerifyOteCommand> {
 
   @Mock private AppEngineConnection connection;
 
-  @Before
-  public void init() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     command.setConnection(connection);
     ImmutableMap<String, Object> response =
         ImmutableMap.of("blobio", "Num actions: 19 - Reqs passed: 19/19 - Overall: PASS");
@@ -46,7 +48,7 @@ public class VerifyOteCommandTest extends CommandTestCase<VerifyOteCommand> {
   }
 
   @Test
-  public void testSuccess_pass() throws Exception {
+  void testSuccess_pass() throws Exception {
     Registrar registrar =
         loadRegistrar("TheRegistrar")
             .asBuilder()
@@ -64,15 +66,17 @@ public class VerifyOteCommandTest extends CommandTestCase<VerifyOteCommand> {
     assertInStdout("Overall: PASS");
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void testFailure_registrarDoesntExist() {
+  void testFailure_registrarDoesntExist() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommand("blobio"));
     assertThat(thrown).hasMessageThat().contains("Registrar blobio does not exist.");
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void testFailure_noRegistrarsNoCheckAll() {
+  void testFailure_noRegistrarsNoCheckAll() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommand(""));
     assertThat(thrown)

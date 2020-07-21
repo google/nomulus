@@ -41,16 +41,16 @@ import google.registry.model.registry.label.PremiumList;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link UpdateTldCommand}. */
-public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
+class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
 
   private final DateTime now = DateTime.now(UTC);
 
-  @Before
-  public void initTest() {
+  @BeforeEach
+  void beforeEach() {
     persistReservedList("common_abuse", "baa,FULLY_BLOCKED");
     persistReservedList("xn--q9jyb4c_abuse", "lamb,FULLY_BLOCKED");
     persistReservedList("tld_banned", "kilo,FULLY_BLOCKED", "lima,FULLY_BLOCKED");
@@ -63,7 +63,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_tldStateTransitions() throws Exception {
+  void testSuccess_tldStateTransitions() throws Exception {
     DateTime sunriseStart = now;
     DateTime quietPeriodStart = sunriseStart.plusMonths(2);
     DateTime gaStart = quietPeriodStart.plusWeeks(1);
@@ -88,7 +88,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_setTldState() throws Exception {
+  void testSuccess_setTldState() throws Exception {
     persistResource(
         Registry.get("xn--q9jyb4c")
             .asBuilder()
@@ -100,7 +100,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_renewBillingCostTransitions() throws Exception {
+  void testSuccess_renewBillingCostTransitions() throws Exception {
     DateTime later = now.plusMonths(1);
     runCommandForced(
         String.format(
@@ -122,7 +122,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_multipleArguments() throws Exception {
+  void testSuccess_multipleArguments() throws Exception {
     assertThat(Registry.get("xn--q9jyb4c").getAddGracePeriodLength())
         .isNotEqualTo(standardMinutes(5));
     createTld("example");
@@ -135,7 +135,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_addGracePeriodFlag() throws Exception {
+  void testSuccess_addGracePeriodFlag() throws Exception {
     assertThat(Registry.get("xn--q9jyb4c").getAddGracePeriodLength())
         .isNotEqualTo(standardMinutes(5));
     runCommandForced("--add_grace_period=PT300S", "xn--q9jyb4c");
@@ -143,7 +143,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_redemptionGracePeriodFlag() throws Exception {
+  void testSuccess_redemptionGracePeriodFlag() throws Exception {
     assertThat(Registry.get("xn--q9jyb4c").getRedemptionGracePeriodLength())
         .isNotEqualTo(standardMinutes(5));
     runCommandForced("--redemption_grace_period=PT300S", "xn--q9jyb4c");
@@ -152,7 +152,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_pendingDeleteLengthFlag() throws Exception {
+  void testSuccess_pendingDeleteLengthFlag() throws Exception {
     assertThat(Registry.get("xn--q9jyb4c").getPendingDeleteLength())
         .isNotEqualTo(standardMinutes(5));
     runCommandForced("--pending_delete_length=PT300S", "xn--q9jyb4c");
@@ -160,14 +160,14 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_dnsWriter() throws Exception {
+  void testSuccess_dnsWriter() throws Exception {
     assertThat(Registry.get("xn--q9jyb4c").getDnsWriters()).containsExactly("VoidDnsWriter");
     runCommandForced("--dns_writers=FooDnsWriter", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getDnsWriters()).containsExactly("FooDnsWriter");
   }
 
   @Test
-  public void testSuccess_multipleDnsWriters() throws Exception {
+  void testSuccess_multipleDnsWriters() throws Exception {
     assertThat(Registry.get("xn--q9jyb4c").getDnsWriters()).containsExactly("VoidDnsWriter");
 
     runCommandForced("--dns_writers=FooDnsWriter,VoidDnsWriter", "xn--q9jyb4c");
@@ -176,32 +176,32 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_escrow() throws Exception {
+  void testSuccess_escrow() throws Exception {
     runCommandForced("--escrow=true", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getEscrowEnabled()).isTrue();
   }
 
   @Test
-  public void testSuccess_noEscrow() throws Exception {
+  void testSuccess_noEscrow() throws Exception {
     runCommandForced("--escrow=false", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getEscrowEnabled()).isFalse();
   }
 
   @Test
-  public void testSuccess_createBillingCostFlag() throws Exception {
+  void testSuccess_createBillingCostFlag() throws Exception {
     runCommandForced("--create_billing_cost=\"USD 42.42\"", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getStandardCreateCost()).isEqualTo(Money.of(USD, 42.42));
   }
 
   @Test
-  public void testSuccess_restoreBillingCostFlag() throws Exception {
+  void testSuccess_restoreBillingCostFlag() throws Exception {
     runCommandForced("--restore_billing_cost=\"USD 42.42\"", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getStandardRestoreCost())
         .isEqualTo(Money.of(USD, 42.42));
   }
 
   @Test
-  public void testSuccess_nonUsdBillingCostFlag() throws Exception {
+  void testSuccess_nonUsdBillingCostFlag() throws Exception {
     persistResource(
         Registry.get("xn--q9jyb4c")
             .asBuilder()
@@ -228,27 +228,27 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_setLordnUsername() throws Exception {
+  void testSuccess_setLordnUsername() throws Exception {
     runCommandForced("--lordn_username=lordn000", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getLordnUsername()).isEqualTo("lordn000");
   }
 
   @Test
-  public void testSuccess_setOptionalParamsNullString() throws Exception {
+  void testSuccess_setOptionalParamsNullString() throws Exception {
     persistResource(Registry.get("xn--q9jyb4c").asBuilder().setLordnUsername("lordn000").build());
     runCommandForced("--lordn_username=null", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getLordnUsername()).isNull();
   }
 
   @Test
-  public void testSuccess_setOptionalParamsEmptyString() throws Exception {
+  void testSuccess_setOptionalParamsEmptyString() throws Exception {
     persistResource(Registry.get("xn--q9jyb4c").asBuilder().setLordnUsername("lordn000").build());
     runCommandForced("--lordn_username=", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getLordnUsername()).isNull();
   }
 
   @Test
-  public void testSuccess_setReservedLists() throws Exception {
+  void testSuccess_setReservedLists() throws Exception {
     runCommandForced("--reserved_lists=xn--q9jyb4c_r1,xn--q9jyb4c_r2", "xn--q9jyb4c");
 
     assertThat(Registry.get("xn--q9jyb4c").getReservedLists().stream().map(Key::getName))
@@ -256,7 +256,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_setReservedListsOverwrites() throws Exception {
+  void testSuccess_setReservedListsOverwrites() throws Exception {
     persistResource(Registry.get("xn--q9jyb4c").asBuilder()
         .setReservedListsByName(ImmutableSet.of("xn--q9jyb4c_r1", "xn--q9jyb4c_r2"))
         .build());
@@ -266,7 +266,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_addReservedLists() throws Exception {
+  void testSuccess_addReservedLists() throws Exception {
     persistResource(Registry.get("xn--q9jyb4c").asBuilder()
         .setReservedListsByName(ImmutableSet.of("xn--q9jyb4c_r1"))
         .build());
@@ -276,7 +276,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_removeAllReservedLists() throws Exception {
+  void testSuccess_removeAllReservedLists() throws Exception {
     persistResource(Registry.get("xn--q9jyb4c").asBuilder()
         .setReservedListsByName(ImmutableSet.of("xn--q9jyb4c_r1", "xn--q9jyb4c_r2"))
         .build());
@@ -285,7 +285,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_removeSomeReservedLists() throws Exception {
+  void testSuccess_removeSomeReservedLists() throws Exception {
     persistResource(Registry.get("xn--q9jyb4c").asBuilder()
         .setReservedListsByName(ImmutableSet.of("xn--q9jyb4c_r1", "xn--q9jyb4c_r2"))
         .build());
@@ -295,14 +295,14 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_setAllowedRegistrants() throws Exception {
+  void testSuccess_setAllowedRegistrants() throws Exception {
     runCommandForced("--allowed_registrants=alice,bob", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getAllowedRegistrantContactIds())
         .containsExactly("alice", "bob");
   }
 
   @Test
-  public void testSuccess_setAllowedRegistrantsOverwrites() throws Exception {
+  void testSuccess_setAllowedRegistrantsOverwrites() throws Exception {
     persistResource(
         Registry.get("xn--q9jyb4c").asBuilder()
             .setAllowedRegistrantContactIds(ImmutableSet.of("jane", "john"))
@@ -313,7 +313,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_addAllowedRegistrants() throws Exception {
+  void testSuccess_addAllowedRegistrants() throws Exception {
     persistResource(
         Registry.get("xn--q9jyb4c").asBuilder()
             .setAllowedRegistrantContactIds(ImmutableSet.of("alice"))
@@ -324,7 +324,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_removeAllAllowedRegistrants() throws Exception {
+  void testSuccess_removeAllAllowedRegistrants() throws Exception {
     persistResource(
         Registry.get("xn--q9jyb4c").asBuilder()
             .setAllowedRegistrantContactIds(ImmutableSet.of("alice", "bob"))
@@ -334,7 +334,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_removeSomeAllowedRegistrants() throws Exception {
+  void testSuccess_removeSomeAllowedRegistrants() throws Exception {
     persistResource(
         Registry.get("xn--q9jyb4c").asBuilder()
             .setAllowedRegistrantContactIds(ImmutableSet.of("alice", "bob"))
@@ -344,14 +344,14 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_setAllowedNameservers() throws Exception {
+  void testSuccess_setAllowedNameservers() throws Exception {
     runCommandForced("--allowed_nameservers=ns1.example.com,ns2.example.com", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getAllowedFullyQualifiedHostNames())
         .containsExactly("ns1.example.com", "ns2.example.com");
   }
 
   @Test
-  public void testSuccess_setAllowedNameserversOverwrites() throws Exception {
+  void testSuccess_setAllowedNameserversOverwrites() throws Exception {
     persistResource(
         Registry.get("xn--q9jyb4c").asBuilder()
             .setAllowedFullyQualifiedHostNames(
@@ -363,7 +363,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_addAllowedNameservers() throws Exception {
+  void testSuccess_addAllowedNameservers() throws Exception {
     persistResource(
         Registry.get("xn--q9jyb4c").asBuilder()
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("ns1.example.com"))
@@ -374,7 +374,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_removeAllAllowedNameservers() throws Exception {
+  void testSuccess_removeAllAllowedNameservers() throws Exception {
     persistResource(
         Registry.get("xn--q9jyb4c").asBuilder()
             .setAllowedFullyQualifiedHostNames(
@@ -385,7 +385,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_removeSomeAllowedNameservers() throws Exception {
+  void testSuccess_removeSomeAllowedNameservers() throws Exception {
     persistResource(
         Registry.get("xn--q9jyb4c").asBuilder()
             .setAllowedFullyQualifiedHostNames(
@@ -397,7 +397,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_invalidAddGracePeriod() {
+  void testFailure_invalidAddGracePeriod() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -406,7 +406,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_invalidRedemptionGracePeriod() {
+  void testFailure_invalidRedemptionGracePeriod() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -415,7 +415,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_invalidPendingDeleteLength() {
+  void testFailure_invalidPendingDeleteLength() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -424,7 +424,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_invalidTldState() {
+  void testFailure_invalidTldState() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -437,7 +437,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_invalidTldStateTransitionTime() {
+  void testFailure_invalidTldStateTransitionTime() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -449,7 +449,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_tldStatesOutOfOrder() {
+  void testFailure_tldStatesOutOfOrder() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -463,7 +463,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_duplicateTldStateTransitions() {
+  void testFailure_duplicateTldStateTransitions() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -477,7 +477,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_duplicateTldStateTransitionTimes() {
+  void testFailure_duplicateTldStateTransitionTimes() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -492,7 +492,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_outOfOrderTldStateTransitionTimes() {
+  void testFailure_outOfOrderTldStateTransitionTimes() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -508,7 +508,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_bothTldStateFlags() {
+  void testFailure_bothTldStateFlags() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -525,7 +525,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
     }
 
   @Test
-  public void testFailure_setCurrentTldState_outOfOrder() {
+  void testFailure_setCurrentTldState_outOfOrder() {
     persistResource(
         Registry.get("xn--q9jyb4c").asBuilder()
             .setTldStateTransitions(
@@ -541,7 +541,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_setCurrentTldState_laterTransitionScheduled() {
+  void testFailure_setCurrentTldState_laterTransitionScheduled() {
     persistResource(
         Registry.get("xn--q9jyb4c").asBuilder()
             .setTldStateTransitions(
@@ -559,7 +559,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_setCurrentTldState_inProduction() {
+  void testFailure_setCurrentTldState_inProduction() {
     persistResource(
         Registry.get("xn--q9jyb4c").asBuilder()
             .setTldStateTransitions(
@@ -582,7 +582,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_invalidRenewBillingCost() {
+  void testFailure_invalidRenewBillingCost() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -596,7 +596,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_negativeRenewBillingCost() {
+  void testFailure_negativeRenewBillingCost() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -608,7 +608,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_invalidRenewCostTransitionTime() {
+  void testFailure_invalidRenewCostTransitionTime() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -620,7 +620,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_duplicateRenewCostTransitionTimes() {
+  void testFailure_duplicateRenewCostTransitionTimes() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -635,7 +635,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_outOfOrderRenewCostTransitionTimes() {
+  void testFailure_outOfOrderRenewCostTransitionTimes() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -651,7 +651,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_noTldName() {
+  void testFailure_noTldName() {
     ParameterException thrown = assertThrows(ParameterException.class, this::runCommandForced);
     assertThat(thrown)
         .hasMessageThat()
@@ -659,14 +659,14 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_oneTldDoesNotExist() {
+  void testFailure_oneTldDoesNotExist() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommandForced("foo", "xn--q9jyb4c"));
     assertThat(thrown).hasMessageThat().contains("TLD foo does not exist");
   }
 
   @Test
-  public void testFailure_duplicateArguments() {
+  void testFailure_duplicateArguments() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class, () -> runCommandForced("xn--q9jyb4c", "xn--q9jyb4c"));
@@ -674,14 +674,14 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_tldDoesNotExist() {
+  void testFailure_tldDoesNotExist() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommandForced("foobarbaz"));
     assertThat(thrown).hasMessageThat().contains("TLD foobarbaz does not exist");
   }
 
   @Test
-  public void testFailure_specifiedDnsWriter_doesntExist() {
+  void testFailure_specifiedDnsWriter_doesntExist() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -692,7 +692,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_setNonExistentReservedLists() {
+  void testFailure_setNonExistentReservedLists() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -703,7 +703,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_cantAddDuplicateReservedList() {
+  void testFailure_cantAddDuplicateReservedList() {
     persistResource(Registry.get("xn--q9jyb4c").asBuilder()
         .setReservedListsByName(ImmutableSet.of("xn--q9jyb4c_r1", "xn--q9jyb4c_r2"))
         .build());
@@ -715,7 +715,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_cantRemoveReservedListThatIsntPresent() {
+  void testFailure_cantRemoveReservedListThatIsntPresent() {
     persistResource(Registry.get("xn--q9jyb4c").asBuilder()
         .setReservedListsByName(ImmutableSet.of("xn--q9jyb4c_r1", "xn--q9jyb4c_r2"))
         .build());
@@ -727,7 +727,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_cantAddAndRemoveSameReservedListSimultaneously() {
+  void testFailure_cantAddAndRemoveSameReservedListSimultaneously() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -740,7 +740,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_cantAddDuplicateAllowedRegistrants() {
+  void testFailure_cantAddDuplicateAllowedRegistrants() {
     persistResource(
         Registry.get("xn--q9jyb4c").asBuilder()
         .setAllowedRegistrantContactIds(ImmutableSet.of("alice", "bob"))
@@ -753,7 +753,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_cantRemoveAllowedRegistrantThatIsntPresent() {
+  void testFailure_cantRemoveAllowedRegistrantThatIsntPresent() {
     persistResource(
         Registry.get("xn--q9jyb4c").asBuilder()
         .setAllowedRegistrantContactIds(ImmutableSet.of("alice"))
@@ -766,7 +766,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_cantAddAndRemoveSameAllowedRegistrantsSimultaneously() {
+  void testFailure_cantAddAndRemoveSameAllowedRegistrantsSimultaneously() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -779,7 +779,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_cantAddDuplicateAllowedNameservers() {
+  void testFailure_cantAddDuplicateAllowedNameservers() {
     persistResource(
         Registry.get("xn--q9jyb4c").asBuilder()
             .setAllowedFullyQualifiedHostNames(
@@ -793,7 +793,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_cantRemoveAllowedNameserverThatIsntPresent() {
+  void testFailure_cantRemoveAllowedNameserverThatIsntPresent() {
     persistResource(
         Registry.get("xn--q9jyb4c").asBuilder()
             .setAllowedFullyQualifiedHostNames(
@@ -807,7 +807,7 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_cantAddAndRemoveSameAllowedNameserversSimultaneously() {
+  void testFailure_cantAddAndRemoveSameAllowedNameserversSimultaneously() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -820,33 +820,33 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_canSetRoidSuffixToWhatItAlreadyIs() throws Exception {
+  void testSuccess_canSetRoidSuffixToWhatItAlreadyIs() throws Exception {
     createTld("foo", "BLAH");
     runCommandForced("--roid_suffix=BLAH", "foo");
     assertThat(Registry.get("foo").getRoidSuffix()).isEqualTo("BLAH");
   }
 
   @Test
-  public void testSuccess_updateRoidSuffix() throws Exception {
+  void testSuccess_updateRoidSuffix() throws Exception {
     createTld("foo", "ARGLE");
     runCommandForced("--roid_suffix=BARGLE", "foo");
     assertThat(Registry.get("foo").getRoidSuffix()).isEqualTo("BARGLE");
   }
 
   @Test
-  public void testSuccess_removePremiumListWithNull() throws Exception {
+  void testSuccess_removePremiumListWithNull() throws Exception {
     runCommandForced("--premium_list=null", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getPremiumList()).isNull();
   }
 
   @Test
-  public void testSuccess_removePremiumListWithBlank() throws Exception {
+  void testSuccess_removePremiumListWithBlank() throws Exception {
     runCommandForced("--premium_list=", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getPremiumList()).isNull();
   }
 
   @Test
-  public void testSuccess_premiumListNotRemovedWhenNotSpecified() throws Exception {
+  void testSuccess_premiumListNotRemovedWhenNotSpecified() throws Exception {
     runCommandForced("--add_reserved_lists=xn--q9jyb4c_r1,xn--q9jyb4c_r2", "xn--q9jyb4c");
     Key<PremiumList> premiumListKey = Registry.get("xn--q9jyb4c").getPremiumList();
     assertThat(premiumListKey).isNotNull();
@@ -854,48 +854,48 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testSuccess_driveFolderId_notRemovedWhenNotSpecified() throws Exception {
+  void testSuccess_driveFolderId_notRemovedWhenNotSpecified() throws Exception {
     persistResource(Registry.get("xn--q9jyb4c").asBuilder().setDriveFolderId("foobar").build());
     runCommandForced("xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getDriveFolderId()).isEqualTo("foobar");
   }
 
   @Test
-  public void testSuccess_setCommonReservedListOnTld() throws Exception {
+  void testSuccess_setCommonReservedListOnTld() throws Exception {
     runSuccessfulReservedListsTest("common_abuse");
   }
 
   @Test
-  public void testSuccess_setTldSpecificReservedListOnTld() throws Exception {
+  void testSuccess_setTldSpecificReservedListOnTld() throws Exception {
     runSuccessfulReservedListsTest("xn--q9jyb4c_abuse");
   }
 
   @Test
-  public void testSuccess_setCommonReservedListAndTldSpecificReservedListOnTld() throws Exception {
+  void testSuccess_setCommonReservedListAndTldSpecificReservedListOnTld() throws Exception {
     runSuccessfulReservedListsTest("common_abuse,xn--q9jyb4c_abuse");
   }
 
   @Test
-  public void testFailure_setReservedListFromOtherTld() {
+  void testFailure_setReservedListFromOtherTld() {
     runFailureReservedListsTest("tld_banned",
         IllegalArgumentException.class,
         "The reserved list(s) tld_banned cannot be applied to the tld xn--q9jyb4c");
   }
 
   @Test
-  public void testSuccess_setReservedListFromOtherTld_withOverride() throws Exception {
+  void testSuccess_setReservedListFromOtherTld_withOverride() throws Exception {
     runReservedListsTestOverride("tld_banned");
   }
 
   @Test
-  public void testFailure_setCommonAndReservedListFromOtherTld() {
+  void testFailure_setCommonAndReservedListFromOtherTld() {
     runFailureReservedListsTest("common_abuse,tld_banned",
         IllegalArgumentException.class,
         "The reserved list(s) tld_banned cannot be applied to the tld xn--q9jyb4c");
   }
 
   @Test
-  public void testSuccess_setCommonAndReservedListFromOtherTld_withOverride() throws Exception {
+  void testSuccess_setCommonAndReservedListFromOtherTld_withOverride() throws Exception {
     runReservedListsTestOverride("common_abuse,tld_banned");
     String errMsg =
         "Error overridden: The reserved list(s) tld_banned "
@@ -904,37 +904,37 @@ public class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   @Test
-  public void testFailure_setMultipleReservedListsFromOtherTld() {
+  void testFailure_setMultipleReservedListsFromOtherTld() {
     runFailureReservedListsTest("tld_banned,soy_expurgated",
         IllegalArgumentException.class,
         "The reserved list(s) tld_banned, soy_expurgated cannot be applied to the tld xn--q9jyb4c");
   }
 
   @Test
-  public void testSuccess_setMultipleReservedListsFromOtherTld_withOverride() throws Exception {
+  void testSuccess_setMultipleReservedListsFromOtherTld_withOverride() throws Exception {
     runReservedListsTestOverride("tld_banned,soy_expurgated");
   }
 
   @Test
-  public void testSuccess_setPremiumList() throws Exception {
+  void testSuccess_setPremiumList() throws Exception {
     runCommandForced("--premium_list=xn--q9jyb4c", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getPremiumList().getName()).isEqualTo("xn--q9jyb4c");
   }
 
   @Test
-  public void testSuccess_setDriveFolderIdToValue() throws Exception {
+  void testSuccess_setDriveFolderIdToValue() throws Exception {
     runCommandForced("--drive_folder_id=madmax2030", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getDriveFolderId()).isEqualTo("madmax2030");
   }
 
   @Test
-  public void testSuccess_setDriveFolderIdToNull() throws Exception {
+  void testSuccess_setDriveFolderIdToNull() throws Exception {
     runCommandForced("--drive_folder_id=null", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getDriveFolderId()).isNull();
   }
 
   @Test
-  public void testFailure_setPremiumListThatDoesntExist() {
+  void testFailure_setPremiumListThatDoesntExist() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

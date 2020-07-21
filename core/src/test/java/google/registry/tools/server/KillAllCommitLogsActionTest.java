@@ -41,15 +41,12 @@ import google.registry.model.ofy.CommitLogMutation;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import org.joda.time.DateTime;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
-/** Tests for {@link KillAllCommitLogsAction}.*/
-@RunWith(JUnit4.class)
-public class KillAllCommitLogsActionTest extends MapreduceTestCase<KillAllCommitLogsAction> {
+/** Tests for {@link KillAllCommitLogsAction}. */
+class KillAllCommitLogsActionTest extends MapreduceTestCase<KillAllCommitLogsAction> {
 
-  static final ImmutableList<Class<? extends ImmutableObject>> AFFECTED_TYPES =
+  private static final ImmutableList<Class<? extends ImmutableObject>> AFFECTED_TYPES =
       ImmutableList.of(
           CommitLogBucket.class,
           CommitLogCheckpoint.class,
@@ -66,7 +63,7 @@ public class KillAllCommitLogsActionTest extends MapreduceTestCase<KillAllCommit
   }
 
   @Test
-  public void testKill() throws Exception {
+  void testKill() throws Exception {
     int nextContactId = 5432;
     for (String tld : asList("tld1", "tld2")) {
       createTld(tld);

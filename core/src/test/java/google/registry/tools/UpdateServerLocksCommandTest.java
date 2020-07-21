@@ -17,48 +17,48 @@ package google.registry.tools;
 import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link UpdateServerLocksCommand}. */
-public class UpdateServerLocksCommandTest extends EppToolCommandTestCase<UpdateServerLocksCommand> {
+class UpdateServerLocksCommandTest extends EppToolCommandTestCase<UpdateServerLocksCommand> {
 
   @Test
-  public void testSuccess_applyOne() throws Exception {
+  void testSuccess_applyOne() throws Exception {
     runCommandForced("--client=NewRegistrar", "--registrar_request=true", "--reason=Test",
         "--domain_name=example.tld", "--apply=serverRenewProhibited");
     eppVerifier.verifySent("update_server_locks_apply_one.xml");
   }
 
   @Test
-  public void testSuccess_multipleWordReason() throws Exception {
+  void testSuccess_multipleWordReason() throws Exception {
     runCommandForced("--client=NewRegistrar", "--registrar_request=false",
         "--reason=\"Test this\"", "--domain_name=example.tld", "--apply=serverRenewProhibited");
     eppVerifier.verifySent("update_server_locks_multiple_word_reason.xml");
   }
 
   @Test
-  public void testSuccess_removeOne() throws Exception {
+  void testSuccess_removeOne() throws Exception {
     runCommandForced("--client=NewRegistrar", "--registrar_request=true", "--reason=Test",
         "--domain_name=example.tld", "--remove=serverRenewProhibited");
     eppVerifier.verifySent("update_server_locks_remove_one.xml");
   }
 
   @Test
-  public void testSuccess_applyAll() throws Exception {
+  void testSuccess_applyAll() throws Exception {
     runCommandForced("--client=NewRegistrar", "--registrar_request=true", "--reason=Test",
         "--domain_name=example.tld", "--apply=all");
     eppVerifier.verifySent("update_server_locks_apply_all.xml");
   }
 
   @Test
-  public void testSuccess_removeAll() throws Exception {
+  void testSuccess_removeAll() throws Exception {
     runCommandForced("--client=NewRegistrar", "--registrar_request=true", "--reason=Test",
         "--domain_name=example.tld", "--remove=all");
     eppVerifier.verifySent("update_server_locks_remove_all.xml");
   }
 
   @Test
-  public void testFailure_applyAllRemoveOne_failsDueToOverlap() {
+  void testFailure_applyAllRemoveOne_failsDueToOverlap() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -72,7 +72,7 @@ public class UpdateServerLocksCommandTest extends EppToolCommandTestCase<UpdateS
   }
 
   @Test
-  public void testFailure_illegalStatus() {
+  void testFailure_illegalStatus() {
     // The EPP status is a valid one by RFC, but invalid for this command.
     assertThrows(
         IllegalArgumentException.class,
@@ -86,7 +86,7 @@ public class UpdateServerLocksCommandTest extends EppToolCommandTestCase<UpdateS
   }
 
   @Test
-  public void testFailure_unrecognizedStatus() {
+  void testFailure_unrecognizedStatus() {
     // Handles a status passed to the command that doesn't correspond to any
     // EPP-valid status.
     assertThrows(
@@ -101,7 +101,7 @@ public class UpdateServerLocksCommandTest extends EppToolCommandTestCase<UpdateS
   }
 
   @Test
-  public void testFailure_mainParameter() {
+  void testFailure_mainParameter() {
     assertThrows(
         ParameterException.class,
         () ->
@@ -115,7 +115,7 @@ public class UpdateServerLocksCommandTest extends EppToolCommandTestCase<UpdateS
   }
 
   @Test
-  public void testFailure_noOp() {
+  void testFailure_noOp() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -130,7 +130,7 @@ public class UpdateServerLocksCommandTest extends EppToolCommandTestCase<UpdateS
   }
 
   @Test
-  public void testFailure_missingClientId() {
+  void testFailure_missingClientId() {
     assertThrows(
         ParameterException.class,
         () ->
@@ -142,7 +142,7 @@ public class UpdateServerLocksCommandTest extends EppToolCommandTestCase<UpdateS
   }
 
   @Test
-  public void testFailure_unknownFlag() {
+  void testFailure_unknownFlag() {
     assertThrows(
         ParameterException.class,
         () ->
@@ -156,7 +156,7 @@ public class UpdateServerLocksCommandTest extends EppToolCommandTestCase<UpdateS
   }
 
   @Test
-  public void testFailure_noReasonWhenNotRegistrarRequested() {
+  void testFailure_noReasonWhenNotRegistrarRequested() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -168,7 +168,7 @@ public class UpdateServerLocksCommandTest extends EppToolCommandTestCase<UpdateS
   }
 
   @Test
-  public void testFailure_missingRegistrarRequest() {
+  void testFailure_missingRegistrarRequest() {
     assertThrows(
         ParameterException.class,
         () ->

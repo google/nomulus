@@ -32,25 +32,25 @@ import java.io.File;
 import java.io.IOException;
 import javax.persistence.EntityManager;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Base class for common testing setup for create and update commands for Reserved Lists.
  *
  * @param <T> command type
  */
-public abstract class CreateOrUpdateReservedListCommandTestCase<
+abstract class CreateOrUpdateReservedListCommandTestCase<
         T extends CreateOrUpdateReservedListCommand>
     extends CommandTestCase<T> {
 
   String reservedTermsPath;
-  String invalidReservedTermsPath;
+  private String invalidReservedTermsPath;
 
-  @Before
-  public void init() throws IOException {
-    File reservedTermsFile = tmpDir.newFile("xn--q9jyb4c_common-reserved.txt");
-    File invalidReservedTermsFile = tmpDir.newFile("reserved-terms-wontparse.csv");
+  @BeforeEach
+  void beforeEachCreateOrUpdateReservedListCommandTestCase() throws IOException {
+    File reservedTermsFile = tmpDir.resolve("xn--q9jyb4c_common-reserved.txt").toFile();
+    File invalidReservedTermsFile = tmpDir.resolve("reserved-terms-wontparse.csv").toFile();
     String reservedTermsCsv =
         loadFile(CreateOrUpdateReservedListCommandTestCase.class, "example_reserved_terms.csv");
     Files.asCharSink(reservedTermsFile, UTF_8).write(reservedTermsCsv);
@@ -61,7 +61,7 @@ public abstract class CreateOrUpdateReservedListCommandTestCase<
   }
 
   @Test
-  public void testFailure_fileDoesntExist() {
+  void testFailure_fileDoesntExist() {
     assertThat(
             assertThrows(
                 ParameterException.class,
@@ -74,7 +74,7 @@ public abstract class CreateOrUpdateReservedListCommandTestCase<
   }
 
   @Test
-  public void testFailure_fileDoesntParse() {
+  void testFailure_fileDoesntParse() {
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
@@ -87,7 +87,7 @@ public abstract class CreateOrUpdateReservedListCommandTestCase<
   }
 
   @Test
-  public void testFailure_invalidLabel_includesFullDomainName() throws Exception {
+  void testFailure_invalidLabel_includesFullDomainName() throws Exception {
     Files.asCharSink(new File(invalidReservedTermsPath), UTF_8)
         .write("example.tld,FULLY_BLOCKED\n\n");
     assertThat(

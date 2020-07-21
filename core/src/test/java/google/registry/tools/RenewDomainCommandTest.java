@@ -32,26 +32,26 @@ import google.registry.testing.InjectRule;
 import google.registry.util.Clock;
 import java.util.List;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 /** Unit tests for {@link RenewDomainCommand}. */
 public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCommand> {
 
-  @Rule public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
   private final Clock clock = new FakeClock(DateTime.parse("2015-04-05T05:05:05Z"));
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     command.clock = clock;
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     persistResource(
         persistActiveDomain(
                 "domain.tld",
@@ -94,7 +94,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
   }
 
   @Test
-  public void testSuccess_multipleDomains_renewsAndUsesEachDomainsRegistrar() throws Exception {
+  void testSuccess_multipleDomains_renewsAndUsesEachDomainsRegistrar() throws Exception {
     persistThreeDomains();
     runCommandForced("--period 3", "domain1.tld", "domain2.tld", "domain3.tld");
     eppVerifier
@@ -113,7 +113,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
   }
 
   @Test
-  public void testSuccess_multipleDomains_renewsAndUsesSpecifiedRegistrar() throws Exception {
+  void testSuccess_multipleDomains_renewsAndUsesSpecifiedRegistrar() throws Exception {
     persistThreeDomains();
     persistNewRegistrar("reg3", "Registrar 3", Registrar.Type.REAL, 9783L);
     runCommandForced("--period 3", "domain1.tld", "domain2.tld", "domain3.tld", "-u", "-c reg3");
@@ -133,7 +133,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
   }
 
   @Test
-  public void testFailure_domainDoesntExist() {
+  void testFailure_domainDoesntExist() {
     IllegalArgumentException e =
         assertThrows(IllegalArgumentException.class, () -> runCommandForced("nonexistent.tld"));
     assertThat(e)
@@ -142,7 +142,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
   }
 
   @Test
-  public void testFailure_domainIsDeleted() {
+  void testFailure_domainIsDeleted() {
     persistDeletedDomain("deleted.tld", DateTime.parse("2012-10-05T05:05:05Z"));
     IllegalArgumentException e =
         assertThrows(IllegalArgumentException.class, () -> runCommandForced("deleted.tld"));
@@ -150,7 +150,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
   }
 
   @Test
-  public void testFailure_duplicateDomainSpecified() {
+  void testFailure_duplicateDomainSpecified() {
     IllegalArgumentException e =
         assertThrows(
             IllegalArgumentException.class, () -> runCommandForced("dupe.tld", "dupe.tld"));
@@ -158,7 +158,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
   }
 
   @Test
-  public void testFailure_cantRenewForTenYears() {
+  void testFailure_cantRenewForTenYears() {
     persistActiveDomain(
         "domain.tld",
         DateTime.parse("2014-09-05T05:05:05Z"),
@@ -170,7 +170,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
   }
 
   @Test
-  public void testFailure_missingDomainNames() {
+  void testFailure_missingDomainNames() {
     assertThrows(ParameterException.class, () -> runCommand("--period 4"));
   }
 }

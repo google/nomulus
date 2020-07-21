@@ -26,7 +26,7 @@ import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.SEVERE;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.base.Splitter;
@@ -163,7 +163,7 @@ public class EppControllerTest {
         true,
         true,
         domainCreateXml.getBytes(UTF_8));
-    verifyZeroInteractions(eppMetrics);
+    verifyNoInteractions(eppMetrics);
   }
 
   @Test

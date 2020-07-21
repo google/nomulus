@@ -44,28 +44,25 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.LogRecord;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link GcsDiffFileLister}. */
-@RunWith(JUnit4.class)
 public class GcsDiffFileListerTest {
 
-  static final String GCS_BUCKET = "gcs bucket";
+  private static final String GCS_BUCKET = "gcs bucket";
 
-  final DateTime now = DateTime.now(UTC);
-  final GcsDiffFileLister diffLister = new GcsDiffFileLister();
-  final GcsService gcsService = GcsServiceFactory.createGcsService();
+  private final DateTime now = DateTime.now(UTC);
+  private final GcsDiffFileLister diffLister = new GcsDiffFileLister();
+  private final GcsService gcsService = GcsServiceFactory.createGcsService();
   private final TestLogHandler logHandler = new TestLogHandler();
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  @Before
-  public void before() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     diffLister.gcsService = gcsService;
     diffLister.gcsBucket = GCS_BUCKET;
     diffLister.executor = newDirectExecutorService();
@@ -111,13 +108,13 @@ public class GcsDiffFileListerTest {
   }
 
   @Test
-  public void testList_noFilesFound() {
+  void testList_noFilesFound() {
     DateTime fromTime = now.plusMillis(1);
     assertThat(listDiffFiles(fromTime, null)).isEmpty();
   }
 
   @Test
-  public void testList_patchesHoles() {
+  void testList_patchesHoles() {
     // Fake out the GCS list() method to return only the first and last file.
     // We can't use Mockito.spy() because GcsService's impl is final.
     diffLister.gcsService = (GcsService) newProxyInstance(
@@ -162,7 +159,7 @@ public class GcsDiffFileListerTest {
   }
 
   @Test
-  public void testList_failsOnFork() throws Exception {
+  void testList_failsOnFork() throws Exception {
     // We currently have files for now-4m ... now, construct the following sequence:
     //  now-8m <- now-7m <- now-6m  now-5m <- now-4m ... now
     //    ^___________________________|
@@ -179,7 +176,7 @@ public class GcsDiffFileListerTest {
   }
 
   @Test
-  public void testList_boundaries() {
+  void testList_boundaries() {
     assertThat(listDiffFiles(now.minusMinutes(4), now))
         .containsExactly(
             now.minusMinutes(4),
@@ -192,7 +189,7 @@ public class GcsDiffFileListerTest {
   }
 
   @Test
-  public void testList_failsOnGaps() throws Exception {
+  void testList_failsOnGaps() throws Exception {
     // We currently have files for now-4m ... now, construct the following sequence:
     //  now-8m <- now-7m <- now-6m  {missing} <- now-4m ... now
     for (int i = 6; i < 9; ++i) {
@@ -228,7 +225,7 @@ public class GcsDiffFileListerTest {
   }
 
   @Test
-  public void testList_toTimeSpecified() {
+  void testList_toTimeSpecified() {
     assertThat(listDiffFiles(
             now.minusMinutes(4).minusSeconds(1), now.minusMinutes(2).plusSeconds(1)))
         .containsExactly(

@@ -71,7 +71,7 @@ public class EppToolVerifier {
    *
    * <p>Must be called at least once before any {@link #verifySent} calls.
    */
-  public EppToolVerifier expectClientId(String clientId) {
+  EppToolVerifier expectClientId(String clientId) {
     this.clientId = clientId;
     return this;
   }
@@ -81,7 +81,7 @@ public class EppToolVerifier {
    *
    * <p>If not called, {@link #verifySent} will expect the "superuser" flag to be false.
    */
-  public EppToolVerifier expectSuperuser() {
+  EppToolVerifier expectSuperuser() {
     this.superuser = true;
     return this;
   }
@@ -91,7 +91,7 @@ public class EppToolVerifier {
    *
    * <p>If not called, {@link #verifySent} will expect the "dryRun" flag to be false.
    */
-  public EppToolVerifier expectDryRun() {
+  EppToolVerifier expectDryRun() {
     this.dryRun = true;
     return this;
   }
@@ -141,7 +141,7 @@ public class EppToolVerifier {
    *
    * <p>If multiple EPPs are expected, the verifySent* call order must match the EPP order.
    */
-  public EppToolVerifier verifySentAny() throws Exception {
+  EppToolVerifier verifySentAny() throws Exception {
     setArgumentsIfNeeded();
     paramIndex++;
     assertThat(capturedParams.size()).isAtLeast(paramIndex);
@@ -151,7 +151,7 @@ public class EppToolVerifier {
   /**
    * Test that no more EPPs were sent, after any that were expected in previous "verifySent" calls.
    */
-  public void verifyNoMoreSent() throws Exception {
+  void verifyNoMoreSent() throws Exception {
     setArgumentsIfNeeded();
     assertThat(
             capturedParams

@@ -27,21 +27,21 @@ import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetResourceByKeyCommand}. */
-public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKeyCommand> {
+class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKeyCommand> {
 
-  DateTime now = DateTime.now(UTC);
+  private DateTime now = DateTime.now(UTC);
 
-  @Before
-  public void initialize() {
+  @BeforeEach
+  void beforeEach() {
     createTld("tld");
   }
 
   @Test
-  public void testSuccess_domain() throws Exception {
+  void testSuccess_domain() throws Exception {
     persistActiveDomain("example.tld");
     runCommand("agR0ZXN0chULEgpEb21haW5CYXNlIgUyLVRMRAw");
     assertInStdout("fullyQualifiedDomainName=example.tld");
@@ -49,7 +49,7 @@ public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKe
   }
 
   @Test
-  public void testSuccess_domain_expand() throws Exception {
+  void testSuccess_domain_expand() throws Exception {
     persistActiveDomain("example.tld");
     runCommand("agR0ZXN0chULEgpEb21haW5CYXNlIgUyLVRMRAw", "--expand");
     assertInStdout("fullyQualifiedDomainName=example.tld");
@@ -58,7 +58,7 @@ public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKe
   }
 
   @Test
-  public void testSuccess_domain_multipleArguments() throws Exception {
+  void testSuccess_domain_multipleArguments() throws Exception {
     persistActiveDomain("example.tld");
     persistActiveDomain("example2.tld");
     runCommand(
@@ -68,7 +68,7 @@ public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKe
   }
 
   @Test
-  public void testFailure_domain_oneDoesNotExist() {
+  void testFailure_domain_oneDoesNotExist() {
     persistActiveDomain("example.tld");
     NullPointerException thrown =
         assertThrows(
@@ -83,7 +83,7 @@ public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKe
   }
 
   @Test
-  public void testSuccess_deletedDomain() throws Exception {
+  void testSuccess_deletedDomain() throws Exception {
     persistDeletedDomain("example.tld", now.minusDays(1));
     runCommand("agR0ZXN0chULEgpEb21haW5CYXNlIgUyLVRMRAw");
     assertInStdout("fullyQualifiedDomainName=example.tld");
@@ -91,14 +91,14 @@ public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKe
   }
 
   @Test
-  public void testSuccess_contact() throws Exception {
+  void testSuccess_contact() throws Exception {
     persistActiveContact("sh8013");
     runCommand("agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjItUk9JRAw");
     assertInStdout("contactId=sh8013");
   }
 
   @Test
-  public void testSuccess_contact_expand() throws Exception {
+  void testSuccess_contact_expand() throws Exception {
     persistActiveContact("sh8013");
     runCommand("agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjItUk9JRAw", "--expand");
     assertInStdout("contactId=sh8013");
@@ -106,7 +106,7 @@ public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKe
   }
 
   @Test
-  public void testSuccess_contact_multipleArguments() throws Exception {
+  void testSuccess_contact_multipleArguments() throws Exception {
     persistActiveContact("sh8013");
     persistActiveContact("jd1234");
     runCommand(
@@ -117,7 +117,7 @@ public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKe
   }
 
   @Test
-  public void testFailure_contact_oneDoesNotExist() {
+  void testFailure_contact_oneDoesNotExist() {
     persistActiveContact("sh8013");
     NullPointerException thrown =
         assertThrows(
@@ -132,7 +132,7 @@ public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKe
   }
 
   @Test
-  public void testSuccess_deletedContact() throws Exception {
+  void testSuccess_deletedContact() throws Exception {
     persistDeletedContact("sh8013", now.minusDays(1));
     runCommand("agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjItUk9JRAw");
     assertInStdout("contactId=sh8013");
@@ -140,14 +140,14 @@ public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKe
   }
 
   @Test
-  public void testSuccess_host() throws Exception {
+  void testSuccess_host() throws Exception {
     persistActiveHost("ns1.example.tld");
     runCommand("agR0ZXN0chgLEgxIb3N0UmVzb3VyY2UiBjItUk9JRAw");
     assertInStdout("fullyQualifiedHostName=ns1.example.tld");
   }
 
   @Test
-  public void testSuccess_host_expand() throws Exception {
+  void testSuccess_host_expand() throws Exception {
     persistActiveHost("ns1.example.tld");
     runCommand("agR0ZXN0chgLEgxIb3N0UmVzb3VyY2UiBjItUk9JRAw", "--expand");
     assertInStdout("fullyQualifiedHostName=ns1.example.tld");
@@ -155,7 +155,7 @@ public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKe
   }
 
   @Test
-  public void testSuccess_host_multipleArguments() throws Exception {
+  void testSuccess_host_multipleArguments() throws Exception {
     persistActiveHost("ns1.example.tld");
     persistActiveHost("ns2.example.tld");
     runCommand(
@@ -166,7 +166,7 @@ public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKe
   }
 
   @Test
-  public void testFailure_host_oneDoesNotExist() {
+  void testFailure_host_oneDoesNotExist() {
     persistActiveHost("ns1.example.tld");
     NullPointerException thrown =
         assertThrows(
@@ -181,7 +181,7 @@ public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKe
   }
 
   @Test
-  public void testSuccess_deletedHost() throws Exception {
+  void testSuccess_deletedHost() throws Exception {
     persistDeletedHost("ns1.example.tld", now.minusDays(1));
     runCommand("agR0ZXN0chgLEgxIb3N0UmVzb3VyY2UiBjItUk9JRAw");
     assertInStdout("fullyQualifiedHostName=ns1.example.tld");
@@ -189,7 +189,7 @@ public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKe
   }
 
   @Test
-  public void testSuccess_mixedTypes() throws Exception {
+  void testSuccess_mixedTypes() throws Exception {
     persistActiveDomain("example.tld");
     persistActiveContact("sh8013");
     persistActiveHost("ns1.example.tld");
@@ -203,7 +203,7 @@ public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKe
   }
 
   @Test
-  public void testFailure_keyDoesNotExist() {
+  void testFailure_keyDoesNotExist() {
     NullPointerException thrown =
         assertThrows(
             NullPointerException.class,
@@ -214,7 +214,7 @@ public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKe
   }
 
   @Test
-  public void testFailure_nonsenseKey() {
+  void testFailure_nonsenseKey() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class, () -> runCommand("agR0ZXN0chULEgpEb21haW5CYXN"));
@@ -222,7 +222,7 @@ public class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKe
   }
 
   @Test
-  public void testFailure_noParameters() {
+  void testFailure_noParameters() {
     assertThrows(ParameterException.class, this::runCommand);
   }
 }

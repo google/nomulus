@@ -16,8 +16,8 @@ package google.registry.tools;
 
 import static google.registry.testing.DatastoreHelper.createTlds;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Abstract class for commands that construct + send EPP commands.
@@ -31,15 +31,15 @@ public abstract class EppToolCommandTestCase<C extends EppToolCommand> extends C
 
   EppToolVerifier eppVerifier;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  public void beforeEachEppToolCommandTestCase() {
     // Create two TLDs for commands that allow multiple TLDs at once.
     createTlds("tld", "tld2");
     eppVerifier = EppToolVerifier.create(command).expectClientId("NewRegistrar");
   }
 
-  @After
-  public void cleanup() throws Exception {
+  @AfterEach
+  public void afterEachEppToolCommandTestCase() throws Exception {
     eppVerifier.verifyNoMoreSent();
   }
 }

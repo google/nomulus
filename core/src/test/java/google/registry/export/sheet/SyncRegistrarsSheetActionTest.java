@@ -19,8 +19,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import google.registry.testing.AppEngineRule;
@@ -29,17 +29,14 @@ import google.registry.testing.FakeResponse;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link SyncRegistrarsSheetAction}. */
-@RunWith(JUnit4.class)
 public class SyncRegistrarsSheetActionTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
@@ -54,8 +51,8 @@ public class SyncRegistrarsSheetActionTest {
     action.run();
   }
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     action = new SyncRegistrarsSheetAction();
     action.response = response;
     action.syncRegistrarsSheet = syncRegistrarsSheet;
@@ -64,14 +61,14 @@ public class SyncRegistrarsSheetActionTest {
   }
 
   @Test
-  public void testPost_withoutParamsOrSystemProperty_dropsTask() {
+  void testPost_withoutParamsOrSystemProperty_dropsTask() {
     runAction(null, null);
     assertThat(response.getPayload()).startsWith("MISSINGNO");
-    verifyZeroInteractions(syncRegistrarsSheet);
+    verifyNoInteractions(syncRegistrarsSheet);
   }
 
   @Test
-  public void testPost_withoutParams_runsSyncWithDefaultIdAndChecksIfModified() throws Exception {
+  void testPost_withoutParams_runsSyncWithDefaultIdAndChecksIfModified() throws Exception {
     when(syncRegistrarsSheet.wereRegistrarsModified()).thenReturn(true);
     runAction("jazz", null);
     assertThat(response.getStatus()).isEqualTo(200);
@@ -83,7 +80,7 @@ public class SyncRegistrarsSheetActionTest {
   }
 
   @Test
-  public void testPost_noModificationsToRegistrarEntities_doesNothing() {
+  void testPost_noModificationsToRegistrarEntities_doesNothing() {
     when(syncRegistrarsSheet.wereRegistrarsModified()).thenReturn(false);
     runAction("NewRegistrar", null);
     assertThat(response.getPayload()).startsWith("NOTMODIFIED");
@@ -92,7 +89,7 @@ public class SyncRegistrarsSheetActionTest {
   }
 
   @Test
-  public void testPost_overrideId_runsSyncWithCustomIdAndDoesNotCheckModified() throws Exception {
+  void testPost_overrideId_runsSyncWithCustomIdAndDoesNotCheckModified() throws Exception {
     runAction(null, "foobar");
     assertThat(response.getPayload()).startsWith("OK");
     verify(syncRegistrarsSheet).run(eq("foobar"));
@@ -100,10 +97,10 @@ public class SyncRegistrarsSheetActionTest {
   }
 
   @Test
-  public void testPost_failToAquireLock_servletDoesNothingAndReturns() {
+  void testPost_failToAquireLock_servletDoesNothingAndReturns() {
     action.lockHandler = new FakeLockHandler(false);
     runAction(null, "foobar");
     assertThat(response.getPayload()).startsWith("LOCKED");
-    verifyZeroInteractions(syncRegistrarsSheet);
+    verifyNoInteractions(syncRegistrarsSheet);
   }
 }

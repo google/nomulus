@@ -27,9 +27,9 @@ import google.registry.model.registry.Registry;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ListCursorsCommand}. */
 public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> {
@@ -40,22 +40,22 @@ public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> 
   private static final String HEADER_TWO =
       "--------------------------------------------------------------------------";
 
-  @Rule public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     inject.setStaticField(
         Ofy.class, "clock", new FakeClock(DateTime.parse("1984-12-21T06:07:08.789Z")));
   }
 
   @Test
-  public void testListCursors_noTlds_printsNothing() throws Exception {
+  void testListCursors_noTlds_printsNothing() throws Exception {
     runCommand("--type=BRDA");
     assertThat(getStdoutAsString()).isEmpty();
   }
 
   @Test
-  public void testListCursors_twoTldsOneAbsent_printsAbsentAndTimestampSorted() throws Exception {
+  void testListCursors_twoTldsOneAbsent_printsAbsentAndTimestampSorted() throws Exception {
     createTlds("foo", "bar");
     persistResource(
         Cursor.create(CursorType.BRDA, DateTime.parse("1984-12-18TZ"), Registry.get("bar")));
@@ -70,19 +70,19 @@ public class ListCursorsCommandTest extends CommandTestCase<ListCursorsCommand> 
   }
 
   @Test
-  public void testListCursors_badCursor_throwsIae() {
+  void testListCursors_badCursor_throwsIae() {
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> runCommand("--type=love"));
     assertThat(thrown).hasMessageThat().contains("Invalid value for --type parameter.");
   }
 
   @Test
-  public void testListCursors_lowercaseCursor_isAllowed() throws Exception {
+  void testListCursors_lowercaseCursor_isAllowed() throws Exception {
     runCommand("--type=brda");
   }
 
   @Test
-  public void testListCursors_filterEscrowEnabled_doesWhatItSays() throws Exception {
+  void testListCursors_filterEscrowEnabled_doesWhatItSays() throws Exception {
     createTlds("foo", "bar");
     persistResource(Registry.get("bar").asBuilder().setEscrowEnabled(true).build());
     runCommand("--type=BRDA", "--escrow_enabled");
