@@ -42,6 +42,7 @@ import javax.annotation.Nullable;
 import javax.inject.Singleton;
 import org.apache.beam.sdk.io.FileSystems;
 import org.apache.beam.sdk.io.fs.ResourceId;
+import org.apache.beam.sdk.options.PipelineOptionsFactory;
 
 /**
  * Provides bindings for {@link JpaTransactionManager} to Cloud SQL.
@@ -100,6 +101,7 @@ public class BeamJpaModule {
   }
 
   String readOnlyLineFromCredentialFile() {
+    FileSystems.setDefaultPipelineOptions(PipelineOptionsFactory.create());
     try {
       ResourceId resourceId = FileSystems.matchSingleFileSpec(credentialFilePath).resourceId();
       try (BufferedReader reader =
