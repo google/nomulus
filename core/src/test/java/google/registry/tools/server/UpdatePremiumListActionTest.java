@@ -32,24 +32,21 @@ import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeJsonResponse;
 import java.math.BigDecimal;
 import org.joda.money.Money;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UpdatePremiumListAction}. */
-@RunWith(JUnit4.class)
-public class UpdatePremiumListActionTest {
+class UpdatePremiumListActionTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  UpdatePremiumListAction action;
-  FakeJsonResponse response;
+  private UpdatePremiumListAction action;
+  private FakeJsonResponse response;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     createTlds("foo", "xn--q9jyb4c", "how");
     action = new UpdatePremiumListAction();
     response = new FakeJsonResponse();
@@ -57,14 +54,14 @@ public class UpdatePremiumListActionTest {
   }
 
   @Test
-  public void test_invalidRequest_missingInput_returnsErrorStatus() {
+  void test_invalidRequest_missingInput_returnsErrorStatus() {
     action.name = "foo";
     action.run();
     assertThat(response.getResponseMap().get("status")).isEqualTo("error");
   }
 
   @Test
-  public void test_invalidRequest_listDoesNotExist_returnsErrorStatus() {
+  void test_invalidRequest_listDoesNotExist_returnsErrorStatus() {
     action.name = "bamboozle";
     action.inputData = "richer,JPY 5000";
     action.run();
@@ -76,7 +73,7 @@ public class UpdatePremiumListActionTest {
   }
 
   @Test
-  public void test_success() {
+  void test_success() {
     PremiumListDao.saveNew(
         parseToPremiumList(
             "foo", readResourceUtf8(DatastoreHelper.class, "default_premium_list_testdata.csv")));
