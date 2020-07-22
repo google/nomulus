@@ -55,6 +55,7 @@ import org.junit.runners.JUnit4;
 // a wrapper.
 @RunWith(JUnit4.class)
 public class CommitLogTransformsTest implements Serializable {
+
   private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
 
   @Rule public final transient TemporaryFolder temporaryFolder = new TemporaryFolder();

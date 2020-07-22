@@ -22,13 +22,10 @@ import com.google.common.base.Joiner;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Tests to ensure that generated flow documentation matches the expected documentation. */
-@RunWith(JUnit4.class)
-public class FlowDocumentationTest {
+class FlowDocumentationTest {
   private static final Path GOLDEN_MARKDOWN_FILEPATH = getProjectRoot().resolve("docs/flows.md");
 
   private static final String UPDATE_COMMAND = "./gradlew :core:flowDocsTool";
@@ -43,7 +40,7 @@ public class FlowDocumentationTest {
               "");
 
   @Test
-  public void testGeneratedMatchesGolden() throws IOException {
+  void testGeneratedMatchesGolden() throws IOException {
     // Read the markdown file.
     Path goldenMarkdownPath =
         GOLDEN_MARKDOWN_FILEPATH;

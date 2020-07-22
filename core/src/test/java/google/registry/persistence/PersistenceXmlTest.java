@@ -16,26 +16,20 @@ package google.registry.persistence;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.truth.Expect;
 import java.util.Collections;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Entity;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests to verify persistence.xml is valid. */
-@RunWith(JUnit4.class)
-public class PersistenceXmlTest {
-
-  @ClassRule public static final Expect expect = Expect.create();
+class PersistenceXmlTest {
 
   @Test
-  public void verifyClassTags_containOnlyRequiredClasses() {
+  void verifyClassTags_containOnlyRequiredClasses() {
     ImmutableList<Class> managedClassed = PersistenceXmlUtility.getManagedClasses();
 
     ImmutableList<Class> unnecessaryClasses =
@@ -51,13 +45,11 @@ public class PersistenceXmlTest {
             .filter(clazz -> Collections.frequency(managedClassed, clazz) > 1)
             .collect(toImmutableSet());
 
-    expect
-        .withMessage("Found duplicate <class> tags defined in persistence.xml.")
+    assertWithMessage("Found duplicate <class> tags defined in persistence.xml.")
         .that(duplicateClasses)
         .isEmpty();
 
-    expect
-        .withMessage(
+    assertWithMessage(
             "Found unnecessary <class> tags defined in persistence.xml. Only entity class and"
                 + " implementation of AttributeConverter are required to be added in"
                 + " persistence.xml.")

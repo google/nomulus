@@ -47,16 +47,13 @@ import java.util.Optional;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.LocalDate;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link Spec11EmailUtils}. */
-@RunWith(JUnit4.class)
-public class Spec11EmailUtilsTest {
+class Spec11EmailUtilsTest {
 
   private static final ImmutableList<String> FAKE_RESOURCES = ImmutableList.of("foo");
   private static final String DAILY_EMAIL_FORMAT =
@@ -95,8 +92,8 @@ public class Spec11EmailUtilsTest {
           + " domains are added to these lists.</p><p>If you have any questions regarding this"
           + " notice, please contact abuse@test.com.</p>";
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private SendEmailService emailService;
   private Spec11EmailUtils emailUtils;
@@ -107,8 +104,8 @@ public class Spec11EmailUtilsTest {
   private DomainBase aDomain;
   private DomainBase bDomain;
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     emailService = mock(SendEmailService.class);
     parser = mock(Spec11RegistrarThreatMatchesParser.class);
     when(parser.getRegistrarThreatMatches(date)).thenReturn(sampleThreatMatches());
@@ -131,7 +128,7 @@ public class Spec11EmailUtilsTest {
   }
 
   @Test
-  public void testSuccess_emailMonthlySpec11Reports() throws Exception {
+  void testSuccess_emailMonthlySpec11Reports() throws Exception {
     emailUtils.emailSpec11Reports(
         date,
         Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL,
@@ -169,7 +166,7 @@ public class Spec11EmailUtilsTest {
   }
 
   @Test
-  public void testSuccess_emailDailySpec11Reports() throws Exception {
+  void testSuccess_emailDailySpec11Reports() throws Exception {
     emailUtils.emailSpec11Reports(
         date,
         Spec11EmailSoyInfo.DAILY_SPEC_11_EMAIL,
@@ -207,14 +204,12 @@ public class Spec11EmailUtilsTest {
   }
 
   @Test
-  public void testSuccess_skipsInactiveDomain() throws Exception {
+  void testSuccess_skipsInactiveDomain() throws Exception {
     // CLIENT_HOLD and SERVER_HOLD mean no DNS so we don't need to email it out
     persistResource(
-        ofy().load().entity(aDomain).now().asBuilder().addStatusValue(SERVER_HOLD)
-            .build());
+        ofy().load().entity(aDomain).now().asBuilder().addStatusValue(SERVER_HOLD).build());
     persistResource(
-        ofy().load().entity(bDomain).now().asBuilder().addStatusValue(CLIENT_HOLD)
-            .build());
+        ofy().load().entity(bDomain).now().asBuilder().addStatusValue(CLIENT_HOLD).build());
     emailUtils.emailSpec11Reports(
         date,
         Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL,
@@ -242,7 +237,7 @@ public class Spec11EmailUtilsTest {
   }
 
   @Test
-  public void testOneFailure_sendsAlert() throws Exception {
+  void testOneFailure_sendsAlert() throws Exception {
     // If there is one failure, we should still send the other message and then an alert email
     LinkedHashSet<RegistrarThreatMatches> matches = new LinkedHashSet<>();
     matches.add(getMatchA());
@@ -297,7 +292,7 @@ public class Spec11EmailUtilsTest {
   }
 
   @Test
-  public void testSuccess_sendAlertEmail() throws Exception {
+  void testSuccess_sendAlertEmail() throws Exception {
     emailUtils.sendAlertEmail("Spec11 Pipeline Alert: 2018-07", "Alert!");
     verify(emailService).sendEmail(contentCaptor.capture());
     validateMessage(
@@ -311,7 +306,7 @@ public class Spec11EmailUtilsTest {
   }
 
   @Test
-  public void testSuccess_useWhoisAbuseEmailIfAvailable() throws Exception {
+  void testSuccess_useWhoisAbuseEmailIfAvailable() throws Exception {
     // if John Doe is the whois abuse contact, email them instead of the regular email
     persistResource(
         AppEngineRule.makeRegistrarContact2()
@@ -330,7 +325,7 @@ public class Spec11EmailUtilsTest {
   }
 
   @Test
-  public void testFailure_badClientId() {
+  void testFailure_badClientId() {
     RuntimeException thrown =
         assertThrows(
             RuntimeException.class,

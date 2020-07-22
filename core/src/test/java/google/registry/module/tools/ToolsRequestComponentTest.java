@@ -19,23 +19,20 @@ import static com.google.common.truth.Truth.assertThat;
 import google.registry.request.Action;
 import google.registry.request.RouterDisplayHelper;
 import google.registry.testing.GoldenFileTestHelper;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ToolsRequestComponent}. */
-@RunWith(JUnit4.class)
-public class ToolsRequestComponentTest {
+class ToolsRequestComponentTest {
 
   @Test
-  public void testRoutingMap() {
+  void testRoutingMap() {
     GoldenFileTestHelper.assertThatRoutesFromComponent(ToolsRequestComponent.class)
         .describedAs("tools routing map")
         .isEqualToGolden(ToolsRequestComponentTest.class, "tools_routing.txt");
   }
 
   @Test
-  public void testRoutingService() {
+  void testRoutingService() {
     assertThat(
             RouterDisplayHelper.extractHumanReadableRoutesWithWrongService(
                 ToolsRequestComponent.class, Action.Service.TOOLS))

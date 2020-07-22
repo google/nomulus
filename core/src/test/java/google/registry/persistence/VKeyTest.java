@@ -18,25 +18,21 @@ import static com.google.common.truth.Truth.assertThat;
 import com.googlecode.objectify.Key;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.TestObject;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@RunWith(JUnit4.class)
-public class VKeyTest {
+/** Unit tests for {@link VKey}. */
+class VKeyTest {
 
-  @Rule
-  public final AppEngineRule appEngineRule =
+  @RegisterExtension
+  final AppEngineRule appEngineRule =
       AppEngineRule.builder()
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(TestObject.class)
           .build();
 
-  public VKeyTest() {}
-
   @Test
-  public void testOptionalAccessors() {
+  void testOptionalAccessors() {
     VKey<TestObject> key =
         VKey.create(TestObject.class, "foo", Key.create(TestObject.create("foo")));
     assertThat(key.maybeGetSqlKey().isPresent()).isTrue();

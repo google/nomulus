@@ -19,13 +19,10 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.joda.time.YearMonth;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ActivityReportingQueryBuilder}. */
-@RunWith(JUnit4.class)
-public class TransactionsReportingQueryBuilderTest {
+class TransactionsReportingQueryBuilderTest {
 
   private final YearMonth yearMonth = new YearMonth(2017, 9);
 
@@ -36,7 +33,7 @@ public class TransactionsReportingQueryBuilderTest {
   }
 
   @Test
-  public void testAggregateQueryMatch() {
+  void testAggregateQueryMatch() {
     TransactionsReportingQueryBuilder queryBuilder = getQueryBuilder();
     assertThat(queryBuilder.getReportQuery(yearMonth))
         .isEqualTo(
@@ -45,7 +42,7 @@ public class TransactionsReportingQueryBuilderTest {
   }
 
   @Test
-  public void testIntermediaryQueryMatch() {
+  void testIntermediaryQueryMatch() {
     ImmutableList<String> expectedQueryNames =
         ImmutableList.of(
             TransactionsReportingQueryBuilder.TRANSACTIONS_REPORT_AGGREGATION,

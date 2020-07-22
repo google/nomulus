@@ -30,14 +30,11 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import org.joda.time.LocalDate;
 import org.json.JSONObject;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Spec11RegistrarThreatMatchesParser}. */
-@RunWith(JUnit4.class)
-public class Spec11RegistrarThreatMatchesParserTest {
+class Spec11RegistrarThreatMatchesParserTest {
 
   private static final String TODAY = "2018-07-21";
   private static final String YESTERDAY = "2018-07-20";
@@ -46,31 +43,31 @@ public class Spec11RegistrarThreatMatchesParserTest {
   private final Spec11RegistrarThreatMatchesParser parser =
       new Spec11RegistrarThreatMatchesParser(gcsUtils, "test-bucket");
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     setupFile("spec11_fake_report", TODAY);
   }
 
   @Test
-  public void testSuccess_retrievesReport() throws Exception {
+  void testSuccess_retrievesReport() throws Exception {
     assertThat(parser.getRegistrarThreatMatches(LocalDate.parse(TODAY)))
         .isEqualTo(sampleThreatMatches());
   }
 
   @Test
-  public void testFindPrevious_exists() throws Exception {
+  void testFindPrevious_exists() throws Exception {
     setupFile("spec11_fake_report_previous_day", YESTERDAY);
     assertThat(parser.getPreviousDateWithMatches(LocalDate.parse(TODAY)))
         .hasValue(LocalDate.parse(YESTERDAY));
   }
 
   @Test
-  public void testFindPrevious_notFound() {
+  void testFindPrevious_notFound() {
     assertThat(parser.getPreviousDateWithMatches(LocalDate.parse(TODAY))).isEmpty();
   }
 
   @Test
-  public void testFindPrevious_olderThanYesterdayFound() throws Exception {
+  void testFindPrevious_olderThanYesterdayFound() throws Exception {
     setupFile("spec11_fake_report_previous_day", "2018-07-14");
 
     assertThat(parser.getPreviousDateWithMatches(LocalDate.parse(TODAY)))
@@ -78,7 +75,7 @@ public class Spec11RegistrarThreatMatchesParserTest {
   }
 
   @Test
-  public void testSuccess_ignoreExtraFields() throws Exception {
+  void testSuccess_ignoreExtraFields() throws Exception {
     ThreatMatch objectWithExtraFields =
         ThreatMatch.fromJSON(
             new JSONObject(

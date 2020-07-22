@@ -50,95 +50,90 @@ import java.util.Set;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests {@link ChildEntityInput} */
-@RunWith(JUnit4.class)
-public class ChildEntityInputTest {
+class ChildEntityInputTest {
 
   private static final DateTime now = DateTime.now(DateTimeZone.UTC);
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  DomainBase domainA;
-  DomainBase domainB;
-  HistoryEntry domainHistoryEntryA;
-  HistoryEntry domainHistoryEntryB;
-  HistoryEntry contactHistoryEntry;
-  BillingEvent.OneTime oneTimeA;
-  BillingEvent.OneTime oneTimeB;
-  BillingEvent.Recurring recurringA;
-  BillingEvent.Recurring recurringB;
+  private DomainBase domainA;
+  private DomainBase domainB;
+  private HistoryEntry domainHistoryEntryA;
+  private HistoryEntry domainHistoryEntryB;
+  private HistoryEntry contactHistoryEntry;
+  private BillingEvent.OneTime oneTimeA;
+  private BillingEvent.OneTime oneTimeB;
+  private BillingEvent.Recurring recurringA;
+  private BillingEvent.Recurring recurringB;
 
   private void setupResources() {
     createTld("tld");
     ContactResource contact = persistEppResourceInFirstBucket(newContactResource("contact1234"));
     domainA = persistEppResourceInFirstBucket(newDomainBase("a.tld", contact));
-    domainHistoryEntryA = persistResource(
-        new HistoryEntry.Builder()
-            .setParent(domainA)
-            .setModificationTime(now)
-            .build());
-    contactHistoryEntry = persistResource(
-        new HistoryEntry.Builder()
-            .setParent(contact)
-            .setModificationTime(now)
-            .build());
-    oneTimeA = persistResource(
-        new BillingEvent.OneTime.Builder()
-            .setParent(domainHistoryEntryA)
-            .setReason(Reason.CREATE)
-            .setFlags(ImmutableSet.of(BillingEvent.Flag.ANCHOR_TENANT))
-            .setPeriodYears(2)
-            .setCost(Money.of(USD, 1))
-            .setEventTime(now)
-            .setBillingTime(now.plusDays(5))
-            .setClientId("TheRegistrar")
-            .setTargetId("a.tld")
-            .build());
-    recurringA = persistResource(
-        new BillingEvent.Recurring.Builder()
-            .setParent(domainHistoryEntryA)
-            .setReason(Reason.RENEW)
-            .setEventTime(now.plusYears(1))
-            .setRecurrenceEndTime(END_OF_TIME)
-            .setClientId("TheRegistrar")
-            .setTargetId("a.tld")
-            .build());
+    domainHistoryEntryA =
+        persistResource(
+            new HistoryEntry.Builder().setParent(domainA).setModificationTime(now).build());
+    contactHistoryEntry =
+        persistResource(
+            new HistoryEntry.Builder().setParent(contact).setModificationTime(now).build());
+    oneTimeA =
+        persistResource(
+            new BillingEvent.OneTime.Builder()
+                .setParent(domainHistoryEntryA)
+                .setReason(Reason.CREATE)
+                .setFlags(ImmutableSet.of(BillingEvent.Flag.ANCHOR_TENANT))
+                .setPeriodYears(2)
+                .setCost(Money.of(USD, 1))
+                .setEventTime(now)
+                .setBillingTime(now.plusDays(5))
+                .setClientId("TheRegistrar")
+                .setTargetId("a.tld")
+                .build());
+    recurringA =
+        persistResource(
+            new BillingEvent.Recurring.Builder()
+                .setParent(domainHistoryEntryA)
+                .setReason(Reason.RENEW)
+                .setEventTime(now.plusYears(1))
+                .setRecurrenceEndTime(END_OF_TIME)
+                .setClientId("TheRegistrar")
+                .setTargetId("a.tld")
+                .build());
   }
 
   private void setupSecondDomainBases() {
     domainB = persistEppResourceInFirstBucket(newDomainBase("b.tld"));
-    domainHistoryEntryB = persistResource(
-        new HistoryEntry.Builder()
-            .setParent(domainB)
-            .setModificationTime(now)
-            .build());
-    oneTimeB = persistResource(
-        new BillingEvent.OneTime.Builder()
-            .setParent(domainHistoryEntryA)
-            .setReason(Reason.CREATE)
-            .setFlags(ImmutableSet.of(BillingEvent.Flag.ANCHOR_TENANT))
-            .setPeriodYears(2)
-            .setCost(Money.of(USD, 1))
-            .setEventTime(now)
-            .setBillingTime(now.plusDays(5))
-            .setClientId("TheRegistrar")
-            .setTargetId("a.tld")
-            .build());
-    recurringB = persistResource(
-        new BillingEvent.Recurring.Builder()
-            .setParent(domainHistoryEntryA)
-            .setReason(Reason.RENEW)
-            .setEventTime(now.plusYears(1))
-            .setRecurrenceEndTime(END_OF_TIME)
-            .setClientId("TheRegistrar")
-            .setTargetId("a.tld")
-            .build());
+    domainHistoryEntryB =
+        persistResource(
+            new HistoryEntry.Builder().setParent(domainB).setModificationTime(now).build());
+    oneTimeB =
+        persistResource(
+            new BillingEvent.OneTime.Builder()
+                .setParent(domainHistoryEntryA)
+                .setReason(Reason.CREATE)
+                .setFlags(ImmutableSet.of(BillingEvent.Flag.ANCHOR_TENANT))
+                .setPeriodYears(2)
+                .setCost(Money.of(USD, 1))
+                .setEventTime(now)
+                .setBillingTime(now.plusDays(5))
+                .setClientId("TheRegistrar")
+                .setTargetId("a.tld")
+                .build());
+    recurringB =
+        persistResource(
+            new BillingEvent.Recurring.Builder()
+                .setParent(domainHistoryEntryA)
+                .setReason(Reason.RENEW)
+                .setEventTime(now.plusYears(1))
+                .setRecurrenceEndTime(END_OF_TIME)
+                .setClientId("TheRegistrar")
+                .setTargetId("a.tld")
+                .build());
   }
 
   @SuppressWarnings("unchecked")
@@ -154,15 +149,17 @@ public class ChildEntityInputTest {
   }
 
   @Test
-  public void testSuccess_childEntityReader_multipleParentsAndChildren() throws Exception {
+  void testSuccess_childEntityReader_multipleParentsAndChildren() throws Exception {
     setupResources();
     setupSecondDomainBases();
     Set<ImmutableObject> seen = new HashSet<>();
-    InputReader<ImmutableObject> reader = EppResourceInputs.createChildEntityInput(
-        ImmutableSet.of(EppResource.class),
-        ImmutableSet.<Class<? extends ImmutableObject>>of(
-            HistoryEntry.class, BillingEvent.OneTime.class, BillingEvent.Recurring.class))
-        .createReaders().get(0);
+    InputReader<ImmutableObject> reader =
+        EppResourceInputs.createChildEntityInput(
+                ImmutableSet.of(EppResource.class),
+                ImmutableSet.<Class<? extends ImmutableObject>>of(
+                    HistoryEntry.class, BillingEvent.OneTime.class, BillingEvent.Recurring.class))
+            .createReaders()
+            .get(0);
     reader.beginShard();
     reader.beginSlice();
     for (int i = 0; i < 8; i++) {
@@ -177,31 +174,34 @@ public class ChildEntityInputTest {
         seen.add(reader.next());
       }
     }
-    assertThat(seen).containsExactly(
-        domainHistoryEntryA,
-        domainHistoryEntryB,
-        contactHistoryEntry,
-        oneTimeA,
-        recurringA,
-        oneTimeB,
-        recurringB);
+    assertThat(seen)
+        .containsExactly(
+            domainHistoryEntryA,
+            domainHistoryEntryB,
+            contactHistoryEntry,
+            oneTimeA,
+            recurringA,
+            oneTimeB,
+            recurringB);
   }
 
   @Test
-  public void testSuccess_childEntityInput_polymorphicBaseType() {
+  void testSuccess_childEntityInput_polymorphicBaseType() {
     createChildEntityInput(ImmutableSet.of(EppResource.class), ImmutableSet.of(BillingEvent.class));
   }
 
   @Test
-  public void testSuccess_childEntityReader_multipleChildTypes() throws Exception {
+  void testSuccess_childEntityReader_multipleChildTypes() throws Exception {
     setupResources();
-    InputReader<ImmutableObject> reader = EppResourceInputs.createChildEntityInput(
-        ImmutableSet.of(EppResource.class),
-        ImmutableSet.<Class<? extends ImmutableObject>>of(
-            HistoryEntry.class, BillingEvent.OneTime.class, BillingEvent.Recurring.class))
-        .createReaders().get(0);
-    assertThat(getAllFromReader(reader)).containsExactly(
-        domainHistoryEntryA, contactHistoryEntry, oneTimeA, recurringA);
+    InputReader<ImmutableObject> reader =
+        EppResourceInputs.createChildEntityInput(
+                ImmutableSet.of(EppResource.class),
+                ImmutableSet.<Class<? extends ImmutableObject>>of(
+                    HistoryEntry.class, BillingEvent.OneTime.class, BillingEvent.Recurring.class))
+            .createReaders()
+            .get(0);
+    assertThat(getAllFromReader(reader))
+        .containsExactly(domainHistoryEntryA, contactHistoryEntry, oneTimeA, recurringA);
   }
 
   private static Set<ImmutableObject> getAllFromReader(InputReader<ImmutableObject> reader)
@@ -220,72 +220,85 @@ public class ChildEntityInputTest {
   }
 
   @Test
-  public void testSuccess_childEntityReader_filterParentTypes() throws Exception {
+  void testSuccess_childEntityReader_filterParentTypes() throws Exception {
     setupResources();
-    InputReader<ImmutableObject> reader = EppResourceInputs.createChildEntityInput(
-        ImmutableSet.<Class<? extends EppResource>>of(ContactResource.class),
-        ImmutableSet.<Class<? extends ImmutableObject>>of(
-            HistoryEntry.class, BillingEvent.OneTime.class, BillingEvent.Recurring.class))
-        .createReaders().get(0);
+    InputReader<ImmutableObject> reader =
+        EppResourceInputs.createChildEntityInput(
+                ImmutableSet.<Class<? extends EppResource>>of(ContactResource.class),
+                ImmutableSet.<Class<? extends ImmutableObject>>of(
+                    HistoryEntry.class, BillingEvent.OneTime.class, BillingEvent.Recurring.class))
+            .createReaders()
+            .get(0);
     assertThat(getAllFromReader(reader)).containsExactly(contactHistoryEntry);
   }
 
   @Test
-  public void testSuccess_childEntityReader_polymorphicChildFiltering() throws Exception {
+  void testSuccess_childEntityReader_polymorphicChildFiltering() throws Exception {
     setupResources();
-    InputReader<ImmutableObject> reader = EppResourceInputs.createChildEntityInput(
-        ImmutableSet.of(EppResource.class),
-        ImmutableSet.<Class<? extends ImmutableObject>>of(BillingEvent.OneTime.class))
-            .createReaders().get(0);
+    InputReader<ImmutableObject> reader =
+        EppResourceInputs.createChildEntityInput(
+                ImmutableSet.of(EppResource.class),
+                ImmutableSet.<Class<? extends ImmutableObject>>of(BillingEvent.OneTime.class))
+            .createReaders()
+            .get(0);
     assertThat(getAllFromReader(reader)).containsExactly(oneTimeA);
   }
 
   @Test
-  public void testSuccess_childEntityReader_polymorphicChildClass() throws Exception {
+  void testSuccess_childEntityReader_polymorphicChildClass() throws Exception {
     setupResources();
-    InputReader<ImmutableObject> reader = EppResourceInputs.createChildEntityInput(
-        ImmutableSet.of(EppResource.class),
-        ImmutableSet.<Class<? extends ImmutableObject>>of(BillingEvent.class))
-        .createReaders().get(0);
+    InputReader<ImmutableObject> reader =
+        EppResourceInputs.createChildEntityInput(
+                ImmutableSet.of(EppResource.class),
+                ImmutableSet.<Class<? extends ImmutableObject>>of(BillingEvent.class))
+            .createReaders()
+            .get(0);
     assertThat(getAllFromReader(reader)).containsExactly(oneTimeA, recurringA);
   }
 
   @Test
-  public void testSuccess_childEntityReader_noneReturned() throws Exception {
+  void testSuccess_childEntityReader_noneReturned() throws Exception {
     createTld("tld");
-    InputReader<ImmutableObject> reader = EppResourceInputs.createChildEntityInput(
-        ImmutableSet.<Class<? extends EppResource>>of(ContactResource.class),
-        ImmutableSet.<Class<? extends ImmutableObject>>of(
-            BillingEvent.OneTime.class)).createReaders().get(0);
+    InputReader<ImmutableObject> reader =
+        EppResourceInputs.createChildEntityInput(
+                ImmutableSet.<Class<? extends EppResource>>of(ContactResource.class),
+                ImmutableSet.<Class<? extends ImmutableObject>>of(BillingEvent.OneTime.class))
+            .createReaders()
+            .get(0);
     assertThat(getAllFromReader(reader)).isEmpty();
   }
 
   @Test
-  public void testSuccess_childEntityReader_readerCountMatchesBucketCount() throws Exception {
-    assertThat(EppResourceInputs.createChildEntityInput(
-        ImmutableSet.<Class<? extends EppResource>>of(DomainBase.class),
-        ImmutableSet.<Class<? extends ImmutableObject>>of(
-            BillingEvent.OneTime.class)).createReaders()).hasSize(3);
+  void testSuccess_childEntityReader_readerCountMatchesBucketCount() throws Exception {
+    assertThat(
+            EppResourceInputs.createChildEntityInput(
+                    ImmutableSet.<Class<? extends EppResource>>of(DomainBase.class),
+                    ImmutableSet.<Class<? extends ImmutableObject>>of(BillingEvent.OneTime.class))
+                .createReaders())
+        .hasSize(3);
   }
 
   @Test
-  public void testSuccess_childEntityReader_oneReaderPerBucket() throws Exception {
+  void testSuccess_childEntityReader_oneReaderPerBucket() throws Exception {
     createTld("tld");
     Set<ImmutableObject> historyEntries = new HashSet<>();
     for (int i = 1; i <= 3; i++) {
       DomainBase domain = persistSimpleResource(newDomainBase(i + ".tld"));
-      historyEntries.add(persistResource(
-          new HistoryEntry.Builder()
-              .setParent(domain)
-              .setModificationTime(now)
-              .setClientId(i + ".tld")
-              .build()));
+      historyEntries.add(
+          persistResource(
+              new HistoryEntry.Builder()
+                  .setParent(domain)
+                  .setModificationTime(now)
+                  .setClientId(i + ".tld")
+                  .build()));
       persistResource(EppResourceIndex.create(getBucketKey(i), Key.create(domain)));
     }
     Set<ImmutableObject> seen = new HashSet<>();
-    for (InputReader<ImmutableObject> reader : EppResourceInputs.createChildEntityInput(
-        ImmutableSet.<Class<? extends EppResource>>of(DomainBase.class),
-        ImmutableSet.<Class<? extends ImmutableObject>>of(HistoryEntry.class)).createReaders()) {
+    for (InputReader<ImmutableObject> reader :
+        EppResourceInputs.createChildEntityInput(
+                ImmutableSet.<Class<? extends EppResource>>of(DomainBase.class),
+                ImmutableSet.<Class<? extends ImmutableObject>>of(HistoryEntry.class))
+            .createReaders()) {
       reader.beginShard();
       reader.beginSlice();
       seen.add(reader.next());
@@ -299,7 +312,7 @@ public class ChildEntityInputTest {
   }
 
   @Test
-  public void testSuccess_childEntityReader_survivesAcrossSerialization() throws Exception {
+  void testSuccess_childEntityReader_survivesAcrossSerialization() throws Exception {
     setupResources();
     Set<ImmutableObject> seen = new HashSet<>();
     InputReader<ImmutableObject> reader =

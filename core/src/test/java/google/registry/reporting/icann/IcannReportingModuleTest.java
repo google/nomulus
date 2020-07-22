@@ -19,16 +19,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import javax.servlet.http.HttpServletRequest;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link google.registry.reporting.icann.IcannReportingModule}. */
-@RunWith(JUnit4.class)
-public class IcannReportingModuleTest {
+class IcannReportingModuleTest {
 
   @Test
-  public void testProvideReportTypes() {
+  void testProvideReportTypes() {
     HttpServletRequest req = mock(HttpServletRequest.class);
 
     when(req.getParameter("reportTypes")).thenReturn(null);

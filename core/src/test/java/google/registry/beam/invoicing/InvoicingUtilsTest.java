@@ -25,16 +25,13 @@ import org.apache.beam.sdk.io.FileBasedSink;
 import org.apache.beam.sdk.options.ValueProvider;
 import org.apache.beam.sdk.options.ValueProvider.StaticValueProvider;
 import org.apache.beam.sdk.transforms.SerializableFunction;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link InvoicingUtils}. */
-@RunWith(JUnit4.class)
-public class InvoicingUtilsTest {
+class InvoicingUtilsTest {
 
   @Test
-  public void testDestinationFunction_generatesProperFileParams() {
+  void testDestinationFunction_generatesProperFileParams() {
     SerializableFunction<BillingEvent, Params> destinationFunction =
         InvoicingUtils.makeDestinationFunction("my/directory", StaticValueProvider.of("2017-10"));
 
@@ -53,7 +50,7 @@ public class InvoicingUtilsTest {
   }
 
   @Test
-  public void testEmptyDestinationParams() {
+  void testEmptyDestinationParams() {
     assertThat(InvoicingUtils.makeEmptyDestinationParams("my/directory"))
         .isEqualTo(
             new Params()
@@ -63,7 +60,7 @@ public class InvoicingUtilsTest {
 
   /** Asserts that the instantiated sql template matches a golden expected file. */
   @Test
-  public void testMakeQueryProvider() {
+  void testMakeQueryProvider() {
     ValueProvider<String> queryProvider =
         InvoicingUtils.makeQueryProvider(StaticValueProvider.of("2017-10"), "my-project-id");
     assertThat(queryProvider.get()).isEqualTo(loadFile("billing_events_test.sql"));

@@ -17,16 +17,13 @@ package google.registry.persistence.transaction;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static org.junit.Assert.assertThrows;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** JUnit test for {@link DummyJpaTransactionManager} */
-@RunWith(JUnit4.class)
-public class DummyJpaTransactionManagerTest {
+class DummyJpaTransactionManagerTest {
 
   @Test
-  public void throwsExceptionWhenAnyMethodIsInvoked() {
+  void throwsExceptionWhenAnyMethodIsInvoked() {
     assertThrows(UnsupportedOperationException.class, () -> jpaTm().transact(() -> null));
     assertThrows(UnsupportedOperationException.class, () -> jpaTm().getTransactionTime());
   }
