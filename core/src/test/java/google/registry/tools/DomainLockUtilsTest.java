@@ -349,7 +349,7 @@ public final class DomainLockUtilsTest {
                     domainLockUtils.saveNewRegistryLockRequest(
                         "asdf.tld", "TheRegistrar", POC_ID, false)))
         .hasMessageThat()
-        .isEqualTo("Unknown domain asdf.tld");
+        .isEqualTo("Domain doesn't exist");
   }
 
   @Test
