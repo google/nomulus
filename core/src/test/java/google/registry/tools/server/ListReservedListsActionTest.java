@@ -21,21 +21,16 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-/**
- * Unit tests for {@link ListReservedListsAction}.
- */
-@RunWith(JUnit4.class)
-public class ListReservedListsActionTest extends ListActionTestCase {
+/** Unit tests for {@link ListReservedListsAction}. */
+class ListReservedListsActionTest extends ListActionTestCase {
 
-  ListReservedListsAction action;
+  private ListReservedListsAction action;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     ReservedList rl1 = persistReservedList("xn--q9jyb4c-published", true, "blah,FULLY_BLOCKED");
     ReservedList rl2 = persistReservedList("xn--q9jyb4c-private", false, "dugong,FULLY_BLOCKED");
     createTld("xn--q9jyb4c");
@@ -44,7 +39,7 @@ public class ListReservedListsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_noParameters() {
+  void testRun_noParameters() {
     testRunSuccess(
         action,
         Optional.empty(),
@@ -55,7 +50,7 @@ public class ListReservedListsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_withParameters() {
+  void testRun_withParameters() {
     testRunSuccess(
         action,
         Optional.of("shouldPublish"),
@@ -68,7 +63,7 @@ public class ListReservedListsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_withWildcard() {
+  void testRun_withWildcard() {
     testRunSuccess(
         action,
         Optional.of("*"),
@@ -81,7 +76,7 @@ public class ListReservedListsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_withBadField_returnsError() {
+  void testRun_withBadField_returnsError() {
     testRunError(
         action,
         Optional.of("badfield"),

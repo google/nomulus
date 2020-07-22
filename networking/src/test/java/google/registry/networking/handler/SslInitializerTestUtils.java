@@ -128,7 +128,7 @@ public final class SslInitializerTestUtils {
   }
 
   /** Verifies tha the SSL channel cannot be established due to a given exception. */
-  static void verifySslExcpetion(
+  static void verifySslException(
       Channel channel, CheckedConsumer<Channel> operation, Class<? extends Exception> cause)
       throws Exception {
     // Extract SSL exception from the handshake future.

@@ -17,28 +17,23 @@ package google.registry.tools.server;
 import static google.registry.testing.DatastoreHelper.persistPremiumList;
 
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-/**
- * Unit tests for {@link ListPremiumListsAction}.
- */
-@RunWith(JUnit4.class)
-public class ListPremiumListsActionTest extends ListActionTestCase {
+/** Unit tests for {@link ListPremiumListsAction}. */
+class ListPremiumListsActionTest extends ListActionTestCase {
 
-  ListPremiumListsAction action;
+  private ListPremiumListsAction action;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     persistPremiumList("xn--q9jyb4c", "rich,USD 100");
     persistPremiumList("how", "richer,JPY 5000");
     action = new ListPremiumListsAction();
   }
 
   @Test
-  public void testRun_noParameters() {
+  void testRun_noParameters() {
     testRunSuccess(
         action,
         Optional.empty(),
@@ -49,7 +44,7 @@ public class ListPremiumListsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_withParameters() {
+  void testRun_withParameters() {
     testRunSuccess(
         action,
         Optional.of("revisionKey"),
@@ -62,7 +57,7 @@ public class ListPremiumListsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_withWildcard() {
+  void testRun_withWildcard() {
     testRunSuccess(
         action,
         Optional.of("*"),
@@ -75,7 +70,7 @@ public class ListPremiumListsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_withBadField_returnsError() {
+  void testRun_withBadField_returnsError() {
     testRunError(
         action,
         Optional.of("badfield"),
