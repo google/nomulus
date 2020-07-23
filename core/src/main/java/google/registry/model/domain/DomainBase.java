@@ -79,10 +79,13 @@ import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
+import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
+import javax.persistence.OneToMany;
 import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 import org.joda.time.DateTime;
@@ -253,7 +256,11 @@ public class DomainBase extends EppResource
   VKey<PollMessage.Autorenew> autorenewPollMessage;
 
   /** The unexpired grace periods for this domain (some of which may not be active yet). */
-  @Transient @ElementCollection Set<GracePeriod> gracePeriods;
+  @OneToMany(cascade = {CascadeType.ALL})
+  @JoinTable(
+      name = "DomainGracePeriod",
+      inverseJoinColumns = @JoinColumn(name = "grace_period_id", referencedColumnName = "id"))
+  Set<GracePeriod> gracePeriods;
 
   /**
    * The id of the signed mark that was used to create this domain in sunrise.

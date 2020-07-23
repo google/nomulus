@@ -268,6 +268,12 @@ create sequence history_id_sequence start 1 increment 1;
         primary key (repo_id)
     );
 
+    create table "DomainGracePeriod" (
+       domain_repo_id text not null,
+        grace_period_id int8 not null,
+        primary key (domain_repo_id, grace_period_id)
+    );
+
     create table "DomainHost" (
        domain_repo_id text not null,
         ns_hosts text
@@ -275,11 +281,11 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "GracePeriod" (
        id  bigserial not null,
-        billing_event_one_time int8,
-        billing_event_recurring int8,
-        registrar_id text,
-        expiration_time timestamptz,
-        type int4,
+        billing_event_id int8,
+        billing_recurrence_id int8,
+        registrar_id text not null,
+        expiration_time timestamptz not null,
+        type text not null,
         primary key (id)
     );
 
@@ -522,6 +528,9 @@ create index IDXhsjqiy2lyobfymplb28nm74lm on "Domain" (current_sponsor_registrar
 create index IDX5mnf0wn20tno4b9do88j61klr on "Domain" (deletion_time);
 create index IDXc5aw4pk1vkd6ymhvkpanmoadv on "Domain" (domain_name);
 create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
+
+    alter table if exists "DomainGracePeriod" 
+       add constraint UK_cn4v4atanwosjiksnstk59ghc unique (grace_period_id);
 create index IDXfg2nnjlujxo6cb9fha971bq2n on "HostHistory" (creation_time);
 create index IDX1iy7njgb7wjmj9piml4l2g0qi on "HostHistory" (history_registrar_id);
 create index IDXkkwbwcwvrdkkqothkiye4jiff on "HostHistory" (host_name);
@@ -547,6 +556,16 @@ create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date
        add constraint FK6sc6at5hedffc0nhdcab6ivuq 
        foreign key (revision_id) 
        references "ClaimsList";
+
+    alter table if exists "DomainGracePeriod" 
+       add constraint FK6csolg92mour3qpgscatqpt50 
+       foreign key (grace_period_id) 
+       references "GracePeriod";
+
+    alter table if exists "DomainGracePeriod" 
+       add constraint FK66qes7q8o6cnckskb2bxdlw6c 
+       foreign key (domain_repo_id) 
+       references "Domain";
 
     alter table if exists "DomainHost" 
        add constraint FKeq1guccbre1yk3oosgp2io554 
