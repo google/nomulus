@@ -22,6 +22,7 @@ import com.google.appengine.api.datastore.Entity;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
+import google.registry.beam.TestPipelineExtension;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainBase;
@@ -32,7 +33,6 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import java.io.File;
 import org.apache.beam.sdk.testing.NeedsRunner;
-import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollectionTuple;
 import org.joda.time.DateTime;
@@ -85,8 +85,8 @@ public class LoadDatastoreSnapshotTest {
   @Rule public final transient InjectRule injectRule = new InjectRule();
 
   @Rule
-  public final transient TestPipeline pipeline =
-      TestPipeline.create().enableAbandonedNodeEnforcement(true);
+  public final transient TestPipelineExtension pipeline =
+      TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
 
   private FakeClock fakeClock;
   private File exportRootDir;

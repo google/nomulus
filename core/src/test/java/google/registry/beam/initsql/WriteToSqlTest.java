@@ -20,6 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.appengine.api.datastore.Entity;
 import com.google.common.collect.ImmutableList;
 import google.registry.backup.VersionedEntity;
+import google.registry.beam.TestPipelineExtension;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
@@ -35,7 +36,6 @@ import java.io.PrintStream;
 import java.io.Serializable;
 import java.util.stream.Collectors;
 import org.apache.beam.sdk.testing.NeedsRunner;
-import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.Create;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -65,8 +65,8 @@ public class WriteToSqlTest implements Serializable {
   @Rule public transient TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @Rule
-  public final transient TestPipeline pipeline =
-      TestPipeline.create().enableAbandonedNodeEnforcement(true);
+  public final transient TestPipelineExtension pipeline =
+      TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
 
   private ImmutableList<Entity> contacts;
 
