@@ -38,6 +38,8 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.function.Supplier;
 import org.apache.beam.runners.direct.DirectRunner;
@@ -56,47 +58,47 @@ import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 /** Unit tests for {@link Spec11Pipeline}. */
-@RunWith(JUnit4.class)
-public class Spec11PipelineTest {
+class Spec11PipelineTest {
 
   private static PipelineOptions pipelineOptions;
 
-  @BeforeClass
-  public static void initializePipelineOptions() {
+  @BeforeAll
+  static void beforeAll() {
     pipelineOptions = PipelineOptionsFactory.create();
     pipelineOptions.setRunner(DirectRunner.class);
   }
 
-  @Rule
-  public final transient TestPipelineExtension p =
+  @RegisterExtension
+  final transient TestPipelineExtension testPipeline =
       TestPipelineExtension.fromOptions(pipelineOptions);
 
-  @Rule public final TemporaryFolder tempFolder = new TemporaryFolder();
+  @SuppressWarnings("WeakerAccess")
+  @TempDir
+  Path tmpDir;
 
   private final Retrier retrier =
       new Retrier(new FakeSleeper(new FakeClock(DateTime.parse("2019-07-15TZ"))), 1);
   private Spec11Pipeline spec11Pipeline;
 
-  @Before
-  public void initializePipeline() throws IOException {
-    File beamTempFolder = tempFolder.newFolder();
+  @BeforeEach
+  void beforeEach() throws IOException {
+    String beamTempFolder =
+        Files.createDirectory(tmpDir.resolve("beam_temp")).toAbsolutePath().toString();
     spec11Pipeline =
         new Spec11Pipeline(
             "test-project",
-            beamTempFolder.getAbsolutePath() + "/staging",
-            beamTempFolder.getAbsolutePath() + "/templates/invoicing",
-            tempFolder.getRoot().getAbsolutePath(),
+            beamTempFolder + "/staging",
+            beamTempFolder + "/templates/invoicing",
+            tmpDir.toAbsolutePath().toString(),
             GoogleCredentialsBundle.create(GoogleCredentials.create(null)),
             retrier);
   }
@@ -130,7 +132,7 @@ public class Spec11PipelineTest {
    */
   @Test
   @SuppressWarnings("unchecked")
-  public void testEndToEndPipeline_generatesExpectedFiles() throws Exception {
+  void testEndToEndPipeline_generatesExpectedFiles() throws Exception {
     // Establish mocks for testing
     ImmutableList<Subdomain> inputRows = getInputDomains();
     CloseableHttpClient httpClient = mock(CloseableHttpClient.class, withSettings().serializable());
@@ -145,9 +147,9 @@ public class Spec11PipelineTest {
             (Serializable & Supplier) () -> httpClient);
 
     // Apply input and evaluation transforms
-    PCollection<Subdomain> input = p.apply(Create.of(inputRows));
+    PCollection<Subdomain> input = testPipeline.apply(Create.of(inputRows));
     spec11Pipeline.evaluateUrlHealth(input, evalFn, StaticValueProvider.of("2018-06-01"));
-    p.run();
+    testPipeline.run();
 
     // Verify header and 4 threat matches for 3 registrars are found
     ImmutableList<String> generatedReport = resultFileContents();
@@ -295,7 +297,7 @@ public class Spec11PipelineTest {
         new File(
             String.format(
                 "%s/icann/spec11/2018-06/SPEC11_MONTHLY_REPORT_2018-06-01",
-                tempFolder.getRoot().getAbsolutePath()));
+                tmpDir.toAbsolutePath().toString()));
     return ImmutableList.copyOf(
         ResourceUtils.readResourceUtf8(resultFile.toURI().toURL()).split("\n"));
   }
