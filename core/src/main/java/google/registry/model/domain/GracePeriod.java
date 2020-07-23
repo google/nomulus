@@ -26,6 +26,8 @@ import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.persistence.VKey;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import org.joda.time.DateTime;
@@ -44,16 +46,19 @@ public class GracePeriod extends ImmutableObject {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Ignore
   /** Unique id required for hibernate representation. */
-  long id;
+  Long id;
 
   /** The type of grace period. */
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
   GracePeriodStatus type;
 
   /** When the grace period ends. */
+  @Column(nullable = false)
   DateTime expirationTime;
 
   /** The registrar to bill. */
-  @Column(name = "registrarId")
+  @Column(name = "registrarId", nullable = false)
   String clientId;
 
   /**
@@ -62,6 +67,7 @@ public class GracePeriod extends ImmutableObject {
    * billingEventRecurring}) or for redemption grace periods (since deletes have no cost).
    */
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
+  @Column(name = "billing_event_id")
   VKey<BillingEvent.OneTime> billingEventOneTime = null;
 
   /**
@@ -69,6 +75,7 @@ public class GracePeriod extends ImmutableObject {
    * applicable - i.e. if the action was an autorenew - or null in all other cases.
    */
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
+  @Column(name = "billing_recurrence_id")
   VKey<BillingEvent.Recurring> billingEventRecurring = null;
 
   public GracePeriodStatus getType() {
