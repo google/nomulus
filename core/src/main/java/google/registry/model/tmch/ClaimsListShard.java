@@ -89,6 +89,9 @@ import org.joda.time.DateTime;
  * succeeds, we will end up with having two exact same claims list with only different {@link
  * #revisionId}. However, this is not an actual problem because we only use the claims list with
  * highest {@link #revisionId}.
+ *
+ * <p>TODO(b/162007765): Rename the class to ClaimsList and remove Datastore related fields and
+ * methods.
  */
 @Entity
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
