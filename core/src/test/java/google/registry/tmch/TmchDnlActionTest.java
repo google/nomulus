@@ -23,10 +23,10 @@ import static org.mockito.Mockito.when;
 import google.registry.model.tmch.ClaimsListShard;
 import java.util.Optional;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link TmchDnlAction}. */
-public class TmchDnlActionTest extends TmchActionTestCase {
+class TmchDnlActionTest extends TmchActionTestCase {
 
   private TmchDnlAction newTmchDnlAction() {
     TmchDnlAction action = new TmchDnlAction();
@@ -36,7 +36,7 @@ public class TmchDnlActionTest extends TmchActionTestCase {
   }
 
   @Test
-  public void testDnl() throws Exception {
+  void testDnl() throws Exception {
     assertThat(ClaimsListShard.get().getClaimKey("xn----7sbejwbn3axu3d")).isEmpty();
     when(httpResponse.getContent())
         .thenReturn(TmchTestData.loadBytes("dnl-latest.csv").read())

@@ -374,10 +374,10 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "PremiumList" (
        revision_id  bigserial not null,
-        bloom_filter bytea not null,
         creation_timestamp timestamptz not null,
-        currency text not null,
         name text not null,
+        bloom_filter bytea not null,
+        currency text not null,
         primary key (revision_id)
     );
 

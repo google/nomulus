@@ -48,7 +48,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.model.registry.label.PremiumList.PremiumListRevision;
 import google.registry.testing.AppEngineRule;
-import google.registry.testing.TestCacheRule;
+import google.registry.testing.TestCacheExtension;
 import java.util.Map;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,8 +63,8 @@ public class PremiumListUtilsTest {
 
   // Set long persist times on caches so they can be tested (cache times default to 0 in tests).
   @RegisterExtension
-  public final TestCacheRule testCacheRule =
-      new TestCacheRule.Builder()
+  public final TestCacheExtension testCacheExtension =
+      new TestCacheExtension.Builder()
           .withPremiumListsCache(standardDays(1))
           .withPremiumListEntriesCache(standardDays(1))
           .build();

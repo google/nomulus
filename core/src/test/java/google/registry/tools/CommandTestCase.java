@@ -32,7 +32,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.CertificateSamples;
 import google.registry.testing.FakeClock;
-import google.registry.testing.SystemPropertyRule;
+import google.registry.testing.SystemPropertyExtension;
 import google.registry.tools.params.ParameterFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -76,14 +76,15 @@ public abstract class CommandTestCase<C extends Command> {
           .withTaskQueue()
           .build();
 
-  @RegisterExtension final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
+  @RegisterExtension
+  final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   @TempDir public Path tmpDir;
 
   @BeforeEach
   public final void beforeEachCommandTestCase() throws Exception {
     // Ensure the UNITTEST environment has been set before constructing a new command instance.
-    RegistryToolEnvironment.UNITTEST.setup(systemPropertyRule);
+    RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
     command = newCommandInstance();
 
     // Capture standard output/error. This is problematic because gradle tests run in parallel in
@@ -104,7 +105,7 @@ public abstract class CommandTestCase<C extends Command> {
   }
 
   void runCommandInEnvironment(RegistryToolEnvironment env, String... args) throws Exception {
-    env.setup(systemPropertyRule);
+    env.setup(systemPropertyExtension);
     try {
       JCommander jcommander = new JCommander(command);
       jcommander.addConverterFactory(new ParameterFactory());
@@ -115,7 +116,7 @@ public abstract class CommandTestCase<C extends Command> {
       // This primarily matters for AutoTimestamp fields, which otherwise won't have updated values.
       ofy().clearSessionCache();
       // Reset back to UNITTEST environment.
-      RegistryToolEnvironment.UNITTEST.setup(systemPropertyRule);
+      RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
     }
   }
 

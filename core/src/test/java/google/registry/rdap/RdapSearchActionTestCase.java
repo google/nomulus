@@ -24,13 +24,13 @@ import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
 import java.util.Optional;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 /** Common unit test code for actions inheriting {@link RdapSearchActionBase}. */
 public abstract class RdapSearchActionTestCase<A extends RdapSearchActionBase>
     extends RdapActionBaseTestCase<A> {
 
-  protected RdapSearchActionTestCase(Class<A> rdapActionClass) {
+  RdapSearchActionTestCase(Class<A> rdapActionClass) {
     super(rdapActionClass);
   }
 
@@ -39,8 +39,8 @@ public abstract class RdapSearchActionTestCase<A extends RdapSearchActionBase>
   int metricPrefixLength = 0;
   int metricStatusCode = SC_OK;
 
-  @Before
-  public void initRdapSearchActionTestCase() {
+  @BeforeEach
+  public void beforeEachRdapSearchActionTestCase() {
     action.parameterMap = ImmutableListMultimap.of();
     action.cursorTokenParam = Optional.empty();
     action.registrarParam = Optional.empty();
@@ -49,7 +49,7 @@ public abstract class RdapSearchActionTestCase<A extends RdapSearchActionBase>
     action.requestPath = actionPath;
   }
 
-  void rememberWildcardType(WildcardType wildcardType, int prefixLength) {
+  private void rememberWildcardType(WildcardType wildcardType, int prefixLength) {
     metricWildcardType = wildcardType;
     metricPrefixLength = prefixLength;
   }

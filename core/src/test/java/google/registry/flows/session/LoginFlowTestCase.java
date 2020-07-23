@@ -44,7 +44,7 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
   private Registrar.Builder registrarBuilder;
 
   @BeforeEach
-  void initRegistrar() {
+  void beforeEachLoginFlowTestCase() {
     sessionMetadata.setClientId(null); // Don't implicitly log in (all other flows need to).
     registrar = loadRegistrar("NewRegistrar");
     registrarBuilder = registrar.asBuilder();

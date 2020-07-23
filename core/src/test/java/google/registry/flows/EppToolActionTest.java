@@ -21,14 +21,11 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 /** Tests for {@link EppToolAction}. */
-@RunWith(JUnit4.class)
-public class EppToolActionTest {
+class EppToolActionTest {
 
   private void doTest(boolean isDryRun, boolean isSuperuser) {
     EppToolAction action = new EppToolAction();
@@ -50,22 +47,22 @@ public class EppToolActionTest {
   }
 
   @Test
-  public void testDryRunAndSuperuser() {
+  void testDryRunAndSuperuser() {
     doTest(true, true);
   }
 
   @Test
-  public void testDryRun() {
+  void testDryRun() {
     doTest(true, false);
   }
 
   @Test
-  public void testSuperuser() {
+  void testSuperuser() {
     doTest(false, true);
   }
 
   @Test
-  public void testNeitherDryRunNorSuperuser() {
+  void testNeitherDryRunNorSuperuser() {
     doTest(false, false);
   }
 }

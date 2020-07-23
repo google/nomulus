@@ -17,7 +17,7 @@ package google.registry.keyring.api;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.BouncyCastleProviderExtension;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import org.bouncycastle.openpgp.PGPException;
@@ -35,7 +35,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link KeySerializer}. */
 class KeySerializerTest {
 
-  @RegisterExtension final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   /**
    * An Armored representation of a pgp secret key.

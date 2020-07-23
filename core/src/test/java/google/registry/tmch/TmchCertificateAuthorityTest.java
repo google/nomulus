@@ -30,25 +30,22 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateRevokedException;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link TmchCertificateAuthority}. */
-@RunWith(JUnit4.class)
-public class TmchCertificateAuthorityTest {
+class TmchCertificateAuthorityTest {
 
-  public static final String GOOD_TEST_CERTIFICATE = loadFile("icann-tmch-test-good.crt");
-  public static final String REVOKED_TEST_CERTIFICATE = loadFile("icann-tmch-test-revoked.crt");
+  private static final String GOOD_TEST_CERTIFICATE = loadFile("icann-tmch-test-good.crt");
+  private static final String REVOKED_TEST_CERTIFICATE = loadFile("icann-tmch-test-revoked.crt");
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private FakeClock clock = new FakeClock(DateTime.parse("2014-01-01T00:00:00Z"));
 
   @Test
-  public void testFailure_prodRootExpired() {
+  void testFailure_prodRootExpired() {
     TmchCertificateAuthority tmchCertificateAuthority =
         new TmchCertificateAuthority(PRODUCTION, clock);
     clock.setTo(DateTime.parse("2024-01-01T00:00:00Z"));
@@ -59,7 +56,7 @@ public class TmchCertificateAuthorityTest {
   }
 
   @Test
-  public void testFailure_prodRootNotYetValid() {
+  void testFailure_prodRootNotYetValid() {
     TmchCertificateAuthority tmchCertificateAuthority =
         new TmchCertificateAuthority(PRODUCTION, clock);
     clock.setTo(DateTime.parse("2000-01-01T00:00:00Z"));
@@ -70,7 +67,7 @@ public class TmchCertificateAuthorityTest {
   }
 
   @Test
-  public void testFailure_crlDoesntMatchCerts() {
+  void testFailure_crlDoesntMatchCerts() {
     // Use the prod cl, which won't match our test certificate.
     TmchCertificateAuthority tmchCertificateAuthority = new TmchCertificateAuthority(PILOT, clock);
     TmchCrl.set(
@@ -83,13 +80,13 @@ public class TmchCertificateAuthorityTest {
   }
 
   @Test
-  public void testSuccess_verify() throws Exception {
+  void testSuccess_verify() throws Exception {
     TmchCertificateAuthority tmchCertificateAuthority = new TmchCertificateAuthority(PILOT, clock);
     tmchCertificateAuthority.verify(loadCertificate(GOOD_TEST_CERTIFICATE));
   }
 
   @Test
-  public void testFailure_verifySignatureDoesntMatch() {
+  void testFailure_verifySignatureDoesntMatch() {
     TmchCertificateAuthority tmchCertificateAuthority =
         new TmchCertificateAuthority(PRODUCTION, clock);
     SignatureException e =
@@ -100,7 +97,7 @@ public class TmchCertificateAuthorityTest {
   }
 
   @Test
-  public void testFailure_verifyRevoked() {
+  void testFailure_verifyRevoked() {
     TmchCertificateAuthority tmchCertificateAuthority = new TmchCertificateAuthority(PILOT, clock);
     CertificateRevokedException thrown =
         assertThrows(

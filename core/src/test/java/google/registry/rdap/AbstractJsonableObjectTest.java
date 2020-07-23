@@ -26,12 +26,10 @@ import google.registry.rdap.AbstractJsonableObject.JsonableException;
 import google.registry.rdap.AbstractJsonableObject.RestrictJsonNames;
 import java.util.Optional;
 import org.joda.time.DateTime;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
-@RunWith(JUnit4.class)
-public final class AbstractJsonableObjectTest {
+/** Unit tests for {@link AbstractJsonableObject}. */
+final class AbstractJsonableObjectTest {
 
   private final Gson gson = new Gson();
 
@@ -40,7 +38,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testPrimitives() {
+  void testPrimitives() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement String myString = "Hello, world!";
       @JsonableElement int myInt = 42;
@@ -53,9 +51,8 @@ public final class AbstractJsonableObjectTest {
                 "{'myBoolean':false,'myDouble':3.14,'myInt':42,'myString':'Hello, world!'}"));
   }
 
-
   @Test
-  public void testDateTime() {
+  void testDateTime() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement DateTime dateTime = DateTime.parse("2019-01-02T13:53Z");
     };
@@ -63,7 +60,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testRenaming() {
+  void testRenaming() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement("newName") String myString = "Hello, world!";
     };
@@ -71,7 +68,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testDuplicateNames_fails() {
+  void testDuplicateNames_fails() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement String myString = "A";
       @JsonableElement("myString") String anotherString = "B";
@@ -81,7 +78,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testMethod() {
+  void testMethod() {
     Jsonable jsonable =
         new AbstractJsonableObject() {
           @JsonableElement String myString() {
@@ -92,7 +89,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testMethodWithArguments_fails() {
+  void testMethodWithArguments_fails() {
     Jsonable jsonable =
         new AbstractJsonableObject() {
           @JsonableElement String myString(String in) {
@@ -103,9 +100,8 @@ public final class AbstractJsonableObjectTest {
         .hasMessageThat().contains("must have no arguments");
   }
 
-
   @Test
-  public void testRecursive() {
+  void testRecursive() {
     Jsonable myJsonableObject = new AbstractJsonableObject() {
       @JsonableElement double myDouble = 3.14;
       @JsonableElement boolean myBoolean = false;
@@ -124,7 +120,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testList() {
+  void testList() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement
       ImmutableList<String> myList = ImmutableList.of("my", "immutable", "list");
@@ -133,7 +129,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testMultipleLists() {
+  void testMultipleLists() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement
       ImmutableList<String> myList = ImmutableList.of("my", "immutable", "list");
@@ -145,7 +141,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testListElements() {
+  void testListElements() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement
       ImmutableList<String> myList = ImmutableList.of("my", "immutable", "list");
@@ -159,7 +155,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testListElementsWithoutList() {
+  void testListElementsWithoutList() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement("myList[]")
       Integer myListMeaningOfLife = 42;
@@ -170,7 +166,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testListOptionalElements() {
+  void testListOptionalElements() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement
       ImmutableList<String> myList = ImmutableList.of("my", "immutable", "list");
@@ -183,7 +179,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testList_sameNameAsElement_failes() {
+  void testList_sameNameAsElement_failes() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement("myList")
       String myString = "A";
@@ -211,7 +207,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testRestricted_withAllowedNames() {
+  void testRestricted_withAllowedNames() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement
       JsonableWithNameRestrictions allowed = new JsonableWithNameRestrictions();
@@ -225,7 +221,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testRestricted_withWrongName_failes() {
+  void testRestricted_withWrongName_failes() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement
       JsonableWithNameRestrictions wrong = new JsonableWithNameRestrictions();
@@ -236,7 +232,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testRestricted_withNoNamesAllowed_fails() {
+  void testRestricted_withNoNamesAllowed_fails() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement
       JsonableWithNoAllowedNames wrong = new JsonableWithNoAllowedNames();
@@ -252,14 +248,14 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testRestricted_withNoNamesAllowed_canBeOutermost() {
+  void testRestricted_withNoNamesAllowed_canBeOutermost() {
     Jsonable jsonable = new JsonableObjectWithNoAllowedNames();
     assertThat(jsonable.toJson())
         .isEqualTo(createJson("{'key':'value'}"));
   }
 
   @Test
-  public void testRestricted_withNoNamesAllowed_canBeMerged() {
+  void testRestricted_withNoNamesAllowed_canBeMerged() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement("*") final Jsonable inner = new JsonableObjectWithNoAllowedNames();
       @JsonableElement final String otherKey = "otherValue";
@@ -283,7 +279,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testInheritingStaticMembers_works() {
+  void testInheritingStaticMembers_works() {
     Jsonable jsonable = new InheritedWithStatic();
     assertThat(jsonable.toJson())
         .isEqualTo(createJson("{'messages':['message 1','more messages','message 2']}"));
@@ -317,7 +313,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testOverriding_works() {
+  void testOverriding_works() {
     Jsonable jsonable = new InheritedOverriding();
     assertThat(jsonable.toJson())
         .isEqualTo(
@@ -330,7 +326,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testMerge_works() {
+  void testMerge_works() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement String key = "value";
       @JsonableElement("*") Object subObject = new AbstractJsonableObject() {
@@ -342,7 +338,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testMerge_joinsArrays_works() {
+  void testMerge_joinsArrays_works() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement("lst[]") String a = "value";
       @JsonableElement("*") Object subObject = new AbstractJsonableObject() {
@@ -354,7 +350,7 @@ public final class AbstractJsonableObjectTest {
   }
 
   @Test
-  public void testMerge_multiLayer_works() {
+  void testMerge_multiLayer_works() {
     Jsonable jsonable = new AbstractJsonableObject() {
       @JsonableElement String key = "value";
 

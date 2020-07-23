@@ -22,36 +22,33 @@ import google.registry.model.OteStatsTestHelper;
 import google.registry.testing.AppEngineRule;
 import java.util.Map;
 import java.util.regex.Pattern;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link VerifyOteAction}. */
-@RunWith(JUnit4.class)
-public class VerifyOteActionTest {
+class VerifyOteActionTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private final VerifyOteAction action = new VerifyOteAction();
 
   @Test
-  public void testSuccess_summarize_allPass() throws Exception {
+  void testSuccess_summarize_allPass() throws Exception {
     OteStatsTestHelper.setupCompleteOte("blobio");
     assertThat(getResponse(true))
         .isEqualTo("# actions:   30 - Reqs: [----------------] 16/16 - Overall: PASS");
   }
 
   @Test
-  public void testFailure_summarize_someFailures() throws Exception {
+  void testFailure_summarize_someFailures() throws Exception {
     OteStatsTestHelper.setupIncompleteOte("blobio");
     assertThat(getResponse(true))
         .isEqualTo("# actions:   34 - Reqs: [-.-----.------.-] 13/16 - Overall: FAIL");
   }
 
   @Test
-  public void testSuccess_passNotSummarized() throws Exception {
+  void testSuccess_passNotSummarized() throws Exception {
     OteStatsTestHelper.setupCompleteOte("blobio");
     String expectedOteStatus =
         "domain creates idn: 1\n"
@@ -81,7 +78,7 @@ public class VerifyOteActionTest {
   }
 
   @Test
-  public void testFailure_incomplete() throws Exception {
+  void testFailure_incomplete() throws Exception {
     OteStatsTestHelper.setupIncompleteOte("blobio");
     String expectedOteStatus =
         "domain creates idn: 0\n"

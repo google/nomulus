@@ -48,15 +48,12 @@ import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.testing.AppEngineRule;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for domain lifecycle. */
-@RunWith(JUnit4.class)
-public class EppLifecycleDomainTest extends EppTestCase {
+class EppLifecycleDomainTest extends EppTestCase {
 
   private static final ImmutableMap<String, String> DEFAULT_TRANSFER_RESPONSE_PARMS =
       ImmutableMap.of(
@@ -64,17 +61,17 @@ public class EppLifecycleDomainTest extends EppTestCase {
           "ACDATE", "2002-06-04T00:00:00Z",
           "EXDATE", "2003-06-01T00:04:00Z");
 
-  @Rule
-  public final AppEngineRule appEngine =
+  @RegisterExtension
+  final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @Before
-  public void initTld() {
+  @BeforeEach
+  void beforeEach() {
     createTlds("example", "tld");
   }
 
   @Test
-  public void testDomainDeleteRestore() throws Exception {
+  void testDomainDeleteRestore() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
 
@@ -134,7 +131,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testDomainDeleteRestore_duringAutorenewGracePeriod() throws Exception {
+  void testDomainDeleteRestore_duringAutorenewGracePeriod() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
 
@@ -208,7 +205,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testDomainDeleteRestore_duringRenewalGracePeriod() throws Exception {
+  void testDomainDeleteRestore_duringRenewalGracePeriod() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
 
@@ -290,8 +287,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testDomainDelete_duringAddAndRenewalGracePeriod_deletesImmediately()
-      throws Exception {
+  void testDomainDelete_duringAddAndRenewalGracePeriod_deletesImmediately() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
 
@@ -386,7 +382,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testDomainDeletion_withinAddGracePeriod_deletesImmediately() throws Exception {
+  void testDomainDeletion_withinAddGracePeriod_deletesImmediately() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
 
@@ -442,7 +438,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testDomainDeletion_outsideAddGracePeriod_showsRedemptionPeriod() throws Exception {
+  void testDomainDeletion_outsideAddGracePeriod_showsRedemptionPeriod() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
 
@@ -504,7 +500,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testEapDomainDeletion_withinAddGracePeriod_eapFeeIsNotRefunded() throws Exception {
+  void testEapDomainDeletion_withinAddGracePeriod_eapFeeIsNotRefunded() throws Exception {
     assertThatCommand("login_valid_fee_extension.xml").hasResponse("generic_success_response.xml");
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
 
@@ -569,7 +565,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testDomainDeletionWithSubordinateHost_fails() throws Exception {
+  void testDomainDeletionWithSubordinateHost_fails() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createFakesite();
     createSubordinateHost();
@@ -582,7 +578,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testDeletionOfDomain_afterRenameOfSubordinateHost_succeeds() throws Exception {
+  void testDeletionOfDomain_afterRenameOfSubordinateHost_succeeds() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThat(getRecordedEppMetric())
         .hasClientId("NewRegistrar")
@@ -637,7 +633,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testDeletionOfDomain_afterUpdateThatCreatesSubordinateHost_fails() throws Exception {
+  void testDeletionOfDomain_afterUpdateThatCreatesSubordinateHost_fails() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createFakesite();
 
@@ -680,7 +676,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testDomainCreation_failsBeforeSunrise() throws Exception {
+  void testDomainCreation_failsBeforeSunrise() throws Exception {
     DateTime sunriseDate = DateTime.parse("2000-05-30T00:00:00Z");
     createTld(
         "example",
@@ -714,7 +710,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testDomainCheckFee_succeeds() throws Exception {
+  void testDomainCheckFee_succeeds() throws Exception {
     DateTime gaDate = DateTime.parse("2000-05-30T00:00:00Z");
     createTld(
         "example",
@@ -740,7 +736,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testDomainCreate_annualAutoRenewPollMessages_haveUniqueIds() throws Exception {
+  void testDomainCreate_annualAutoRenewPollMessages_haveUniqueIds() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     // Create the domain.
     createFakesite();
@@ -790,7 +786,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testDomainTransferPollMessage_serverApproved() throws Exception {
+  void testDomainTransferPollMessage_serverApproved() throws Exception {
     // As the losing registrar, create the domain.
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createFakesite();
@@ -839,7 +835,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testTransfer_autoRenewGraceActive_onlyAtAutomaticTransferTime_getsSubsumed()
+  void testTransfer_autoRenewGraceActive_onlyAtAutomaticTransferTime_getsSubsumed()
       throws Exception {
     // Register the domain as the first registrar.
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -877,7 +873,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testNameserversTransferWithDomain_successfully() throws Exception {
+  void testNameserversTransferWithDomain_successfully() throws Exception {
     // Log in as the first registrar and set up domains with hosts.
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createFakesite();
@@ -914,7 +910,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testRenewalFails_whenTotalTermExceeds10Years() throws Exception {
+  void testRenewalFails_whenTotalTermExceeds10Years() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     // Creates domain with 2 year expiration.
     createFakesite();
@@ -928,7 +924,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testDomainDeletionCancelsPendingTransfer() throws Exception {
+  void testDomainDeletionCancelsPendingTransfer() throws Exception {
     // Register the domain as the first registrar.
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createFakesite();
@@ -966,7 +962,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testDomainTransfer_subordinateHost_showsChangeInTransferQuery() throws Exception {
+  void testDomainTransfer_subordinateHost_showsChangeInTransferQuery() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     createFakesite();
     createSubordinateHost();
@@ -1002,7 +998,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
    * superordinate domain, not whatever the transfer time from the second domain is.
    */
   @Test
-  public void testSuccess_lastTransferTime_superordinateDomainTransferFollowedByHostUpdate()
+  void testSuccess_lastTransferTime_superordinateDomainTransferFollowedByHostUpdate()
       throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     // Create fakesite.example with subordinate host ns3.fakesite.example
@@ -1056,7 +1052,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
    * to be external, that the host retains the transfer time of the first superordinate domain.
    */
   @Test
-  public void testSuccess_lastTransferTime_superordinateDomainTransferThenHostUpdateToExternal()
+  void testSuccess_lastTransferTime_superordinateDomainTransferThenHostUpdateToExternal()
       throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     // Create fakesite.example with subordinate host ns3.fakesite.example
@@ -1099,7 +1095,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testSuccess_multipartTldsWithSharedSuffixes() throws Exception {
+  void testSuccess_multipartTldsWithSharedSuffixes() throws Exception {
     createTlds("bar.foo.tld", "foo.tld");
 
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -1143,7 +1139,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testSuccess_multipartTldsWithSharedPrefixes() throws Exception {
+  void testSuccess_multipartTldsWithSharedPrefixes() throws Exception {
     createTld("tld.foo");
 
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -1177,12 +1173,12 @@ public class EppLifecycleDomainTest extends EppTestCase {
   /**
    * Test a full launch of start-date sunrise.
    *
-   * We show that we can't create during pre-delegation, can only create with an encoded mark during
-   * start-date sunrise - which we can then delete "as normal" (no need for a signed mark or
+   * <p>We show that we can't create during pre-delegation, can only create with an encoded mark
+   * during start-date sunrise - which we can then delete "as normal" (no need for a signed mark or
    * anything for delete), and then use "regular" create during general-availability.
    */
   @Test
-  public void testDomainCreation_startDateSunriseFull() throws Exception {
+  void testDomainCreation_startDateSunriseFull() throws Exception {
     // The signed mark is valid between 2013 and 2017
     DateTime sunriseDate = DateTime.parse("2014-09-08T09:09:09Z");
     DateTime gaDate = sunriseDate.plusDays(30);
@@ -1278,7 +1274,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
 
   /** Test that missing type= argument on launch create works in start-date sunrise. */
   @Test
-  public void testDomainCreation_startDateSunrise_noType() throws Exception {
+  void testDomainCreation_startDateSunrise_noType() throws Exception {
     // The signed mark is valid between 2013 and 2017
     DateTime sunriseDate = DateTime.parse("2014-09-08T09:09:09Z");
     DateTime gaDate = sunriseDate.plusDays(30);
@@ -1327,7 +1323,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testDomainTransfer_duringAutorenewGrace() throws Exception {
+  void testDomainTransfer_duringAutorenewGrace() throws Exception {
     // Creation date of fakesite: 2000-06-01T00:04:00.0Z
     // Expiration date: 2002-06-01T00:04:00.0Z
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -1413,7 +1409,7 @@ public class EppLifecycleDomainTest extends EppTestCase {
   }
 
   @Test
-  public void testDomainTransfer_queryForServerApproved() throws Exception {
+  void testDomainTransfer_queryForServerApproved() throws Exception {
     // Creation date of fakesite: 2000-06-01T00:04:00.0Z
     // Expiration date: 2002-06-01T00:04:00.0Z
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");

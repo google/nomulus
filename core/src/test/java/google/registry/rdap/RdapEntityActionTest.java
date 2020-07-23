@@ -40,16 +40,13 @@ import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RdapEntityAction}. */
-@RunWith(JUnit4.class)
-public class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
+class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityAction> {
 
-  public RdapEntityActionTest() {
+  RdapEntityActionTest() {
     super(RdapEntityAction.class);
   }
 
@@ -60,8 +57,8 @@ public class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityActio
   private ContactResource disconnectedContact;
   private ContactResource deletedContact;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     // lol
     createTld("lol");
     registrarLol = persistResource(makeRegistrar(
@@ -191,35 +188,35 @@ public class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityActio
   }
 
   @Test
-  public void testUnknownEntity_RoidPattern_notFound() {
+  void testUnknownEntity_RoidPattern_notFound() {
     runNotFoundTest("_MISSING-ENTITY_");
   }
 
   @Test
-  public void testUnknownEntity_IanaPattern_notFound() {
+  void testUnknownEntity_IanaPattern_notFound() {
     runNotFoundTest("123");
   }
 
   @Test
-  public void testUnknownEntity_notRoidNotIana_notFound() {
+  void testUnknownEntity_notRoidNotIana_notFound() {
     // Since we allow search by registrar name, every string is a possible name
     runNotFoundTest("some,random,string");
   }
 
   @Test
-  public void testValidRegistrantContact_works() {
+  void testValidRegistrantContact_works() {
     login("evilregistrar");
     runSuccessfulHandleTest(registrant.getRepoId(), "rdap_associated_contact.json");
   }
 
   @Test
-  public void testValidRegistrantContact_found_asAdministrator() {
+  void testValidRegistrantContact_found_asAdministrator() {
     loginAsAdmin();
     runSuccessfulHandleTest(registrant.getRepoId(), "rdap_associated_contact.json");
   }
 
   @Test
-  public void testValidRegistrantContact_found_notLoggedIn() {
+  void testValidRegistrantContact_found_notLoggedIn() {
     runSuccessfulHandleTest(
         registrant.getRepoId(),
         "(◕‿◕)",
@@ -229,7 +226,7 @@ public class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityActio
   }
 
   @Test
-  public void testValidRegistrantContact_found_loggedInAsOtherRegistrar() {
+  void testValidRegistrantContact_found_loggedInAsOtherRegistrar() {
     login("otherregistrar");
     runSuccessfulHandleTest(
         registrant.getRepoId(),
@@ -240,49 +237,49 @@ public class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityActio
   }
 
   @Test
-  public void testValidAdminContact_works() {
+  void testValidAdminContact_works() {
     login("evilregistrar");
     runSuccessfulHandleTest(adminContact.getRepoId(), "rdap_associated_contact.json");
   }
 
   @Test
-  public void testValidTechContact_works() {
+  void testValidTechContact_works() {
     login("evilregistrar");
     runSuccessfulHandleTest(techContact.getRepoId(), "rdap_associated_contact.json");
   }
 
   @Test
-  public void testValidDisconnectedContact_works() {
+  void testValidDisconnectedContact_works() {
     login("evilregistrar");
     runSuccessfulHandleTest(disconnectedContact.getRepoId(), "rdap_contact.json");
   }
 
   @Test
-  public void testDeletedContact_notFound() {
+  void testDeletedContact_notFound() {
     runNotFoundTest(deletedContact.getRepoId());
   }
 
   @Test
-  public void testDeletedContact_notFound_includeDeletedSetFalse() {
+  void testDeletedContact_notFound_includeDeletedSetFalse() {
     action.includeDeletedParam = Optional.of(false);
     runNotFoundTest(deletedContact.getRepoId());
   }
 
   @Test
-  public void testDeletedContact_notFound_notLoggedIn() {
+  void testDeletedContact_notFound_notLoggedIn() {
     action.includeDeletedParam = Optional.of(true);
     runNotFoundTest(deletedContact.getRepoId());
   }
 
   @Test
-  public void testDeletedContact_notFound_loggedInAsDifferentRegistrar() {
+  void testDeletedContact_notFound_loggedInAsDifferentRegistrar() {
     login("idnregistrar");
     action.includeDeletedParam = Optional.of(true);
     runNotFoundTest(deletedContact.getRepoId());
   }
 
   @Test
-  public void testDeletedContact_found_loggedInAsCorrectRegistrar() {
+  void testDeletedContact_found_loggedInAsCorrectRegistrar() {
     login("evilregistrar");
     action.includeDeletedParam = Optional.of(true);
     runSuccessfulHandleTest(
@@ -294,7 +291,7 @@ public class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityActio
   }
 
   @Test
-  public void testDeletedContact_found_loggedInAsAdmin() {
+  void testDeletedContact_found_loggedInAsAdmin() {
     loginAsAdmin();
     action.includeDeletedParam = Optional.of(true);
     runSuccessfulHandleTest(
@@ -306,12 +303,12 @@ public class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityActio
   }
 
   @Test
-  public void testRegistrar_found() {
+  void testRegistrar_found() {
     runSuccessfulHandleTest("101", "Yes Virginia <script>", "rdap_registrar.json");
   }
 
   @Test
-  public void testRegistrarByName_found() {
+  void testRegistrarByName_found() {
     assertThat(generateActualJson("IDN%20Registrar"))
         .isEqualTo(
             generateExpectedJsonWithTopLevelEntries(
@@ -320,28 +317,28 @@ public class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityActio
   }
 
   @Test
-  public void testRegistrar102_works() {
+  void testRegistrar102_works() {
     runSuccessfulHandleTest("102", "IDN Registrar", "rdap_registrar.json");
   }
 
   @Test
-  public void testRegistrar103_works() {
+  void testRegistrar103_works() {
     runSuccessfulHandleTest("103", "Multilevel Registrar", "rdap_registrar.json");
   }
 
   @Test
-  public void testRegistrar104_notFound() {
+  void testRegistrar104_notFound() {
     runNotFoundTest("104");
   }
 
   @Test
-  public void testRegistrar104_notFound_deletedFlagWhenNotLoggedIn() {
+  void testRegistrar104_notFound_deletedFlagWhenNotLoggedIn() {
     action.includeDeletedParam = Optional.of(true);
     runNotFoundTest("104");
   }
 
   @Test
-  public void testRegistrar104_found_deletedFlagWhenLoggedIn() {
+  void testRegistrar104_found_deletedFlagWhenLoggedIn() {
     login("deletedregistrar");
     action.includeDeletedParam = Optional.of(true);
     runSuccessfulHandleTest(
@@ -349,14 +346,14 @@ public class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityActio
   }
 
   @Test
-  public void testRegistrar104_notFound_deletedFlagWhenLoggedInAsOther() {
+  void testRegistrar104_notFound_deletedFlagWhenLoggedInAsOther() {
     login("1tldregistrar");
     action.includeDeletedParam = Optional.of(true);
     runNotFoundTest("104");
   }
 
   @Test
-  public void testRegistrar104_found_deletedFlagWhenLoggedInAsAdmin() {
+  void testRegistrar104_found_deletedFlagWhenLoggedInAsAdmin() {
     loginAsAdmin();
     action.includeDeletedParam = Optional.of(true);
     runSuccessfulHandleTest(
@@ -364,12 +361,12 @@ public class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityActio
   }
 
   @Test
-  public void testRegistrar105_doesNotExist() {
+  void testRegistrar105_doesNotExist() {
     runNotFoundTest("105");
   }
 
   @Test
-  public void testQueryParameter_ignored() {
+  void testQueryParameter_ignored() {
     login("evilregistrar");
     assertThat(generateActualJson(techContact.getRepoId() + "?key=value")).isEqualTo(
         generateExpectedJsonWithTopLevelEntries(
@@ -378,7 +375,7 @@ public class RdapEntityActionTest extends RdapActionBaseTestCase<RdapEntityActio
   }
 
   @Test
-  public void testMetrics() {
+  void testMetrics() {
     generateActualJson(registrant.getRepoId());
     verify(rdapMetrics)
         .updateMetrics(

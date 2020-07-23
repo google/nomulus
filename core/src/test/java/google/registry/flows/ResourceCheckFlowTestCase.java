@@ -26,7 +26,7 @@ import google.registry.model.eppoutput.CheckData;
  * @param <F> the flow type
  * @param <R> the resource type
  */
-public class ResourceCheckFlowTestCase<F extends Flow, R extends EppResource>
+public abstract class ResourceCheckFlowTestCase<F extends Flow, R extends EppResource>
     extends ResourceFlowTestCase<F, R> {
 
   protected void doCheckTest(CheckData.Check... expected) throws Exception {

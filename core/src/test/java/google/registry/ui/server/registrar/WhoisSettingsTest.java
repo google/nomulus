@@ -23,20 +23,17 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import java.util.Map;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for security_settings.js use of {@link RegistrarSettingsAction}.
  *
  * <p>The default read and session validation tests are handled by the superclass.
  */
-@RunWith(JUnit4.class)
-public class WhoisSettingsTest extends RegistrarSettingsActionTestCase {
+class WhoisSettingsTest extends RegistrarSettingsActionTestCase {
 
   @Test
-  public void testPost_update_success() throws Exception {
+  void testPost_update_success() throws Exception {
     Registrar modified =
         loadRegistrar(CLIENT_ID)
             .asBuilder()
@@ -65,7 +62,7 @@ public class WhoisSettingsTest extends RegistrarSettingsActionTestCase {
   }
 
   @Test
-  public void testPost_badUsStateCode_returnsFormFieldError() {
+  void testPost_badUsStateCode_returnsFormFieldError() {
     Registrar modified =
         loadRegistrar(CLIENT_ID)
             .asBuilder()
@@ -92,7 +89,7 @@ public class WhoisSettingsTest extends RegistrarSettingsActionTestCase {
   }
 
   @Test
-  public void testPost_badAddress_returnsFormFieldError() {
+  void testPost_badAddress_returnsFormFieldError() {
     Registrar modified =
         loadRegistrar(CLIENT_ID)
             .asBuilder()
@@ -120,7 +117,7 @@ public class WhoisSettingsTest extends RegistrarSettingsActionTestCase {
   }
 
   @Test
-  public void testPost_badWhoisServer_returnsFormFieldError() {
+  void testPost_badWhoisServer_returnsFormFieldError() {
     Registrar modified =
         loadRegistrar(CLIENT_ID).asBuilder().setWhoisServer("tears@dry.tragical.lol").build();
     Map<String, Object> response =

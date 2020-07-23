@@ -26,7 +26,7 @@ import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpRequestInitializer;
 import google.registry.config.RegistryConfig;
-import google.registry.testing.SystemPropertyRule;
+import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.GoogleCredentialsBundle;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,14 +39,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class RequestFactoryModuleTest {
 
-  @RegisterExtension final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
+  @RegisterExtension
+  final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   @Mock public GoogleCredentialsBundle credentialsBundle;
   @Mock public HttpRequestInitializer httpRequestInitializer;
 
   @BeforeEach
   void beforeEach() {
-    RegistryToolEnvironment.UNITTEST.setup(systemPropertyRule);
+    RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
   }
 
   @Test

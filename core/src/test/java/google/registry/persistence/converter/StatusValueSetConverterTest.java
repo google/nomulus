@@ -20,24 +20,22 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import java.util.Set;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link StatusValueSetConverter}. */
-@RunWith(JUnit4.class)
 public class StatusValueSetConverterTest {
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
-  public void testRoundTrip() {
+  void testRoundTrip() {
     Set<StatusValue> enums = ImmutableSet.of(StatusValue.INACTIVE, StatusValue.PENDING_DELETE);
     TestEntity obj = new TestEntity("foo", enums);
 

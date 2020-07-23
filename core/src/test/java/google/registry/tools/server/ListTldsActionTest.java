@@ -19,31 +19,28 @@ import static google.registry.testing.DatastoreHelper.createTld;
 import google.registry.testing.FakeClock;
 import java.util.Optional;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ListTldsAction}. */
-@RunWith(JUnit4.class)
-public class ListTldsActionTest extends ListActionTestCase {
+class ListTldsActionTest extends ListActionTestCase {
 
-  ListTldsAction action;
+  private ListTldsAction action;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     createTld("xn--q9jyb4c");
     action = new ListTldsAction();
     action.clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
   }
 
   @Test
-  public void testRun_noParameters() {
+  void testRun_noParameters() {
     testRunSuccess(action, Optional.empty(), Optional.empty(), Optional.empty(), "xn--q9jyb4c");
   }
 
   @Test
-  public void testRun_withParameters() {
+  void testRun_withParameters() {
     testRunSuccess(
         action,
         Optional.of("tldType"),
@@ -55,7 +52,7 @@ public class ListTldsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_withWildcard() {
+  void testRun_withWildcard() {
     testRunSuccess(
         action,
         Optional.of("*"),
@@ -67,7 +64,7 @@ public class ListTldsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_withBadField_returnsError() {
+  void testRun_withBadField_returnsError() {
     testRunError(
         action,
         Optional.of("badfield"),

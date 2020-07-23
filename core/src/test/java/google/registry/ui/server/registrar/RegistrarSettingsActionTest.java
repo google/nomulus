@@ -36,7 +36,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.testing.CertificateSamples;
-import google.registry.testing.SystemPropertyRule;
+import google.registry.testing.SystemPropertyExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.EmailMessage;
@@ -45,21 +45,18 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
 /** Tests for {@link RegistrarSettingsAction}. */
-@RunWith(JUnit4.class)
-public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
+class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
 
-  @Rule
-  public final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
+  @RegisterExtension
+  final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   @Test
-  public void testSuccess_updateRegistrarInfo_andSendsNotificationEmail() throws Exception {
+  void testSuccess_updateRegistrarInfo_andSendsNotificationEmail() throws Exception {
     String expectedEmailBody = loadFile(getClass(), "update_registrar_email.txt");
     // This update changes some values on the admin contact and makes it a tech contact as well,
     // while deleting the existing tech contact (by omission).
@@ -77,7 +74,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testFailure_updateRegistrarInfo_duplicateContacts() {
+  void testFailure_updateRegistrarInfo_duplicateContacts() {
     Map<String, Object> response = action.handleJsonRequest(
         readJsonFromFile("update_registrar_duplicate_contacts.json", getLastUpdateTime()));
     assertThat(response).containsExactly(
@@ -94,7 +91,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
    * Also relevant if the person's privilege were revoked after the page load.
    */
   @Test
-  public void testFailure_readRegistrarInfo_notAuthorized() {
+  void testFailure_readRegistrarInfo_notAuthorized() {
     setUserWithoutAccess();
     Map<String, Object> response = action.handleJsonRequest(ImmutableMap.of("id", CLIENT_ID));
     assertThat(response)
@@ -108,7 +105,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
 
   /** This is the default read test for the registrar settings actions. */
   @Test
-  public void testSuccess_readRegistrarInfo_authorizedReadWrite() {
+  void testSuccess_readRegistrarInfo_authorizedReadWrite() {
     Map<String, Object> response = action.handleJsonRequest(ImmutableMap.of("id", CLIENT_ID));
     assertThat(response)
         .containsExactly(
@@ -119,7 +116,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_emptyJsonObject_errorLastUpdateTimeFieldRequired() {
+  void testUpdate_emptyJsonObject_errorLastUpdateTimeFieldRequired() {
     Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
     args.remove("lastUpdateTime");
 
@@ -138,7 +135,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_noEmail_errorEmailFieldRequired() {
+  void testUpdate_noEmail_errorEmailFieldRequired() {
     Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
     args.remove("emailAddress");
 
@@ -157,7 +154,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testFailure_updateRegistrarInfo_notAuthorized() {
+  void testFailure_updateRegistrarInfo_notAuthorized() {
     setUserWithoutAccess();
 
     Map<String, Object> response = action.handleJsonRequest(ImmutableMap.of(
@@ -175,7 +172,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_badEmail_errorEmailField() {
+  void testUpdate_badEmail_errorEmailField() {
     Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
     args.put("emailAddress", "lolcat");
 
@@ -194,7 +191,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testPost_nonParsableTime_getsAngry() {
+  void testPost_nonParsableTime_getsAngry() {
     Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
     args.put("lastUpdateTime", "cookies");
 
@@ -213,7 +210,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testPost_nonAsciiCharacters_getsAngry() {
+  void testPost_nonAsciiCharacters_getsAngry() {
     Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
     args.put("emailAddress", "ヘ(◕。◕ヘ)@example.com");
 
@@ -334,7 +331,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_whoisServer() {
+  void testUpdate_whoisServer() {
     doTestUpdate(
         Role.OWNER,
         Registrar::getWhoisServer,
@@ -343,24 +340,24 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_phoneNumber() {
+  void testUpdate_phoneNumber() {
     doTestUpdate(
         Role.OWNER, Registrar::getPhoneNumber, "+1.2345678900", Registrar.Builder::setPhoneNumber);
   }
 
   @Test
-  public void testUpdate_faxNumber() {
+  void testUpdate_faxNumber() {
     doTestUpdate(
         Role.OWNER, Registrar::getFaxNumber, "+1.2345678900", Registrar.Builder::setFaxNumber);
   }
 
   @Test
-  public void testUpdate_url() {
+  void testUpdate_url() {
     doTestUpdate(Role.OWNER, Registrar::getUrl, "new-url.example", Registrar.Builder::setUrl);
   }
 
   @Test
-  public void testUpdate_ipAddressAllowList() {
+  void testUpdate_ipAddressAllowList() {
     doTestUpdate(
         Role.OWNER,
         Registrar::getIpAddressAllowList,
@@ -369,7 +366,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_clientCertificate() {
+  void testUpdate_clientCertificate() {
     doTestUpdate(
         Role.OWNER,
         Registrar::getClientCertificate,
@@ -378,7 +375,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_failoverClientCertificate() {
+  void testUpdate_failoverClientCertificate() {
     doTestUpdate(
         Role.OWNER,
         Registrar::getFailoverClientCertificate,
@@ -387,7 +384,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_allowedTlds() {
+  void testUpdate_allowedTlds() {
     doTestUpdate(
         Role.ADMIN,
         Registrar::getAllowedTlds,
@@ -396,9 +393,9 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_allowedTlds_failedWhenNoWhoisAbuseContactExists() {
+  void testUpdate_allowedTlds_failedWhenNoWhoisAbuseContactExists() {
     setUserAdmin();
-    RegistryEnvironment.PRODUCTION.setup(systemPropertyRule);
+    RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
     Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
     args.put("allowedTlds", ImmutableList.of("newtld", "currenttld"));
 
@@ -419,7 +416,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_allowedTlds_failedWhenTldNotExist() {
+  void testUpdate_allowedTlds_failedWhenTldNotExist() {
     setUserAdmin();
     Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
     args.put("allowedTlds", ImmutableList.of("invalidtld", "currenttld"));
@@ -441,7 +438,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_allowedTlds_failedWhenRemovingTld() {
+  void testUpdate_allowedTlds_failedWhenRemovingTld() {
     setUserAdmin();
     Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
     args.put("allowedTlds", ImmutableList.of("newtld"));
@@ -463,7 +460,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_allowedTlds_noChange_successWhenUserIsNotAdmin() {
+  void testUpdate_allowedTlds_noChange_successWhenUserIsNotAdmin() {
     Map<String, Object> args = Maps.newHashMap(loadRegistrar(CLIENT_ID).toJsonMap());
     args.put("allowedTlds", ImmutableList.of("currenttld"));
 
@@ -483,7 +480,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_localizedAddress_city() {
+  void testUpdate_localizedAddress_city() {
     doTestUpdate(
         Role.OWNER,
         Registrar::getLocalizedAddress,
@@ -492,7 +489,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_localizedAddress_countryCode() {
+  void testUpdate_localizedAddress_countryCode() {
     doTestUpdate(
         Role.OWNER,
         Registrar::getLocalizedAddress,
@@ -501,7 +498,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_localizedAddress_state() {
+  void testUpdate_localizedAddress_state() {
     doTestUpdate(
         Role.OWNER,
         Registrar::getLocalizedAddress,
@@ -510,7 +507,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_localizedAddress_street() {
+  void testUpdate_localizedAddress_street() {
     doTestUpdate(
         Role.OWNER,
         Registrar::getLocalizedAddress,
@@ -523,7 +520,7 @@ public class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase
   }
 
   @Test
-  public void testUpdate_localizedAddress_zip() {
+  void testUpdate_localizedAddress_zip() {
     doTestUpdate(
         Role.OWNER,
         Registrar::getLocalizedAddress,
