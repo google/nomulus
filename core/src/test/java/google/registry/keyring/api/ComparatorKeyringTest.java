@@ -30,15 +30,12 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ComparatorKeyring}. */
-@RunWith(JUnit4.class)
-public class ComparatorKeyringTest {
+class ComparatorKeyringTest {
 
   private static final String PUBLIC_KEY_FINGERPRINT = "fingerprint";
   private static final String PUBLIC_KEY_TO_STRING =
@@ -79,18 +76,18 @@ public class ComparatorKeyringTest {
 
   private final TestLogHandler testLogHandler = new TestLogHandler();
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     LoggerConfig.getConfig(ComparatorKeyring.class).addHandler(testLogHandler);
   }
 
-  @After
-  public void tearDown() {
+  @AfterEach
+  void afterEach() {
     LoggerConfig.getConfig(ComparatorKeyring.class).removeHandler(testLogHandler);
   }
 
   @Test
-  public void testPublicKeyToString() throws Exception {
+  void testPublicKeyToString() throws Exception {
     assertThat(
             ComparatorKeyring.stringify(
                 mockPublicKey(false, false)))
@@ -98,7 +95,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testPublicKeyEquals() throws Exception {
+  void testPublicKeyEquals() throws Exception {
     assertThat(
             ComparatorKeyring.compare(
                 mockPublicKey(false, false),
@@ -107,7 +104,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testPublicKeyDifferFingerprint_notEqual() throws Exception {
+  void testPublicKeyDifferFingerprint_notEqual() throws Exception {
     assertThat(
             ComparatorKeyring.compare(
                 mockPublicKey(false, false),
@@ -116,7 +113,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testPublicKeyDifferEncoded_notEqual() throws Exception {
+  void testPublicKeyDifferEncoded_notEqual() throws Exception {
     assertThat(
             ComparatorKeyring.compare(
                 mockPublicKey(false, false),
@@ -125,7 +122,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testPrivateKeyToString() throws Exception {
+  void testPrivateKeyToString() throws Exception {
     assertThat(
             ComparatorKeyring.stringify(
                 mockPrivateKey(false, false, false, false)))
@@ -133,7 +130,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testPrivateKeyEquals() throws Exception {
+  void testPrivateKeyEquals() throws Exception {
     assertThat(
             ComparatorKeyring.compare(
                 mockPrivateKey(false, false, false, false),
@@ -142,7 +139,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testPrivateKeyDifferId_notEquals() throws Exception {
+  void testPrivateKeyDifferId_notEquals() throws Exception {
     assertThat(
             ComparatorKeyring.compare(
                 mockPrivateKey(false, false, false, false),
@@ -151,7 +148,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testPrivateKeyDifferBcpgFormat_notEquals() throws Exception {
+  void testPrivateKeyDifferBcpgFormat_notEquals() throws Exception {
     assertThat(
             ComparatorKeyring.compare(
                 mockPrivateKey(false, false, false, false),
@@ -160,7 +157,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testPrivateKeyDifferBcpgEncoding_notEquals() throws Exception {
+  void testPrivateKeyDifferBcpgEncoding_notEquals() throws Exception {
     assertThat(
             ComparatorKeyring.compare(
                 mockPrivateKey(false, false, false, false),
@@ -169,7 +166,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testPrivateKeyDifferPublicKeyEncoding_notEquals() throws Exception {
+  void testPrivateKeyDifferPublicKeyEncoding_notEquals() throws Exception {
     assertThat(
             ComparatorKeyring.compare(
                 mockPrivateKey(false, false, false, false),
@@ -178,7 +175,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testKeyPairToString() throws Exception {
+  void testKeyPairToString() throws Exception {
     assertThat(
             ComparatorKeyring.stringify(
                 new PGPKeyPair(
@@ -188,7 +185,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testKeyPairEquals() throws Exception {
+  void testKeyPairEquals() throws Exception {
     assertThat(
             ComparatorKeyring.compare(
                 new PGPKeyPair(
@@ -201,7 +198,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testKeyPairDifferPublicKey_notEqual() throws Exception {
+  void testKeyPairDifferPublicKey_notEqual() throws Exception {
     assertThat(
             ComparatorKeyring.compare(
                 new PGPKeyPair(
@@ -214,7 +211,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testKeyPairDifferPrivateKey_notEqual() throws Exception {
+  void testKeyPairDifferPrivateKey_notEqual() throws Exception {
     assertThat(
             ComparatorKeyring.compare(
                 new PGPKeyPair(
@@ -232,7 +229,7 @@ public class ComparatorKeyringTest {
   // We will fully test a single method just to make sure everything is "connected" correctly.
 
   @Test
-  public void testRdeSigningKey_actualThrows() throws Exception {
+  void testRdeSigningKey_actualThrows() throws Exception {
     Keyring actualKeyring = mock(Keyring.class);
     Keyring secondKeyring = mock(Keyring.class);
     PGPKeyPair keyPair =
@@ -252,7 +249,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testRdeSigningKey_secondThrows() throws Exception {
+  void testRdeSigningKey_secondThrows() throws Exception {
     Keyring actualKeyring = mock(Keyring.class);
     Keyring secondKeyring = mock(Keyring.class);
     PGPKeyPair keyPair =
@@ -272,7 +269,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testRdeSigningKey_bothThrow() {
+  void testRdeSigningKey_bothThrow() {
     Keyring actualKeyring = mock(Keyring.class);
     Keyring secondKeyring = mock(Keyring.class);
     when(actualKeyring.getRdeSigningKey()).thenThrow(new KeyringException("message"));
@@ -285,7 +282,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testRdeSigningKey_same() throws Exception {
+  void testRdeSigningKey_same() throws Exception {
     Keyring actualKeyring = mock(Keyring.class);
     Keyring secondKeyring = mock(Keyring.class);
     PGPKeyPair keyPair =
@@ -306,7 +303,7 @@ public class ComparatorKeyringTest {
   }
 
   @Test
-  public void testRdeSigningKey_different() throws Exception {
+  void testRdeSigningKey_different() throws Exception {
     Keyring actualKeyring = mock(Keyring.class);
     Keyring secondKeyring = mock(Keyring.class);
     PGPKeyPair keyPair =

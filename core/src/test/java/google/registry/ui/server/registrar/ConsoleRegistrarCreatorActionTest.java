@@ -60,11 +60,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public final class ConsoleRegistrarCreatorActionTest {
+final class ConsoleRegistrarCreatorActionTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngineRule =
-      AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  final AppEngineRule appEngineRule = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @RegisterExtension
   @Order(value = Integer.MAX_VALUE)

@@ -39,28 +39,25 @@ import google.registry.util.SendEmailService;
 import java.util.Optional;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.YearMonth;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link google.registry.reporting.icann.IcannReportingStagingAction}. */
-@RunWith(JUnit4.class)
-public class IcannReportingStagingActionTest {
+class IcannReportingStagingActionTest {
 
-  FakeResponse response = new FakeResponse();
-  IcannReportingStager stager = mock(IcannReportingStager.class);
-  YearMonth yearMonth = new YearMonth(2017, 6);
-  String subdir = "default/dir";
-  IcannReportingStagingAction action;
+  private FakeResponse response = new FakeResponse();
+  private IcannReportingStager stager = mock(IcannReportingStager.class);
+  private YearMonth yearMonth = new YearMonth(2017, 6);
+  private String subdir = "default/dir";
+  private IcannReportingStagingAction action;
 
-  @Rule
-  public final AppEngineRule appEngine =
+  @RegisterExtension
+  final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withLocalModules().withTaskQueue().build();
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     action = new IcannReportingStagingAction();
     action.yearMonth = yearMonth;
     action.overrideSubdir = Optional.of(subdir);
@@ -84,7 +81,7 @@ public class IcannReportingStagingActionTest {
   }
 
   @Test
-  public void testActivityReportingMode_onlyStagesActivityReports() throws Exception {
+  void testActivityReportingMode_onlyStagesActivityReports() throws Exception {
     action.reportTypes = ImmutableSet.of(ReportType.ACTIVITY);
     action.run();
     verify(stager).stageReports(yearMonth, subdir, ReportType.ACTIVITY);
@@ -100,7 +97,7 @@ public class IcannReportingStagingActionTest {
   }
 
   @Test
-  public void testAbsentReportingMode_stagesBothReports() throws Exception {
+  void testAbsentReportingMode_stagesBothReports() throws Exception {
     action.run();
     verify(stager).stageReports(yearMonth, subdir, ReportType.ACTIVITY);
     verify(stager).stageReports(yearMonth, subdir, ReportType.TRANSACTIONS);
@@ -116,7 +113,7 @@ public class IcannReportingStagingActionTest {
   }
 
   @Test
-  public void testRetryOnBigqueryException() throws Exception {
+  void testRetryOnBigqueryException() throws Exception {
     when(stager.stageReports(yearMonth, subdir, ReportType.TRANSACTIONS))
         .thenThrow(new BigqueryJobFailureException("Expected failure", null, null, null))
         .thenReturn(ImmutableList.of("c", "d"));
@@ -135,7 +132,7 @@ public class IcannReportingStagingActionTest {
   }
 
   @Test
-  public void testEmailEng_onMoreThanRetriableFailure() throws Exception {
+  void testEmailEng_onMoreThanRetriableFailure() throws Exception {
     action.reportTypes = ImmutableSet.of(ReportType.ACTIVITY);
     when(stager.stageReports(yearMonth, subdir, ReportType.ACTIVITY))
         .thenThrow(new BigqueryJobFailureException("Expected failure", null, null, null));
@@ -160,25 +157,22 @@ public class IcannReportingStagingActionTest {
   }
 
   @Test
-  public void testEmptySubDir_returnsDefaultSubdir() {
+  void testEmptySubDir_returnsDefaultSubdir() {
     action.overrideSubdir = Optional.empty();
     assertThat(action.getSubdir(new YearMonth(2017, 6))).isEqualTo("icann/monthly/2017-06");
   }
 
   @Test
-  public void testGivenSubdir_returnsManualSubdir() {
+  void testGivenSubdir_returnsManualSubdir() {
     action.overrideSubdir = Optional.of("manual/dir");
     assertThat(action.getSubdir(new YearMonth(2017, 6))).isEqualTo("manual/dir");
   }
 
   @Test
-  public void testInvalidSubdir_throwsException() {
+  void testInvalidSubdir_throwsException() {
     action.overrideSubdir = Optional.of("/whoops");
     BadRequestException thrown =
-        assertThrows(
-            BadRequestException.class,
-            () ->
-                action.getSubdir(new YearMonth(2017, 6)));
+        assertThrows(BadRequestException.class, () -> action.getSubdir(new YearMonth(2017, 6)));
     assertThat(thrown)
         .hasMessageThat()
         .contains("subdir must not start or end with a \"/\", got /whoops instead.");

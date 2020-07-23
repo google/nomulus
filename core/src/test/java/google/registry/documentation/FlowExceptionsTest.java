@@ -21,9 +21,7 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.documentation.FlowDocumentation.ErrorCase;
 import java.io.IOException;
 import java.util.Set;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test to ensure accurate documentation of flow exceptions.
@@ -47,13 +45,12 @@ import org.junit.runners.JUnit4;
  * removing the javadoc tag.
  */
 @SuppressWarnings("javadoc")
-@RunWith(JUnit4.class)
-public class FlowExceptionsTest {
+class FlowExceptionsTest {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Test
-  public void testExceptionCorrespondence() throws IOException {
+  void testExceptionCorrespondence() throws IOException {
     DocumentationGenerator docGenerator = new DocumentationGenerator();
     Set<ErrorCase> possibleErrors = Sets.newHashSet(docGenerator.getAllErrors());
     Set<String> mismatchingFlows = Sets.newHashSet();

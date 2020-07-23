@@ -35,15 +35,12 @@ import google.registry.testing.FakeResponse;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.io.IOException;
 import org.joda.time.YearMonth;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PublishInvoicesAction}. */
-@RunWith(JUnit4.class)
-public class PublishInvoicesActionTest {
+class PublishInvoicesActionTest {
 
   private Get get;
   private BillingEmailUtils emailUtils;
@@ -52,11 +49,11 @@ public class PublishInvoicesActionTest {
   private FakeResponse response;
   private PublishInvoicesAction uploadAction;
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withTaskQueue().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withTaskQueue().build();
 
-  @Before
-  public void setUp() throws IOException {
+  @BeforeEach
+  void beforeEach() throws IOException {
     Dataflow dataflow = mock(Dataflow.class);
     Projects projects = mock(Projects.class);
     Jobs jobs = mock(Jobs.class);
@@ -74,7 +71,7 @@ public class PublishInvoicesActionTest {
   }
 
   @Test
-  public void testJobDone_enqueuesCopyAction_emailsResults() {
+  void testJobDone_enqueuesCopyAction_emailsResults() {
     expectedJob.setCurrentState("JOB_STATE_DONE");
     uploadAction.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
@@ -88,7 +85,7 @@ public class PublishInvoicesActionTest {
   }
 
   @Test
-  public void testJobFailed_returnsNonRetriableResponse() {
+  void testJobFailed_returnsNonRetriableResponse() {
     expectedJob.setCurrentState("JOB_STATE_FAILED");
     uploadAction.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
@@ -96,14 +93,14 @@ public class PublishInvoicesActionTest {
   }
 
   @Test
-  public void testJobIndeterminate_returnsRetriableResponse() {
+  void testJobIndeterminate_returnsRetriableResponse() {
     expectedJob.setCurrentState("JOB_STATE_RUNNING");
     uploadAction.run();
     assertThat(response.getStatus()).isEqualTo(SC_NOT_MODIFIED);
   }
 
   @Test
-  public void testIOException_returnsFailureMessage() throws IOException {
+  void testIOException_returnsFailureMessage() throws IOException {
     when(get.execute()).thenThrow(new IOException("expected"));
     uploadAction.run();
     assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);

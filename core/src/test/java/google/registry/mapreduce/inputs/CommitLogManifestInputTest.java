@@ -30,14 +30,11 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CommitLogManifestInput}. */
-@RunWith(JUnit4.class)
-public final class CommitLogManifestInputTest {
+final class CommitLogManifestInputTest {
 
   private static final DateTime DATE_TIME_OLD = DateTime.parse("2015-12-19T12:00Z");
   private static final DateTime DATE_TIME_OLD2 = DateTime.parse("2016-12-19T11:59Z");
@@ -47,19 +44,18 @@ public final class CommitLogManifestInputTest {
   private static final DateTime DATE_TIME_NEW = DateTime.parse("2016-12-19T12:01Z");
   private static final DateTime DATE_TIME_NEW2 = DateTime.parse("2017-12-19T12:00Z");
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testInputOlderThan_allFound() throws Exception {
+  void testInputOlderThan_allFound() throws Exception {
     Set<Key<CommitLogManifest>> created = new HashSet<>();
     for (int i = 1; i <= 3; i++) {
       created.add(createManifest(CommitLogBucket.getBucketKey(i), DATE_TIME_OLD));
     }
     List<Key<CommitLogManifest>> seen = new ArrayList<>();
     Input<Key<CommitLogManifest>> input = new CommitLogManifestInput(DATE_TIME_THRESHOLD);
-    for (InputReader<Key<CommitLogManifest>> reader
-        : input.createReaders()) {
+    for (InputReader<Key<CommitLogManifest>> reader : input.createReaders()) {
       reader.beginShard();
       reader.beginSlice();
       seen.add(reader.next());
@@ -73,7 +69,7 @@ public final class CommitLogManifestInputTest {
   }
 
   @Test
-  public void testInputOlderThan_skipsNew() throws Exception {
+  void testInputOlderThan_skipsNew() throws Exception {
     Set<Key<CommitLogManifest>> old = new HashSet<>();
     for (int i = 1; i <= 3; i++) {
       createManifest(CommitLogBucket.getBucketKey(i), DATE_TIME_NEW);
@@ -83,8 +79,7 @@ public final class CommitLogManifestInputTest {
     }
     List<Key<CommitLogManifest>> seen = new ArrayList<>();
     Input<Key<CommitLogManifest>> input = new CommitLogManifestInput(DATE_TIME_THRESHOLD);
-    for (InputReader<Key<CommitLogManifest>> reader
-        : input.createReaders()) {
+    for (InputReader<Key<CommitLogManifest>> reader : input.createReaders()) {
       reader.beginShard();
       reader.beginSlice();
       try {
@@ -101,7 +96,7 @@ public final class CommitLogManifestInputTest {
   }
 
   @Test
-  public void testInputAll() throws Exception {
+  void testInputAll() throws Exception {
     Set<Key<CommitLogManifest>> created = new HashSet<>();
     for (int i = 1; i <= 3; i++) {
       created.add(createManifest(CommitLogBucket.getBucketKey(i), DATE_TIME_NEW));
@@ -111,8 +106,7 @@ public final class CommitLogManifestInputTest {
     }
     List<Key<CommitLogManifest>> seen = new ArrayList<>();
     Input<Key<CommitLogManifest>> input = new CommitLogManifestInput();
-    for (InputReader<Key<CommitLogManifest>> reader
-        : input.createReaders()) {
+    for (InputReader<Key<CommitLogManifest>> reader : input.createReaders()) {
       reader.beginShard();
       reader.beginSlice();
       try {
@@ -129,8 +123,7 @@ public final class CommitLogManifestInputTest {
   }
 
   private static Key<CommitLogManifest> createManifest(
-      Key<CommitLogBucket> parent,
-      DateTime dateTime) {
+      Key<CommitLogBucket> parent, DateTime dateTime) {
     CommitLogManifest commitLogManifest = CommitLogManifest.create(parent, dateTime, null);
     DatastoreHelper.persistResource(commitLogManifest);
     return Key.create(commitLogManifest);

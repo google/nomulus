@@ -28,23 +28,22 @@ import google.registry.security.XsrfTokenManager;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import javax.servlet.http.HttpServletRequest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
-@RunWith(JUnit4.class)
-public final class LegacyAuthenticationMechanismTest {
+/** Unit tests for {@link LegacyAuthenticationMechanism}. */
+@ExtendWith(MockitoExtension.class)
+final class LegacyAuthenticationMechanismTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
-
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Mock private UserService userService;
   @Mock private HttpServletRequest req;
@@ -54,8 +53,8 @@ public final class LegacyAuthenticationMechanismTest {
   private LegacyAuthenticationMechanism legacyAuthenticationMechanism;
   private String goodToken;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     xsrfTokenManager = new XsrfTokenManager(clock, userService);
     legacyAuthenticationMechanism =
         new LegacyAuthenticationMechanism(userService, xsrfTokenManager);
@@ -64,8 +63,8 @@ public final class LegacyAuthenticationMechanismTest {
     goodToken = xsrfTokenManager.generateToken("email@example.com");
   }
 
-  @After
-  public void tearDown() {
+  @AfterEach
+  void afterEach() {
     // Make sure we didn't use getParameter or getInputStream or any of the other "with side
     // effects" getters unexpectedly. But allow "no side effect" getters.
     //
@@ -83,14 +82,15 @@ public final class LegacyAuthenticationMechanismTest {
   }
 
   @Test
-  public void testAuthenticate_notLoggedIn() {
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  void testAuthenticate_notLoggedIn() {
     when(userService.isUserLoggedIn()).thenReturn(false);
     assertThat(legacyAuthenticationMechanism.authenticate(req).authLevel())
         .isEqualTo(AuthLevel.NONE);
   }
 
   @Test
-  public void testAuthenticate_loggedInSafeMethod_get() {
+  void testAuthenticate_loggedInSafeMethod_get() {
     when(userService.isUserLoggedIn()).thenReturn(true);
     when(req.getMethod()).thenReturn("GET");
     assertThat(legacyAuthenticationMechanism.authenticate(req).authLevel())
@@ -98,7 +98,7 @@ public final class LegacyAuthenticationMechanismTest {
   }
 
   @Test
-  public void testAuthenticate_loggedInSafeMethod_head() {
+  void testAuthenticate_loggedInSafeMethod_head() {
     when(userService.isUserLoggedIn()).thenReturn(true);
     when(req.getMethod()).thenReturn("HEAD");
     assertThat(legacyAuthenticationMechanism.authenticate(req).authLevel())
@@ -106,7 +106,8 @@ public final class LegacyAuthenticationMechanismTest {
   }
 
   @Test
-  public void testAuthenticate_loggedInUnsafeMethod_post_noXsrfToken() {
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  void testAuthenticate_loggedInUnsafeMethod_post_noXsrfToken() {
     when(userService.isUserLoggedIn()).thenReturn(true);
     when(req.getMethod()).thenReturn("POST");
     assertThat(legacyAuthenticationMechanism.authenticate(req).authLevel())
@@ -118,7 +119,7 @@ public final class LegacyAuthenticationMechanismTest {
   }
 
   @Test
-  public void testAuthenticate_loggedInUnsafeMethod_post_goodTokenInHeader() {
+  void testAuthenticate_loggedInUnsafeMethod_post_goodTokenInHeader() {
     when(userService.isUserLoggedIn()).thenReturn(true);
     when(req.getMethod()).thenReturn("POST");
     when(req.getHeader("X-CSRF-Token")).thenReturn(goodToken);
@@ -131,7 +132,8 @@ public final class LegacyAuthenticationMechanismTest {
   }
 
   @Test
-  public void testAuthenticate_loggedInUnsafeMethod_post_badTokenInHeader() {
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  void testAuthenticate_loggedInUnsafeMethod_post_badTokenInHeader() {
     when(userService.isUserLoggedIn()).thenReturn(true);
     when(req.getMethod()).thenReturn("POST");
     when(req.getHeader("X-CSRF-Token")).thenReturn("bad");
@@ -144,7 +146,7 @@ public final class LegacyAuthenticationMechanismTest {
   }
 
   @Test
-  public void testAuthenticate_loggedInUnsafeMethod_post_goodTokenInParam() {
+  void testAuthenticate_loggedInUnsafeMethod_post_goodTokenInParam() {
     when(userService.isUserLoggedIn()).thenReturn(true);
     when(req.getMethod()).thenReturn("POST");
     when(req.getParameter("xsrfToken")).thenReturn(goodToken);
@@ -157,7 +159,8 @@ public final class LegacyAuthenticationMechanismTest {
   }
 
   @Test
-  public void testAuthenticate_loggedInUnsafeMethod_post_badTokenInParam() {
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  void testAuthenticate_loggedInUnsafeMethod_post_badTokenInParam() {
     when(userService.isUserLoggedIn()).thenReturn(true);
     when(req.getMethod()).thenReturn("POST");
     when(req.getParameter("xsrfToken")).thenReturn("bad");

@@ -21,20 +21,17 @@ import static google.registry.testing.DatastoreHelper.createTlds;
 import com.google.common.collect.ImmutableSet;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link EppMetric}. */
-@RunWith(JUnit4.class)
-public class EppMetricTest {
+class EppMetricTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void test_invalidTld_isRecordedAsInvalid() {
+  void test_invalidTld_isRecordedAsInvalid() {
     EppMetric metric =
         EppMetric.builderForRequest(new FakeClock())
             .setTlds(ImmutableSet.of("notarealtld"))
@@ -43,7 +40,7 @@ public class EppMetricTest {
   }
 
   @Test
-  public void test_validTld_isRecorded() {
+  void test_validTld_isRecorded() {
     createTld("example");
     EppMetric metric =
         EppMetric.builderForRequest(new FakeClock()).setTlds(ImmutableSet.of("example")).build();
@@ -51,7 +48,7 @@ public class EppMetricTest {
   }
 
   @Test
-  public void test_multipleTlds_areRecordedAsVarious() {
+  void test_multipleTlds_areRecordedAsVarious() {
     createTlds("foo", "bar");
     EppMetric metric =
         EppMetric.builderForRequest(new FakeClock())
@@ -61,7 +58,7 @@ public class EppMetricTest {
   }
 
   @Test
-  public void test_zeroTlds_areRecordedAsAbsent() {
+  void test_zeroTlds_areRecordedAsAbsent() {
     EppMetric metric =
         EppMetric.builderForRequest(new FakeClock()).setTlds(ImmutableSet.of()).build();
     assertThat(metric.getTld()).isEmpty();

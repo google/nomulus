@@ -41,18 +41,15 @@ import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
 import google.registry.util.Retrier;
 import java.io.IOException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link google.registry.reporting.billing.CopyDetailReportsAction}. */
-@RunWith(JUnit4.class)
-public class CopyDetailReportsActionTest {
+class CopyDetailReportsActionTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private final GcsService gcsService = GcsServiceFactory.createGcsService();
   private final GcsUtils gcsUtils = new GcsUtils(gcsService, 1024);
@@ -62,8 +59,8 @@ public class CopyDetailReportsActionTest {
   private BillingEmailUtils emailUtils;
   private CopyDetailReportsAction action;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     persistResource(loadRegistrar("TheRegistrar").asBuilder().setDriveFolderId("0B-12345").build());
     persistResource(loadRegistrar("NewRegistrar").asBuilder().setDriveFolderId("0B-54321").build());
     response = new FakeResponse();
@@ -81,7 +78,7 @@ public class CopyDetailReportsActionTest {
   }
 
   @Test
-  public void testSuccess() throws IOException {
+  void testSuccess() throws IOException {
     writeGcsFile(
         gcsService,
         new GcsFilename("test-bucket", "results/invoice_details_2017-10_TheRegistrar_test.csv"),
@@ -112,7 +109,7 @@ public class CopyDetailReportsActionTest {
   }
 
   @Test
-  public void testSuccess_nonDetailReportFiles_notSent() throws IOException{
+  void testSuccess_nonDetailReportFiles_notSent() throws IOException {
     writeGcsFile(
         gcsService,
         new GcsFilename("test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
@@ -137,7 +134,7 @@ public class CopyDetailReportsActionTest {
   }
 
   @Test
-  public void testSuccess_transientIOException_retries() throws IOException {
+  void testSuccess_transientIOException_retries() throws IOException {
     writeGcsFile(
         gcsService,
         new GcsFilename("test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
@@ -159,7 +156,7 @@ public class CopyDetailReportsActionTest {
   }
 
   @Test
-  public void testFail_tooManyFailures_sendsAlertEmail_continues() throws IOException {
+  void testFail_tooManyFailures_sendsAlertEmail_continues() throws IOException {
     writeGcsFile(
         gcsService,
         new GcsFilename("test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
@@ -202,7 +199,7 @@ public class CopyDetailReportsActionTest {
   }
 
   @Test
-  public void testFail_registrarDoesntExist_doesntCopy() throws IOException {
+  void testFail_registrarDoesntExist_doesntCopy() throws IOException {
     writeGcsFile(
         gcsService,
         new GcsFilename("test-bucket", "results/invoice_details_2017-10_notExistent_hello.csv"),
@@ -212,12 +209,11 @@ public class CopyDetailReportsActionTest {
   }
 
   @Test
-  public void testFail_noRegistrarFolderId_doesntCopy() throws IOException {
+  void testFail_noRegistrarFolderId_doesntCopy() throws IOException {
     persistResource(loadRegistrar("TheRegistrar").asBuilder().setDriveFolderId(null).build());
     writeGcsFile(
         gcsService,
-        new GcsFilename(
-            "test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
+        new GcsFilename("test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
         "hola,mundo\n3,4".getBytes(UTF_8));
     action.run();
     verifyNoInteractions(driveConnection);

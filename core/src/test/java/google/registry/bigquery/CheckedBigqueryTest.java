@@ -29,15 +29,12 @@ import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableReference;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link CheckedBigquery}. */
-@RunWith(JUnit4.class)
-public class CheckedBigqueryTest {
+class CheckedBigqueryTest {
 
   private final Bigquery bigquery = mock(Bigquery.class);
   private final Bigquery.Datasets bigqueryDatasets = mock(Bigquery.Datasets.class);
@@ -48,8 +45,8 @@ public class CheckedBigqueryTest {
 
   private CheckedBigquery checkedBigquery;
 
-  @Before
-  public void before() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     when(bigquery.datasets()).thenReturn(bigqueryDatasets);
     when(bigqueryDatasets.insert(eq("Project-Id"), any(Dataset.class)))
         .thenReturn(bigqueryDatasetsInsert);
@@ -70,7 +67,7 @@ public class CheckedBigqueryTest {
   }
 
   @Test
-  public void testSuccess_datastoreCreation() throws Exception {
+  void testSuccess_datastoreCreation() throws Exception {
     checkedBigquery.ensureDataSetExists("Project-Id", "Dataset-Id");
 
     ArgumentCaptor<Dataset> datasetArg = ArgumentCaptor.forClass(Dataset.class);
@@ -83,7 +80,7 @@ public class CheckedBigqueryTest {
   }
 
   @Test
-  public void testSuccess_datastoreAndTableCreation() throws Exception {
+  void testSuccess_datastoreAndTableCreation() throws Exception {
     checkedBigquery.ensureDataSetAndTableExist("Project-Id", "Dataset2", "Table2");
 
     ArgumentCaptor<Dataset> datasetArg = ArgumentCaptor.forClass(Dataset.class);
