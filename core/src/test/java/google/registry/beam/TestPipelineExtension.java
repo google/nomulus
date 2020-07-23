@@ -1,3 +1,5 @@
+// Copyright 2020 The Nomulus Authors. All Rights Reserved.
+// This applies to our modifications; the base file's license header is:
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -22,13 +24,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
+import com.google.common.collect.Maps;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
@@ -45,6 +51,7 @@ import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.options.ValueProvider;
 import org.apache.beam.sdk.options.ValueProvider.StaticValueProvider;
 import org.apache.beam.sdk.runners.TransformHierarchy;
+import org.apache.beam.sdk.runners.TransformHierarchy.Node;
 import org.apache.beam.sdk.testing.CrashingRunner;
 import org.apache.beam.sdk.testing.NeedsRunner;
 import org.apache.beam.sdk.testing.PAssert;
@@ -52,12 +59,6 @@ import org.apache.beam.sdk.testing.TestPipelineOptions;
 import org.apache.beam.sdk.testing.ValidatesRunner;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.util.common.ReflectHelpers;
-import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Optional;
-import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Predicate;
-import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Predicates;
-import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Strings;
-import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.FluentIterable;
-import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.Maps;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
@@ -149,7 +150,7 @@ public class TestPipelineExtension extends Pipeline implements TestRule {
     // Null until the pipeline has been run
     @Nullable private List<TransformHierarchy.Node> runVisitedNodes;
 
-    private final Predicate<TransformHierarchy.Node> isPAssertNode =
+    private final Predicate<Node> isPAssertNode =
         node ->
             node.getTransform() instanceof PAssert.GroupThenAssert
                 || node.getTransform() instanceof PAssert.GroupThenAssertForSingleton
@@ -196,8 +197,8 @@ public class TestPipelineExtension extends Pipeline implements TestRule {
           final List<TransformHierarchy.Node> pipelineNodes = recordPipelineNodes(pipeline);
           if (pipelineRunSucceeded() && !visitedAll(pipelineNodes)) {
             final boolean hasDanglingPAssert =
-                FluentIterable.from(pipelineNodes)
-                    .filter(Predicates.not(Predicates.in(runVisitedNodes)))
+                pipelineNodes.stream()
+                    .filter(pn -> !runVisitedNodes.contains(pn))
                     .anyMatch(isPAssertNode);
             if (hasDanglingPAssert) {
               throw new AbandonedNodeException("The pipeline contains abandoned PAssert(s).");
@@ -259,7 +260,7 @@ public class TestPipelineExtension extends Pipeline implements TestRule {
           .registerModules(ObjectMapper.findModules(ReflectHelpers.findClassLoader()));
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-  private Optional<? extends PipelineRunEnforcement> enforcement = Optional.absent();
+  private Optional<? extends PipelineRunEnforcement> enforcement = Optional.empty();
 
   /**
    * Creates and returns a new test pipeline.
@@ -294,7 +295,7 @@ public class TestPipelineExtension extends Pipeline implements TestRule {
         if (!enforcement.isPresent()) {
 
           final boolean annotatedWithNeedsRunner =
-              FluentIterable.from(description.getAnnotations())
+              description.getAnnotations().stream()
                   .filter(Annotations.Predicates.isAnnotationOfType(Category.class))
                   .anyMatch(Annotations.Predicates.isCategoryOf(NeedsRunner.class, true));
 
@@ -333,8 +334,8 @@ public class TestPipelineExtension extends Pipeline implements TestRule {
   }
 
   /**
-   * Runs this {@link TestPipelineExtension}, unwrapping any {@code AssertionError} that is raised during
-   * testing.
+   * Runs this {@link TestPipelineExtension}, unwrapping any {@code AssertionError} that is raised
+   * during testing.
    */
   @Override
   public PipelineResult run() {
@@ -560,7 +561,7 @@ public class TestPipelineExtension extends Pipeline implements TestRule {
 
       static Predicate<Annotation> isCategoryOf(final Class<?> value, final boolean allowDerived) {
         return category ->
-            FluentIterable.from(Arrays.asList(((Category) category).value()))
+            Arrays.stream(((Category) category).value())
                 .anyMatch(
                     aClass -> allowDerived ? value.isAssignableFrom(aClass) : value.equals(aClass));
       }
