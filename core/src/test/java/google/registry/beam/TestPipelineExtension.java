@@ -19,7 +19,7 @@
  */
 package google.registry.beam;
 
-import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.checkState;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -60,9 +60,9 @@ import org.apache.beam.sdk.testing.ValidatesRunner;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.util.common.ReflectHelpers;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.TestRule;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 // NOTE: This file is copied from the Apache Beam distribution so that it can be locally modified to
 // support JUnit 5.
@@ -70,10 +70,6 @@ import org.junit.runners.model.Statement;
 /**
  * A creator of test pipelines that can be used inside of tests that can be configured to run
  * locally or against a remote pipeline runner.
- *
- * <p>It is recommended to tag hand-selected tests for this purpose using the {@link
- * ValidatesRunner} {@link Category} annotation, as each test run against a pipeline runner will
- * utilize resources of that pipeline runner.
  *
  * <p>In order to run tests on a pipeline runner, the following conditions must be met:
  *
@@ -111,7 +107,8 @@ import org.junit.runners.model.Statement;
  * <p>See also the <a href="https://beam.apache.org/contribute/testing/">Testing</a> documentation
  * section.
  */
-public class TestPipelineExtension extends Pipeline implements TestRule {
+public class TestPipelineExtension extends Pipeline
+    implements BeforeEachCallback, AfterEachCallback {
 
   private final PipelineOptions options;
 
@@ -287,50 +284,38 @@ public class TestPipelineExtension extends Pipeline implements TestRule {
   }
 
   @Override
-  public Statement apply(final Statement statement, final Description description) {
-    return new Statement() {
+  public void beforeEach(ExtensionContext context) throws Exception {
+    options.as(ApplicationNameOptions.class).setAppName(getAppName(context));
 
-      private void setDeducedEnforcementLevel() {
-        // if the enforcement level has not been set by the user do auto-inference
-        if (!enforcement.isPresent()) {
+    // if the enforcement level has not been set by the user do auto-inference
+    if (!enforcement.isPresent()) {
+      final boolean isCrashingRunner = CrashingRunner.class.isAssignableFrom(options.getRunner());
 
-          final boolean annotatedWithNeedsRunner =
-              description.getAnnotations().stream()
-                  .filter(Annotations.Predicates.isAnnotationOfType(Category.class))
-                  .anyMatch(Annotations.Predicates.isCategoryOf(NeedsRunner.class, true));
+      checkState(
+          !isCrashingRunner,
+          "Cannot test using a [%s] runner. Please re-check your configuration.",
+          CrashingRunner.class.getSimpleName());
 
-          final boolean crashingRunner = CrashingRunner.class.isAssignableFrom(options.getRunner());
+      enableAbandonedNodeEnforcement(true);
+    }
+  }
 
-          checkState(
-              !(annotatedWithNeedsRunner && crashingRunner),
-              "The test was annotated with a [@%s] / [@%s] while the runner "
-                  + "was set to [%s]. Please re-check your configuration.",
-              NeedsRunner.class.getSimpleName(),
-              ValidatesRunner.class.getSimpleName(),
-              CrashingRunner.class.getSimpleName());
+  @Override
+  public void afterEach(ExtensionContext context) throws Exception {
+    enforcement.get().afterUserCodeFinished();
+  }
 
-          enableAbandonedNodeEnforcement(annotatedWithNeedsRunner || !crashingRunner);
-        }
-      }
-
-      @Override
-      public void evaluate() throws Throwable {
-        options.as(ApplicationNameOptions.class).setAppName(getAppName(description));
-
-        setDeducedEnforcementLevel();
-
-        // statement.evaluate() essentially runs the user code contained in the unit test at hand.
-        // Exceptions thrown during the execution of the user's test code will propagate here,
-        // unless the user explicitly handles them with a "catch" clause in his code. If the
-        // exception is handled by a user's "catch" clause, is does not interrupt the flow and
-        // we move on to invoking the configured enforcements.
-        // If the user does not handle a thrown exception, it will propagate here and interrupt
-        // the flow, preventing the enforcement(s) from being activated.
-        // The motivation for this is avoiding enforcements over faulty pipelines.
-        statement.evaluate();
-        enforcement.get().afterUserCodeFinished();
-      }
-    };
+  /** Returns the class + method name of the test. */
+  private String getAppName(ExtensionContext context) {
+    String methodName = context.getRequiredTestMethod().getName();
+    Class<?> testClass = context.getRequiredTestClass();
+    if (testClass.isMemberClass()) {
+      return String.format(
+          "%s$%s-%s",
+          testClass.getEnclosingClass().getSimpleName(), testClass.getSimpleName(), methodName);
+    } else {
+      return String.format("%s-%s", testClass.getSimpleName(), methodName);
+    }
   }
 
   /**
@@ -480,19 +465,6 @@ public class TestPipelineExtension extends Pipeline implements TestRule {
               + ":"
               + System.getProperty(PROPERTY_BEAM_TEST_PIPELINE_OPTIONS),
           e);
-    }
-  }
-
-  /** Returns the class + method name of the test. */
-  private String getAppName(Description description) {
-    String methodName = description.getMethodName();
-    Class<?> testClass = description.getTestClass();
-    if (testClass.isMemberClass()) {
-      return String.format(
-          "%s$%s-%s",
-          testClass.getEnclosingClass().getSimpleName(), testClass.getSimpleName(), methodName);
-    } else {
-      return String.format("%s-%s", testClass.getSimpleName(), methodName);
     }
   }
 

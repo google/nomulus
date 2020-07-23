@@ -34,46 +34,48 @@ import google.registry.testing.InjectRule;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.stream.Collectors;
-import org.apache.beam.sdk.testing.NeedsRunner;
 import org.apache.beam.sdk.transforms.Create;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.RuleChain;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Unit test for {@link Transforms#writeToSql}. */
-public class WriteToSqlTest implements Serializable {
+class WriteToSqlTest implements Serializable {
 
   private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
 
   private final FakeClock fakeClock = new FakeClock(START_TIME);
 
-  @Rule public final transient InjectRule injectRule = new InjectRule();
+  @RegisterExtension final transient InjectRule injectRule = new InjectRule();
 
-  // For use in the RuleChain below. Saves a reference to retrieve Database connection config.
-  public final transient JpaIntegrationTestRule database =
+  @RegisterExtension
+  final transient JpaIntegrationTestRule database =
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationTestRule();
 
-  @Rule
-  public final transient RuleChain jpaRules =
-      RuleChain.outerRule(new DatastoreEntityExtension()).around(database);
+  @RegisterExtension
+  @Order(value = 1)
+  final transient DatastoreEntityExtension datastore = new DatastoreEntityExtension();
 
-  @Rule public transient TemporaryFolder temporaryFolder = new TemporaryFolder();
+  @SuppressWarnings("WeakerAccess")
+  @TempDir
+  transient Path tmpDir;
 
-  @Rule
-  public final transient TestPipelineExtension pipeline =
+  @RegisterExtension
+  final transient TestPipelineExtension testPipeline =
       TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
 
   private ImmutableList<Entity> contacts;
 
   private File credentialFile;
 
-  @Before
-  public void beforeEach() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     try (BackupTestStore store = new BackupTestStore(fakeClock)) {
       injectRule.setStaticField(Ofy.class, "clock", fakeClock);
 
@@ -91,7 +93,7 @@ public class WriteToSqlTest implements Serializable {
       }
       contacts = builder.build();
     }
-    credentialFile = temporaryFolder.newFile();
+    credentialFile = Files.createFile(tmpDir.resolve("credential.dat")).toFile();
     new PrintStream(credentialFile)
         .printf(
             "%s %s %s",
@@ -102,9 +104,8 @@ public class WriteToSqlTest implements Serializable {
   }
 
   @Test
-  @Category(NeedsRunner.class)
-  public void writeToSql_twoWriters() {
-    pipeline
+  void writeToSql_twoWriters() {
+    testPipeline
         .apply(
             Create.of(
                 contacts.stream()
@@ -121,7 +122,7 @@ public class WriteToSqlTest implements Serializable {
                         .beamJpaModule(new BeamJpaModule(credentialFile.getAbsolutePath()))
                         .build()
                         .localDbJpaTransactionManager()));
-    pipeline.run().waitUntilFinish();
+    testPipeline.run().waitUntilFinish();
 
     ImmutableList<?> sqlContacts = jpaTm().transact(() -> jpaTm().loadAll(ContactResource.class));
     // TODO(weiminyu): compare load entities with originals. Note: lastUpdateTimes won't match by
