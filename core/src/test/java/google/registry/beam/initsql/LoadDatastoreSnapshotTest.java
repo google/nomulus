@@ -32,17 +32,15 @@ import google.registry.model.registry.Registry;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import java.io.File;
-import org.apache.beam.sdk.testing.NeedsRunner;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollectionTuple;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Unit test for {@link Transforms#loadDatastoreSnapshot}.
@@ -71,8 +69,8 @@ import org.junit.runners.JUnit4;
  *   <li>Deletes are properly handled.
  * </ul>
  */
-@RunWith(JUnit4.class)
-public class LoadDatastoreSnapshotTest {
+class LoadDatastoreSnapshotTest {
+
   private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
 
   private static final ImmutableList<Class<?>> ALL_KINDS =
@@ -80,12 +78,14 @@ public class LoadDatastoreSnapshotTest {
   private static final ImmutableSet<String> ALL_KIND_STRS =
       ALL_KINDS.stream().map(Key::getKind).collect(ImmutableSet.toImmutableSet());
 
-  @Rule public final transient TemporaryFolder temporaryFolder = new TemporaryFolder();
+  @SuppressWarnings("WeakerAccess")
+  @TempDir
+  transient Path tmpDir;
 
-  @Rule public final transient InjectRule injectRule = new InjectRule();
+  @RegisterExtension final transient InjectRule injectRule = new InjectRule();
 
-  @Rule
-  public final transient TestPipelineExtension pipeline =
+  @RegisterExtension
+  final transient TestPipelineExtension testPipeline =
       TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
 
   private FakeClock fakeClock;
@@ -102,14 +102,14 @@ public class LoadDatastoreSnapshotTest {
   private transient DateTime contactLastUpdateTime;
   private transient DateTime domainLastUpdateTime;
 
-  @Before
-  public void beforeEach() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     fakeClock = new FakeClock(START_TIME);
     try (BackupTestStore store = new BackupTestStore(fakeClock)) {
       injectRule.setStaticField(Ofy.class, "clock", fakeClock);
 
-      exportRootDir = temporaryFolder.newFolder();
-      commitLogsDir = temporaryFolder.newFolder();
+      exportRootDir = Files.createDirectory(tmpDir.resolve("export_root")).toFile();
+      commitLogsDir = Files.createDirectory(tmpDir.resolve("commit_logs")).toFile();
 
       Registry registry = newRegistry("tld1", "TLD1");
       ContactResource fillerContact = newContactResource("contact_filler");
@@ -154,10 +154,9 @@ public class LoadDatastoreSnapshotTest {
   }
 
   @Test
-  @Category(NeedsRunner.class)
-  public void loadDatastoreSnapshot() {
+  void loadDatastoreSnapshot() {
     PCollectionTuple snapshot =
-        pipeline.apply(
+        testPipeline.apply(
             Transforms.loadDatastoreSnapshot(
                 exportDir.getAbsolutePath(),
                 commitLogsDir.getAbsolutePath(),
@@ -173,6 +172,6 @@ public class LoadDatastoreSnapshotTest {
     InitSqlTestUtils.assertContainsExactlyElementsIn(
         snapshot.get(Transforms.createTagForKind("ContactResource")),
         KV.of(contactLastUpdateTime.getMillis(), dsContact));
-    pipeline.run();
+    testPipeline.run();
   }
 }

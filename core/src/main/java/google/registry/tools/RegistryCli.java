@@ -68,8 +68,9 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
 
   @Parameter(
       names = {"--sql_access_info"},
-      description = "Name of a file containing space-separated SQL access info used when deploying "
-          + "Beam pipelines")
+      description =
+          "Name of a file containing space-separated SQL access info used when deploying "
+              + "Beam pipelines")
   private String sqlAccessInfoFile = null;
 
   // Do not make this final - compile-time constant inlining may interfere with JCommander.

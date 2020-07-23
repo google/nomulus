@@ -31,9 +31,10 @@ import google.registry.testing.InjectRule;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.fs.MatchResult.Metadata;
-import org.apache.beam.sdk.testing.NeedsRunner;
 import org.apache.beam.sdk.testing.PAssert;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.transforms.DoFn;
@@ -41,27 +42,25 @@ import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Unit tests for {@link Transforms} related to loading CommitLogs. */
-@RunWith(JUnit4.class)
-public class CommitLogTransformsTest implements Serializable {
+class CommitLogTransformsTest implements Serializable {
 
   private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
 
-  @Rule public final transient TemporaryFolder temporaryFolder = new TemporaryFolder();
+  @SuppressWarnings("WeakerAccess")
+  @TempDir
+  transient Path tmpDir;
 
-  @Rule public final transient InjectRule injectRule = new InjectRule();
+  @RegisterExtension final transient InjectRule injectRule = new InjectRule();
 
-  @Rule
-  public final transient TestPipelineExtension pipeline =
+  @RegisterExtension
+  final transient TestPipelineExtension testPipeline =
       TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
 
   private FakeClock fakeClock;
@@ -74,8 +73,8 @@ public class CommitLogTransformsTest implements Serializable {
   private transient ContactResource contact;
   private transient DomainBase domain;
 
-  @Before
-  public void beforeEach() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     fakeClock = new FakeClock(START_TIME);
     store = new BackupTestStore(fakeClock);
     injectRule.setStaticField(Ofy.class, "clock", fakeClock);
@@ -91,12 +90,12 @@ public class CommitLogTransformsTest implements Serializable {
     contact = (ContactResource) store.loadAsOfyEntity(contact);
     domain = (DomainBase) store.loadAsOfyEntity(domain);
 
-    commitLogsDir = temporaryFolder.newFolder();
+    commitLogsDir = Files.createDirectory(tmpDir.resolve("commit_logs")).toFile();
     firstCommitLogFile = store.saveCommitLogs(commitLogsDir.getAbsolutePath());
   }
 
-  @After
-  public void afterEach() throws Exception {
+  @AfterEach
+  void afterEach() throws Exception {
     if (store != null) {
       store.close();
       store = null;
@@ -104,10 +103,9 @@ public class CommitLogTransformsTest implements Serializable {
   }
 
   @Test
-  @Category(NeedsRunner.class)
-  public void getCommitLogFilePatterns() {
+  void getCommitLogFilePatterns() {
     PCollection<String> patterns =
-        pipeline.apply(
+        testPipeline.apply(
             "Get CommitLog file patterns",
             Transforms.getCommitLogFilePatterns(commitLogsDir.getAbsolutePath()));
 
@@ -116,14 +114,13 @@ public class CommitLogTransformsTest implements Serializable {
 
     PAssert.that(patterns).containsInAnyOrder(expectedPatterns);
 
-    pipeline.run();
+    testPipeline.run();
   }
 
   @Test
-  @Category(NeedsRunner.class)
-  public void getFilesByPatterns() {
+  void getFilesByPatterns() {
     PCollection<Metadata> fileMetas =
-        pipeline
+        testPipeline
             .apply(
                 "File patterns to metadata",
                 Create.of(commitLogsDir.getAbsolutePath() + "/commit_diff_until_*")
@@ -148,12 +145,11 @@ public class CommitLogTransformsTest implements Serializable {
 
     PAssert.that(fileNames).containsInAnyOrder(expectedFilenames);
 
-    pipeline.run();
+    testPipeline.run();
   }
 
   @Test
-  @Category(NeedsRunner.class)
-  public void filterCommitLogsByTime() throws IOException {
+  void filterCommitLogsByTime() throws IOException {
     ImmutableList<String> commitLogFilenames =
         ImmutableList.of(
             "commit_diff_until_2000-01-01T00:00:00.000Z",
@@ -162,16 +158,15 @@ public class CommitLogTransformsTest implements Serializable {
             "commit_diff_until_2000-01-01T00:00:00.003Z",
             "commit_diff_until_2000-01-01T00:00:00.004Z");
 
-    File commitLogDir = temporaryFolder.newFolder();
     for (String name : commitLogFilenames) {
-      new File(commitLogDir, name).createNewFile();
+      new File(commitLogsDir, name).createNewFile();
     }
 
     PCollection<String> filteredFilenames =
-        pipeline
+        testPipeline
             .apply(
                 "Get commitlog file patterns",
-                Transforms.getCommitLogFilePatterns(commitLogDir.getAbsolutePath()))
+                Transforms.getCommitLogFilePatterns(commitLogsDir.getAbsolutePath()))
             .apply("Find commitlog files", Transforms.getFilesByPatterns())
             .apply(
                 "Filtered by Time",
@@ -193,14 +188,13 @@ public class CommitLogTransformsTest implements Serializable {
             "commit_diff_until_2000-01-01T00:00:00.001Z",
             "commit_diff_until_2000-01-01T00:00:00.002Z");
 
-    pipeline.run();
+    testPipeline.run();
   }
 
   @Test
-  @Category(NeedsRunner.class)
-  public void loadOneCommitLogFile() {
+  void loadOneCommitLogFile() {
     PCollection<VersionedEntity> entities =
-        pipeline
+        testPipeline
             .apply(
                 "Get CommitLog file patterns",
                 Transforms.getCommitLogFilePatterns(commitLogsDir.getAbsolutePath()))
@@ -215,14 +209,13 @@ public class CommitLogTransformsTest implements Serializable {
         KV.of(fakeClock.nowUtc().getMillis() - 1, store.loadAsDatastoreEntity(contact)),
         KV.of(fakeClock.nowUtc().getMillis() - 1, store.loadAsDatastoreEntity(domain)));
 
-    pipeline.run();
+    testPipeline.run();
   }
 
   @Test
-  @Category(NeedsRunner.class)
-  public void loadOneCommitLogFile_filterByKind() {
+  void loadOneCommitLogFile_filterByKind() {
     PCollection<VersionedEntity> entities =
-        pipeline
+        testPipeline
             .apply(
                 "Get CommitLog file patterns",
                 Transforms.getCommitLogFilePatterns(commitLogsDir.getAbsolutePath()))
@@ -235,6 +228,6 @@ public class CommitLogTransformsTest implements Serializable {
         KV.of(fakeClock.nowUtc().getMillis() - 2, store.loadAsDatastoreEntity(registry)),
         KV.of(fakeClock.nowUtc().getMillis() - 1, store.loadAsDatastoreEntity(contact)));
 
-    pipeline.run();
+    testPipeline.run();
   }
 }

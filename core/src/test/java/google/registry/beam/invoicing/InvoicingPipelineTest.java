@@ -24,6 +24,8 @@ import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.ResourceUtils;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Map.Entry;
@@ -33,47 +35,46 @@ import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.options.ValueProvider.StaticValueProvider;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.values.PCollection;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Unit tests for {@link InvoicingPipeline}. */
-@RunWith(JUnit4.class)
-public class InvoicingPipelineTest {
+class InvoicingPipelineTest {
 
   private static PipelineOptions pipelineOptions;
 
-  @BeforeClass
-  public static void initializePipelineOptions() {
+  @BeforeAll
+  static void beforeAll() {
     pipelineOptions = PipelineOptionsFactory.create();
     pipelineOptions.setRunner(DirectRunner.class);
   }
 
-  @Rule
-  public final transient TestPipelineExtension p =
+  @RegisterExtension
+  final transient TestPipelineExtension testPipeline =
       TestPipelineExtension.fromOptions(pipelineOptions);
 
-  @Rule public final TemporaryFolder tempFolder = new TemporaryFolder();
+  @SuppressWarnings("WeakerAccess")
+  @TempDir
+  transient Path tmpDir;
 
   private InvoicingPipeline invoicingPipeline;
 
-  @Before
-  public void initializePipeline() throws IOException {
-    File beamTempFolder = tempFolder.newFolder();
-    String beamTempFolderPath = beamTempFolder.getAbsolutePath();
-    invoicingPipeline = new InvoicingPipeline(
-        "test-project",
-        beamTempFolderPath,
-        beamTempFolderPath + "/templates/invoicing",
-        beamTempFolderPath + "/staging",
-        tempFolder.getRoot().getAbsolutePath(),
-        "REG-INV",
-        GoogleCredentialsBundle.create(GoogleCredentials.create(null))
-    );
+  @BeforeEach
+  void beforeEach() throws IOException {
+    String beamTempFolder =
+        Files.createDirectory(tmpDir.resolve("beam_temp")).toAbsolutePath().toString();
+    invoicingPipeline =
+        new InvoicingPipeline(
+            "test-project",
+            beamTempFolder,
+            beamTempFolder + "/templates/invoicing",
+            beamTempFolder + "/staging",
+            tmpDir.toAbsolutePath().toString(),
+            "REG-INV",
+            GoogleCredentialsBundle.create(GoogleCredentials.create(null)));
   }
 
   private ImmutableList<BillingEvent> getInputEvents() {
@@ -189,17 +190,18 @@ public class InvoicingPipelineTest {
   }
 
   @Test
-  public void testEndToEndPipeline_generatesExpectedFiles() throws Exception {
+  void testEndToEndPipeline_generatesExpectedFiles() throws Exception {
     ImmutableList<BillingEvent> inputRows = getInputEvents();
-    PCollection<BillingEvent> input = p.apply(Create.of(inputRows));
+    PCollection<BillingEvent> input = testPipeline.apply(Create.of(inputRows));
     invoicingPipeline.applyTerminalTransforms(input, StaticValueProvider.of("2017-10"));
-    p.run();
+    testPipeline.run();
 
     for (Entry<String, ImmutableList<String>> entry : getExpectedDetailReportMap().entrySet()) {
       ImmutableList<String> detailReport = resultFileContents(entry.getKey());
       assertThat(detailReport.get(0))
-          .isEqualTo("id,billingTime,eventTime,registrarId,billingId,poNumber,tld,action,"
-              + "domain,repositoryId,years,currency,amount,flags");
+          .isEqualTo(
+              "id,billingTime,eventTime,registrarId,billingId,poNumber,tld,action,"
+                  + "domain,repositoryId,years,currency,amount,flags");
       assertThat(detailReport.subList(1, detailReport.size()))
           .containsExactlyElementsIn(entry.getValue());
     }
@@ -218,8 +220,7 @@ public class InvoicingPipelineTest {
   private ImmutableList<String> resultFileContents(String filename) throws Exception {
     File resultFile =
         new File(
-            String.format(
-                "%s/invoices/2017-10/%s", tempFolder.getRoot().getAbsolutePath(), filename));
+            String.format("%s/invoices/2017-10/%s", tmpDir.toAbsolutePath().toString(), filename));
     return ImmutableList.copyOf(
         ResourceUtils.readResourceUtf8(resultFile.toURI().toURL()).split("\n"));
   }

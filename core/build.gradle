@@ -256,6 +256,7 @@ dependencies {
   compile deps['org.bouncycastle:bcpg-jdk15on']
   testCompile deps['org.bouncycastle:bcpkix-jdk15on']
   compile deps['org.bouncycastle:bcprov-jdk15on']
+  testCompile deps['com.fasterxml.jackson.core:jackson-databind']
   runtime deps['org.glassfish.jaxb:jaxb-runtime']
   compile deps['org.hibernate:hibernate-core']
   compile deps['org.joda:joda-money']
