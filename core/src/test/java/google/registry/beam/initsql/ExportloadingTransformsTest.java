@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.backup.VersionedEntity;
+import google.registry.beam.TestPipelineExtension;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.Ofy;
@@ -35,7 +36,6 @@ import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.fs.MatchResult.Metadata;
 import org.apache.beam.sdk.testing.NeedsRunner;
 import org.apache.beam.sdk.testing.PAssert;
-import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
@@ -56,8 +56,6 @@ import org.junit.runners.JUnit4;
  *
  * <p>This class implements {@link Serializable} so that test {@link DoFn} classes may be inlined.
  */
-// TODO(weiminyu): Upgrade to JUnit5 when TestPipeline is upgraded. It is also easy to adapt with
-// a wrapper.
 @RunWith(JUnit4.class)
 public class ExportloadingTransformsTest implements Serializable {
   private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
@@ -72,8 +70,8 @@ public class ExportloadingTransformsTest implements Serializable {
   @Rule public final transient InjectRule injectRule = new InjectRule();
 
   @Rule
-  public final transient TestPipeline pipeline =
-      TestPipeline.create().enableAbandonedNodeEnforcement(true);
+  public final transient TestPipelineExtension pipeline =
+      TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
 
   private FakeClock fakeClock;
   private transient BackupTestStore store;

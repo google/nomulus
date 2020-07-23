@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import google.registry.beam.TestPipelineExtension;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.ResourceUtils;
 import java.io.File;
@@ -30,7 +31,6 @@ import org.apache.beam.runners.direct.DirectRunner;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.options.ValueProvider.StaticValueProvider;
-import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.values.PCollection;
 import org.junit.Before;
@@ -53,7 +53,10 @@ public class InvoicingPipelineTest {
     pipelineOptions.setRunner(DirectRunner.class);
   }
 
-  @Rule public final transient TestPipeline p = TestPipeline.fromOptions(pipelineOptions);
+  @Rule
+  public final transient TestPipelineExtension p =
+      TestPipelineExtension.fromOptions(pipelineOptions);
+
   @Rule public final TemporaryFolder tempFolder = new TemporaryFolder();
 
   private InvoicingPipeline invoicingPipeline;

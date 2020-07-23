@@ -24,6 +24,7 @@ import static org.mockito.Mockito.withSettings;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
+import google.registry.beam.TestPipelineExtension;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
@@ -43,7 +44,6 @@ import org.apache.beam.runners.direct.DirectRunner;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.options.ValueProvider.StaticValueProvider;
-import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.http.ProtocolVersion;
@@ -78,7 +78,10 @@ public class Spec11PipelineTest {
     pipelineOptions.setRunner(DirectRunner.class);
   }
 
-  @Rule public final transient TestPipeline p = TestPipeline.fromOptions(pipelineOptions);
+  @Rule
+  public final transient TestPipelineExtension p =
+      TestPipelineExtension.fromOptions(pipelineOptions);
+
   @Rule public final TemporaryFolder tempFolder = new TemporaryFolder();
 
   private final Retrier retrier =
