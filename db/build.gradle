@@ -25,16 +25,11 @@ ext {
   Set allDbEnv =
       [ 'alpha', 'crash' ].plus(restrictedDbEnv).asUnmodifiable()
 
-  def appNameProperty = 'appName'
   def dbServerProperty = 'dbServer'
   def dbNameProperty = 'dbName'
 
   def dbServer = findProperty(dbServerProperty).toString().toLowerCase()
   def dbName = findProperty(dbNameProperty)
-  def appName = "domain-registry"
-  if (hasProperty(appNameProperty)) {
-    appName = findProperty(appNameProperty)
-  }
 
   isCloudSql = {
     return allDbEnv.contains(dbServer)
@@ -80,7 +75,8 @@ ext {
   getCloudSqlCredential = { env, role ->
     def devProject = project.hasProperty('devProject')
         ? project.getProperty('devProject') : rootProject.devProject
-    def gcpProject = env == 'production' ? appName : "${appName}-${env}"
+    def gcpProject = project.hasProperty('gcpProject')
+        ? project.getProperty('gcpProject') : rootProject.gcpProject
     def keyProject = env in restrictedDbEnv? devProject : gcpProject
     def command =
         """gsutil cp \
