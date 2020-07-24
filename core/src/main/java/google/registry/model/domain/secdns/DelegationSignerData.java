@@ -15,8 +15,12 @@
 package google.registry.model.domain.secdns;
 
 import com.googlecode.objectify.annotation.Embed;
+import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
@@ -36,14 +40,22 @@ public class DelegationSignerData extends ImmutableObject implements DatastoreAn
 
   private DelegationSignerData() {}
 
+  /** Unique id required for hibernate representation. */
+  @javax.persistence.Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Ignore
+  Long id;
+
   /** The identifier for this particular key in the domain. */
-  @javax.persistence.Id int keyTag;
+  @Column(nullable = false)
+  int keyTag;
 
   /**
    * The algorithm used by this key.
    *
    * @see <a href="http://tools.ietf.org/html/rfc4034#appendix-A.1">RFC 4034 Appendix A.1</a>
    */
+  @Column(nullable = false)
   @XmlElement(name = "alg")
   int algorithm;
 
@@ -52,6 +64,7 @@ public class DelegationSignerData extends ImmutableObject implements DatastoreAn
    *
    * @see <a href="http://tools.ietf.org/html/rfc4034#appendix-A.2">RFC 4034 Appendix A.2</a>
    */
+  @Column(nullable = false)
   int digestType;
 
   /**
@@ -59,6 +72,7 @@ public class DelegationSignerData extends ImmutableObject implements DatastoreAn
    *
    * @see <a href="http://tools.ietf.org/html/rfc4034#section-5.1.4">RFC 4034 Section 5.1.4</a>
    */
+  @Column(nullable = false)
   @XmlJavaTypeAdapter(HexBinaryAdapter.class)
   byte[] digest;
 
