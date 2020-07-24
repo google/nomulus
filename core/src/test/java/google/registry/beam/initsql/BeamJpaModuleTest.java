@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import google.registry.persistence.NomulusPostgreSql;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.testing.DatastoreEntityExtension;
-import java.io.File;
+import java.nio.file.Path;
 import org.apache.beam.sdk.io.FileSystems;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.junit.jupiter.api.Order;
@@ -33,19 +33,22 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /** Unit tests for {@link BeamJpaModule}. */
 @Testcontainers
-public class BeamJpaModuleTest {
-
-  @Container
-  final PostgreSQLContainer database = new PostgreSQLContainer(NomulusPostgreSql.getDockerTag());
+class BeamJpaModuleTest {
 
   @RegisterExtension
   final DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
-  @TempDir File tempFolder;
+  @Container
+  final PostgreSQLContainer database = new PostgreSQLContainer(NomulusPostgreSql.getDockerTag());
+
+  @SuppressWarnings("WeakerAccess")
+  @TempDir
+  Path tmpDir;
 
   @RegisterExtension
   @Order(Order.DEFAULT + 1)
-  final BeamJpaExtension beamJpaExtension = new BeamJpaExtension(() -> tempFolder, database);
+  final BeamJpaExtension beamJpaExtension =
+      new BeamJpaExtension(() -> tmpDir.resolve("credential.dat"), database);
 
   @Test
   void getJpaTransactionManager_local() {

@@ -17,21 +17,18 @@ package google.registry.beam.initsql;
 import static google.registry.testing.truth.TextDiffSubject.assertWithMessageAboutUrlSource;
 
 import com.google.common.io.Resources;
+import google.registry.beam.TestPipelineExtension;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URL;
 import org.apache.beam.runners.core.construction.renderer.PipelineDotRenderer;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
-import org.apache.beam.sdk.testing.TestPipeline;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Manages visualization of {@link InitSqlPipeline}. */
-@RunWith(JUnit4.class)
-public class InitSqlPipelineGraphTest {
+class InitSqlPipelineGraphTest {
 
   private static final String GOLDEN_DOT_FILE = "pipeline_golden.dot";
 
@@ -49,14 +46,14 @@ public class InitSqlPipelineGraphTest {
           .withValidation()
           .as(InitSqlPipelineOptions.class);
 
-  @Rule
-  public final transient TestPipeline pipeline =
-      TestPipeline.create().enableAbandonedNodeEnforcement(false);
+  @RegisterExtension
+  final transient TestPipelineExtension testPipeline =
+      TestPipelineExtension.create().enableAbandonedNodeEnforcement(false);
 
   @Test
   public void createPipeline_compareGraph() throws IOException {
-    new InitSqlPipeline(options, pipeline).setupPipeline();
-    String dotString = PipelineDotRenderer.toDotString(pipeline);
+    new InitSqlPipeline(options, testPipeline).setupPipeline();
+    String dotString = PipelineDotRenderer.toDotString(testPipeline);
     URL goldenDotUrl = Resources.getResource(InitSqlPipelineGraphTest.class, GOLDEN_DOT_FILE);
     File outputFile = new File(new File(goldenDotUrl.getFile()).getParent(), "pipeline_curr.dot");
     try (PrintStream ps = new PrintStream(outputFile)) {

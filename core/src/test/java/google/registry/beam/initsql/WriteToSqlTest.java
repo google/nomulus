@@ -21,6 +21,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.appengine.api.datastore.Entity;
 import com.google.common.collect.ImmutableList;
 import google.registry.backup.VersionedEntity;
+import google.registry.beam.TestPipelineExtension;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.ofy.Ofy;
@@ -33,7 +34,6 @@ import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import java.io.Serializable;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Collectors;
 import org.apache.beam.sdk.transforms.Create;
@@ -51,15 +51,15 @@ class WriteToSqlTest implements Serializable {
 
   private final FakeClock fakeClock = new FakeClock(START_TIME);
 
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  final transient DatastoreEntityExtension datastore = new DatastoreEntityExtension();
+
   @RegisterExtension final transient InjectRule injectRule = new InjectRule();
 
   @RegisterExtension
   final transient JpaIntegrationTestRule database =
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationTestRule();
-
-  @RegisterExtension
-  @Order(value = 1)
-  final transient DatastoreEntityExtension datastore = new DatastoreEntityExtension();
 
   @SuppressWarnings("WeakerAccess")
   @TempDir
@@ -70,19 +70,10 @@ class WriteToSqlTest implements Serializable {
       TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
 
   // Must not be transient!
+  @RegisterExtension
+  @Order(Order.DEFAULT + 1)
   public final BeamJpaExtension beamJpaExtension =
-      new BeamJpaExtension(temporaryFolder, jpaIntegrationTestRule.getDatabase());
-
-  @Rule
-  public final transient RuleChain jpaRules =
-      RuleChain.outerRule(new DatastoreEntityExtension())
-          .around(jpaIntegrationTestRule)
-          .around(temporaryFolder)
-          .around(beamJpaExtension);
-
-  @Rule
-  public final transient TestPipeline pipeline =
-      TestPipeline.create().enableAbandonedNodeEnforcement(true);
+      new BeamJpaExtension(() -> tmpDir.resolve("credential.dat"), database.getDatabase());
 
   private ImmutableList<Entity> contacts;
 

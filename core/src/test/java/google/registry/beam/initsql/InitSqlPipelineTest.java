@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.backup.AppEngineEnvironment;
+import google.registry.beam.TestPipelineExtension;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
@@ -54,22 +55,18 @@ import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
-import org.apache.beam.sdk.testing.NeedsRunner;
-import org.apache.beam.sdk.testing.TestPipeline;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.RuleChain;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Unit tests for {@link InitSqlPipeline}. */
-@RunWith(JUnit4.class)
-public class InitSqlPipelineTest {
+class InitSqlPipelineTest {
   private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
 
   private static final ImmutableList<Class<?>> ALL_KINDS =
@@ -83,27 +80,29 @@ public class InitSqlPipelineTest {
 
   private transient FakeClock fakeClock = new FakeClock(START_TIME);
 
-  @Rule public final transient InjectRule injectRule = new InjectRule();
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  final transient DatastoreEntityExtension datastore = new DatastoreEntityExtension();
 
-  @Rule
-  public final transient TestPipeline pipeline =
-      TestPipeline.create().enableAbandonedNodeEnforcement(true);
+  @RegisterExtension final transient InjectRule injectRule = new InjectRule();
 
-  public final transient JpaIntegrationTestRule jpaIntegrationTestRule =
+  @SuppressWarnings("WeakerAccess")
+  @TempDir
+  transient Path tmpDir;
+
+  @RegisterExtension
+  final transient TestPipelineExtension testPipeline =
+      TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
+
+  @RegisterExtension
+  final transient JpaIntegrationTestRule database =
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationTestRule();
 
-  public final transient TemporaryFolder temporaryFolder = new TemporaryFolder();
-
   // Must not be transient!
-  public final BeamJpaExtension beamJpaExtension =
-      new BeamJpaExtension(temporaryFolder, jpaIntegrationTestRule.getDatabase());
-
-  @Rule
-  public final transient RuleChain jpaRules =
-      RuleChain.outerRule(new DatastoreEntityExtension())
-          .around(jpaIntegrationTestRule)
-          .around(temporaryFolder)
-          .around(beamJpaExtension);
+  @RegisterExtension
+  @Order(Order.DEFAULT + 1)
+  final BeamJpaExtension beamJpaExtension =
+      new BeamJpaExtension(() -> tmpDir.resolve("credential.dat"), database.getDatabase());
 
   private File exportRootDir;
   private File exportDir;
@@ -118,11 +117,11 @@ public class InitSqlPipelineTest {
 
   private transient HistoryEntry historyEntry;
 
-  @Before
+  @BeforeEach
   public void beforeEach() throws Exception {
     try (BackupTestStore store = new BackupTestStore(fakeClock)) {
       injectRule.setStaticField(Ofy.class, "clock", fakeClock);
-      exportRootDir = temporaryFolder.newFolder();
+      exportRootDir = Files.createDirectory(tmpDir.resolve("exports")).toFile();
 
       persistResource(newRegistry("com", "COM"));
       registrar1 = persistResource(AppEngineRule.makeRegistrar1());
@@ -220,12 +219,11 @@ public class InitSqlPipelineTest {
                           GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(1), "registrar", null))
                   .build());
       exportDir = store.export(exportRootDir.getAbsolutePath(), ALL_KINDS, ImmutableSet.of());
-      commitLogDir = temporaryFolder.newFolder();
+      commitLogDir = Files.createDirectory(tmpDir.resolve("commits")).toFile();
     }
   }
 
   @Test
-  @Category(NeedsRunner.class)
   public void runPipeline() {
     InitSqlPipelineOptions options =
         PipelineOptionsFactory.fromArgs(
@@ -237,7 +235,7 @@ public class InitSqlPipelineTest {
                 "--commitLogDir=" + commitLogDir.getAbsolutePath())
             .withValidation()
             .as(InitSqlPipelineOptions.class);
-    InitSqlPipeline initSqlPipeline = new InitSqlPipeline(options, pipeline);
+    InitSqlPipeline initSqlPipeline = new InitSqlPipeline(options, testPipeline);
     initSqlPipeline.run().waitUntilFinish();
     try (AppEngineEnvironment env = new AppEngineEnvironment("test")) {
       assertHostResourceEquals(

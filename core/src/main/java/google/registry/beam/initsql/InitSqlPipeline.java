@@ -41,7 +41,6 @@ import java.util.Collection;
 import java.util.Optional;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
-import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.transforms.Wait;
@@ -128,7 +127,7 @@ public class InitSqlPipeline implements Serializable {
   }
 
   @VisibleForTesting
-  InitSqlPipeline(InitSqlPipelineOptions options, TestPipeline pipeline) {
+  InitSqlPipeline(InitSqlPipelineOptions options, Pipeline pipeline) {
     this.options = options;
     this.pipeline = pipeline;
     jpaGetter = JpaTransactionManagerComponent::localDbJpaTransactionManager;
