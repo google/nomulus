@@ -29,7 +29,7 @@ import com.google.common.collect.ObjectArrays;
 import com.google.common.io.Files;
 import com.google.common.reflect.TypeToken;
 import google.registry.model.poll.PollMessage;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CertificateSamples;
 import google.registry.testing.FakeClock;
 import google.registry.testing.SystemPropertyExtension;
@@ -69,8 +69,8 @@ public abstract class CommandTestCase<C extends Command> {
   public final FakeClock fakeClock = new FakeClock();
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withClock(fakeClock)
           .withTaskQueue()

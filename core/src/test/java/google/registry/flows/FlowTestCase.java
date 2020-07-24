@@ -47,7 +47,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tmch.ClaimsListShard.ClaimsListSingleton;
 import google.registry.monitoring.whitebox.EppMetric;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.EppLoader;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
@@ -85,8 +85,8 @@ public abstract class FlowTestCase<F extends Flow> {
   }
 
   @RegisterExtension
-  final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @RegisterExtension final InjectRule inject = new InjectRule();
 

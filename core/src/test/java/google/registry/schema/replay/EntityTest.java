@@ -26,8 +26,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test to verify classes implement {@link SqlEntity} and {@link DatastoreEntity} when they should.
@@ -35,8 +35,8 @@ import org.junit.Test;
 public class EntityTest {
 
   @Test
-  @Ignore("This won't be done until b/152410794 is done, since it requires many entity changes")
-  public void testSqlEntityPersistence() {
+  @Disabled("This won't be done until b/152410794 is done, since it requires many entity changes")
+  void testSqlEntityPersistence() {
     try (ScanResult scanResult =
         new ClassGraph().enableAnnotationInfo().whitelistPackages("google.registry").scan()) {
       // All javax.persistence entities must implement SqlEntity and vice versa

@@ -24,10 +24,9 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.rules.ExternalResource;
 
 /**
- * JUnit Rule for overriding {@code private static} fields during a test.
+ * JUnit extension for overriding {@code private static} fields during a test.
  *
  * <p>This rule uses reflection to change the value of a field while your test is running and then
  * restore it to its original value after it's done (even if the test fails). The injection will
@@ -88,7 +87,7 @@ import org.junit.rules.ExternalResource;
  * @see google.registry.util.NonFinalForTesting
  * @see org.junit.rules.ExternalResource
  */
-public class InjectRule extends ExternalResource implements AfterEachCallback {
+public class InjectRule implements AfterEachCallback {
 
   private static class Change {
     private final Field field;
@@ -144,12 +143,7 @@ public class InjectRule extends ExternalResource implements AfterEachCallback {
   }
 
   @Override
-  public void afterEach(ExtensionContext context) throws Exception {
-    after();
-  }
-
-  @Override
-  protected void after() {
+  public void afterEach(ExtensionContext context) {
     RuntimeException thrown = null;
     for (Change change : changes) {
       try {

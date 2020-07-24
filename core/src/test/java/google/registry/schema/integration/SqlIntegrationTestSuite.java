@@ -33,6 +33,7 @@ import google.registry.schema.registrar.RegistrarDaoTest;
 import google.registry.schema.server.LockDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
 import google.registry.schema.tmch.ClaimsListDaoTest;
+import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -45,13 +46,9 @@ import org.junit.runner.RunWith;
  * server/schema compatibility tests between releases.
  *
  * <p>Suite members are typically DAO tests, which perform simple create/update/delete operations on
- * JPA entities. Each member class must use the {@link
- * google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule} (either
- * directly or through a rule chain) and have at least one test method that persists a JPA entity
- * declared in persistence.xml.
- *
- * <p>Membership of this suite is monitored by the checks in {@link #checkJpaEntityCoverage()} and
- * {@link SqlIntegrationMembershipTest#sqlIntegrationMembershipComplete()}.
+ * JPA entities. Each member class must call {@link
+ * AppEngineExtension.Builder#enableJpaEntityCoverageCheck} and have at least one test method that
+ * persists a JPA entity declared in persistence.xml.
  *
  * <p>Note that with {@code JpaIntegrationWithCoverageRule}, each method starts with an empty
  * database. Therefore this is not the right place for verifying backward data compatibility in

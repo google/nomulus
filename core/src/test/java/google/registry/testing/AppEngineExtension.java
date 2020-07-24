@@ -15,12 +15,16 @@
 package google.registry.testing;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.io.Files.asCharSink;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.DatastoreHelper.persistSimpleResources;
 import static google.registry.testing.DualDatabaseTestInvocationContextProvider.injectTmForDualDatabaseTest;
 import static google.registry.testing.DualDatabaseTestInvocationContextProvider.restoreTmAfterDualDatabaseTest;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.Files.createFile;
+import static java.nio.file.Files.walk;
+import static java.util.Comparator.reverseOrder;
 import static org.json.XML.toJSONObject;
 
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
@@ -45,19 +49,20 @@ import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import google.registry.util.Clock;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.LogManager;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -65,28 +70,17 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.rules.ExternalResource;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
- * JUnit Rule for managing the App Engine testing environment.
+ * JUnit extension for managing the App Engine testing environment.
  *
  * <p>Generally you'll want to configure the environment using only the services you need (because
  * each service is expensive to create).
  *
- * <p>This rule also resets global Objectify for the current thread.
- *
- * <p>This class works with both JUnit 4 and JUnit 5. With JUnit 4, the test runner calls {@link
- * #apply(Statement, Description)}, which in turns calls {@link #before()} on entry and {@link
- * #after()} on exit. With JUnit 5, the test runner calls {@link #beforeEach(ExtensionContext)} and
- * {@link #afterEach(ExtensionContext)}.
- *
- * @see org.junit.rules.ExternalResource
+ * <p>This extension also resets global Objectify for the current thread.
  */
-public final class AppEngineRule extends ExternalResource
-    implements BeforeEachCallback, AfterEachCallback {
+public final class AppEngineExtension implements BeforeEachCallback, AfterEachCallback {
 
   public static final String NEW_REGISTRAR_GAE_USER_ID = "666";
   public static final String THE_REGISTRAR_GAE_USER_ID = "31337";
@@ -100,27 +94,32 @@ public final class AppEngineRule extends ExternalResource
       readResourceUtf8("google/registry/env/common/default/WEB-INF/queue.xml");
 
   /** A parsed version of the indexes used in the prod code. */
-  private static final Set<String> MANUAL_INDEXES = getIndexXmlStrings(
-      readResourceUtf8(
-          "google/registry/env/common/default/WEB-INF/datastore-indexes.xml"));
+  private static final Set<String> MANUAL_INDEXES =
+      getIndexXmlStrings(
+          readResourceUtf8("google/registry/env/common/default/WEB-INF/datastore-indexes.xml"));
 
   private static final String LOGGING_PROPERTIES =
-      readResourceUtf8(AppEngineRule.class, "logging.properties");
+      readResourceUtf8(AppEngineExtension.class, "logging.properties");
 
   private LocalServiceTestHelper helper;
 
-  /** A rule-within-a-rule to provide a temporary folder for AppEngineRule's internal temp files. */
-  TemporaryFolder temporaryFolder = new TemporaryFolder();
-
   /**
-   * Sets up a SQL database when running on JUnit 5. This is for test classes that are not member of
-   * the {@code SqlIntegrationTestSuite}.
+   * A temporary directory for AppEngineRule's internal temp files that is different for each test.
+   *
+   * <p>Note that we can't use {@link TempDir} here because that only works in test classes, not
+   * extensions.
    */
-  private JpaIntegrationTestRule jpaIntegrationTestRule = null;
+  File tmpDir;
 
   /**
-   * Sets up a SQL database when running on JUnit 5 and records the JPA entities tested by each test
-   * class. This is for {@code SqlIntegrationTestSuite} members.
+   * Sets up a SQL database. This is for test classes that are not member of the {@code
+   * SqlIntegrationTestSuite}.
+   */
+  private JpaIntegrationTestExtension jpaIntegrationTestRule = null;
+
+  /**
+   * Sets up a SQL database and records the JPA entities tested by each test class. This is for
+   * {@code SqlIntegrationTestSuite} members.
    */
   private JpaIntegrationWithCoverageExtension jpaIntegrationWithCoverageExtension = null;
 
@@ -144,16 +143,17 @@ public final class AppEngineRule extends ExternalResource
   private ImmutableList<Class<?>> ofyTestEntities;
   private ImmutableList<Class<?>> jpaTestEntities;
 
-  /** Builder for {@link AppEngineRule}. */
+  /** Builder for {@link AppEngineExtension}. */
   public static class Builder {
 
-    private AppEngineRule rule = new AppEngineRule();
+    private AppEngineExtension rule = new AppEngineExtension();
     private ImmutableList.Builder<Class<?>> ofyTestEntities = new ImmutableList.Builder<>();
     private ImmutableList.Builder<Class<?>> jpaTestEntities = new ImmutableList.Builder<>();
 
     /** Turn on the Datastore service and the Cloud SQL service. */
     public Builder withDatastoreAndCloudSql() {
-      rule.withDatastore = rule.withCloudSql = true;
+      rule.withDatastore = true;
+      rule.withCloudSql = true;
       return this;
     }
 
@@ -223,7 +223,7 @@ public final class AppEngineRule extends ExternalResource
      * ObjectifyService} instances for each test (class), the setup overhead would rise
      * significantly.
      *
-     * @see AppEngineRule#register(Class)
+     * @see AppEngineExtension#register(Class)
      */
     @SafeVarargs
     public final Builder withOfyTestEntities(Class<?>... entities) {
@@ -237,7 +237,7 @@ public final class AppEngineRule extends ExternalResource
       return this;
     }
 
-    public AppEngineRule build() {
+    public AppEngineExtension build() {
       checkState(
           !rule.enableJpaEntityCoverageCheck || rule.withCloudSql,
           "withJpaEntityCoverageCheck enabled without Cloud SQL");
@@ -263,20 +263,22 @@ public final class AppEngineRule extends ExternalResource
         .setState(State.ACTIVE)
         .setIcannReferralEmail("lol@sloth.test")
         .setUrl("http://my.fake.url")
-        .setInternationalizedAddress(new RegistrarAddress.Builder()
-            .setStreet(ImmutableList.of("123 Example Boulevard"))
-            .setCity("Williamsburg")
-            .setState("NY")
-            .setZip("11211")
-            .setCountryCode("US")
-            .build())
-        .setLocalizedAddress(new RegistrarAddress.Builder()
-            .setStreet(ImmutableList.of("123 Example B\u0151ulevard"))
-            .setCity("Williamsburg")
-            .setState("NY")
-            .setZip("11211")
-            .setCountryCode("US")
-            .build())
+        .setInternationalizedAddress(
+            new RegistrarAddress.Builder()
+                .setStreet(ImmutableList.of("123 Example Boulevard"))
+                .setCity("Williamsburg")
+                .setState("NY")
+                .setZip("11211")
+                .setCountryCode("US")
+                .build())
+        .setLocalizedAddress(
+            new RegistrarAddress.Builder()
+                .setStreet(ImmutableList.of("123 Example B\u0151ulevard"))
+                .setCity("Williamsburg")
+                .setState("NY")
+                .setZip("11211")
+                .setCountryCode("US")
+                .build())
         .setPhoneNumber("+1.3334445555")
         .setPhonePasscode("12345")
         .setContactsRequireSyncing(true);
@@ -311,8 +313,8 @@ public final class AppEngineRule extends ExternalResource
   }
 
   /**
-   * Public factory for first RegistrarContact to allow comparison
-   * against stored value in unit tests.
+   * Public factory for first RegistrarContact to allow comparison against stored value in unit
+   * tests.
    */
   public static RegistrarContact makeRegistrarContact1() {
     return new RegistrarContact.Builder()
@@ -327,8 +329,8 @@ public final class AppEngineRule extends ExternalResource
   }
 
   /**
-   * Public factory for second RegistrarContact to allow comparison
-   * against stored value in unit tests.
+   * Public factory for second RegistrarContact to allow comparison against stored value in unit
+   * tests.
    */
   public static RegistrarContact makeRegistrarContact2() {
     return new RegistrarContact.Builder()
@@ -355,110 +357,43 @@ public final class AppEngineRule extends ExternalResource
         .build();
   }
 
-  /** Called before every test method. JUnit 5 only. */
+  /** Called before every test method. */
   @Override
   public void beforeEach(ExtensionContext context) throws Exception {
-    before();
-    if (withCloudSql) {
-      JpaTestRules.Builder builder = new JpaTestRules.Builder();
-      if (clock != null) {
-        builder.withClock(clock);
-      }
-      if (enableJpaEntityCoverageCheck) {
-        jpaIntegrationWithCoverageExtension = builder.buildIntegrationWithCoverageExtension();
-        jpaIntegrationWithCoverageExtension.beforeEach(context);
-      } else if (withJpaUnitTest) {
-        jpaUnitTestRule =
-            builder
-                .withEntityClass(jpaTestEntities.toArray(new Class[jpaTestEntities.size()]))
-                .buildUnitTestRule();
-        jpaUnitTestRule.beforeEach(context);
-      } else {
-        jpaIntegrationTestRule = builder.buildIntegrationTestRule();
-        jpaIntegrationTestRule.beforeEach(context);
-      }
-    }
-    if (isWithDatastoreAndCloudSql()) {
-      injectTmForDualDatabaseTest(context);
-    }
-  }
-
-  /** Called after each test method. JUnit 5 only. */
-  @Override
-  public void afterEach(ExtensionContext context) throws Exception {
-    if (withCloudSql) {
-      if (enableJpaEntityCoverageCheck) {
-        jpaIntegrationWithCoverageExtension.afterEach(context);
-      } else if (withJpaUnitTest) {
-        jpaUnitTestRule.afterEach(context);
-      } else {
-        jpaIntegrationTestRule.afterEach(context);
-      }
-    }
-    after();
-    if (isWithDatastoreAndCloudSql()) {
-      restoreTmAfterDualDatabaseTest(context);
-    }
-  }
-
-  /**
-   * Hack to make sure AppEngineRule is always wrapped in a {@link JpaIntegrationWithCoverageRule}.
-   * JUnit 4 only.
-   */
-  // Note: Even with @EnableRuleMigrationSupport, JUnit5 runner does not call this method.
-  // Note 2: Do not migrate members of SqlIntegrationTestSuite to JUnit5 individually.
-  // TODO(weiminyu): migrate SqlIntegrationTestSuite in one go.
-  @Override
-  public Statement apply(Statement base, Description description) {
-    Statement statement = base;
-    if (withCloudSql) {
-      JpaTestRules.Builder builder = new JpaTestRules.Builder();
-      if (clock != null) {
-        builder.withClock(clock);
-      }
-      checkState(
-          !enableJpaEntityCoverageCheck,
-          "JUnit4 tests must not enable withJpaEntityCoverageCheck.");
-      statement = builder.buildIntegrationTestRule().apply(base, description);
-    }
-    return super.apply(statement, description);
-  }
-
-  @Override
-  protected void before() throws IOException {
+    tmpDir = Files.createTempDir();
     setupLogging();
-    temporaryFolder.create();
     Set<LocalServiceTestConfig> configs = new HashSet<>();
     if (withUrlFetch) {
       configs.add(new LocalURLFetchServiceTestConfig());
     }
     if (withDatastore) {
-      configs.add(new LocalDatastoreServiceTestConfig()
-          // We need to set this to allow cross entity group transactions.
-          .setApplyAllHighRepJobPolicy()
-          // This causes unit tests to write a file containing any indexes the test required. We
-          // can use that file below to make sure we have the right indexes in our prod code.
-          .setNoIndexAutoGen(false));
-      // This forces app engine to write the generated indexes to a usable location.
-      System.setProperty("appengine.generated.dir", temporaryFolder.getRoot().getAbsolutePath());
+      configs.add(
+          new LocalDatastoreServiceTestConfig()
+              // We need to set this to allow cross entity group transactions.
+              .setApplyAllHighRepJobPolicy()
+              // This causes unit tests to write a file containing any indexes the test required. We
+              // can use that file below to make sure we have the right indexes in our prod code.
+              .setNoIndexAutoGen(false));
+      // This forces App Engine to write the generated indexes to a usable location.
+      System.setProperty("appengine.generated.dir", tmpDir.getAbsolutePath());
     }
     if (withLocalModules) {
-      configs.add(new LocalModulesServiceTestConfig()
-          .addBasicScalingModuleVersion("default", "1", 1)
-          .addBasicScalingModuleVersion("tools", "1", 1)
-          .addBasicScalingModuleVersion("backend", "1", 1));
+      configs.add(
+          new LocalModulesServiceTestConfig()
+              .addBasicScalingModuleVersion("default", "1", 1)
+              .addBasicScalingModuleVersion("tools", "1", 1)
+              .addBasicScalingModuleVersion("backend", "1", 1));
     }
     if (withTaskQueue) {
-      File queueFile = temporaryFolder.newFile("queue.xml");
-      Files.asCharSink(queueFile, UTF_8).write(taskQueueXml);
-      configs.add(new LocalTaskQueueTestConfig()
-          .setQueueXmlPath(queueFile.getAbsolutePath()));
+      File queueFile = createFile(new File(tmpDir, "queue.xml").toPath()).toFile();
+      asCharSink(queueFile, UTF_8).write(taskQueueXml);
+      configs.add(new LocalTaskQueueTestConfig().setQueueXmlPath(queueFile.getAbsolutePath()));
     }
     if (withUserService) {
       configs.add(new LocalUserServiceTestConfig());
     }
 
-    helper = new LocalServiceTestHelper(configs.toArray(new LocalServiceTestConfig[]{}));
+    helper = new LocalServiceTestHelper(configs.toArray(new LocalServiceTestConfig[] {}));
 
     if (withUserService) {
       // Set top-level properties on LocalServiceTestConfig for user login.
@@ -491,19 +426,52 @@ public final class AppEngineRule extends ExternalResource
       if (!withoutCannedData) {
         loadInitialData();
       }
-      this.ofyTestEntities.forEach(AppEngineRule::register);
+      this.ofyTestEntities.forEach(AppEngineExtension::register);
+    }
+
+    if (withCloudSql) {
+      JpaTestRules.Builder builder = new JpaTestRules.Builder();
+      if (clock != null) {
+        builder.withClock(clock);
+      }
+      if (enableJpaEntityCoverageCheck) {
+        jpaIntegrationWithCoverageExtension = builder.buildIntegrationWithCoverageExtension();
+        jpaIntegrationWithCoverageExtension.beforeEach(context);
+      } else if (withJpaUnitTest) {
+        jpaUnitTestRule =
+            builder
+                .withEntityClass(jpaTestEntities.toArray(new Class[jpaTestEntities.size()]))
+                .buildUnitTestRule();
+        jpaUnitTestRule.beforeEach(context);
+      } else {
+        jpaIntegrationTestRule = builder.buildIntegrationTestRule();
+        jpaIntegrationTestRule.beforeEach(context);
+      }
+    }
+    if (isWithDatastoreAndCloudSql()) {
+      injectTmForDualDatabaseTest(context);
     }
   }
 
+  /** Called after each test method. */
   @Override
-  protected void after() {
+  public void afterEach(ExtensionContext context) throws Exception {
+    if (withCloudSql) {
+      if (enableJpaEntityCoverageCheck) {
+        jpaIntegrationWithCoverageExtension.afterEach(context);
+      } else if (withJpaUnitTest) {
+        jpaUnitTestRule.afterEach(context);
+      } else {
+        jpaIntegrationTestRule.afterEach(context);
+      }
+    }
     // Resets Objectify. Although it would seem more obvious to do this at the start of a request
     // instead of at the end, this is more consistent with what ObjectifyFilter does in real code.
     ObjectifyFilter.complete();
     helper.tearDown();
     helper = null;
     // Test that Datastore didn't need any indexes we don't have listed in our index file.
-    File indexFile = new File(temporaryFolder.getRoot(), "datastore-indexes-auto.xml");
+    File indexFile = new File(tmpDir, "datastore-indexes-auto.xml");
     try {
       if (!indexFile.exists()) {
         return;
@@ -520,10 +488,16 @@ public final class AppEngineRule extends ExternalResource
     } catch (IOException e) {
       throw new RuntimeException(e);
     } finally {
-      temporaryFolder.delete();
+      // Delete the temp directory's contents and then the temp directory itself.
+      try (Stream<Path> filesToDelete = walk(tmpDir.toPath())) {
+        filesToDelete.sorted(reverseOrder()).map(Path::toFile).forEach(File::delete);
+      }
     }
     // Clean up environment setting left behind by AppEngine test instance.
     ApiProxy.setEnvironmentForCurrentThread(null);
+    if (isWithDatastoreAndCloudSql()) {
+      restoreTmAfterDualDatabaseTest(context);
+    }
   }
 
   /**
@@ -584,7 +558,7 @@ public final class AppEngineRule extends ExternalResource
       for (int i = 0; i < ((JSONArray) object).length(); ++i) {
         builder.add(((JSONArray) object).getJSONObject(i));
       }
-    } else if (object instanceof JSONObject){
+    } else if (object instanceof JSONObject) {
       // When there's only a single entry it won't be wrapped in an array.
       builder.add((JSONObject) object);
     }
@@ -594,15 +568,15 @@ public final class AppEngineRule extends ExternalResource
   /** Turn a JSON representation of an index into xml. */
   private static String getIndexXmlString(JSONObject source) throws JSONException {
     StringBuilder builder = new StringBuilder();
-    builder.append(String.format(
-        "<datastore-index kind=\"%s\" ancestor=\"%s\" source=\"manual\">\n",
-        source.getString("kind"),
-        source.get("ancestor").toString()));
+    builder.append(
+        String.format(
+            "<datastore-index kind=\"%s\" ancestor=\"%s\" source=\"manual\">\n",
+            source.getString("kind"), source.get("ancestor").toString()));
     for (JSONObject property : getJsonAsArray(source.get("property"))) {
-      builder.append(String.format(
-          "  <property name=\"%s\" direction=\"%s\"/>\n",
-          property.getString("name"),
-          property.getString("direction")));
+      builder.append(
+          String.format(
+              "  <property name=\"%s\" direction=\"%s\"/>\n",
+              property.getString("name"), property.getString("direction")));
     }
     return builder.append("</datastore-index>").toString();
   }

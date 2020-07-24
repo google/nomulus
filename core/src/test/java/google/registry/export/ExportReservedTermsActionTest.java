@@ -36,7 +36,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.request.Response;
 import google.registry.storage.drive.DriveConnection;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,7 +46,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ExportReservedTermsActionTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private final DriveConnection driveConnection = mock(DriveConnection.class);
   private final Response response = mock(Response.class);

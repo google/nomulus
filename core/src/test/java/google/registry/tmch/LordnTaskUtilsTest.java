@@ -28,7 +28,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar.Type;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
@@ -44,8 +44,8 @@ public class LordnTaskUtilsTest {
   private static final Clock clock = new FakeClock(DateTime.parse("2010-05-01T10:11:12Z"));
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @RegisterExtension public final InjectRule inject = new InjectRule();
 

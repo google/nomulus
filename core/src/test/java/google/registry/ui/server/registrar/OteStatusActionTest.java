@@ -29,18 +29,15 @@ import google.registry.model.OteStatsTestHelper;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link OteStatusAction} */
-@RunWith(JUnit4.class)
 public final class OteStatusActionTest {
 
   private static final String CLIENT_ID = "blobio-1";
@@ -48,11 +45,12 @@ public final class OteStatusActionTest {
 
   private final OteStatusAction action = new OteStatusAction();
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     ImmutableSetMultimap<String, Role> authValues =
         OteAccountBuilder.createClientIdToTldMap(BASE_CLIENT_ID).keySet().stream()
             .collect(toImmutableSetMultimap(Function.identity(), ignored -> Role.OWNER));
@@ -61,7 +59,7 @@ public final class OteStatusActionTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void testSuccess_finishedOte() throws Exception {
+  void testSuccess_finishedOte() throws Exception {
     OteStatsTestHelper.setupCompleteOte(BASE_CLIENT_ID);
 
     Map<String, ?> actionResult = action.handleJsonRequest(ImmutableMap.of("clientId", CLIENT_ID));
@@ -76,7 +74,7 @@ public final class OteStatusActionTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void testSuccess_incomplete() throws Exception {
+  void testSuccess_incomplete() throws Exception {
     OteStatsTestHelper.setupIncompleteOte(BASE_CLIENT_ID);
 
     Map<String, ?> actionResult = action.handleJsonRequest(ImmutableMap.of("clientId", CLIENT_ID));
@@ -106,7 +104,7 @@ public final class OteStatusActionTest {
   }
 
   @Test
-  public void testFailure_malformedInput() {
+  void testFailure_malformedInput() {
     assertThat(action.handleJsonRequest(null))
         .containsExactlyEntriesIn(errorResultWithMessage("Malformed JSON"));
     assertThat(action.handleJsonRequest(ImmutableMap.of()))
@@ -114,14 +112,14 @@ public final class OteStatusActionTest {
   }
 
   @Test
-  public void testFailure_registrarDoesntExist() {
+  void testFailure_registrarDoesntExist() {
     assertThat(action.handleJsonRequest(ImmutableMap.of("clientId", "nonexistent-3")))
         .containsExactlyEntriesIn(
             errorResultWithMessage("Registrar nonexistent-3 does not exist"));
   }
 
   @Test
-  public void testFailure_notAuthorized() {
+  void testFailure_notAuthorized() {
     persistNewRegistrar(CLIENT_ID, "blobio-1", Type.REAL, 1L);
     action.registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(ImmutableSetMultimap.of());
@@ -131,7 +129,7 @@ public final class OteStatusActionTest {
   }
 
   @Test
-  public void testFailure_malformedRegistrarName() {
+  void testFailure_malformedRegistrarName() {
     assertThat(action.handleJsonRequest(ImmutableMap.of("clientId", "badclient-id")))
         .containsExactlyEntriesIn(
             errorResultWithMessage(
@@ -139,7 +137,7 @@ public final class OteStatusActionTest {
   }
 
   @Test
-  public void testFailure_nonOteRegistrar() {
+  void testFailure_nonOteRegistrar() {
     persistNewRegistrar(CLIENT_ID, "SomeRegistrar", Type.REAL, 1L);
     assertThat(action.handleJsonRequest(ImmutableMap.of("clientId", CLIENT_ID)))
         .containsExactlyEntriesIn(

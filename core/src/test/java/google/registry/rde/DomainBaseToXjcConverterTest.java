@@ -55,7 +55,7 @@ import google.registry.model.rde.RdeMode;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.util.Idn;
 import google.registry.xjc.domain.XjcDomainStatusType;
@@ -84,7 +84,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class DomainBaseToXjcConverterTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private final DateTime now = DateTime.parse("2014-01-01T00:00:00Z");
   private final FakeClock clock = new FakeClock(now);

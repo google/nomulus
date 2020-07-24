@@ -28,21 +28,19 @@ import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.server.RegistryTestServer;
-import java.util.concurrent.TimeUnit;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.Timeout;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junitpioneer.jupiter.RetryingTest;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
 /** WebDriver tests for Registrar Console UI. */
-@RunWith(RepeatableRunner.class)
+@Timeout(60)
 public class RegistrarConsoleWebTest extends WebDriverTestCase {
 
-  @Rule
-  public final TestServerRule server =
-      new TestServerRule.Builder()
+  @RegisterExtension
+  public final TestServerExtension server =
+      new TestServerExtension.Builder()
           .setRunfiles(RegistryTestServer.RUNFILES)
           .setRoutes(
               route("/registrar", FrontendServlet.class),
@@ -51,10 +49,6 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
           .setFixtures(BASIC)
           .setEmail("Marla.Singer@google.com")
           .build();
-
-
-
-  @Rule public final Timeout deathClock = new Timeout(60000, TimeUnit.MILLISECONDS);
 
   /** Checks the identified element has the given text content. */
   void assertEltText(String eltId, String eltValue) {
@@ -77,8 +71,8 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
         .isTrue();
   }
 
-  @Test
-  public void testEditButtonsVisibility_owner() throws Throwable {
+  @RetryingTest(3)
+  void testEditButtonsVisibility_owner() throws Throwable {
     driver.get(server.getUrl("/registrar#whois-settings"));
     assertEltVisible("reg-app-btns-edit");
     assertEltInvisible("reg-app-btn-add");
@@ -96,8 +90,8 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
     assertEltInvisible("reg-app-btn-add");
   }
 
-  @Test
-  public void testEditButtonsVisibility_adminAndOwner() throws Throwable {
+  @RetryingTest(3)
+  void testEditButtonsVisibility_adminAndOwner() throws Throwable {
     server.setIsAdmin(true);
     driver.get(server.getUrl("/registrar#whois-settings"));
     assertEltVisible("reg-app-btns-edit");
@@ -120,8 +114,8 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
     assertEltInvisible("reg-app-btn-add");
   }
 
-  @Test
-  public void testEditButtonsVisibility_adminOnly() throws Throwable {
+  @RetryingTest(3)
+  void testEditButtonsVisibility_adminOnly() throws Throwable {
     server.setIsAdmin(true);
     // To make sure we're only ADMIN (and not also "OWNER"), we switch to the NewRegistrar we
     // aren't in the contacts of
@@ -146,25 +140,26 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
     assertEltInvisible("reg-app-btn-add");
   }
 
-  @Test
-  public void testWhoisSettingsEdit() throws Throwable {
+  @RetryingTest(3)
+  void testWhoisSettingsEdit() throws Throwable {
     driver.get(server.getUrl("/registrar#whois-settings"));
     driver.waitForElement(By.id("reg-app-btn-edit")).click();
-    driver.setFormFieldsById(new ImmutableMap.Builder<String, String>()
-        .put("emailAddress", "test1@example.com")
-        .put("clientIdentifier", "ignored")
-        .put("whoisServer", "foo.bar.baz")
-        .put("url", "blah.blar")
-        .put("phoneNumber", "+1.2125650000")
-        .put("faxNumber", "+1.2125650001")
-        .put("localizedAddress.street[0]", "Bőulevard őf")
-        .put("localizedAddress.street[1]", "Brőken Dreams")
-        .put("localizedAddress.street[2]", "")
-        .put("localizedAddress.city", "New York")
-        .put("localizedAddress.state", "NY")
-        .put("localizedAddress.zip", "10011")
-        .put("localizedAddress.countryCode", "US")
-        .build());
+    driver.setFormFieldsById(
+        new ImmutableMap.Builder<String, String>()
+            .put("emailAddress", "test1@example.com")
+            .put("clientIdentifier", "ignored")
+            .put("whoisServer", "foo.bar.baz")
+            .put("url", "blah.blar")
+            .put("phoneNumber", "+1.2125650000")
+            .put("faxNumber", "+1.2125650001")
+            .put("localizedAddress.street[0]", "Bőulevard őf")
+            .put("localizedAddress.street[1]", "Brőken Dreams")
+            .put("localizedAddress.street[2]", "")
+            .put("localizedAddress.city", "New York")
+            .put("localizedAddress.state", "NY")
+            .put("localizedAddress.zip", "10011")
+            .put("localizedAddress.countryCode", "US")
+            .build());
     driver.findElement(By.id("reg-app-btn-save")).click();
     Thread.sleep(1000);
     Registrar registrar = server.runInAppEngineEnvironment(() -> loadRegistrar("TheRegistrar"));
@@ -182,8 +177,8 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
     assertThat(address.getCountryCode()).isEqualTo("US");
   }
 
-  @Test
-  public void testContactSettingsView() throws Throwable {
+  @RetryingTest(3)
+  void testContactSettingsView() throws Throwable {
     driver.get(server.getUrl("/registrar#contact-settings"));
     driver.waitForElement(By.id("reg-app-btn-add"));
     ImmutableList<RegistrarContact> contacts =
@@ -196,13 +191,12 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
     }
   }
 
-  @Test
-  public void testSecuritySettingsView() throws Throwable {
+  @RetryingTest(3)
+  void testSecuritySettingsView() throws Throwable {
     driver.get(server.getUrl("/registrar#security-settings"));
     driver.waitForElement(By.id("reg-app-btn-edit"));
     Registrar registrar = server.runInAppEngineEnvironment(() -> loadRegistrar("TheRegistrar"));
-    assertThat(driver.findElement(By.id("phonePasscode"))
-        .getAttribute("value"))
+    assertThat(driver.findElement(By.id("phonePasscode")).getAttribute("value"))
         .isEqualTo(registrar.getPhonePasscode());
   }
 }

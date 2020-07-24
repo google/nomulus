@@ -21,7 +21,7 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -29,7 +29,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class ExportUtilsTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
   void test_exportReservedTerms() {

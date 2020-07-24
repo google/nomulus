@@ -24,7 +24,7 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeJsonResponse;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +37,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class CreatePremiumListActionTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private CreatePremiumListAction action;
   private FakeJsonResponse response;

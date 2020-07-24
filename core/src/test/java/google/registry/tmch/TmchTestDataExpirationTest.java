@@ -22,7 +22,7 @@ import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.DomainFlowTmchUtils;
 import google.registry.model.smd.EncodedSignedMark;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.util.ResourceUtils;
 import google.registry.util.SystemClock;
 import java.nio.file.Path;
@@ -34,7 +34,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class TmchTestDataExpirationTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

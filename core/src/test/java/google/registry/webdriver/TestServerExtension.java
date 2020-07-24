@@ -16,7 +16,7 @@ package google.registry.webdriver;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.testing.AppEngineRule.THE_REGISTRAR_GAE_USER_ID;
+import static google.registry.testing.AppEngineExtension.THE_REGISTRAR_GAE_USER_ID;
 import static google.registry.util.NetworkUtils.getExternalAddressOfLocalSystem;
 import static google.registry.util.NetworkUtils.pickUnusedPort;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -28,7 +28,7 @@ import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.server.Fixture;
 import google.registry.server.Route;
 import google.registry.server.TestServer;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.UserInfo;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -39,22 +39,22 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingDeque;
 import javax.servlet.Filter;
-import org.junit.rules.ExternalResource;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * JUnit Rule that sets up and tears down {@link TestServer}.
+ * JUnit extension that sets up and tears down {@link TestServer}.
  *
  * <p><b>Warning:</b> App Engine testing environments are thread local. This rule will spawn that
  * testing environment in a separate thread from your unit tests. Therefore any modifications you
  * need to make to that testing environment (e.g. Datastore interactions) must be done through the
  * {@link #runInAppEngineEnvironment(Callable)} method.
  */
-public final class TestServerRule extends ExternalResource {
+public final class TestServerExtension implements BeforeEachCallback, AfterEachCallback {
 
   private final ImmutableList<Fixture> fixtures;
-  private final AppEngineRule appEngineRule;
+  private final AppEngineExtension appEngineRule;
   private final BlockingQueue<FutureTask<?>> jobs = new LinkedBlockingDeque<>();
   private final ImmutableMap<String, Path> runfiles;
   private final ImmutableList<Route> routes;
@@ -63,7 +63,7 @@ public final class TestServerRule extends ExternalResource {
   private TestServer testServer;
   private Thread serverThread;
 
-  private TestServerRule(
+  private TestServerExtension(
       ImmutableMap<String, Path> runfiles,
       ImmutableList<Route> routes,
       ImmutableList<Class<? extends Filter>> filters,
@@ -77,7 +77,7 @@ public final class TestServerRule extends ExternalResource {
     // We create an GAE-Admin user, and then use AuthenticatedRegistrarAccessor.bypassAdminCheck to
     // choose whether the user is an admin or not.
     this.appEngineRule =
-        AppEngineRule.builder()
+        AppEngineExtension.builder()
             .withDatastoreAndCloudSql()
             .withLocalModules()
             .withUrlFetch()
@@ -88,7 +88,7 @@ public final class TestServerRule extends ExternalResource {
   }
 
   @Override
-  protected void before() throws InterruptedException {
+  public void beforeEach(ExtensionContext context) throws InterruptedException {
     try {
       testServer =
           new TestServer(
@@ -103,7 +103,7 @@ public final class TestServerRule extends ExternalResource {
       throw new IllegalStateException(e);
     }
     setIsAdmin(false);
-    Server server = new Server();
+    Server server = new Server(context);
     serverThread = new Thread(server);
     synchronized (this) {
       serverThread.start();
@@ -114,7 +114,7 @@ public final class TestServerRule extends ExternalResource {
   }
 
   @Override
-  protected void after() {
+  public void afterEach(ExtensionContext context) {
     // Reset the global state AuthenticatedRegistrarAccessor.bypassAdminCheck
     // to the default value so it doesn't interfere with other tests
     AuthenticatedRegistrarAccessor.bypassAdminCheck = false;
@@ -156,37 +156,48 @@ public final class TestServerRule extends ExternalResource {
    * <p>You should use this method when you want to do things like change Datastore, because the App
    * Engine testing environment is thread-local.
    */
-  public <T> T runInAppEngineEnvironment(Callable<T> callback) throws Throwable {
+  <T> T runInAppEngineEnvironment(Callable<T> callback) throws Throwable {
     FutureTask<T> job = new FutureTask<>(callback);
     jobs.add(job);
     testServer.ping();
     return job.get();
   }
 
-  private final class Server extends Statement implements Runnable {
+  private final class Server implements Runnable {
+
+    private ExtensionContext context;
+
+    Server(ExtensionContext context) {
+      this.context = context;
+    }
+
     private volatile boolean isRunning = false;
 
     @Override
     public void run() {
       try {
-        appEngineRule.apply(this, Description.EMPTY).evaluate();
-      } catch (InterruptedException e) {
-        // This is what we expect to happen.
+        try {
+          appEngineRule.beforeEach(context);
+          this.runInner();
+        } catch (InterruptedException e) {
+          // This is what we expect to happen.
+        } finally {
+          appEngineRule.afterEach(context);
+        }
       } catch (Throwable e) {
         throw new RuntimeException(e);
       }
     }
 
-    @Override
-    public void evaluate() throws InterruptedException {
+    void runInner() throws InterruptedException {
       for (Fixture fixture : fixtures) {
         fixture.load();
       }
       testServer.start();
       System.out.printf("TestServerRule is listening on: %s\n", testServer.getUrl("/"));
-      synchronized (TestServerRule.this) {
+      synchronized (TestServerExtension.this) {
         isRunning = true;
-        TestServerRule.this.notify();
+        TestServerExtension.this.notify();
       }
       try {
         while (true) {
@@ -211,12 +222,13 @@ public final class TestServerRule extends ExternalResource {
   }
 
   /**
-   * Builder for {@link TestServerRule}.
+   * Builder for {@link TestServerExtension}.
    *
    * <p>This builder has three required fields: {@link #setRunfiles}, {@link #setRoutes}, and {@link
    * #setFilters}.
    */
   public static final class Builder {
+
     private ImmutableMap<String, Path> runfiles;
     private ImmutableList<Route> routes;
     ImmutableList<Class<? extends Filter>> filters;
@@ -225,7 +237,7 @@ public final class TestServerRule extends ExternalResource {
     private Optional<String> gaeUserId = Optional.empty();
 
     /** Sets the directories containing the static files for {@link TestServer}. */
-    public Builder setRunfiles(ImmutableMap<String, Path> runfiles) {
+    Builder setRunfiles(ImmutableMap<String, Path> runfiles) {
       this.runfiles = runfiles;
       return this;
     }
@@ -267,9 +279,9 @@ public final class TestServerRule extends ExternalResource {
       return this;
     }
 
-    /** Returns a new {@link TestServerRule} instance. */
-    public TestServerRule build() {
-      return new TestServerRule(
+    /** Returns a new {@link TestServerExtension} instance. */
+    public TestServerExtension build() {
+      return new TestServerExtension(
           checkNotNull(this.runfiles),
           checkNotNull(this.routes),
           checkNotNull(this.filters),

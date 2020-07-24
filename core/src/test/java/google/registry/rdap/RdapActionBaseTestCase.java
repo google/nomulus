@@ -30,7 +30,7 @@ import google.registry.request.Actions;
 import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.UserAuthInfo;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectRule;
@@ -46,7 +46,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @RegisterExtension public final InjectRule inject = new InjectRule();
 

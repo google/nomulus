@@ -34,7 +34,7 @@ import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.GcsTestingUtils;
 import google.registry.testing.TestObject;
 import java.util.List;
@@ -47,8 +47,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ExportCommitLogDiffActionTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(TestObject.class)
           .build();

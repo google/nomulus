@@ -37,7 +37,7 @@ import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
@@ -62,8 +62,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public final class ConsoleOteSetupActionTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngineRule =
-      AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngineRule =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @RegisterExtension
   @Order(value = Integer.MAX_VALUE)

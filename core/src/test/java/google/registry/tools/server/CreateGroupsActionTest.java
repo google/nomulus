@@ -27,7 +27,7 @@ import google.registry.groups.GroupsConnection.Role;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.InternalServerErrorException;
 import google.registry.request.Response;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.InjectRule;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -37,7 +37,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class CreateGroupsActionTest {
 
   @RegisterExtension
-  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @RegisterExtension final InjectRule inject = new InjectRule();
 

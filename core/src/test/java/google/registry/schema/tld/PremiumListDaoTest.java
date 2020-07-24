@@ -29,7 +29,7 @@ import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -46,8 +46,8 @@ public class PremiumListDaoTest {
   private final FakeClock fakeClock = new FakeClock();
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .enableJpaEntityCoverageCheck(true)
           .withClock(fakeClock)

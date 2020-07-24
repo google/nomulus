@@ -49,7 +49,7 @@ import google.registry.model.common.Cursor;
 import google.registry.model.registry.Registry;
 import google.registry.request.HttpException.InternalServerErrorException;
 import google.registry.request.HttpException.NoContentException;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
@@ -80,7 +80,8 @@ public class RdeReportActionTest {
   public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private final FakeResponse response = new FakeResponse();
   private final EscrowTaskRunner runner = mock(EscrowTaskRunner.class);

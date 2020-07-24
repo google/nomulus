@@ -23,7 +23,7 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.io.StreamCorruptedException;
@@ -34,8 +34,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class TransactionTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(TestEntity.class)
           .withJpaUnitTestEntities(TestEntity.class)

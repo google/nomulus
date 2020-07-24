@@ -24,7 +24,7 @@ import com.google.common.base.Joiner;
 import google.registry.export.datastore.DatastoreAdmin;
 import google.registry.export.datastore.DatastoreAdmin.Export;
 import google.registry.export.datastore.Operation;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +39,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class BackupDatastoreActionTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withTaskQueue().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withTaskQueue().build();
 
   @Mock private DatastoreAdmin datastoreAdmin;
   @Mock private Export exportRequest;

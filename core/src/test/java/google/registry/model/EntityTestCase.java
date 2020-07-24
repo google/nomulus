@@ -29,7 +29,7 @@ import com.googlecode.objectify.annotation.Serialize;
 import com.googlecode.objectify.cmd.Query;
 import google.registry.model.ofy.Ofy;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import google.registry.util.CidrAddressBlock;
@@ -59,7 +59,7 @@ public abstract class EntityTestCase {
 
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
-  @RegisterExtension public final AppEngineRule appEngine;
+  @RegisterExtension public final AppEngineExtension appEngine;
 
   @RegisterExtension public InjectRule inject = new InjectRule();
 
@@ -69,7 +69,7 @@ public abstract class EntityTestCase {
 
   protected EntityTestCase(JpaEntityCoverageCheck jpaEntityCoverageCheck) {
     appEngine =
-        AppEngineRule.builder()
+        AppEngineExtension.builder()
             .withDatastoreAndCloudSql()
             .enableJpaEntityCoverageCheck(jpaEntityCoverageCheck == JpaEntityCoverageCheck.ENABLED)
             .withClock(fakeClock)

@@ -30,7 +30,7 @@ import google.registry.model.registry.Registry;
 import google.registry.rde.EscrowTaskRunner.EscrowTask;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.HttpException.ServiceUnavailableException;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import org.joda.time.DateTime;
@@ -44,8 +44,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class EscrowTaskRunnerTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private final EscrowTask task = mock(EscrowTask.class);
   private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));

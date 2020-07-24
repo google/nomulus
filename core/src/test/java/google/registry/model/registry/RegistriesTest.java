@@ -23,7 +23,7 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.net.InternetDomainName;
 import google.registry.model.registry.Registry.TldType;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -31,7 +31,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class RegistriesTest {
 
   @RegisterExtension
-  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private void initTestTlds() {
     createTlds("foo", "a.b.c"); // Test a multipart tld.

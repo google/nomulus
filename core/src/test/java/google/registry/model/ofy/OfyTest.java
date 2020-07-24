@@ -45,7 +45,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
 import google.registry.util.SystemClock;
@@ -60,7 +60,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class OfyTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   /** An entity to use in save and delete tests. */
   private HistoryEntry someObject;

@@ -20,7 +20,7 @@ import static google.registry.xml.ValidationMode.LENIENT;
 import static google.registry.xml.XmlTestUtils.assertXmlEquals;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.EppLoader;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -29,7 +29,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ContactCommandTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private void doXmlRoundtripTest(String inputFilename) throws Exception {
     EppLoader eppLoader = new EppLoader(this, inputFilename);

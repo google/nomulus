@@ -45,7 +45,7 @@ import google.registry.model.host.HostResource;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.schema.domain.RegistryLock;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
@@ -72,8 +72,8 @@ public final class DomainLockUtilsTest {
   private DomainLockUtils domainLockUtils;
 
   @RegisterExtension
-  public final AppEngineRule appEngineRule =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngineRule =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withClock(clock)
           .withTaskQueue()

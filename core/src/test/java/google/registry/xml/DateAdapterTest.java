@@ -18,45 +18,41 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import org.joda.time.LocalDate;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DateAdapter}. */
-@RunWith(JUnit4.class)
-public class DateAdapterTest {
+class DateAdapterTest {
 
   @Test
-  public void testMarshal() {
-    assertThat(new DateAdapter().marshal(
-        new LocalDate(2010, 10, 17))).isEqualTo("2010-10-17");
+  void testMarshal() {
+    assertThat(new DateAdapter().marshal(new LocalDate(2010, 10, 17))).isEqualTo("2010-10-17");
   }
 
   @Test
-  public void testMarshalEmpty() {
+  void testMarshalEmpty() {
     assertThat(new DateAdapter().marshal(null)).isEmpty();
   }
 
   @Test
-  public void testUnmarshal() {
+  void testUnmarshal() {
     assertThat(new DateAdapter().unmarshal("2010-10-17T04:20:00Z"))
         .isEqualTo(new LocalDate(2010, 10, 17));
   }
 
   @Test
-  public void testUnmarshalConvertsToZuluTime() {
+  void testUnmarshalConvertsToZuluTime() {
     assertThat(new DateAdapter().unmarshal("2010-10-17T23:23:23-04:00"))
         .isEqualTo(new LocalDate(2010, 10, 18));
   }
 
   @Test
-  public void testUnmarshalEmpty() {
+  void testUnmarshalEmpty() {
     assertThat(new DateAdapter().unmarshal(null)).isNull();
     assertThat(new DateAdapter().unmarshal("")).isNull();
   }
 
   @Test
-  public void testUnmarshalInvalid() {
+  void testUnmarshalInvalid() {
     assertThrows(
         IllegalArgumentException.class,
         () -> assertThat(new DateAdapter().unmarshal("oh my goth")).isNull());

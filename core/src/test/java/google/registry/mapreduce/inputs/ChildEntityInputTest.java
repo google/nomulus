@@ -39,7 +39,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -59,7 +59,8 @@ class ChildEntityInputTest {
   private static final DateTime now = DateTime.now(DateTimeZone.UTC);
 
   @RegisterExtension
-  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private DomainBase domainA;
   private DomainBase domainB;

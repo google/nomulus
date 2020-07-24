@@ -46,7 +46,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
@@ -67,8 +67,8 @@ public class DomainBaseUtilTest {
   private Key<DomainBase> domainKey;
 
   @RegisterExtension
-  AppEngineRule appEngineRule =
-      AppEngineRule.builder().withDatastore().withClock(fakeClock).build();
+  AppEngineExtension appEngineRule =
+      AppEngineExtension.builder().withDatastore().withClock(fakeClock).build();
 
   @RegisterExtension InjectRule injectRule = new InjectRule();
 

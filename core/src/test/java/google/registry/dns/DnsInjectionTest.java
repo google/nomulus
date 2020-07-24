@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 import google.registry.model.ofy.Ofy;
 import google.registry.request.HttpException.NotFoundException;
 import google.registry.request.RequestModule;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import java.io.PrintWriter;
@@ -43,8 +43,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public final class DnsInjectionTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @RegisterExtension public final InjectRule inject = new InjectRule();
 

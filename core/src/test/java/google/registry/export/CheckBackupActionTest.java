@@ -35,7 +35,7 @@ import google.registry.request.Action.Method;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.HttpException.NotModifiedException;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
@@ -61,7 +61,7 @@ public class CheckBackupActionTest {
   private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withTaskQueue().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withTaskQueue().build();
 
   @Mock private DatastoreAdmin datastoreAdmin;
   @Mock private Get getNotFoundBackupProgressRequest;

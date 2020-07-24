@@ -14,6 +14,7 @@
 
 package google.registry.testing;
 
+import static com.google.common.io.Files.asCharSink;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.util.CollectionUtils.entriesToImmutableMap;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -31,19 +32,15 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for {@link google.registry.testing.AppEngineRule}. Tests focus on Datastoe-related
- * assertions made during teardown checks.
+ * Unit tests for {@link AppEngineExtension}.
+ *
+ * <p>Tests focus on Datastore-related assertions made during teardown checks.
  */
-@RunWith(JUnit4.class)
-public class AppEngineRuleTest {
+class AppEngineExtensionTest {
 
   // An arbitrary index in google/registry/env/common/default/WEB-INF/datastore-indexes.xml
   private static final String DECLARED_INDEX =
@@ -56,53 +53,51 @@ public class AppEngineRuleTest {
               "    <property name=\"searchName\" direction=\"asc\"/>",
               "  </datastore-index>",
               "</datastore-indexes>");
+
   private static final String UNDECLARED_INDEX =
       DECLARED_INDEX.replace("ContactResource", "NoSuchResource");
 
-  @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
+  private final AppEngineExtension appEngineRule =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  private final AppEngineRule appEngineRule =
-      AppEngineRule.builder().withDatastoreAndCloudSql().build();
-
-  @Before
-  public void setupAppEngineRule() throws Exception {
-    appEngineRule.temporaryFolder = temporaryFolder;
-    appEngineRule.before();
+  @BeforeEach
+  void beforeEach() throws Exception {
+    appEngineRule.beforeEach(null);
   }
 
   @Test
-  public void testTeardown_successNoAutoIndexFile() {
-    appEngineRule.after();
+  void testTeardown_successNoAutoIndexFile() throws Exception {
+    appEngineRule.afterEach(null);
   }
 
   @Test
-  public void testTeardown_successEmptyAutoIndexFile() throws Exception {
+  void testTeardown_successEmptyAutoIndexFile() throws Exception {
     writeAutoIndexFile("");
-    appEngineRule.after();
+    appEngineRule.afterEach(null);
   }
 
   @Test
-  public void testTeardown_successWhiteSpacesOnlyAutoIndexFile() throws Exception {
+  void testTeardown_successWhiteSpacesOnlyAutoIndexFile() throws Exception {
     writeAutoIndexFile("  ");
-    appEngineRule.after();
+    appEngineRule.afterEach(null);
   }
 
   @Test
-  public void testTeardown_successOnlyDeclaredIndexesUsed() throws Exception {
+  void testTeardown_successOnlyDeclaredIndexesUsed() throws Exception {
     writeAutoIndexFile(DECLARED_INDEX);
-    appEngineRule.after();
+    appEngineRule.afterEach(null);
   }
 
   @Test
-  public void testTeardown_failureUndeclaredIndexesUsed() throws Exception {
+  void testTeardown_failureUndeclaredIndexesUsed() throws Exception {
     writeAutoIndexFile(UNDECLARED_INDEX);
-    assertThrows(AssertionError.class, () -> appEngineRule.after());
+    assertThrows(AssertionError.class, () -> appEngineRule.afterEach(null));
   }
 
   @Test
-  public void testRegisterOfyEntities_failure() {
-    AppEngineRule appEngineRule =
-        AppEngineRule.builder()
+  void testRegisterOfyEntities_failure() throws Exception {
+    AppEngineExtension appEngineRule =
+        AppEngineExtension.builder()
             .withDatastoreAndCloudSql()
             .withOfyTestEntities(google.registry.testing.TestObject.class, TestObject.class)
             .build();
@@ -112,12 +107,13 @@ public class AppEngineRuleTest {
             TestObject.class.getName(),
             "TestObject",
             google.registry.testing.TestObject.class.getName());
-    assertThrows(expectedErrorMessage, IllegalStateException.class, appEngineRule::before);
-    appEngineRule.after();
+    assertThrows(
+        expectedErrorMessage, IllegalStateException.class, () -> appEngineRule.beforeEach(null));
+    appEngineRule.afterEach(null);
   }
 
   @Test
-  public void testOfyEntities_uniqueKinds() {
+  void testOfyEntities_uniqueKinds() {
     try (ScanResult scanResult =
         new ClassGraph()
             .enableAnnotationInfo()
@@ -146,9 +142,7 @@ public class AppEngineRuleTest {
   }
 
   private void writeAutoIndexFile(String content) throws IOException {
-    com.google.common.io.Files.asCharSink(
-            new File(temporaryFolder.getRoot(), "datastore-indexes-auto.xml"), UTF_8)
-        .write(content);
+    asCharSink(new File(appEngineRule.tmpDir, "datastore-indexes-auto.xml"), UTF_8).write(content);
   }
 
   @Entity

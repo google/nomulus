@@ -29,7 +29,7 @@ import com.google.common.collect.Iterables;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.util.CidrAddressBlock;
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -45,8 +45,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ImmutableObjectTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(ValueObject.class)
           .build();

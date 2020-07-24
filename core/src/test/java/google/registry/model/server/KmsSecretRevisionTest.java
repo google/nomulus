@@ -20,7 +20,7 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Strings;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -29,7 +29,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class KmsSecretRevisionTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private KmsSecretRevision secretRevision;
 

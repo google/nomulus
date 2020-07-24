@@ -45,7 +45,7 @@ import com.google.common.net.InternetDomainName;
 import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.Retrier;
@@ -70,8 +70,8 @@ public class ReadDnsQueueActionTest {
   private FakeClock clock = new FakeClock(DateTime.parse("3000-01-01TZ"));
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withTaskQueue(
               Joiner.on('\n')

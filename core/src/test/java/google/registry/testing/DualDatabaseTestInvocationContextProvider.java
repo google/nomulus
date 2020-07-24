@@ -84,14 +84,15 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
         throws Exception {
       List<Field> appEngineRuleFields =
           Stream.of(testInstance.getClass().getFields())
-              .filter(field -> field.getType().isAssignableFrom(AppEngineRule.class))
+              .filter(field -> field.getType().isAssignableFrom(AppEngineExtension.class))
               .collect(toImmutableList());
       if (appEngineRuleFields.size() != 1) {
         throw new IllegalStateException(
             "@DualDatabaseTest test must have only 1 AppEngineRule field");
       }
       appEngineRuleFields.get(0).setAccessible(true);
-      AppEngineRule appEngineRule = (AppEngineRule) appEngineRuleFields.get(0).get(testInstance);
+      AppEngineExtension appEngineRule =
+          (AppEngineExtension) appEngineRuleFields.get(0).get(testInstance);
       if (!appEngineRule.isWithDatastoreAndCloudSql()) {
         throw new IllegalStateException(
             "AppEngineRule in @DualDatabaseTest test must set withDatastoreAndCloudSql()");

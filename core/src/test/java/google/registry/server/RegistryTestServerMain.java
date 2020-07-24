@@ -19,13 +19,11 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HostAndPort;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.UserInfo;
 import google.registry.tools.params.HostAndPortParameter;
 import google.registry.ui.ConsoleDebug;
 import java.util.List;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
 
 /** Command-line interface for {@link RegistryTestServer}. */
 @Parameters(separators = " =", commandDescription = "Runs web development server.")
@@ -62,7 +60,7 @@ public final class RegistryTestServerMain {
   @Parameter(
       names = "--login_user_id",
       description = "GAE User ID for App Engine Local User Service.")
-  private String loginUserId = AppEngineRule.MARLA_SINGER_GAE_USER_ID;
+  private String loginUserId = AppEngineExtension.MARLA_SINGER_GAE_USER_ID;
 
   @Parameter(
       names = "--login_is_admin",
@@ -134,40 +132,37 @@ public final class RegistryTestServerMain {
         LIGHT_PURPLE, ORANGE, PINK, RESET);
 
     final RegistryTestServer server = new RegistryTestServer(address);
-    Statement runner =
-        new Statement() {
-          @Override
-          public void evaluate() throws InterruptedException {
-            System.out.printf("%sLoading Datastore fixtures...%s\n", BLUE, RESET);
-            for (Fixture fixture : fixtures) {
-              fixture.load();
-            }
-            System.out.printf("%sStarting Jetty6 HTTP Server...%s\n", BLUE, RESET);
-            server.start();
-            System.out.printf("%sListening on: %s%s\n", PURPLE, server.getUrl("/"), RESET);
-            try {
-              while (true) {
-                server.process();
-              }
-            } finally {
-              server.stop();
-            }
-          }
-        };
 
     System.out.printf("%sLoading SQL fixtures and AppEngineRule...%s\n", BLUE, RESET);
-    AppEngineRule.builder()
-        .withDatastoreAndCloudSql()
-        .withUrlFetch()
-        .withTaskQueue()
-        .withLocalModules()
-        .withUserService(
-            loginIsAdmin
-                ? UserInfo.createAdmin(loginEmail, loginUserId)
-                : UserInfo.create(loginEmail, loginUserId))
-        .build()
-        .apply(runner, Description.EMPTY)
-        .evaluate();
+    AppEngineExtension appEngine =
+        AppEngineExtension.builder()
+            .withDatastoreAndCloudSql()
+            .withUrlFetch()
+            .withTaskQueue()
+            .withLocalModules()
+            .withUserService(
+                loginIsAdmin
+                    ? UserInfo.createAdmin(loginEmail, loginUserId)
+                    : UserInfo.create(loginEmail, loginUserId))
+            .build();
+    appEngine.beforeEach(null);
+    System.out.printf("%sLoading Datastore fixtures...%s\n", BLUE, RESET);
+    for (Fixture fixture : fixtures) {
+      fixture.load();
+    }
+    System.out.printf("%sStarting Jetty6 HTTP Server...%s\n", BLUE, RESET);
+    server.start();
+    System.out.printf("%sListening on: %s%s\n", PURPLE, server.getUrl("/"), RESET);
+    try {
+      // This infinite loop is terminated when the user presses Ctrl-C.
+      //noinspection InfiniteLoopStatement
+      while (true) {
+        server.process();
+      }
+    } finally {
+      server.stop();
+      appEngine.afterEach(null);
+    }
   }
 
   private RegistryTestServerMain() {}

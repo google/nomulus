@@ -29,7 +29,7 @@ import com.google.api.client.testing.http.MockLowLevelHttpResponse;
 import com.google.api.client.util.Base64;
 import com.google.api.client.util.StringUtils;
 import com.google.common.io.ByteSource;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +47,8 @@ class IcannHttpReporterTest {
   private MockLowLevelHttpRequest mockRequest;
 
   @RegisterExtension
-  AppEngineRule appEngineRule = new AppEngineRule.Builder().withDatastoreAndCloudSql().build();
+  AppEngineExtension appEngineRule =
+      new AppEngineExtension.Builder().withDatastoreAndCloudSql().build();
 
   private MockHttpTransport createMockTransport(final ByteSource iirdeaResponse) {
     return new MockHttpTransport() {

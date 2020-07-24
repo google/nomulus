@@ -35,7 +35,7 @@ import google.registry.model.domain.superuser.DomainTransferRequestSuperuserExte
 import google.registry.model.eppcommon.ProtocolDefinition.ServiceExtension;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.EppInput.CommandExtension;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.util.TypeUtils;
 import java.util.logging.LogRecord;
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class ExtensionManagerTest {
 
   @RegisterExtension
-  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
   void testDuplicateExtensionsForbidden() {

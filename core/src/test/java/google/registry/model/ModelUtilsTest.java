@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.annotation.Id;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.lang.reflect.Field;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +28,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link ModelUtils}. */
 public class ModelUtilsTest {
 
-  @RegisterExtension public AppEngineRule appEngineRule = new AppEngineRule.Builder().build();
+  @RegisterExtension
+  public AppEngineExtension appEngineRule = new AppEngineExtension.Builder().build();
 
   /** Test class for reflection methods. */
   public static class TestClass extends ImmutableObject implements Buildable {

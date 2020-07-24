@@ -37,34 +37,32 @@ import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.whois.WhoisResponse.WhoisResponseResults;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainWhoisResponse}. */
-@RunWith(JUnit4.class)
-public class DomainWhoisResponseTest {
+class DomainWhoisResponseTest {
 
-  @Rule public final AppEngineRule gae = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineExtension gae = AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  HostResource hostResource1;
-  HostResource hostResource2;
-  RegistrarContact abuseContact;
-  ContactResource adminContact;
-  ContactResource registrant;
-  ContactResource techContact;
-  DomainBase domainBase;
+  private HostResource hostResource1;
+  private HostResource hostResource2;
+  private RegistrarContact abuseContact;
+  private ContactResource adminContact;
+  private ContactResource registrant;
+  private ContactResource techContact;
+  private DomainBase domainBase;
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2009-05-29T20:15:00Z"));
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     // Update the registrar to have an IANA ID.
     Registrar registrar =
         persistResource(
@@ -260,7 +258,7 @@ public class DomainWhoisResponseTest {
   }
 
   @Test
-  public void getPlainTextOutputTest() {
+  void getPlainTextOutputTest() {
     DomainWhoisResponse domainWhoisResponse =
         new DomainWhoisResponse(domainBase, false, "Please contact registrar", clock.nowUtc());
     assertThat(
@@ -271,7 +269,7 @@ public class DomainWhoisResponseTest {
   }
 
   @Test
-  public void getPlainTextOutputTest_registrarAbuseInfoMissing() {
+  void getPlainTextOutputTest_registrarAbuseInfoMissing() {
     persistResource(abuseContact.asBuilder().setVisibleInDomainWhoisAsAbuse(false).build());
     DomainWhoisResponse domainWhoisResponse =
         new DomainWhoisResponse(domainBase, false, "Please contact registrar", clock.nowUtc());
@@ -283,7 +281,7 @@ public class DomainWhoisResponseTest {
   }
 
   @Test
-  public void getPlainTextOutputTest_fullOutput() {
+  void getPlainTextOutputTest_fullOutput() {
     DomainWhoisResponse domainWhoisResponse =
         new DomainWhoisResponse(domainBase, true, "Please contact registrar", clock.nowUtc());
     assertThat(
@@ -294,7 +292,7 @@ public class DomainWhoisResponseTest {
   }
 
   @Test
-  public void addImplicitOkStatusTest() {
+  void addImplicitOkStatusTest() {
     DomainWhoisResponse domainWhoisResponse =
         new DomainWhoisResponse(
             domainBase.asBuilder().setStatusValues(null).build(),

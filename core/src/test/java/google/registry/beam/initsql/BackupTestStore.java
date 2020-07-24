@@ -26,7 +26,7 @@ import com.googlecode.objectify.Key;
 import google.registry.backup.CommitLogExports;
 import google.registry.backup.VersionedEntity;
 import google.registry.model.ofy.CommitLogCheckpoint;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.tools.LevelDbFileBuilder;
 import java.io.File;
@@ -53,7 +53,7 @@ class BackupTestStore implements AutoCloseable {
       DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss_SSS");
 
   private final FakeClock fakeClock;
-  private AppEngineRule appEngine;
+  private AppEngineExtension appEngine;
   /** For fetching the persisted Datastore Entity directly. */
   private DatastoreService datastoreService;
 
@@ -62,7 +62,7 @@ class BackupTestStore implements AutoCloseable {
   BackupTestStore(FakeClock fakeClock) throws Exception {
     this.fakeClock = fakeClock;
     this.appEngine =
-        new AppEngineRule.Builder()
+        new AppEngineExtension.Builder()
             .withDatastore()
             .withoutCannedData()
             .withClock(fakeClock)

@@ -21,7 +21,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import org.junit.rules.ExternalResource;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.RemoteWebDriver;
@@ -29,8 +31,8 @@ import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 
-/** JUnit rule for managing Docker container used by WebDriver tests. */
-class DockerWebDriverRule extends ExternalResource {
+/** JUnit extension for managing Docker containers used by WebDriver tests. */
+class DockerWebDriverExtension implements BeforeAllCallback, AfterAllCallback {
 
   // This port number is defined in this Dockerfile:
   // https://github.com/SeleniumHQ/docker-selenium/blob/master/StandaloneChrome/Dockerfile#L21
@@ -39,7 +41,6 @@ class DockerWebDriverRule extends ExternalResource {
   private WebDriver webDriver;
 
   private static URL getWebDriverUrl() {
-
     // TODO(#209): Find a way to automatically detect the version of docker image
     GenericContainer container =
         new GenericContainer("selenium/standalone-chrome:3.141.59-mercury")
@@ -63,13 +64,13 @@ class DockerWebDriverRule extends ExternalResource {
   }
 
   @Override
-  protected void before() {
+  public void beforeAll(ExtensionContext context) {
     ChromeOptions chromeOptions = new ChromeOptions().setHeadless(true);
     webDriver = new RemoteWebDriver(WEB_DRIVER_URL, chromeOptions);
   }
 
   @Override
-  protected void after() {
+  public void afterAll(ExtensionContext context) {
     try {
       webDriver.quit();
     } finally {
@@ -81,7 +82,7 @@ class DockerWebDriverRule extends ExternalResource {
    * Returns {@link WebDriver} instance connected to the {@link
    * org.openqa.selenium.chrome.ChromeDriverService} running in the container.
    */
-  public WebDriver getWebDriver() {
+  WebDriver getWebDriver() {
     return checkNotNull(webDriver);
   }
 }

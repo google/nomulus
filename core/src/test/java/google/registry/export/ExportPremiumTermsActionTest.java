@@ -41,7 +41,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.request.Response;
 import google.registry.storage.drive.DriveConnection;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,7 +58,8 @@ public class ExportPremiumTermsActionTest {
       DISCLAIMER_WITH_NEWLINE + "0,USD 549.00\n" + "2048,USD 549.00\n";
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private final DriveConnection driveConnection = mock(DriveConnection.class);
   private final Response response = mock(Response.class);

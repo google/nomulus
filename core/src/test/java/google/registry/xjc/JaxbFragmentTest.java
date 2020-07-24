@@ -24,19 +24,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
-@RunWith(JUnit4.class)
-public class JaxbFragmentTest {
+/** Unit tests for {@link JaxbFragment}. */
+class JaxbFragmentTest {
 
   private static final String HOST_FRAGMENT = loadFile(XjcObjectTest.class, "host_fragment.xml");
 
   /** Verifies that a {@link JaxbFragment} can be serialized and deserialized successfully. */
   @SuppressWarnings("unchecked")
   @Test
-  public void testJavaSerialization() throws Exception {
+  void testJavaSerialization() throws Exception {
     // Load rdeHost xml fragment into a jaxb object, wrap it, marshal, unmarshal, verify host.
     // The resulting host name should be "ns1.example1.test", from the original xml fragment.
     try (InputStream source = new ByteArrayInputStream(HOST_FRAGMENT.getBytes(UTF_8))) {

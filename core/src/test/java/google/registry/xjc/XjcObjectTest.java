@@ -29,18 +29,16 @@ import google.registry.xjc.rde.XjcRdeDepositTypeType;
 import google.registry.xjc.rdecontact.XjcRdeContact;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@code XjcObject}. */
-@RunWith(JUnit4.class)
-public class XjcObjectTest {
+class XjcObjectTest {
+
   private static final String RDE_DEPOSIT_FULL =
       loadFile(XjcObjectTest.class, "rde_deposit_full.xml");
 
   @Test
-  public void testMarshalUtf8() throws Exception {
+  void testMarshalUtf8() throws Exception {
     XjcRdeDeposit deposit = unmarshalFullDeposit();
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     deposit.marshal(out, UTF_8);
@@ -51,7 +49,7 @@ public class XjcObjectTest {
   }
 
   @Test
-  public void testMarshalUtf16() throws Exception {
+  void testMarshalUtf16() throws Exception {
     XjcRdeDeposit deposit = unmarshalFullDeposit();
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     deposit.marshal(out, UTF_16);
@@ -62,7 +60,7 @@ public class XjcObjectTest {
   }
 
   @Test
-  public void testMarshalValidation() throws Exception {
+  void testMarshalValidation() throws Exception {
     XjcRdeDeposit deposit = unmarshalFullDeposit();
     deposit.setId("");
     Throwable thrown =
@@ -71,7 +69,7 @@ public class XjcObjectTest {
   }
 
   @Test
-  public void testUnmarshalUTF8() throws Exception {
+  void testUnmarshalUTF8() throws Exception {
     XjcRdeDeposit deposit = unmarshalFullDeposit();
     assertThat(deposit).isNotNull();
     assertThat(deposit.getType()).isEqualTo(XjcRdeDepositTypeType.FULL);
@@ -79,7 +77,7 @@ public class XjcObjectTest {
   }
 
   @Test
-  public void testUnmarshalUTF16() throws Exception {
+  void testUnmarshalUTF16() throws Exception {
     XjcRdeDeposit deposit = unmarshal(XjcRdeDeposit.class, new ByteArrayInputStream(
         RDE_DEPOSIT_FULL.replaceFirst("UTF-8", "UTF-16").getBytes(UTF_16)));
     assertThat(deposit).isNotNull();
@@ -88,7 +86,7 @@ public class XjcObjectTest {
   }
 
   @Test
-  public void testUnmarshalValidation() {
+  void testUnmarshalValidation() {
     Throwable thrown =
         assertThrows(
             Throwable.class,
@@ -103,20 +101,20 @@ public class XjcObjectTest {
   }
 
   @Test
-  public void testToString() throws Exception {
+  void testToString() throws Exception {
     String xml = unmarshalFullDeposit().toString();
     assertWithMessage(xml).that(xml).startsWith("<rde:deposit ");
     assertWithMessage(xml).that(xml.length()).isGreaterThan(1000);
   }
 
   @Test
-  public void testToStringNoValidation() {
+  void testToStringNoValidation() {
     String xml = new XjcRdeContact().toString();
     assertWithMessage(xml).that(xml).startsWith("<XjcRdeContact ");
   }
 
   @Test
-  public void testNamespaceEpp() throws Exception {
+  void testNamespaceEpp() throws Exception {
     String xml =
         unmarshal(XjcObject.class, loadBytes(XjcObjectTest.class, "greeting.xml").openStream())
             .toString();

@@ -65,7 +65,7 @@ class ContactTransferRequestFlowTest
   }
 
   @BeforeEach
-  void setUp() {
+  void beforeEach() {
     setEppInput("contact_transfer_request.xml");
     setClientIdForFlow("NewRegistrar");
     contact = persistActiveContact("sh8013");

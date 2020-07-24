@@ -28,7 +28,10 @@ import javax.persistence.PersistenceException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** JUnit test for {@link JpaTransactionManagerRule}, with {@link JpaUnitTestExtension} as proxy. */
+/**
+ * JUnit test for {@link JpaTransactionManagerExtension}, with {@link JpaUnitTestExtension} as
+ * proxy.
+ */
 public class JpaTransactionManagerRuleTest {
 
   @RegisterExtension

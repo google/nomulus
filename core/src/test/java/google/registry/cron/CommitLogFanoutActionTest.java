@@ -19,7 +19,7 @@ import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 
 import com.google.common.base.Joiner;
 import google.registry.model.ofy.CommitLogBucket;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.Retrier;
 import google.registry.util.TaskQueueUtils;
@@ -36,8 +36,8 @@ class CommitLogFanoutActionTest {
   private static final String QUEUE = "the-queue";
 
   @RegisterExtension
-  final AppEngineRule appEngineRule =
-      AppEngineRule.builder()
+  final AppEngineExtension appEngineRule =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withTaskQueue(
               Joiner.on('\n')

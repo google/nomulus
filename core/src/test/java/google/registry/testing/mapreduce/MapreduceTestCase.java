@@ -34,7 +34,7 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.flogger.FluentLogger;
 import google.registry.mapreduce.MapreduceRunner;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.AppEngineServiceUtilsImpl;
@@ -83,8 +83,12 @@ public abstract class MapreduceTestCase<T> {
   private LocalTaskQueue taskQueue;
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withLocalModules().withTaskQueue().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
+          .withDatastoreAndCloudSql()
+          .withLocalModules()
+          .withTaskQueue()
+          .build();
 
   private AppEngineServiceUtils appEngineServiceUtils;
 

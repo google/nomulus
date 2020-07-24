@@ -20,7 +20,7 @@ import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -29,7 +29,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class CommitLogCheckpointTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private static final DateTime T1 = START_OF_TIME;
   private static final DateTime T2 = START_OF_TIME.plusMillis(1);
