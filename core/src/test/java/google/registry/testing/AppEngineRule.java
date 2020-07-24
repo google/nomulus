@@ -30,6 +30,7 @@ import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.appengine.tools.development.testing.LocalTaskQueueTestConfig;
 import com.google.appengine.tools.development.testing.LocalURLFetchServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalUserServiceTestConfig;
+import com.google.apphosting.api.ApiProxy;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -521,6 +522,8 @@ public final class AppEngineRule extends ExternalResource
     } finally {
       temporaryFolder.delete();
     }
+    // Clean up environment setting left behind by AppEngine test instance.
+    ApiProxy.setEnvironmentForCurrentThread(null);
   }
 
   /**

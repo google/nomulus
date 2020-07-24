@@ -14,7 +14,7 @@
 
 package google.registry.model.domain;
 
-import static google.registry.model.EppResourceTestUtils.assertEqualsIgnoreLastUpdateTime;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
@@ -154,7 +154,9 @@ public class DomainBaseSqlTest {
               DomainBase org = domain.asBuilder().setCreationTime(result.getCreationTime()).build();
 
               // Note that the equality comparison forces a lazy load of all fields.
-              assertEqualsIgnoreLastUpdateTime(result, org);
+              assertAboutImmutableObjects()
+                  .that(result)
+                  .isEqualExceptFields(org, "updateTimestamp");
             });
   }
 

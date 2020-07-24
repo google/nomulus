@@ -19,12 +19,10 @@ import static com.google.common.truth.Truth.assertThat;
 import google.registry.persistence.NomulusPostgreSql;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.testing.DatastoreEntityExtension;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.nio.file.Path;
 import org.apache.beam.sdk.io.FileSystems;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -35,31 +33,28 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /** Unit tests for {@link BeamJpaModule}. */
 @Testcontainers
-public class BeamJpaModuleTest {
-
-  @Container
-  public PostgreSQLContainer database = new PostgreSQLContainer(NomulusPostgreSql.getDockerTag());
+class BeamJpaModuleTest {
 
   @RegisterExtension
-  public DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
+  final DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
-  @TempDir File tempFolder;
+  @Container
+  final PostgreSQLContainer database = new PostgreSQLContainer(NomulusPostgreSql.getDockerTag());
 
-  private File credentialFile;
+  @SuppressWarnings("WeakerAccess")
+  @TempDir
+  Path tmpDir;
 
-  @BeforeEach
-  public void beforeEach() throws IOException {
-    credentialFile = new File(tempFolder, "credential");
-    new PrintStream(credentialFile)
-        .printf("%s %s %s", database.getJdbcUrl(), database.getUsername(), database.getPassword())
-        .close();
-  }
+  @RegisterExtension
+  @Order(Order.DEFAULT + 1)
+  final BeamJpaExtension beamJpaExtension =
+      new BeamJpaExtension(() -> tmpDir.resolve("credential.dat"), database);
 
   @Test
   void getJpaTransactionManager_local() {
     JpaTransactionManager jpa =
         DaggerBeamJpaModule_JpaTransactionManagerComponent.builder()
-            .beamJpaModule(new BeamJpaModule(credentialFile.getAbsolutePath()))
+            .beamJpaModule(beamJpaExtension.getBeamJpaModule())
             .build()
             .localDbJpaTransactionManager();
     assertThat(
@@ -80,7 +75,7 @@ public class BeamJpaModuleTest {
    */
   @Test
   @EnabledIfSystemProperty(named = "test.gcp_integration.env", matches = "\\S+")
-  public void getJpaTransactionManager_cloudSql_authRequired() {
+  void getJpaTransactionManager_cloudSql_authRequired() {
     String environmentName = System.getProperty("test.gcp_integration.env");
     FileSystems.setDefaultPipelineOptions(PipelineOptionsFactory.create());
     JpaTransactionManager jpa =

@@ -16,7 +16,6 @@ package google.registry.model.contact;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.EppResourceTestUtils.assertEqualsIgnoreLastUpdateTime;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
@@ -31,6 +30,7 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
+import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.contact.Disclose.PostalInfoChoice;
 import google.registry.model.contact.PostalInfo.Type;
@@ -155,7 +155,9 @@ public class ContactResourceTest extends EntityTestCase {
                     .setServerApproveEntities(null)
                     .build())
             .build();
-    assertEqualsIgnoreLastUpdateTime(persisted, fixed);
+    ImmutableObjectSubject.assertAboutImmutableObjects()
+        .that(persisted)
+        .isEqualExceptFields(fixed, "updateTimestamp");
   }
 
   @Test

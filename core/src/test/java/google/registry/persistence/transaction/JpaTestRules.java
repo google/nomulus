@@ -135,14 +135,14 @@ public class JpaTestRules {
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
       this.currentTestClassName = context.getRequiredTestClass().getName();
-      integrationTestRule.before();
+      integrationTestRule.beforeEach(null);
       jpaEntityCoverage.before();
     }
 
     @Override
     public void afterEach(ExtensionContext context) throws Exception {
       jpaEntityCoverage.after();
-      integrationTestRule.after();
+      integrationTestRule.afterEach(null);
       this.currentTestClassName = null;
     }
   }

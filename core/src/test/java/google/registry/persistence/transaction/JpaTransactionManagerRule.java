@@ -216,25 +216,17 @@ abstract class JpaTransactionManagerRule extends ExternalResource
   }
 
   @Override
-  public void before() throws Exception {
+  protected void before() throws Exception {
     beforeEach(null);
   }
 
   @Override
-  public void after() {
+  protected void after() {
     afterEach(null);
   }
 
-  public String getDatabaseUrl() {
-    return database.getJdbcUrl();
-  }
-
-  public String getDatabaseUsername() {
-    return database.getUsername();
-  }
-
-  public String getDatabasePassword() {
-    return database.getPassword();
+  public JdbcDatabaseContainer getDatabase() {
+    return database;
   }
 
   private void resetTablesAndSequences() {
