@@ -82,7 +82,8 @@ class BeamJpaModuleTest {
         DaggerBeamJpaModule_JpaTransactionManagerComponent.builder()
             .beamJpaModule(
                 new BeamJpaModule(
-                    BackupPaths.getCloudSQLCredentialFilePatterns(environmentName).get(0)))
+                    BackupPaths.getCloudSQLCredentialFilePatterns(environmentName).get(0),
+                    "domain-registry-alpha"))
             .build()
             .cloudSqlJpaTransactionManager();
     assertThat(

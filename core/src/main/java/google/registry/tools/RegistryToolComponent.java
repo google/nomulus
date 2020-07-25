@@ -134,6 +134,9 @@ interface RegistryToolComponent {
     @BindsInstance
     Builder credentialFilePath(@Nullable @Config("credentialFilePath") String credentialFilePath);
 
+    @BindsInstance
+    Builder sqlAccessInfoFile(@Nullable @Config("sqlAccessInfoFile") String sqlAccessInfoFile);
+
     Builder beamJpaModule(BeamJpaModule beamJpaModule);
 
     RegistryToolComponent build();

@@ -29,7 +29,7 @@ import com.google.appengine.tools.remoteapi.RemoteApiOptions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import google.registry.beam.initsql.BeamJpaModule;
+import google.registry.backup.AppEngineEnvironment;
 import google.registry.config.RegistryConfig;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.persistence.transaction.TransactionManagerFactory;
@@ -68,9 +68,8 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
 
   @Parameter(
       names = {"--sql_access_info"},
-      description =
-          "Name of a file containing space-separated SQL access info used when deploying "
-              + "Beam pipelines")
+      description = "Name of a file containing space-separated SQL access info used when deploying "
+          + "Beam pipelines")
   private String sqlAccessInfoFile = null;
 
   // Do not make this final - compile-time constant inlining may interfere with JCommander.
@@ -168,7 +167,7 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
     component =
         DaggerRegistryToolComponent.builder()
             .credentialFilePath(credentialJson)
-            .beamJpaModule(new BeamJpaModule(sqlAccessInfoFile))
+            .sqlAccessInfoFile(sqlAccessInfoFile)
             .build();
 
     // JCommander stores sub-commands as nested JCommander objects containing a list of user objects
@@ -179,7 +178,7 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
             Iterables.getOnlyElement(jcommander.getCommands().get(parsedCommand).getObjects());
     loggingParams.configureLogging();  // Must be called after parameters are parsed.
 
-    try {
+    try (AppEngineEnvironment env = new AppEngineEnvironment()) {
       runCommand(command);
     } catch (RuntimeException ex) {
       if (Throwables.getRootCause(ex) instanceof LoginRequiredException) {
