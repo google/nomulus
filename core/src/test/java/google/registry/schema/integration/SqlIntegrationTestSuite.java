@@ -25,7 +25,7 @@ import google.registry.model.poll.PollMessageTest;
 import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.model.registry.label.ReservedListSqlDaoTest;
 import google.registry.model.reporting.Spec11ThreatMatchTest;
-import google.registry.persistence.transaction.JpaEntityCoverage;
+import google.registry.persistence.transaction.JpaEntityCoverageExtension;
 import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.integration.SqlIntegrationTestSuite.AfterSuiteTest;
 import google.registry.schema.integration.SqlIntegrationTestSuite.BeforeSuiteTest;
@@ -91,7 +91,7 @@ public class SqlIntegrationTestSuite {
 
   @BeforeAll // Not yet supported in JUnit 5. Called through BeforeSuiteTest.
   public static void initJpaEntityCoverage() {
-    JpaEntityCoverage.init();
+    JpaEntityCoverageExtension.init();
   }
 
   @AfterAll // Not yet supported in JUnit 5. Called through AfterSuiteTest.
@@ -99,12 +99,12 @@ public class SqlIntegrationTestSuite {
     // TODO(weiminyu): collect both assertion errors like Truth's Expect does in JUnit 4.
     assert_()
         .withMessage("Tests are missing for the following JPA entities:")
-        .that(JpaEntityCoverage.getUncoveredEntities())
+        .that(JpaEntityCoverageExtension.getUncoveredEntities())
         .isEmpty();
     assert_()
         .withMessage(
             "The following classes do not test JPA entities. Please remove them from this suite")
-        .that(JpaEntityCoverage.getIrrelevantTestClasses())
+        .that(JpaEntityCoverageExtension.getIrrelevantTestClasses())
         .isEmpty();
   }
 

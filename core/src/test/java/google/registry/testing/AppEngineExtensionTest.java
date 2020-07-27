@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Unit tests for {@link AppEngineExtension}.
@@ -60,38 +61,41 @@ class AppEngineExtensionTest {
   private final AppEngineExtension appEngineRule =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
+  @RegisterExtension
+  final ContextCapturingMetaExtension context = new ContextCapturingMetaExtension();
+
   @BeforeEach
   void beforeEach() throws Exception {
-    appEngineRule.beforeEach(null);
+    appEngineRule.beforeEach(context.getContext());
   }
 
   @Test
   void testTeardown_successNoAutoIndexFile() throws Exception {
-    appEngineRule.afterEach(null);
+    appEngineRule.afterEach(context.getContext());
   }
 
   @Test
   void testTeardown_successEmptyAutoIndexFile() throws Exception {
     writeAutoIndexFile("");
-    appEngineRule.afterEach(null);
+    appEngineRule.afterEach(context.getContext());
   }
 
   @Test
   void testTeardown_successWhiteSpacesOnlyAutoIndexFile() throws Exception {
     writeAutoIndexFile("  ");
-    appEngineRule.afterEach(null);
+    appEngineRule.afterEach(context.getContext());
   }
 
   @Test
   void testTeardown_successOnlyDeclaredIndexesUsed() throws Exception {
     writeAutoIndexFile(DECLARED_INDEX);
-    appEngineRule.afterEach(null);
+    appEngineRule.afterEach(context.getContext());
   }
 
   @Test
   void testTeardown_failureUndeclaredIndexesUsed() throws Exception {
     writeAutoIndexFile(UNDECLARED_INDEX);
-    assertThrows(AssertionError.class, () -> appEngineRule.afterEach(null));
+    assertThrows(AssertionError.class, () -> appEngineRule.afterEach(context.getContext()));
   }
 
   @Test
@@ -99,17 +103,19 @@ class AppEngineExtensionTest {
     AppEngineExtension appEngineRule =
         AppEngineExtension.builder()
             .withDatastoreAndCloudSql()
-            .withOfyTestEntities(google.registry.testing.TestObject.class, TestObject.class)
+            .withOfyTestEntities(
+                google.registry.testing.TestObject.class, AppEngineExtensionTestObject.class)
             .build();
     String expectedErrorMessage =
         String.format(
             "Cannot register %s. The Kind %s is already registered with %s",
-            TestObject.class.getName(),
+            AppEngineExtensionTestObject.class.getName(),
             "TestObject",
             google.registry.testing.TestObject.class.getName());
     assertThrows(
-        expectedErrorMessage, IllegalStateException.class, () -> appEngineRule.beforeEach(null));
-    appEngineRule.afterEach(null);
+        expectedErrorMessage,
+        IllegalStateException.class,
+        () -> appEngineRule.beforeEach(context.getContext()));
   }
 
   @Test
@@ -122,7 +128,8 @@ class AppEngineExtensionTest {
             .scan()) {
       Multimap<String, Class<?>> kindToEntityMultiMap =
           scanResult.getClassesWithAnnotation(Entity.class.getName()).stream()
-              .filter(clazz -> !clazz.getName().equals(TestObject.class.getName()))
+              .filter(
+                  clazz -> !clazz.getName().equals(AppEngineExtensionTestObject.class.getName()))
               .map(clazz -> clazz.loadClass())
               .collect(
                   Multimaps.toMultimap(
@@ -146,5 +153,5 @@ class AppEngineExtensionTest {
   }
 
   @Entity
-  private static final class TestObject {}
+  private static final class AppEngineExtensionTestObject {}
 }

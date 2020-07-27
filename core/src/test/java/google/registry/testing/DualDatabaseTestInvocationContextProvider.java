@@ -38,6 +38,7 @@ import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
  * Datastore and PostgresQL respectively.
  */
 class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocationContextProvider {
+
   private static final Namespace NAMESPACE =
       Namespace.create(DualDatabaseTestInvocationContextProvider.class);
   private static final String INJECTED_TM_SUPPLIER_KEY = "injected_tm_supplier_key";

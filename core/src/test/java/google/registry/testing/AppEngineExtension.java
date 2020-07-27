@@ -112,7 +112,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   File tmpDir;
 
   /**
-   * Sets up a SQL database. This is for test classes that are not member of the {@code
+   * Sets up a SQL database. This is for test classes that are not a member of the {@code
    * SqlIntegrationTestSuite}.
    */
   private JpaIntegrationTestExtension jpaIntegrationTestRule = null;
@@ -492,11 +492,11 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
       try (Stream<Path> filesToDelete = walk(tmpDir.toPath())) {
         filesToDelete.sorted(reverseOrder()).map(Path::toFile).forEach(File::delete);
       }
-    }
-    // Clean up environment setting left behind by AppEngine test instance.
-    ApiProxy.setEnvironmentForCurrentThread(null);
-    if (isWithDatastoreAndCloudSql()) {
-      restoreTmAfterDualDatabaseTest(context);
+      // Clean up environment setting left behind by AppEngine test instance.
+      ApiProxy.setEnvironmentForCurrentThread(null);
+      if (isWithDatastoreAndCloudSql()) {
+        restoreTmAfterDualDatabaseTest(context);
+      }
     }
   }
 

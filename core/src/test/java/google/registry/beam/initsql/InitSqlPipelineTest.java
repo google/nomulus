@@ -118,7 +118,7 @@ class InitSqlPipelineTest {
   private transient HistoryEntry historyEntry;
 
   @BeforeEach
-  public void beforeEach() throws Exception {
+  void beforeEach() throws Exception {
     try (BackupTestStore store = new BackupTestStore(fakeClock)) {
       injectRule.setStaticField(Ofy.class, "clock", fakeClock);
       exportRootDir = Files.createDirectory(tmpDir.resolve("exports")).toFile();
@@ -224,7 +224,7 @@ class InitSqlPipelineTest {
   }
 
   @Test
-  public void runPipeline() {
+  void runPipeline() {
     InitSqlPipelineOptions options =
         PipelineOptionsFactory.fromArgs(
                 "--sqlCredentialUrlOverride="

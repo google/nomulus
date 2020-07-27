@@ -80,9 +80,7 @@ public class JpaTestRules {
   public static final class JpaIntegrationWithCoverageExtension
       implements BeforeEachCallback, AfterEachCallback {
 
-    private String currentTestClassName = null;
-    private final JpaEntityCoverage jpaEntityCoverage =
-        new JpaEntityCoverage(() -> this.currentTestClassName);
+    private final JpaEntityCoverageExtension jpaEntityCoverage = new JpaEntityCoverageExtension();
     private final JpaIntegrationTestExtension integrationTestRule;
 
     JpaIntegrationWithCoverageExtension(JpaIntegrationTestExtension integrationTestRule) {
@@ -91,21 +89,20 @@ public class JpaTestRules {
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
-      this.currentTestClassName = context.getRequiredTestClass().getName();
-      integrationTestRule.beforeEach(null);
-      jpaEntityCoverage.before();
+      integrationTestRule.beforeEach(context);
+      jpaEntityCoverage.beforeEach(context);
     }
 
     @Override
-    public void afterEach(ExtensionContext context) throws Exception {
-      jpaEntityCoverage.after();
-      integrationTestRule.afterEach(null);
-      this.currentTestClassName = null;
+    public void afterEach(ExtensionContext context) {
+      jpaEntityCoverage.afterEach(context);
+      integrationTestRule.afterEach(context);
     }
   }
 
   /** Builder of test rules that provide {@link JpaTransactionManager}. */
   public static class Builder {
+
     private String initScript;
     private Clock clock;
     private List<Class> extraEntityClasses = new ArrayList<Class>();
