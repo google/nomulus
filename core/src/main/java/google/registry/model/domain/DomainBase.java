@@ -227,7 +227,8 @@ public class DomainBase extends EppResource
    * refer to a {@link PollMessage} timed to when the domain is fully deleted. If the domain is
    * restored, the message should be deleted.
    */
-  @Transient Key<PollMessage.OneTime> deletePollMessage;
+  @Column(name = "deletion_poll_message_id")
+  VKey<PollMessage.OneTime> deletePollMessage;
 
   /**
    * The recurring billing event associated with this domain's autorenewals.
@@ -237,7 +238,8 @@ public class DomainBase extends EppResource
    * {@link #registrationExpirationTime} is changed the recurrence should be closed, a new one
    * should be created, and this field should be updated to point to the new one.
    */
-  @Transient Key<BillingEvent.Recurring> autorenewBillingEvent;
+  @Column(name = "billing_recurrence_id")
+  VKey<BillingEvent.Recurring> autorenewBillingEvent;
 
   /**
    * The recurring poll message associated with this domain's autorenewals.
@@ -247,7 +249,8 @@ public class DomainBase extends EppResource
    * {@link #registrationExpirationTime} is changed the recurrence should be closed, a new one
    * should be created, and this field should be updated to point to the new one.
    */
-  @Transient Key<PollMessage.Autorenew> autorenewPollMessage;
+  @Column(name = "autorenew_poll_message_id")
+  VKey<PollMessage.Autorenew> autorenewPollMessage;
 
   /** The unexpired grace periods for this domain (some of which may not be active yet). */
   @Transient @ElementCollection Set<GracePeriod> gracePeriods;
@@ -316,15 +319,15 @@ public class DomainBase extends EppResource
     return registrationExpirationTime;
   }
 
-  public Key<PollMessage.OneTime> getDeletePollMessage() {
+  public VKey<PollMessage.OneTime> getDeletePollMessage() {
     return deletePollMessage;
   }
 
-  public Key<BillingEvent.Recurring> getAutorenewBillingEvent() {
+  public VKey<BillingEvent.Recurring> getAutorenewBillingEvent() {
     return autorenewBillingEvent;
   }
 
-  public Key<PollMessage.Autorenew> getAutorenewPollMessage() {
+  public VKey<PollMessage.Autorenew> getAutorenewPollMessage() {
     return autorenewPollMessage;
   }
 
@@ -453,14 +456,8 @@ public class DomainBase extends EppResource
               .setRegistrationExpirationTime(expirationDate)
               // Set the speculatively-written new autorenew events as the domain's autorenew
               // events.
-              .setAutorenewBillingEvent(
-                  transferData.getServerApproveAutorenewEvent() == null
-                      ? null
-                      : transferData.getServerApproveAutorenewEvent().getOfyKey())
-              .setAutorenewPollMessage(
-                  transferData.getServerApproveAutorenewPollMessage() == null
-                      ? null
-                      : transferData.getServerApproveAutorenewPollMessage().getOfyKey());
+              .setAutorenewBillingEvent(transferData.getServerApproveAutorenewEvent())
+              .setAutorenewPollMessage(transferData.getServerApproveAutorenewPollMessage());
       if (transferData.getTransferPeriod().getValue() == 1) {
         // Set the grace period using a key to the prescheduled transfer billing event.  Not using
         // GracePeriod.forBillingEvent() here in order to avoid the actual Datastore fetch.
@@ -471,9 +468,7 @@ public class DomainBase extends EppResource
                     transferExpirationTime.plus(
                         Registry.get(getTld()).getTransferGracePeriodLength()),
                     transferData.getGainingClientId(),
-                    transferData.getServerApproveBillingEvent() == null
-                        ? null
-                        : transferData.getServerApproveBillingEvent().getOfyKey())));
+                    transferData.getServerApproveBillingEvent())));
       } else {
         // There won't be a billing event, so we don't need a grace period
         builder.setGracePeriods(ImmutableSet.of());
@@ -801,19 +796,17 @@ public class DomainBase extends EppResource
       return this;
     }
 
-    public Builder setDeletePollMessage(Key<PollMessage.OneTime> deletePollMessage) {
+    public Builder setDeletePollMessage(VKey<PollMessage.OneTime> deletePollMessage) {
       getInstance().deletePollMessage = deletePollMessage;
       return this;
     }
 
-    public Builder setAutorenewBillingEvent(
-        Key<BillingEvent.Recurring> autorenewBillingEvent) {
+    public Builder setAutorenewBillingEvent(VKey<BillingEvent.Recurring> autorenewBillingEvent) {
       getInstance().autorenewBillingEvent = autorenewBillingEvent;
       return this;
     }
 
-    public Builder setAutorenewPollMessage(
-        Key<PollMessage.Autorenew> autorenewPollMessage) {
+    public Builder setAutorenewPollMessage(VKey<PollMessage.Autorenew> autorenewPollMessage) {
       getInstance().autorenewPollMessage = autorenewPollMessage;
       return this;
     }

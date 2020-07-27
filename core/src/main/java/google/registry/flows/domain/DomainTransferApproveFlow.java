@@ -186,8 +186,8 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                     .setTransferredRegistrationExpirationTime(newExpirationTime)
                     .build())
             .setRegistrationExpirationTime(newExpirationTime)
-            .setAutorenewBillingEvent(Key.create(autorenewEvent))
-            .setAutorenewPollMessage(Key.create(gainingClientAutorenewPollMessage))
+            .setAutorenewBillingEvent(autorenewEvent.createVKey())
+            .setAutorenewPollMessage(gainingClientAutorenewPollMessage.createVKey())
             // Remove all the old grace periods and add a new one for the transfer.
             .setGracePeriods(
                 billingEvent.isPresent()

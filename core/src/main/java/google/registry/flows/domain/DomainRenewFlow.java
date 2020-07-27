@@ -33,7 +33,6 @@ import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.ParameterValueRangeErrorException;
 import google.registry.flows.ExtensionManager;
@@ -181,8 +180,8 @@ public final class DomainRenewFlow implements TransactionalFlow {
             .setLastEppUpdateTime(now)
             .setLastEppUpdateClientId(clientId)
             .setRegistrationExpirationTime(newExpirationTime)
-            .setAutorenewBillingEvent(Key.create(newAutorenewEvent))
-            .setAutorenewPollMessage(Key.create(newAutorenewPollMessage))
+            .setAutorenewBillingEvent(newAutorenewEvent.createVKey())
+            .setAutorenewPollMessage(newAutorenewPollMessage.createVKey())
             .addGracePeriod(
                 GracePeriod.forBillingEvent(GracePeriodStatus.RENEW, explicitRenewEvent))
             .build();

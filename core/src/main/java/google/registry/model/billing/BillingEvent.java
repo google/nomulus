@@ -630,9 +630,9 @@ public abstract class BillingEvent extends ImmutableObject
           .setParent(historyEntry);
       // Set the grace period's billing event using the appropriate Cancellation builder method.
       if (gracePeriod.getOneTimeBillingEvent() != null) {
-        builder.setOneTimeEventKey(VKey.from(gracePeriod.getOneTimeBillingEvent()));
+        builder.setOneTimeEventKey(gracePeriod.getOneTimeBillingEvent());
       } else if (gracePeriod.getRecurringBillingEvent() != null) {
-        builder.setRecurringEventKey(VKey.from(gracePeriod.getRecurringBillingEvent()));
+        builder.setRecurringEventKey(gracePeriod.getRecurringBillingEvent());
       }
       return builder.build();
     }
