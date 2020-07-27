@@ -233,7 +233,7 @@ create sequence history_id_sequence start 1 increment 1;
         auth_info_repo_id text,
         auth_info_value text,
         billing_recurrence_id int8,
-        autorenew_poll_message_id int8,
+        autorenew_poll_message int8,
         billing_contact text,
         deletion_poll_message_id int8,
         domain_name text,
@@ -282,7 +282,10 @@ create sequence history_id_sequence start 1 increment 1;
         admin_contact text,
         auth_info_repo_id text,
         auth_info_value text,
+        billing_recurrence_id int8,
+        autorenew_poll_message int8,
         billing_contact text,
+        deletion_poll_message_id int8,
         domain_name text,
         idn_table_name text,
         last_transfer_time timestamptz,
@@ -319,6 +322,7 @@ create sequence history_id_sequence start 1 increment 1;
         last_epp_update_registrar_id text,
         last_epp_update_time timestamptz,
         statuses text[],
+        update_timestamp timestamptz,
         domain_repo_id text not null,
         primary key (history_revision_id)
     );
