@@ -1597,14 +1597,6 @@ ALTER TABLE ONLY public."Spec11ThreatMatch"
 
 
 --
--- Name: Spec11ThreatMatch fk_safebrowsing_threat_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Spec11ThreatMatch"
-    ADD CONSTRAINT fk_safebrowsing_threat_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
-
-
---
 -- Name: DomainHost fkfmi7bdink53swivs390m2btxg; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
