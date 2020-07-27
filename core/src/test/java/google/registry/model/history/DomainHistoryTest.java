@@ -33,6 +33,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import org.junit.jupiter.api.Test;
 
+/** Tests for {@link DomainHistory}. */
 public class DomainHistoryTest extends EntityTestCase {
 
   public DomainHistoryTest() {
@@ -82,6 +83,7 @@ public class DomainHistoryTest extends EntityTestCase {
   }
 
   static void assertDomainHistoriesEqual(DomainHistory one, DomainHistory two) {
-    assertAboutImmutableObjects().that(one).isEqualExceptFields(two);
+    assertAboutImmutableObjects().that(one)
+        .isEqualExceptFields(two, "domainContent", "domainRepoId", "parent");
   }
 }

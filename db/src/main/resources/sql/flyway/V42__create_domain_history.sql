@@ -26,7 +26,10 @@ CREATE TABLE "DomainHistory" (
     admin_contact text,
     auth_info_repo_id text,
     auth_info_value text,
+    billing_recurrence_id int8,
+    autorenew_poll_message_id int8,
     billing_contact text,
+    deletion_poll_message_id int8,
     domain_name text,
     idn_table_name text,
     last_transfer_time timestamptz,
@@ -63,12 +66,13 @@ CREATE TABLE "DomainHistory" (
     last_epp_update_registrar_id text,
     last_epp_update_time timestamptz,
     statuses text[],
+    update_timestamp timestamptz,
     domain_repo_id text NOT NULL,
     PRIMARY KEY (history_revision_id)
 );
 
 CREATE TABLE "DomainHistoryHost" (
-   domain_history_history_revision_id int8 not null,
+   domain_history_history_revision_id int8 NOT NULL,
    ns_hosts text
 );
 

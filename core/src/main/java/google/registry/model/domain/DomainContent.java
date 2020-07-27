@@ -230,6 +230,7 @@ public class DomainContent extends EppResource
    * {@link #registrationExpirationTime} is changed the recurrence should be closed, a new one
    * should be created, and this field should be updated to point to the new one.
    */
+  @Column(name = "autorenew_poll_message_id")
   VKey<PollMessage.Autorenew> autorenewPollMessage;
 
   /** The unexpired grace periods for this domain (some of which may not be active yet). */
@@ -438,7 +439,7 @@ public class DomainContent extends EppResource
               .setRegistrationExpirationTime(expirationDate)
               // Set the speculatively-written new autorenew events as the domain's autorenew
               // events.
-              .setAutorenewBillingEvent(transferData.getServerApproveBillingEvent())
+              .setAutorenewBillingEvent(transferData.getServerApproveAutorenewEvent())
               .setAutorenewPollMessage(transferData.getServerApproveAutorenewPollMessage());
       if (transferData.getTransferPeriod().getValue() == 1) {
         // Set the grace period using a key to the prescheduled transfer billing event.  Not using

@@ -423,7 +423,10 @@ CREATE TABLE public."DomainHistory" (
     admin_contact text,
     auth_info_repo_id text,
     auth_info_value text,
+    billing_recurrence_id bigint,
+    autorenew_poll_message_id bigint,
     billing_contact text,
+    deletion_poll_message_id bigint,
     domain_name text,
     idn_table_name text,
     last_transfer_time timestamp with time zone,
@@ -460,6 +463,7 @@ CREATE TABLE public."DomainHistory" (
     last_epp_update_registrar_id text,
     last_epp_update_time timestamp with time zone,
     statuses text[],
+    update_timestamp timestamp with time zone,
     domain_repo_id text NOT NULL
 );
 
