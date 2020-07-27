@@ -67,6 +67,14 @@ public class DomainHistory extends HistoryEntry {
     return domainRepoId;
   }
 
+  // Hibernate needs this in order to populate nsHosts but no one else should ever use it
+  @SuppressWarnings("UnusedMethod")
+  private void setNsHosts(Set<VKey<HostResource>> nsHosts) {
+    if (domainContent != null) {
+      domainContent.nsHosts = nsHosts;
+    }
+  }
+
   @Override
   public Builder asBuilder() {
     return new Builder(clone(this));

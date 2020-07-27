@@ -347,6 +347,12 @@ public class DomainContent extends EppResource
     return nullToEmptyImmutableCopy(nsHosts);
   }
 
+  // Hibernate needs this in order to populate nsHosts but no one else should ever use it
+  @SuppressWarnings("UnusedMethod")
+  private void setNsHosts(Set<VKey<HostResource>> nsHosts) {
+    this.nsHosts = nsHosts;
+  }
+
   public final String getCurrentSponsorClientId() {
     return getPersistedCurrentSponsorClientId();
   }
