@@ -26,7 +26,6 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyNotReserved;
 import static google.registry.flows.domain.DomainFlowUtils.verifyPremiumNameIsNotBlocked;
 import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActive;
 import static google.registry.model.ResourceTransferUtils.updateForeignKeyIndexDeletionTime;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
@@ -174,8 +173,8 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
             existingDomain, newExpirationTime, autorenewEvent, autorenewPollMessage, now, clientId);
     updateForeignKeyIndexDeletionTime(newDomain);
     entitiesToSave.add(newDomain, historyEntry, autorenewEvent, autorenewPollMessage);
-    ofy().save().entities(entitiesToSave.build());
-    ofy().delete().key(existingDomain.getDeletePollMessage());
+    tm().saveNewOrUpdateAll(entitiesToSave.build());
+    tm().delete(existingDomain.getDeletePollMessage());
     dnsQueue.addDomainRefreshTask(existingDomain.getDomainName());
     return responseBuilder
         .setExtensions(createResponseExtensions(feesAndCredits, feeUpdate, isExpired))
@@ -232,8 +231,8 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
         .setStatusValues(null)
         .setGracePeriods(null)
         .setDeletePollMessage(null)
-        .setAutorenewBillingEvent(Key.create(autorenewEvent))
-        .setAutorenewPollMessage(Key.create(autorenewPollMessage))
+        .setAutorenewBillingEvent(autorenewEvent.createVKey())
+        .setAutorenewPollMessage(autorenewPollMessage.createVKey())
         .setLastEppUpdateTime(now)
         .setLastEppUpdateClientId(clientId)
         .build();

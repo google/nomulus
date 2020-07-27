@@ -16,12 +16,12 @@ package google.registry.flows.domain;
 
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.NET_ADDS_4_YR;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_SUCCESSFUL;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.assertBillingEventsForResource;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.deleteResource;
@@ -42,7 +42,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Streams;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
@@ -192,7 +191,7 @@ class DomainTransferApproveFlowTest
     assertAboutHistoryEntries().that(historyEntryTransferApproved).hasOtherClientId("NewRegistrar");
     assertTransferApproved(domain, originalTransferData);
     assertAboutDomains().that(domain).hasRegistrationExpirationTime(expectedExpirationTime);
-    assertThat(ofy().load().key(domain.getAutorenewBillingEvent()).now().getEventTime())
+    assertThat(tm().load(domain.getAutorenewBillingEvent()).getEventTime())
         .isEqualTo(expectedExpirationTime);
     // The poll message (in the future) to the losing registrar for implicit ack should be gone.
     assertThat(getPollMessages(domain, "TheRegistrar", clock.nowUtc().plusMonths(1))).isEmpty();
@@ -403,7 +402,7 @@ class DomainTransferApproveFlowTest
             .setEventTime(clock.nowUtc()) // The cancellation happens at the moment of transfer.
             .setBillingTime(
                 oldExpirationTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()))
-            .setRecurringEventKey(VKey.from(domain.getAutorenewBillingEvent())));
+            .setRecurringEventKey(domain.getAutorenewBillingEvent()));
   }
 
   @Test
@@ -634,7 +633,7 @@ class DomainTransferApproveFlowTest
   @Test
   void testSuccess_superuserExtension_transferPeriodZero_autorenewGraceActive() throws Exception {
     DomainBase domain = reloadResourceByForeignKey();
-    Key<Recurring> existingAutorenewEvent = domain.getAutorenewBillingEvent();
+    VKey<Recurring> existingAutorenewEvent = domain.getAutorenewBillingEvent();
     // Set domain to have auto-renewed just before the transfer request, so that it will have an
     // active autorenew grace period spanning the entire transfer window.
     DateTime autorenewTime = clock.nowUtc().minusDays(1);

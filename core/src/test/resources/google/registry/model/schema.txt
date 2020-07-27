@@ -164,14 +164,14 @@ class google.registry.model.domain.DomainAuthInfo {
 class google.registry.model.domain.DomainBase {
   @Id java.lang.String repoId;
   com.google.common.collect.ImmutableSortedMap<org.joda.time.DateTime, com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest>> revisions;
-  com.googlecode.objectify.Key<google.registry.model.billing.BillingEvent$Recurring> autorenewBillingEvent;
-  com.googlecode.objectify.Key<google.registry.model.poll.PollMessage$Autorenew> autorenewPollMessage;
-  com.googlecode.objectify.Key<google.registry.model.poll.PollMessage$OneTime> deletePollMessage;
   google.registry.model.CreateAutoTimestamp creationTime;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.domain.DomainAuthInfo authInfo;
   google.registry.model.domain.launch.LaunchNotice launchNotice;
   google.registry.model.transfer.DomainTransferData transferData;
+  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$Recurring> autorenewBillingEvent;
+  google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> autorenewPollMessage;
+  google.registry.persistence.VKey<google.registry.model.poll.PollMessage$OneTime> deletePollMessage;
   java.lang.String creationClientId;
   java.lang.String currentSponsorClientId;
   java.lang.String fullyQualifiedDomainName;
@@ -191,9 +191,9 @@ class google.registry.model.domain.DomainBase {
   org.joda.time.DateTime registrationExpirationTime;
 }
 class google.registry.model.domain.GracePeriod {
-  com.googlecode.objectify.Key<google.registry.model.billing.BillingEvent$OneTime> billingEventOneTime;
-  com.googlecode.objectify.Key<google.registry.model.billing.BillingEvent$Recurring> billingEventRecurring;
   google.registry.model.domain.rgp.GracePeriodStatus type;
+  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$OneTime> billingEventOneTime;
+  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$Recurring> billingEventRecurring;
   java.lang.String clientId;
   org.joda.time.DateTime expirationTime;
 }

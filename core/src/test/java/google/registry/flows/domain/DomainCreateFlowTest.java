@@ -31,6 +31,7 @@ import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABIL
 import static google.registry.model.registry.Registry.TldState.PREDELEGATION;
 import static google.registry.model.registry.Registry.TldState.QUIET_PERIOD;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.testing.DatastoreHelper.assertBillingEvents;
 import static google.registry.testing.DatastoreHelper.assertPollMessagesForResource;
@@ -257,8 +258,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     HistoryEntry historyEntry = getHistoryEntries(domain).get(0);
     assertAboutDomains()
         .that(domain)
-        .hasRegistrationExpirationTime(
-            ofy().load().key(domain.getAutorenewBillingEvent()).now().getEventTime())
+        .hasRegistrationExpirationTime(tm().load(domain.getAutorenewBillingEvent()).getEventTime())
         .and()
         .hasOnlyOneHistoryEntryWhich()
         .hasType(HistoryEntry.Type.DOMAIN_CREATE)

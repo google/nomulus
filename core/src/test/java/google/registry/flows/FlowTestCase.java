@@ -22,6 +22,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.model.eppcommon.EppXmlTransformer.marshal;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.POLL_MESSAGE_ID_STRIPPER;
 import static google.registry.testing.DatastoreHelper.getPollMessages;
 import static google.registry.testing.DatastoreHelper.stripBillingEventId;
@@ -196,12 +197,9 @@ public abstract class FlowTestCase<F extends Flow> {
     assertWithMessage("Billing event is present for grace period: " + gracePeriod)
         .that(gracePeriod.hasBillingEvent())
         .isTrue();
-    return ofy()
-        .load()
-        .key(
+    return tm().load(
             firstNonNull(
-                gracePeriod.getOneTimeBillingEvent(), gracePeriod.getRecurringBillingEvent()))
-        .now();
+                gracePeriod.getOneTimeBillingEvent(), gracePeriod.getRecurringBillingEvent()));
   }
 
   /**

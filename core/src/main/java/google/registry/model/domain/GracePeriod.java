@@ -17,12 +17,13 @@ package google.registry.model.domain;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.rgp.GracePeriodStatus;
+import google.registry.persistence.VKey;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
@@ -57,18 +58,18 @@ public class GracePeriod extends ImmutableObject {
 
   /**
    * The one-time billing event corresponding to the action that triggered this grace period, or
-   * null if not applicable.  Not set for autorenew grace periods (which instead use the field
-   * {@code billingEventRecurring}) or for redemption grace periods (since deletes have no cost).
+   * null if not applicable. Not set for autorenew grace periods (which instead use the field {@code
+   * billingEventRecurring}) or for redemption grace periods (since deletes have no cost).
    */
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
-  Key<BillingEvent.OneTime> billingEventOneTime = null;
+  VKey<BillingEvent.OneTime> billingEventOneTime = null;
 
   /**
    * The recurring billing event corresponding to the action that triggered this grace period, if
    * applicable - i.e. if the action was an autorenew - or null in all other cases.
    */
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
-  Key<BillingEvent.Recurring> billingEventRecurring = null;
+  VKey<BillingEvent.Recurring> billingEventRecurring = null;
 
   public GracePeriodStatus getType() {
     return type;
@@ -91,8 +92,7 @@ public class GracePeriod extends ImmutableObject {
    * Returns the one time billing event. The value will only be non-null if the type of this grace
    * period is not AUTO_RENEW.
    */
-
-  public Key<BillingEvent.OneTime> getOneTimeBillingEvent() {
+  public VKey<BillingEvent.OneTime> getOneTimeBillingEvent() {
     return billingEventOneTime;
   }
 
@@ -100,16 +100,16 @@ public class GracePeriod extends ImmutableObject {
    * Returns the recurring billing event. The value will only be non-null if the type of this grace
    * period is AUTO_RENEW.
    */
-  public Key<BillingEvent.Recurring> getRecurringBillingEvent() {
+  public VKey<BillingEvent.Recurring> getRecurringBillingEvent() {
     return billingEventRecurring;
   }
 
   private static GracePeriod createInternal(
-       GracePeriodStatus type,
-       DateTime expirationTime,
-       String clientId,
-       @Nullable Key<BillingEvent.OneTime> billingEventOneTime,
-       @Nullable Key<BillingEvent.Recurring> billingEventRecurring) {
+      GracePeriodStatus type,
+      DateTime expirationTime,
+      String clientId,
+      @Nullable VKey<BillingEvent.OneTime> billingEventOneTime,
+      @Nullable VKey<BillingEvent.Recurring> billingEventRecurring) {
     checkArgument((billingEventOneTime == null) || (billingEventRecurring == null),
         "A grace period can have at most one billing event");
     checkArgument(
@@ -127,15 +127,15 @@ public class GracePeriod extends ImmutableObject {
   /**
    * Creates a GracePeriod for an (optional) OneTime billing event.
    *
-   * <p>Normal callers should always use {@link #forBillingEvent} instead, assuming they do not
-   * need to avoid loading the BillingEvent from Datastore.  This method should typically be
-   * called only from test code to explicitly construct GracePeriods.
+   * <p>Normal callers should always use {@link #forBillingEvent} instead, assuming they do not need
+   * to avoid loading the BillingEvent from Datastore. This method should typically be called only
+   * from test code to explicitly construct GracePeriods.
    */
   public static GracePeriod create(
       GracePeriodStatus type,
       DateTime expirationTime,
       String clientId,
-      @Nullable Key<BillingEvent.OneTime> billingEventOneTime) {
+      @Nullable VKey<BillingEvent.OneTime> billingEventOneTime) {
     return createInternal(type, expirationTime, clientId, billingEventOneTime, null);
   }
 
@@ -144,7 +144,7 @@ public class GracePeriod extends ImmutableObject {
       GracePeriodStatus type,
       DateTime expirationTime,
       String clientId,
-      Key<BillingEvent.Recurring> billingEventRecurring) {
+      VKey<Recurring> billingEventRecurring) {
     checkArgumentNotNull(billingEventRecurring, "billingEventRecurring cannot be null");
     return createInternal(type, expirationTime, clientId, null, billingEventRecurring);
   }
@@ -159,6 +159,6 @@ public class GracePeriod extends ImmutableObject {
   public static GracePeriod forBillingEvent(
       GracePeriodStatus type, BillingEvent.OneTime billingEvent) {
     return create(
-        type, billingEvent.getBillingTime(), billingEvent.getClientId(), Key.create(billingEvent));
+        type, billingEvent.getBillingTime(), billingEvent.getClientId(), billingEvent.createVKey());
   }
 }

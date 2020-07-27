@@ -232,7 +232,10 @@ create sequence history_id_sequence start 1 increment 1;
         admin_contact text,
         auth_info_repo_id text,
         auth_info_value text,
+        billing_recurrence_id int8,
+        autorenew_poll_message_id int8,
         billing_contact text,
+        deletion_poll_message_id int8,
         domain_name text,
         idn_table_name text,
         last_transfer_time timestamptz,
@@ -272,8 +275,8 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "GracePeriod" (
        id  bigserial not null,
-        billing_event_one_time bytea,
-        billing_event_recurring bytea,
+        billing_event_one_time int8,
+        billing_event_recurring int8,
         registrar_id text,
         expiration_time timestamptz,
         type int4,

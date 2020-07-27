@@ -398,7 +398,10 @@ CREATE TABLE public."Domain" (
     transfer_pending_expiration_time timestamp with time zone,
     transfer_request_time timestamp with time zone,
     transfer_status text,
-    update_timestamp timestamp with time zone
+    update_timestamp timestamp with time zone,
+    billing_recurrence_id bigint,
+    autorenew_poll_message_id bigint,
+    deletion_poll_message_id bigint
 );
 
 
@@ -1453,11 +1456,35 @@ ALTER TABLE ONLY public."Domain"
 
 
 --
+-- Name: Domain fk_domain_autorenew_poll_message_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_autorenew_poll_message_id FOREIGN KEY (autorenew_poll_message_id) REFERENCES public."PollMessage"(poll_message_id);
+
+
+--
 -- Name: Domain fk_domain_billing_contact; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."Domain"
     ADD CONSTRAINT fk_domain_billing_contact FOREIGN KEY (billing_contact) REFERENCES public."Contact"(repo_id);
+
+
+--
+-- Name: Domain fk_domain_billing_recurrence_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingEvent"(billing_event_id);
+
+
+--
+-- Name: Domain fk_domain_deletion_poll_message_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_deletion_poll_message_id FOREIGN KEY (deletion_poll_message_id) REFERENCES public."PollMessage"(poll_message_id);
 
 
 --
@@ -1594,14 +1621,6 @@ ALTER TABLE ONLY public."PollMessage"
 
 ALTER TABLE ONLY public."Spec11ThreatMatch"
     ADD CONSTRAINT fk_safebrowsing_threat_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
-
-
---
--- Name: Spec11ThreatMatch fk_safebrowsing_threat_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Spec11ThreatMatch"
-    ADD CONSTRAINT fk_safebrowsing_threat_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
 
 
 --

@@ -20,6 +20,7 @@ import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
 import static google.registry.model.eppcommon.StatusValue.PENDING_TRANSFER;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.reporting.HistoryEntry.Type.SYNTHETIC;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.assertBillingEventsEqual;
 import static google.registry.testing.DatastoreHelper.assertPollMessagesEqual;
 import static google.registry.testing.DatastoreHelper.createTld;
@@ -119,7 +120,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     HistoryEntry synthetic = getOnlyHistoryEntryOfType(domain, SYNTHETIC);
 
     assertBillingEventsEqual(
-        ofy().load().key(domain.getAutorenewBillingEvent()).now(),
+        tm().load(domain.getAutorenewBillingEvent()),
         new BillingEvent.Recurring.Builder()
             .setParent(synthetic)
             .setReason(Reason.RENEW)
@@ -148,7 +149,8 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
                 .build()));
 
     // Check that fields on domain were updated correctly.
-    assertThat(domain.getAutorenewPollMessage().getParent()).isEqualTo(Key.create(synthetic));
+    assertThat(domain.getAutorenewPollMessage().getOfyKey().getParent())
+        .isEqualTo(Key.create(synthetic));
     assertThat(domain.getRegistrationExpirationTime()).isEqualTo(newExpirationTime);
     assertThat(domain.getLastEppUpdateTime()).isEqualTo(unrenewTime);
     assertThat(domain.getLastEppUpdateClientId()).isEqualTo("TheRegistrar");

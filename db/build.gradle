@@ -36,6 +36,7 @@ ext {
   }
 
   getAccessInfoByHostPort = { hostAndPort ->
+    println "Database set to ${hostAndPort}."
     return [
         url: "jdbc:postgresql://${hostAndPort}/${dbName}",
         user: findProperty('dbUser'),
@@ -45,6 +46,7 @@ ext {
   getSocketFactoryAccessInfo = { env ->
     def cred = getCloudSqlCredential(env, 'admin').split(' ')
     def sqlInstance = cred[0]
+    println "Database set to Cloud SQL instance ${sqlInstance}."
     return [
         url: """\
                    jdbc:postgresql://google/${dbName}?cloudSqlInstance=
@@ -73,14 +75,17 @@ ext {
   getCloudSqlCredential = { env, role ->
     def devProject = project.hasProperty('devProject')
         ? project.getProperty('devProject') : rootProject.devProject
+    def gcpProject = project.hasProperty('gcpProject')
+        ? project.getProperty('gcpProject') : rootProject.gcpProject
+    def keyProject = env in restrictedDbEnv? devProject : gcpProject
     def command =
         """gsutil cp \
-           gs://${devProject}-deploy/cloudsql-credentials/${env}/${role}_credential.enc - | \
+           gs://${gcpProject}-beam/cloudsql/${role}_credential.enc - | \
            base64 -d | \
            gcloud kms decrypt --location global --keyring nomulus-tool-keyring \
            --key nomulus-tool-key --plaintext-file=- \
            --ciphertext-file=- \
-           --project=${devProject}"""
+           --project=${keyProject}"""
 
     return execInBash(command, '/tmp')
   }
