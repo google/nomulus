@@ -156,12 +156,12 @@ class InitSqlPipelineTest {
       Key<HistoryEntry> historyEntryKey = Key.create(historyEntry);
       Key<BillingEvent.OneTime> oneTimeBillKey =
           Key.create(historyEntryKey, BillingEvent.OneTime.class, 1);
-      Key<BillingEvent.Recurring> recurringBillKey =
-          Key.create(historyEntryKey, BillingEvent.Recurring.class, 2);
-      Key<PollMessage.Autorenew> autorenewPollKey =
-          Key.create(historyEntryKey, PollMessage.Autorenew.class, 3);
-      Key<PollMessage.OneTime> onetimePollKey =
-          Key.create(historyEntryKey, PollMessage.OneTime.class, 1);
+      VKey<BillingEvent.Recurring> recurringBillKey =
+          VKey.from(Key.create(historyEntryKey, BillingEvent.Recurring.class, 2));
+      VKey<PollMessage.Autorenew> autorenewPollKey =
+          VKey.from(Key.create(historyEntryKey, PollMessage.Autorenew.class, 3));
+      VKey<PollMessage.OneTime> onetimePollKey =
+          VKey.from(Key.create(historyEntryKey, PollMessage.OneTime.class, 1));
       domain =
           persistResource(
               new DomainBase.Builder()
@@ -200,12 +200,10 @@ class InitSqlPipelineTest {
                           .setPendingTransferExpirationTime(fakeClock.nowUtc())
                           .setServerApproveEntities(
                               ImmutableSet.of(
-                                  VKey.from(oneTimeBillKey),
-                                  VKey.from(recurringBillKey),
-                                  VKey.from(autorenewPollKey)))
+                                  VKey.from(oneTimeBillKey), recurringBillKey, autorenewPollKey))
                           .setServerApproveBillingEvent(VKey.from(oneTimeBillKey))
-                          .setServerApproveAutorenewEvent(VKey.from(recurringBillKey))
-                          .setServerApproveAutorenewPollMessage(VKey.from(autorenewPollKey))
+                          .setServerApproveAutorenewEvent(recurringBillKey)
+                          .setServerApproveAutorenewPollMessage(autorenewPollKey)
                           .setTransferRequestTime(fakeClock.nowUtc().plusDays(1))
                           .setTransferStatus(TransferStatus.SERVER_APPROVED)
                           .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
