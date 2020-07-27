@@ -109,6 +109,11 @@ public class Transaction extends ImmutableObject implements Buildable {
     return builder.build();
   }
 
+  /** Returns true if the transaction contains no mutations. */
+  public boolean isEmpty() {
+    return mutations.isEmpty();
+  }
+
   @Override
   public Builder asBuilder() {
     return new Builder(clone(this));
