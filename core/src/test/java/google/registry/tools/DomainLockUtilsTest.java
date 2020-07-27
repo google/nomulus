@@ -49,6 +49,7 @@ import google.registry.testing.AppEngineRule;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
+import google.registry.testing.SqlHelper;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.UserInfo;
 import google.registry.util.AppEngineServiceUtils;
@@ -276,6 +277,37 @@ public final class DomainLockUtilsTest {
   }
 
   @Test
+  void testSuccess_adminCanLockLockedDomain_withNoSavedLock() {
+    // in the case of inconsistencies / errors, admins should have the ability to override
+    // whatever statuses exist on the domain
+    persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
+    RegistryLock resultLock = domainLockUtils
+        .administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, true);
+    verifyProperlyLockedDomain(true);
+    assertThat(resultLock.getLockCompletionTimestamp()).isEqualTo(Optional.of(clock.nowUtc()));
+  }
+
+  @Test
+  void testSuccess_adminCanLockUnlockedDomain_withSavedLock() {
+    // in the case of inconsistencies / errors, admins should have the ability to override
+    // what the RegistryLock table says
+    SqlHelper.saveRegistryLock(new RegistryLock.Builder()
+        .setLockCompletionTimestamp(clock.nowUtc())
+        .setDomainName(DOMAIN_NAME)
+        .setVerificationCode("hi")
+        .setRegistrarId("TheRegistrar")
+        .setRepoId(domain.getRepoId())
+        .isSuperuser(false)
+        .setRegistrarPocId(POC_ID)
+        .build());
+    clock.advanceOneMilli();
+    RegistryLock resultLock = domainLockUtils
+        .administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, true);
+    verifyProperlyLockedDomain(true);
+    assertThat(resultLock.getLockCompletionTimestamp()).isEqualTo(Optional.of(clock.nowUtc()));
+  }
+
+  @Test
   void testFailure_createUnlock_alreadyPendingUnlock() {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
@@ -317,7 +349,7 @@ public final class DomainLockUtilsTest {
                     domainLockUtils.saveNewRegistryLockRequest(
                         "asdf.tld", "TheRegistrar", POC_ID, false)))
         .hasMessageThat()
-        .isEqualTo("Unknown domain asdf.tld");
+        .isEqualTo("Domain doesn't exist");
   }
 
   @Test
