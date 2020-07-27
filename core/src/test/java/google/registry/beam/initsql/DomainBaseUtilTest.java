@@ -63,7 +63,7 @@ public class DomainBaseUtilTest {
   private DomainBase domain;
   private Entity domainEntity;
   private Key<OneTime> oneTimeBillKey;
-  private Key<BillingEvent.Recurring> recurringBillKey;
+  private VKey<BillingEvent.Recurring> recurringBillKey;
   private Key<DomainBase> domainKey;
 
   @RegisterExtension
@@ -102,11 +102,11 @@ public class DomainBaseUtilTest {
     Key<HistoryEntry> historyEntryKey =
         Key.create(persistResource(new HistoryEntry.Builder().setParent(domainKey).build()));
     oneTimeBillKey = Key.create(historyEntryKey, BillingEvent.OneTime.class, 1);
-    recurringBillKey = Key.create(historyEntryKey, BillingEvent.Recurring.class, 2);
-    Key<PollMessage.Autorenew> autorenewPollKey =
-        Key.create(historyEntryKey, PollMessage.Autorenew.class, 3);
-    Key<PollMessage.OneTime> onetimePollKey =
-        Key.create(historyEntryKey, PollMessage.OneTime.class, 1);
+    recurringBillKey = VKey.from(Key.create(historyEntryKey, BillingEvent.Recurring.class, 2));
+    VKey<PollMessage.Autorenew> autorenewPollKey =
+        VKey.from(Key.create(historyEntryKey, PollMessage.Autorenew.class, 3));
+    VKey<PollMessage.OneTime> onetimePollKey =
+        VKey.from(Key.create(historyEntryKey, PollMessage.OneTime.class, 1));
     // Set up a new persisted domain entity.
     domain =
         persistResource(
@@ -146,12 +146,10 @@ public class DomainBaseUtilTest {
                             .setPendingTransferExpirationTime(fakeClock.nowUtc())
                             .setServerApproveEntities(
                                 ImmutableSet.of(
-                                    VKey.from(oneTimeBillKey),
-                                    VKey.from(recurringBillKey),
-                                    VKey.from(autorenewPollKey)))
+                                    VKey.from(oneTimeBillKey), recurringBillKey, autorenewPollKey))
                             .setServerApproveBillingEvent(VKey.from(oneTimeBillKey))
-                            .setServerApproveAutorenewEvent(VKey.from(recurringBillKey))
-                            .setServerApproveAutorenewPollMessage(VKey.from(autorenewPollKey))
+                            .setServerApproveAutorenewEvent(recurringBillKey)
+                            .setServerApproveAutorenewPollMessage(autorenewPollKey)
                             .setTransferRequestTime(fakeClock.nowUtc().plusDays(1))
                             .setTransferStatus(TransferStatus.SERVER_APPROVED)
                             .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
