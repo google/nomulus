@@ -17,23 +17,17 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.io.File;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
-@RunWith(JUnit4.class)
-public class DumpGoldenSchemaCommandTest extends CommandTestCase<DumpGoldenSchemaCommand> {
+/** Unit tests for {@link google.registry.tools.DumpGoldenSchemaCommand}. */
+class DumpGoldenSchemaCommandTest extends CommandTestCase<DumpGoldenSchemaCommand> {
 
-  @Rule public TemporaryFolder tmp = new TemporaryFolder();
-
-  public DumpGoldenSchemaCommandTest() {}
+  DumpGoldenSchemaCommandTest() {}
 
   @Test
-  public void testSchemaGeneration() throws Exception {
-    runCommand(
-        "--output=" + tmp.getRoot() + File.separatorChar + "golden.sql", "--start_postgresql");
-    assertThat(new File(tmp.getRoot(), "golden.sql").length()).isGreaterThan(1);
+  void testSchemaGeneration() throws Exception {
+    File schemaFile = tmpDir.resolve("golden.sql").toFile();
+    runCommand("--output=" + schemaFile.toString(), "--start_postgresql");
+    assertThat(schemaFile.length()).isGreaterThan(1);
   }
 }

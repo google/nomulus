@@ -28,10 +28,10 @@ import java.security.SignatureException;
 import java.security.cert.CRLException;
 import java.security.cert.CertificateNotYetValidException;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link TmchCrlAction}. */
-public class TmchCrlActionTest extends TmchActionTestCase {
+class TmchCrlActionTest extends TmchActionTestCase {
 
   private TmchCrlAction newTmchCrlAction(TmchCaMode tmchCaMode) throws MalformedURLException {
     TmchCrlAction action = new TmchCrlAction();
@@ -42,7 +42,7 @@ public class TmchCrlActionTest extends TmchActionTestCase {
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     clock.setTo(DateTime.parse("2013-07-24TZ"));
     when(httpResponse.getContent()).thenReturn(
         readResourceBytes(TmchCertificateAuthority.class, "icann-tmch.crl").read());
@@ -53,7 +53,7 @@ public class TmchCrlActionTest extends TmchActionTestCase {
   }
 
   @Test
-  public void testFailure_crlTooOld() throws Exception {
+  void testFailure_crlTooOld() throws Exception {
     clock.setTo(DateTime.parse("2020-01-01TZ"));
     when(httpResponse.getContent())
         .thenReturn(loadBytes(TmchCrlActionTest.class, "icann-tmch-pilot-old.crl").read());
@@ -67,7 +67,7 @@ public class TmchCrlActionTest extends TmchActionTestCase {
   }
 
   @Test
-  public void testFailure_crlNotSignedByRoot() throws Exception {
+  void testFailure_crlNotSignedByRoot() throws Exception {
     clock.setTo(DateTime.parse("2013-07-24TZ"));
     when(httpResponse.getContent())
         .thenReturn(readResourceBytes(TmchCertificateAuthority.class, "icann-tmch.crl").read());
@@ -77,7 +77,7 @@ public class TmchCrlActionTest extends TmchActionTestCase {
   }
 
   @Test
-  public void testFailure_crlNotYetValid() throws Exception {
+  void testFailure_crlNotYetValid() throws Exception {
     clock.setTo(DateTime.parse("1984-01-01TZ"));
     when(httpResponse.getContent()).thenReturn(
         readResourceBytes(TmchCertificateAuthority.class, "icann-tmch-pilot.crl").read());

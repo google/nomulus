@@ -19,32 +19,29 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import google.registry.testing.AppEngineRule;
-import org.junit.After;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link GaeUserIdConverter}. */
-@RunWith(JUnit4.class)
 public class GaeUserIdConverterTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  @After
-  public void verifyNoLingeringEntities() {
+  @AfterEach
+  void verifyNoLingeringEntities() {
     assertThat(ofy().load().type(GaeUserIdConverter.class).count()).isEqualTo(0);
   }
 
   @Test
-  public void testSuccess() {
+  void testSuccess() {
     assertThat(GaeUserIdConverter.convertEmailAddressToGaeUserId("example@example.com"))
         .matches("[0-9]+");
   }
 
   @Test
-  public void testSuccess_inTransaction() {
+  void testSuccess_inTransaction() {
     tm()
         .transactNew(
             () ->

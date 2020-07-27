@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2020 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.bigquery;
+package google.registry.beam.initsql;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.apache.beam.sdk.options.PipelineOptionsFactory;
+import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link BigqueryConnection}. */
-@RunWith(JUnit4.class)
-public class BigqueryConnectionTest {
+/** Unit tests for {@link google.registry.beam.initsql.InitSqlPipelineOptions}. * */
+public class InitSqlPipelineOptionsTest {
 
   @Test
-  public void testNothing() {
-    // Placeholder test class for now.
-    // TODO(b/16569089): figure out a good way for testing our Bigquery usage overall - maybe unit
-    // tests here, maybe end-to-end testing.
+  void registerToValidate() {
+    PipelineOptionsFactory.register(InitSqlPipelineOptions.class);
   }
 }

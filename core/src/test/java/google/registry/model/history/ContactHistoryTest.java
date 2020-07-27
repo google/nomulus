@@ -15,6 +15,7 @@
 package google.registry.model.history;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.history.DomainHistoryTest.assertHistoriesEqual;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatastoreHelper.newContactResourceWithRoid;
@@ -32,12 +33,12 @@ import org.junit.jupiter.api.Test;
 /** Tests for {@link ContactHistory}. */
 public class ContactHistoryTest extends EntityTestCase {
 
-  public ContactHistoryTest() {
+  ContactHistoryTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     saveRegistrar("TheRegistrar");
 
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
@@ -62,9 +63,13 @@ public class ContactHistoryTest extends EntityTestCase {
         .transact(
             () -> {
               ContactHistory fromDatabase = jpaTm().load(VKey.createSql(ContactHistory.class, 1L));
-              assertHistoriesEqual(fromDatabase, contactHistory);
+              assertContactHistoriesEqual(fromDatabase, contactHistory);
               assertThat(fromDatabase.getContactRepoId().getSqlKey())
                   .isEqualTo(contactHistory.getContactRepoId().getSqlKey());
             });
+  }
+
+  static void assertContactHistoriesEqual(ContactHistory one, ContactHistory two) {
+    assertAboutImmutableObjects().that(one).isEqualExceptFields(two);
   }
 }

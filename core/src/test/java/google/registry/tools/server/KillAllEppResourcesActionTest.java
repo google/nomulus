@@ -53,15 +53,12 @@ import google.registry.testing.mapreduce.MapreduceTestCase;
 import java.util.stream.Stream;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
-/** Tests for {@link KillAllEppResourcesAction}.*/
-@RunWith(JUnit4.class)
-public class KillAllEppResourcesActionTest extends MapreduceTestCase<KillAllEppResourcesAction> {
+/** Tests for {@link KillAllEppResourcesAction}. */
+class KillAllEppResourcesActionTest extends MapreduceTestCase<KillAllEppResourcesAction> {
 
-  static final ImmutableSet<String> AFFECTED_KINDS =
+  private static final ImmutableSet<String> AFFECTED_KINDS =
       Stream.of(
               EppResourceIndex.class,
               ForeignKeyContactIndex.class,
@@ -86,7 +83,7 @@ public class KillAllEppResourcesActionTest extends MapreduceTestCase<KillAllEppR
   }
 
   @Test
-  public void testKill() throws Exception {
+  void testKill() throws Exception {
     createTld("tld1");
     createTld("tld2");
     for (EppResource resource : asList(

@@ -24,6 +24,7 @@ import google.registry.model.history.DomainHistoryTest;
 import google.registry.model.history.HostHistoryTest;
 import google.registry.model.poll.PollMessageTest;
 import google.registry.model.registry.RegistryLockDaoTest;
+import google.registry.model.registry.label.ReservedListSqlDaoTest;
 import google.registry.model.reporting.Spec11ThreatMatchTest;
 import google.registry.persistence.transaction.JpaEntityCoverage;
 import google.registry.schema.cursor.CursorDaoTest;
@@ -32,7 +33,6 @@ import google.registry.schema.integration.SqlIntegrationTestSuite.BeforeSuiteTes
 import google.registry.schema.registrar.RegistrarDaoTest;
 import google.registry.schema.server.LockDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
-import google.registry.schema.tld.ReservedListDaoTest;
 import google.registry.schema.tmch.ClaimsListDaoTest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -86,8 +86,8 @@ import org.junit.runner.RunWith;
   PollMessageTest.class,
   PremiumListDaoTest.class,
   RegistrarDaoTest.class,
+  ReservedListSqlDaoTest.class,
   RegistryLockDaoTest.class,
-  ReservedListDaoTest.class,
   Spec11ThreatMatchTest.class,
   // AfterSuiteTest must be the last entry. See class javadoc for details.
   AfterSuiteTest.class

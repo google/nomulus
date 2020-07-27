@@ -75,7 +75,12 @@ public class TransactionManagerFactory {
     return tm;
   }
 
-  /** Returns {@link JpaTransactionManager} instance. */
+  /**
+   * Returns {@link JpaTransactionManager} instance.
+   *
+   * <p>Between invocations of {@link TransactionManagerFactory#setJpaTm} every call to this method
+   * returns the same instance.
+   */
   public static JpaTransactionManager jpaTm() {
     return jpaTm.get();
   }
@@ -93,7 +98,7 @@ public class TransactionManagerFactory {
         RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
             || RegistryToolEnvironment.get() != null,
         "setJpamTm() should only be called by tools and tests.");
-    jpaTm = jpaTmSupplier;
+    jpaTm = Suppliers.memoize(jpaTmSupplier::get);
   }
 
   /** Sets the return of {@link #tm()} to the given instance of {@link TransactionManager}. */

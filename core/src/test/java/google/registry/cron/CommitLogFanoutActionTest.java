@@ -26,20 +26,17 @@ import google.registry.util.TaskQueueUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CommitLogFanoutAction}. */
-@RunWith(JUnit4.class)
-public class CommitLogFanoutActionTest {
+class CommitLogFanoutActionTest {
 
   private static final String ENDPOINT = "/the/servlet";
   private static final String QUEUE = "the-queue";
 
-  @Rule
-  public final AppEngineRule appEngine =
+  @RegisterExtension
+  final AppEngineRule appEngineRule =
       AppEngineRule.builder()
           .withDatastoreAndCloudSql()
           .withTaskQueue(
@@ -55,7 +52,7 @@ public class CommitLogFanoutActionTest {
           .build();
 
   @Test
-  public void testSuccess() {
+  void testSuccess() {
     CommitLogFanoutAction action = new CommitLogFanoutAction();
     action.taskQueueUtils = new TaskQueueUtils(new Retrier(null, 1));
     action.endpoint = ENDPOINT;

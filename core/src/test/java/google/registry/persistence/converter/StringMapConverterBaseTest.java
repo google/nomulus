@@ -22,21 +22,20 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import java.util.Map;
 import javax.persistence.Converter;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.NoResultException;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link StringMapConverterBase}. */
-@RunWith(JUnit4.class)
 public class StringMapConverterBaseTest {
-  @Rule
-  public final JpaTestRules.JpaUnitTestRule jpaRule =
+
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder()
           .withInitScript("sql/flyway/V14__load_extension_for_hstore.sql")
           .withEntityClass(TestStringMapConverter.class, TestEntity.class)
@@ -49,7 +48,7 @@ public class StringMapConverterBaseTest {
           new Key("key3"), new Value("value3"));
 
   @Test
-  public void roundTripConversion_returnsSameMap() {
+  void roundTripConversion_returnsSameMap() {
     TestEntity testEntity = new TestEntity(MAP);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
@@ -58,7 +57,7 @@ public class StringMapConverterBaseTest {
   }
 
   @Test
-  public void testUpdateColumn_succeeds() {
+  void testUpdateColumn_succeeds() {
     TestEntity testEntity = new TestEntity(MAP);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
@@ -72,7 +71,7 @@ public class StringMapConverterBaseTest {
   }
 
   @Test
-  public void testNullValue_writesAndReadsNullSuccessfully() {
+  void testNullValue_writesAndReadsNullSuccessfully() {
     TestEntity testEntity = new TestEntity(null);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
@@ -81,7 +80,7 @@ public class StringMapConverterBaseTest {
   }
 
   @Test
-  public void testEmptyMap_writesAndReadsEmptyCollectionSuccessfully() {
+  void testEmptyMap_writesAndReadsEmptyCollectionSuccessfully() {
     TestEntity testEntity = new TestEntity(ImmutableMap.of());
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
@@ -90,7 +89,7 @@ public class StringMapConverterBaseTest {
   }
 
   @Test
-  public void testNativeQuery_succeeds() {
+  void testNativeQuery_succeeds() {
     executeNativeQuery(
         "INSERT INTO \"TestEntity\" (name, map) VALUES ('id', 'key1=>value1, key2=>value2')");
 

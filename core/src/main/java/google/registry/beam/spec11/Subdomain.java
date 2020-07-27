@@ -36,12 +36,14 @@ import org.apache.beam.sdk.io.gcp.bigquery.SchemaAndRecord;
 public abstract class Subdomain implements Serializable {
 
   private static final ImmutableList<String> FIELD_NAMES =
-      ImmutableList.of("fullyQualifiedDomainName", "registrarClientId", "registrarEmailAddress");
+      ImmutableList.of("domainName", "domainRepoId", "registrarId", "registrarEmailAddress");
 
   /** Returns the fully qualified domain name. */
-  abstract String fullyQualifiedDomainName();
-  /** Returns the client ID of the associated registrar for this domain. */
-  abstract String registrarClientId();
+  abstract String domainName();
+  /** Returns the domain repo ID (the primary key of the domain table). */
+  abstract String domainRepoId();
+  /** Returns the registrar ID of the associated registrar for this domain. */
+  abstract String registrarId();
   /** Returns the email address of the registrar associated with this domain. */
   abstract String registrarEmailAddress();
 
@@ -56,8 +58,9 @@ public abstract class Subdomain implements Serializable {
     checkFieldsNotNull(FIELD_NAMES, schemaAndRecord);
     GenericRecord record = schemaAndRecord.getRecord();
     return create(
-        extractField(record, "fullyQualifiedDomainName"),
-        extractField(record, "registrarClientId"),
+        extractField(record, "domainName"),
+        extractField(record, "domainRepoId"),
+        extractField(record, "registrarId"),
         extractField(record, "registrarEmailAddress"));
   }
 
@@ -69,9 +72,11 @@ public abstract class Subdomain implements Serializable {
    */
   @VisibleForTesting
   static Subdomain create(
-      String fullyQualifiedDomainName, String registrarClientId, String registrarEmailAddress) {
+      String domainName,
+      String domainRepoId,
+      String registrarId,
+      String registrarEmailAddress) {
     return new AutoValue_Subdomain(
-        fullyQualifiedDomainName, registrarClientId, registrarEmailAddress);
+        domainName, domainRepoId, registrarId, registrarEmailAddress);
   }
 }
-

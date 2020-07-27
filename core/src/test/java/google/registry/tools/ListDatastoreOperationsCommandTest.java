@@ -27,18 +27,14 @@ import google.registry.testing.FakeClock;
 import google.registry.util.Clock;
 import java.io.IOException;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 
 /** Unit tests for {@link google.registry.tools.ListDatastoreOperationsCommand}. */
-@RunWith(JUnit4.class)
-public class ListDatastoreOperationsCommandTest
-    extends CommandTestCase<ListDatastoreOperationsCommand> {
+class ListDatastoreOperationsCommandTest extends CommandTestCase<ListDatastoreOperationsCommand> {
 
   @Mock private DatastoreAdmin datastoreAdmin;
   @Mock private ListOperations listOperationsRequest;
@@ -46,25 +42,24 @@ public class ListDatastoreOperationsCommandTest
 
   private final Clock clock = new FakeClock(new DateTime("2019-01-01T00:00:30Z"));
 
-  @Before
-  public void setup() throws IOException {
+  @BeforeEach
+  void beforeEach() throws IOException {
     command.datastoreAdmin = datastoreAdmin;
     command.clock = clock;
-
-    when(datastoreAdmin.list(filterClause.capture())).thenReturn(listOperationsRequest);
-    when(datastoreAdmin.listAll()).thenReturn(listOperationsRequest);
     when(listOperationsRequest.execute()).thenReturn(new OperationList());
   }
 
   @Test
-  public void testListAll() throws Exception {
+  void testListAll() throws Exception {
+    when(datastoreAdmin.listAll()).thenReturn(listOperationsRequest);
     runCommand();
     verify(datastoreAdmin, times(1)).listAll();
     verifyNoMoreInteractions(datastoreAdmin);
   }
 
   @Test
-  public void testListWithFilter() throws Exception {
+  void testListWithFilter() throws Exception {
+    when(datastoreAdmin.list(filterClause.capture())).thenReturn(listOperationsRequest);
     runCommand("--start_time_filter=PT30S");
     verify(datastoreAdmin, times(1)).list(filterClause.capture());
     assertThat(filterClause.getValue())

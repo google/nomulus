@@ -238,6 +238,7 @@ dependencies {
   compile deps['jline:jline']
   compile deps['joda-time:joda-time']
   compile deps['org.apache.avro:avro']
+  testCompile deps['org.apache.beam:beam-runners-core-construction-java']
   testCompile deps['org.apache.beam:beam-runners-direct-java']
   compile deps['org.apache.beam:beam-runners-google-cloud-dataflow-java']
   compile deps['org.apache.beam:beam-sdks-java-core']
@@ -256,6 +257,7 @@ dependencies {
   compile deps['org.bouncycastle:bcpg-jdk15on']
   testCompile deps['org.bouncycastle:bcpkix-jdk15on']
   compile deps['org.bouncycastle:bcprov-jdk15on']
+  testCompile deps['com.fasterxml.jackson.core:jackson-databind']
   runtime deps['org.glassfish.jaxb:jaxb-runtime']
   compile deps['org.hibernate:hibernate-core']
   compile deps['org.joda:joda-money']
@@ -312,6 +314,7 @@ dependencies {
   testCompile deps['org.junit.jupiter:junit-jupiter-api']
   testCompile deps['org.junit.jupiter:junit-jupiter-engine']
   testCompile deps['org.junit.jupiter:junit-jupiter-migrationsupport']
+  testCompile deps['org.junit.jupiter:junit-jupiter-params']
   testCompile deps['org.junit.platform:junit-platform-runner']
   testCompile deps['org.junit.platform:junit-platform-suite-api']
   testCompile deps['org.junit.vintage:junit-vintage-engine']
@@ -964,6 +967,49 @@ publishing {
 
 task buildToolImage(dependsOn: nomulus, type: Exec) {
   commandLine 'docker', 'build', '-t', 'nomulus-tool', '.'
+}
+
+task generateInitSqlPipelineGraph(type: Test) {
+  include "**/InitSqlPipelineGraphTest.*"
+  testNameIncludePatterns = ["**createPipeline_compareGraph"]
+  ignoreFailures = true
+}
+
+task updateInitSqlPipelineGraph(type: Copy) {
+  def graphRelativePath = 'google/registry/beam/initsql/'
+  from ("${projectDir}/build/resources/test/${graphRelativePath}") {
+    include 'pipeline_curr.dot'
+    rename 'curr', 'golden'
+  }
+  into "src/test/resources/${graphRelativePath}"
+
+  dependsOn generateInitSqlPipelineGraph
+
+  doLast {
+    if (com.google.common.base.Strings.isNullOrEmpty(project.dot_path)) {
+      getLogger().info('Property dot_path is null. Not creating image for pipeline graph.')
+    }
+    def dotPath = project.dot_path
+    if (!new File(dotPath).exists()) {
+      throw new RuntimeException(
+          """\
+              ${dotPath} not found. Make sure graphviz is installed
+              and the dot_path property is set correctly."""
+              .stripIndent())
+    }
+    def goldenGraph = "src/test/resources/${graphRelativePath}/pipeline_golden.dot"
+    def goldenImage = "src/test/resources/${graphRelativePath}/pipeline_golden.png"
+    def cmd = "${dotPath} -Tpng -o \"${goldenImage}\" \"${goldenGraph}\""
+    try {
+      rootProject.ext.execInBash(cmd, projectDir)
+    } catch (Throwable throwable) {
+      throw new RuntimeException(
+          """\
+              Failed to generate golden image with command ${cmd}
+              Error: ${throwable.getMessage()}
+          """)
+    }
+  }
 }
 
 // Build the devtool jar.

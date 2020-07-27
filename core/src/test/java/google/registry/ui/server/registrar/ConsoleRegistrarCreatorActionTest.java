@@ -42,7 +42,7 @@ import google.registry.testing.AppEngineRule;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.SystemPropertyRule;
+import google.registry.testing.SystemPropertyExtension;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
@@ -60,15 +60,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public final class ConsoleRegistrarCreatorActionTest {
+final class ConsoleRegistrarCreatorActionTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngineRule =
-      AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  final AppEngineRule appEngineRule = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @RegisterExtension
   @Order(value = Integer.MAX_VALUE)
-  public final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
+  final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   private final FakeResponse response = new FakeResponse();
   private final ConsoleRegistrarCreatorAction action = new ConsoleRegistrarCreatorAction();
@@ -78,7 +77,7 @@ public final class ConsoleRegistrarCreatorActionTest {
   @Mock SendEmailService emailService;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void beforeEach() throws Exception {
     persistPremiumList("default_sandbox_list", "sandbox,USD 1000");
 
     action.req = request;
@@ -125,7 +124,7 @@ public final class ConsoleRegistrarCreatorActionTest {
   }
 
   @Test
-  public void testNoUser_redirect() {
+  void testNoUser_redirect() {
     when(request.getRequestURI()).thenReturn("/test");
     action.authResult = AuthResult.NOT_AUTHENTICATED;
     action.run();
@@ -134,22 +133,22 @@ public final class ConsoleRegistrarCreatorActionTest {
   }
 
   @Test
-  public void testGet_authorized() {
+  void testGet_authorized() {
     action.run();
     assertThat(response.getPayload()).contains("<h1>Create Registrar</h1>");
     assertThat(response.getPayload()).contains("gtag('config', 'sampleId')");
   }
 
   @Test
-  public void testGet_authorized_onProduction() {
-    RegistryEnvironment.PRODUCTION.setup(systemPropertyRule);
+  void testGet_authorized_onProduction() {
+    RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
     action.run();
     assertThat(response.getPayload()).contains("<h1>Create Registrar</h1>");
     assertThat(response.getPayload()).contains("gtag('config', 'sampleId')");
   }
 
   @Test
-  public void testGet_unauthorized() {
+  void testGet_unauthorized() {
     action.registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(ImmutableSetMultimap.of());
     action.run();
@@ -158,7 +157,7 @@ public final class ConsoleRegistrarCreatorActionTest {
   }
 
   @Test
-  public void testPost_authorized_minimalAddress() {
+  void testPost_authorized_minimalAddress() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
     action.billingAccount = Optional.of("USD=billing-account");
@@ -226,7 +225,7 @@ public final class ConsoleRegistrarCreatorActionTest {
   }
 
   @Test
-  public void testPost_authorized_allAddress() {
+  void testPost_authorized_allAddress() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
     action.billingAccount = Optional.of("USD=billing-account");
@@ -263,7 +262,7 @@ public final class ConsoleRegistrarCreatorActionTest {
   }
 
   @Test
-  public void testPost_authorized_multipleBillingLines() {
+  void testPost_authorized_multipleBillingLines() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
     action.ianaId = Optional.of(12321);
@@ -300,7 +299,7 @@ public final class ConsoleRegistrarCreatorActionTest {
   }
 
   @Test
-  public void testPost_authorized_repeatingCurrency_fails() {
+  void testPost_authorized_repeatingCurrency_fails() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
     action.ianaId = Optional.of(12321);
@@ -328,7 +327,7 @@ public final class ConsoleRegistrarCreatorActionTest {
   }
 
   @Test
-  public void testPost_authorized_badCurrency_fails() {
+  void testPost_authorized_badCurrency_fails() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
     action.ianaId = Optional.of(12321);
@@ -355,7 +354,7 @@ public final class ConsoleRegistrarCreatorActionTest {
   }
 
   @Test
-  public void testPost_authorized_badBillingLine_fails() {
+  void testPost_authorized_badBillingLine_fails() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
     action.ianaId = Optional.of(12321);
@@ -384,7 +383,7 @@ public final class ConsoleRegistrarCreatorActionTest {
   }
 
   @Test
-  public void testPost_authorized_setPassword() {
+  void testPost_authorized_setPassword() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
     action.billingAccount = Optional.of("USD=billing-account");
@@ -413,7 +412,7 @@ public final class ConsoleRegistrarCreatorActionTest {
   }
 
   @Test
-  public void testPost_badEmailFails() {
+  void testPost_badEmailFails() {
     action.clientId = Optional.of("myclientid");
     action.name = Optional.of("registrar name");
     action.billingAccount = Optional.of("USD=billing-account");
@@ -434,7 +433,7 @@ public final class ConsoleRegistrarCreatorActionTest {
   }
 
   @Test
-  public void testPost_unauthorized() {
+  void testPost_unauthorized() {
     action.registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(ImmutableSetMultimap.of());
     action.clientId = Optional.of("myclientid");

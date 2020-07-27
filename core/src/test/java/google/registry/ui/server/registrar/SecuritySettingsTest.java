@@ -27,21 +27,17 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.registrar.Registrar;
 import java.util.Map;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for security_settings.js use of {@link RegistrarSettingsAction}.
  *
- * <p>The default read and session validation tests are handled by the
- * superclass.
+ * <p>The default read and session validation tests are handled by the superclass.
  */
-@RunWith(JUnit4.class)
-public class SecuritySettingsTest extends RegistrarSettingsActionTestCase {
+class SecuritySettingsTest extends RegistrarSettingsActionTestCase {
 
   @Test
-  public void testPost_updateCert_success() throws Exception {
+  void testPost_updateCert_success() throws Exception {
     Registrar modified =
         loadRegistrar(CLIENT_ID)
             .asBuilder()
@@ -59,7 +55,7 @@ public class SecuritySettingsTest extends RegistrarSettingsActionTestCase {
   }
 
   @Test
-  public void testPost_updateCert_failure() {
+  void testPost_updateCert_failure() {
     Map<String, Object> reqJson = loadRegistrar(CLIENT_ID).toJsonMap();
     reqJson.put("clientCertificate", "BLAH");
     Map<String, Object> response = action.handleJsonRequest(ImmutableMap.of(
@@ -72,7 +68,7 @@ public class SecuritySettingsTest extends RegistrarSettingsActionTestCase {
   }
 
   @Test
-  public void testChangeCertificates() throws Exception {
+  void testChangeCertificates() throws Exception {
     Map<String, Object> jsonMap = loadRegistrar(CLIENT_ID).toJsonMap();
     jsonMap.put("clientCertificate", SAMPLE_CERT);
     jsonMap.put("failoverClientCertificate", null);
@@ -89,7 +85,7 @@ public class SecuritySettingsTest extends RegistrarSettingsActionTestCase {
   }
 
   @Test
-  public void testChangeFailoverCertificate() throws Exception {
+  void testChangeFailoverCertificate() throws Exception {
     Map<String, Object> jsonMap = loadRegistrar(CLIENT_ID).toJsonMap();
     jsonMap.put("failoverClientCertificate", SAMPLE_CERT2);
     Map<String, Object> response = action.handleJsonRequest(ImmutableMap.of(
@@ -103,7 +99,7 @@ public class SecuritySettingsTest extends RegistrarSettingsActionTestCase {
   }
 
   @Test
-  public void testEmptyOrNullCertificate_doesNotClearOutCurrentOne() throws Exception {
+  void testEmptyOrNullCertificate_doesNotClearOutCurrentOne() throws Exception {
     Registrar initialRegistrar =
         persistResource(
             loadRegistrar(CLIENT_ID)
@@ -126,7 +122,7 @@ public class SecuritySettingsTest extends RegistrarSettingsActionTestCase {
   }
 
   @Test
-  public void testToJsonMap_containsCertificate() {
+  void testToJsonMap_containsCertificate() {
     Map<String, Object> jsonMap =
         loadRegistrar(CLIENT_ID)
             .asBuilder()
@@ -138,7 +134,7 @@ public class SecuritySettingsTest extends RegistrarSettingsActionTestCase {
   }
 
   @Test
-  public void testToJsonMap_containsFailoverCertificate() {
+  void testToJsonMap_containsFailoverCertificate() {
     Map<String, Object> jsonMap =
         loadRegistrar(CLIENT_ID)
             .asBuilder()

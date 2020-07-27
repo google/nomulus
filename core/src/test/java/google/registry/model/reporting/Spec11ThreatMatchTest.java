@@ -46,12 +46,12 @@ public class Spec11ThreatMatchTest extends EntityTestCase {
   private HostResource host;
   private ContactResource registrantContact;
 
-  public Spec11ThreatMatchTest() {
+  Spec11ThreatMatchTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     VKey<HostResource> hostVKey = VKey.createSql(HostResource.class, "host");
     VKey<ContactResource> registrantContactVKey =
         VKey.createSql(ContactResource.class, "contact_id");
@@ -100,7 +100,7 @@ public class Spec11ThreatMatchTest extends EntityTestCase {
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     saveRegistrar(REGISTRAR_ID);
 
     jpaTm()
@@ -119,7 +119,7 @@ public class Spec11ThreatMatchTest extends EntityTestCase {
   }
 
   @Test
-  public void testThreatForeignKeyConstraints() {
+  void testThreatForeignKeyConstraints() {
     assertThrowForeignKeyViolation(
         () -> {
           jpaTm()
@@ -149,7 +149,7 @@ public class Spec11ThreatMatchTest extends EntityTestCase {
   }
 
   @Test
-  public void testFailure_threatsWithInvalidFields() {
+  void testFailure_threatsWithInvalidFields() {
     assertThrows(
         IllegalArgumentException.class, () -> threat.asBuilder().setRegistrarId(null).build());
 

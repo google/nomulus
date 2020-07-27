@@ -22,7 +22,7 @@ import sys
 import re
 
 # We should never analyze any generated files
-UNIVERSALLY_SKIPPED_PATTERNS = {"/build/", "cloudbuild-caches", "/out/"}
+UNIVERSALLY_SKIPPED_PATTERNS = {"/build/", "cloudbuild-caches", "/out/", ".git/"}
 # We can't rely on CI to have the Enum package installed so we do this instead.
 FORBIDDEN = 1
 REQUIRED = 2
@@ -77,9 +77,9 @@ PRESUBMITS = {
     PresubmitCheck(
         r".*Copyright 20\d{2} The Nomulus Authors\. All Rights Reserved\.",
         ("java", "js", "soy", "sql", "py", "sh", "gradle"), {
-            ".git", "/build/", "/generated/", "node_modules/",
-            "JUnitBackports.java", "registrar_bin.", "registrar_dbg.",
-            "google-java-format-diff.py",
+            ".git", "/build/", "/generated/", "/generated_tests/",
+            "node_modules/", "JUnitBackports.java", "registrar_bin.",
+            "registrar_dbg.", "google-java-format-diff.py",
             "nomulus.golden.sql", "soyutils_usegoog.js"
         }, REQUIRED):
         "File did not include the license header.",

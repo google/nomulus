@@ -26,7 +26,7 @@ import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.SEVERE;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.base.Splitter;
@@ -50,26 +50,24 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import org.joda.time.DateTime;
 import org.json.simple.JSONValue;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link EppController}. */
-@RunWith(JUnit4.class)
-public class EppControllerTest {
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class EppControllerTest {
 
-  @Rule
-  public AppEngineRule appEngineRule =
-      new AppEngineRule.Builder().withDatastoreAndCloudSql().build();
-
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
+  @RegisterExtension
+  AppEngineRule appEngineRule = new AppEngineRule.Builder().withDatastoreAndCloudSql().build();
 
   @Mock SessionMetadata sessionMetadata;
   @Mock TransportCredentials transportCredentials;
@@ -96,8 +94,8 @@ public class EppControllerTest {
 
   private EppController eppController;
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     loggerToIntercept.addHandler(logHandler);
 
     when(sessionMetadata.getClientId()).thenReturn("some-client");
@@ -117,13 +115,13 @@ public class EppControllerTest {
     eppController.serverTridProvider = new FakeServerTridProvider();
   }
 
-  @After
-  public void tearDown() {
+  @AfterEach
+  void afterEach() {
     loggerToIntercept.removeHandler(logHandler);
   }
 
   @Test
-  public void testMarshallingUnknownError() throws Exception {
+  void testMarshallingUnknownError() throws Exception {
     marshal(
         EppController.getErrorResponse(
             Result.create(Code.COMMAND_FAILED), Trid.create(null, "server-trid")),
@@ -131,7 +129,7 @@ public class EppControllerTest {
   }
 
   @Test
-  public void testHandleEppCommand_regularEppCommand_exportsEppMetrics() {
+  void testHandleEppCommand_regularEppCommand_exportsEppMetrics() {
     createTld("tld");
     // Note that some of the EPP metric fields, like # of attempts and command name, are set in
     // FlowRunner, not EppController, and since FlowRunner is mocked out for these tests they won't
@@ -155,7 +153,7 @@ public class EppControllerTest {
   }
 
   @Test
-  public void testHandleEppCommand_dryRunEppCommand_doesNotExportMetric() {
+  void testHandleEppCommand_dryRunEppCommand_doesNotExportMetric() {
     eppController.handleEppCommand(
         sessionMetadata,
         transportCredentials,
@@ -163,11 +161,11 @@ public class EppControllerTest {
         true,
         true,
         domainCreateXml.getBytes(UTF_8));
-    verifyZeroInteractions(eppMetrics);
+    verifyNoInteractions(eppMetrics);
   }
 
   @Test
-  public void testHandleEppCommand_unmarshallableData_loggedAtInfo_withJsonData() throws Exception {
+  void testHandleEppCommand_unmarshallableData_loggedAtInfo_withJsonData() throws Exception {
     eppController.handleEppCommand(
         sessionMetadata,
         transportCredentials,
@@ -176,7 +174,8 @@ public class EppControllerTest {
         false,
         "GET / HTTP/1.1\n\n".getBytes(UTF_8));
 
-    assertAboutLogs().that(logHandler)
+    assertAboutLogs()
+        .that(logHandler)
         .hasLogAtLevelWithMessage(INFO, "EPP request XML unmarshalling failed");
     LogRecord logRecord =
         findFirstLogRecordWithMessagePrefix(logHandler, "EPP request XML unmarshalling failed");
@@ -184,14 +183,14 @@ public class EppControllerTest {
     assertThat(messageParts.size()).isAtLeast(2);
     Map<String, Object> json = parseJsonMap(messageParts.get(1));
     assertThat(json).containsEntry("clientId", "some-client");
-    assertThat(json).containsEntry("resultCode", 2001L);  // Must be Long to compare equal.
+    assertThat(json).containsEntry("resultCode", 2001L); // Must be Long to compare equal.
     assertThat(json).containsEntry("resultMessage", "Command syntax error");
     assertThat(json)
         .containsEntry("xmlBytes", base64().encode("GET / HTTP/1.1\n\n".getBytes(UTF_8)));
   }
 
   @Test
-  public void testHandleEppCommand_throwsEppException_loggedAtInfo() throws Exception {
+  void testHandleEppCommand_throwsEppException_loggedAtInfo() throws Exception {
     when(flowRunner.run(eppController.eppMetricBuilder))
         .thenThrow(new UnimplementedExtensionException());
     eppController.handleEppCommand(
@@ -201,7 +200,8 @@ public class EppControllerTest {
         false,
         true,
         domainCreateXml.getBytes(UTF_8));
-    assertAboutLogs().that(logHandler)
+    assertAboutLogs()
+        .that(logHandler)
         .hasLogAtLevelWithMessage(INFO, "Flow returned failure response");
     LogRecord logRecord =
         findFirstLogRecordWithMessagePrefix(logHandler, "Flow returned failure response");
@@ -209,8 +209,7 @@ public class EppControllerTest {
   }
 
   @Test
-  public void testHandleEppCommand_throwsEppExceptionInProviderException_loggedAtInfo()
-      throws Exception {
+  void testHandleEppCommand_throwsEppExceptionInProviderException_loggedAtInfo() throws Exception {
     when(flowRunner.run(eppController.eppMetricBuilder))
         .thenThrow(new EppExceptionInProviderException(new UnimplementedExtensionException()));
     eppController.handleEppCommand(
@@ -220,7 +219,8 @@ public class EppControllerTest {
         false,
         true,
         domainCreateXml.getBytes(UTF_8));
-    assertAboutLogs().that(logHandler)
+    assertAboutLogs()
+        .that(logHandler)
         .hasLogAtLevelWithMessage(INFO, "Flow returned failure response");
     LogRecord logRecord =
         findFirstLogRecordWithMessagePrefix(logHandler, "Flow returned failure response");
@@ -228,7 +228,7 @@ public class EppControllerTest {
   }
 
   @Test
-  public void testHandleEppCommand_throwsRuntimeException_loggedAtSevere() throws Exception {
+  void testHandleEppCommand_throwsRuntimeException_loggedAtSevere() throws Exception {
     when(flowRunner.run(eppController.eppMetricBuilder)).thenThrow(new IllegalStateException());
     eppController.handleEppCommand(
         sessionMetadata,
@@ -237,7 +237,8 @@ public class EppControllerTest {
         false,
         true,
         domainCreateXml.getBytes(UTF_8));
-    assertAboutLogs().that(logHandler)
+    assertAboutLogs()
+        .that(logHandler)
         .hasLogAtLevelWithMessage(SEVERE, "Unexpected failure in flow execution");
     LogRecord logRecord =
         findFirstLogRecordWithMessagePrefix(logHandler, "Unexpected failure in flow execution");

@@ -18,19 +18,16 @@ import static com.google.common.truth.Truth.assertThat;
 
 import google.registry.model.OteStats.StatType;
 import google.registry.testing.AppEngineRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@RunWith(JUnit4.class)
 public final class OteStatsTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testSuccess_allPass() throws Exception {
+  void testSuccess_allPass() throws Exception {
     OteStatsTestHelper.setupCompleteOte("blobio");
     OteStats stats = OteStats.getFromRegistrar("blobio");
     assertThat(stats.getFailures()).isEmpty();
@@ -38,7 +35,7 @@ public final class OteStatsTest {
   }
 
   @Test
-  public void testSuccess_incomplete() throws Exception {
+  void testSuccess_incomplete() throws Exception {
     OteStatsTestHelper.setupIncompleteOte("blobio");
     OteStats stats = OteStats.getFromRegistrar("blobio");
     assertThat(stats.getFailures())
@@ -49,7 +46,7 @@ public final class OteStatsTest {
   }
 
   @Test
-  public void testSuccess_toString() throws Exception {
+  void testSuccess_toString() throws Exception {
     OteStatsTestHelper.setupCompleteOte("blobio");
     OteStats stats = OteStats.getFromRegistrar("blobio");
     String expected =
@@ -90,7 +87,7 @@ public final class OteStatsTest {
   }
 
   @Test
-  public void testIncomplete_toString() throws Exception {
+  void testIncomplete_toString() throws Exception {
     OteStatsTestHelper.setupIncompleteOte("blobio");
     OteStats stats = OteStats.getFromRegistrar("blobio");
     String expected =

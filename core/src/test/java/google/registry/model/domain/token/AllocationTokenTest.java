@@ -37,19 +37,19 @@ import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.reporting.HistoryEntry;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link AllocationToken}. */
-public class AllocationTokenTest extends EntityTestCase {
+class AllocationTokenTest extends EntityTestCase {
 
-  @Before
-  public void setup() {
+  @BeforeEach
+  void setup() {
     createTld("foo");
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     AllocationToken unlimitedUseToken =
         persistResource(
             new AllocationToken.Builder()
@@ -81,7 +81,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  public void testIndexing() throws Exception {
+  void testIndexing() throws Exception {
     verifyIndexing(
         persistResource(
             new AllocationToken.Builder()
@@ -97,7 +97,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  public void testCreationTime_autoPopulates() {
+  void testCreationTime_autoPopulates() {
     AllocationToken tokenBeforePersisting =
         new AllocationToken.Builder().setToken("abc123").setTokenType(SINGLE_USE).build();
     assertThat(tokenBeforePersisting.getCreationTime()).isEmpty();
@@ -106,7 +106,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  public void testSetCreationTime_cantCallMoreThanOnce() {
+  void testSetCreationTime_cantCallMoreThanOnce() {
     AllocationToken.Builder builder =
         new AllocationToken.Builder()
             .setToken("foobar")
@@ -120,7 +120,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  public void testSetToken_cantCallMoreThanOnce() {
+  void testSetToken_cantCallMoreThanOnce() {
     AllocationToken.Builder builder = new AllocationToken.Builder().setToken("foobar");
     IllegalStateException thrown =
         assertThrows(IllegalStateException.class, () -> builder.setToken("barfoo"));
@@ -128,7 +128,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  public void testSetTokenType_cantCallMoreThanOnce() {
+  void testSetTokenType_cantCallMoreThanOnce() {
     AllocationToken.Builder builder =
         new AllocationToken.Builder().setTokenType(TokenType.UNLIMITED_USE);
     IllegalStateException thrown =
@@ -137,7 +137,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  public void testBuild_DomainNameWithLessThanTwoParts() {
+  void testBuild_DomainNameWithLessThanTwoParts() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -155,7 +155,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  public void testBuild_invalidTLD() {
+  void testBuild_invalidTLD() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -173,7 +173,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  public void testBuild_domainNameOnlyOnSingleUse() {
+  void testBuild_domainNameOnlyOnSingleUse() {
     AllocationToken.Builder builder =
         new AllocationToken.Builder()
             .setToken("foobar")
@@ -186,7 +186,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  public void testBuild_redemptionHistoryEntryOnlyInSingleUse() {
+  void testBuild_redemptionHistoryEntryOnlyInSingleUse() {
     AllocationToken.Builder builder =
         new AllocationToken.Builder()
             .setToken("foobar")
@@ -199,7 +199,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  public void testSetTransitions_notStartOfTime() {
+  void testSetTransitions_notStartOfTime() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -217,7 +217,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  public void testSetTransitions_badInitialValue() {
+  void testSetTransitions_badInitialValue() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -234,14 +234,14 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  public void testSetTransitions_invalidInitialTransitions() {
+  void testSetTransitions_invalidInitialTransitions() {
     // NOT_STARTED can only go to VALID or CANCELLED
     assertBadInitialTransition(NOT_STARTED);
     assertBadInitialTransition(ENDED);
   }
 
   @Test
-  public void testSetTransitions_badTransitionsFromValid() {
+  void testSetTransitions_badTransitionsFromValid() {
     // VALID can only go to ENDED or CANCELLED
     assertBadTransition(
         ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
@@ -262,14 +262,14 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  public void testSetTransitions_terminalTransitions() {
+  void testSetTransitions_terminalTransitions() {
     // both ENDED and CANCELLED are terminal
     assertTerminal(ENDED);
     assertTerminal(CANCELLED);
   }
 
   @Test
-  public void testBuild_noTokenType() {
+  void testBuild_noTokenType() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -278,7 +278,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  public void testBuild_noToken() {
+  void testBuild_noToken() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -287,7 +287,7 @@ public class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  public void testBuild_emptyToken() {
+  void testBuild_emptyToken() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

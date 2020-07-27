@@ -20,26 +20,23 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import google.registry.model.ImmutableObject;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link Enumerated} annotation. */
-@RunWith(JUnit4.class)
 public class StringValueEnumeratedTest {
 
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
-  public void roundTripConversion_returnsSameEnum() {
+  void roundTripConversion_returnsSameEnum() {
     TestEntity testEntity = new TestEntity(State.ACTIVE);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
@@ -48,7 +45,7 @@ public class StringValueEnumeratedTest {
   }
 
   @Test
-  public void testNativeQuery_succeeds() {
+  void testNativeQuery_succeeds() {
     TestEntity testEntity = new TestEntity(State.DISABLED);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
 

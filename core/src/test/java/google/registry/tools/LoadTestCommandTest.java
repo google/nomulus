@@ -17,50 +17,50 @@ package google.registry.tools;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
 import google.registry.model.registrar.Registrar;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 
-@RunWith(JUnit4.class)
-public class LoadTestCommandTest extends CommandTestCase<LoadTestCommand> {
-  AppEngineConnection connection = mock(AppEngineConnection.class);
+/** Unit tests for {@link LoadTestCommand}. */
+class LoadTestCommandTest extends CommandTestCase<LoadTestCommand> {
 
-  @Before
-  public void setUp() {
+  @Mock private AppEngineConnection connection;
+
+  @BeforeEach
+  void beforeEach() {
     command.setConnection(connection);
     createTld("example");
     persistNewRegistrar("acme", "ACME", Registrar.Type.REAL, 99L);
   }
 
   @Test
-  public void test_defaults() throws Exception {
+  void test_defaults() throws Exception {
     runCommandForced();
-    ImmutableMap<String, Object> parms = new ImmutableMap.Builder<String, Object>()
-        .put("tld", "example")
-        .put("clientId", "acme")
-        .put("successfulHostCreates", 1)
-        .put("successfulDomainCreates", 1)
-        .put("successfulContactCreates", 1)
-        .put("hostInfos", 1)
-        .put("domainInfos", 1)
-        .put("contactInfos", 1)
-        .put("runSeconds", 4600)
-        .build();
+    ImmutableMap<String, Object> params =
+        new ImmutableMap.Builder<String, Object>()
+            .put("tld", "example")
+            .put("clientId", "acme")
+            .put("successfulHostCreates", 1)
+            .put("successfulDomainCreates", 1)
+            .put("successfulContactCreates", 1)
+            .put("hostInfos", 1)
+            .put("domainInfos", 1)
+            .put("contactInfos", 1)
+            .put("runSeconds", 4600)
+            .build();
     verify(connection)
         .sendPostRequest(
-            eq("/_dr/loadtest"), eq(parms), eq(MediaType.PLAIN_TEXT_UTF_8), eq(new byte[0]));
+            eq("/_dr/loadtest"), eq(params), eq(MediaType.PLAIN_TEXT_UTF_8), eq(new byte[0]));
   }
 
   @Test
-  public void test_overrides() throws Exception {
+  void test_overrides() throws Exception {
     createTld("foo");
     runCommandForced(
         "--tld=foo",
@@ -72,38 +72,39 @@ public class LoadTestCommandTest extends CommandTestCase<LoadTestCommand> {
         "--domain_infos=14",
         "--contact_infos=15",
         "--run_seconds=16");
-    ImmutableMap<String, Object> parms = new ImmutableMap.Builder<String, Object>()
-        .put("tld", "foo")
-        .put("clientId", "NewRegistrar")
-        .put("successfulHostCreates", 10)
-        .put("successfulDomainCreates", 11)
-        .put("successfulContactCreates", 12)
-        .put("hostInfos", 13)
-        .put("domainInfos", 14)
-        .put("contactInfos", 15)
-        .put("runSeconds", 16)
-        .build();
+    ImmutableMap<String, Object> params =
+        new ImmutableMap.Builder<String, Object>()
+            .put("tld", "foo")
+            .put("clientId", "NewRegistrar")
+            .put("successfulHostCreates", 10)
+            .put("successfulDomainCreates", 11)
+            .put("successfulContactCreates", 12)
+            .put("hostInfos", 13)
+            .put("domainInfos", 14)
+            .put("contactInfos", 15)
+            .put("runSeconds", 16)
+            .build();
     verify(connection)
         .sendPostRequest(
-            eq("/_dr/loadtest"), eq(parms), eq(MediaType.PLAIN_TEXT_UTF_8), eq(new byte[0]));
+            eq("/_dr/loadtest"), eq(params), eq(MediaType.PLAIN_TEXT_UTF_8), eq(new byte[0]));
   }
 
   @Test
-  public void test_badTLD() throws Exception {
+  void test_badTLD() throws Exception {
     runCommand("--tld=bogus");
-    verifyZeroInteractions(connection);
+    verifyNoInteractions(connection);
     assertInStderr("No such TLD: bogus");
   }
 
   @Test
-  public void test_badClientId() throws Exception {
+  void test_badClientId() throws Exception {
     runCommand("--client_id=badaddry");
-    verifyZeroInteractions(connection);
+    verifyNoInteractions(connection);
     assertInStderr("No such client: badaddry");
   }
 
   @Test
-  public void test_noProduction() throws Exception {
+  void test_noProduction() throws Exception {
     runCommandInEnvironment(RegistryToolEnvironment.PRODUCTION);
     assertInStderr("You may not run a load test against production.");
   }

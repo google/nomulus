@@ -14,16 +14,13 @@
 
 package google.registry.config;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RegistryEnvironment}. */
-@RunWith(JUnit4.class)
-public class RegistryEnvironmentTest {
+class RegistryEnvironmentTest {
 
   @Test
-  public void testGet() {
+  void testGet() {
     RegistryEnvironment.get();
   }
 }

@@ -33,10 +33,8 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import javax.net.SocketFactory;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.xbill.DNS.ARecord;
 import org.xbill.DNS.DClass;
 import org.xbill.DNS.Flags;
@@ -49,8 +47,7 @@ import org.xbill.DNS.Type;
 import org.xbill.DNS.Update;
 
 /** Unit tests for {@link DnsMessageTransport}. */
-@RunWith(JUnit4.class)
-public class DnsMessageTransportTest {
+class DnsMessageTransportTest {
 
   private static final String UPDATE_HOST = "127.0.0.1";
 
@@ -60,8 +57,9 @@ public class DnsMessageTransportTest {
   private Message simpleQuery;
   private Message expectedResponse;
   private DnsMessageTransport resolver;
-  @Before
-  public void before() throws Exception {
+
+  @BeforeEach
+  void beforeEach() throws Exception {
     simpleQuery =
         Message.newQuery(Record.newRecord(Name.fromString("example.com."), Type.A, DClass.IN));
     expectedResponse = responseMessageWithCode(simpleQuery, Rcode.NOERROR);
@@ -71,7 +69,7 @@ public class DnsMessageTransportTest {
   }
 
   @Test
-  public void testSentMessageHasCorrectLengthAndContent() throws Exception {
+  void testSentMessageHasCorrectLengthAndContent() throws Exception {
     ByteArrayInputStream inputStream =
         new ByteArrayInputStream(messageToBytesWithLength(expectedResponse));
     when(mockSocket.getInputStream()).thenReturn(inputStream);
@@ -89,7 +87,7 @@ public class DnsMessageTransportTest {
   }
 
   @Test
-  public void testReceivedMessageWithLengthHasCorrectContent() throws Exception {
+  void testReceivedMessageWithLengthHasCorrectContent() throws Exception {
     ByteArrayInputStream inputStream =
         new ByteArrayInputStream(messageToBytesWithLength(expectedResponse));
     when(mockSocket.getInputStream()).thenReturn(inputStream);
@@ -102,7 +100,7 @@ public class DnsMessageTransportTest {
   }
 
   @Test
-  public void testEofReceivingResponse() throws Exception {
+  void testEofReceivingResponse() throws Exception {
     byte[] messageBytes = messageToBytesWithLength(expectedResponse);
     ByteArrayInputStream inputStream =
         new ByteArrayInputStream(Arrays.copyOf(messageBytes, messageBytes.length - 1));
@@ -112,7 +110,7 @@ public class DnsMessageTransportTest {
   }
 
   @Test
-  public void testTimeoutReceivingResponse() throws Exception {
+  void testTimeoutReceivingResponse() throws Exception {
     InputStream mockInputStream = mock(InputStream.class);
     when(mockInputStream.read()).thenThrow(new SocketTimeoutException("testing"));
     when(mockSocket.getInputStream()).thenReturn(mockInputStream);
@@ -126,7 +124,7 @@ public class DnsMessageTransportTest {
   }
 
   @Test
-  public void testSentMessageTooLongThrowsException() throws Exception {
+  void testSentMessageTooLongThrowsException() throws Exception {
     Update oversize = new Update(Name.fromString("tld", Name.root));
     for (int i = 0; i < 2000; i++) {
       oversize.add(
@@ -143,7 +141,7 @@ public class DnsMessageTransportTest {
   }
 
   @Test
-  public void testResponseIdMismatchThrowsExeption() throws Exception {
+  void testResponseIdMismatchThrowsExeption() throws Exception {
     expectedResponse.getHeader().setID(1 + simpleQuery.getHeader().getID());
     when(mockSocket.getInputStream())
         .thenReturn(new ByteArrayInputStream(messageToBytesWithLength(expectedResponse)));
@@ -159,7 +157,7 @@ public class DnsMessageTransportTest {
   }
 
   @Test
-  public void testResponseOpcodeMismatchThrowsException() throws Exception {
+  void testResponseOpcodeMismatchThrowsException() throws Exception {
     simpleQuery.getHeader().setOpcode(Opcode.QUERY);
     expectedResponse.getHeader().setOpcode(Opcode.STATUS);
     when(mockSocket.getInputStream())

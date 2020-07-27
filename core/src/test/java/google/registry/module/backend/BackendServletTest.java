@@ -21,24 +21,21 @@ import static org.mockito.Mockito.when;
 import google.registry.testing.AppEngineRule;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link BackendServlet}. */
-@RunWith(JUnit4.class)
-public class BackendServletTest {
+class BackendServletTest {
 
-  @Rule
-  public final AppEngineRule appEngine =
+  @RegisterExtension
+  final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withLocalModules().build();
 
   private final HttpServletRequest req = mock(HttpServletRequest.class);
   private final HttpServletResponse rsp = mock(HttpServletResponse.class);
 
   @Test
-  public void testService_unknownPath_returnsNotFound() throws Exception {
+  void testService_unknownPath_returnsNotFound() throws Exception {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/lol");
     new BackendServlet().service(req, rsp);

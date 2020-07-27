@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
 import com.google.common.base.Splitter;
-import dagger.Binds;
 import dagger.Component;
 import dagger.Lazy;
 import dagger.Module;
@@ -32,10 +31,6 @@ import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceModule.JdbcJpaTm;
 import google.registry.persistence.PersistenceModule.SocketFactoryJpaTm;
 import google.registry.persistence.transaction.JpaTransactionManager;
-import google.registry.util.Clock;
-import google.registry.util.Sleeper;
-import google.registry.util.SystemClock;
-import google.registry.util.SystemSleeper;
 import google.registry.util.UtilsModule;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -159,17 +154,8 @@ public class BeamJpaModule {
   @Provides
   @Config("beamHibernateHikariMaximumPoolSize")
   static int getBeamHibernateHikariMaximumPoolSize() {
+    // TODO(weiminyu): make this configurable. Should be equal to number of cores.
     return 4;
-  }
-
-  @Module
-  interface BindModule {
-
-    @Binds
-    Sleeper sleeper(SystemSleeper sleeper);
-
-    @Binds
-    Clock clock(SystemClock clock);
   }
 
   @Singleton

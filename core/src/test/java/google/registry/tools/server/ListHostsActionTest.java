@@ -20,28 +20,23 @@ import static google.registry.testing.DatastoreHelper.persistActiveHost;
 import google.registry.testing.FakeClock;
 import java.util.Optional;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-/**
- * Unit tests for {@link ListHostsAction}.
- */
-@RunWith(JUnit4.class)
-public class ListHostsActionTest extends ListActionTestCase {
+/** Unit tests for {@link ListHostsAction}. */
+class ListHostsActionTest extends ListActionTestCase {
 
-  ListHostsAction action;
+  private ListHostsAction action;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     createTld("foo");
     action = new ListHostsAction();
     action.clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
   }
 
   @Test
-  public void testRun_noParameters() {
+  void testRun_noParameters() {
     testRunSuccess(
         action,
         null,
@@ -50,7 +45,7 @@ public class ListHostsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_twoLinesWithRepoId() {
+  void testRun_twoLinesWithRepoId() {
     persistActiveHost("example2.foo");
     persistActiveHost("example1.foo");
     testRunSuccess(
@@ -65,7 +60,7 @@ public class ListHostsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_twoLinesWithWildcard() {
+  void testRun_twoLinesWithWildcard() {
     persistActiveHost("example2.foo");
     persistActiveHost("example1.foo");
     testRunSuccess(
@@ -80,7 +75,7 @@ public class ListHostsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_twoLinesWithWildcardAndAnotherField() {
+  void testRun_twoLinesWithWildcardAndAnotherField() {
     persistActiveHost("example2.foo");
     persistActiveHost("example1.foo");
     testRunSuccess(
@@ -95,7 +90,7 @@ public class ListHostsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_withBadField_returnsError() {
+  void testRun_withBadField_returnsError() {
     persistActiveHost("example2.foo");
     persistActiveHost("example1.foo");
     testRunError(

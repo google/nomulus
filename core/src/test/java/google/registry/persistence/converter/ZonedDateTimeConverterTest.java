@@ -19,46 +19,43 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ZonedDateTimeConverter}. */
-@RunWith(JUnit4.class)
 public class ZonedDateTimeConverterTest {
 
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   private final ZonedDateTimeConverter converter = new ZonedDateTimeConverter();
 
   @Test
-  public void convertToDatabaseColumn_returnsNullIfInputIsNull() {
+  void convertToDatabaseColumn_returnsNullIfInputIsNull() {
     assertThat(converter.convertToDatabaseColumn(null)).isNull();
   }
 
   @Test
-  public void convertToDatabaseColumn_convertsCorrectly() {
+  void convertToDatabaseColumn_convertsCorrectly() {
     ZonedDateTime zonedDateTime = ZonedDateTime.parse("2019-09-01T01:01:01Z");
     assertThat(converter.convertToDatabaseColumn(zonedDateTime).toInstant())
         .isEqualTo(zonedDateTime.toInstant());
   }
 
   @Test
-  public void convertToEntityAttribute_returnsNullIfInputIsNull() {
+  void convertToEntityAttribute_returnsNullIfInputIsNull() {
     assertThat(converter.convertToEntityAttribute(null)).isNull();
   }
 
   @Test
-  public void convertToEntityAttribute_convertsCorrectly() {
+  void convertToEntityAttribute_convertsCorrectly() {
     ZonedDateTime zonedDateTime = ZonedDateTime.parse("2019-09-01T01:01:01Z");
     Instant instant = zonedDateTime.toInstant();
     assertThat(converter.convertToEntityAttribute(Timestamp.from(instant)))
@@ -66,7 +63,7 @@ public class ZonedDateTimeConverterTest {
   }
 
   @Test
-  public void converter_generatesTimestampWithNormalizedZone() {
+  void converter_generatesTimestampWithNormalizedZone() {
     ZonedDateTime zdt = ZonedDateTime.parse("2019-09-01T01:01:01Z");
     TestEntity entity = new TestEntity("normalized_utc_time", zdt);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
@@ -78,7 +75,7 @@ public class ZonedDateTimeConverterTest {
   }
 
   @Test
-  public void converter_convertsNonNormalizedZoneCorrectly() {
+  void converter_convertsNonNormalizedZoneCorrectly() {
     ZonedDateTime zdt = ZonedDateTime.parse("2019-09-01T01:01:01Z[UTC]");
     TestEntity entity = new TestEntity("non_normalized_utc_time", zdt);
 
@@ -91,7 +88,7 @@ public class ZonedDateTimeConverterTest {
   }
 
   @Test
-  public void converter_convertsNonUtcZoneCorrectly() {
+  void converter_convertsNonUtcZoneCorrectly() {
     ZonedDateTime zdt = ZonedDateTime.parse("2019-09-01T01:01:01+05:00");
     TestEntity entity = new TestEntity("new_york_time", zdt);
 

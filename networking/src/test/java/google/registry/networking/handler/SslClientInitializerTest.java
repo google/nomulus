@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.networking.handler.SslInitializerTestUtils.getKeyPair;
 import static google.registry.networking.handler.SslInitializerTestUtils.setUpSslChannel;
 import static google.registry.networking.handler.SslInitializerTestUtils.signKeyPair;
-import static google.registry.networking.handler.SslInitializerTestUtils.verifySslExcpetion;
+import static google.registry.networking.handler.SslInitializerTestUtils.verifySslException;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.networking.util.SelfSignedCaCertificate;
@@ -225,7 +225,7 @@ public class SslClientInitializerTest {
             sslProvider, hostProvider, portProvider, ImmutableList.of(ssc.cert()), null, null);
     nettyRule.setUpClient(localAddress, sslClientInitializer);
 
-    verifySslExcpetion(
+    verifySslException(
         nettyRule.getClientChannel(),
         channel -> channel.pipeline().get(SslHandler.class).handshakeFuture().get(),
         CertificateExpiredException.class);
@@ -259,7 +259,7 @@ public class SslClientInitializerTest {
             sslProvider, hostProvider, portProvider, ImmutableList.of(ssc.cert()), null, null);
     nettyRule.setUpClient(localAddress, sslClientInitializer);
 
-    verifySslExcpetion(
+    verifySslException(
         nettyRule.getClientChannel(),
         channel -> channel.pipeline().get(SslHandler.class).handshakeFuture().get(),
         CertificateNotYetValidException.class);

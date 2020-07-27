@@ -26,13 +26,13 @@ import static org.junit.Assert.assertThrows;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DeletePremiumListCommand}. */
-public class DeletePremiumListCommandTest extends CommandTestCase<DeletePremiumListCommand> {
+class DeletePremiumListCommandTest extends CommandTestCase<DeletePremiumListCommand> {
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     PremiumList premiumList = persistPremiumList("xn--q9jyb4c", "blah,USD 100");
     assertThat(loadPremiumListEntries(premiumList)).hasSize(1);
     runCommand("--force", "--name=xn--q9jyb4c");
@@ -47,7 +47,7 @@ public class DeletePremiumListCommandTest extends CommandTestCase<DeletePremiumL
   }
 
   @Test
-  public void testFailure_whenPremiumListDoesNotExist() {
+  void testFailure_whenPremiumListDoesNotExist() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommandForced("--name=foo"));
     assertThat(thrown)
@@ -56,7 +56,7 @@ public class DeletePremiumListCommandTest extends CommandTestCase<DeletePremiumL
   }
 
   @Test
-  public void testFailure_whenPremiumListIsInUse() {
+  void testFailure_whenPremiumListIsInUse() {
     PremiumList premiumList = persistPremiumList("xn--q9jyb4c", "blah,USD 100");
     createTld("xn--q9jyb4c");
     persistResource(Registry.get("xn--q9jyb4c").asBuilder().setPremiumList(premiumList).build());

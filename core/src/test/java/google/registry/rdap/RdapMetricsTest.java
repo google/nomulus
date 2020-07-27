@@ -23,19 +23,16 @@ import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RdapMetrics}. */
-@RunWith(JUnit4.class)
-public class RdapMetricsTest {
+class RdapMetricsTest {
 
   private final RdapMetrics rdapMetrics = new RdapMetrics();
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     RdapMetrics.requests.reset();
     RdapMetrics.responses.reset();
     RdapMetrics.numberOfDomainsRetrieved.reset();
@@ -58,7 +55,7 @@ public class RdapMetricsTest {
   }
 
   @Test
-  public void testPost() {
+  void testPost() {
     rdapMetrics.updateMetrics(getBuilder().setRequestMethod(Action.Method.POST).build());
     assertThat(RdapMetrics.requests)
         .hasValueForLabels(1, "DOMAINS", "NO", "NO", "PUBLIC", "POST")
@@ -67,7 +64,7 @@ public class RdapMetricsTest {
   }
 
   @Test
-  public void testHead() {
+  void testHead() {
     rdapMetrics.updateMetrics(getBuilder().setRequestMethod(Action.Method.HEAD).build());
     assertThat(RdapMetrics.requests)
         .hasValueForLabels(1, "DOMAINS", "NO", "NO", "PUBLIC", "HEAD")
@@ -76,7 +73,7 @@ public class RdapMetricsTest {
   }
 
   @Test
-  public void testPrefixLength_cappedAt5() {
+  void testPrefixLength_cappedAt5() {
     rdapMetrics.updateMetrics(
         getBuilder().setPrefixLength(6).setNumDomainsRetrieved(1).build());
     assertThat(RdapMetrics.numberOfDomainsRetrieved)
@@ -86,7 +83,7 @@ public class RdapMetricsTest {
   }
 
   @Test
-  public void testIncludeDeleted() {
+  void testIncludeDeleted() {
     rdapMetrics.updateMetrics(getBuilder().setIncludeDeleted(true).build());
     assertThat(RdapMetrics.requests)
         .hasValueForLabels(1, "DOMAINS", "YES", "NO", "PUBLIC", "GET")
@@ -95,7 +92,7 @@ public class RdapMetricsTest {
   }
 
   @Test
-  public void testDesiredRegistrar() {
+  void testDesiredRegistrar() {
     rdapMetrics.updateMetrics(getBuilder().setRegistrarSpecified(true).build());
     assertThat(RdapMetrics.requests)
         .hasValueForLabels(1, "DOMAINS", "NO", "YES", "PUBLIC", "GET")
@@ -104,7 +101,7 @@ public class RdapMetricsTest {
   }
 
   @Test
-  public void testCompleteResultSet() {
+  void testCompleteResultSet() {
     rdapMetrics.updateMetrics(
         getBuilder()
             .setIncompletenessWarningType(IncompletenessWarningType.COMPLETE)
@@ -116,7 +113,7 @@ public class RdapMetricsTest {
   }
 
   @Test
-  public void testTruncatedResultSet() {
+  void testTruncatedResultSet() {
     rdapMetrics.updateMetrics(
         getBuilder()
             .setIncompletenessWarningType(IncompletenessWarningType.TRUNCATED)
@@ -128,7 +125,7 @@ public class RdapMetricsTest {
   }
 
   @Test
-  public void testPossiblyIncompleteResultSet() {
+  void testPossiblyIncompleteResultSet() {
     rdapMetrics.updateMetrics(
         getBuilder()
             .setIncompletenessWarningType(IncompletenessWarningType.MIGHT_BE_INCOMPLETE)
@@ -140,7 +137,7 @@ public class RdapMetricsTest {
   }
 
   @Test
-  public void testPublicRole() {
+  void testPublicRole() {
     rdapMetrics.updateMetrics(getBuilder().setRole(RdapAuthorization.Role.PUBLIC).build());
     assertThat(RdapMetrics.requests)
         .hasValueForLabels(1, "DOMAINS", "NO", "NO", "PUBLIC", "GET")
@@ -149,7 +146,7 @@ public class RdapMetricsTest {
   }
 
   @Test
-  public void testRegistrarRole() {
+  void testRegistrarRole() {
     rdapMetrics.updateMetrics(getBuilder().setRole(RdapAuthorization.Role.REGISTRAR).build());
     assertThat(RdapMetrics.requests)
         .hasValueForLabels(1, "DOMAINS", "NO", "NO", "REGISTRAR", "GET")
@@ -158,7 +155,7 @@ public class RdapMetricsTest {
   }
 
   @Test
-  public void testAdminRole() {
+  void testAdminRole() {
     rdapMetrics.updateMetrics(getBuilder().setRole(RdapAuthorization.Role.ADMINISTRATOR).build());
     assertThat(RdapMetrics.requests)
         .hasValueForLabels(1, "DOMAINS", "NO", "NO", "ADMINISTRATOR", "GET")
@@ -168,7 +165,7 @@ public class RdapMetricsTest {
 
   /** Tests what would happen in a domain search for "cat.lol" which found that domain. */
   @Test
-  public void testSimpleDomainSearch() {
+  void testSimpleDomainSearch() {
     rdapMetrics.updateMetrics(
         getBuilder()
             .setSearchType(SearchType.BY_DOMAIN_NAME)
@@ -199,7 +196,7 @@ public class RdapMetricsTest {
    * deleted domains, which found 10 matching hosts, then looked for domains and found 5 matches.
    */
   @Test
-  public void testDomainSearchByNameserverWithWildcardAndDeleted() {
+  void testDomainSearchByNameserverWithWildcardAndDeleted() {
     rdapMetrics.updateMetrics(
         getBuilder()
             .setSearchType(SearchType.BY_NAMESERVER_NAME)
@@ -233,7 +230,7 @@ public class RdapMetricsTest {
 
   /** Tests what would happen in a nameserver search for "*.cat.lol", which found no matches. */
   @Test
-  public void testNoNameserversFound() {
+  void testNoNameserversFound() {
     rdapMetrics.updateMetrics(
         getBuilder()
             .setEndpointType(EndpointType.NAMESERVERS)
@@ -262,7 +259,7 @@ public class RdapMetricsTest {
 
   /** Tests what would happen in an entity search for "Mike*" which found 50 contacts. */
   @Test
-  public void testEntitySearchByNameWithWildcard() {
+  void testEntitySearchByNameWithWildcard() {
     rdapMetrics.updateMetrics(
         getBuilder()
             .setEndpointType(EndpointType.ENTITIES)

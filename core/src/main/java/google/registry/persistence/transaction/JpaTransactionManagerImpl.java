@@ -63,6 +63,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public void teardown() {
+    emf.close();
+  }
+
+  @Override
   public EntityManager getEntityManager() {
     if (transactionInfo.get().entityManager == null) {
       throw new PersistenceException(

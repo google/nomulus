@@ -22,34 +22,35 @@ import google.registry.model.registry.label.PremiumList;
 import java.util.Map;
 import java.util.Optional;
 import org.joda.time.Duration;
-import org.junit.rules.ExternalResource;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * Sets up caches with desired data expiry for testing and restores their default configurations
- * when tests complete.
+ * A JUnit extension that overloads cache expiry for tests.
  *
  * <p>This rule is necessary because many caches in the system are singleton and referenced through
  * static fields.
  */
-public class TestCacheRule extends ExternalResource {
+public class TestCacheExtension implements BeforeEachCallback, AfterEachCallback {
 
   private final ImmutableList<TestCacheHandler> cacheHandlers;
 
-  private TestCacheRule(ImmutableList<TestCacheHandler> cacheHandlers) {
+  private TestCacheExtension(ImmutableList<TestCacheHandler> cacheHandlers) {
     this.cacheHandlers = cacheHandlers;
   }
 
   @Override
-  protected void before() {
+  public void beforeEach(ExtensionContext context) {
     cacheHandlers.forEach(TestCacheHandler::before);
   }
 
   @Override
-  protected void after() {
+  public void afterEach(ExtensionContext context) {
     cacheHandlers.forEach(TestCacheHandler::after);
   }
 
-  /** Builder for {@link TestCacheRule}. */
+  /** Builder for {@link TestCacheExtension}. */
   public static class Builder {
     private final Map<String, TestCacheHandler> cacheHandlerMap = Maps.newHashMap();
 
@@ -81,8 +82,8 @@ public class TestCacheRule extends ExternalResource {
       return this;
     }
 
-    public TestCacheRule build() {
-      return new TestCacheRule(ImmutableList.copyOf(cacheHandlerMap.values()));
+    public TestCacheExtension build() {
+      return new TestCacheExtension(ImmutableList.copyOf(cacheHandlerMap.values()));
     }
   }
 

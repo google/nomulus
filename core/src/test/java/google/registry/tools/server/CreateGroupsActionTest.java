@@ -30,22 +30,16 @@ import google.registry.request.Response;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.InjectRule;
 import java.util.Optional;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-/**
- * Unit tests for {@link CreateGroupsAction}.
- */
-@RunWith(JUnit4.class)
-public class CreateGroupsActionTest {
+/** Unit tests for {@link CreateGroupsAction}. */
+class CreateGroupsActionTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension final InjectRule inject = new InjectRule();
 
   private final DirectoryGroupsConnection connection = mock(DirectoryGroupsConnection.class);
   private final Response response = mock(Response.class);
@@ -60,7 +54,7 @@ public class CreateGroupsActionTest {
   }
 
   @Test
-  public void test_invalidRequest_missingClientId() {
+  void test_invalidRequest_missingClientId() {
     BadRequestException thrown = assertThrows(BadRequestException.class, () -> runAction(null));
     assertThat(thrown)
         .hasMessageThat()
@@ -68,7 +62,7 @@ public class CreateGroupsActionTest {
   }
 
   @Test
-  public void test_invalidRequest_invalidClientId() {
+  void test_invalidRequest_invalidClientId() {
     BadRequestException thrown =
         assertThrows(BadRequestException.class, () -> runAction("completelyMadeUpClientId"));
     assertThat(thrown)
@@ -79,7 +73,7 @@ public class CreateGroupsActionTest {
   }
 
   @Test
-  public void test_createsAllGroupsSuccessfully() throws Exception {
+  void test_createsAllGroupsSuccessfully() throws Exception {
     runAction("NewRegistrar");
     verify(response).setStatus(SC_OK);
     verify(response).setPayload("Success!");
@@ -90,7 +84,7 @@ public class CreateGroupsActionTest {
   }
 
   @Test
-  public void test_createsSomeGroupsSuccessfully_whenOthersFail() throws Exception {
+  void test_createsSomeGroupsSuccessfully_whenOthersFail() throws Exception {
     when(connection.createGroup("newregistrar-primary-contacts@domain-registry.example"))
         .thenThrow(new RuntimeException("Could not contact server."));
     doThrow(new RuntimeException("Invalid access.")).when(connection).addMemberToGroup(

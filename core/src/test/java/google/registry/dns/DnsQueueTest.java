@@ -24,31 +24,28 @@ import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DnsQueue}. */
-@RunWith(JUnit4.class)
 public class DnsQueueTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private DnsQueue dnsQueue;
   private final FakeClock clock = new FakeClock(DateTime.parse("2010-01-01T10:00:00Z"));
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     dnsQueue = DnsQueue.createForTesting(clock);
     dnsQueue.leaseTasksBatchSize = 10;
   }
 
   @Test
-  public void test_addHostRefreshTask_success() {
+  void test_addHostRefreshTask_success() {
     createTld("tld");
     dnsQueue.addHostRefreshTask("octopus.tld");
     assertTasksEnqueued(
@@ -61,7 +58,7 @@ public class DnsQueueTest {
   }
 
   @Test
-  public void test_addHostRefreshTask_failsOnUnknownTld() {
+  void test_addHostRefreshTask_failsOnUnknownTld() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -78,7 +75,7 @@ public class DnsQueueTest {
   }
 
   @Test
-  public void test_addDomainRefreshTask_success() {
+  void test_addDomainRefreshTask_success() {
     createTld("tld");
     dnsQueue.addDomainRefreshTask("octopus.tld");
     assertTasksEnqueued(
@@ -91,7 +88,7 @@ public class DnsQueueTest {
   }
 
   @Test
-  public void test_addDomainRefreshTask_failsOnUnknownTld() {
+  void test_addDomainRefreshTask_failsOnUnknownTld() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

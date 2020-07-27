@@ -20,8 +20,8 @@ import static google.registry.proxy.handler.EppServiceHandler.CLIENT_CERTIFICATE
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.proxy.Protocol;
@@ -78,7 +78,7 @@ public class FrontendMetricsHandlerTest {
     Object request = new Object();
     assertThat(channel.writeInbound(request)).isTrue();
     assertThat((Object) channel.readInbound()).isEqualTo(request);
-    verifyZeroInteractions(metrics);
+    verifyNoInteractions(metrics);
   }
 
   @Test

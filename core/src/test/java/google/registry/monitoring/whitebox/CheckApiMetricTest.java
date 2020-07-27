@@ -19,26 +19,23 @@ import static com.google.common.truth.Truth.assertThat;
 import google.registry.monitoring.whitebox.CheckApiMetric.Status;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CheckApiMetric}. */
-@RunWith(JUnit4.class)
-public class CheckApiMetricTest {
+class CheckApiMetricTest {
   private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
 
   private final FakeClock clock = new FakeClock(START_TIME);
   private CheckApiMetric.Builder metricBuilder;
 
-  @Before
-  public void setup() {
+  @BeforeEach
+  void beforeEach() {
     metricBuilder = CheckApiMetric.builder(clock);
   }
 
   @Test
-  public void testSuccess_timestampsAreSet() {
+  void testSuccess_timestampsAreSet() {
     clock.advanceOneMilli();
     CheckApiMetric metric = metricBuilder.status(Status.SUCCESS).build();
 

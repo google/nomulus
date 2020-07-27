@@ -79,6 +79,10 @@ nomulus.iml
 nomulus.ipr
 nomulus.iws
 
+# Auto-generated java classes by Intellij
+*/src/main/generated/
+*/src/test/generated_tests/
+
 # VScode
 .vscode
 

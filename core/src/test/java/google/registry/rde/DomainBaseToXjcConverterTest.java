@@ -31,7 +31,6 @@ import static org.joda.money.CurrencyUnit.USD;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
-import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -71,11 +70,9 @@ import google.registry.xjc.secdns.XjcSecdnsDsDataType;
 import java.io.ByteArrayOutputStream;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Unit tests for {@link DomainBaseToXjcConverter}.
@@ -83,22 +80,21 @@ import org.junit.runners.JUnit4;
  * <p>This tests the mapping between {@link DomainBase} and {@link XjcRdeDomain} as well as some
  * exceptional conditions.
  */
-@RunWith(JUnit4.class)
 public class DomainBaseToXjcConverterTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private final DateTime now = DateTime.parse("2014-01-01T00:00:00Z");
   private final FakeClock clock = new FakeClock(now);
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     createTld("xn--q9jyb4c");
   }
 
   @Test
-  public void testConvertThick() {
+  void testConvertThick() {
     XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.FULL);
 
     assertThat(bean.getClID()).isEqualTo("GetTheeBack");
@@ -179,7 +175,7 @@ public class DomainBaseToXjcConverterTest {
   }
 
   @Test
-  public void testConvertThin() {
+  void testConvertThin() {
     XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.THIN);
     assertThat(bean.getRegistrant()).isNull();
     assertThat(bean.getContacts()).isEmpty();
@@ -187,18 +183,18 @@ public class DomainBaseToXjcConverterTest {
   }
 
   @Test
-  public void testMarshalThick() throws Exception {
+  void testMarshalThick() throws Exception {
     XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.FULL);
     wrapDeposit(bean).marshal(new ByteArrayOutputStream(), UTF_8);
   }
 
   @Test
-  public void testMarshalThin() throws Exception {
+  void testMarshalThin() throws Exception {
     XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.THIN);
     wrapDeposit(bean).marshal(new ByteArrayOutputStream(), UTF_8);
   }
 
-  public XjcRdeDeposit wrapDeposit(XjcRdeDomain domain) {
+  XjcRdeDeposit wrapDeposit(XjcRdeDomain domain) {
     XjcRdeDeposit deposit = new XjcRdeDeposit();
     deposit.setId("984302");
     deposit.setType(XjcRdeDepositTypeType.FULL);
@@ -305,8 +301,7 @@ public class DomainBaseToXjcConverterTest {
                     StatusValue.CLIENT_TRANSFER_PROHIBITED,
                     StatusValue.SERVER_UPDATE_PROHIBITED))
             .setAutorenewBillingEvent(
-                Key.create(
-                    persistResource(
+                persistResource(
                         new BillingEvent.Recurring.Builder()
                             .setReason(Reason.RENEW)
                             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
@@ -315,10 +310,10 @@ public class DomainBaseToXjcConverterTest {
                             .setEventTime(END_OF_TIME)
                             .setRecurrenceEndTime(END_OF_TIME)
                             .setParent(historyEntry)
-                            .build())))
+                            .build())
+                    .createVKey())
             .setAutorenewPollMessage(
-                Key.create(
-                    persistResource(
+                persistResource(
                         new PollMessage.Autorenew.Builder()
                             .setTargetId("lol")
                             .setClientId("TheRegistrar")
@@ -326,7 +321,8 @@ public class DomainBaseToXjcConverterTest {
                             .setAutorenewEndTime(END_OF_TIME)
                             .setMsg("Domain was auto-renewed.")
                             .setParent(historyEntry)
-                            .build())))
+                            .build())
+                    .createVKey())
             .setTransferData(
                 new DomainTransferData.Builder()
                     .setGainingClientId("gaining")

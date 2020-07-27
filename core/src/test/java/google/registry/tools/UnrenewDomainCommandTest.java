@@ -20,6 +20,7 @@ import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
 import static google.registry.model.eppcommon.StatusValue.PENDING_TRANSFER;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.reporting.HistoryEntry.Type.SYNTHETIC;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.assertBillingEventsEqual;
 import static google.registry.testing.DatastoreHelper.assertPollMessagesEqual;
 import static google.registry.testing.DatastoreHelper.createTld;
@@ -47,26 +48,26 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UnrenewDomainCommand}. */
 public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainCommand> {
 
-  @Rule public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2016-12-06T13:55:01Z"));
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     createTld("tld");
     inject.setStaticField(Ofy.class, "clock", clock);
     command.clock = clock;
   }
 
   @Test
-  public void test_unrenewTwoDomains_worksSuccessfully() throws Exception {
+  void test_unrenewTwoDomains_worksSuccessfully() throws Exception {
     ContactResource contact = persistActiveContact("jd1234");
     clock.advanceOneMilli();
     persistDomainWithDependentResources(
@@ -91,7 +92,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
   }
 
   @Test
-  public void test_unrenewDomain_savesDependentEntitiesCorrectly() throws Exception {
+  void test_unrenewDomain_savesDependentEntitiesCorrectly() throws Exception {
     ContactResource contact = persistActiveContact("jd1234");
     clock.advanceOneMilli();
     persistDomainWithDependentResources(
@@ -119,7 +120,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     HistoryEntry synthetic = getOnlyHistoryEntryOfType(domain, SYNTHETIC);
 
     assertBillingEventsEqual(
-        ofy().load().key(domain.getAutorenewBillingEvent()).now(),
+        tm().load(domain.getAutorenewBillingEvent()),
         new BillingEvent.Recurring.Builder()
             .setParent(synthetic)
             .setReason(Reason.RENEW)
@@ -148,14 +149,15 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
                 .build()));
 
     // Check that fields on domain were updated correctly.
-    assertThat(domain.getAutorenewPollMessage().getParent()).isEqualTo(Key.create(synthetic));
+    assertThat(domain.getAutorenewPollMessage().getOfyKey().getParent())
+        .isEqualTo(Key.create(synthetic));
     assertThat(domain.getRegistrationExpirationTime()).isEqualTo(newExpirationTime);
     assertThat(domain.getLastEppUpdateTime()).isEqualTo(unrenewTime);
     assertThat(domain.getLastEppUpdateClientId()).isEqualTo("TheRegistrar");
   }
 
   @Test
-  public void test_periodTooLow_fails() {
+  void test_periodTooLow_fails() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class, () -> runCommandForced("--period", "0", "domain.tld"));
@@ -163,7 +165,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
   }
 
   @Test
-  public void test_periodTooHigh_fails() {
+  void test_periodTooHigh_fails() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class, () -> runCommandForced("--period", "10", "domain.tld"));
@@ -171,7 +173,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
   }
 
   @Test
-  public void test_varietyOfInvalidDomains_displaysErrors() {
+  void test_varietyOfInvalidDomains_displaysErrors() {
     DateTime now = clock.nowUtc();
     persistResource(
         newDomainBase("deleting.tld")

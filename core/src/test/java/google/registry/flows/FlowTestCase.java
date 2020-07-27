@@ -22,6 +22,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.model.eppcommon.EppXmlTransformer.marshal;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.POLL_MESSAGE_ID_STRIPPER;
 import static google.registry.testing.DatastoreHelper.getPollMessages;
 import static google.registry.testing.DatastoreHelper.stripBillingEventId;
@@ -73,16 +74,22 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public abstract class FlowTestCase<F extends Flow> {
 
   /** Whether to actually write to Datastore or just simulate. */
-  public enum CommitMode { LIVE, DRY_RUN }
+  public enum CommitMode {
+    LIVE,
+    DRY_RUN
+  }
 
   /** Whether to run in normal or superuser mode. */
-  public enum UserPrivileges { NORMAL, SUPERUSER }
+  public enum UserPrivileges {
+    NORMAL,
+    SUPERUSER
+  }
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
+  final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension final InjectRule inject = new InjectRule();
 
   protected EppLoader eppLoader;
   protected SessionMetadata sessionMetadata;
@@ -94,7 +101,7 @@ public abstract class FlowTestCase<F extends Flow> {
   private EppMetric.Builder eppMetricBuilder;
 
   @BeforeEach
-  public void init() {
+  public void beforeEachFlowTestCase() {
     sessionMetadata = new HttpSessionMetadata(new FakeHttpSession());
     sessionMetadata.setClientId("TheRegistrar");
     sessionMetadata.setServiceExtensionUris(ProtocolDefinition.getVisibleServiceExtensionUris());
@@ -190,12 +197,9 @@ public abstract class FlowTestCase<F extends Flow> {
     assertWithMessage("Billing event is present for grace period: " + gracePeriod)
         .that(gracePeriod.hasBillingEvent())
         .isTrue();
-    return ofy()
-        .load()
-        .key(
+    return tm().load(
             firstNonNull(
-                gracePeriod.getOneTimeBillingEvent(), gracePeriod.getRecurringBillingEvent()))
-        .now();
+                gracePeriod.getOneTimeBillingEvent(), gracePeriod.getRecurringBillingEvent()));
   }
 
   /**

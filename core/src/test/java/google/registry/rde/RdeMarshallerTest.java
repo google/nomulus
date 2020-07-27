@@ -20,23 +20,20 @@ import static google.registry.xml.ValidationMode.STRICT;
 
 import google.registry.testing.AppEngineRule;
 import google.registry.xml.XmlTestUtils;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RdeMarshaller}. */
-@RunWith(JUnit4.class)
 public class RdeMarshallerTest {
 
   private static final String DECLARATION =
       "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n";
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testMarshalRegistrar_validData_producesXmlFragment() throws Exception {
+  void testMarshalRegistrar_validData_producesXmlFragment() throws Exception {
     DepositFragment fragment =
         new RdeMarshaller(STRICT).marshalRegistrar(loadRegistrar("TheRegistrar"));
     assertThat(fragment.type()).isEqualTo(RdeResourceType.REGISTRAR);
@@ -80,7 +77,7 @@ public class RdeMarshallerTest {
   }
 
   @Test
-  public void testMarshalRegistrar_unicodeCharacters_dontGetMangled() {
+  void testMarshalRegistrar_unicodeCharacters_dontGetMangled() {
     DepositFragment fragment =
         new RdeMarshaller(STRICT).marshalRegistrar(loadRegistrar("TheRegistrar"));
     assertThat(fragment.xml()).contains("123 Example Bőulevard");

@@ -77,6 +77,7 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "Contact" (
        repo_id text not null,
+        update_timestamp timestamptz,
         creation_registrar_id text not null,
         creation_time timestamptz not null,
         current_sponsor_registrar_id text not null,
@@ -197,6 +198,7 @@ create sequence history_id_sequence start 1 increment 1;
         last_epp_update_registrar_id text,
         last_epp_update_time timestamptz,
         statuses text[],
+        update_timestamp timestamptz,
         contact_repo_id text not null,
         primary key (history_revision_id)
     );
@@ -219,6 +221,7 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "Domain" (
        repo_id text not null,
+        update_timestamp timestamptz,
         creation_registrar_id text not null,
         creation_time timestamptz not null,
         current_sponsor_registrar_id text not null,
@@ -229,7 +232,10 @@ create sequence history_id_sequence start 1 increment 1;
         admin_contact text,
         auth_info_repo_id text,
         auth_info_value text,
+        billing_recurrence_id int8,
+        autorenew_poll_message_id int8,
         billing_contact text,
+        deletion_poll_message_id int8,
         domain_name text,
         idn_table_name text,
         last_transfer_time timestamptz,
@@ -329,8 +335,8 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "GracePeriod" (
        id  bigserial not null,
-        billing_event_one_time bytea,
-        billing_event_recurring bytea,
+        billing_event_one_time int8,
+        billing_event_recurring int8,
         registrar_id text,
         expiration_time timestamptz,
         type int4,
@@ -360,12 +366,14 @@ create sequence history_id_sequence start 1 increment 1;
         last_epp_update_registrar_id text,
         last_epp_update_time timestamptz,
         statuses text[],
+        update_timestamp timestamptz,
         host_repo_id text not null,
         primary key (history_revision_id)
     );
 
     create table "HostResource" (
        repo_id text not null,
+        update_timestamp timestamptz,
         creation_registrar_id text not null,
         creation_time timestamptz not null,
         current_sponsor_registrar_id text not null,
@@ -429,10 +437,10 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "PremiumList" (
        revision_id  bigserial not null,
-        bloom_filter bytea not null,
         creation_timestamp timestamptz not null,
-        currency text not null,
         name text not null,
+        bloom_filter bytea not null,
+        currency text not null,
         primary key (revision_id)
     );
 
@@ -522,8 +530,8 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "ReservedEntry" (
        revision_id int8 not null,
-        comment text,
         reservation_type int4 not null,
+        comment text,
         domain_label text not null,
         primary key (revision_id, domain_label)
     );

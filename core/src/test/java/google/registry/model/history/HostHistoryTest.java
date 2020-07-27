@@ -15,6 +15,7 @@
 package google.registry.model.history;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.history.DomainHistoryTest.assertHistoriesEqual;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatastoreHelper.newHostResourceWithRoid;
@@ -29,15 +30,17 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import org.junit.jupiter.api.Test;
 
-/** Tests for {@link HostHistory}. */
+/**
+ * Tests for {@link HostHistory}.
+ */
 public class HostHistoryTest extends EntityTestCase {
 
-  public HostHistoryTest() {
+  HostHistoryTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     saveRegistrar("TheRegistrar");
 
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
@@ -63,9 +66,16 @@ public class HostHistoryTest extends EntityTestCase {
             () -> {
               HostHistory fromDatabase =
                   jpaTm().load(VKey.createSql(HostHistory.class, hostHistory.getId()));
-              assertHistoriesEqual(fromDatabase, hostHistory);
+              assertHostHistoriesEqual(fromDatabase, hostHistory);
               assertThat(fromDatabase.getHostRepoId().getSqlKey())
                   .isEqualTo(hostHistory.getHostRepoId().getSqlKey());
             });
+  }
+
+  private void assertHostHistoriesEqual(HostHistory one, HostHistory two) {
+    assertAboutImmutableObjects().that(one).isEqualExceptFields(two, "hostBase");
+    assertAboutImmutableObjects()
+        .that(one.getHostBase())
+        .isEqualExceptFields(two.getHostBase(), "repoId");
   }
 }

@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -28,23 +28,24 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit test for {@link JpaTestRules.Builder#withSqlLogging()}. */
-public class JpaTestRulesSqlLoggingTest {
+class JpaTestRulesSqlLoggingTest {
 
   // Entity under test: configured to log SQL statements to Stdout.
   @RegisterExtension
-  JpaUnitTestRule jpaRule = new JpaTestRules.Builder().withSqlLogging().buildUnitTestRule();
+  JpaUnitTestExtension jpaExtension =
+      new JpaTestRules.Builder().withSqlLogging().buildUnitTestRule();
 
   private PrintStream orgStdout;
   private ByteArrayOutputStream stdoutBuffer;
 
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     orgStdout = System.out;
     System.setOut(new PrintStream(stdoutBuffer = new ByteArrayOutputStream()));
   }
 
   @AfterEach
-  public void afterEach() {
+  void afterEach() {
     System.setOut(orgStdout);
   }
 

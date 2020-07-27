@@ -52,17 +52,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link BigqueryPollJobAction}. */
-@RunWith(JUnit4.class)
 public class BigqueryPollJobActionTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
@@ -79,8 +76,8 @@ public class BigqueryPollJobActionTest {
   private final CapturingLogHandler logHandler = new CapturingLogHandler();
   private BigqueryPollJobAction action = new BigqueryPollJobAction();
 
-  @Before
-  public void before() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     action.bigquery = bigquery;
     when(bigquery.jobs()).thenReturn(bigqueryJobs);
     when(bigqueryJobs.get(PROJECT_ID, JOB_ID)).thenReturn(bigqueryJobsGet);
@@ -100,14 +97,14 @@ public class BigqueryPollJobActionTest {
   }
 
   @Test
-  public void testSuccess_enqueuePollTask() {
+  void testSuccess_enqueuePollTask() {
     new BigqueryPollJobEnqueuer(TASK_QUEUE_UTILS).enqueuePollTask(
         new JobReference().setProjectId(PROJECT_ID).setJobId(JOB_ID));
     assertTasksEnqueued(BigqueryPollJobAction.QUEUE, newPollJobTaskMatcher("GET"));
   }
 
   @Test
-  public void testSuccess_enqueuePollTask_withChainedTask() throws Exception {
+  void testSuccess_enqueuePollTask_withChainedTask() throws Exception {
     TaskOptions chainedTask = TaskOptions.Builder
         .withUrl("/_dr/something")
         .method(Method.POST)
@@ -126,7 +123,7 @@ public class BigqueryPollJobActionTest {
   }
 
   @Test
-  public void testSuccess_jobCompletedSuccessfully() throws Exception {
+  void testSuccess_jobCompletedSuccessfully() throws Exception {
     when(bigqueryJobsGet.execute()).thenReturn(
         new Job().setStatus(new JobStatus().setState("DONE")));
     action.run();
@@ -135,7 +132,7 @@ public class BigqueryPollJobActionTest {
   }
 
   @Test
-  public void testSuccess_chainedPayloadAndJobSucceeded_enqueuesChainedTask() throws Exception {
+  void testSuccess_chainedPayloadAndJobSucceeded_enqueuesChainedTask() throws Exception {
     when(bigqueryJobsGet.execute()).thenReturn(
         new Job().setStatus(new JobStatus().setState("DONE")));
 
@@ -167,7 +164,7 @@ public class BigqueryPollJobActionTest {
   }
 
   @Test
-  public void testJobFailed() throws Exception {
+  void testJobFailed() throws Exception {
     when(bigqueryJobsGet.execute()).thenReturn(new Job().setStatus(
         new JobStatus()
             .setState("DONE")
@@ -179,20 +176,20 @@ public class BigqueryPollJobActionTest {
   }
 
   @Test
-  public void testJobPending() throws Exception {
+  void testJobPending() throws Exception {
     when(bigqueryJobsGet.execute()).thenReturn(
         new Job().setStatus(new JobStatus().setState("PENDING")));
     assertThrows(NotModifiedException.class, action::run);
   }
 
   @Test
-  public void testJobStatusUnreadable() throws Exception {
+  void testJobStatusUnreadable() throws Exception {
     when(bigqueryJobsGet.execute()).thenThrow(IOException.class);
     assertThrows(NotModifiedException.class, action::run);
   }
 
   @Test
-  public void testFailure_badChainedTaskPayload() throws Exception {
+  void testFailure_badChainedTaskPayload() throws Exception {
     when(bigqueryJobsGet.execute()).thenReturn(
         new Job().setStatus(new JobStatus().setState("DONE")));
     action.payload = "payload".getBytes(UTF_8);

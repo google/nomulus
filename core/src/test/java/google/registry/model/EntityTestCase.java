@@ -41,8 +41,6 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Set;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -61,9 +59,9 @@ public abstract class EntityTestCase {
 
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
-  @Rule @RegisterExtension public final AppEngineRule appEngine;
+  @RegisterExtension public final AppEngineRule appEngine;
 
-  @Rule @RegisterExtension public InjectRule inject = new InjectRule();
+  @RegisterExtension public InjectRule inject = new InjectRule();
 
   protected EntityTestCase() {
     this(JpaEntityCoverageCheck.DISABLED);
@@ -78,7 +76,6 @@ public abstract class EntityTestCase {
             .build();
   }
 
-  @Before
   @BeforeEach
   public void injectClock() {
     inject.setStaticField(Ofy.class, "clock", fakeClock);

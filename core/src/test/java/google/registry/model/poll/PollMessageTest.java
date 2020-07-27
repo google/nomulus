@@ -34,16 +34,16 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link PollMessage}. */
 public class PollMessageTest extends EntityTestCase {
 
-  HistoryEntry historyEntry;
-  PollMessage.OneTime oneTime;
-  PollMessage.Autorenew autoRenew;
+  private HistoryEntry historyEntry;
+  private PollMessage.OneTime oneTime;
+  private PollMessage.Autorenew autoRenew;
 
-  public PollMessageTest() {
+  PollMessageTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     createTld("foobar");
     historyEntry =
         persistResource(
@@ -123,7 +123,7 @@ public class PollMessageTest extends EntityTestCase {
   }
 
   @Test
-  public void testPersistenceOneTime() {
+  void testPersistenceOneTime() {
     PollMessage.OneTime pollMessage =
         persistResource(
             new PollMessage.OneTime.Builder()
@@ -136,7 +136,7 @@ public class PollMessageTest extends EntityTestCase {
   }
 
   @Test
-  public void testPersistenceAutorenew() {
+  void testPersistenceAutorenew() {
     PollMessage.Autorenew pollMessage =
         persistResource(
             new PollMessage.Autorenew.Builder()
@@ -151,7 +151,7 @@ public class PollMessageTest extends EntityTestCase {
   }
 
   @Test
-  public void testIndexingAutorenew() throws Exception {
+  void testIndexingAutorenew() throws Exception {
     PollMessage.Autorenew pollMessage =
         persistResource(
             new PollMessage.Autorenew.Builder()

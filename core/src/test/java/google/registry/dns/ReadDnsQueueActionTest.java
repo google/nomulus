@@ -56,14 +56,11 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ReadDnsQueueAction}. */
-@RunWith(JUnit4.class)
 public class ReadDnsQueueActionTest {
 
   private static final int TEST_TLD_UPDATE_BATCH_SIZE = 100;
@@ -72,7 +69,7 @@ public class ReadDnsQueueActionTest {
   // test in the future. Set to year 3000 so it'll remain in the future for a very long time.
   private FakeClock clock = new FakeClock(DateTime.parse("3000-01-01TZ"));
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
       AppEngineRule.builder()
           .withDatastoreAndCloudSql()
@@ -93,8 +90,8 @@ public class ReadDnsQueueActionTest {
           .withClock(clock)
           .build();
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     // Because of b/73372999 - the FakeClock can't be in the past, or the TaskQueues stop working.
     // To make sure it's never in the past, we set the date far-far into the future
     clock.setTo(DateTime.parse("3000-01-01TZ"));
@@ -171,7 +168,7 @@ public class ReadDnsQueueActionTest {
   }
 
   @Test
-  public void testSuccess_methodPostIsDefault() {
+  void testSuccess_methodPostIsDefault() {
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.net");
     dnsQueue.addDomainRefreshTask("domain.example");
@@ -187,7 +184,7 @@ public class ReadDnsQueueActionTest {
   }
 
   @Test
-  public void testSuccess_allSingleLockTlds() {
+  void testSuccess_allSingleLockTlds() {
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.net");
     dnsQueue.addDomainRefreshTask("domain.example");
@@ -200,7 +197,7 @@ public class ReadDnsQueueActionTest {
   }
 
   @Test
-  public void testSuccess_moreUpdatesThanQueueBatchSize() {
+  void testSuccess_moreUpdatesThanQueueBatchSize() {
     // The task queue has a batch size of 1000 (that's the maximum number of items you can lease at
     // once).
     ImmutableList<String> domains =
@@ -219,15 +216,14 @@ public class ReadDnsQueueActionTest {
     assertThat(queuedParams).hasSize(15);
     // Check all the expected domains are indeed enqueued
     assertThat(
-            queuedParams
-                .stream()
+            queuedParams.stream()
                 .map(params -> params.get("domains").stream().collect(onlyElement()))
                 .flatMap(values -> Splitter.on(',').splitToList(values).stream()))
         .containsExactlyElementsIn(domains);
   }
 
   @Test
-  public void testSuccess_twoDnsWriters() {
+  void testSuccess_twoDnsWriters() {
     persistResource(
         Registry.get("com")
             .asBuilder()
@@ -242,7 +238,7 @@ public class ReadDnsQueueActionTest {
   }
 
   @Test
-  public void testSuccess_differentUpdateTimes_usesMinimum() {
+  void testSuccess_differentUpdateTimes_usesMinimum() {
     clock.setTo(DateTime.parse("3000-02-03TZ"));
     dnsQueue.addDomainRefreshTask("domain1.com");
     clock.setTo(DateTime.parse("3000-02-04TZ"));
@@ -256,18 +252,18 @@ public class ReadDnsQueueActionTest {
     assertThat(getQueuedParams(DNS_PUBLISH_PUSH_QUEUE_NAME)).hasSize(1);
     assertThat(getQueuedParams(DNS_PUBLISH_PUSH_QUEUE_NAME).get(0))
         .containsExactly(
-                "enqueued", "3000-02-05T01:00:00.000Z",
-                "itemsCreated", "3000-02-03T00:00:00.000Z",
-                "tld", "com",
-                "dnsWriter", "comWriter",
-                "domains", "domain1.com,domain2.com,domain3.com",
-                "hosts", "",
-                "lockIndex", "1",
-                "numPublishLocks", "1");
+            "enqueued", "3000-02-05T01:00:00.000Z",
+            "itemsCreated", "3000-02-03T00:00:00.000Z",
+            "tld", "com",
+            "dnsWriter", "comWriter",
+            "domains", "domain1.com,domain2.com,domain3.com",
+            "hosts", "",
+            "lockIndex", "1",
+            "numPublishLocks", "1");
   }
 
   @Test
-  public void testSuccess_oneTldPaused_returnedToQueue() {
+  void testSuccess_oneTldPaused_returnedToQueue() {
     persistResource(Registry.get("net").asBuilder().setDnsPaused(true).build());
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.net");
@@ -281,7 +277,7 @@ public class ReadDnsQueueActionTest {
   }
 
   @Test
-  public void testSuccess_oneTldUnknown_returnedToQueue() {
+  void testSuccess_oneTldUnknown_returnedToQueue() {
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.example");
     QueueFactory.getQueue(DNS_PULL_QUEUE_NAME)
@@ -301,7 +297,7 @@ public class ReadDnsQueueActionTest {
   }
 
   @Test
-  public void testSuccess_corruptTaskTldMismatch_published() {
+  void testSuccess_corruptTaskTldMismatch_published() {
     // TODO(mcilwain): what's the correct action to take in this case?
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.example");
@@ -322,7 +318,7 @@ public class ReadDnsQueueActionTest {
   }
 
   @Test
-  public void testSuccess_corruptTaskNoTld_discarded() {
+  void testSuccess_corruptTaskNoTld_discarded() {
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.example");
     QueueFactory.getQueue(DNS_PULL_QUEUE_NAME)
@@ -341,7 +337,7 @@ public class ReadDnsQueueActionTest {
   }
 
   @Test
-  public void testSuccess_corruptTaskNoName_discarded() {
+  void testSuccess_corruptTaskNoName_discarded() {
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.example");
     QueueFactory.getQueue(DNS_PULL_QUEUE_NAME)
@@ -360,7 +356,7 @@ public class ReadDnsQueueActionTest {
   }
 
   @Test
-  public void testSuccess_corruptTaskNoType_discarded() {
+  void testSuccess_corruptTaskNoType_discarded() {
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.example");
     QueueFactory.getQueue(DNS_PULL_QUEUE_NAME)
@@ -379,7 +375,7 @@ public class ReadDnsQueueActionTest {
   }
 
   @Test
-  public void testSuccess_corruptTaskWrongType_discarded() {
+  void testSuccess_corruptTaskWrongType_discarded() {
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.example");
     QueueFactory.getQueue(DNS_PULL_QUEUE_NAME)
@@ -399,7 +395,7 @@ public class ReadDnsQueueActionTest {
   }
 
   @Test
-  public void testSuccess_zone_getsIgnored() {
+  void testSuccess_zone_getsIgnored() {
     dnsQueue.addHostRefreshTask("ns1.domain.com");
     dnsQueue.addDomainRefreshTask("domain.net");
     dnsQueue.addZoneRefreshTask("example");
@@ -420,7 +416,7 @@ public class ReadDnsQueueActionTest {
   }
 
   @Test
-  public void testSuccess_manyDomainsAndHosts() {
+  void testSuccess_manyDomainsAndHosts() {
     for (int i = 0; i < 150; i++) {
       // 0: domain; 1: host 1; 2: host 2
       for (int thingType = 0; thingType < 3; thingType++) {
@@ -491,7 +487,7 @@ public class ReadDnsQueueActionTest {
   }
 
   @Test
-  public void testSuccess_lockGroupsHostBySuperordinateDomain() {
+  void testSuccess_lockGroupsHostBySuperordinateDomain() {
     dnsQueue.addDomainRefreshTask("hello.multilock.uk");
     dnsQueue.addHostRefreshTask("ns1.abc.hello.multilock.uk");
     dnsQueue.addHostRefreshTask("ns2.hello.multilock.uk");

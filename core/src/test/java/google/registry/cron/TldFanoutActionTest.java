@@ -39,22 +39,19 @@ import google.registry.util.TaskQueueUtils;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link TldFanoutAction}. */
-@RunWith(JUnit4.class)
-public class TldFanoutActionTest {
+class TldFanoutActionTest {
 
   private static final String ENDPOINT = "/the/servlet";
   private static final String QUEUE = "the-queue";
   private final FakeResponse response = new FakeResponse();
 
-  @Rule
-  public final AppEngineRule appEngine =
+  @RegisterExtension
+  final AppEngineRule appEngine =
       AppEngineRule.builder()
           .withDatastoreAndCloudSql()
           .withTaskQueue(
@@ -96,8 +93,8 @@ public class TldFanoutActionTest {
     action.run();
   }
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     createTlds("com", "net", "org", "example");
     persistResource(Registry.get("example").asBuilder().setTldType(TldType.TEST).build());
   }
@@ -123,36 +120,36 @@ public class TldFanoutActionTest {
   }
 
   @Test
-  public void testSuccess_methodPostIsDefault() {
+  void testSuccess_methodPostIsDefault() {
     run(getParamsMap("runInEmpty", ""));
     assertTasksEnqueued(QUEUE, new TaskMatcher().method("POST"));
   }
 
   @Test
-  public void testFailure_noTlds() {
+  void testFailure_noTlds() {
     assertThrows(IllegalArgumentException.class, () -> run(getParamsMap()));
   }
 
   @Test
-  public void testSuccess_runInEmpty() {
+  void testSuccess_runInEmpty() {
     run(getParamsMap("runInEmpty", ""));
     assertTaskWithoutTld();
   }
 
   @Test
-  public void testSuccess_forEachRealTld() {
+  void testSuccess_forEachRealTld() {
     run(getParamsMap("forEachRealTld", ""));
     assertTasks("com", "net", "org");
   }
 
   @Test
-  public void testSuccess_forEachTestTld() {
+  void testSuccess_forEachTestTld() {
     run(getParamsMap("forEachTestTld", ""));
     assertTasks("example");
   }
 
   @Test
-  public void testSuccess_forEachTestTldAndForEachRealTld() {
+  void testSuccess_forEachTestTldAndForEachRealTld() {
     run(getParamsMap(
         "forEachTestTld", "",
         "forEachRealTld", ""));
@@ -160,13 +157,13 @@ public class TldFanoutActionTest {
   }
 
   @Test
-  public void testSuccess_runEverywhere() {
+  void testSuccess_runEverywhere() {
     run(getParamsMap("forEachTestTld", "", "forEachRealTld", ""));
     assertTasks("com", "net", "org", "example");
   }
 
   @Test
-  public void testSuccess_excludeRealTlds() {
+  void testSuccess_excludeRealTlds() {
     run(getParamsMap(
         "forEachRealTld", "",
         "exclude", "com,net"));
@@ -174,7 +171,7 @@ public class TldFanoutActionTest {
   }
 
   @Test
-  public void testSuccess_excludeTestTlds() {
+  void testSuccess_excludeTestTlds() {
     run(getParamsMap(
         "forEachTestTld", "",
         "exclude", "example"));
@@ -182,7 +179,7 @@ public class TldFanoutActionTest {
   }
 
   @Test
-  public void testSuccess_excludeNonexistentTlds() {
+  void testSuccess_excludeNonexistentTlds() {
     run(getParamsMap(
         "forEachTestTld", "",
         "forEachRealTld", "",
@@ -191,7 +188,7 @@ public class TldFanoutActionTest {
   }
 
   @Test
-  public void testFailure_runInEmptyAndTest() {
+  void testFailure_runInEmptyAndTest() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -202,7 +199,7 @@ public class TldFanoutActionTest {
   }
 
   @Test
-  public void testFailure_runInEmptyAndReal() {
+  void testFailure_runInEmptyAndReal() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -213,7 +210,7 @@ public class TldFanoutActionTest {
   }
 
   @Test
-  public void testFailure_runInEmptyAndExclude() {
+  void testFailure_runInEmptyAndExclude() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -224,14 +221,14 @@ public class TldFanoutActionTest {
   }
 
   @Test
-  public void testSuccess_additionalArgsFlowThroughToPostParams() {
+  void testSuccess_additionalArgsFlowThroughToPostParams() {
     run(getParamsMap("forEachTestTld", "", "newkey", "newval"));
     assertTasksEnqueued(QUEUE,
         new TaskMatcher().url("/the/servlet").param("newkey", "newval"));
   }
 
   @Test
-  public void testSuccess_returnHttpResponse() {
+  void testSuccess_returnHttpResponse() {
     run(getParamsMap("forEachRealTld", "", "endpoint", "/the/servlet"));
 
     List<TaskStateInfo> taskList =
@@ -250,7 +247,7 @@ public class TldFanoutActionTest {
   }
 
   @Test
-  public void testSuccess_returnHttpResponse_runInEmpty() {
+  void testSuccess_returnHttpResponse_runInEmpty() {
     run(getParamsMap("runInEmpty", "", "endpoint", "/the/servlet"));
 
     List<TaskStateInfo> taskList =

@@ -25,106 +25,95 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.base.VerifyException;
 import google.registry.testing.AppEngineRule;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RdeRevision}. */
-@RunWith(JUnit4.class)
 public class RdeRevisionTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testGetNextRevision_objectDoesntExist_returnsZero() {
-    assertThat(getNextRevision("torment", DateTime.parse("1984-12-18TZ"), FULL))
-        .isEqualTo(0);
+  void testGetNextRevision_objectDoesntExist_returnsZero() {
+    assertThat(getNextRevision("torment", DateTime.parse("1984-12-18TZ"), FULL)).isEqualTo(0);
   }
 
   @Test
-  public void testGetNextRevision_objectExistsAtZero_returnsOne() {
+  void testGetNextRevision_objectExistsAtZero_returnsOne() {
     save("sorrow", DateTime.parse("1984-12-18TZ"), FULL, 0);
-    assertThat(getNextRevision("sorrow", DateTime.parse("1984-12-18TZ"), FULL))
-        .isEqualTo(1);
+    assertThat(getNextRevision("sorrow", DateTime.parse("1984-12-18TZ"), FULL)).isEqualTo(1);
   }
 
   @Test
-  public void testSaveRevision_objectDoesntExist_newRevisionIsZero_nextRevIsOne() {
+  void testSaveRevision_objectDoesntExist_newRevisionIsZero_nextRevIsOne() {
     tm().transact(() -> saveRevision("despondency", DateTime.parse("1984-12-18TZ"), FULL, 0));
-    tm()
-        .transact(
+    tm().transact(
             () ->
                 assertThat(getNextRevision("despondency", DateTime.parse("1984-12-18TZ"), FULL))
                     .isEqualTo(1));
   }
 
   @Test
-  public void testSaveRevision_objectDoesntExist_newRevisionIsOne_throwsVe() {
+  void testSaveRevision_objectDoesntExist_newRevisionIsOne_throwsVe() {
     VerifyException thrown =
         assertThrows(
             VerifyException.class,
             () ->
-                tm()
-                    .transact(
+                tm().transact(
                         () ->
                             saveRevision("despondency", DateTime.parse("1984-12-18TZ"), FULL, 1)));
     assertThat(thrown).hasMessageThat().contains("object missing");
   }
 
   @Test
-  public void testSaveRevision_objectExistsAtZero_newRevisionIsZero_throwsVe() {
+  void testSaveRevision_objectExistsAtZero_newRevisionIsZero_throwsVe() {
     save("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 0);
     VerifyException thrown =
         assertThrows(
             VerifyException.class,
             () ->
-                tm()
-                    .transact(
+                tm().transact(
                         () -> saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 0)));
     assertThat(thrown).hasMessageThat().contains("object already created");
   }
 
   @Test
-  public void testSaveRevision_objectExistsAtZero_newRevisionIsOne_nextRevIsTwo() {
+  void testSaveRevision_objectExistsAtZero_newRevisionIsOne_nextRevIsTwo() {
     save("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 0);
     tm().transact(() -> saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 1));
-    tm()
-        .transact(
+    tm().transact(
             () ->
                 assertThat(getNextRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL))
                     .isEqualTo(2));
   }
 
   @Test
-  public void testSaveRevision_objectExistsAtZero_newRevisionIsTwo_throwsVe() {
+  void testSaveRevision_objectExistsAtZero_newRevisionIsTwo_throwsVe() {
     save("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 0);
     VerifyException thrown =
         assertThrows(
             VerifyException.class,
             () ->
-                tm()
-                    .transact(
+                tm().transact(
                         () -> saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 2)));
     assertThat(thrown).hasMessageThat().contains("should be at 1 ");
   }
 
   @Test
-  public void testSaveRevision_negativeRevision_throwsIae() {
+  void testSaveRevision_negativeRevision_throwsIae() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                tm()
-                    .transact(
+                tm().transact(
                         () ->
                             saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, -1)));
     assertThat(thrown).hasMessageThat().contains("Negative revision");
   }
 
   @Test
-  public void testSaveRevision_callerNotInTransaction_throwsIse() {
+  void testSaveRevision_callerNotInTransaction_throwsIse() {
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,

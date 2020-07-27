@@ -19,23 +19,20 @@ import static com.google.common.truth.Truth.assertThat;
 import google.registry.request.Action;
 import google.registry.request.RouterDisplayHelper;
 import google.registry.testing.GoldenFileTestHelper;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link BackendRequestComponent}. */
-@RunWith(JUnit4.class)
-public class BackendRequestComponentTest {
+class BackendRequestComponentTest {
 
   @Test
-  public void testRoutingMap() {
+  void testRoutingMap() {
     GoldenFileTestHelper.assertThatRoutesFromComponent(BackendRequestComponent.class)
         .describedAs("backend routing map")
         .isEqualToGolden(BackendRequestComponentTest.class, "backend_routing.txt");
   }
 
   @Test
-  public void testRoutingService() {
+  void testRoutingService() {
     assertThat(
             RouterDisplayHelper.extractHumanReadableRoutesWithWrongService(
                 BackendRequestComponent.class, Action.Service.BACKEND))

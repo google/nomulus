@@ -22,19 +22,16 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.testing.FakeClock;
 import java.util.Optional;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ListDomainsAction}. */
-@RunWith(JUnit4.class)
-public class ListDomainsActionTest extends ListActionTestCase {
+class ListDomainsActionTest extends ListActionTestCase {
 
   private ListDomainsAction action;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     createTld("foo");
     action = new ListDomainsAction();
     action.clock = new FakeClock(DateTime.parse("2018-01-01TZ"));
@@ -42,7 +39,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_invalidRequest_missingTlds() {
+  void testRun_invalidRequest_missingTlds() {
     action.tlds = ImmutableSet.of();
     testRunError(
         action,
@@ -53,7 +50,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_invalidRequest_invalidTld() {
+  void testRun_invalidRequest_invalidTld() {
     action.tlds = ImmutableSet.of("%%%badtld%%%");
     testRunError(
         action,
@@ -64,13 +61,13 @@ public class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_noParameters() {
+  void testRun_noParameters() {
     action.tlds = ImmutableSet.of("foo");
     testRunSuccess(action, null, null, null);
   }
 
   @Test
-  public void testRun_twoLinesWithIdOnly() {
+  void testRun_twoLinesWithIdOnly() {
     action.tlds = ImmutableSet.of("foo");
     createTlds("bar", "sim");
     persistActiveDomain("dontlist.bar", DateTime.parse("2015-02-14T15:15:15Z"));
@@ -88,7 +85,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_multipleTlds() {
+  void testRun_multipleTlds() {
     action.tlds = ImmutableSet.of("bar", "foo");
     createTlds("bar", "sim");
     persistActiveDomain("dolist.bar", DateTime.parse("2015-01-15T15:15:15Z"));
@@ -106,7 +103,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_moreTldsThanMaxNumSubqueries() {
+  void testRun_moreTldsThanMaxNumSubqueries() {
     ListDomainsAction.maxNumSubqueries = 2;
     createTlds("baa", "bab", "bac", "bad");
     action.tlds = ImmutableSet.of("baa", "bab", "bac", "bad");
@@ -129,7 +126,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_twoLinesWithIdOnlyNoHeader() {
+  void testRun_twoLinesWithIdOnlyNoHeader() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
     persistActiveDomain("example2.foo", DateTime.parse("2011-03-04T16:00:00Z"));
@@ -143,7 +140,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_twoLinesWithIdOnlyExplicitHeader() {
+  void testRun_twoLinesWithIdOnlyExplicitHeader() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
     persistActiveDomain("example2.foo", DateTime.parse("2011-03-04T16:00:00Z"));
@@ -159,7 +156,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_twoLinesWithRepoId() {
+  void testRun_twoLinesWithRepoId() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
     persistActiveDomain("example3.foo", DateTime.parse("2011-03-04T16:00:00Z"));
@@ -175,7 +172,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_twoLinesWithRepoIdNoHeader() {
+  void testRun_twoLinesWithRepoIdNoHeader() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
     persistActiveDomain("example3.foo", DateTime.parse("2011-03-04T16:00:00Z"));
@@ -189,7 +186,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_twoLinesWithRepoIdExplicitHeader() {
+  void testRun_twoLinesWithRepoIdExplicitHeader() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
     persistActiveDomain("example3.foo", DateTime.parse("2011-03-04T16:00:00Z"));
@@ -205,7 +202,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_twoLinesWithWildcard() {
+  void testRun_twoLinesWithWildcard() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
     persistActiveDomain("example3.foo", DateTime.parse("2010-03-05T16:00:00Z"));
@@ -221,7 +218,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_twoLinesWithWildcardAndAnotherField() {
+  void testRun_twoLinesWithWildcardAndAnotherField() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example1.foo", DateTime.parse("2010-03-04T16:00:00Z"));
     persistActiveDomain("example3.foo", DateTime.parse("2010-03-04T17:00:00Z"));
@@ -237,7 +234,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_withBadField_returnsError() {
+  void testRun_withBadField_returnsError() {
     action.tlds = ImmutableSet.of("foo");
     persistActiveDomain("example2.foo");
     persistActiveDomain("example1.foo");
@@ -250,7 +247,7 @@ public class ListDomainsActionTest extends ListActionTestCase {
   }
 
   @Test
-  public void testRun_limitFiltersOutOldestDomains() {
+  void testRun_limitFiltersOutOldestDomains() {
     createTlds("bar", "baz");
     action.tlds = ImmutableSet.of("foo", "bar");
     action.limit = 2;

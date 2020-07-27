@@ -25,17 +25,14 @@ import google.registry.model.poll.PollMessage;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineRule;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link TransferData}. */
-@RunWith(JUnit4.class)
 public class TransferDataTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private final DateTime now = DateTime.now(UTC);
@@ -46,8 +43,8 @@ public class TransferDataTest {
   private VKey<PollMessage.Autorenew> autorenewPollMessageKey;
   private VKey<PollMessage.OneTime> otherServerApprovePollMessageKey;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     transferBillingEventKey = VKey.create(BillingEvent.OneTime.class, 12345);
     otherServerApproveBillingEventKey = VKey.create(BillingEvent.Cancellation.class, 2468);
     recurringBillingEventKey = VKey.create(BillingEvent.Recurring.class, 13579);
@@ -56,7 +53,7 @@ public class TransferDataTest {
   }
 
   @Test
-  public void test_copyConstantFieldsToBuilder() {
+  void test_copyConstantFieldsToBuilder() {
     DomainTransferData constantTransferData =
         new DomainTransferData.Builder()
             .setTransferRequestTrid(Trid.create("server-trid", "client-trid"))

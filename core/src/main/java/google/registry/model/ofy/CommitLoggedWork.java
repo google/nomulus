@@ -168,7 +168,7 @@ class CommitLoggedWork<R> implements Runnable {
       DateTime transactionTime, Set<Entry<Key<BackupGroupRoot>, BackupGroupRoot>> bgrEntries) {
     ImmutableMap.Builder<Key<BackupGroupRoot>, DateTime> builder = new ImmutableMap.Builder<>();
     for (Entry<Key<BackupGroupRoot>, BackupGroupRoot> entry : bgrEntries) {
-      DateTime updateTime = entry.getValue().getUpdateAutoTimestamp().getTimestamp();
+      DateTime updateTime = entry.getValue().getUpdateTimestamp().getTimestamp();
       if (!updateTime.isBefore(transactionTime)) {
         builder.put(entry.getKey(), updateTime);
       }

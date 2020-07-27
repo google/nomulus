@@ -16,27 +16,29 @@ package google.registry.testing;
 
 import java.security.Security;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.rules.ExternalResource;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * JUnit Rule for registering {@link BouncyCastleProvider} with Java Security.
+ * JUnit extension for registering {@link BouncyCastleProvider} with Java Security.
  *
- * <p>This rule is necessary in order to use the {@code "BC"} provider of cryptographic functions.
- * Normally you would perform this registration in your {@code main()} function.
+ * <p>This extension is necessary in order to use the {@code "BC"} provider of cryptographic
+ * functions. Normally you would perform this registration in your {@code main()} function.
  *
  * @see BouncyCastleProvider
- * @see org.junit.rules.ExternalResource
+ * @see org.junit.jupiter.api.extension.Extension
  * @see java.security.Security#addProvider(java.security.Provider)
  */
-public class BouncyCastleProviderRule extends ExternalResource {
+public class BouncyCastleProviderExtension implements BeforeEachCallback, AfterEachCallback {
 
   @Override
-  protected void before() {
+  public void beforeEach(ExtensionContext context) {
     Security.addProvider(new BouncyCastleProvider());
   }
 
   @Override
-  protected void after() {
+  public void afterEach(ExtensionContext context) {
     Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
   }
 }

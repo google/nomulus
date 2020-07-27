@@ -38,14 +38,14 @@ import java.math.BigDecimal;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CreateTldCommand}. */
-public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
+class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     persistReservedList("common_abuse", "baa,FULLY_BLOCKED");
     persistReservedList("xn--q9jyb4c_abuse", "lamb,FULLY_BLOCKED");
     persistReservedList("tld_banned", "kilo,FULLY_BLOCKED", "lima,FULLY_BLOCKED");
@@ -55,7 +55,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     DateTime before = DateTime.now(UTC);
     runCommandForced("xn--q9jyb4c", "--roid_suffix=Q9JYB4C", "--dns_writers=FooDnsWriter");
     DateTime after = DateTime.now(UTC);
@@ -72,7 +72,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testFailure_multipleArguments() {
+  void testFailure_multipleArguments() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -83,7 +83,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testFailure_multipleDuplicateArguments() {
+  void testFailure_multipleDuplicateArguments() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -94,7 +94,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_initialTldStateFlag() throws Exception {
+  void testSuccess_initialTldStateFlag() throws Exception {
     runCommandForced(
         "--initial_tld_state=GENERAL_AVAILABILITY",
         "--roid_suffix=Q9JYB4C",
@@ -105,7 +105,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_initialRenewBillingCostFlag() throws Exception {
+  void testSuccess_initialRenewBillingCostFlag() throws Exception {
     runCommandForced(
         "--initial_renew_billing_cost=\"USD 42.42\"",
         "--roid_suffix=Q9JYB4C",
@@ -116,7 +116,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_eapFeeSchedule() throws Exception {
+  void testSuccess_eapFeeSchedule() throws Exception {
     DateTime now = DateTime.now(UTC);
     DateTime tomorrow = now.plusDays(1);
     runCommandForced(
@@ -137,7 +137,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_addGracePeriodFlag() throws Exception {
+  void testSuccess_addGracePeriodFlag() throws Exception {
     runCommandForced(
         "--add_grace_period=PT300S",
         "--roid_suffix=Q9JYB4C",
@@ -147,27 +147,27 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_roidSuffixWorks() throws Exception {
+  void testSuccess_roidSuffixWorks() throws Exception {
     runCommandForced("--roid_suffix=RSUFFIX", "--dns_writers=VoidDnsWriter", "tld");
     assertThat(Registry.get("tld").getRoidSuffix()).isEqualTo("RSUFFIX");
   }
 
   @Test
-  public void testSuccess_escrow() throws Exception {
+  void testSuccess_escrow() throws Exception {
     runCommandForced(
         "--escrow=true", "--roid_suffix=Q9JYB4C", "--dns_writers=VoidDnsWriter", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getEscrowEnabled()).isTrue();
   }
 
   @Test
-  public void testSuccess_noEscrow() throws Exception {
+  void testSuccess_noEscrow() throws Exception {
     runCommandForced(
         "--escrow=false", "--roid_suffix=Q9JYB4C", "--dns_writers=VoidDnsWriter", "xn--q9jyb4c");
     assertThat(Registry.get("xn--q9jyb4c").getEscrowEnabled()).isFalse();
   }
 
   @Test
-  public void testSuccess_redemptionGracePeriodFlag() throws Exception {
+  void testSuccess_redemptionGracePeriodFlag() throws Exception {
     runCommandForced(
         "--redemption_grace_period=PT300S",
         "--roid_suffix=Q9JYB4C",
@@ -178,7 +178,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_pendingDeleteLengthFlag() throws Exception {
+  void testSuccess_pendingDeleteLengthFlag() throws Exception {
     runCommandForced(
         "--pending_delete_length=PT300S",
         "--roid_suffix=Q9JYB4C",
@@ -188,7 +188,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_automaticTransferLengthFlag() throws Exception {
+  void testSuccess_automaticTransferLengthFlag() throws Exception {
     runCommandForced(
         "--automatic_transfer_length=PT300S",
         "--roid_suffix=Q9JYB4C",
@@ -199,7 +199,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_createBillingCostFlag() throws Exception {
+  void testSuccess_createBillingCostFlag() throws Exception {
     runCommandForced(
         "--create_billing_cost=\"USD 42.42\"",
         "--roid_suffix=Q9JYB4C",
@@ -209,7 +209,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_restoreBillingCostFlag() throws Exception {
+  void testSuccess_restoreBillingCostFlag() throws Exception {
     runCommandForced(
         "--restore_billing_cost=\"USD 42.42\"",
         "--roid_suffix=Q9JYB4C",
@@ -220,7 +220,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_serverStatusChangeCostFlag() throws Exception {
+  void testSuccess_serverStatusChangeCostFlag() throws Exception {
     runCommandForced(
         "--server_status_change_cost=\"USD 42.42\"",
         "--roid_suffix=Q9JYB4C",
@@ -231,7 +231,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_nonUsdBillingCostFlag() throws Exception {
+  void testSuccess_nonUsdBillingCostFlag() throws Exception {
     runCommandForced(
         "--create_billing_cost=\"JPY 12345\"",
         "--restore_billing_cost=\"JPY 67890\"",
@@ -247,7 +247,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_multipartTld() throws Exception {
+  void testSuccess_multipartTld() throws Exception {
     runCommandForced("co.uk", "--roid_suffix=COUK", "--dns_writers=VoidDnsWriter");
 
     Registry registry = Registry.get("co.uk");
@@ -259,7 +259,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_setReservedLists() throws Exception {
+  void testSuccess_setReservedLists() throws Exception {
     runCommandForced(
         "--reserved_lists=xn--q9jyb4c_abuse,common_abuse",
         "--roid_suffix=Q9JYB4C",
@@ -270,7 +270,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testFailure_invalidAddGracePeriod() {
+  void testFailure_invalidAddGracePeriod() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -284,7 +284,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testFailure_invalidRedemptionGracePeriod() {
+  void testFailure_invalidRedemptionGracePeriod() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -298,7 +298,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testFailure_invalidPendingDeleteLength() {
+  void testFailure_invalidPendingDeleteLength() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -312,7 +312,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testFailure_invalidTldState() {
+  void testFailure_invalidTldState() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -326,7 +326,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testFailure_bothTldStateFlags() {
+  void testFailure_bothTldStateFlags() {
     DateTime now = DateTime.now(UTC);
     IllegalArgumentException thrown =
         assertThrows(
@@ -345,7 +345,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testFailure_negativeInitialRenewBillingCost() {
+  void testFailure_negativeInitialRenewBillingCost() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -359,7 +359,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testFailure_invalidEapCurrency() {
+  void testFailure_invalidEapCurrency() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -373,7 +373,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testFailure_noTldName() {
+  void testFailure_noTldName() {
     ParameterException thrown = assertThrows(ParameterException.class, this::runCommandForced);
     assertThat(thrown)
         .hasMessageThat()
@@ -381,7 +381,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testFailure_noDnsWriter() {
+  void testFailure_noDnsWriter() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -390,7 +390,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testFailure_alreadyExists() {
+  void testFailure_alreadyExists() {
     createTld("xn--q9jyb4c");
     IllegalStateException thrown =
         assertThrows(
@@ -402,7 +402,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testFailure_tldStartsWithDigit() {
+  void testFailure_tldStartsWithDigit() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -411,7 +411,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_setAllowedRegistrants() throws Exception {
+  void testSuccess_setAllowedRegistrants() throws Exception {
     runCommandForced(
         "--allowed_registrants=alice,bob",
         "--roid_suffix=Q9JYB4C",
@@ -422,7 +422,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_setAllowedNameservers() throws Exception {
+  void testSuccess_setAllowedNameservers() throws Exception {
     runCommandForced(
         "--allowed_nameservers=ns1.example.com,ns2.example.com",
         "--roid_suffix=Q9JYB4C",
@@ -433,22 +433,22 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_setCommonReservedListOnTld() throws Exception {
+  void testSuccess_setCommonReservedListOnTld() throws Exception {
     runSuccessfulReservedListsTest("common_abuse");
   }
 
   @Test
-  public void testSuccess_setTldSpecificReservedListOnTld() throws Exception {
+  void testSuccess_setTldSpecificReservedListOnTld() throws Exception {
     runSuccessfulReservedListsTest("xn--q9jyb4c_abuse");
   }
 
   @Test
-  public void testSuccess_setCommonReservedListAndTldSpecificReservedListOnTld() throws Exception {
+  void testSuccess_setCommonReservedListAndTldSpecificReservedListOnTld() throws Exception {
     runSuccessfulReservedListsTest("common_abuse,xn--q9jyb4c_abuse");
   }
 
   @Test
-  public void testFailure_setReservedListFromOtherTld() {
+  void testFailure_setReservedListFromOtherTld() {
     runFailureReservedListsTest(
         "tld_banned",
         IllegalArgumentException.class,
@@ -456,12 +456,12 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_setReservedListFromOtherTld_withOverride() throws Exception {
+  void testSuccess_setReservedListFromOtherTld_withOverride() throws Exception {
     runReservedListsTestOverride("tld_banned");
   }
 
   @Test
-  public void testFailure_setCommonAndReservedListFromOtherTld() {
+  void testFailure_setCommonAndReservedListFromOtherTld() {
     runFailureReservedListsTest(
         "common_abuse,tld_banned",
         IllegalArgumentException.class,
@@ -469,7 +469,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_setCommonAndReservedListFromOtherTld_withOverride() throws Exception {
+  void testSuccess_setCommonAndReservedListFromOtherTld_withOverride() throws Exception {
     runReservedListsTestOverride("common_abuse,tld_banned");
     String errMsg =
         "Error overridden: The reserved list(s) tld_banned "
@@ -478,7 +478,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testFailure_setMultipleReservedListsFromOtherTld() {
+  void testFailure_setMultipleReservedListsFromOtherTld() {
     runFailureReservedListsTest(
         "tld_banned,soy_expurgated",
         IllegalArgumentException.class,
@@ -486,12 +486,12 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_setMultipleReservedListsFromOtherTld_withOverride() throws Exception {
+  void testSuccess_setMultipleReservedListsFromOtherTld_withOverride() throws Exception {
     runReservedListsTestOverride("tld_banned,soy_expurgated");
   }
 
   @Test
-  public void testFailure_setNonExistentReservedLists() {
+  void testFailure_setNonExistentReservedLists() {
     runFailureReservedListsTest(
         "xn--q9jyb4c_asdf,common_asdsdgh",
         IllegalArgumentException.class,
@@ -499,7 +499,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_setPremiumList() throws Exception {
+  void testSuccess_setPremiumList() throws Exception {
     runCommandForced(
         "--premium_list=xn--q9jyb4c",
         "--roid_suffix=Q9JYB4C",
@@ -509,7 +509,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_setDriveFolderIdToValue() throws Exception {
+  void testSuccess_setDriveFolderIdToValue() throws Exception {
     runCommandForced(
         "--drive_folder_id=madmax2030",
         "--roid_suffix=Q9JYB4C",
@@ -519,7 +519,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testSuccess_setDriveFolderIdToNull() throws Exception {
+  void testSuccess_setDriveFolderIdToNull() throws Exception {
     runCommandForced(
         "--drive_folder_id=null",
         "--roid_suffix=Q9JYB4C",
@@ -529,7 +529,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testFailure_setPremiumListThatDoesntExist() {
+  void testFailure_setPremiumListThatDoesntExist() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -543,7 +543,7 @@ public class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
-  public void testFailure_specifiedDnsWriters_dontExist() {
+  void testFailure_specifiedDnsWriters_dontExist() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

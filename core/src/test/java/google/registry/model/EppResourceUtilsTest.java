@@ -30,33 +30,29 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link EppResourceUtils}. */
-@RunWith(JUnit4.class)
 public class EppResourceUtilsTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectRule inject = new InjectRule();
 
   private final FakeClock clock = new FakeClock(DateTime.now(UTC));
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     createTld("tld");
     inject.setStaticField(Ofy.class, "clock", clock);
   }
 
   @Test
-  public void testLoadAtPointInTime_beforeCreated_returnsNull() {
+  void testLoadAtPointInTime_beforeCreated_returnsNull() {
     clock.advanceOneMilli();
     // Don't save a commit log, we shouldn't need one.
     HostResource host = persistResource(
@@ -67,7 +63,7 @@ public class EppResourceUtilsTest {
   }
 
   @Test
-  public void testLoadAtPointInTime_atOrAfterLastAutoUpdateTime_returnsResource() {
+  void testLoadAtPointInTime_atOrAfterLastAutoUpdateTime_returnsResource() {
     clock.advanceOneMilli();
     // Don't save a commit log, we shouldn't need one.
     HostResource host = persistResource(
@@ -78,7 +74,7 @@ public class EppResourceUtilsTest {
   }
 
   @Test
-  public void testLoadAtPointInTime_usingIntactRevisionHistory_returnsMutationValue() {
+  void testLoadAtPointInTime_usingIntactRevisionHistory_returnsMutationValue() {
     clock.advanceOneMilli();
     // Save resource with a commit log that we can read in later as a revisions map value.
     HostResource oldHost = persistResourceWithCommitLog(
@@ -99,7 +95,7 @@ public class EppResourceUtilsTest {
   }
 
   @Test
-  public void testLoadAtPointInTime_brokenRevisionHistory_returnsResourceAsIs() {
+  void testLoadAtPointInTime_brokenRevisionHistory_returnsResourceAsIs() {
     // Don't save a commit log since we want to test the handling of a broken revisions key.
     HostResource oldHost = persistResource(
         newHostResource("ns1.cat.tld").asBuilder()
@@ -119,7 +115,7 @@ public class EppResourceUtilsTest {
   }
 
   @Test
-  public void testLoadAtPointInTime_fallback_returnsMutationValueForOldestRevision() {
+  void testLoadAtPointInTime_fallback_returnsMutationValueForOldestRevision() {
     clock.advanceOneMilli();
     // Save a commit log that we can fall back to.
     HostResource oldHost = persistResourceWithCommitLog(
@@ -141,7 +137,7 @@ public class EppResourceUtilsTest {
   }
 
   @Test
-  public void testLoadAtPointInTime_ultimateFallback_onlyOneRevision_returnsCurrentResource() {
+  void testLoadAtPointInTime_ultimateFallback_onlyOneRevision_returnsCurrentResource() {
     clock.advanceOneMilli();
     // Don't save a commit log; we want to test that we load from the current resource.
     HostResource host = persistResource(
@@ -156,7 +152,7 @@ public class EppResourceUtilsTest {
   }
 
   @Test
-  public void testLoadAtPointInTime_moreThanThirtyDaysInPast_historyIsPurged() {
+  void testLoadAtPointInTime_moreThanThirtyDaysInPast_historyIsPurged() {
     clock.advanceOneMilli();
     HostResource host =
         persistResourceWithCommitLog(newHostResource("ns1.example.net"));
@@ -169,8 +165,10 @@ public class EppResourceUtilsTest {
     assertThat(host.getRevisions()).hasSize(2);
     // Even though there is no revision, make a best effort guess to use the oldest revision.
     assertThat(
-        loadAtPointInTime(host, clock.nowUtc().minus(Duration.standardDays(32)))
-          .now().getUpdateAutoTimestamp().getTimestamp())
-              .isEqualTo(host.getRevisions().firstKey());
+            loadAtPointInTime(host, clock.nowUtc().minus(Duration.standardDays(32)))
+                .now()
+                .getUpdateTimestamp()
+                .getTimestamp())
+        .isEqualTo(host.getRevisions().firstKey());
   }
 }

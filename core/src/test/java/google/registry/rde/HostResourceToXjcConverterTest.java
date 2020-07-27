@@ -33,11 +33,9 @@ import google.registry.xjc.rdehost.XjcRdeHost;
 import google.registry.xjc.rdehost.XjcRdeHostElement;
 import java.io.ByteArrayOutputStream;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Unit tests for {@link HostResourceToXjcConverter}.
@@ -45,19 +43,18 @@ import org.junit.runners.JUnit4;
  * <p>This tests the mapping between {@link HostResource} and {@link XjcRdeHost} as well as some
  * exceptional conditions.
  */
-@RunWith(JUnit4.class)
 public class HostResourceToXjcConverterTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     createTld("foobar");
   }
 
   @Test
-  public void testConvertSubordinateHost() {
+  void testConvertSubordinateHost() {
     DomainBase domain =
         newDomainBase("love.foobar")
             .asBuilder()
@@ -120,7 +117,7 @@ public class HostResourceToXjcConverterTest {
   }
 
   @Test
-  public void testConvertExternalHost() {
+  void testConvertExternalHost() {
     XjcRdeHost bean =
         HostResourceToXjcConverter.convertExternalHost(
             new HostResource.Builder()
@@ -169,7 +166,7 @@ public class HostResourceToXjcConverterTest {
   }
 
   @Test
-  public void testConvertExternalHost_ipv6() {
+  void testConvertExternalHost_ipv6() {
     XjcRdeHost bean =
         HostResourceToXjcConverter.convertExternalHost(
             new HostResource.Builder()
@@ -190,7 +187,7 @@ public class HostResourceToXjcConverterTest {
   }
 
   @Test
-  public void testHostStatusValueIsInvalid() {
+  void testHostStatusValueIsInvalid() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -210,7 +207,7 @@ public class HostResourceToXjcConverterTest {
   }
 
   @Test
-  public void testMarshal() throws Exception {
+  void testMarshal() throws Exception {
     // Bean! Bean! Bean!
     XjcRdeHostElement bean =
         HostResourceToXjcConverter.convertExternal(

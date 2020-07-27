@@ -19,54 +19,52 @@ import static org.junit.Assert.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import org.joda.time.YearMonth;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link YearMonthParameter}. */
-@RunWith(JUnit4.class)
-public class YearMonthParameterTest {
+class YearMonthParameterTest {
+
   private final YearMonthParameter instance = new YearMonthParameter();
 
   @Test
-  public void testConvert_awfulMonth() {
+  void testConvert_awfulMonth() {
     assertThat(instance.convert("1984-12")).isEqualTo(new YearMonth(1984, 12));
   }
 
   @Test
-  public void testConvert_null_throwsException() {
+  void testConvert_null_throwsException() {
     assertThrows(NullPointerException.class, () -> instance.convert(null));
   }
 
   @Test
-  public void testConvert_empty_throwsException() {
+  void testConvert_empty_throwsException() {
     assertThrows(IllegalArgumentException.class, () -> instance.convert(""));
   }
 
   @Test
-  public void testConvert_sillyString_throwsException() {
+  void testConvert_sillyString_throwsException() {
     assertThrows(IllegalArgumentException.class, () -> instance.convert("foo"));
   }
 
   @Test
-  public void testConvert_wrongOrder() {
+  void testConvert_wrongOrder() {
     assertThrows(IllegalArgumentException.class, () -> instance.convert("12-1984"));
   }
 
   @Test
-  public void testConvert_noHyphen() {
+  void testConvert_noHyphen() {
     assertThrows(IllegalArgumentException.class, () -> instance.convert("198412"));
   }
 
   @Test
-  public void testValidate_sillyString_throwsParameterException() {
+  void testValidate_sillyString_throwsParameterException() {
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> instance.validate("--time", "foo"));
     assertThat(thrown).hasMessageThat().contains("--time=foo not a valid");
   }
 
   @Test
-  public void testValidate_correctInput_doesntThrow() {
+  void testValidate_correctInput_doesntThrow() {
     instance.validate("--time", "1984-12");
   }
 }

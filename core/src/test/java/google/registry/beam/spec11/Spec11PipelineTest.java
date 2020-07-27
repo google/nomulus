@@ -24,6 +24,7 @@ import static org.mockito.Mockito.withSettings;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
+import google.registry.beam.TestPipelineExtension;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
@@ -37,13 +38,14 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.function.Supplier;
 import org.apache.beam.runners.direct.DirectRunner;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.options.ValueProvider.StaticValueProvider;
-import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.http.ProtocolVersion;
@@ -56,46 +58,49 @@ import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 /** Unit tests for {@link Spec11Pipeline}. */
-@RunWith(JUnit4.class)
-public class Spec11PipelineTest {
+class Spec11PipelineTest {
 
   private static PipelineOptions pipelineOptions;
 
-  @BeforeClass
-  public static void initializePipelineOptions() {
+  @BeforeAll
+  static void beforeAll() {
     pipelineOptions = PipelineOptionsFactory.create();
     pipelineOptions.setRunner(DirectRunner.class);
   }
 
-  @Rule public final transient TestPipeline p = TestPipeline.fromOptions(pipelineOptions);
-  @Rule public final TemporaryFolder tempFolder = new TemporaryFolder();
+  @RegisterExtension
+  final transient TestPipelineExtension testPipeline =
+      TestPipelineExtension.fromOptions(pipelineOptions);
 
-  private final Retrier retrier = new Retrier(
-      new FakeSleeper(new FakeClock(DateTime.parse("2019-07-15TZ"))), 1);
+  @SuppressWarnings("WeakerAccess")
+  @TempDir
+  Path tmpDir;
+
+  private final Retrier retrier =
+      new Retrier(new FakeSleeper(new FakeClock(DateTime.parse("2019-07-15TZ"))), 1);
   private Spec11Pipeline spec11Pipeline;
 
-  @Before
-  public void initializePipeline() throws IOException {
-    File beamTempFolder = tempFolder.newFolder();
-    spec11Pipeline = new Spec11Pipeline(
-        "test-project",
-        beamTempFolder.getAbsolutePath() + "/staging",
-        beamTempFolder.getAbsolutePath() + "/templates/invoicing",
-        tempFolder.getRoot().getAbsolutePath(),
-        GoogleCredentialsBundle.create(GoogleCredentials.create(null)),
-        retrier
-    );
+  @BeforeEach
+  void beforeEach() throws IOException {
+    String beamTempFolder =
+        Files.createDirectory(tmpDir.resolve("beam_temp")).toAbsolutePath().toString();
+    spec11Pipeline =
+        new Spec11Pipeline(
+            "test-project",
+            beamTempFolder + "/staging",
+            beamTempFolder + "/templates/invoicing",
+            tmpDir.toAbsolutePath().toString(),
+            GoogleCredentialsBundle.create(GoogleCredentials.create(null)),
+            retrier);
   }
 
   private static final ImmutableList<String> BAD_DOMAINS =
@@ -107,13 +112,15 @@ public class Spec11PipelineTest {
     // Put in half for theRegistrar and half for someRegistrar
     for (int i = 0; i < 255; i++) {
       subdomainsBuilder.add(
-          Subdomain.create(String.format("%s.com", i), "theRegistrar", "fake@theRegistrar.com"));
+          Subdomain.create(
+              String.format("%s.com", i), "theDomain", "theRegistrar", "fake@theRegistrar.com"));
     }
     for (int i = 255; i < 510; i++) {
       subdomainsBuilder.add(
-          Subdomain.create(String.format("%s.com", i), "someRegistrar", "fake@someRegistrar.com"));
+          Subdomain.create(
+              String.format("%s.com", i), "someDomain", "someRegistrar", "fake@someRegistrar.com"));
     }
-    subdomainsBuilder.add(Subdomain.create("no-email.com", "noEmailRegistrar", ""));
+    subdomainsBuilder.add(Subdomain.create("no-email.com", "fakeDomain", "noEmailRegistrar", ""));
     return subdomainsBuilder.build();
   }
 
@@ -125,7 +132,7 @@ public class Spec11PipelineTest {
    */
   @Test
   @SuppressWarnings("unchecked")
-  public void testEndToEndPipeline_generatesExpectedFiles() throws Exception {
+  void testEndToEndPipeline_generatesExpectedFiles() throws Exception {
     // Establish mocks for testing
     ImmutableList<Subdomain> inputRows = getInputDomains();
     CloseableHttpClient httpClient = mock(CloseableHttpClient.class, withSettings().serializable());
@@ -140,9 +147,9 @@ public class Spec11PipelineTest {
             (Serializable & Supplier) () -> httpClient);
 
     // Apply input and evaluation transforms
-    PCollection<Subdomain> input = p.apply(Create.of(inputRows));
+    PCollection<Subdomain> input = testPipeline.apply(Create.of(inputRows));
     spec11Pipeline.evaluateUrlHealth(input, evalFn, StaticValueProvider.of("2018-06-01"));
-    p.run();
+    testPipeline.run();
 
     // Verify header and 4 threat matches for 3 registrars are found
     ImmutableList<String> generatedReport = resultFileContents();
@@ -165,8 +172,7 @@ public class Spec11PipelineTest {
     assertThat(noEmailThreatMatch.length()).isEqualTo(1);
     assertThat(noEmailThreatMatch.getJSONObject(0).get("fullyQualifiedDomainName"))
         .isEqualTo("no-email.com");
-    assertThat(noEmailThreatMatch.getJSONObject(0).get("threatType"))
-        .isEqualTo("MALWARE");
+    assertThat(noEmailThreatMatch.getJSONObject(0).get("threatType")).isEqualTo("MALWARE");
 
     JSONObject someRegistrarJSON = new JSONObject(sortedLines.get(1));
     assertThat(someRegistrarJSON.get("registrarEmailAddress")).isEqualTo("fake@someRegistrar.com");
@@ -176,8 +182,7 @@ public class Spec11PipelineTest {
     assertThat(someThreatMatch.length()).isEqualTo(1);
     assertThat(someThreatMatch.getJSONObject(0).get("fullyQualifiedDomainName"))
         .isEqualTo("444.com");
-    assertThat(someThreatMatch.getJSONObject(0).get("threatType"))
-        .isEqualTo("MALWARE");
+    assertThat(someThreatMatch.getJSONObject(0).get("threatType")).isEqualTo("MALWARE");
 
     // theRegistrar has two ThreatMatches, we have to parse it explicitly
     JSONObject theRegistrarJSON = new JSONObject(sortedLines.get(2));
@@ -228,10 +233,8 @@ public class Spec11PipelineTest {
     CloseableHttpResponse httpResponse =
         mock(CloseableHttpResponse.class, withSettings().serializable());
     when(httpResponse.getStatusLine())
-        .thenReturn(
-            new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 200, "Done"));
-    when(httpResponse.getEntity())
-        .thenReturn(new FakeHttpEntity(getAPIResponse(badUrls)));
+        .thenReturn(new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 200, "Done"));
+    when(httpResponse.getEntity()).thenReturn(new FakeHttpEntity(getAPIResponse(badUrls)));
     return httpResponse;
   }
 
@@ -294,9 +297,8 @@ public class Spec11PipelineTest {
         new File(
             String.format(
                 "%s/icann/spec11/2018-06/SPEC11_MONTHLY_REPORT_2018-06-01",
-                tempFolder.getRoot().getAbsolutePath()));
+                tmpDir.toAbsolutePath().toString()));
     return ImmutableList.copyOf(
         ResourceUtils.readResourceUtf8(resultFile.toURI().toURL()).split("\n"));
   }
-
 }

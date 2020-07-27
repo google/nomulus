@@ -38,20 +38,17 @@ import google.registry.model.eppinput.EppInput.CommandExtension;
 import google.registry.testing.AppEngineRule;
 import google.registry.util.TypeUtils;
 import java.util.logging.LogRecord;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ExtensionManager}. */
-@RunWith(JUnit4.class)
-public class ExtensionManagerTest {
+class ExtensionManagerTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testDuplicateExtensionsForbidden() {
+  void testDuplicateExtensionsForbidden() {
     ExtensionManager manager =
         new TestInstanceBuilder()
             .setEppRequestSource(EppRequestSource.TOOL)
@@ -66,7 +63,7 @@ public class ExtensionManagerTest {
   }
 
   @Test
-  public void testUndeclaredExtensionsLogged() throws Exception {
+  void testUndeclaredExtensionsLogged() throws Exception {
     TestLogHandler handler = new TestLogHandler();
     LoggerConfig.getConfig(ExtensionManager.class).addHandler(handler);
     ExtensionManager manager =
@@ -88,7 +85,7 @@ public class ExtensionManagerTest {
   }
 
   @Test
-  public void testBlacklistedExtensions_forbiddenWhenUndeclared() {
+  void testBlacklistedExtensions_forbiddenWhenUndeclared() {
     ExtensionManager manager =
         new TestInstanceBuilder()
             .setEppRequestSource(EppRequestSource.TOOL)
@@ -102,7 +99,7 @@ public class ExtensionManagerTest {
   }
 
   @Test
-  public void testBlacklistedExtensions_allowedWhenDeclared() throws Exception {
+  void testBlacklistedExtensions_allowedWhenDeclared() throws Exception {
     ExtensionManager manager =
         new TestInstanceBuilder()
             .setEppRequestSource(EppRequestSource.TOOL)
@@ -114,7 +111,7 @@ public class ExtensionManagerTest {
   }
 
   @Test
-  public void testMetadataExtension_allowedForToolSource() throws Exception {
+  void testMetadataExtension_allowedForToolSource() throws Exception {
     ExtensionManager manager =
         new TestInstanceBuilder()
             .setEppRequestSource(EppRequestSource.TOOL)
@@ -126,7 +123,7 @@ public class ExtensionManagerTest {
   }
 
   @Test
-  public void testMetadataExtension_forbiddenWhenNotToolSource() {
+  void testMetadataExtension_forbiddenWhenNotToolSource() {
     ExtensionManager manager =
         new TestInstanceBuilder()
             .setEppRequestSource(EppRequestSource.CONSOLE)
@@ -139,7 +136,7 @@ public class ExtensionManagerTest {
   }
 
   @Test
-  public void testSuperuserExtension_allowedForToolSource() throws Exception {
+  void testSuperuserExtension_allowedForToolSource() throws Exception {
     ExtensionManager manager =
         new TestInstanceBuilder()
             .setEppRequestSource(EppRequestSource.TOOL)
@@ -152,7 +149,7 @@ public class ExtensionManagerTest {
   }
 
   @Test
-  public void testSuperuserExtension_forbiddenWhenNotSuperuser() {
+  void testSuperuserExtension_forbiddenWhenNotSuperuser() {
     ExtensionManager manager =
         new TestInstanceBuilder()
             .setEppRequestSource(EppRequestSource.TOOL)
@@ -167,7 +164,7 @@ public class ExtensionManagerTest {
   }
 
   @Test
-  public void testSuperuserExtension_forbiddenWhenNotToolSource() {
+  void testSuperuserExtension_forbiddenWhenNotToolSource() {
     ExtensionManager manager =
         new TestInstanceBuilder()
             .setEppRequestSource(EppRequestSource.CONSOLE)
@@ -182,7 +179,7 @@ public class ExtensionManagerTest {
   }
 
   @Test
-  public void testUnimplementedExtensionsForbidden() {
+  void testUnimplementedExtensionsForbidden() {
     ExtensionManager manager =
         new TestInstanceBuilder()
             .setEppRequestSource(EppRequestSource.TOOL)

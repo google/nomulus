@@ -31,7 +31,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.Period;
@@ -224,8 +223,8 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
             .setRegistrationExpirationTime(newExpirationTime)
             .setLastEppUpdateTime(now)
             .setLastEppUpdateClientId(domain.getCurrentSponsorClientId())
-            .setAutorenewBillingEvent(Key.create(newAutorenewEvent))
-            .setAutorenewPollMessage(Key.create(newAutorenewPollMessage))
+            .setAutorenewBillingEvent(newAutorenewEvent.createVKey())
+            .setAutorenewPollMessage(newAutorenewPollMessage.createVKey())
             .build();
     // In order to do it'll need to write out a new HistoryEntry (likely of type SYNTHETIC), a new
     // autorenew billing event and poll message, and a new one time poll message at the present time

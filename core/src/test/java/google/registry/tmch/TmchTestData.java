@@ -37,7 +37,7 @@ public final class TmchTestData {
   }
 
   /** Extracts SMD XML from an ASCII-armored file. */
-  public static byte[] loadSmd(String file) {
+  static byte[] loadSmd(String file) {
     String data = loadFile(file);
     return base64()
         .decode(

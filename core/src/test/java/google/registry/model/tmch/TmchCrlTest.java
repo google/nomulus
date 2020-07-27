@@ -17,20 +17,17 @@ package google.registry.model.tmch;
 import static com.google.common.truth.Truth.assertThat;
 
 import google.registry.testing.AppEngineRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link TmchCrl}. */
-@RunWith(JUnit4.class)
 public class TmchCrlTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testSuccess() {
+  void testSuccess() {
     assertThat(TmchCrl.get()).isNull();
     TmchCrl.set("lolcat", "http://lol.cat");
     assertThat(TmchCrl.get().getCrl()).isEqualTo("lolcat");

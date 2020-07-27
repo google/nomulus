@@ -16,16 +16,13 @@ package google.registry.model.mark;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link MarkHolder}. */
-@RunWith(JUnit4.class)
-public final class MarkHolderTest {
+final class MarkHolderTest {
 
   @Test
-  public void testDeadCodeWeDontWantToDelete() {
+  void testDeadCodeWeDontWantToDelete() {
     MarkHolder mc = new MarkHolder();
     mc.entitlement = MarkHolder.EntitlementType.OWNER;
     assertThat(mc.getEntitlementType()).isEqualTo(MarkHolder.EntitlementType.OWNER);

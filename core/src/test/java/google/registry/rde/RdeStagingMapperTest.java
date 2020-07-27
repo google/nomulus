@@ -41,7 +41,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Unit tests for {@link RdeStagingMapper}. */
 @ExtendWith(MockitoExtension.class)
-public class RdeStagingMapperTest {
+class RdeStagingMapperTest {
 
   private static final Pattern REGISTRAR_NAME_PATTERN =
       Pattern.compile("<rdeRegistrar:name>(.*)</rdeRegistrar:name>");
@@ -50,7 +50,7 @@ public class RdeStagingMapperTest {
 
   @Mock MapperContext<PendingDeposit, DepositFragment> context;
 
-  ArgumentCaptor<DepositFragment> depositFragmentCaptor =
+  private ArgumentCaptor<DepositFragment> depositFragmentCaptor =
       ArgumentCaptor.forClass(DepositFragment.class);
 
   @RegisterExtension

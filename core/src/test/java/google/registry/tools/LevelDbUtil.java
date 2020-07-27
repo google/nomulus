@@ -20,7 +20,7 @@ import google.registry.tools.LevelDbLogReader.ChunkType;
 
 class LevelDbUtil {
 
-  public static final int MAX_RECORD = LevelDbLogReader.BLOCK_SIZE - LevelDbLogReader.HEADER_SIZE;
+  static final int MAX_RECORD = LevelDbLogReader.BLOCK_SIZE - LevelDbLogReader.HEADER_SIZE;
 
   /** Adds a new record header to "bytes" at "pos", returns the new position. */
   private static int addRecordHeader(byte[] bytes, int pos, ChunkType type, int size) {

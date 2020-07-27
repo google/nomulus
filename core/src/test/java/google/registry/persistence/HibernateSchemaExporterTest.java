@@ -21,40 +21,42 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.money.CurrencyUnit;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 /** Unit tests for {@link HibernateSchemaExporter}. */
-@RunWith(JUnit4.class)
-public class HibernateSchemaExporterTest {
-  @ClassRule
-  public static final PostgreSQLContainer database =
+@Testcontainers
+class HibernateSchemaExporterTest {
+
+  @Container
+  private static final PostgreSQLContainer database =
       new PostgreSQLContainer(NomulusPostgreSql.getDockerTag());
 
   private static HibernateSchemaExporter exporter;
 
-  @Rule public final TemporaryFolder tempFolder = new TemporaryFolder();
+  @SuppressWarnings("WeakerAccess")
+  @TempDir
+  Path tmpDir;
 
-  @BeforeClass
-  public static void init() {
+  @BeforeAll
+  static void beforeAll() {
     exporter =
         HibernateSchemaExporter.create(
             database.getJdbcUrl(), database.getUsername(), database.getPassword());
   }
 
   @Test
-  public void export_succeeds() throws IOException {
-    File sqlFile = tempFolder.newFile();
-    exporter.export(ImmutableList.of(TestEntity.class), sqlFile);
+  void export_succeeds() throws IOException {
+    File sqlFile = Files.createFile(tmpDir.resolve("tempfile.dat")).toFile();
+    exporter.export(ImmutableList.of(HibernateSchemaTestEntity.class), sqlFile);
     assertThat(Files.readAllBytes(sqlFile.toPath()))
         .isEqualTo(
             ("\n"
@@ -67,7 +69,7 @@ public class HibernateSchemaExporterTest {
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
-  private static class TestEntity {
+  private static class HibernateSchemaTestEntity {
     @Id String name;
 
     CurrencyUnit cu;

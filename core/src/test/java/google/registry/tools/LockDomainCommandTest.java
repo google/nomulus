@@ -37,14 +37,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link LockDomainCommand}. */
-public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
+class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     persistNewRegistrar("adminreg", "Admin Registrar", Type.REAL, 693L);
     createTld("tld");
     command.registryAdminClientId = "adminreg";
@@ -57,7 +57,7 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
   }
 
   @Test
-  public void testSuccess_locksDomain() throws Exception {
+  void testSuccess_locksDomain() throws Exception {
     DomainBase domain = persistActiveDomain("example.tld");
     runCommandForced("--client=TheRegistrar", "example.tld");
     assertThat(reloadResource(domain).getStatusValues())
@@ -65,7 +65,7 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
   }
 
   @Test
-  public void testSuccess_partiallyUpdatesStatuses() throws Exception {
+  void testSuccess_partiallyUpdatesStatuses() throws Exception {
     DomainBase domain =
         persistResource(
             newDomainBase("example.tld")
@@ -78,7 +78,7 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
   }
 
   @Test
-  public void testSuccess_manyDomains() throws Exception {
+  void testSuccess_manyDomains() throws Exception {
     // Create 26 domains -- one more than the number of entity groups allowed in a transaction (in
     // case that was going to be the failure point).
     List<DomainBase> domains = new ArrayList<>();
@@ -98,7 +98,7 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
   }
 
   @Test
-  public void testFailure_domainDoesntExist() {
+  void testFailure_domainDoesntExist() {
     IllegalArgumentException e =
         assertThrows(
             IllegalArgumentException.class,
@@ -107,7 +107,7 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
   }
 
   @Test
-  public void testSuccess_alreadyLockedDomain_performsNoAction() throws Exception {
+  void testSuccess_alreadyLockedDomain_performsNoAction() throws Exception {
     DomainBase domain =
         persistResource(
             newDomainBase("example.tld")
@@ -119,7 +119,7 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
   }
 
   @Test
-  public void testSuccess_defaultsToAdminRegistrar_ifUnspecified() throws Exception {
+  void testSuccess_defaultsToAdminRegistrar_ifUnspecified() throws Exception {
     DomainBase domain = persistActiveDomain("example.tld");
     runCommandForced("example.tld");
     assertThat(getMostRecentRegistryLockByRepoId(domain.getRepoId()).get().getRegistrarId())
@@ -127,7 +127,7 @@ public class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
   }
 
   @Test
-  public void testFailure_duplicateDomainsAreSpecified() {
+  void testFailure_duplicateDomainsAreSpecified() {
     IllegalArgumentException e =
         assertThrows(
             IllegalArgumentException.class,

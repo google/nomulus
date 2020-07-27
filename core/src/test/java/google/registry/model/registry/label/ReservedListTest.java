@@ -39,26 +39,22 @@ import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ReservedList}. */
-@RunWith(JUnit4.class)
-public class ReservedListTest {
+class ReservedListTest {
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension final InjectRule inject = new InjectRule();
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  FakeClock clock = new FakeClock(DateTime.parse("2010-01-01T10:00:00Z"));
+  private FakeClock clock = new FakeClock(DateTime.parse("2010-01-01T10:00:00Z"));
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     createTld("tld");
     reservedListChecks.reset();
@@ -79,7 +75,7 @@ public class ReservedListTest {
   }
 
   @Test
-  public void testGetReservationTypes_allLabelsAreUnreserved_withNoReservedLists() {
+  void testGetReservationTypes_allLabelsAreUnreserved_withNoReservedLists() {
     assertThat(Registry.get("tld").getReservedLists()).isEmpty();
     assertThat(getReservationTypes("doodle", "tld")).isEmpty();
     assertThat(getReservationTypes("access", "tld")).isEmpty();
@@ -88,13 +84,13 @@ public class ReservedListTest {
   }
 
   @Test
-  public void testZeroReservedLists_doesNotCauseError() {
+  void testZeroReservedLists_doesNotCauseError() {
     assertThat(getReservationTypes("doodle", "tld")).isEmpty();
     verifyUnreservedCheckCount(1);
   }
 
   @Test
-  public void testGetReservationTypes_twoLetterCodesAreAvailable() {
+  void testGetReservationTypes_twoLetterCodesAreAvailable() {
     for (String sld : ImmutableList.of("aa", "az", "zz", "91", "1n", "j5")) {
       assertThat(getReservationTypes(sld, "tld")).isEmpty();
     }
@@ -102,7 +98,7 @@ public class ReservedListTest {
   }
 
   @Test
-  public void testGetReservationTypes_singleCharacterDomainsAreAllowed() {
+  void testGetReservationTypes_singleCharacterDomainsAreAllowed() {
     // This isn't quite exhaustive but it's close.
     for (char c = 'a'; c <= 'z'; c++) {
       assertThat(getReservationTypes("" + c, "tld")).isEmpty();
@@ -111,7 +107,7 @@ public class ReservedListTest {
   }
 
   @Test
-  public void testGetReservationTypes_concatsMultipleListsCorrectly() {
+  void testGetReservationTypes_concatsMultipleListsCorrectly() {
     ReservedList rl1 = persistReservedList(
         "reserved1",
         "lol,FULLY_BLOCKED # yup",
@@ -153,7 +149,7 @@ public class ReservedListTest {
   }
 
   @Test
-  public void testGetReservationTypes_returnsAllReservationTypesFromMultipleListsForTheSameLabel() {
+  void testGetReservationTypes_returnsAllReservationTypesFromMultipleListsForTheSameLabel() {
     ReservedList rl1 =
         persistReservedList("reserved1", "lol,NAME_COLLISION # yup", "cat,FULLY_BLOCKED");
     ReservedList rl2 =
@@ -167,9 +163,8 @@ public class ReservedListTest {
     assertThat(getReservationTypes("snowcrash", "tld")).containsExactly(FULLY_BLOCKED);
   }
 
-
   @Test
-  public void testGetReservationTypes_worksAfterReservedListRemovedUsingSet() {
+  void testGetReservationTypes_worksAfterReservedListRemovedUsingSet() {
     ReservedList rl1 = persistReservedList(
         "reserved1", "lol,FULLY_BLOCKED", "cat,FULLY_BLOCKED");
     ReservedList rl2 = persistReservedList(
@@ -202,7 +197,7 @@ public class ReservedListTest {
   }
 
   @Test
-  public void testGetReservationTypes_combinesMultipleLists() {
+  void testGetReservationTypes_combinesMultipleLists() {
     ReservedList rl1 = persistReservedList(
         "reserved1", "lol,NAME_COLLISION", "roflcopter,ALLOWED_IN_SUNRISE");
     ReservedList rl2 = persistReservedList("reserved2", "lol,FULLY_BLOCKED");
@@ -233,7 +228,7 @@ public class ReservedListTest {
   }
 
   @Test
-  public void testSave() {
+  void testSave() {
     ReservedList rl = persistReservedList("tld-reserved", "lol,FULLY_BLOCKED # yup");
     createTld("tld");
     persistResource(Registry.get("tld").asBuilder().setReservedLists(rl).build());
@@ -241,7 +236,7 @@ public class ReservedListTest {
   }
 
   @Test
-  public void testSave_commentsArePersistedCorrectly() {
+  void testSave_commentsArePersistedCorrectly() {
     ReservedList reservedList = persistReservedList(
         "reserved",
         "trombone,FULLY_BLOCKED  # yup",
@@ -266,20 +261,20 @@ public class ReservedListTest {
   }
 
   @Test
-  public void testIsInUse_returnsTrueWhenInUse() {
+  void testIsInUse_returnsTrueWhenInUse() {
     ReservedList rl = persistReservedList("reserved", "trombone,FULLY_BLOCKED");
     persistResource(Registry.get("tld").asBuilder().setReservedLists(ImmutableSet.of(rl)).build());
     assertThat(rl.isInUse()).isTrue();
   }
 
   @Test
-  public void testIsInUse_returnsFalseWhenNotInUse() {
+  void testIsInUse_returnsFalseWhenNotInUse() {
     ReservedList rl = persistReservedList("reserved", "trombone,FULLY_BLOCKED");
     assertThat(rl.isInUse()).isFalse();
   }
 
   @Test
-  public void testSetFromInputLines() {
+  void testSetFromInputLines() {
     ReservedList reservedList = persistReservedList("reserved", "trombone,FULLY_BLOCKED");
     assertThat(ReservedList.get("reserved").get().getReservedListEntries()).hasSize(1);
     reservedList = reservedList.asBuilder()
@@ -290,7 +285,7 @@ public class ReservedListTest {
   }
 
   @Test
-  public void testAsBuilderReturnsIdenticalReservedList() {
+  void testAsBuilderReturnsIdenticalReservedList() {
     ReservedList original = persistReservedList("tld-reserved-cloning", "trombone,FULLY_BLOCKED");
     ReservedList clone = original.asBuilder().build();
     assertThat(clone.getName()).isEqualTo("tld-reserved-cloning");
@@ -301,7 +296,7 @@ public class ReservedListTest {
   }
 
   @Test
-  public void testSave_badSyntax() {
+  void testSave_badSyntax() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -310,13 +305,13 @@ public class ReservedListTest {
   }
 
   @Test
-  public void testSave_badReservationType() {
+  void testSave_badReservationType() {
     assertThrows(
         IllegalArgumentException.class, () -> persistReservedList("tld", "lol,FULLY_BLOCKZ # yup"));
   }
 
   @Test
-  public void testParse_cannotIncludeDuplicateLabels() {
+  void testParse_cannotIncludeDuplicateLabels() {
     ReservedList rl = new ReservedList.Builder().setName("blah").build();
     IllegalStateException thrown =
         assertThrows(
@@ -336,7 +331,7 @@ public class ReservedListTest {
   }
 
   @Test
-  public void testValidation_labelMustBeLowercase() {
+  void testValidation_labelMustBeLowercase() {
     Exception e =
         assertThrows(
             IllegalArgumentException.class,
@@ -345,7 +340,7 @@ public class ReservedListTest {
   }
 
   @Test
-  public void testValidation_labelMustBePunyCoded() {
+  void testValidation_labelMustBePunyCoded() {
     Exception e =
         assertThrows(
             IllegalArgumentException.class,

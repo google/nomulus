@@ -50,7 +50,7 @@ import google.registry.model.registry.Registry;
 import google.registry.request.HttpException.InternalServerErrorException;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.testing.AppEngineRule;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.FakeResponse;
@@ -64,24 +64,22 @@ import java.net.SocketTimeoutException;
 import java.util.Map;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link RdeReportAction}. */
-@RunWith(JUnit4.class)
 public class RdeReportActionTest {
 
   private static final ByteSource REPORT_XML = RdeTestData.loadBytes("report.xml");
   private static final ByteSource IIRDEA_BAD_XML = RdeTestData.loadBytes("iirdea_bad.xml");
   private static final ByteSource IIRDEA_GOOD_XML = RdeTestData.loadBytes("iirdea_good.xml");
-  @Rule
-  public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
 
-  @Rule
+  @RegisterExtension
+  public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
+
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private final FakeResponse response = new FakeResponse();
@@ -113,8 +111,8 @@ public class RdeReportActionTest {
     return action;
   }
 
-  @Before
-  public void before() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     PGPPublicKey encryptKey = new FakeKeyringModule().get().getRdeStagingEncryptionKey();
     createTld("test");
     persistResource(
@@ -125,7 +123,7 @@ public class RdeReportActionTest {
   }
 
   @Test
-  public void testRun() {
+  void testRun() {
     createTld("lol");
     RdeReportAction action = createAction();
     action.tld = "lol";
@@ -136,7 +134,7 @@ public class RdeReportActionTest {
   }
 
   @Test
-  public void testRunWithLock() throws Exception {
+  void testRunWithLock() throws Exception {
     when(httpResponse.getResponseCode()).thenReturn(SC_OK);
     when(httpResponse.getContent()).thenReturn(IIRDEA_GOOD_XML.read());
     when(urlFetchService.fetch(request.capture())).thenReturn(httpResponse);
@@ -162,7 +160,7 @@ public class RdeReportActionTest {
   }
 
   @Test
-  public void testRunWithLock_uploadNotFinished_throws204() {
+  void testRunWithLock_uploadNotFinished_throws204() {
     persistResource(
         Cursor.create(RDE_UPLOAD, DateTime.parse("2006-06-06TZ"), Registry.get("test")));
     NoContentException thrown =
@@ -176,7 +174,7 @@ public class RdeReportActionTest {
   }
 
   @Test
-  public void testRunWithLock_badRequest_throws500WithErrorInfo() throws Exception {
+  void testRunWithLock_badRequest_throws500WithErrorInfo() throws Exception {
     when(httpResponse.getResponseCode()).thenReturn(SC_BAD_REQUEST);
     when(httpResponse.getContent()).thenReturn(IIRDEA_BAD_XML.read());
     when(urlFetchService.fetch(request.capture())).thenReturn(httpResponse);
@@ -188,7 +186,7 @@ public class RdeReportActionTest {
   }
 
   @Test
-  public void testRunWithLock_fetchFailed_throwsRuntimeException() throws Exception {
+  void testRunWithLock_fetchFailed_throwsRuntimeException() throws Exception {
     class ExpectedThrownException extends RuntimeException {}
     when(urlFetchService.fetch(any(HTTPRequest.class))).thenThrow(new ExpectedThrownException());
     assertThrows(
@@ -196,7 +194,7 @@ public class RdeReportActionTest {
   }
 
   @Test
-  public void testRunWithLock_socketTimeout_doesRetry() throws Exception {
+  void testRunWithLock_socketTimeout_doesRetry() throws Exception {
     when(httpResponse.getResponseCode()).thenReturn(SC_OK);
     when(httpResponse.getContent()).thenReturn(IIRDEA_GOOD_XML.read());
     when(urlFetchService.fetch(request.capture()))

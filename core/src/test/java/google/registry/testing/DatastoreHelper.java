@@ -549,8 +549,8 @@ public class DatastoreHelper {
     return persistResource(
         domain
             .asBuilder()
-            .setAutorenewBillingEvent(Key.create(autorenewEvent))
-            .setAutorenewPollMessage(Key.create(autorenewPollMessage))
+            .setAutorenewBillingEvent(autorenewEvent.createVKey())
+            .setAutorenewPollMessage(autorenewPollMessage.createVKey())
             .build());
   }
 
@@ -592,13 +592,13 @@ public class DatastoreHelper {
                 .build());
     // Modify the existing autorenew event to reflect the pending transfer.
     persistResource(
-        ofy().load().key(domain.getAutorenewBillingEvent()).now().asBuilder()
+        tm().load(domain.getAutorenewBillingEvent())
+            .asBuilder()
             .setRecurrenceEndTime(expirationTime)
             .build());
     // Update the end time of the existing autorenew poll message. We must delete it if it has no
     // events left in it.
-    PollMessage.Autorenew autorenewPollMessage =
-        ofy().load().key(domain.getAutorenewPollMessage()).now();
+    PollMessage.Autorenew autorenewPollMessage = tm().load(domain.getAutorenewPollMessage());
     if (autorenewPollMessage.getEventTime().isBefore(expirationTime)) {
       persistResource(
           autorenewPollMessage.asBuilder()

@@ -26,22 +26,19 @@ import google.registry.model.registry.label.ReservedList;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.testing.AppEngineRule;
 import google.registry.testing.FakeResponse;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DeleteEntityAction}. */
-@RunWith(JUnit4.class)
-public class DeleteEntityActionTest {
+class DeleteEntityActionTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  FakeResponse response = new FakeResponse();
+  private FakeResponse response = new FakeResponse();
 
   @Test
-  public void test_deleteSingleRawEntitySuccessfully() {
+  void test_deleteSingleRawEntitySuccessfully() {
     Entity entity = new Entity("single", "raw");
     getDatastoreService().put(entity);
     new DeleteEntityAction(KeyFactory.keyToString(entity.getKey()), response).run();
@@ -49,7 +46,7 @@ public class DeleteEntityActionTest {
   }
 
   @Test
-  public void test_deleteSingleRegisteredEntitySuccessfully() {
+  void test_deleteSingleRegisteredEntitySuccessfully() {
     ReservedList ofyEntity = new ReservedList.Builder().setName("foo").build();
     ofy().saveWithoutBackup().entity(ofyEntity).now();
     new DeleteEntityAction(KeyFactory.keyToString(create(ofyEntity).getRaw()), response).run();
@@ -57,7 +54,7 @@ public class DeleteEntityActionTest {
   }
 
   @Test
-  public void test_deletePolymorphicEntity_fallbackSucceedsForUnregisteredType() {
+  void test_deletePolymorphicEntity_fallbackSucceedsForUnregisteredType() {
     Entity entity = new Entity("single", "raw");
     entity.setIndexedProperty("^d", "UnregType");
     getDatastoreService().put(entity);
@@ -66,7 +63,7 @@ public class DeleteEntityActionTest {
   }
 
   @Test
-  public void test_deleteOneRawEntityAndOneRegisteredEntitySuccessfully() {
+  void test_deleteOneRawEntityAndOneRegisteredEntitySuccessfully() {
     Entity entity = new Entity("first", "raw");
     getDatastoreService().put(entity);
     String rawKey = KeyFactory.keyToString(entity.getKey());
@@ -78,7 +75,7 @@ public class DeleteEntityActionTest {
   }
 
   @Test
-  public void test_deleteNonExistentEntityRepliesWithError() {
+  void test_deleteNonExistentEntityRepliesWithError() {
     Entity entity = new Entity("not", "here");
     String rawKey = KeyFactory.keyToString(entity.getKey());
     BadRequestException thrown =
@@ -88,7 +85,7 @@ public class DeleteEntityActionTest {
   }
 
   @Test
-  public void test_deleteOneEntityAndNonExistentEntityRepliesWithError() {
+  void test_deleteOneEntityAndNonExistentEntityRepliesWithError() {
     ReservedList ofyEntity = new ReservedList.Builder().setName("first_registered").build();
     ofy().saveWithoutBackup().entity(ofyEntity).now();
     String ofyKey = KeyFactory.keyToString(create(ofyEntity).getRaw());

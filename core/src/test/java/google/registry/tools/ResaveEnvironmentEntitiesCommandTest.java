@@ -28,14 +28,14 @@ import google.registry.model.ofy.CommitLogMutation;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.registry.Registry;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ResaveEnvironmentEntitiesCommand}. */
-public class ResaveEnvironmentEntitiesCommandTest
+class ResaveEnvironmentEntitiesCommandTest
     extends CommandTestCase<ResaveEnvironmentEntitiesCommand> {
 
   @Test
-  public void testSuccess_noop() throws Exception {
+  void testSuccess_noop() throws Exception {
     // Get rid of all the entities that this command runs on so that it does nothing.
     deleteEntitiesOfTypes(
         Registry.class,
@@ -49,7 +49,7 @@ public class ResaveEnvironmentEntitiesCommandTest
   }
 
   @Test
-  public void testSuccess_createsCommitLogs() throws Exception {
+  void testSuccess_createsCommitLogs() throws Exception {
     createTld("tld");
     deleteEntitiesOfTypes(CommitLogManifest.class, CommitLogMutation.class);
     assertThat(ofy().load().type(CommitLogManifest.class).keys()).isEmpty();

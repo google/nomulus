@@ -1,0 +1,260 @@
+// Copyright 2020 The Nomulus Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package google.registry.beam.initsql;
+
+import static com.google.common.base.Preconditions.checkArgument;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.googlecode.objectify.Key;
+import google.registry.backup.AppEngineEnvironment;
+import google.registry.backup.VersionedEntity;
+import google.registry.beam.initsql.BeamJpaModule.JpaTransactionManagerComponent;
+import google.registry.beam.initsql.Transforms.RemoveDomainBaseForeignKeys;
+import google.registry.beam.initsql.Transforms.SerializableSupplier;
+import google.registry.model.billing.BillingEvent;
+import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.host.HostResource;
+import google.registry.model.poll.PollMessage;
+import google.registry.model.registrar.Registrar;
+import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registry.Registry;
+import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.transaction.JpaTransactionManager;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Optional;
+import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.PipelineResult;
+import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.transforms.SerializableFunction;
+import org.apache.beam.sdk.transforms.Wait;
+import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PCollectionTuple;
+import org.apache.beam.sdk.values.TupleTag;
+import org.joda.time.DateTime;
+
+/**
+ * A BEAM pipeline that populates a SQL database with data from a Datastore backup.
+ *
+ * <p>This pipeline migrates EPP resources and related entities that cross-reference each other. To
+ * avoid violating foreign key constraints, writes to SQL are ordered by entity kinds. In addition,
+ * the {@link DomainBase} kind is written twice (see details below). The write order is presented
+ * below. Although some kinds can be written concurrently, e.g. {@code ContactResource} and {@code
+ * RegistrarContact}, we do not expect any performance benefit since the limiting resource is the
+ * number of JDBC connections. Google internal users may refer to <a
+ * href="http://go/registry-r3-init-sql">the design doc</a> for more information.
+ *
+ * <ol>
+ *   <li>{@link Registry}: Assumes that {@code PremiumList} and {@code ReservedList} have been set
+ *       up in the SQL database.
+ *   <li>{@link Registrar}: Logically depends on {@code Registry}, Foreign key not modeled yet.
+ *   <li>{@link ContactResource}: references {@code Registrar}
+ *   <li>{@link RegistrarContact}: references {@code Registrar}.
+ *   <li>Cleansed {@link DomainBase}: with references to {@code BillingEvent}, {@code Recurring},
+ *       {@code Cancellation} and {@code HostResource} removed, still references {@code Registrar}
+ *       and {@code ContactResource}. The removal breaks circular Foreign Key references.
+ *   <li>{@link HostResource}: references {@code DomainBase}.
+ *   <li>{@link HistoryEntry}: maps to one of three SQL entity types and may reference {@code
+ *       Registrar}, {@code ContactResource}, {@code HostResource}, and {@code DomainBase}.
+ *   <li>{@link AllocationToken}: references {@code HistoryEntry}.
+ *   <li>{@link BillingEvent.Recurring}: references {@code Registrar}, {@code DomainBase} and {@code
+ *       HistoryEntry}.
+ *   <li>{@link BillingEvent.OneTime}: references {@code Registrar}, {@code DomainBase}, {@code
+ *       BillingEvent.Recurring}, {@code HistoryEntry} and {@code AllocationToken}.
+ *   <li>{@link BillingEvent.Modification}: SQL model TBD. Will reference {@code Registrar}, {@code
+ *       DomainBase} and {@code BillingEvent.OneTime}.
+ *   <li>{@link BillingEvent.Cancellation}: references {@code Registrar}, {@code DomainBase}, {@code
+ *       BillingEvent.Recurring}, {@code BillingEvent.OneTime}, and {@code HistoryEntry}.
+ *   <li>{@link PollMessage}: references {@code Registrar}, {@code DomainBase}, {@code
+ *       ContactResource}, {@code HostResource}, and {@code HistoryEntry}.
+ *   <li>{@link DomainBase}, original copy from Datastore.
+ * </ol>
+ */
+public class InitSqlPipeline implements Serializable {
+
+  /**
+   * Datastore kinds to be written to the SQL database before the cleansed version of {@link
+   * DomainBase}.
+   */
+  // TODO(weiminyu): include Registry.class when it is modeled in JPA.
+  private static final ImmutableList<Class<?>> PHASE_ONE_ORDERED =
+      ImmutableList.of(Registrar.class, ContactResource.class);
+
+  /**
+   * Datastore kinds to be written to the SQL database after the cleansed version of {@link
+   * DomainBase}.
+   *
+   * <p>The following entities are missing from the list:
+   *
+   * <ul>
+   *   <li>Those not modeled in JPA yet, e.g., {@code BillingEvent.Modification}.
+   *   <li>Those waiting for sanitation, e.g., {@code HistoryEntry}, which would have duplicate keys
+   *       after converting to SQL model.
+   *   <li>Those that have foreign key constraints on the above.
+   * </ul>
+   */
+  // TODO(weiminyu): add more entities when available.
+  private static final ImmutableList<Class<?>> PHASE_TWO_ORDERED =
+      ImmutableList.of(HostResource.class);
+
+  private final InitSqlPipelineOptions options;
+
+  private final Pipeline pipeline;
+
+  private final SerializableFunction<JpaTransactionManagerComponent, JpaTransactionManager>
+      jpaGetter;
+
+  InitSqlPipeline(InitSqlPipelineOptions options) {
+    this.options = options;
+    pipeline = Pipeline.create(options);
+    jpaGetter = JpaTransactionManagerComponent::cloudSqlJpaTransactionManager;
+  }
+
+  @VisibleForTesting
+  InitSqlPipeline(InitSqlPipelineOptions options, Pipeline pipeline) {
+    this.options = options;
+    this.pipeline = pipeline;
+    jpaGetter = JpaTransactionManagerComponent::localDbJpaTransactionManager;
+  }
+
+  public PipelineResult run() {
+    setupPipeline();
+    return pipeline.run();
+  }
+
+  @VisibleForTesting
+  void setupPipeline() {
+    PCollectionTuple datastoreSnapshot =
+        pipeline.apply(
+            "Load Datastore snapshot",
+            Transforms.loadDatastoreSnapshot(
+                options.getDatastoreExportDir(),
+                options.getCommitLogDir(),
+                DateTime.parse(options.getCommitLogStartTimestamp()),
+                DateTime.parse(options.getCommitLogEndTimestamp()),
+                ImmutableSet.<String>builder()
+                    .add("DomainBase")
+                    .addAll(toKindStrings(PHASE_ONE_ORDERED))
+                    .addAll(toKindStrings(PHASE_TWO_ORDERED))
+                    .build()));
+
+    // Set up the pipeline to write entity kinds from PHASE_ONE_ORDERED to SQL. Return a object
+    // that signals the completion of the phase.
+    PCollection<Void> blocker =
+        scheduleOnePhaseWrites(datastoreSnapshot, PHASE_ONE_ORDERED, Optional.empty(), null);
+    blocker =
+        writeToSql(
+            "DomainBase without circular foreign keys",
+            removeDomainBaseForeignKeys(datastoreSnapshot)
+                .apply("Wait on phase one", Wait.on(blocker)));
+    // Set up the pipeline to write entity kinds from PHASE_TWO_ORDERED to SQL. This phase won't
+    // start until all cleansed DomainBases have been written (started by line above).
+    scheduleOnePhaseWrites(
+        datastoreSnapshot, PHASE_TWO_ORDERED, Optional.of(blocker), "DomainBaseNoFkeys");
+  }
+
+  private PCollection<VersionedEntity> removeDomainBaseForeignKeys(
+      PCollectionTuple datastoreSnapshot) {
+    PCollection<VersionedEntity> domainBases =
+        datastoreSnapshot.get(Transforms.createTagForKind("DomainBase"));
+    return domainBases.apply(
+        "Remove circular foreign keys from DomainBase",
+        ParDo.of(new RemoveDomainBaseForeignKeys()));
+  }
+
+  /**
+   * Sets up the pipeline to write entities in {@code entityClasses} to SQL. Entities are written
+   * one kind at a time based on each kind's position in {@code entityClasses}. Concurrency exists
+   * within each kind.
+   *
+   * @param datastoreSnapshot the Datastore snapshot of all data to be migrated to SQL
+   * @param entityClasses the entity types in write order
+   * @param blockingPCollection the pipeline stage that blocks this phase
+   * @param blockingTag description of the stage (if exists) that blocks this phase. Needed for
+   *     generating unique transform ids
+   * @return the output {@code PCollection} from the writing of the last entity kind. Other parts of
+   *     the pipeline can {@link Wait} on this object
+   */
+  private PCollection<Void> scheduleOnePhaseWrites(
+      PCollectionTuple datastoreSnapshot,
+      Collection<Class<?>> entityClasses,
+      Optional<PCollection<Void>> blockingPCollection,
+      String blockingTag) {
+    checkArgument(!entityClasses.isEmpty(), "Each phase must have at least one kind.");
+    ImmutableList<TupleTag<VersionedEntity>> tags =
+        toKindStrings(entityClasses).stream()
+            .map(Transforms::createTagForKind)
+            .collect(ImmutableList.toImmutableList());
+
+    PCollection<Void> prev = blockingPCollection.orElse(null);
+    String prevTag = blockingTag;
+    for (TupleTag<VersionedEntity> tag : tags) {
+      PCollection<VersionedEntity> curr = datastoreSnapshot.get(tag);
+      if (prev != null) {
+        curr = curr.apply("Wait on " + prevTag, Wait.on(prev));
+      }
+      prev = writeToSql(tag.getId(), curr);
+      prevTag = tag.getId();
+    }
+    return prev;
+  }
+
+  private PCollection<Void> writeToSql(String transformId, PCollection<VersionedEntity> data) {
+    String credentialFileUrl =
+        options.getSqlCredentialUrlOverride() != null
+            ? options.getSqlCredentialUrlOverride()
+            : BackupPaths.getCloudSQLCredentialFilePatterns(options.getEnvironment()).get(0);
+
+    return data.apply(
+        "Write to sql: " + transformId,
+        Transforms.writeToSql(
+            transformId,
+            options.getMaxConcurrentSqlWriters(),
+            options.getSqlWriteBatchSize(),
+            new JpaSupplierFactory(credentialFileUrl, jpaGetter)));
+  }
+
+  private static ImmutableList<String> toKindStrings(Collection<Class<?>> entityClasses) {
+    try (AppEngineEnvironment env = new AppEngineEnvironment()) {
+      return entityClasses.stream().map(Key::getKind).collect(ImmutableList.toImmutableList());
+    }
+  }
+
+  static class JpaSupplierFactory implements SerializableSupplier<JpaTransactionManager> {
+    private static final long serialVersionUID = 1L;
+
+    private String credentialFileUrl;
+    private SerializableFunction<JpaTransactionManagerComponent, JpaTransactionManager> jpaGetter;
+
+    JpaSupplierFactory(
+        String credentialFileUrl,
+        SerializableFunction<JpaTransactionManagerComponent, JpaTransactionManager> jpaGetter) {
+      this.credentialFileUrl = credentialFileUrl;
+      this.jpaGetter = jpaGetter;
+    }
+
+    @Override
+    public JpaTransactionManager get() {
+      return jpaGetter.apply(
+          DaggerBeamJpaModule_JpaTransactionManagerComponent.builder()
+              .beamJpaModule(new BeamJpaModule(credentialFileUrl))
+              .build());
+    }
+  }
+}

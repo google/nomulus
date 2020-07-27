@@ -27,7 +27,7 @@ import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.testing.FakeClock;
-import google.registry.testing.SystemPropertyRule;
+import google.registry.testing.SystemPropertyExtension;
 import google.registry.tools.ShellCommand.JCommanderCompletor;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -39,43 +39,40 @@ import java.util.ArrayList;
 import java.util.List;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@RunWith(JUnit4.class)
-public class ShellCommandTest {
+/** Unit tests for {@link ShellCommand}. */
+class ShellCommandTest {
 
-  @Rule public final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
+  @RegisterExtension
+  final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   CommandRunner cli = mock(CommandRunner.class);
-  FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+  private FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
 
-  PrintStream orgStdout;
-  PrintStream orgStderr;
+  private PrintStream orgStdout;
+  private PrintStream orgStderr;
 
-  ByteArrayOutputStream stdout;
-  ByteArrayOutputStream stderr;
+  private ByteArrayOutputStream stdout;
+  private ByteArrayOutputStream stderr;
 
-  public ShellCommandTest() {}
-
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     orgStdout = System.out;
     orgStderr = System.err;
   }
 
-  @After
-  public void tearDown() {
+  @AfterEach
+  void afterEach() {
     System.setOut(orgStdout);
     System.setErr(orgStderr);
   }
 
   @Test
-  public void testParsing() {
+  void testParsing() {
     assertThat(ShellCommand.parseCommand("foo bar 123 baz+ // comment \"string data\""))
         .isEqualTo(new String[] {"foo", "bar", "123", "baz+", "//", "comment", "string data"});
     assertThat(ShellCommand.parseCommand("\"got \\\" escapes?\""))
@@ -87,18 +84,20 @@ public class ShellCommandTest {
       CommandRunner commandRunner, Duration delay, String... commands) throws Exception {
     ArrayDeque<String> queue = new ArrayDeque<String>(ImmutableList.copyOf(commands));
     BufferedReader bufferedReader = mock(BufferedReader.class);
-    when(bufferedReader.readLine()).thenAnswer((x) -> {
-      clock.advanceBy(delay);
-      if (queue.isEmpty()) {
-        throw new IOException();
-      }
-      return queue.poll();
-    });
+    when(bufferedReader.readLine())
+        .thenAnswer(
+            (x) -> {
+              clock.advanceBy(delay);
+              if (queue.isEmpty()) {
+                throw new IOException();
+              }
+              return queue.poll();
+            });
     return new ShellCommand(bufferedReader, clock, commandRunner);
   }
 
   @Test
-  public void testCommandProcessing() throws Exception {
+  void testCommandProcessing() throws Exception {
     MockCli cli = new MockCli();
     ShellCommand shellCommand =
         createShellCommand(cli, Duration.ZERO, "test1 foo bar", "test2 foo bar");
@@ -110,8 +109,8 @@ public class ShellCommandTest {
   }
 
   @Test
-  public void testNoIdleWhenInAlpha() throws Exception {
-    RegistryToolEnvironment.ALPHA.setup(systemPropertyRule);
+  void testNoIdleWhenInAlpha() throws Exception {
+    RegistryToolEnvironment.ALPHA.setup(systemPropertyExtension);
     MockCli cli = new MockCli();
     ShellCommand shellCommand =
         createShellCommand(cli, Duration.standardDays(1), "test1 foo bar", "test2 foo bar");
@@ -119,8 +118,8 @@ public class ShellCommandTest {
   }
 
   @Test
-  public void testNoIdleWhenInSandbox() throws Exception {
-    RegistryToolEnvironment.SANDBOX.setup(systemPropertyRule);
+  void testNoIdleWhenInSandbox() throws Exception {
+    RegistryToolEnvironment.SANDBOX.setup(systemPropertyExtension);
     MockCli cli = new MockCli();
     ShellCommand shellCommand =
         createShellCommand(cli, Duration.standardDays(1), "test1 foo bar", "test2 foo bar");
@@ -128,8 +127,8 @@ public class ShellCommandTest {
   }
 
   @Test
-  public void testIdleWhenOverHourInProduction() throws Exception {
-    RegistryToolEnvironment.PRODUCTION.setup(systemPropertyRule);
+  void testIdleWhenOverHourInProduction() throws Exception {
+    RegistryToolEnvironment.PRODUCTION.setup(systemPropertyExtension);
     MockCli cli = new MockCli();
     ShellCommand shellCommand =
         createShellCommand(cli, Duration.standardMinutes(61), "test1 foo bar", "test2 foo bar");
@@ -138,8 +137,8 @@ public class ShellCommandTest {
   }
 
   @Test
-  public void testNoIdleWhenUnderHourInProduction() throws Exception {
-    RegistryToolEnvironment.PRODUCTION.setup(systemPropertyRule);
+  void testNoIdleWhenUnderHourInProduction() throws Exception {
+    RegistryToolEnvironment.PRODUCTION.setup(systemPropertyExtension);
     MockCli cli = new MockCli();
     ShellCommand shellCommand =
         createShellCommand(cli, Duration.standardMinutes(59), "test1 foo bar", "test2 foo bar");
@@ -156,10 +155,10 @@ public class ShellCommandTest {
   }
 
   @Test
-  public void testMultipleCommandInvocations() throws Exception {
+  void testMultipleCommandInvocations() throws Exception {
     try (RegistryCli cli =
         new RegistryCli("unittest", ImmutableMap.of("test_command", TestCommand.class))) {
-      RegistryToolEnvironment.UNITTEST.setup(systemPropertyRule);
+      RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
       cli.setEnvironment(RegistryToolEnvironment.UNITTEST);
       cli.run(new String[] {"test_command", "-x", "xval", "arg1", "arg2"});
       cli.run(new String[] {"test_command", "-x", "otherxval", "arg3"});
@@ -173,7 +172,7 @@ public class ShellCommandTest {
   }
 
   @Test
-  public void testNonExistentCommand() {
+  void testNonExistentCommand() {
     try (RegistryCli cli =
         new RegistryCli("unittest", ImmutableMap.of("test_command", TestCommand.class))) {
 
@@ -183,9 +182,7 @@ public class ShellCommandTest {
   }
 
   private void performJCommanderCompletorTest(
-      String line,
-      int expectedBackMotion,
-      String... expectedCompletions) {
+      String line, int expectedBackMotion, String... expectedCompletions) {
     JCommander jcommander = new JCommander();
     jcommander.setProgramName("test");
     jcommander.addCommand("help", new HelpCommand(jcommander));
@@ -201,7 +198,7 @@ public class ShellCommandTest {
   }
 
   @Test
-  public void testCompletion_commands() {
+  void testCompletion_commands() {
     performJCommanderCompletorTest("", 0, "testCommand ", "testAnotherCommand ", "help ");
     performJCommanderCompletorTest("n", 1);
     performJCommanderCompletorTest("test", 4, "testCommand ", "testAnotherCommand ");
@@ -211,7 +208,7 @@ public class ShellCommandTest {
   }
 
   @Test
-  public void testCompletion_help() {
+  void testCompletion_help() {
     performJCommanderCompletorTest("h", 1, "help ");
     performJCommanderCompletorTest("help ", 0, "testCommand ", "testAnotherCommand ", "help ");
     performJCommanderCompletorTest("help testC", 5, "testCommand ");
@@ -219,7 +216,7 @@ public class ShellCommandTest {
   }
 
   @Test
-  public void testCompletion_documentation() {
+  void testCompletion_documentation() {
     performJCommanderCompletorTest(
         "testCommand ",
         0,
@@ -239,7 +236,7 @@ public class ShellCommandTest {
   }
 
   @Test
-  public void testCompletion_arguments() {
+  void testCompletion_arguments() {
     performJCommanderCompletorTest("testCommand -", 1, "-x ", "--xparam ", "--xorg ");
     performJCommanderCompletorTest("testCommand --wrong", 7);
     performJCommanderCompletorTest("testCommand noise  --", 2, "--xparam ", "--xorg ");
@@ -247,7 +244,7 @@ public class ShellCommandTest {
   }
 
   @Test
-  public void testCompletion_enum() {
+  void testCompletion_enum() {
     performJCommanderCompletorTest("testCommand --xorg P", 1, "PRIVATE ", "PUBLIC ");
     performJCommanderCompletorTest("testCommand --xorg PU", 2, "PUBLIC ");
     performJCommanderCompletorTest(
@@ -255,7 +252,7 @@ public class ShellCommandTest {
   }
 
   @Test
-  public void testEncapsulatedOutputStream_basicFuncionality() {
+  void testEncapsulatedOutputStream_basicFuncionality() {
     ByteArrayOutputStream backing = new ByteArrayOutputStream();
     try (PrintStream out =
         new PrintStream(new ShellCommand.EncapsulatingOutputStream(backing, "out: "))) {
@@ -267,7 +264,7 @@ public class ShellCommandTest {
   }
 
   @Test
-  public void testEncapsulatedOutputStream_emptyStream() {
+  void testEncapsulatedOutputStream_emptyStream() {
     ByteArrayOutputStream backing = new ByteArrayOutputStream();
     try (PrintStream out =
         new PrintStream(new ShellCommand.EncapsulatingOutputStream(backing, "out: "))) {}
@@ -275,8 +272,8 @@ public class ShellCommandTest {
   }
 
   @Test
-  public void testEncapsulatedOutput_command() throws Exception {
-    RegistryToolEnvironment.ALPHA.setup(systemPropertyRule);
+  void testEncapsulatedOutput_command() throws Exception {
+    RegistryToolEnvironment.ALPHA.setup(systemPropertyExtension);
     captureOutput();
     ShellCommand shellCommand =
         new ShellCommand(
@@ -299,8 +296,8 @@ public class ShellCommandTest {
   }
 
   @Test
-  public void testEncapsulatedOutput_throws() throws Exception {
-    RegistryToolEnvironment.ALPHA.setup(systemPropertyRule);
+  void testEncapsulatedOutput_throws() throws Exception {
+    RegistryToolEnvironment.ALPHA.setup(systemPropertyExtension);
     captureOutput();
     ShellCommand shellCommand =
         new ShellCommand(
@@ -319,7 +316,7 @@ public class ShellCommandTest {
   }
 
   @Test
-  public void testEncapsulatedOutput_noCommand() throws Exception {
+  void testEncapsulatedOutput_noCommand() throws Exception {
     captureOutput();
     ShellCommand shellCommand =
         createShellCommand(
@@ -353,15 +350,13 @@ public class ShellCommandTest {
     }
 
     @Parameter(
-      names = {"-x", "--xparam"},
-      description = "test parameter"
-    )
+        names = {"-x", "--xparam"},
+        description = "test parameter")
     String xparam = "default value";
 
     @Parameter(
-      names = {"--xorg"},
-      description = "test organization"
-    )
+        names = {"--xorg"},
+        description = "test organization")
     OrgType orgType = OrgType.PRIVATE;
 
     // List for recording command invocations by run().
@@ -373,7 +368,7 @@ public class ShellCommandTest {
     @Parameter(description = "normal argument")
     List<String> args;
 
-    public TestCommand() {}
+    TestCommand() {}
 
     @Override
     public void run() {

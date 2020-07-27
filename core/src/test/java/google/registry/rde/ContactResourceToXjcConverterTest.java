@@ -47,11 +47,9 @@ import google.registry.xjc.rdecontact.XjcRdeContact;
 import google.registry.xjc.rdecontact.XjcRdeContactElement;
 import java.io.ByteArrayOutputStream;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Unit tests for {@link ContactResourceToXjcConverter}.
@@ -59,19 +57,18 @@ import org.junit.runners.JUnit4;
  * <p>This tests the mapping between {@link ContactResource} and {@link XjcRdeContact} as well as
  * some exceptional conditions.
  */
-@RunWith(JUnit4.class)
 public class ContactResourceToXjcConverterTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     createTld("xn--q9jyb4c");
   }
 
   @Test
-  public void testConvertContact() {
+  void testConvertContact() {
     ContactResource contact = makeContactResource();
     XjcRdeContact bean = ContactResourceToXjcConverter.convertContact(contact);
 
@@ -232,7 +229,7 @@ public class ContactResourceToXjcConverterTest {
   }
 
   @Test
-  public void testConvertContact_absentVoiceAndFaxNumbers() {
+  void testConvertContact_absentVoiceAndFaxNumbers() {
     XjcRdeContact bean = ContactResourceToXjcConverter.convertContact(
         makeContactResource().asBuilder()
             .setVoiceNumber(null)
@@ -243,7 +240,7 @@ public class ContactResourceToXjcConverterTest {
   }
 
   @Test
-  public void testConvertContact_absentDisclose() {
+  void testConvertContact_absentDisclose() {
     XjcRdeContact bean = ContactResourceToXjcConverter.convertContact(
         makeContactResource().asBuilder()
             .setDisclose(null)
@@ -252,7 +249,7 @@ public class ContactResourceToXjcConverterTest {
   }
 
   @Test
-  public void testConvertContact_absentTransferData() {
+  void testConvertContact_absentTransferData() {
     XjcRdeContact bean = ContactResourceToXjcConverter.convertContact(
         makeContactResource().asBuilder()
             .setLastTransferTime(null)
@@ -263,7 +260,7 @@ public class ContactResourceToXjcConverterTest {
   }
 
   @Test
-  public void testMarshal() throws Exception {
+  void testMarshal() throws Exception {
     XjcRdeContact bean = ContactResourceToXjcConverter.convertContact(makeContactResource());
     wrapDeposit(bean).marshal(new ByteArrayOutputStream(), UTF_8);
   }

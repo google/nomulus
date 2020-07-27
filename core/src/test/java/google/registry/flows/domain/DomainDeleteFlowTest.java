@@ -34,6 +34,7 @@ import static google.registry.model.reporting.DomainTransactionRecord.Transactio
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_DELETE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.assertBillingEvents;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.getOnlyHistoryEntryOfType;
@@ -139,8 +140,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         persistResource(
             domain
                 .asBuilder()
-                .setAutorenewBillingEvent(Key.create(autorenewBillingEvent))
-                .setAutorenewPollMessage(Key.create(autorenewPollMessage))
+                .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
+                .setAutorenewPollMessage(autorenewPollMessage.createVKey())
                 .build());
     assertTransactionalFlow(true);
   }
@@ -196,9 +197,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                             GracePeriodStatus.AUTO_RENEW,
                             A_MONTH_AGO.plusDays(45),
                             "TheRegistrar",
-                            Key.create(autorenewBillingEvent))))
-                .setAutorenewBillingEvent(Key.create(autorenewBillingEvent))
-                .setAutorenewPollMessage(Key.create(autorenewPollMessage))
+                            autorenewBillingEvent.createVKey())))
+                .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
+                .setAutorenewPollMessage(autorenewPollMessage.createVKey())
                 .build());
     assertTransactionalFlow(true);
   }
@@ -436,9 +437,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     DateTime deletionTime = domain.getDeletionTime();
     assertThat(getPollMessages("TheRegistrar", deletionTime.minusMinutes(1))).isEmpty();
     assertThat(getPollMessages("TheRegistrar", deletionTime)).hasSize(1);
-    assertThat(domain.getDeletePollMessage())
-        .isEqualTo(Key.create(getOnlyPollMessage("TheRegistrar")));
-    PollMessage.OneTime deletePollMessage = ofy().load().key(domain.getDeletePollMessage()).now();
+    assertThat(domain.getDeletePollMessage().getOfyKey())
+        .isEqualTo(getOnlyPollMessage("TheRegistrar").createVKey().getOfyKey());
+    PollMessage.OneTime deletePollMessage = tm().load(domain.getDeletePollMessage());
     assertThat(deletePollMessage.getMsg()).isEqualTo(expectedMessage);
   }
 
@@ -472,10 +473,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     // Modify the autorenew poll message so that it has unacked messages in the past. This should
     // prevent it from being deleted when the domain is deleted.
     persistResource(
-        ofy()
-            .load()
-            .key(reloadResourceByForeignKey().getAutorenewPollMessage())
-            .now()
+        tm().load(reloadResourceByForeignKey().getAutorenewPollMessage())
             .asBuilder()
             .setEventTime(A_MONTH_FROM_NOW.minusYears(3))
             .build());

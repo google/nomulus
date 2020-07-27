@@ -44,19 +44,16 @@ import java.io.ObjectOutputStream;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests {@link EppResourceInputs} */
-@RunWith(JUnit4.class)
-public class EppResourceInputsTest {
+class EppResourceInputsTest {
 
   private static final double EPSILON = 0.0001;
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @SuppressWarnings("unchecked")
   private <T> T serializeAndDeserialize(T obj) throws Exception {
@@ -71,12 +68,12 @@ public class EppResourceInputsTest {
   }
 
   @Test
-  public void testSuccess_keyInputType_polymorphicBaseType() {
+  void testSuccess_keyInputType_polymorphicBaseType() {
     createKeyInput(EppResource.class);
   }
 
   @Test
-  public void testFailure_keyInputType_noInheritanceBetweenTypes_eppResource() {
+  void testFailure_keyInputType_noInheritanceBetweenTypes_eppResource() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -85,7 +82,7 @@ public class EppResourceInputsTest {
   }
 
   @Test
-  public void testFailure_entityInputType_noInheritanceBetweenTypes_eppResource() {
+  void testFailure_entityInputType_noInheritanceBetweenTypes_eppResource() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -94,7 +91,7 @@ public class EppResourceInputsTest {
   }
 
   @Test
-  public void testFailure_entityInputType_noInheritanceBetweenTypes_subclasses() {
+  void testFailure_entityInputType_noInheritanceBetweenTypes_subclasses() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -103,13 +100,13 @@ public class EppResourceInputsTest {
   }
 
   @Test
-  public void testReaderCountMatchesBucketCount() throws Exception {
+  void testReaderCountMatchesBucketCount() throws Exception {
     assertThat(createKeyInput(DomainBase.class).createReaders()).hasSize(3);
     assertThat(createEntityInput(DomainBase.class).createReaders()).hasSize(3);
   }
 
   @Test
-  public void testKeyInput_oneReaderPerBucket() throws Exception {
+  void testKeyInput_oneReaderPerBucket() throws Exception {
     createTld("tld");
     Set<Key<DomainBase>> domains = new HashSet<>();
     for (int i = 1; i <= 3; i++) {
@@ -132,7 +129,7 @@ public class EppResourceInputsTest {
   }
 
   @Test
-  public void testEntityInput_oneReaderPerBucket() throws Exception {
+  void testEntityInput_oneReaderPerBucket() throws Exception {
     createTld("tld");
     Set<DomainBase> domains = new HashSet<>();
     for (int i = 1; i <= 3; i++) {
@@ -142,8 +139,7 @@ public class EppResourceInputsTest {
       persistResource(EppResourceIndex.create(getBucketKey(i), Key.create(domain)));
     }
     Set<DomainBase> seen = new HashSet<>();
-    for (InputReader<DomainBase> reader
-        : createEntityInput(DomainBase.class).createReaders()) {
+    for (InputReader<DomainBase> reader : createEntityInput(DomainBase.class).createReaders()) {
       reader.beginShard();
       reader.beginSlice();
       seen.add(reader.next());
@@ -157,7 +153,7 @@ public class EppResourceInputsTest {
   }
 
   @Test
-  public void testSuccess_keyReader_survivesAcrossSerialization() throws Exception {
+  void testSuccess_keyReader_survivesAcrossSerialization() throws Exception {
     createTld("tld");
     DomainBase domainA = persistEppResourceInFirstBucket(newDomainBase("a.tld"));
     DomainBase domainB = persistEppResourceInFirstBucket(newDomainBase("b.tld"));
@@ -181,15 +177,14 @@ public class EppResourceInputsTest {
   }
 
   @Test
-  public void testSuccess_entityReader_survivesAcrossSerialization() throws Exception {
+  void testSuccess_entityReader_survivesAcrossSerialization() throws Exception {
     createTld("tld");
     DomainBase domainA = persistEppResourceInFirstBucket(newDomainBase("a.tld"));
     DomainBase domainB = persistEppResourceInFirstBucket(newDomainBase("b.tld"));
     // Should be ignored. We'll know if it isn't because the progress counts will be off.
     persistActiveContact("contact");
     Set<DomainBase> seen = new HashSet<>();
-    InputReader<DomainBase> reader =
-        createEntityInput(DomainBase.class).createReaders().get(0);
+    InputReader<DomainBase> reader = createEntityInput(DomainBase.class).createReaders().get(0);
     reader.beginShard();
     reader.beginSlice();
     assertThat(reader.getProgress()).isWithin(EPSILON).of(0);
@@ -208,15 +203,16 @@ public class EppResourceInputsTest {
   }
 
   @Test
-  public void testSuccess_entityReader_filtersOnMultipleTypes() throws Exception {
+  void testSuccess_entityReader_filtersOnMultipleTypes() throws Exception {
     createTld("tld");
     DomainBase domain = persistEppResourceInFirstBucket(newDomainBase("a.tld"));
     HostResource host = persistEppResourceInFirstBucket(newHostResource("ns1.example.com"));
     persistEppResourceInFirstBucket(newContactResource("contact"));
     Set<EppResource> seen = new HashSet<>();
     InputReader<EppResource> reader =
-        EppResourceInputs.<EppResource>createEntityInput(
-              DomainBase.class, HostResource.class).createReaders().get(0);
+        EppResourceInputs.<EppResource>createEntityInput(DomainBase.class, HostResource.class)
+            .createReaders()
+            .get(0);
     reader.beginShard();
     reader.beginSlice();
     assertThat(reader.getProgress()).isWithin(EPSILON).of(0);
@@ -229,7 +225,7 @@ public class EppResourceInputsTest {
   }
 
   @Test
-  public void testSuccess_entityReader_noFilteringWhenUsingEppResource() throws Exception {
+  void testSuccess_entityReader_noFilteringWhenUsingEppResource() throws Exception {
     createTld("tld");
     ContactResource contact = persistEppResourceInFirstBucket(newContactResource("contact"));
     // Specify the contact since persistActiveDomain{Application} creates a hidden one.

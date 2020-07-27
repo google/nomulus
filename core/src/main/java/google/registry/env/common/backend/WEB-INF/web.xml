@@ -367,6 +367,12 @@
     <url-pattern>/_dr/task/linkRdeHosts</url-pattern>
   </servlet-mapping>
 
+  <!-- Action to automatically re-lock a domain after unlocking it -->
+  <servlet-mapping>
+    <servlet-name>backend-servlet</servlet-name>
+    <url-pattern>/_dr/task/relockDomain</url-pattern>
+  </servlet-mapping>
+
   <!-- Security config -->
   <security-constraint>
     <web-resource-collection>

@@ -29,13 +29,13 @@ import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetAllocationTokenCommand}. */
-public class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocationTokenCommand> {
+class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocationTokenCommand> {
 
   @Test
-  public void testSuccess_oneToken() throws Exception {
+  void testSuccess_oneToken() throws Exception {
     createTlds("bar");
     AllocationToken token =
         persistResource(
@@ -49,7 +49,7 @@ public class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocation
   }
 
   @Test
-  public void testSuccess_multipleTokens() throws Exception {
+  void testSuccess_multipleTokens() throws Exception {
     createTlds("baz");
     ImmutableList<AllocationToken> tokens =
         persistSimpleResources(
@@ -73,7 +73,7 @@ public class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocation
   }
 
   @Test
-  public void testSuccess_redeemedToken() throws Exception {
+  void testSuccess_redeemedToken() throws Exception {
     createTld("tld");
     DomainBase domain =
         persistActiveDomain("fqqdn.tld", DateTime.parse("2016-04-07T22:19:17.044Z"));
@@ -92,7 +92,7 @@ public class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocation
   }
 
   @Test
-  public void testSuccess_oneTokenDoesNotExist() throws Exception {
+  void testSuccess_oneTokenDoesNotExist() throws Exception {
     createTlds("bar");
     AllocationToken token =
         persistResource(
@@ -107,7 +107,7 @@ public class GetAllocationTokenCommandTest extends CommandTestCase<GetAllocation
   }
 
   @Test
-  public void testFailure_noAllocationTokensSpecified() {
+  void testFailure_noAllocationTokensSpecified() {
     assertThrows(ParameterException.class, this::runCommand);
   }
 }

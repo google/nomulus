@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.flows.domain.DomainFlowUtils;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.request.Action;
@@ -118,6 +119,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       String registrarId = postInput.registrarId;
       checkArgument(!Strings.isNullOrEmpty(registrarId), "Missing key for registrarId");
       checkArgument(!Strings.isNullOrEmpty(postInput.domainName), "Missing key for domainName");
+      DomainFlowUtils.validateDomainName(postInput.domainName);
       checkNotNull(postInput.isLock, "Missing key for isLock");
       UserAuthInfo userAuthInfo =
           authResult

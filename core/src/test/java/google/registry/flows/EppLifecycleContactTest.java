@@ -22,21 +22,18 @@ import static google.registry.testing.EppMetricSubject.assertThat;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.testing.AppEngineRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for contact lifecycle. */
-@RunWith(JUnit4.class)
-public class EppLifecycleContactTest extends EppTestCase {
+class EppLifecycleContactTest extends EppTestCase {
 
-  @Rule
-  public final AppEngineRule appEngine =
+  @RegisterExtension
+  final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @Test
-  public void testContactLifecycle() throws Exception {
+  void testContactLifecycle() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatCommand("contact_create_sh8013.xml")
         .atTime("2000-06-01T00:00:00Z")
@@ -72,7 +69,7 @@ public class EppLifecycleContactTest extends EppTestCase {
   }
 
   @Test
-  public void testContactTransferPollMessage() throws Exception {
+  void testContactTransferPollMessage() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatCommand("contact_create_sh8013.xml")
         .atTime("2000-06-01T00:00:00Z")

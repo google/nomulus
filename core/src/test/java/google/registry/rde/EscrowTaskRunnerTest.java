@@ -35,18 +35,15 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link EscrowTaskRunner}. */
-@RunWith(JUnit4.class)
 public class EscrowTaskRunnerTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine =
       AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
@@ -57,8 +54,8 @@ public class EscrowTaskRunnerTest {
   private EscrowTaskRunner runner;
   private Registry registry;
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     createTld("lol");
     registry = Registry.get("lol");
     runner = new EscrowTaskRunner();
@@ -68,13 +65,13 @@ public class EscrowTaskRunnerTest {
     DateTimeZone.setDefault(DateTimeZone.forID("America/New_York"));  // Make sure UTC stuff works.
   }
 
-  @After
-  public void after() {
+  @AfterEach
+  void afterEach() {
     DateTimeZone.setDefault(previousDateTimeZone);
   }
 
   @Test
-  public void testRun_cursorIsToday_advancesCursorToTomorrow() throws Exception {
+  void testRun_cursorIsToday_advancesCursorToTomorrow() throws Exception {
     clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));
     persistResource(
         Cursor.create(CursorType.RDE_STAGING, DateTime.parse("2006-06-06TZ"), registry));
@@ -87,7 +84,7 @@ public class EscrowTaskRunnerTest {
   }
 
   @Test
-  public void testRun_cursorMissing_assumesTodayAndAdvancesCursorToTomorrow() throws Exception {
+  void testRun_cursorMissing_assumesTodayAndAdvancesCursorToTomorrow() throws Exception {
     clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));
     runner.lockRunAndRollForward(
         task, registry, standardSeconds(30), CursorType.RDE_STAGING, standardDays(1));
@@ -98,7 +95,7 @@ public class EscrowTaskRunnerTest {
   }
 
   @Test
-  public void testRun_cursorInTheFuture_doesNothing() {
+  void testRun_cursorInTheFuture_doesNothing() {
     clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));
     persistResource(
         Cursor.create(CursorType.RDE_STAGING, DateTime.parse("2006-06-07TZ"), registry));
@@ -112,7 +109,7 @@ public class EscrowTaskRunnerTest {
   }
 
   @Test
-  public void testRun_lockIsntAvailable_throws503() {
+  void testRun_lockIsntAvailable_throws503() {
     String lockName = "EscrowTaskRunner " + task.getClass().getSimpleName();
     clock.setTo(DateTime.parse("2006-06-06T00:30:00Z"));
     persistResource(

@@ -28,6 +28,7 @@ import java.io.IOException;
 
 /** Utility class for building a leveldb logfile. */
 public final class LevelDbFileBuilder {
+
   private final FileOutputStream out;
   private byte[] currentBlock = new byte[BLOCK_SIZE];
 

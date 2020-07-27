@@ -22,14 +22,14 @@ import google.registry.testing.FakeJsonResponse;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
-import org.junit.Rule;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Base class for tests of list actions.
  */
 public class ListActionTestCase {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private FakeJsonResponse response;

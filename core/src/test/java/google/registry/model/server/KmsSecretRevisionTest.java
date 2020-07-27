@@ -21,22 +21,20 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Strings;
 import google.registry.testing.AppEngineRule;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@RunWith(JUnit4.class)
+/** Unit tests for {@link google.registry.model.server.KmsSecretRevision}. */
 public class KmsSecretRevisionTest {
 
-  @Rule
+  @RegisterExtension
   public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   private KmsSecretRevision secretRevision;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     secretRevision =
         persistResource(
             new KmsSecretRevision.Builder()
@@ -47,7 +45,7 @@ public class KmsSecretRevisionTest {
   }
 
   @Test
-  public void test_setEncryptedValue_tooLong_throwsException() {
+  void test_setEncryptedValue_tooLong_throwsException() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -63,7 +61,7 @@ public class KmsSecretRevisionTest {
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     assertThat(ofy().load().entity(secretRevision).now()).isEqualTo(secretRevision);
   }
 }

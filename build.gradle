@@ -25,7 +25,7 @@ buildscript {
 
   dependencies {
     classpath 'com.google.cloud.tools:appengine-gradle-plugin:2.0.1'
-    classpath "net.ltgt.gradle:gradle-errorprone-plugin:0.6.1"
+    classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.6.1'
     classpath 'org.sonatype.aether:aether-api:1.13.1'
     classpath 'org.sonatype.aether:aether-impl:1.13.1'
   }
@@ -49,6 +49,7 @@ plugins {
   id 'com.diffplug.gradle.spotless' version '3.25.0'
 
   id 'jacoco'
+  id 'com.dorongold.task-tree' version '1.5'
 }
 
 wrapper {
@@ -443,6 +444,7 @@ task javaIncrementalFormatDryRun {
     println("${invokeJavaDiffFormatScript("show")}")
   }
 }
+tasks.build.dependsOn(tasks.javaIncrementalFormatCheck)
 
 // Checks if modified lines in Java source files need reformatting.
 // Note that this task processes modified Java files in the entire repository.
@@ -451,8 +453,6 @@ task javaIncrementalFormatApply {
     invokeJavaDiffFormatScript("format")
   }
 }
-
-tasks.build.dependsOn(tasks.javaIncrementalFormatCheck)
 
 task javadoc(type: Javadoc) {
   source javadocSource
@@ -467,5 +467,17 @@ task javadoc(type: Javadoc) {
 }
 
 tasks.build.dependsOn(tasks.javadoc)
+
+// Task for doing development on core Nomulus.
+// This fixes code formatting automatically as necessary, builds and tests the
+// core Nomulus codebase, and runs all presubmits.
+task coreDev {
+  dependsOn 'javaIncrementalFormatApply'
+  dependsOn 'javadoc'
+  dependsOn 'checkDependenciesDotGradle'
+  dependsOn 'checkLicense'
+  dependsOn ':core:check'
+  dependsOn 'assemble'
+}
 
 javadocDependentTasks.each { tasks.javadoc.dependsOn(it) }

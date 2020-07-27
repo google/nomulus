@@ -24,23 +24,20 @@ import com.google.common.reflect.ClassPath.ResourceInfo;
 import google.registry.testing.AppEngineRule;
 import java.net.URL;
 import java.util.List;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Presubmit tests for {@link PremiumList} configuration files. */
-@RunWith(JUnit4.class)
-public class GenrulePremiumListTest {
+class GenrulePremiumListTest {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final String LISTS_DIRECTORY = "google/registry/config/files/premium/";
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testParse_allPremiumLists() throws Exception {
+  void testParse_allPremiumLists() throws Exception {
     ClassPath classpath = ClassPath.from(getClass().getClassLoader());
     int numParsed = 0;
     for (ResourceInfo resource : classpath.getResources()) {

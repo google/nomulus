@@ -224,12 +224,12 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
     return disclose;
   }
 
-  public final String getCurrentSponsorClientId() {
+  public String getCurrentSponsorClientId() {
     return getPersistedCurrentSponsorClientId();
   }
 
   @Override
-  public final ContactTransferData getTransferData() {
+  public ContactTransferData getTransferData() {
     return Optional.ofNullable(transferData).orElse(ContactTransferData.EMPTY);
   }
 

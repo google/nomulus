@@ -89,7 +89,7 @@ public abstract class RdeModule {
   @Provides
   @Parameter(PARAM_LENIENT)
   static boolean provideLenient(HttpServletRequest req) {
-    return extractBooleanParameter(req, PARAM_REVISION);
+    return extractBooleanParameter(req, PARAM_LENIENT);
   }
 
   @Provides

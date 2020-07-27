@@ -15,6 +15,7 @@
 package google.registry.model.history;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatastoreHelper.newContactResourceWithRoid;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
@@ -74,19 +75,13 @@ public class DomainHistoryTest extends EntityTestCase {
             () -> {
               DomainHistory fromDatabase =
                   jpaTm().load(VKey.createSql(DomainHistory.class, domainHistory.getId()));
-              assertHistoriesEqual(fromDatabase, domainHistory);
+              assertDomainHistoriesEqual(fromDatabase, domainHistory);
               assertThat(fromDatabase.getDomainRepoId().getSqlKey())
                   .isEqualTo(domainHistory.getDomainRepoId().getSqlKey());
             });
   }
 
-  static void assertHistoriesEqual(HistoryEntry one, HistoryEntry two) {
-    // enough of the fields get changed during serialization that we can't depend on .equals()
-    assertThat(one.getClientId()).isEqualTo(two.getClientId());
-    assertThat(one.getBySuperuser()).isEqualTo(two.getBySuperuser());
-    assertThat(one.getRequestedByRegistrar()).isEqualTo(two.getRequestedByRegistrar());
-    assertThat(one.getReason()).isEqualTo(two.getReason());
-    assertThat(one.getTrid()).isEqualTo(two.getTrid());
-    assertThat(one.getType()).isEqualTo(two.getType());
+  static void assertDomainHistoriesEqual(DomainHistory one, DomainHistory two) {
+    assertAboutImmutableObjects().that(one).isEqualExceptFields(two);
   }
 }

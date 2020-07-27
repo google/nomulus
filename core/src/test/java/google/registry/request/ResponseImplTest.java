@@ -24,32 +24,29 @@ import static org.mockito.Mockito.when;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import javax.servlet.http.HttpServletResponse;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ResponseImpl}. */
-@RunWith(JUnit4.class)
-public class ResponseImplTest {
+class ResponseImplTest {
 
   private final HttpServletResponse rsp = mock(HttpServletResponse.class);
 
   @Test
-  public void testSetStatus() {
+  void testSetStatus() {
     new ResponseImpl(rsp).setStatus(666);
     verify(rsp).setStatus(666);
     verifyNoMoreInteractions(rsp);
   }
 
   @Test
-  public void testSetContentType() {
+  void testSetContentType() {
     new ResponseImpl(rsp).setContentType(PLAIN_TEXT_UTF_8);
     verify(rsp).setContentType("text/plain; charset=utf-8");
     verifyNoMoreInteractions(rsp);
   }
 
   @Test
-  public void testSetPayload() throws Exception {
+  void testSetPayload() throws Exception {
     StringWriter httpOutput = new StringWriter();
     when(rsp.getWriter()).thenReturn(new PrintWriter(httpOutput));
     new ResponseImpl(rsp).setPayload("hello world");

@@ -20,11 +20,13 @@ import static google.registry.testing.LogsSubject.assertAboutLogs;
 import com.google.common.testing.TestLogHandler;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
+import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.joda.time.Duration;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -34,6 +36,10 @@ public class LockDaoTest {
   private final FakeClock fakeClock = new FakeClock();
   private final TestLogHandler logHandler = new TestLogHandler();
   private final Logger loggerToIntercept = Logger.getLogger(LockDao.class.getCanonicalName());
+
+  @RegisterExtension
+  @Order(value = 1)
+  public DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
   @RegisterExtension
   public final JpaIntegrationWithCoverageExtension jpa =

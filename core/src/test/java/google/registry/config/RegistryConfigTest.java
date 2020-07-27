@@ -18,15 +18,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.config.RegistryConfig.CONFIG_SETTINGS;
 import static google.registry.config.RegistryConfig.ConfigModule.provideReservedTermsExportDisclaimer;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
-@RunWith(JUnit4.class)
-public class RegistryConfigTest {
+/** Unit tests for {@link RegistryConfig}. */
+class RegistryConfigTest {
 
   @Test
-  public void test_reservedTermsExportDisclaimer_isPrependedWithOctothorpes() {
+  void test_reservedTermsExportDisclaimer_isPrependedWithOctothorpes() {
     assertThat(provideReservedTermsExportDisclaimer(CONFIG_SETTINGS.get()))
         .isEqualTo("# Disclaimer line 1.\n" + "# Line 2 is this 1.");
   }

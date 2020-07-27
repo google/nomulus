@@ -30,18 +30,18 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Objects;
-import org.junit.rules.ExternalResource;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * GnuPG system command JUnit rule.
+ * GnuPG system command JUnit extension.
  *
  * <p>This rule creates a isolated environment for running the {@code gpg} command inside system
  * integration tests. It reduces a lot of the boilerplate of setting up the shell environment and
  * importing your keyrings into a temporary config folder.
- *
- * @see ExternalResource
  */
-public final class GpgSystemCommandRule extends ExternalResource {
+public final class GpgSystemCommandExtension implements BeforeEachCallback, AfterEachCallback {
 
   private static final File DEV_NULL = new File("/dev/null");
   private static final String TEMP_FILE_PREFIX = "gpgtest";
@@ -53,8 +53,8 @@ public final class GpgSystemCommandRule extends ExternalResource {
   private final ByteSource privateKeyring;
   private final Runtime runtime = Runtime.getRuntime();
 
-  /** Constructs a new {@link GpgSystemCommandRule} instance. */
-  public GpgSystemCommandRule(ByteSource publicKeyring, ByteSource privateKeyring) {
+  /** Constructs a new {@link GpgSystemCommandExtension} instance. */
+  public GpgSystemCommandExtension(ByteSource publicKeyring, ByteSource privateKeyring) {
     this.publicKeyring = checkNotNull(publicKeyring, "publicKeyring");
     this.privateKeyring = checkNotNull(privateKeyring, "privateKeyring");
   }
@@ -83,7 +83,7 @@ public final class GpgSystemCommandRule extends ExternalResource {
   }
 
   @Override
-  protected void before() throws IOException, InterruptedException {
+  public void beforeEach(ExtensionContext context) throws IOException, InterruptedException {
     checkState(Objects.equals(cwd, DEV_NULL));
     String tmpRootDirString = System.getenv("TMPDIR");
     // Create the working directory for the forked process on Temp file system. Create under the
@@ -123,7 +123,7 @@ public final class GpgSystemCommandRule extends ExternalResource {
   }
 
   @Override
-  protected void after() {
+  public void afterEach(ExtensionContext context) {
     // TODO(weiminyu): we should delete the cwd tree.
     cwd = DEV_NULL;
     conf = DEV_NULL;

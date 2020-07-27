@@ -30,6 +30,7 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
+import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.contact.Disclose.PostalInfoChoice;
 import google.registry.model.contact.PostalInfo.Type;
@@ -45,15 +46,15 @@ import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactResource}. */
 public class ContactResourceTest extends EntityTestCase {
-  ContactResource originalContact;
-  ContactResource contactResource;
+  private ContactResource originalContact;
+  private ContactResource contactResource;
 
-  public ContactResourceTest() {
+  ContactResourceTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     createTld("foobar");
     originalContact =
         new ContactResource.Builder()
@@ -124,12 +125,12 @@ public class ContactResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testCloudSqlPersistence_failWhenViolateForeignKeyConstraint() {
+  void testCloudSqlPersistence_failWhenViolateForeignKeyConstraint() {
     assertThrowForeignKeyViolation(() -> jpaTm().transact(() -> jpaTm().saveNew(originalContact)));
   }
 
   @Test
-  public void testCloudSqlPersistence_succeed() {
+  void testCloudSqlPersistence_succeed() {
     saveRegistrar("registrar1");
     saveRegistrar("registrar2");
     saveRegistrar("registrar3");
@@ -154,11 +155,13 @@ public class ContactResourceTest extends EntityTestCase {
                     .setServerApproveEntities(null)
                     .build())
             .build();
-    assertThat(persisted).isEqualTo(fixed);
+    ImmutableObjectSubject.assertAboutImmutableObjects()
+        .that(persisted)
+        .isEqualExceptFields(fixed, "updateTimestamp");
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     assertThat(
             loadByForeignKey(
                 ContactResource.class, contactResource.getForeignKey(), fakeClock.nowUtc()))
@@ -166,12 +169,12 @@ public class ContactResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testIndexing() throws Exception {
+  void testIndexing() throws Exception {
     verifyIndexing(contactResource, "deletionTime", "currentSponsorClientId", "searchName");
   }
 
   @Test
-  public void testEmptyStringsBecomeNull() {
+  void testEmptyStringsBecomeNull() {
     assertThat(new ContactResource.Builder().setContactId(null).build().getContactId()).isNull();
     assertThat(new ContactResource.Builder().setContactId("").build().getContactId()).isNull();
     assertThat(new ContactResource.Builder().setContactId(" ").build().getContactId()).isNotNull();
@@ -203,7 +206,7 @@ public class ContactResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testEmptyTransferDataBecomesNull() {
+  void testEmptyTransferDataBecomesNull() {
     ContactResource withNull = new ContactResource.Builder().setTransferData(null).build();
     ContactResource withEmpty =
         withNull.asBuilder().setTransferData(ContactTransferData.EMPTY).build();
@@ -212,7 +215,7 @@ public class ContactResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testImplicitStatusValues() {
+  void testImplicitStatusValues() {
     // OK is implicit if there's no other statuses.
     assertAboutContacts()
         .that(new ContactResource.Builder().build())
@@ -234,7 +237,7 @@ public class ContactResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testExpiredTransfer() {
+  void testExpiredTransfer() {
     ContactResource afterTransfer =
         contactResource
             .asBuilder()
@@ -255,7 +258,7 @@ public class ContactResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testSetCreationTime_cantBeCalledTwice() {
+  void testSetCreationTime_cantBeCalledTwice() {
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
@@ -264,7 +267,7 @@ public class ContactResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void testToHydratedString_notCircular() {
+  void testToHydratedString_notCircular() {
     // If there are circular references, this will overflow the stack.
     contactResource.toHydratedString();
   }
