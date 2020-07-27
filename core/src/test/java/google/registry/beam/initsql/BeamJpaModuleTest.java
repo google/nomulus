@@ -83,7 +83,7 @@ class BeamJpaModuleTest {
             .beamJpaModule(
                 new BeamJpaModule(
                     BackupPaths.getCloudSQLCredentialFilePatterns(environmentName).get(0),
-                    "domain-registry-alpha"))
+                    String.format("domain-registry-%s", environmentName)))
             .build()
             .cloudSqlJpaTransactionManager();
     assertThat(
