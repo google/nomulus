@@ -262,11 +262,6 @@ create sequence history_id_sequence start 1 increment 1;
         primary key (repo_id)
     );
 
-    create table "Domain_nsHosts" (
-       domain_repo_id text not null,
-        ns_hosts text
-    );
-
     create table "DomainHistory" (
        history_revision_id int8 not null,
         history_by_superuser boolean not null,
@@ -322,8 +317,13 @@ create sequence history_id_sequence start 1 increment 1;
         primary key (history_revision_id)
     );
 
-    create table "DomainHistory_nsHosts" (
+    create table "DomainHistoryHost" (
        domain_history_history_revision_id int8 not null,
+        ns_hosts text
+    );
+
+    create table "DomainHost" (
+       domain_repo_id text not null,
         ns_hosts text
     );
 
@@ -604,15 +604,15 @@ create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date
        foreign key (revision_id) 
        references "ClaimsList";
 
-    alter table if exists "Domain_nsHosts" 
-       add constraint FKlboxfjsrxhk93qyuvfnfwlaky 
-       foreign key (domain_repo_id) 
-       references "Domain";
-
-    alter table if exists "DomainHistory_nsHosts" 
-       add constraint FK6b8eqdxwe3guc56tgpm89atx 
+    alter table if exists "DomainHistoryHost" 
+       add constraint FK378h8v3j8qd8xtjn2e0bcmrtj 
        foreign key (domain_history_history_revision_id) 
        references "DomainHistory";
+
+    alter table if exists "DomainHost" 
+       add constraint FKeq1guccbre1yk3oosgp2io554 
+       foreign key (domain_repo_id) 
+       references "Domain";
 
     alter table if exists "PremiumEntry" 
        add constraint FKo0gw90lpo1tuee56l0nb6y6g5 

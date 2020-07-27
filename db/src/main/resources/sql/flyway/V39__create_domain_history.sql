@@ -12,8 +12,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-ALTER TABLE IF EXISTS "DomainHost" RENAME TO "Domain_nsHosts";
-
 CREATE TABLE "DomainHistory" (
    history_revision_id int8 NOT NULL,
     history_by_superuser boolean NOT NULL,
@@ -69,7 +67,7 @@ CREATE TABLE "DomainHistory" (
     PRIMARY KEY (history_revision_id)
 );
 
-CREATE TABLE "DomainHistory_nsHosts" (
+CREATE TABLE "DomainHistoryHost" (
    domain_history_history_revision_id int8 not null,
    ns_hosts text
 );
@@ -92,7 +90,7 @@ ALTER TABLE IF EXISTS "DomainHistory"
 ALTER TABLE ONLY public."DomainHistory" ALTER COLUMN history_revision_id
    SET DEFAULT nextval('public."history_id_sequence"'::regclass);
 
-ALTER TABLE IF EXISTS "DomainHistory_nsHosts"
+ALTER TABLE IF EXISTS "DomainHistoryHost"
    ADD CONSTRAINT FK6b8eqdxwe3guc56tgpm89atx
    FOREIGN KEY (domain_history_history_revision_id)
    REFERENCES "DomainHistory";

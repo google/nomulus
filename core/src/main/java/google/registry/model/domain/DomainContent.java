@@ -76,7 +76,6 @@ import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
-import javax.persistence.JoinTable;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.PostLoad;
 import javax.persistence.Transient;
@@ -131,7 +130,7 @@ public class DomainContent extends EppResource
   @Index String tld;
 
   /** References to hosts that are the nameservers for the domain. */
-  @Index @ElementCollection @JoinTable Set<VKey<HostResource>> nsHosts;
+  @Index @Transient Set<VKey<HostResource>> nsHosts;
 
   /**
    * The union of the contacts visible via {@link #getContacts} and {@link #getRegistrant}.

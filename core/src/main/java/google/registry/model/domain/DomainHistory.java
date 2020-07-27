@@ -17,10 +17,16 @@ package google.registry.model.domain;
 import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
+import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import java.util.Set;
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.JoinTable;
 
 /**
  * A persisted history entry representing an EPP modification to a domain.
@@ -43,6 +49,13 @@ public class DomainHistory extends HistoryEntry {
 
   @Column(nullable = false)
   VKey<DomainBase> domainRepoId;
+
+  @ElementCollection
+  @JoinTable(name = "DomainHistoryHost")
+  @Access(AccessType.PROPERTY)
+  public Set<VKey<HostResource>> getNsHosts() {
+    return domainContent.nsHosts;
+  }
 
   /** The state of the {@link DomainContent} object at this point in time. */
   public DomainContent getDomainContent() {

@@ -20,11 +20,15 @@ import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
+import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
+import java.util.Set;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
+import javax.persistence.ElementCollection;
+import javax.persistence.JoinTable;
 import org.joda.time.DateTime;
 
 /**
@@ -59,6 +63,13 @@ public class DomainBase extends DomainContent
   @Access(AccessType.PROPERTY)
   public String getRepoId() {
     return super.getRepoId();
+  }
+
+  @ElementCollection
+  @JoinTable(name = "DomainHost")
+  @Access(AccessType.PROPERTY)
+  public Set<VKey<HostResource>> getNsHosts() {
+    return super.nsHosts;
   }
 
   @Override
