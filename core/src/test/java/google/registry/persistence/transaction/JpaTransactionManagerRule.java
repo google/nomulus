@@ -165,10 +165,10 @@ abstract class JpaTransactionManagerRule extends ExternalResource
     }
     executeSql(readSqlInClassPath(DB_CLEANUP_SQL_PATH));
     initScriptPath.ifPresent(path -> executeSql(readSqlInClassPath(path)));
-    if (!extraEntityClasses.isEmpty()) {
+    if (!includeNomulusSchema) {
       File tempSqlFile = File.createTempFile("tempSqlFile", ".sql");
       tempSqlFile.deleteOnExit();
-      exporter.export(extraEntityClasses, tempSqlFile);
+      exporter.export(getTestEntities(), tempSqlFile);
       executeSql(
           new String(Files.readAllBytes(tempSqlFile.toPath()), StandardCharsets.UTF_8));
     }
@@ -188,11 +188,7 @@ abstract class JpaTransactionManagerRule extends ExternalResource
     assertReasonableNumDbConnections();
     emf =
         createEntityManagerFactory(
-            getJdbcUrl(),
-            database.getUsername(),
-            database.getPassword(),
-            properties,
-            extraEntityClasses);
+            getJdbcUrl(), database.getUsername(), database.getPassword(), properties);
     emfEntityHash = entityHash;
   }
 
@@ -320,11 +316,7 @@ abstract class JpaTransactionManagerRule extends ExternalResource
 
   /** Constructs the {@link EntityManagerFactory} instance. */
   private EntityManagerFactory createEntityManagerFactory(
-      String jdbcUrl,
-      String username,
-      String password,
-      ImmutableMap<String, String> configs,
-      ImmutableList<Class> extraEntityClasses) {
+      String jdbcUrl, String username, String password, ImmutableMap<String, String> configs) {
     HashMap<String, String> properties = Maps.newHashMap(configs);
     properties.put(Environment.URL, jdbcUrl);
     properties.put(Environment.USER, username);
@@ -353,7 +345,14 @@ abstract class JpaTransactionManagerRule extends ExternalResource
       descriptor.getManagedClassNames().addAll(nonEntityClasses);
     }
 
-    extraEntityClasses.stream().map(Class::getName).forEach(descriptor::addClasses);
+    getTestEntities().stream().map(Class::getName).forEach(descriptor::addClasses);
     return Bootstrap.getEntityManagerFactoryBuilder(descriptor, properties).build();
+  }
+
+  private ImmutableList<Class> getTestEntities() {
+    // We have to add the TransactionEntity to extra entities, as this is required by the
+    // transaction replication mechanism.
+    return Stream.concat(extraEntityClasses.stream(), Stream.of(TransactionEntity.class))
+        .collect(toImmutableList());
   }
 }
