@@ -358,7 +358,7 @@ final class RegistryLockPostActionTest {
                 "domainName", "bad.tld",
                 "isLock", true,
                 "password", "hi"));
-    assertFailureWithMessage(response, "Unknown domain bad.tld");
+    assertFailureWithMessage(response, "Domain doesn't exist");
   }
 
   @Test

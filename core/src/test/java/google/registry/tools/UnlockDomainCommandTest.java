@@ -108,19 +108,16 @@ class UnlockDomainCommandTest extends CommandTestCase<UnlockDomainCommand> {
   }
 
   @Test
-  void testFailure_domainDoesntExist() {
-    IllegalArgumentException e =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> runCommandForced("--client=TheRegistrar", "missing.tld"));
-    assertThat(e).hasMessageThat().isEqualTo("Domain 'missing.tld' does not exist or is deleted");
+  void testFailure_domainDoesntExist() throws Exception {
+    runCommandForced("--client=NewRegistrar", "missing.tld");
+    assertInStdout("Failed domains:\n[missing.tld (Domain doesn't exist)]");
   }
 
   @Test
-  void testSuccess_alreadyUnlockedDomain_performsNoAction() throws Exception {
+  void testSuccess_alreadyUnlockedDomain_staysUnlocked() throws Exception {
     DomainBase domain = persistActiveDomain("example.tld");
     runCommandForced("--client=TheRegistrar", "example.tld");
-    assertThat(reloadResource(domain)).isEqualTo(domain);
+    assertThat(reloadResource(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
   }
 
   @Test
