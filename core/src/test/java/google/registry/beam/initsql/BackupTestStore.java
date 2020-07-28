@@ -67,7 +67,7 @@ class BackupTestStore implements AutoCloseable {
             .withoutCannedData()
             .withClock(fakeClock)
             .build();
-    this.appEngine.beforeEach(null);
+    this.appEngine.setUp();
     datastoreService = DatastoreServiceFactory.getDatastoreService();
   }
 
@@ -186,7 +186,7 @@ class BackupTestStore implements AutoCloseable {
   @Override
   public void close() throws Exception {
     if (appEngine != null) {
-      appEngine.afterEach(null);
+      appEngine.tearDown();
       appEngine = null;
     }
   }

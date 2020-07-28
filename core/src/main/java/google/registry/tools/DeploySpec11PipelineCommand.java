@@ -27,18 +27,40 @@ import javax.inject.Inject;
 @Parameters(commandDescription = "Deploy the Spec11 pipeline to GCS.")
 public class DeploySpec11PipelineCommand implements Command {
 
-  @Inject @Config("projectId") String projectId;
-  @Inject @Config("beamStagingUrl") String beamStagingUrl;
-  @Inject @Config("spec11TemplateUrl")String spec11TemplateUrl;
-  @Inject @Config("reportingBucketUrl")String reportingBucketUrl;
+  @Inject
+  @Config("projectId")
+  String projectId;
+
+  @Inject
+  @Config("beamStagingUrl")
+  String beamStagingUrl;
+
+  @Inject
+  @Config("spec11TemplateUrl")
+  String spec11TemplateUrl;
+
+  @Inject
+  @Config("reportingBucketUrl")
+  String reportingBucketUrl;
+
   @Inject @LocalCredential GoogleCredentialsBundle googleCredentialsBundle;
   @Inject Retrier retrier;
-  @Inject @Nullable @Config("sqlAccessInfoFile") String sqlAccessInfoFile;
+
+  @Inject
+  @Nullable
+  @Config("sqlAccessInfoFile")
+  String sqlAccessInfoFile;
 
   @Override
   public void run() {
-    Spec11Pipeline pipeline = new Spec11Pipeline(projectId, beamStagingUrl, spec11TemplateUrl,
-        reportingBucketUrl, googleCredentialsBundle, retrier);
+    Spec11Pipeline pipeline =
+        new Spec11Pipeline(
+            projectId,
+            beamStagingUrl,
+            spec11TemplateUrl,
+            reportingBucketUrl,
+            googleCredentialsBundle,
+            retrier);
     pipeline.deploy();
   }
 }

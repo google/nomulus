@@ -60,8 +60,8 @@ public interface InitSqlPipelineOptions extends GcpOptions {
 
   void setEnvironment(String environment);
 
-  @Description("The GCP project that contains the keyring used for decrypting the "
-      + "SQL credential file.")
+  @Description(
+      "The GCP project that contains the keyring used for decrypting the " + "SQL credential file.")
   @Nullable
   String getCloudKmsProjectId();
 
