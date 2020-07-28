@@ -64,7 +64,11 @@ public class DeploySpec11PipelineCommand implements Command {
 
   @Override
   public void run() {
-    jpaSf = new JpaSupplierFactory(sqlAccessInfoFile, cloudKmsProjectId, JpaTransactionManagerComponent::cloudSqlJpaTransactionManager);
+    jpaSf =
+        new JpaSupplierFactory(
+            sqlAccessInfoFile,
+            cloudKmsProjectId,
+            JpaTransactionManagerComponent::cloudSqlJpaTransactionManager);
 
     Spec11Pipeline pipeline =
         new Spec11Pipeline(
