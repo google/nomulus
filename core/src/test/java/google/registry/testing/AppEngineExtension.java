@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.DatastoreHelper.persistSimpleResources;
 import static google.registry.testing.DualDatabaseTestInvocationContextProvider.injectTmForDualDatabaseTest;
 import static google.registry.testing.DualDatabaseTestInvocationContextProvider.restoreTmAfterDualDatabaseTest;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.createFile;
@@ -360,6 +361,41 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   /** Called before every test method. */
   @Override
   public void beforeEach(ExtensionContext context) throws Exception {
+    checkArgumentNotNull(context, "The ExtensionContext must not be null");
+    setUp();
+    if (withCloudSql) {
+      JpaTestRules.Builder builder = new JpaTestRules.Builder();
+      if (clock != null) {
+        builder.withClock(clock);
+      }
+      if (enableJpaEntityCoverageCheck) {
+        jpaIntegrationWithCoverageExtension = builder.buildIntegrationWithCoverageExtension();
+        jpaIntegrationWithCoverageExtension.beforeEach(context);
+      } else if (withJpaUnitTest) {
+        jpaUnitTestRule =
+            builder
+                .withEntityClass(jpaTestEntities.toArray(new Class[jpaTestEntities.size()]))
+                .buildUnitTestRule();
+        jpaUnitTestRule.beforeEach(context);
+      } else {
+        jpaIntegrationTestRule = builder.buildIntegrationTestRule();
+        jpaIntegrationTestRule.beforeEach(context);
+      }
+    }
+    if (isWithDatastoreAndCloudSql()) {
+      injectTmForDualDatabaseTest(context);
+    }
+  }
+
+  /**
+   * Prepares the fake App Engine environment for use.
+   *
+   * <p>This should only be called from a <i>non-test context</i>, e.g. {@link
+   * google.registry.server.RegistryTestServerMain}, as it doesn't do any of the setup that requires
+   * the existence of an {@link ExtensionContext}, which is only available from inside the JUnit
+   * runner.
+   */
+  public void setUp() throws Exception {
     tmpDir = Files.createTempDir();
     setupLogging();
     Set<LocalServiceTestConfig> configs = new HashSet<>();
@@ -428,43 +464,39 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
       }
       this.ofyTestEntities.forEach(AppEngineExtension::register);
     }
-
-    if (withCloudSql) {
-      JpaTestRules.Builder builder = new JpaTestRules.Builder();
-      if (clock != null) {
-        builder.withClock(clock);
-      }
-      if (enableJpaEntityCoverageCheck) {
-        jpaIntegrationWithCoverageExtension = builder.buildIntegrationWithCoverageExtension();
-        jpaIntegrationWithCoverageExtension.beforeEach(context);
-      } else if (withJpaUnitTest) {
-        jpaUnitTestRule =
-            builder
-                .withEntityClass(jpaTestEntities.toArray(new Class[jpaTestEntities.size()]))
-                .buildUnitTestRule();
-        jpaUnitTestRule.beforeEach(context);
-      } else {
-        jpaIntegrationTestRule = builder.buildIntegrationTestRule();
-        jpaIntegrationTestRule.beforeEach(context);
-      }
-    }
-    if (isWithDatastoreAndCloudSql()) {
-      injectTmForDualDatabaseTest(context);
-    }
   }
 
   /** Called after each test method. */
   @Override
   public void afterEach(ExtensionContext context) throws Exception {
-    if (withCloudSql) {
-      if (enableJpaEntityCoverageCheck) {
-        jpaIntegrationWithCoverageExtension.afterEach(context);
-      } else if (withJpaUnitTest) {
-        jpaUnitTestRule.afterEach(context);
-      } else {
-        jpaIntegrationTestRule.afterEach(context);
+    checkArgumentNotNull(context, "The ExtensionContext must not be null");
+    try {
+      if (withCloudSql) {
+        if (enableJpaEntityCoverageCheck) {
+          jpaIntegrationWithCoverageExtension.afterEach(context);
+        } else if (withJpaUnitTest) {
+          jpaUnitTestRule.afterEach(context);
+        } else {
+          jpaIntegrationTestRule.afterEach(context);
+        }
+      }
+      tearDown();
+    } finally {
+      if (isWithDatastoreAndCloudSql()) {
+        restoreTmAfterDualDatabaseTest(context);
       }
     }
+  }
+
+  /**
+   * Tears down the fake App Engine environment after use.
+   *
+   * <p>This should only be called from a <i>non-test context</i>, e.g. {@link
+   * google.registry.server.RegistryTestServerMain}, as it doesn't do any of the setup that requires
+   * the existence of an {@link ExtensionContext}, which is only available from inside the JUnit
+   * runner.
+   */
+  public void tearDown() throws Exception {
     // Resets Objectify. Although it would seem more obvious to do this at the start of a request
     // instead of at the end, this is more consistent with what ObjectifyFilter does in real code.
     ObjectifyFilter.complete();
@@ -494,9 +526,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
       }
       // Clean up environment setting left behind by AppEngine test instance.
       ApiProxy.setEnvironmentForCurrentThread(null);
-      if (isWithDatastoreAndCloudSql()) {
-        restoreTmAfterDualDatabaseTest(context);
-      }
     }
   }
 

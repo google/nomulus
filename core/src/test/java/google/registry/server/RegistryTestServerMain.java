@@ -145,7 +145,7 @@ public final class RegistryTestServerMain {
                     ? UserInfo.createAdmin(loginEmail, loginUserId)
                     : UserInfo.create(loginEmail, loginUserId))
             .build();
-    appEngine.beforeEach(null);
+    appEngine.setUp();
     System.out.printf("%sLoading Datastore fixtures...%s\n", BLUE, RESET);
     for (Fixture fixture : fixtures) {
       fixture.load();
@@ -161,7 +161,7 @@ public final class RegistryTestServerMain {
       }
     } finally {
       server.stop();
-      appEngine.afterEach(null);
+      appEngine.tearDown();
     }
   }
 
