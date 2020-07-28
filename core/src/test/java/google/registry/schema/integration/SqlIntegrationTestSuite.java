@@ -25,7 +25,7 @@ import google.registry.model.poll.PollMessageTest;
 import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.model.registry.label.ReservedListSqlDaoTest;
 import google.registry.model.reporting.Spec11ThreatMatchTest;
-import google.registry.persistence.transaction.JpaEntityCoverage;
+import google.registry.persistence.transaction.JpaEntityCoverageExtension;
 import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.integration.SqlIntegrationTestSuite.AfterSuiteTest;
 import google.registry.schema.integration.SqlIntegrationTestSuite.BeforeSuiteTest;
@@ -33,6 +33,7 @@ import google.registry.schema.registrar.RegistrarDaoTest;
 import google.registry.schema.server.LockDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
 import google.registry.schema.tmch.ClaimsListDaoTest;
+import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -45,13 +46,9 @@ import org.junit.runner.RunWith;
  * server/schema compatibility tests between releases.
  *
  * <p>Suite members are typically DAO tests, which perform simple create/update/delete operations on
- * JPA entities. Each member class must use the {@link
- * google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageRule} (either
- * directly or through a rule chain) and have at least one test method that persists a JPA entity
- * declared in persistence.xml.
- *
- * <p>Membership of this suite is monitored by the checks in {@link #checkJpaEntityCoverage()} and
- * {@link SqlIntegrationMembershipTest#sqlIntegrationMembershipComplete()}.
+ * JPA entities. Each member class must call {@link
+ * AppEngineExtension.Builder#enableJpaEntityCoverageCheck} and have at least one test method that
+ * persists a JPA entity declared in persistence.xml.
  *
  * <p>Note that with {@code JpaIntegrationWithCoverageRule}, each method starts with an empty
  * database. Therefore this is not the right place for verifying backward data compatibility in
@@ -94,7 +91,7 @@ public class SqlIntegrationTestSuite {
 
   @BeforeAll // Not yet supported in JUnit 5. Called through BeforeSuiteTest.
   public static void initJpaEntityCoverage() {
-    JpaEntityCoverage.init();
+    JpaEntityCoverageExtension.init();
   }
 
   @AfterAll // Not yet supported in JUnit 5. Called through AfterSuiteTest.
@@ -102,12 +99,12 @@ public class SqlIntegrationTestSuite {
     // TODO(weiminyu): collect both assertion errors like Truth's Expect does in JUnit 4.
     assert_()
         .withMessage("Tests are missing for the following JPA entities:")
-        .that(JpaEntityCoverage.getUncoveredEntities())
+        .that(JpaEntityCoverageExtension.getUncoveredEntities())
         .isEmpty();
     assert_()
         .withMessage(
             "The following classes do not test JPA entities. Please remove them from this suite")
-        .that(JpaEntityCoverage.getIrrelevantTestClasses())
+        .that(JpaEntityCoverageExtension.getIrrelevantTestClasses())
         .isEmpty();
   }
 

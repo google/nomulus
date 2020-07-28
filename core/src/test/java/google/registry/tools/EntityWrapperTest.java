@@ -21,7 +21,7 @@ import com.google.appengine.api.datastore.EntityTranslator;
 import com.google.common.collect.ImmutableList;
 import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
 import com.google.storage.onestore.v3.OnestoreEntity.Property;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -32,7 +32,8 @@ public final class EntityWrapperTest {
   private static final int ARBITRARY_KEY_ID = 1001;
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
   void testEquals() {

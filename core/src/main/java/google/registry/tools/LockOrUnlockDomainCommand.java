@@ -34,9 +34,7 @@ import google.registry.model.eppcommon.StatusValue;
 import java.util.List;
 import javax.inject.Inject;
 
-/**
- * Shared base class for commands to registry lock or unlock a domain via EPP.
- */
+/** Shared base class for commands to registry lock or unlock a domain via EPP. */
 public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
     implements CommandWithRemoteApi {
 
@@ -61,8 +59,7 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
   @Config("registryAdminClientId")
   String registryAdminClientId;
 
-  @Inject
-  DomainLockUtils domainLockUtils;
+  @Inject DomainLockUtils domainLockUtils;
 
   protected ImmutableSet<String> getDomains() {
     return ImmutableSet.copyOf(mainParameters);
@@ -88,25 +85,28 @@ public abstract class LockOrUnlockDomainCommand extends ConfirmingCommand
         .forEach(
             batch ->
                 // we require that the jpaTm is the outer transaction in DomainLockUtils
-                jpaTm().transact(() -> tm().transact(
-                    () -> {
-                      for (String domain : batch) {
-                        try {
-                          createAndApplyRequest(domain);
-                        } catch (Throwable t) {
-                          logger.atSevere().withCause(t).log(
-                              "Error when (un)locking domain %s.", domain);
-                          failedDomainsToReasons.put(domain, t.getMessage());
-                          continue;
-                        }
-                        successfulDomainsBuilder.add(domain);
-                      }
-                    })));
+                jpaTm()
+                    .transact(
+                        () ->
+                            tm().transact(
+                                    () -> {
+                                      for (String domain : batch) {
+                                        try {
+                                          createAndApplyRequest(domain);
+                                        } catch (Throwable t) {
+                                          logger.atSevere().withCause(t).log(
+                                              "Error when (un)locking domain %s.", domain);
+                                          failedDomainsToReasons.put(domain, t.getMessage());
+                                          continue;
+                                        }
+                                        successfulDomainsBuilder.add(domain);
+                                      }
+                                    })));
     ImmutableSet<String> successfulDomains = successfulDomainsBuilder.build();
-    ImmutableSet<String> failedDomains = failedDomainsToReasons.build().entrySet()
-        .stream()
-        .map(entry -> String.format("%s (%s)", entry.getKey(), entry.getValue()))
-        .collect(toImmutableSet());
+    ImmutableSet<String> failedDomains =
+        failedDomainsToReasons.build().entrySet().stream()
+            .map(entry -> String.format("%s (%s)", entry.getKey(), entry.getValue()))
+            .collect(toImmutableSet());
     return String.format(
         "Successfully locked/unlocked domains:\n%s\nFailed domains:\n%s",
         successfulDomains, failedDomains);

@@ -31,7 +31,7 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessageExternalKeyConverter.PollMessageExternalKeyParseException;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import org.joda.time.DateTime;
@@ -43,7 +43,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class PollMessageExternalKeyConverterTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @RegisterExtension public InjectRule inject = new InjectRule();
 

@@ -23,15 +23,13 @@ import google.registry.ui.server.registrar.HtmlAction;
 import google.registry.ui.server.registrar.JsonGetAction;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
-@RunWith(JUnit4.class)
-public final class ActionMembershipTest {
+/** Unit tests of action membership. */
+final class ActionMembershipTest {
 
   @Test
-  public void testAllActionsEitherHtmlOrJson() {
+  void testAllActionsEitherHtmlOrJson() {
     // All UI actions should serve valid HTML or JSON. There are three valid options:
     // 1. Extending HtmlAction to signal that we are serving an HTML page
     // 2. Extending JsonAction to show that we are serving JSON POST requests

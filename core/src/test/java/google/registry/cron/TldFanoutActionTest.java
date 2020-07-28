@@ -31,7 +31,7 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.Retrier;
@@ -51,8 +51,8 @@ class TldFanoutActionTest {
   private final FakeResponse response = new FakeResponse();
 
   @RegisterExtension
-  final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withTaskQueue(
               Joiner.on('\n')

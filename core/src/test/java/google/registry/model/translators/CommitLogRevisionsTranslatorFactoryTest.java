@@ -27,7 +27,7 @@ import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.common.CrossTldSingleton;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.Ofy;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import java.util.List;
@@ -47,8 +47,8 @@ public class CommitLogRevisionsTranslatorFactoryTest {
   }
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(TestObject.class)
           .build();

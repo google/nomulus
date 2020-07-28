@@ -28,19 +28,18 @@ import javax.imageio.ImageReader;
 
 /** An immutable class represents a screenshot taken in a visual regression test. */
 public class ActualScreenshot {
-  public static final String IMAGE_FORMAT = "png";
+
+  private static final String IMAGE_FORMAT = "png";
   private String imageKey;
   private BufferedImage bufferedImage;
-  private int attempt;
 
-  private ActualScreenshot(String imageKey, BufferedImage bufferedImage, int attempt) {
+  private ActualScreenshot(String imageKey, BufferedImage bufferedImage) {
     this.imageKey = imageKey;
     this.bufferedImage = bufferedImage;
-    this.attempt = attempt;
   }
 
   /** Creates an ActualScreenshot from the given image format and byte array. */
-  public static ActualScreenshot create(String imageKey, int attempt, byte[] imageBytes) {
+  public static ActualScreenshot create(String imageKey, byte[] imageBytes) {
     checkNotNull(imageKey);
     checkNotNull(imageBytes);
     byte[] imageBytesClone = Arrays.copyOf(imageBytes, imageBytes.length);
@@ -49,15 +48,15 @@ public class ActualScreenshot {
     try {
       imageReader.setInput(checkNotNull(ImageIO.createImageInputStream(imageInputStream)));
       BufferedImage bufferedImage = checkNotNull(imageReader.read(0));
-      return new ActualScreenshot(imageKey, bufferedImage, attempt);
+      return new ActualScreenshot(imageKey, bufferedImage);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
   }
 
   /** {@link BufferedImage#getSubimage(int, int, int, int)} */
-  public ActualScreenshot getSubimage(int x, int y, int w, int h) {
-    return new ActualScreenshot(imageKey, bufferedImage.getSubimage(x, y, w, h), attempt);
+  ActualScreenshot getSubimage(int x, int y, int w, int h) {
+    return new ActualScreenshot(imageKey, bufferedImage.getSubimage(x, y, w, h));
   }
 
   /** {@link BufferedImage#getWidth()} */
@@ -82,11 +81,6 @@ public class ActualScreenshot {
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
-  }
-
-  /** Returns the attempt number of the test. */
-  public int getAttempt() {
-    return attempt;
   }
 
   /** Returns the concat of imageKey and imageFormat. */

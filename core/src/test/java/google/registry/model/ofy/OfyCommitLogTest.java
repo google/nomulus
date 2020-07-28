@@ -30,7 +30,7 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.ImmutableObject;
 import google.registry.model.common.EntityGroupRoot;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import google.registry.testing.TestObject.TestVirtualObject;
@@ -43,8 +43,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class OfyCommitLogTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(TestVirtualObject.class, Root.class, Child.class)
           .build();

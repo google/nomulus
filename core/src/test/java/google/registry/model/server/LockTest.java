@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 
 import google.registry.model.ofy.Ofy;
 import google.registry.model.server.Lock.LockState;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import google.registry.util.RequestStatusChecker;
@@ -51,8 +51,8 @@ public class LockTest {
   private LockMetrics origLockMetrics;
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withClock(clock).build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withClock(clock).build();
 
   @RegisterExtension public final InjectRule inject = new InjectRule();
 

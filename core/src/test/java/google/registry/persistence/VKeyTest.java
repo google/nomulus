@@ -16,7 +16,7 @@ package google.registry.persistence;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.googlecode.objectify.Key;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.TestObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -25,8 +25,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class VKeyTest {
 
   @RegisterExtension
-  final AppEngineRule appEngineRule =
-      AppEngineRule.builder()
+  final AppEngineExtension appEngineRule =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(TestObject.class)
           .build();

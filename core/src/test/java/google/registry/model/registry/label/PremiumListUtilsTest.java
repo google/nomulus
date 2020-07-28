@@ -47,7 +47,7 @@ import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.model.registry.label.PremiumList.PremiumListRevision;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.TestCacheExtension;
 import java.util.Map;
 import org.joda.money.Money;
@@ -59,7 +59,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class PremiumListUtilsTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   // Set long persist times on caches so they can be tested (cache times default to 0 in tests).
   @RegisterExtension

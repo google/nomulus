@@ -19,7 +19,7 @@ import static google.registry.tmch.TmchTestData.loadSmd;
 import static org.junit.Assert.assertThrows;
 
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import google.registry.tmch.TmchXmlSignature.CertificateSignatureException;
@@ -40,7 +40,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class TmchXmlSignatureTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @RegisterExtension public final InjectRule inject = new InjectRule();
 

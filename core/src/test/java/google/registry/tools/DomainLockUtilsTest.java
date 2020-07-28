@@ -45,7 +45,7 @@ import google.registry.model.host.HostResource;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.schema.domain.RegistryLock;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
@@ -73,8 +73,8 @@ public final class DomainLockUtilsTest {
   private DomainLockUtils domainLockUtils;
 
   @RegisterExtension
-  public final AppEngineRule appEngineRule =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngineRule =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withClock(clock)
           .withTaskQueue()
@@ -281,8 +281,8 @@ public final class DomainLockUtilsTest {
     // in the case of inconsistencies / errors, admins should have the ability to override
     // whatever statuses exist on the domain
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
-    RegistryLock resultLock = domainLockUtils
-        .administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, true);
+    RegistryLock resultLock =
+        domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, true);
     verifyProperlyLockedDomain(true);
     assertThat(resultLock.getLockCompletionTimestamp()).isEqualTo(Optional.of(clock.nowUtc()));
   }
@@ -291,18 +291,19 @@ public final class DomainLockUtilsTest {
   void testSuccess_adminCanLockUnlockedDomain_withSavedLock() {
     // in the case of inconsistencies / errors, admins should have the ability to override
     // what the RegistryLock table says
-    SqlHelper.saveRegistryLock(new RegistryLock.Builder()
-        .setLockCompletionTimestamp(clock.nowUtc())
-        .setDomainName(DOMAIN_NAME)
-        .setVerificationCode("hi")
-        .setRegistrarId("TheRegistrar")
-        .setRepoId(domain.getRepoId())
-        .isSuperuser(false)
-        .setRegistrarPocId(POC_ID)
-        .build());
+    SqlHelper.saveRegistryLock(
+        new RegistryLock.Builder()
+            .setLockCompletionTimestamp(clock.nowUtc())
+            .setDomainName(DOMAIN_NAME)
+            .setVerificationCode("hi")
+            .setRegistrarId("TheRegistrar")
+            .setRepoId(domain.getRepoId())
+            .isSuperuser(false)
+            .setRegistrarPocId(POC_ID)
+            .build());
     clock.advanceOneMilli();
-    RegistryLock resultLock = domainLockUtils
-        .administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, true);
+    RegistryLock resultLock =
+        domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, true);
     verifyProperlyLockedDomain(true);
     assertThat(resultLock.getLockCompletionTimestamp()).isEqualTo(Optional.of(clock.nowUtc()));
   }

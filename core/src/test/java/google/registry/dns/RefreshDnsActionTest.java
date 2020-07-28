@@ -28,7 +28,7 @@ import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.domain.DomainBase;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.NotFoundException;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,8 +38,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class RefreshDnsActionTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
   private final FakeClock clock = new FakeClock();

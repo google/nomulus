@@ -16,7 +16,7 @@ package google.registry.model.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -24,7 +24,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class TmchCrlTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
   void testSuccess() {

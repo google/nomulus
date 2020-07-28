@@ -22,7 +22,7 @@ import com.google.common.net.InetAddresses;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.EntityTest.EntityForTesting;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.net.InetAddress;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -35,8 +35,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class InetAddressSetConverterTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withJpaUnitTestEntities(InetAddressSetTestEntity.class)
           .build();

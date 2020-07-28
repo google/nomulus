@@ -31,7 +31,7 @@ import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
 import google.registry.persistence.transaction.TransactionManager;
 import google.registry.schema.cursor.CursorDao;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
 import org.joda.time.DateTime;
@@ -44,7 +44,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class CommitLogCheckpointStrategyTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @RegisterExtension public final InjectRule inject = new InjectRule();
 

@@ -63,7 +63,7 @@ import google.registry.model.registry.Registry;
 import google.registry.rde.JSchSshSession.JSchSshSessionFactory;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.RequestParameters;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
@@ -126,8 +126,8 @@ public class RdeUploadActionTest {
           RdeTestData.loadBytes("pgp-private-keyring-escrow.asc"));
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private final FakeResponse response = new FakeResponse();
   private final EscrowTaskRunner runner = mock(EscrowTaskRunner.class);

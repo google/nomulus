@@ -303,8 +303,8 @@ public final class DomainLockUtils {
 
   private static void verifyDomainLocked(DomainBase domainBase, boolean isAdmin) {
     checkArgument(
-        isAdmin || !Sets.intersection(domainBase.getStatusValues(), REGISTRY_LOCK_STATUSES)
-            .isEmpty(),
+        isAdmin
+            || !Sets.intersection(domainBase.getStatusValues(), REGISTRY_LOCK_STATUSES).isEmpty(),
         "Domain %s is already unlocked",
         domainBase.getDomainName());
   }
@@ -312,8 +312,7 @@ public final class DomainLockUtils {
   private DomainBase getDomain(String domainName, String registrarId, DateTime now) {
     DomainBase domain =
         loadByForeignKeyCached(DomainBase.class, domainName, now)
-            .orElseThrow(
-                () -> new IllegalArgumentException("Domain doesn't exist"));
+            .orElseThrow(() -> new IllegalArgumentException("Domain doesn't exist"));
     // The user must have specified either the correct registrar ID or the admin registrar ID
     checkArgument(
         registryAdminRegistrarId.equals(registrarId)

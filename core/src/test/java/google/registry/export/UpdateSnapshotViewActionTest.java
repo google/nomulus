@@ -37,7 +37,7 @@ import com.google.api.services.bigquery.model.Table;
 import com.google.common.collect.Iterables;
 import google.registry.bigquery.CheckedBigquery;
 import google.registry.request.HttpException.InternalServerErrorException;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,7 +50,7 @@ import org.mockito.InOrder;
 public class UpdateSnapshotViewActionTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withTaskQueue().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withTaskQueue().build();
 
   private final CheckedBigquery checkedBigquery = mock(CheckedBigquery.class);
   private final Bigquery bigquery = mock(Bigquery.class);

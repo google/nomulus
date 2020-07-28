@@ -26,7 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.tmch.ClaimsListShard.ClaimsListRevision;
 import google.registry.model.tmch.ClaimsListShard.UnshardedSaveException;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +38,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ClaimsListShardTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private final int shardSize = 10;
 

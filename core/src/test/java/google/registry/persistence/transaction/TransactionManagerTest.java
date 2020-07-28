@@ -29,7 +29,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.model.ofy.Ofy;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
@@ -60,8 +60,8 @@ public class TransactionManagerTest {
   @RegisterExtension public InjectRule inject = new InjectRule();
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withClock(fakeClock)
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(TestEntity.class)

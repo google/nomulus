@@ -34,7 +34,7 @@ import com.google.appengine.tools.cloudstorage.ListResult;
 import com.google.common.collect.Iterators;
 import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -59,7 +59,8 @@ public class GcsDiffFileListerTest {
   private final TestLogHandler logHandler = new TestLogHandler();
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @BeforeEach
   void beforeEach() throws Exception {

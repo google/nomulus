@@ -21,7 +21,7 @@ import static org.joda.time.DateTimeZone.UTC;
 
 import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.common.CrossTldSingleton;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -30,8 +30,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class UpdateAutoTimestampTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(UpdateAutoTimestampTestObject.class)
           .build();

@@ -28,7 +28,7 @@ import google.registry.model.eppoutput.EppOutput;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.host.HostCommand;
 import google.registry.model.host.HostInfoData;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.EppLoader;
 import google.registry.xml.ValidationMode;
 import org.junit.jupiter.api.Test;
@@ -38,7 +38,8 @@ public class StatusValueAdapterTest {
 
   // Needed to create HostResources.
   @RegisterExtension
-  public AppEngineRule appEngine = new AppEngineRule.Builder().withDatastoreAndCloudSql().build();
+  public AppEngineExtension appEngine =
+      new AppEngineExtension.Builder().withDatastoreAndCloudSql().build();
 
   @Test
   void testMarshalling() throws Exception {

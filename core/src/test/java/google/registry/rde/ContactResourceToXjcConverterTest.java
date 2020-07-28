@@ -33,7 +33,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.xjc.contact.XjcContactPostalInfoEnumType;
 import google.registry.xjc.contact.XjcContactPostalInfoType;
 import google.registry.xjc.contact.XjcContactStatusType;
@@ -60,7 +60,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ContactResourceToXjcConverterTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @BeforeEach
   void beforeEach() {

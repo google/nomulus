@@ -21,7 +21,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import google.registry.model.server.Lock;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.util.RequestStatusCheckerImpl;
 import java.util.Optional;
@@ -30,21 +30,17 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link LockHandler}. */
-@RunWith(JUnit4.class)
-public final class LockHandlerImplTest {
+final class LockHandlerImplTest {
 
   private static final Duration ONE_DAY = Duration.standardDays(1);
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2001-08-29T12:20:00Z"));
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().build();
+  @RegisterExtension final AppEngineExtension appEngine = AppEngineExtension.builder().build();
 
   private static class CountingCallable implements Callable<Void> {
     int numCalled = 0;
@@ -87,11 +83,8 @@ public final class LockHandlerImplTest {
     return lockHandler.executeWithLocks(callable, "tld", ONE_DAY, "resourceName");
   }
 
-  @Before public void setUp() {
-  }
-
   @Test
-  public void testLockSucceeds() {
+  void testLockSucceeds() {
     Lock lock = mock(Lock.class);
     CountingCallable countingCallable = new CountingCallable();
     assertThat(executeWithLocks(countingCallable, lock)).isTrue();
@@ -100,7 +93,7 @@ public final class LockHandlerImplTest {
   }
 
   @Test
-  public void testLockSucceeds_uncheckedException() {
+  void testLockSucceeds_uncheckedException() {
     Lock lock = mock(Lock.class);
     Exception expectedException = new RuntimeException("test");
     RuntimeException exception =
@@ -112,7 +105,7 @@ public final class LockHandlerImplTest {
   }
 
   @Test
-  public void testLockSucceeds_timeoutException() {
+  void testLockSucceeds_timeoutException() {
     Lock lock = mock(Lock.class);
     Exception expectedException = new TimeoutException("test");
     RuntimeException thrown =
@@ -129,7 +122,7 @@ public final class LockHandlerImplTest {
   }
 
   @Test
-  public void testLockSucceeds_checkedException() {
+  void testLockSucceeds_checkedException() {
     Lock lock = mock(Lock.class);
     Exception expectedException = new Exception("test");
     RuntimeException exception =
@@ -141,7 +134,7 @@ public final class LockHandlerImplTest {
   }
 
   @Test
-  public void testLockFailed() {
+  void testLockFailed() {
     Lock lock = null;
     CountingCallable countingCallable = new CountingCallable();
     assertThat(executeWithLocks(countingCallable, lock)).isFalse();

@@ -38,7 +38,7 @@ import com.google.common.net.MediaType;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
 import java.util.LinkedHashSet;
@@ -93,7 +93,8 @@ class Spec11EmailUtilsTest {
           + " notice, please contact abuse@test.com.</p>";
 
   @RegisterExtension
-  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private SendEmailService emailService;
   private Spec11EmailUtils emailUtils;
@@ -309,7 +310,7 @@ class Spec11EmailUtilsTest {
   void testSuccess_useWhoisAbuseEmailIfAvailable() throws Exception {
     // if John Doe is the whois abuse contact, email them instead of the regular email
     persistResource(
-        AppEngineRule.makeRegistrarContact2()
+        AppEngineExtension.makeRegistrarContact2()
             .asBuilder()
             .setEmailAddress("johndoe@theregistrar.com")
             .setVisibleInDomainWhoisAsAbuse(true)

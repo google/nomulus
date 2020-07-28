@@ -44,7 +44,7 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.util.Retrier;
 import google.registry.util.SystemClock;
 import google.registry.util.SystemSleeper;
@@ -70,7 +70,8 @@ import org.mockito.quality.Strictness;
 public class CloudDnsWriterTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private static final Inet4Address IPv4 = (Inet4Address) InetAddresses.forString("127.0.0.1");
   private static final Inet6Address IPv6 = (Inet6Address) InetAddresses.forString("::1");

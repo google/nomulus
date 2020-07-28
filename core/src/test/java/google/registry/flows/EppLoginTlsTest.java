@@ -19,7 +19,7 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CertificateSamples;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -31,7 +31,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class EppLoginTlsTest extends EppTestCase {
 
   @RegisterExtension
-  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   void setClientCertificateHash(String clientCertificateHash) {
     setTransportCredentials(

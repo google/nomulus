@@ -29,26 +29,23 @@ import com.google.appengine.api.taskqueue.TaskHandle;
 import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.appengine.api.taskqueue.TransientFailureException;
 import com.google.common.collect.ImmutableList;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link TaskQueueUtils}. */
-@RunWith(JUnit4.class)
 public final class TaskQueueUtilsTest {
 
   private static final int MAX_RETRIES = 3;
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private int origBatchSize;
 
@@ -60,19 +57,19 @@ public final class TaskQueueUtilsTest {
   private final TaskOptions task = withUrl("url").taskName("name");
   private final TaskHandle handle = new TaskHandle(task, "handle");
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     origBatchSize = TaskQueueUtils.BATCH_SIZE;
     TaskQueueUtils.BATCH_SIZE = 2;
   }
 
-  @After
-  public void after() {
+  @AfterEach
+  void afterEach() {
     TaskQueueUtils.BATCH_SIZE = origBatchSize;
   }
 
   @Test
-  public void testEnqueue_worksOnFirstTry_doesntSleep() {
+  void testEnqueue_worksOnFirstTry_doesntSleep() {
     when(queue.add(ImmutableList.of(task))).thenReturn(ImmutableList.of(handle));
     assertThat(taskQueueUtils.enqueue(queue, task)).isSameInstanceAs(handle);
     verify(queue).add(ImmutableList.of(task));
@@ -80,7 +77,7 @@ public final class TaskQueueUtilsTest {
   }
 
   @Test
-  public void testEnqueue_twoTransientErrorsThenSuccess_stillWorksAfterSleeping() {
+  void testEnqueue_twoTransientErrorsThenSuccess_stillWorksAfterSleeping() {
     when(queue.add(ImmutableList.of(task)))
         .thenThrow(new TransientFailureException(""))
         .thenThrow(new TransientFailureException(""))
@@ -91,7 +88,7 @@ public final class TaskQueueUtilsTest {
   }
 
   @Test
-  public void testEnqueue_multiple() {
+  void testEnqueue_multiple() {
     TaskOptions taskA = withUrl("a").taskName("a");
     TaskOptions taskB = withUrl("b").taskName("b");
     ImmutableList<TaskHandle> handles =
@@ -103,7 +100,7 @@ public final class TaskQueueUtilsTest {
   }
 
   @Test
-  public void testEnqueue_maxRetries_givesUp() {
+  void testEnqueue_maxRetries_givesUp() {
     when(queue.add(ImmutableList.of(task)))
         .thenThrow(new TransientFailureException("one"))
         .thenThrow(new TransientFailureException("two"))
@@ -115,7 +112,7 @@ public final class TaskQueueUtilsTest {
   }
 
   @Test
-  public void testEnqueue_transientErrorThenInterrupt_throwsTransientError() {
+  void testEnqueue_transientErrorThenInterrupt_throwsTransientError() {
     when(queue.add(ImmutableList.of(task))).thenThrow(new TransientFailureException(""));
     try {
       Thread.currentThread().interrupt();
@@ -126,7 +123,7 @@ public final class TaskQueueUtilsTest {
   }
 
   @Test
-  public void testDeleteTasks_usesMultipleBatches() {
+  void testDeleteTasks_usesMultipleBatches() {
     Queue defaultQ = QueueFactory.getQueue("default");
     TaskOptions taskOptA = withUrl("/a").taskName("a");
     TaskOptions taskOptB = withUrl("/b").taskName("b");

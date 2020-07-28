@@ -53,7 +53,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registry.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
@@ -75,7 +75,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class WhoisActionTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @RegisterExtension public final InjectRule inject = new InjectRule();
 

@@ -46,7 +46,7 @@ import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.Role;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.schema.domain.RegistryLock;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.tools.DomainLockUtils;
@@ -61,18 +61,20 @@ import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
-@RunWith(JUnit4.class)
-public final class RegistryLockPostActionTest {
+/** Unit tests for {@link RegistryLockPostAction}. */
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+final class RegistryLockPostActionTest {
 
   private static final String EMAIL_MESSAGE_TEMPLATE =
       "Please click the link below to perform the lock \\/ unlock action on domain example.tld. "
@@ -82,11 +84,9 @@ public final class RegistryLockPostActionTest {
 
   private final FakeClock clock = new FakeClock();
 
-  @Rule
-  public final AppEngineRule appEngineRule =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withClock(clock).build();
-
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
+  @RegisterExtension
+  final AppEngineExtension appEngineExtension =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withClock(clock).build();
 
   private User userWithoutPermission;
   private User userWithLockPermission;
@@ -99,10 +99,10 @@ public final class RegistryLockPostActionTest {
   @Mock HttpServletRequest mockRequest;
   @Mock HttpServletResponse mockResponse;
 
-  @Before
-  public void setup() throws Exception {
-    userWithLockPermission = userFromRegistrarContact(AppEngineRule.makeRegistrarContact3());
-    userWithoutPermission = userFromRegistrarContact(AppEngineRule.makeRegistrarContact2());
+  @BeforeEach
+  void beforeEach() throws Exception {
+    userWithLockPermission = userFromRegistrarContact(AppEngineExtension.makeRegistrarContact3());
+    userWithoutPermission = userFromRegistrarContact(AppEngineExtension.makeRegistrarContact2());
     createTld("tld");
     domain = persistResource(newDomainBase("example.tld"));
 
@@ -116,13 +116,13 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testSuccess_lock() throws Exception {
+  void testSuccess_lock() throws Exception {
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertSuccess(response, "lock", "Marla.Singer.RegistryLock@crr.com");
   }
 
   @Test
-  public void testSuccess_unlock() throws Exception {
+  void testSuccess_unlock() throws Exception {
     saveRegistryLock(createLock().asBuilder().setLockCompletionTimestamp(clock.nowUtc()).build());
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
@@ -130,7 +130,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testSuccess_unlock_relockDurationSet() throws Exception {
+  void testSuccess_unlock_relockDurationSet() throws Exception {
     saveRegistryLock(createLock().asBuilder().setLockCompletionTimestamp(clock.nowUtc()).build());
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     ImmutableMap<String, Object> request =
@@ -146,7 +146,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testSuccess_unlock_adminUnlockingAdmin() throws Exception {
+  void testSuccess_unlock_adminUnlockingAdmin() throws Exception {
     saveRegistryLock(
         createLock()
             .asBuilder()
@@ -163,7 +163,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testSuccess_linkedToContactEmail() throws Exception {
+  void testSuccess_linkedToContactEmail() throws Exception {
     // Even though the user is some.email@gmail.com the contact is still Marla Singer
     userWithLockPermission =
         new User("some.email@gmail.com", "gmail.com", userWithLockPermission.getUserId());
@@ -175,14 +175,14 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testFailure_unlock_noLock() {
+  void testFailure_unlock_noLock() {
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertFailureWithMessage(response, "No lock object for domain example.tld");
   }
 
   @Test
-  public void testFailure_unlock_alreadyUnlocked() {
+  void testFailure_unlock_alreadyUnlocked() {
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     saveRegistryLock(
         createLock()
@@ -195,7 +195,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testFailure_unlock_nonAdminUnlockingAdmin() {
+  void testFailure_unlock_nonAdminUnlockingAdmin() {
     saveRegistryLock(
         createLock()
             .asBuilder()
@@ -209,7 +209,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testSuccess_adminUser() throws Exception {
+  void testSuccess_adminUser() throws Exception {
     // Admin user should be able to lock/unlock regardless -- and we use the admin user's email
     action =
         createAction(
@@ -219,7 +219,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testSuccess_adminUser_doesNotRequirePassword() throws Exception {
+  void testSuccess_adminUser_doesNotRequirePassword() throws Exception {
     action =
         createAction(
             AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, true)));
@@ -233,25 +233,25 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testFailure_noInput() {
+  void testFailure_noInput() {
     Map<String, ?> response = action.handleJsonRequest(null);
     assertFailureWithMessage(response, "Null JSON");
   }
 
   @Test
-  public void testFailure_noRegistrarId() {
+  void testFailure_noRegistrarId() {
     Map<String, ?> response = action.handleJsonRequest(ImmutableMap.of());
     assertFailureWithMessage(response, "Missing key for registrarId");
   }
 
   @Test
-  public void testFailure_emptyRegistrarId() {
+  void testFailure_emptyRegistrarId() {
     Map<String, ?> response = action.handleJsonRequest(ImmutableMap.of("registrarId", ""));
     assertFailureWithMessage(response, "Missing key for registrarId");
   }
 
   @Test
-  public void testFailure_unauthorizedRegistrarId() {
+  void testFailure_unauthorizedRegistrarId() {
     AuthResult authResult =
         AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithLockPermission, false));
     action = createAction(authResult, ImmutableSet.of("TheRegistrar"));
@@ -266,14 +266,14 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testFailure_incorrectRegistrarIdForDomain() {
+  void testFailure_incorrectRegistrarIdForDomain() {
     persistResource(domain.asBuilder().setPersistedCurrentSponsorClientId("NewRegistrar").build());
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertFailureWithMessage(response, "Domain example.tld is not owned by registrar TheRegistrar");
   }
 
   @Test
-  public void testFailure_noDomainName() {
+  void testFailure_noDomainName() {
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of("registrarId", "TheRegistrar", "password", "hi", "isLock", true));
@@ -281,7 +281,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testFailure_nonPunycodeDomainName() {
+  void testFailure_nonPunycodeDomainName() {
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of(
@@ -293,7 +293,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testFailure_noLockParam() {
+  void testFailure_noLockParam() {
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of(
@@ -304,7 +304,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testFailure_notAllowedOnRegistrar() {
+  void testFailure_notAllowedOnRegistrar() {
     persistResource(
         loadRegistrar("TheRegistrar").asBuilder().setRegistryLockAllowed(false).build());
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
@@ -312,7 +312,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testFailure_noPassword() {
+  void testFailure_noPassword() {
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of(
@@ -323,7 +323,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testFailure_notEnabledForRegistrarContact() {
+  void testFailure_notEnabledForRegistrarContact() {
     action =
         createAction(
             AuthResult.create(AuthLevel.USER, UserAuthInfo.create(userWithoutPermission, false)));
@@ -338,7 +338,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testFailure_badPassword() {
+  void testFailure_badPassword() {
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of(
@@ -350,7 +350,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testFailure_invalidDomain() {
+  void testFailure_invalidDomain() {
     Map<String, ?> response =
         action.handleJsonRequest(
             ImmutableMap.of(
@@ -362,7 +362,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testSuccess_previousLockUnlocked() throws Exception {
+  void testSuccess_previousLockUnlocked() throws Exception {
     saveRegistryLock(
         createLock()
             .asBuilder()
@@ -376,7 +376,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testSuccess_previousLockExpired() throws Exception {
+  void testSuccess_previousLockExpired() throws Exception {
     RegistryLock previousLock = saveRegistryLock(createLock());
     String verificationCode = previousLock.getVerificationCode();
     previousLock = getRegistryLockByVerificationCode(verificationCode).get();
@@ -386,7 +386,7 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testFailure_alreadyPendingLock() {
+  void testFailure_alreadyPendingLock() {
     saveRegistryLock(createLock());
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertFailureWithMessage(
@@ -394,14 +394,14 @@ public final class RegistryLockPostActionTest {
   }
 
   @Test
-  public void testFailure_alreadyLocked() {
+  void testFailure_alreadyLocked() {
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertFailureWithMessage(response, "Domain example.tld is already locked");
   }
 
   @Test
-  public void testFailure_alreadyUnlocked() {
+  void testFailure_alreadyUnlocked() {
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertFailureWithMessage(response, "Domain example.tld is already unlocked");
   }

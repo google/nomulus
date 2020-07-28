@@ -40,7 +40,7 @@ import google.registry.model.rde.RdeRevision;
 import google.registry.model.registry.Registry;
 import google.registry.request.RequestParameters;
 import google.registry.schema.cursor.CursorDao;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.FakeLockHandler;
@@ -64,8 +64,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class RdeStagingReducerTest {
 
   @RegisterExtension
-  AppEngineRule appEngineRule =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  AppEngineExtension appEngineRule =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private static final String GCS_BUCKET = "test-rde-bucket";
   private static final GcsService gcsService = GcsServiceFactory.createGcsService();

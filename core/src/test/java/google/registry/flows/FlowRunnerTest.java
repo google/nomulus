@@ -33,7 +33,7 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppOutput.ResponseOrGreeting;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.monitoring.whitebox.EppMetric;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import java.util.List;
@@ -46,7 +46,8 @@ import org.mockito.Mockito;
 /** Unit tests for {@link FlowRunner}. */
 class FlowRunnerTest {
 
-  @RegisterExtension final AppEngineRule appEngineRule = new AppEngineRule.Builder().build();
+  @RegisterExtension
+  final AppEngineExtension appEngineRule = new AppEngineExtension.Builder().build();
 
   private final FlowRunner flowRunner = new FlowRunner();
   private final EppMetric.Builder eppMetricBuilder = EppMetric.builderForRequest(new FakeClock());

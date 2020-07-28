@@ -20,15 +20,13 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.collect.ImmutableList;
 import java.net.URI;
 import java.util.Optional;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link IdnTable}. */
-@RunWith(JUnit4.class)
-public class IdnTableTest {
+class IdnTableTest {
+
   @Test
-  public void testDigits() {
+  void testDigits() {
     ImmutableList<String> of = ImmutableList.of(
         "# URL: https://love.example/lolcatattack.txt",
         "# Policy: https://love.example/policy.html",
@@ -49,7 +47,7 @@ public class IdnTableTest {
   }
 
   @Test
-  public void testIgnoreCommentAndEmptyLines() {
+  void testIgnoreCommentAndEmptyLines() {
     IdnTable idnTable = IdnTable.createFrom("lolcatattack", ImmutableList.of(
         "# URL: https://love.example/lolcatattack.txt",
         "# Policy: https://love.example/policy.html",
@@ -70,7 +68,7 @@ public class IdnTableTest {
   }
 
   @Test
-  public void testSurrogates() {
+  void testSurrogates() {
     IdnTable idnTable =
         IdnTable.createFrom(
             "lolcatattack",
@@ -92,7 +90,7 @@ public class IdnTableTest {
   }
 
   @Test
-  public void testSpecialComments_getParsed() {
+  void testSpecialComments_getParsed() {
     ImmutableList<String> of =
         ImmutableList.of(
             "# URL: https://love.example/lolcatattack.txt",
@@ -104,7 +102,7 @@ public class IdnTableTest {
   }
 
   @Test
-  public void testMissingUrl_throwsNpe() {
+  void testMissingUrl_throwsNpe() {
     ImmutableList<String> of = ImmutableList.of("# Policy: https://love.example/policy.html");
     NullPointerException thrown =
         assertThrows(
@@ -113,7 +111,7 @@ public class IdnTableTest {
   }
 
   @Test
-  public void testMissingPolicy_throwsNpe() {
+  void testMissingPolicy_throwsNpe() {
     ImmutableList<String> of = ImmutableList.of("# URL: https://love.example/sloth.txt");
     NullPointerException thrown =
         assertThrows(

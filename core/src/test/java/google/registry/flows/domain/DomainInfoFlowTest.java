@@ -62,7 +62,7 @@ import google.registry.model.ofy.RequestCapturingAsyncDatastoreService;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -95,7 +95,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
     sessionMetadata.setClientId("NewRegistrar");
     clock.setTo(DateTime.parse("2005-03-03T22:00:00.000Z"));
     createTld("tld");
-    persistResource(AppEngineRule.makeRegistrar1().asBuilder().setClientId("ClientZ").build());
+    persistResource(AppEngineExtension.makeRegistrar1().asBuilder().setClientId("ClientZ").build());
   }
 
   private void persistTestEntities(String domainName, boolean inactive) {

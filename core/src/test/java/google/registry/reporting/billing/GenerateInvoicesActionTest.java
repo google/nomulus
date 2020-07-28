@@ -31,7 +31,7 @@ import com.google.api.services.dataflow.model.LaunchTemplateParameters;
 import com.google.api.services.dataflow.model.LaunchTemplateResponse;
 import com.google.api.services.dataflow.model.RuntimeEnvironment;
 import com.google.common.collect.ImmutableMap;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.io.IOException;
@@ -44,7 +44,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class GenerateInvoicesActionTest {
 
   @RegisterExtension
-  final AppEngineRule appEngine = AppEngineRule.builder().withTaskQueue().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withTaskQueue().build();
 
   private Dataflow dataflow;
   private Projects projects;

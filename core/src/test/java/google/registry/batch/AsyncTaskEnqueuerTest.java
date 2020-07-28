@@ -39,7 +39,7 @@ import com.google.common.flogger.LoggerConfig;
 import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactResource;
 import google.registry.schema.domain.RegistryLock;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.testing.InjectRule;
@@ -64,8 +64,8 @@ import org.mockito.quality.Strictness;
 public class AsyncTaskEnqueuerTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @RegisterExtension public final InjectRule inject = new InjectRule();
 

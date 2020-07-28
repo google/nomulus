@@ -24,7 +24,7 @@ import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.KeyFactory;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.request.HttpException.BadRequestException;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -33,7 +33,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class DeleteEntityActionTest {
 
   @RegisterExtension
-  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private FakeResponse response = new FakeResponse();
 

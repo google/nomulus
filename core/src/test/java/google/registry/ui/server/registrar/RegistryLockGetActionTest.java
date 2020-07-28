@@ -17,9 +17,9 @@ package google.registry.ui.server.registrar;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.ADMIN;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
-import static google.registry.testing.AppEngineRule.makeRegistrar2;
-import static google.registry.testing.AppEngineRule.makeRegistrarContact2;
-import static google.registry.testing.AppEngineRule.makeRegistrarContact3;
+import static google.registry.testing.AppEngineExtension.makeRegistrar2;
+import static google.registry.testing.AppEngineExtension.makeRegistrarContact2;
+import static google.registry.testing.AppEngineExtension.makeRegistrarContact3;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
@@ -39,34 +39,27 @@ import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.schema.domain.RegistryLock;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import java.util.Map;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RegistryLockGetAction}. */
-@RunWith(JUnit4.class)
-public final class RegistryLockGetActionTest {
+final class RegistryLockGetActionTest {
 
   private static final Gson GSON = new Gson();
 
   private final FakeClock fakeClock = new FakeClock();
 
-  @Rule
-  public final AppEngineRule appEngineRule =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withClock(fakeClock).build();
-
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
+  @RegisterExtension
+  final AppEngineExtension appEngineRule =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withClock(fakeClock).build();
 
   private final FakeResponse response = new FakeResponse();
 
@@ -75,9 +68,9 @@ public final class RegistryLockGetActionTest {
   private AuthenticatedRegistrarAccessor accessor;
   private RegistryLockGetAction action;
 
-  @Before
-  public void setup() {
-    user = userFromRegistrarContact(AppEngineRule.makeRegistrarContact3());
+  @BeforeEach
+  void beforeEach() {
+    user = userFromRegistrarContact(AppEngineExtension.makeRegistrarContact3());
     fakeClock.setTo(DateTime.parse("2000-06-08T22:00:00.0Z"));
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
     accessor =
@@ -91,7 +84,7 @@ public final class RegistryLockGetActionTest {
   }
 
   @Test
-  public void testSuccess_retrievesLocks() {
+  void testSuccess_retrievesLocks() {
     RegistryLock expiredLock =
         new RegistryLock.Builder()
             .setRepoId("repoId")
@@ -231,7 +224,7 @@ public final class RegistryLockGetActionTest {
   }
 
   @Test
-  public void testFailure_invalidMethod() {
+  void testFailure_invalidMethod() {
     action.method = Method.POST;
     assertThat(assertThrows(IllegalArgumentException.class, action::run))
         .hasMessageThat()
@@ -239,7 +232,7 @@ public final class RegistryLockGetActionTest {
   }
 
   @Test
-  public void testFailure_noAuthInfo() {
+  void testFailure_noAuthInfo() {
     action.authResult = AuthResult.NOT_AUTHENTICATED;
     assertThat(assertThrows(IllegalArgumentException.class, action::run))
         .hasMessageThat()
@@ -247,7 +240,7 @@ public final class RegistryLockGetActionTest {
   }
 
   @Test
-  public void testFailure_noClientId() {
+  void testFailure_noClientId() {
     action.paramClientId = Optional.empty();
     assertThat(assertThrows(IllegalArgumentException.class, action::run))
         .hasMessageThat()
@@ -255,7 +248,7 @@ public final class RegistryLockGetActionTest {
   }
 
   @Test
-  public void testFailure_noRegistrarAccess() {
+  void testFailure_noRegistrarAccess() {
     accessor = AuthenticatedRegistrarAccessor.createForTesting(ImmutableSetMultimap.of());
     action =
         new RegistryLockGetAction(
@@ -265,7 +258,7 @@ public final class RegistryLockGetActionTest {
   }
 
   @Test
-  public void testSuccess_readOnlyAccessForOtherUsers() {
+  void testSuccess_readOnlyAccessForOtherUsers() {
     // If lock is not enabled for a user, this should be read-only
     persistResource(
         makeRegistrarContact3().asBuilder().setAllowedToSetRegistryLockPassword(true).build());
@@ -285,7 +278,7 @@ public final class RegistryLockGetActionTest {
   }
 
   @Test
-  public void testSuccess_lockAllowedForAdmin() {
+  void testSuccess_lockAllowedForAdmin() {
     // Locks are allowed for admins even when they're not enabled for the registrar
     persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(false).build());
     // disallow the other user
@@ -315,7 +308,7 @@ public final class RegistryLockGetActionTest {
   }
 
   @Test
-  public void testSuccess_linkedToContactEmail() {
+  void testSuccess_linkedToContactEmail() {
     // Even though the user is some.email@gmail.com the contact is still Marla Singer
     user = new User("some.email@gmail.com", "gmail.com", user.getUserId());
     authResult = AuthResult.create(AuthLevel.USER, UserAuthInfo.create(user, false));
@@ -338,7 +331,7 @@ public final class RegistryLockGetActionTest {
   }
 
   @Test
-  public void testFailure_lockNotAllowedForRegistrar() {
+  void testFailure_lockNotAllowedForRegistrar() {
     // The UI shouldn't be making requests where lock isn't enabled for this registrar
     action =
         new RegistryLockGetAction(
@@ -348,7 +341,7 @@ public final class RegistryLockGetActionTest {
   }
 
   @Test
-  public void testFailure_accessDenied() {
+  void testFailure_accessDenied() {
     accessor = AuthenticatedRegistrarAccessor.createForTesting(ImmutableSetMultimap.of());
     action =
         new RegistryLockGetAction(
@@ -358,7 +351,7 @@ public final class RegistryLockGetActionTest {
   }
 
   @Test
-  public void testFailure_badRegistrar() {
+  void testFailure_badRegistrar() {
     action =
         new RegistryLockGetAction(
             Method.GET, response, accessor, authResult, Optional.of("SomeBadRegistrar"));

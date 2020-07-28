@@ -19,16 +19,15 @@ import static java.util.stream.Collectors.joining;
 import static org.apache.commons.text.StringEscapeUtils.escapeEcmaScript;
 
 import com.google.common.base.Preconditions;
-import google.registry.webdriver.RepeatableRunner.AttemptNumber;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import org.junit.rules.ExternalResource;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.Dimension;
@@ -42,12 +41,14 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 /**
- * WebDriver delegate JUnit Rule that exposes most {@link WebDriver} API plus {@link ScreenDiffer}
- * API.
+ * WebDriver delegate JUnit extension that exposes most of the {@link WebDriver} API and the {@link
+ * ScreenDiffer} API.
  */
 @SuppressWarnings("deprecation")
-public final class WebDriverPlusScreenDifferRule extends ExternalResource
-    implements WebDriver,
+public final class WebDriverPlusScreenDifferExtension
+    implements BeforeEachCallback,
+        AfterEachCallback,
+        WebDriver,
         org.openqa.selenium.interactions.HasInputDevices,
         TakesScreenshot,
         JavascriptExecutor,
@@ -72,12 +73,11 @@ public final class WebDriverPlusScreenDifferRule extends ExternalResource
   private static final Dimension DEFAULT_WINDOW_SIZE = new Dimension(1200, 2000);
 
   private static final String GOLDENS_PATH =
-      getResource(WebDriverPlusScreenDifferRule.class, "goldens/chrome-linux").getFile();
+      getResource(WebDriverPlusScreenDifferExtension.class, "goldens/chrome-linux").getFile();
 
   private WebDriverProvider webDriverProvider;
   private WebDriver driver;
   private ScreenDiffer webDriverPlusScreenDiffer;
-  private AttemptNumber attemptNumber;
 
   // Prefix to use for golden image files, will be set to ClassName_MethodName once the test
   // starts. Will be added a user-given imageKey as a suffix, and of course a '.png' at the end.
@@ -88,37 +88,31 @@ public final class WebDriverPlusScreenDifferRule extends ExternalResource
     WebDriver getWebDriver();
   }
 
-  @Override
-  public Statement apply(Statement base, Description description) {
-    if (imageNamePrefix == null) {
-      String className = description.getTestClass().getSimpleName();
-      String methodName = description.getMethodName();
-      String unsanitizedName = className + "_" + methodName;
-      // remove all of the special wildcard characters so they don't exist in filenames.
-      imageNamePrefix = unsanitizedName.replaceAll("[*?~\"\\[\\]]", "");
-    }
-    return super.apply(base, description);
-  }
-
-  /** Constructs a {@link WebDriverPlusScreenDifferRule} instance. */
-  public WebDriverPlusScreenDifferRule(
-      WebDriverProvider webDriverProvider, AttemptNumber attemptNumber) {
+  /** Constructs a {@link WebDriverPlusScreenDifferExtension} instance. */
+  WebDriverPlusScreenDifferExtension(WebDriverProvider webDriverProvider) {
     this.webDriverProvider = webDriverProvider;
-    this.attemptNumber = attemptNumber;
   }
 
   @Override
-  protected void before() {
+  public void beforeEach(ExtensionContext context) {
     driver = webDriverProvider.getWebDriver();
     webDriverPlusScreenDiffer =
         new WebDriverScreenDiffer(driver, GOLDENS_PATH, MAX_COLOR_DIFF, MAX_PIXEL_DIFF);
     // non-zero timeout so findByElement will wait for the element to appear
     driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
     driver.manage().window().setSize(DEFAULT_WINDOW_SIZE);
+
+    if (imageNamePrefix == null) {
+      String className = context.getRequiredTestClass().getSimpleName();
+      String methodName = context.getRequiredTestMethod().getName();
+      String unsanitizedName = className + "_" + methodName;
+      // remove all of the special wildcard characters so they don't exist in filenames.
+      imageNamePrefix = unsanitizedName.replaceAll("[*?~\"\\[\\]]", "");
+    }
   }
 
   @Override
-  protected void after() {
+  public void afterEach(ExtensionContext context) {
     webDriverPlusScreenDiffer.verifyAndQuit();
   }
 
@@ -128,7 +122,7 @@ public final class WebDriverPlusScreenDifferRule extends ExternalResource
   }
 
   /** Waits indefinitely for an element to appear on the page, then returns it. */
-  public WebElement waitForElement(By by) throws InterruptedException {
+  WebElement waitForElement(By by) throws InterruptedException {
     while (true) {
       List<WebElement> elements = findElements(by);
       if (!elements.isEmpty()) {
@@ -155,7 +149,7 @@ public final class WebDriverPlusScreenDifferRule extends ExternalResource
   }
 
   /** Sets value of input fields, where {@code fields} key is the {@code id=""} attribute. */
-  public void setFormFieldsById(Map<String, String> fields) {
+  void setFormFieldsById(Map<String, String> fields) {
     executeScript(
         fields.entrySet().stream()
             .map(
@@ -177,8 +171,8 @@ public final class WebDriverPlusScreenDifferRule extends ExternalResource
    *     the format of ClassName_MethodName_<imageKey> will uniquely identify golden image.
    * @param element the element on the page to be compared
    */
-  public void diffElement(String imageKey, WebElement element) {
-    webDriverPlusScreenDiffer.diffElement(element, getUniqueName(imageKey), attemptNumber.get());
+  private void diffElement(String imageKey, WebElement element) {
+    webDriverPlusScreenDiffer.diffElement(element, getUniqueName(imageKey));
   }
 
   /**
@@ -206,8 +200,8 @@ public final class WebDriverPlusScreenDifferRule extends ExternalResource
    * @param imageKey a unique name such that by prepending the calling class name and method name in
    *     the format of ClassName_MethodName_<imageKey> will uniquely identify golden image.
    */
-  public void diffPage(String imageKey) {
-    webDriverPlusScreenDiffer.diffPage(getUniqueName(imageKey), attemptNumber.get());
+  void diffPage(String imageKey) {
+    webDriverPlusScreenDiffer.diffPage(getUniqueName(imageKey));
   }
 
   @Override

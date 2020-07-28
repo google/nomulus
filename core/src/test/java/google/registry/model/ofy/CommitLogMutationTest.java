@@ -25,7 +25,7 @@ import com.google.appengine.api.datastore.KeyFactory;
 import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
 import google.registry.model.registry.Registry;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +36,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class CommitLogMutationTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private static final DateTime NOW = DateTime.now(DateTimeZone.UTC);
 

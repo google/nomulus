@@ -27,16 +27,17 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-import org.junit.rules.ExternalResource;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
  * Checks for JPA {@link Entity entities} that are declared in persistence.xml but not persisted in
  * integration tests.
  */
-public class JpaEntityCoverage extends ExternalResource {
+public class JpaEntityCoverageExtension implements BeforeEachCallback, AfterEachCallback {
 
   // TODO(weiminyu): update this set when entities written to Cloud SQL and tests are added.
   private static final ImmutableSet<String> IGNORE_ENTITIES =
@@ -53,26 +54,19 @@ public class JpaEntityCoverage extends ExternalResource {
   // Map of test class name to boolean flag indicating if it tests any JPA entities.
   private static final Map<String, Boolean> testsJpaEntities = Maps.newHashMap();
 
-  // Provides class name of the test being executed.
-  private final Supplier<String> currTestClassNameSupplier;
-
-  public JpaEntityCoverage(Supplier<String> currTestClassNameSupplier) {
-    this.currTestClassNameSupplier = currTestClassNameSupplier;
+  @Override
+  public void beforeEach(ExtensionContext context) {
+    testsJpaEntities.putIfAbsent(context.getRequiredTestClass().getName(), false);
   }
 
   @Override
-  public void before() {
-    testsJpaEntities.putIfAbsent(currTestClassNameSupplier.get(), false);
-  }
-
-  @Override
-  public void after() {
+  public void afterEach(ExtensionContext context) {
     ALL_JPA_ENTITIES.stream()
-        .filter(JpaEntityCoverage::isPersisted)
+        .filter(JpaEntityCoverageExtension::isPersisted)
         .forEach(
             entity -> {
               allCoveredJpaEntities.add(entity);
-              testsJpaEntities.put(currTestClassNameSupplier.get(), true);
+              testsJpaEntities.put(context.getRequiredTestClass().getName(), true);
             });
   }
 

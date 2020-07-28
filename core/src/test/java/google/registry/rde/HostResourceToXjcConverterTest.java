@@ -26,7 +26,7 @@ import com.google.common.net.InetAddresses;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.xjc.host.XjcHostStatusType;
 import google.registry.xjc.host.XjcHostStatusValueType;
 import google.registry.xjc.rdehost.XjcRdeHost;
@@ -46,7 +46,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class HostResourceToXjcConverterTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @BeforeEach
   void beforeEach() {

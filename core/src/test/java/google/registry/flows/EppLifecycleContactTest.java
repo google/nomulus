@@ -21,7 +21,7 @@ import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_NO_MESSAG
 import static google.registry.testing.EppMetricSubject.assertThat;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -29,8 +29,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class EppLifecycleContactTest extends EppTestCase {
 
   @RegisterExtension
-  final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @Test
   void testContactLifecycle() throws Exception {

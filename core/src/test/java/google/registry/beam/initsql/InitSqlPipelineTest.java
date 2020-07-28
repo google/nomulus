@@ -49,8 +49,8 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
-import google.registry.testing.AppEngineRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectRule;
@@ -95,7 +95,7 @@ class InitSqlPipelineTest {
       TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
 
   @RegisterExtension
-  final transient JpaIntegrationTestRule database =
+  final transient JpaIntegrationTestExtension database =
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationTestRule();
 
   // Must not be transient!
@@ -118,14 +118,14 @@ class InitSqlPipelineTest {
   private transient HistoryEntry historyEntry;
 
   @BeforeEach
-  public void beforeEach() throws Exception {
+  void beforeEach() throws Exception {
     try (BackupTestStore store = new BackupTestStore(fakeClock)) {
       injectRule.setStaticField(Ofy.class, "clock", fakeClock);
       exportRootDir = Files.createDirectory(tmpDir.resolve("exports")).toFile();
 
       persistResource(newRegistry("com", "COM"));
-      registrar1 = persistResource(AppEngineRule.makeRegistrar1());
-      registrar2 = persistResource(AppEngineRule.makeRegistrar2());
+      registrar1 = persistResource(AppEngineExtension.makeRegistrar1());
+      registrar2 = persistResource(AppEngineExtension.makeRegistrar2());
       Key<DomainBase> domainKey = Key.create(null, DomainBase.class, "4-COM");
       hostResource =
           persistResource(
@@ -222,7 +222,7 @@ class InitSqlPipelineTest {
   }
 
   @Test
-  public void runPipeline() {
+  void runPipeline() {
     InitSqlPipelineOptions options =
         PipelineOptionsFactory.fromArgs(
                 "--sqlCredentialUrlOverride="

@@ -30,7 +30,7 @@ import google.registry.flows.EppTestComponent.FakesAndMocksModule;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.Ofy;
 import google.registry.monitoring.whitebox.EppMetric;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.EppLoader;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
@@ -44,8 +44,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class EppCommitLogsTest {
 
   @RegisterExtension
-  final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @RegisterExtension final InjectRule inject = new InjectRule();
 

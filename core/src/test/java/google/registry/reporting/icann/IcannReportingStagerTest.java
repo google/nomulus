@@ -33,7 +33,7 @@ import google.registry.bigquery.BigqueryConnection.DestinationTable;
 import google.registry.bigquery.BigqueryUtils.TableType;
 import google.registry.gcs.GcsUtils;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -51,8 +51,8 @@ class IcannReportingStagerTest {
   private String subdir = "icann/monthly/2017-06";
 
   @RegisterExtension
-  final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withLocalModules().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withLocalModules().build();
 
   private IcannReportingStager createStager() {
     IcannReportingStager action = new IcannReportingStager();

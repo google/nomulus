@@ -34,7 +34,7 @@ import com.google.appengine.api.urlfetch.HTTPResponse;
 import com.google.appengine.api.urlfetch.URLFetchService;
 import google.registry.model.registry.Registry;
 import google.registry.request.HttpException.ConflictException;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
 import java.net.URL;
 import java.util.Optional;
@@ -78,8 +78,8 @@ class NordnVerifyActionTest {
           + "bogpog,4611\n";
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @Mock private URLFetchService fetchService;
   @Mock private HTTPResponse httpResponse;

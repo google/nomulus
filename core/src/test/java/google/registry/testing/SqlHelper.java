@@ -16,7 +16,7 @@ package google.registry.testing;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.testing.AppEngineRule.makeRegistrar1;
+import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Throwables;

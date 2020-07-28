@@ -18,13 +18,10 @@ import static com.google.common.truth.Truth8.assertThat;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link IdnLabelValidator}. */
-@RunWith(JUnit4.class)
-public class IdnLabelValidatorTest {
+class IdnLabelValidatorTest {
 
   private IdnLabelValidator idnLabelValidator = IdnLabelValidator.createDefaultIdnLabelValidator();
 
@@ -86,22 +83,22 @@ public class IdnLabelValidatorTest {
   }
 
   @Test
-  public void testMinna() {
+  void testMinna() {
     doJapaneseLanguageTests("xn--q9jyb4c");
   }
 
   @Test
-  public void testFoo() {
+  void testFoo() {
     doJapaneseLanguageTests("foo");
   }
 
   @Test
-  public void testSoy() {
+  void testSoy() {
     doJapaneseLanguageTests("soy");
   }
 
   @Test
-  public void testOverridenTables() {
+  void testOverridenTables() {
     // Set .tld to have only the extended latin table and not japanese.
     idnLabelValidator =
         new IdnLabelValidator(

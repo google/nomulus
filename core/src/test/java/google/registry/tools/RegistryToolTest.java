@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.concurrent.locks.ReentrantLock;
@@ -31,7 +31,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class RegistryToolTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   // Lock for stdout/stderr.  Note that this is static: since we're dealing with globals, we need
   // to lock for the entire JVM.

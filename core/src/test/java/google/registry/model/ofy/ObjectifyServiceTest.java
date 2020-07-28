@@ -14,7 +14,7 @@
 
 package google.registry.model.ofy;
 
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -22,7 +22,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ObjectifyServiceTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
   void test_initOfy_canBeCalledTwice() {

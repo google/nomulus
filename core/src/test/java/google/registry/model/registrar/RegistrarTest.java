@@ -49,6 +49,7 @@ import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Registrar}. */
 class RegistrarTest extends EntityTestCase {
+
   private Registrar registrar;
   private RegistrarContact abuseAdminContact;
 

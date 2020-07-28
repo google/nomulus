@@ -17,7 +17,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableSet;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.tools.EntityWrapper.Property;
 import java.io.File;
 import java.io.IOException;
@@ -33,7 +33,8 @@ public class RecordAccumulatorTest {
   @TempDir public File tmpDir;
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
   void testReadDirectory() throws IOException {

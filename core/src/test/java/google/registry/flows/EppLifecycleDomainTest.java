@@ -45,7 +45,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.reporting.HistoryEntry.Type;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,8 +62,8 @@ class EppLifecycleDomainTest extends EppTestCase {
           "EXDATE", "2003-06-01T00:04:00Z");
 
   @RegisterExtension
-  final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @BeforeEach
   void beforeEach() {

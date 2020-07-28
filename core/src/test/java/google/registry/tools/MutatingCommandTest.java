@@ -26,7 +26,7 @@ import static org.junit.Assert.assertThrows;
 
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.util.Arrays;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +37,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class MutatingCommandTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private Registrar registrar1;
   private Registrar registrar2;

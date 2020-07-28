@@ -34,7 +34,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.util.CidrAddressBlock;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
@@ -867,7 +867,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   private void persistWhoisAbuseContact() {
     persistResource(
-        AppEngineRule.makeRegistrarContact1()
+        AppEngineExtension.makeRegistrarContact1()
             .asBuilder()
             .setVisibleInDomainWhoisAsAbuse(true)
             .build());

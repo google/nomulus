@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.OteStatsTestHelper;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.util.Map;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class VerifyOteActionTest {
 
   @RegisterExtension
-  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private final VerifyOteAction action = new VerifyOteAction();
 

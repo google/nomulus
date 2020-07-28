@@ -29,7 +29,7 @@ import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 import google.registry.gcs.GcsUtils;
 import google.registry.keyring.api.Keyring;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.GcsTestingUtils;
@@ -65,7 +65,8 @@ public class BrdaCopyActionTest {
   public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @RegisterExtension
   public final GpgSystemCommandExtension gpg =

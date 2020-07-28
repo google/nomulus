@@ -18,7 +18,7 @@ import static org.joda.time.DateTimeZone.UTC;
 import static org.joda.time.format.ISODateTimeFormat.dateTimeNoMillis;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -27,7 +27,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class EppLoggedOutTest extends EppTestCase {
 
   @RegisterExtension
-  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
   void testHello() throws Exception {

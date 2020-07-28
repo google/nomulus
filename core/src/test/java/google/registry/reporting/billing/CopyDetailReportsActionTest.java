@@ -35,7 +35,7 @@ import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
 import com.google.common.net.MediaType;
 import google.registry.gcs.GcsUtils;
 import google.registry.storage.drive.DriveConnection;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
@@ -49,7 +49,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class CopyDetailReportsActionTest {
 
   @RegisterExtension
-  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private final GcsService gcsService = GcsServiceFactory.createGcsService();
   private final GcsUtils gcsUtils = new GcsUtils(gcsService, 1024);
