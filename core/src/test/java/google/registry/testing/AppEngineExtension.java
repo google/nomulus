@@ -23,7 +23,6 @@ import static google.registry.testing.DualDatabaseTestInvocationContextProvider.
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.nio.file.Files.createFile;
 import static java.nio.file.Files.walk;
 import static java.util.Comparator.reverseOrder;
 import static org.json.XML.toJSONObject;
@@ -421,7 +420,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
               .addBasicScalingModuleVersion("backend", "1", 1));
     }
     if (withTaskQueue) {
-      File queueFile = createFile(new File(tmpDir, "queue.xml").toPath()).toFile();
+      File queueFile = new File(tmpDir, "queue.xml");
       asCharSink(queueFile, UTF_8).write(taskQueueXml);
       configs.add(new LocalTaskQueueTestConfig().setQueueXmlPath(queueFile.getAbsolutePath()));
     }
