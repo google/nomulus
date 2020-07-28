@@ -230,6 +230,9 @@ cloudSql:
   username: username
   # This name is used by Cloud SQL when connecting to the database.
   instanceConnectionName: project-id:region:instance-id
+  # Set this to true to replicate cloud SQL transactions to datastore in the
+  # background.
+  replicateTransactions: false
 
 cloudDns:
   # Set both properties to null in Production.

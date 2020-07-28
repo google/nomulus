@@ -494,6 +494,12 @@ create sequence history_id_sequence start 1 increment 1;
         tld text not null,
         primary key (id)
     );
+
+    create table "Transaction" (
+       id  bigserial not null,
+        contents bytea,
+        primary key (id)
+    );
 create index IDXih4b2tea127p5rb61gje6e1y2 on "BillingCancellation" (registrar_id);
 create index IDX2exdfbx6oiiwnhr8j6gjpqt2j on "BillingCancellation" (event_time);
 create index IDXqa3g92jc17e8dtiaviy4fet4x on "BillingCancellation" (billing_time);
