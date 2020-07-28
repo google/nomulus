@@ -119,6 +119,10 @@ public class Transaction extends ImmutableObject implements Buildable {
     return new Builder(clone(this));
   }
 
+  public final TransactionEntity toEntity() {
+    return new TransactionEntity(serialize());
+  }
+
   public static class Builder extends GenericBuilder<Transaction, Builder> {
 
     ImmutableList.Builder listBuilder = new ImmutableList.Builder();

@@ -104,7 +104,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       txn.begin();
       txnInfo.start(clock);
       T result = work.get();
-      txnInfo.recordTransaction(getEntityManager());
+      txnInfo.recordTransaction();
       txn.commit();
       return result;
     } catch (RuntimeException | Error e) {
@@ -429,11 +429,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       }
     }
 
-    private void recordTransaction(EntityManager em) {
+    private void recordTransaction() {
       if (contentsBuilder != null) {
         Transaction persistedTxn = contentsBuilder.build();
         if (!persistedTxn.isEmpty()) {
-          em.persist(new TransactionEntity(persistedTxn.serialize()));
+          entityManager.persist(persistedTxn.toEntity());
         }
       }
     }
