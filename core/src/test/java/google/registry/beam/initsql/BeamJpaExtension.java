@@ -54,7 +54,7 @@ public final class BeamJpaExtension implements BeforeEachCallback, AfterEachCall
     if (beamJpaModule != null) {
       return beamJpaModule;
     }
-    return beamJpaModule = new BeamJpaModule(credentialFile.getAbsolutePath());
+    return beamJpaModule = new BeamJpaModule(credentialFile.getAbsolutePath(), null);
   }
 
   @Override
