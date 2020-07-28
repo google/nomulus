@@ -28,14 +28,12 @@ import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.server.RegistryTestServer;
-import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junitpioneer.jupiter.RetryingTest;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
 /** WebDriver tests for Registrar Console UI. */
-@Timeout(60)
 public class RegistrarConsoleWebTest extends WebDriverTestCase {
 
   @RegisterExtension
