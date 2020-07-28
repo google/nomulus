@@ -14,7 +14,10 @@
 
 package google.registry.tools;
 
+import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import google.registry.beam.initsql.BeamJpaModule.JpaTransactionManagerComponent;
+import google.registry.beam.initsql.JpaSupplierFactory;
 import google.registry.beam.spec11.Spec11Pipeline;
 import google.registry.config.CredentialModule.LocalCredential;
 import google.registry.config.RegistryConfig.Config;
@@ -30,6 +33,12 @@ public class DeploySpec11PipelineCommand implements Command {
   @Inject
   @Config("projectId")
   String projectId;
+
+  @Parameter(
+      names = {"-c"},
+      description = "Cloud KMS project ID",
+      required = true)
+  String cloudKmsProjectId;
 
   @Inject
   @Config("beamStagingUrl")
@@ -51,14 +60,19 @@ public class DeploySpec11PipelineCommand implements Command {
   @Config("sqlAccessInfoFile")
   String sqlAccessInfoFile;
 
+  JpaSupplierFactory jpaSf;
+
   @Override
   public void run() {
+    jpaSf = new JpaSupplierFactory(sqlAccessInfoFile, cloudKmsProjectId, JpaTransactionManagerComponent::cloudSqlJpaTransactionManager);
+
     Spec11Pipeline pipeline =
         new Spec11Pipeline(
             projectId,
             beamStagingUrl,
             spec11TemplateUrl,
             reportingBucketUrl,
+            jpaSf,
             googleCredentialsBundle,
             retrier);
     pipeline.deploy();
