@@ -25,9 +25,9 @@ public class JpaSupplierFactory implements SerializableSupplier<JpaTransactionMa
   private static final long serialVersionUID = 1L;
 
   private final String credentialFileUrl;
-  @Nullable
-  private final String cloudKmsProjectId;
-  private final SerializableFunction<JpaTransactionManagerComponent, JpaTransactionManager> jpaGetter;
+  @Nullable private final String cloudKmsProjectId;
+  private final SerializableFunction<JpaTransactionManagerComponent, JpaTransactionManager>
+      jpaGetter;
 
   public JpaSupplierFactory(
       String credentialFileUrl,
