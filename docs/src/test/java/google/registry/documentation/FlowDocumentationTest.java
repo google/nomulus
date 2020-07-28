@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 class FlowDocumentationTest {
   private static final Path GOLDEN_MARKDOWN_FILEPATH = getProjectRoot().resolve("docs/flows.md");
 
-  private static final String UPDATE_COMMAND = "./gradlew :core:flowDocsTool";
+  private static final String UPDATE_COMMAND = "./gradlew :docs:flowDocsTool";
   private static final String UPDATE_INSTRUCTIONS =
       Joiner.on('\n')
           .join(
