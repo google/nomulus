@@ -57,46 +57,6 @@ public class ResaveEntitiesWithUniqueIdCommandTest
   }
 
   @Test
-  public void resavePollMessage_succeeds() throws Exception {
-    persistResource(
-        domain
-            .asBuilder()
-            .setAutorenewPollMessage(
-                Key.create(persistAutorenewPollMessage(persistHistoryEntry(domain))))
-            .build());
-
-    runCommand("--force", writeToNamedTmpFile("keypath.txt", getKeyPathLiteral(autorenewToResave)));
-
-    int count = 0;
-    for (PollMessage autorenew : ofy().load().type(PollMessage.class).ancestor(historyEntry)) {
-      count++;
-      assertThat(autorenew.getId()).isNotEqualTo(autorenewToResave.getId());
-      assertThat(autorenew.asBuilder().setId(autorenewToResave.getId()).build())
-          .isEqualTo(autorenewToResave);
-    }
-    assertThat(count).isEqualTo(1);
-  }
-
-  @Test
-  public void resavePollMessage_resavesDomainWhenNecessary() throws Exception {
-    persistResource(
-        domain.asBuilder().setAutorenewPollMessage(Key.create(autorenewToResave)).build());
-
-    runCommand("--force", writeToNamedTmpFile("keypath.txt", getKeyPathLiteral(autorenewToResave)));
-
-    int count = 0;
-    for (PollMessage autorenew : ofy().load().type(PollMessage.class).ancestor(historyEntry)) {
-      count++;
-      assertThat(autorenew.getId()).isNotEqualTo(autorenewToResave.getId());
-      assertThat(autorenew.asBuilder().setId(autorenewToResave.getId()).build())
-          .isEqualTo(autorenewToResave);
-      assertThat(ofy().load().entity(domain).now().getAutorenewPollMessage())
-          .isEqualTo(Key.create(autorenew));
-    }
-    assertThat(count).isEqualTo(1);
-  }
-
-  @Test
   public void resaveBillingEvent_succeeds() throws Exception {
     runCommand(
         "--force", writeToNamedTmpFile("keypath.txt", getKeyPathLiteral(billingEventToResave)));

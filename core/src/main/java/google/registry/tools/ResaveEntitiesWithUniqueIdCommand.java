@@ -26,7 +26,6 @@ import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.DomainBase;
-import google.registry.model.poll.PollMessage;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -57,8 +56,6 @@ public class ResaveEntitiesWithUniqueIdCommand extends MutatingCommand {
         }
         if (entity instanceof BillingEvent.OneTime) {
           resaveBillingEvent((BillingEvent.OneTime) entity);
-        } else if (entity instanceof PollMessage.Autorenew) {
-          resaveAutorenewPollMessage((PollMessage.Autorenew) entity);
         } else {
           throw new IllegalArgumentException("Unsupported entity key: " + untypedKey);
         }
@@ -85,7 +82,7 @@ public class ResaveEntitiesWithUniqueIdCommand extends MutatingCommand {
         .forEach(
             gracePeriod ->
                 checkState(
-                    !gracePeriod.getOneTimeBillingEvent().equals(key),
+                    !gracePeriod.getOneTimeBillingEvent().getOfyKey().equals(key),
                     "Entity %s is referred by a grace period in domain %s",
                     key,
                     domainKey));
@@ -93,24 +90,6 @@ public class ResaveEntitiesWithUniqueIdCommand extends MutatingCommand {
     // By setting id to 0L, Buildable.build() will assign an application wide unique id to it.
     BillingEvent.OneTime uniqIdBillingEvent = billingEvent.asBuilder().setId(0L).build();
     deleteOldAndSaveNewEntity(billingEvent, uniqIdBillingEvent);
-  }
-
-  private void resaveAutorenewPollMessage(PollMessage.Autorenew pollMessage) {
-    Key<PollMessage.Autorenew> key = Key.create(pollMessage);
-    Key<DomainBase> domainKey = getGrandParentAsDomain(key);
-    DomainBase domain = ofy().load().key(domainKey).now();
-
-    assertNotInDomainTransferData(domain, key);
-
-    // It is possible that the PollMessage.Autorenew entity to be resaved is still referred by its
-    // domain.
-    PollMessage.Autorenew uniqIdPollMessage = pollMessage.asBuilder().setId(0L).build();
-    if (domain.getAutorenewPollMessage().equals(key)) {
-      stageEntityChange(
-          domain,
-          domain.asBuilder().setAutorenewPollMessage(Key.create(uniqIdPollMessage)).build());
-    }
-    deleteOldAndSaveNewEntity(pollMessage, uniqIdPollMessage);
   }
 
   private static boolean isKind(Key<?> key, Class<?> clazz) {
