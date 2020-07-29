@@ -42,7 +42,13 @@ public class JpaEntityCoverageExtension implements BeforeEachCallback, AfterEach
   // TODO(weiminyu): update this set when entities written to Cloud SQL and tests are added.
   private static final ImmutableSet<String> IGNORE_ENTITIES =
       ImmutableSet.of(
-          "DelegationSignerData", "DesignatedContact", "GracePeriod", "RegistrarContact");
+          "DelegationSignerData",
+          "DesignatedContact",
+          "GracePeriod",
+          "RegistrarContact",
+
+          // TransactionEntity is trivial, its persistence is tested in TransactionTest.
+          "TransactionEntity");
 
   private static final ImmutableSet<Class> ALL_JPA_ENTITIES =
       PersistenceXmlUtility.getManagedClasses().stream()
