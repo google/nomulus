@@ -82,11 +82,6 @@ sourceSets {
   main {
     java {
       srcDirs += generatedDir
-      // Javadoc API is deprecated in Java 11 and removed in Java 12.
-      // TODO(jianglai): re-enable after migrating to the new Javadoc API
-      if ((JavaVersion.current().majorVersion as Integer) >= 11) {
-        exclude 'google/registry/documentation/**'
-      }
     }
     resources {
       exclude '**/*.xjb'
@@ -852,22 +847,6 @@ task generateGoldenImages(type: FilteringTest) {
   }
 }
 generateGoldenImages.finalizedBy(findGoldenImages)
-
-task flowDocsTool(type: JavaExec) {
-  systemProperty 'test.projectRoot', rootProject.projectRootDir
-  systemProperty 'test.resourcesDir', resourcesDir
-
-  classpath = sourceSets.main.runtimeClasspath
-  main = 'google.registry.documentation.FlowDocumentationTool'
-
-  def arguments = []
-  if (rootProject.flowDocsFile) {
-    arguments << "--output_file=${rootProject.flowDocsFile}"
-  } else {
-    arguments << "--output_file=${rootProject.projectRootDir}/docs/flows.md"
-  }
-  args arguments
-}
 
 task standardTest(type: FilteringTest) {
   includeAllTests()
