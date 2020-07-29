@@ -32,7 +32,7 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.stream.Collectors;
@@ -55,7 +55,7 @@ class WriteToSqlTest implements Serializable {
   @Order(Order.DEFAULT - 1)
   final transient DatastoreEntityExtension datastore = new DatastoreEntityExtension();
 
-  @RegisterExtension final transient InjectRule injectRule = new InjectRule();
+  @RegisterExtension final transient InjectExtension injectRule = new InjectExtension();
 
   @RegisterExtension
   final transient JpaIntegrationTestExtension database =

@@ -274,7 +274,6 @@ dependencies {
   compile deps['org.testcontainers:postgresql']
   testCompile deps['org.testcontainers:selenium']
   testCompile deps['org.testcontainers:testcontainers']
-  testCompile deps['pl.pragmatists:JUnitParams']
   compile deps['xerces:xmlParserAPIs']
   compile deps['xpp3:xpp3']
   // This dependency must come after javax.mail:mail as it would otherwise
@@ -318,7 +317,6 @@ dependencies {
   testCompile deps['org.junit-pioneer:junit-pioneer']
   testCompile deps['org.junit.platform:junit-platform-runner']
   testCompile deps['org.junit.platform:junit-platform-suite-api']
-  testCompile deps['org.junit.vintage:junit-vintage-engine']
   testCompile deps['org.mockito:mockito-core']
   testCompile deps['org.mockito:mockito-junit-jupiter']
   runtime deps['org.postgresql:postgresql']

@@ -35,7 +35,7 @@ import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
 import google.registry.persistence.VKey;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.tools.LevelDbLogReader;
 import java.io.File;
 import java.io.IOException;
@@ -58,7 +58,7 @@ public class BackupTestStoreTest {
 
   @TempDir File tempDir;
 
-  @RegisterExtension InjectRule injectRule = new InjectRule();
+  @RegisterExtension InjectExtension injectRule = new InjectExtension();
 
   private FakeClock fakeClock;
   private BackupTestStore store;

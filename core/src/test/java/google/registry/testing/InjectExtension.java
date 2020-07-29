@@ -45,10 +45,10 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * to be evil; but hopefully one day we'll be able to delete this class and do things
  * <i>properly</i> with <a href="http://square.github.io/dagger/">Dagger</a> dependency injection.
  *
- * <p>This class temporarily supports both JUnit4 and JUnit5. You use this class in JUnit4 by
- * declaring it as a {@link org.junit.Rule &#064;Rule} field and then calling {@link
- * #setStaticField} from either your {@link org.junit.Test &#064;Test} or {@link org.junit.Before
- * &#064;Before} methods. For example:
+ * <p>You use this class in by declaring it as an {@link
+ * org.junit.jupiter.api.extension.RegisterExtension &#064;RegisterExtension} field and then call
+ * {@link #setStaticField} from either your {@link org.junit.jupiter.api.Test &#064;Test} or {@link
+ * org.junit.jupiter.api.BeforeEach &#064;BeforeEach} methods. For example:
  *
  * <pre>
  * // Doomsday.java
@@ -62,16 +62,15 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * }
  *
  * // DoomsdayTest.java
- * &#064;RunWith(JUnit4.class)
  * public class DoomsdayTest {
  *
- *   &#064;Rule
- *   public InjectRule inject = new InjectRule();
+ *   &#064;RegisterExtension
+ *   public InjectExtension inject = new InjectExtension();
  *
  *   private final FakeClock clock = new FakeClock();
  *
- *   &#064;Before
- *   public void before() {
+ *   &#064;BeforeEach
+ *   public void beforeEach() {
  *     inject.setStaticField(Doomsday.class, "clock", clock);
  *   }
  *
@@ -85,9 +84,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * </pre>
  *
  * @see google.registry.util.NonFinalForTesting
- * @see org.junit.rules.ExternalResource
  */
-public class InjectRule implements AfterEachCallback {
+public class InjectExtension implements AfterEachCallback {
 
   private static class Change {
     private final Field field;
@@ -109,9 +107,9 @@ public class InjectRule implements AfterEachCallback {
    *
    * <p>The field is allowed to be {@code private}, but it most not be {@code final}.
    *
-   * <p>This method may be called either from either your {@link org.junit.Before @Before}
-   * method or from the {@link org.junit.Test @Test} method itself. However you may not
-   * inject the same field multiple times during the same test.
+   * <p>This method may be called either from either your {@link org.junit.Before @Before} method or
+   * from the {@link org.junit.Test @Test} method itself. However you may not inject the same field
+   * multiple times during the same test.
    *
    * @throws IllegalArgumentException if the static field could not be found or modified.
    * @throws IllegalStateException if the field has already been injected during this test.
@@ -127,16 +125,19 @@ public class InjectRule implements AfterEachCallback {
         | SecurityException
         | IllegalArgumentException
         | IllegalAccessException e) {
-      throw new IllegalArgumentException(String.format(
-          "Static field not found: %s.%s", clazz.getSimpleName(), fieldName), e);
+      throw new IllegalArgumentException(
+          String.format("Static field not found: %s.%s", clazz.getSimpleName(), fieldName), e);
     }
-    checkState(!injected.contains(field),
-        "Static field already injected: %s.%s", clazz.getSimpleName(), fieldName);
+    checkState(
+        !injected.contains(field),
+        "Static field already injected: %s.%s",
+        clazz.getSimpleName(),
+        fieldName);
     try {
       field.set(null, newValue);
     } catch (IllegalArgumentException | IllegalAccessException e) {
-      throw new IllegalArgumentException(String.format(
-          "Static field not settable: %s.%s", clazz.getSimpleName(), fieldName), e);
+      throw new IllegalArgumentException(
+          String.format("Static field not settable: %s.%s", clazz.getSimpleName(), fieldName), e);
     }
     changes.add(new Change(field, oldValue, newValue));
     injected.add(field);
@@ -147,13 +148,13 @@ public class InjectRule implements AfterEachCallback {
     RuntimeException thrown = null;
     for (Change change : changes) {
       try {
-        checkState(change.field.get(null).equals(change.newValue),
+        checkState(
+            change.field.get(null).equals(change.newValue),
             "Static field value was changed post-injection: %s.%s",
-            change.field.getDeclaringClass().getSimpleName(), change.field.getName());
+            change.field.getDeclaringClass().getSimpleName(),
+            change.field.getName());
         change.field.set(null, change.oldValue);
-      } catch (IllegalArgumentException
-          | IllegalStateException
-          | IllegalAccessException e) {
+      } catch (IllegalArgumentException | IllegalStateException | IllegalAccessException e) {
         if (thrown == null) {
           thrown = new RuntimeException(e);
         } else {

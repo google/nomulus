@@ -38,7 +38,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import java.util.Optional;
 import java.util.logging.Level;
 import javax.servlet.http.HttpServletRequest;
@@ -62,7 +62,7 @@ class AuthenticatedRegistrarAccessorTest {
   final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @RegisterExtension final InjectRule inject = new InjectRule();
+  @RegisterExtension final InjectExtension inject = new InjectExtension();
 
   @Mock private HttpServletRequest req;
   @Mock private HttpServletResponse rsp;

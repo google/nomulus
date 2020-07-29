@@ -30,7 +30,7 @@ import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -82,7 +82,7 @@ class LoadDatastoreSnapshotTest {
   @TempDir
   transient Path tmpDir;
 
-  @RegisterExtension final transient InjectRule injectRule = new InjectRule();
+  @RegisterExtension final transient InjectExtension injectRule = new InjectExtension();
 
   @RegisterExtension
   final transient TestPipelineExtension testPipeline =

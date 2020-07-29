@@ -49,7 +49,7 @@ import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import org.joda.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -70,7 +70,7 @@ public class DomainBaseUtilTest {
   AppEngineExtension appEngineRule =
       AppEngineExtension.builder().withDatastore().withClock(fakeClock).build();
 
-  @RegisterExtension InjectRule injectRule = new InjectRule();
+  @RegisterExtension InjectExtension injectRule = new InjectExtension();
 
   @BeforeEach
   void beforeEach() {
