@@ -60,11 +60,9 @@ public class DeploySpec11PipelineCommand implements Command {
   @Config("sqlAccessInfoFile")
   String sqlAccessInfoFile;
 
-  JpaSupplierFactory jpaSf;
-
   @Override
   public void run() {
-    jpaSf =
+    JpaSupplierFactory jpaSupplierFactory =
         new JpaSupplierFactory(
             sqlAccessInfoFile,
             cloudKmsProjectId,
@@ -76,7 +74,7 @@ public class DeploySpec11PipelineCommand implements Command {
             beamStagingUrl,
             spec11TemplateUrl,
             reportingBucketUrl,
-            jpaSf,
+            jpaSupplierFactory,
             googleCredentialsBundle,
             retrier);
     pipeline.deploy();
