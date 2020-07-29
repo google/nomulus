@@ -53,6 +53,7 @@ public class DomainHistory extends HistoryEntry {
   @ElementCollection
   @JoinTable(name = "DomainHistoryHost")
   @Access(AccessType.PROPERTY)
+  @Column(name = "ns_host")
   public Set<VKey<HostResource>> getNsHosts() {
     return domainContent.nsHosts;
   }

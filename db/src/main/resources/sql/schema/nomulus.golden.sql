@@ -474,7 +474,7 @@ CREATE TABLE public."DomainHistory" (
 
 CREATE TABLE public."DomainHistoryHost" (
     domain_history_history_revision_id bigint NOT NULL,
-    ns_hosts text
+    ns_host text
 );
 
 
@@ -484,7 +484,7 @@ CREATE TABLE public."DomainHistoryHost" (
 
 CREATE TABLE public."DomainHost" (
     domain_repo_id text NOT NULL,
-    ns_hosts text
+    ns_host text
 );
 
 
@@ -1681,7 +1681,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."DomainHost"
-    ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (ns_hosts) REFERENCES public."HostResource"(repo_id);
+    ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (ns_host) REFERENCES public."HostResource"(repo_id);
 
 
 --

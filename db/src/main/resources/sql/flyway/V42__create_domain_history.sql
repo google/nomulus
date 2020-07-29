@@ -73,8 +73,10 @@ CREATE TABLE "DomainHistory" (
 
 CREATE TABLE "DomainHistoryHost" (
    domain_history_history_revision_id int8 NOT NULL,
-   ns_hosts text
+   ns_host text
 );
+
+ALTER TABLE IF EXISTS "DomainHost" RENAME ns_hosts TO ns_host;
 
 CREATE INDEX IDXrh4xmrot9bd63o382ow9ltfig ON "DomainHistory" (creation_time);
 CREATE INDEX IDXaro1omfuaxjwmotk3vo00trwm ON "DomainHistory" (history_registrar_id);

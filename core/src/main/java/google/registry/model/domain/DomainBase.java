@@ -27,6 +27,7 @@ import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.util.Set;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
+import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.JoinTable;
 import org.joda.time.DateTime;
@@ -68,6 +69,7 @@ public class DomainBase extends DomainContent
   @ElementCollection
   @JoinTable(name = "DomainHost")
   @Access(AccessType.PROPERTY)
+  @Column(name = "ns_host")
   public Set<VKey<HostResource>> getNsHosts() {
     return super.nsHosts;
   }
