@@ -21,12 +21,13 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSet;
 import google.registry.backup.AppEngineEnvironment;
-import google.registry.beam.initsql.JpaSupplierFactory;
+import google.registry.beam.initsql.Transforms.SerializableSupplier;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.config.CredentialModule.LocalCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
+import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.Retrier;
 import google.registry.util.SqlTemplate;
@@ -93,7 +94,7 @@ public class Spec11Pipeline implements Serializable {
   private final String reportingBucketUrl;
   private final GoogleCredentials googleCredentials;
   private final Retrier retrier;
-  private final JpaSupplierFactory jpaSf;
+  private final SerializableSupplier<JpaTransactionManager> jpaSupplierFactory;
 
   @Inject
   public Spec11Pipeline(
@@ -101,14 +102,14 @@ public class Spec11Pipeline implements Serializable {
       @Config("beamStagingUrl") String beamStagingUrl,
       @Config("spec11TemplateUrl") String spec11TemplateUrl,
       @Config("reportingBucketUrl") String reportingBucketUrl,
-      JpaSupplierFactory jpaSf,
+      SerializableSupplier<JpaTransactionManager> jpaSupplierFactory,
       @LocalCredential GoogleCredentialsBundle googleCredentialsBundle,
       Retrier retrier) {
     this.projectId = projectId;
     this.beamStagingUrl = beamStagingUrl;
     this.spec11TemplateUrl = spec11TemplateUrl;
     this.reportingBucketUrl = reportingBucketUrl;
-    this.jpaSf = jpaSf;
+    this.jpaSupplierFactory = jpaSupplierFactory;
     this.googleCredentials = googleCredentialsBundle.getGoogleCredentials();
     this.retrier = retrier;
   }
@@ -208,7 +209,9 @@ public class Spec11Pipeline implements Serializable {
                           .setDomainRepoId(context.element().getKey().domainRepoId())
                           .setRegistrarId(context.element().getKey().registrarId())
                           .build();
-                  jpaSf.get().transact(() -> jpaSf.get().saveNew(threatMatch));
+                  jpaSupplierFactory
+                      .get()
+                      .transact(() -> jpaSupplierFactory.get().saveNew(threatMatch));
                 }
               }
             }));

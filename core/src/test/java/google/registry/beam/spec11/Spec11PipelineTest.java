@@ -27,7 +27,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.CharStreams;
 import google.registry.beam.TestPipelineExtension;
-import google.registry.beam.initsql.JpaSupplierFactory;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
@@ -106,19 +105,6 @@ class Spec11PipelineTest {
     }
   }
 
-  private static class GetJpaTmAnswer implements Answer<JpaTransactionManager>, Serializable {
-    @Override
-    public JpaTransactionManager answer(InvocationOnMock invocation) {
-      JpaTransactionManager mockJpaTm =
-          mock(JpaTransactionManager.class, withSettings().serializable());
-      doAnswer(new IgnoringTransactAnswer()).when(mockJpaTm).transact(any(Runnable.class));
-      doAnswer(new TestThreatMatchToSqlAnswer())
-          .when(mockJpaTm)
-          .saveNew(any(Spec11ThreatMatch.class));
-      return mockJpaTm;
-    }
-  }
-
   /**
    * Because Spec11Pipeline serializes and deserializes its input, the JpaTransactionManager used is
    * a different object from the one passed into it. Instead of using an ArgumentCaptor to capture
@@ -128,7 +114,6 @@ class Spec11PipelineTest {
   private static List<Spec11ThreatMatch> savedSpec11ThreatMatches = new ArrayList<>();
 
   private static PipelineOptions pipelineOptions;
-  private static JpaSupplierFactory jpaSf;
 
   @BeforeAll
   static void beforeAll() {
@@ -160,16 +145,13 @@ class Spec11PipelineTest {
         .when(mockJpaTm)
         .saveNew(any(Spec11ThreatMatch.class));
 
-    jpaSf = mock(JpaSupplierFactory.class, withSettings().serializable());
-    doAnswer(new GetJpaTmAnswer()).when(jpaSf).get();
-
     spec11Pipeline =
         new Spec11Pipeline(
             "test-project",
             beamTempFolder + "/staging",
             beamTempFolder + "/templates/invoicing",
             tmpDir.toAbsolutePath().toString(),
-            jpaSf,
+            () -> mockJpaTm,
             GoogleCredentialsBundle.create(GoogleCredentials.create(null)),
             retrier);
   }
