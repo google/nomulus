@@ -38,10 +38,10 @@ public enum ReservationType {
   ALLOWED_IN_SUNRISE("Reserved", 0),
 
   /** The domain can only be registered by providing a specific token. */
-  RESERVED_FOR_SPECIFIC_USE("Allocation token required", 1),
+  RESERVED_FOR_SPECIFIC_USE("Reserved; alloc. token required", 1),
 
   /** The domain is for an anchor tenant and can only be registered using a specific token. */
-  RESERVED_FOR_ANCHOR_TENANT("Allocation token required", 2),
+  RESERVED_FOR_ANCHOR_TENANT("Reserved; alloc. token required", 2),
 
   /**
    * The domain can only be registered during sunrise for defensive purposes, and will never
