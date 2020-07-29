@@ -39,7 +39,7 @@ module.exports = function(config) {
         included: false
       },
       {
-        pattern: 'core/build/generated/source/custom/main/**/*.soy.js',
+        pattern: 'core/build/generated/sources/custom/java/main/**/*.soy.js',
         included: false
       },
       {
@@ -65,7 +65,7 @@ module.exports = function(config) {
       'node_modules/google-closure-library/closure/goog/base.js': ['closure'],
       'node_modules/google-closure-library/closure/**/*.js': ['closure'],
       'core/src/*/javascript/**/*.js': ['closure'],
-      'core/build/generated/source/custom/main/**/*.soy.js': ['closure'],
+      'core/build/generated/sources/custom/java/main/**/*.soy.js': ['closure'],
     },
     proxies: {
       "/assets/": "/base/core/build/resources/main/google/registry/ui/assets/"

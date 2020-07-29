@@ -14,7 +14,6 @@
 
 apply plugin: 'java'
 apply plugin: 'nebula.lint'
-apply plugin: 'net.ltgt.apt'
 apply plugin: 'net.ltgt.errorprone'
 apply plugin: 'checkstyle'
 apply plugin: 'jacoco'
