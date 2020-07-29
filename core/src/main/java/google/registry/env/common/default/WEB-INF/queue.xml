@@ -206,6 +206,11 @@
     <name>async-actions</name>
     <rate>1/s</rate>
     <max-concurrent-requests>5</max-concurrent-requests>
+    <retry-parameters>
+      <!-- Retry twice, one five minutes later, one five minutes after that. -->
+      <task-retry-limit>2</task-retry-limit>
+      <min-backoff-seconds>300</min-backoff-seconds>
+    </retry-parameters>
   </queue>
 
   <!-- The load[0-9] queues are used for load-testing, and can be safely deleted
