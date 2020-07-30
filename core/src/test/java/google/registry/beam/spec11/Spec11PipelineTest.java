@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.CharStreams;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
+import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.persistence.transaction.JpaTransactionManager;
@@ -84,8 +85,6 @@ import org.mockito.stubbing.Answer;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class Spec11PipelineTest {
-
-  // Serializable Answer that runs the saveNew method passed into transact().
   private static class SaveNewThreatMatchAnswer implements Answer<Void>, Serializable {
     @Override
     public Void answer(InvocationOnMock invocation) {
