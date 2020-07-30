@@ -833,8 +833,9 @@ project.tasks.create('initSqlPipeline', JavaExec) {
     // production binary, so that it won't be chosen by mistake: we definitely do
     // not want to use it for the real jobs, yet DirectRunner is the default if
     // the user forgets to override it.
-    // To allow DirectRunner in this task, we need to add testRuntimeClasspath to
-    // the classpath.
+    // DirectRunner is required for tests and is already on testRuntimeClasspath.
+    // For simplicity, we add testRuntimeClasspath to this task's classpath instead
+    // of defining a new configuration just for the DirectRunner dependency.
     classpath =
         isDirectRunner
             ? sourceSets.main.runtimeClasspath.plus(sourceSets.test.runtimeClasspath)
