@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
@@ -83,10 +84,8 @@ import org.mockito.stubbing.Answer;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class Spec11PipelineTest {
-  /*
-   * Serializable Answer for transact(). In Spec11Pipeline, transact is called with a Runnable
-   * argument (a lambda function that takes in no arguments and persists the Spec11ThreatMatch).
-   */
+
+  // Serializable Answer that runs the saveNew method passed into transact().
   private static class SaveNewThreatMatchAnswer implements Answer<Void>, Serializable {
     @Override
     public Void answer(InvocationOnMock invocation) {
@@ -286,7 +285,9 @@ class Spec11PipelineTest {
             .setRegistrarId(badDomain.registrarId())
             .build();
 
+    verify(mockJpaTm).transact(any(Runnable.class));
     verify(mockJpaTm).saveNew(threat);
+    verifyNoMoreInteractions(mockJpaTm);
   }
 
   /**
