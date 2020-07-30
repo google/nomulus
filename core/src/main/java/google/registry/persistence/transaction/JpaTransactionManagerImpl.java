@@ -46,7 +46,6 @@ import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.metamodel.EntityType;
 import javax.persistence.metamodel.SingularAttribute;
-import org.hibernate.exception.JDBCConnectionException;
 import org.joda.time.DateTime;
 
 /** Implementation of {@link JpaTransactionManager} for JPA compatible database. */
@@ -165,7 +164,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
                   getEntityManager().createNativeQuery("SET TRANSACTION READ ONLY").executeUpdate();
                   return work.get();
                 }),
-        JDBCConnectionException.class);
+        JpaRetries::isFailedQueryRetriable);
   }
 
   @Override
@@ -179,7 +178,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> T doTransactionless(Supplier<T> work) {
-    return retrier.callWithRetry(() -> transact(work), JDBCConnectionException.class);
+    return retrier.callWithRetry(() -> transact(work), JpaRetries::isFailedQueryRetriable);
   }
 
   @Override

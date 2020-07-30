@@ -31,6 +31,7 @@ import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension
 import google.registry.testing.FakeClock;
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.sql.SQLException;
 import java.util.NoSuchElementException;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
@@ -166,6 +167,21 @@ class JpaTransactionManagerImplTest {
     spyJpaTm.transact(() -> spyJpaTm.saveNew(theEntity));
     assertThrows(
         JDBCConnectionException.class,
+        () -> spyJpaTm.transactNewReadOnly(() -> spyJpaTm.load(theEntityKey)));
+    verify(spyJpaTm, times(3)).load(theEntityKey);
+  }
+
+  @Test
+  public void transactNewReadOnly_retriesNestedJdbcConnectionExceptions() {
+    JpaTransactionManager spyJpaTm = spy(jpaTm());
+    doThrow(
+            new RuntimeException()
+                .initCause(new JDBCConnectionException("connection exception", new SQLException())))
+        .when(spyJpaTm)
+        .load(any(VKey.class));
+    spyJpaTm.transact(() -> spyJpaTm.saveNew(theEntity));
+    assertThrows(
+        RuntimeException.class,
         () -> spyJpaTm.transactNewReadOnly(() -> spyJpaTm.load(theEntityKey)));
     verify(spyJpaTm, times(3)).load(theEntityKey);
   }

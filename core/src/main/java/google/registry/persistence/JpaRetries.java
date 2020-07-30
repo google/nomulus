@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableSet;
 import java.sql.SQLException;
 import java.util.function.Predicate;
 import javax.persistence.OptimisticLockException;
+import org.hibernate.exception.JDBCConnectionException;
 
 /** Helpers for identifying retriable database operations. */
 public final class JpaRetries {
@@ -40,6 +41,13 @@ public final class JpaRetries {
               e instanceof SQLException
                   && RETRIABLE_TXN_SQL_STATE.contains(((SQLException) e).getSQLState()));
 
+  private static final Predicate<Throwable> RETRIABLE_QUERY_PREDICATE =
+      Predicates.or(
+          JDBCConnectionException.class::isInstance,
+          e ->
+              e instanceof SQLException
+                  && RETRIABLE_TXN_SQL_STATE.contains(((SQLException) e).getSQLState()));
+
   public static boolean isFailedTxnRetriable(Throwable throwable) {
     Throwable t = throwable;
     while (t != null) {
@@ -53,6 +61,13 @@ public final class JpaRetries {
 
   public static boolean isFailedQueryRetriable(Throwable throwable) {
     // TODO(weiminyu): check for more error codes.
-    return isFailedTxnRetriable(throwable);
+    Throwable t = throwable;
+    while (t != null) {
+      if (RETRIABLE_QUERY_PREDICATE.test(t)) {
+        return true;
+      }
+      t = t.getCause();
+    }
+    return false;
   }
 }
