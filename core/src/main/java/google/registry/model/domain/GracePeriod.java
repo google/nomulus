@@ -30,6 +30,8 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
+import javax.persistence.Index;
+import javax.persistence.Table;
 import org.joda.time.DateTime;
 
 /**
@@ -40,13 +42,19 @@ import org.joda.time.DateTime;
  */
 @Embed
 @javax.persistence.Entity
+@Table(indexes = @Index(columnList = "domainRepoId"))
 public class GracePeriod extends ImmutableObject {
 
+  /** Unique id required for hibernate representation. */
   @javax.persistence.Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Ignore
-  /** Unique id required for hibernate representation. */
   Long id;
+
+  /** Repository id for the domain which this grace period belongs to. */
+  @Ignore
+  @Column(nullable = false)
+  String domainRepoId;
 
   /** The type of grace period. */
   @Column(nullable = false)

@@ -17,10 +17,16 @@ create table "GracePeriod" (
     billing_event_id int8,
     billing_recurrence_id int8,
     registrar_id text not null,
+    domain_repo_id text not null,
     expiration_time timestamptz not null,
     type text not null,
     primary key (id)
 );
+
+alter table if exists "GracePeriod"
+   add constraint fk_grace_period_domain_repo_id
+   foreign key (domain_repo_id)
+   references "Domain";
 
 alter table if exists "GracePeriod"
    add constraint fk_grace_period_billing_event_id
@@ -32,21 +38,5 @@ alter table if exists "GracePeriod"
    foreign key (billing_recurrence_id)
    references "BillingRecurrence";
 
-create table "DomainGracePeriod" (
-   domain_repo_id text not null,
-   grace_period_id int8 not null,
-   primary key (domain_repo_id, grace_period_id)
-);
+create index IDXj1mtx98ndgbtb1bkekahms18w on "GracePeriod" (domain_repo_id);
 
-alter table if exists "DomainGracePeriod"
-    add constraint UK_cn4v4atanwosjiksnstk59ghc unique (grace_period_id);
-
-alter table if exists "DomainGracePeriod"
-   add constraint FK6csolg92mour3qpgscatqpt50
-   foreign key (grace_period_id)
-   references "GracePeriod";
-
-alter table if exists "DomainGracePeriod"
-   add constraint FK66qes7q8o6cnckskb2bxdlw6c
-   foreign key (domain_repo_id)
-   references "Domain";
