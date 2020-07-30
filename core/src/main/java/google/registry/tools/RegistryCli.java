@@ -29,7 +29,6 @@ import com.google.appengine.tools.remoteapi.RemoteApiOptions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import google.registry.backup.AppEngineEnvironment;
 import google.registry.config.RegistryConfig;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.persistence.transaction.TransactionManagerFactory;
@@ -179,7 +178,7 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
             Iterables.getOnlyElement(jcommander.getCommands().get(parsedCommand).getObjects());
     loggingParams.configureLogging();  // Must be called after parameters are parsed.
 
-    try (AppEngineEnvironment env = new AppEngineEnvironment()) {
+    try {
       runCommand(command);
     } catch (RuntimeException ex) {
       if (Throwables.getRootCause(ex) instanceof LoginRequiredException) {
