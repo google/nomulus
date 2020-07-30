@@ -183,7 +183,8 @@ public final class DomainRenewFlow implements TransactionalFlow {
             .setAutorenewBillingEvent(newAutorenewEvent.createVKey())
             .setAutorenewPollMessage(newAutorenewPollMessage.createVKey())
             .addGracePeriod(
-                GracePeriod.forBillingEvent(GracePeriodStatus.RENEW, explicitRenewEvent))
+                GracePeriod.forBillingEvent(
+                    GracePeriodStatus.RENEW, existingDomain.getRepoId(), explicitRenewEvent))
             .build();
     EntityChanges entityChanges =
         flowCustomLogic.beforeSave(

@@ -122,6 +122,7 @@ final class RdeFixtures {
                 ImmutableSet.of(
                     GracePeriod.forBillingEvent(
                         GracePeriodStatus.RENEW,
+                        domain.getRepoId(),
                         persistResource(
                             new BillingEvent.OneTime.Builder()
                                 .setReason(Reason.RENEW)
@@ -135,6 +136,7 @@ final class RdeFixtures {
                                 .build())),
                     GracePeriod.create(
                         GracePeriodStatus.TRANSFER,
+                        domain.getRepoId(),
                         DateTime.parse("1992-01-01T00:00:00Z"),
                         "foo",
                         null)))

@@ -195,6 +195,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                     ImmutableSet.of(
                         GracePeriod.createForRecurring(
                             GracePeriodStatus.AUTO_RENEW,
+                            domain.getRepoId(),
                             A_MONTH_AGO.plusDays(45),
                             "TheRegistrar",
                             autorenewBillingEvent.createVKey())))
@@ -290,7 +291,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   void testDryRun() throws Exception {
     setUpSuccessfulTest();
     setUpGracePeriods(
-        GracePeriod.create(GracePeriodStatus.ADD, TIME_BEFORE_FLOW.plusDays(1), "foo", null));
+        GracePeriod.create(
+            GracePeriodStatus.ADD, domain.getRepoId(), TIME_BEFORE_FLOW.plusDays(1), "foo", null));
     dryRunFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
@@ -314,7 +316,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     setUpSuccessfulTest();
     BillingEvent.OneTime graceBillingEvent =
         persistResource(createBillingEvent(Reason.CREATE, Money.of(USD, 123)));
-    setUpGracePeriods(GracePeriod.forBillingEvent(gracePeriodStatus, graceBillingEvent));
+    setUpGracePeriods(
+        GracePeriod.forBillingEvent(gracePeriodStatus, domain.getRepoId(), graceBillingEvent));
     // We should see exactly one poll message, which is for the autorenew 1 month in the future.
     assertPollMessages(createAutorenewPollMessage("TheRegistrar").build());
     clock.advanceOneMilli();
@@ -388,9 +391,14 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     BillingEvent.OneTime renewBillingEvent =
         persistResource(createBillingEvent(Reason.RENEW, Money.of(USD, 456)));
     setUpGracePeriods(
-        GracePeriod.forBillingEvent(GracePeriodStatus.RENEW, renewBillingEvent),
+        GracePeriod.forBillingEvent(GracePeriodStatus.RENEW, domain.getRepoId(), renewBillingEvent),
         // This grace period has no associated billing event, so it won't cause a cancellation.
-        GracePeriod.create(GracePeriodStatus.TRANSFER, TIME_BEFORE_FLOW.plusDays(1), "foo", null));
+        GracePeriod.create(
+            GracePeriodStatus.TRANSFER,
+            domain.getRepoId(),
+            TIME_BEFORE_FLOW.plusDays(1),
+            "foo",
+            null));
     // We should see exactly one poll message, which is for the autorenew 1 month in the future.
     assertPollMessages(createAutorenewPollMessage("TheRegistrar").build());
     DateTime expectedExpirationTime = domain.getRegistrationExpirationTime().minusYears(2);
@@ -424,6 +432,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .containsExactly(
             GracePeriod.create(
                 GracePeriodStatus.REDEMPTION,
+                domain.getRepoId(),
                 clock.nowUtc().plus(Registry.get("tld").getRedemptionGracePeriodLength()),
                 "TheRegistrar",
                 null));
@@ -624,6 +633,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .containsExactly(
             GracePeriod.create(
                 GracePeriodStatus.REDEMPTION,
+                domain.getRepoId(),
                 clock.nowUtc().plus(Registry.get("tld").getRedemptionGracePeriodLength()),
                 "TheRegistrar",
                 null));
@@ -696,7 +706,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     BillingEvent.OneTime graceBillingEvent =
         persistResource(createBillingEvent(Reason.CREATE, Money.of(USD, 123)));
     // Use a grace period so that the delete is immediate, simplifying the assertions below.
-    setUpGracePeriods(GracePeriod.forBillingEvent(GracePeriodStatus.ADD, graceBillingEvent));
+    setUpGracePeriods(
+        GracePeriod.forBillingEvent(GracePeriodStatus.ADD, domain.getRepoId(), graceBillingEvent));
     // Add a nameserver.
     HostResource host = persistResource(newHostResource("ns1.example.tld"));
     persistResource(
@@ -1004,7 +1015,11 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     setUpSuccessfulTest();
     setUpGracePeriods(
         GracePeriod.create(
-            GracePeriodStatus.ADD, TIME_BEFORE_FLOW.plusDays(1), "TheRegistrar", null));
+            GracePeriodStatus.ADD,
+            domain.getRepoId(),
+            TIME_BEFORE_FLOW.plusDays(1),
+            "TheRegistrar",
+            null));
     setUpGracePeriodDurations();
     clock.advanceOneMilli();
     earlierHistoryEntry =
@@ -1027,7 +1042,11 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     setUpSuccessfulTest();
     setUpGracePeriods(
         GracePeriod.create(
-            GracePeriodStatus.ADD, TIME_BEFORE_FLOW.plusDays(1), "TheRegistrar", null));
+            GracePeriodStatus.ADD,
+            domain.getRepoId(),
+            TIME_BEFORE_FLOW.plusDays(1),
+            "TheRegistrar",
+            null));
     setUpGracePeriodDurations();
     clock.advanceOneMilli();
     earlierHistoryEntry =
@@ -1081,6 +1100,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .containsExactly(
             GracePeriod.create(
                 GracePeriodStatus.REDEMPTION,
+                domain.getRepoId(),
                 clock.nowUtc().plus(standardDays(15)),
                 "TheRegistrar",
                 null));
@@ -1127,6 +1147,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .containsExactly(
             GracePeriod.create(
                 GracePeriodStatus.REDEMPTION,
+                domain.getRepoId(),
                 clock.nowUtc().plus(standardDays(15)),
                 "TheRegistrar",
                 null));

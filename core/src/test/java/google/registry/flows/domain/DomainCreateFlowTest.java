@@ -325,7 +325,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertGracePeriods(
         domain.getGracePeriods(),
         ImmutableMap.of(
-            GracePeriod.create(GracePeriodStatus.ADD, billingTime, "TheRegistrar", null),
+            GracePeriod.create(
+                GracePeriodStatus.ADD, domain.getRepoId(), billingTime, "TheRegistrar", null),
             createBillingEvent));
     assertDnsTasksEnqueued(getUniqueIdFromCommand());
     assertEppResourceIndexEntityFor(domain);

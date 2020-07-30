@@ -308,7 +308,8 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
         domain
             .asBuilder()
             .addGracePeriod(
-                GracePeriod.create(gracePeriodStatus, clock.nowUtc().plusDays(1), "foo", null))
+                GracePeriod.create(
+                    gracePeriodStatus, domain.getRepoId(), clock.nowUtc().plusDays(1), "foo", null))
             .setCreationClientId("NewRegistrar")
             .setCreationTimeForTest(DateTime.parse("2003-11-26T22:00:00.0Z"))
             .setRegistrationExpirationTime(DateTime.parse("2005-11-26T22:00:00.0Z"))
@@ -337,7 +338,11 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             .asBuilder()
             .addGracePeriod(
                 GracePeriod.createForRecurring(
-                    GracePeriodStatus.AUTO_RENEW, clock.nowUtc().plusDays(1), "foo", recurringVKey))
+                    GracePeriodStatus.AUTO_RENEW,
+                    domain.getRepoId(),
+                    clock.nowUtc().plusDays(1),
+                    "foo",
+                    recurringVKey))
             .build());
     doSuccessfulTest("domain_info_response_autorenewperiod.xml", false);
   }
@@ -352,7 +357,11 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             .asBuilder()
             .addGracePeriod(
                 GracePeriod.create(
-                    GracePeriodStatus.REDEMPTION, clock.nowUtc().plusDays(1), "foo", null))
+                    GracePeriodStatus.REDEMPTION,
+                    domain.getRepoId(),
+                    clock.nowUtc().plusDays(1),
+                    "foo",
+                    null))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
             .build());
     doSuccessfulTest("domain_info_response_redemptionperiod.xml", false);
@@ -367,7 +376,11 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             .asBuilder()
             .addGracePeriod(
                 GracePeriod.create(
-                    GracePeriodStatus.RENEW, clock.nowUtc().plusDays(1), "foo", null))
+                    GracePeriodStatus.RENEW,
+                    domain.getRepoId(),
+                    clock.nowUtc().plusDays(1),
+                    "foo",
+                    null))
             .build());
     doSuccessfulTest("domain_info_response_renewperiod.xml", false);
   }
@@ -381,10 +394,18 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             .asBuilder()
             .addGracePeriod(
                 GracePeriod.create(
-                    GracePeriodStatus.RENEW, clock.nowUtc().plusDays(1), "foo", null))
+                    GracePeriodStatus.RENEW,
+                    domain.getRepoId(),
+                    clock.nowUtc().plusDays(1),
+                    "foo",
+                    null))
             .addGracePeriod(
                 GracePeriod.create(
-                    GracePeriodStatus.RENEW, clock.nowUtc().plusDays(2), "foo", null))
+                    GracePeriodStatus.RENEW,
+                    domain.getRepoId(),
+                    clock.nowUtc().plusDays(2),
+                    "foo",
+                    null))
             .build());
     doSuccessfulTest("domain_info_response_renewperiod.xml", false);
   }
@@ -398,7 +419,11 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             .asBuilder()
             .addGracePeriod(
                 GracePeriod.create(
-                    GracePeriodStatus.TRANSFER, clock.nowUtc().plusDays(1), "foo", null))
+                    GracePeriodStatus.TRANSFER,
+                    domain.getRepoId(),
+                    clock.nowUtc().plusDays(1),
+                    "foo",
+                    null))
             .build());
     doSuccessfulTest("domain_info_response_transferperiod.xml", false);
   }
@@ -421,10 +446,19 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
         domain
             .asBuilder()
             .addGracePeriod(
-                GracePeriod.create(GracePeriodStatus.ADD, clock.nowUtc().plusDays(1), "foo", null))
+                GracePeriod.create(
+                    GracePeriodStatus.ADD,
+                    domain.getRepoId(),
+                    clock.nowUtc().plusDays(1),
+                    "foo",
+                    null))
             .addGracePeriod(
                 GracePeriod.create(
-                    GracePeriodStatus.RENEW, clock.nowUtc().plusDays(2), "foo", null))
+                    GracePeriodStatus.RENEW,
+                    domain.getRepoId(),
+                    clock.nowUtc().plusDays(2),
+                    "foo",
+                    null))
             .build());
     doSuccessfulTest("domain_info_response_stackedaddrenewperiod.xml", false);
   }
@@ -437,7 +471,12 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
         domain
             .asBuilder()
             .addGracePeriod(
-                GracePeriod.create(GracePeriodStatus.ADD, clock.nowUtc().plusDays(1), "foo", null))
+                GracePeriod.create(
+                    GracePeriodStatus.ADD,
+                    domain.getRepoId(),
+                    clock.nowUtc().plusDays(1),
+                    "foo",
+                    null))
             .setDsData(
                 ImmutableSet.of(
                     DelegationSignerData.create(

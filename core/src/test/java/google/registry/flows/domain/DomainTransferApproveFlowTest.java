@@ -288,6 +288,7 @@ class DomainTransferApproveFlowTest
         ImmutableMap.of(
             GracePeriod.create(
                 GracePeriodStatus.TRANSFER,
+                domain.getRepoId(),
                 clock.nowUtc().plus(registry.getTransferGracePeriodLength()),
                 "NewRegistrar",
                 null),
@@ -649,6 +650,7 @@ class DomainTransferApproveFlowTest
                 .addGracePeriod(
                     GracePeriod.createForRecurring(
                         GracePeriodStatus.AUTO_RENEW,
+                        domain.getRepoId(),
                         autorenewTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()),
                         "TheRegistrar",
                         existingAutorenewEvent))

@@ -236,6 +236,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
         ImmutableMap.of(
             GracePeriod.create(
                 GracePeriodStatus.RENEW,
+                domain.getRepoId(),
                 clock.nowUtc().plus(Registry.get("tld").getRenewGracePeriodLength()),
                 renewalClientId,
                 null),

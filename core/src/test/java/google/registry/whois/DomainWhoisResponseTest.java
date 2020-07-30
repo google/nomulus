@@ -228,11 +228,12 @@ class DomainWhoisResponseTest {
     VKey<ContactResource> adminResourceKey = adminContact.createVKey();
     VKey<ContactResource> techResourceKey = techContact.createVKey();
 
+    String repoId = "3-TLD";
     domainBase =
         persistResource(
             new DomainBase.Builder()
                 .setDomainName("example.tld")
-                .setRepoId("3-TLD")
+                .setRepoId(repoId)
                 .setLastEppUpdateTime(DateTime.parse("2009-05-29T20:13:00Z"))
                 .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))
                 .setRegistrationExpirationTime(DateTime.parse("2010-10-08T00:44:59Z"))
@@ -252,8 +253,9 @@ class DomainWhoisResponseTest {
                 .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, "deadface")))
                 .setGracePeriods(
                     ImmutableSet.of(
-                        GracePeriod.create(GracePeriodStatus.ADD, END_OF_TIME, "", null),
-                        GracePeriod.create(GracePeriodStatus.TRANSFER, END_OF_TIME, "", null)))
+                        GracePeriod.create(GracePeriodStatus.ADD, repoId, END_OF_TIME, "", null),
+                        GracePeriod.create(
+                            GracePeriodStatus.TRANSFER, repoId, END_OF_TIME, "", null)))
                 .build());
   }
 

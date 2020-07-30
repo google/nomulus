@@ -161,6 +161,7 @@ public class DomainBaseUtilTest {
                     .addGracePeriod(
                         GracePeriod.create(
                             GracePeriodStatus.ADD,
+                            "4-COM",
                             fakeClock.nowUtc().plusDays(1),
                             "registrar",
                             null))
