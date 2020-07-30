@@ -119,9 +119,9 @@ class ExportloadingTransformsTest implements Serializable {
 
     ImmutableList<String> expectedPatterns =
         ImmutableList.of(
-            exportDir.getAbsolutePath() + "/all_namespaces/kind_Registry/input-*",
-            exportDir.getAbsolutePath() + "/all_namespaces/kind_DomainBase/input-*",
-            exportDir.getAbsolutePath() + "/all_namespaces/kind_ContactResource/input-*");
+            exportDir.getAbsolutePath() + "/all_namespaces/kind_Registry/output-*",
+            exportDir.getAbsolutePath() + "/all_namespaces/kind_DomainBase/output-*",
+            exportDir.getAbsolutePath() + "/all_namespaces/kind_ContactResource/output-*");
 
     PAssert.that(patterns).containsInAnyOrder(expectedPatterns);
 
@@ -135,10 +135,10 @@ class ExportloadingTransformsTest implements Serializable {
             .apply(
                 "File patterns to metadata",
                 Create.of(
-                        exportDir.getAbsolutePath() + "/all_namespaces/kind_Registry/input-*",
-                        exportDir.getAbsolutePath() + "/all_namespaces/kind_DomainBase/input-*",
+                        exportDir.getAbsolutePath() + "/all_namespaces/kind_Registry/output-*",
+                        exportDir.getAbsolutePath() + "/all_namespaces/kind_DomainBase/output-*",
                         exportDir.getAbsolutePath()
-                            + "/all_namespaces/kind_ContactResource/input-*")
+                            + "/all_namespaces/kind_ContactResource/output-*")
                     .withCoder(StringUtf8Coder.of()))
             .apply(Transforms.getFilesByPatterns());
 
@@ -157,9 +157,9 @@ class ExportloadingTransformsTest implements Serializable {
 
     ImmutableList<String> expectedFilenames =
         ImmutableList.of(
-            exportDir.getAbsolutePath() + "/all_namespaces/kind_Registry/input-0",
-            exportDir.getAbsolutePath() + "/all_namespaces/kind_DomainBase/input-0",
-            exportDir.getAbsolutePath() + "/all_namespaces/kind_ContactResource/input-0");
+            exportDir.getAbsolutePath() + "/all_namespaces/kind_Registry/output-0",
+            exportDir.getAbsolutePath() + "/all_namespaces/kind_DomainBase/output-0",
+            exportDir.getAbsolutePath() + "/all_namespaces/kind_ContactResource/output-0");
 
     PAssert.that(fileNames).containsInAnyOrder(expectedFilenames);
 

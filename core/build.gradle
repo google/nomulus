@@ -819,6 +819,24 @@ createToolTask(
     'google.registry.tools.DevTool',
     sourceSets.nonprod)
 
+project.tasks.create('initSqlPipeline', JavaExec) {
+  main = 'google.registry.beam.initsql.InitSqlPipeline'
+
+  doFirst {
+    getToolArgsList().ifPresent {
+      args it
+    }
+
+    def isDirectRunner =
+        args.contains('DirectRunner') || args.contains('--runner=DirectRunner')
+    // DirectRunner is only on testRuntimeClasspath.
+    classpath =
+        isDirectRunner
+            ? sourceSets.main.runtimeClasspath.plus(sourceSets.test.runtimeClasspath)
+            : sourceSets.main.runtimeClasspath
+  }
+}
+
 project.tasks.create('generateSqlSchema', JavaExec) {
   classpath = sourceSets.nonprod.runtimeClasspath
   main = 'google.registry.tools.DevTool'
