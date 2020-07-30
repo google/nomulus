@@ -829,7 +829,12 @@ project.tasks.create('initSqlPipeline', JavaExec) {
 
     def isDirectRunner =
         args.contains('DirectRunner') || args.contains('--runner=DirectRunner')
-    // DirectRunner is only on testRuntimeClasspath.
+    // The dependency containing DirectRunner is intentionally excluded from the
+    // production binary, so that it won't be chosen by mistake: we definitely do
+    // not want to use it for the real jobs, yet DirectRunner is the default if
+    // the user forgets to override it.
+    // To allow DirectRunner in this task, we need to add testRuntimeClasspath to
+    // the classpath.
     classpath =
         isDirectRunner
             ? sourceSets.main.runtimeClasspath.plus(sourceSets.test.runtimeClasspath)
