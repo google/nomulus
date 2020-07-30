@@ -21,7 +21,7 @@ import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.xjc.XjcXmlTransformer.unmarshal;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.re2j.Pattern;
 import google.registry.xjc.rde.XjcRdeDeposit;

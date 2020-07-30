@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Throwables;
 import com.google.common.truth.ThrowableSubject;
@@ -41,14 +41,15 @@ import io.netty.util.ReferenceCountUtil;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import org.junit.rules.ExternalResource;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * Helper for setting up and testing client / server connection with netty.
+ * JUnit extension to set up and test the client / server connection with netty.
  *
  * <p>Used in {@link SslClientInitializerTest} and {@link SslServerInitializerTest}.
  */
-public final class NettyRule extends ExternalResource {
+public final class NettyExtension implements AfterEachCallback {
 
   // All I/O operations are done inside the single thread within this event loop group, which is
   // different from the main test thread. Therefore synchronizations are required to make sure that
@@ -223,7 +224,7 @@ public final class NettyRule extends ExternalResource {
   }
 
   @Override
-  protected void after() {
+  public void afterEach(ExtensionContext context) {
     Future<?> unusedFuture = eventLoopGroup.shutdownGracefully();
   }
 

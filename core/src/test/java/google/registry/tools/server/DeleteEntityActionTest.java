@@ -18,7 +18,7 @@ import static com.google.appengine.api.datastore.DatastoreServiceFactory.getData
 import static com.google.common.truth.Truth.assertThat;
 import static com.googlecode.objectify.Key.create;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.KeyFactory;

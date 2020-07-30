@@ -22,7 +22,7 @@ import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.persistActiveContact;
 import static google.registry.testing.DatastoreHelper.persistDomainAndEnqueueLordn;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.launch.LaunchNotice;

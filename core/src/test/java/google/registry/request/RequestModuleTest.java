@@ -16,7 +16,7 @@ package google.registry.request;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.RequestModule.provideJsonPayload;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.net.MediaType;
 import google.registry.request.HttpException.BadRequestException;

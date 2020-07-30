@@ -15,21 +15,18 @@
 package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.util.Retrier.FailureReporter;
 import java.util.concurrent.Callable;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Retrier}. */
-@RunWith(JUnit4.class)
-public class RetrierTest {
+class RetrierTest {
 
-  Retrier retrier = new Retrier(new FakeSleeper(new FakeClock()), 3);
+  private Retrier retrier = new Retrier(new FakeSleeper(new FakeClock()), 3);
 
   /** An exception to throw from {@link CountingThrower}. */
   static class CountingException extends RuntimeException {
@@ -70,7 +67,7 @@ public class RetrierTest {
   }
 
   @Test
-  public void testRetryableException() {
+  void testRetryableException() {
     CountingException thrown =
         assertThrows(
             CountingException.class,
@@ -79,7 +76,7 @@ public class RetrierTest {
   }
 
   @Test
-  public void testUnretryableException() {
+  void testUnretryableException() {
     CountingException thrown =
         assertThrows(
             CountingException.class,
@@ -88,14 +85,13 @@ public class RetrierTest {
   }
 
   @Test
-  public void testRetrySucceeded() {
-    assertThat(retrier.callWithRetry(new CountingThrower(2), CountingException.class))
-        .isEqualTo(2);
+  void testRetrySucceeded() {
+    assertThat(retrier.callWithRetry(new CountingThrower(2), CountingException.class)).isEqualTo(2);
   }
 
   @Test
   @SuppressWarnings("AssertThrowsMultipleStatements")
-  public void testRetryFailed_withReporter() {
+  void testRetryFailed_withReporter() {
     CountingException thrown =
         assertThrows(
             CountingException.class,
@@ -112,7 +108,7 @@ public class RetrierTest {
   }
 
   @Test
-  public void testRetrySucceeded_withReporter() {
+  void testRetrySucceeded_withReporter() {
     TestReporter reporter = new TestReporter();
     assertThat(retrier.callWithRetry(new CountingThrower(2), reporter, CountingException.class))
         .isEqualTo(2);
@@ -120,7 +116,7 @@ public class RetrierTest {
   }
 
   @Test
-  public void testFirstTrySucceeded_withReporter() {
+  void testFirstTrySucceeded_withReporter() {
     TestReporter reporter = new TestReporter();
     assertThat(retrier.callWithRetry(new CountingThrower(0), reporter, CountingException.class))
         .isEqualTo(0);
@@ -128,14 +124,14 @@ public class RetrierTest {
   }
 
   @Test
-  public void testRetryPredicate_succeedsWhenRetries() {
+  void testRetryPredicate_succeedsWhenRetries() {
     // Throws a retryable "1" exception is retryable, and then it succeeds on "1".
     assertThat(retrier.callWithRetry(new CountingThrower(1), e -> e.getMessage().equals("1")))
         .isEqualTo(1);
   }
 
   @Test
-  public void testRetryPredicate_failsWhenDoesntRetry() {
+  void testRetryPredicate_failsWhenDoesntRetry() {
     // Throws a retryable "1" exception, then a non-retryable "2" exception, resulting in failure.
     CountingException ex =
         assertThrows(

@@ -19,12 +19,10 @@ import static google.registry.keyring.api.PgpHelper.KeyRequirement.ENCRYPT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.lessThan;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assume.assumeThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import google.registry.keyring.api.Keyring;
 import google.registry.testing.BouncyCastleProviderExtension;
@@ -53,17 +51,15 @@ public class GhostrydeTest {
   @RegisterExtension
   public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
-  private static final ImmutableList<String> CONTENTS =
-      ImmutableList.of(
-          "hi",
-          "(◕‿◕)",
-          Strings.repeat("Fanatics have their dreams, wherewith they weave\n", 1000),
-          "\0yolo",
-          "");
-
   @SuppressWarnings("unused")
   static Stream<Arguments> provideTestCombinations() {
-    return CONTENTS.stream().map(Arguments::of);
+    return Stream.of(
+            "hi",
+            "(◕‿◕)",
+            Strings.repeat("Fanatics have their dreams, wherewith they weave\n", 1000),
+            "\0yolo",
+            "")
+        .map(Arguments::of);
   }
 
   @ParameterizedTest
@@ -154,7 +150,7 @@ public class GhostrydeTest {
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
   void testFailure_corruption(String content) throws Exception {
-    assumeThat(content.length(), is(lessThan(100)));
+    assumeTrue(content.length() < 100);
 
     Keyring keyring = new FakeKeyringModule().get();
     PGPPublicKey publicKey = keyring.getRdeStagingEncryptionKey();
@@ -257,10 +253,11 @@ public class GhostrydeTest {
     // Make the last byte of the private key off by one. muahahaha
     byte[] keyData = rsa.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
     keyData[keyData.length - 1]++;
-    PGPPrivateKey privateKey = new PGPPrivateKey(
-        rsa.getKeyID(),
-        rsa.getPrivateKey().getPublicKeyPacket(),
-        rsa.getPrivateKey().getPrivateKeyDataPacket());
+    PGPPrivateKey privateKey =
+        new PGPPrivateKey(
+            rsa.getKeyID(),
+            rsa.getPrivateKey().getPublicKeyPacket(),
+            rsa.getPrivateKey().getPrivateKeyDataPacket());
 
     ByteArrayOutputStream bsOut = new ByteArrayOutputStream();
     try (OutputStream encoder = Ghostryde.encoder(bsOut, publicKey)) {

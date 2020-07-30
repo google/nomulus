@@ -107,8 +107,9 @@ public class InjectExtension implements AfterEachCallback {
    *
    * <p>The field is allowed to be {@code private}, but it most not be {@code final}.
    *
-   * <p>This method may be called either from either your {@link org.junit.Before @Before} method or
-   * from the {@link org.junit.Test @Test} method itself. However you may not inject the same field
+   * <p>This method may be called either from either your {@link
+   * org.junit.jupiter.api.BeforeEach @BeforeEach} method or from the {@link
+   * org.junit.jupiter.api.Test @Test} method itself. However you may not inject the same field
    * multiple times during the same test.
    *
    * @throws IllegalArgumentException if the static field could not be found or modified.

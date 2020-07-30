@@ -38,7 +38,7 @@ io.github.java-diff-utils:java-diff-utils:4.0
 io.grpc:grpc-context:1.22.1
 io.opencensus:opencensus-api:0.24.0
 io.opencensus:opencensus-contrib-http-util:0.24.0
-junit:junit:4.13
+junit:junit:4.12
 net.java.dev.jna:jna-platform:5.5.0
 net.java.dev.jna:jna:5.5.0
 org.apache.commons:commons-compress:1.20
@@ -55,7 +55,6 @@ org.junit.jupiter:junit-jupiter-api:5.6.2
 org.junit.jupiter:junit-jupiter-engine:5.6.2
 org.junit.platform:junit-platform-commons:1.6.2
 org.junit.platform:junit-platform-engine:1.6.2
-org.junit.vintage:junit-vintage-engine:5.6.2
 org.junit:junit-bom:5.6.2
 org.opentest4j:opentest4j:1.2.0
 org.ow2.asm:asm-analysis:8.0.1
@@ -71,5 +70,6 @@ org.scijava:native-lib-loader:2.0.2
 org.slf4j:slf4j-api:1.7.30
 org.testcontainers:database-commons:1.14.3
 org.testcontainers:jdbc:1.14.3
+org.testcontainers:junit-jupiter:1.14.3
 org.testcontainers:postgresql:1.14.3
 org.testcontainers:testcontainers:1.14.3

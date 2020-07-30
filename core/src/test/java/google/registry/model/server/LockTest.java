@@ -20,7 +20,7 @@ import static google.registry.model.server.Lock.LockState.FREE;
 import static google.registry.model.server.Lock.LockState.IN_USE;
 import static google.registry.model.server.Lock.LockState.OWNER_DIED;
 import static google.registry.model.server.Lock.LockState.TIMED_OUT;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;

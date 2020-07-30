@@ -33,7 +33,7 @@ import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.tldconfig.idn.IdnTableEnum.EXTENDED_LATIN;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.appengine.tools.cloudstorage.GcsService;

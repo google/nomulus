@@ -19,7 +19,7 @@ import static google.registry.proxy.TestUtils.makeWhoisHttpRequest;
 import static google.registry.proxy.TestUtils.makeWhoisHttpResponse;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Throwables;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;

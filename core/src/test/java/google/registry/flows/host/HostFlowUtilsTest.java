@@ -16,7 +16,7 @@ package google.registry.flows.host;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Strings;
 import google.registry.flows.host.HostFlowUtils.HostNameNotLowerCaseException;

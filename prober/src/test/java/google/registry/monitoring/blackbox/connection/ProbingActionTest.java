@@ -24,7 +24,7 @@ import google.registry.monitoring.blackbox.handler.ActionHandler;
 import google.registry.monitoring.blackbox.handler.ConversionHandler;
 import google.registry.monitoring.blackbox.handler.TestActionHandler;
 import google.registry.monitoring.blackbox.message.TestMessage;
-import google.registry.networking.handler.NettyRule;
+import google.registry.networking.handler.NettyExtension;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -55,7 +55,7 @@ public class ProbingActionTest {
   private static final String ADDRESS_NAME = "TEST_ADDRESS";
   private static final int TEST_PORT = 0;
 
-  @Rule public NettyRule nettyRule = new NettyRule();
+  @Rule public NettyExtension nettyRule = new NettyExtension();
 
   /**
    * We use custom Test {@link ActionHandler} and {@link ConversionHandler} so test depends only on

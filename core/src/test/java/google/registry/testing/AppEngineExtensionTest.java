@@ -18,7 +18,7 @@ import static com.google.common.io.Files.asCharSink;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.util.CollectionUtils.entriesToImmutableMap;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Multimap;

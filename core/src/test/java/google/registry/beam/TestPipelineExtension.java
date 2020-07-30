@@ -27,9 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import java.io.IOException;
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,7 +57,6 @@ import org.apache.beam.sdk.testing.TestPipelineOptions;
 import org.apache.beam.sdk.testing.ValidatesRunner;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.util.common.ReflectHelpers;
-import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -119,17 +116,17 @@ public class TestPipelineExtension extends Pipeline
 
     protected final Pipeline pipeline;
 
-    protected boolean runAttempted;
+    boolean runAttempted;
 
     private PipelineRunEnforcement(final Pipeline pipeline) {
       this.pipeline = pipeline;
     }
 
-    protected void enableAutoRunIfMissing(final boolean enable) {
+    void enableAutoRunIfMissing(final boolean enable) {
       enableAutoRunIfMissing = enable;
     }
 
-    protected void beforePipelineExecution() {
+    void beforePipelineExecution() {
       runAttempted = true;
     }
 
@@ -248,9 +245,9 @@ public class TestPipelineExtension extends Pipeline
   }
 
   /** System property used to set {@link TestPipelineOptions}. */
-  public static final String PROPERTY_BEAM_TEST_PIPELINE_OPTIONS = "beamTestPipelineOptions";
+  private static final String PROPERTY_BEAM_TEST_PIPELINE_OPTIONS = "beamTestPipelineOptions";
 
-  static final String PROPERTY_USE_DEFAULT_DUMMY_RUNNER = "beamUseDummyRunner";
+  private static final String PROPERTY_USE_DEFAULT_DUMMY_RUNNER = "beamUseDummyRunner";
 
   private static final ObjectMapper MAPPER =
       new ObjectMapper()
@@ -434,7 +431,7 @@ public class TestPipelineExtension extends Pipeline
   }
 
   /** Creates {@link PipelineOptions} for testing. */
-  public static PipelineOptions testingPipelineOptions() {
+  private static PipelineOptions testingPipelineOptions() {
     try {
       @Nullable
       String beamTestPipelineOptions = System.getProperty(PROPERTY_BEAM_TEST_PIPELINE_OPTIONS);
@@ -474,7 +471,7 @@ public class TestPipelineExtension extends Pipeline
    * <p>Note this only runs for runners which support Metrics. Runners which do not should verify
    * this in some other way. See: https://issues.apache.org/jira/browse/BEAM-2001
    */
-  public static void verifyPAssertsSucceeded(Pipeline pipeline, PipelineResult pipelineResult) {
+  private static void verifyPAssertsSucceeded(Pipeline pipeline, PipelineResult pipelineResult) {
     if (MetricsEnvironment.isMetricsSupported()) {
       long expectedNumberOfAssertions = (long) PAssert.countAsserts(pipeline);
 
@@ -512,31 +509,6 @@ public class TestPipelineExtension extends Pipeline
     @Override
     public void visitPrimitiveTransform(TransformHierarchy.Node node) {
       empty = false;
-    }
-  }
-
-  /**
-   * A utility class for querying annotations.
-   *
-   * <p>NOTE: This was copied from the Apache Beam project from a separate file only for visibility
-   * reasons (it's package-private there).
-   */
-  static class Annotations {
-
-    /** Annotation predicates. */
-    static class Predicates {
-
-      static Predicate<Annotation> isAnnotationOfType(final Class<? extends Annotation> clazz) {
-        return annotation ->
-            annotation.annotationType() != null && annotation.annotationType().equals(clazz);
-      }
-
-      static Predicate<Annotation> isCategoryOf(final Class<?> value, final boolean allowDerived) {
-        return category ->
-            Arrays.stream(((Category) category).value())
-                .anyMatch(
-                    aClass -> allowDerived ? value.isAssignableFrom(aClass) : value.equals(aClass));
-      }
     }
   }
 }

@@ -16,7 +16,7 @@ package google.registry.persistence.transaction;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;

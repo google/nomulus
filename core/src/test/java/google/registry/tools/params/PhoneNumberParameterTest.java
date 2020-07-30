@@ -15,7 +15,7 @@
 package google.registry.tools.params;
 
 import static com.google.common.truth.Truth8.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 

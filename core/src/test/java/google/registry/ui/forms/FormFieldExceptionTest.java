@@ -15,7 +15,7 @@
 package google.registry.ui.forms;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.testing.NullPointerTester;
 import org.junit.jupiter.api.Test;

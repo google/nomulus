@@ -17,15 +17,12 @@ package google.registry.util;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.util.SerializeUtils.deserialize;
 import static google.registry.util.SerializeUtils.serialize;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link SerializeUtils}. */
-@RunWith(JUnit4.class)
-public class SerializeUtilsTest {
+class SerializeUtilsTest {
 
   static class Lol {
     @Override
@@ -33,30 +30,31 @@ public class SerializeUtilsTest {
       return "LOL_VALUE";
     }
   }
+
   @Test
-  public void testSerialize_nullValue_returnsNull() {
+  void testSerialize_nullValue_returnsNull() {
     assertThat(serialize(null)).isNull();
   }
 
   @Test
-  public void testDeserialize_nullValue_returnsNull() {
+  void testDeserialize_nullValue_returnsNull() {
     assertThat(deserialize(Object.class, null)).isNull();
   }
 
   @Test
-  public void testSerializeDeserialize_stringValue_maintainsValue() {
+  void testSerializeDeserialize_stringValue_maintainsValue() {
     assertThat(deserialize(String.class, serialize("hello"))).isEqualTo("hello");
   }
 
   @Test
-  public void testSerialize_objectDoesntImplementSerialize_hasInformativeError() {
+  void testSerialize_objectDoesntImplementSerialize_hasInformativeError() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> serialize(new Lol()));
     assertThat(thrown).hasMessageThat().contains("Unable to serialize: LOL_VALUE");
   }
 
   @Test
-  public void testDeserialize_badValue_hasInformativeError() {
+  void testDeserialize_badValue_hasInformativeError() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

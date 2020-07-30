@@ -21,8 +21,8 @@ import static google.registry.backup.BackupUtils.GcsMetadataKeys.LOWER_BOUND_CHE
 import static google.registry.backup.ExportCommitLogDiffAction.DIFF_FILE_PREFIX;
 import static java.lang.reflect.Proxy.newProxyInstance;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.appengine.tools.cloudstorage.GcsFileMetadata;
 import com.google.appengine.tools.cloudstorage.GcsFileOptions;

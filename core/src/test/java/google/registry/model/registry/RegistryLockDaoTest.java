@@ -24,7 +24,7 @@ import static google.registry.testing.SqlHelper.getRegistryLockByRevisionId;
 import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
 import static google.registry.testing.SqlHelper.getRegistryLocksByRegistrarId;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
 import google.registry.schema.domain.RegistryLock;

@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import google.registry.tools.server.ToolsTestData;

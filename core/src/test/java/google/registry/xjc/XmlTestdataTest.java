@@ -15,133 +15,111 @@
 package google.registry.xjc;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.xjc.XjcXmlTransformer.unmarshal;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import google.registry.testing.TestDataHelper;
 import google.registry.xjc.epp.XjcEpp;
 import google.registry.xjc.rde.XjcRdeDeposit;
+import google.registry.xml.XmlException;
 import java.io.ByteArrayInputStream;
-import org.junit.experimental.theories.DataPoints;
-import org.junit.experimental.theories.Theories;
-import org.junit.experimental.theories.Theory;
-import org.junit.runner.RunWith;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
- * Unit tests that ensure {@link XjcObject} is able to unmarshal XML in {@code testdata/} and
- * ensure they conform to the XML schema definitions.
+ * Unit tests that ensure {@link XjcObject} is able to unmarshal XML in {@code testdata/} and ensure
+ * they conform to the XML schema definitions.
  */
-@RunWith(Theories.class)
-public class XmlTestdataTest {
-  private static class Example {
-    final ByteArrayInputStream xmlStream;
+class XmlTestdataTest {
 
-    private Example(String filename) {
-      this.xmlStream = new ByteArrayInputStream(
-          TestDataHelper.loadFile(XmlTestdataTest.class, filename).getBytes(UTF_8));
-    }
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testValid(String filename, Class<? extends XjcObject> expectedClazz) throws Exception {
+    XjcObject xml = unmarshal(XjcObject.class, loadAsStream(filename));
+    assertThat(xml).isInstanceOf(expectedClazz);
   }
 
-  private static class Good extends Example {
-    final Class<?> clazz;
-
-    private Good(String filename, Class<?> clazz) {
-      super(filename);
-      this.clazz = clazz;
-    }
+  @Test
+  void testInvalid() {
+    ByteArrayInputStream badData = loadAsStream("invalid_greeting.xml");
+    XmlException thrown =
+        assertThrows(XmlException.class, () -> unmarshal(XjcObject.class, badData));
+    assertThat(thrown).hasMessageThat().contains("dcp}' is expected");
   }
 
-  private static class Evil extends Example {
-    final String error;
-
-    private Evil(String filename, String error) {
-      super(filename);
-      this.error = error;
-    }
+  @SuppressWarnings("unused")
+  static Stream<Arguments> provideTestCombinations() {
+    return Stream.of(
+        Arguments.of("contact_check_response.xml", XjcEpp.class),
+        Arguments.of("contact_check.xml", XjcEpp.class),
+        Arguments.of("contact_create_response_offline_review_completed.xml", XjcEpp.class),
+        Arguments.of("contact_create_response_offline_review.xml", XjcEpp.class),
+        Arguments.of("contact_create_response.xml", XjcEpp.class),
+        Arguments.of("contact_create.xml", XjcEpp.class),
+        Arguments.of("contact_delete_response.xml", XjcEpp.class),
+        Arguments.of("contact_delete.xml", XjcEpp.class),
+        Arguments.of("contact_info_response.xml", XjcEpp.class),
+        Arguments.of("contact_info.xml", XjcEpp.class),
+        Arguments.of("contact_transfer_query_response.xml", XjcEpp.class),
+        Arguments.of("contact_transfer_query.xml", XjcEpp.class),
+        Arguments.of("contact_transfer_request_response.xml", XjcEpp.class),
+        Arguments.of("contact_transfer_request.xml", XjcEpp.class),
+        Arguments.of("contact_update.xml", XjcEpp.class),
+        Arguments.of("domain_check_response.xml", XjcEpp.class),
+        Arguments.of("domain_check.xml", XjcEpp.class),
+        Arguments.of("domain_create_response_offline_review_completed.xml", XjcEpp.class),
+        Arguments.of("domain_create_response_offline_review.xml", XjcEpp.class),
+        Arguments.of("domain_create_response.xml", XjcEpp.class),
+        Arguments.of("domain_create.xml", XjcEpp.class),
+        Arguments.of("domain_delete.xml", XjcEpp.class),
+        Arguments.of("domain_info_response_addperiod.xml", XjcEpp.class),
+        Arguments.of("domain_info_response_pendingdelete.xml", XjcEpp.class),
+        Arguments.of("domain_info_response_pendingrestore.xml", XjcEpp.class),
+        Arguments.of("domain_info_response_redemptionperiod.xml", XjcEpp.class),
+        Arguments.of("domain_info_response_unauthorized.xml", XjcEpp.class),
+        Arguments.of("domain_info_response.xml", XjcEpp.class),
+        Arguments.of("domain_info_with_auth.xml", XjcEpp.class),
+        Arguments.of("domain_info.xml", XjcEpp.class),
+        Arguments.of("domain_renew_response.xml", XjcEpp.class),
+        Arguments.of("domain_renew.xml", XjcEpp.class),
+        Arguments.of("domain_transfer_query_response.xml", XjcEpp.class),
+        Arguments.of("domain_transfer_query.xml", XjcEpp.class),
+        Arguments.of("domain_transfer_request_response.xml", XjcEpp.class),
+        Arguments.of("domain_transfer_request.xml", XjcEpp.class),
+        Arguments.of("domain_update_restore_report.xml", XjcEpp.class),
+        Arguments.of("domain_update_restore_request.xml", XjcEpp.class),
+        Arguments.of("domain_update.xml", XjcEpp.class),
+        Arguments.of("generic_success_response.xml", XjcEpp.class),
+        Arguments.of("greeting.xml", XjcEpp.class),
+        Arguments.of("host_check_response.xml", XjcEpp.class),
+        Arguments.of("host_check.xml", XjcEpp.class),
+        Arguments.of("host_create_response_offline_review_complete.xml", XjcEpp.class),
+        Arguments.of("host_create_response_offline_review.xml", XjcEpp.class),
+        Arguments.of("host_create_response.xml", XjcEpp.class),
+        Arguments.of("host_create.xml", XjcEpp.class),
+        Arguments.of("host_delete_response.xml", XjcEpp.class),
+        Arguments.of("host_delete.xml", XjcEpp.class),
+        Arguments.of("host_info_response.xml", XjcEpp.class),
+        Arguments.of("host_info.xml", XjcEpp.class),
+        Arguments.of("host_update.xml", XjcEpp.class),
+        Arguments.of("login.xml", XjcEpp.class),
+        Arguments.of("logout_response.xml", XjcEpp.class),
+        Arguments.of("logout.xml", XjcEpp.class),
+        Arguments.of("poll_ack_response.xml", XjcEpp.class),
+        Arguments.of("poll_ack.xml", XjcEpp.class),
+        Arguments.of("poll_response_empty.xml", XjcEpp.class),
+        Arguments.of("poll_response_mixed.xml", XjcEpp.class),
+        Arguments.of("poll.xml", XjcEpp.class),
+        Arguments.of("rde_deposit_differential.xml", XjcRdeDeposit.class),
+        Arguments.of("rde_deposit_full.xml", XjcRdeDeposit.class),
+        Arguments.of("restore_request_response.xml", XjcEpp.class));
   }
 
-  @DataPoints
-  public static final Good[] GOOD = new Good[] {
-    new Good("contact_check_response.xml", XjcEpp.class),
-    new Good("contact_check.xml", XjcEpp.class),
-    new Good("contact_create_response_offline_review_completed.xml", XjcEpp.class),
-    new Good("contact_create_response_offline_review.xml", XjcEpp.class),
-    new Good("contact_create_response.xml", XjcEpp.class),
-    new Good("contact_create.xml", XjcEpp.class),
-    new Good("contact_delete_response.xml", XjcEpp.class),
-    new Good("contact_delete.xml", XjcEpp.class),
-    new Good("contact_info_response.xml", XjcEpp.class),
-    new Good("contact_info.xml", XjcEpp.class),
-    new Good("contact_transfer_query_response.xml", XjcEpp.class),
-    new Good("contact_transfer_query.xml", XjcEpp.class),
-    new Good("contact_transfer_request_response.xml", XjcEpp.class),
-    new Good("contact_transfer_request.xml", XjcEpp.class),
-    new Good("contact_update.xml", XjcEpp.class),
-    new Good("domain_check_response.xml", XjcEpp.class),
-    new Good("domain_check.xml", XjcEpp.class),
-    new Good("domain_create_response_offline_review_completed.xml", XjcEpp.class),
-    new Good("domain_create_response_offline_review.xml", XjcEpp.class),
-    new Good("domain_create_response.xml", XjcEpp.class),
-    new Good("domain_create.xml", XjcEpp.class),
-    new Good("domain_delete.xml", XjcEpp.class),
-    new Good("domain_info_response_addperiod.xml", XjcEpp.class),
-    new Good("domain_info_response_pendingdelete.xml", XjcEpp.class),
-    new Good("domain_info_response_pendingrestore.xml", XjcEpp.class),
-    new Good("domain_info_response_redemptionperiod.xml", XjcEpp.class),
-    new Good("domain_info_response_unauthorized.xml", XjcEpp.class),
-    new Good("domain_info_response.xml", XjcEpp.class),
-    new Good("domain_info_with_auth.xml", XjcEpp.class),
-    new Good("domain_info.xml", XjcEpp.class),
-    new Good("domain_renew_response.xml", XjcEpp.class),
-    new Good("domain_renew.xml", XjcEpp.class),
-    new Good("domain_transfer_query_response.xml", XjcEpp.class),
-    new Good("domain_transfer_query.xml", XjcEpp.class),
-    new Good("domain_transfer_request_response.xml", XjcEpp.class),
-    new Good("domain_transfer_request.xml", XjcEpp.class),
-    new Good("domain_update_restore_report.xml", XjcEpp.class),
-    new Good("domain_update_restore_request.xml", XjcEpp.class),
-    new Good("domain_update.xml", XjcEpp.class),
-    new Good("generic_success_response.xml", XjcEpp.class),
-    new Good("greeting.xml", XjcEpp.class),
-    new Good("host_check_response.xml", XjcEpp.class),
-    new Good("host_check.xml", XjcEpp.class),
-    new Good("host_create_response_offline_review_complete.xml", XjcEpp.class),
-    new Good("host_create_response_offline_review.xml", XjcEpp.class),
-    new Good("host_create_response.xml", XjcEpp.class),
-    new Good("host_create.xml", XjcEpp.class),
-    new Good("host_delete_response.xml", XjcEpp.class),
-    new Good("host_delete.xml", XjcEpp.class),
-    new Good("host_info_response.xml", XjcEpp.class),
-    new Good("host_info.xml", XjcEpp.class),
-    new Good("host_update.xml", XjcEpp.class),
-    new Good("login.xml", XjcEpp.class),
-    new Good("logout_response.xml", XjcEpp.class),
-    new Good("logout.xml", XjcEpp.class),
-    new Good("poll_ack_response.xml", XjcEpp.class),
-    new Good("poll_ack.xml", XjcEpp.class),
-    new Good("poll_response_empty.xml", XjcEpp.class),
-    new Good("poll_response_mixed.xml", XjcEpp.class),
-    new Good("poll.xml", XjcEpp.class),
-    new Good("rde_deposit_differential.xml", XjcRdeDeposit.class),
-    new Good("rde_deposit_full.xml", XjcRdeDeposit.class),
-    new Good("restore_request_response.xml", XjcEpp.class),
-  };
-
-  @DataPoints
-  public static final Evil[] EVIL = new Evil[] {
-    new Evil("invalid_greeting.xml", "dcp}' is expected"),
-  };
-
-  @Theory
-  public void testValid(Good v) throws Exception {
-    XjcObject xml = unmarshal(XjcObject.class, v.xmlStream);
-    assertThat(xml).isInstanceOf(v.clazz);
-  }
-
-  @Theory
-  public void testInvalid(Evil v) {
-    Throwable thrown = assertThrows(Throwable.class, () -> unmarshal(XjcObject.class, v.xmlStream));
-    assertThat(thrown).hasMessageThat().contains(v.error);
+  private static ByteArrayInputStream loadAsStream(String filename) {
+    return new ByteArrayInputStream(loadFile(XmlTestdataTest.class, filename).getBytes(UTF_8));
   }
 }

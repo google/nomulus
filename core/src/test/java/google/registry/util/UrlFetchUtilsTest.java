@@ -20,7 +20,7 @@ import static com.google.common.net.MediaType.CSV_UTF_8;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.util.UrlFetchUtils.setPayloadMultipart;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
