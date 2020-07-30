@@ -19,7 +19,6 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import google.registry.documentation.FlowDocumentation.ErrorCase;
-import java.io.IOException;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
@@ -50,7 +49,7 @@ class FlowExceptionsTest {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Test
-  void testExceptionCorrespondence() throws IOException {
+  void testExceptionCorrespondence() throws Exception {
     DocumentationGenerator docGenerator = new DocumentationGenerator();
     Set<ErrorCase> possibleErrors = Sets.newHashSet(docGenerator.getAllErrors());
     Set<String> mismatchingFlows = Sets.newHashSet();

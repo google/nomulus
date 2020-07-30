@@ -27,19 +27,22 @@ import java.io.IOException;
 /**
  * Tool to generate documentation for the EPP flows and corresponding external API.
  *
- * <p>Mostly responsible for producing standalone documentation files (HTML
- * and Markdown) from flow information objects; those call into javadoc to
- * extract documentation information from the flows package source files.
- * See the {@link FlowDocumentation} class for more details.
+ * <p>Mostly responsible for producing standalone documentation files (HTML and Markdown) from flow
+ * information objects; those call into javadoc to extract documentation information from the flows
+ * package source files. See the {@link FlowDocumentation} class for more details.
  */
 @Parameters(separators = " =", commandDescription = "Tool to generate EPP API documentation")
 public class FlowDocumentationTool {
 
-  @Parameter(names = {"-o", "--output_file"},
+  @Parameter(
+      names = {"-o", "--output_file"},
       description = "file where generated documentation will be written (use '-' for stdout)")
   private String outputFileName;
 
-  @Parameter(names = {"--help", "--helpshort"}, description = "print this help", help = true)
+  @Parameter(
+      names = {"--help", "--helpshort"},
+      description = "print this help",
+      help = true)
   private boolean displayHelp = false;
 
   /** Parses command line flags and then runs the documentation tool. */
@@ -68,7 +71,7 @@ public class FlowDocumentationTool {
     DocumentationGenerator docGenerator;
     try {
       docGenerator = new DocumentationGenerator();
-    } catch (IOException e) {
+    } catch (Exception e) {
       throw new RuntimeException("IO error while running Javadoc tool", e);
     }
     String output = docGenerator.generateMarkdown();
@@ -76,7 +79,7 @@ public class FlowDocumentationTool {
       System.out.println(output);
     } else {
       if (outputFileName == null) {
-        outputFileName = "doclet.html";
+        outputFileName = "doclet.md";
       }
       try {
         Files.asCharSink(new File(outputFileName), UTF_8).write(output);
@@ -86,5 +89,3 @@ public class FlowDocumentationTool {
     }
   }
 }
-
-
