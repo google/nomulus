@@ -308,9 +308,14 @@ subprojects {
     }
   }
 
-  javadocSource << project.sourceSets.main.allJava
-  javadocClasspath << project.sourceSets.main.compileClasspath
-  javadocDependentTasks << project.tasks.compileJava
+  // No need to produce javadoc for the docs subproject, which has no APIs to
+  // expose to users.
+  if (project.name != 'docs') {
+    javadocSource << project.sourceSets.main.allJava
+    javadocClasspath << project.sourceSets.main.compileClasspath
+    javadocClasspath << "${buildDir}/generated/sources/annotationProcessor/java/main"
+    javadocDependentTasks << project.tasks.compileJava
+  }
 }
 
 // If "-P verboseTestOutput=true" is passed in, configure all subprojects to dump all of their
