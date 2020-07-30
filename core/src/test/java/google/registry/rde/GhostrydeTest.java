@@ -17,8 +17,6 @@ package google.registry.rde;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.keyring.api.PgpHelper.KeyRequirement.ENCRYPT;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -120,7 +118,7 @@ public class GhostrydeTest {
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
   void testFailure_tampering(String content) throws Exception {
-    assumeThat(content.length(), is(greaterThan(100)));
+    assumeTrue(content.length() > 100);
 
     Keyring keyring = new FakeKeyringModule().get();
     PGPPublicKey publicKey = keyring.getRdeStagingEncryptionKey();
