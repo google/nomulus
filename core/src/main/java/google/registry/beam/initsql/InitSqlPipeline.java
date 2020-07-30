@@ -40,6 +40,7 @@ import java.util.Collection;
 import java.util.Optional;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
+import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.transforms.Wait;
@@ -233,5 +234,11 @@ public class InitSqlPipeline implements Serializable {
     try (AppEngineEnvironment env = new AppEngineEnvironment()) {
       return entityClasses.stream().map(Key::getKind).collect(ImmutableList.toImmutableList());
     }
+  }
+
+  public static void main(String[] args) {
+    InitSqlPipelineOptions options =
+        PipelineOptionsFactory.fromArgs(args).withValidation().as(InitSqlPipelineOptions.class);
+    new InitSqlPipeline(options).run();
   }
 }
