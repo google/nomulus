@@ -35,7 +35,7 @@ public class DeploySpec11PipelineCommand implements Command {
   String projectId;
 
   @Parameter(
-      names = {"-c"},
+      names = {"-project"},
       description = "Cloud KMS project ID",
       required = true)
   String cloudKmsProjectId;

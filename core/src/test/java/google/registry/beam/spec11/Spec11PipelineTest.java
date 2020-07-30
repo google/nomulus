@@ -25,6 +25,7 @@ import static org.mockito.Mockito.withSettings;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.io.CharStreams;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
@@ -98,7 +99,7 @@ class Spec11PipelineTest {
     @Override
     public Void answer(InvocationOnMock invocation) {
       Spec11ThreatMatch threat = invocation.getArgument(0, Spec11ThreatMatch.class);
-      if (threat.getDomainName().equals("testThreatMatchToSql.com")) {
+      if (threat.getDomainName().equals("testThreatMatchToSqlBad.com")) {
         savedSpec11ThreatMatches.add(threat);
       }
       return null;
@@ -157,7 +158,8 @@ class Spec11PipelineTest {
   }
 
   private static final ImmutableList<String> BAD_DOMAINS =
-      ImmutableList.of("111.com", "222.com", "444.com", "no-email.com", "testThreatMatchToSql.com");
+      ImmutableList.of(
+          "111.com", "222.com", "444.com", "no-email.com", "testThreatMatchToSqlBad.com");
 
   private ImmutableList<Subdomain> getInputDomainsJson() {
     ImmutableList.Builder<Subdomain> subdomainsBuilder = new ImmutableList.Builder<>();
@@ -264,10 +266,17 @@ class Spec11PipelineTest {
   @Test
   @SuppressWarnings("unchecked")
   public void testSpec11ThreatMatchToSql() throws Exception {
-    // Create one bad Subdomain to test with evaluateUrlHealth
+    // Create one bad and one good Subdomain to test with evaluateUrlHealth. Only the bad one should
+    // be detected and stored in avedSpec11ThreatMatches.
     Subdomain badDomain =
         Subdomain.create(
-            "testThreatMatchToSql.com", "theDomain", "theRegistrar", "fake@theRegistrar.com");
+            "testThreatMatchToSqlBad.com", "theDomain", "theRegistrar", "fake@theRegistrar.com");
+    Subdomain goodDomain =
+        Subdomain.create(
+            "testThreatMatchToSqlGood.com",
+            "someDomain",
+            "someRegistrar",
+            "fake@someRegistrar.com");
 
     Spec11ThreatMatch threat =
         new Spec11ThreatMatch()
@@ -291,12 +300,12 @@ class Spec11PipelineTest {
             (Serializable & Supplier) () -> mockHttpClient);
 
     // Apply input and evaluation transforms
-    PCollection<Subdomain> input = testPipeline.apply(Create.of(badDomain));
+    PCollection<Subdomain> input = testPipeline.apply(Create.of(badDomain, goodDomain));
     spec11Pipeline.evaluateUrlHealth(input, evalFn, StaticValueProvider.of("2020-06-10"));
     testPipeline.run();
 
     // Verify that the domain names of the Subdomain and the persisted Spec11TThreatMatch are equal.
-    Spec11ThreatMatch persistedThreat = savedSpec11ThreatMatches.get(0);
+    Spec11ThreatMatch persistedThreat = Iterables.getOnlyElement(savedSpec11ThreatMatches);
     threat.asBuilder().setId(persistedThreat.getId());
     assertThat(threat).isEqualTo(persistedThreat);
   }

@@ -198,6 +198,7 @@ public class Spec11Pipeline implements Serializable {
               public void processElement(ProcessContext context) {
                 // create the Spec11ThreatMatch from Subdomain and ThreatMatch
                 try (AppEngineEnvironment env = new AppEngineEnvironment()) {
+                  Subdomain subdomain = context.element().getKey();
                   Spec11ThreatMatch threatMatch =
                       new Spec11ThreatMatch.Builder()
                           .setThreatTypes(
@@ -205,9 +206,9 @@ public class Spec11Pipeline implements Serializable {
                                   ThreatType.valueOf(context.element().getValue().threatType())))
                           .setCheckDate(
                               LocalDate.parse(dateProvider.get(), ISODateTimeFormat.date()))
-                          .setDomainName(context.element().getKey().domainName())
-                          .setDomainRepoId(context.element().getKey().domainRepoId())
-                          .setRegistrarId(context.element().getKey().registrarId())
+                          .setDomainName(subdomain.domainName())
+                          .setDomainRepoId(subdomain.domainRepoId())
+                          .setRegistrarId(subdomain.registrarId())
                           .build();
                   jpaSupplierFactory
                       .get()
