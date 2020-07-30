@@ -32,7 +32,7 @@ public final class BackupPaths {
   private BackupPaths() {}
 
   private static final String WILDCARD_CHAR = "*";
-  private static final String EXPORT_PATTERN_TEMPLATE = "%s/all_namespaces/kind_%s/input-%s";
+  private static final String EXPORT_PATTERN_TEMPLATE = "%s/all_namespaces/kind_%s/output-%s";
 
   public static final String COMMIT_LOG_NAME_PREFIX = "commit_diff_until_";
   private static final String COMMIT_LOG_PATTERN_TEMPLATE = "%s/" + COMMIT_LOG_NAME_PREFIX + "*";
