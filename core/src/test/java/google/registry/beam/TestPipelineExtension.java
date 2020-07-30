@@ -86,11 +86,10 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * remote execution modes. For example:
  *
  * <pre><code>
- * {@literal @Rule}
- *  public final transient TestPipeline p = TestPipeline.create();
+ * {@literal @RegisterExtension}
+ *  final transient TestPipeline p = TestPipeline.create();
  *
  * {@literal @Test}
- * {@literal @Category}(NeedsRunner.class)
  *  public void myPipelineTest() throws Exception {
  *    final PCollection&lt;String&gt; pCollection = pipeline.apply(...)
  *    PAssert.that(pCollection).containsInAnyOrder(...);
@@ -329,8 +328,9 @@ public class TestPipelineExtension extends Pipeline
   public PipelineResult run(PipelineOptions options) {
     checkState(
         enforcement.isPresent(),
-        "Is your TestPipeline declaration missing a @Rule annotation? Usage: "
-            + "@Rule public final transient TestPipeline pipeline = TestPipeline.create();");
+        "Is your TestPipeline declaration missing a @RegisterExtension annotation? Usage:"
+            + " @RegisterExtension final transient TestPipelineExtension pipeline ="
+            + " TestPipeline.create();");
 
     final PipelineResult pipelineResult;
     try {
