@@ -16,52 +16,86 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.common.base.Splitter;
+import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.DomainBase;
+import google.registry.util.NonFinalForTesting;
 import java.io.File;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.List;
 
 /**
  * Command to resave entities with a unique id.
  *
- * <p>This command is used to address the duplicate id issue we found for certain
- * BillingEvent.OneTime and PollMessage.Autorenew entities. The command reassigns an application
- * wide unique id to the problematic entity and resaves it, it also resaves the entity having
- * reference to the problematic entity with the updated id.
+ * <p>This command is used to address the duplicate id issue we found for certain {@link
+ * BillingEvent.OneTime} entities. The command reassigns an application wide unique id to the
+ * problematic entity and resaves it, it also resaves the entity having reference to the problematic
+ * entity with the updated id.
+ *
+ * <p>To use this command, you will need to provide the path to a file containing a list of strings
+ * representing the literal of Objectify key for the problematic entities. An example key literal
+ * is:
+ *
+ * <pre>
+ * "DomainBase", "111111-TEST", "HistoryEntry", 2222222, "OneTime", 3333333
+ * </pre>
+ *
+ * <p>Note that the double quotes are part of the key literal. The key literal can be retrieved from
+ * the column <code>__key__.path</code> in BigQuery.
  */
-@Parameters(separators = " =", commandDescription = "Resave entites with a unique id.")
+@Parameters(separators = " =", commandDescription = "Resave entities with a unique id.")
 public class ResaveEntitiesWithUniqueIdCommand extends MutatingCommand {
 
-  @Parameter(description = "Key paths file name", required = true)
-  List<String> mainParameters;
+  @Parameter(
+      names = "--key_paths_file",
+      description =
+          "Key paths file name, each line in the file should be a key literal. An example key"
+              + " literal is: \"DomainBase\", \"111111-TEST\", \"HistoryEntry\", 2222222,"
+              + " \"OneTime\", 3333333")
+  File keyPathsFile;
+
+  @NonFinalForTesting private static InputStream stdin = System.in;
+
+  private String keyChangeMessage;
 
   @Override
   protected void init() throws Exception {
-    for (String fileName : mainParameters) {
-      for (String keyPath : Files.readLines(new File(fileName), StandardCharsets.UTF_8)) {
-        Key<?> untypedKey = parseKeyPath(keyPath);
-        Object entity = ofy().load().key(untypedKey).now();
-        if (entity == null) {
-          System.err.println(String.format("Entity %s doesn't exist!", untypedKey));
-          continue;
-        }
-        if (entity instanceof BillingEvent.OneTime) {
-          resaveBillingEvent((BillingEvent.OneTime) entity);
-        } else {
-          throw new IllegalArgumentException("Unsupported entity key: " + untypedKey);
-        }
-        flushTransaction();
+    for (String keyPath :
+        keyPathsFile == null
+            ? CharStreams.readLines(new InputStreamReader(stdin, UTF_8))
+            : Files.readLines(keyPathsFile, UTF_8)) {
+      Key<?> untypedKey = parseKeyPath(keyPath);
+      Object entity = ofy().load().key(untypedKey).now();
+      if (entity == null) {
+        System.err.println(
+            String.format(
+                "Entity %s read from %s doesn't exist in Datastore!",
+                untypedKey,
+                keyPathsFile == null ? "STDIN" : "File " + keyPathsFile.getAbsolutePath()));
+        continue;
       }
+      if (entity instanceof BillingEvent.OneTime) {
+        resaveBillingEvent((BillingEvent.OneTime) entity);
+      } else {
+        throw new IllegalArgumentException("Unsupported entity key: " + untypedKey);
+      }
+      flushTransaction();
     }
+  }
+
+  @Override
+  protected void postBatchExecute() {
+    System.out.println(keyChangeMessage);
   }
 
   private void deleteOldAndSaveNewEntity(ImmutableObject oldEntity, ImmutableObject newEntity) {
@@ -75,7 +109,7 @@ public class ResaveEntitiesWithUniqueIdCommand extends MutatingCommand {
     DomainBase domain = ofy().load().key(domainKey).now();
 
     // The BillingEvent.OneTime entity to be resaved should be the billing event created a few
-    // years ago, so they should not be referred in TransferData and GracePeriod in the domain.
+    // years ago, so they should not be referenced from TransferData and GracePeriod in the domain.
     assertNotInDomainTransferData(domain, key);
     domain
         .getGracePeriods()
@@ -83,13 +117,15 @@ public class ResaveEntitiesWithUniqueIdCommand extends MutatingCommand {
             gracePeriod ->
                 checkState(
                     !gracePeriod.getOneTimeBillingEvent().getOfyKey().equals(key),
-                    "Entity %s is referred by a grace period in domain %s",
+                    "Entity %s is referenced by a grace period in domain %s",
                     key,
                     domainKey));
 
     // By setting id to 0L, Buildable.build() will assign an application wide unique id to it.
     BillingEvent.OneTime uniqIdBillingEvent = billingEvent.asBuilder().setId(0L).build();
     deleteOldAndSaveNewEntity(billingEvent, uniqIdBillingEvent);
+    keyChangeMessage =
+        String.format("Old Entity Key: %s New Entity Key: %s", key, Key.create(uniqIdBillingEvent));
   }
 
   private static boolean isKind(Key<?> key, Class<?> clazz) {
@@ -151,7 +187,7 @@ public class ResaveEntitiesWithUniqueIdCommand extends MutatingCommand {
               entityKey ->
                   checkState(
                       !entityKey.getOfyKey().equals(key),
-                      "Entity %s is referred by the transfer data in domain %s",
+                      "Entity %s is referenced by the transfer data in domain %s",
                       key,
                       domainBase.createVKey().getOfyKey()));
     }

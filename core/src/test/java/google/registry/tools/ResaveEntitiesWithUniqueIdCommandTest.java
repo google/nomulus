@@ -35,11 +35,11 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
 import org.joda.money.Money;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ResaveEntitiesWithUniqueIdCommand}. */
-public class ResaveEntitiesWithUniqueIdCommandTest
+class ResaveEntitiesWithUniqueIdCommandTest
     extends CommandTestCase<ResaveEntitiesWithUniqueIdCommand> {
 
   DomainBase domain;
@@ -47,8 +47,8 @@ public class ResaveEntitiesWithUniqueIdCommandTest
   PollMessage.Autorenew autorenewToResave;
   BillingEvent.OneTime billingEventToResave;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void setUp() {
     createTld("foobar");
     domain = persistActiveDomain("foo.foobar");
     historyEntry = persistHistoryEntry(domain);
@@ -57,9 +57,11 @@ public class ResaveEntitiesWithUniqueIdCommandTest
   }
 
   @Test
-  public void resaveBillingEvent_succeeds() throws Exception {
+  void resaveBillingEvent_succeeds() throws Exception {
     runCommand(
-        "--force", writeToNamedTmpFile("keypath.txt", getKeyPathLiteral(billingEventToResave)));
+        "--force",
+        "--key_paths_file",
+        writeToNamedTmpFile("keypath.txt", getKeyPathLiteral(billingEventToResave)));
 
     int count = 0;
     for (BillingEvent.OneTime billingEvent :
@@ -73,7 +75,7 @@ public class ResaveEntitiesWithUniqueIdCommandTest
   }
 
   @Test
-  public void resaveBillingEvent_failsWhenReferredByDomain() throws Exception {
+  void resaveBillingEvent_failsWhenReferredByDomain() throws Exception {
     persistResource(
         domain
             .asBuilder()
@@ -88,6 +90,7 @@ public class ResaveEntitiesWithUniqueIdCommandTest
         () ->
             runCommand(
                 "--force",
+                "--key_paths_file",
                 writeToNamedTmpFile("keypath.txt", getKeyPathLiteral(billingEventToResave))));
   }
 
