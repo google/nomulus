@@ -115,7 +115,7 @@ public class FlowDocumentation {
   /** Javadoc of the class. */
   public String getDocTree() {
     StringJoiner joiner = new StringJoiner("");
-    docTree.getFullBody().forEach(docTree -> joiner.add(docTree.toString()));
+    docTree.getFullBody().forEach(dt -> joiner.add(dt.toString()));
     return joiner.toString();
   }
 
@@ -252,7 +252,7 @@ public class FlowDocumentation {
       // finally an ending semicolon. "?:" is used to designate non-capturing groups as we are only
       // interested in capturing the fully qualified class name.
       Pattern pattern =
-          Pattern.compile(String.format("(?:\\n|;)\\s*import\\s*((?:\\w*.)*%s)\\s*;", signature));
+          Pattern.compile(String.format("(?:\\n|;)\\s*import\\s+((?:\\w*\\.)*%s)\\s*;", signature));
       Matcher matcher = pattern.matcher(unusedClassFileContent);
       if (matcher.find()) {
         referencedTypeElement = elements.getTypeElement(matcher.group(1));
