@@ -79,27 +79,30 @@ import org.mockito.stubbing.Answer;
 /** Unit tests for {@link Spec11Pipeline}. */
 class Spec11PipelineTest {
   /*
-   * Serializable answer for transact().
+   * Serializable answer for transact(). In Spec11Pipeline, transact is called with a Runnable
+   * argument (a lambda function that takes in no arguments and persists the Spec11ThreatMatch).
    */
-  private static class IgnoringTransactAnswer implements Answer<Void>, Serializable {
+  private static class SaveNewThreatMatchAnswer implements Answer<Void>, Serializable {
     @Override
     public Void answer(InvocationOnMock invocation) {
-      Runnable runnable = invocation.getArgument(0, Runnable.class);
-      runnable.run();
+      Runnable persistThreat = invocation.getArgument(0, Runnable.class);
+      persistThreat.run();
       return null;
     }
   }
 
   /**
    * Serializable answer for the saveNew() call that is only used in testSpec11ThreatMatchToSql.
-   * This is enforced using the if statement. Because savedList is static, we do not want other
-   * tests to write over the value we want from testSpec11ThreatMatchToSql.
+   * This should save only the "bad" domain; savedSpec11ThreatMatches should only contain one
+   * threat.
    */
   private static class TestThreatMatchToSqlAnswer implements Answer<Void>, Serializable {
     @Override
     public Void answer(InvocationOnMock invocation) {
       Spec11ThreatMatch threat = invocation.getArgument(0, Spec11ThreatMatch.class);
-      if (threat.getDomainName().equals("testThreatMatchToSqlBad.com")) {
+      String flaggedDomainName = threat.getDomainName();
+      if (flaggedDomainName.equals("testThreatMatchToSqlBad.com")
+          || flaggedDomainName.equals("testThreatMatchToSqlGood.com")) {
         savedSpec11ThreatMatches.add(threat);
       }
       return null;
@@ -141,7 +144,7 @@ class Spec11PipelineTest {
 
     JpaTransactionManager mockJpaTm =
         mock(JpaTransactionManager.class, withSettings().serializable());
-    doAnswer(new IgnoringTransactAnswer()).when(mockJpaTm).transact(any(Runnable.class));
+    doAnswer(new SaveNewThreatMatchAnswer()).when(mockJpaTm).transact(any(Runnable.class));
     doAnswer(new TestThreatMatchToSqlAnswer())
         .when(mockJpaTm)
         .saveNew(any(Spec11ThreatMatch.class));
@@ -267,7 +270,7 @@ class Spec11PipelineTest {
   @SuppressWarnings("unchecked")
   public void testSpec11ThreatMatchToSql() throws Exception {
     // Create one bad and one good Subdomain to test with evaluateUrlHealth. Only the bad one should
-    // be detected and stored in avedSpec11ThreatMatches.
+    // be detected and stored in savedSpec11ThreatMatches.
     Subdomain badDomain =
         Subdomain.create(
             "testThreatMatchToSqlBad.com", "theDomain", "theRegistrar", "fake@theRegistrar.com");

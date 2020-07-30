@@ -210,9 +210,8 @@ public class Spec11Pipeline implements Serializable {
                           .setDomainRepoId(subdomain.domainRepoId())
                           .setRegistrarId(subdomain.registrarId())
                           .build();
-                  jpaSupplierFactory
-                      .get()
-                      .transact(() -> jpaSupplierFactory.get().saveNew(threatMatch));
+                  JpaTransactionManager jpaTransactionManager = jpaSupplierFactory.get();
+                  jpaTransactionManager.transact(() -> jpaTransactionManager.saveNew(threatMatch));
                 }
               }
             }));
