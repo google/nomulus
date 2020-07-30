@@ -41,7 +41,7 @@ import google.registry.request.lock.LockHandler;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +55,7 @@ public class PublishDnsUpdatesActionTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
   private final FakeClock clock = new FakeClock(DateTime.parse("1971-01-01TZ"));
   private final FakeLockHandler lockHandler = new FakeLockHandler(true);
   private final DnsWriter dnsWriter = mock(DnsWriter.class);

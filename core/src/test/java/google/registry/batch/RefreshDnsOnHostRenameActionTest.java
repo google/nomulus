@@ -50,7 +50,7 @@ import google.registry.model.server.Lock;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import google.registry.util.AppEngineServiceUtils;
@@ -70,7 +70,7 @@ import org.mockito.Mock;
 public class RefreshDnsOnHostRenameActionTest
     extends MapreduceTestCase<RefreshDnsOnHostRenameAction> {
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   private AsyncTaskEnqueuer enqueuer;
   private final FakeClock clock = new FakeClock(DateTime.parse("2015-01-15T11:22:33Z"));

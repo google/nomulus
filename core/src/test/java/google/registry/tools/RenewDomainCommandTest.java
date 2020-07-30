@@ -28,7 +28,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.util.Clock;
 import java.util.List;
 import org.joda.time.DateTime;
@@ -40,7 +40,7 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 /** Unit tests for {@link RenewDomainCommand}. */
 public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCommand> {
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   private final Clock clock = new FakeClock(DateTime.parse("2015-04-05T05:05:05Z"));
 

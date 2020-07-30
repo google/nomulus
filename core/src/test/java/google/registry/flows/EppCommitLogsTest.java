@@ -34,7 +34,7 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.EppLoader;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,7 +47,7 @@ class EppCommitLogsTest {
   final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @RegisterExtension final InjectRule inject = new InjectRule();
+  @RegisterExtension final InjectExtension inject = new InjectExtension();
 
   private final FakeClock clock = new FakeClock(DateTime.now(UTC));
   private EppLoader eppLoader;

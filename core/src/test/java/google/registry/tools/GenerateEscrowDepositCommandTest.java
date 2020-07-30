@@ -22,7 +22,7 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
 import com.beust.jcommander.ParameterException;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.AppEngineServiceUtils;
 import java.util.Optional;
@@ -38,7 +38,7 @@ import org.mockito.quality.Strictness;
 public class GenerateEscrowDepositCommandTest
     extends CommandTestCase<GenerateEscrowDepositCommand> {
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @Mock AppEngineServiceUtils appEngineServiceUtils;
 

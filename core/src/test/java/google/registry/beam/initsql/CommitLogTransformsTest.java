@@ -27,7 +27,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -57,7 +57,7 @@ class CommitLogTransformsTest implements Serializable {
   @TempDir
   transient Path tmpDir;
 
-  @RegisterExtension final transient InjectRule injectRule = new InjectRule();
+  @RegisterExtension final transient InjectExtension injectRule = new InjectExtension();
 
   @RegisterExtension
   final transient TestPipelineExtension testPipeline =

@@ -33,7 +33,7 @@ import google.registry.request.auth.UserAuthInfo;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.util.Idn;
 import google.registry.util.TypeUtils;
 import java.util.HashMap;
@@ -49,7 +49,7 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   protected static final AuthResult AUTH_RESULT =
       AuthResult.create(

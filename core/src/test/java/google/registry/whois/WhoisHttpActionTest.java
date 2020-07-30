@@ -43,7 +43,7 @@ import google.registry.model.registry.Registry;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.whois.WhoisMetrics.WhoisMetric;
 import java.io.IOException;
 import java.io.Reader;
@@ -66,7 +66,7 @@ class WhoisHttpActionTest {
   final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @RegisterExtension final InjectRule inject = new InjectRule();
+  @RegisterExtension final InjectExtension inject = new InjectExtension();
 
   private final FakeResponse response = new FakeResponse();
   private final FakeClock clock = new FakeClock(DateTime.parse("2009-06-29T20:13:00Z"));

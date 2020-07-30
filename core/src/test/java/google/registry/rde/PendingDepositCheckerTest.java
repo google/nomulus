@@ -33,7 +33,7 @@ import google.registry.model.registry.Registry;
 import google.registry.schema.cursor.CursorDao;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +42,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link PendingDepositChecker}. */
 public class PendingDepositCheckerTest {
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @RegisterExtension
   public final AppEngineExtension appEngine =

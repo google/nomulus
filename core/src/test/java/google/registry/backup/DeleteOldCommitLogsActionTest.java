@@ -25,7 +25,7 @@ import google.registry.model.ofy.Ofy;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -41,7 +41,7 @@ public class DeleteOldCommitLogsActionTest
   private final FakeResponse response = new FakeResponse();
   private ContactResource contact;
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @BeforeEach
   void beforeEach() {

@@ -41,7 +41,7 @@ import google.registry.model.registrar.RegistrarContact;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,7 +60,7 @@ public class SyncRegistrarsSheetTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @Captor private ArgumentCaptor<ImmutableList<ImmutableMap<String, String>>> rowsCaptor;
   @Mock private SheetSynchronizer sheetSynchronizer;

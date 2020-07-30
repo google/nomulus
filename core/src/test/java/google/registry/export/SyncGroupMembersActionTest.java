@@ -42,7 +42,7 @@ import google.registry.request.Response;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.util.Retrier;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
@@ -60,7 +60,7 @@ public class SyncGroupMembersActionTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   private final DirectoryGroupsConnection connection = mock(DirectoryGroupsConnection.class);
   private final Response response = mock(Response.class);

@@ -22,7 +22,7 @@ import com.google.common.base.Splitter;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeUserService;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +35,7 @@ class XsrfTokenManagerTest {
   final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @RegisterExtension InjectRule inject = new InjectRule();
+  @RegisterExtension InjectExtension inject = new InjectExtension();
 
   private final User testUser = new User("test@example.com", "test@example.com");
   private final FakeClock clock = new FakeClock(START_OF_TIME);

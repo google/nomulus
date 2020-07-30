@@ -29,7 +29,7 @@ import static org.mockito.Mockito.verify;
 import com.google.common.collect.ImmutableSet;
 import google.registry.dns.DnsQueue;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import google.registry.tools.server.RefreshDnsForAllDomainsAction.RefreshDnsForAllDomainsActionMapper;
 import java.util.Random;
@@ -45,7 +45,7 @@ import org.mockito.ArgumentCaptor;
 public class RefreshDnsForAllDomainsActionTest
     extends MapreduceTestCase<RefreshDnsForAllDomainsAction> {
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
   private DnsQueue origDnsQueue;

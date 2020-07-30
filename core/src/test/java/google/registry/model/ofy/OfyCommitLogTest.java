@@ -32,7 +32,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.TestObject.TestVirtualObject;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +49,7 @@ public class OfyCommitLogTest {
           .withOfyTestEntities(TestVirtualObject.class, Root.class, Child.class)
           .build();
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
 

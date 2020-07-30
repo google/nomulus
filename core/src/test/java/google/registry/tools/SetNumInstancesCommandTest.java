@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verify;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMultimap;
 import google.registry.testing.AppEngineAdminApiHelper;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.util.AppEngineServiceUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ import org.mockito.quality.Strictness;
 /** Unit tests for {@link SetNumInstancesCommand}. */
 public class SetNumInstancesCommandTest extends CommandTestCase<SetNumInstancesCommand> {
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @Mock AppEngineServiceUtils appEngineServiceUtils;
 
