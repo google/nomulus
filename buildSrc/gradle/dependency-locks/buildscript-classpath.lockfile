@@ -19,9 +19,7 @@ commons-lang:commons-lang:2.6
 javax.inject:javax.inject:1
 junit:junit:4.12
 nebula.lint:nebula.lint.gradle.plugin:16.0.2
-net.ltgt.apt:net.ltgt.apt.gradle.plugin:0.19
 net.ltgt.errorprone:net.ltgt.errorprone.gradle.plugin:0.6.1
-net.ltgt.gradle:gradle-apt-plugin:0.19
 net.ltgt.gradle:gradle-errorprone-plugin:0.6.1
 org.apache.commons:commons-lang3:3.8.1
 org.apache.maven:maven-artifact:3.6.2
