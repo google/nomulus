@@ -19,7 +19,6 @@ import static google.registry.util.BuildPathUtils.getProjectRoot;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Joiner;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
@@ -40,10 +39,9 @@ class FlowDocumentationTest {
               "");
 
   @Test
-  void testGeneratedMatchesGolden() throws IOException {
+  void testGeneratedMatchesGolden() throws Exception {
     // Read the markdown file.
-    Path goldenMarkdownPath =
-        GOLDEN_MARKDOWN_FILEPATH;
+    Path goldenMarkdownPath = GOLDEN_MARKDOWN_FILEPATH;
 
     String goldenMarkdown = new String(Files.readAllBytes(goldenMarkdownPath), UTF_8);
 

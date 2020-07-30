@@ -31,6 +31,7 @@ dependencies {
 
 task flowDocsTool(type: JavaExec) {
   systemProperty 'test.projectRoot', rootProject.projectRootDir
+  jvmArgs = ['--add-exports', 'jdk.javadoc/jdk.javadoc.internal.tool=ALL-UNNAMED']
   classpath = sourceSets.main.runtimeClasspath
   main = 'google.registry.documentation.FlowDocumentationTool'
 
@@ -41,4 +42,15 @@ task flowDocsTool(type: JavaExec) {
     arguments << "--output_file=${rootProject.projectRootDir}/docs/flows.md"
   }
   args arguments
+}
+
+tasks.compileJava {
+  options.compilerArgs = ["--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+                          "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+                          "--add-exports", "jdk.javadoc/jdk.javadoc.internal.tool=ALL-UNNAMED"]
+
+}
+
+tasks.test {
+  jvmArgs = ['--add-exports', 'jdk.javadoc/jdk.javadoc.internal.tool=ALL-UNNAMED']
 }

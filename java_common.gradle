@@ -116,8 +116,12 @@ tasks.withType(JavaCompile).configureEach {
     }
 }
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+// TODO: Change source version to 11 after target version is changed to 11 and
+// once we figure out what's wrong with Dagger compilation with source version
+// >8.
+sourceCompatibility = '8'
+// TODO: Change target version to 11. Source version can stay at 8.
+targetCompatibility = '8'
 
 compileJava { options.encoding = "UTF-8" }
 compileTestJava { options.encoding = "UTF-8" }

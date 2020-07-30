@@ -24,9 +24,7 @@ import google.registry.documentation.FlowDocumentation.ErrorCase;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Formatter that converts flow documentation into Markdown.
- */
+/** Formatter that converts flow documentation into Markdown. */
 public final class MarkdownDocumentationFormatter {
 
   /** Header for flow documentation HTML output. */
@@ -42,9 +40,9 @@ public final class MarkdownDocumentationFormatter {
   private static final int LINE_WIDTH = 80;
 
   /**
-   * Returns the string with all HTML tags stripped.  Also, removes a single space after any
-   * newlines that have one (we get a single space indent for all lines but the first because of
-   * the way that javadocs are written in comments).
+   * Returns the string with all HTML tags stripped. Also, removes a single space after any newlines
+   * that have one (we get a single space indent for all lines but the first because of the way that
+   * javadocs are written in comments).
    */
   @VisibleForTesting
   static String fixHtml(String value) {
@@ -84,9 +82,7 @@ public final class MarkdownDocumentationFormatter {
     return result.toString().replace("\n ", "\n");
   }
 
-  /**
-   * Formats a list of words into a paragraph with less than maxWidth characters per line.
-   */
+  /** Formats a list of words into a paragraph with less than maxWidth characters per line. */
   @VisibleForTesting
   static String formatParagraph(List<String> words, int maxWidth) {
     int lineLength = 0;
@@ -117,9 +113,7 @@ public final class MarkdownDocumentationFormatter {
     return output.toString();
   }
 
-  /**
-   * Returns 'value' with words reflowed to maxWidth characters.
-   */
+  /** Returns 'value' with words reflowed to maxWidth characters. */
   @VisibleForTesting
   static String reflow(String text, int maxWidth) {
 
@@ -139,8 +133,8 @@ public final class MarkdownDocumentationFormatter {
       }
 
       // Split the line into words and add them to the current paragraph.
-      words.addAll(Splitter.on(
-          CharMatcher.breakingWhitespace()).omitEmptyStrings().splitToList(line));
+      words.addAll(
+          Splitter.on(CharMatcher.breakingWhitespace()).omitEmptyStrings().splitToList(line));
     }
 
     // Format the last paragraph, if any.
@@ -158,7 +152,7 @@ public final class MarkdownDocumentationFormatter {
     for (FlowDocumentation flowDoc : flowDocs) {
       output.append(String.format("## %s\n\n", flowDoc.getName()));
       output.append("### Description\n\n");
-      output.append(String.format("%s\n\n", reflow(fixHtml(flowDoc.getClassDocs()), LINE_WIDTH)));
+      output.append(String.format("%s\n", reflow(fixHtml(flowDoc.getDocTree()), LINE_WIDTH)));
       output.append("### Errors\n\n");
       for (Long code : flowDoc.getErrorsByCode().keySet()) {
         output.append(String.format("*   %d\n", code));
