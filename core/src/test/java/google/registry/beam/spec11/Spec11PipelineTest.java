@@ -30,7 +30,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.CharStreams;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
-import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.persistence.transaction.JpaTransactionManager;
@@ -88,8 +87,8 @@ class Spec11PipelineTest {
   private static class SaveNewThreatMatchAnswer implements Answer<Void>, Serializable {
     @Override
     public Void answer(InvocationOnMock invocation) {
-      Runnable persistThreat = invocation.getArgument(0, Runnable.class);
-      persistThreat.run();
+      Runnable runnable = invocation.getArgument(0, Runnable.class);
+      runnable.run();
       return null;
     }
   }
@@ -272,9 +271,9 @@ class Spec11PipelineTest {
     spec11Pipeline.evaluateUrlHealth(input, evalFn, StaticValueProvider.of("2020-06-10"));
     testPipeline.run();
 
-    // Verify that the threat created from the bad Subdomain and the persisted Spec11TThreatMatch
-    // are equal.
-    Spec11ThreatMatch threat =
+    // Verify that the expected threat created from the bad Subdomain and the persisted
+    // Spec11TThreatMatch are equal.
+    Spec11ThreatMatch expected =
         new Spec11ThreatMatch()
             .asBuilder()
             .setThreatTypes(ImmutableSet.of(ThreatType.MALWARE))
@@ -285,7 +284,7 @@ class Spec11PipelineTest {
             .build();
 
     verify(mockJpaTm).transact(any(Runnable.class));
-    verify(mockJpaTm).saveNew(threat);
+    verify(mockJpaTm).saveNew(expected);
     verifyNoMoreInteractions(mockJpaTm);
   }
 
