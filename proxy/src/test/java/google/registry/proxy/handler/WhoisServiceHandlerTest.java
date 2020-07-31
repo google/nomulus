@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.proxy.TestUtils.makeWhoisHttpRequest;
 import static google.registry.proxy.TestUtils.makeWhoisHttpResponse;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;

@@ -20,7 +20,7 @@ import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_
 import static google.registry.util.ResourceUtils.readResourceBytes;
 import static google.registry.util.X509Utils.getCertificateHash;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Throwables;
 import google.registry.networking.util.SelfSignedCaCertificate;

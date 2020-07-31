@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.SystemInfo.hasCommand;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -44,10 +44,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 class GhostrydeGpgIntegrationTest {
 
   @RegisterExtension
-  public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
+  final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   @RegisterExtension
-  public final GpgSystemCommandExtension gpg =
+  final GpgSystemCommandExtension gpg =
       new GpgSystemCommandExtension(
           RdeTestData.loadBytes("pgp-public-keyring.asc"),
           RdeTestData.loadBytes("pgp-private-keyring-registry.asc"));

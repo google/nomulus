@@ -33,8 +33,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.Duration.standardDays;
 import static org.joda.time.Duration.standardHours;
 import static org.joda.time.Duration.standardSeconds;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -72,7 +72,7 @@ import google.registry.testing.FakeSleeper;
 import google.registry.testing.GpgSystemCommandExtension;
 import google.registry.testing.Lazies;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
-import google.registry.testing.sftp.SftpServerRule;
+import google.registry.testing.sftp.SftpServerExtension;
 import google.registry.util.Retrier;
 import google.registry.util.TaskQueueUtils;
 import java.io.File;
@@ -110,7 +110,7 @@ public class RdeUploadActionTest {
   private static final GcsFilename REPORT_R1_FILE =
       new GcsFilename("bucket", "tld_2010-10-17_full_S1_R1-report.xml.ghostryde");
 
-  @RegisterExtension final SftpServerRule sftpd = new SftpServerRule();
+  @RegisterExtension final SftpServerExtension sftpd = new SftpServerExtension();
 
   @SuppressWarnings("WeakerAccess")
   @TempDir

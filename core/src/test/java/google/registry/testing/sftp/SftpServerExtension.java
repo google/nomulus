@@ -25,11 +25,11 @@ import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * JUnit Rule for creating an in-process {@link TestSftpServer SFTP Server}.
+ * JUnit extension for creating an in-process {@link TestSftpServer SFTP Server}.
  *
  * @see TestSftpServer
  */
-public final class SftpServerRule implements AfterEachCallback {
+public final class SftpServerExtension implements AfterEachCallback {
 
   @Nullable
   private FtpServer server;

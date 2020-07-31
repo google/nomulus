@@ -52,9 +52,9 @@ org.junit.jupiter:junit-jupiter-api:5.6.2
 org.junit.jupiter:junit-jupiter-engine:5.6.2
 org.junit.platform:junit-platform-commons:1.6.2
 org.junit.platform:junit-platform-engine:1.6.2
-org.junit.vintage:junit-vintage-engine:5.6.2
 org.junit:junit-bom:5.6.2
 org.mockito:mockito-core:3.3.3
+org.mockito:mockito-junit-jupiter:3.3.3
 org.objenesis:objenesis:2.6
 org.opentest4j:opentest4j:1.2.0
 org.yaml:snakeyaml:1.17

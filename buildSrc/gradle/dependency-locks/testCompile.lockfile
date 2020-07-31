@@ -49,7 +49,7 @@ javax.annotation:jsr250-api:1.0
 javax.inject:javax.inject:1
 javax.validation:validation-api:1.0.0.GA
 joda-time:joda-time:2.9.2
-junit:junit:4.13
+junit:junit:4.12
 net.bytebuddy:byte-buddy-agent:1.10.5
 net.bytebuddy:byte-buddy:1.10.5
 org.apache.commons:commons-lang3:3.8.1
@@ -65,7 +65,6 @@ org.junit.jupiter:junit-jupiter-api:5.6.2
 org.junit.jupiter:junit-jupiter-engine:5.6.2
 org.junit.platform:junit-platform-commons:1.6.2
 org.junit.platform:junit-platform-engine:1.6.2
-org.junit.vintage:junit-vintage-engine:5.6.2
 org.junit:junit-bom:5.6.2
 org.mockito:mockito-core:3.3.3
 org.objenesis:objenesis:2.6

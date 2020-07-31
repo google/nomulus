@@ -24,7 +24,7 @@ import google.registry.monitoring.blackbox.handler.ActionHandler;
 import google.registry.monitoring.blackbox.handler.ConversionHandler;
 import google.registry.monitoring.blackbox.handler.TestActionHandler;
 import google.registry.monitoring.blackbox.message.TestMessage;
-import google.registry.networking.handler.NettyRule;
+import google.registry.networking.handler.NettyExtension;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -34,11 +34,9 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import org.joda.time.Duration;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Unit tests for {@link ProbingAction} subtypes
@@ -46,8 +44,7 @@ import org.junit.runners.JUnit4;
  * <p>Attempts to test how well each {@link ProbingAction} works with an {@link ActionHandler}
  * subtype when receiving to all possible types of responses
  */
-@RunWith(JUnit4.class)
-public class ProbingActionTest {
+class ProbingActionTest {
 
   private static final String TEST_MESSAGE = "MESSAGE_TEST";
   private static final String SECONDARY_TEST_MESSAGE = "SECONDARY_MESSAGE_TEST";
@@ -55,7 +52,7 @@ public class ProbingActionTest {
   private static final String ADDRESS_NAME = "TEST_ADDRESS";
   private static final int TEST_PORT = 0;
 
-  @Rule public NettyRule nettyRule = new NettyRule();
+  @RegisterExtension NettyExtension nettyExtension = new NettyExtension();
 
   /**
    * We use custom Test {@link ActionHandler} and {@link ConversionHandler} so test depends only on
@@ -67,9 +64,9 @@ public class ProbingActionTest {
 
   // TODO - Currently, this test fails to receive outbound messages from the embedded channel, which
   // we will fix in a later release.
-  @Ignore
+  @Disabled
   @Test
-  public void testSuccess_existingChannel() {
+  void testSuccess_existingChannel() {
     // setup
     EmbeddedChannel channel = new EmbeddedChannel(conversionHandler, testHandler);
     channel.attr(CONNECTION_FUTURE_KEY).set(channel.newSucceededFuture());
@@ -118,12 +115,12 @@ public class ProbingActionTest {
   }
 
   @Test
-  public void testSuccess_newChannel() throws Exception {
+  void testSuccess_newChannel() throws Exception {
     // setup
 
     LocalAddress address = new LocalAddress(ADDRESS_NAME);
     Bootstrap bootstrap =
-        new Bootstrap().group(nettyRule.getEventLoopGroup()).channel(LocalChannel.class);
+        new Bootstrap().group(nettyExtension.getEventLoopGroup()).channel(LocalChannel.class);
 
     // Sets up a Protocol corresponding to when a new connection is created.
     Protocol protocol =
@@ -134,7 +131,7 @@ public class ProbingActionTest {
             .setPersistentConnection(false)
             .build();
 
-    nettyRule.setUpServer(address);
+    nettyExtension.setUpServer(address);
 
     // Sets up a ProbingAction with existing channel using test specified attributes.
     ProbingAction action =
@@ -150,7 +147,7 @@ public class ProbingActionTest {
     ChannelFuture future = action.call();
 
     // Tests to see if message is properly sent to remote server
-    nettyRule.assertReceivedMessage(TEST_MESSAGE);
+    nettyExtension.assertReceivedMessage(TEST_MESSAGE);
 
     future = future.syncUninterruptibly();
     // Tests to see that, since server responds, we have set future to true

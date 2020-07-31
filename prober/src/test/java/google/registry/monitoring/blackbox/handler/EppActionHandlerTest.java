@@ -15,7 +15,7 @@
 package google.registry.monitoring.blackbox.handler;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.monitoring.blackbox.exception.EppClientException;
 import google.registry.monitoring.blackbox.exception.FailureException;

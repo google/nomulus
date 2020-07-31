@@ -17,7 +17,7 @@ package google.registry.whois;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;

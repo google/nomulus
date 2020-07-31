@@ -15,7 +15,7 @@
 package google.registry.persistence.transaction;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.Test;

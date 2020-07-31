@@ -16,21 +16,18 @@ package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RegistrarUtils}. */
-@RunWith(JUnit4.class)
-public class RegistrarUtilsTest {
+class RegistrarUtilsTest {
 
   @Test
-  public void testNormalizeRegistrarName_letterOrDigitOnly() {
+  void testNormalizeRegistrarName_letterOrDigitOnly() {
     assertThat(RegistrarUtils.normalizeRegistrarName("129abzAZ")).isEqualTo("129abzaz");
   }
 
   @Test
-  public void testNormalizeRegistrarName_hasSymbols() {
+  void testNormalizeRegistrarName_hasSymbols() {
     assertThat(RegistrarUtils.normalizeRegistrarName("^}129a(bzAZ/:")).isEqualTo("129abzaz");
   }
 }

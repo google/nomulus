@@ -16,7 +16,7 @@ package google.registry.flows.session;
 
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static org.joda.time.format.ISODateTimeFormat.dateTimeNoMillis;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.flows.EppException;

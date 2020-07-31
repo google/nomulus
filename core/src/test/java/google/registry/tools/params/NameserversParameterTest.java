@@ -17,7 +17,7 @@ package google.registry.tools.params;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.tools.params.NameserversParameter.splitNameservers;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import org.junit.jupiter.api.Test;

@@ -32,7 +32,7 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.math.BigDecimal.ROUND_UNNECESSARY;
 import static org.joda.money.CurrencyUnit.EUR;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;

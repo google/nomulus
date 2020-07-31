@@ -18,7 +18,7 @@ import static com.google.common.io.BaseEncoding.base64;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.testing.EqualsTester;
 import java.io.ByteArrayInputStream;
@@ -28,15 +28,13 @@ import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link PosixTarHeader}. */
-@RunWith(JUnit4.class)
-public class PosixTarHeaderTest {
+class PosixTarHeaderTest {
+
   @Test
-  public void testGnuTarBlob() throws Exception {
+  void testGnuTarBlob() throws Exception {
     // This data was generated as follows:
     //
     //   echo hello kitty >hello.xml
@@ -119,7 +117,7 @@ public class PosixTarHeaderTest {
   }
 
   @Test
-  public void testFields() {
+  void testFields() {
     PosixTarHeader header =
         new PosixTarHeader.Builder()
             .setType(PosixTarHeader.Type.REGULAR)
@@ -146,7 +144,7 @@ public class PosixTarHeaderTest {
   }
 
   @Test
-  public void testFieldsSomeMoar() {
+  void testFieldsSomeMoar() {
     PosixTarHeader header =
         new PosixTarHeader.Builder()
             .setType(PosixTarHeader.Type.DIRECTORY)
@@ -171,7 +169,7 @@ public class PosixTarHeaderTest {
   }
 
   @Test
-  public void testLoad() {
+  void testLoad() {
     PosixTarHeader header =
         new PosixTarHeader.Builder()
             .setType(PosixTarHeader.Type.REGULAR)
@@ -199,7 +197,7 @@ public class PosixTarHeaderTest {
   }
 
   @Test
-  public void testBadChecksum() {
+  void testBadChecksum() {
     PosixTarHeader header =
         new PosixTarHeader.Builder().setName("(◕‿◕).txt").setSize(31337).build();
     byte[] bytes = header.getBytes();
@@ -211,7 +209,7 @@ public class PosixTarHeaderTest {
   }
 
   @Test
-  public void testHashEquals() {
+  void testHashEquals() {
     new EqualsTester()
         .addEqualityGroup(
             new PosixTarHeader.Builder()
@@ -241,7 +239,7 @@ public class PosixTarHeaderTest {
   }
 
   @Test
-  public void testReadBsdTarFormatUstar() throws Exception {
+  void testReadBsdTarFormatUstar() throws Exception {
     // $ tar --version
     // bsdtar 2.8.3 - libarchive 2.8.3
 
@@ -299,7 +297,7 @@ public class PosixTarHeaderTest {
   }
 
   @Test
-  public void testReadBsdTarFormatDefault() throws Exception {
+  void testReadBsdTarFormatDefault() throws Exception {
     // $ tar --version
     // bsdtar 2.8.3 - libarchive 2.8.3
 
@@ -357,7 +355,7 @@ public class PosixTarHeaderTest {
   }
 
   @Test
-  public void testReadGnuTarFormatDefault() throws Exception {
+  void testReadGnuTarFormatDefault() throws Exception {
     // $ tar --version
     // tar (GNU tar) 1.26
 
@@ -415,7 +413,7 @@ public class PosixTarHeaderTest {
   }
 
   @Test
-  public void testReadGnuTarFormatUstar() throws Exception {
+  void testReadGnuTarFormatUstar() throws Exception {
     // $ tar --version
     // tar (GNU tar) 1.26
 

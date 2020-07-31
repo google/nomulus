@@ -20,7 +20,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.registrar.Registrar.loadByClientId;
 import static google.registry.testing.DatastoreHelper.persistPremiumList;
 import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 

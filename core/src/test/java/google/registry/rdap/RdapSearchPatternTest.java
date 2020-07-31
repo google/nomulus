@@ -15,7 +15,7 @@
 package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.request.HttpException.UnprocessableEntityException;
 import org.junit.jupiter.api.Test;

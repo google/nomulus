@@ -19,7 +19,7 @@ import static google.registry.export.CheckBackupAction.CHECK_BACKUP_KINDS_TO_LOA
 import static google.registry.export.CheckBackupAction.CHECK_BACKUP_NAME_PARAM;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 

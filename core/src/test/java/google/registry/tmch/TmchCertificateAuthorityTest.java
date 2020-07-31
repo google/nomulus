@@ -20,7 +20,7 @@ import static google.registry.config.RegistryConfig.ConfigModule.TmchCaMode.PROD
 import static google.registry.tmch.TmchTestData.loadFile;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static google.registry.util.X509Utils.loadCertificate;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.tmch.TmchCrl;
 import google.registry.testing.AppEngineExtension;

@@ -17,28 +17,25 @@ package google.registry.util;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link TeeOutputStream}. */
-@RunWith(JUnit4.class)
-public class TeeOutputStreamTest {
+class TeeOutputStreamTest {
+
   private final ByteArrayOutputStream outputA = new ByteArrayOutputStream();
   private final ByteArrayOutputStream outputB = new ByteArrayOutputStream();
   private final ByteArrayOutputStream outputC = new ByteArrayOutputStream();
 
   @Test
-  public void testWrite_writesToMultipleStreams() throws Exception {
+  void testWrite_writesToMultipleStreams() throws Exception {
     // Write shared data using the tee output stream.
-    try (OutputStream tee =
-        new TeeOutputStream(asList(outputA, outputB, outputC))) {
+    try (OutputStream tee = new TeeOutputStream(asList(outputA, outputB, outputC))) {
       tee.write("hello ".getBytes(UTF_8));
       tee.write("hello world!".getBytes(UTF_8), 6, 5);
       tee.write('!');
@@ -55,12 +52,12 @@ public class TeeOutputStreamTest {
 
   @Test
   @SuppressWarnings("resource")
-  public void testConstructor_failsWithEmptyIterable() {
+  void testConstructor_failsWithEmptyIterable() {
     assertThrows(IllegalArgumentException.class, () -> new TeeOutputStream(ImmutableSet.of()));
   }
 
   @Test
-  public void testWriteInteger_failsAfterClose() throws Exception {
+  void testWriteInteger_failsAfterClose() throws Exception {
     OutputStream tee = new TeeOutputStream(ImmutableList.of(outputA));
     tee.close();
     IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> tee.write(1));
@@ -68,7 +65,7 @@ public class TeeOutputStreamTest {
   }
 
   @Test
-  public void testWriteByteArray_failsAfterClose() throws Exception {
+  void testWriteByteArray_failsAfterClose() throws Exception {
     OutputStream tee = new TeeOutputStream(ImmutableList.of(outputA));
     tee.close();
     IllegalStateException thrown =
@@ -77,7 +74,7 @@ public class TeeOutputStreamTest {
   }
 
   @Test
-  public void testWriteByteSubarray_failsAfterClose() throws Exception {
+  void testWriteByteSubarray_failsAfterClose() throws Exception {
     OutputStream tee = new TeeOutputStream(ImmutableList.of(outputA));
     tee.close();
     IllegalStateException thrown =

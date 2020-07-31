@@ -17,17 +17,15 @@ package google.registry.util;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 import static google.registry.util.DomainNameUtils.getSecondLevelDomain;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainNameUtils}. */
-@RunWith(JUnit4.class)
-public class DomainNameUtilsTest {
+class DomainNameUtilsTest {
+
   @Test
-  public void testCanonicalizeDomainName() {
+  void testCanonicalizeDomainName() {
     assertThat(canonicalizeDomainName("foo")).isEqualTo("foo");
     assertThat(canonicalizeDomainName("FOO")).isEqualTo("foo");
     assertThat(canonicalizeDomainName("foo.tld")).isEqualTo("foo.tld");
@@ -41,12 +39,12 @@ public class DomainNameUtilsTest {
   }
 
   @Test
-  public void testCanonicalizeDomainName_acePrefixUnicodeChars() {
+  void testCanonicalizeDomainName_acePrefixUnicodeChars() {
     assertThrows(IllegalArgumentException.class, () -> canonicalizeDomainName("xn--みんな"));
   }
 
   @Test
-  public void testGetSecondLevelDomain_returnsProperDomain() {
+  void testGetSecondLevelDomain_returnsProperDomain() {
     assertThat(getSecondLevelDomain("foo.bar", "bar")).isEqualTo("foo.bar");
     assertThat(getSecondLevelDomain("ns1.foo.bar", "bar")).isEqualTo("foo.bar");
     assertThat(getSecondLevelDomain("ns1.abc.foo.bar", "bar")).isEqualTo("foo.bar");
@@ -54,20 +52,18 @@ public class DomainNameUtilsTest {
   }
 
   @Test
-  public void testGetSecondLevelDomain_insufficientDomainNameDepth() {
+  void testGetSecondLevelDomain_insufficientDomainNameDepth() {
     IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class, () -> getSecondLevelDomain("bar", "bar"));
+        assertThrows(IllegalArgumentException.class, () -> getSecondLevelDomain("bar", "bar"));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("hostName must be at least one level below the tld");
   }
 
   @Test
-  public void testGetSecondLevelDomain_domainNotUnderTld() {
+  void testGetSecondLevelDomain_domainNotUnderTld() {
     IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class, () -> getSecondLevelDomain("foo.bar", "abc"));
+        assertThrows(IllegalArgumentException.class, () -> getSecondLevelDomain("foo.bar", "abc"));
     assertThat(thrown).hasMessageThat().isEqualTo("hostName must be under the tld");
   }
 }

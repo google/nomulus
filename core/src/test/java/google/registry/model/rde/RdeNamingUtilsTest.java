@@ -19,7 +19,7 @@ import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.model.rde.RdeMode.THIN;
 import static google.registry.model.rde.RdeNamingUtils.makePartialName;
 import static google.registry.model.rde.RdeNamingUtils.makeRydeFilename;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;

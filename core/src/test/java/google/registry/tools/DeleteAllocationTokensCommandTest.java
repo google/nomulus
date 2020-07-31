@@ -19,7 +19,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenType.SINGL
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.persistResource;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.domain.token.AllocationToken;

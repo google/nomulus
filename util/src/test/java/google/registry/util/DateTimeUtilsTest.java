@@ -25,57 +25,54 @@ import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 import static google.registry.util.DateTimeUtils.leapSafeSubtractYears;
 import static google.registry.util.DateTimeUtils.toJodaDateTime;
 import static google.registry.util.DateTimeUtils.toZonedDateTime;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import java.time.ZonedDateTime;
 import org.joda.time.DateTime;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DateTimeUtils}. */
-@RunWith(JUnit4.class)
-public class DateTimeUtilsTest {
+class DateTimeUtilsTest {
 
-  ImmutableList<DateTime> sampleDates = ImmutableList.of(
-      START_OF_TIME, START_OF_TIME.plusDays(1), END_OF_TIME, END_OF_TIME);
+  private ImmutableList<DateTime> sampleDates =
+      ImmutableList.of(START_OF_TIME, START_OF_TIME.plusDays(1), END_OF_TIME, END_OF_TIME);
 
   @Test
-  public void testSuccess_earliestOf() {
+  void testSuccess_earliestOf() {
     assertThat(earliestOf(START_OF_TIME, END_OF_TIME)).isEqualTo(START_OF_TIME);
     assertThat(earliestOf(sampleDates)).isEqualTo(START_OF_TIME);
   }
 
   @Test
-  public void testSuccess_latestOf() {
+  void testSuccess_latestOf() {
     assertThat(latestOf(START_OF_TIME, END_OF_TIME)).isEqualTo(END_OF_TIME);
     assertThat(latestOf(sampleDates)).isEqualTo(END_OF_TIME);
   }
 
   @Test
-  public void testSuccess_isBeforeOrAt() {
+  void testSuccess_isBeforeOrAt() {
     assertThat(isBeforeOrAt(START_OF_TIME, START_OF_TIME.plusDays(1))).isTrue();
     assertThat(isBeforeOrAt(START_OF_TIME, START_OF_TIME)).isTrue();
     assertThat(isBeforeOrAt(START_OF_TIME.plusDays(1), START_OF_TIME)).isFalse();
   }
 
   @Test
-  public void testSuccess_isAtOrAfter() {
+  void testSuccess_isAtOrAfter() {
     assertThat(isAtOrAfter(START_OF_TIME, START_OF_TIME.plusDays(1))).isFalse();
     assertThat(isAtOrAfter(START_OF_TIME, START_OF_TIME)).isTrue();
     assertThat(isAtOrAfter(START_OF_TIME.plusDays(1), START_OF_TIME)).isTrue();
   }
 
   @Test
-  public void testSuccess_leapSafeAddYears() {
+  void testSuccess_leapSafeAddYears() {
     DateTime startDate = DateTime.parse("2012-02-29T00:00:00Z");
     assertThat(startDate.plusYears(4)).isEqualTo(DateTime.parse("2016-02-29T00:00:00Z"));
     assertThat(leapSafeAddYears(startDate, 4)).isEqualTo(DateTime.parse("2016-02-28T00:00:00Z"));
   }
 
   @Test
-  public void testSuccess_leapSafeSubtractYears() {
+  void testSuccess_leapSafeSubtractYears() {
     DateTime startDate = DateTime.parse("2012-02-29T00:00:00Z");
     assertThat(startDate.minusYears(4)).isEqualTo(DateTime.parse("2008-02-29T00:00:00Z"));
     assertThat(leapSafeSubtractYears(startDate, 4))
@@ -83,58 +80,58 @@ public class DateTimeUtilsTest {
   }
 
   @Test
-  public void testSuccess_leapSafeSubtractYears_zeroYears() {
+  void testSuccess_leapSafeSubtractYears_zeroYears() {
     DateTime leapDay = DateTime.parse("2012-02-29T00:00:00Z");
     assertThat(leapDay.minusYears(0)).isEqualTo(leapDay);
   }
 
   @Test
-  public void testFailure_earliestOfEmpty() {
+  void testFailure_earliestOfEmpty() {
     assertThrows(IllegalArgumentException.class, () -> earliestOf(ImmutableList.of()));
   }
 
   @Test
-  public void testFailure_latestOfEmpty() {
+  void testFailure_latestOfEmpty() {
     assertThrows(IllegalArgumentException.class, () -> earliestOf(ImmutableList.of()));
   }
 
   @Test
-  public void testSuccess_toZonedDateTime_preservesTimeZone() {
+  void testSuccess_toZonedDateTime_preservesTimeZone() {
     DateTime dateTime = DateTime.parse("2019-09-06T10:59:36.283-07:00"); // PDT
     ZonedDateTime zonedDateTime = toZonedDateTime(dateTime);
     assertThat(zonedDateTime.toString()).isEqualTo("2019-09-06T10:59:36.283-07:00"); // still PDT
   }
 
   @Test
-  public void testSuccess_toZonedDateTime_fromStringZulu() {
+  void testSuccess_toZonedDateTime_fromStringZulu() {
     DateTime dateTime = DateTime.parse("2015-10-13T11:22:33.168Z");
     ZonedDateTime zonedDateTime = toZonedDateTime(dateTime);
     assertThat(zonedDateTime.toString()).isEqualTo("2015-10-13T11:22:33.168Z");
   }
 
   @Test
-  public void testSuccess_toZonedDateTime_leapYear() {
+  void testSuccess_toZonedDateTime_leapYear() {
     DateTime dateTime = DateTime.parse("2016-02-29T11:22:33.168Z");
     ZonedDateTime zonedDateTime = toZonedDateTime(dateTime);
     assertThat(zonedDateTime.toString()).isEqualTo("2016-02-29T11:22:33.168Z");
   }
 
   @Test
-  public void testSuccess_toJodaDateTime_preservesTimeZone() {
+  void testSuccess_toJodaDateTime_preservesTimeZone() {
     ZonedDateTime zonedDateTime = ZonedDateTime.parse("2019-09-06T10:59:36.283-07:00"); // PDT
     DateTime dateTime = toJodaDateTime(zonedDateTime);
     assertThat(dateTime.toString()).isEqualTo("2019-09-06T10:59:36.283-07:00"); // still PDT
   }
 
   @Test
-  public void testSuccess_toJodaDateTime_fromStringZulu() {
+  void testSuccess_toJodaDateTime_fromStringZulu() {
     ZonedDateTime zonedDateTime = ZonedDateTime.parse("2015-10-13T11:22:33.168Z");
     DateTime dateTime = toJodaDateTime(zonedDateTime);
     assertThat(dateTime.toString()).isEqualTo("2015-10-13T11:22:33.168Z");
   }
 
   @Test
-  public void testSuccess_toJodaDateTime_leapYear() {
+  void testSuccess_toJodaDateTime_leapYear() {
     ZonedDateTime zonedDateTime = ZonedDateTime.parse("2016-02-29T11:22:33.168Z");
     DateTime dateTime = toJodaDateTime(zonedDateTime);
     assertThat(dateTime.toString()).isEqualTo("2016-02-29T11:22:33.168Z");

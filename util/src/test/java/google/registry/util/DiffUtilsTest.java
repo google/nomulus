@@ -21,47 +21,43 @@ import static google.registry.util.DiffUtils.prettyPrintSetDiff;
 import com.google.common.collect.ImmutableSet;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DiffUtils} */
-@RunWith(JUnit4.class)
-public class DiffUtilsTest {
+class DiffUtilsTest {
 
   @Test
-  public void test_prettyPrintSetDiff_emptySets() {
+  void test_prettyPrintSetDiff_emptySets() {
     assertThat(prettyPrintSetDiff(ImmutableSet.of(), ImmutableSet.of()))
         .isEqualTo("NO DIFFERENCES");
   }
 
   @Test
-  public void test_prettyPrintSetDiff_noDifferences() {
+  void test_prettyPrintSetDiff_noDifferences() {
     assertThat(prettyPrintSetDiff(ImmutableSet.of("c", "x", "m"), ImmutableSet.of("m", "x", "c")))
         .isEqualTo("NO DIFFERENCES");
   }
 
   @Test
-  public void test_prettyPrintSetDiff_addedElements() {
+  void test_prettyPrintSetDiff_addedElements() {
     assertThat(prettyPrintSetDiff(ImmutableSet.of("z"), ImmutableSet.of("a", "b", "z")))
         .isEqualTo("\n    ADDED: [a, b]\n    FINAL CONTENTS: [a, b, z]");
   }
 
   @Test
-  public void test_prettyPrintSetDiff_removedElements() {
+  void test_prettyPrintSetDiff_removedElements() {
     assertThat(prettyPrintSetDiff(ImmutableSet.of("x", "y", "z"), ImmutableSet.of("y")))
         .isEqualTo("\n    REMOVED: [x, z]\n    FINAL CONTENTS: [y]");
   }
 
   @Test
-  public void test_prettyPrintSetDiff_addedAndRemovedElements() {
-    assertThat(prettyPrintSetDiff(
-        ImmutableSet.of("a", "b", "c"), ImmutableSet.of("a", "y", "z")))
+  void test_prettyPrintSetDiff_addedAndRemovedElements() {
+    assertThat(prettyPrintSetDiff(ImmutableSet.of("a", "b", "c"), ImmutableSet.of("a", "y", "z")))
         .isEqualTo("\n    ADDED: [y, z]\n    REMOVED: [b, c]\n    FINAL CONTENTS: [a, y, z]");
   }
 
   @Test
-  public void test_emptyToNullCollection_doesntDisplay() {
+  void test_emptyToNullCollection_doesntDisplay() {
     Map<String, Object> mapA = new HashMap<>();
     mapA.put("a", "jim");
     mapA.put("b", null);
@@ -73,27 +69,27 @@ public class DiffUtilsTest {
   }
 
   @Test
-  public void test_prettyPrintSetDiff_addedAndRemovedElements_objects() {
+  void test_prettyPrintSetDiff_addedAndRemovedElements_objects() {
     DummyObject a = DummyObject.create("a");
     DummyObject b = DummyObject.create("b");
     DummyObject c = DummyObject.create("c");
 
-    assertThat(prettyPrintSetDiff(
-        ImmutableSet.of(a, b), ImmutableSet.of(a, c)))
-        .isEqualTo("\n"
-            + "    ADDED:\n"
-            + "        {c}\n"
-            + "    REMOVED:\n"
-            + "        {b}\n"
-            + "    FINAL CONTENTS:\n"
-            + "        {a},\n"
-            + "        {c}");
+    assertThat(prettyPrintSetDiff(ImmutableSet.of(a, b), ImmutableSet.of(a, c)))
+        .isEqualTo(
+            "\n"
+                + "    ADDED:\n"
+                + "        {c}\n"
+                + "    REMOVED:\n"
+                + "        {b}\n"
+                + "    FINAL CONTENTS:\n"
+                + "        {a},\n"
+                + "        {c}");
   }
 
   private static class DummyObject {
-    public String id;
+    String id;
 
-    public static DummyObject create(String id) {
+    static DummyObject create(String id) {
       DummyObject instance = new DummyObject();
       instance.id = id;
       return instance;
