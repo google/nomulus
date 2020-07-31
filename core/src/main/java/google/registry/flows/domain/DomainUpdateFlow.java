@@ -67,6 +67,7 @@ import google.registry.model.domain.DomainCommand.Update.AddRemove;
 import google.registry.model.domain.DomainCommand.Update.Change;
 import google.registry.model.domain.fee.FeeUpdateCommandExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
+import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.domain.secdns.SecDnsUpdateExtension;
 import google.registry.model.domain.superuser.DomainUpdateSuperuserExtension;
 import google.registry.model.eppcommon.AuthInfo;
@@ -238,10 +239,16 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     DomainBase.Builder domainBuilder =
         domain
             .asBuilder()
-            // Handle the secDNS extension.
+            // Handle the secDNS extension. As dsData in secDnsUpdate is read from EPP input and
+            // does not have domainRepoId set, we create a copy of the existing dsData without
+            // domainRepoId for comparison.
             .setDsData(
                 secDnsUpdate.isPresent()
-                    ? updateDsData(domain.getDsData(), secDnsUpdate.get())
+                    ? updateDsData(
+                        domain.getDsData().stream()
+                            .map(DelegationSignerData::cloneWithoutDomainRepoId)
+                            .collect(toImmutableSet()),
+                        secDnsUpdate.get())
                     : domain.getDsData())
             .setLastEppUpdateTime(now)
             .setLastEppUpdateClientId(clientId)

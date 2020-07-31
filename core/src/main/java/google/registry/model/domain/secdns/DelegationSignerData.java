@@ -14,15 +14,22 @@
 
 package google.registry.model.domain.secdns;
 
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
+
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
+import google.registry.model.domain.secdns.DelegationSignerData.DelegationSignerDataId;
+import java.io.Serializable;
 import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
+import javax.persistence.Entity;
+import javax.persistence.IdClass;
+import javax.persistence.Index;
+import javax.persistence.Table;
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
@@ -37,16 +44,17 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @XmlType(name = "dsData")
 @javax.persistence.Entity
 public class DelegationSignerData extends ImmutableObject implements DatastoreAndSqlEntity {
+@Entity
+@Table(indexes = @Index(columnList = "domainRepoId"))
+@IdClass(DelegationSignerDataId.class)
+public class DelegationSignerData extends ImmutableObject {
 
   private DelegationSignerData() {}
 
-  /** Unique id required for hibernate representation. */
-  @javax.persistence.Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Ignore
-  Long id;
+  @Ignore @XmlTransient @javax.persistence.Id String domainRepoId;
 
   /** The identifier for this particular key in the domain. */
+  @javax.persistence.Id
   @Column(nullable = false)
   int keyTag;
 
@@ -96,6 +104,18 @@ public class DelegationSignerData extends ImmutableObject implements DatastoreAn
     return digest == null ? "" : DatatypeConverter.printHexBinary(digest);
   }
 
+  public DelegationSignerData cloneWithDomainRepoId(String domainRepoId) {
+    DelegationSignerData clone = clone(this);
+    clone.domainRepoId = checkArgumentNotNull(domainRepoId);
+    return clone;
+  }
+
+  public DelegationSignerData cloneWithoutDomainRepoId() {
+    DelegationSignerData clone = clone(this);
+    clone.domainRepoId = null;
+    return clone;
+  }
+
   public static DelegationSignerData create(
       int keyTag, int algorithm, int digestType, byte[] digest) {
     DelegationSignerData instance = new DelegationSignerData();
@@ -120,5 +140,21 @@ public class DelegationSignerData extends ImmutableObject implements DatastoreAn
     return String.format(
         "%d %d %d %s",
         this.keyTag, this.algorithm, this.digestType, DatatypeConverter.printHexBinary(digest));
+  }
+
+  static class DelegationSignerDataId extends ImmutableObject implements Serializable {
+    String domainRepoId;
+    int keyTag;
+
+    private DelegationSignerDataId() {}
+
+    private DelegationSignerDataId(String domainRepoId, int keyTag) {
+      this.domainRepoId = domainRepoId;
+      this.keyTag = keyTag;
+    }
+
+    public static DelegationSignerDataId create(String domainRepoId, int keyTag) {
+      return new DelegationSignerDataId(checkArgumentNotNull(domainRepoId), keyTag);
+    }
   }
 }

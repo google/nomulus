@@ -13,29 +13,17 @@
 -- limitations under the License.
 
 create table "DelegationSignerData" (
-    id  bigserial not null,
+    domain_repo_id text not null,
+    key_tag int4 not null,
     algorithm int4 not null,
     digest bytea not null,
     digest_type int4 not null,
-    key_tag int4 not null,
-    primary key (id)
+    primary key (domain_repo_id, key_tag)
 );
 
-create table "DomainDsData" (
-    domain_repo_id text not null,
-    ds_data_id int8 not null,
-    primary key (domain_repo_id, ds_data_id)
-);
+create index IDXhlqqd5uy98cjyos72d81x9j95 on "DelegationSignerData" (domain_repo_id);
 
-alter table if exists "DomainDsData"
-   add constraint UK_ecl1ewlvuqp0cltbqx7vfp6by unique (ds_data_id);
-
-alter table if exists "DomainDsData"
-   add constraint FKl5ua6ggkmoa2h1fcqk0slgmi
-   foreign key (ds_data_id)
-   references "DelegationSignerData";
-
-alter table if exists "DomainDsData"
-   add constraint FKqdwyovl6ehp9sq6jkoomsfc5
+alter table if exists "DelegationSignerData"
+   add constraint FKtr24j9v14ph2mfuw2gsmt12kq
    foreign key (domain_repo_id)
    references "Domain";
