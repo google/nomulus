@@ -45,12 +45,16 @@ task flowDocsTool(type: JavaExec) {
 }
 
 tasks.compileJava {
-  options.compilerArgs = ["--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-                          "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
-                          "--add-exports", "jdk.javadoc/jdk.javadoc.internal.tool=ALL-UNNAMED"]
+  options.compilerArgs = ["--add-exports",
+                          "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+                          "--add-exports",
+                          "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+                          "--add-exports",
+                          "jdk.javadoc/jdk.javadoc.internal.tool=ALL-UNNAMED"]
 
 }
 
 tasks.test {
-  jvmArgs = ['--add-exports', 'jdk.javadoc/jdk.javadoc.internal.tool=ALL-UNNAMED']
+  jvmArgs = ['--add-exports',
+             'jdk.javadoc/jdk.javadoc.internal.tool=ALL-UNNAMED']
 }

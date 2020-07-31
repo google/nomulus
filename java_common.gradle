@@ -100,8 +100,12 @@ tasks.withType(JavaCompile).configureEach {
     // The -Werror flag causes Intellij to fail on deprecated api use.
     // Allow IDE user to turn off this flag by specifying a Gradle VM
     // option from inside the IDE.
-    if (System.getProperty('no_werror') != 'true') {
-        options.compilerArgs << "-Werror"
+    if (System.getProperty('no_werror') != 'true' &&
+        // The core project throws an warning about Gradle annotation processor
+        // not compatible with Java source version > 8. Re-assess once the
+        // warning is fixed.
+        getProject().name != 'core') {
+      options.compilerArgs << "-Werror"
     }
     options.errorprone.disableWarningsInGeneratedCode = true
     options.errorprone.errorproneArgumentProviders.add([
