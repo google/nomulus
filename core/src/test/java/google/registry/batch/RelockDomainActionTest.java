@@ -201,7 +201,7 @@ public class RelockDomainActionTest {
         EmailMessage.newBuilder()
             .setSubject("Successful re-lock of domain example.tld")
             .setBody(
-                "This is a notification that we have successfully re-locked example.tld.\n\nPlease "
+                "The domain example.tld was successfully re-locked.\n\nPlease "
                     + "contact support at support@example.com if you have any questions.")
             .setRecipients(
                 ImmutableSet.of(new InternetAddress("Marla.Singer.RegistryLock@crr.com")))
@@ -216,7 +216,7 @@ public class RelockDomainActionTest {
             .setSubject("Error re-locking domain example.tld")
             .setBody(
                 String.format(
-                    "There was an error when automatically relocking example.tld. Error message:"
+                    "There was an error when automatically re-locking example.tld. Error message:"
                         + " %s\n\nPlease contact support at support@example.com if you have"
                         + " any questions.",
                     exceptionMessage))

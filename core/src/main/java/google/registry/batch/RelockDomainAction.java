@@ -62,10 +62,10 @@ public class RelockDomainAction implements Runnable {
   public static final String OLD_UNLOCK_REVISION_ID_PARAM = "oldUnlockRevisionId";
 
   private static final String RELOCK_SUCCESS_EMAIL_TEMPLATE =
-      "This is a notification that we have successfully re-locked %s.\n\nPlease contact support at "
-          + "%s if you have any questions.";
+      "The domain %s was successfully re-locked.\n\nPlease contact support at %s if you have any "
+          + "questions.";
   private static final String RELOCK_FAILURE_EMAIL_TEMPLATE =
-      "There was an error when automatically relocking %s. Error message: %s\n\nPlease contact "
+      "There was an error when automatically re-locking %s. Error message: %s\n\nPlease contact "
           + "support at %s if you have any questions.";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
