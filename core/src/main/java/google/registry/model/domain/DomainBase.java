@@ -69,7 +69,7 @@ public class DomainBase extends DomainContent
   @ElementCollection
   @JoinTable(name = "DomainHost")
   @Access(AccessType.PROPERTY)
-  @Column(name = "ns_host")
+  @Column(name = "host_repo_id")
   public Set<VKey<HostResource>> getNsHosts() {
     return super.nsHosts;
   }

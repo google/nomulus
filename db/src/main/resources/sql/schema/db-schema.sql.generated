@@ -329,12 +329,12 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "DomainHistoryHost" (
        domain_history_history_revision_id int8 not null,
-        ns_host text
+        host_repo_id text
     );
 
     create table "DomainHost" (
        domain_repo_id text not null,
-        ns_host text
+        host_repo_id text
     );
 
     create table "GracePeriod" (
