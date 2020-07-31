@@ -19,13 +19,10 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.common.collect.ImmutableList;
 import google.registry.monitoring.blackbox.exception.UndeterminedStateException;
 import google.registry.monitoring.blackbox.message.HttpRequestMessage;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit Tests for {@link WebWhoisToken} */
-@RunWith(JUnit4.class)
-public class WebWhoisTokenTest {
+class WebWhoisTokenTest {
 
   private static final String PREFIX = "whois.nic.";
   private static final String HOST = "starter";
@@ -35,10 +32,10 @@ public class WebWhoisTokenTest {
   private final ImmutableList<String> testDomains =
       ImmutableList.of(FIRST_TLD, SECOND_TLD, THIRD_TLD);
 
-  public Token webToken = new WebWhoisToken(testDomains);
+  private Token webToken = new WebWhoisToken(testDomains);
 
   @Test
-  public void testMessageModification() throws UndeterminedStateException {
+  void testMessageModification() throws UndeterminedStateException {
     // creates Request message with header
     HttpRequestMessage message = new HttpRequestMessage();
     message.headers().set("host", HOST);
@@ -49,13 +46,13 @@ public class WebWhoisTokenTest {
   }
 
   @Test
-  public void testHostOfToken() {
+  void testHostOfToken() {
     assertThat(webToken.host()).isEqualTo(PREFIX + FIRST_TLD);
     assertThat(webToken.host()).isEqualTo(PREFIX + FIRST_TLD);
   }
 
   @Test
-  public void testNextToken() {
+  void testNextToken() {
     assertThat(webToken.host()).isEqualTo(PREFIX + FIRST_TLD);
     webToken = webToken.next();
 

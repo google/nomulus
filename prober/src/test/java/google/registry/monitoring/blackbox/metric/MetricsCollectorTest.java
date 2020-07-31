@@ -19,14 +19,11 @@ import static com.google.monitoring.metrics.contrib.LongMetricSubject.assertThat
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.monitoring.blackbox.metric.MetricsCollector.ResponseType;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link MetricsCollector}. */
-@RunWith(JUnit4.class)
-public class MetricsCollectorTest {
+class MetricsCollectorTest {
 
   private final String requestName = "request";
   private final String responseName = "response";
@@ -34,13 +31,13 @@ public class MetricsCollectorTest {
 
   private final MetricsCollector metrics = new MetricsCollector();
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     metrics.resetMetric();
   }
 
   @Test
-  public void testOneRecord() {
+  void testOneRecord() {
     metrics.recordResult(protocol, requestName, responseName, ResponseType.SUCCESS, 100);
 
     assertThat(MetricsCollector.responsesCounter)
@@ -56,7 +53,7 @@ public class MetricsCollectorTest {
   }
 
   @Test
-  public void testMultipleRecords_sameStatus() {
+  void testMultipleRecords_sameStatus() {
     metrics.recordResult(protocol, requestName, responseName, ResponseType.FAILURE, 100);
     metrics.recordResult(protocol, requestName, responseName, ResponseType.FAILURE, 200);
 
@@ -77,7 +74,7 @@ public class MetricsCollectorTest {
   }
 
   @Test
-  public void testMultipleRecords_differentStatus() {
+  void testMultipleRecords_differentStatus() {
     metrics.recordResult(protocol, requestName, responseName, ResponseType.SUCCESS, 100);
     metrics.recordResult(protocol, requestName, responseName, ResponseType.FAILURE, 200);
 

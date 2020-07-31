@@ -20,14 +20,11 @@ import google.registry.monitoring.blackbox.exception.UndeterminedStateException;
 import google.registry.monitoring.blackbox.message.EppRequestMessage;
 import google.registry.monitoring.blackbox.util.EppUtils;
 import io.netty.channel.Channel;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 /** Unit Tests for each {@link Token} subtype (just {@link WebWhoisToken} for now) */
-@RunWith(JUnit4.class)
-public class EppTokenTest {
+class EppTokenTest {
 
   private static String TEST_HOST = "host";
   private static String TEST_TLD = "tld";
@@ -36,7 +33,7 @@ public class EppTokenTest {
   private EppToken transientEppToken = new EppToken.Transient(TEST_TLD, TEST_HOST);
 
   @Test
-  public void testMessageModificationSuccess_PersistentToken() throws UndeterminedStateException {
+  void testMessageModificationSuccess_PersistentToken() throws UndeterminedStateException {
 
     EppRequestMessage originalMessage = EppUtils.getCreateMessage(EppUtils.getSuccessResponse());
     String domainName = persistentEppToken.getCurrentDomainName();
@@ -51,7 +48,7 @@ public class EppTokenTest {
   }
 
   @Test
-  public void testMessageModificationSuccess_TransientToken() throws UndeterminedStateException {
+  void testMessageModificationSuccess_TransientToken() throws UndeterminedStateException {
 
     EppRequestMessage originalMessage = EppUtils.getCreateMessage(EppUtils.getSuccessResponse());
     String domainName = transientEppToken.getCurrentDomainName();
@@ -66,7 +63,7 @@ public class EppTokenTest {
   }
 
   @Test
-  public void testNext_persistentToken() {
+  void testNext_persistentToken() {
     String domainName = persistentEppToken.getCurrentDomainName();
     Channel mockChannel = Mockito.mock(Channel.class);
     persistentEppToken.setChannel(mockChannel);
@@ -78,7 +75,7 @@ public class EppTokenTest {
   }
 
   @Test
-  public void testNext_transientToken() {
+  void testNext_transientToken() {
     String domainName = transientEppToken.getCurrentDomainName();
     Channel mockChannel = Mockito.mock(Channel.class);
     transientEppToken.setChannel(mockChannel);

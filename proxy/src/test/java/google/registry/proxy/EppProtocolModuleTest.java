@@ -37,14 +37,11 @@ import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.util.concurrent.Promise;
 import java.security.cert.X509Certificate;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** End-to-end tests for {@link EppProtocolModule}. */
-@RunWith(JUnit4.class)
-public class EppProtocolModuleTest extends ProtocolModuleTest {
+class EppProtocolModuleTest extends ProtocolModuleTest {
 
   private static final int HEADER_LENGTH = 4;
 
@@ -59,7 +56,7 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
 
   private X509Certificate certificate;
 
-  public EppProtocolModuleTest() {
+  EppProtocolModuleTest() {
     super(TestComponent::eppHandlers);
   }
 
@@ -119,9 +116,9 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
     return TestUtils.makeEppHttpResponse(new String(content, UTF_8), status, cookies);
   }
 
+  @BeforeEach
   @Override
-  @Before
-  public void setUp() throws Exception {
+  void beforeEach() throws Exception {
     testComponent = makeTestComponent(new FakeClock());
     certificate = SelfSignedCaCertificate.create().cert();
     initializeChannel(
@@ -135,7 +132,7 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testSuccess_singleFrameInboundMessage() throws Exception {
+  void testSuccess_singleFrameInboundMessage() throws Exception {
     // First inbound message is hello.
     assertThat((FullHttpRequest) channel.readInbound()).isEqualTo(makeEppHttpRequest(HELLO_BYTES));
 
@@ -151,7 +148,7 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testSuccess_SingleFrame_MultipleInboundMessages() throws Exception {
+  void testSuccess_SingleFrame_MultipleInboundMessages() throws Exception {
     // First inbound message is hello.
     channel.readInbound();
 
@@ -173,7 +170,7 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testSuccess_MultipleFrames_MultipleInboundMessages() throws Exception {
+  void testSuccess_MultipleFrames_MultipleInboundMessages() throws Exception {
     // First inbound message is hello.
     channel.readInbound();
 
@@ -201,7 +198,7 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testSuccess_simpleOutboundMessage() throws Exception {
+  void testSuccess_simpleOutboundMessage() throws Exception {
     // First inbound message is hello.
     channel.readInbound();
 
@@ -217,7 +214,7 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testFailure_nonOkOutboundMessage() throws Exception {
+  void testFailure_nonOkOutboundMessage() throws Exception {
     // First inbound message is hello.
     channel.readInbound();
 
@@ -239,7 +236,7 @@ public class EppProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testSuccess_setAndReadCookies() throws Exception {
+  void testSuccess_setAndReadCookies() throws Exception {
     // First inbound message is hello.
     channel.readInbound();
 
