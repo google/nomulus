@@ -99,6 +99,8 @@ nomulus.iws
 
 # We don't want to ignore the gradle jar files
 !/gradle/wrapper/**/*.jar
+# We don't want to ignroe the google-java-format jar file
+!/java-format/*.jar
 .gradle/
 **/build
 cloudbuild-caches/
