@@ -705,6 +705,10 @@ task fragileTest(type: FilteringTest) {
 
   // Run every test class in a freshly started process.
   forkEvery 1
+
+  doFirst {
+    new File(screenshotsDir).deleteDir()
+  }
 }
 
 task outcastTest(type: FilteringTest) {
@@ -897,10 +901,6 @@ task standardTest(type: FilteringTest) {
 
   systemProperty 'test.projectRoot', rootProject.projectRootDir
   systemProperty 'test.resourcesDir', resourcesDir
-
-  doFirst {
-    new File(screenshotsDir).deleteDir()
-  }
 }
 
 test {
