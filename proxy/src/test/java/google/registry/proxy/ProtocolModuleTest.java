@@ -62,7 +62,7 @@ import java.util.function.Supplier;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Base class for end-to-end tests of a {@link Protocol}.
@@ -78,9 +78,9 @@ import org.junit.Before;
  */
 public abstract class ProtocolModuleTest {
 
-  protected static final ProxyConfig PROXY_CONFIG = getProxyConfig(Environment.LOCAL);
+  static final ProxyConfig PROXY_CONFIG = getProxyConfig(Environment.LOCAL);
 
-  protected TestComponent testComponent;
+  TestComponent testComponent;
 
   /**
    * Default list of handler classes that are not of interest in end-to-end testing of the {@link
@@ -122,10 +122,10 @@ public abstract class ProtocolModuleTest {
    * Method reference to the component method that exposes the list of handler providers for the
    * specific {@link Protocol} in interest.
    */
-  protected final Function<TestComponent, ImmutableList<Provider<? extends ChannelHandler>>>
+  private final Function<TestComponent, ImmutableList<Provider<? extends ChannelHandler>>>
       handlerProvidersMethod;
 
-  protected final ImmutableSet<Class<? extends ChannelHandler>> excludedHandlers;
+  private final ImmutableSet<Class<? extends ChannelHandler>> excludedHandlers;
 
   protected ProtocolModuleTest(
       Function<TestComponent, ImmutableList<Provider<? extends ChannelHandler>>>
@@ -149,7 +149,7 @@ public abstract class ProtocolModuleTest {
         .collect(toImmutableList());
   }
 
-  protected void initializeChannel(Consumer<Channel> initializer) {
+  void initializeChannel(Consumer<Channel> initializer) {
     channel =
         new EmbeddedChannel(
             new ChannelInitializer<Channel>() {
@@ -174,8 +174,8 @@ public abstract class ProtocolModuleTest {
         .build();
   }
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     testComponent = makeTestComponent(new FakeClock());
     initializeChannel(this::addAllTestableHandlers);
   }
@@ -196,6 +196,7 @@ public abstract class ProtocolModuleTest {
         HttpsRelayProtocolModule.class
       })
   interface TestComponent {
+
     @WhoisProtocol
     ImmutableList<Provider<? extends ChannelHandler>> whoisHandlers();
 

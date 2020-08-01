@@ -36,14 +36,11 @@ import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.function.Function;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link MetricParameters}. */
-@RunWith(JUnit4.class)
-public class MetricParametersTest {
+class MetricParametersTest {
 
   private static final HashMap<String, String> RESULTS = new HashMap<>();
 
@@ -71,8 +68,8 @@ public class MetricParametersTest {
     return new ByteArrayInputStream(input.getBytes(UTF_8));
   }
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     fakeEnvVarMap.put(NAMESPACE_ID_ENV, "some-namespace");
     fakeEnvVarMap.put(POD_ID_ENV, "some-pod");
     fakeEnvVarMap.put(CONTAINER_NAME_ENV, "some-container");
@@ -97,26 +94,26 @@ public class MetricParametersTest {
   }
 
   @Test
-  public void testSuccess() {
+  void testSuccess() {
     assertThat(metricParameters.makeLabelsMap()).isEqualTo(ImmutableMap.copyOf(RESULTS));
   }
 
   @Test
-  public void testSuccess_missingEnvVar() {
+  void testSuccess_missingEnvVar() {
     fakeEnvVarMap.remove(POD_ID_ENV);
     RESULTS.put("pod_id", "");
     assertThat(metricParameters.makeLabelsMap()).isEqualTo(ImmutableMap.copyOf(RESULTS));
   }
 
   @Test
-  public void testSuccess_malformedZone() throws Exception {
+  void testSuccess_malformedZone() throws Exception {
     when(zoneConnection.getInputStream()).thenReturn(makeInputStreamFromString("some-zone"));
     RESULTS.put("zone", "");
     assertThat(metricParameters.makeLabelsMap()).isEqualTo(ImmutableMap.copyOf(RESULTS));
   }
 
   @Test
-  public void testSuccess_errorResponseCode() throws Exception {
+  void testSuccess_errorResponseCode() throws Exception {
     when(projectIdConnection.getResponseCode()).thenReturn(404);
     when(projectIdConnection.getErrorStream())
         .thenReturn(makeInputStreamFromString("some error message"));
@@ -125,7 +122,7 @@ public class MetricParametersTest {
   }
 
   @Test
-  public void testSuccess_connectionError() throws Exception {
+  void testSuccess_connectionError() throws Exception {
     InputStream fakeInputStream = mock(InputStream.class);
     when(projectIdConnection.getInputStream()).thenReturn(fakeInputStream);
     when(fakeInputStream.read(any(byte[].class), anyInt(), anyInt()))

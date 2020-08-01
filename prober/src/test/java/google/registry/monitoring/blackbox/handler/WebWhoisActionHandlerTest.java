@@ -38,9 +38,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import javax.inject.Provider;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for {@link WebWhoisActionHandler}.
@@ -48,8 +46,7 @@ import org.junit.runners.JUnit4;
  * <p>Attempts to test how well {@link WebWhoisActionHandler} works when responding to all possible
  * types of responses
  */
-@RunWith(JUnit4.class)
-public class WebWhoisActionHandlerTest {
+class WebWhoisActionHandlerTest {
 
   private static final int HTTP_PORT = 80;
   private static final String HTTP_REDIRECT = "http://";
@@ -105,7 +102,7 @@ public class WebWhoisActionHandlerTest {
   }
 
   @Test
-  public void testBasic_responseOk() {
+  void testBasic_responseOk() {
     // setup
     setup("", null, true);
     setupChannel(initialProtocol);
@@ -126,7 +123,7 @@ public class WebWhoisActionHandlerTest {
   }
 
   @Test
-  public void testBasic_responseFailure_badRequest() {
+  void testBasic_responseFailure_badRequest() {
     // setup
     setup("", null, false);
     setupChannel(initialProtocol);
@@ -152,7 +149,7 @@ public class WebWhoisActionHandlerTest {
   }
 
   @Test
-  public void testBasic_responseFailure_badURL() {
+  void testBasic_responseFailure_badURL() {
     // setup
     setup("", null, false);
     setupChannel(initialProtocol);
@@ -179,7 +176,7 @@ public class WebWhoisActionHandlerTest {
   }
 
   @Test
-  public void testAdvanced_redirect() {
+  void testAdvanced_redirect() {
     // Sets up EventLoopGroup with 1 thread to be blocking.
     EventLoopGroup group = new NioEventLoopGroup(1);
 

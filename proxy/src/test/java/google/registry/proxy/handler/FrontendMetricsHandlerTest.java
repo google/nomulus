@@ -32,14 +32,11 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link FrontendMetricsHandler}. */
-@RunWith(JUnit4.class)
-public class FrontendMetricsHandlerTest {
+class FrontendMetricsHandlerTest {
 
   private static final String CLIENT_CERT_HASH = "blah12345";
   private static final String PROTOCOL_NAME = "frontend protocol";
@@ -58,8 +55,8 @@ public class FrontendMetricsHandlerTest {
 
   private EmbeddedChannel channel;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     channel =
         new EmbeddedChannel(
             new ChannelInitializer<EmbeddedChannel>() {
@@ -73,7 +70,7 @@ public class FrontendMetricsHandlerTest {
   }
 
   @Test
-  public void testSuccess_oneRequest() {
+  void testSuccess_oneRequest() {
     // Inbound message passed to the next handler.
     Object request = new Object();
     assertThat(channel.writeInbound(request)).isTrue();
@@ -82,7 +79,7 @@ public class FrontendMetricsHandlerTest {
   }
 
   @Test
-  public void testSuccess_oneRequest_oneResponse() {
+  void testSuccess_oneRequest_oneResponse() {
     Object request = new Object();
     Object response = new Object();
     // Inbound message passed to the next handler.
@@ -98,7 +95,7 @@ public class FrontendMetricsHandlerTest {
   }
 
   @Test
-  public void testFailure_responseBeforeRequest() {
+  void testFailure_responseBeforeRequest() {
     Object response = new Object();
     IllegalStateException e =
         assertThrows(IllegalStateException.class, () -> channel.writeOutbound(response));
@@ -106,7 +103,7 @@ public class FrontendMetricsHandlerTest {
   }
 
   @Test
-  public void testSuccess_pipelinedResponses() {
+  void testSuccess_pipelinedResponses() {
     Object request1 = new Object();
     Object response1 = new Object();
     Object request2 = new Object();

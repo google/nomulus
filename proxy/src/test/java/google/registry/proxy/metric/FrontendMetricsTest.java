@@ -20,26 +20,23 @@ import static com.google.monitoring.metrics.contrib.LongMetricSubject.assertThat
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.DefaultChannelId;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link FrontendMetrics}. */
-@RunWith(JUnit4.class)
-public class FrontendMetricsTest {
+class FrontendMetricsTest {
 
   private static final String PROTOCOL = "some protocol";
   private static final String CERT_HASH = "abc_blah_1134zdf";
   private final FrontendMetrics metrics = new FrontendMetrics();
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     metrics.resetMetrics();
   }
 
   @Test
-  public void testSuccess_oneConnection() {
+  void testSuccess_oneConnection() {
     EmbeddedChannel channel = new EmbeddedChannel();
     metrics.registerActiveConnection(PROTOCOL, CERT_HASH, channel);
     assertThat(channel.isActive()).isTrue();
@@ -62,7 +59,7 @@ public class FrontendMetricsTest {
   }
 
   @Test
-  public void testSuccess_twoConnections_sameClient() {
+  void testSuccess_twoConnections_sameClient() {
     EmbeddedChannel channel1 = new EmbeddedChannel();
     EmbeddedChannel channel2 = new EmbeddedChannel(DefaultChannelId.newInstance());
 
@@ -111,7 +108,7 @@ public class FrontendMetricsTest {
   }
 
   @Test
-  public void testSuccess_twoConnections_differentClients() {
+  void testSuccess_twoConnections_differentClients() {
     EmbeddedChannel channel1 = new EmbeddedChannel();
     EmbeddedChannel channel2 = new EmbeddedChannel(DefaultChannelId.newInstance());
     String certHash2 = "blahblah_lol_234";
@@ -167,7 +164,7 @@ public class FrontendMetricsTest {
   }
 
   @Test
-  public void testSuccess_registerQuotaRejections() {
+  void testSuccess_registerQuotaRejections() {
     String otherCertHash = "foobar1234X";
     String remoteAddress = "127.0.0.1";
     String otherProtocol = "other protocol";

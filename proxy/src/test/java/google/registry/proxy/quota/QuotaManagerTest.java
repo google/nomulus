@@ -29,13 +29,10 @@ import google.registry.proxy.quota.TokenStore.TimestampedInteger;
 import google.registry.testing.FakeClock;
 import java.util.concurrent.Future;
 import org.joda.time.DateTime;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link QuotaManager}. */
-@RunWith(JUnit4.class)
-public class QuotaManagerTest {
+class QuotaManagerTest {
 
   private static final String USER_ID = "theUser";
 
@@ -48,7 +45,7 @@ public class QuotaManagerTest {
   private QuotaResponse response;
 
   @Test
-  public void testSuccess_requestApproved() {
+  void testSuccess_requestApproved() {
     when(tokenStore.take(anyString())).thenReturn(TimestampedInteger.create(1, clock.nowUtc()));
 
     request = QuotaRequest.create(USER_ID);
@@ -59,7 +56,7 @@ public class QuotaManagerTest {
   }
 
   @Test
-  public void testSuccess_requestDenied() {
+  void testSuccess_requestDenied() {
     when(tokenStore.take(anyString())).thenReturn(TimestampedInteger.create(0, clock.nowUtc()));
 
     request = QuotaRequest.create(USER_ID);
@@ -70,7 +67,7 @@ public class QuotaManagerTest {
   }
 
   @Test
-  public void testSuccess_rebate() throws Exception {
+  void testSuccess_rebate() throws Exception {
     DateTime grantedTokenRefillTime = clock.nowUtc();
     response = QuotaResponse.create(true, USER_ID, grantedTokenRefillTime);
     QuotaRebate rebate = QuotaRebate.create(response);

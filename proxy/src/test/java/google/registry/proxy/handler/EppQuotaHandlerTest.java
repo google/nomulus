@@ -38,14 +38,11 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link EppQuotaHandler} */
-@RunWith(JUnit4.class)
-public class EppQuotaHandlerTest {
+class EppQuotaHandlerTest {
 
   private final QuotaManager quotaManager = mock(QuotaManager.class);
   private final FrontendMetrics metrics = mock(FrontendMetrics.class);
@@ -73,14 +70,14 @@ public class EppQuotaHandlerTest {
                 .build());
   }
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     channel.attr(CLIENT_CERTIFICATE_HASH_KEY).set(clientCertHash);
     setProtocol(channel);
   }
 
   @Test
-  public void testSuccess_quotaGrantedAndReturned() {
+  void testSuccess_quotaGrantedAndReturned() {
     when(quotaManager.acquireQuota(QuotaRequest.create(clientCertHash)))
         .thenReturn(QuotaResponse.create(true, clientCertHash, now));
 
@@ -104,7 +101,7 @@ public class EppQuotaHandlerTest {
   }
 
   @Test
-  public void testFailure_quotaNotGranted() {
+  void testFailure_quotaNotGranted() {
     when(quotaManager.acquireQuota(QuotaRequest.create(clientCertHash)))
         .thenReturn(QuotaResponse.create(false, clientCertHash, now));
     OverQuotaException e =
@@ -119,7 +116,7 @@ public class EppQuotaHandlerTest {
   }
 
   @Test
-  public void testSuccess_twoChannels_twoUserIds() {
+  void testSuccess_twoChannels_twoUserIds() {
     // Set up another user.
     final EppQuotaHandler otherHandler = new EppQuotaHandler(quotaManager, metrics);
     final EmbeddedChannel otherChannel = new EmbeddedChannel(otherHandler);
@@ -147,7 +144,7 @@ public class EppQuotaHandlerTest {
   }
 
   @Test
-  public void testSuccess_twoChannels_sameUserIds() {
+  void testSuccess_twoChannels_sameUserIds() {
     // Set up another channel for the same user.
     final EppQuotaHandler otherHandler = new EppQuotaHandler(quotaManager, metrics);
     final EmbeddedChannel otherChannel = new EmbeddedChannel(otherHandler);

@@ -51,7 +51,7 @@ public class TestServer {
     this(new NioEventLoopGroup(1), localAddress, handlers);
   }
 
-  public TestServer(
+  private TestServer(
       EventLoopGroup eventLoopGroup,
       LocalAddress localAddress,
       ImmutableList<? extends ChannelHandler> handlers) {
@@ -108,7 +108,7 @@ public class TestServer {
      * @param destinationInput - Server will send back an {@link HttpResponseStatus} OK response
      *     when receiving a request with this host location
      */
-    public RedirectHandler(String redirectInput, String destinationInput, String destinationPath) {
+    RedirectHandler(String redirectInput, String destinationInput, String destinationPath) {
       this.redirectInput = redirectInput;
       this.destinationInput = destinationInput;
       this.destinationPath = destinationPath;
