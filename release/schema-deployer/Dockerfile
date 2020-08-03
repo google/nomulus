@@ -15,23 +15,23 @@
 # This Dockerfile builds an image that can be used in Google Cloud Build.
 # We need the following programs to build the schema deployer:
 # 1. Bash to execute a shell script.
-# 2. Java 8 for running the Flywaydb commandline tool.
+# 2. Java 11 for running the Flywaydb commandline tool.
 # 2. Cloud SQL proxy for connection to the SQL instance.
 # 3. The Flywaydb commandline tool.
 #
 # Please refer to deploy_sql_schema.sh for expected volumes and arguments.
 
-# Although any Linux-based Java image with bash would work (e.g., openjdk:8),
+# Although any Linux-based Java image with bash would work (e.g., openjdk:11),
 # as a GCP application we prefer to start with a GCP-approved base image.
 FROM marketplace.gcr.io/google/ubuntu1804
 ENV DEBIAN_FRONTEND=noninteractive LANG=en_US.UTF-8
-# Install openjdk-8
+# Install openjdk-11
 RUN apt-get update -y \
     && apt-get install locales -y \
     && locale-gen en_US.UTF-8 \
     && apt-get install apt-utils -y \
     && apt-get upgrade -y \
-    && apt-get install openjdk-8-jdk-headless -y
+    && apt-get install openjdk-11-jdk-headless -y
 
 # Get netstat, used for checking Cloud SQL proxy readiness.
 RUN apt-get install net-tools
