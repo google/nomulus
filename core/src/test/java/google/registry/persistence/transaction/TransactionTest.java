@@ -103,37 +103,6 @@ public class TransactionTest {
   }
 
   @Test
-  public void testTransactionSerialization() throws IOException {
-    RegistryConfig.overrideCloudSqlReplicateTransactions(true);
-    try {
-      jpaTm()
-          .transact(
-              () -> {
-                jpaTm().saveNew(fooEntity);
-                jpaTm().saveNew(barEntity);
-              });
-      TransactionEntity txnEnt =
-          jpaTm().transact(() -> jpaTm().load(VKey.createSql(TransactionEntity.class, 1L)));
-      Transaction txn = Transaction.deserialize(txnEnt.contents);
-      txn.writeToDatastore();
-      ofyTm()
-          .transact(
-              () -> {
-                assertThat(ofyTm().load(fooEntity.key())).isEqualTo(fooEntity);
-                assertThat(ofyTm().load(barEntity.key())).isEqualTo(barEntity);
-              });
-
-      // Verify that no transaction was persisted for the load transaction.
-      assertThat(
-              jpaTm()
-                  .transact(() -> jpaTm().checkExists(VKey.createSql(TransactionEntity.class, 2L))))
-          .isFalse();
-    } finally {
-      RegistryConfig.overrideCloudSqlReplicateTransactions(false);
-    }
-  }
-
-  @Test
   public void testTransactionSerializationDisabledByDefault() {
     jpaTm()
         .transact(
