@@ -52,6 +52,7 @@ import google.registry.model.tmch.ClaimsListShard;
 import google.registry.model.tmch.ClaimsListShard.ClaimsListRevision;
 import google.registry.model.tmch.ClaimsListShard.ClaimsListSingleton;
 import google.registry.model.tmch.TmchCrl;
+import google.registry.schema.replay.LastSqlTransaction;
 
 /** Sets of classes of the Objectify-registered entities in use throughout the model. */
 public final class EntityClasses {
@@ -90,6 +91,7 @@ public final class EntityClasses {
           HostResource.class,
           KmsSecret.class,
           KmsSecretRevision.class,
+          LastSqlTransaction.class,
           Lock.class,
           PollMessage.class,
           PollMessage.Autorenew.class,

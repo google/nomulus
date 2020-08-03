@@ -112,7 +112,7 @@ class TransactionTest {
               });
       TransactionEntity txnEnt =
           jpaTm().transact(() -> jpaTm().loadByKey(VKey.createSql(TransactionEntity.class, 1L)));
-      Transaction txn = Transaction.deserialize(txnEnt.contents);
+      Transaction txn = Transaction.deserialize(txnEnt.getContents());
       txn.writeToDatastore();
       ofyTm()
           .transact(
