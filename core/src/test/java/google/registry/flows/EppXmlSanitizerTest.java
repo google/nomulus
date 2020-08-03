@@ -121,8 +121,8 @@ class EppXmlSanitizerTest {
   void testSanitize_utf16_encodingPreserved() {
     // Test data should specify an endian-specific UTF-16 scheme for easy assertion. If 'UTF-16' is
     // used, the XMLEventReader in sanitizer may resolve it to an endian-specific one.
-    String inputXml = "<?xml version=\"1.0\" encoding=\"UTF-16LE\" standalone=\"no\"?>"
-	+ "<p>\u03bc</p>\n";
+    String inputXml =
+        "<?xml version=\"1.0\" encoding=\"UTF-16LE\" standalone=\"no\"?>" + "<p>\u03bc</p>\n";
     String sanitizedXml = sanitizeEppXml(inputXml.getBytes(UTF_16LE));
 
     assertThat(sanitizedXml).isEqualTo(inputXml);
