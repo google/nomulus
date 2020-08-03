@@ -17,12 +17,19 @@ set -e
 apt-get update -y
 apt-get install locales -y
 locale-gen en_US.UTF-8
-apt-get install apt-utils -y
+apt-get install apt-utils gnupg -y
 apt-get upgrade -y
 # Install Java
 apt-get install openjdk-11-jdk-headless -y
+# Install nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+# Install node
+nvm install node
 # Install npm
-apt-get install npm -y
+nvm install-latest-npm
 # Install gcloud
 # Cribbed from https://cloud.google.com/sdk/docs/quickstart-debian-ubuntu
 apt-get install lsb-release -y
