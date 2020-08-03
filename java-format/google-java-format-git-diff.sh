@@ -48,7 +48,7 @@ function showNoncompliantFiles() {
 
   git diff -U0 ${forkPoint} | \
       ${SCRIPT_DIR}/google-java-format-diff.py \
-      --google-java-format-jar ${SCRIPT_DIR}/${JAR_NAME} \
+      --google-java-format-jar "${SCRIPT_DIR}/${JAR_NAME}" \
       -p1 | awk -v "message=$message" \
           '/\+\+\+ ([^ ]*)/ { print message $2 }' 1>&2
 }
@@ -63,20 +63,20 @@ function callGoogleJavaFormatDiff() {
       showNoncompliantFiles "$forkPoint" "\033[1mNeeds formatting: "
       callResult=$(git diff -U0 ${forkPoint} | \
           ${SCRIPT_DIR}/google-java-format-diff.py \
-          --google-java-format-jar ${SCRIPT_DIR}/${JAR_NAME} \
+          --google-java-format-jar "${SCRIPT_DIR}/${JAR_NAME}" \
           -p1 | wc -l)
       ;;
     "format")
       showNoncompliantFiles "$forkPoint" "\033[1mReformatting: "
       callResult=$(git diff -U0 ${forkPoint} | \
           ${SCRIPT_DIR}/google-java-format-diff.py \ 
-          --google-java-format-jar ${SCRIPT_DIR}/${JAR_NAME} \
+          --google-java-format-jar "${SCRIPT_DIR}/${JAR_NAME}" \
           -p1 -i)
       ;;
     "show")
       callResult=$(git diff -U0 ${forkPoint} | \
           ${SCRIPT_DIR}/google-java-format-diff.py \
-          --google-java-format-jar ${SCRIPT_DIR}/${JAR_NAME} \
+          --google-java-format-jar "${SCRIPT_DIR}/${JAR_NAME}" \
           -p1)
       ;;
   esac

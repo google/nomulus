@@ -97,9 +97,8 @@ nomulus.iws
 ######################################################################
 # Gradle Ignores
 
-# We don't want to ignore the gradle jar files
+# We don't want to ignore the gradle or google-java-format jar files
 !/gradle/wrapper/**/*.jar
-# We don't want to ignroe the google-java-format jar file
 !/java-format/*.jar
 .gradle/
 **/build
