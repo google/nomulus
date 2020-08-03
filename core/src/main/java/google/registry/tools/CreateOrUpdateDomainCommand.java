@@ -15,20 +15,11 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.util.CollectionUtils.findDuplicates;
 
-import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.Parameter;
-import com.google.auto.value.AutoValue;
-import com.google.common.base.Ascii;
-import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.io.BaseEncoding;
-import com.google.template.soy.data.SoyListData;
-import com.google.template.soy.data.SoyMapData;
 import google.registry.tools.params.NameserversParameter;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -80,76 +71,14 @@ abstract class CreateOrUpdateDomainCommand extends MutatingEppToolCommand {
   String password;
 
   @Parameter(
-    names = "--ds_records",
-    description =
-        "Comma-separated list of DS records. Each DS record is given as "
-        + "<keyTag> <alg> <digestType> <digest>, in order, as it appears in the Zonefile.",
-    converter = DsRecordConverter.class
-  )
+      names = "--ds_records",
+      description =
+          "Comma-separated list of DS records. Each DS record is given as "
+              + "<keyTag> <alg> <digestType> <digest>, in order, as it appears in the Zonefile.",
+      converter = DsRecord.Converter.class)
   List<DsRecord> dsRecords = new ArrayList<>();
 
   Set<String> domains;
-
-  @AutoValue
-  abstract static class DsRecord {
-    private static final Splitter SPLITTER =
-        Splitter.on(CharMatcher.whitespace()).omitEmptyStrings();
-
-    public abstract int keyTag();
-    public abstract int alg();
-    public abstract int digestType();
-    public abstract String digest();
-
-    private static DsRecord create(int keyTag, int alg, int digestType, String digest) {
-      digest = Ascii.toUpperCase(digest);
-      checkArgument(
-          BaseEncoding.base16().canDecode(digest),
-          "digest should be even-lengthed hex, but is %s (length %s)",
-          digest,
-          digest.length());
-      return new AutoValue_CreateOrUpdateDomainCommand_DsRecord(keyTag, alg, digestType, digest);
-    }
-
-    /**
-     * Parses a string representation of the DS record.
-     *
-     * <p>The string format accepted is "[keyTag] [alg] [digestType] [digest]" (i.e., the 4
-     * arguments separated by any number of spaces, as it appears in the Zone file)
-     */
-    public static DsRecord parse(String dsRecord) {
-      List<String> elements = SPLITTER.splitToList(dsRecord);
-      checkArgument(
-          elements.size() == 4,
-          "dsRecord %s should have 4 parts, but has %s",
-          dsRecord,
-          elements.size());
-      return DsRecord.create(
-          Integer.parseUnsignedInt(elements.get(0)),
-          Integer.parseUnsignedInt(elements.get(1)),
-          Integer.parseUnsignedInt(elements.get(2)),
-          elements.get(3));
-    }
-
-    public SoyMapData toSoyData() {
-      return new SoyMapData(
-          "keyTag", keyTag(),
-          "alg", alg(),
-          "digestType", digestType(),
-          "digest", digest());
-    }
-
-    public static SoyListData convertToSoy(List<DsRecord> dsRecords) {
-      return new SoyListData(
-          dsRecords.stream().map(DsRecord::toSoyData).collect(toImmutableList()));
-    }
-  }
-
-  public static class DsRecordConverter implements IStringConverter<DsRecord> {
-    @Override
-    public DsRecord convert(String dsRecord) {
-      return DsRecord.parse(dsRecord);
-    }
-  }
 
   @Override
   protected void initEppToolCommand() throws Exception {

@@ -21,8 +21,8 @@
 {@param domainName: string}
 {@param hostsToAdd: list<string>}
 {@param hostsToRemove: list<string>}
-{@param locksToApply: list<string>}
-{@param locksToRemove: list<string>}
+{@param statusesToApply: list<string>}
+{@param statusesToRemove: list<string>}
 {@param newDsData: list<[keyTag:int, alg:int, digestType:int, digest:string]>}
 {@param reason: string}
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -39,7 +39,7 @@
           {/for}
           </domain:ns>
         {/if}
-        {for $la in $locksToApply}
+        {for $la in $statusesToApply}
           <domain:status s="{$la}" />
         {/for}
         </domain:add>
@@ -51,7 +51,7 @@
           {/for}
           </domain:ns>
         {/if}
-        {for $lr in $locksToRemove}
+        {for $lr in $statusesToRemove}
           <domain:status s="{$lr}" />
         {/for}
         </domain:rem>

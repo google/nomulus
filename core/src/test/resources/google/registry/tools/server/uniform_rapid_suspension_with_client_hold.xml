@@ -9,15 +9,16 @@
             <domain:hostObj>urs1.example.com</domain:hostObj>
             <domain:hostObj>urs2.example.com</domain:hostObj>
           </domain:ns>
-          <domain:status s="serverDeleteProhibited" />
-          <domain:status s="serverTransferProhibited" />
-          <domain:status s="serverUpdateProhibited" />
+          <domain:status s="serverDeleteProhibited"/>
+          <domain:status s="serverTransferProhibited"/>
+          <domain:status s="serverUpdateProhibited"/>
         </domain:add>
         <domain:rem>
           <domain:ns>
             <domain:hostObj>ns2.example.com</domain:hostObj>
             <domain:hostObj>ns1.example.com</domain:hostObj>
           </domain:ns>
+          <domain:status s="clientHold"/>
         </domain:rem>
       </domain:update>
     </update>

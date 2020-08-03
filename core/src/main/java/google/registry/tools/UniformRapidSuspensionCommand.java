@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Strings.nullToEmpty;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.model.EppResourceUtils.checkResourcesExist;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
@@ -26,9 +26,11 @@ import static org.joda.time.DateTimeZone.UTC;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
+import com.google.template.soy.data.SoyListData;
 import com.google.template.soy.data.SoyMapData;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.secdns.DelegationSignerData;
@@ -37,14 +39,10 @@ import google.registry.model.host.HostResource;
 import google.registry.tools.soy.UniformRapidSuspensionSoyInfo;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.joda.time.DateTime;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
 
 /** A command to suspend a domain for the Uniform Rapid Suspension process. */
 @Parameters(separators = " =",
@@ -58,9 +56,6 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
 
   /** Client id that made this change. Only recorded in the history entry. **/
   private static final String CLIENT_ID = "CharlestonRoad";
-
-  private static final ImmutableSet<String> DSDATA_FIELDS =
-      ImmutableSet.of("keyTag", "alg", "digestType", "digest");
 
   @Parameter(
       names = {"-n", "--domain_name"},
@@ -76,10 +71,12 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
 
   @Parameter(
       names = {"-s", "--dsdata"},
-      description = "Comma-delimited set of dsdata to replace the current dsdata on the domain, "
-          + "where each dsdata is represented as a JSON object with fields 'keyTag', 'alg', "
-          + "'digestType' and 'digest'.")
-  private String newDsData;
+      description =
+          "Comma-delimited set of dsdata to replace the current dsdata on the domain, "
+              + "Each DS record is given as <keyTag> <alg> <digestType> <digest>, in order, as it "
+              + "appears in the Zonefile.",
+      converter = DsRecord.Converter.class)
+  private List<DsRecord> newDsData;
 
   @Parameter(
       names = {"-p", "--locks_to_preserve"},
@@ -87,6 +84,13 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
           "Comma-delimited set of locks to preserve (only valid with --undo). Valid "
               + "locks: serverDeleteProhibited, serverTransferProhibited, serverUpdateProhibited")
   private List<String> locksToPreserve = new ArrayList<>();
+
+  @Parameter(
+      names = {"--restore_client_hold"},
+      description =
+          "Restores a CLIENT_HOLD status that was previously removed for a URS suspension (only "
+              + "valid with --undo).")
+  private boolean restoreClientHold;
 
   @Parameter(
       names = {"--undo"},
@@ -100,28 +104,16 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
   ImmutableSortedSet<String> existingNameservers;
 
   /** Set of existing dsdata jsons that need to be restored during undo, sorted for nicer output. */
-  ImmutableSortedSet<String> existingDsData;
+  ImmutableList<ImmutableMap<String, Object>> existingDsData;
+
+  /** Set of status values to remove. */
+  ImmutableSet<String> removeStatuses;
 
   @Override
   protected void initMutatingEppToolCommand() {
     superuser = true;
     DateTime now = DateTime.now(UTC);
     ImmutableSet<String> newHostsSet = ImmutableSet.copyOf(newHosts);
-    ImmutableSet.Builder<Map<String, Object>> newDsDataBuilder = new ImmutableSet.Builder<>();
-    try {
-      // Add brackets around newDsData to convert it to a parsable JSON array.
-      String jsonArrayString = String.format("[%s]", nullToEmpty(newDsData));
-      for (Object dsData : (JSONArray) JSONValue.parseWithException(jsonArrayString)) {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> dsDataJson = (Map<String, Object>) dsData;
-        checkArgument(
-            dsDataJson.keySet().equals(DSDATA_FIELDS),
-            "Incorrect fields on --dsdata JSON: " + JSONValue.toJSONString(dsDataJson));
-        newDsDataBuilder.add(dsDataJson);
-      }
-    } catch (ClassCastException | ParseException e) {
-      throw new IllegalArgumentException("Invalid --dsdata JSON", e);
-    }
     Optional<DomainBase> domain = loadByForeignKey(DomainBase.class, domainName, now);
     checkArgumentPresent(domain, "Domain '%s' does not exist or is deleted", domainName);
     Set<String> missingHosts =
@@ -133,18 +125,39 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     existingNameservers = getExistingNameservers(domain.get());
     existingLocks = getExistingLocks(domain.get());
     existingDsData = getExistingDsData(domain.get());
+    removeStatuses =
+        (hasClientHold(domain.get()) && !undo)
+            ? ImmutableSet.of(StatusValue.CLIENT_HOLD.getXmlName())
+            : ImmutableSet.of();
+    ImmutableSet<String> statusesToApply;
+    if (undo) {
+      statusesToApply =
+          restoreClientHold
+              ? ImmutableSet.of(StatusValue.CLIENT_HOLD.getXmlName())
+              : ImmutableSet.of();
+    } else {
+      statusesToApply = URS_LOCKS;
+    }
     setSoyTemplate(
         UniformRapidSuspensionSoyInfo.getInstance(),
         UniformRapidSuspensionSoyInfo.UNIFORMRAPIDSUSPENSION);
-    addSoyRecord(CLIENT_ID, new SoyMapData(
-        "domainName", domainName,
-        "hostsToAdd", difference(newHostsSet, existingNameservers),
-        "hostsToRemove", difference(existingNameservers, newHostsSet),
-        "locksToApply", undo ? ImmutableSet.of() : URS_LOCKS,
-        "locksToRemove",
-            undo ? difference(URS_LOCKS, ImmutableSet.copyOf(locksToPreserve)) : ImmutableSet.of(),
-        "newDsData", newDsDataBuilder.build(),
-        "reason", (undo ? "Undo " : "") + "Uniform Rapid Suspension"));
+    addSoyRecord(
+        CLIENT_ID,
+        new SoyMapData(
+            "domainName",
+            domainName,
+            "hostsToAdd",
+            difference(newHostsSet, existingNameservers),
+            "hostsToRemove",
+            difference(existingNameservers, newHostsSet),
+            "statusesToApply",
+            statusesToApply,
+            "statusesToRemove",
+            undo ? difference(URS_LOCKS, ImmutableSet.copyOf(locksToPreserve)) : removeStatuses,
+            "newDsData",
+            newDsData != null ? DsRecord.convertToSoy(newDsData) : new SoyListData(),
+            "reason",
+            (undo ? "Undo " : "") + "Uniform Rapid Suspension"));
   }
 
   private ImmutableSortedSet<String> getExistingNameservers(DomainBase domain) {
@@ -165,15 +178,25 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     return locks.build();
   }
 
-  private ImmutableSortedSet<String> getExistingDsData(DomainBase domain) {
-    ImmutableSortedSet.Builder<String> dsDataJsons = ImmutableSortedSet.naturalOrder();
+  private boolean hasClientHold(DomainBase domain) {
+    for (StatusValue status : domain.getStatusValues()) {
+      if (status == StatusValue.CLIENT_HOLD) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private ImmutableList<ImmutableMap<String, Object>> getExistingDsData(DomainBase domain) {
+    ImmutableList.Builder<ImmutableMap<String, Object>> dsDataJsons = new ImmutableList.Builder();
     HexBinaryAdapter hexBinaryAdapter = new HexBinaryAdapter();
     for (DelegationSignerData dsData : domain.getDsData()) {
-      dsDataJsons.add(JSONValue.toJSONString(ImmutableMap.of(
-          "keyTag", dsData.getKeyTag(),
-          "algorithm", dsData.getAlgorithm(),
-          "digestType", dsData.getDigestType(),
-          "digest", hexBinaryAdapter.marshal(dsData.getDigest()))));
+      dsDataJsons.add(
+          ImmutableMap.of(
+              "keyTag", dsData.getKeyTag(),
+              "algorithm", dsData.getAlgorithm(),
+              "digestType", dsData.getDigestType(),
+              "digest", hexBinaryAdapter.marshal(dsData.getDigest())));
     }
     return dsDataJsons.build();
   }
@@ -194,8 +217,23 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     if (!existingLocks.isEmpty()) {
       undoBuilder.append(" --locks_to_preserve ").append(Joiner.on(',').join(existingLocks));
     }
+    if (removeStatuses.contains(StatusValue.CLIENT_HOLD.getXmlName())) {
+      undoBuilder.append(" --restore_client_hold");
+    }
     if (!existingDsData.isEmpty()) {
-      undoBuilder.append(" --dsdata ").append(Joiner.on(',').join(existingDsData));
+      ImmutableList<String> formattedDsRecords =
+          existingDsData.stream()
+              .map(
+                  rec ->
+                      String.format(
+                          "%s %s %s %s",
+                          rec.get("keyTag"),
+                          rec.get("algorithm"),
+                          rec.get("digestType"),
+                          rec.get("digest")))
+              .sorted()
+              .collect(toImmutableList());
+      undoBuilder.append(" --dsdata ").append(Joiner.on(',').join(formattedDsRecords));
     }
     return undoBuilder.toString();
   }
