@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2020 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
 package google.registry.model.history;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatastoreHelper.newContactResourceWithRoid;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -24,7 +26,6 @@ import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.VKey;
 import org.junit.jupiter.api.Test;
 
@@ -37,26 +38,18 @@ public class ContactHistoryTest extends EntityTestCase {
 
   @Test
   void testPersistence() {
-    saveRegistrar("registrar1");
+    saveRegistrar("TheRegistrar");
 
-    ContactResource contact =
-        new ContactResource.Builder()
-            .setRepoId("contact1")
-            .setContactId("contactId")
-            .setCreationClientId("registrar1")
-            .setPersistedCurrentSponsorClientId("registrar1")
-            .setTransferData(new ContactTransferData.Builder().build())
-            .build();
-
+    ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
     jpaTm().transact(() -> jpaTm().saveNew(contact));
-    VKey<ContactResource> contactVKey = VKey.createSql(ContactResource.class, "contact1");
+    VKey<ContactResource> contactVKey = contact.createVKey();
     ContactResource contactFromDb = jpaTm().transact(() -> jpaTm().load(contactVKey));
     ContactHistory contactHistory =
         new ContactHistory.Builder()
             .setType(HistoryEntry.Type.HOST_CREATE)
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
             .setModificationTime(fakeClock.nowUtc())
-            .setClientId("registrar1")
+            .setClientId("TheRegistrar")
             .setTrid(Trid.create("ABC-123", "server-trid"))
             .setBySuperuser(false)
             .setReason("reason")
@@ -70,18 +63,15 @@ public class ContactHistoryTest extends EntityTestCase {
             () -> {
               ContactHistory fromDatabase = jpaTm().load(VKey.createSql(ContactHistory.class, 1L));
               assertContactHistoriesEqual(fromDatabase, contactHistory);
+              assertThat(fromDatabase.getContactRepoId().getSqlKey())
+                  .isEqualTo(contactHistory.getContactRepoId().getSqlKey());
             });
   }
 
-  private void assertContactHistoriesEqual(ContactHistory one, ContactHistory two) {
-    // enough of the fields get changed during serialization that we can't depend on .equals()
-    assertThat(one.getClientId()).isEqualTo(two.getClientId());
-    assertThat(one.getContactRepoId()).isEqualTo(two.getContactRepoId());
-    assertThat(one.getBySuperuser()).isEqualTo(two.getBySuperuser());
-    assertThat(one.getRequestedByRegistrar()).isEqualTo(two.getRequestedByRegistrar());
-    assertThat(one.getReason()).isEqualTo(two.getReason());
-    assertThat(one.getTrid()).isEqualTo(two.getTrid());
-    assertThat(one.getType()).isEqualTo(two.getType());
-    assertThat(one.getContactBase().getContactId()).isEqualTo(two.getContactBase().getContactId());
+  static void assertContactHistoriesEqual(ContactHistory one, ContactHistory two) {
+    assertAboutImmutableObjects().that(one)
+        .isEqualExceptFields(two, "contactBase", "contactRepoId", "parent");
+    assertAboutImmutableObjects().that(one.getContactBase())
+        .isEqualExceptFields(two.getContactBase(), "repoId");
   }
 }

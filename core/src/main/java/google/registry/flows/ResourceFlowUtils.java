@@ -42,6 +42,7 @@ import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainContent;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.eppcommon.AuthInfo;
@@ -255,7 +256,7 @@ public final class ResourceFlowUtils {
    * @param domain is the domain already projected at approvalTime
    */
   public static DateTime computeExDateForApprovalTime(
-      DomainBase domain, DateTime approvalTime, Period period) {
+      DomainContent domain, DateTime approvalTime, Period period) {
     boolean inAutoRenew = domain.getGracePeriodStatuses().contains(GracePeriodStatus.AUTO_RENEW);
     // inAutoRenew is set to false if the period is zero because a zero-period transfer should not
     // subsume an autorenew.

@@ -268,9 +268,73 @@ create sequence history_id_sequence start 1 increment 1;
         primary key (repo_id)
     );
 
+    create table "DomainHistory" (
+       history_revision_id int8 not null,
+        history_by_superuser boolean not null,
+        history_registrar_id text,
+        history_modification_time timestamptz not null,
+        history_reason text not null,
+        history_requested_by_registrar boolean not null,
+        history_client_transaction_id text,
+        history_server_transaction_id text,
+        history_type text not null,
+        history_xml_bytes bytea not null,
+        admin_contact text,
+        auth_info_repo_id text,
+        auth_info_value text,
+        billing_recurrence_id int8,
+        autorenew_poll_message_id int8,
+        billing_contact text,
+        deletion_poll_message_id int8,
+        domain_name text,
+        idn_table_name text,
+        last_transfer_time timestamptz,
+        launch_notice_accepted_time timestamptz,
+        launch_notice_expiration_time timestamptz,
+        launch_notice_tcn_id text,
+        launch_notice_validator_id text,
+        registrant_contact text,
+        registration_expiration_time timestamptz,
+        smd_id text,
+        subordinate_hosts text[],
+        tech_contact text,
+        tld text,
+        transfer_billing_cancellation_id int8,
+        transfer_billing_recurrence_id int8,
+        transfer_autorenew_poll_message_id int8,
+        transfer_billing_event_id int8,
+        transfer_renew_period_unit text,
+        transfer_renew_period_value int4,
+        transfer_registration_expiration_time timestamptz,
+        transfer_gaining_poll_message_id int8,
+        transfer_losing_poll_message_id int8,
+        transfer_client_txn_id text,
+        transfer_server_txn_id text,
+        transfer_gaining_registrar_id text,
+        transfer_losing_registrar_id text,
+        transfer_pending_expiration_time timestamptz,
+        transfer_request_time timestamptz,
+        transfer_status text,
+        creation_registrar_id text not null,
+        creation_time timestamptz not null,
+        current_sponsor_registrar_id text not null,
+        deletion_time timestamptz,
+        last_epp_update_registrar_id text,
+        last_epp_update_time timestamptz,
+        statuses text[],
+        update_timestamp timestamptz,
+        domain_repo_id text not null,
+        primary key (history_revision_id)
+    );
+
+    create table "DomainHistoryHost" (
+       domain_history_history_revision_id int8 not null,
+        host_repo_id text
+    );
+
     create table "DomainHost" (
        domain_repo_id text not null,
-        ns_hosts text
+        host_repo_id text
     );
 
     create table "GracePeriod" (
@@ -528,6 +592,10 @@ create index IDXhsjqiy2lyobfymplb28nm74lm on "Domain" (current_sponsor_registrar
 create index IDX5mnf0wn20tno4b9do88j61klr on "Domain" (deletion_time);
 create index IDXc5aw4pk1vkd6ymhvkpanmoadv on "Domain" (domain_name);
 create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
+create index IDXrh4xmrot9bd63o382ow9ltfig on "DomainHistory" (creation_time);
+create index IDXaro1omfuaxjwmotk3vo00trwm on "DomainHistory" (history_registrar_id);
+create index IDXsu1nam10cjes9keobapn5jvxj on "DomainHistory" (history_type);
+create index IDX6w3qbtgce93cal2orjg1tw7b7 on "DomainHistory" (history_modification_time);
 create index IDXfg2nnjlujxo6cb9fha971bq2n on "HostHistory" (creation_time);
 create index IDX1iy7njgb7wjmj9piml4l2g0qi on "HostHistory" (history_registrar_id);
 create index IDXkkwbwcwvrdkkqothkiye4jiff on "HostHistory" (host_name);
@@ -553,6 +621,11 @@ create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date
        add constraint FK6sc6at5hedffc0nhdcab6ivuq 
        foreign key (revision_id) 
        references "ClaimsList";
+
+    alter table if exists "DomainHistoryHost" 
+       add constraint FK378h8v3j8qd8xtjn2e0bcmrtj 
+       foreign key (domain_history_history_revision_id) 
+       references "DomainHistory";
 
     alter table if exists "DomainHost" 
        add constraint FKeq1guccbre1yk3oosgp2io554 

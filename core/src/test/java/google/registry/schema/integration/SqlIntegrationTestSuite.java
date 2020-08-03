@@ -20,6 +20,7 @@ import google.registry.model.billing.BillingEventTest;
 import google.registry.model.contact.ContactResourceTest;
 import google.registry.model.domain.DomainBaseSqlTest;
 import google.registry.model.history.ContactHistoryTest;
+import google.registry.model.history.DomainHistoryTest;
 import google.registry.model.history.HostHistoryTest;
 import google.registry.model.poll.PollMessageTest;
 import google.registry.model.registry.RegistryLockDaoTest;
@@ -77,6 +78,7 @@ import org.junit.runner.RunWith;
   ContactResourceTest.class,
   CursorDaoTest.class,
   DomainBaseSqlTest.class,
+  DomainHistoryTest.class,
   HostHistoryTest.class,
   LockDaoTest.class,
   PollMessageTest.class,
