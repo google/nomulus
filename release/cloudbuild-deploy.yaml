@@ -39,17 +39,17 @@ steps:
       --location=global --keyring=nomulus-tool-keyring --key=nomulus-tool-key
 # Set the path to the file for sql_access_info to deploy the Spec 11 pipeline
 - name: 'gcr.io/$PROJECT_ID/builder:latest'
-    entrypoint: /bin/bash
-    args:
-    - -c
-    - |
-      set -e
-      if [ ${_ENV} == production ]; then
-        sql_access_project="domain-registry"
-      else
-        sql_access_project="domain-registry-${_ENV}"
-      fi
-      export sql_access_info_file="gs://$sql_access_project-beam/cloudsql/admin_credential.enc"
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    if [ ${_ENV} == production ]; then
+      sql_access_project="domain-registry"
+    else
+      sql_access_project="domain-registry-${_ENV}"
+    fi
+    export sql_access_info_file="gs://$sql_access_project-beam/cloudsql/admin_credential.enc"
 # Deploy the Spec11 pipeline to GCS.
 - name: 'gcr.io/$PROJECT_ID/nomulus-tool:latest'
   args:
