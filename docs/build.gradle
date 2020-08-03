@@ -29,6 +29,9 @@ dependencies {
   testCompile deps['org.junit.jupiter:junit-jupiter-engine']
 }
 
+sourceCompatibility = '11'
+targetCompatibility = '11'
+
 task flowDocsTool(type: JavaExec) {
   systemProperty 'test.projectRoot', rootProject.projectRootDir
   jvmArgs = ['--add-exports', 'jdk.javadoc/jdk.javadoc.internal.tool=ALL-UNNAMED']

@@ -67,7 +67,6 @@ configurations {
 
 dependencies {
     // compatibility with Java 8
-    errorproneJavac("com.google.errorprone:javac:9+181-r4173-1")
     errorprone("com.google.errorprone:error_prone_core:2.3.3")
 }
 
