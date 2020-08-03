@@ -523,7 +523,7 @@ create sequence history_id_sequence start 1 increment 1;
         lock_request_timestamp timestamptz not null,
         registrar_id text not null,
         registrar_poc_id text,
-        relock_duration int8,
+        relock_duration interval,
         repo_id text not null,
         unlock_completion_timestamp timestamptz,
         unlock_request_timestamp timestamptz,
@@ -556,6 +556,12 @@ create sequence history_id_sequence start 1 increment 1;
         registrar_id text not null,
         threat_types text[] not null,
         tld text not null,
+        primary key (id)
+    );
+
+    create table "Transaction" (
+       id  bigserial not null,
+        contents bytea,
         primary key (id)
     );
 create index IDXih4b2tea127p5rb61gje6e1y2 on "BillingCancellation" (registrar_id);

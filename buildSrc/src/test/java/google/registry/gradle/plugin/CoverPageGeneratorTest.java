@@ -26,13 +26,10 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.gradle.plugin.ProjectData.TaskData;
 import java.io.File;
 import java.nio.file.Paths;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Tests for {@link CoverPageGenerator} */
-@RunWith(JUnit4.class)
-public final class CoverPageGeneratorTest {
+final class CoverPageGeneratorTest {
 
   private static final ProjectData EMPTY_PROJECT =
       ProjectData.builder()
@@ -88,14 +85,14 @@ public final class CoverPageGeneratorTest {
   }
 
   @Test
-  public void testGetFilesToUpload_entryPoint_isIndexHtml() {
+  void testGetFilesToUpload_entryPoint_isIndexHtml() {
     CoverPageGenerator coverPageGenerator = new CoverPageGenerator(EMPTY_PROJECT);
     assertThat(coverPageGenerator.getFilesToUpload().entryPoint())
         .isEqualTo(Paths.get("index.html"));
   }
 
   @Test
-  public void testGetFilesToUpload_containsEntryFile() {
+  void testGetFilesToUpload_containsEntryFile() {
     String content = getContentOfGeneratedFile(EMPTY_PROJECT, "index.html");
     assertThat(content)
         .contains(
@@ -103,7 +100,7 @@ public final class CoverPageGeneratorTest {
   }
 
   @Test
-  public void testCoverPage_showsFailedTask() {
+  void testCoverPage_showsFailedTask() {
     String content = getCoverPage(EMPTY_PROJECT.toBuilder().addTask(EMPTY_TASK_FAILURE).build());
     assertThat(content).contains("task-failure");
     assertThat(content).contains("<p>FAILURE</p>");
@@ -112,7 +109,7 @@ public final class CoverPageGeneratorTest {
   }
 
   @Test
-  public void testCoverPage_showsSuccessfulTask() {
+  void testCoverPage_showsSuccessfulTask() {
     String content = getCoverPage(EMPTY_PROJECT.toBuilder().addTask(EMPTY_TASK_SUCCESS).build());
     assertThat(content).contains("task-success");
     assertThat(content).doesNotContain("<p>FAILURE</p>");
@@ -121,7 +118,7 @@ public final class CoverPageGeneratorTest {
   }
 
   @Test
-  public void testCoverPage_showsUpToDateTask() {
+  void testCoverPage_showsUpToDateTask() {
     String content = getCoverPage(EMPTY_PROJECT.toBuilder().addTask(EMPTY_TASK_UP_TO_DATE).build());
     assertThat(content).contains("task-up-to-date");
     assertThat(content).doesNotContain("<p>FAILURE</p>");
@@ -130,11 +127,10 @@ public final class CoverPageGeneratorTest {
   }
 
   @Test
-  public void testCoverPage_failedAreFirst() {
+  void testCoverPage_failedAreFirst() {
     String content =
         getCoverPage(
-            EMPTY_PROJECT
-                .toBuilder()
+            EMPTY_PROJECT.toBuilder()
                 .addTask(EMPTY_TASK_UP_TO_DATE)
                 .addTask(EMPTY_TASK_FAILURE)
                 .addTask(EMPTY_TASK_SUCCESS)
@@ -149,11 +145,10 @@ public final class CoverPageGeneratorTest {
   }
 
   @Test
-  public void testCoverPage_failingTask_statusIsFailure() {
+  void testCoverPage_failingTask_statusIsFailure() {
     String content =
         getCoverPage(
-            EMPTY_PROJECT
-                .toBuilder()
+            EMPTY_PROJECT.toBuilder()
                 .addTask(EMPTY_TASK_UP_TO_DATE)
                 .addTask(EMPTY_TASK_FAILURE)
                 .addTask(EMPTY_TASK_SUCCESS)
@@ -162,11 +157,10 @@ public final class CoverPageGeneratorTest {
   }
 
   @Test
-  public void testCoverPage_noFailingTask_statusIsSuccess() {
+  void testCoverPage_noFailingTask_statusIsSuccess() {
     String content =
         getCoverPage(
-            EMPTY_PROJECT
-                .toBuilder()
+            EMPTY_PROJECT.toBuilder()
                 .addTask(EMPTY_TASK_UP_TO_DATE)
                 .addTask(EMPTY_TASK_SUCCESS)
                 .build());
@@ -174,7 +168,7 @@ public final class CoverPageGeneratorTest {
   }
 
   @Test
-  public void testGetFilesToUpload_containsCssFile() {
+  void testGetFilesToUpload_containsCssFile() {
     ImmutableMap<String, String> files = getGeneratedFiles(EMPTY_PROJECT);
     assertThat(files).containsKey(filenameJoiner.join("css", "style.css"));
     assertThat(files.get(filenameJoiner.join("css", "style.css"))).contains("body {");
@@ -183,14 +177,12 @@ public final class CoverPageGeneratorTest {
   }
 
   @Test
-  public void testCreateReportFiles_taskWithLog() {
+  void testCreateReportFiles_taskWithLog() {
     ImmutableMap<String, String> files =
         getGeneratedFiles(
-            EMPTY_PROJECT
-                .toBuilder()
+            EMPTY_PROJECT.toBuilder()
                 .addTask(
-                    EMPTY_TASK_SUCCESS
-                        .toBuilder()
+                    EMPTY_TASK_SUCCESS.toBuilder()
                         .setUniqueName("my:name")
                         .setLog(toByteArraySupplier("my log data"))
                         .build())
@@ -200,11 +192,10 @@ public final class CoverPageGeneratorTest {
   }
 
   @Test
-  public void testCreateReportFiles_taskWithoutLog() {
+  void testCreateReportFiles_taskWithoutLog() {
     ImmutableMap<String, String> files =
         getGeneratedFiles(
-            EMPTY_PROJECT
-                .toBuilder()
+            EMPTY_PROJECT.toBuilder()
                 .addTask(EMPTY_TASK_SUCCESS.toBuilder().setUniqueName("my:name").build())
                 .build());
     assertThat(files).doesNotContainKey("logs/my-name.log");
@@ -212,14 +203,12 @@ public final class CoverPageGeneratorTest {
   }
 
   @Test
-  public void testCreateReportFiles_taskWithFilledReport() {
+  void testCreateReportFiles_taskWithFilledReport() {
     ImmutableMap<String, String> files =
         getGeneratedFiles(
-            EMPTY_PROJECT
-                .toBuilder()
+            EMPTY_PROJECT.toBuilder()
                 .addTask(
-                    EMPTY_TASK_SUCCESS
-                        .toBuilder()
+                    EMPTY_TASK_SUCCESS.toBuilder()
                         .putReport(
                             "someReport",
                             FilesWithEntryPoint.create(
@@ -234,14 +223,12 @@ public final class CoverPageGeneratorTest {
   }
 
   @Test
-  public void testCreateReportFiles_taskWithEmptyReport() {
+  void testCreateReportFiles_taskWithEmptyReport() {
     ImmutableMap<String, String> files =
         getGeneratedFiles(
-            EMPTY_PROJECT
-                .toBuilder()
+            EMPTY_PROJECT.toBuilder()
                 .addTask(
-                    EMPTY_TASK_SUCCESS
-                        .toBuilder()
+                    EMPTY_TASK_SUCCESS.toBuilder()
                         .putReport(
                             "someReport",
                             FilesWithEntryPoint.create(
@@ -254,14 +241,12 @@ public final class CoverPageGeneratorTest {
   }
 
   @Test
-  public void testCreateReportFiles_taskWithLogAndMultipleReports() {
+  void testCreateReportFiles_taskWithLogAndMultipleReports() {
     ImmutableMap<String, String> files =
         getGeneratedFiles(
-            EMPTY_PROJECT
-                .toBuilder()
+            EMPTY_PROJECT.toBuilder()
                 .addTask(
-                    EMPTY_TASK_SUCCESS
-                        .toBuilder()
+                    EMPTY_TASK_SUCCESS.toBuilder()
                         .setUniqueName("my:name")
                         .setLog(toByteArraySupplier("log data"))
                         .putReport(

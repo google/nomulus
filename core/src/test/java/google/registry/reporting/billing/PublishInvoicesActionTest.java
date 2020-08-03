@@ -30,7 +30,7 @@ import com.google.api.services.dataflow.Dataflow.Projects.Jobs;
 import com.google.api.services.dataflow.Dataflow.Projects.Jobs.Get;
 import com.google.api.services.dataflow.model.Job;
 import com.google.common.net.MediaType;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.io.IOException;
@@ -50,7 +50,7 @@ class PublishInvoicesActionTest {
   private PublishInvoicesAction uploadAction;
 
   @RegisterExtension
-  final AppEngineRule appEngine = AppEngineRule.builder().withTaskQueue().build();
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withTaskQueue().build();
 
   @BeforeEach
   void beforeEach() throws IOException {

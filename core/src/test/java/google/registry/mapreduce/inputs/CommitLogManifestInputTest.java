@@ -22,7 +22,7 @@ import com.google.appengine.tools.mapreduce.InputReader;
 import com.googlecode.objectify.Key;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogManifest;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreHelper;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -45,7 +45,8 @@ final class CommitLogManifestInputTest {
   private static final DateTime DATE_TIME_NEW2 = DateTime.parse("2017-12-19T12:00Z");
 
   @RegisterExtension
-  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
   void testInputOlderThan_allFound() throws Exception {

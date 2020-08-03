@@ -23,6 +23,9 @@ import static google.registry.gradle.plugin.GcsPluginUtils.toNormalizedPath;
 import static google.registry.gradle.plugin.GcsPluginUtils.uploadFileToGcs;
 import static google.registry.gradle.plugin.GcsPluginUtils.uploadFilesToGcsMultithread;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.Files.createDirectories;
+import static java.nio.file.Files.createDirectory;
+import static java.nio.file.Files.createFile;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -36,22 +39,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Tests for {@link GcsPluginUtilsTest} */
-@RunWith(JUnit4.class)
-public final class GcsPluginUtilsTest {
+final class GcsPluginUtilsTest {
 
   private static final Joiner filenameJoiner = Joiner.on(File.separator);
 
-  @Rule public final TemporaryFolder folder = new TemporaryFolder();
+  @SuppressWarnings("WeakerAccess")
+  @TempDir
+  Path tmpDir;
 
   @Test
-  public void testGetContentType_knownTypes() {
+  void testGetContentType_knownTypes() {
     assertThat(getContentType("path/to/file.html")).isEqualTo("text/html");
     assertThat(getContentType("path/to/file.htm")).isEqualTo("text/html");
     assertThat(getContentType("path/to/file.log")).isEqualTo("text/plain");
@@ -63,12 +64,12 @@ public final class GcsPluginUtilsTest {
   }
 
   @Test
-  public void testGetContentType_unknownTypes() {
+  void testGetContentType_unknownTypes() {
     assertThat(getContentType("path/to/file.unknown")).isEqualTo("application/octet-stream");
   }
 
   @Test
-  public void testUploadFileToGcs() {
+  void testUploadFileToGcs() {
     Storage storage = mock(Storage.class);
     uploadFileToGcs(
         storage, "my-bucket", Paths.get("my", "filename.txt"), toByteArraySupplier("my data"));
@@ -82,7 +83,7 @@ public final class GcsPluginUtilsTest {
   }
 
   @Test
-  public void testUploadFilesToGcsMultithread() {
+  void testUploadFilesToGcsMultithread() {
     Storage storage = mock(Storage.class);
     uploadFilesToGcsMultithread(
         storage,
@@ -121,21 +122,21 @@ public final class GcsPluginUtilsTest {
   }
 
   @Test
-  public void testToByteArraySupplier_string() {
+  void testToByteArraySupplier_string() {
     assertThat(toByteArraySupplier("my string").get()).isEqualTo("my string".getBytes(UTF_8));
   }
 
   @Test
-  public void testToByteArraySupplier_stringSupplier() {
+  void testToByteArraySupplier_stringSupplier() {
     assertThat(toByteArraySupplier(() -> "my string").get()).isEqualTo("my string".getBytes(UTF_8));
   }
 
   @Test
-  public void testToByteArraySupplier_file() throws Exception {
-    folder.newFolder("arbitrary");
-    File file = folder.newFile("arbitrary/file.txt");
-    Files.write(file.toPath(), "some data".getBytes(UTF_8));
-    assertThat(toByteArraySupplier(file).get()).isEqualTo("some data".getBytes(UTF_8));
+  void testToByteArraySupplier_file() throws Exception {
+    Path dir = createDirectory(tmpDir.resolve("arbitrary"));
+    Path file = createFile(dir.resolve("file.txt"));
+    Files.write(file, "some data".getBytes(UTF_8));
+    assertThat(toByteArraySupplier(file.toFile()).get()).isEqualTo("some data".getBytes(UTF_8));
   }
 
   private ImmutableMap<String, String> readAllFiles(FilesWithEntryPoint reportFiles) {
@@ -147,16 +148,16 @@ public final class GcsPluginUtilsTest {
   }
 
   @Test
-  public void testCreateReportFiles_destinationIsFile() throws Exception {
-    Path root = toNormalizedPath(folder.newFolder("my", "root"));
-    folder.newFolder("my", "root", "some", "path");
-    File destination = folder.newFile("my/root/some/path/file.txt");
-    Files.write(destination.toPath(), "some data".getBytes(UTF_8));
+  void testCreateReportFiles_destinationIsFile() throws Exception {
+    Path root = toNormalizedPath(createDirectories(tmpDir.resolve("my/root")).toAbsolutePath());
+    Path somePath = createDirectories(root.resolve("some/path"));
+    Path destination = createFile(somePath.resolve("file.txt"));
+    Files.write(destination, "some data".getBytes(UTF_8));
     // Since the entry point is obvious here - any hint given is just ignored.
-    File ignoredHint = folder.newFile("my/root/ignored.txt");
+    File ignoredHint = createFile(root.resolve("ignored.txt")).toFile();
 
     FilesWithEntryPoint files =
-        readFilesWithEntryPoint(destination, Optional.of(ignoredHint), root);
+        readFilesWithEntryPoint(destination.toFile(), Optional.of(ignoredHint), root);
 
     assertThat(files.entryPoint().toString())
         .isEqualTo(filenameJoiner.join("some", "path", "file.txt"));
@@ -165,13 +166,13 @@ public final class GcsPluginUtilsTest {
   }
 
   @Test
-  public void testCreateReportFiles_destinationDoesntExist() throws Exception {
-    Path root = toNormalizedPath(folder.newFolder("my", "root"));
+  void testCreateReportFiles_destinationDoesntExist() throws Exception {
+    Path root = toNormalizedPath(createDirectories(tmpDir.resolve("my/root")).toAbsolutePath());
     File destination = root.resolve("non/existing.txt").toFile();
     assertThat(destination.isFile()).isFalse();
     assertThat(destination.isDirectory()).isFalse();
-    // Since there are not files, any hint given is obvioulsy wrong and will be ignored.
-    File ignoredHint = folder.newFile("my/root/ignored.txt");
+    // Since there are no files, any hint given is obviously wrong and will be ignored.
+    File ignoredHint = createFile(root.resolve("ignored.txt")).toFile();
 
     FilesWithEntryPoint files =
         readFilesWithEntryPoint(destination, Optional.of(ignoredHint), root);
@@ -181,34 +182,33 @@ public final class GcsPluginUtilsTest {
   }
 
   @Test
-  public void testCreateReportFiles_noFiles() throws Exception {
-    Path root = toNormalizedPath(folder.newFolder("my", "root"));
-    File destination = folder.newFolder("my", "root", "some", "path");
-    folder.newFolder("my", "root", "some", "path", "a", "b");
-    folder.newFolder("my", "root", "some", "path", "c");
-    // Since there are not files, any hint given is obvioulsy wrong and will be ignored.
-    File ignoredHint = folder.newFile("my/root/ignored.txt");
+  void testCreateReportFiles_noFiles() throws Exception {
+    Path root = toNormalizedPath(createDirectories(tmpDir.resolve("my/root")).toAbsolutePath());
+    Path destination = createDirectories(root.resolve("some/path"));
+    createDirectories(destination.resolve("a/b"));
+    createDirectory(destination.resolve("c"));
+    // Since there are not files, any hint given is obviously wrong and will be ignored.
+    File ignoredHint = createFile(root.resolve("ignored.txt")).toFile();
 
     FilesWithEntryPoint files =
-        readFilesWithEntryPoint(destination, Optional.of(ignoredHint), root);
+        readFilesWithEntryPoint(destination.toFile(), Optional.of(ignoredHint), root);
 
     assertThat(files.entryPoint().toString()).isEqualTo(filenameJoiner.join("some", "path"));
     assertThat(files.files()).isEmpty();
   }
 
   @Test
-  public void testCreateReportFiles_oneFile() throws Exception {
-    Path root = toNormalizedPath(folder.newFolder("my", "root"));
-    File destination = folder.newFolder("my", "root", "some", "path");
-    folder.newFolder("my", "root", "some", "path", "a", "b");
-    folder.newFolder("my", "root", "some", "path", "c");
-    Files.write(
-        folder.newFile("my/root/some/path/a/file.txt").toPath(), "some data".getBytes(UTF_8));
+  void testCreateReportFiles_oneFile() throws Exception {
+    Path root = toNormalizedPath(createDirectories(tmpDir.resolve("my/root")).toAbsolutePath());
+    Path destination = createDirectories(root.resolve("some/path"));
+    createDirectories(destination.resolve("a/b"));
+    createDirectory(destination.resolve("c"));
+    Files.write(createFile(destination.resolve("a/file.txt")), "some data".getBytes(UTF_8));
     // Since the entry point is obvious here - any hint given is just ignored.
-    File ignoredHint = folder.newFile("my/root/ignored.txt");
+    File ignoredHint = createFile(root.resolve("ignored.txt")).toFile();
 
     FilesWithEntryPoint files =
-        readFilesWithEntryPoint(destination, Optional.of(ignoredHint), root);
+        readFilesWithEntryPoint(destination.toFile(), Optional.of(ignoredHint), root);
 
     assertThat(files.entryPoint().toString())
         .isEqualTo(filenameJoiner.join("some", "path", "a", "file.txt"));
@@ -222,22 +222,19 @@ public final class GcsPluginUtilsTest {
    * <p>TODO(guyben): switch to checking zip file instead.
    */
   @Test
-  public void testCreateReportFiles_multipleFiles_noHint() throws Exception {
-    Path root = toNormalizedPath(folder.newFolder("my", "root"));
-    File destination = folder.newFolder("my", "root", "some", "path");
-    folder.newFolder("my", "root", "some", "path", "a", "b");
-    folder.newFolder("my", "root", "some", "path", "c");
+  void testCreateReportFiles_multipleFiles_noHint() throws Exception {
+    Path root = toNormalizedPath(createDirectories(tmpDir.resolve("my/root")).toAbsolutePath());
+    Path destination = createDirectories(root.resolve("some/path"));
+    createDirectories(destination.resolve("a/b"));
+    createDirectory(destination.resolve("c"));
 
-    Files.write(
-        folder.newFile("my/root/some/path/index.html").toPath(), "some data".getBytes(UTF_8));
-    Files.write(
-        folder.newFile("my/root/some/path/a/index.html").toPath(), "wrong index".getBytes(UTF_8));
-    Files.write(
-        folder.newFile("my/root/some/path/c/style.css").toPath(), "css file".getBytes(UTF_8));
-    Files.write(
-        folder.newFile("my/root/some/path/my_image.png").toPath(), "images".getBytes(UTF_8));
+    Files.write(createFile(destination.resolve("index.html")), "some data".getBytes(UTF_8));
+    Files.write(createFile(destination.resolve("a/index.html")), "wrong index".getBytes(UTF_8));
+    Files.write(createFile(destination.resolve("c/style.css")), "css file".getBytes(UTF_8));
+    Files.write(createFile(destination.resolve("my_image.png")), "images".getBytes(UTF_8));
 
-    FilesWithEntryPoint files = readFilesWithEntryPoint(destination, Optional.empty(), root);
+    FilesWithEntryPoint files =
+        readFilesWithEntryPoint(destination.toFile(), Optional.empty(), root);
 
     assertThat(files.entryPoint().toString())
         .isEqualTo(filenameJoiner.join("some", "path", "path.zip"));
@@ -251,24 +248,20 @@ public final class GcsPluginUtilsTest {
    * <p>TODO(guyben): switch to checking zip file instead.
    */
   @Test
-  public void testCreateReportFiles_multipleFiles_withBadHint() throws Exception {
-    Path root = toNormalizedPath(folder.newFolder("my", "root"));
-    File destination = folder.newFolder("my", "root", "some", "path");
+  void testCreateReportFiles_multipleFiles_withBadHint() throws Exception {
+    Path root = toNormalizedPath(createDirectories(tmpDir.resolve("my/root")).toAbsolutePath());
+    Path destination = createDirectories(root.resolve("some/path"));
     // This entry point points to a directory, which isn't an appropriate entry point
-    File badEntryPoint = folder.newFolder("my", "root", "some", "path", "a", "b");
-    folder.newFolder("my", "root", "some", "path", "c");
+    File badEntryPoint = createDirectories(destination.resolve("a/b")).toFile();
+    createDirectory(destination.resolve("c"));
 
-    Files.write(
-        folder.newFile("my/root/some/path/index.html").toPath(), "some data".getBytes(UTF_8));
-    Files.write(
-        folder.newFile("my/root/some/path/a/index.html").toPath(), "wrong index".getBytes(UTF_8));
-    Files.write(
-        folder.newFile("my/root/some/path/c/style.css").toPath(), "css file".getBytes(UTF_8));
-    Files.write(
-        folder.newFile("my/root/some/path/my_image.png").toPath(), "images".getBytes(UTF_8));
+    Files.write(createFile(destination.resolve("index.html")), "some data".getBytes(UTF_8));
+    Files.write(createFile(destination.resolve("a/index.html")), "wrong index".getBytes(UTF_8));
+    Files.write(createFile(destination.resolve("c/style.css")), "css file".getBytes(UTF_8));
+    Files.write(createFile(destination.resolve("my_image.png")), "images".getBytes(UTF_8));
 
     FilesWithEntryPoint files =
-        readFilesWithEntryPoint(destination, Optional.of(badEntryPoint), root);
+        readFilesWithEntryPoint(destination.toFile(), Optional.of(badEntryPoint), root);
 
     assertThat(files.entryPoint().toString())
         .isEqualTo(filenameJoiner.join("some", "path", "path.zip"));
@@ -277,24 +270,21 @@ public final class GcsPluginUtilsTest {
   }
 
   @Test
-  public void testCreateReportFiles_multipleFiles_withGoodHint() throws Exception {
-    Path root = toNormalizedPath(folder.newFolder("my", "root"));
-    File destination = folder.newFolder("my", "root", "some", "path");
-    folder.newFolder("my", "root", "some", "path", "a", "b");
-    folder.newFolder("my", "root", "some", "path", "c");
+  void testCreateReportFiles_multipleFiles_withGoodHint() throws Exception {
+    Path root = toNormalizedPath(createDirectories(tmpDir.resolve("my/root")).toAbsolutePath());
+    Path destination = createDirectories(root.resolve("some/path"));
+    createDirectories(destination.resolve("a/b"));
+    createDirectory(destination.resolve("c"));
     // The hint is an actual file nested in the destination directory!
-    File goodEntryPoint = folder.newFile("my/root/some/path/index.html");
+    Path goodEntryPoint = createFile(destination.resolve("index.html"));
 
-    Files.write(goodEntryPoint.toPath(), "some data".getBytes(UTF_8));
-    Files.write(
-        folder.newFile("my/root/some/path/a/index.html").toPath(), "wrong index".getBytes(UTF_8));
-    Files.write(
-        folder.newFile("my/root/some/path/c/style.css").toPath(), "css file".getBytes(UTF_8));
-    Files.write(
-        folder.newFile("my/root/some/path/my_image.png").toPath(), "images".getBytes(UTF_8));
+    Files.write(goodEntryPoint, "some data".getBytes(UTF_8));
+    Files.write(createFile(destination.resolve("a/index.html")), "wrong index".getBytes(UTF_8));
+    Files.write(createFile(destination.resolve("c/style.css")), "css file".getBytes(UTF_8));
+    Files.write(createFile(destination.resolve("my_image.png")), "images".getBytes(UTF_8));
 
     FilesWithEntryPoint files =
-        readFilesWithEntryPoint(destination, Optional.of(goodEntryPoint), root);
+        readFilesWithEntryPoint(destination.toFile(), Optional.of(goodEntryPoint.toFile()), root);
 
     assertThat(files.entryPoint().toString())
         .isEqualTo(filenameJoiner.join("some", "path", "index.html"));

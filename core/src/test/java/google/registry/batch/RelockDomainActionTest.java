@@ -34,7 +34,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.schema.domain.RegistryLock;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
@@ -65,8 +65,8 @@ public class RelockDomainActionTest {
               mock(AppEngineServiceUtils.class), clock, Duration.ZERO));
 
   @RegisterExtension
-  public final AppEngineRule appEngineRule =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngineRule =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withUserService(UserInfo.create(POC_ID, "12345"))
           .build();

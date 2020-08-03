@@ -8,7 +8,6 @@ An EPP flow that checks whether a contact can be provisioned.
 
 This flows can check the existence of multiple contacts simultaneously.
 
-
 ### Errors
 
 *   2306
@@ -19,7 +18,6 @@ This flows can check the existence of multiple contacts simultaneously.
 ### Description
 
 An EPP flow that creates a new contact.
-
 
 ### Errors
 
@@ -42,7 +40,6 @@ an existing reference. However, a successful delete will always be asynchronous,
 as all existing domains must be checked for references to the host before the
 deletion is allowed to proceed. A poll message will be written with the success
 or failure message when the process is complete.
-
 
 ### Errors
 
@@ -67,7 +64,6 @@ contact's most recent transfer if it has ever been transferred. Any registrar
 can see any contact's information, but the authInfo is only visible to the
 registrar that owns the contact or to a registrar that already supplied it.
 
-
 ### Errors
 
 *   2201
@@ -86,7 +82,6 @@ registrar. The losing registrar has a "transfer" time period to respond (by
 default five days) after which the transfer is automatically approved. Within
 that window, this flow allows the losing client to explicitly approve the
 transfer request, which then becomes effective immediately.
-
 
 ### Errors
 
@@ -110,7 +105,6 @@ registrar. The losing registrar has a "transfer" time period to respond (by
 default five days) after which the transfer is automatically approved. Within
 that window, this flow allows the gaining client to withdraw the transfer
 request.
-
 
 ### Errors
 
@@ -137,7 +131,6 @@ authId) to see the status of a transfer, which may still be pending or may have
 been approved, rejected, cancelled or implicitly approved by virtue of the
 transfer period expiring.
 
-
 ### Errors
 
 *   2002
@@ -159,7 +152,6 @@ The "gaining" registrar requests a transfer from the "losing" (aka current)
 registrar. The losing registrar has a "transfer" time period to respond (by
 default five days) after which the transfer is automatically approved. Within
 that window, this flow allows the losing client to reject the transfer request.
-
 
 ### Errors
 
@@ -184,7 +176,6 @@ default five days) after which the transfer is automatically approved. Within
 that window, the transfer might be approved explicitly by the losing registrar
 or rejected, and the gaining registrar can also cancel the transfer request.
 
-
 ### Errors
 
 *   2002
@@ -205,7 +196,6 @@ or rejected, and the gaining registrar can also cancel the transfer request.
 ### Description
 
 An EPP flow that updates a contact.
-
 
 ### Errors
 
@@ -233,7 +223,6 @@ An EPP flow that checks whether a domain can be provisioned.
 
 This flow also supports the EPP fee extension and can return pricing
 information.
-
 
 ### Errors
 
@@ -273,7 +262,6 @@ information.
 
 An EPP flow that checks whether domain labels are trademarked.
 
-
 ### Errors
 
 *   2002
@@ -293,7 +281,6 @@ An EPP flow that checks whether domain labels are trademarked.
 ### Description
 
 An EPP flow that creates a new domain resource.
-
 
 ### Errors
 
@@ -391,7 +378,6 @@ An EPP flow that creates a new domain resource.
 
 An EPP flow that deletes a domain.
 
-
 ### Errors
 
 *   2002
@@ -419,7 +405,6 @@ The registrar that owns the domain, and any registrar presenting a valid
 authInfo for the domain, will get a rich result with all of the domain's fields.
 All other requests will be answered with a minimal result containing only basic
 information about the domain.
-
 
 ### Errors
 
@@ -451,7 +436,6 @@ request would result in a registration greater than ten years long it will fail.
 In practice this means it's impossible to request a ten year renewal, since that
 will always cause the new registration to be longer than 10 years unless it
 comes in at the exact millisecond that the domain would have expired.
-
 
 ### Errors
 
@@ -508,7 +492,6 @@ Restores cost a fixed restore fee plus a one year renewal fee for the domain.
 The domain is restored to a single year expiration starting at the restore time,
 regardless of what the original expiration time was.
 
-
 ### Errors
 
 *   2002
@@ -559,7 +542,6 @@ Datastore with timestamps such that they only would become active when the
 transfer period passed. In this flow, those speculative objects are deleted and
 replaced with new ones with the correct approval time.
 
-
 ### Errors
 
 *   2201
@@ -588,7 +570,6 @@ When the transfer was requested, poll messages and billing events were saved to
 Datastore with timestamps such that they only would become active when the
 transfer period passed. In this flow, those speculative objects are deleted.
 
-
 ### Errors
 
 *   2201
@@ -615,7 +596,6 @@ authId) to see the status of a transfer, which may still be pending or may have
 been approved, rejected, cancelled or implicitly approved by virtue of the
 transfer period expiring.
 
-
 ### Errors
 
 *   2002
@@ -641,7 +621,6 @@ that window, this flow allows the losing client to reject the transfer request.
 When the transfer was requested, poll messages and billing events were saved to
 Datastore with timestamps such that they only would become active when the
 transfer period passed. In this flow, those speculative objects are deleted.
-
 
 ### Errors
 
@@ -673,7 +652,6 @@ server-approval period passes. Keys to these speculative objects are saved in
 the domain's transfer data, and on explicit approval, rejection or cancellation
 of the request, they will be deleted (and in the approval case, replaced with
 new ones with the correct approval time).
-
 
 ### Errors
 
@@ -729,7 +707,6 @@ applied by the superuser. As such, adding or removing these statuses incurs a
 billing event. There will be only one charge per update, even if several such
 statuses are updated at once.
 
-
 ### Errors
 
 *   2003
@@ -777,7 +754,6 @@ statuses are updated at once.
 
 A flow for an Epp "hello".
 
-
 ### Errors
 
 *   2001
@@ -790,7 +766,6 @@ A flow for an Epp "hello".
 An EPP flow that checks whether a host can be provisioned.
 
 This flows can check the existence of multiple hosts simultaneously.
-
 
 ### Errors
 
@@ -808,7 +783,6 @@ hosts are those that are under a top level domain within this registry, and
 external hosts are all other hosts. Internal hosts must have at least one ip
 address associated with them, whereas external hosts cannot have any. This flow
 allows creating a host name, and if necessary enqueues tasks to update DNS.
-
 
 ### Errors
 
@@ -845,7 +819,6 @@ as all existing domains must be checked for references to the host before the
 deletion is allowed to proceed. A poll message will be written with the success
 or failure message when the process is complete.
 
-
 ### Errors
 
 *   2005
@@ -870,7 +843,6 @@ An EPP flow that returns information about a host.
 The returned information included IP addresses, if any, and details of the
 host's most recent transfer if it has ever been transferred. Any registrar can
 see the information for any host.
-
 
 ### Errors
 
@@ -897,7 +869,6 @@ hosts. When a host is renamed from internal to external all IP addresses must be
 simultaneously removed, and when it is renamed from external to internal at
 least one must be added. If the host is renamed or IP addresses are added, tasks
 are enqueued to update DNS accordingly.
-
 
 ### Errors
 
@@ -937,7 +908,6 @@ are enqueued to update DNS accordingly.
 
 An EPP flow for login.
 
-
 ### Errors
 
 *   2002
@@ -969,7 +939,6 @@ An EPP flow for login.
 
 An EPP flow for logout.
 
-
 ### Errors
 
 *   2002
@@ -985,7 +954,6 @@ Registrars refer to poll messages using an externally visible id generated by
 {@link PollMessageExternalKeyConverter}. One-time poll messages are deleted from
 Datastore once they are ACKed, whereas autorenew poll messages are simply marked
 as read, and won't be delivered again until the next year of their recurrence.
-
 
 ### Errors
 
@@ -1010,7 +978,6 @@ Note that poll messages whose event time is in the future (i.e. they are
 speculative and could still be changed or rescinded) are ignored. The externally
 visible id for the poll message that the registrar sees is generated by {@link
 PollMessageExternalKeyConverter}.
-
 
 ### Errors
 

@@ -21,7 +21,7 @@ import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.model.ofy.Ofy;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,7 @@ public class CountDomainsCommandTest extends CommandTestCase<CountDomainsCommand
 
   protected FakeClock clock = new FakeClock(DateTime.now(UTC));
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @BeforeEach
   final void beforeEach() {

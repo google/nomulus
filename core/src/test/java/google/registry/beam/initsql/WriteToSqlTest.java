@@ -27,12 +27,12 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestRule;
-import google.registry.testing.AppEngineRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.stream.Collectors;
@@ -55,10 +55,10 @@ class WriteToSqlTest implements Serializable {
   @Order(Order.DEFAULT - 1)
   final transient DatastoreEntityExtension datastore = new DatastoreEntityExtension();
 
-  @RegisterExtension final transient InjectRule injectRule = new InjectRule();
+  @RegisterExtension final transient InjectExtension injectRule = new InjectExtension();
 
   @RegisterExtension
-  final transient JpaIntegrationTestRule database =
+  final transient JpaIntegrationTestExtension database =
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationTestRule();
 
   @SuppressWarnings("WeakerAccess")
@@ -72,7 +72,7 @@ class WriteToSqlTest implements Serializable {
   // Must not be transient!
   @RegisterExtension
   @Order(Order.DEFAULT + 1)
-  public final BeamJpaExtension beamJpaExtension =
+  final BeamJpaExtension beamJpaExtension =
       new BeamJpaExtension(() -> tmpDir.resolve("credential.dat"), database.getDatabase());
 
   private ImmutableList<Entity> contacts;
@@ -83,7 +83,7 @@ class WriteToSqlTest implements Serializable {
       injectRule.setStaticField(Ofy.class, "clock", fakeClock);
 
       // Required for contacts created below.
-      Registrar ofyRegistrar = AppEngineRule.makeRegistrar2();
+      Registrar ofyRegistrar = AppEngineExtension.makeRegistrar2();
       store.insertOrUpdate(ofyRegistrar);
       jpaTm().transact(() -> jpaTm().saveNewOrUpdate(store.loadAsOfyEntity(ofyRegistrar)));
 

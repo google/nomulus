@@ -23,7 +23,7 @@ import com.google.appengine.api.datastore.EntityTranslator;
 import com.google.common.collect.ImmutableList;
 import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
 import google.registry.model.contact.ContactResource;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreHelper;
 import google.registry.tools.EntityWrapper.Property;
 import java.io.File;
@@ -41,7 +41,8 @@ public class LevelDbFileBuilderTest {
   @TempDir Path tmpDir;
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
   void testSingleRecordWrites() throws IOException {

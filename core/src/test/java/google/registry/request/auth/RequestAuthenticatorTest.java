@@ -17,7 +17,7 @@ package google.registry.request.auth;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -30,7 +30,7 @@ import google.registry.request.auth.RequestAuthenticator.AuthMethod;
 import google.registry.request.auth.RequestAuthenticator.AuthSettings;
 import google.registry.request.auth.RequestAuthenticator.UserPolicy;
 import google.registry.security.XsrfTokenManager;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeOAuthService;
 import google.registry.testing.FakeUserService;
@@ -43,7 +43,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link RequestAuthenticator}. */
 class RequestAuthenticatorTest {
 
-  @RegisterExtension final AppEngineRule appEngine = AppEngineRule.builder().build();
+  @RegisterExtension final AppEngineExtension appEngine = AppEngineExtension.builder().build();
 
   private static final AuthSettings AUTH_NONE = AuthSettings.create(
       ImmutableList.of(AuthMethod.INTERNAL),

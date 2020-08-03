@@ -14,24 +14,67 @@
 
 package google.registry.persistence.converter;
 
+import java.sql.SQLException;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 import org.joda.time.Duration;
+import org.joda.time.Period;
+import org.postgresql.util.PGInterval;
 
-/** JPA converter to for storing/retrieving {@link org.joda.time.DateTime} objects. */
+/**
+ * JPA converter to for storing/retrieving {@link org.joda.time.Duration} objects.
+ *
+ * <p>The Joda Time Duration is simply a number of milliseconds representing a length of time. This
+ * can be converted into a PGInterval, but only for the fields that have a standard number of
+ * milliseconds. Therefore, there is no way to populate the months or years field of a PGInterval
+ * and be confident that it is representing the exact number of milliseconds it was intended to
+ * represent.
+ */
 @Converter(autoApply = true)
-public class DurationConverter implements AttributeConverter<Duration, Long> {
+public class DurationConverter implements AttributeConverter<Duration, PGInterval> {
 
   @Override
   @Nullable
-  public Long convertToDatabaseColumn(@Nullable Duration duration) {
-    return duration == null ? null : duration.getMillis();
+  public PGInterval convertToDatabaseColumn(@Nullable Duration duration) {
+    if (duration == null) {
+      return new PGInterval();
+    }
+    PGInterval interval = new PGInterval();
+    Period period = new Period(duration);
+    // For some reason when the period is created from the duration, it does not set days, but
+    // instead just a total number of hours. Years and months are not created because those can
+    // differ in length of milliseconds.
+    interval.setDays(period.getHours() / 24);
+    interval.setHours(period.getHours() % 24);
+    interval.setMinutes(period.getMinutes());
+    double millis = (double) period.getMillis() / 1000;
+    interval.setSeconds(period.getSeconds() + millis);
+    return interval;
   }
 
   @Override
   @Nullable
-  public Duration convertToEntityAttribute(@Nullable Long dbData) {
-    return dbData == null ? null : new Duration(dbData);
+  public Duration convertToEntityAttribute(@Nullable PGInterval dbData) {
+    if (dbData == null) {
+      return null;
+    }
+    PGInterval interval = null;
+    try {
+      interval = new PGInterval(dbData.toString());
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+
+    if (interval.equals(new PGInterval())) {
+      return null;
+    }
+
+    final int days = interval.getDays();
+    final int hours = interval.getHours();
+    final int mins = interval.getMinutes();
+    final int secs = (int) interval.getSeconds();
+    final int millis = interval.getMicroSeconds() / 1000;
+    return new Period(0, 0, 0, days, hours, mins, secs, millis).toStandardDuration();
   }
 }

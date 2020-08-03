@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.flows.EppException;
 import google.registry.flows.ResourceFlowTestCase;
@@ -32,7 +32,7 @@ import google.registry.flows.domain.DomainFlowUtils.LeadingDashException;
 import google.registry.flows.domain.DomainFlowUtils.TldDoesNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.model.domain.DomainBase;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +42,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
   void setup() {
     setEppInput("domain_info.xml");
     createTld("tld");
-    persistResource(AppEngineRule.makeRegistrar1().asBuilder().build());
+    persistResource(AppEngineExtension.makeRegistrar1().asBuilder().build());
   }
 
   @Test

@@ -57,6 +57,10 @@ final class GcsPluginUtils {
     return file.toPath().toAbsolutePath().normalize();
   }
 
+  static Path toNormalizedPath(Path file) {
+    return file.toAbsolutePath().normalize();
+  }
+
   static String getContentType(String fileName) {
     return EXTENSION_TO_CONTENT_TYPE.getOrDefault(
         Files.getFileExtension(fileName), DEFAULT_CONTENT_TYPE);

@@ -61,6 +61,13 @@ public interface InitSqlPipelineOptions extends GcpOptions {
   void setEnvironment(String environment);
 
   @Description(
+      "The GCP project that contains the keyring used for decrypting the " + "SQL credential file.")
+  @Nullable
+  String getCloudKmsProjectId();
+
+  void setCloudKmsProjectId(String cloudKmsProjectId);
+
+  @Description(
       "The maximum JDBC connection pool size on a VM. "
           + "This value should be equal to or greater than the number of cores on the VM.")
   @Default.Integer(4)

@@ -743,7 +743,7 @@ CREATE TABLE public."RegistryLock" (
     unlock_completion_timestamp timestamp with time zone,
     last_update_timestamp timestamp with time zone,
     relock_revision_id bigint,
-    relock_duration bigint
+    relock_duration interval
 );
 
 
@@ -844,6 +844,35 @@ ALTER SEQUENCE public."SafeBrowsingThreat_id_seq" OWNED BY public."Spec11ThreatM
 
 
 --
+-- Name: Transaction; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Transaction" (
+    id bigint NOT NULL,
+    contents bytea
+);
+
+
+--
+-- Name: Transaction_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."Transaction_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: Transaction_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."Transaction_id_seq" OWNED BY public."Transaction".id;
+
+
+--
 -- Name: BillingCancellation billing_cancellation_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -904,6 +933,13 @@ ALTER TABLE ONLY public."ReservedList" ALTER COLUMN revision_id SET DEFAULT next
 --
 
 ALTER TABLE ONLY public."Spec11ThreatMatch" ALTER COLUMN id SET DEFAULT nextval('public."SafeBrowsingThreat_id_seq"'::regclass);
+
+
+--
+-- Name: Transaction id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Transaction" ALTER COLUMN id SET DEFAULT nextval('public."Transaction_id_seq"'::regclass);
 
 
 --
@@ -1080,6 +1116,14 @@ ALTER TABLE ONLY public."ReservedList"
 
 ALTER TABLE ONLY public."Spec11ThreatMatch"
     ADD CONSTRAINT "SafeBrowsingThreat_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: Transaction Transaction_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Transaction"
+    ADD CONSTRAINT "Transaction_pkey" PRIMARY KEY (id);
 
 
 --

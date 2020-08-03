@@ -35,7 +35,7 @@ import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.RequestAuthenticator;
 import google.registry.request.auth.UserAuthInfo;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.UserInfo;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -51,8 +51,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public final class RequestHandlerTest {
 
   @RegisterExtension
-  final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withUserService(UserInfo.create("test@example.com", "test@example.com"))
           .build();

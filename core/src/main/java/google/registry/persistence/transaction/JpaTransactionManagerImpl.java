@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
+import google.registry.config.RegistryConfig;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
 import java.lang.reflect.Field;
@@ -101,9 +102,9 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     EntityTransaction txn = txnInfo.entityManager.getTransaction();
     try {
       txn.begin();
-      txnInfo.inTransaction = true;
-      txnInfo.transactionTime = clock.nowUtc();
+      txnInfo.start(clock);
       T result = work.get();
+      txnInfo.recordTransaction();
       txn.commit();
       return result;
     } catch (RuntimeException | Error e) {
@@ -177,6 +178,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     checkArgumentNotNull(entity, "entity must be specified");
     assertInTransaction();
     getEntityManager().persist(entity);
+    transactionInfo.get().addUpdate(entity);
   }
 
   @Override
@@ -191,6 +193,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     checkArgumentNotNull(entity, "entity must be specified");
     assertInTransaction();
     getEntityManager().merge(entity);
+    transactionInfo.get().addUpdate(entity);
   }
 
   @Override
@@ -206,6 +209,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     assertInTransaction();
     checkArgument(checkExists(entity), "Given entity does not exist");
     getEntityManager().merge(entity);
+    transactionInfo.get().addUpdate(entity);
   }
 
   @Override
@@ -297,6 +301,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         String.format("DELETE FROM %s WHERE %s", entityType.getName(), getAndClause(entityIds));
     Query query = getEntityManager().createQuery(sql);
     entityIds.forEach(entityId -> query.setParameter(entityId.name, entityId.value));
+    transactionInfo.get().addDelete(key);
     return query.executeUpdate();
   }
 
@@ -387,14 +392,49 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     boolean inTransaction = false;
     DateTime transactionTime;
 
+    // Serializable representation of the transaction to be persisted in the Transaction table.
+    Transaction.Builder contentsBuilder;
+
+    /** Start a new transaction. */
+    private void start(Clock clock) {
+      checkArgumentNotNull(clock);
+      inTransaction = true;
+      transactionTime = clock.nowUtc();
+      if (RegistryConfig.getCloudSqlReplicateTransactions()) {
+        contentsBuilder = new Transaction.Builder();
+      }
+    }
+
     private void clear() {
       inTransaction = false;
       transactionTime = null;
+      contentsBuilder = null;
       if (entityManager != null) {
         // Close this EntityManager just let the connection pool be able to reuse it, it doesn't
         // close the underlying database connection.
         entityManager.close();
         entityManager = null;
+      }
+    }
+
+    private void addUpdate(Object entity) {
+      if (contentsBuilder != null) {
+        contentsBuilder.addUpdate(entity);
+      }
+    }
+
+    private void addDelete(VKey<?> key) {
+      if (contentsBuilder != null) {
+        contentsBuilder.addDelete(key);
+      }
+    }
+
+    private void recordTransaction() {
+      if (contentsBuilder != null) {
+        Transaction persistedTxn = contentsBuilder.build();
+        if (!persistedTxn.isEmpty()) {
+          entityManager.persist(persistedTxn.toEntity());
+        }
       }
     }
   }

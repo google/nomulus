@@ -26,7 +26,7 @@ import static google.registry.testing.HostResourceSubject.assertAboutHosts;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -35,8 +35,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class EppLifecycleHostTest extends EppTestCase {
 
   @RegisterExtension
-  final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @Test
   void testLifecycle() throws Exception {

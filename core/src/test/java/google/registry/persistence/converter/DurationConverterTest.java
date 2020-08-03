@@ -21,58 +21,65 @@ import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import google.registry.schema.replay.EntityTest.EntityForTesting;
-import java.math.BigInteger;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.postgresql.util.PGInterval;
 
 /** Unit tests for {@link DurationConverter}. */
 public class DurationConverterTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpaExtension =
-      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
+      new JpaTestRules.Builder().withEntityClass(DurationTestEntity.class).buildUnitTestRule();
 
   private final DurationConverter converter = new DurationConverter();
 
   @Test
-  void testNulls() {
-    assertThat(converter.convertToDatabaseColumn(null)).isNull();
-    assertThat(converter.convertToEntityAttribute(null)).isNull();
+  public void testNulls() {
+    assertThat(converter.convertToDatabaseColumn(null)).isEqualTo(new PGInterval());
+    assertThat(converter.convertToEntityAttribute(new PGInterval())).isNull();
   }
 
   @Test
   void testRoundTrip() {
-    TestEntity entity = new TestEntity(Duration.standardDays(6));
+    Duration testDuration =
+        Duration.standardDays(6)
+            .plus(Duration.standardHours(10))
+            .plus(Duration.standardMinutes(30))
+            .plus(Duration.standardSeconds(15))
+            .plus(Duration.millis(7));
+    DurationTestEntity entity = new DurationTestEntity(testDuration);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
-    assertThat(
-            jpaTm()
-                .transact(
-                    () ->
-                        jpaTm()
-                            .getEntityManager()
-                            .createNativeQuery(
-                                "SELECT duration FROM \"TestEntity\" WHERE name = 'id'")
-                            .getResultList()))
-        .containsExactly(BigInteger.valueOf(Duration.standardDays(6).getMillis()));
-    TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
-    assertThat(persisted.duration).isEqualTo(Duration.standardDays(6));
+    DurationTestEntity persisted =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(DurationTestEntity.class, "id"));
+    assertThat(persisted.duration.getMillis()).isEqualTo(testDuration.getMillis());
+  }
+
+  @Test
+  void testRoundTripLargeNumberOfDays() {
+    Duration testDuration =
+        Duration.standardDays(10001).plus(Duration.standardHours(100)).plus(Duration.millis(790));
+    DurationTestEntity entity = new DurationTestEntity(testDuration);
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
+    DurationTestEntity persisted =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(DurationTestEntity.class, "id"));
+    assertThat(persisted.duration.getMillis()).isEqualTo(testDuration.getMillis());
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.
   @EntityForTesting
-  public static class TestEntity extends ImmutableObject {
+  public static class DurationTestEntity extends ImmutableObject {
 
     @Id String name = "id";
 
     Duration duration;
 
-    public TestEntity() {}
+    public DurationTestEntity() {}
 
-    TestEntity(Duration duration) {
+    DurationTestEntity(Duration duration) {
       this.duration = duration;
     }
   }

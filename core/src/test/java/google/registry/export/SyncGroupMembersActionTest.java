@@ -39,10 +39,10 @@ import google.registry.groups.GroupsConnection.Role;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.request.Response;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.util.Retrier;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
@@ -52,14 +52,15 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  * Unit tests for {@link SyncGroupMembersAction}.
  *
  * <p>Note that this relies on the registrars NewRegistrar and TheRegistrar created by default in
- * {@link AppEngineRule}.
+ * {@link AppEngineExtension}.
  */
 public class SyncGroupMembersActionTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   private final DirectoryGroupsConnection connection = mock(DirectoryGroupsConnection.class);
   private final Response response = mock(Response.class);

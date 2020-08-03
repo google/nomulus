@@ -32,6 +32,7 @@
     <class>google.registry.model.registrar.RegistrarContact</class>
     <class>google.registry.model.registry.label.PremiumList</class>
     <class>google.registry.model.reporting.Spec11ThreatMatch</class>
+    <class>google.registry.persistence.transaction.TransactionEntity</class>
     <class>google.registry.schema.domain.RegistryLock</class>
     <class>google.registry.schema.tmch.ClaimsList</class>
     <class>google.registry.schema.cursor.Cursor</class>

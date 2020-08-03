@@ -23,7 +23,7 @@ import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 import com.google.common.collect.ImmutableList;
@@ -98,12 +98,9 @@ class LockDomainCommandTest extends CommandTestCase<LockDomainCommand> {
   }
 
   @Test
-  void testFailure_domainDoesntExist() {
-    IllegalArgumentException e =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> runCommandForced("--client=NewRegistrar", "missing.tld"));
-    assertThat(e).hasMessageThat().isEqualTo("Domain 'missing.tld' does not exist or is deleted");
+  void testFailure_domainDoesntExist() throws Exception {
+    runCommandForced("--client=NewRegistrar", "missing.tld");
+    assertInStdout("Failed domains:\n[missing.tld (Domain doesn't exist)]");
   }
 
   @Test

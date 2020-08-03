@@ -33,8 +33,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.Duration.standardDays;
 import static org.joda.time.Duration.standardHours;
 import static org.joda.time.Duration.standardSeconds;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -63,7 +63,7 @@ import google.registry.model.registry.Registry;
 import google.registry.rde.JSchSshSession.JSchSshSessionFactory;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.RequestParameters;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
@@ -72,7 +72,7 @@ import google.registry.testing.FakeSleeper;
 import google.registry.testing.GpgSystemCommandExtension;
 import google.registry.testing.Lazies;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
-import google.registry.testing.sftp.SftpServerRule;
+import google.registry.testing.sftp.SftpServerExtension;
 import google.registry.util.Retrier;
 import google.registry.util.TaskQueueUtils;
 import java.io.File;
@@ -110,7 +110,7 @@ public class RdeUploadActionTest {
   private static final GcsFilename REPORT_R1_FILE =
       new GcsFilename("bucket", "tld_2010-10-17_full_S1_R1-report.xml.ghostryde");
 
-  @RegisterExtension final SftpServerRule sftpd = new SftpServerRule();
+  @RegisterExtension final SftpServerExtension sftpd = new SftpServerExtension();
 
   @SuppressWarnings("WeakerAccess")
   @TempDir
@@ -126,8 +126,8 @@ public class RdeUploadActionTest {
           RdeTestData.loadBytes("pgp-private-keyring-escrow.asc"));
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private final FakeResponse response = new FakeResponse();
   private final EscrowTaskRunner runner = mock(EscrowTaskRunner.class);

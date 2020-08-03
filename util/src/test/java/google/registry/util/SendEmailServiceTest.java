@@ -15,7 +15,7 @@
 package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -32,20 +32,15 @@ import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMultipart;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Unit tests for {@link SendEmailService}. */
-@RunWith(JUnit4.class)
-public class SendEmailServiceTest {
-
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
+@ExtendWith(MockitoExtension.class)
+class SendEmailServiceTest {
 
   private final Retrier retrier = new Retrier(new FakeSleeper(new FakeClock()), 2);
   private final TransportEmailSender wrapper = mock(TransportEmailSender.class);
@@ -54,7 +49,7 @@ public class SendEmailServiceTest {
   @Captor private ArgumentCaptor<Message> messageCaptor;
 
   @Test
-  public void testSuccess_simple() throws Exception {
+  void testSuccess_simple() throws Exception {
     EmailMessage content = createBuilder().build();
     sendEmailService.sendEmail(content);
     Message message = getMessage();
@@ -73,7 +68,7 @@ public class SendEmailServiceTest {
   }
 
   @Test
-  public void testSuccess_bcc() throws Exception {
+  void testSuccess_bcc() throws Exception {
     EmailMessage content =
         createBuilder()
             .setBccs(
@@ -90,7 +85,7 @@ public class SendEmailServiceTest {
   }
 
   @Test
-  public void testSuccess_contentType() throws Exception {
+  void testSuccess_contentType() throws Exception {
     EmailMessage content = createBuilder().setContentType(MediaType.HTML_UTF_8).build();
     sendEmailService.sendEmail(content);
     Message message = getMessage();
@@ -98,7 +93,7 @@ public class SendEmailServiceTest {
   }
 
   @Test
-  public void testSuccess_attachment() throws Exception {
+  void testSuccess_attachment() throws Exception {
     EmailMessage content =
         createBuilder()
             .setAttachment(
@@ -117,7 +112,7 @@ public class SendEmailServiceTest {
   }
 
   @Test
-  public void testSuccess_retry() throws Exception {
+  void testSuccess_retry() throws Exception {
     doThrow(new MessagingException("hi"))
         .doNothing()
         .when(wrapper)
@@ -128,7 +123,7 @@ public class SendEmailServiceTest {
   }
 
   @Test
-  public void testFailure_wrongExceptionType() throws Exception {
+  void testFailure_wrongExceptionType() throws Exception {
     doThrow(new RuntimeException("this is a runtime exception")).when(wrapper).sendMessage(any());
     EmailMessage content = createBuilder().build();
     RuntimeException thrown =
@@ -137,7 +132,7 @@ public class SendEmailServiceTest {
   }
 
   @Test
-  public void testFailure_tooManyTries() throws Exception {
+  void testFailure_tooManyTries() throws Exception {
     doThrow(new MessagingException("hi"))
         .doThrow(new MessagingException("second"))
         .when(wrapper)

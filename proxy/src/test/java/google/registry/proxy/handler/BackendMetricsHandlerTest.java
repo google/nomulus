@@ -22,7 +22,7 @@ import static google.registry.proxy.TestUtils.makeHttpPostRequest;
 import static google.registry.proxy.TestUtils.makeHttpResponse;
 import static google.registry.proxy.handler.EppServiceHandler.CLIENT_CERTIFICATE_HASH_KEY;
 import static google.registry.proxy.handler.RelayHandler.RELAY_CHANNEL_KEY;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -40,14 +40,11 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link BackendMetricsHandler}. */
-@RunWith(JUnit4.class)
-public class BackendMetricsHandlerTest {
+class BackendMetricsHandlerTest {
 
   private static final String HOST = "host.tld";
   private static final String CLIENT_CERT_HASH = "blah12345";
@@ -75,8 +72,8 @@ public class BackendMetricsHandlerTest {
 
   private EmbeddedChannel channel;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     EmbeddedChannel frontendChannel = new EmbeddedChannel();
     frontendChannel.attr(PROTOCOL_KEY).set(frontendProtocol);
     frontendChannel.attr(CLIENT_CERTIFICATE_HASH_KEY).set(CLIENT_CERT_HASH);
@@ -93,7 +90,7 @@ public class BackendMetricsHandlerTest {
   }
 
   @Test
-  public void testFailure_outbound_wrongType() {
+  void testFailure_outbound_wrongType() {
     Object request = new Object();
     IllegalArgumentException e =
         assertThrows(IllegalArgumentException.class, () -> channel.writeOutbound(request));
@@ -101,7 +98,7 @@ public class BackendMetricsHandlerTest {
   }
 
   @Test
-  public void testFailure_inbound_wrongType() {
+  void testFailure_inbound_wrongType() {
     Object response = new Object();
     IllegalArgumentException e =
         assertThrows(IllegalArgumentException.class, () -> channel.writeInbound(response));
@@ -109,7 +106,7 @@ public class BackendMetricsHandlerTest {
   }
 
   @Test
-  public void testSuccess_oneRequest() {
+  void testSuccess_oneRequest() {
     FullHttpRequest request = makeHttpPostRequest("some content", HOST, "/");
     // outbound message passed to the next handler.
     assertThat(channel.writeOutbound(request)).isTrue();
@@ -120,7 +117,7 @@ public class BackendMetricsHandlerTest {
   }
 
   @Test
-  public void testSuccess_oneRequest_oneResponse() {
+  void testSuccess_oneRequest_oneResponse() {
     FullHttpRequest request = makeHttpPostRequest("some request", HOST, "/");
     FullHttpResponse response = makeHttpResponse("some response", HttpResponseStatus.OK);
     // outbound message passed to the next handler.
@@ -139,7 +136,7 @@ public class BackendMetricsHandlerTest {
   }
 
   @Test
-  public void testSuccess_badResponse() {
+  void testSuccess_badResponse() {
     FullHttpRequest request = makeHttpPostRequest("some request", HOST, "/");
     FullHttpResponse response =
         makeHttpResponse("some bad response", HttpResponseStatus.BAD_REQUEST);
@@ -161,7 +158,7 @@ public class BackendMetricsHandlerTest {
   }
 
   @Test
-  public void testFailure_responseBeforeRequest() {
+  void testFailure_responseBeforeRequest() {
     FullHttpResponse response = makeHttpResponse("phantom response", HttpResponseStatus.OK);
     IllegalStateException e =
         assertThrows(IllegalStateException.class, () -> channel.writeInbound(response));
@@ -169,7 +166,7 @@ public class BackendMetricsHandlerTest {
   }
 
   @Test
-  public void testSuccess_pipelinedResponses() {
+  void testSuccess_pipelinedResponses() {
     FullHttpRequest request1 = makeHttpPostRequest("request 1", HOST, "/");
     FullHttpResponse response1 = makeHttpResponse("response 1", HttpResponseStatus.OK);
     FullHttpRequest request2 = makeHttpPostRequest("request 22", HOST, "/");

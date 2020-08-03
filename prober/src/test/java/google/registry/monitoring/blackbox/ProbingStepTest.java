@@ -30,7 +30,7 @@ import google.registry.monitoring.blackbox.handler.TestActionHandler;
 import google.registry.monitoring.blackbox.message.OutboundMessageType;
 import google.registry.monitoring.blackbox.message.TestMessage;
 import google.registry.monitoring.blackbox.token.Token;
-import google.registry.networking.handler.NettyRule;
+import google.registry.networking.handler.NettyExtension;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
@@ -40,15 +40,15 @@ import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import org.joda.time.Duration;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mockito;
 
 /**
  * Unit Tests for {@link ProbingSequence}s and {@link ProbingStep}s and their specific
- * implementations
+ * implementations.
  */
-public class ProbingStepTest {
+class ProbingStepTest {
 
   /** Basic Constants necessary for tests */
   private static final String ADDRESS_NAME = "TEST_ADDRESS";
@@ -61,12 +61,13 @@ public class ProbingStepTest {
   private final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
   private final Bootstrap bootstrap =
       new Bootstrap().group(eventLoopGroup).channel(LocalChannel.class);
+
   /** Used for testing how well probing step can create connection to blackbox server */
-  @Rule public NettyRule nettyRule = new NettyRule();
+  @RegisterExtension NettyExtension nettyExtension = new NettyExtension();
 
   /**
-   * The two main handlers we need in any test pipeline used that connects to {@link NettyRule's
-   * server}
+   * The two main handlers we need in any test pipeline used that connects to {@link NettyExtension
+   * 's server}
    */
   private ActionHandler testHandler = new TestActionHandler();
 
@@ -87,7 +88,7 @@ public class ProbingStepTest {
   }
 
   @Test
-  public void testProbingActionGenerate_embeddedChannel() throws UndeterminedStateException {
+  void testProbingActionGenerate_embeddedChannel() throws UndeterminedStateException {
     // Sets up Protocol to represent existing channel connection.
     Protocol testProtocol =
         Protocol.builder()
@@ -125,7 +126,7 @@ public class ProbingStepTest {
   }
 
   @Test
-  public void testProbingActionGenerate_newChannel() throws UndeterminedStateException {
+  void testProbingActionGenerate_newChannel() throws UndeterminedStateException {
     // Sets up Protocol for when we create a new channel.
     Protocol testProtocol =
         Protocol.builder()
@@ -149,7 +150,7 @@ public class ProbingStepTest {
     Token testToken = testToken(ADDRESS_NAME);
 
     // Sets up server listening at LocalAddress so generated action can have successful connection.
-    nettyRule.setUpServer(address);
+    nettyExtension.setUpServer(address);
 
     ProbingAction testAction = testStep.generateAction(testToken);
 

@@ -24,14 +24,11 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link BackendMetrics}. */
-@RunWith(JUnit4.class)
-public class BackendMetricsTest {
+class BackendMetricsTest {
 
   private final String host = "host.tld";
   private final String certHash = "blah12345";
@@ -39,13 +36,13 @@ public class BackendMetricsTest {
 
   private final BackendMetrics metrics = new BackendMetrics();
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     metrics.resetMetrics();
   }
 
   @Test
-  public void testSuccess_oneRequest() {
+  void testSuccess_oneRequest() {
     String content = "some content";
     FullHttpRequest request = makeHttpPostRequest(content, host, "/");
     metrics.requestSent(protocol, certHash, request.content().readableBytes());
@@ -64,7 +61,7 @@ public class BackendMetricsTest {
   }
 
   @Test
-  public void testSuccess_multipleRequests() {
+  void testSuccess_multipleRequests() {
     String content1 = "some content";
     String content2 = "some other content";
     FullHttpRequest request1 = makeHttpPostRequest(content1, host, "/");
@@ -87,7 +84,7 @@ public class BackendMetricsTest {
   }
 
   @Test
-  public void testSuccess_oneResponse() {
+  void testSuccess_oneResponse() {
     String content = "some response";
     FullHttpResponse response = makeHttpResponse(content, HttpResponseStatus.OK);
     metrics.responseReceived(protocol, certHash, response, Duration.millis(5));
@@ -109,7 +106,7 @@ public class BackendMetricsTest {
   }
 
   @Test
-  public void testSuccess_multipleResponses() {
+  void testSuccess_multipleResponses() {
     String content1 = "some response";
     String content2 = "other response";
     String content3 = "a very bad response";
@@ -142,7 +139,7 @@ public class BackendMetricsTest {
   }
 
   @Test
-  public void testSuccess_oneRequest_oneResponse() {
+  void testSuccess_oneRequest_oneResponse() {
     String requestContent = "some request";
     String responseContent = "the only response";
     FullHttpRequest request = makeHttpPostRequest(requestContent, host, "/");

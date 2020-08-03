@@ -21,7 +21,7 @@ import static google.registry.testing.DatastoreHelper.deleteTld;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.DatastoreHelper.persistSimpleResource;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.api.client.http.LowLevelHttpRequest;
 import com.google.api.client.testing.http.MockHttpTransport;
@@ -34,7 +34,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,8 +76,8 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
           + "\"version\":\"1.0\"}";
 
   @RegisterExtension
-  public AppEngineRule appEngineRule =
-      new AppEngineRule.Builder().withDatastoreAndCloudSql().build();
+  public AppEngineExtension appEngineRule =
+      new AppEngineExtension.Builder().withDatastoreAndCloudSql().build();
 
   private static class TestHttpTransport extends MockHttpTransport {
     private final ArrayList<MockLowLevelHttpRequest> requestsSent = new ArrayList<>();

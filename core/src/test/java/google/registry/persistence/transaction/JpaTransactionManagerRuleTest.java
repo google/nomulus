@@ -16,7 +16,7 @@ package google.registry.persistence.transaction;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
@@ -28,7 +28,10 @@ import javax.persistence.PersistenceException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** JUnit test for {@link JpaTransactionManagerRule}, with {@link JpaUnitTestExtension} as proxy. */
+/**
+ * JUnit test for {@link JpaTransactionManagerExtension}, with {@link JpaUnitTestExtension} as
+ * proxy.
+ */
 public class JpaTransactionManagerRuleTest {
 
   @RegisterExtension

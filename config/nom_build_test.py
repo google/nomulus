@@ -14,6 +14,7 @@
 
 import io
 import os
+import shutil
 import unittest
 from unittest import mock
 import nom_build
@@ -67,6 +68,7 @@ class MyTest(unittest.TestCase):
             mock.patch.object(nom_build, 'print', self.print_fake).start())
 
         self.call_mock = mock.patch.object(subprocess, 'call').start()
+        self.copy_mock = mock.patch.object(shutil, 'copy').start()
 
         self.file_contents = {
             # Prefil with the actual file contents.
@@ -92,17 +94,32 @@ class MyTest(unittest.TestCase):
 
     def test_no_args(self):
         nom_build.main(['nom_build'])
-        self.assertEqual(self.printed, [])
-        self.call_mock.assert_called_with([GRADLEW])
+        self.assertEqual(self.printed,
+                         ['\x1b[33mWARNING:\x1b[0m No tasks specified.  Not '
+                         'doing anything'])
 
     def test_property_calls(self):
-        nom_build.main(['nom_build', '--testFilter=foo'])
-        self.call_mock.assert_called_with([GRADLEW, '-P', 'testFilter=foo'])
+        nom_build.main(['nom_build', 'task-name', '--testFilter=foo'])
+        self.call_mock.assert_called_with([GRADLEW, '-P', 'testFilter=foo',
+                                          'task-name'])
 
     def test_gradle_flags(self):
-        nom_build.main(['nom_build', '-d', '-b', 'foo'])
+        nom_build.main(['nom_build', 'task-name', '-d', '-b', 'foo'])
         self.call_mock.assert_called_with([GRADLEW, '--build-file', 'foo',
-                                          '--debug'])
+                                          '--debug', 'task-name'])
+
+    def test_generate_golden_file(self):
+        self.call_mock.side_effect = [1, 0]
+        nom_build.main(['nom_build', ':nom:generate_golden_file'])
+        self.call_mock.assert_has_calls([
+            mock.call([GRADLEW, ':db:test']),
+            mock.call([GRADLEW, ':db:test'])
+        ])
+
+    def test_generate_golden_file_nofail(self):
+        self.call_mock.return_value = 0
+        nom_build.main(['nom_build', ':nom:generate_golden_file'])
+        self.call_mock.assert_has_calls([mock.call([GRADLEW, ':db:test'])])
 
 unittest.main()
 

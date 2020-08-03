@@ -32,19 +32,16 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link JsonHttp}. */
-@RunWith(JUnit4.class)
-public class JsonHttpTest {
+class JsonHttpTest {
 
   private final HttpServletRequest req = mock(HttpServletRequest.class);
   private final HttpServletResponse rsp = mock(HttpServletResponse.class);
 
   @Test
-  public void testRead_postMethod_works() throws Exception {
+  void testRead_postMethod_works() throws Exception {
     when(req.getMethod()).thenReturn("POST");
     when(req.getContentType()).thenReturn(JSON_UTF_8.toString());
     when(req.getReader()).thenReturn(new BufferedReader(new StringReader("{\"k\":\"v\"}")));
@@ -52,7 +49,7 @@ public class JsonHttpTest {
   }
 
   @Test
-  public void testRead_putMethod_works() throws Exception {
+  void testRead_putMethod_works() throws Exception {
     when(req.getMethod()).thenReturn("PUT");
     when(req.getContentType()).thenReturn(JSON_UTF_8.toString());
     when(req.getReader()).thenReturn(new BufferedReader(new StringReader("{\"k\":\"v\"}")));
@@ -60,7 +57,7 @@ public class JsonHttpTest {
   }
 
   @Test
-  public void testRead_getMethod_notAllowed() throws Exception {
+  void testRead_getMethod_notAllowed() throws Exception {
     when(req.getMethod()).thenReturn("GET");
     when(req.getContentType()).thenReturn(JSON_UTF_8.toString());
     when(req.getReader()).thenReturn(new BufferedReader(new StringReader("{}")));
@@ -68,7 +65,7 @@ public class JsonHttpTest {
   }
 
   @Test
-  public void testRead_textPlainContentType_notAllowed() throws Exception {
+  void testRead_textPlainContentType_notAllowed() throws Exception {
     when(req.getMethod()).thenReturn("POST");
     when(req.getContentType()).thenReturn(PLAIN_TEXT_UTF_8.toString());
     when(req.getReader()).thenReturn(new BufferedReader(new StringReader("{\"k\":\"v\"}")));
@@ -76,7 +73,7 @@ public class JsonHttpTest {
   }
 
   @Test
-  public void testRead_jsonContentTypeWithoutCharsetParameter_allowed() throws Exception {
+  void testRead_jsonContentTypeWithoutCharsetParameter_allowed() throws Exception {
     when(req.getMethod()).thenReturn("POST");
     when(req.getContentType()).thenReturn(JSON_UTF_8.withoutParameters().toString());
     when(req.getReader()).thenReturn(new BufferedReader(new StringReader("{\"k\":\"v\"}")));
@@ -84,7 +81,7 @@ public class JsonHttpTest {
   }
 
   @Test
-  public void testRead_jsonContentTypeWithWeirdCharsetParameter_notAllowed() throws Exception {
+  void testRead_jsonContentTypeWithWeirdCharsetParameter_notAllowed() throws Exception {
     when(req.getMethod()).thenReturn("POST");
     when(req.getContentType()).thenReturn(JSON_UTF_8.withCharset(UTF_16).toString());
     when(req.getReader()).thenReturn(new BufferedReader(new StringReader("{\"k\":\"v\"}")));
@@ -92,7 +89,7 @@ public class JsonHttpTest {
   }
 
   @Test
-  public void testRead_emptyJson_notAllowed() throws Exception {
+  void testRead_emptyJson_notAllowed() throws Exception {
     when(req.getMethod()).thenReturn("POST");
     when(req.getContentType()).thenReturn(JSON_UTF_8.toString());
     when(req.getReader()).thenReturn(new BufferedReader(new StringReader("")));
@@ -100,7 +97,7 @@ public class JsonHttpTest {
   }
 
   @Test
-  public void testRead_nonObjectJson_notAllowed() throws Exception {
+  void testRead_nonObjectJson_notAllowed() throws Exception {
     when(req.getMethod()).thenReturn("POST");
     when(req.getContentType()).thenReturn(JSON_UTF_8.toString());
     when(req.getReader()).thenReturn(new BufferedReader(new StringReader("123")));
@@ -108,7 +105,7 @@ public class JsonHttpTest {
   }
 
   @Test
-  public void testRead_nullJson_notAllowed() throws Exception {
+  void testRead_nullJson_notAllowed() throws Exception {
     when(req.getMethod()).thenReturn("POST");
     when(req.getContentType()).thenReturn(JSON_UTF_8.toString());
     when(req.getReader()).thenReturn(new BufferedReader(new StringReader("null")));
@@ -116,7 +113,7 @@ public class JsonHttpTest {
   }
 
   @Test
-  public void testWrite() throws Exception {
+  void testWrite() throws Exception {
     StringWriter writer = new StringWriter();
     when(rsp.getWriter()).thenReturn(new PrintWriter(writer));
     JsonHttp.write(rsp, ImmutableMap.of("k", "v"));

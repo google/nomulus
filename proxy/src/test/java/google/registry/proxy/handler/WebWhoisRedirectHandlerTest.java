@@ -24,13 +24,10 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link WebWhoisRedirectHandler}. */
-@RunWith(JUnit4.class)
-public class WebWhoisRedirectHandlerTest {
+class WebWhoisRedirectHandlerTest {
 
   private static final String REDIRECT_HOST = "www.example.com";
   private static final String TARGET_HOST = "whois.nic.tld";
@@ -62,7 +59,7 @@ public class WebWhoisRedirectHandlerTest {
   // HTTP redirect tests.
 
   @Test
-  public void testSuccess_http_methodNotAllowed() {
+  void testSuccess_http_methodNotAllowed() {
     setupChannel(false);
     request = makeHttpPostRequest("", TARGET_HOST, "/");
     // No inbound message passed to the next handler.
@@ -74,7 +71,7 @@ public class WebWhoisRedirectHandlerTest {
   }
 
   @Test
-  public void testSuccess_http_badHost() {
+  void testSuccess_http_badHost() {
     setupChannel(false);
     request = makeHttpGetRequest("", "/");
     // No inbound message passed to the next handler.
@@ -86,7 +83,7 @@ public class WebWhoisRedirectHandlerTest {
   }
 
   @Test
-  public void testSuccess_http_noHost() {
+  void testSuccess_http_noHost() {
     setupChannel(false);
     request = makeHttpGetRequest("", "/");
     request.headers().remove("host");
@@ -99,7 +96,7 @@ public class WebWhoisRedirectHandlerTest {
   }
 
   @Test
-  public void testSuccess_http_healthCheck() {
+  void testSuccess_http_healthCheck() {
     setupChannel(false);
     request = makeHttpPostRequest("", TARGET_HOST, "/");
     // No inbound message passed to the next handler.
@@ -111,7 +108,7 @@ public class WebWhoisRedirectHandlerTest {
   }
 
   @Test
-  public void testSuccess_http_redirectToHttps() {
+  void testSuccess_http_redirectToHttps() {
     setupChannel(false);
     request = makeHttpGetRequest(TARGET_HOST, "/");
     // No inbound message passed to the next handler.
@@ -125,7 +122,7 @@ public class WebWhoisRedirectHandlerTest {
   }
 
   @Test
-  public void testSuccess_http_redirectToHttps_hostAndPort() {
+  void testSuccess_http_redirectToHttps_hostAndPort() {
     setupChannel(false);
     request = makeHttpGetRequest(TARGET_HOST + ":80", "/");
     // No inbound message passed to the next handler.
@@ -139,7 +136,7 @@ public class WebWhoisRedirectHandlerTest {
   }
 
   @Test
-  public void testSuccess_http_redirectToHttps_noKeepAlive() {
+  void testSuccess_http_redirectToHttps_noKeepAlive() {
     setupChannel(false);
     request = makeHttpGetRequest(TARGET_HOST, "/");
     request.headers().set("connection", "close");
@@ -156,7 +153,7 @@ public class WebWhoisRedirectHandlerTest {
   // HTTPS redirect tests.
 
   @Test
-  public void testSuccess_https_methodNotAllowed() {
+  void testSuccess_https_methodNotAllowed() {
     setupChannel(true);
     request = makeHttpPostRequest("", TARGET_HOST, "/");
     // No inbound message passed to the next handler.
@@ -168,7 +165,7 @@ public class WebWhoisRedirectHandlerTest {
   }
 
   @Test
-  public void testSuccess_https_badHost() {
+  void testSuccess_https_badHost() {
     setupChannel(true);
     request = makeHttpGetRequest("", "/");
     // No inbound message passed to the next handler.
@@ -180,7 +177,7 @@ public class WebWhoisRedirectHandlerTest {
   }
 
   @Test
-  public void testSuccess_https_noHost() {
+  void testSuccess_https_noHost() {
     setupChannel(true);
     request = makeHttpGetRequest("", "/");
     request.headers().remove("host");
@@ -193,7 +190,7 @@ public class WebWhoisRedirectHandlerTest {
   }
 
   @Test
-  public void testSuccess_https_healthCheck() {
+  void testSuccess_https_healthCheck() {
     setupChannel(true);
     request = makeHttpGetRequest("health-check.invalid", "/");
     // No inbound message passed to the next handler.
@@ -205,7 +202,7 @@ public class WebWhoisRedirectHandlerTest {
   }
 
   @Test
-  public void testSuccess_https_redirectToDestination() {
+  void testSuccess_https_redirectToDestination() {
     setupChannel(true);
     request = makeHttpGetRequest(TARGET_HOST, "/");
     // No inbound message passed to the next handler.
@@ -218,7 +215,7 @@ public class WebWhoisRedirectHandlerTest {
   }
 
   @Test
-  public void testSuccess_https_redirectToDestination_noKeepAlive() {
+  void testSuccess_https_redirectToDestination_noKeepAlive() {
     setupChannel(true);
     request = makeHttpGetRequest(TARGET_HOST, "/");
     request.headers().set("connection", "close");

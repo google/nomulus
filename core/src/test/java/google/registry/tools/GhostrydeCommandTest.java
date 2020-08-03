@@ -16,13 +16,13 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.keyring.api.Keyring;
 import google.registry.rde.Ghostryde;
 import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +51,7 @@ class GhostrydeCommandTest extends CommandTestCase<GhostrydeCommand> {
       + "Haply I may remember,             \n"
       + "  And haply may forget.           \n").getBytes(UTF_8);
 
-  @RegisterExtension final InjectRule inject = new InjectRule();
+  @RegisterExtension final InjectExtension inject = new InjectExtension();
 
   @RegisterExtension
   final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();

@@ -15,26 +15,24 @@
 package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link TypeUtils}. */
-@RunWith(JUnit4.class)
-public class TypeUtilsTest {
+class TypeUtilsTest {
+
   @Test
-  public void test_getClassFromString_validClass() {
+  void test_getClassFromString_validClass() {
     Class<? extends Serializable> clazz =
         TypeUtils.getClassFromString("java.util.ArrayList", Serializable.class);
     assertThat(clazz).isEqualTo(ArrayList.class);
   }
 
   @Test
-  public void test_getClassFromString_notAssignableFrom() {
+  void test_getClassFromString_notAssignableFrom() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -43,7 +41,7 @@ public class TypeUtilsTest {
   }
 
   @Test
-  public void test_getClassFromString_unknownClass() {
+  void test_getClassFromString_unknownClass() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -62,7 +60,7 @@ public class TypeUtilsTest {
   }
 
   @Test
-  public void test_instantiateWithArg() {
+  void test_instantiateWithArg() {
     Class<ExampleClass> clazz =
         TypeUtils.getClassFromString(
             "google.registry.util.TypeUtilsTest$ExampleClass", ExampleClass.class);

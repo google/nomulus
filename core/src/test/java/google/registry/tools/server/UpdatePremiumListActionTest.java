@@ -27,7 +27,7 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.schema.tld.PremiumListDao;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeJsonResponse;
 import java.math.BigDecimal;
@@ -40,7 +40,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class UpdatePremiumListActionTest {
 
   @RegisterExtension
-  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private UpdatePremiumListAction action;
   private FakeJsonResponse response;

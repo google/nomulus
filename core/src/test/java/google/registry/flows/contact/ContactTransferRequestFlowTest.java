@@ -29,7 +29,7 @@ import static google.registry.testing.DatastoreHelper.getPollMessages;
 import static google.registry.testing.DatastoreHelper.persistActiveContact;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -65,7 +65,7 @@ class ContactTransferRequestFlowTest
   }
 
   @BeforeEach
-  void setUp() {
+  void beforeEach() {
     setEppInput("contact_transfer_request.xml");
     setClientIdForFlow("NewRegistrar");
     contact = persistActiveContact("sh8013");

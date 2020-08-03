@@ -35,9 +35,6 @@ plugins {
   // Java static analysis plugins. Keep versions consistent with
   // ./buildSrc/build.gradle
   id 'nebula.lint' version '16.0.2'
-  // TODO(weiminyu): consider remove net.ltgt.apt. Gradle 5.2+
-  //  has similar functionalities.
-  id 'net.ltgt.apt' version '0.19' apply false
   id 'net.ltgt.errorprone' version '0.6.1'
   id 'checkstyle'
   id 'com.github.johnrengelman.shadow' version '5.1.0'
@@ -290,12 +287,6 @@ subprojects {
 
   project.tasks.test.dependsOn runPresubmits
 
-// Path to code generated with annotation processors. Note that this path is
-// chosen by the 'net.ltgt.apt' plugin, and may change if IDE-specific plugins
-// are applied, e.g., 'idea' or 'eclipse'
-  def aptGeneratedDir = "${project.buildDir}/generated/source/apt/main"
-  def aptGeneratedTestDir = "${project.buildDir}/generated/source/apt/test"
-
   def commonlyExcludedResources = ['**/*.java', '**/BUILD']
 
   project.ext.javaDir = "${project.projectDir}/src/main/java"
@@ -304,18 +295,12 @@ subprojects {
 
   sourceSets {
     main {
-      java {
-        srcDirs += aptGeneratedDir
-      }
       resources {
         srcDirs += project.ext.javaDir
         exclude commonlyExcludedResources
       }
     }
     test {
-      java {
-        srcDirs += aptGeneratedTestDir
-      }
       resources {
         srcDirs += project.ext.javaTestDir
         exclude commonlyExcludedResources
@@ -323,9 +308,14 @@ subprojects {
     }
   }
 
-  javadocSource << project.sourceSets.main.allJava
-  javadocClasspath << project.sourceSets.main.compileClasspath
-  javadocDependentTasks << project.tasks.compileJava
+  // No need to produce javadoc for the docs subproject, which has no APIs to
+  // expose to users.
+  if (project.name != 'docs') {
+    javadocSource << project.sourceSets.main.allJava
+    javadocClasspath << project.sourceSets.main.compileClasspath
+    javadocClasspath << "${buildDir}/generated/sources/annotationProcessor/java/main"
+    javadocDependentTasks << project.tasks.compileJava
+  }
 }
 
 // If "-P verboseTestOutput=true" is passed in, configure all subprojects to dump all of their

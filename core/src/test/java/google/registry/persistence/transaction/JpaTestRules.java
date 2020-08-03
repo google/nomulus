@@ -33,10 +33,6 @@ import org.joda.time.DateTime;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.rules.RuleChain;
-import org.junit.rules.TestRule;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
 
 /**
  * Holds specialized JUnit rules that start a test database server and provide {@link
@@ -50,8 +46,8 @@ public class JpaTestRules {
    * Junit rule for integration tests with JPA framework, when the underlying database is populated
    * with the Nomulus Cloud SQL schema.
    */
-  public static class JpaIntegrationTestRule extends JpaTransactionManagerRule {
-    private JpaIntegrationTestRule(
+  public static class JpaIntegrationTestExtension extends JpaTransactionManagerExtension {
+    private JpaIntegrationTestExtension(
         Clock clock,
         ImmutableList<Class> extraEntityClasses,
         ImmutableMap<String, String> userProperties) {
@@ -59,14 +55,11 @@ public class JpaTestRules {
     }
   }
 
-  private static final AssertionError EXCEPTION_OF_DISAPPROVAL =
-      new AssertionError("ಠ_ಠ  Why are you writing new tests in JUnit 4??  ಠ_ಠ");
-
   /**
    * JUnit extension for unit tests with JPA framework, when the underlying database is populated by
    * the optional init script (which must not be the Nomulus Cloud SQL schema).
    */
-  public static class JpaUnitTestExtension extends JpaTransactionManagerRule {
+  public static class JpaUnitTestExtension extends JpaTransactionManagerExtension {
     private JpaUnitTestExtension(
         Clock clock,
         Optional<String> initScriptPath,
@@ -74,81 +67,42 @@ public class JpaTestRules {
         ImmutableMap<String, String> userProperties) {
       super(clock, initScriptPath, false, extraEntityClasses, userProperties);
     }
-
-    @Override
-    public void before() {
-      throw EXCEPTION_OF_DISAPPROVAL;
-    }
-
-    @Override
-    public void after() {
-      throw EXCEPTION_OF_DISAPPROVAL;
-    }
-  }
-
-  /**
-   * Junit rule for member classes of {@link
-   * google.registry.schema.integration.SqlIntegrationTestSuite}. In addition to providing a
-   * database through {@link JpaIntegrationTestRule}, it also keeps track of the test coverage of
-   * the declare JPA entities (in persistence.xml).
-   *
-   * <p>It is enforced through tests that all test classes using this rule must be included in the
-   * {@code SqlIntegrationTestSuite}. For the sake of efficiency, end-to-end tests that mainly test
-   * non-database functionalities should not use this rule.
-   */
-  public static final class JpaIntegrationWithCoverageRule implements TestRule {
-    private final RuleChain ruleChain;
-
-    JpaIntegrationWithCoverageRule(JpaIntegrationTestRule integrationTestRule) {
-      TestCaseWatcher watcher = new TestCaseWatcher();
-      this.ruleChain =
-          RuleChain.outerRule(watcher)
-              .around(integrationTestRule)
-              .around(new JpaEntityCoverage(watcher::getTestClass));
-    }
-
-    @Override
-    public Statement apply(Statement base, Description description) {
-      return ruleChain.apply(base, description);
-    }
   }
 
   /**
    * JUnit extension for member classes of {@link
    * google.registry.schema.integration.SqlIntegrationTestSuite}. In addition to providing a
-   * database through {@link JpaIntegrationTestRule}, it also keeps track of the test coverage of
-   * the declared JPA entities (in persistence.xml). Per-class statistics are stored in static
+   * database through {@link JpaIntegrationTestExtension}, it also keeps track of the test coverage
+   * of the declared JPA entities (in persistence.xml). Per-class statistics are stored in static
    * variables. The SqlIntegrationTestSuite inspects the cumulative statistics after all test
    * classes have run.
    */
   public static final class JpaIntegrationWithCoverageExtension
       implements BeforeEachCallback, AfterEachCallback {
-    private String currentTestClassName = null;
-    private final JpaEntityCoverage jpaEntityCoverage =
-        new JpaEntityCoverage(() -> this.currentTestClassName);
-    private final JpaIntegrationTestRule integrationTestRule;
 
-    JpaIntegrationWithCoverageExtension(JpaIntegrationTestRule integrationTestRule) {
+    private final JpaEntityCoverageExtension jpaEntityCoverage = new JpaEntityCoverageExtension();
+    private final JpaIntegrationTestExtension integrationTestRule;
+
+    JpaIntegrationWithCoverageExtension(JpaIntegrationTestExtension integrationTestRule) {
       this.integrationTestRule = integrationTestRule;
     }
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
-      this.currentTestClassName = context.getRequiredTestClass().getName();
-      integrationTestRule.beforeEach(null);
-      jpaEntityCoverage.before();
+      integrationTestRule.beforeEach(context);
+      jpaEntityCoverage.beforeEach(context);
     }
 
     @Override
-    public void afterEach(ExtensionContext context) throws Exception {
-      jpaEntityCoverage.after();
-      integrationTestRule.afterEach(null);
-      this.currentTestClassName = null;
+    public void afterEach(ExtensionContext context) {
+      jpaEntityCoverage.afterEach(context);
+      integrationTestRule.afterEach(context);
     }
   }
 
   /** Builder of test rules that provide {@link JpaTransactionManager}. */
   public static class Builder {
+
     private String initScript;
     private Clock clock;
     private List<Class> extraEntityClasses = new ArrayList<Class>();
@@ -177,7 +131,7 @@ public class JpaTestRules {
     }
 
     /** Adds the specified property to those used to initialize the transaction manager. */
-    public Builder withProperty(String name, String value) {
+    Builder withProperty(String name, String value) {
       this.userProperties.put(name, value);
       return this;
     }
@@ -188,31 +142,22 @@ public class JpaTestRules {
      * <p>SQL logging is very noisy and disabled by default. This method maybe useful when
      * troubleshooting a specific test.
      */
-    public Builder withSqlLogging() {
+    Builder withSqlLogging() {
       withProperty(Environment.SHOW_SQL, "true");
       return this;
     }
 
-    /** Builds a {@link JpaIntegrationTestRule} instance. */
-    public JpaIntegrationTestRule buildIntegrationTestRule() {
-      return new JpaIntegrationTestRule(
+    /** Builds a {@link JpaIntegrationTestExtension} instance. */
+    public JpaIntegrationTestExtension buildIntegrationTestRule() {
+      return new JpaIntegrationTestExtension(
           clock == null ? new FakeClock(DateTime.now(UTC)) : clock,
           ImmutableList.copyOf(extraEntityClasses),
           ImmutableMap.copyOf(userProperties));
     }
 
     /**
-     * Builds a {@link RuleChain} around {@link JpaIntegrationTestRule} that also checks test
-     * coverage of JPA entity classes.
-     */
-    public JpaIntegrationWithCoverageRule buildIntegrationWithCoverageRule() {
-      checkState(initScript == null, "Integration tests do not accept initScript");
-      return new JpaIntegrationWithCoverageRule(buildIntegrationTestRule());
-    }
-
-    /**
-     * JUnit extension that adapts {@link JpaIntegrationTestRule} for JUnit 5 and also checks test
-     * coverage of JPA entity classes.
+     * JUnit extension that adapts {@link JpaIntegrationTestExtension} for JUnit 5 and also checks
+     * test coverage of JPA entity classes.
      */
     public JpaIntegrationWithCoverageExtension buildIntegrationWithCoverageExtension() {
       checkState(initScript == null, "Integration tests do not accept initScript");

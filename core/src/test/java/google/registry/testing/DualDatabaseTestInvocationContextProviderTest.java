@@ -34,7 +34,8 @@ public class DualDatabaseTestInvocationContextProviderTest {
   private static int postgresqlTestCounter = 0;
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @TestTemplate
   void testToUseTransactionManager() {

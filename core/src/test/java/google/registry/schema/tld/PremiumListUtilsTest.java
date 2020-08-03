@@ -16,25 +16,23 @@ package google.registry.schema.tld;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.schema.tld.PremiumListUtils.parseToPremiumList;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.registry.label.PremiumList;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.math.BigDecimal;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PremiumListUtils}. */
-@RunWith(JUnit4.class)
-public class PremiumListUtilsTest {
+class PremiumListUtilsTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void parseInputToPremiumList_works() {
+  void parseInputToPremiumList_works() {
     PremiumList premiumList =
         parseToPremiumList("testlist", "foo,USD 99.50\n" + "bar,USD 30\n" + "baz,USD 10\n");
     assertThat(premiumList.getName()).isEqualTo("testlist");
@@ -43,7 +41,7 @@ public class PremiumListUtilsTest {
   }
 
   @Test
-  public void parseInputToPremiumList_throwsOnInconsistentCurrencies() {
+  void parseInputToPremiumList_throwsOnInconsistentCurrencies() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

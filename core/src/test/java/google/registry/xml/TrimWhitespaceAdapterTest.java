@@ -16,16 +16,13 @@ package google.registry.xml;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link TrimWhitespaceAdapter}. */
-@RunWith(JUnit4.class)
-public class TrimWhitespaceAdapterTest {
+class TrimWhitespaceAdapterTest {
 
   @Test
-  public void testUnmarshal() {
+  void testUnmarshal() {
     TrimWhitespaceAdapter adapter = new TrimWhitespaceAdapter();
     assertThat(adapter.unmarshal("blah")).isEqualTo("blah");
     assertThat(adapter.unmarshal("")).isEmpty();
@@ -34,7 +31,7 @@ public class TrimWhitespaceAdapterTest {
   }
 
   @Test
-  public void testMarshal() {
+  void testMarshal() {
     TrimWhitespaceAdapter adapter = new TrimWhitespaceAdapter();
     assertThat(adapter.marshal("blah")).isEqualTo("blah");
     assertThat(adapter.marshal("")).isEmpty();

@@ -27,7 +27,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.reporting.HistoryEntry.Type;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.util.Clock;
 import java.util.List;
 import org.joda.money.Money;
@@ -40,8 +40,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class EppLifecycleToolsTest extends EppTestCase {
 
   @RegisterExtension
-  final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @BeforeEach
   void beforeEach() {

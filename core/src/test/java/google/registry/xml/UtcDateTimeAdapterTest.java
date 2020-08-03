@@ -16,56 +16,53 @@ package google.registry.xml;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link UtcDateTimeAdapter}. */
-@RunWith(JUnit4.class)
-public class UtcDateTimeAdapterTest {
+class UtcDateTimeAdapterTest {
 
   @Test
-  public void testMarshal() {
+  void testMarshal() {
     assertThat(new UtcDateTimeAdapter().marshal(new DateTime(2010, 10, 17, 4, 20, 0, UTC)))
         .isEqualTo("2010-10-17T04:20:00Z");
   }
 
   @Test
-  public void testMarshalConvertsToZuluTime() {
+  void testMarshalConvertsToZuluTime() {
     assertThat(new UtcDateTimeAdapter().marshal(
         new DateTime(2010, 10, 17, 0, 20, 0, DateTimeZone.forOffsetHours(-4))))
             .isEqualTo("2010-10-17T04:20:00Z");
   }
 
   @Test
-  public void testMarshalEmpty() {
+  void testMarshalEmpty() {
     assertThat(new UtcDateTimeAdapter().marshal(null)).isEmpty();
   }
 
   @Test
-  public void testUnmarshal() {
+  void testUnmarshal() {
     assertThat(new UtcDateTimeAdapter().unmarshal("2010-10-17T04:20:00Z"))
         .isEqualTo(new DateTime(2010, 10, 17, 4, 20, 0, UTC));
   }
 
   @Test
-  public void testUnmarshalConvertsToZuluTime() {
+  void testUnmarshalConvertsToZuluTime() {
     assertThat(new UtcDateTimeAdapter().unmarshal("2010-10-17T00:20:00-04:00"))
         .isEqualTo(new DateTime(2010, 10, 17, 4, 20, 0, UTC));
   }
 
   @Test
-  public void testUnmarshalEmpty() {
+  void testUnmarshalEmpty() {
     assertThat(new UtcDateTimeAdapter().unmarshal(null)).isNull();
     assertThat(new UtcDateTimeAdapter().unmarshal("")).isNull();
   }
 
   @Test
-  public void testUnmarshalInvalid() {
+  void testUnmarshalInvalid() {
     assertThrows(
         IllegalArgumentException.class,
         () -> assertThat(new UtcDateTimeAdapter().unmarshal("oh my goth")).isNull());

@@ -24,7 +24,6 @@ import google.registry.backup.AppEngineEnvironment;
 import google.registry.backup.VersionedEntity;
 import google.registry.beam.initsql.BeamJpaModule.JpaTransactionManagerComponent;
 import google.registry.beam.initsql.Transforms.RemoveDomainBaseForeignKeys;
-import google.registry.beam.initsql.Transforms.SerializableSupplier;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
@@ -41,6 +40,7 @@ import java.util.Collection;
 import java.util.Optional;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
+import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.transforms.Wait;
@@ -227,7 +227,7 @@ public class InitSqlPipeline implements Serializable {
             transformId,
             options.getMaxConcurrentSqlWriters(),
             options.getSqlWriteBatchSize(),
-            new JpaSupplierFactory(credentialFileUrl, jpaGetter)));
+            new JpaSupplierFactory(credentialFileUrl, options.getCloudKmsProjectId(), jpaGetter)));
   }
 
   private static ImmutableList<String> toKindStrings(Collection<Class<?>> entityClasses) {
@@ -236,25 +236,9 @@ public class InitSqlPipeline implements Serializable {
     }
   }
 
-  static class JpaSupplierFactory implements SerializableSupplier<JpaTransactionManager> {
-    private static final long serialVersionUID = 1L;
-
-    private String credentialFileUrl;
-    private SerializableFunction<JpaTransactionManagerComponent, JpaTransactionManager> jpaGetter;
-
-    JpaSupplierFactory(
-        String credentialFileUrl,
-        SerializableFunction<JpaTransactionManagerComponent, JpaTransactionManager> jpaGetter) {
-      this.credentialFileUrl = credentialFileUrl;
-      this.jpaGetter = jpaGetter;
-    }
-
-    @Override
-    public JpaTransactionManager get() {
-      return jpaGetter.apply(
-          DaggerBeamJpaModule_JpaTransactionManagerComponent.builder()
-              .beamJpaModule(new BeamJpaModule(credentialFileUrl))
-              .build());
-    }
+  public static void main(String[] args) {
+    InitSqlPipelineOptions options =
+        PipelineOptionsFactory.fromArgs(args).withValidation().as(InitSqlPipelineOptions.class);
+    new InitSqlPipeline(options).run();
   }
 }

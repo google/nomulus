@@ -21,8 +21,8 @@ import static google.registry.backup.BackupUtils.GcsMetadataKeys.LOWER_BOUND_CHE
 import static google.registry.backup.ExportCommitLogDiffAction.DIFF_FILE_PREFIX;
 import static java.lang.reflect.Proxy.newProxyInstance;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.appengine.tools.cloudstorage.GcsFileMetadata;
 import com.google.appengine.tools.cloudstorage.GcsFileOptions;
@@ -34,7 +34,7 @@ import com.google.appengine.tools.cloudstorage.ListResult;
 import com.google.common.collect.Iterators;
 import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -59,7 +59,8 @@ public class GcsDiffFileListerTest {
   private final TestLogHandler logHandler = new TestLogHandler();
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @BeforeEach
   void beforeEach() throws Exception {

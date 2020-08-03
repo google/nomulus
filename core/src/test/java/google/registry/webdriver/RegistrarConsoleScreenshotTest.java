@@ -17,8 +17,8 @@ package google.registry.webdriver;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.server.Fixture.BASIC;
 import static google.registry.server.Route.route;
-import static google.registry.testing.AppEngineRule.makeRegistrar2;
-import static google.registry.testing.AppEngineRule.makeRegistrarContact2;
+import static google.registry.testing.AppEngineExtension.makeRegistrar2;
+import static google.registry.testing.AppEngineExtension.makeRegistrarContact2;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
@@ -37,23 +37,21 @@ import google.registry.model.registrar.RegistrarContact;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.server.RegistryTestServer;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CertificateSamples;
 import java.util.Optional;
 import java.util.UUID;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junitpioneer.jupiter.RetryingTest;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
 
 /** Registrar Console Screenshot Differ tests. */
-@RunWith(RepeatableRunner.class)
-public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
+class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
 
-  @Rule
-  public final TestServerRule server =
-      new TestServerRule.Builder()
+  @RegisterExtension
+  final TestServerExtension server =
+      new TestServerExtension.Builder()
           .setRunfiles(RegistryTestServer.RUNFILES)
           .setRoutes(
               route("/registrar", FrontendServlet.class),
@@ -67,16 +65,16 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
           .setGaeUserId("12345") // from AppEngineRule.makeRegistrarContact3
           .build();
 
-  @Test
-  public void index_owner() throws Throwable {
+  @RetryingTest(3)
+  void index_owner() throws Throwable {
     driver.get(server.getUrl("/registrar"));
     driver.waitForElement(By.tagName("h1"));
     driver.diffPage("page");
   }
 
   /** Admins have an extra "admin" tab. */
-  @Test
-  public void index_adminAndOwner() throws Throwable {
+  @RetryingTest(3)
+  void index_adminAndOwner() throws Throwable {
     server.setIsAdmin(true);
     driver.get(server.getUrl("/registrar"));
     driver.waitForElement(By.tagName("h1"));
@@ -84,8 +82,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   }
 
   /** Admins who aren't owners still have all the tabs. */
-  @Test
-  public void index_admin() throws Throwable {
+  @RetryingTest(3)
+  void index_admin() throws Throwable {
     server.setIsAdmin(true);
     // To make sure we're only ADMIN (and not also "OWNER"), we switch to the NewRegistrar we
     // aren't in the contacts of
@@ -94,15 +92,15 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  @Test
-  public void contactUs() throws Throwable {
+  @RetryingTest(3)
+  void contactUs() throws Throwable {
     driver.get(server.getUrl("/registrar#contact-us"));
     driver.waitForElement(By.tagName("h1"));
     driver.diffPage("page");
   }
 
-  @Test
-  public void settingsContact() throws Throwable {
+  @RetryingTest(3)
+  void settingsContact() throws Throwable {
     driver.get(server.getUrl("/registrar#contact-settings"));
     Thread.sleep(1000);
     driver.waitForElement(By.tagName("h1"));
@@ -110,8 +108,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   }
 
   /** Admins shouldn't have the "add" button */
-  @Test
-  public void settingsContact_asAdmin() throws Throwable {
+  @RetryingTest(3)
+  void settingsContact_asAdmin() throws Throwable {
     server.setIsAdmin(true);
     driver.get(server.getUrl("/registrar?clientId=NewRegistrar#contact-settings"));
     Thread.sleep(1000);
@@ -119,8 +117,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  @Test
-  public void settingsContactItem() throws Throwable {
+  @RetryingTest(3)
+  void settingsContactItem() throws Throwable {
     driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
     Thread.sleep(1000);
     driver.waitForElement(By.tagName("h1"));
@@ -128,8 +126,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   }
 
   /** Admins shouldn't have the "edit" button */
-  @Test
-  public void settingsContactItem_asAdmin() throws Throwable {
+  @RetryingTest(3)
+  void settingsContactItem_asAdmin() throws Throwable {
     server.setIsAdmin(true);
     driver.get(
         server.getUrl(
@@ -139,8 +137,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  @Test
-  public void settingsContactEdit() throws Throwable {
+  @RetryingTest(3)
+  void settingsContactEdit() throws Throwable {
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
     Thread.sleep(1000);
@@ -149,8 +147,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  @Test
-  public void settingsContactEdit_setRegistryLockPassword() throws Throwable {
+  @RetryingTest(3)
+  void settingsContactEdit_setRegistryLockPassword() throws Throwable {
     server.runInAppEngineEnvironment(
         () -> {
           persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build());
@@ -200,8 +198,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         });
   }
 
-  @Test
-  public void settingsContactEdit_setRegistryLockPassword_alreadySet() throws Throwable {
+  @RetryingTest(3)
+  void settingsContactEdit_setRegistryLockPassword_alreadySet() throws Throwable {
     server.runInAppEngineEnvironment(
         () -> {
           persistResource(
@@ -221,8 +219,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  @Test
-  public void settingsContactEdit_setRegistryLockPassword_notAllowedForContact() throws Throwable {
+  @RetryingTest(3)
+  void settingsContactEdit_setRegistryLockPassword_notAllowedForContact() throws Throwable {
     server.runInAppEngineEnvironment(
         () -> persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build()));
     driver.manage().window().setSize(new Dimension(1050, 2000));
@@ -233,8 +231,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  @Test
-  public void settingsContactAdd() throws Throwable {
+  @RetryingTest(3)
+  void settingsContactAdd() throws Throwable {
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#contact-settings"));
     Thread.sleep(1000);
@@ -243,8 +241,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  @Test
-  public void settingsAdmin_whenAdmin() throws Throwable {
+  @RetryingTest(3)
+  void settingsAdmin_whenAdmin() throws Throwable {
     server.setIsAdmin(true);
     driver.manage().window().setSize(new Dimension(1050, 2000));
     // To make sure we're only ADMIN (and not also "OWNER"), we switch to the NewRegistrar we
@@ -267,24 +265,24 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
    * <p>Note that failure here is a UI issue only and not a security issue, since any "admin" change
    * a user tries to do is validated on the backend and fails for non-admins.
    */
-  @Test
-  public void settingsAdmin_whenNotAdmin_showsHome() throws Throwable {
+  @RetryingTest(3)
+  void settingsAdmin_whenNotAdmin_showsHome() throws Throwable {
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#admin-settings"));
     driver.waitForElement(By.tagName("h1"));
     driver.diffPage("view");
   }
 
-  @Test
-  public void getOteStatus_noButtonWhenReal() throws Exception {
+  @RetryingTest(3)
+  void getOteStatus_noButtonWhenReal() throws Exception {
     server.setIsAdmin(true);
     driver.get(server.getUrl("/registrar#admin-settings"));
     driver.waitForElement(By.tagName("h1"));
     driver.diffPage("result");
   }
 
-  @Test
-  public void getOteStatus_notCompleted() throws Exception {
+  @RetryingTest(3)
+  void getOteStatus_notCompleted() throws Exception {
     server.setIsAdmin(true);
     driver.get(server.getUrl("/registrar?clientId=oteunfinished-1#admin-settings"));
     driver.findElement(By.id("btn-ote-status")).click();
@@ -294,8 +292,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("result");
   }
 
-  @Test
-  public void getOteStatus_completed() throws Exception {
+  @RetryingTest(3)
+  void getOteStatus_completed() throws Exception {
     server.setIsAdmin(true);
     driver.get(server.getUrl("/registrar?clientId=otefinished-1#admin-settings"));
     driver.waitForElement(By.id("btn-ote-status"));
@@ -307,8 +305,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("result");
   }
 
-  @Test
-  public void settingsSecurity() throws Throwable {
+  @RetryingTest(3)
+  void settingsSecurity() throws Throwable {
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#security-settings"));
     driver.waitForElement(By.tagName("h1"));
@@ -319,8 +317,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   }
 
   /** Admins shouldn't have the "edit" button */
-  @Test
-  public void settingsSecurity_asAdmin() throws Throwable {
+  @RetryingTest(3)
+  void settingsSecurity_asAdmin() throws Throwable {
     server.setIsAdmin(true);
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar?clientId=NewRegistrar#security-settings"));
@@ -328,8 +326,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("view");
   }
 
-  @Test
-  public void settingsSecurityWithCerts() throws Throwable {
+  @RetryingTest(3)
+  void settingsSecurityWithCerts() throws Throwable {
     server.runInAppEngineEnvironment(
         () -> {
           persistResource(
@@ -349,8 +347,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("edit");
   }
 
-  @Test
-  public void settingsSecurityWithHashOnly() throws Throwable {
+  @RetryingTest(3)
+  void settingsSecurityWithHashOnly() throws Throwable {
     server.runInAppEngineEnvironment(
         () -> {
           persistResource(
@@ -369,8 +367,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("edit");
   }
 
-  @Test
-  public void index_registrarDisabled() throws Throwable {
+  @RetryingTest(3)
+  void index_registrarDisabled() throws Throwable {
     server.runInAppEngineEnvironment(
         () ->
             persistResource(
@@ -380,15 +378,15 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("view");
   }
 
-  @Test
-  public void settingsWhois() throws Throwable {
+  @RetryingTest(3)
+  void settingsWhois() throws Throwable {
     driver.get(server.getUrl("/registrar#whois-settings"));
     driver.waitForElement(By.tagName("h1"));
     driver.diffPage("page");
   }
 
-  @Test
-  public void settingsWhoisEdit() throws Throwable {
+  @RetryingTest(3)
+  void settingsWhoisEdit() throws Throwable {
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#whois-settings"));
     driver.waitForElement(By.id("reg-app-btn-edit")).click();
@@ -396,8 +394,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  @Test
-  public void settingsWhoisEditError() throws Throwable {
+  @RetryingTest(3)
+  void settingsWhoisEditError() throws Throwable {
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#whois-settings"));
     driver.waitForElement(By.id("reg-app-btn-edit")).click();
@@ -407,8 +405,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  @Test
-  public void indexPage_smallScrolledDown() throws Throwable {
+  @RetryingTest(3)
+  void indexPage_smallScrolledDown() throws Throwable {
     driver.manage().window().setSize(new Dimension(600, 300));
     driver.get(server.getUrl("/registrar"));
     driver.waitForElement(By.tagName("h1"));
@@ -417,8 +415,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  @Test
-  public void registryLockVerify_success() throws Throwable {
+  @RetryingTest(3)
+  void registryLockVerify_success() throws Throwable {
     String lockVerificationCode = "f1be78a2-2d61-458c-80f0-9dd8f2f8625f";
     server.runInAppEngineEnvironment(
         () -> {
@@ -442,22 +440,22 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  @Test
-  public void registryLockVerify_unknownLock() throws Throwable {
+  @RetryingTest(3)
+  void registryLockVerify_unknownLock() throws Throwable {
     driver.get(server.getUrl("/registry-lock-verify?isLock=true&lockVerificationCode=asdfasdf"));
     driver.waitForElement(By.id("reg-content"));
     driver.diffPage("page");
   }
 
-  @Test
-  public void registryLock_empty() throws Throwable {
+  @RetryingTest(3)
+  void registryLock_empty() throws Throwable {
     driver.get(server.getUrl("/registrar?clientId=TheRegistrar#registry-lock"));
     driver.waitForElement(By.tagName("h2"));
     driver.diffPage("page");
   }
 
-  @Test
-  public void registryLock_notAllowed() throws Throwable {
+  @RetryingTest(3)
+  void registryLock_notAllowed() throws Throwable {
     server.runInAppEngineEnvironment(
         () -> {
           persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(false).build());
@@ -468,8 +466,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  @Test
-  public void registryLock_nonEmpty() throws Throwable {
+  @RetryingTest(3)
+  void registryLock_nonEmpty() throws Throwable {
     server.runInAppEngineEnvironment(
         () -> {
           createDomainAndSaveLock();
@@ -480,8 +478,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  @Test
-  public void registryLock_nonEmpty_admin() throws Throwable {
+  @RetryingTest(3)
+  void registryLock_nonEmpty_admin() throws Throwable {
     server.runInAppEngineEnvironment(
         () -> {
           createTld("tld");
@@ -533,8 +531,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  @Test
-  public void registryLock_unlockModal() throws Throwable {
+  @RetryingTest(3)
+  void registryLock_unlockModal() throws Throwable {
     server.runInAppEngineEnvironment(
         () -> {
           createDomainAndSaveLock();
@@ -548,8 +546,8 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  @Test
-  public void registryLock_lockModal() throws Throwable {
+  @RetryingTest(3)
+  void registryLock_lockModal() throws Throwable {
     server.setIsAdmin(true);
     server.runInAppEngineEnvironment(
         () -> {
@@ -565,12 +563,12 @@ public class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("page");
   }
 
-  @Test
-  public void registryLock_notAllowedForUser() throws Throwable {
+  @RetryingTest(3)
+  void registryLock_notAllowedForUser() throws Throwable {
     server.runInAppEngineEnvironment(
         () -> {
           persistResource(
-              AppEngineRule.makeRegistrarContact3()
+              AppEngineExtension.makeRegistrarContact3()
                   .asBuilder()
                   .setAllowedToSetRegistryLockPassword(true)
                   .build());

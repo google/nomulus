@@ -36,6 +36,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
  */
 @Parameters(separators = " =", commandDescription = "Generate PostgreSQL schema.")
 public class GenerateSqlSchemaCommand implements Command {
+
   private static final String DB_NAME = "postgres";
   private static final String DB_USERNAME = "postgres";
   private static final String DB_PASSWORD = "domain-registry";

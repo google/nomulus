@@ -18,12 +18,12 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.joda.time.Duration.millis;
 import static org.joda.time.Duration.standardDays;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharSource;
 import google.registry.model.smd.SignedMarkRevocationList;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link SmdrlCsvParser}. */
 class SmdrlCsvParserTest {
 
-  @RegisterExtension public final AppEngineRule appEngine = AppEngineRule.builder().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().build();
 
   private final FakeClock clock = new FakeClock();
 

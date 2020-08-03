@@ -29,7 +29,6 @@ import com.google.appengine.tools.remoteapi.RemoteApiOptions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import google.registry.beam.initsql.BeamJpaModule;
 import google.registry.config.RegistryConfig;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.persistence.transaction.TransactionManagerFactory;
@@ -168,7 +167,7 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
     component =
         DaggerRegistryToolComponent.builder()
             .credentialFilePath(credentialJson)
-            .beamJpaModule(new BeamJpaModule(sqlAccessInfoFile))
+            .sqlAccessInfoFile(sqlAccessInfoFile)
             .build();
 
     // JCommander stores sub-commands as nested JCommander objects containing a list of user objects

@@ -17,11 +17,11 @@ package google.registry.request.auth;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.ADMIN;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
-import static google.registry.testing.AppEngineRule.THE_REGISTRAR_GAE_USER_ID;
+import static google.registry.testing.AppEngineExtension.THE_REGISTRAR_GAE_USER_ID;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -37,8 +37,8 @@ import google.registry.groups.GroupsConnection;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
-import google.registry.testing.AppEngineRule;
-import google.registry.testing.InjectRule;
+import google.registry.testing.AppEngineExtension;
+import google.registry.testing.InjectExtension;
 import java.util.Optional;
 import java.util.logging.Level;
 import javax.servlet.http.HttpServletRequest;
@@ -59,9 +59,10 @@ import org.mockito.quality.Strictness;
 class AuthenticatedRegistrarAccessorTest {
 
   @RegisterExtension
-  final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @RegisterExtension final InjectRule inject = new InjectRule();
+  @RegisterExtension final InjectExtension inject = new InjectExtension();
 
   @Mock private HttpServletRequest req;
   @Mock private HttpServletResponse rsp;

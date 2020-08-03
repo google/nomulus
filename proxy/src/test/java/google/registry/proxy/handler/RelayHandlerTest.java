@@ -25,14 +25,11 @@ import google.registry.proxy.Protocol.BackendProtocol;
 import google.registry.proxy.Protocol.FrontendProtocol;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.ArrayDeque;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RelayHandler}. */
-@RunWith(JUnit4.class)
-public class RelayHandlerTest {
+class RelayHandlerTest {
 
   private static final class ExpectedType {}
 
@@ -56,8 +53,8 @@ public class RelayHandlerTest {
           .build();
   private final BackendProtocol backendProtocol = frontendProtocol.relayProtocol();
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     inboundChannel.attr(RELAY_CHANNEL_KEY).set(outboundChannel);
     inboundChannel.attr(RELAY_BUFFER_KEY).set(new ArrayDeque<>());
     inboundChannel.attr(PROTOCOL_KEY).set(frontendProtocol);
@@ -65,7 +62,7 @@ public class RelayHandlerTest {
   }
 
   @Test
-  public void testSuccess_relayInboundMessageOfExpectedType() {
+  void testSuccess_relayInboundMessageOfExpectedType() {
     ExpectedType inboundMessage = new ExpectedType();
     // Relay handler intercepted the message, no further inbound message.
     assertThat(inboundChannel.writeInbound(inboundMessage)).isFalse();
@@ -75,7 +72,7 @@ public class RelayHandlerTest {
   }
 
   @Test
-  public void testSuccess_ignoreInboundMessageOfOtherType() {
+  void testSuccess_ignoreInboundMessageOfOtherType() {
     OtherType inboundMessage = new OtherType();
     // Relay handler ignores inbound message of other types, the inbound message is passed along.
     assertThat(inboundChannel.writeInbound(inboundMessage)).isTrue();
@@ -85,7 +82,7 @@ public class RelayHandlerTest {
   }
 
   @Test
-  public void testSuccess_frontClosed() {
+  void testSuccess_frontClosed() {
     inboundChannel.attr(RELAY_BUFFER_KEY).set(null);
     inboundChannel.attr(PROTOCOL_KEY).set(backendProtocol);
     outboundChannel.attr(PROTOCOL_KEY).set(frontendProtocol);
@@ -101,7 +98,7 @@ public class RelayHandlerTest {
   }
 
   @Test
-  public void testSuccess_backendClosed_enqueueBuffer() {
+  void testSuccess_backendClosed_enqueueBuffer() {
     ExpectedType inboundMessage = new ExpectedType();
     // Outbound channel (backend) is closed.
     outboundChannel.finish();
@@ -114,7 +111,7 @@ public class RelayHandlerTest {
   }
 
   @Test
-  public void testSuccess_channelRead_relayNotSet() {
+  void testSuccess_channelRead_relayNotSet() {
     ExpectedType inboundMessage = new ExpectedType();
     inboundChannel.attr(RELAY_CHANNEL_KEY).set(null);
     // Nothing to read.

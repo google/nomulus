@@ -35,7 +35,7 @@ import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
 import google.registry.persistence.VKey;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.tools.LevelDbLogReader;
 import java.io.File;
 import java.io.IOException;
@@ -58,7 +58,7 @@ public class BackupTestStoreTest {
 
   @TempDir File tempDir;
 
-  @RegisterExtension InjectRule injectRule = new InjectRule();
+  @RegisterExtension InjectExtension injectRule = new InjectExtension();
 
   private FakeClock fakeClock;
   private BackupTestStore store;
@@ -109,9 +109,9 @@ public class BackupTestStoreTest {
             .map(string -> string.substring(exportFolder.getAbsolutePath().length()))) {
       assertThat(files)
           .containsExactly(
-              "/all_namespaces/kind_Registry/input-0",
-              "/all_namespaces/kind_DomainBase/input-0",
-              "/all_namespaces/kind_ContactResource/input-0");
+              "/all_namespaces/kind_Registry/output-0",
+              "/all_namespaces/kind_DomainBase/output-0",
+              "/all_namespaces/kind_ContactResource/output-0");
     }
   }
 
@@ -132,16 +132,16 @@ public class BackupTestStoreTest {
     String exportRootPath = tempDir.getAbsolutePath();
     File exportFolder = export(exportRootPath, Collections.EMPTY_SET);
     ImmutableList<Object> loadedRegistries =
-        loadExportedEntities(new File(exportFolder, "/all_namespaces/kind_Registry/input-0"));
+        loadExportedEntities(new File(exportFolder, "/all_namespaces/kind_Registry/output-0"));
     assertThat(loadedRegistries).containsExactly(registry);
 
     ImmutableList<Object> loadedDomains =
-        loadExportedEntities(new File(exportFolder, "/all_namespaces/kind_DomainBase/input-0"));
+        loadExportedEntities(new File(exportFolder, "/all_namespaces/kind_DomainBase/output-0"));
     assertThat(loadedDomains).containsExactly(domain);
 
     ImmutableList<Object> loadedContacts =
         loadExportedEntities(
-            new File(exportFolder, "/all_namespaces/kind_ContactResource/input-0"));
+            new File(exportFolder, "/all_namespaces/kind_ContactResource/output-0"));
     assertThat(loadedContacts).containsExactly(contact);
   }
 
@@ -156,7 +156,7 @@ public class BackupTestStoreTest {
         export(
             exportRootPath, ImmutableSet.of(Key.create(getCrossTldKey(), Registry.class, "tld1")));
     ImmutableList<Object> loadedRegistries =
-        loadExportedEntities(new File(exportFolder, "/all_namespaces/kind_Registry/input-0"));
+        loadExportedEntities(new File(exportFolder, "/all_namespaces/kind_Registry/output-0"));
     assertThat(loadedRegistries).containsExactly(newRegistry);
   }
 

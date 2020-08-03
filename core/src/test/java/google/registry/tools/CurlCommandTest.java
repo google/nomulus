@@ -20,7 +20,7 @@ import static google.registry.request.Action.Service.DEFAULT;
 import static google.registry.request.Action.Service.PUBAPI;
 import static google.registry.request.Action.Service.TOOLS;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;

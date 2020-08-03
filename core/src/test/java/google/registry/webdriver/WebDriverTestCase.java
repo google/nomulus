@@ -14,21 +14,17 @@
 
 package google.registry.webdriver;
 
-import google.registry.webdriver.RepeatableRunner.AttemptNumber;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.rules.Timeout;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Base class for tests that needs a {@link WebDriverPlusScreenDifferRule}. */
-public class WebDriverTestCase {
-  @ClassRule
-  public static final DockerWebDriverRule webDriverProvider = new DockerWebDriverRule();
-  public final AttemptNumber attemptNumber = new AttemptNumber();
+/** Base class for tests that needs a {@link WebDriverPlusScreenDifferExtension}. */
+@Timeout(60)
+class WebDriverTestCase {
 
-  @Rule
-  public final WebDriverPlusScreenDifferRule driver =
-      new WebDriverPlusScreenDifferRule(webDriverProvider::getWebDriver, attemptNumber);
+  @RegisterExtension
+  static final DockerWebDriverExtension webDriverProvider = new DockerWebDriverExtension();
 
-  @Rule
-  public final Timeout timeout = Timeout.seconds(30);
+  @RegisterExtension
+  final WebDriverPlusScreenDifferExtension driver =
+      new WebDriverPlusScreenDifferExtension(webDriverProvider::getWebDriver);
 }

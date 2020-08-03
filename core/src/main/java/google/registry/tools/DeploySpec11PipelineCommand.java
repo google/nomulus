@@ -16,17 +16,51 @@ package google.registry.tools;
 
 import com.beust.jcommander.Parameters;
 import google.registry.beam.spec11.Spec11Pipeline;
+import google.registry.config.CredentialModule.LocalCredential;
+import google.registry.config.RegistryConfig.Config;
+import google.registry.util.GoogleCredentialsBundle;
+import google.registry.util.Retrier;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /** Nomulus command that deploys the {@link Spec11Pipeline} template. */
 @Parameters(commandDescription = "Deploy the Spec11 pipeline to GCS.")
 public class DeploySpec11PipelineCommand implements Command {
 
-  @Inject Spec11Pipeline spec11Pipeline;
+  @Inject
+  @Config("projectId")
+  String projectId;
+
+  @Inject
+  @Config("beamStagingUrl")
+  String beamStagingUrl;
+
+  @Inject
+  @Config("spec11TemplateUrl")
+  String spec11TemplateUrl;
+
+  @Inject
+  @Config("reportingBucketUrl")
+  String reportingBucketUrl;
+
+  @Inject @LocalCredential GoogleCredentialsBundle googleCredentialsBundle;
+  @Inject Retrier retrier;
+
+  @Inject
+  @Nullable
+  @Config("sqlAccessInfoFile")
+  String sqlAccessInfoFile;
 
   @Override
   public void run() {
-    spec11Pipeline.deploy();
+    Spec11Pipeline pipeline =
+        new Spec11Pipeline(
+            projectId,
+            beamStagingUrl,
+            spec11TemplateUrl,
+            reportingBucketUrl,
+            googleCredentialsBundle,
+            retrier);
+    pipeline.deploy();
   }
 }
-

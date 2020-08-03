@@ -26,9 +26,6 @@ buildscript {
 plugins {
   // Java static analysis plugins. Keep versions consistent with ../build.gradle
   id 'nebula.lint' version '16.0.2'
-  // Config helper for annotation processors such as AutoValue and Dagger.
-  // Ensures that source code is generated at an appropriate location.
-  id 'net.ltgt.apt' version '0.19' apply false
   id 'net.ltgt.errorprone' version '0.6.1'
   id 'checkstyle'
   id 'com.diffplug.gradle.spotless' version '3.25.0'
@@ -83,10 +80,8 @@ dependencies {
   annotationProcessor deps['com.google.auto.value:auto-value']
   testCompile deps['com.google.truth:truth']
   testCompile deps['com.google.truth.extensions:truth-java8-extension']
-  testCompile deps['junit:junit']
   testCompile deps['org.junit.jupiter:junit-jupiter-api']
   testCompile deps['org.junit.jupiter:junit-jupiter-engine']
-  testCompile deps['org.junit.vintage:junit-vintage-engine']
   testCompile deps['org.mockito:mockito-core']
 }
 

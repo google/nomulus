@@ -1527,6 +1527,21 @@ public final class RegistryConfig {
     return CONFIG_SETTINGS.get().hibernate.hikariIdleTimeout;
   }
 
+  /**
+   * Returns whether to replicate cloud SQL transactions to datastore.
+   *
+   * <p>If true, all cloud SQL transactions will be persisted as TransactionEntity objects in the
+   * Transaction table and replayed against datastore in a cron job.
+   */
+  public static boolean getCloudSqlReplicateTransactions() {
+    return CONFIG_SETTINGS.get().cloudSql.replicateTransactions;
+  }
+
+  @VisibleForTesting
+  public static void overrideCloudSqlReplicateTransactions(boolean replicateTransactions) {
+    CONFIG_SETTINGS.get().cloudSql.replicateTransactions = replicateTransactions;
+  }
+
   /** Returns the roid suffix to be used for the roids of all contacts and hosts. */
   public static String getContactAndHostRoidSuffix() {
     return CONFIG_SETTINGS.get().registryPolicy.contactAndHostRoidSuffix;

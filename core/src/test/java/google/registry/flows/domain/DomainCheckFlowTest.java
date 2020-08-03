@@ -31,7 +31,7 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -143,7 +143,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         create(false, "example1.tld", "In use"),
         create(false, "example2.tld", "The allocation token is invalid"),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Allocation token required"));
+        create(false, "specificuse.tld", "Reserved; alloc. token required"));
   }
 
   @Test
@@ -156,7 +156,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         create(false, "example1.tld", "In use"),
         create(true, "example2.tld", null),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Allocation token required"));
+        create(false, "specificuse.tld", "Reserved; alloc. token required"));
   }
 
   @Test
@@ -173,7 +173,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         create(false, "example1.tld", "In use"),
         create(false, "example2.tld", "Alloc token was already redeemed"),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Allocation token required"));
+        create(false, "specificuse.tld", "Reserved; alloc. token required"));
   }
 
   @Test
@@ -222,7 +222,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         create(false, "example1.tld", "In use"),
         create(false, "example2.tld", "Alloc token invalid for domain"),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Allocation token required"));
+        create(false, "specificuse.tld", "Reserved; alloc. token required"));
   }
 
   @Test
@@ -276,7 +276,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     doCheckTest(
         create(false, "collision.tld", "Cannot be delegated"),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "anchor.tld", "Allocation token required"),
+        create(false, "anchor.tld", "Reserved; alloc. token required"),
         create(false, "allowedinsunrise.tld", "Reserved"),
         create(false, "premiumcollision.tld", "Cannot be delegated"));
   }
@@ -410,7 +410,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testSuccess_anchorTenantReserved() throws Exception {
     setEppInput("domain_check_anchor.xml");
-    doCheckTest(create(false, "anchor.tld", "Allocation token required"));
+    doCheckTest(create(false, "anchor.tld", "Reserved; alloc. token required"));
   }
 
   @Test

@@ -93,20 +93,20 @@ PRESUBMITS = {
     PresubmitCheck(
         r".*\bSystem\.(out|err)\.print", "java", {
             "StackdriverDashboardBuilder.java", "/tools/", "/example/",
-            "RegistryTestServerMain.java", "TestServerRule.java",
+            "RegistryTestServerMain.java", "TestServerExtension.java",
             "FlowDocumentationTool.java"
         }):
         "System.(out|err).println is only allowed in tools/ packages. Please "
         "use a logger instead.",
 
-    # ObjectifyService.register is restricted to main/ or AppEngineRule.
+    # ObjectifyService.register is restricted to main/ or AppEngineExtension.
     PresubmitCheck(
         r".*\bObjectifyService\.register", "java", {
             "/build/", "/generated/", "node_modules/", "src/main/",
-            "AppEngineRule.java"
+            "AppEngineExtension.java"
         }):
-      "ObjectifyService.register is not allowed in tests. Please use "
-      "AppengineRule.register instead.",
+      "ObjectifyService.register(...) is not allowed in tests. Please use "
+      "AppEngineExtension.register(...) instead.",
 
     # PostgreSQLContainer instantiation must specify docker tag
     PresubmitCheck(

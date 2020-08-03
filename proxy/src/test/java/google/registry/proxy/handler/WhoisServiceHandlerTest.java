@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.proxy.TestUtils.makeWhoisHttpRequest;
 import static google.registry.proxy.TestUtils.makeWhoisHttpResponse;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -34,14 +34,11 @@ import io.netty.handler.codec.EncoderException;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link WhoisServiceHandler}. */
-@RunWith(JUnit4.class)
-public class WhoisServiceHandlerTest {
+class WhoisServiceHandlerTest {
 
   private static final String RELAY_HOST = "www.example.tld";
   private static final String RELAY_PATH = "/test";
@@ -56,22 +53,22 @@ public class WhoisServiceHandlerTest {
       new WhoisServiceHandler(RELAY_HOST, RELAY_PATH, () -> ACCESS_TOKEN, metrics);
   private EmbeddedChannel channel;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     // Need to reset metrics for each test method, since they are static fields on the class and
     // shared between each run.
     channel = new EmbeddedChannel(whoisServiceHandler);
   }
 
   @Test
-  public void testSuccess_connectionMetrics_oneChannel() {
+  void testSuccess_connectionMetrics_oneChannel() {
     assertThat(channel.isActive()).isTrue();
     verify(metrics).registerActiveConnection(PROTOCOL, CLIENT_HASH, channel);
     verifyNoMoreInteractions(metrics);
   }
 
   @Test
-  public void testSuccess_ConnectionMetrics_twoConnections() {
+  void testSuccess_ConnectionMetrics_twoConnections() {
     assertThat(channel.isActive()).isTrue();
     verify(metrics).registerActiveConnection(PROTOCOL, CLIENT_HASH, channel);
 
@@ -88,7 +85,7 @@ public class WhoisServiceHandlerTest {
   }
 
   @Test
-  public void testSuccess_fireInboundHttpRequest() {
+  void testSuccess_fireInboundHttpRequest() {
     ByteBuf inputBuffer = Unpooled.wrappedBuffer(QUERY_CONTENT.getBytes(US_ASCII));
     FullHttpRequest expectedRequest =
         makeWhoisHttpRequest(QUERY_CONTENT, RELAY_HOST, RELAY_PATH, ACCESS_TOKEN);
@@ -102,7 +99,7 @@ public class WhoisServiceHandlerTest {
   }
 
   @Test
-  public void testSuccess_parseOutboundHttpResponse() {
+  void testSuccess_parseOutboundHttpResponse() {
     String outputString = "line1\r\nline2\r\n";
     FullHttpResponse outputResponse = makeWhoisHttpResponse(outputString, HttpResponseStatus.OK);
     // output data passed to next handler
@@ -115,7 +112,7 @@ public class WhoisServiceHandlerTest {
   }
 
   @Test
-  public void testFailure_OutboundHttpResponseNotOK() {
+  void testFailure_OutboundHttpResponseNotOK() {
     String outputString = "line1\r\nline2\r\n";
     FullHttpResponse outputResponse =
         makeWhoisHttpResponse(outputString, HttpResponseStatus.BAD_REQUEST);
