@@ -45,11 +45,10 @@ steps:
   - |
     set -e
     if [ ${_ENV} == production ]; then
-      sql_access_project="domain-registry"
+      echo "gs://domain-registry-beam/cloudsql/admin_credential.enc" > sql_access_path.txt
     else
-      sql_access_project="domain-registry-${_ENV}"
+      echo "gs://domain-registry-${_ENV}-beam/cloudsql/admin_credential.enc" > sql_access_path.txt
     fi
-    export sql_access_info_file="gs://$sql_access_project-beam/cloudsql/admin_credential.enc"
 # Deploy the Spec11 pipeline to GCS.
 - name: 'gcr.io/$PROJECT_ID/nomulus-tool:latest'
   args:
@@ -58,7 +57,7 @@ steps:
   - --credential
   - tool-credential.json
   - --sql_access_info
-  - $sql_access_info_file
+  - `cat sql_access_path.txt`
   - deploy_spec11_pipeline
   - --project
   - $PROJECT_ID
