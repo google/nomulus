@@ -258,7 +258,7 @@ dependencies {
   compile deps['org.joda:joda-money']
   compile deps['org.json:json']
   testCompile deps['org.mortbay.jetty:jetty']
-  runtimeOnly deps['org.postgresql:postgresql']
+  compile deps['org.postgresql:postgresql']
   testCompile deps['org.seleniumhq.selenium:selenium-api']
   testCompile deps['org.seleniumhq.selenium:selenium-chrome-driver']
   testCompile deps['org.seleniumhq.selenium:selenium-java']

@@ -459,7 +459,7 @@ create sequence history_id_sequence start 1 increment 1;
         lock_request_timestamp timestamptz not null,
         registrar_id text not null,
         registrar_poc_id text,
-        relock_duration int8,
+        relock_duration interval,
         repo_id text not null,
         unlock_completion_timestamp timestamptz,
         unlock_request_timestamp timestamptz,

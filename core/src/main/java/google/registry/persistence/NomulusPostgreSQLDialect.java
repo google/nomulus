@@ -13,6 +13,7 @@
 // limitations under the License.
 package google.registry.persistence;
 
+import google.registry.persistence.converter.IntervalDescriptor;
 import google.registry.persistence.converter.StringCollectionDescriptor;
 import google.registry.persistence.converter.StringMapDescriptor;
 import java.sql.Types;
@@ -30,6 +31,7 @@ public class NomulusPostgreSQLDialect extends PostgreSQL95Dialect {
     registerColumnType(StringMapDescriptor.COLUMN_TYPE, StringMapDescriptor.COLUMN_NAME);
     registerColumnType(
         StringCollectionDescriptor.COLUMN_TYPE, StringCollectionDescriptor.COLUMN_DDL_NAME);
+    registerColumnType(IntervalDescriptor.COLUMN_TYPE, IntervalDescriptor.COLUMN_NAME);
   }
 
   @Override
@@ -40,5 +42,7 @@ public class NomulusPostgreSQLDialect extends PostgreSQL95Dialect {
     typeContributions.contributeSqlTypeDescriptor(StringCollectionDescriptor.getInstance());
     typeContributions.contributeJavaTypeDescriptor(StringMapDescriptor.getInstance());
     typeContributions.contributeSqlTypeDescriptor(StringMapDescriptor.getInstance());
+    typeContributions.contributeJavaTypeDescriptor(IntervalDescriptor.getInstance());
+    typeContributions.contributeSqlTypeDescriptor(IntervalDescriptor.getInstance());
   }
 }
