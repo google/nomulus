@@ -6,18 +6,19 @@
         <domain:name>evil.tld</domain:name>
         <domain:add>
           <domain:ns>
+            <domain:hostObj>ns1.example.com</domain:hostObj>
+            <domain:hostObj>ns2.example.com</domain:hostObj>
+          </domain:ns>
+          <domain:status s="clientHold" />
+        </domain:add>
+        <domain:rem>
+          <domain:ns>
             <domain:hostObj>urs1.example.com</domain:hostObj>
             <domain:hostObj>urs2.example.com</domain:hostObj>
           </domain:ns>
           <domain:status s="serverDeleteProhibited" />
           <domain:status s="serverTransferProhibited" />
           <domain:status s="serverUpdateProhibited" />
-        </domain:add>
-        <domain:rem>
-          <domain:ns>
-            <domain:hostObj>ns2.example.com</domain:hostObj>
-            <domain:hostObj>ns1.example.com</domain:hostObj>
-          </domain:ns>
         </domain:rem>
       </domain:update>
     </update>
@@ -26,17 +27,9 @@
         <secDNS:rem>
           <secDNS:all>true</secDNS:all>
         </secDNS:rem>
-        <secDNS:add>
-          <secDNS:dsData>
-            <secDNS:keyTag>1</secDNS:keyTag>
-            <secDNS:alg>1</secDNS:alg>
-            <secDNS:digestType>1</secDNS:digestType>
-            <secDNS:digest>ABCD</secDNS:digest>
-          </secDNS:dsData>
-        </secDNS:add>
       </secDNS:update>
       <metadata:metadata xmlns:metadata="urn:google:params:xml:ns:metadata-1.0">
-        <metadata:reason>Uniform Rapid Suspension</metadata:reason>
+        <metadata:reason>Undo Uniform Rapid Suspension</metadata:reason>
         <metadata:requestedByRegistrar>false</metadata:requestedByRegistrar>
       </metadata:metadata>
     </extension>
