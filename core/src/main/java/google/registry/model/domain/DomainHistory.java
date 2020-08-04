@@ -24,6 +24,7 @@ import com.googlecode.objectify.annotation.EntitySubclass;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
+import google.registry.model.domain.GracePeriod.GracePeriodHistory;
 import google.registry.model.domain.secdns.DomainDsDataHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.DomainTransactionRecord;
@@ -118,6 +119,24 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   })
   Set<DomainDsDataHistory> dsDataHistories;
 
+  @OneToMany(
+      cascade = {CascadeType.ALL},
+      fetch = FetchType.EAGER,
+      orphanRemoval = true)
+  @JoinColumns({
+    @JoinColumn(
+        name = "domainHistoryRevisionId",
+        referencedColumnName = "historyRevisionId",
+        insertable = false,
+        updatable = false),
+    @JoinColumn(
+        name = "domainRepoId",
+        referencedColumnName = "domainRepoId",
+        insertable = false,
+        updatable = false)
+  })
+  Set<GracePeriodHistory> gracePeriodHistories;
+
   @Override
   @Nullable
   @Access(AccessType.PROPERTY)
@@ -203,6 +222,10 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   /** The key to the {@link DomainBase} this is based off of. */
   public VKey<DomainBase> getParentVKey() {
     return VKey.create(DomainBase.class, getDomainRepoId());
+  }
+
+  public Set<GracePeriodHistory> getGracePeriodHistories() {
+    return nullToEmptyImmutableCopy(gracePeriodHistories);
   }
 
   /** Creates a {@link VKey} instance for this entity. */
@@ -326,6 +349,10 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
         instance.dsDataHistories =
             nullToEmptyImmutableCopy(instance.domainContent.getDsData()).stream()
                 .map(dsData -> DomainDsDataHistory.createFrom(instance.id, dsData))
+                .collect(toImmutableSet());
+        instance.gracePeriodHistories =
+            nullToEmptyImmutableCopy(instance.domainContent.getGracePeriods()).stream()
+                .map(gracePeriod -> GracePeriodHistory.createFrom(instance.id, gracePeriod))
                 .collect(toImmutableSet());
       }
       return instance;

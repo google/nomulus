@@ -26,21 +26,23 @@ import google.registry.persistence.VKey;
 import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /** Base class containing common fields and methods for {@link GracePeriod}. */
 @Embed
 @MappedSuperclass
+@Access(AccessType.FIELD)
 public class GracePeriodBase extends ImmutableObject {
 
   /** Unique id required for hibernate representation. */
-  @javax.persistence.Id
-  @Ignore
-  Long id;
+  @Transient Long gracePeriodId;
 
   /** Repository id for the domain which this grace period belongs to. */
   @Ignore
@@ -85,8 +87,8 @@ public class GracePeriodBase extends ImmutableObject {
   @Column(name = "billing_recurrence_history_id")
   Long billingEventRecurringHistoryId;
 
-  public long getId() {
-    return id;
+  public long getGracePeriodId() {
+    return gracePeriodId;
   }
 
   public GracePeriodStatus getType() {
@@ -103,6 +105,12 @@ public class GracePeriodBase extends ImmutableObject {
 
   public String getClientId() {
     return clientId;
+  }
+
+  /** This method is private because it is only used by Hibernate. */
+  @SuppressWarnings("unused")
+  private void setGracePeriodId(long gracePeriodId) {
+    this.gracePeriodId = gracePeriodId;
   }
 
   /** Returns true if this GracePeriod has an associated BillingEvent; i.e. if it's refundable. */

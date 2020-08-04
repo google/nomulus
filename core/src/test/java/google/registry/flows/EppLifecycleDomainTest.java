@@ -805,7 +805,7 @@ class EppLifecycleDomainTest extends EppTestCase {
 
     // As the losing registrar, read the request poll message, and then ack it.
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
-    String messageId = "1-C-EXAMPLE-20-26-2001";
+    String messageId = "1-C-EXAMPLE-18-24-2001";
     assertThatCommand("poll.xml")
         .atTime("2001-01-01T00:01:00Z")
         .hasResponse("poll_response_domain_transfer_request.xml", ImmutableMap.of("ID", messageId));
@@ -814,7 +814,7 @@ class EppLifecycleDomainTest extends EppTestCase {
         .hasResponse("poll_ack_response_empty.xml");
 
     // Five days in the future, expect a server approval poll message to the loser, and ack it.
-    messageId = "1-C-EXAMPLE-20-25-2001";
+    messageId = "1-C-EXAMPLE-18-23-2001";
     assertThatCommand("poll.xml")
         .atTime("2001-01-06T00:01:00Z")
         .hasResponse(
@@ -826,7 +826,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatLogoutSucceeds();
 
     // Also expect a server approval poll message to the winner, with the transfer request trid.
-    messageId = "1-C-EXAMPLE-20-24-2001";
+    messageId = "1-C-EXAMPLE-18-22-2001";
     assertThatLoginSucceeds("TheRegistrar", "password2");
     assertThatCommand("poll.xml")
         .atTime("2001-01-06T00:02:00Z")

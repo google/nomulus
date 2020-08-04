@@ -413,7 +413,8 @@ public class DomainBaseTest extends EntityTestCase {
                     .plusDays(1)
                     .plus(Registry.get("com").getTransferGracePeriodLength()),
                 "winner",
-                transferBillingEvent.createVKey()));
+                transferBillingEvent.createVKey(),
+                afterTransfer.getGracePeriods().iterator().next().getGracePeriodId()));
     // If we project after the grace period expires all should be the same except the grace period.
     DomainBase afterGracePeriod =
         domain.cloneProjectedAtTime(
@@ -653,7 +654,8 @@ public class DomainBaseTest extends EntityTestCase {
                     .plusYears(2)
                     .plus(Registry.get("com").getAutoRenewGracePeriodLength()),
                 renewedThreeTimes.getCurrentSponsorClientId(),
-                renewedThreeTimes.autorenewBillingEvent));
+                renewedThreeTimes.autorenewBillingEvent,
+                renewedThreeTimes.getGracePeriods().iterator().next().getGracePeriodId()));
   }
 
   @Test

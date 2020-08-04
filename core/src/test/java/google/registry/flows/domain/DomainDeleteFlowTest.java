@@ -436,7 +436,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                 domain.getRepoId(),
                 clock.nowUtc().plus(Registry.get("tld").getRedemptionGracePeriodLength()),
                 "TheRegistrar",
-                null));
+                null,
+                resource.getGracePeriods().iterator().next().getGracePeriodId()));
     assertDeletionPollMessageFor(resource, "Domain deleted.");
   }
 
@@ -637,7 +638,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                 domain.getRepoId(),
                 clock.nowUtc().plus(Registry.get("tld").getRedemptionGracePeriodLength()),
                 "TheRegistrar",
-                null));
+                null,
+                domain.getGracePeriods().iterator().next().getGracePeriodId()));
     // The poll message (in the future) to the losing registrar for implicit ack should be gone.
     assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).isEmpty();
     // The poll message in the future to the gaining registrar should be gone too, but there
@@ -1104,7 +1106,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                 domain.getRepoId(),
                 clock.nowUtc().plus(standardDays(15)),
                 "TheRegistrar",
-                null));
+                null,
+                resource.getGracePeriods().iterator().next().getGracePeriodId()));
     assertDeletionPollMessageFor(resource, "Deleted by registry administrator.");
   }
 
@@ -1151,7 +1154,8 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                 domain.getRepoId(),
                 clock.nowUtc().plus(standardDays(15)),
                 "TheRegistrar",
-                null));
+                null,
+                resource.getGracePeriods().iterator().next().getGracePeriodId()));
     assertDeletionPollMessageFor(resource, "Deleted by registry administrator.");
   }
 
