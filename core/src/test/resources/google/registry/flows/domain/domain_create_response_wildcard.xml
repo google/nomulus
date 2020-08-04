@@ -6,17 +6,11 @@
     <resData>
       <domain:creData
        xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
-        <domain:name>rich.example</domain:name>
-        <domain:crDate>1999-04-03T22:00:00.0Z</domain:crDate>
+        <domain:name>%DOMAIN%</domain:name>
+        <domain:crDate>%CRDATE%</domain:crDate>
         <domain:exDate>%EXDATE%</domain:exDate>
       </domain:creData>
     </resData>
-    <extension>
-      <fee:creData xmlns:fee="urn:ietf:params:xml:ns:fee-0.12">
-        <fee:currency>USD</fee:currency>
-        <fee:fee description="create">%FEE%</fee:fee>
-      </fee:creData>
-    </extension>
     <trID>
       <clTRID>ABC-12345</clTRID>
       <svTRID>server-trid</svTRID>

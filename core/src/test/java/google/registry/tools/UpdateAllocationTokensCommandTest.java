@@ -78,6 +78,24 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
   }
 
   @Test
+  void testUpdateDiscountPremiums() throws Exception {
+    AllocationToken token =
+        persistResource(
+            builderWithPromo().setDiscountFraction(0.5).setDiscountPremiums(false).build());
+    runCommandForced("--prefix", "token", "--discount_premiums", "true");
+    assertThat(reloadResource(token).shouldDiscountPremiums()).isTrue();
+    runCommandForced("--prefix", "token", "--discount_premiums", "false");
+    assertThat(reloadResource(token).shouldDiscountPremiums()).isFalse();
+  }
+
+  @Test
+  void testUpdateDiscountYears() throws Exception {
+    AllocationToken token = persistResource(builderWithPromo().setDiscountFraction(0.5).build());
+    runCommandForced("--prefix", "token", "--discount_years", "4");
+    assertThat(reloadResource(token).getDiscountYears()).isEqualTo(4);
+  }
+
+  @Test
   void testUpdateStatusTransitions() throws Exception {
     DateTime now = DateTime.now(UTC);
     AllocationToken token = persistResource(builderWithPromo().build());

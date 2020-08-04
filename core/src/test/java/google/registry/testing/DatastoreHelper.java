@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
@@ -71,6 +72,7 @@ import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
+import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
@@ -830,6 +832,22 @@ public class DatastoreHelper {
         .filter(subType::isInstance)
         .map(subType::cast)
         .collect(onlyElement());
+  }
+
+  public static void assertAllocationTokens(AllocationToken... expectedTokens) {
+    ImmutableSet<AllocationToken> actualTokens =
+        ofy().load().type(AllocationToken.class).list().stream()
+            .map(DatastoreHelper::stripAllocationToken)
+            .collect(toImmutableSet());
+    assertThat(actualTokens)
+        .containsExactlyElementsIn(
+            Arrays.stream(expectedTokens)
+                .map(DatastoreHelper::stripAllocationToken)
+                .collect(toImmutableSet()));
+  }
+
+  private static AllocationToken stripAllocationToken(AllocationToken token) {
+    return token.asBuilder().clearTimestampsForTest().build();
   }
 
   /** Returns a newly allocated, globally unique domain repoId of the format HEX-TLD. */

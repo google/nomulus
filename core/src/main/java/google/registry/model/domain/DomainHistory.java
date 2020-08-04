@@ -38,10 +38,10 @@ import javax.persistence.JoinTable;
 @Entity
 @javax.persistence.Table(
     indexes = {
-        @javax.persistence.Index(columnList = "creationTime"),
-        @javax.persistence.Index(columnList = "historyRegistrarId"),
-        @javax.persistence.Index(columnList = "historyType"),
-        @javax.persistence.Index(columnList = "historyModificationTime")
+      @javax.persistence.Index(columnList = "creationTime"),
+      @javax.persistence.Index(columnList = "historyRegistrarId"),
+      @javax.persistence.Index(columnList = "historyType"),
+      @javax.persistence.Index(columnList = "historyModificationTime")
     })
 public class DomainHistory extends HistoryEntry {
   // Store DomainContent instead of DomainBase so we don't pick up its @Id

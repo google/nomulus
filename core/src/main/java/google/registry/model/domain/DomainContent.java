@@ -534,8 +534,10 @@ public class DomainContent extends EppResource
 
   /** Loads and returns the fully qualified host names of all linked nameservers. */
   public ImmutableSortedSet<String> loadNameserverHostNames() {
-    return ofy().load()
-        .keys(getNameservers().stream().map(VKey::getOfyKey).collect(toImmutableSet())).values()
+    return ofy()
+        .load()
+        .keys(getNameservers().stream().map(VKey::getOfyKey).collect(toImmutableSet()))
+        .values()
         .stream()
         .map(HostResource::getHostName)
         .collect(toImmutableSortedSet(Ordering.natural()));

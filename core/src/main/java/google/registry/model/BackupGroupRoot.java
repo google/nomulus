@@ -30,6 +30,7 @@ import javax.xml.bind.annotation.XmlTransient;
  */
 @MappedSuperclass
 public abstract class BackupGroupRoot extends ImmutableObject {
+
   /**
    * An automatically managed timestamp of when this object was last written to Datastore.
    *
@@ -40,11 +41,21 @@ public abstract class BackupGroupRoot extends ImmutableObject {
   // Prevents subclasses from unexpectedly accessing as property (e.g., HostResource), which would
   // require an unnecessary non-private setter method.
   @Access(AccessType.FIELD)
-  @VisibleForTesting
   UpdateAutoTimestamp updateTimestamp = UpdateAutoTimestamp.create(null);
 
   /** Get the {@link UpdateAutoTimestamp} for this entity. */
   public UpdateAutoTimestamp getUpdateTimestamp() {
     return updateTimestamp;
+  }
+
+  /**
+   * Reset the given entity's update timestamp FOR TEST USE ONLY.
+   *
+   * <p>Don't you care call this in production code as it violates the {@link ImmutableObject}
+   * contract.
+   */
+  @VisibleForTesting
+  public static void resetUpdateTimestampForTest(BackupGroupRoot entity) {
+    entity.updateTimestamp = UpdateAutoTimestamp.create(null);
   }
 }

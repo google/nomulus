@@ -4,7 +4,7 @@
       <domain:create
           xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:name>rich.example</domain:name>
-        <domain:period unit="y">2</domain:period>
+        <domain:period unit="y">%YEARS%</domain:period>
         <domain:ns>
           <domain:hostObj>ns1.example.net</domain:hostObj>
           <domain:hostObj>ns2.example.net</domain:hostObj>
@@ -25,7 +25,7 @@
       </allocationToken:allocationToken>
       <fee:create xmlns:fee="urn:ietf:params:xml:ns:fee-0.12">
         <fee:currency>USD</fee:currency>
-        <fee:fee>193.5</fee:fee>
+        <fee:fee>%FEE%</fee:fee>
       </fee:create>
     </extension>
     <clTRID>ABC-12345</clTRID>
