@@ -27,8 +27,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig;
+import google.registry.persistence.JpaRetries;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
+import google.registry.util.Retrier;
+import google.registry.util.SystemSleeper;
 import java.lang.reflect.Field;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
@@ -49,6 +52,7 @@ import org.joda.time.DateTime;
 public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final Retrier retrier = new Retrier(new SystemSleeper(), 3);
 
   // EntityManagerFactory is thread safe.
   private final EntityManagerFactory emf;
@@ -94,6 +98,40 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public <T> T transact(Supplier<T> work) {
     // TODO(shicong): Investigate removing transactNew functionality after migration as it may
     //  be same as this one.
+    return retrier.callWithRetry(
+        () -> {
+          if (inTransaction()) {
+            return work.get();
+          }
+          TransactionInfo txnInfo = transactionInfo.get();
+          txnInfo.entityManager = emf.createEntityManager();
+          EntityTransaction txn = txnInfo.entityManager.getTransaction();
+          try {
+            txn.begin();
+            txnInfo.start(clock);
+            T result = work.get();
+            txnInfo.recordTransaction();
+            txn.commit();
+            return result;
+          } catch (RuntimeException | Error e) {
+            // Error is unchecked!
+            try {
+              txn.rollback();
+              logger.atWarning().log("Error during transaction; transaction rolled back");
+            } catch (Throwable rollbackException) {
+              logger.atSevere().withCause(rollbackException).log(
+                  "Rollback failed; suppressing error");
+            }
+            throw e;
+          } finally {
+            txnInfo.clear();
+          }
+        },
+        JpaRetries::isFailedTxnRetriable);
+  }
+
+  @Override
+  public <T> T transactNoRetry(Supplier<T> work) {
     if (inTransaction()) {
       return work.get();
     }
@@ -131,6 +169,15 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public void transactNoRetry(Runnable work) {
+    transactNoRetry(
+        () -> {
+          work.run();
+          return null;
+        });
+  }
+
+  @Override
   public <T> T transactNew(Supplier<T> work) {
     return transact(work);
   }
@@ -142,11 +189,14 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> T transactNewReadOnly(Supplier<T> work) {
-    return transact(
-        () -> {
-          getEntityManager().createNativeQuery("SET TRANSACTION READ ONLY").executeUpdate();
-          return work.get();
-        });
+    return retrier.callWithRetry(
+        () ->
+            transact(
+                () -> {
+                  getEntityManager().createNativeQuery("SET TRANSACTION READ ONLY").executeUpdate();
+                  return work.get();
+                }),
+        JpaRetries::isFailedQueryRetriable);
   }
 
   @Override
@@ -160,7 +210,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> T doTransactionless(Supplier<T> work) {
-    return transact(work);
+    return retrier.callWithRetry(() -> transact(work), JpaRetries::isFailedQueryRetriable);
   }
 
   @Override

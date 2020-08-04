@@ -18,6 +18,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.TestDataHelper.fileClassPath;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
@@ -26,12 +31,16 @@ import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension
 import google.registry.testing.FakeClock;
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.sql.SQLException;
 import java.util.NoSuchElementException;
+import java.util.function.Supplier;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
+import javax.persistence.OptimisticLockException;
 import javax.persistence.RollbackException;
+import org.hibernate.exception.JDBCConnectionException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -128,6 +137,117 @@ class JpaTransactionManagerImplTest {
     jpaTm().transact(() -> jpaTm().saveNew(theEntity));
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(theEntity))).isTrue();
     assertThat(jpaTm().transact(() -> jpaTm().load(theEntityKey))).isEqualTo(theEntity);
+  }
+
+  @Test
+  public void transact_retriesOptimisticLockExceptions() {
+    JpaTransactionManager spyJpaTm = spy(jpaTm());
+    doThrow(OptimisticLockException.class).when(spyJpaTm).delete(any(VKey.class));
+    spyJpaTm.transact(() -> spyJpaTm.saveNew(theEntity));
+    assertThrows(
+        OptimisticLockException.class,
+        () -> spyJpaTm.transact(() -> spyJpaTm.delete(theEntityKey)));
+    verify(spyJpaTm, times(3)).delete(theEntityKey);
+    Supplier<Runnable> supplier =
+        () -> {
+          Runnable work = () -> spyJpaTm.delete(theEntityKey);
+          work.run();
+          return null;
+        };
+    assertThrows(OptimisticLockException.class, () -> spyJpaTm.transact(supplier));
+    verify(spyJpaTm, times(6)).delete(theEntityKey);
+  }
+
+  @Test
+  public void transactNoRetry_doesNotRetryOptimisticLockException() {
+    JpaTransactionManager spyJpaTm = spy(jpaTm());
+    doThrow(OptimisticLockException.class).when(spyJpaTm).delete(any(VKey.class));
+    spyJpaTm.transactNoRetry(() -> spyJpaTm.saveNew(theEntity));
+    assertThrows(
+        OptimisticLockException.class,
+        () -> spyJpaTm.transactNoRetry(() -> spyJpaTm.delete(theEntityKey)));
+    verify(spyJpaTm, times(1)).delete(theEntityKey);
+    Supplier<Runnable> supplier =
+        () -> {
+          Runnable work = () -> spyJpaTm.delete(theEntityKey);
+          work.run();
+          return null;
+        };
+    assertThrows(OptimisticLockException.class, () -> spyJpaTm.transactNoRetry(supplier));
+    verify(spyJpaTm, times(2)).delete(theEntityKey);
+  }
+
+  @Test
+  public void transact_retriesNestedOptimisticLockExceptions() {
+    JpaTransactionManager spyJpaTm = spy(jpaTm());
+    doThrow(new RuntimeException().initCause(new OptimisticLockException()))
+        .when(spyJpaTm)
+        .delete(any(VKey.class));
+    spyJpaTm.transact(() -> spyJpaTm.saveNew(theEntity));
+    assertThrows(
+        RuntimeException.class, () -> spyJpaTm.transact(() -> spyJpaTm.delete(theEntityKey)));
+    verify(spyJpaTm, times(3)).delete(theEntityKey);
+    Supplier<Runnable> supplier =
+        () -> {
+          Runnable work = () -> spyJpaTm.delete(theEntityKey);
+          work.run();
+          return null;
+        };
+    assertThrows(RuntimeException.class, () -> spyJpaTm.transact(supplier));
+    verify(spyJpaTm, times(6)).delete(theEntityKey);
+  }
+
+  @Test
+  public void transactNewReadOnly_retriesJdbcConnectionExceptions() {
+    JpaTransactionManager spyJpaTm = spy(jpaTm());
+    doThrow(JDBCConnectionException.class).when(spyJpaTm).load(any(VKey.class));
+    spyJpaTm.transact(() -> spyJpaTm.saveNew(theEntity));
+    assertThrows(
+        JDBCConnectionException.class,
+        () -> spyJpaTm.transactNewReadOnly(() -> spyJpaTm.load(theEntityKey)));
+    verify(spyJpaTm, times(3)).load(theEntityKey);
+    Supplier<Runnable> supplier =
+        () -> {
+          Runnable work = () -> spyJpaTm.load(theEntityKey);
+          work.run();
+          return null;
+        };
+    assertThrows(JDBCConnectionException.class, () -> spyJpaTm.transactNewReadOnly(supplier));
+    verify(spyJpaTm, times(6)).load(theEntityKey);
+  }
+
+  @Test
+  public void transactNewReadOnly_retriesNestedJdbcConnectionExceptions() {
+    JpaTransactionManager spyJpaTm = spy(jpaTm());
+    doThrow(
+            new RuntimeException()
+                .initCause(new JDBCConnectionException("connection exception", new SQLException())))
+        .when(spyJpaTm)
+        .load(any(VKey.class));
+    spyJpaTm.transact(() -> spyJpaTm.saveNew(theEntity));
+    assertThrows(
+        RuntimeException.class,
+        () -> spyJpaTm.transactNewReadOnly(() -> spyJpaTm.load(theEntityKey)));
+    verify(spyJpaTm, times(3)).load(theEntityKey);
+    Supplier<Runnable> supplier =
+        () -> {
+          Runnable work = () -> spyJpaTm.load(theEntityKey);
+          work.run();
+          return null;
+        };
+    assertThrows(RuntimeException.class, () -> spyJpaTm.transactNewReadOnly(supplier));
+    verify(spyJpaTm, times(6)).load(theEntityKey);
+  }
+
+  @Test
+  public void doTransactionless_retriesJdbcConnectionExceptions() {
+    JpaTransactionManager spyJpaTm = spy(jpaTm());
+    doThrow(JDBCConnectionException.class).when(spyJpaTm).load(any(VKey.class));
+    spyJpaTm.transact(() -> spyJpaTm.saveNew(theEntity));
+    assertThrows(
+        RuntimeException.class,
+        () -> spyJpaTm.doTransactionless(() -> spyJpaTm.load(theEntityKey)));
+    verify(spyJpaTm, times(3)).load(theEntityKey);
   }
 
   @Test
