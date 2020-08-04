@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.CharStreams;
 import google.registry.beam.spec11.Spec11Pipeline;
@@ -32,7 +33,6 @@ import google.registry.tools.ConfirmingCommand;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
@@ -47,18 +47,18 @@ import org.json.JSONObject;
 public class BackfillSpec11ThreatMatchCommand extends ConfirmingCommand {
 
   private static final YearMonth START_MONTH = new YearMonth(2019, 01);
-  private static final YearMonth END_MONTH = new YearMonth();
+  private static final YearMonth END_MONTH = new YearMonth(); // This sets the current month.
 
   private static final Pattern FILENAME_PATTERN =
       Pattern.compile("SPEC11_MONTHLY_REPORT_(\\d{4}-\\d{2}-\\d{2})");
   private static final String REPORTING_FOLDER = "domain-registry-reporting/icann/spec11/";
-  private HashMap<GcsFilename, LocalDate> filenamesToDates = new HashMap<>();
 
   @Inject GcsUtils gcsUtils;
 
   @Override
   protected String execute() throws IOException {
-    mapFilenamesToDates(START_MONTH, END_MONTH);
+    ImmutableMap<GcsFilename, LocalDate> filenamesToDates =
+        mapFilenamesToDates(START_MONTH, END_MONTH);
     for (GcsFilename spec11ReportFilename : filenamesToDates.keySet()) {
       ImmutableList<Spec11ThreatMatch> threatMatches =
           getSpec11ThreatMatchesFromFile(
@@ -125,7 +125,9 @@ public class BackfillSpec11ThreatMatchCommand extends ConfirmingCommand {
    * Get all of the folders that contain the JSON files and list all files from each folder. Map
    * each GcsFilename to a LocalDate corresponding to the date of the pipeline run.
    */
-  private void mapFilenamesToDates(YearMonth startMonth, YearMonth endMonth) throws IOException {
+  private ImmutableMap<GcsFilename, LocalDate> mapFilenamesToDates(
+      YearMonth startMonth, YearMonth endMonth) throws IOException {
+    ImmutableMap.Builder<GcsFilename, LocalDate> filenamesToDates = new ImmutableMap.Builder<>();
     while (!startMonth.isAfter(endMonth)) {
       String bucket = String.format("%s%s", REPORTING_FOLDER, startMonth.toString());
       ImmutableList<String> filesFromBucket =
@@ -136,5 +138,6 @@ public class BackfillSpec11ThreatMatchCommand extends ConfirmingCommand {
       }
       startMonth = startMonth.plusMonths(1);
     }
+    return filenamesToDates.build();
   }
 }
