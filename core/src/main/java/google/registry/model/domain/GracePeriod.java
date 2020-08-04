@@ -117,4 +117,21 @@ public class GracePeriod extends GracePeriodBase {
     return clone;
   }
 
+  /** Entity class to represent a historic {@link GracePeriod}. */
+  @Entity(name = "GracePeriodHistory")
+  @Table(indexes = @Index(columnList = "domainRepoId"))
+  static class GracePeriodHistory extends GracePeriodBase {
+    Long historyRevisionId;
+
+    static GracePeriodHistory createFrom(GracePeriod gracePeriod) {
+      GracePeriodHistory instance = new GracePeriodHistory();
+      instance.type = gracePeriod.type;
+      instance.domainRepoId = gracePeriod.domainRepoId;
+      instance.expirationTime = gracePeriod.expirationTime;
+      instance.clientId = gracePeriod.clientId;
+      instance.billingEventOneTime = gracePeriod.billingEventOneTime;
+      instance.billingEventRecurring = gracePeriod.billingEventRecurring;
+      return instance;
+    }
+  }
 }
