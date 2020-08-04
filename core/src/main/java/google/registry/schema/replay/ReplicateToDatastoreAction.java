@@ -23,11 +23,9 @@ import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import java.io.IOException;
-import java.util.List;
+import javax.persistence.NoResultException;
 
-/**
- * Cron task to replicate from Cloud SQL to datastore.
- */
+/** Cron task to replicate from Cloud SQL to datastore. */
 @Action(
     service = Action.Service.BACKEND,
     path = ReplicateToDatastoreAction.PATH,
@@ -39,27 +37,49 @@ class ReplicateToDatastoreAction implements Runnable {
 
   @Override
   public void run() {
-    ofyTm().transact(() -> {
-          LastSqlTransaction lastSqlTxn = LastSqlTransaction.load();
+    // We're limited by the number of objects that can be in a single datastore transaction,
+    // therefore we have to do this one SQL transaction at a time.
+    while (processSingleTransaction()) {}
+  }
 
-          // Get all entries that we haven't processed yet.
-          List transactions = jpaTm().transact(() ->
-            jpaTm().getEntityManager().createQuery(
-                    "SELECT txn FROM TransactionEntity txn WHERE id > :lastId ORDER BY id")
-                .setParameter("lastId", lastSqlTxn.getTransactionId())
-                .getResultList());
+  private boolean processSingleTransaction() {
+    return ofyTm()
+        .transact(
+            () -> {
+              LastSqlTransaction lastSqlTxn = LastSqlTransaction.load();
 
-          // Write them all to datastore.
-          for (TransactionEntity txnEntity : (List<TransactionEntity>) transactions) {
-            try {
-              Transaction.deserialize(txnEntity.getContents()).writeToDatastore();
-            } catch (IOException e) {
-              throw new RuntimeException(e);
-            }
-            lastSqlTxn.setTransactionId(txnEntity.getId());
-          }
+              // Get the next entry that we haven't processed.
+              TransactionEntity txnEntity;
+              try {
+                txnEntity =
+                    (TransactionEntity)
+                        jpaTm()
+                            .transact(
+                                () ->
+                                    jpaTm()
+                                        .getEntityManager()
+                                        .createQuery(
+                                            "SELECT txn FROM TransactionEntity txn WHERE id >"
+                                                + " :lastId ORDER BY id")
+                                        .setParameter("lastId", lastSqlTxn.getTransactionId())
+                                        .setMaxResults(1)
+                                        .getSingleResult());
+              } catch (NoResultException e) {
+                return false;
+              }
 
-          lastSqlTxn.store();
-        });
+              // Write it to datastore.
+              long newTransactionId;
+              try {
+                Transaction.deserialize(txnEntity.getContents()).writeToDatastore();
+              } catch (IOException e) {
+                throw new RuntimeException(e);
+              }
+              newTransactionId = txnEntity.getId();
+
+              // Write the updated last transaction id to datastore.
+              lastSqlTxn.withNewTransactionId(newTransactionId).store();
+              return true;
+            });
   }
 }

@@ -72,9 +72,12 @@ public class ReplicateToDatastoreActionTest {
     assertThat(ofyTm().transact(() -> ofyTm().load(bar.key()))).isEqualTo(bar);
     assertThat(ofyTm().transact(() -> ofyTm().maybeLoad(baz.key())).isPresent()).isFalse();
 
-    jpaTm().transact(() -> {
-          jpaTm().delete(bar.key()); jpaTm().saveNew(baz);
-        });
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().delete(bar.key());
+              jpaTm().saveNew(baz);
+            });
     task.run();
 
     assertThat(ofyTm().transact(() -> ofyTm().maybeLoad(bar.key()).isPresent())).isFalse();
@@ -102,7 +105,6 @@ public class ReplicateToDatastoreActionTest {
     assertThat(ofyTm().transact(() -> ofyTm().load(bar.key()))).isEqualTo(bar);
     assertThat(ofyTm().transact(() -> ofyTm().maybeLoad(foo.key()).isPresent())).isFalse();
   }
-
 
   @Entity(name = "ReplicationTestEntity")
   @javax.persistence.Entity(name = "TestEntity")
