@@ -22,9 +22,7 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
 
-/**
- * Datastore entity to keep track of the last SQL transaction imported into the datastore.
- */
+/** Datastore entity to keep track of the last SQL transaction imported into the datastore. */
 @Entity
 public class LastSqlTransaction extends ImmutableObject {
 
@@ -37,17 +35,19 @@ public class LastSqlTransaction extends ImmutableObject {
 
   private long transactionId;
 
-  LastSqlTransaction() {
-    transactionId = -1;
+  LastSqlTransaction() {}
+
+  private LastSqlTransaction(long newTransactionId) {
+    transactionId = newTransactionId;
   }
 
-  void setTransactionId(long transactionId) {
+  LastSqlTransaction withNewTransactionId(long transactionId) {
     checkArgument(
         transactionId > this.transactionId,
         "New transaction id (%s) must be greater than the current transaction id (%s)",
         transactionId,
         this.transactionId);
-    this.transactionId = transactionId;
+    return new LastSqlTransaction(transactionId);
   }
 
   long getTransactionId() {
@@ -66,11 +66,12 @@ public class LastSqlTransaction extends ImmutableObject {
     return result == null ? new LastSqlTransaction() : result;
   }
 
-  /** Stores the instance in datastore.
+  /**
+   * Stores the instance in datastore.
    *
    * <p>Must be called within the same transaction as load().
    */
   void store() {
-    ofy().saveWithoutBackup().entity(this);
+    ofy().save().entity(this);
   }
 }
