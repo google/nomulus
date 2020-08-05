@@ -14,7 +14,6 @@
 
 package google.registry.model;
 
-import com.google.common.annotations.VisibleForTesting;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.MappedSuperclass;
@@ -46,16 +45,5 @@ public abstract class BackupGroupRoot extends ImmutableObject {
   /** Get the {@link UpdateAutoTimestamp} for this entity. */
   public UpdateAutoTimestamp getUpdateTimestamp() {
     return updateTimestamp;
-  }
-
-  /**
-   * Reset the given entity's update timestamp FOR TEST USE ONLY.
-   *
-   * <p>Don't you care call this in production code as it violates the {@link ImmutableObject}
-   * contract.
-   */
-  @VisibleForTesting
-  public static void resetUpdateTimestampForTest(BackupGroupRoot entity) {
-    entity.updateTimestamp = UpdateAutoTimestamp.create(null);
   }
 }

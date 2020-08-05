@@ -279,13 +279,6 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
       return this;
     }
 
-    @VisibleForTesting
-    public Builder clearTimestampsForTest() {
-      getInstance().creationTime = CreateAutoTimestamp.create(null);
-      resetUpdateTimestampForTest(getInstance());
-      return this;
-    }
-
     public Builder setAllowedClientIds(Set<String> allowedClientIds) {
       getInstance().allowedClientIds = forceEmptyToNull(allowedClientIds);
       return this;

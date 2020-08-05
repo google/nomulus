@@ -68,6 +68,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Ordering;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig;
 import google.registry.flows.EppException;
@@ -155,6 +156,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registry.Registry;
+import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.Registry.TldType;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
@@ -1194,17 +1196,14 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         Registry.get("tld")
             .asBuilder()
             .setTldStateTransitions(
-                ImmutableSortedMap.of(
-                    START_OF_TIME,
-                    PREDELEGATION,
-                    DateTime.parse("1999-01-01T00:00:00Z"),
-                    QUIET_PERIOD,
-                    // The anchor tenant is created here, on 1999-04-03
-                    DateTime.parse("1999-07-01T00:00:00Z"),
-                    START_DATE_SUNRISE,
-                    DateTime.parse("2000-01-01T00:00:00Z"),
-                    GENERAL_AVAILABILITY))
+                new ImmutableSortedMap.Builder<DateTime, TldState>(Ordering.natural())
+                    .put(START_OF_TIME, PREDELEGATION)
+                    .put(DateTime.parse("1999-01-01T00:00:00Z"), QUIET_PERIOD)
+                    .put(DateTime.parse("1999-07-01T00:00:00Z"), START_DATE_SUNRISE)
+                    .put(DateTime.parse("2000-01-01T00:00:00Z"), GENERAL_AVAILABILITY)
+                    .build())
             .build());
+    // The anchor tenant is created during the quiet period, on 1999-04-03.
     setEppInput("domain_create_anchor_allocationtoken.xml");
     persistContactsAndHosts();
     runFlowAssertResponse(loadFile("domain_create_anchor_response.xml"));
@@ -1340,13 +1339,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     runFlowAssertResponse(
         loadFile(
             "domain_create_response_wildcard.xml",
-            ImmutableMap.of(
-                "DOMAIN",
-                "example.tld",
-                "CRDATE",
-                "1999-04-03T22:00:00.0Z",
-                "EXDATE",
-                "2004-04-03T22:00:00.0Z")));
+            new ImmutableMap.Builder<String, String>()
+                .put("DOMAIN", "example.tld")
+                .put("CRDATE", "1999-04-03T22:00:00.0Z")
+                .put("EXDATE", "2004-04-03T22:00:00.0Z")
+                .build()));
     BillingEvent.OneTime billingEvent =
         Iterables.getOnlyElement(ofy().load().type(BillingEvent.OneTime.class));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
@@ -1422,7 +1419,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   @Test
   void testSuccess_promotionDoesNotApplyToPremiumPrice() {
-    // At the moment, discounts cannot apply to premium domains
+    // Discounts only apply to premium domains if the token is explicitly configured to allow it.
     createTld("example");
     persistContactsAndHosts();
     persistResource(

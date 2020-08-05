@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
@@ -27,6 +26,7 @@ import static google.registry.config.RegistryConfig.getContactAndHostRoidSuffix;
 import static google.registry.config.RegistryConfig.getContactAutomaticTransferLength;
 import static google.registry.model.EppResourceUtils.createDomainRepoId;
 import static google.registry.model.EppResourceUtils.createRepoId;
+import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.model.ResourceTransferUtils.createTransferResponse;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
@@ -835,19 +835,9 @@ public class DatastoreHelper {
   }
 
   public static void assertAllocationTokens(AllocationToken... expectedTokens) {
-    ImmutableSet<AllocationToken> actualTokens =
-        ofy().load().type(AllocationToken.class).list().stream()
-            .map(DatastoreHelper::stripAllocationToken)
-            .collect(toImmutableSet());
-    assertThat(actualTokens)
-        .containsExactlyElementsIn(
-            Arrays.stream(expectedTokens)
-                .map(DatastoreHelper::stripAllocationToken)
-                .collect(toImmutableSet()));
-  }
-
-  private static AllocationToken stripAllocationToken(AllocationToken token) {
-    return token.asBuilder().clearTimestampsForTest().build();
+    assertThat(ofy().load().type(AllocationToken.class).list())
+        .comparingElementsUsing(immutableObjectCorrespondence("updateTimestamp", "creationTime"))
+        .containsExactlyElementsIn(expectedTokens);
   }
 
   /** Returns a newly allocated, globally unique domain repoId of the format HEX-TLD. */
