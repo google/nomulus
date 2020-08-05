@@ -282,13 +282,14 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   }
 
   @Test
-  void testSuccess_allocationTokenPromotion() throws Exception {
+  void testSuccess_allocationTokenPromotion_singleYear() throws Exception {
     createTld("example");
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
+            .setDiscountYears(2)
             .setTokenStatusTransitions(
                 ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
                     .put(START_OF_TIME, TokenStatus.NOT_STARTED)
@@ -298,6 +299,69 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .build());
     setEppInput("domain_check_allocationtoken_fee.xml");
     runFlowAssertResponse(loadFile("domain_check_allocationtoken_fee_response.xml"));
+  }
+
+  @Test
+  void testSuccess_allocationTokenPromotion_multiYearAndPremiums() throws Exception {
+    createTld("example");
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("rich.example")
+            .setDiscountFraction(0.9)
+            .setDiscountYears(3)
+            .setDiscountPremiums(true)
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
+                    .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
+                    .build())
+            .build());
+    setEppInput(
+        "domain_check_allocationtoken_promotion.xml", ImmutableMap.of("DOMAIN", "rich.example"));
+    runFlowAssertResponse(
+        loadFile(
+            "domain_check_allocationtoken_promotion_response.xml",
+            new ImmutableMap.Builder<String, String>()
+                .put("DOMAIN", "rich.example")
+                .put("COST_1YR", "10.00")
+                .put("COST_2YR", "20.00")
+                .put("COST_5YR", "230.00")
+                .put("FEE_CLASS", "<fee:class>premium</fee:class>")
+                .build()));
+  }
+
+  @Test
+  void testSuccess_allocationTokenPromotion_multiYear() throws Exception {
+    createTld("tld");
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("single.tld")
+            .setDiscountFraction(0.444)
+            .setDiscountYears(2)
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
+                    .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
+                    .build())
+            .build());
+    setEppInput(
+        "domain_check_allocationtoken_promotion.xml", ImmutableMap.of("DOMAIN", "single.tld"));
+    runFlowAssertResponse(
+        loadFile(
+            "domain_check_allocationtoken_promotion_response.xml",
+            new ImmutableMap.Builder<String, String>()
+                .put("DOMAIN", "single.tld")
+                .put("COST_1YR", "7.23")
+                .put("COST_2YR", "14.46")
+                .put("COST_5YR", "53.46")
+                .put("FEE_CLASS", "")
+                .build()));
   }
 
   @Test
