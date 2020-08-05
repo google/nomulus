@@ -1,0 +1,39 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <check>
+      <domain:check
+          xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>%DOMAIN%</domain:name>
+      </domain:check>
+    </check>
+    <extension>
+      <allocationToken:allocationToken
+          xmlns:allocationToken=
+              "urn:ietf:params:xml:ns:allocationToken-1.0">
+        abc123
+      </allocationToken:allocationToken>
+      <fee:check
+          xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+        <fee:domain>
+          <fee:name>%DOMAIN%</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>%DOMAIN%</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">2</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>%DOMAIN%</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">5</fee:period>
+        </fee:domain>
+      </fee:check>
+    </extension>
+    <clTRID>ABC-12345</clTRID>
+  </command>
+</epp>

@@ -14,7 +14,6 @@
 
 package google.registry.model;
 
-import com.google.common.annotations.VisibleForTesting;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.MappedSuperclass;
@@ -30,6 +29,7 @@ import javax.xml.bind.annotation.XmlTransient;
  */
 @MappedSuperclass
 public abstract class BackupGroupRoot extends ImmutableObject {
+
   /**
    * An automatically managed timestamp of when this object was last written to Datastore.
    *
@@ -40,7 +40,6 @@ public abstract class BackupGroupRoot extends ImmutableObject {
   // Prevents subclasses from unexpectedly accessing as property (e.g., HostResource), which would
   // require an unnecessary non-private setter method.
   @Access(AccessType.FIELD)
-  @VisibleForTesting
   UpdateAutoTimestamp updateTimestamp = UpdateAutoTimestamp.create(null);
 
   /** Get the {@link UpdateAutoTimestamp} for this entity. */

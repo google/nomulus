@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<epp xmlns:launch="urn:ietf:params:xml:ns:launch-1.0" xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1" xmlns:host="urn:ietf:params:xml:ns:host-1.0" xmlns:fee11="urn:ietf:params:xml:ns:fee-0.11" xmlns:fee12="urn:ietf:params:xml:ns:fee-0.12" xmlns:fee="urn:ietf:params:xml:ns:fee-0.6" xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0" xmlns="urn:ietf:params:xml:ns:epp-1.0" xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xmlns:contact="urn:ietf:params:xml:ns:contact-1.0">
+  <response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <resData>
+      <domain:chkData>
+        <domain:cd>
+          <domain:name avail="true">%DOMAIN%</domain:name>
+        </domain:cd>
+      </domain:chkData>
+    </resData>
+    <extension>
+      <fee:chkData>
+        <fee:cd>
+          <fee:name>%DOMAIN%</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="create">%COST_1YR%</fee:fee>
+          %FEE_CLASS%
+        </fee:cd>
+        <fee:cd>
+          <fee:name>%DOMAIN%</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">2</fee:period>
+          <fee:fee description="create">%COST_2YR%</fee:fee>
+          %FEE_CLASS%
+        </fee:cd>
+        <fee:cd>
+          <fee:name>%DOMAIN%</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">5</fee:period>
+          <fee:fee description="create">%COST_5YR%</fee:fee>
+          %FEE_CLASS%
+        </fee:cd>
+      </fee:chkData>
+    </extension>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>

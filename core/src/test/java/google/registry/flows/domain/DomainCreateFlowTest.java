@@ -68,6 +68,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Ordering;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig;
 import google.registry.flows.EppException;
@@ -150,12 +151,12 @@ import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
-import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registry.Registry;
+import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.Registry.TldType;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
@@ -435,7 +436,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   @Test
   void testFailure_invalidAllocationToken() {
-    setEppInput("domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     persistContactsAndHosts();
     EppException thrown = assertThrows(InvalidAllocationTokenException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -445,7 +448,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   void testFailure_reservedDomainCreate_allocationTokenIsForADifferentDomain() {
     // Try to register a reserved domain name with an allocation token valid for a different domain
     // name.
-    setEppInput("domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "resdom.tld"));
+    setEppInput(
+        "domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "resdom.tld", "YEARS", "2"));
     persistContactsAndHosts();
     persistResource(
         new AllocationToken.Builder()
@@ -464,7 +468,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   void testFailure_nonreservedDomainCreate_allocationTokenIsForADifferentDomain() {
     // Try to register a non-reserved domain name with an allocation token valid for a different
     // domain name.
-    setEppInput("domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     persistContactsAndHosts();
     persistResource(
         new AllocationToken.Builder()
@@ -481,7 +487,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   @Test
   void testFailure_alreadyRedemeedAllocationToken() {
-    setEppInput("domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     persistContactsAndHosts();
     persistResource(
         new AllocationToken.Builder()
@@ -497,7 +505,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   @Test
   void testSuccess_validAllocationToken_isRedeemed() throws Exception {
-    setEppInput("domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     persistContactsAndHosts();
     AllocationToken token =
         persistResource(
@@ -508,12 +518,14 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     HistoryEntry historyEntry =
         ofy().load().type(HistoryEntry.class).ancestor(reloadResourceByForeignKey()).first().now();
     assertThat(ofy().load().entity(token).now().getRedemptionHistoryEntry())
-        .isEqualTo(Key.create(historyEntry));
+        .hasValue(Key.create(historyEntry));
   }
 
   @Test
   void testSuccess_validAllocationToken_multiUse() throws Exception {
-    setEppInput("domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     persistContactsAndHosts();
     allocationToken =
         persistResource(
@@ -531,7 +543,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     runFlow();
     assertSuccessfulCreate("tld", ImmutableSet.of(), allocationToken);
     clock.advanceOneMilli();
-    setEppInput("domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "otherexample.tld"));
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "otherexample.tld", "YEARS", "2"));
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "otherexample.tld")));
   }
@@ -543,8 +557,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistContactsAndHosts("foo.tld");
     assertTransactionalFlow(true);
     String expectedResponseXml =
-        loadFile(
-            "domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.foo.tld"));
+        loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.foo.tld"));
     runFlowAssertResponse(CommitMode.LIVE, UserPrivileges.NORMAL, expectedResponseXml);
     assertSuccessfulCreate("foo.tld", ImmutableSet.of());
     assertNoLordn();
@@ -576,8 +589,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "domain_create_registration_encoded_signed_mark.xml",
         ImmutableMap.of("DOMAIN", "test-validate.tld", "PHASE", "open"));
     persistContactsAndHosts();
-    EppException thrown =
-        assertThrows(SignedMarksOnlyDuringSunriseException.class, this::runFlow);
+    EppException thrown = assertThrows(SignedMarksOnlyDuringSunriseException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
@@ -1184,13 +1196,14 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         Registry.get("tld")
             .asBuilder()
             .setTldStateTransitions(
-                ImmutableSortedMap.of(
-                    START_OF_TIME, PREDELEGATION,
-                    DateTime.parse("1999-01-01T00:00:00Z"), QUIET_PERIOD,
-                    // The anchor tenant is created here, on 1999-04-03
-                    DateTime.parse("1999-07-01T00:00:00Z"), START_DATE_SUNRISE,
-                    DateTime.parse("2000-01-01T00:00:00Z"), GENERAL_AVAILABILITY))
+                new ImmutableSortedMap.Builder<DateTime, TldState>(Ordering.natural())
+                    .put(START_OF_TIME, PREDELEGATION)
+                    .put(DateTime.parse("1999-01-01T00:00:00Z"), QUIET_PERIOD)
+                    .put(DateTime.parse("1999-07-01T00:00:00Z"), START_DATE_SUNRISE)
+                    .put(DateTime.parse("2000-01-01T00:00:00Z"), GENERAL_AVAILABILITY)
+                    .build())
             .build());
+    // The anchor tenant is created during the quiet period, on 1999-04-03.
     setEppInput("domain_create_anchor_allocationtoken.xml");
     persistContactsAndHosts();
     runFlowAssertResponse(loadFile("domain_create_anchor_response.xml"));
@@ -1210,7 +1223,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 .build());
     // Despite the domain being FULLY_BLOCKED, the non-superuser create succeeds the domain is also
     // RESERVED_FOR_SPECIFIC_USE and the correct allocation token is passed.
-    setEppInput("domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "resdom.tld"));
+    setEppInput(
+        "domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "resdom.tld", "YEARS", "2"));
     persistContactsAndHosts();
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "resdom.tld")));
@@ -1233,7 +1247,8 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 .setTokenType(SINGLE_USE)
                 .setDomainName("resdom.tld")
                 .build());
-    setEppInput("domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "resdom.tld"));
+    setEppInput(
+        "domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "resdom.tld", "YEARS", "2"));
     persistContactsAndHosts();
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "resdom.tld")));
@@ -1247,7 +1262,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         ofy().load().key(Key.create(AllocationToken.class, token)).now();
     assertThat(reloadedToken.isRedeemed()).isTrue();
     assertThat(reloadedToken.getRedemptionHistoryEntry())
-        .isEqualTo(Key.create(getHistoryEntries(reloadResourceByForeignKey()).get(0)));
+        .hasValue(Key.create(getHistoryEntries(reloadResourceByForeignKey()).get(0)));
   }
 
   private void assertAllocationTokenWasNotRedeemed(String token) {
@@ -1264,7 +1279,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.UNLIMITED_USE)
+            .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
             .setTokenStatusTransitions(
                 ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
@@ -1274,7 +1289,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                     .build())
             .build());
     clock.advanceOneMilli();
-    setEppInput("domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
     BillingEvent.OneTime billingEvent =
@@ -1284,14 +1301,131 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   @Test
-  void testSuccess_promotionDoesNotApplyToPremiumPrice() {
-    // At the moment, discounts cannot apply to premium domains
+  void testSuccess_allocationToken_multiYearDiscount_maxesAtTokenDiscountYears() throws Exception {
+    // 2yrs @ $13 + 3yrs @ $13 * (1 - 0.73) = $36.53
+    runTest_allocationToken_multiYearDiscount(false, 0.73, 3, Money.of(USD, 36.53));
+  }
+
+  @Test
+  void testSuccess_allocationToken_multiYearDiscount_maxesAtNumRegistrationYears()
+      throws Exception {
+    // 5yrs @ $13 * (1 - 0.276) = $47.06
+    runTest_allocationToken_multiYearDiscount(false, 0.276, 10, Money.of(USD, 47.06));
+  }
+
+  void runTest_allocationToken_multiYearDiscount(
+      boolean discountPremiums, double discountFraction, int discountYears, Money expectedPrice)
+      throws Exception {
+    persistContactsAndHosts();
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("example.tld")
+            .setDiscountFraction(discountFraction)
+            .setDiscountYears(discountYears)
+            .setDiscountPremiums(discountPremiums)
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().plusMillis(1), TokenStatus.VALID)
+                    .put(clock.nowUtc().plusSeconds(1), TokenStatus.ENDED)
+                    .build())
+            .build());
+    clock.advanceOneMilli();
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "5"));
+    runFlowAssertResponse(
+        loadFile(
+            "domain_create_response_wildcard.xml",
+            new ImmutableMap.Builder<String, String>()
+                .put("DOMAIN", "example.tld")
+                .put("CRDATE", "1999-04-03T22:00:00.0Z")
+                .put("EXDATE", "2004-04-03T22:00:00.0Z")
+                .build()));
+    BillingEvent.OneTime billingEvent =
+        Iterables.getOnlyElement(ofy().load().type(BillingEvent.OneTime.class));
+    assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
+    assertThat(billingEvent.getCost()).isEqualTo(expectedPrice);
+  }
+
+  @Test
+  void testSuccess_allocationToken_multiYearDiscount_worksForPremiums() throws Exception {
     createTld("example");
     persistContactsAndHosts();
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.UNLIMITED_USE)
+            .setTokenType(SINGLE_USE)
+            .setDomainName("rich.example")
+            .setDiscountFraction(0.98)
+            .setDiscountYears(2)
+            .setDiscountPremiums(true)
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().plusMillis(1), TokenStatus.VALID)
+                    .put(clock.nowUtc().plusSeconds(1), TokenStatus.ENDED)
+                    .build())
+            .build());
+    clock.advanceOneMilli();
+    setEppInput(
+        "domain_create_premium_allocationtoken.xml",
+        ImmutableMap.of("YEARS", "3", "FEE", "104.00"));
+    runFlowAssertResponse(
+        loadFile(
+            "domain_create_response_premium.xml",
+            ImmutableMap.of("EXDATE", "2002-04-03T22:00:00.0Z", "FEE", "104.00")));
+    BillingEvent.OneTime billingEvent =
+        Iterables.getOnlyElement(ofy().load().type(BillingEvent.OneTime.class));
+    assertThat(billingEvent.getTargetId()).isEqualTo("rich.example");
+    // 1yr @ $100 + 2yrs @ $100 * (1 - 0.98) = $104
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 104.00));
+  }
+
+  @Test
+  void testSuccess_allocationToken_singleYearDiscount_worksForPremiums() throws Exception {
+    createTld("example");
+    persistContactsAndHosts();
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("rich.example")
+            .setDiscountFraction(0.95555)
+            .setDiscountPremiums(true)
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().plusMillis(1), TokenStatus.VALID)
+                    .put(clock.nowUtc().plusSeconds(1), TokenStatus.ENDED)
+                    .build())
+            .build());
+    clock.advanceOneMilli();
+    setEppInput(
+        "domain_create_premium_allocationtoken.xml",
+        ImmutableMap.of("YEARS", "3", "FEE", "204.44"));
+    runFlowAssertResponse(
+        loadFile(
+            "domain_create_response_premium.xml",
+            ImmutableMap.of("EXDATE", "2002-04-03T22:00:00.0Z", "FEE", "204.44")));
+    BillingEvent.OneTime billingEvent =
+        Iterables.getOnlyElement(ofy().load().type(BillingEvent.OneTime.class));
+    assertThat(billingEvent.getTargetId()).isEqualTo("rich.example");
+    // 2yrs @ $100 + 1yr @ $100 * (1 - 0.95555) = $204.44
+    assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 204.44));
+  }
+
+  @Test
+  void testSuccess_promotionDoesNotApplyToPremiumPrice() {
+    // Discounts only apply to premium domains if the token is explicitly configured to allow it.
+    createTld("example");
+    persistContactsAndHosts();
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
             .setTokenStatusTransitions(
                 ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
@@ -1301,7 +1435,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                     .build())
             .build());
     clock.advanceOneMilli();
-    setEppInput("domain_create_premium_allocationtoken.xml");
+    setEppInput(
+        "domain_create_premium_allocationtoken.xml",
+        ImmutableMap.of("YEARS", "2", "FEE", "193.50"));
     assertAboutEppExceptions()
         .that(assertThrows(AllocationTokenInvalidForPremiumNameException.class, this::runFlow))
         .marshalsToXml();
@@ -1313,7 +1449,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.UNLIMITED_USE)
+            .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
             .setTokenStatusTransitions(
                 ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
@@ -1322,7 +1458,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                     .put(clock.nowUtc().plusDays(60), TokenStatus.ENDED)
                     .build())
             .build());
-    setEppInput("domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     assertAboutEppExceptions()
         .that(assertThrows(AllocationTokenNotInPromotionException.class, this::runFlow))
         .marshalsToXml();
@@ -1334,7 +1472,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.UNLIMITED_USE)
+            .setTokenType(UNLIMITED_USE)
             .setAllowedTlds(ImmutableSet.of("example"))
             .setDiscountFraction(0.5)
             .setTokenStatusTransitions(
@@ -1344,7 +1482,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                     .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
                     .build())
             .build());
-    setEppInput("domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     assertAboutEppExceptions()
         .that(assertThrows(AllocationTokenNotValidForTldException.class, this::runFlow))
         .marshalsToXml();
@@ -1356,7 +1496,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
-            .setTokenType(TokenType.UNLIMITED_USE)
+            .setTokenType(UNLIMITED_USE)
             .setAllowedClientIds(ImmutableSet.of("someClientId"))
             .setDiscountFraction(0.5)
             .setTokenStatusTransitions(
@@ -1366,7 +1506,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                     .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
                     .build())
             .build());
-    setEppInput("domain_create_allocationtoken.xml", ImmutableMap.of("DOMAIN", "example.tld"));
+    setEppInput(
+        "domain_create_allocationtoken.xml",
+        ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     assertAboutEppExceptions()
         .that(assertThrows(AllocationTokenNotValidForRegistrarException.class, this::runFlow))
         .marshalsToXml();
@@ -1562,7 +1704,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     // Modify the Registrar to block premium names.
     persistResource(loadRegistrar("TheRegistrar").asBuilder().setBlockPremiumNames(true).build());
     runFlowAssertResponse(
-        CommitMode.LIVE, SUPERUSER, loadFile("domain_create_response_premium.xml"));
+        CommitMode.LIVE,
+        SUPERUSER,
+        loadFile(
+            "domain_create_response_premium.xml",
+            ImmutableMap.of("EXDATE", "2001-04-03T22:00:00.0Z", "FEE", "200.00")));
     assertSuccessfulCreate("example", ImmutableSet.of());
   }
 

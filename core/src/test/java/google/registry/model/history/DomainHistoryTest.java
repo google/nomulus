@@ -83,7 +83,8 @@ public class DomainHistoryTest extends EntityTestCase {
   }
 
   static void assertDomainHistoriesEqual(DomainHistory one, DomainHistory two) {
-    assertAboutImmutableObjects().that(one)
+    assertAboutImmutableObjects()
+        .that(one)
         .isEqualExceptFields(two, "domainContent", "domainRepoId", "parent");
   }
 }

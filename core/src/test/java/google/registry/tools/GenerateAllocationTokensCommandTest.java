@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.testing.DatastoreHelper.assertAllocationTokens;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -32,11 +33,9 @@ import static org.mockito.Mockito.verify;
 import com.beust.jcommander.ParameterException;
 import com.google.appengine.tools.remoteapi.RemoteApiException;
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.googlecode.objectify.Key;
 import google.registry.model.domain.token.AllocationToken;
@@ -160,6 +159,8 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         "--allowed_client_ids", "TheRegistrar,NewRegistrar",
         "--allowed_tlds", "tld,example",
         "--discount_fraction", "0.5",
+        "--discount_premiums", "true",
+        "--discount_years", "6",
         "--token_status_transitions",
             String.format(
                 "\"%s=NOT_STARTED,%s=VALID,%s=ENDED\"", START_OF_TIME, promoStart, promoEnd));
@@ -170,6 +171,8 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
             .setAllowedClientIds(ImmutableSet.of("TheRegistrar", "NewRegistrar"))
             .setAllowedTlds(ImmutableSet.of("tld", "example"))
             .setDiscountFraction(0.5)
+            .setDiscountPremiums(true)
+            .setDiscountYears(6)
             .setTokenStatusTransitions(
                 ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
                     .put(START_OF_TIME, TokenStatus.NOT_STARTED)
@@ -307,26 +310,6 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
                 () -> runCommand("--number", "999", "--type", "UNLIMITED_USE")))
         .hasMessageThat()
         .isEqualTo("For UNLIMITED_USE tokens, must specify --token_status_transitions");
-  }
-
-  private void assertAllocationTokens(AllocationToken... expectedTokens) {
-    // Using ImmutableObject comparison here is tricky because the creation/updated timestamps are
-    // neither easy nor valuable to test here.
-    ImmutableMap<String, AllocationToken> actualTokens =
-        Maps.uniqueIndex(ofy().load().type(AllocationToken.class), AllocationToken::getToken);
-    assertThat(actualTokens).hasSize(expectedTokens.length);
-    for (AllocationToken expectedToken : expectedTokens) {
-      AllocationToken match = actualTokens.get(expectedToken.getToken());
-      assertThat(match).isNotNull();
-      assertThat(match.getRedemptionHistoryEntry())
-          .isEqualTo(expectedToken.getRedemptionHistoryEntry());
-      assertThat(match.getAllowedClientIds()).isEqualTo(expectedToken.getAllowedClientIds());
-      assertThat(match.getAllowedTlds()).isEqualTo(expectedToken.getAllowedTlds());
-      assertThat(match.getDiscountFraction()).isEqualTo(expectedToken.getDiscountFraction());
-      assertThat(match.getTokenStatusTransitions())
-          .isEqualTo(expectedToken.getTokenStatusTransitions());
-      assertThat(match.getTokenType()).isEqualTo(expectedToken.getTokenType());
-    }
   }
 
   private AllocationToken createToken(
