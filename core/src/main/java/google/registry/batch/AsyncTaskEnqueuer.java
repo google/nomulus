@@ -31,7 +31,6 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
-import google.registry.schema.domain.RegistryLock;
 import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.Retrier;
 import javax.inject.Inject;
@@ -159,26 +158,17 @@ public final class AsyncTaskEnqueuer {
             .param(PARAM_REQUESTED_TIME, now.toString()));
   }
 
-  /**
-   * Enqueues a task to asynchronously re-lock a registry-locked domain after it was unlocked.
-   *
-   * <p>Note: the relockDuration must be present on the lock object.
-   */
-  public void enqueueDomainRelock(RegistryLock lock) {
-    checkArgument(
-        lock.getRelockDuration().isPresent(),
-        "Lock with ID %s not configured for relock",
-        lock.getRevisionId());
+  /** Enqueues a task to asynchronously re-lock a registry-locked domain after it was unlocked. */
+  public void enqueueDomainRelock(long countdownMillis, long lockRevisionId, int previousAttempts) {
     String backendHostname = appEngineServiceUtils.getServiceHostname("backend");
     addTaskToQueueWithRetry(
         asyncActionsPushQueue,
         TaskOptions.Builder.withUrl(RelockDomainAction.PATH)
             .method(Method.POST)
             .header("Host", backendHostname)
-            .param(
-                RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
-                String.valueOf(lock.getRevisionId()))
-            .countdownMillis(lock.getRelockDuration().get().getMillis()));
+            .param(RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM, String.valueOf(lockRevisionId))
+            .param(RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM, String.valueOf(previousAttempts))
+            .countdownMillis(countdownMillis));
   }
 
   /**

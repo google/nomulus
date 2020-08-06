@@ -21,6 +21,7 @@ import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
+import static google.registry.request.RequestParameters.extractIntParameter;
 import static google.registry.request.RequestParameters.extractLongParameter;
 import static google.registry.request.RequestParameters.extractOptionalBooleanParameter;
 import static google.registry.request.RequestParameters.extractOptionalIntParameter;
@@ -94,9 +95,15 @@ public class BatchModule {
   }
 
   @Provides
-  @Parameter("oldUnlockRevisionId")
+  @Parameter(RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM)
   static long provideOldUnlockRevisionId(HttpServletRequest req) {
-    return extractLongParameter(req, "oldUnlockRevisionId");
+    return extractLongParameter(req, RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM);
+  }
+
+  @Provides
+  @Parameter(RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM)
+  static int providePreviousAttempts(HttpServletRequest req) {
+    return extractIntParameter(req, RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM);
   }
 
   @Provides
