@@ -15,13 +15,9 @@
 package google.registry.tools.params;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assume.assumeThat;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.beust.jcommander.ParameterException;
 import java.io.File;
@@ -62,8 +58,8 @@ class PathParameterTest {
     Path currentDirectory = Paths.get("").toAbsolutePath();
     Path file = Paths.get(tmpDir.resolve("tmp.file").toString());
     Path relative = file.relativize(currentDirectory);
-    assumeThat(relative, is(not(equalTo(file))));
-    assumeThat(relative.toString(), startsWith("../"));
+    assumeFalse(relative.equals(file));
+    assumeTrue(relative.toString().startsWith("../"));
     Path converted = vanilla.convert(file.toString());
     assertThat((Object) converted).isEqualTo(file);
   }

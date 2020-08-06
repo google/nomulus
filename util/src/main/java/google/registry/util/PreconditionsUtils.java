@@ -29,33 +29,36 @@ public class PreconditionsUtils {
    * preferable to throw an IAE instead of an NPE, such as where we want an IAE to indicate that
    * it's just a bad argument/parameter and reserve NPEs for bugs and unexpected null values.
    */
-  public static <T> T checkArgumentNotNull(T reference) {
+  public static <T> T checkArgumentNotNull(@Nullable T reference) {
     checkArgument(reference != null);
     return reference;
   }
 
   /** Checks whether the provided reference is null, throws IAE if it is, and returns it if not. */
-  public static <T> T checkArgumentNotNull(T reference, @Nullable Object errorMessage) {
+  public static <T> T checkArgumentNotNull(@Nullable T reference, @Nullable Object errorMessage) {
     checkArgument(reference != null, errorMessage);
     return reference;
   }
 
   /** Checks whether the provided reference is null, throws IAE if it is, and returns it if not. */
   public static <T> T checkArgumentNotNull(
-      T reference, @Nullable String errorMessageTemplate, @Nullable Object... errorMessageArgs) {
+      @Nullable T reference,
+      @Nullable String errorMessageTemplate,
+      @Nullable Object... errorMessageArgs) {
     checkArgument(reference != null, errorMessageTemplate, errorMessageArgs);
     return reference;
   }
 
   /** Checks if the provided Optional is present, returns its value if so, and throws IAE if not. */
-  public static <T> T checkArgumentPresent(Optional<T> reference) {
+  public static <T> T checkArgumentPresent(@Nullable Optional<T> reference) {
     checkArgumentNotNull(reference);
     checkArgument(reference.isPresent());
     return reference.get();
   }
 
   /** Checks if the provided Optional is present, returns its value if so, and throws IAE if not. */
-  public static <T> T checkArgumentPresent(Optional<T> reference, @Nullable Object errorMessage) {
+  public static <T> T checkArgumentPresent(
+      @Nullable Optional<T> reference, @Nullable Object errorMessage) {
     checkArgumentNotNull(reference, errorMessage);
     checkArgument(reference.isPresent(), errorMessage);
     return reference.get();
@@ -63,7 +66,7 @@ public class PreconditionsUtils {
 
   /** Checks if the provided Optional is present, returns its value if so, and throws IAE if not. */
   public static <T> T checkArgumentPresent(
-      Optional<T> reference,
+      @Nullable Optional<T> reference,
       @Nullable String errorMessageTemplate,
       @Nullable Object... errorMessageArgs) {
     checkArgumentNotNull(reference, errorMessageTemplate, errorMessageArgs);

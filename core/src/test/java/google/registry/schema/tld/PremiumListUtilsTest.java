@@ -16,7 +16,7 @@ package google.registry.schema.tld;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.schema.tld.PremiumListUtils.parseToPremiumList;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.registry.label.PremiumList;
 import google.registry.testing.AppEngineExtension;

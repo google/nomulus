@@ -35,7 +35,7 @@ import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptio
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -288,6 +288,7 @@ class DomainTransferApproveFlowTest
         ImmutableMap.of(
             GracePeriod.create(
                 GracePeriodStatus.TRANSFER,
+                domain.getRepoId(),
                 clock.nowUtc().plus(registry.getTransferGracePeriodLength()),
                 "NewRegistrar",
                 null),
@@ -649,6 +650,7 @@ class DomainTransferApproveFlowTest
                 .addGracePeriod(
                     GracePeriod.createForRecurring(
                         GracePeriodStatus.AUTO_RENEW,
+                        domain.getRepoId(),
                         autorenewTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()),
                         "TheRegistrar",
                         existingAutorenewEvent))

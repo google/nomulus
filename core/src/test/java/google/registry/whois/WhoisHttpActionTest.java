@@ -29,7 +29,7 @@ import static google.registry.whois.WhoisTestData.loadFile;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -43,7 +43,7 @@ import google.registry.model.registry.Registry;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.whois.WhoisMetrics.WhoisMetric;
 import java.io.IOException;
 import java.io.Reader;
@@ -66,7 +66,7 @@ class WhoisHttpActionTest {
   final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @RegisterExtension final InjectRule inject = new InjectRule();
+  @RegisterExtension final InjectExtension inject = new InjectExtension();
 
   private final FakeResponse response = new FakeResponse();
   private final FakeClock clock = new FakeClock(DateTime.parse("2009-06-29T20:13:00Z"));

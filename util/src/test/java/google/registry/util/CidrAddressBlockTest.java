@@ -14,8 +14,11 @@
 
 package google.registry.util;
 
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InetAddresses;
@@ -25,40 +28,42 @@ import java.net.InetAddress;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
 
-/**
- * Tests for {@link CidrAddressBlock}.
- *
- */
-public class CidrAddressBlockTest extends TestCase {
+/** Tests for {@link CidrAddressBlock}. */
+class CidrAddressBlockTest {
 
-  public void testNulls() {
+  @Test
+  void testNulls() {
     NullPointerTester tester = new NullPointerTester();
     tester.testAllPublicStaticMethods(CidrAddressBlock.class);
     tester.testAllPublicConstructors(CidrAddressBlock.class);
     tester.testAllPublicInstanceMethods(new CidrAddressBlock("::/0"));
   }
 
-  public void testConstructorWithNetmask() {
+  @Test
+  void testConstructorWithNetmask() {
     CidrAddressBlock b0 = new CidrAddressBlock("22.24.66.0/24");
     assertEquals("22.24.66.0", b0.getIp());
     assertEquals(24, b0.getNetmask());
   }
 
-  public void testConstructorPicksNetmask() {
+  @Test
+  void testConstructorPicksNetmask() {
     CidrAddressBlock b0 = new CidrAddressBlock("64.132.1.2");
     assertEquals(32, b0.getNetmask());
   }
 
-  public void testConstructorDoesntThrow() {
+  @Test
+  void testConstructorDoesntThrow() {
     new CidrAddressBlock("64.132.0.0/16");
     new CidrAddressBlock("128.142.217.0/24");
     new CidrAddressBlock("35.213.0.0", 16);
     new CidrAddressBlock("89.23.164.0", 24);
   }
 
-  public void testInetAddressConstructor() {
+  @Test
+  void testInetAddressConstructor() {
     CidrAddressBlock b0 = new CidrAddressBlock(InetAddresses.forString("1.2.3.4"));
     assertEquals(32, b0.getNetmask());
     assertEquals("1.2.3.4", b0.getIp());
@@ -73,7 +78,8 @@ public class CidrAddressBlockTest extends TestCase {
     assertEquals("5ffe:0:0:0:0:0:0:1", b1.getIp());
   }
 
-  public void testCornerCasesSucceed() {
+  @Test
+  void testCornerCasesSucceed() {
     new CidrAddressBlock("0.0.0.0/32");
     new CidrAddressBlock("255.255.255.255/32");
     new CidrAddressBlock("255.255.255.254/31");
@@ -88,7 +94,8 @@ public class CidrAddressBlockTest extends TestCase {
     new CidrAddressBlock("ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe/127");
   }
 
-  public void testFailure() {
+  @Test
+  void testFailure() {
     assertConstructionFails("");
     assertConstructionFails("0");
     assertConstructionFails("1");
@@ -120,31 +127,31 @@ public class CidrAddressBlockTest extends TestCase {
     assertConstructionFails("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/127");
   }
 
-  public void testTruncation() {
-    ImmutableMap<String, String> netblocks = new ImmutableMap.Builder<String, String>()
-        // IPv4
-        .put("1.2.3.4/0", "0.0.0.0/0")
-        .put("1.2.3.4/24", "1.2.3.0/24")
-        .put("1.2.3.255/27", "1.2.3.224/27")
-        .put("1.2.3.255/28", "1.2.3.240/28")
-        // IPv6
-        .put("2001:db8::1/0", "::/0")
-        .put("2001:db8::1/16", "2001::/16")
-        .put("2001:db8::1/21", "2001:800::/21")
-        .put("2001:db8::1/22", "2001:c00::/22")
-        .build();
+  @Test
+  void testTruncation() {
+    ImmutableMap<String, String> netblocks =
+        new ImmutableMap.Builder<String, String>()
+            // IPv4
+            .put("1.2.3.4/0", "0.0.0.0/0")
+            .put("1.2.3.4/24", "1.2.3.0/24")
+            .put("1.2.3.255/27", "1.2.3.224/27")
+            .put("1.2.3.255/28", "1.2.3.240/28")
+            // IPv6
+            .put("2001:db8::1/0", "::/0")
+            .put("2001:db8::1/16", "2001::/16")
+            .put("2001:db8::1/21", "2001:800::/21")
+            .put("2001:db8::1/22", "2001:c00::/22")
+            .build();
     for (Map.Entry<String, String> pair : netblocks.entrySet()) {
       assertConstructionFails(pair.getKey());
+      assertEquals(new CidrAddressBlock(pair.getValue()), CidrAddressBlock.create(pair.getKey()));
       assertEquals(
-          new CidrAddressBlock(pair.getValue()),
-          CidrAddressBlock.create(pair.getKey()));
-      assertEquals(
-          CidrAddressBlock.create(pair.getKey()),
-          CidrAddressBlock.create(pair.getValue()));
+          CidrAddressBlock.create(pair.getKey()), CidrAddressBlock.create(pair.getValue()));
     }
   }
 
-  public void testContains() {
+  @Test
+  void testContains() {
     CidrAddressBlock b0 = CidrAddressBlock.create("172.24.255.0/24");
     assertTrue(b0.contains(b0));
     assertTrue(b0.contains(b0.getIp()));
@@ -226,19 +233,21 @@ public class CidrAddressBlockTest extends TestCase {
     assertFalse(allIPv6.contains(allIPv4));
   }
 
-  public void testGetAllOnesAddress() {
+  @Test
+  void testGetAllOnesAddress() {
     // <CIDR block> -> <expected getAllOnesAddress()>
-    ImmutableMap<String, String> testCases = new ImmutableMap.Builder<String, String>()
-        .put("172.24.255.0/24", "172.24.255.255")
-        .put("172.24.0.0/15", "172.25.255.255")
-        .put("172.24.254.0/23", "172.24.255.255")
-        .put("172.24.255.0/32", "172.24.255.0")
-        .put("0.0.0.0/0", "255.255.255.255")
-        .put("2001:db8::/48", "2001:db8::ffff:ffff:ffff:ffff:ffff")
-        .put("2001:db8::/32", "2001:db8:ffff:ffff:ffff:ffff:ffff:ffff")
-        .put("2001:db8::/128", "2001:db8::")
-        .put("::/0", "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
-        .build();
+    ImmutableMap<String, String> testCases =
+        new ImmutableMap.Builder<String, String>()
+            .put("172.24.255.0/24", "172.24.255.255")
+            .put("172.24.0.0/15", "172.25.255.255")
+            .put("172.24.254.0/23", "172.24.255.255")
+            .put("172.24.255.0/32", "172.24.255.0")
+            .put("0.0.0.0/0", "255.255.255.255")
+            .put("2001:db8::/48", "2001:db8::ffff:ffff:ffff:ffff:ffff")
+            .put("2001:db8::/32", "2001:db8:ffff:ffff:ffff:ffff:ffff:ffff")
+            .put("2001:db8::/128", "2001:db8::")
+            .put("::/0", "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
+            .build();
 
     for (Map.Entry<String, String> testCase : testCases.entrySet()) {
       assertEquals(
@@ -247,7 +256,8 @@ public class CidrAddressBlockTest extends TestCase {
     }
   }
 
-  public void testEqualsAndHashCode() {
+  @Test
+  void testEqualsAndHashCode() {
     CidrAddressBlock b0 = new CidrAddressBlock("172.24.66.0/24");
     CidrAddressBlock b1 = new CidrAddressBlock("172.24.66.0", 24);
     CidrAddressBlock b2 = new CidrAddressBlock("172.24.0.0/16");
@@ -269,7 +279,8 @@ public class CidrAddressBlockTest extends TestCase {
     assertNotEquals(b0, b3);
   }
 
-  public void testIterate() {
+  @Test
+  void testIterate() {
     CidrAddressBlock b0 = new CidrAddressBlock("172.24.66.0/24");
     int count = 0;
     for (InetAddress addr : b0) {
@@ -293,7 +304,8 @@ public class CidrAddressBlockTest extends TestCase {
     assertThrows(NoSuchElementException.class, i::next);
   }
 
-  public void testSerializability() {
+  @Test
+  void testSerializability() {
     SerializableTester.reserializeAndAssert(new CidrAddressBlock("22.24.66.0/24"));
     SerializableTester.reserializeAndAssert(new CidrAddressBlock("64.132.1.2"));
     SerializableTester.reserializeAndAssert(

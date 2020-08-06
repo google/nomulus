@@ -21,7 +21,7 @@ import static google.registry.proxy.TestUtils.makeEppHttpResponse;
 import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
 import static google.registry.util.X509Utils.getCertificateHash;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -44,14 +44,11 @@ import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.util.concurrent.Promise;
 import java.security.cert.X509Certificate;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link EppServiceHandler}. */
-@RunWith(JUnit4.class)
-public class EppServiceHandlerTest {
+class EppServiceHandlerTest {
 
   private static final String HELLO =
       "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
@@ -112,8 +109,8 @@ public class EppServiceHandlerTest {
         cookies);
   }
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     clientCertificate = SelfSignedCaCertificate.create().cert();
     channel = setUpNewChannel(eppServiceHandler);
   }
@@ -132,7 +129,7 @@ public class EppServiceHandlerTest {
   }
 
   @Test
-  public void testSuccess_connectionMetrics_oneConnection() throws Exception {
+  void testSuccess_connectionMetrics_oneConnection() throws Exception {
     setHandshakeSuccess();
     String certHash = getCertificateHash(clientCertificate);
     assertThat(channel.isActive()).isTrue();
@@ -141,7 +138,7 @@ public class EppServiceHandlerTest {
   }
 
   @Test
-  public void testSuccess_connectionMetrics_twoConnections_sameClient() throws Exception {
+  void testSuccess_connectionMetrics_twoConnections_sameClient() throws Exception {
     setHandshakeSuccess();
     String certHash = getCertificateHash(clientCertificate);
     assertThat(channel.isActive()).isTrue();
@@ -165,7 +162,7 @@ public class EppServiceHandlerTest {
   }
 
   @Test
-  public void testSuccess_connectionMetrics_twoConnections_differentClients() throws Exception {
+  void testSuccess_connectionMetrics_twoConnections_differentClients() throws Exception {
     setHandshakeSuccess();
     String certHash = getCertificateHash(clientCertificate);
     assertThat(channel.isActive()).isTrue();
@@ -191,7 +188,7 @@ public class EppServiceHandlerTest {
   }
 
   @Test
-  public void testSuccess_sendHelloUponHandshakeSuccess() throws Exception {
+  void testSuccess_sendHelloUponHandshakeSuccess() throws Exception {
     // Nothing to pass to the next handler.
     assertThat((Object) channel.readInbound()).isNull();
     setHandshakeSuccess();
@@ -204,7 +201,7 @@ public class EppServiceHandlerTest {
   }
 
   @Test
-  public void testSuccess_disconnectUponHandshakeFailure() throws Exception {
+  void testSuccess_disconnectUponHandshakeFailure() throws Exception {
     // Nothing to pass to the next handler.
     assertThat((Object) channel.readInbound()).isNull();
     setHandshakeFailure();
@@ -212,7 +209,7 @@ public class EppServiceHandlerTest {
   }
 
   @Test
-  public void testSuccess_sendRequestToNextHandler() throws Exception {
+  void testSuccess_sendRequestToNextHandler() throws Exception {
     setHandshakeSuccess();
     // First inbound message is hello.
     channel.readInbound();
@@ -226,7 +223,7 @@ public class EppServiceHandlerTest {
   }
 
   @Test
-  public void testSuccess_sendResponseToNextHandler() throws Exception {
+  void testSuccess_sendResponseToNextHandler() throws Exception {
     setHandshakeSuccess();
     String content = "<epp>stuff</epp>";
     channel.writeOutbound(makeEppHttpResponse(content, HttpResponseStatus.OK));
@@ -238,7 +235,7 @@ public class EppServiceHandlerTest {
   }
 
   @Test
-  public void testSuccess_sendResponseToNextHandler_andDisconnect() throws Exception {
+  void testSuccess_sendResponseToNextHandler_andDisconnect() throws Exception {
     setHandshakeSuccess();
     String content = "<epp>stuff</epp>";
     HttpResponse response = makeEppHttpResponse(content, HttpResponseStatus.OK);
@@ -253,7 +250,7 @@ public class EppServiceHandlerTest {
   }
 
   @Test
-  public void testFailure_disconnectOnNonOKResponseStatus() throws Exception {
+  void testFailure_disconnectOnNonOKResponseStatus() throws Exception {
     setHandshakeSuccess();
     String content = "<epp>stuff</epp>";
     EncoderException thrown =
@@ -269,7 +266,7 @@ public class EppServiceHandlerTest {
   }
 
   @Test
-  public void testSuccess_setCookies() throws Exception {
+  void testSuccess_setCookies() throws Exception {
     setHandshakeSuccess();
     // First inbound message is hello.
     channel.readInbound();
@@ -291,7 +288,7 @@ public class EppServiceHandlerTest {
   }
 
   @Test
-  public void testSuccess_updateCookies() throws Exception {
+  void testSuccess_updateCookies() throws Exception {
     setHandshakeSuccess();
     // First inbound message is hello.
     channel.readInbound();

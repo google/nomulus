@@ -52,7 +52,7 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.EppLoader;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.TestDataHelper;
 import google.registry.tmch.TmchCertificateAuthority;
 import google.registry.tmch.TmchXmlSignature;
@@ -89,7 +89,7 @@ public abstract class FlowTestCase<F extends Flow> {
   final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @RegisterExtension final InjectRule inject = new InjectRule();
+  @RegisterExtension final InjectExtension inject = new InjectExtension();
 
   protected EppLoader eppLoader;
   protected SessionMetadata sessionMetadata;
@@ -185,6 +185,7 @@ public abstract class FlowTestCase<F extends Flow> {
       builder.put(
           GracePeriod.create(
               entry.getKey().getType(),
+              entry.getKey().getDomainRepoId(),
               entry.getKey().getExpirationTime(),
               entry.getKey().getClientId(),
               null),

@@ -26,8 +26,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
+import google.registry.config.RegistryConfig;
+import google.registry.persistence.JpaRetries;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
+import google.registry.util.Retrier;
+import google.registry.util.SystemSleeper;
 import java.lang.reflect.Field;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
@@ -48,6 +52,7 @@ import org.joda.time.DateTime;
 public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final Retrier retrier = new Retrier(new SystemSleeper(), 3);
 
   // EntityManagerFactory is thread safe.
   private final EntityManagerFactory emf;
@@ -93,6 +98,40 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public <T> T transact(Supplier<T> work) {
     // TODO(shicong): Investigate removing transactNew functionality after migration as it may
     //  be same as this one.
+    return retrier.callWithRetry(
+        () -> {
+          if (inTransaction()) {
+            return work.get();
+          }
+          TransactionInfo txnInfo = transactionInfo.get();
+          txnInfo.entityManager = emf.createEntityManager();
+          EntityTransaction txn = txnInfo.entityManager.getTransaction();
+          try {
+            txn.begin();
+            txnInfo.start(clock);
+            T result = work.get();
+            txnInfo.recordTransaction();
+            txn.commit();
+            return result;
+          } catch (RuntimeException | Error e) {
+            // Error is unchecked!
+            try {
+              txn.rollback();
+              logger.atWarning().log("Error during transaction; transaction rolled back");
+            } catch (Throwable rollbackException) {
+              logger.atSevere().withCause(rollbackException).log(
+                  "Rollback failed; suppressing error");
+            }
+            throw e;
+          } finally {
+            txnInfo.clear();
+          }
+        },
+        JpaRetries::isFailedTxnRetriable);
+  }
+
+  @Override
+  public <T> T transactNoRetry(Supplier<T> work) {
     if (inTransaction()) {
       return work.get();
     }
@@ -101,9 +140,9 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     EntityTransaction txn = txnInfo.entityManager.getTransaction();
     try {
       txn.begin();
-      txnInfo.inTransaction = true;
-      txnInfo.transactionTime = clock.nowUtc();
+      txnInfo.start(clock);
       T result = work.get();
+      txnInfo.recordTransaction();
       txn.commit();
       return result;
     } catch (RuntimeException | Error e) {
@@ -130,6 +169,15 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public void transactNoRetry(Runnable work) {
+    transactNoRetry(
+        () -> {
+          work.run();
+          return null;
+        });
+  }
+
+  @Override
   public <T> T transactNew(Supplier<T> work) {
     return transact(work);
   }
@@ -141,11 +189,14 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> T transactNewReadOnly(Supplier<T> work) {
-    return transact(
-        () -> {
-          getEntityManager().createNativeQuery("SET TRANSACTION READ ONLY").executeUpdate();
-          return work.get();
-        });
+    return retrier.callWithRetry(
+        () ->
+            transact(
+                () -> {
+                  getEntityManager().createNativeQuery("SET TRANSACTION READ ONLY").executeUpdate();
+                  return work.get();
+                }),
+        JpaRetries::isFailedQueryRetriable);
   }
 
   @Override
@@ -159,7 +210,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> T doTransactionless(Supplier<T> work) {
-    return transact(work);
+    return retrier.callWithRetry(() -> transact(work), JpaRetries::isFailedQueryRetriable);
   }
 
   @Override
@@ -177,6 +228,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     checkArgumentNotNull(entity, "entity must be specified");
     assertInTransaction();
     getEntityManager().persist(entity);
+    transactionInfo.get().addUpdate(entity);
   }
 
   @Override
@@ -191,6 +243,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     checkArgumentNotNull(entity, "entity must be specified");
     assertInTransaction();
     getEntityManager().merge(entity);
+    transactionInfo.get().addUpdate(entity);
   }
 
   @Override
@@ -206,6 +259,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     assertInTransaction();
     checkArgument(checkExists(entity), "Given entity does not exist");
     getEntityManager().merge(entity);
+    transactionInfo.get().addUpdate(entity);
   }
 
   @Override
@@ -297,6 +351,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         String.format("DELETE FROM %s WHERE %s", entityType.getName(), getAndClause(entityIds));
     Query query = getEntityManager().createQuery(sql);
     entityIds.forEach(entityId -> query.setParameter(entityId.name, entityId.value));
+    transactionInfo.get().addDelete(key);
     return query.executeUpdate();
   }
 
@@ -387,14 +442,49 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     boolean inTransaction = false;
     DateTime transactionTime;
 
+    // Serializable representation of the transaction to be persisted in the Transaction table.
+    Transaction.Builder contentsBuilder;
+
+    /** Start a new transaction. */
+    private void start(Clock clock) {
+      checkArgumentNotNull(clock);
+      inTransaction = true;
+      transactionTime = clock.nowUtc();
+      if (RegistryConfig.getCloudSqlReplicateTransactions()) {
+        contentsBuilder = new Transaction.Builder();
+      }
+    }
+
     private void clear() {
       inTransaction = false;
       transactionTime = null;
+      contentsBuilder = null;
       if (entityManager != null) {
         // Close this EntityManager just let the connection pool be able to reuse it, it doesn't
         // close the underlying database connection.
         entityManager.close();
         entityManager = null;
+      }
+    }
+
+    private void addUpdate(Object entity) {
+      if (contentsBuilder != null) {
+        contentsBuilder.addUpdate(entity);
+      }
+    }
+
+    private void addDelete(VKey<?> key) {
+      if (contentsBuilder != null) {
+        contentsBuilder.addDelete(key);
+      }
+    }
+
+    private void recordTransaction() {
+      if (contentsBuilder != null) {
+        Transaction persistedTxn = contentsBuilder.build();
+        if (!persistedTxn.isEmpty()) {
+          entityManager.persist(persistedTxn.toEntity());
+        }
       }
     }
   }

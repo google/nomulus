@@ -360,7 +360,8 @@ public class DomainCreateFlow implements TransactionalFlow {
                     command.getNameservers().stream().collect(toImmutableSet()))
             .setStatusValues(statuses.build())
             .setContacts(command.getContacts())
-            .addGracePeriod(GracePeriod.forBillingEvent(GracePeriodStatus.ADD, createBillingEvent))
+            .addGracePeriod(
+                GracePeriod.forBillingEvent(GracePeriodStatus.ADD, repoId, createBillingEvent))
             .build();
     entitiesToSave.add(
         newDomain,

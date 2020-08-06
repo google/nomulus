@@ -16,7 +16,7 @@ package google.registry.model.domain;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
@@ -63,8 +63,9 @@ public class GracePeriodTest {
 
   @Test
   void testSuccess_forBillingEvent() {
-    GracePeriod gracePeriod = GracePeriod.forBillingEvent(GracePeriodStatus.ADD, onetime);
+    GracePeriod gracePeriod = GracePeriod.forBillingEvent(GracePeriodStatus.ADD, "1-TEST", onetime);
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.ADD);
+    assertThat(gracePeriod.getDomainRepoId()).isEqualTo("1-TEST");
     assertThat(gracePeriod.getOneTimeBillingEvent()).isEqualTo(onetime.createVKey());
     assertThat(gracePeriod.getRecurringBillingEvent()).isNull();
     assertThat(gracePeriod.getClientId()).isEqualTo("TheRegistrar");
@@ -74,9 +75,11 @@ public class GracePeriodTest {
 
   @Test
   void testSuccess_createWithoutBillingEvent() {
-    GracePeriod gracePeriod = GracePeriod.createWithoutBillingEvent(
-        GracePeriodStatus.REDEMPTION, now, "TheRegistrar");
+    GracePeriod gracePeriod =
+        GracePeriod.createWithoutBillingEvent(
+            GracePeriodStatus.REDEMPTION, "1-TEST", now, "TheRegistrar");
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.REDEMPTION);
+    assertThat(gracePeriod.getDomainRepoId()).isEqualTo("1-TEST");
     assertThat(gracePeriod.getOneTimeBillingEvent()).isNull();
     assertThat(gracePeriod.getRecurringBillingEvent()).isNull();
     assertThat(gracePeriod.getClientId()).isEqualTo("TheRegistrar");
@@ -89,7 +92,7 @@ public class GracePeriodTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> GracePeriod.forBillingEvent(GracePeriodStatus.AUTO_RENEW, onetime));
+            () -> GracePeriod.forBillingEvent(GracePeriodStatus.AUTO_RENEW, "1-TEST", onetime));
     assertThat(thrown).hasMessageThat().contains("autorenew");
   }
 
@@ -101,6 +104,7 @@ public class GracePeriodTest {
             () ->
                 GracePeriod.createForRecurring(
                     GracePeriodStatus.RENEW,
+                    "1-TEST",
                     now.plusDays(1),
                     "TheRegistrar",
                     VKey.create(Recurring.class, 12345)));

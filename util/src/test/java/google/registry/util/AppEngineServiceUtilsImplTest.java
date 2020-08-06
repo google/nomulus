@@ -15,7 +15,7 @@
 package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -24,54 +24,51 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.appengine.api.modules.ModulesService;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Unit tests for {@link AppEngineServiceUtilsImpl}. */
-@RunWith(JUnit4.class)
-public class AppEngineServiceUtilsImplTest {
-
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
+@ExtendWith(MockitoExtension.class)
+class AppEngineServiceUtilsImplTest {
 
   @Mock private ModulesService modulesService;
 
   private AppEngineServiceUtils appEngineServiceUtils;
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     appEngineServiceUtils = new AppEngineServiceUtilsImpl(modulesService);
-    when(modulesService.getVersionHostname(anyString(), isNull()))
-        .thenReturn("1234.servicename.projectid.appspot.fake");
-    when(modulesService.getVersionHostname(anyString(), eq("2345")))
-        .thenReturn("2345.servicename.projectid.appspot.fake");
   }
 
   @Test
-  public void test_getServiceHostname_doesntIncludeVersionId() {
+  void test_getServiceHostname_doesntIncludeVersionId() {
+    when(modulesService.getVersionHostname(anyString(), isNull()))
+        .thenReturn("1234.servicename.projectid.appspot.fake");
     assertThat(appEngineServiceUtils.getServiceHostname("servicename"))
         .isEqualTo("servicename.projectid.appspot.fake");
   }
 
   @Test
-  public void test_getVersionHostname_doesIncludeVersionId() {
+  void test_getVersionHostname_doesIncludeVersionId() {
+    when(modulesService.getVersionHostname(anyString(), isNull()))
+        .thenReturn("1234.servicename.projectid.appspot.fake");
     assertThat(appEngineServiceUtils.getCurrentVersionHostname("servicename"))
         .isEqualTo("1234.servicename.projectid.appspot.fake");
   }
 
   @Test
-  public void test_getVersionHostname_worksWithVersionId() {
+  void test_getVersionHostname_worksWithVersionId() {
+    when(modulesService.getVersionHostname(anyString(), eq("2345")))
+        .thenReturn("2345.servicename.projectid.appspot.fake");
     assertThat(appEngineServiceUtils.getVersionHostname("servicename", "2345"))
         .isEqualTo("2345.servicename.projectid.appspot.fake");
   }
 
   @Test
-  public void test_getVersionHostname_throwsWhenVersionIdIsNull() {
+  void test_getVersionHostname_throwsWhenVersionIdIsNull() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -80,13 +77,13 @@ public class AppEngineServiceUtilsImplTest {
   }
 
   @Test
-  public void test_setNumInstances_worksWithValidParameters() {
+  void test_setNumInstances_worksWithValidParameters() {
     appEngineServiceUtils.setNumInstances("service", "version", 10L);
     verify(modulesService, times(1)).setNumInstances("service", "version", 10L);
   }
 
   @Test
-  public void test_setNumInstances_throwsWhenServiceIsNull() {
+  void test_setNumInstances_throwsWhenServiceIsNull() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -95,7 +92,7 @@ public class AppEngineServiceUtilsImplTest {
   }
 
   @Test
-  public void test_setNumInstances_throwsWhenVersionIsNull() {
+  void test_setNumInstances_throwsWhenVersionIsNull() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -104,7 +101,7 @@ public class AppEngineServiceUtilsImplTest {
   }
 
   @Test
-  public void test_setNumInstances_throwsWhenNumInstancesIsInvalid() {
+  void test_setNumInstances_throwsWhenNumInstancesIsInvalid() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -113,32 +110,32 @@ public class AppEngineServiceUtilsImplTest {
   }
 
   @Test
-  public void test_convertToSingleSubdomain_doesNothingWithoutServiceOrHostname() {
+  void test_convertToSingleSubdomain_doesNothingWithoutServiceOrHostname() {
     assertThat(appEngineServiceUtils.convertToSingleSubdomain("projectid.appspot.com"))
         .isEqualTo("projectid.appspot.com");
   }
 
   @Test
-  public void test_convertToSingleSubdomain_doesNothingWhenItCannotParseCorrectly() {
+  void test_convertToSingleSubdomain_doesNothingWhenItCannotParseCorrectly() {
     assertThat(appEngineServiceUtils.convertToSingleSubdomain("garbage.notrealhost.example"))
         .isEqualTo("garbage.notrealhost.example");
   }
 
   @Test
-  public void test_convertToSingleSubdomain_convertsWithServiceName() {
+  void test_convertToSingleSubdomain_convertsWithServiceName() {
     assertThat(appEngineServiceUtils.convertToSingleSubdomain("service.projectid.appspot.com"))
         .isEqualTo("service-dot-projectid.appspot.com");
   }
 
   @Test
-  public void test_convertToSingleSubdomain_convertsWithVersionAndServiceName() {
+  void test_convertToSingleSubdomain_convertsWithVersionAndServiceName() {
     assertThat(
             appEngineServiceUtils.convertToSingleSubdomain("version.service.projectid.appspot.com"))
         .isEqualTo("version-dot-service-dot-projectid.appspot.com");
   }
 
   @Test
-  public void test_convertToSingleSubdomain_convertsWithInstanceAndVersionAndServiceName() {
+  void test_convertToSingleSubdomain_convertsWithInstanceAndVersionAndServiceName() {
     assertThat(
             appEngineServiceUtils.convertToSingleSubdomain(
                 "instanceid.version.service.projectid.appspot.com"))

@@ -26,6 +26,7 @@ import static google.registry.config.RegistryConfig.getContactAndHostRoidSuffix;
 import static google.registry.config.RegistryConfig.getContactAutomaticTransferLength;
 import static google.registry.model.EppResourceUtils.createDomainRepoId;
 import static google.registry.model.EppResourceUtils.createRepoId;
+import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.model.ResourceTransferUtils.createTransferResponse;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
@@ -71,6 +72,7 @@ import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
+import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
@@ -119,12 +121,16 @@ public class DatastoreHelper {
                   String.class));
 
   public static HostResource newHostResource(String hostName) {
+    return newHostResourceWithRoid(hostName, generateNewContactHostRoid());
+  }
+
+  public static HostResource newHostResourceWithRoid(String hostName, String repoId) {
     return new HostResource.Builder()
         .setHostName(hostName)
         .setCreationClientId("TheRegistrar")
         .setPersistedCurrentSponsorClientId("TheRegistrar")
         .setCreationTimeForTest(START_OF_TIME)
-        .setRepoId(generateNewContactHostRoid())
+        .setRepoId(repoId)
         .build();
   }
 
@@ -498,9 +504,10 @@ public class DatastoreHelper {
       DateTime creationTime,
       DateTime expirationTime) {
     String domainName = String.format("%s.%s", label, tld);
+    String repoId = generateNewDomainRoid(tld);
     DomainBase domain =
         new DomainBase.Builder()
-            .setRepoId(generateNewDomainRoid(tld))
+            .setRepoId(repoId)
             .setDomainName(domainName)
             .setPersistedCurrentSponsorClientId("TheRegistrar")
             .setCreationClientId("TheRegistrar")
@@ -513,7 +520,7 @@ public class DatastoreHelper {
                     DesignatedContact.create(Type.TECH, contact.createVKey())))
             .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("fooBAR")))
             .addGracePeriod(
-                GracePeriod.create(GracePeriodStatus.ADD, now.plusDays(10), "foo", null))
+                GracePeriod.create(GracePeriodStatus.ADD, repoId, now.plusDays(10), "foo", null))
             .build();
     HistoryEntry historyEntryDomainCreate =
         persistResource(
@@ -826,6 +833,12 @@ public class DatastoreHelper {
         .filter(subType::isInstance)
         .map(subType::cast)
         .collect(onlyElement());
+  }
+
+  public static void assertAllocationTokens(AllocationToken... expectedTokens) {
+    assertThat(ofy().load().type(AllocationToken.class).list())
+        .comparingElementsUsing(immutableObjectCorrespondence("updateTimestamp", "creationTime"))
+        .containsExactlyElementsIn(expectedTokens);
   }
 
   /** Returns a newly allocated, globally unique domain repoId of the format HEX-TLD. */

@@ -33,7 +33,7 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.EUR;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -112,7 +112,11 @@ class DomainRestoreRequestFlowTest
             .setDeletionTime(clock.nowUtc().plusDays(35))
             .addGracePeriod(
                 GracePeriod.create(
-                    GracePeriodStatus.REDEMPTION, clock.nowUtc().plusDays(1), "foo", null))
+                    GracePeriodStatus.REDEMPTION,
+                    domain.getRepoId(),
+                    clock.nowUtc().plusDays(1),
+                    "foo",
+                    null))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
             .setDeletePollMessage(
                 persistResource(

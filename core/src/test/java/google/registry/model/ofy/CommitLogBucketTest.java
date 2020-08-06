@@ -20,13 +20,13 @@ import static google.registry.model.ofy.CommitLogBucket.loadAllBuckets;
 import static google.registry.model.ofy.CommitLogBucket.loadBucket;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.annotation.Cache;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -38,7 +38,7 @@ public class CommitLogBucketTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
   private CommitLogBucket bucket;
 
   @BeforeEach

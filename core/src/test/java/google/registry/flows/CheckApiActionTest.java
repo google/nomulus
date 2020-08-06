@@ -277,7 +277,7 @@ class CheckApiActionTest {
             "tier", "premium",
             "status", "success",
             "available", false,
-            "reason", "Allocation token required");
+            "reason", "Reserved; alloc. token required");
 
     verifySuccessMetric(PREMIUM, RESERVED);
   }

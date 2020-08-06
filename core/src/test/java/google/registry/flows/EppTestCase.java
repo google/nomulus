@@ -45,7 +45,7 @@ import google.registry.persistence.VKey;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -60,7 +60,7 @@ public class EppTestCase {
   private static final MediaType APPLICATION_EPP_XML_UTF8 =
       MediaType.create("application", "epp+xml").withCharset(UTF_8);
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   protected final FakeClock clock = new FakeClock();
 

@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import org.gradle.api.internal.tasks.userinput.UserInputHandler
-
 plugins {
   id "org.flywaydb.flyway" version "6.0.1"
   id 'maven-publish'
@@ -159,12 +157,12 @@ dependencies {
   testCompile deps['com.google.guava:guava']
   testCompile deps['com.google.truth:truth']
   testRuntime deps['io.github.java-diff-utils:java-diff-utils']
-  testCompile deps['junit:junit']
   testCompile deps['org.junit.jupiter:junit-jupiter-api']
   testCompile deps['org.junit.jupiter:junit-jupiter-engine']
-  testCompile deps['org.junit.vintage:junit-vintage-engine']
   testCompile deps['org.testcontainers:postgresql']
   testCompile deps['org.testcontainers:testcontainers']
+  testCompile deps['org.testcontainers:junit-jupiter']
+  testCompile deps['org.testcontainers:postgresql']
   testCompile project(path: ':common', configuration: 'testing')
 }
 

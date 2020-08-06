@@ -14,12 +14,13 @@
 
 package google.registry.model.history;
 
+import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatastoreHelper.newHostResourceWithRoid;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostHistory;
@@ -37,16 +38,9 @@ public class HostHistoryTest extends EntityTestCase {
 
   @Test
   void testPersistence() {
-    saveRegistrar("registrar1");
+    saveRegistrar("TheRegistrar");
 
-    HostResource host =
-        new HostResource.Builder()
-            .setRepoId("host1")
-            .setHostName("ns1.example.com")
-            .setCreationClientId("TheRegistrar")
-            .setPersistedCurrentSponsorClientId("TheRegistrar")
-            .setInetAddresses(ImmutableSet.of())
-            .build();
+    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
     jpaTm().transact(() -> jpaTm().saveNew(host));
     VKey<HostResource> hostVKey = VKey.createSql(HostResource.class, "host1");
     HostResource hostFromDb = jpaTm().transact(() -> jpaTm().load(hostVKey));
@@ -55,7 +49,7 @@ public class HostHistoryTest extends EntityTestCase {
             .setType(HistoryEntry.Type.HOST_CREATE)
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
             .setModificationTime(fakeClock.nowUtc())
-            .setClientId("registrar1")
+            .setClientId("TheRegistrar")
             .setTrid(Trid.create("ABC-123", "server-trid"))
             .setBySuperuser(false)
             .setReason("reason")
@@ -70,6 +64,8 @@ public class HostHistoryTest extends EntityTestCase {
               HostHistory fromDatabase =
                   jpaTm().load(VKey.createSql(HostHistory.class, hostHistory.getId()));
               assertHostHistoriesEqual(fromDatabase, hostHistory);
+              assertThat(fromDatabase.getHostRepoId().getSqlKey())
+                  .isEqualTo(hostHistory.getHostRepoId().getSqlKey());
             });
   }
 

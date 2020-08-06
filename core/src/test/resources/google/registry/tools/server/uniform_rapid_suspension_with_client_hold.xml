@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <update>
+      <domain:update xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>evil.tld</domain:name>
+        <domain:add>
+          <domain:ns>
+            <domain:hostObj>urs1.example.com</domain:hostObj>
+            <domain:hostObj>urs2.example.com</domain:hostObj>
+          </domain:ns>
+          <domain:status s="serverDeleteProhibited"/>
+          <domain:status s="serverTransferProhibited"/>
+          <domain:status s="serverUpdateProhibited"/>
+        </domain:add>
+        <domain:rem>
+          <domain:ns>
+            <domain:hostObj>ns2.example.com</domain:hostObj>
+            <domain:hostObj>ns1.example.com</domain:hostObj>
+          </domain:ns>
+          <domain:status s="clientHold"/>
+        </domain:rem>
+      </domain:update>
+    </update>
+    <extension>
+      <secDNS:update xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1">
+        <secDNS:rem>
+          <secDNS:all>true</secDNS:all>
+        </secDNS:rem>
+        <secDNS:add>
+          <secDNS:dsData>
+            <secDNS:keyTag>1</secDNS:keyTag>
+            <secDNS:alg>1</secDNS:alg>
+            <secDNS:digestType>1</secDNS:digestType>
+            <secDNS:digest>ABCD</secDNS:digest>
+          </secDNS:dsData>
+        </secDNS:add>
+      </secDNS:update>
+      <metadata:metadata xmlns:metadata="urn:google:params:xml:ns:metadata-1.0">
+        <metadata:reason>Uniform Rapid Suspension</metadata:reason>
+        <metadata:requestedByRegistrar>false</metadata:requestedByRegistrar>
+      </metadata:metadata>
+    </extension>
+    <clTRID>RegistryTool</clTRID>
+  </command>
+</epp>

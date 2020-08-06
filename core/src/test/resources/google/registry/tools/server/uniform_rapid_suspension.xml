@@ -31,7 +31,7 @@
             <secDNS:keyTag>1</secDNS:keyTag>
             <secDNS:alg>1</secDNS:alg>
             <secDNS:digestType>1</secDNS:digestType>
-            <secDNS:digest>abc</secDNS:digest>
+            <secDNS:digest>ABCD</secDNS:digest>
           </secDNS:dsData>
         </secDNS:add>
       </secDNS:update>

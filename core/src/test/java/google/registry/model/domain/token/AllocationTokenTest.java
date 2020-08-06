@@ -27,7 +27,7 @@ import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -44,7 +44,7 @@ import org.junit.jupiter.api.Test;
 class AllocationTokenTest extends EntityTestCase {
 
   @BeforeEach
-  void setup() {
+  void beforeEach() {
     createTld("foo");
   }
 
@@ -59,6 +59,8 @@ class AllocationTokenTest extends EntityTestCase {
                 .setAllowedTlds(ImmutableSet.of("dev", "app"))
                 .setAllowedClientIds(ImmutableSet.of("TheRegistrar, NewRegistrar"))
                 .setDiscountFraction(0.5)
+                .setDiscountPremiums(true)
+                .setDiscountYears(3)
                 .setTokenStatusTransitions(
                     ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
                         .put(START_OF_TIME, NOT_STARTED)
@@ -155,7 +157,7 @@ class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
-  void testBuild_invalidTLD() {
+  void testBuild_invalidTld() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -269,6 +271,50 @@ class AllocationTokenTest extends EntityTestCase {
   }
 
   @Test
+  void testSetDiscountFractionTooHigh() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new AllocationToken.Builder().setDiscountFraction(1.1));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Discount fraction must be between 0 and 1 inclusive");
+  }
+
+  @Test
+  void testSetDiscountFractionTooLow() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new AllocationToken.Builder().setDiscountFraction(-.0001));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Discount fraction must be between 0 and 1 inclusive");
+  }
+
+  @Test
+  void testSetDiscountYearsTooHigh() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new AllocationToken.Builder().setDiscountYears(11));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Discount years must be between 1 and 10 inclusive");
+  }
+
+  @Test
+  void testSetDiscountYearsTooLow() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new AllocationToken.Builder().setDiscountYears(0));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Discount years must be between 1 and 10 inclusive");
+  }
+
+  @Test
   void testBuild_noTokenType() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -293,6 +339,38 @@ class AllocationTokenTest extends EntityTestCase {
             IllegalArgumentException.class,
             () -> new AllocationToken.Builder().setToken("").setTokenType(SINGLE_USE).build());
     assertThat(thrown).hasMessageThat().isEqualTo("Token must not be blank");
+  }
+
+  @Test
+  void testBuild_discountPremiumsRequiresDiscountFraction() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                new AllocationToken.Builder()
+                    .setToken("abc")
+                    .setTokenType(SINGLE_USE)
+                    .setDiscountPremiums(true)
+                    .build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Discount premiums can only be specified along with a discount fraction");
+  }
+
+  @Test
+  void testBuild_discountYearsRequiresDiscountFraction() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                new AllocationToken.Builder()
+                    .setToken("abc")
+                    .setTokenType(SINGLE_USE)
+                    .setDiscountYears(2)
+                    .build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Discount years can only be specified along with a discount fraction");
   }
 
   private void assertBadInitialTransition(TokenStatus status) {

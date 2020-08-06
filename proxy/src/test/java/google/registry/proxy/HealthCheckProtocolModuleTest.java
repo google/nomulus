@@ -19,20 +19,17 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** End-to-end tests for {@link HealthCheckProtocolModule}. */
-@RunWith(JUnit4.class)
-public class HealthCheckProtocolModuleTest extends ProtocolModuleTest {
+class HealthCheckProtocolModuleTest extends ProtocolModuleTest {
 
-  public HealthCheckProtocolModuleTest() {
+  HealthCheckProtocolModuleTest() {
     super(TestComponent::healthCheckHandlers);
   }
 
   @Test
-  public void testSuccess_expectedInboundMessage() {
+  void testSuccess_expectedInboundMessage() {
     // no inbound message passed along.
     assertThat(
             channel.writeInbound(
@@ -47,7 +44,7 @@ public class HealthCheckProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testSuccess_InboundMessageTooShort() {
+  void testSuccess_InboundMessageTooShort() {
     String shortRequest = "HEALTH_CHECK";
     // no inbound message passed along.
     assertThat(channel.writeInbound(Unpooled.wrappedBuffer(shortRequest.getBytes(US_ASCII))))
@@ -58,7 +55,7 @@ public class HealthCheckProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testSuccess_InboundMessageTooLong() {
+  void testSuccess_InboundMessageTooLong() {
     String longRequest = "HEALTH_CHECK_REQUEST HELLO";
     // no inbound message passed along.
     assertThat(channel.writeInbound(Unpooled.wrappedBuffer(longRequest.getBytes(US_ASCII))))
@@ -76,7 +73,7 @@ public class HealthCheckProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testSuccess_InboundMessageNotMatch() {
+  void testSuccess_InboundMessageNotMatch() {
     String invalidRequest = "HEALTH_CHECK_REQUESX";
     // no inbound message passed along.
     assertThat(channel.writeInbound(Unpooled.wrappedBuffer(invalidRequest.getBytes(US_ASCII))))

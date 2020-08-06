@@ -17,7 +17,7 @@ package google.registry.testing;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -26,7 +26,7 @@ import google.registry.schema.domain.RegistryLock;
 import java.sql.SQLException;
 import java.util.Optional;
 import javax.persistence.PersistenceException;
-import org.junit.function.ThrowingRunnable;
+import org.junit.jupiter.api.function.Executable;
 
 /** Static utils for setting up and retrieving test resources from the SQL database. */
 public class SqlHelper {
@@ -65,8 +65,8 @@ public class SqlHelper {
             () -> jpaTm().saveNew(makeRegistrar1().asBuilder().setClientId(clientId).build()));
   }
 
-  public static void assertThrowForeignKeyViolation(ThrowingRunnable runnable) {
-    PersistenceException thrown = assertThrows(PersistenceException.class, runnable);
+  public static void assertThrowForeignKeyViolation(Executable executable) {
+    PersistenceException thrown = assertThrows(PersistenceException.class, executable);
     assertThat(Throwables.getRootCause(thrown)).isInstanceOf(SQLException.class);
     assertThat(Throwables.getRootCause(thrown))
         .hasMessageThat()

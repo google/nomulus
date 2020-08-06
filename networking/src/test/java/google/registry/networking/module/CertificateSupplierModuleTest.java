@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.networking.handler.SslInitializerTestUtils.getKeyPair;
 import static google.registry.networking.handler.SslInitializerTestUtils.signKeyPair;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import dagger.BindsInstance;
@@ -38,14 +38,11 @@ import java.util.function.Supplier;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CertificateSupplierModule}. */
-@RunWith(JUnit4.class)
-public class CertificateSupplierModuleTest {
+class CertificateSupplierModuleTest {
 
   private SelfSignedCaCertificate ssc;
   private PrivateKey key;
@@ -60,8 +57,8 @@ public class CertificateSupplierModuleTest {
         .build();
   }
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     ssc = SelfSignedCaCertificate.create();
     KeyPair keyPair = getKeyPair();
     key = keyPair.getPrivate();
@@ -69,14 +66,14 @@ public class CertificateSupplierModuleTest {
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     component = createComponentForPem(cert, ssc.cert(), key);
     assertThat(component.privateKeySupplier().get()).isEqualTo(key);
     assertThat(component.certificatesSupplier().get()).containsExactly(cert, ssc.cert()).inOrder();
   }
 
   @Test
-  public void testSuccess_certificateChainNotContinuous() throws Exception {
+  void testSuccess_certificateChainNotContinuous() throws Exception {
     component = createComponentForPem(cert, key, ssc.cert());
     assertThat(component.privateKeySupplier().get()).isEqualTo(key);
     assertThat(component.certificatesSupplier().get()).containsExactly(cert, ssc.cert()).inOrder();
@@ -84,7 +81,7 @@ public class CertificateSupplierModuleTest {
 
   @Test
   @SuppressWarnings("ReturnValueIgnored")
-  public void testFailure_noPrivateKey() throws Exception {
+  void testFailure_noPrivateKey() throws Exception {
     component = createComponentForPem(cert, ssc.cert());
     IllegalStateException thrown =
         assertThrows(IllegalStateException.class, () -> component.privateKeySupplier().get());
@@ -93,7 +90,7 @@ public class CertificateSupplierModuleTest {
 
   @Test
   @SuppressWarnings("ReturnValueIgnored")
-  public void testFailure_twoPrivateKeys() throws Exception {
+  void testFailure_twoPrivateKeys() throws Exception {
     component = createComponentForPem(cert, ssc.cert(), key, ssc.key());
     IllegalStateException thrown =
         assertThrows(IllegalStateException.class, () -> component.privateKeySupplier().get());
@@ -102,7 +99,7 @@ public class CertificateSupplierModuleTest {
 
   @Test
   @SuppressWarnings("ReturnValueIgnored")
-  public void testFailure_certificatesOutOfOrder() throws Exception {
+  void testFailure_certificatesOutOfOrder() throws Exception {
     component = createComponentForPem(ssc.cert(), cert, key);
     IllegalStateException thrown =
         assertThrows(IllegalStateException.class, () -> component.certificatesSupplier().get());
@@ -111,7 +108,7 @@ public class CertificateSupplierModuleTest {
 
   @Test
   @SuppressWarnings("ReturnValueIgnored")
-  public void testFailure_noCertificates() throws Exception {
+  void testFailure_noCertificates() throws Exception {
     component = createComponentForPem(key);
     IllegalStateException thrown =
         assertThrows(IllegalStateException.class, () -> component.certificatesSupplier().get());

@@ -14,7 +14,6 @@
 
 apply plugin: 'java'
 apply plugin: 'nebula.lint'
-apply plugin: 'net.ltgt.apt'
 apply plugin: 'net.ltgt.errorprone'
 apply plugin: 'checkstyle'
 apply plugin: 'jacoco'
@@ -68,7 +67,6 @@ configurations {
 
 dependencies {
     // compatibility with Java 8
-    errorproneJavac("com.google.errorprone:javac:9+181-r4173-1")
     errorprone("com.google.errorprone:error_prone_core:2.3.3")
 }
 
@@ -101,8 +99,12 @@ tasks.withType(JavaCompile).configureEach {
     // The -Werror flag causes Intellij to fail on deprecated api use.
     // Allow IDE user to turn off this flag by specifying a Gradle VM
     // option from inside the IDE.
-    if (System.getProperty('no_werror') != 'true') {
-        options.compilerArgs << "-Werror"
+    if (System.getProperty('no_werror') != 'true' &&
+        // The core project throws an warning about Gradle annotation processor
+        // not compatible with Java source version > 8. Re-assess once the
+        // warning is fixed.
+        getProject().name != 'core') {
+      options.compilerArgs << "-Werror"
     }
     options.errorprone.disableWarningsInGeneratedCode = true
     options.errorprone.errorproneArgumentProviders.add([
@@ -117,8 +119,12 @@ tasks.withType(JavaCompile).configureEach {
     }
 }
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+// TODO: Change source version to 11 after target version is changed to 11 and
+// once we figure out what's wrong with Dagger compilation with source version
+// >8.
+sourceCompatibility = '8'
+// TODO: Change target version to 11. Source version can stay at 8.
+targetCompatibility = '8'
 
 compileJava { options.encoding = "UTF-8" }
 compileTestJava { options.encoding = "UTF-8" }

@@ -24,7 +24,7 @@ import static google.registry.schema.cursor.CursorDao.loadAndCompare;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
 import google.registry.model.domain.DomainBase;

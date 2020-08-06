@@ -16,12 +16,12 @@ package google.registry.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.tmch.TmchTestData.loadSmd;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.tmch.TmchXmlSignature.CertificateSignatureException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -43,7 +43,7 @@ class TmchXmlSignatureTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   // This should be a date which falls within the validity range of the test files contained in the
   // testdata/active directory. Note that test files claiming to be valid for a particular date

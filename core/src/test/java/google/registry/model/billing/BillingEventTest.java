@@ -25,7 +25,7 @@ import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -385,10 +385,11 @@ public class BillingEventTest extends EntityTestCase {
 
   @Test
   void testSuccess_cancellation_forGracePeriod_withOneTime() {
-    BillingEvent.Cancellation newCancellation = BillingEvent.Cancellation.forGracePeriod(
-        GracePeriod.forBillingEvent(GracePeriodStatus.ADD, oneTime),
-        historyEntry2,
-        "foo.tld");
+    BillingEvent.Cancellation newCancellation =
+        BillingEvent.Cancellation.forGracePeriod(
+            GracePeriod.forBillingEvent(GracePeriodStatus.ADD, domain.getRepoId(), oneTime),
+            historyEntry2,
+            "foo.tld");
     // Set ID to be the same to ignore for the purposes of comparison.
     newCancellation = newCancellation.asBuilder().setId(cancellationOneTime.getId()).build();
     assertThat(newCancellation).isEqualTo(cancellationOneTime);
@@ -400,6 +401,7 @@ public class BillingEventTest extends EntityTestCase {
         BillingEvent.Cancellation.forGracePeriod(
             GracePeriod.createForRecurring(
                 GracePeriodStatus.AUTO_RENEW,
+                domain.getRepoId(),
                 now.plusYears(1).plusDays(45),
                 "a registrar",
                 recurring.createVKey()),
@@ -418,7 +420,10 @@ public class BillingEventTest extends EntityTestCase {
             () ->
                 BillingEvent.Cancellation.forGracePeriod(
                     GracePeriod.createWithoutBillingEvent(
-                        GracePeriodStatus.REDEMPTION, now.plusDays(1), "a registrar"),
+                        GracePeriodStatus.REDEMPTION,
+                        domain.getRepoId(),
+                        now.plusDays(1),
+                        "a registrar"),
                     historyEntry,
                     "foo.tld"));
     assertThat(thrown).hasMessageThat().contains("grace period without billing event");

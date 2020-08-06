@@ -43,17 +43,16 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.stream.Stream;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Unit tests for {@link SslServerInitializer}.
@@ -66,8 +65,7 @@ import org.junit.runners.Parameterized.Parameters;
  * <p>The local addresses used in each test method must to be different, otherwise tests run in
  * parallel may interfere with each other.
  */
-@RunWith(Parameterized.class)
-public class SslServerInitializerTest {
+class SslServerInitializerTest {
 
   /** Fake host to test if the SSL engine gets the correct peer host. */
   private static final String SSL_HOST = "www.example.tld";
@@ -75,22 +73,23 @@ public class SslServerInitializerTest {
   /** Fake port to test if the SSL engine gets the correct peer port. */
   private static final int SSL_PORT = 12345;
 
-  @Rule public NettyRule nettyRule = new NettyRule();
+  @RegisterExtension NettyExtension nettyExtension = new NettyExtension();
 
-  @Parameter(0)
-  public SslProvider sslProvider;
-
-  // We do our best effort to test all available SSL providers.
-  @Parameters(name = "{0}")
-  public static SslProvider[] data() {
-    return OpenSsl.isAvailable()
-        ? new SslProvider[] {SslProvider.OPENSSL, SslProvider.JDK}
-        : new SslProvider[] {SslProvider.JDK};
+  @SuppressWarnings("unused")
+  static Stream<Arguments> provideTestCombinations() {
+    Stream.Builder<Arguments> args = Stream.builder();
+    // We do our best effort to test all available SSL providers.
+    args.add(Arguments.of(SslProvider.JDK));
+    if (OpenSsl.isAvailable()) {
+      args.add(Arguments.of(SslProvider.OPENSSL));
+    }
+    return args.build();
   }
 
   private ChannelHandler getServerHandler(
       boolean requireClientCert,
       boolean validateClientCert,
+      SslProvider sslProvider,
       PrivateKey privateKey,
       X509Certificate... certificates) {
     return new SslServerInitializer<LocalChannel>(
@@ -102,7 +101,10 @@ public class SslServerInitializerTest {
   }
 
   private ChannelHandler getClientHandler(
-      X509Certificate trustedCertificate, PrivateKey privateKey, X509Certificate certificate) {
+      SslProvider sslProvider,
+      X509Certificate trustedCertificate,
+      PrivateKey privateKey,
+      X509Certificate certificate) {
     return new ChannelInitializer<LocalChannel>() {
       @Override
       protected void initChannel(LocalChannel ch) throws Exception {
@@ -125,8 +127,9 @@ public class SslServerInitializerTest {
     };
   }
 
-  @Test
-  public void testSuccess_swappedInitializerWithSslHandler() throws Exception {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testSuccess_swappedInitializerWithSslHandler(SslProvider sslProvider) throws Exception {
     SelfSignedCaCertificate ssc = SelfSignedCaCertificate.create(SSL_HOST);
     SslServerInitializer<EmbeddedChannel> sslServerInitializer =
         new SslServerInitializer<>(
@@ -145,19 +148,22 @@ public class SslServerInitializerTest {
     assertThat(channel.isActive()).isTrue();
   }
 
-  @Test
-  public void testSuccess_trustAnyClientCert() throws Exception {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testSuccess_trustAnyClientCert(SslProvider sslProvider) throws Exception {
     SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
     LocalAddress localAddress = new LocalAddress("TRUST_ANY_CLIENT_CERT_" + sslProvider);
 
-    nettyRule.setUpServer(
-        localAddress, getServerHandler(true, false, serverSsc.key(), serverSsc.cert()));
+    nettyExtension.setUpServer(
+        localAddress,
+        getServerHandler(true, false, sslProvider, serverSsc.key(), serverSsc.cert()));
     SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create();
-    nettyRule.setUpClient(
-        localAddress, getClientHandler(serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
+    nettyExtension.setUpClient(
+        localAddress,
+        getClientHandler(sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
 
-    SSLSession sslSession = setUpSslChannel(nettyRule.getClientChannel(), serverSsc.cert());
-    nettyRule.assertThatMessagesWork();
+    SSLSession sslSession = setUpSslChannel(nettyExtension.getClientChannel(), serverSsc.cert());
+    nettyExtension.assertThatMessagesWork();
 
     // Verify that the SSL session gets the client cert. Note that this SslSession is for the client
     // channel, therefore its local certificates are the remote certificates of the SslSession for
@@ -166,59 +172,66 @@ public class SslServerInitializerTest {
     assertThat(sslSession.getPeerCertificates()).asList().containsExactly(serverSsc.cert());
   }
 
-  @Test
-  public void testFailure_clientCertExpired() throws Exception {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testFailure_clientCertExpired(SslProvider sslProvider) throws Exception {
     SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
     LocalAddress localAddress = new LocalAddress("CLIENT_CERT_EXPIRED_" + sslProvider);
 
-    nettyRule.setUpServer(
-        localAddress, getServerHandler(true, true, serverSsc.key(), serverSsc.cert()));
+    nettyExtension.setUpServer(
+        localAddress, getServerHandler(true, true, sslProvider, serverSsc.key(), serverSsc.cert()));
     SelfSignedCaCertificate clientSsc =
         SelfSignedCaCertificate.create(
             "CLIENT",
             Date.from(Instant.now().minus(Duration.ofDays(2))),
             Date.from(Instant.now().minus(Duration.ofDays(1))));
-    nettyRule.setUpClient(
-        localAddress, getClientHandler(serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
+    nettyExtension.setUpClient(
+        localAddress,
+        getClientHandler(sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
 
     verifySslException(
-        nettyRule.getServerChannel(),
+        nettyExtension.getServerChannel(),
         channel -> channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get(),
         CertificateExpiredException.class);
   }
 
-  @Test
-  public void testFailure_clientCertNotYetValid() throws Exception {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testFailure_clientCertNotYetValid(SslProvider sslProvider) throws Exception {
     SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
     LocalAddress localAddress = new LocalAddress("CLIENT_CERT_EXPIRED_" + sslProvider);
 
-    nettyRule.setUpServer(
-        localAddress, getServerHandler(true, true, serverSsc.key(), serverSsc.cert()));
+    nettyExtension.setUpServer(
+        localAddress, getServerHandler(true, true, sslProvider, serverSsc.key(), serverSsc.cert()));
     SelfSignedCaCertificate clientSsc =
         SelfSignedCaCertificate.create(
             "CLIENT",
             Date.from(Instant.now().plus(Duration.ofDays(1))),
             Date.from(Instant.now().plus(Duration.ofDays(2))));
-    nettyRule.setUpClient(
-        localAddress, getClientHandler(serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
+    nettyExtension.setUpClient(
+        localAddress,
+        getClientHandler(sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
 
     verifySslException(
-        nettyRule.getServerChannel(),
+        nettyExtension.getServerChannel(),
         channel -> channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get(),
         CertificateNotYetValidException.class);
   }
 
-  @Test
-  public void testSuccess_doesNotRequireClientCert() throws Exception {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testSuccess_doesNotRequireClientCert(SslProvider sslProvider) throws Exception {
     SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
     LocalAddress localAddress = new LocalAddress("DOES_NOT_REQUIRE_CLIENT_CERT_" + sslProvider);
 
-    nettyRule.setUpServer(
-        localAddress, getServerHandler(false, false, serverSsc.key(), serverSsc.cert()));
-    nettyRule.setUpClient(localAddress, getClientHandler(serverSsc.cert(), null, null));
+    nettyExtension.setUpServer(
+        localAddress,
+        getServerHandler(false, false, sslProvider, serverSsc.key(), serverSsc.cert()));
+    nettyExtension.setUpClient(
+        localAddress, getClientHandler(sslProvider, serverSsc.cert(), null, null));
 
-    SSLSession sslSession = setUpSslChannel(nettyRule.getClientChannel(), serverSsc.cert());
-    nettyRule.assertThatMessagesWork();
+    SSLSession sslSession = setUpSslChannel(nettyExtension.getClientChannel(), serverSsc.cert());
+    nettyExtension.assertThatMessagesWork();
 
     // Verify that the SSL session does not contain any client cert. Note that this SslSession is
     // for the client channel, therefore its local certificates are the remote certificates of the
@@ -227,32 +240,38 @@ public class SslServerInitializerTest {
     assertThat(sslSession.getPeerCertificates()).asList().containsExactly(serverSsc.cert());
   }
 
-  @Test
-  public void testSuccess_CertSignedByOtherCA() throws Exception {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testSuccess_CertSignedByOtherCa(SslProvider sslProvider) throws Exception {
     // The self-signed cert of the CA.
     SelfSignedCaCertificate caSsc = SelfSignedCaCertificate.create();
     KeyPair keyPair = getKeyPair();
     X509Certificate serverCert = signKeyPair(caSsc, keyPair, SSL_HOST);
     LocalAddress localAddress = new LocalAddress("CERT_SIGNED_BY_OTHER_CA_" + sslProvider);
 
-    nettyRule.setUpServer(
+    nettyExtension.setUpServer(
         localAddress,
         getServerHandler(
             true,
             false,
+            sslProvider,
             keyPair.getPrivate(),
             // Serving both the server cert, and the CA cert
             serverCert,
             caSsc.cert()));
     SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create();
-    nettyRule.setUpClient(
+    nettyExtension.setUpClient(
         localAddress,
         getClientHandler(
+            sslProvider,
             // Client trusts the CA cert
-            caSsc.cert(), clientSsc.key(), clientSsc.cert()));
+            caSsc.cert(),
+            clientSsc.key(),
+            clientSsc.cert()));
 
-    SSLSession sslSession = setUpSslChannel(nettyRule.getClientChannel(), serverCert, caSsc.cert());
-    nettyRule.assertThatMessagesWork();
+    SSLSession sslSession =
+        setUpSslChannel(nettyExtension.getClientChannel(), serverCert, caSsc.cert());
+    nettyExtension.assertThatMessagesWork();
 
     assertThat(sslSession.getLocalCertificates()).asList().containsExactly(clientSsc.cert());
     assertThat(sslSession.getPeerCertificates())
@@ -261,16 +280,19 @@ public class SslServerInitializerTest {
         .inOrder();
   }
 
-  @Test
-  public void testFailure_requireClientCertificate() throws Exception {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testFailure_requireClientCertificate(SslProvider sslProvider) throws Exception {
     SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
     LocalAddress localAddress = new LocalAddress("REQUIRE_CLIENT_CERT_" + sslProvider);
 
-    nettyRule.setUpServer(
-        localAddress, getServerHandler(true, false, serverSsc.key(), serverSsc.cert()));
-    nettyRule.setUpClient(
+    nettyExtension.setUpServer(
+        localAddress,
+        getServerHandler(true, false, sslProvider, serverSsc.key(), serverSsc.cert()));
+    nettyExtension.setUpClient(
         localAddress,
         getClientHandler(
+            sslProvider,
             serverSsc.cert(),
             // No client cert/private key used.
             null,
@@ -278,27 +300,30 @@ public class SslServerInitializerTest {
 
     // When the server rejects the client during handshake due to lack of client certificate, both
     // should throw exceptions.
-    nettyRule.assertThatServerRootCause().isInstanceOf(SSLHandshakeException.class);
-    nettyRule.assertThatClientRootCause().isInstanceOf(SSLException.class);
-    assertThat(nettyRule.getClientChannel().isActive()).isFalse();
+    nettyExtension.assertThatServerRootCause().isInstanceOf(SSLHandshakeException.class);
+    nettyExtension.assertThatClientRootCause().isInstanceOf(SSLException.class);
+    assertThat(nettyExtension.getClientChannel().isActive()).isFalse();
   }
 
-  @Test
-  public void testFailure_wrongHostnameInCertificate() throws Exception {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testFailure_wrongHostnameInCertificate(SslProvider sslProvider) throws Exception {
     SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create("wrong.com");
     LocalAddress localAddress = new LocalAddress("WRONG_HOSTNAME_" + sslProvider);
 
-    nettyRule.setUpServer(
-        localAddress, getServerHandler(true, false, serverSsc.key(), serverSsc.cert()));
+    nettyExtension.setUpServer(
+        localAddress,
+        getServerHandler(true, false, sslProvider, serverSsc.key(), serverSsc.cert()));
     SelfSignedCaCertificate clientSsc = SelfSignedCaCertificate.create();
-    nettyRule.setUpClient(
-        localAddress, getClientHandler(serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
+    nettyExtension.setUpClient(
+        localAddress,
+        getClientHandler(sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert()));
 
     // When the client rejects the server cert due to wrong hostname, both the server and the client
     // throw exceptions.
-    nettyRule.assertThatClientRootCause().isInstanceOf(CertificateException.class);
-    nettyRule.assertThatClientRootCause().hasMessageThat().contains(SSL_HOST);
-    nettyRule.assertThatServerRootCause().isInstanceOf(SSLException.class);
-    assertThat(nettyRule.getClientChannel().isActive()).isFalse();
+    nettyExtension.assertThatClientRootCause().isInstanceOf(CertificateException.class);
+    nettyExtension.assertThatClientRootCause().hasMessageThat().contains(SSL_HOST);
+    nettyExtension.assertThatServerRootCause().isInstanceOf(SSLException.class);
+    assertThat(nettyExtension.getClientChannel().isActive()).isFalse();
   }
 }

@@ -16,7 +16,7 @@ package google.registry.monitoring.blackbox.message;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.monitoring.blackbox.exception.EppClientException;
 import google.registry.monitoring.blackbox.exception.FailureException;
@@ -29,23 +29,21 @@ import java.util.List;
 import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-@RunWith(JUnit4.class)
-public class EppMessageTest {
+/** Unit tests for {@link EppMessage}. */
+class EppMessageTest {
 
   private Document xmlDoc = null;
   private Document greeting = null;
   private DocumentBuilder builder = null;
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     String xmlString =
         "<epp>"
             + "<textAndAttr myAttr1='1'>text1</textAndAttr>"
@@ -64,7 +62,7 @@ public class EppMessageTest {
   }
 
   @Test
-  public void xmlDocToStringSuccess() throws Exception {
+  void xmlDocToStringSuccess() throws Exception {
     Document xml = builder.newDocument();
     Element doc = xml.createElement("doc");
     Element title = xml.createElement("title");
@@ -88,7 +86,7 @@ public class EppMessageTest {
   }
 
   @Test
-  public void xmlDoctoByteArraySuccess() throws Exception {
+  void xmlDoctoByteArraySuccess() throws Exception {
     Document xml = builder.newDocument();
     Element doc = xml.createElement("doc");
     Element title = xml.createElement("title");
@@ -112,12 +110,12 @@ public class EppMessageTest {
   }
 
   @Test
-  public void eppValidateSuccess() throws Exception {
+  void eppValidateSuccess() throws Exception {
     EppMessage.eppValidate(greeting);
   }
 
   @Test
-  public void eppValidateFail() {
+  void eppValidateFail() {
     assertThrows(SAXException.class, () -> EppMessage.eppValidate(xmlDoc));
   }
 
@@ -127,7 +125,7 @@ public class EppMessageTest {
    * actual (greeting) respoonse.
    */
   @Test
-  public void verifyResponseSuccess() throws Exception {
+  void verifyResponseSuccess() throws Exception {
     ArrayList<String> list = new ArrayList<>();
     list.add("epp");
     list.add("//textAndAttr[@myAttr1='1'] | //textAndAttr[child::text()='text1']");
@@ -139,7 +137,7 @@ public class EppMessageTest {
   }
 
   @Test
-  public void verifyEppResponseSuccess() throws Exception {
+  void verifyEppResponseSuccess() throws Exception {
     ArrayList<String> list = new ArrayList<>();
     list.add("*");
     list.add("/eppns:epp");
@@ -151,7 +149,7 @@ public class EppMessageTest {
   }
 
   @Test
-  public void verifyResponseMissingTextFail() {
+  void verifyResponseMissingTextFail() {
     ArrayList<String> list = new ArrayList<>();
     list.add("epp");
     list.add("//textAndAttr[child::text()='text2']");
@@ -160,7 +158,7 @@ public class EppMessageTest {
   }
 
   @Test
-  public void verifyResponseMissingAttrFail() {
+  void verifyResponseMissingAttrFail() {
     ArrayList<String> list = new ArrayList<>();
     list.add("epp");
     list.add("//textAndAttr/@myAttr2");
@@ -169,7 +167,7 @@ public class EppMessageTest {
   }
 
   @Test
-  public void verifyResponseSplitTextAttrFail() {
+  void verifyResponseSplitTextAttrFail() {
     ArrayList<String> list = new ArrayList<>();
     list.add("epp");
     list.add("//textAndAttrSplitRepeated[@myAttr3='3'][child::text()='text3']");
@@ -178,7 +176,7 @@ public class EppMessageTest {
   }
 
   @Test
-  public void getEppDocFromTemplateTest() throws Exception {
+  void getEppDocFromTemplateTest() throws Exception {
     Map<String, String> replaceMap = new HashMap<>();
     replaceMap.put("//eppns:expectedClTRID", "ABC-1234-CBA");
     replaceMap.put("//domainns:name", "foo");
@@ -189,7 +187,7 @@ public class EppMessageTest {
   }
 
   @Test
-  public void getEppDocFromTemplateTestFail() {
+  void getEppDocFromTemplateTestFail() {
     Map<String, String> replaceMap = new HashMap<>();
     replaceMap.put("//eppns:create", "ABC-1234-CBA");
     replaceMap.put("//domainns:name", "foo");
@@ -199,7 +197,7 @@ public class EppMessageTest {
   }
 
   @Test
-  public void checkValidDomainName() {
+  void checkValidDomainName() {
     String domainName = "good.tld";
     assertThat(domainName.matches(EppMessage.VALID_SLD_LABEL_REGEX)).isTrue();
     domainName = "good.tld.";

@@ -25,8 +25,8 @@ import javax.persistence.Entity;
  * A persisted history entry representing an EPP modification to a contact.
  *
  * <p>In addition to the general history fields (e.g. action time, registrar ID) we also persist a
- * copy of the host entity at this point in time. We persist a raw {@link ContactBase} so that the
- * foreign-keyed fields in that class can refer to this object.
+ * copy of the contact entity at this point in time. We persist a raw {@link ContactBase} so that
+ * the foreign-keyed fields in that class can refer to this object.
  */
 @Entity
 @javax.persistence.Table(

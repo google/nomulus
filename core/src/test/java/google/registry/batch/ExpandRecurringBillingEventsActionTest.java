@@ -31,7 +31,7 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -52,7 +52,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.schema.cursor.CursorDao;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +67,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ExpandRecurringBillingEventsActionTest
     extends MapreduceTestCase<ExpandRecurringBillingEventsAction> {
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   private final DateTime beginningOfTest = DateTime.parse("2000-10-02T00:00:00Z");
   private final FakeClock clock = new FakeClock(beginningOfTest);

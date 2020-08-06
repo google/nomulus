@@ -16,18 +16,15 @@ package google.registry.proxy.quota;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.proxy.ProxyConfig.Quota;
 import org.joda.time.Duration;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
 /** Unit Tests for {@link QuotaConfig} */
-@RunWith(JUnit4.class)
-public class QuotaConfigTest {
+class QuotaConfigTest {
 
   private QuotaConfig quotaConfig;
 
@@ -47,7 +44,7 @@ public class QuotaConfigTest {
   }
 
   @Test
-  public void testSuccess_regularConfig() {
+  void testSuccess_regularConfig() {
     quotaConfig = loadQuotaConfig("quota_config_regular.yaml");
     assertThat(quotaConfig.getRefreshPeriod()).isEqualTo(Duration.standardHours(1));
     validateQuota("abc", 10, 60);
@@ -56,7 +53,7 @@ public class QuotaConfigTest {
   }
 
   @Test
-  public void testSuccess_onlyDefault() {
+  void testSuccess_onlyDefault() {
     quotaConfig = loadQuotaConfig("quota_config_default.yaml");
     assertThat(quotaConfig.getRefreshPeriod()).isEqualTo(Duration.standardHours(1));
     validateQuota("abc", 100, 60);
@@ -65,14 +62,14 @@ public class QuotaConfigTest {
   }
 
   @Test
-  public void testSuccess_noRefresh_noRefill() {
+  void testSuccess_noRefresh_noRefill() {
     quotaConfig = loadQuotaConfig("quota_config_no_refresh_no_refill.yaml");
     assertThat(quotaConfig.getRefreshPeriod()).isEqualTo(Duration.ZERO);
     assertThat(quotaConfig.getRefillPeriod("no_match")).isEqualTo(Duration.ZERO);
   }
 
   @Test
-  public void testFailure_getTokenAmount_throwsOnUnlimitedTokens() {
+  void testFailure_getTokenAmount_throwsOnUnlimitedTokens() {
     quotaConfig = loadQuotaConfig("quota_config_unlimited_tokens.yaml");
     assertThat(quotaConfig.hasUnlimitedTokens("some_user")).isTrue();
     IllegalStateException e =
@@ -83,7 +80,7 @@ public class QuotaConfigTest {
   }
 
   @Test
-  public void testFailure_duplicateUserId() {
+  void testFailure_duplicateUserId() {
     IllegalArgumentException e =
         assertThrows(
             IllegalArgumentException.class, () -> loadQuotaConfig("quota_config_duplicate.yaml"));

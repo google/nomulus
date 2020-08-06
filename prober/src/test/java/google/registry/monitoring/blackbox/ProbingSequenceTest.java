@@ -37,10 +37,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 /**
@@ -56,8 +54,7 @@ import org.mockito.Mockito;
  * UnrecoverableStateException}, using mocks of the steps or actions, as the sequences are run using
  * the main thread (with {@link EmbeddedChannel}).
  */
-@RunWith(JUnit4.class)
-public class ProbingSequenceTest {
+class ProbingSequenceTest {
 
   private static final String PROTOCOL_NAME = "PROTOCOL";
   private static final String MESSAGE_NAME = "MESSAGE";
@@ -100,8 +97,8 @@ public class ProbingSequenceTest {
   /** Default mock {@link Clock} passed into each {@link ProbingSequence} tested */
   private Clock clock = new FakeClock();
 
-  @Before
-  public void setup() {
+  @BeforeEach
+  void beforeEach() {
     // To avoid a NullPointerException, we must have a protocol return persistent connection as
     // false.
     doReturn(true).when(mockProtocol).persistentConnection();
@@ -124,7 +121,7 @@ public class ProbingSequenceTest {
   }
 
   @Test
-  public void testSequenceBasicConstruction_Success() {
+  void testSequenceBasicConstruction_Success() {
     ProbingStep firstStep = Mockito.mock(ProbingStep.class);
     ProbingStep secondStep = Mockito.mock(ProbingStep.class);
     ProbingStep thirdStep = Mockito.mock(ProbingStep.class);
@@ -149,7 +146,7 @@ public class ProbingSequenceTest {
   }
 
   @Test
-  public void testSequenceAdvancedConstruction_Success() {
+  void testSequenceAdvancedConstruction_Success() {
     ProbingStep firstStep = Mockito.mock(ProbingStep.class);
     ProbingStep secondStep = Mockito.mock(ProbingStep.class);
     ProbingStep thirdStep = Mockito.mock(ProbingStep.class);
@@ -175,7 +172,7 @@ public class ProbingSequenceTest {
   }
 
   @Test
-  public void testRunStep_Success() throws UndeterminedStateException {
+  void testRunStep_Success() throws UndeterminedStateException {
     // Always returns a succeeded future on call to mockAction. Also advances the FakeClock by
     // standard LATENCY to check right latency is recorded.
     doAnswer(
@@ -229,7 +226,7 @@ public class ProbingSequenceTest {
   }
 
   @Test
-  public void testRunLoop_Success() throws UndeterminedStateException {
+  void testRunLoop_Success() throws UndeterminedStateException {
     // Always returns a succeeded future on call to mockAction. Also advances the FakeClock by
     // standard LATENCY to check right latency is recorded.
     doAnswer(
@@ -367,7 +364,7 @@ public class ProbingSequenceTest {
   }
 
   @Test
-  public void testRunStep_FailureRunning() throws UndeterminedStateException {
+  void testRunStep_FailureRunning() throws UndeterminedStateException {
     // Returns a failed future when calling the generated mock action. Also advances FakeClock by
     // LATENCY in order to check right latency is recorded.
     doAnswer(
@@ -402,7 +399,7 @@ public class ProbingSequenceTest {
   }
 
   @Test
-  public void testRunStep_FailureGenerating() throws UndeterminedStateException {
+  void testRunStep_FailureGenerating() throws UndeterminedStateException {
     // Mock first step throws an error when generating the first action, and advances the clock
     // by LATENCY.
     doAnswer(

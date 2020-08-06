@@ -21,7 +21,7 @@ import static google.registry.bigquery.BigqueryUtils.toBigqueryTimestampString;
 import static google.registry.bigquery.BigqueryUtils.toJobReferenceString;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.api.services.bigquery.model.JobReference;
 import java.util.concurrent.TimeUnit;

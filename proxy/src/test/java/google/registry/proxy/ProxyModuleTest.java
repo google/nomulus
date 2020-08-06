@@ -17,23 +17,20 @@ package google.registry.proxy;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.proxy.ProxyConfig.Environment.LOCAL;
 import static google.registry.proxy.ProxyConfig.getProxyConfig;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import google.registry.proxy.ProxyConfig.Environment;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ProxyModule}. */
-@RunWith(JUnit4.class)
-public class ProxyModuleTest {
+class ProxyModuleTest {
 
   private static final ProxyConfig PROXY_CONFIG = getProxyConfig(LOCAL);
   private final ProxyModule proxyModule = new ProxyModule();
 
   @Test
-  public void testSuccess_parseArgs_defaultArgs() {
+  void testSuccess_parseArgs_defaultArgs() {
     String[] args = {};
     proxyModule.parse(args);
     assertThat(proxyModule.provideWhoisPort(PROXY_CONFIG)).isEqualTo(PROXY_CONFIG.whois.port);
@@ -49,7 +46,7 @@ public class ProxyModuleTest {
   }
 
   @Test
-  public void testFailure_parseArgs_loggingInProduction() {
+  void testFailure_parseArgs_loggingInProduction() {
     String[] args = {"--env", "production", "--log"};
     IllegalArgumentException e =
         assertThrows(
@@ -63,7 +60,7 @@ public class ProxyModuleTest {
   }
 
   @Test
-  public void testFailure_parseArgs_wrongArguments() {
+  void testFailure_parseArgs_wrongArguments() {
     String[] args = {"--wrong_flag", "some_value"};
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> proxyModule.parse(args));
@@ -71,56 +68,56 @@ public class ProxyModuleTest {
   }
 
   @Test
-  public void testSuccess_parseArgs_log() {
+  void testSuccess_parseArgs_log() {
     String[] args = {"--log"};
     proxyModule.parse(args);
     assertThat(proxyModule.log).isTrue();
   }
 
   @Test
-  public void testSuccess_parseArgs_customWhoisPort() {
+  void testSuccess_parseArgs_customWhoisPort() {
     String[] args = {"--whois", "12345"};
     proxyModule.parse(args);
     assertThat(proxyModule.provideWhoisPort(PROXY_CONFIG)).isEqualTo(12345);
   }
 
   @Test
-  public void testSuccess_parseArgs_customEppPort() {
+  void testSuccess_parseArgs_customEppPort() {
     String[] args = {"--epp", "22222"};
     proxyModule.parse(args);
     assertThat(proxyModule.provideEppPort(PROXY_CONFIG)).isEqualTo(22222);
   }
 
   @Test
-  public void testSuccess_parseArgs_customHealthCheckPort() {
+  void testSuccess_parseArgs_customHealthCheckPort() {
     String[] args = {"--health_check", "23456"};
     proxyModule.parse(args);
     assertThat(proxyModule.provideHealthCheckPort(PROXY_CONFIG)).isEqualTo(23456);
   }
 
   @Test
-  public void testSuccess_parseArgs_customhttpWhoisPort() {
+  void testSuccess_parseArgs_customhttpWhoisPort() {
     String[] args = {"--http_whois", "12121"};
     proxyModule.parse(args);
     assertThat(proxyModule.provideHttpWhoisProtocol(PROXY_CONFIG)).isEqualTo(12121);
   }
 
   @Test
-  public void testSuccess_parseArgs_customhttpsWhoisPort() {
+  void testSuccess_parseArgs_customhttpsWhoisPort() {
     String[] args = {"--https_whois", "21212"};
     proxyModule.parse(args);
     assertThat(proxyModule.provideHttpsWhoisProtocol(PROXY_CONFIG)).isEqualTo(21212);
   }
 
   @Test
-  public void testSuccess_parseArgs_customEnvironment() {
+  void testSuccess_parseArgs_customEnvironment() {
     String[] args = {"--env", "ALpHa"};
     proxyModule.parse(args);
     assertThat(proxyModule.provideEnvironment()).isEqualTo(Environment.ALPHA);
   }
 
   @Test
-  public void testFailure_parseArgs_wrongEnvironment() {
+  void testFailure_parseArgs_wrongEnvironment() {
     String[] args = {"--env", "beta"};
     ParameterException e = assertThrows(ParameterException.class, () -> proxyModule.parse(args));
     assertThat(e).hasMessageThat().contains("Invalid value for --env parameter");

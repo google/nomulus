@@ -53,7 +53,7 @@ import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestEx
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -84,7 +84,7 @@ class InitSqlPipelineTest {
   @Order(Order.DEFAULT - 1)
   final transient DatastoreEntityExtension datastore = new DatastoreEntityExtension();
 
-  @RegisterExtension final transient InjectRule injectRule = new InjectRule();
+  @RegisterExtension final transient InjectExtension injectRule = new InjectExtension();
 
   @SuppressWarnings("WeakerAccess")
   @TempDir
@@ -214,7 +214,11 @@ class InitSqlPipelineTest {
                   .setSmdId("smdid")
                   .addGracePeriod(
                       GracePeriod.create(
-                          GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(1), "registrar", null))
+                          GracePeriodStatus.ADD,
+                          "4-COM",
+                          fakeClock.nowUtc().plusDays(1),
+                          "registrar",
+                          null))
                   .build());
       exportDir = store.export(exportRootDir.getAbsolutePath(), ALL_KINDS, ImmutableSet.of());
       commitLogDir = Files.createDirectory(tmpDir.resolve("commits")).toFile();

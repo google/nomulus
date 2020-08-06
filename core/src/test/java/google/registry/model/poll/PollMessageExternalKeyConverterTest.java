@@ -23,7 +23,7 @@ import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistActiveHost;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.domain.Period;
@@ -33,7 +33,7 @@ import google.registry.model.poll.PollMessageExternalKeyConverter.PollMessageExt
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,7 +46,7 @@ public class PollMessageExternalKeyConverterTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @RegisterExtension public InjectRule inject = new InjectRule();
+  @RegisterExtension public InjectExtension inject = new InjectExtension();
 
   private HistoryEntry historyEntry;
   private FakeClock clock = new FakeClock(DateTime.parse("2007-07-07T01:01:01Z"));

@@ -15,26 +15,20 @@
 package google.registry.monitoring.blackbox.handler;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import google.registry.monitoring.blackbox.exception.EppClientException;
 import google.registry.monitoring.blackbox.exception.FailureException;
-import google.registry.monitoring.blackbox.exception.UndeterminedStateException;
 import google.registry.monitoring.blackbox.message.EppRequestMessage;
 import google.registry.monitoring.blackbox.message.EppResponseMessage;
 import google.registry.monitoring.blackbox.util.EppUtils;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
-import java.io.IOException;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 /**
  * Unit tests for {@link EppActionHandler} and {@link EppMessageHandler} as well as integration
@@ -44,8 +38,7 @@ import org.xml.sax.SAXException;
  * of {@link EppResponseMessage}s with corresponding {@link EppRequestMessage} sent down channel
  * pipeline.
  */
-@RunWith(Parameterized.class)
-public class EppActionHandlerTest {
+class EppActionHandlerTest {
 
   private static final String USER_ID = "TEST_ID";
   private static final String USER_PASSWORD = "TEST_PASSWORD";
@@ -54,94 +47,74 @@ public class EppActionHandlerTest {
   private static final String DOMAIN_NAME = "TEST_DOMAIN_NAME.test";
   private static final String SERVER_ID = "TEST_SERVER_ID";
 
-  @Parameter(0)
-  public EppRequestMessage message;
-
   private EmbeddedChannel channel;
   private EppActionHandler actionHandler = new EppActionHandler();
   private EppMessageHandler messageHandler = new EppMessageHandler(EppUtils.getGreetingResponse());
 
-  // We test all relevant EPP actions
-  @Parameters(name = "{0}")
-  public static EppRequestMessage[] data() {
-    return new EppRequestMessage[] {
-      EppUtils.getHelloMessage(EppUtils.getGreetingResponse()),
-      EppUtils.getLoginMessage(EppUtils.getSuccessResponse(), USER_ID, USER_PASSWORD),
-      EppUtils.getCreateMessage(EppUtils.getSuccessResponse()),
-      EppUtils.getCreateMessage(EppUtils.getFailureResponse()),
-      EppUtils.getDeleteMessage(EppUtils.getSuccessResponse()),
-      EppUtils.getDeleteMessage(EppUtils.getFailureResponse()),
-      EppUtils.getLogoutMessage(EppUtils.getSuccessResponse()),
-      EppUtils.getCheckMessage(EppUtils.getDomainExistsResponse()),
-      EppUtils.getCheckMessage(EppUtils.getDomainNotExistsResponse())
-    };
+  @SuppressWarnings("unused")
+  static Stream<Arguments> provideTestCombinations() {
+    return Stream.of(
+            EppUtils.getHelloMessage(EppUtils.getGreetingResponse()),
+            EppUtils.getLoginMessage(EppUtils.getSuccessResponse(), USER_ID, USER_PASSWORD),
+            EppUtils.getCreateMessage(EppUtils.getSuccessResponse()),
+            EppUtils.getCreateMessage(EppUtils.getFailureResponse()),
+            EppUtils.getDeleteMessage(EppUtils.getSuccessResponse()),
+            EppUtils.getDeleteMessage(EppUtils.getFailureResponse()),
+            EppUtils.getLogoutMessage(EppUtils.getSuccessResponse()),
+            EppUtils.getCheckMessage(EppUtils.getDomainExistsResponse()),
+            EppUtils.getCheckMessage(EppUtils.getDomainNotExistsResponse()))
+        .map(Arguments::of);
   }
 
-  /** Setup main three handlers to be used in pipeline. */
-  @Before
-  public void setup() throws EppClientException {
+  private void setupRequestAndChannels(EppRequestMessage message, ChannelHandler... handlers)
+      throws Exception {
     message.modifyMessage(USER_CLIENT_TRID, DOMAIN_NAME);
-  }
-
-  private void setupEmbeddedChannel(ChannelHandler... handlers) {
     channel = new EmbeddedChannel(handlers);
   }
 
   private Document getResponse(EppResponseMessage response, boolean fail, String clTrid)
-      throws IOException, EppClientException {
-    if (response.name().equals("greeting")) {
-      if (fail) {
-        return EppUtils.getBasicResponse(true, clTrid, SERVER_ID);
-      } else {
-        return EppUtils.getGreeting();
-      }
-    } else if (response.name().equals("domainExists")) {
-      return EppUtils.getDomainCheck(!fail, clTrid, SERVER_ID, DOMAIN_NAME);
-
-    } else if (response.name().equals("domainNotExists")) {
-      return EppUtils.getDomainCheck(fail, clTrid, SERVER_ID, DOMAIN_NAME);
-
-    } else if (response.name().equals("success")) {
-      return EppUtils.getBasicResponse(!fail, clTrid, SERVER_ID);
-
-    } else {
-      return EppUtils.getBasicResponse(fail, clTrid, SERVER_ID);
+      throws Exception {
+    switch (response.name()) {
+      case "greeting":
+        if (fail) {
+          return EppUtils.getBasicResponse(true, clTrid, SERVER_ID);
+        } else {
+          return EppUtils.getGreeting();
+        }
+      case "domainExists":
+        return EppUtils.getDomainCheck(!fail, clTrid, SERVER_ID, DOMAIN_NAME);
+      case "domainNotExists":
+        return EppUtils.getDomainCheck(fail, clTrid, SERVER_ID, DOMAIN_NAME);
+      case "success":
+        return EppUtils.getBasicResponse(!fail, clTrid, SERVER_ID);
+      default:
+        return EppUtils.getBasicResponse(fail, clTrid, SERVER_ID);
     }
   }
 
-  @Test
-  public void testBasicAction_Success_Embedded()
-      throws SAXException, IOException, EppClientException, FailureException {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testBasicAction_Success_Embedded(EppRequestMessage message) throws Exception {
     // We simply use an embedded channel in this instance
-    setupEmbeddedChannel(actionHandler);
-
+    setupRequestAndChannels(message, actionHandler);
     ChannelFuture future = actionHandler.getFinishedFuture();
-
     EppResponseMessage response = message.getExpectedResponse();
-
     response.getDocument(
         EppUtils.docToByteBuf(getResponse(message.getExpectedResponse(), false, USER_CLIENT_TRID)));
-
     channel.writeInbound(response);
-
     ChannelFuture unusedFuture = future.syncUninterruptibly();
-
     assertThat(future.isSuccess()).isTrue();
   }
 
-  @Test
-  public void testBasicAction_FailCode_Embedded()
-      throws SAXException, IOException, EppClientException, FailureException {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testBasicAction_FailCode_Embedded(EppRequestMessage message) throws Exception {
     // We simply use an embedded channel in this instance
-    setupEmbeddedChannel(actionHandler);
-
+    setupRequestAndChannels(message, actionHandler);
     ChannelFuture future = actionHandler.getFinishedFuture();
-
     EppResponseMessage response = message.getExpectedResponse();
-
     response.getDocument(
         EppUtils.docToByteBuf(getResponse(message.getExpectedResponse(), true, USER_CLIENT_TRID)));
-
     channel.writeInbound(response);
 
     assertThrows(
@@ -151,19 +124,15 @@ public class EppActionHandlerTest {
         });
   }
 
-  @Test
-  public void testBasicAction_FailTRID_Embedded()
-      throws SAXException, IOException, EppClientException, FailureException {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testBasicAction_FailTRID_Embedded(EppRequestMessage message) throws Exception {
     // We simply use an embedded channel in this instance
-    setupEmbeddedChannel(actionHandler);
-
+    setupRequestAndChannels(message, actionHandler);
     ChannelFuture future = actionHandler.getFinishedFuture();
-
     EppResponseMessage response = message.getExpectedResponse();
-
     response.getDocument(
         EppUtils.docToByteBuf(getResponse(message.getExpectedResponse(), false, FAILURE_TRID)));
-
     channel.writeInbound(response);
 
     if (message.getExpectedResponse().name().equals("greeting")) {
@@ -178,32 +147,26 @@ public class EppActionHandlerTest {
     }
   }
 
-  @Test
-  public void testIntegratedAction_Success_Embedded()
-      throws IOException, SAXException, UndeterminedStateException {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testIntegratedAction_Success_Embedded(EppRequestMessage message) throws Exception {
     // We simply use an embedded channel in this instance
-    setupEmbeddedChannel(messageHandler, actionHandler);
-
+    setupRequestAndChannels(message, messageHandler, actionHandler);
     ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(message);
-
     channel.writeInbound(
         EppUtils.docToByteBuf(getResponse(message.getExpectedResponse(), false, USER_CLIENT_TRID)));
-
     ChannelFuture unusedFuture = future.syncUninterruptibly();
-
     assertThat(future.isSuccess()).isTrue();
   }
 
-  @Test
-  public void testIntegratedAction_FailCode_Embedded()
-      throws IOException, SAXException, UndeterminedStateException {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testIntegratedAction_FailCode_Embedded(EppRequestMessage message) throws Exception {
     // We simply use an embedded channel in this instance
-    setupEmbeddedChannel(messageHandler, actionHandler);
-
+    setupRequestAndChannels(message, messageHandler, actionHandler);
     ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(message);
-
     channel.writeInbound(
         EppUtils.docToByteBuf(getResponse(message.getExpectedResponse(), true, USER_CLIENT_TRID)));
 
@@ -214,15 +177,13 @@ public class EppActionHandlerTest {
         });
   }
 
-  @Test
-  public void testIntegratedAction_FailTRID_Embedded()
-      throws IOException, SAXException, UndeterminedStateException {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testIntegratedAction_FailTRID_Embedded(EppRequestMessage message) throws Exception {
     // We simply use an embedded channel in this instance
-    setupEmbeddedChannel(messageHandler, actionHandler);
-
+    setupRequestAndChannels(message, messageHandler, actionHandler);
     ChannelFuture future = actionHandler.getFinishedFuture();
     channel.writeOutbound(message);
-
     channel.writeInbound(
         EppUtils.docToByteBuf(getResponse(message.getExpectedResponse(), false, FAILURE_TRID)));
 

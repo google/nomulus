@@ -17,7 +17,7 @@ package google.registry.rde;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.keyring.api.PgpHelper.KeyRequirement.ENCRYPT;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;

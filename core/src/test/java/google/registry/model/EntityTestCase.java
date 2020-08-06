@@ -31,7 +31,7 @@ import google.registry.model.ofy.Ofy;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.util.CidrAddressBlock;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -61,7 +61,7 @@ public abstract class EntityTestCase {
 
   @RegisterExtension public final AppEngineExtension appEngine;
 
-  @RegisterExtension public InjectRule inject = new InjectRule();
+  @RegisterExtension public InjectExtension inject = new InjectExtension();
 
   protected EntityTestCase() {
     this(JpaEntityCoverageCheck.DISABLED);

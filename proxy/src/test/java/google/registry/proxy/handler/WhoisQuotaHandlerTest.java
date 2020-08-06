@@ -17,7 +17,7 @@ package google.registry.proxy.handler;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.proxy.Protocol.PROTOCOL_KEY;
 import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -37,14 +37,11 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link WhoisQuotaHandler} */
-@RunWith(JUnit4.class)
-public class WhoisQuotaHandlerTest {
+class WhoisQuotaHandlerTest {
 
   private final QuotaManager quotaManager = mock(QuotaManager.class);
   private final FrontendMetrics metrics = mock(FrontendMetrics.class);
@@ -72,14 +69,14 @@ public class WhoisQuotaHandlerTest {
                 .build());
   }
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     channel.attr(REMOTE_ADDRESS_KEY).set(remoteAddress);
     setProtocol(channel);
   }
 
   @Test
-  public void testSuccess_quotaGranted() {
+  void testSuccess_quotaGranted() {
     when(quotaManager.acquireQuota(QuotaRequest.create(remoteAddress)))
         .thenReturn(QuotaResponse.create(true, remoteAddress, now));
 
@@ -99,7 +96,7 @@ public class WhoisQuotaHandlerTest {
   }
 
   @Test
-  public void testFailure_quotaNotGranted() {
+  void testFailure_quotaNotGranted() {
     when(quotaManager.acquireQuota(QuotaRequest.create(remoteAddress)))
         .thenReturn(QuotaResponse.create(false, remoteAddress, now));
     OverQuotaException e =
@@ -110,7 +107,7 @@ public class WhoisQuotaHandlerTest {
   }
 
   @Test
-  public void testSuccess_twoChannels_twoUserIds() {
+  void testSuccess_twoChannels_twoUserIds() {
     // Set up another user.
     final WhoisQuotaHandler otherHandler = new WhoisQuotaHandler(quotaManager, metrics);
     final EmbeddedChannel otherChannel = new EmbeddedChannel(otherHandler);
@@ -138,7 +135,7 @@ public class WhoisQuotaHandlerTest {
   }
 
   @Test
-  public void testSuccess_oneUser_rateLimited() {
+  void testSuccess_oneUser_rateLimited() {
     // Set up another channel for the same user.
     final WhoisQuotaHandler otherHandler = new WhoisQuotaHandler(quotaManager, metrics);
     final EmbeddedChannel otherChannel = new EmbeddedChannel(otherHandler);

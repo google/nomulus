@@ -20,7 +20,7 @@ import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.model.rde.RdeRevision.getNextRevision;
 import static google.registry.model.rde.RdeRevision.saveRevision;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.VerifyException;
 import google.registry.testing.AppEngineExtension;

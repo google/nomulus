@@ -44,7 +44,7 @@ import google.registry.model.ofy.Ofy;
 import google.registry.request.Response;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.AppEngineServiceUtils;
 import org.joda.time.DateTime;
@@ -66,7 +66,7 @@ public class ResaveEntityActionTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @Mock private AppEngineServiceUtils appEngineServiceUtils;
   @Mock private Response response;
@@ -117,9 +117,10 @@ public class ResaveEntityActionTest {
 
   @Test
   void test_domainPendingDeletion_isResavedAndReenqueued() {
+    DomainBase newDomain = newDomainBase("domain.tld");
     DomainBase domain =
         persistResource(
-            newDomainBase("domain.tld")
+            newDomain
                 .asBuilder()
                 .setDeletionTime(clock.nowUtc().plusDays(35))
                 .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
@@ -127,6 +128,7 @@ public class ResaveEntityActionTest {
                     ImmutableSet.of(
                         GracePeriod.createWithoutBillingEvent(
                             GracePeriodStatus.REDEMPTION,
+                            newDomain.getRepoId(),
                             clock.nowUtc().plusDays(30),
                             "TheRegistrar")))
                 .build());

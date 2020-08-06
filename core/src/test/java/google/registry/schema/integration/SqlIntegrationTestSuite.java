@@ -20,12 +20,14 @@ import google.registry.model.billing.BillingEventTest;
 import google.registry.model.contact.ContactResourceTest;
 import google.registry.model.domain.DomainBaseSqlTest;
 import google.registry.model.history.ContactHistoryTest;
+import google.registry.model.history.DomainHistoryTest;
 import google.registry.model.history.HostHistoryTest;
 import google.registry.model.poll.PollMessageTest;
 import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.model.registry.label.ReservedListSqlDaoTest;
 import google.registry.model.reporting.Spec11ThreatMatchTest;
 import google.registry.persistence.transaction.JpaEntityCoverageExtension;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
 import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.integration.SqlIntegrationTestSuite.AfterSuiteTest;
 import google.registry.schema.integration.SqlIntegrationTestSuite.BeforeSuiteTest;
@@ -50,8 +52,8 @@ import org.junit.runner.RunWith;
  * AppEngineExtension.Builder#enableJpaEntityCoverageCheck} and have at least one test method that
  * persists a JPA entity declared in persistence.xml.
  *
- * <p>Note that with {@code JpaIntegrationWithCoverageRule}, each method starts with an empty
- * database. Therefore this is not the right place for verifying backward data compatibility in
+ * <p>Note that with {@link JpaIntegrationWithCoverageExtension}, each method starts with an empty
+ * database. Therefore this is not the right place for verifying backwards data compatibility in
  * end-to-end functional tests.
  *
  * <p>As of April 2020, none of the before/after annotations ({@code BeforeClass} and {@code
@@ -76,6 +78,7 @@ import org.junit.runner.RunWith;
   ContactResourceTest.class,
   CursorDaoTest.class,
   DomainBaseSqlTest.class,
+  DomainHistoryTest.class,
   HostHistoryTest.class,
   LockDaoTest.class,
   PollMessageTest.class,

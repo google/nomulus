@@ -31,7 +31,7 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -143,7 +143,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         create(false, "example1.tld", "In use"),
         create(false, "example2.tld", "The allocation token is invalid"),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Allocation token required"));
+        create(false, "specificuse.tld", "Reserved; alloc. token required"));
   }
 
   @Test
@@ -156,7 +156,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         create(false, "example1.tld", "In use"),
         create(true, "example2.tld", null),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Allocation token required"));
+        create(false, "specificuse.tld", "Reserved; alloc. token required"));
   }
 
   @Test
@@ -173,7 +173,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         create(false, "example1.tld", "In use"),
         create(false, "example2.tld", "Alloc token was already redeemed"),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Allocation token required"));
+        create(false, "specificuse.tld", "Reserved; alloc. token required"));
   }
 
   @Test
@@ -222,7 +222,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         create(false, "example1.tld", "In use"),
         create(false, "example2.tld", "Alloc token invalid for domain"),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "specificuse.tld", "Allocation token required"));
+        create(false, "specificuse.tld", "Reserved; alloc. token required"));
   }
 
   @Test
@@ -276,19 +276,20 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     doCheckTest(
         create(false, "collision.tld", "Cannot be delegated"),
         create(false, "reserved.tld", "Reserved"),
-        create(false, "anchor.tld", "Allocation token required"),
+        create(false, "anchor.tld", "Reserved; alloc. token required"),
         create(false, "allowedinsunrise.tld", "Reserved"),
         create(false, "premiumcollision.tld", "Cannot be delegated"));
   }
 
   @Test
-  void testSuccess_allocationTokenPromotion() throws Exception {
+  void testSuccess_allocationTokenPromotion_singleYear() throws Exception {
     createTld("example");
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
+            .setDiscountYears(2)
             .setTokenStatusTransitions(
                 ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
                     .put(START_OF_TIME, TokenStatus.NOT_STARTED)
@@ -298,6 +299,69 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .build());
     setEppInput("domain_check_allocationtoken_fee.xml");
     runFlowAssertResponse(loadFile("domain_check_allocationtoken_fee_response.xml"));
+  }
+
+  @Test
+  void testSuccess_allocationTokenPromotion_multiYearAndPremiums() throws Exception {
+    createTld("example");
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("rich.example")
+            .setDiscountFraction(0.9)
+            .setDiscountYears(3)
+            .setDiscountPremiums(true)
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
+                    .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
+                    .build())
+            .build());
+    setEppInput(
+        "domain_check_allocationtoken_promotion.xml", ImmutableMap.of("DOMAIN", "rich.example"));
+    runFlowAssertResponse(
+        loadFile(
+            "domain_check_allocationtoken_promotion_response.xml",
+            new ImmutableMap.Builder<String, String>()
+                .put("DOMAIN", "rich.example")
+                .put("COST_1YR", "10.00")
+                .put("COST_2YR", "20.00")
+                .put("COST_5YR", "230.00")
+                .put("FEE_CLASS", "<fee:class>premium</fee:class>")
+                .build()));
+  }
+
+  @Test
+  void testSuccess_allocationTokenPromotion_multiYear() throws Exception {
+    createTld("tld");
+    persistResource(
+        new AllocationToken.Builder()
+            .setToken("abc123")
+            .setTokenType(SINGLE_USE)
+            .setDomainName("single.tld")
+            .setDiscountFraction(0.444)
+            .setDiscountYears(2)
+            .setTokenStatusTransitions(
+                ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                    .put(START_OF_TIME, TokenStatus.NOT_STARTED)
+                    .put(clock.nowUtc().minusDays(1), TokenStatus.VALID)
+                    .put(clock.nowUtc().plusDays(1), TokenStatus.ENDED)
+                    .build())
+            .build());
+    setEppInput(
+        "domain_check_allocationtoken_promotion.xml", ImmutableMap.of("DOMAIN", "single.tld"));
+    runFlowAssertResponse(
+        loadFile(
+            "domain_check_allocationtoken_promotion_response.xml",
+            new ImmutableMap.Builder<String, String>()
+                .put("DOMAIN", "single.tld")
+                .put("COST_1YR", "7.23")
+                .put("COST_2YR", "14.46")
+                .put("COST_5YR", "53.46")
+                .put("FEE_CLASS", "")
+                .build()));
   }
 
   @Test
@@ -410,7 +474,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testSuccess_anchorTenantReserved() throws Exception {
     setEppInput("domain_check_anchor.xml");
-    doCheckTest(create(false, "anchor.tld", "Allocation token required"));
+    doCheckTest(create(false, "anchor.tld", "Reserved; alloc. token required"));
   }
 
   @Test

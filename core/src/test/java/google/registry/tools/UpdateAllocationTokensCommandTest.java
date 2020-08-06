@@ -24,7 +24,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIM
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -75,6 +75,24 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     AllocationToken token = persistResource(builderWithPromo().setDiscountFraction(0.5).build());
     runCommandForced("--prefix", "token", "--discount_fraction", "0.15");
     assertThat(reloadResource(token).getDiscountFraction()).isEqualTo(0.15);
+  }
+
+  @Test
+  void testUpdateDiscountPremiums() throws Exception {
+    AllocationToken token =
+        persistResource(
+            builderWithPromo().setDiscountFraction(0.5).setDiscountPremiums(false).build());
+    runCommandForced("--prefix", "token", "--discount_premiums", "true");
+    assertThat(reloadResource(token).shouldDiscountPremiums()).isTrue();
+    runCommandForced("--prefix", "token", "--discount_premiums", "false");
+    assertThat(reloadResource(token).shouldDiscountPremiums()).isFalse();
+  }
+
+  @Test
+  void testUpdateDiscountYears() throws Exception {
+    AllocationToken token = persistResource(builderWithPromo().setDiscountFraction(0.5).build());
+    runCommandForced("--prefix", "token", "--discount_years", "4");
+    assertThat(reloadResource(token).getDiscountYears()).isEqualTo(4);
   }
 
   @Test

@@ -44,10 +44,11 @@ import org.joda.time.DateTime;
 /**
  * A persistable contact resource including mutable and non-mutable fields.
  *
+ * <p>This class deliberately does not include an {@link javax.persistence.Id} so that any
+ * foreign-keyed fields can refer to the proper parent entity's ID, whether we're storing this in
+ * the DB itself or as part of another entity
+ *
  * @see <a href="https://tools.ietf.org/html/rfc5733">RFC 5733</a>
- *     <p>This class deliberately does not include an {@link javax.persistence.Id} so that any
- *     foreign-keyed fields can refer to the proper parent entity's ID, whether we're storing this
- *     in the DB itself or as part of another entity
  */
 @MappedSuperclass
 @Embeddable

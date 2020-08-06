@@ -33,7 +33,7 @@ import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.tldconfig.idn.IdnTableEnum.EXTENDED_LATIN;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.appengine.tools.cloudstorage.GcsService;
@@ -59,7 +59,7 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import google.registry.tldconfig.idn.IdnTableEnum;
@@ -103,7 +103,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   private static final GcsFilename LENGTH_FILE =
       new GcsFilename("rde-bucket", "lol_2000-01-01_full_S1_R0.xml.length");
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   private final FakeClock clock = new FakeClock();
   private final FakeResponse response = new FakeResponse();

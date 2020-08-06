@@ -27,9 +27,7 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpServerCodec;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /**
  * End-to-end tests for {@link HttpsRelayProtocolModule}.
@@ -45,8 +43,7 @@ import org.junit.runners.JUnit4;
  * handlers that deal with HTTP protocol, but not whether the handlers converts between bytes and
  * HTTP messages correctly, which is presumed correct.
  */
-@RunWith(JUnit4.class)
-public class HttpsRelayProtocolModuleTest extends ProtocolModuleTest {
+class HttpsRelayProtocolModuleTest extends ProtocolModuleTest {
 
   private static final String HOST = "test.tld";
   private static final String PATH = "/path/to/test";
@@ -55,7 +52,7 @@ public class HttpsRelayProtocolModuleTest extends ProtocolModuleTest {
   private final EmbeddedChannel serverChannel =
       new EmbeddedChannel(new HttpServerCodec(), new HttpObjectAggregator(512 * 1024));
 
-  public HttpsRelayProtocolModuleTest() {
+  HttpsRelayProtocolModuleTest() {
     super(TestComponent::httpsRelayHandlers);
   }
 
@@ -92,12 +89,12 @@ public class HttpsRelayProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testSuccess_OkResponse() {
+  void testSuccess_OkResponse() {
     requestAndRespondWithStatus(HttpResponseStatus.OK);
   }
 
   @Test
-  public void testSuccess_NonOkResponse() {
+  void testSuccess_NonOkResponse() {
     requestAndRespondWithStatus(HttpResponseStatus.BAD_REQUEST);
   }
 }

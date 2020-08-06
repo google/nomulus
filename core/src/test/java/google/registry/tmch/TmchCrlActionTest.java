@@ -17,7 +17,7 @@ package google.registry.tmch;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.TestDataHelper.loadBytes;
 import static google.registry.util.ResourceUtils.readResourceBytes;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 

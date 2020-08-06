@@ -40,7 +40,7 @@ import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.CapturingLogHandler;
@@ -65,7 +65,7 @@ public class AsyncTaskEnqueuerTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @RegisterExtension public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @Mock private AppEngineServiceUtils appEngineServiceUtils;
 
@@ -157,8 +157,8 @@ public class AsyncTaskEnqueuerTest {
                 .setRegistrarPocId("someone@example.com")
                 .setVerificationCode("hi")
                 .build());
-    asyncTaskEnqueuer
-        .enqueueDomainRelock(lock.getRelockDuration().get().getMillis(), lock.getRevisionId(), 0);
+    asyncTaskEnqueuer.enqueueDomainRelock(
+        lock.getRelockDuration().get().getMillis(), lock.getRevisionId(), 0);
     assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new TaskMatcher()

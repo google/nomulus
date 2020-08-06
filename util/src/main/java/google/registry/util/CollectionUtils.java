@@ -75,38 +75,39 @@ public class CollectionUtils {
   }
 
   /** Defensive copy helper for {@link Set}. */
-  public static <V> ImmutableSet<V> nullSafeImmutableCopy(Set<V> data) {
+  public static <V> ImmutableSet<V> nullSafeImmutableCopy(@Nullable Set<V> data) {
     return data == null ? null : ImmutableSet.copyOf(data);
   }
 
   /** Defensive copy helper for {@link List}. */
-  public static <V> ImmutableList<V> nullSafeImmutableCopy(List<V> data) {
+  public static <V> ImmutableList<V> nullSafeImmutableCopy(@Nullable List<V> data) {
     return data == null ? null : ImmutableList.copyOf(data);
   }
 
   /** Defensive copy helper for {@link Set}. */
-  public static <V> ImmutableSet<V> nullToEmptyImmutableCopy(Set<V> data) {
+  public static <V> ImmutableSet<V> nullToEmptyImmutableCopy(@Nullable Set<V> data) {
     return data == null ? ImmutableSet.of() : ImmutableSet.copyOf(data);
   }
 
   /** Defensive copy helper for {@link Set}. */
-  public static <V extends Comparable<V>>
-      ImmutableSortedSet<V> nullToEmptyImmutableSortedCopy(Set<V> data) {
+  public static <V extends Comparable<V>> ImmutableSortedSet<V> nullToEmptyImmutableSortedCopy(
+      @Nullable Set<V> data) {
     return data == null ? ImmutableSortedSet.of() : ImmutableSortedSet.copyOf(data);
   }
 
   /** Defensive copy helper for {@link SortedMap}. */
-  public static <K, V> ImmutableSortedMap<K, V> nullToEmptyImmutableCopy(SortedMap<K, V> data) {
+  public static <K, V> ImmutableSortedMap<K, V> nullToEmptyImmutableCopy(
+      @Nullable SortedMap<K, V> data) {
     return data == null ? ImmutableSortedMap.of() : ImmutableSortedMap.copyOfSorted(data);
   }
 
   /** Defensive copy helper for {@link List}. */
-  public static <V> ImmutableList<V> nullToEmptyImmutableCopy(List<V> data) {
+  public static <V> ImmutableList<V> nullToEmptyImmutableCopy(@Nullable List<V> data) {
     return data == null ? ImmutableList.of() : ImmutableList.copyOf(data);
   }
 
   /** Defensive copy helper for {@link Map}. */
-  public static <K, V> ImmutableMap<K, V> nullToEmptyImmutableCopy(Map<K, V> data) {
+  public static <K, V> ImmutableMap<K, V> nullToEmptyImmutableCopy(@Nullable Map<K, V> data) {
     return data == null ? ImmutableMap.of() : ImmutableMap.copyOf(data);
   }
 

@@ -33,15 +33,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link TokenStore}. */
-@RunWith(JUnit4.class)
-public class TokenStoreTest {
+class TokenStoreTest {
 
   private final QuotaConfig quotaConfig = mock(QuotaConfig.class);
   private final FakeClock clock = new FakeClock();
@@ -89,8 +86,8 @@ public class TokenStoreTest {
         });
   }
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     when(quotaConfig.getRefreshPeriod()).thenReturn(Duration.standardSeconds(60));
     when(quotaConfig.getRefillPeriod(user)).thenReturn(Duration.standardSeconds(10));
     when(quotaConfig.getTokenAmount(user)).thenReturn(3);
@@ -99,7 +96,7 @@ public class TokenStoreTest {
   }
 
   @Test
-  public void testSuccess_take() {
+  void testSuccess_take() {
     // Take 3 tokens one by one.
     DateTime refillTime = clock.nowUtc();
     assertTake(1, 2, refillTime);
@@ -118,13 +115,13 @@ public class TokenStoreTest {
   }
 
   @Test
-  public void testSuccess_put_entryDoesNotExist() {
+  void testSuccess_put_entryDoesNotExist() {
     tokenStore.put(user, clock.nowUtc());
     assertThat(tokenStore.getTokenForTests(user)).isNull();
   }
 
   @Test
-  public void testSuccess_put() {
+  void testSuccess_put() {
     DateTime refillTime = clock.nowUtc();
 
     // Initialize the entry.
@@ -148,7 +145,7 @@ public class TokenStoreTest {
   }
 
   @Test
-  public void testSuccess_takeAndPut() {
+  void testSuccess_takeAndPut() {
     DateTime refillTime = clock.nowUtc();
 
     // Take 1 token.
@@ -168,7 +165,7 @@ public class TokenStoreTest {
   }
 
   @Test
-  public void testSuccess_multipleUsers() {
+  void testSuccess_multipleUsers() {
     DateTime refillTime1 = clock.nowUtc();
     DateTime refillTime2 = clock.nowUtc();
 
@@ -196,7 +193,7 @@ public class TokenStoreTest {
   }
 
   @Test
-  public void testSuccess_refresh() {
+  void testSuccess_refresh() {
     DateTime refillTime1 = clock.nowUtc();
     assertTake(user, 1, 2, refillTime1);
 
@@ -214,7 +211,7 @@ public class TokenStoreTest {
   }
 
   @Test
-  public void testSuccess_unlimitedQuota() {
+  void testSuccess_unlimitedQuota() {
     when(quotaConfig.hasUnlimitedTokens(user)).thenReturn(true);
     for (int i = 0; i < 10000; ++i) {
       assertTake(1, SENTINEL_UNLIMITED_TOKENS, clock.nowUtc());
@@ -225,7 +222,7 @@ public class TokenStoreTest {
   }
 
   @Test
-  public void testSuccess_noRefill() {
+  void testSuccess_noRefill() {
     when(quotaConfig.getRefillPeriod(user)).thenReturn(Duration.ZERO);
     DateTime refillTime = clock.nowUtc();
     assertTake(1, 2, refillTime);
@@ -236,7 +233,7 @@ public class TokenStoreTest {
   }
 
   @Test
-  public void testSuccess_noRefresh() {
+  void testSuccess_noRefresh() {
     when(quotaConfig.getRefreshPeriod()).thenReturn(Duration.ZERO);
     DateTime refillTime = clock.nowUtc();
     assertTake(1, 2, refillTime);
@@ -246,7 +243,7 @@ public class TokenStoreTest {
   }
 
   @Test
-  public void testSuccess_concurrency() throws Exception {
+  void testSuccess_concurrency() throws Exception {
     ExecutorService executor = Executors.newWorkStealingPool();
     final DateTime time1 = clock.nowUtc();
     submitAndWaitForTasks(
@@ -297,7 +294,7 @@ public class TokenStoreTest {
   }
 
   @Test
-  public void testSuccess_scheduleRefresh() throws Exception {
+  void testSuccess_scheduleRefresh() throws Exception {
     when(quotaConfig.getRefreshPeriod()).thenReturn(Duration.standardSeconds(5));
 
     tokenStore.scheduleRefresh();

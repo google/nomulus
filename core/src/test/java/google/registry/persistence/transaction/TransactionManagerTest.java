@@ -18,7 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
@@ -32,7 +32,7 @@ import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -57,7 +57,7 @@ public class TransactionManagerTest {
           new TestEntity("entity2", "bar"),
           new TestEntity("entity3", "qux"));
 
-  @RegisterExtension public InjectRule inject = new InjectRule();
+  @RegisterExtension public InjectExtension inject = new InjectExtension();
 
   @RegisterExtension
   public final AppEngineExtension appEngine =

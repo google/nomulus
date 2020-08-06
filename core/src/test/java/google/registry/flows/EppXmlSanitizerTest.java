@@ -121,15 +121,10 @@ class EppXmlSanitizerTest {
   void testSanitize_utf16_encodingPreserved() {
     // Test data should specify an endian-specific UTF-16 scheme for easy assertion. If 'UTF-16' is
     // used, the XMLEventReader in sanitizer may resolve it to an endian-specific one.
-    String inputXml = "<?xml version=\"1.0\" encoding=\"UTF-16LE\"?><p>\u03bc</p>\n";
+    String inputXml =
+        "<?xml version=\"1.0\" encoding=\"UTF-16LE\" standalone=\"no\"?>" + "<p>\u03bc</p>\n";
     String sanitizedXml = sanitizeEppXml(inputXml.getBytes(UTF_16LE));
 
-    // As of Java 9, standalone is always written to the XML header and is defaulted to "no" if not
-    // otherwise specified. We don't care about that for this specific test, and since we want to be
-    // compatible with both Java 8 and Java 11 (for now), we strip the standalone="no" attribute if
-    // it is present prior to doing the string comparison.
-    // TODO(java11): Remove this stripping and do a full assertion once we no longer care about
-    //               maintaining Java 8 build compatibility.
-    assertThat(sanitizedXml.replace(" standalone=\"no\"", "")).isEqualTo(inputXml);
+    assertThat(sanitizedXml).isEqualTo(inputXml);
   }
 }

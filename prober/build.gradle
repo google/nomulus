@@ -48,10 +48,9 @@ dependencies {
 
     testCompile deps['com.google.monitoring-client:contrib']
     testCompile deps['com.google.truth:truth']
-    testCompile deps['junit:junit']
     testCompile deps['org.junit.jupiter:junit-jupiter-api']
     testCompile deps['org.junit.jupiter:junit-jupiter-engine']
-    testCompile deps['org.junit.vintage:junit-vintage-engine']
+    testCompile deps['org.junit.jupiter:junit-jupiter-params']
     testCompile deps['org.mockito:mockito-core']
     testCompile project(path: ':common', configuration: 'testing')
     testCompile project(path: ':networking', configuration: 'testRuntime')
