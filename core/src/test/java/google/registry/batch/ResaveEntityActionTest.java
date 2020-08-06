@@ -117,9 +117,10 @@ public class ResaveEntityActionTest {
 
   @Test
   void test_domainPendingDeletion_isResavedAndReenqueued() {
+    DomainBase newDomain = newDomainBase("domain.tld");
     DomainBase domain =
         persistResource(
-            newDomainBase("domain.tld")
+            newDomain
                 .asBuilder()
                 .setDeletionTime(clock.nowUtc().plusDays(35))
                 .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
@@ -127,6 +128,7 @@ public class ResaveEntityActionTest {
                     ImmutableSet.of(
                         GracePeriod.createWithoutBillingEvent(
                             GracePeriodStatus.REDEMPTION,
+                            newDomain.getRepoId(),
                             clock.nowUtc().plusDays(30),
                             "TheRegistrar")))
                 .build());

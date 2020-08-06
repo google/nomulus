@@ -192,7 +192,10 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setGracePeriods(
                 billingEvent.isPresent()
                     ? ImmutableSet.of(
-                        GracePeriod.forBillingEvent(GracePeriodStatus.TRANSFER, billingEvent.get()))
+                        GracePeriod.forBillingEvent(
+                            GracePeriodStatus.TRANSFER,
+                            existingDomain.getRepoId(),
+                            billingEvent.get()))
                     : ImmutableSet.of())
             .setLastEppUpdateTime(now)
             .setLastEppUpdateClientId(clientId)

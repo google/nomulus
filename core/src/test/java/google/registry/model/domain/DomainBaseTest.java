@@ -154,6 +154,7 @@ public class DomainBaseTest extends EntityTestCase {
                     .addGracePeriod(
                         GracePeriod.create(
                             GracePeriodStatus.ADD,
+                            "4-COM",
                             fakeClock.nowUtc().plusDays(1),
                             "registrar",
                             null))
@@ -371,7 +372,11 @@ public class DomainBaseTest extends EntityTestCase {
                 // Okay for billing event to be null since the point of this grace period is just
                 // to check that the transfer will clear all existing grace periods.
                 GracePeriod.create(
-                    GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(100), "foo", null))
+                    GracePeriodStatus.ADD,
+                    domain.getRepoId(),
+                    fakeClock.nowUtc().plusDays(100),
+                    "foo",
+                    null))
             .build();
     DomainBase afterTransfer = domain.cloneProjectedAtTime(fakeClock.nowUtc().plusDays(1));
     DateTime newExpirationTime = oldExpirationTime.plusYears(1);
@@ -382,6 +387,7 @@ public class DomainBaseTest extends EntityTestCase {
         .containsExactly(
             GracePeriod.create(
                 GracePeriodStatus.TRANSFER,
+                domain.getRepoId(),
                 fakeClock
                     .nowUtc()
                     .plusDays(1)
@@ -499,9 +505,24 @@ public class DomainBaseTest extends EntityTestCase {
   void testStackedGracePeriods() {
     ImmutableList<GracePeriod> gracePeriods =
         ImmutableList.of(
-            GracePeriod.create(GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(3), "foo", null),
-            GracePeriod.create(GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(2), "bar", null),
-            GracePeriod.create(GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(1), "baz", null));
+            GracePeriod.create(
+                GracePeriodStatus.ADD,
+                domain.getRepoId(),
+                fakeClock.nowUtc().plusDays(3),
+                "foo",
+                null),
+            GracePeriod.create(
+                GracePeriodStatus.ADD,
+                domain.getRepoId(),
+                fakeClock.nowUtc().plusDays(2),
+                "bar",
+                null),
+            GracePeriod.create(
+                GracePeriodStatus.ADD,
+                domain.getRepoId(),
+                fakeClock.nowUtc().plusDays(1),
+                "baz",
+                null));
     domain = domain.asBuilder().setGracePeriods(ImmutableSet.copyOf(gracePeriods)).build();
     for (int i = 1; i < 3; ++i) {
       assertThat(domain.cloneProjectedAtTime(fakeClock.nowUtc().plusDays(i)).getGracePeriods())
@@ -513,14 +534,32 @@ public class DomainBaseTest extends EntityTestCase {
   void testGracePeriodsByType() {
     ImmutableSet<GracePeriod> addGracePeriods =
         ImmutableSet.of(
-            GracePeriod.create(GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(3), "foo", null),
-            GracePeriod.create(GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(1), "baz", null));
+            GracePeriod.create(
+                GracePeriodStatus.ADD,
+                domain.getRepoId(),
+                fakeClock.nowUtc().plusDays(3),
+                "foo",
+                null),
+            GracePeriod.create(
+                GracePeriodStatus.ADD,
+                domain.getRepoId(),
+                fakeClock.nowUtc().plusDays(1),
+                "baz",
+                null));
     ImmutableSet<GracePeriod> renewGracePeriods =
         ImmutableSet.of(
             GracePeriod.create(
-                GracePeriodStatus.RENEW, fakeClock.nowUtc().plusDays(3), "foo", null),
+                GracePeriodStatus.RENEW,
+                domain.getRepoId(),
+                fakeClock.nowUtc().plusDays(3),
+                "foo",
+                null),
             GracePeriod.create(
-                GracePeriodStatus.RENEW, fakeClock.nowUtc().plusDays(1), "baz", null));
+                GracePeriodStatus.RENEW,
+                domain.getRepoId(),
+                fakeClock.nowUtc().plusDays(1),
+                "baz",
+                null));
     domain =
         domain
             .asBuilder()
@@ -589,6 +628,7 @@ public class DomainBaseTest extends EntityTestCase {
         .containsExactly(
             GracePeriod.createForRecurring(
                 GracePeriodStatus.AUTO_RENEW,
+                domain.getRepoId(),
                 oldExpirationTime
                     .plusYears(2)
                     .plus(Registry.get("com").getAutoRenewGracePeriodLength()),
@@ -757,6 +797,7 @@ public class DomainBaseTest extends EntityTestCase {
                     ImmutableSet.of(
                         GracePeriod.createForRecurring(
                             GracePeriodStatus.AUTO_RENEW,
+                            domain.getRepoId(),
                             now.plusDays(1),
                             "NewRegistrar",
                             recurringBillKey)))

@@ -186,14 +186,18 @@ public final class DomainDeleteFlow implements TransactionalFlow {
       DateTime redemptionTime = now.plus(redemptionGracePeriodLength);
       asyncTaskEnqueuer.enqueueAsyncResave(
           existingDomain, now, ImmutableSortedSet.of(redemptionTime, deletionTime));
-      builder.setDeletionTime(deletionTime)
+      builder
+          .setDeletionTime(deletionTime)
           .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
           // Clear out all old grace periods and add REDEMPTION, which does not include a key to a
           // billing event because there isn't one for a domain delete.
-          .setGracePeriods(ImmutableSet.of(GracePeriod.createWithoutBillingEvent(
-              GracePeriodStatus.REDEMPTION,
-              redemptionTime,
-              clientId)));
+          .setGracePeriods(
+              ImmutableSet.of(
+                  GracePeriod.createWithoutBillingEvent(
+                      GracePeriodStatus.REDEMPTION,
+                      existingDomain.getRepoId(),
+                      redemptionTime,
+                      clientId)));
       // Note: The expiration time is unchanged, so if it's before the new deletion time, there will
       // be a "phantom autorenew" where the expiration time advances. No poll message will be
       // produced (since we are ending the autorenew recurrences at "now" below) and the billing

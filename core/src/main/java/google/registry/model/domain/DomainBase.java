@@ -14,6 +14,7 @@
 
 package google.registry.model.domain;
 
+
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.EppResource;
@@ -27,9 +28,13 @@ import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.util.Set;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
+import javax.persistence.OneToMany;
 import org.joda.time.DateTime;
 
 /**
@@ -72,6 +77,17 @@ public class DomainBase extends DomainContent
   @Column(name = "host_repo_id")
   public Set<VKey<HostResource>> getNsHosts() {
     return super.nsHosts;
+  }
+
+  @Access(AccessType.PROPERTY)
+  @OneToMany(
+      cascade = {CascadeType.ALL},
+      fetch = FetchType.EAGER,
+      orphanRemoval = true)
+  @JoinColumn(name = "domainRepoId", referencedColumnName = "repoId")
+  @SuppressWarnings("UnusedMethod")
+  private Set<GracePeriod> getInternalGracePeriods() {
+    return gracePeriods;
   }
 
   @Override

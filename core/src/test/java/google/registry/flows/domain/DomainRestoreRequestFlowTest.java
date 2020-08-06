@@ -112,7 +112,11 @@ class DomainRestoreRequestFlowTest
             .setDeletionTime(clock.nowUtc().plusDays(35))
             .addGracePeriod(
                 GracePeriod.create(
-                    GracePeriodStatus.REDEMPTION, clock.nowUtc().plusDays(1), "foo", null))
+                    GracePeriodStatus.REDEMPTION,
+                    domain.getRepoId(),
+                    clock.nowUtc().plusDays(1),
+                    "foo",
+                    null))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
             .setDeletePollMessage(
                 persistResource(

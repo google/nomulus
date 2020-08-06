@@ -504,9 +504,10 @@ public class DatastoreHelper {
       DateTime creationTime,
       DateTime expirationTime) {
     String domainName = String.format("%s.%s", label, tld);
+    String repoId = generateNewDomainRoid(tld);
     DomainBase domain =
         new DomainBase.Builder()
-            .setRepoId(generateNewDomainRoid(tld))
+            .setRepoId(repoId)
             .setDomainName(domainName)
             .setPersistedCurrentSponsorClientId("TheRegistrar")
             .setCreationClientId("TheRegistrar")
@@ -519,7 +520,7 @@ public class DatastoreHelper {
                     DesignatedContact.create(Type.TECH, contact.createVKey())))
             .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("fooBAR")))
             .addGracePeriod(
-                GracePeriod.create(GracePeriodStatus.ADD, now.plusDays(10), "foo", null))
+                GracePeriod.create(GracePeriodStatus.ADD, repoId, now.plusDays(10), "foo", null))
             .build();
     HistoryEntry historyEntryDomainCreate =
         persistResource(

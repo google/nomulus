@@ -214,7 +214,11 @@ class InitSqlPipelineTest {
                   .setSmdId("smdid")
                   .addGracePeriod(
                       GracePeriod.create(
-                          GracePeriodStatus.ADD, fakeClock.nowUtc().plusDays(1), "registrar", null))
+                          GracePeriodStatus.ADD,
+                          "4-COM",
+                          fakeClock.nowUtc().plusDays(1),
+                          "registrar",
+                          null))
                   .build());
       exportDir = store.export(exportRootDir.getAbsolutePath(), ALL_KINDS, ImmutableSet.of());
       commitLogDir = Files.createDirectory(tmpDir.resolve("commits")).toFile();

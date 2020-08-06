@@ -278,6 +278,7 @@ public class DomainBaseToXjcConverterTest {
                 ImmutableSet.of(
                     GracePeriod.forBillingEvent(
                         GracePeriodStatus.RENEW,
+                        domain.getRepoId(),
                         persistResource(
                             new BillingEvent.OneTime.Builder()
                                 .setReason(Reason.RENEW)
@@ -291,6 +292,7 @@ public class DomainBaseToXjcConverterTest {
                                 .build())),
                     GracePeriod.create(
                         GracePeriodStatus.TRANSFER,
+                        domain.getRepoId(),
                         DateTime.parse("1920-01-01T00:00:00Z"),
                         "foo",
                         null)))

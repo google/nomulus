@@ -332,6 +332,7 @@ class DomainTransferRequestFlowTest
           ImmutableMap.of(
               GracePeriod.create(
                   GracePeriodStatus.TRANSFER,
+                  domain.getRepoId(),
                   implicitTransferTime.plus(registry.getTransferGracePeriodLength()),
                   "NewRegistrar",
                   null),
@@ -962,6 +963,7 @@ class DomainTransferRequestFlowTest
                 .addGracePeriod(
                     GracePeriod.createForRecurring(
                         GracePeriodStatus.AUTO_RENEW,
+                        domain.getRepoId(),
                         autorenewTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()),
                         "TheRegistrar",
                         existingAutorenewEvent))
@@ -1088,6 +1090,7 @@ class DomainTransferRequestFlowTest
                 .addGracePeriod(
                     GracePeriod.createForRecurring(
                         GracePeriodStatus.AUTO_RENEW,
+                        domain.getRepoId(),
                         autorenewTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()),
                         "TheRegistrar",
                         domain.getAutorenewBillingEvent()))
@@ -1117,6 +1120,7 @@ class DomainTransferRequestFlowTest
                 .addGracePeriod(
                     GracePeriod.createForRecurring(
                         GracePeriodStatus.AUTO_RENEW,
+                        domain.getRepoId(),
                         autorenewTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()),
                         "TheRegistrar",
                         existingAutorenewEvent))
