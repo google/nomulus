@@ -252,6 +252,23 @@ public class RelockDomainActionTest {
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
   }
 
+  @Test
+  void testFailure_maxRetries() throws Exception {
+    deleteResource(domain);
+    action = createAction(oldLock.getRevisionId(), RelockDomainAction.MAX_ATTEMPTS);
+    action.run();
+    assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
+    String expectedBody =
+        "There have been unexpected errors when automatically re-locking example.tld, for the last "
+            + "6 hours. We will not attempt to re-lock the domain again. Please contact support at "
+            + "support@example.com if you have any questions";
+    assertFailureEmailWithBody(
+        expectedBody,
+        ImmutableSet.of(
+            new InternetAddress("Marla.Singer.RegistryLock@crr.com"),
+            new InternetAddress("alerts@example.com")));
+  }
+
   private void assertSuccessEmailSent() throws Exception {
     EmailMessage expectedEmail =
         EmailMessage.newBuilder()
