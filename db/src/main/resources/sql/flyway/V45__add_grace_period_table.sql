@@ -24,7 +24,7 @@ create table "GracePeriod" (
 );
 
 alter table if exists "GracePeriod"
-   add constraint fk_grace_period_domain_repo_id
+   add constraint FK2mys4hojm6ev2g9tmy5aq6m7g
    foreign key (domain_repo_id)
    references "Domain";
 
@@ -39,4 +39,3 @@ alter table if exists "GracePeriod"
    references "BillingRecurrence";
 
 create index IDXj1mtx98ndgbtb1bkekahms18w on "GracePeriod" (domain_repo_id);
-

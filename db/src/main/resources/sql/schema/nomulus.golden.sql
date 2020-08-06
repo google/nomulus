@@ -489,6 +489,40 @@ CREATE TABLE public."DomainHost" (
 
 
 --
+-- Name: GracePeriod; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."GracePeriod" (
+    id bigint NOT NULL,
+    billing_event_id bigint,
+    billing_recurrence_id bigint,
+    registrar_id text NOT NULL,
+    domain_repo_id text NOT NULL,
+    expiration_time timestamp with time zone NOT NULL,
+    type text NOT NULL
+);
+
+
+--
+-- Name: GracePeriod_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."GracePeriod_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: GracePeriod_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."GracePeriod_id_seq" OWNED BY public."GracePeriod".id;
+
+
+--
 -- Name: HostHistory; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -901,6 +935,13 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 
 
 --
+-- Name: GracePeriod id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."GracePeriod" ALTER COLUMN id SET DEFAULT nextval('public."GracePeriod_id_seq"'::regclass);
+
+
+--
 -- Name: PollMessage poll_message_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1020,6 +1061,14 @@ ALTER TABLE ONLY public."DomainHistory"
 
 ALTER TABLE ONLY public."Domain"
     ADD CONSTRAINT "Domain_pkey" PRIMARY KEY (repo_id);
+
+
+--
+-- Name: GracePeriod GracePeriod_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."GracePeriod"
+    ADD CONSTRAINT "GracePeriod_pkey" PRIMARY KEY (id);
 
 
 --
@@ -1311,6 +1360,13 @@ CREATE INDEX idxhp33wybmb6tbpr1bq7ttwk8je ON public."ContactHistory" USING btree
 
 
 --
+-- Name: idxj1mtx98ndgbtb1bkekahms18w; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxj1mtx98ndgbtb1bkekahms18w ON public."GracePeriod" USING btree (domain_repo_id);
+
+
+--
 -- Name: idxj77pfwhui9f0i7wjq6lmibovj; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1486,6 +1542,14 @@ ALTER TABLE ONLY public."Domain"
 
 ALTER TABLE ONLY public."RegistryLock"
     ADD CONSTRAINT fk2lhcwpxlnqijr96irylrh1707 FOREIGN KEY (relock_revision_id) REFERENCES public."RegistryLock"(revision_id);
+
+
+--
+-- Name: GracePeriod fk2mys4hojm6ev2g9tmy5aq6m7g; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."GracePeriod"
+    ADD CONSTRAINT fk2mys4hojm6ev2g9tmy5aq6m7g FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
 
 
 --
@@ -1726,6 +1790,22 @@ ALTER TABLE ONLY public."Domain"
 
 ALTER TABLE ONLY public."DomainHost"
     ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (host_repo_id) REFERENCES public."HostResource"(repo_id);
+
+
+--
+-- Name: GracePeriod fk_grace_period_billing_event_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."GracePeriod"
+    ADD CONSTRAINT fk_grace_period_billing_event_id FOREIGN KEY (billing_event_id) REFERENCES public."BillingEvent"(billing_event_id);
+
+
+--
+-- Name: GracePeriod fk_grace_period_billing_recurrence_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."GracePeriod"
+    ADD CONSTRAINT fk_grace_period_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id);
 
 
 --

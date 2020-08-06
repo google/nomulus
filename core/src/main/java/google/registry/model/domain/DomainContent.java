@@ -73,7 +73,6 @@ import javax.persistence.AccessType;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
-import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 import javax.persistence.MappedSuperclass;
@@ -234,7 +233,7 @@ public class DomainContent extends EppResource
   VKey<PollMessage.Autorenew> autorenewPollMessage;
 
   /** The unexpired grace periods for this domain (some of which may not be active yet). */
-  @Transient @ElementCollection Set<GracePeriod> gracePeriods;
+  @Transient Set<GracePeriod> gracePeriods;
 
   /**
    * The id of the signed mark that was used to create this domain in sunrise.
@@ -260,6 +259,18 @@ public class DomainContent extends EppResource
     allContacts =
         allContacts.stream().map(contact -> contact.reconstitute()).collect(toImmutableSet());
     setContactFields(allContacts, true);
+
+    // We have to return the cloned object here because the original object's
+    // hashcode is not correct due to the change to its domainRepoId. The cloned
+    // object will have a null hashcode so that it can get a recalculated hashcode
+    // when its hashCode() is invoked.
+    // TODO(b/162739503): Remove this after fully migrating to Cloud SQL.
+    if (gracePeriods != null) {
+      gracePeriods =
+          gracePeriods.stream()
+              .map(gracePeriod -> gracePeriod.cloneWithDomainRepoId(getRepoId()))
+              .collect(toImmutableSet());
+    }
   }
 
   @PostLoad
@@ -352,6 +363,12 @@ public class DomainContent extends EppResource
   @SuppressWarnings("UnusedMethod")
   private void setNsHosts(Set<VKey<HostResource>> nsHosts) {
     this.nsHosts = nsHosts;
+  }
+
+  // Hibernate needs this in order to populate gracePeriods but no one else should ever use it
+  @SuppressWarnings("UnusedMethod")
+  private void setInternalGracePeriods(Set<GracePeriod> gracePeriods) {
+    this.gracePeriods = gracePeriods;
   }
 
   public final String getCurrentSponsorClientId() {
@@ -448,6 +465,7 @@ public class DomainContent extends EppResource
             ImmutableSet.of(
                 GracePeriod.create(
                     GracePeriodStatus.TRANSFER,
+                    domain.getRepoId(),
                     transferExpirationTime.plus(
                         Registry.get(domain.getTld()).getTransferGracePeriodLength()),
                     transferData.getGainingClientId(),
@@ -483,6 +501,7 @@ public class DomainContent extends EppResource
           .addGracePeriod(
               GracePeriod.createForRecurring(
                   GracePeriodStatus.AUTO_RENEW,
+                  domain.getRepoId(),
                   lastAutorenewTime.plus(
                       Registry.get(domain.getTld()).getAutoRenewGracePeriodLength()),
                   domain.getCurrentSponsorClientId(),

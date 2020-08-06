@@ -339,11 +339,12 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "GracePeriod" (
        id  bigserial not null,
-        billing_event_one_time int8,
-        billing_event_recurring int8,
-        registrar_id text,
-        expiration_time timestamptz,
-        type int4,
+        billing_event_id int8,
+        billing_recurrence_id int8,
+        registrar_id text not null,
+        domain_repo_id text not null,
+        expiration_time timestamptz not null,
+        type text not null,
         primary key (id)
     );
 
@@ -596,6 +597,7 @@ create index IDXrh4xmrot9bd63o382ow9ltfig on "DomainHistory" (creation_time);
 create index IDXaro1omfuaxjwmotk3vo00trwm on "DomainHistory" (history_registrar_id);
 create index IDXsu1nam10cjes9keobapn5jvxj on "DomainHistory" (history_type);
 create index IDX6w3qbtgce93cal2orjg1tw7b7 on "DomainHistory" (history_modification_time);
+create index IDXj1mtx98ndgbtb1bkekahms18w on "GracePeriod" (domain_repo_id);
 create index IDXfg2nnjlujxo6cb9fha971bq2n on "HostHistory" (creation_time);
 create index IDX1iy7njgb7wjmj9piml4l2g0qi on "HostHistory" (history_registrar_id);
 create index IDXkkwbwcwvrdkkqothkiye4jiff on "HostHistory" (host_name);
@@ -629,6 +631,11 @@ create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date
 
     alter table if exists "DomainHost" 
        add constraint FKeq1guccbre1yk3oosgp2io554 
+       foreign key (domain_repo_id) 
+       references "Domain";
+
+    alter table if exists "GracePeriod" 
+       add constraint FK2mys4hojm6ev2g9tmy5aq6m7g 
        foreign key (domain_repo_id) 
        references "Domain";
 

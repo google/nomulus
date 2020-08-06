@@ -18,6 +18,7 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 
@@ -25,6 +26,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.launch.LaunchNotice;
+import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
@@ -100,6 +102,8 @@ public class DomainBaseSqlTest {
             .setLaunchNotice(
                 LaunchNotice.create("tcnid", "validatorId", START_OF_TIME, START_OF_TIME))
             .setSmdId("smdid")
+            .addGracePeriod(
+                GracePeriod.create(GracePeriodStatus.ADD, "4-COM", END_OF_TIME, "registrar1", null))
             .build();
 
     host =
