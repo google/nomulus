@@ -348,7 +348,7 @@ public abstract class BillingEvent extends ImmutableObject
     @Override
     public VKey<OneTime> createVKey() {
       return VKey.create(
-          getClass(),
+          OneTime.class,
           parent.getParent().getName() + "/" + parent.getId() + "/" + getId(),
           Key.create(this));
     }
@@ -506,7 +506,7 @@ public abstract class BillingEvent extends ImmutableObject
     @Override
     public VKey<Recurring> createVKey() {
       return VKey.create(
-          getClass(),
+          Recurring.class,
           parent.getParent().getName() + "/" + parent.getId() + "/" + getId(),
           Key.create(this));
     }
@@ -640,7 +640,7 @@ public abstract class BillingEvent extends ImmutableObject
     @Override
     public VKey<Cancellation> createVKey() {
       return VKey.create(
-          getClass(),
+          Cancellation.class,
           parent.getParent().getName() + "/" + parent.getId() + "/" + getId(),
           Key.create(this));
     }
@@ -734,7 +734,7 @@ public abstract class BillingEvent extends ImmutableObject
     @Override
     public VKey<Modification> createVKey() {
       return VKey.create(
-          getClass(),
+          Modification.class,
           parent.getParent().getName() + "/" + parent.getId() + "/" + getId(),
           Key.create(this));
     }
