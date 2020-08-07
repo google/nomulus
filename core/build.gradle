@@ -63,6 +63,8 @@ def dockerIncompatibleTestPatterns = [
     // methods, so we exclude the whole test class.
     "google/registry/tools/params/PathParameterTest.*",
     "google/registry/persistence/PersistenceModuleTest.*",
+    // This test is failing in docker when using Java 11. The cause is unclear.
+    "google/registry/tools/DomainLockUtilsTest.*",
 ]
 
 // Tests that conflict with members of both the main test suite and the
