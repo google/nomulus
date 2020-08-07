@@ -155,7 +155,7 @@ public abstract class PollMessage extends ImmutableObject
   public abstract VKey<? extends PollMessage> createVKey();
 
   public static VKey<PollMessage> createVKey(Key<PollMessage> key) {
-    return key == null ? null : VKey.create(PollMessage.class, key.getId(), key);
+    return VKey.create(PollMessage.class, key.getId(), key);
   }
 
   /** Override Buildable.asBuilder() to give this method stronger typing. */
