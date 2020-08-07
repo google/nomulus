@@ -580,10 +580,8 @@ create index IDXjny8wuot75b5e6p38r47wdawu on "BillingRecurrence" (recurrence_tim
 create index IDX3y752kr9uh4kh6uig54vemx0l on "Contact" (creation_time);
 create index IDXtm415d6fe1rr35stm33s5mg18 on "Contact" (current_sponsor_registrar_id);
 create index IDXn1f711wicdnooa2mqb7g1m55o on "Contact" (deletion_time);
+create index IDXoqd7n4hbx86hvlgkilq75olas on "Contact" (contact_id);
 create index IDX1p3esngcwwu6hstyua6itn6ff on "Contact" (search_name);
-
-    alter table if exists "Contact" 
-       add constraint UKoqd7n4hbx86hvlgkilq75olas unique (contact_id);
 create index IDXo1xdtpij2yryh0skxe9v91sep on "ContactHistory" (creation_time);
 create index IDXhp33wybmb6tbpr1bq7ttwk8je on "ContactHistory" (history_registrar_id);
 create index IDX9q53px6r302ftgisqifmc6put on "ContactHistory" (history_type);
