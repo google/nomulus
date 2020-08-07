@@ -71,6 +71,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -162,12 +163,13 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   @Test
   void testSuccess_oneExists_allocationTokenIsRedeemed() throws Exception {
     setEppInput("domain_check_allocationtoken.xml");
-    persistActiveDomain("example1.tld");
+    DomainBase domain = persistActiveDomain("example1.tld");
+    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1L);
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(SINGLE_USE)
-            .setRedemptionHistoryEntry(Key.create(HistoryEntry.class, 1L))
+            .setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 1L, historyEntryKey))
             .build());
     doCheckTest(
         create(false, "example1.tld", "In use"),

@@ -49,16 +49,32 @@ import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
+import javax.persistence.Column;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Table;
 import org.joda.time.DateTime;
 
 /** An entity representing an allocation token. */
 @ReportedOn
 @Entity
 @WithStringVKey
-public class AllocationToken extends BackupGroupRoot implements Buildable {
+@javax.persistence.Entity
+@Table(
+    indexes = {
+      @javax.persistence.Index(
+          columnList = "token",
+          name = "allocation_token_token_idx",
+          unique = true),
+      @javax.persistence.Index(
+          columnList = "domainName",
+          name = "allocation_token_domain_name_idx"),
+    })
+public class AllocationToken extends BackupGroupRoot implements Buildable, DatastoreAndSqlEntity {
 
   // Promotions should only move forward, and ENDED / CANCELLED are terminal states.
   private static final ImmutableMultimap<TokenStatus, TokenStatus> VALID_TOKEN_STATUS_TRANSITIONS =
@@ -86,15 +102,17 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
   }
 
   /** The allocation token string. */
+  @javax.persistence.Id
   @Id String token;
 
   /** The key of the history entry for which the token was used. Null if not yet used. */
-  @Nullable @Index Key<HistoryEntry> redemptionHistoryEntry;
+  @Nullable @Index VKey<HistoryEntry> redemptionHistoryEntry;
 
   /** The fully-qualified domain name that this token is limited to, if any. */
   @Nullable @Index String domainName;
 
   /** When this token was created. */
+  @Column(nullable = false)
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** Allowed registrar client IDs for this token, or null if all registrars are allowed. */
@@ -117,6 +135,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
   int discountYears = 1;
 
   /** The type of the token, either single-use or unlimited-use. */
+  @Enumerated(EnumType.STRING)
   TokenType tokenType;
 
   // TODO: Remove onLoad once all allocation tokens are migrated to have a discountYears of 1.
@@ -161,7 +180,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
     return token;
   }
 
-  public Optional<Key<HistoryEntry>> getRedemptionHistoryEntry() {
+  public Optional<VKey<HistoryEntry>> getRedemptionHistoryEntry() {
     return Optional.ofNullable(redemptionHistoryEntry);
   }
 
@@ -260,7 +279,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
       return this;
     }
 
-    public Builder setRedemptionHistoryEntry(Key<HistoryEntry> redemptionHistoryEntry) {
+    public Builder setRedemptionHistoryEntry(VKey<HistoryEntry> redemptionHistoryEntry) {
       getInstance().redemptionHistoryEntry =
           checkArgumentNotNull(redemptionHistoryEntry, "Redemption history entry must not be null");
       return this;

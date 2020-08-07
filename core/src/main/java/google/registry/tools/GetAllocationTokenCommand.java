@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -25,6 +26,7 @@ import com.google.common.collect.Lists;
 import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.reporting.HistoryEntry;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -58,8 +60,8 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
         if (!loadedToken.getRedemptionHistoryEntry().isPresent()) {
           System.out.printf("Token %s was not redeemed.\n", token);
         } else {
-          DomainBase domain =
-              domains.get(loadedToken.getRedemptionHistoryEntry().get().<DomainBase>getParent());
+          HistoryEntry historyEntry = tm().load(loadedToken.getRedemptionHistoryEntry().get());
+          DomainBase domain = domains.get(historyEntry.getParent());
           if (domain == null) {
             System.out.printf("ERROR: Token %s was redeemed but domain can't be loaded.\n", token);
           } else {
@@ -82,7 +84,8 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
             .map(AllocationToken::getRedemptionHistoryEntry)
             .filter(Optional::isPresent)
             .map(Optional::get)
-            .map(Key::<DomainBase>getParent)
+            .map(key -> tm().load(key))
+            .map(he -> (Key<DomainBase>) he.getParent())
             .collect(toImmutableList());
     ImmutableMap.Builder<Key<DomainBase>, DomainBase> domainsBuilder = new ImmutableMap.Builder<>();
     for (List<Key<DomainBase>> keys : Lists.partition(domainKeys, BATCH_SIZE)) {

@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assert_;
 import google.registry.model.billing.BillingEventTest;
 import google.registry.model.contact.ContactResourceTest;
 import google.registry.model.domain.DomainBaseSqlTest;
+import google.registry.model.domain.token.AllocationTokenTest;
 import google.registry.model.history.ContactHistoryTest;
 import google.registry.model.history.DomainHistoryTest;
 import google.registry.model.history.HostHistoryTest;
@@ -72,6 +73,7 @@ import org.junit.runner.RunWith;
 @SelectClasses({
   // BeforeSuiteTest must be the first entry. See class javadoc for details.
   BeforeSuiteTest.class,
+  AllocationTokenTest.class,
   BillingEventTest.class,
   ClaimsListDaoTest.class,
   ContactHistoryTest.class,

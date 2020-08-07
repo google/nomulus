@@ -31,6 +31,7 @@ import google.registry.model.annotations.ReportedOn;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.persistence.VKey;
+import google.registry.persistence.WithStringVKey;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
@@ -49,6 +50,7 @@ import org.joda.time.DateTime;
 @ReportedOn
 @Entity
 @MappedSuperclass
+@WithStringVKey
 public class HistoryEntry extends ImmutableObject implements Buildable {
 
   /** Represents the type of history entry. */

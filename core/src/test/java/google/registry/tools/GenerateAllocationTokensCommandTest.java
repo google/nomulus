@@ -37,10 +37,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.DeterministicStringGenerator.Rule;
 import google.registry.testing.FakeClock;
@@ -314,7 +314,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
 
   private AllocationToken createToken(
       String token,
-      @Nullable Key<HistoryEntry> redemptionHistoryEntry,
+      @Nullable VKey<HistoryEntry> redemptionHistoryEntry,
       @Nullable String domainName) {
     AllocationToken.Builder builder =
         new AllocationToken.Builder().setToken(token).setTokenType(SINGLE_USE);

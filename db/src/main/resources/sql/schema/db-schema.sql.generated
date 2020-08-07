@@ -13,6 +13,22 @@
 -- limitations under the License.
 create sequence history_id_sequence start 1 increment 1;
 
+    create table "AllocationToken" (
+       token text not null,
+        update_timestamp timestamptz,
+        allowed_client_ids text[],
+        allowed_tlds text[],
+        creation_time timestamptz not null,
+        discount_fraction float8 not null,
+        discount_premiums boolean not null,
+        discount_years int4 not null,
+        domain_name text,
+        redemption_history_entry text,
+        token_status_transitions hstore,
+        token_type text,
+        primary key (token)
+    );
+
     create table "BillingCancellation" (
        billing_cancellation_id  bigserial not null,
         registrar_id text not null,
@@ -565,6 +581,7 @@ create sequence history_id_sequence start 1 increment 1;
         contents bytea,
         primary key (id)
     );
+create index allocation_token_domain_name_idx on "AllocationToken" (domain_name);
 create index IDXih4b2tea127p5rb61gje6e1y2 on "BillingCancellation" (registrar_id);
 create index IDX2exdfbx6oiiwnhr8j6gjpqt2j on "BillingCancellation" (event_time);
 create index IDXqa3g92jc17e8dtiaviy4fet4x on "BillingCancellation" (billing_time);

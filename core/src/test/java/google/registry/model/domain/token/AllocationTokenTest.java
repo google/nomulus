@@ -16,6 +16,7 @@ package google.registry.model.domain.token;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.CANCELLED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.ENDED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
@@ -23,7 +24,9 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.VAL
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
@@ -33,15 +36,21 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link AllocationToken}. */
-class AllocationTokenTest extends EntityTestCase {
+public class AllocationTokenTest extends EntityTestCase {
+
+  public AllocationTokenTest() {
+    super(JpaEntityCoverageCheck.ENABLED);
+  }
 
   @BeforeEach
   void beforeEach() {
@@ -53,7 +62,7 @@ class AllocationTokenTest extends EntityTestCase {
     AllocationToken unlimitedUseToken =
         persistResource(
             new AllocationToken.Builder()
-                .setToken("abc123")
+                .setToken("abc123Unlimited")
                 .setTokenType(UNLIMITED_USE)
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("dev", "app"))
@@ -70,26 +79,52 @@ class AllocationTokenTest extends EntityTestCase {
                 .build());
     assertThat(ofy().load().entity(unlimitedUseToken).now()).isEqualTo(unlimitedUseToken);
 
+    DomainBase domain = persistActiveDomain("example.foo");
+    Key<HistoryEntry> parentKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
     AllocationToken singleUseToken =
         persistResource(
             new AllocationToken.Builder()
-                .setToken("abc123")
-                .setRedemptionHistoryEntry(Key.create(HistoryEntry.class, 1L))
+                .setToken("abc123Single")
+                .setRedemptionHistoryEntry(HistoryEntry.createVKey(parentKey))
                 .setDomainName("example.foo")
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setTokenType(SINGLE_USE)
                 .build());
     assertThat(ofy().load().entity(singleUseToken).now()).isEqualTo(singleUseToken);
+
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().saveNew(unlimitedUseToken);
+              jpaTm().saveNew(singleUseToken);
+            });
+    jpaTm()
+        .transact(
+            () -> {
+              assertAboutImmutableObjects()
+                  .that(jpaTm().load(VKey.createSql(AllocationToken.class, "abc123Unlimited")))
+                  .isEqualExceptFields(
+                      unlimitedUseToken,
+                      "creationTime",
+                      "updateTimestamp",
+                      "redemptionHistoryEntry");
+              assertAboutImmutableObjects()
+                  .that(jpaTm().load(VKey.createSql(AllocationToken.class, "abc123Single")))
+                  .isEqualExceptFields(
+                      singleUseToken, "creationTime", "updateTimestamp", "redemptionHistoryEntry");
+            });
   }
 
   @Test
   void testIndexing() throws Exception {
+    DomainBase domain = persistActiveDomain("blahdomain.foo");
+    Key<HistoryEntry> parentKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
     verifyIndexing(
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(SINGLE_USE)
-                .setRedemptionHistoryEntry(Key.create(HistoryEntry.class, 1L))
+                .setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 1L, parentKey))
                 .setDomainName("blahdomain.foo")
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .build()),
@@ -193,7 +228,7 @@ class AllocationTokenTest extends EntityTestCase {
         new AllocationToken.Builder()
             .setToken("foobar")
             .setTokenType(TokenType.UNLIMITED_USE)
-            .setRedemptionHistoryEntry(Key.create(HistoryEntry.class, "hi"));
+            .setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 1L));
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
         .hasMessageThat()

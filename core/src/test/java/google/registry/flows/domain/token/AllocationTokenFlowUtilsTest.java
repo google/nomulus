@@ -22,6 +22,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.VAL
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -42,11 +43,13 @@ import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTok
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForRegistrarException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.AllocationTokenNotValidForTldException;
 import google.registry.flows.domain.token.AllocationTokenFlowUtils.InvalidAllocationTokenException;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -189,11 +192,13 @@ class AllocationTokenFlowUtilsTest {
 
   @Test
   void test_checkDomainsWithToken_showsFailureMessageForRedeemedToken() {
+    DomainBase domain = persistActiveDomain("example.tld");
+    Key<HistoryEntry> parentKey = Key.create(Key.create(domain), HistoryEntry.class, 1051L);
     persistResource(
         new AllocationToken.Builder()
             .setToken("tokeN")
             .setTokenType(SINGLE_USE)
-            .setRedemptionHistoryEntry(Key.create(HistoryEntry.class, 101L))
+            .setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 101L, parentKey))
             .build());
     assertThat(
             flowUtils
