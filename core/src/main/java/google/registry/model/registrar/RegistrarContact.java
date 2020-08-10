@@ -20,6 +20,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.io.BaseEncoding.base64;
+import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registrar.Registrar.checkValidEmail;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -35,20 +36,26 @@ import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
+import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.annotations.ReportedOn;
+import google.registry.model.registrar.RegistrarContact.RegistrarPocId;
+import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
-import javax.persistence.Column;
+import javax.persistence.IdClass;
+import javax.persistence.PostLoad;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
@@ -59,16 +66,17 @@ import javax.persistence.Transient;
  * <p>IMPORTANT NOTE: Any time that you change, update, or delete RegistrarContact entities, you
  * *MUST* also modify the persisted Registrar entity with {@link Registrar#contactsRequireSyncing}
  * set to true.
+ *
+ * <p>TODO(b/163366543): Rename the class name to RegistrarPoc after database migration
  */
 @ReportedOn
 @Entity
-@javax.persistence.Entity
+@javax.persistence.Entity(name = "RegistrarPoc")
 @Table(
-    name = "RegistrarPoc",
     indexes = {
       @javax.persistence.Index(columnList = "gaeUserId", name = "registrarpoc_gae_user_id_idx")
     })
-// TODO(shicong): Rename the class name to RegistrarPoc after database migration
+@IdClass(RegistrarPocId.class)
 public class RegistrarContact extends ImmutableObject
     implements DatastoreAndSqlEntity, Jsonifiable {
 
@@ -113,8 +121,9 @@ public class RegistrarContact extends ImmutableObject
   /** The email address of the contact. */
   @Id
   @javax.persistence.Id
-  @Column(nullable = false)
   String emailAddress;
+
+  @Ignore @javax.persistence.Id String registrarId;
 
   /** External email address of this contact used for registry lock confirmations. */
   String registryLockEmailAddress;
@@ -342,6 +351,41 @@ public class RegistrarContact extends ImmutableObject
         .build();
   }
 
+  /** Sets Cloud SQL specific fields when the entity is loaded from Datastore. */
+  @OnLoad
+  void onLoad() {
+    registrarId = parent.getName();
+  }
+
+  /** Sets Datastore specific fields when the entity is loaded from Cloud SQL. */
+  @PostLoad
+  void postLoad() {
+    parent = Key.create(getCrossTldKey(), Registrar.class, registrarId);
+  }
+
+  public VKey<RegistrarContact> createVKey() {
+    return VKey.create(
+        getClass(),
+        new RegistrarPocId(emailAddress, registrarId),
+        Key.create(parent, getClass(), emailAddress));
+  }
+
+  /** Class to represent the composite primary key for {@link RegistrarContact} entity. */
+  static class RegistrarPocId extends ImmutableObject implements Serializable {
+
+    String emailAddress;
+
+    String registrarId;
+
+    // Hibernate requires this default constructor.
+    private RegistrarPocId() {}
+
+    RegistrarPocId(String emailAddress, String registrarId) {
+      this.emailAddress = emailAddress;
+      this.registrarId = registrarId;
+    }
+  }
+
   /** A builder for constructing a {@link RegistrarContact}, since it is immutable. */
   public static class Builder extends Buildable.Builder<RegistrarContact> {
     public Builder() {}
@@ -372,6 +416,7 @@ public class RegistrarContact extends ImmutableObject
             !isNullOrEmpty(getInstance().registryLockEmailAddress),
             "Registry lock email must not be null if allowing registry lock access");
       }
+      getInstance().registrarId = getInstance().parent.getName();
       return cloneEmptyToNull(super.build());
     }
 

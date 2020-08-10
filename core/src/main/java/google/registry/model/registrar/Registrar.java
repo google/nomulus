@@ -73,6 +73,7 @@ import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.registrar.Registrar.BillingAccountEntry.CurrencyMapper;
 import google.registry.model.registry.Registry;
+import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
 import google.registry.util.CidrAddressBlock;
 import java.security.cert.CertificateParsingException;
@@ -701,6 +702,11 @@ public class Registrar extends ImmutableObject
   @Override
   public Builder asBuilder() {
     return new Builder(clone(this));
+  }
+
+  public VKey<Registrar> createVKey() {
+    return VKey.create(
+        getClass(), clientIdentifier, Key.create(parent, getClass(), clientIdentifier));
   }
 
   /** A builder for constructing {@link Registrar}, since it is immutable. */

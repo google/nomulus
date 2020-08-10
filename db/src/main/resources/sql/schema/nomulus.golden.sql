@@ -777,7 +777,8 @@ CREATE TABLE public."RegistrarPoc" (
     visible_in_domain_whois_as_abuse boolean NOT NULL,
     visible_in_whois_as_admin boolean NOT NULL,
     visible_in_whois_as_tech boolean NOT NULL,
-    registry_lock_email_address text
+    registry_lock_email_address text,
+    registrar_id text NOT NULL
 );
 
 
@@ -1154,7 +1155,7 @@ ALTER TABLE ONLY public."PremiumList"
 --
 
 ALTER TABLE ONLY public."RegistrarPoc"
-    ADD CONSTRAINT "RegistrarPoc_pkey" PRIMARY KEY (email_address);
+    ADD CONSTRAINT "RegistrarPoc_pkey" PRIMARY KEY (registrar_id, email_address);
 
 
 --

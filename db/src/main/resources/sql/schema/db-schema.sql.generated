@@ -518,6 +518,7 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "RegistrarPoc" (
        email_address text not null,
+        registrar_id text not null,
         allowed_to_set_registry_lock_password boolean not null,
         fax_number text,
         gae_user_id text,
@@ -530,7 +531,7 @@ create sequence history_id_sequence start 1 increment 1;
         visible_in_domain_whois_as_abuse boolean not null,
         visible_in_whois_as_admin boolean not null,
         visible_in_whois_as_tech boolean not null,
-        primary key (email_address)
+        primary key (email_address, registrar_id)
     );
 
     create table "RegistryLock" (
