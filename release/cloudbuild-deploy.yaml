@@ -37,30 +37,24 @@ steps:
     cat tool-credential.json.enc | base64 -d | gcloud kms decrypt \
       --ciphertext-file=- --plaintext-file=tool-credential.json \
       --location=global --keyring=nomulus-tool-keyring --key=nomulus-tool-key
-# Set the path to the file for sql_access_info to deploy the Spec 11 pipeline
-- name: 'gcr.io/$PROJECT_ID/builder:latest'
-  entrypoint: /bin/bash
-  args:
-  - -c
-  - |
-    set -e
-    if [ ${_ENV} == production ]; then
-      echo "gs://domain-registry-beam/cloudsql/admin_credential.enc" > sql_access_path.txt
-    else
-      echo "gs://domain-registry-${_ENV}-beam/cloudsql/admin_credential.enc" > sql_access_path.txt
-    fi
 # Deploy the Spec11 pipeline to GCS.
-- name: 'gcr.io/$PROJECT_ID/nomulus-tool:latest'
-  args:
-  - -e
-  - ${_ENV}
-  - --credential
-  - tool-credential.json
-  - --sql_access_info
-  - `cat sql_access_path.txt`
-  - deploy_spec11_pipeline
-  - --project
-  - $PROJECT_ID
+#- name: 'gcr.io/$PROJECT_ID/builder:latest'
+#  entrypoint: /bin/bash
+#  args:
+#  - -c
+#  - |
+#    set -e
+#    if [ ${_ENV} == production ]; then
+#      project_id="domain-registry"
+#    else
+#      project_id="domain-registry-${_ENV}"
+#    fi
+#    echo "gs://$${project_id}-beam/cloudsql/admin_credential.enc"
+#    gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/nomulus.jar .
+#    java -jar nomulus.jar -e ${_ENV} --credential tool-credential.json \
+#      --sql_access_info \
+#      "gs://$${project_id}-beam/cloudsql/admin_credential.enc" \
+#      deploy_spec11_pipeline --project $${project_id}
 # Deploy the invoicing pipeline to GCS.
 - name: 'gcr.io/$PROJECT_ID/nomulus-tool:latest'
   args:
