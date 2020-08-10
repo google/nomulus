@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import google.registry.model.registrar.Registrar;
 import google.registry.model.registry.RegistryLockDao;
 import google.registry.schema.domain.RegistryLock;
 import java.sql.SQLException;
@@ -59,10 +60,10 @@ public class SqlHelper {
     return jpaTm().transact(() -> RegistryLockDao.getByRevisionId(revisionId));
   }
 
-  public static void saveRegistrar(String clientId) {
-    jpaTm()
-        .transact(
-            () -> jpaTm().saveNew(makeRegistrar1().asBuilder().setClientId(clientId).build()));
+  public static Registrar saveRegistrar(String clientId) {
+    Registrar registrar = makeRegistrar1().asBuilder().setClientId(clientId).build();
+    jpaTm().transact(() -> jpaTm().saveNew(registrar));
+    return jpaTm().transact(() -> jpaTm().load(registrar.createVKey()));
   }
 
   public static void assertThrowForeignKeyViolation(Executable executable) {
