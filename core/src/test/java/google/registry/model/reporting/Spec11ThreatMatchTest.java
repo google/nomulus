@@ -33,6 +33,7 @@ import google.registry.persistence.VKey;
 import org.joda.time.LocalDate;
 import org.joda.time.format.ISODateTimeFormat;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Spec11ThreatMatch}. */
@@ -121,6 +122,7 @@ public class Spec11ThreatMatchTest extends EntityTestCase {
   }
 
   @Test
+  @Disabled("We can't rely on foreign keys until we've migrated to SQL")
   void testThreatForeignKeyConstraints() {
     assertThrowForeignKeyViolation(
         () -> {
