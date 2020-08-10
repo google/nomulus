@@ -40,7 +40,7 @@ import org.joda.time.DateTime;
       @javax.persistence.Index(columnList = "creationTime"),
       @javax.persistence.Index(columnList = "currentSponsorRegistrarId"),
       @javax.persistence.Index(columnList = "deletionTime"),
-      @javax.persistence.Index(columnList = "contactId", unique = true),
+      @javax.persistence.Index(columnList = "contactId"),
       @javax.persistence.Index(columnList = "searchName")
     })
 @ExternalMessagingName("contact")
