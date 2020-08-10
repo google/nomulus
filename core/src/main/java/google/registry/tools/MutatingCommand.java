@@ -143,9 +143,13 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
   protected String execute() throws Exception {
     for (final List<EntityChange> batch : getCollatedEntityChangeBatches()) {
       tm().transact(() -> batch.forEach(this::executeChange));
+      postBatchExecute();
     }
     return String.format("Updated %d entities.\n", changedEntitiesMap.size());
   }
+
+  /** Performs any execution step after each batch. */
+  protected void postBatchExecute() {}
 
   private void executeChange(EntityChange change) {
     // Load the key of the entity to mutate and double-check that it hasn't been
