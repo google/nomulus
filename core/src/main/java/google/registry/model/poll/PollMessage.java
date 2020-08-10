@@ -155,15 +155,7 @@ public abstract class PollMessage extends ImmutableObject
   public abstract VKey<? extends PollMessage> createVKey();
 
   public static VKey<PollMessage> createVKey(Key<PollMessage> key) {
-    // TODO(b/159207551): As it stands, the SQL key generated here doesn't mesh with the primary key
-    // type for the table, which is a single long integer.  Also note that the class id is not
-    // correct here and as such the resulting key will not be loadable from SQL.
-    if (key == null) {
-      return null;
-    }
-    String path =
-        key.getParent().getParent().getName() + "/" + key.getParent().getId() + key.getId();
-    return VKey.create(PollMessage.class, path, key);
+    return VKey.create(PollMessage.class, key.getId(), key);
   }
 
   /** Override Buildable.asBuilder() to give this method stronger typing. */
