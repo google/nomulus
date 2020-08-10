@@ -616,6 +616,18 @@ public final class RegistryConfig {
     }
 
     /**
+     * Returns the default job region to run Apache Beam (Cloud Dataflow) jobs in.
+     *
+     * @see google.registry.beam.invoicing.InvoicingPipeline
+     * @see google.registry.beam.spec11.Spec11Pipeline
+     */
+    @Provides
+    @Config("defaultJobRegion")
+    public static String provideDefaultJobRegion(RegistryConfigSettings config) {
+      return config.beam.defaultJobRegion;
+    }
+
+    /**
      * Returns the default job zone to run Apache Beam (Cloud Dataflow) jobs in.
      *
      * @see google.registry.reporting.billing.GenerateInvoicesAction

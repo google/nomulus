@@ -15,7 +15,6 @@
 package google.registry.beam.spec11;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.beam.BeamUtils.getQueryFromFile;
 
 import com.google.auth.oauth2.GoogleCredentials;
@@ -32,9 +31,7 @@ import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.Retrier;
 import google.registry.util.SqlTemplate;
-import java.io.File;
 import java.io.Serializable;
-import java.util.Arrays;
 import javax.inject.Inject;
 import org.apache.beam.runners.dataflow.DataflowRunner;
 import org.apache.beam.runners.dataflow.options.DataflowPipelineOptions;
@@ -92,6 +89,7 @@ public class Spec11Pipeline implements Serializable {
   public static final String THREAT_MATCHES_FIELD = "threatMatches";
 
   private final String projectId;
+  private final String beamJobRegion;
   private final String beamStagingUrl;
   private final String spec11TemplateUrl;
   private final String reportingBucketUrl;
@@ -102,6 +100,7 @@ public class Spec11Pipeline implements Serializable {
   @Inject
   public Spec11Pipeline(
       @Config("projectId") String projectId,
+      @Config("defaultJobRegion") String beamJobRegion,
       @Config("beamStagingUrl") String beamStagingUrl,
       @Config("spec11TemplateUrl") String spec11TemplateUrl,
       @Config("reportingBucketUrl") String reportingBucketUrl,
@@ -109,6 +108,7 @@ public class Spec11Pipeline implements Serializable {
       @LocalCredential GoogleCredentialsBundle googleCredentialsBundle,
       Retrier retrier) {
     this.projectId = projectId;
+    this.beamJobRegion = beamJobRegion;
     this.beamStagingUrl = beamStagingUrl;
     this.spec11TemplateUrl = spec11TemplateUrl;
     this.reportingBucketUrl = reportingBucketUrl;
@@ -149,6 +149,7 @@ public class Spec11Pipeline implements Serializable {
     // We can't store options as a member variable due to serialization concerns.
     Spec11PipelineOptions options = PipelineOptionsFactory.as(Spec11PipelineOptions.class);
     options.setProject(projectId);
+    options.setRegion(beamJobRegion);
     options.setRunner(DataflowRunner.class);
     // This causes p.run() to stage the pipeline as a template on GCS, as opposed to running it.
     options.setTemplateLocation(spec11TemplateUrl);
@@ -156,14 +157,6 @@ public class Spec11Pipeline implements Serializable {
     // This credential is used when Dataflow deploys the template to GCS in target GCP project.
     // So, make sure the credential has write permission to GCS in that project.
     options.setGcpCredential(googleCredentials);
-
-    // The BEAM files-to-stage classpath loader is broken past Java 8, so we do this manually.
-    // See https://issues.apache.org/jira/browse/BEAM-2530
-    options.setFilesToStage(
-        Arrays.stream(System.getProperty("java.class.path").split(File.separator))
-            .map(File::new)
-            .map(File::getPath)
-            .collect(toImmutableList()));
 
     Pipeline p = Pipeline.create(options);
     PCollection<Subdomain> domains =

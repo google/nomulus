@@ -14,8 +14,6 @@
 
 package google.registry.beam.invoicing;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-
 import com.google.auth.oauth2.GoogleCredentials;
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey;
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey.InvoiceGroupingKeyCoder;
@@ -24,9 +22,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.reporting.billing.BillingModule;
 import google.registry.reporting.billing.GenerateInvoicesAction;
 import google.registry.util.GoogleCredentialsBundle;
-import java.io.File;
 import java.io.Serializable;
-import java.util.Arrays;
 import javax.inject.Inject;
 import org.apache.beam.runners.dataflow.DataflowRunner;
 import org.apache.beam.runners.dataflow.options.DataflowPipelineOptions;
@@ -63,6 +59,7 @@ import org.apache.beam.sdk.values.TypeDescriptors;
 public class InvoicingPipeline implements Serializable {
 
   private final String projectId;
+  private final String beamJobRegion;
   private final String beamBucketUrl;
   private final String invoiceTemplateUrl;
   private final String beamStagingUrl;
@@ -73,6 +70,7 @@ public class InvoicingPipeline implements Serializable {
   @Inject
   public InvoicingPipeline(
       @Config("projectId") String projectId,
+      @Config("defaultJobRegion") String beamJobRegion,
       @Config("apacheBeamBucketUrl") String beamBucketUrl,
       @Config("invoiceTemplateUrl") String invoiceTemplateUrl,
       @Config("beamStagingUrl") String beamStagingUrl,
@@ -80,6 +78,7 @@ public class InvoicingPipeline implements Serializable {
       @Config("invoiceFilePrefix") String invoiceFilePrefix,
       @LocalCredential GoogleCredentialsBundle googleCredentialsBundle) {
     this.projectId = projectId;
+    this.beamJobRegion = beamJobRegion;
     this.beamBucketUrl = beamBucketUrl;
     this.invoiceTemplateUrl = invoiceTemplateUrl;
     this.beamStagingUrl = beamStagingUrl;
@@ -107,6 +106,7 @@ public class InvoicingPipeline implements Serializable {
     // We can't store options as a member variable due to serialization concerns.
     InvoicingPipelineOptions options = PipelineOptionsFactory.as(InvoicingPipelineOptions.class);
     options.setProject(projectId);
+    options.setRegion(beamJobRegion);
     options.setRunner(DataflowRunner.class);
     // This causes p.run() to stage the pipeline as a template on GCS, as opposed to running it.
     options.setTemplateLocation(invoiceTemplateUrl);
@@ -114,14 +114,6 @@ public class InvoicingPipeline implements Serializable {
     // This credential is used when Dataflow deploys the template to GCS in target GCP project.
     // So, make sure the credential has write permission to GCS in that project.
     options.setGcpCredential(googleCredentials);
-
-    // The BEAM files-to-stage classpath loader is broken past Java 8, so we do this manually.
-    // See https://issues.apache.org/jira/browse/BEAM-2530
-    options.setFilesToStage(
-        Arrays.stream(System.getProperty("java.class.path").split(File.separator))
-            .map(File::new)
-            .map(File::getPath)
-            .collect(toImmutableList()));
 
     Pipeline p = Pipeline.create(options);
 
