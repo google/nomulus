@@ -99,6 +99,7 @@ public final class RegistryTool {
           .put("remove_ip_address", RemoveIpAddressCommand.class)
           .put("renew_domain", RenewDomainCommand.class)
           .put("resave_entities", ResaveEntitiesCommand.class)
+          .put("resave_entities_with_unique_id", ResaveEntitiesWithUniqueIdCommand.class)
           .put("resave_environment_entities", ResaveEnvironmentEntitiesCommand.class)
           .put("resave_epp_resource", ResaveEppResourceCommand.class)
           .put("send_escrow_report_to_icann", SendEscrowReportToIcannCommand.class)

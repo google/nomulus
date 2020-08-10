@@ -1184,14 +1184,6 @@ ALTER TABLE ONLY public."RegistryLock"
 
 
 --
--- Name: Contact ukoqd7n4hbx86hvlgkilq75olas; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT ukoqd7n4hbx86hvlgkilq75olas UNIQUE (contact_id);
-
-
---
 -- Name: idx1iy7njgb7wjmj9piml4l2g0qi; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1413,6 +1405,13 @@ CREATE INDEX idxn898pb9mwcg359cdwvolb11ck ON public."BillingRecurrence" USING bt
 --
 
 CREATE INDEX idxo1xdtpij2yryh0skxe9v91sep ON public."ContactHistory" USING btree (creation_time);
+
+
+--
+-- Name: idxoqd7n4hbx86hvlgkilq75olas; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxoqd7n4hbx86hvlgkilq75olas ON public."Contact" USING btree (contact_id);
 
 
 --
@@ -1870,14 +1869,6 @@ ALTER TABLE ONLY public."PollMessage"
 
 ALTER TABLE ONLY public."PollMessage"
     ADD CONSTRAINT fk_poll_message_transfer_response_losing_registrar_id FOREIGN KEY (transfer_response_losing_registrar_id) REFERENCES public."Registrar"(registrar_id);
-
-
---
--- Name: Spec11ThreatMatch fk_safebrowsing_threat_domain_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Spec11ThreatMatch"
-    ADD CONSTRAINT fk_safebrowsing_threat_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
 
 
 --
